@@ -16,10 +16,11 @@ function D = saveEditor2Doc(D, datasetInfo)
         D.database_rm(metadata_editor_docs);
     end
 
-    document = ndi.database.metadata_ds_core.convertDatasetInfoToStruct(datasetInfo);
+    %documentStruct = ndi.database.metadata_ds_core.convertDatasetInfoToStruct(datasetInfo);
+    documentStruct = datasetInfo; % should be all set
 
     d = ndi.document(docName,'base.id',newid.identifier,...
         'base.session_id',session_id,...
-        'metadata_editor.metadata_structure',document);
+        'metadata_editor.metadata_structure',documentStruct);
     D.database_add(d);
 end

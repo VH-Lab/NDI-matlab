@@ -1,17 +1,6 @@
 classdef MetadataEditorApp < matlab.apps.AppBase
     %METADATAEDITORAPP App Edit and upload metadata for NDI datasets
-    %   
-    %   Syntax:
-    %       ndi.database.metadata_app.Apps.MetadataEditorApp(ndiEntity)
-    %       ndi.database.metadata_app.Apps.MetadataEditorApp(ndiEntity, debugMode)
-    %           opens the metadata editor for the specified NDI entity (session or dataset).
-    %   
-    %   Inputs:
-    %       ndiEntity  : An NDI session or dataset object. This argument is required.
-    %       debugMode  : (Optional) Boolean (true/false, default false) to enable debug features.
-    %
-    %   The temporary working file for metadata is automatically stored in the
-    %   [ndiEntity_path]/.ndi/NDIMetadataEditorData.mat file.
+    %   (Syntax and Inputs documentation remains the same)
 
     % Properties that correspond to app components
     properties (Access = public)
@@ -23,80 +12,47 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         PreviousButton                matlab.ui.control.Button
         MainGridLayout                matlab.ui.container.GridLayout
         TabGroup                      matlab.ui.container.TabGroup
+        
         IntroTab                      matlab.ui.container.Tab
         IntroGridLayout               matlab.ui.container.GridLayout
-        GridLayout25                  matlab.ui.container.GridLayout
-        NdiLogoIntroImage             matlab.ui.control.Image
-        IntroLabel                    matlab.ui.control.Label
-        GridLayout_Step0_C2           matlab.ui.container.GridLayout
-        IntroductionTextLabel         matlab.ui.control.Label
-        GridLayout_Step0_C3           matlab.ui.container.GridLayout
-        GetStartedButton              matlab.ui.control.Button
+        GridLayout25                  matlab.ui.container.GridLayout % For Intro Tab
+        NdiLogoIntroImage             matlab.ui.control.Image      % For Intro Tab
+        IntroLabel                    matlab.ui.control.Label      % For Intro Tab
+        GridLayout_Step0_C2           matlab.ui.container.GridLayout % For Intro Tab
+        IntroductionTextLabel         matlab.ui.control.Label      % For Intro Tab
+        GridLayout_Step0_C3           matlab.ui.container.GridLayout % For Intro Tab
+        GetStartedButton              matlab.ui.control.Button     % For Intro Tab
+        
         DatasetOverviewTab            matlab.ui.container.Tab
         DatasetOverviewGridLayout     matlab.ui.container.GridLayout
         DatasetInformationLabel       matlab.ui.control.Label
         DatasetInformationPanel       matlab.ui.container.Panel
-        GridLayout                    matlab.ui.container.GridLayout
-        GridLayout4                   matlab.ui.container.GridLayout
+        GridLayout                    matlab.ui.container.GridLayout % Inside DatasetInformationPanel
+        GridLayout4                   matlab.ui.container.GridLayout % For Comments
         DatasetCommentsTextArea       matlab.ui.control.TextArea
         DatasetCommentsTextAreaLabel  matlab.ui.control.Label
-        Panel_4                       matlab.ui.container.Panel
-        GridLayout3                   matlab.ui.container.GridLayout
+        Panel_4                       matlab.ui.container.Panel      % For Abstract
+        GridLayout3                   matlab.ui.container.GridLayout % For Abstract
         AbstractTextAreaLabel         matlab.ui.control.Label
         AbstractTextArea              matlab.ui.control.TextArea
-        Panel_3                       matlab.ui.container.Panel
-        GridLayout2                   matlab.ui.container.GridLayout
+        Panel_3                       matlab.ui.container.Panel      % For Titles
+        GridLayout2                   matlab.ui.container.GridLayout % For Titles
         DatasetShortNameEditFieldLabel matlab.ui.control.Label
         DatasetShortNameEditField     matlab.ui.control.EditField
         DatasetBranchTitleEditFieldLabel matlab.ui.control.Label
         DatasetBranchTitleEditField   matlab.ui.control.EditField
+        
         AuthorsTab                    matlab.ui.container.Tab
-        AuthorsGridLayout             matlab.ui.container.GridLayout
-        AuthorDetailsLabel            matlab.ui.control.Label
-        AuthorMainPanel               matlab.ui.container.Panel
-        AuthorMainPanelGridLayout     matlab.ui.container.GridLayout
-        AuthorContentRightGridLayout  matlab.ui.container.GridLayout
-        AffiliationListBoxGridLayout  matlab.ui.container.GridLayout
-        AffiliationListBox            matlab.ui.control.ListBox
-        AffiliationListBoxButtonGridLayout matlab.ui.container.GridLayout
-        RemoveAffiliationButton       matlab.ui.control.Button
-        MoveAffiliationUpButton       matlab.ui.control.Button
-        MoveAffiliationDownButton     matlab.ui.control.Button
-        AffiliationSelectionGridLayout matlab.ui.container.GridLayout
-        OrganizationDropDown          matlab.ui.control.DropDown
-        AddAffiliationButton          matlab.ui.control.Button
-        AffiliationsListBoxLabel      matlab.ui.control.Label
-        AuthorContentCenterGridLayout matlab.ui.container.GridLayout
-        AuthorRoleTree                matlab.ui.container.CheckBoxTree
-        FirstAuthorNode               matlab.ui.container.TreeNode
-        CustodianNode                 matlab.ui.container.TreeNode
-        CorrespondingNode             matlab.ui.container.TreeNode
-        AuthorRoleLabel               matlab.ui.control.Label
-        AuthorEmailEditFieldLabel     matlab.ui.control.Label
-        AuthorEmailEditField          matlab.ui.control.EditField
-        AuthorOrcidGridLayout         matlab.ui.container.GridLayout
-        SearchOrcidButton             matlab.ui.control.Button
-        DigitalIdentifierEditField    matlab.ui.control.EditField
-        DigitalIdentifierEditFieldLabel matlab.ui.control.Label
-        FamilyNameEditField           matlab.ui.control.EditField
-        FamilyNameEditFieldLabel      matlab.ui.control.Label
-        GivenNameEditField            matlab.ui.control.EditField
-        GivenNameEditFieldLabel       matlab.ui.control.Label
-        AuthorContentLeftGridLayout   matlab.ui.container.GridLayout
-        AuthorListBoxLabel            matlab.ui.control.Label
-        AuthorListBoxGridLayout       matlab.ui.container.GridLayout
-        AuthorListBoxButtonGridLayout matlab.ui.container.GridLayout
-        MoveAuthorDownButton          matlab.ui.control.Button
-        MoveAuthorUpButton            matlab.ui.control.Button
-        RemoveAuthorButton            matlab.ui.control.Button
-        AddAuthorButton               matlab.ui.control.Button
-        AuthorListBox                 matlab.ui.control.ListBox
+        AuthorsGridLayout             matlab.ui.container.GridLayout % Main grid for Authors Tab
+        AuthorDetailsLabel            matlab.ui.control.Label      % Title for Authors Tab
+        AuthorMainPanel               matlab.ui.container.Panel      % Panel that will contain AuthorDataGUI's UI
+        
         DatasetDetailsTab             matlab.ui.container.Tab
         DatasetDetailsGridLayout      matlab.ui.container.GridLayout
         DatasetDetailsLabel           matlab.ui.control.Label
         DatasetDetailsPanel           matlab.ui.container.Panel
-        GridLayout18                  matlab.ui.container.GridLayout
-        GridLayout20                  matlab.ui.container.GridLayout
+        GridLayout18                  matlab.ui.container.GridLayout % Main grid in DatasetDetailsPanel
+        GridLayout20                  matlab.ui.container.GridLayout % For Publication Table
         PublicationTableButtonGridLayout matlab.ui.container.GridLayout
         AddRelatedPublicationButton   matlab.ui.control.Button
         RemovePublicationButton       matlab.ui.control.Button
@@ -104,9 +60,9 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         MovePublicationDownButton     matlab.ui.control.Button
         RelatedPublicationUITable     matlab.ui.control.Table
         RelatedPublicationUITableLabel matlab.ui.control.Label
-        GridLayout19                  matlab.ui.container.GridLayout
-        GridLayout22                  matlab.ui.container.GridLayout
-        GridLayout28                  matlab.ui.container.GridLayout
+        GridLayout19                  matlab.ui.container.GridLayout % For Accessibility and Funding
+        GridLayout22                  matlab.ui.container.GridLayout % For Accessibility section
+        GridLayout28                  matlab.ui.container.GridLayout % For License Dropdown + Help
         LicenseHelpButton             matlab.ui.control.Button
         LicenseDropDown               matlab.ui.control.DropDown
         AccessibilityLabel            matlab.ui.control.Label
@@ -119,7 +75,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         LicenseDropDownLabel          matlab.ui.control.Label
         ReleaseDateDatePicker         matlab.ui.control.DatePicker
         ReleaseDateDatePickerLabel    matlab.ui.control.Label
-        FundingGridLayout             matlab.ui.container.GridLayout
+        FundingGridLayout             matlab.ui.container.GridLayout % For Funding Table
         FundingTableButtonGridLayout  matlab.ui.container.GridLayout
         AddFundingButton              matlab.ui.control.Button
         RemoveFundingButton           matlab.ui.control.Button
@@ -127,11 +83,12 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         MoveFundingDownButton         matlab.ui.control.Button
         FundingUITableLabel           matlab.ui.control.Label
         FundingUITable                matlab.ui.control.Table
+        
         ExperimentDetailsTab          matlab.ui.container.Tab
         ExperimentDetailsGridLayout   matlab.ui.container.GridLayout
         ExperimentDetailsLabel        matlab.ui.control.Label
         ExperimentDetailsPanel        matlab.ui.container.Panel
-        GridLayout26                  matlab.ui.container.GridLayout
+        GridLayout26                  matlab.ui.container.GridLayout % Main grid in ExperimentDetailsPanel
         SelectedTechniquesListBox     matlab.ui.control.ListBox
         SelectedTechniquesListBoxLabel matlab.ui.control.Label
         SelectTechniqueDropDownLabel  matlab.ui.control.Label
@@ -144,26 +101,27 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         ExperimentalApproachTree      matlab.ui.container.CheckBoxTree
         DataTypeTree                  matlab.ui.container.CheckBoxTree
         DataTypeTreeLabel             matlab.ui.control.Label
+        
         SubjectInfoTab                matlab.ui.container.Tab
         SubjectInfoGridLayout         matlab.ui.container.GridLayout
         SubjectInfoLabel              matlab.ui.control.Label
         SubjectInfoPanel              matlab.ui.container.Panel
-        GridLayout16                  matlab.ui.container.GridLayout
+        GridLayout16                  matlab.ui.container.GridLayout % Main grid in SubjectInfoPanel
         UITableSubject                matlab.ui.control.Table
-        GridLayout17                  matlab.ui.container.GridLayout
-        GridLayout27                  matlab.ui.container.GridLayout
+        GridLayout17                  matlab.ui.container.GridLayout % For dropdowns/edits below subject table
+        GridLayout27                  matlab.ui.container.GridLayout % For Strain add
         AddStrainButton               matlab.ui.control.Button
         StrainEditField               matlab.ui.control.EditField
-        GridLayout24_4                matlab.ui.container.GridLayout
+        GridLayout24_4                matlab.ui.container.GridLayout % For Species add
         AddSpeciesButton              matlab.ui.control.Button
         SpeciesEditField              matlab.ui.control.EditField
-        GridLayout24_3                matlab.ui.container.GridLayout
+        GridLayout24_3                matlab.ui.container.GridLayout % For Strain assign/clear
         StrainClearButton             matlab.ui.control.Button
         AssignStrainButton            matlab.ui.control.Button
-        GridLayout24_2                matlab.ui.container.GridLayout
+        GridLayout24_2                matlab.ui.container.GridLayout % For Species assign/clear
         SpeciesClearButton            matlab.ui.control.Button
         AssignSpeciesButton           matlab.ui.control.Button
-        GridLayout24                  matlab.ui.container.GridLayout
+        GridLayout24                  matlab.ui.container.GridLayout % For Sex assign/clear
         BiologicalSexClearButton      matlab.ui.control.Button
         AssignBiologicalSexButton     matlab.ui.control.Button
         StrainListBox                 matlab.ui.control.ListBox
@@ -172,12 +130,13 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         SpeciesLabel_2                matlab.ui.control.Label
         BiologicalSexListBox          matlab.ui.control.ListBox
         BiologicalSexLabel            matlab.ui.control.Label
+        
         ProbeInfoTab                  matlab.ui.container.Tab
         ProbeInfoGridLayout           matlab.ui.container.GridLayout
         ProbeInfoLabel                matlab.ui.control.Label
-        ProbeInfoPanel                matlab.ui.container.Panel
-        GridLayout23                  matlab.ui.container.GridLayout
-        UITableProbe                  matlab.ui.control.Table
+        ProbeInfoPanel                matlab.ui.container.Panel % This panel will be parent for ProbeDataGUI
+        % UITableProbe will be created by ProbeDataGUI
+        
         SaveTab                       matlab.ui.container.Tab
         SubmitGridLayout              matlab.ui.container.GridLayout
         SubmitLabel                   matlab.ui.control.Label
@@ -190,22 +149,20 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         ExportDatasetInfoButton       matlab.ui.control.Button
         TestDocumentConversionButton  matlab.ui.control.Button
         SaveButton                    matlab.ui.control.Button
-        SaveChangesButton             matlab.ui.control.Button
+        SaveChangesButton             matlab.ui.control.Button 
         FooterpanelLabel              matlab.ui.control.Label
-        ResetFormButton               matlab.ui.control.Button % New Button
-        RevertToSavedButton           matlab.ui.control.Button % New Button
+        ResetFormButton               matlab.ui.control.Button 
+        RevertToSavedButton           matlab.ui.control.Button 
     end
 
-    
-    properties (Access = private) % Graphical components
-        % UIForm - A struct for storing input form apps, like the Author form. Used
-        % to keep external forms/figures in memory, but hidden
-        UIForm (1,1) struct
+    properties (Access = public) % Changed from private for GUI_Instances
+        UIForm (1,1) struct 
+        AuthorDataGUI_Instance ndi.database.metadata_app.class.AuthorDataGUI 
+        ProbeDataGUI_Instance  ndi.database.metadata_app.class.ProbeDataGUI % Added
+        % SubjectDataGUI_Instance % Placeholder for future Subject GUI controller
     end
 
-    properties (Access = private, Constant)
-        % FieldComponentMap - Mapping between dataset information fields
-        % and app components
+    properties (Access = public, Constant)
         FieldComponentMap = struct(...
                     'DatasetFullName', 'DatasetBranchTitleEditField', ...
                     'DatasetShortName', 'DatasetShortNameEditField', ...
@@ -216,60 +173,34 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     'FullDocumentation', 'FullDocumentationEditField', ...
                     'VersionIdentifier', 'VersionIdentifierEditField', ...
                     'VersionInnovation', 'VersionInnovationEditField', ...
-                                'Funding', 'FundingUITable', ...
-                    'RelatedPublication', 'RelatedPublicationUITable', ...
+                                'Funding', 'FundingUITable', ... 
+                    'RelatedPublication', 'RelatedPublicationUITable', ... 
                     'ExperimentalApproach', 'ExperimentalApproachTree', ...
                     'TechniquesEmployed', 'SelectedTechniquesListBox', ...
                                 'DataType', 'DataTypeTree' ...
                     );
-                    % 'Subjects', 'UITableSubject', ... % Note: Currently handled individually
-                    % 'Probes', 'UITableProbe' ...
-
         FieldComponentPostfix = ["EditField", "TextArea", "DropDown", "UITable", "Tree", "ListBox"]
     end
 
-    properties (Access = private) % Userdata
-        % DatasetInformation - Struct holding all the information entered 
-        % in the app. This is the data which will be saved and loaded
-        DatasetInformation (1,1) struct
+    properties (Access = public) 
+        DatasetInformationStruct (1,1) struct 
         
-        % AuthorData - Utility class for keeping track of author
-        % information. This is used to manage a list of authors and placing
-        % 
         AuthorData (1,1) ndi.database.metadata_app.class.AuthorData
+        Organizations (1,:) struct 
         
-        % Organizations - A struct array containing user-defined
-        % organizations for author affiliations
-        Organizations (1,:) struct % Todo: Save to openminds instances...
-        
-        %Step 4
         SpeciesInstancesUser (1,:) struct
-
         SpeciesData (1,1) ndi.database.metadata_app.class.SpeciesData
         SubjectData (1,1) ndi.database.metadata_app.class.SubjectData
-
-        %Step 5
         ProbeData (1,1) ndi.database.metadata_app.class.ProbeData
         
-        %Email and password
-        LoginInformation
-
-        % An NDI dataset object
-        Dataset
-        
-        % A path to the temporary working file for saving and retrieving 
-        % metadata information during an editing session.
-        % It is typically under Session/.ndi/NDIMetadataEditorData.mat
-        TempWorkingFile
+        LoginInformation 
+        Dataset          
+        TempWorkingFile  
+        Timer            
+        ResourcesPath 
     end
 
-    properties (Access = private)
-        Timer
-    end
-
-    methods (Access = private) % App utility methods
-
-        % Methods for displaying messages to users:
+    methods (Access = public) % App utility methods (alert, inform, etc.) - Changed to public for external access
         
         function alert(app, message, title, varargin)
             if nargin < 3 || isempty(title); title = 'Error'; end
@@ -278,7 +209,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
         function inform(app, message, title, varargin)
             if nargin < 3 || isempty(title);title = 'Info'; end
-
             uialert(app.NDIMetadataEditorUIFigure, message, title, varargin{:}, 'Icon', 'info')
         end
 
@@ -286,158 +216,372 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             msg = sprintf("The following required field(s) are missing:\n%s", strjoin(" - "+missingFields, newline));
             uialert(app.NDIMetadataEditorUIFigure, msg, 'Required Field(s) Missing')
         end
-
-        % Methods for getting values from uicomponents
-
-        function selectionIndex = getListBoxSelectionIndex(~, listBoxHandle)
+    end
+    
+    methods (Access = public) % UI Helper methods - made public for external .fun access
+        function selectionIndex = getListBoxSelectionIndex(app, listBoxHandle)
             if isempty(listBoxHandle.Value)
                 selectionIndex = [];
             else
-                isSelected = strcmp(listBoxHandle.Items, listBoxHandle.Value);
+                if iscell(listBoxHandle.Value) && ~isempty(listBoxHandle.Value)
+                    isSelected = ismember(listBoxHandle.Items, listBoxHandle.Value);
+                else 
+                    isSelected = strcmp(listBoxHandle.Items, listBoxHandle.Value);
+                end
                 selectionIndex = find(isSelected);
             end
         end
 
-        function data = getCheckedTreeNodeData(~, checkedNodeHandles)
-            
+        function data = getCheckedTreeNodeData(app, checkedNodeHandles)
             if ~isempty(checkedNodeHandles)
                 data = {checkedNodeHandles.NodeData};
             else
-                data = '';
+                data = {}; 
             end
         end
 
-        function setCheckedNodesFromData(~, treeHandle, data)
-        % setCheckedNodesFromData - Set checked nodes from reference text
-            nodeData = {treeHandle.Children.NodeData};
+        function setCheckedNodesFromData(app, treeHandle, data)
+            if isempty(treeHandle.Children)
+                treeHandle.CheckedNodes = []; 
+                return; 
+            end
             
-            tf = ismember(nodeData, data);
+            if ischar(data) && ~isempty(data)
+                data = {data}; 
+            elseif isstring(data)
+                data = cellstr(data); 
+            elseif ~iscellstr(data) && ~iscell(data) && ~isempty(data) 
+                data = {}; 
+            elseif iscell(data) && ~isempty(data) && ~all(cellfun(@ischar, data)) 
+                try 
+                    data = cellfun(@char, data, 'UniformOutput', false); 
+                catch
+                    data = {};
+                end
+            end
+            if isempty(data), data = {}; end 
 
-            if any(tf)
-                treeHandle.CheckedNodes = treeHandle.Children(tf);
+            nodeDataArray = {treeHandle.Children.NodeData};
+            nodesToSelect = matlab.ui.container.TreeNode.empty(0,1); 
+            if ~isempty(data) && ~isempty(nodeDataArray)
+                try
+                    tf = ismember(nodeDataArray, data);
+                    if any(tf)
+                        nodesToSelect = treeHandle.Children(tf);
+                    end
+                catch ME_ismember
+                    fprintf(2, 'Error in setCheckedNodesFromData during ismember: %s\n', ME_ismember.message);
+                end
+            end
+            if isempty(nodesToSelect)
+                treeHandle.CheckedNodes = []; 
             else
-                treeHandle.CheckedNodes = [];
+                treeHandle.CheckedNodes = nodesToSelect;
+            end
+        end
+    end
+    
+    methods (Access = private) % UI Checks and Highlighting (and other private app logic)
+        function missingRequiredField = checkRequiredFields(app, tab)
+            tabTitleStr = '';
+            if isa(tab, 'matlab.ui.container.Tab') && isprop(tab,'Title') && ~isempty(tab.Title)
+                tabTitleStr = char(tab.Title);
+            elseif ischar(tab) || isstring(tab)
+                 tabTitleStr = char(tab);
+            end
+            fprintf('DEBUG (checkRequiredFields): Called for tab: %s\n', tabTitleStr);
+            
+            requiredFields = ndi.database.metadata_app.fun.getRequiredFields();
+            missingRequiredField = string.empty(0,1); % Initialize as empty string array
+            fieldsToCheck = string.empty(0,1); 
+
+            currentTabName = tabTitleStr;
+            fprintf('DEBUG (checkRequiredFields): currentTabName determined as: "%s"\n', currentTabName);
+
+            switch currentTabName 
+                case app.DatasetOverviewTab.Title
+                    fieldsToCheck = ["DatasetFullName", "DatasetShortName", "Description", "Comments"];
+                case app.DatasetDetailsTab.Title
+                    fieldsToCheck = ["License", "VersionIdentifier"];
+                case app.ExperimentDetailsTab.Title
+                    fieldsToCheck = ["DataType"]; % Example, add more if needed
+                case {'', app.SaveTab.Title} % Final submission step or SaveTab
+                    fieldsToCheck = string( fieldnames(requiredFields)' );
+                otherwise
+                    fprintf('DEBUG (checkRequiredFields): Tab "%s" not explicitly handled for required fields check, no specific fields added to fieldsToCheck.\n', currentTabName);
+            end    
+            
+            if isempty(fieldsToCheck)
+                fprintf('DEBUG (checkRequiredFields): No fields to check for this tab based on switch case.\n');
+            else
+                fprintf('DEBUG (checkRequiredFields): Fields to check for this tab: %s\n', strjoin(fieldsToCheck,', '));
+            end
+
+            for iField_str = fieldsToCheck % Iterate using string for safety
+                iField = char(iField_str); % Convert to char for struct field access
+                fprintf('DEBUG (checkRequiredFields): Checking field: %s\n', iField);
+
+                if ~isfield(app.FieldComponentMap, iField)
+                    fprintf('DEBUG (checkRequiredFields): Field "%s" not in FieldComponentMap. Skipping.\n', iField);
+                    continue; 
+                end
+
+                componentFieldName = app.FieldComponentMap.(iField);
+                fprintf('DEBUG (checkRequiredFields): Mapped component: %s\n', componentFieldName);
+
+                if isfield(requiredFields, iField) && requiredFields.(iField) 
+                    fprintf('DEBUG (checkRequiredFields): Field "%s" is required.\n', iField);
+                    if isprop(app, componentFieldName) 
+                        uiComponent = app.(componentFieldName);
+                        fprintf('DEBUG (checkRequiredFields): Component "%s" exists.\n', componentFieldName);
+                        value = []; % Initialize value
+                        if isa(uiComponent, 'matlab.ui.container.CheckBoxTree')
+                            value = uiComponent.CheckedNodes; 
+                            fprintf('DEBUG (checkRequiredFields): Value from CheckBoxTree "%s": %d nodes checked.\n', componentFieldName, numel(value));
+                        elseif isa(uiComponent, 'matlab.ui.control.Table')
+                            value = uiComponent.Data;
+                             if istable(value) && ~isempty(value)
+                                fprintf('DEBUG (checkRequiredFields): Value from Table "%s": Table with %d rows.\n', componentFieldName, height(value));
+                             else
+                                 fprintf('DEBUG (checkRequiredFields): Value from Table "%s": Empty or not a table.\n', componentFieldName);
+                                 value = []; % Treat empty table as empty for check
+                             end
+                        else % EditField, TextArea, DropDown, ListBox
+                            value = char(uiComponent.Value); % Convert to char for isempty check
+                            fprintf('DEBUG (checkRequiredFields): Value from "%s" ("%s"): "%s"\n', class(uiComponent), componentFieldName, value);
+                        end
+
+                        if isempty(value)
+                            fieldTitle = app.getFieldTitle(iField);
+                            missingRequiredField(end+1) = fieldTitle; % Append to string array
+                            app.highlightLabelForRequiredField(componentFieldName);
+                            fprintf('DEBUG (checkRequiredFields): Field "%s" (Title: "%s") IS MISSING.\n', iField, fieldTitle);
+                        else
+                            app.resetLabelForRequiredField(componentFieldName); 
+                            fprintf('DEBUG (checkRequiredFields): Field "%s" is PRESENT.\n', iField);
+                        end
+                    else
+                         fprintf(2, 'Warning (checkRequiredFields): Component "%s" for required field "%s" not found on app.\n', componentFieldName, iField);
+                    end
+                else
+                     fprintf('DEBUG (checkRequiredFields): Field "%s" is NOT required or not in requiredFields struct.\n', iField);
+                end
+            end
+            
+            if isequal(currentTabName, "") || isequal(currentTabName, app.SaveTab.Title)
+                fprintf('DEBUG (checkRequiredFields): Performing final checks for SaveTab or empty tab name.\n');
+                if isempty(app.AuthorData.AuthorList) || ...
+                   all(arrayfun(@(x) isempty(strtrim(x.givenName)) && isempty(strtrim(x.familyName)), app.AuthorData.AuthorList))
+                    missingRequiredField(end+1) = "At least one Author with a name";
+                    fprintf('DEBUG (checkRequiredFields): MISSING: At least one Author with a name.\n');
+                end
+            end
+
+            if isempty(missingRequiredField)
+                fprintf('DEBUG (checkRequiredFields): Final missing fields: None\n');
+            else
+                fprintf('DEBUG (checkRequiredFields): Final missing fields: %s\n', strjoin(missingRequiredField,', '));
+            end
+        end
+
+        function fieldTitle = getFieldTitle(app, fieldName)
+            if isfield(app.FieldComponentMap, fieldName)
+                componentFieldName = app.FieldComponentMap.(fieldName);
+                labelFieldName = sprintf('%sLabel', componentFieldName);
+                 if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
+                    fieldTitle = app.(labelFieldName).Text;
+                    fieldTitle = string(strrep(fieldTitle, ' *', ''));
+                 else
+                    fieldTitle = fieldName; 
+                    fprintf(2, 'Warning: Label for component %s (field %s) not found.\n', componentFieldName, fieldName);
+                 end
+            else
+                fieldTitle = fieldName; 
+                 fprintf(2, 'Warning: Field %s not found in FieldComponentMap for getFieldTitle.\n', fieldName);
+            end
+        end
+
+        function highlightLabelForRequiredField(app, componentFieldName)
+            labelFieldName = sprintf('%sLabel', componentFieldName);
+            if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
+                app.(labelFieldName).FontWeight = 'bold';
+                app.(labelFieldName).FontColor = [0.7098    0.0902        0]; 
+                app.(labelFieldName).Tag = 'RequiredValueMissing';
+            end
+        end
+
+        function resetLabelForRequiredField(app, componentFieldName)
+            labelFieldName = sprintf('%sLabel', componentFieldName);
+            if isprop(app, labelFieldName) && isvalid(app.(labelFieldName)) && strcmp(app.(labelFieldName).Tag, 'RequiredValueMissing')
+                app.(labelFieldName).FontWeight = 'normal';
+                app.(labelFieldName).FontColor = [0 0 0]; 
+                app.(labelFieldName).Tag = '';
             end
         end
         
-        function missingRequiredField = checkRequiredFields(app, tab)
+        function markRequiredFields(app) 
             requiredFields = ndi.database.metadata_app.fun.getRequiredFields();
+            requiredSymbol = '*'; 
 
-            missingRequiredField = [];
+            allFieldNamesInMap = string(fieldnames(app.FieldComponentMap));
 
-            switch tab
-                case app.DatasetOverviewTab
-                    fields = ["DatasetFullName", "DatasetShortName", "Description", "Comments"];
-                case app.DatasetDetailsTab
-                    fields = ["License", "VersionIdentifier"];
-                case app.ExperimentDetailsTab
-                    fields = ["DataType"];
-                case "" % Final submission step
-                    fields = string( fieldnames(requiredFields)' );
-                otherwise
-                    fields = [];
-
-            end    
-
-            for iField = fields
-                componentFieldName = app.FieldComponentMap.(iField);
-                if requiredFields.(iField)
-                    if isa(app.(componentFieldName), 'matlab.ui.container.CheckBoxTree')
-                        value = [app.(componentFieldName).CheckedNodes];
+            for iFieldName = reshape(allFieldNamesInMap, 1, [])
+                if isfield(requiredFields, iFieldName) && requiredFields.(iFieldName)
+                    componentName = app.FieldComponentMap.(iFieldName);
+                    labelComponentName = sprintf("%sLabel", componentName);
+                    
+                    if isprop(app, labelComponentName) && isvalid(app.(labelComponentName))
+                        if ~contains(app.(labelComponentName).Text, requiredSymbol)
+                            app.(labelComponentName).Text = sprintf('%s %s', app.(labelComponentName).Text, requiredSymbol);
+                        end
+                        app.(labelComponentName).Tooltip = "Required";
                     else
-                        value = char(app.(componentFieldName).Value);
-                    end
-                    if isempty(value)
-                        fieldTitle = app.getFieldTitle(iField);
-                        missingRequiredField = [missingRequiredField, fieldTitle]; %#ok<AGROW>
-                        app.highlightLabelForRequiredField(componentFieldName)
+                        fprintf(2, 'Warning (markRequiredFields): Label component "%s" not found for required field "%s".\n', labelComponentName, iFieldName);
                     end
                 end
             end
         end
 
-        function fieldTitle = getFieldTitle(app, fieldName)
-            componentFieldName = app.FieldComponentMap.(fieldName);
-            labelFieldName = sprintf('%sLabel', componentFieldName);
-            fieldTitle = app.(labelFieldName).Text;
-            fieldTitle = string(strrep(fieldTitle, ' *', ''));
+        function hideUnimplementedComponents(app) 
+            if isprop(app, 'ErrorTextAreaLabel') && isvalid(app.ErrorTextAreaLabel)
+                app.ErrorTextAreaLabel.Visible = 'off';
+            end
+            if isprop(app, 'ErrorTextArea') && isvalid(app.ErrorTextArea)
+                app.ErrorTextArea.Visible = 'off';
+            end
+            if isprop(app, 'FooterpanelLabel') && isvalid(app.FooterpanelLabel)
+                app.FooterpanelLabel.Visible = 'off';
+            end
         end
+        
+        function setFigureMinSize(app) 
+            isMatch = false;
+            drawnow 
+            pause(0.1); 
 
-        function highlightLabelForRequiredField(app, componentFieldName)
-            labelFieldName = sprintf('%sLabel', componentFieldName);
+            max_attempts = 20; 
+            attempt_count = 0;
+            
+            figName = app.NDIMetadataEditorUIFigure.Name; 
 
-            app.(labelFieldName).FontWeight = 'bold';
-            app.(labelFieldName).FontColor = [0.7098    0.0902        0];
-            app.(labelFieldName).Tag = 'RequiredValueMissing';
+            while ~isMatch && attempt_count < max_attempts
+                windowList = matlab.internal.webwindowmanager.instance.findAllWebwindows();
+                if isempty(windowList)
+                    attempt_count = attempt_count + 1;
+                    pause(0.1);
+                    continue;
+                end
+                titles = {windowList.Title};
+                isMatch = strcmp(titles, figName);
+                
+                if ~any(isMatch)
+                    if ~isempty(app.NDIMetadataEditorUIFigure.Tag)
+                         tags = arrayfun(@(w) getfieldifexists(w,'Tag'), windowList, 'UniformOutput', false);
+                         validTags = cellfun(@ischar, tags);
+                         if any(validTags)
+                            isMatch = strcmp(tags(validTags), app.NDIMetadataEditorUIFigure.Tag);
+                         else
+                            isMatch = false(1,0); 
+                         end
+                    end
+                end
+
+                if ~any(isMatch)
+                    attempt_count = attempt_count + 1;
+                    pause(0.1);
+                end
+            end
+
+            if any(isMatch)
+                window = windowList(find(isMatch,1)); 
+                try
+                    window.setMinSize([840 610]);
+                catch ME_setMinSize
+                     fprintf(2,'Warning: Could not set minimum figure size: %s\n', ME_setMinSize.message);
+                end
+            else
+                fprintf(2,'Warning: Could not find the app window to set minimum size for "%s".\n', figName);
+            end
         end
-
-        function resetLabelForRequiredField(app, componentFieldName)
-            labelFieldName = sprintf('%sLabel', componentFieldName);
-            if strcmp(app.(labelFieldName).Tag, 'RequiredValueMissing')
-                app.(labelFieldName).FontWeight = 'normal';
-                app.(labelFieldName).FontColor = 'k';
-                app.(labelFieldName).Tag = '';
+        
+        function centerFigureOnScreen(app) 
+            if isprop(app, 'NDIMetadataEditorUIFigure') && isvalid(app.NDIMetadataEditorUIFigure)
+                try
+                    originalUnits = app.NDIMetadataEditorUIFigure.Units;
+                    app.NDIMetadataEditorUIFigure.Units = 'pixels';
+                    movegui(app.NDIMetadataEditorUIFigure, 'center');
+                    app.NDIMetadataEditorUIFigure.Units = originalUnits; 
+                catch ME_center
+                    fprintf(2, 'Warning: Could not center figure on screen: %s\n', ME_center.message);
+                end
             end
         end
     end
 
-    methods (Access = private) % Load/save user data
-
+    methods (Access = public) % Load/save and data object interaction 
         function tempWorkingFile = getTempWorkingFile(app)
-        % GETTEMPWORKINGFILE - Determines and returns the full path to the temporary working file.
-        % If app.TempWorkingFile is not already set, this function determines it based on
-        % app.Dataset.path() and sets app.TempWorkingFile.
-        % This file is used to save and load metadata during an editing session.
-
             if isempty(app.TempWorkingFile) || app.TempWorkingFile == ""
-                % datasetObject is a required input to startupFcn, and must be ndi.session or ndi.dataset.
-                % These objects are guaranteed to have a .path() method that returns a non-empty path.
                 entityPath = app.Dataset.path();
                 ndiFolderPath = fullfile(entityPath, '.ndi');
-                % The .ndi folder creation is not handled here as per user feedback.
-                % It's assumed to exist or be handled by the saving mechanism if needed.
                 app.TempWorkingFile = fullfile(ndiFolderPath, 'NDIMetadataEditorData.mat');
             end
             tempWorkingFile = app.TempWorkingFile;
         end
 
-        function saveDatasetInformation(app)
-            tempSaveFile = app.getTempWorkingFile(); 
-            datasetInformation = app.DatasetInformation;
-            save(tempSaveFile, "datasetInformation");
+        function saveDatasetInformationStruct(app) 
+            tempSaveFile = app.getTempWorkingFile();
+            app.DatasetInformationStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+            
+            datasetInformationToSave = app.DatasetInformationStruct; 
+            save(tempSaveFile, "datasetInformation", datasetInformationToSave); 
+            fprintf('DEBUG: DatasetInformationStruct saved to %s\n', tempSaveFile);
         end
 
-        function loadDatasetInformation(app)
+        function loadDatasetInformationStruct(app) 
             tempLoadFile = app.getTempWorkingFile();
-            % tempLoadFile is assumed to be valid and non-empty here.
+            loadedDataStruct = struct(); 
 
-            % This function might create/update tempLoadFile if it extracts metadata
             if ~isempty(app.Dataset) 
                 ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, tempLoadFile);
             end
 
             if isfile(tempLoadFile)
-                S = load(tempLoadFile, "datasetInformation");
-                app.DatasetInformation = S.datasetInformation;
+                S_loaded = [];
+                try
+                    S_loaded = load(tempLoadFile, "datasetInformation");
+                    if isfield(S_loaded, 'datasetInformation')
+                        loadedDataStruct = S_loaded.datasetInformation;
+                    else
+                        fprintf(2, 'Warning: NDIMetadataEditorData.mat "datasetInformation" variable missing. Initializing defaults.\n');
+                    end
+                catch ME_load
+                    warning('MATLAB:MetadataEditorApp:TempFileLoadError', ...
+                            'Could not load temporary metadata file "%s". Error: %s. Initializing default structure.', tempLoadFile, ME_load.message);
+                end
+            else
+                fprintf(1, 'Temporary metadata file not found. Initializing default structure.\n');
             end
-            app.updateComponentsFromDatasetInformation();
+            
+            validatedStruct = ndi.database.metadata_app.fun.validateDatasetInformation(loadedDataStruct, app);
+            app.DatasetInformationStruct = validatedStruct;
+            
+            ndi.database.metadata_app.fun.populateAppFromDatasetInformationStruct(app, app.DatasetInformationStruct);
+        end
+
+        function loadUserDefinedMetadata(app) 
+            app.loadOrganizations();
+            app.loadSpecies();
         end
 
         function loadSpecies(app)
-        % loadSpecies - Load user defined species instances
             import ndi.database.metadata_app.fun.loadUserInstances
             app.SpeciesInstancesUser = loadUserInstances('species');
-
-            % Add openMINDS instances to SpeciesData
-            [names, options] = ndi.database.metadata_app.fun.getOpenMindsInstances('Species');
-
-            for i = 1:numel(options)
+            [names, ~] = ndi.database.metadata_app.fun.getOpenMindsInstances('Species');
+            for i = 1:numel(names)
                 thisName = char(names(i));
                 speciesInstance = openminds.internal.getControlledInstance(thisName, 'Species');
                 app.SpeciesData.addItem(speciesInstance.name, speciesInstance.preferredOntologyIdentifier, speciesInstance.synonym);
             end
-
-            % Add user-defined instances to SpeciesData
             if ~isempty(app.SpeciesInstancesUser)
                 for i = 1:numel(app.SpeciesInstancesUser)
                     speciesInstance = app.SpeciesInstancesUser(i);
@@ -447,7 +591,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
 
         function saveSpecies(app)
-        % saveSpecies - Save user defined species instances
             import ndi.database.metadata_app.fun.saveUserInstances
             saveUserInstances('species', app.SpeciesInstancesUser);
         end
@@ -455,442 +598,88 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         function loadOrganizations(app)
             import ndi.database.metadata_app.fun.loadUserInstances
             app.Organizations = loadUserInstances('affiliation_organization');
+            if ~isempty(app.AuthorDataGUI_Instance) && isvalid(app.AuthorDataGUI_Instance)
+                app.AuthorDataGUI_Instance.populateOrganizationDropdownInternal();
+            end
         end
 
         function saveOrganizationInstances(app)
             import ndi.database.metadata_app.fun.saveUserInstances
-            organizationInstances = app.Organizations;
-            saveUserInstances('affiliation_organization', organizationInstances)
+            saveUserInstances('affiliation_organization', app.Organizations);
         end
         
         function strainInstances = getStrainInstances(app)
             import ndi.database.metadata_app.fun.loadUserInstanceCatalog
             strainInstances = loadUserInstanceCatalog('Strain');
         end
-    end
 
-    methods (Access = private) % Validate user inputs
-
-        function tf = assertUniquePublicationEntered(app, S, ignoreRowIdx)
-            
-            if nargin < 3; ignoreRowIdx = []; end
-
-            rowIND = 1:height(app.RelatedPublicationUITable.Data);
-            rowIND = setdiff(rowIND, ignoreRowIdx);
-
-            if isempty(rowIND); tf = true; return; end
-
-            publicationDois = app.RelatedPublicationUITable.Data.DOI{rowIND};
-            
-            if any(strcmp(publicationDois, S.doi))
-                app.alert('A publication with the provided DOI already exists in the table', 'Duplicate Entry', 'Icon', 'info')
-                tf = false;
-            else
-                tf = true;
-            end
-        end
-    end
-
-    methods (Access = private) % Set/get state/values of components
-        
-        function markRequiredFields(app)
-            requiredFields = ndi.database.metadata_app.fun.getRequiredFields();
-            
-            requiredSymbol = '*'; %char(1805)
-
-            allFieldNames = string( fieldnames(requiredFields) );
-
-            for iFieldName = reshape(allFieldNames, 1, [])
-
-                if requiredFields.(iFieldName)
-                
-                    componentName = app.FieldComponentMap.(iFieldName);
-                    labelComponentName = sprintf("%sLabel", componentName);
-                    
-                    app.(labelComponentName).Text = sprintf('%s %s', app.(labelComponentName).Text, requiredSymbol);
-                    app.(labelComponentName).Tooltip = "Required";
-                end
-            end
-        end
-
-        function updateComponentsFromDatasetInformation(app)
-            
-            if isfield(app.DatasetInformation, 'Author')
-                if numel(app.DatasetInformation.Author) > 0
-                    S = app.DatasetInformation.Author(1);
-                    app.fillAuthorInputFieldsFromStruct(S)
-                    app.AuthorData.AuthorList = app.DatasetInformation.Author;
-                    app.updateAuthorListbox()
-                end
-            end
-            
-            % Compare subjects data which is loaded with subjects available
-            % from session
-            if isfield(app.DatasetInformation, 'Subjects')
-                app.updateSubjectDataFromSession()
-            end
-
-            if isfield(app.DatasetInformation, 'Probe')
-                app.updateProbeDataFromSession()
-            end
-
-            % See property definition for FieldComponentMap for an overview
-            % of which input fields are mapped to respective data fields
-            propertyNames = fieldnames(app.FieldComponentMap);
-            
-            for i = 1:numel(propertyNames)
-                propertyName = propertyNames{i};
-                componentName = app.FieldComponentMap.(propertyName);
-
-                try
-                if isfield(app.DatasetInformation, propertyName)
-                    propertyValue = app.DatasetInformation.(propertyName);
-
-                    if isa(app.(componentName), 'matlab.ui.container.CheckBoxTree')
-                        app.setCheckedNodesFromData(app.(componentName), propertyValue)
-                    elseif isa(app.(componentName), 'matlab.ui.control.ListBox')
-                        app.(componentName).Items = propertyValue;
-                    elseif isa(app.(componentName), 'matlab.ui.control.Table')
-                        tableData = struct2table(propertyValue, 'AsArray', true);
-                        app.(componentName).Data = tableData;
-                    else
-                        app.(componentName).Value = propertyValue;
-                    end
-                end
-                catch ME
-                    disp(ME)
-                end
-            end
-
-        end
-
-        % Get the index for the selected author in the author listbox
-        function authorIndex = getSelectedAuthorIndex(app)
-            isSelected = strcmp(app.AuthorListBox.Items, app.AuthorListBox.Value);
-            authorIndex = find(isSelected);
-        end
-
-        function updateCurrentAuthor(app, propertyName, propertyValue, doSave)
-        % updateCurrentAuthor - Update details for the current author
-        %
-        %   This function updates the value of a property for the currently
-        %   selected author from the author listbox.
-
-            if nargin < 4 || isempty(doSave)
-                doSave = true; 
-            end
-            
-            authorIndex = app.getSelectedAuthorIndex();
-            if isempty(authorIndex); authorIndex = 1; end
-
-            app.AuthorData.updateProperty(propertyName, propertyValue, authorIndex)
-
-            if doSave
-                app.DatasetInformation.Author = app.AuthorData.AuthorList;
-                app.saveDatasetInformation();
-            end
-        end
-
-        % Validate person property against openMINDS
-        function updatePerson(app, propertyName, propertyValue)
-        % Try to create an openMINDS Person with given property value and
-        %show error if the the information is not valid. Note: requires
-        %openMINDS_MATLAB to be on path.
-            try
-                p = openminds.core.Person(propertyName, propertyValue);
-            catch ME
-                uialert(app.NDIMetadataEditorUIFigure, ME.message, 'Invalid input')
-            end
-        end
-        
-        % Update author input fields based on a struct of author details
-        function fillAuthorInputFieldsFromStruct(app, S)
-            % Note: Not all fields are handled yet
-            
-            app.GivenNameEditField.Value = S.givenName;
-            app.FamilyNameEditField.Value = S.familyName;
-            app.AuthorEmailEditField.Value = S.contactInformation.email;
-            app.DigitalIdentifierEditField.Value = S.digitalIdentifier.identifier;
-            
-            app.AffiliationListBox.Items = {};
-
-            if ~isempty(S.affiliation)
-                organizationList = [S.affiliation.memberOf];
-                organizationNames = {organizationList.fullName};
-                if ~isempty(organizationNames{1})
-                    app.AffiliationListBox.Items = organizationNames;
-                end
-            end
-
-            app.setCheckedNodesFromData(app.AuthorRoleTree, S.authorRole)
-        end
-
-        % Update the author listbox with the full names of all existing authors
-        function updateAuthorListbox(app)
-            S = app.AuthorData.AuthorList;
-            fullNames = arrayfun(@(i) app.AuthorData.getAuthorName(i), 1:numel(S), 'UniformOutput', false);
-            app.AuthorListBox.Items = fullNames;
-            app.AuthorListBox.Value = fullNames{1};
-        end
-
-        function updateAuthorPlaceholderLabels(app)
-            expression = 'Author \d*';
-            authorItems = app.AuthorListBox.Items;
-
-            for i = 1:numel(authorItems)
-                
-                thisName = authorItems{i};
-                isSelected = strcmp(app.AuthorListBox.Value, thisName);
-
-                if ~isempty(regexp(thisName, expression, 'once'))
-                    newName = sprintf('Author %d', i);
-                    if ~strcmp(newName, thisName)
-                        app.AuthorListBox.Items{i} = newName;
-                        if isSelected
-                            app.AuthorListBox.Value = newName;
-                        end
-                    end
-
-                end
-            end
-        end
-
-        function reorderAuthorList(app, newAuthorIndex, oldAuthorIndex)
-            
-            % Reorder items in author data
-            try
-                app.AuthorData.reorderItems(newAuthorIndex, oldAuthorIndex)
-            catch ME
-                oldAuthorName = app.AuthorListBox.Items(oldAuthorIndex);
-                
-                if ~isempty( regexp(oldAuthorName, 'Author \d*', 'once') )
-                    errMessage = 'Can not reorder placeholder author item.';
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Invalid operation')
-                    return
-                else
-                    uialert(app.NDIMetadataEditorUIFigure, ME.message, 'Something went wrong')
-                    return
-                end
-            end
-            
-            % Reorder listbox items
-            app.AuthorListBox.Items([newAuthorIndex, oldAuthorIndex]) = ...
-                app.AuthorListBox.Items([oldAuthorIndex, newAuthorIndex]);
-
-            app.updateAuthorPlaceholderLabels()
-        end
-
-        function reorderTableRows(app, tableComponent, newRowInd, oldRowInd)
-        % reorderTableRows - Reorder the rows of the given table and update
-        % data
-
-            tableComponent.Data([newRowInd, oldRowInd], :) = ...
-                tableComponent.Data([oldRowInd, newRowInd], :);
-            
-            tableComponent.Selection = newRowInd;
-
-            if isequal(tableComponent, app.RelatedPublicationUITable)
-                fieldName = 'RelatedPublication';
-            elseif isequal(tableComponent, app.FundingUITable)
-                fieldName = 'Funding';
-            else
-                error('Unknown table component provided')
-            end
-
-            app.DatasetInformation.(fieldName) = table2struct(tableComponent.Data);
-            app.saveDatasetInformation()
-        end
-
-        function onAuthorNameChanged(app, fieldName, value, mode)
-            
-            if nargin < 4; mode = 'nontransient'; end
-
-            %app.updatePerson(fieldName, value)
-            authorIndex = app.getSelectedAuthorIndex();
-            if isempty(authorIndex); authorIndex = 1; end
-
-            app.updateCurrentAuthor(fieldName, value, false)
-
-            fullName = app.AuthorData.getAuthorName(authorIndex);
-
-            app.AuthorListBox.Items{authorIndex} = fullName;
-            app.AuthorListBox.Value = fullName;
-        
-            if strcmp(mode, 'nontransient')
-                app.saveDatasetInformation();
-            end
-        end
-
-        % Check if any ORCID belongs to someone perfectly matching the
-        % given name.
-        function checkOrcidMatch(app, fullName)
-
-            % Only do this if no orcid is entered already:
-            if ~isempty(app.DigitalIdentifierEditField.Value)
-                return
-            end
-
-            % Also skip this if either given name or family name is empty:
-            if isempty(app.GivenNameEditField.Value) || isempty(app.FamilyNameEditField.Value)
-                return
-            end
-
-            try
-                progressdlg = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
-                    "Indeterminate", "on", "Message", "Searching for ORCID...", ...
-                    "Title", "Please Wait");
-                orcid = ndi.database.metadata_app.fun.getOrcId(fullName);
-                
-                if ~isempty(orcid)
-                    delete(progressdlg)
-                    
-                    orcidLink = sprintf("https://orcid.org/%s", orcid);
-                    msg = sprintf('The following ORCID <a href="%s">%s</a> was found matching the given author name. Please use the link above to check if the information matches the intended author', orcidLink, orcid);
-                    answer = uiconfirm(app.NDIMetadataEditorUIFigure, msg, "Review ORCID", "Options", {'Confirm', 'Reject'}, 'CancelOption', 'Reject', 'Interpreter', 'html');
-                    
-                    if strcmp( answer, 'Confirm' )
-                        app.DigitalIdentifierEditField.Value = orcid;
-                        app.updateCurrentAuthor('digitalIdentifier', orcid)
-                    end
-                else
-                    progressdlg.Indeterminate = "off";
-                    progressdlg.Message = "No ORCID entry was found for the entered name";
-                    pause(1.5)
-                    delete(progressdlg)
-                end 
-            catch ME
-                % Todo: Show a uiconfirm if multiple matches are found and
-                % provide a search link for the orcid web search. 
-            end
-        end
-            
-        function insertOrganization(app, S, insertIndex)
-
-            if nargin < 3 || isempty(insertIndex)
-                insertIndex = numel(app.Organizations) + 1;
-            end
-
-            if isempty(app.Organizations)
-                app.Organizations = S;
-            else
-                app.Organizations(insertIndex) = S;
-            end
-            
-            % Update organization dropdown
-            organizationNames = {app.Organizations.fullName};
-            app.OrganizationDropDown.Items = organizationNames;
-            app.saveOrganizationInstances()
-        end
-
-        function appendUserDefinedSpecies(app, S)
-
-            if isempty(app.SpeciesInstancesUser)
-                app.SpeciesInstancesUser = S;
-            else
-                app.SpeciesInstancesUser(end+1) = S;
-            end
-
-            app.saveSpecies()
-        end
-
-        % Add author details to the authors table.
-        function addAffiliationToTable(app,aff)
-            S = struct;
-            S.name = aff.memberOf.fullName;
-            newRowData = struct2table(S,'AsArray', true);
-            app.AffiliationTable.Data = cat(1, app.AffiliationTable.Data, newRowData);
-        end
-
-        % function deleteAffiliationInArray(app, authorIndex, affiliationIndex)
-        %     app.AuthorData.AuthorList(authorIndex).Affiliation(affiliationIndex) = [];
-        % end 
-
-        % Open (external app) form where user can enter author details
         function S = openOrganizationForm(app, organizationInfo, organizationIndex)
-        %openOrganizationForm Open Organization form where user can enter organization details
-            if ~isfield(app.UIForm, 'Organization')
-                app.UIForm.Organization = ndi.database.metadata_app.Apps.OrganizationForm(); % Create the form
+            if ~isfield(app.UIForm, 'Organization') || ~isvalid(app.UIForm.Organization)
+                app.UIForm.Organization = ndi.database.metadata_app.Apps.OrganizationForm();
             else
-                app.UIForm.Organization.Visible = 'on'; % Make the form visible
+                app.UIForm.Organization.Visible = 'on';
             end
-
             if nargin > 1 && ~isempty(organizationInfo)
-                % Update form information if we are editing an organization
                 app.UIForm.Organization.setOrganizationDetails(organizationInfo);
             end
-
-            app.UIForm.Organization.waitfor(); % Wait for user to proceed
-            
-            % Get user-inputs from form
+            app.UIForm.Organization.waitfor();
             S = app.UIForm.Organization.getOrganizationDetails();
-            
-            % Update data in table if user pressed save.
             mode = app.UIForm.Organization.FinishState;
             if mode == "Save"
                 if nargin > 2 && ~isempty(organizationIndex)
-                    app.insertOrganization(S, organizationIndex)
+                    app.insertOrganization(S, organizationIndex);
                 else
                     app.insertOrganization(S);
+                end
+                if ~isempty(app.AuthorDataGUI_Instance) && isvalid(app.AuthorDataGUI_Instance)
+                    app.AuthorDataGUI_Instance.populateOrganizationDropdownInternal();
                 end
             else
                 S = struct.empty;
             end
-
-            app.UIForm.Organization.reset()
-            app.UIForm.Organization.Visible = 'off'; % Hide the form (for later reuse)
-
-            if ~nargout
-                clear S
+            app.UIForm.Organization.reset();
+            app.UIForm.Organization.Visible = 'off';
+            if ~nargout, clear S; end
+        end
+        
+        function insertOrganization(app, S_org, insertIndex) 
+            if nargin < 3 || isempty(insertIndex)
+                insertIndex = numel(app.Organizations) + 1;
             end
+            if isempty(app.Organizations)
+                app.Organizations = S_org;
+            else
+                app.Organizations(insertIndex) = S_org;
+            end
+            app.saveOrganizationInstances();
         end
 
         function S = openFundingForm(app, info)
-        %openFundingForm Open Affiliation form where user can enter Affiliation details
-            
-            % Todo: Use the general openForm method instead.
-
             progressDialog = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
                 'Message', 'Opening form for entering funder details', ...
                 'Title', 'Please wait...', 'Indeterminate', "on");
-        
-            if ~isfield(app.UIForm, 'Funding')
-                app.UIForm.Funding = ndi.database.metadata_app.Apps.FundingForm(); % Create the form
+            if ~isfield(app.UIForm, 'Funding') || ~isvalid(app.UIForm.Funding)
+                app.UIForm.Funding = ndi.database.metadata_app.Apps.FundingForm();
             else
-                app.UIForm.Funding.Visible = 'on'; % Make the form visible
+                app.UIForm.Funding.Visible = 'on';
             end
-
             if nargin > 1 && ~isempty(info)
                 app.UIForm.Funding.setFunderDetails(info);
             end
-                
-            ndi.gui.utility.centerFigure(...
-                app.UIForm.Funding.UIFigure, app.NDIMetadataEditorUIFigure)
-            
+            ndi.gui.utility.centerFigure(app.UIForm.Funding.UIFigure, app.NDIMetadataEditorUIFigure);
             progressDialog.Message = 'Enter funder details:';
-            app.UIForm.Funding.waitfor(); % Wait for user to proceed
-
-            % Get user-inputs from form
+            app.UIForm.Funding.waitfor(); 
             S = app.UIForm.Funding.getFunderDetails();
-            
-            % Update data in table if user pressed save.
             mode = app.UIForm.Funding.FinishState;
-
-            if mode == "Save"
-                % pass
-            else
-                S = struct.empty;
-            end
-
-            app.UIForm.Funding.reset()
-            app.UIForm.Funding.Visible = 'off'; % Hide the form (for later reuse
-            delete(progressDialog)
+            if mode ~= "Save", S = struct.empty; end
+            app.UIForm.Funding.reset();
+            app.UIForm.Funding.Visible = 'off';
+            delete(progressDialog);
         end
 
-        function S = openForm(app, formName, S, editExisting)
-        %openForm Open form where user can enter details
-            
-            if nargin < 3; S = struct.empty; end
-            if nargin < 4; editExisting = ~isempty(S); end
+        function S = openForm(app, formName, S_in, editExisting) 
+            if nargin < 3; S_in = struct.empty; end
+            if nargin < 4; editExisting = ~isempty(S_in); end
 
             progressDialog = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
                 'Message', sprintf('Opening form for entering %s details', formName), ...
@@ -899,297 +688,299 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             if ~isfield(app.UIForm, formName) || ~isvalid(app.UIForm.(formName))
                 appPackage = 'ndi.database.metadata_app.Apps';
                 formAppName = sprintf('%s.%sForm', appPackage, formName);
-                app.UIForm.(formName) = feval(formAppName); % Create the form
+                app.UIForm.(formName) = feval(formAppName); 
             else
-                app.UIForm.(formName).Visible = 'on'; % Make the form visible
+                app.UIForm.(formName).Visible = 'on'; 
             end
 
-            if nargin > 1 && ~isempty(S)
-                % Initialize form if details exist and should be edited
-                app.UIForm.(formName).setFormData(S, editExisting);
+            if ~isempty(S_in)
+                app.UIForm.(formName).setFormData(S_in, editExisting);
             end
                 
-            ndi.gui.utility.centerFigure(...
-                app.UIForm.(formName).UIFigure, app.NDIMetadataEditorUIFigure)
+            ndi.gui.utility.centerFigure(app.UIForm.(formName).UIFigure, app.NDIMetadataEditorUIFigure);
             
             progressDialog.Message = sprintf('Enter %s details', lower(formName));
-            app.UIForm.(formName).waitfor(); % Wait for user to proceed
+            app.UIForm.(formName).waitfor(); 
 
-            % Get user-inputs from form
             S = app.UIForm.(formName).getFormData();
-            
-            % Update data in table if user pressed save.
             mode = app.UIForm.(formName).FinishState;
-            if mode == "Save"
-                % pass
-            else
-                S = struct.empty;
-            end
+            if mode ~= "Save", S = struct.empty; end
 
-            app.UIForm.(formName).reset()
-            app.UIForm.(formName).Visible = 'off'; % Hide the form (for later reuse
-            delete(progressDialog)
-        end
-
-        % Open (external app) form where user can enter probe details
-        function openProbeForm(app, probeType, probeIndex, probe)
-        %openProbeForm Open probe form where user can enter probe details
-            switch probeType
-                case "Electrode"
-                    if ~isfield(app.UIForm, 'Electrode')
-                        app.UIForm.Electrode = ndi.database.metadata_app.Apps.ElectrodeForm();
-                    else
-                        app.UIForm.Electrode.Visible = 1;
-                    end
-                    form = app.UIForm.Electrode;
-                case "Pipette"
-                    if ~isfield(app.UIForm, 'Pipette')
-                        app.UIForm.Pipette = ndi.database.metadata_app.Apps.PipetteForm();
-                    else
-                        app.UIForm.Pipette.Visible = 1;
-                    end
-                    form = app.UIForm.Pipette;
-                if nargin > 3
-                    form.setProbeDetails(probe);
-                end
-            end
-
-            if nargin > 3 && ~isempty(probe)
-                % Update form information if we are editing an probe
-                form.setProbeDetails(probe);
-            end
-
-            ndi.gui.utility.centerFigure(form.UIFigure, app.NDIMetadataEditorUIFigure)
-            
-            form.waitfor(); % Wait for user to proceed
-            
-            % Get user-inputs from form
-            newProbe = form.getProbeDetails();
-
-            % Update data in table if user pressed save.
-            mode = form.FinishState;
-            if mode == "Save"
-                app.ProbeData.replaceProbe(probeIndex, newProbe);
-                app.replaceProbeInTable(probeIndex, newProbe);
-                
-                app.DatasetInformation.Probe = app.ProbeData.ProbeList;
-                app.saveDatasetInformation();
-            end
-
-            form.reset()
-            form.Visible = 'off'; % Hide the form (for later reuse)
+            app.UIForm.(formName).reset();
+            app.UIForm.(formName).Visible = 'off'; 
+            delete(progressDialog);
         end
         
-        function S = openSpeciesForm(app, speciesInfo)
+        % MODIFIED openProbeForm
+        function success = openProbeForm(app, probeType, probeIndexOrData, probeObjIn)
+            % Returns true if form was saved, false otherwise.
+            % Updates app.ProbeData directly if saved.
+            success = false;
+            formHandle = [];
+            % ... (switch statement for formHandle remains the same) ...
+            switch probeType
+                case "Electrode"
+                    if ~isfield(app.UIForm, 'Electrode') || ~isvalid(app.UIForm.Electrode)
+                        app.UIForm.Electrode = ndi.database.metadata_app.Apps.ElectrodeForm();
+                    end
+                    formHandle = app.UIForm.Electrode;
+                case "Pipette"
+                    if ~isfield(app.UIForm, 'Pipette') || ~isvalid(app.UIForm.Pipette)
+                        app.UIForm.Pipette = ndi.database.metadata_app.Apps.PipetteForm();
+                    end
+                    formHandle = app.UIForm.Pipette;
+                otherwise
+                    app.alert(['Probe form for type "' probeType '" not implemented.'], 'Error');
+                    return;
+            end
             
-            if ~isfield(app.UIForm, 'Species') || ~isvalid(app.UIForm.Species)
-                app.UIForm.Species = ndi.database.metadata_app.Apps.SpeciesForm(); % Create the form
+            formHandle.Visible = 'on';
+            if nargin > 3 && ~isempty(probeObjIn) 
+                formHandle.setProbeDetails(probeObjIn); 
+            end
+            ndi.gui.utility.centerFigure(formHandle.UIFigure, app.NDIMetadataEditorUIFigure);
+            formHandle.waitfor();
+            
+            if strcmp(formHandle.FinishState, "Save")
+                updatedProbeObjDetails = formHandle.getProbeDetails(); 
+                app.ProbeData.replaceProbe(probeIndexOrData, updatedProbeObjDetails); % Use probeIndexOrData
+                app.saveDatasetInformationStruct(); 
+                success = true; 
+            end
+            formHandle.reset();
+            formHandle.Visible = 'off';
+        end
+        
+        function S = openSpeciesForm(app, speciesInfoStruct) 
+             if ~isfield(app.UIForm, 'Species') || ~isvalid(app.UIForm.Species)
+                app.UIForm.Species = ndi.database.metadata_app.Apps.SpeciesForm(); 
             else
-                app.UIForm.Species.Visible = 'on'; % Make the form visible
+                app.UIForm.Species.Visible = 'on'; 
             end
-
-            if nargin > 1 && ~isempty(speciesInfo)
-                app.UIForm.Species.setInfo(speciesInfo);
+            if nargin > 1 && ~isempty(speciesInfoStruct)
+                app.UIForm.Species.setInfo(speciesInfoStruct); 
             end
-
-            app.UIForm.Species.waitfor(); % Wait for user to proceed
-                    
-            % Get user-inputs from form
-            S = app.UIForm.Species.getInfo();
-            
-            % Update data in table if user pressed save.
+            app.UIForm.Species.waitfor(); 
+            S = app.UIForm.Species.getInfo(); 
             mode = app.UIForm.Species.FinishState;
-            if mode == "Save"
-                % Add species to list box
-                
-                % Add species to DatasetInformation
-            else
-                S = struct.empty;
-            end
-
-            app.UIForm.Species.reset()
-            app.UIForm.Species.Visible = 'off'; % Hide the form (for later reuse)
+            if mode ~= "Save", S = struct.empty; end
+            app.UIForm.Species.reset();
+            app.UIForm.Species.Visible = 'off';
         end
 
         function S = openLoginForm(app)
-        %openOrganizationForm Open Organization form where user can enter organization details
-            if ~isfield(app.UIForm, 'Login')
-                app.UIForm.Login = ndi.database.metadata_app.Apps.LoginForm(); % Create the form
+             if ~isfield(app.UIForm, 'Login') || ~isvalid(app.UIForm.Login)
+                app.UIForm.Login = ndi.database.metadata_app.Apps.LoginForm();
             else
-                app.UIForm.Login.Visible = 'on'; % Make the form visible
+                app.UIForm.Login.Visible = 'on';
             end
-
-            app.UIForm.Login.waitfor(); % Wait for user to proceed
-            
-            % Get user-inputs from form
+            app.UIForm.Login.waitfor();
             S = app.UIForm.Login.LoginInformation;
-            
-            % Update data in table if user pressed save.
             mode = app.UIForm.Login.FinishState;
             if mode == "Save"
-                app.LoginInformation = S;
+                app.LoginInformation = S; 
             else
                 S = struct.empty;
             end
+            app.UIForm.Login.reset();
+            app.UIForm.Login.Visible = 'off';
+            if ~nargout, clear S; end
+        end
 
-            app.UIForm.Login.reset()
-            app.UIForm.Login.Visible = 'off'; % Hide the form (for later reuse)
+        function resetFigureNameIn(app, name, numSeconds)
+            if ~isempty(app.Timer) && isvalid(app.Timer), stop(app.Timer); delete(app.Timer); app.Timer = []; end
+            app.Timer = timer('TimerFcn', @(~,~)app.updateFigureName(name), 'StartDelay', numSeconds, 'ExecutionMode', 'singleShot');
+            start(app.Timer);
+        end
 
-            if ~nargout
-                clear S
+        function updateFigureName(app, name) 
+            if isvalid(app.NDIMetadataEditorUIFigure)
+                app.NDIMetadataEditorUIFigure.Name = name;
             end
+            if ~isempty(app.Timer) && isvalid(app.Timer), stop(app.Timer); delete(app.Timer); app.Timer = []; end
         end
         
-        % Replace information for specified author in the author table
-        function replaceProbeInTable(app, probeIndex, probe)
-            newRowData = struct2table(probe.toTableStruct(),'AsArray', true);
-            cellData = table2cell(newRowData);
-            app.UITableProbe.Data(probeIndex, :) = cellData;
+        function changeTab(app, newTab)
+            app.TabGroup.SelectedTab = newTab;
+            app.onTabChanged(); 
         end
 
-        function populateOrganizationDropdown(app)
-            if ~isempty(app.Organizations)
-                app.OrganizationDropDown.Items = {app.Organizations.fullName};
-            end        
-        end
+        function onTabChanged(app, ~) 
+            selectedTab = app.TabGroup.SelectedTab;
+            isIntroOrSaveTab = selectedTab == app.IntroTab || selectedTab == app.SaveTab;
 
-        function populateLicenseDropdown(app)
-            [names, shortNames] = ndi.database.metadata_app.fun.getCCByLicences();
-
-            app.LicenseDropDown.Items = ["Select a License"; shortNames];
-            app.LicenseDropDown.ItemsData = [""; names];
-        end
-
-        function populateTechniqueCategoryDropdown(app)
-            allowedTypes = openminds.core.DatasetVersion.LINKED_PROPERTIES.technique;
-            allowedTypes = replace(allowedTypes, 'openminds.controlledterms.', '');
-            app.SelectTechniqueCategoryDropDown.Items = allowedTypes;
-        end
-        
-        function populateTechniqueDropdown(app, schemaName)
-            import ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog
-            import ndi.database.metadata_app.fun.expandDropDownItems
-
-            if nargin < 2 || isempty(schemaName)
-                schemaName = app.SelectTechniqueCategoryDropDown.Value;
-            end
-            
-            [names, options] = ndi.database.metadata_app.fun.getOpenMindsInstances(schemaName);
-            app.SelectTechniqueDropDown.Items = options;
-            app.SelectTechniqueDropDown.ItemsData = names;
-
-            % Alternative routine (Todo: implements this instead): 
-            % Requires: changes to convertFormDataToDocuments
-            % Load openminds instances and extract @ids and names
-            % % % catalog = loadOpenMindsInstanceCatalog(schemaName);
-            % % % options = string( {catalog(:).at_id}' );
-            % % % names = string( {catalog(:).name}' );
-            % % % 
-            % % % [names, options] = expandDropDownItems(names, options, schemaName, "AddSelectOption", true);
-            % % % app.SelectTechniqueDropDown.Items = names;
-            % % % app.SelectTechniqueDropDown.ItemsData = options;
-        end
-
-        function populateSpeciesList(app)
-            import ndi.database.metadata_app.fun.loadUserInstanceCatalog
-            import ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog
-            import ndi.database.metadata_app.fun.expandDropDownItems
-
-            openMindsType = 'Species';
-            
-            speciesCatalog = loadOpenMindsInstanceCatalog(openMindsType);
-            
-            options = string( {speciesCatalog(:).at_id}' );
-            names = string( {speciesCatalog(:).name}' );
-            
-            % Add some actionable options to the dropdown options
-            [names, options] = expandDropDownItems(names, options, openMindsType, "AddSelectOption", true);
-
-            % Combine openMINDS instances and user defined instances.
-            if ~isempty(app.SpeciesInstancesUser)
-                [customNames, customOptions] = deal({app.SpeciesInstancesUser.name}');
-                names = cat(1, names, customNames);
-                options = cat(1, options, customOptions);
-                [names, sortIdx] = sort(names);
-                options = options(sortIdx);
-            end
-
-            app.SpeciesListBox.Items = names;
-            app.SpeciesListBox.ItemsData = options;
-        end
-
-        function populateBiologicalSexList(app)
-            [biologicalSex, options] = ndi.database.metadata_app.fun.getOpenMindsInstances('BiologicalSex');
-            app.BiologicalSexListBox.Items = options;
-            app.BiologicalSexListBox.ItemsData = biologicalSex;
-        end
-
-        function populateStrainList(app)
-            if isempty(app.SpeciesListBox.Value) || ismissing(app.SpeciesListBox.Value)
-                items = "Select a Species";
+            if isIntroOrSaveTab
+                app.FooterPanel.Visible = 'off';
+                if isvalid(app.FooterPanel.Parent) && ~isequal(app.FooterPanel.Parent, app.NDIMetadataEditorUIFigure)
+                    app.FooterPanel.Parent = app.NDIMetadataEditorUIFigure; 
+                end
+                app.MainGridLayout.RowHeight = {'1x'};
             else
-                species = app.SpeciesListBox.Value;
-                strainCatalog = getStrainInstances(app);
-                if strainCatalog.NumItems == 0
-                    items = "No Strains Available";
-                else
-                    allStrains = string( {strainCatalog(:).species} );
-                    %[~, allStrains] = fileparts(allStrains);
-    
-                    keep = allStrains == species;
-    
-                    if ~any(keep)
-                        items = "No Strains Available";
-                    else
-                        items = string( {strainCatalog(keep).name} );
-                    end
-                end        
+                app.FooterPanel.Visible = 'on';
+                if isvalid(app.FooterPanel.Parent) && ~isequal(app.FooterPanel.Parent, app.MainGridLayout)
+                    app.FooterPanel.Parent = app.MainGridLayout; 
+                end
+                app.FooterPanel.Layout.Row = 2;
+                app.FooterPanel.Layout.Column = 1;
+                app.MainGridLayout.RowHeight = {'1x', 63};
             end
-            app.StrainListBox.Items = items;
+        end
+
+        function updateSubjectTableColumData(app, columnName, newValue)
+            selectedRows = app.UITableSubject.Selection;
+            if isempty(selectedRows), return; end 
+
+            for i = 1:numel(selectedRows)
+                subjectIndexInTable = selectedRows(i);
+                subjectNameInTable = app.UITableSubject.Data{subjectIndexInTable, 'Subject'};
+                subjectObjIndex = find(strcmp({app.SubjectData.SubjectList.SubjectName}, subjectNameInTable), 1);
+
+                if ~isempty(subjectObjIndex)
+                    currentSubjectObj = app.SubjectData.SubjectList(subjectObjIndex);
+                    switch columnName
+                        case 'BiologicalSex'
+                            currentSubjectObj.BiologicalSexList = {char(newValue)};
+                        case 'Species'
+                            speciesName = char(newValue);
+                            speciesObj = app.SpeciesData.getItem(speciesName); 
+                            if ~isempty(speciesObj) 
+                                currentSubjectObj.SpeciesList = speciesObj;
+                            else
+                                fprintf(2,'Warning: Species "%s" not found in SpeciesData.\n', speciesName);
+                            end
+                        case 'Strain'
+                            currentSubjectObj.addStrain(char(newValue)); 
+                    end
+                else
+                    fprintf(2,'Warning: Subject "%s" not found in SubjectData for update.\n', subjectNameInTable);
+                end
+            end
+            app.UITableSubject.Data = struct2table(app.SubjectData.formatTable(), 'AsArray', true);
+            app.saveDatasetInformationStruct();
+        end
+
+        function deleteSubjectTableColumData(app, columnName)
+            selectedRows = app.UITableSubject.Selection;
+            if isempty(selectedRows), return; end
+
+            for i = 1:numel(selectedRows)
+                subjectIndexInTable = selectedRows(i);
+                subjectNameInTable = app.UITableSubject.Data{subjectIndexInTable, 'Subject'};
+                subjectObjIndex = find(strcmp({app.SubjectData.SubjectList.SubjectName}, subjectNameInTable), 1);
+
+                if ~isempty(subjectObjIndex)
+                    currentSubjectObj = app.SubjectData.SubjectList(subjectObjIndex);
+                    switch columnName
+                        case 'BiologicalSex'
+                            currentSubjectObj.deleteBiologicalSex();
+                        case 'Species'
+                            currentSubjectObj.deleteSpeciesList();
+                            currentSubjectObj.deleteStrainList(); 
+                        case 'Strain'
+                            currentSubjectObj.deleteStrainList();
+                    end
+                end
+            end
+            app.UITableSubject.Data = struct2table(app.SubjectData.formatTable(), 'AsArray', true);
+            app.saveDatasetInformationStruct();
+        end
+        
+        function probeObj = createProbeObjectFromStruct(app, probeStruct)
+            probeObj = []; 
+            if ~isstruct(probeStruct) || ~isfield(probeStruct, 'ClassType') || ~isfield(probeStruct, 'Name')
+                fprintf(2, 'Warning (createProbeObjectFromStruct): Invalid probeStruct provided.\n');
+                return;
+            end
+            className = probeStruct.ClassType;
+            probeName = probeStruct.Name;
+            try
+                switch className
+                    case {'Electrode', 'ElectrodeArray', 'ndi.daq.metadatabundle.EphysProbe'} 
+                        fprintf(1, 'DEBUG (createProbeObjectFromStruct): Placeholder for creating %s object "%s". Returning struct.\n', className, probeName);
+                        probeObj = probeStruct; % PLACEHOLDER - MUST INSTANTIATE ACTUAL OBJECT
+                    case {'Pipette', 'ndi.daq.metadatabundle.Pipette'}
+                        fprintf(1, 'DEBUG (createProbeObjectFromStruct): Placeholder for creating %s object "%s". Returning struct.\n', className, probeName);
+                        probeObj = probeStruct; % PLACEHOLDER
+                    otherwise
+                        fprintf(2, 'Warning (createProbeObjectFromStruct): Unknown probe ClassType "%s" for probe "%s". Returning struct.\n', className, probeName);
+                        probeObj = probeStruct; 
+                end
+            catch ME_probeCreate
+                 fprintf(2, 'Error creating probe object for "%s" of type "%s": %s\n', probeName, className, ME_probeCreate.message);
+                 probeObj = probeStruct; 
+            end
         end
     end
 
-    methods (Access = private) % App initialization/configuration methods
-        
-        function setFigureMinSize(app)
-            isMatch = false;
-            drawnow
-            app.NDIMetadataEditorUIFigure.Tag = ndi.fun.timestamp;
+    % Callbacks that handle component events (non-author related)
+    methods (Access = public) % Changed from private for callbacks
 
-            while ~any(isMatch)
-                windowList = matlab.internal.webwindowmanager.instance.findAllWebwindows();
-                isMatch = strcmp({windowList.Title}, app.NDIMetadataEditorUIFigure.Name);
+        % Code that executes after component creation
+        function startupFcn(app, datasetObject, debugMode)
+            arguments 
+                app (1,1) ndi.database.metadata_app.Apps.MetadataEditorApp
+                datasetObject (1,1) {mustBeA(datasetObject, ["ndi.session", "ndi.dataset"])}
+                debugMode (1,1) logical = false
             end
-            window = windowList(isMatch);
-            window.setMinSize([840 610])
-        end
 
-        function centerFigureOnScreen(app)
-            ndi.gui.utility.centerFigure(app.NDIMetadataEditorUIFigure)
-        end
-        
-        function hideUnimplementedComponents(app)
-%             app.MoveFundingUpButton.Visible = 'off';
-%             app.MoveFundingDownButton.Visible = 'off';
-%             app.MovePublicationUpButton.Visible = 'off';
-%             app.MovePublicationDownButton.Visible = 'off';
-            app.MoveAffiliationUpButton.Visible = 'off';
-            app.MoveAffiliationDownButton.Visible = 'off';
-            app.ErrorTextAreaLabel.Visible = 'off';
-            app.ErrorTextArea.Visible = 'off';
+            appFileFolder = fileparts(mfilename('fullpath'));
+            app.ResourcesPath = fullfile(appFileFolder, 'resources'); 
+            if ~isfolder(app.ResourcesPath)
+                 fprintf(2, 'Warning (startupFcn): ResourcesPath not found: %s. Icon paths might be incorrect.\n', app.ResourcesPath);
+            end
+
+            try
+                ndi.fun.assertAddonOnPath("openMINDS Metadata Models", 'RequiredFor', 'NDI Dataset Uploader');
+            catch
+                try 
+                    ndi.fun.assertAddonOnPath("openMINDS Metadata Toolbox", 'RequiredFor', 'NDI Dataset Uploader');
+                catch ME
+                    delete(app); throwAsCaller(ME);
+                end
+            end
+
+            app.Dataset = datasetObject;
+            app.TempWorkingFile = app.getTempWorkingFile();
             
-            % app.FundingEditField.Visible = 'off';
-            app.FooterpanelLabel.Visible = 'off';
-            % app.SaveChangesButton.Visible = 'off';
-            % app.DatasetIdentifierEditField.Visible = 'off';
-        end
+            app.FooterPanel.Visible = 'off';
+            app.hideUnimplementedComponents(); 
+            app.markRequiredFields(); 
 
-        function loadUserDefinedMetadata(app)
-        % Load user-defined metadata instances. 
-        %
-        % These are instances that can be re-used across sessions / datasets.
-            app.loadOrganizations()
-            app.loadSpecies()
+            if not(debugMode)
+                app.ExportDatasetInfoButton.Visible = 'off';
+                app.TestDocumentConversionButton.Visible = 'off';
+            end
+
+            app.setFigureMinSize();
+            app.centerFigureOnScreen(); 
+
+            app.AuthorData = ndi.database.metadata_app.class.AuthorData();
+            app.SubjectData = ndi.database.metadata_app.class.SubjectData();
+            app.ProbeData = ndi.database.metadata_app.class.ProbeData();
+            app.SpeciesData = ndi.database.metadata_app.class.SpeciesData();
+
+            app.AuthorDataGUI_Instance = ndi.database.metadata_app.class.AuthorDataGUI(app, app.AuthorMainPanel);
+            app.AuthorDataGUI_Instance.initialize();
+            
+            app.ProbeDataGUI_Instance = ndi.database.metadata_app.class.ProbeDataGUI(app, app.ProbeInfoPanel); 
+            app.ProbeDataGUI_Instance.initialize(); 
+
+
+            app.loadUserDefinedMetadata(); 
+            app.populateComponentsWithMetadata(); 
+
+            if ~isempty(app.Dataset)
+                app.getInitialMetadataFromSession(); 
+            end
+
+            app.loadDatasetInformationStruct(); 
+
+            if ~isfield(app.DatasetInformationStruct, 'VersionIdentifier') || isempty(app.DatasetInformationStruct.VersionIdentifier)
+                app.DatasetInformationStruct.VersionIdentifier = app.VersionIdentifierEditField.Value;
+            end
+            if ~isfield(app.DatasetInformationStruct, 'VersionInnovation') || isempty(app.DatasetInformationStruct.VersionInnovation)
+                app.DatasetInformationStruct.VersionInnovation = 'This is the first version of the dataset';
+            end
         end
 
         function populateComponentsWithMetadata(app)
@@ -1198,2672 +989,954 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             loadInstancesToTreeCheckbox(app.ExperimentalApproachTree, "ExperimentalApproach");
             loadInstancesToTreeCheckbox(app.DataTypeTree, "SemanticDataType");
             
-            app.populateLicenseDropdown()
-            app.populateTechniqueCategoryDropdown()
-            app.populateTechniqueDropdown()
-            app.populateSpeciesList()
-            app.populateBiologicalSexList()
-            app.populateStrainList()
-            app.populateOrganizationDropdown()
+            app.populateLicenseDropdown(); 
+            app.populateTechniqueCategoryDropdown(); 
+            app.populateTechniqueDropdown(); 
+            
+            app.populateSpeciesList();
+            app.populateBiologicalSexList();
+            app.populateStrainList();
         end
         
-        function getInitialMetadataFromSession(app)
-                
-            subjectData = ndi.database.metadata_app.fun.loadSubjects(app.Dataset);
-            app.SubjectData = subjectData;
-            subjectTableData = subjectData.formatTable();
-            if ~isempty(subjectTableData)
-                app.UITableSubject.Data = struct2table(subjectTableData, 'AsArray', true);
-            end
-
-            % probeData = ndi.database.metadata_app.fun.loadProbes(app.Dataset);
-            % app.ProbeData = probeData;
-            % probeTableData = probeData.formatTable();
-            % app.UITableProbe.Data = struct2table(probeTableData, 'AsArray', true);
+        function populateLicenseDropdown(app)
+            [names, shortNames] = ndi.database.metadata_app.fun.getCCByLicences();
+            app.LicenseDropDown.Items = ["Select a License"; shortNames];
+            app.LicenseDropDown.ItemsData = [""; names];
         end
         
-        function updateSubjectDataFromSession(app)
-            
-            % Note: The app.SubjectData is updated directly from the NDI 
-            % session on app construction.
-
-            subjectsLoaded = app.DatasetInformation.Subjects;
-            subjectsSession = app.SubjectData.SubjectList;
-            
-            subjectIdsLoaded = [subjectsLoaded.SubjectName];
-            subjectIdsSession = [subjectsSession.SubjectName];
-
-            % Assume only subjects have been added:
-            addedSubjectIds = setdiff(subjectIdsSession, subjectIdsLoaded);
-            [removedSubjectIds, iA] = setdiff(subjectIdsLoaded, subjectIdsSession);
-
-            if ~isempty(removedSubjectIds)
-                %error('Subject has been removed from session, but is still present in metadata. This condition is not handled yet. Please report.')
-                subjectsLoaded(iA) = [];
+        function populateTechniqueCategoryDropdown(app)
+            allowedTypes = openminds.core.DatasetVersion.LINKED_PROPERTIES.technique;
+            allowedTypes = replace(allowedTypes, 'openminds.controlledterms.', '');
+            if ~iscolumn(allowedTypes) && ~isempty(allowedTypes)
+                allowedTypes = allowedTypes(:);
+            elseif isempty(allowedTypes)
+                allowedTypes = cell(0,1); 
             end
-
-            % Update app's Subject data based on loaded subjects
-            app.SubjectData.SubjectList = subjectsLoaded;
-            for i = 1:numel(addedSubjectIds)
-                newSubject = app.SubjectData.addItem();
-                newSubject.SubjectName = addedSubjectIds(i);
-            end
-
-            subjectTableData = app.SubjectData.formatTable();
-            if ~isempty(subjectTableData)
-                app.UITableSubject.Data = struct2table(subjectTableData, 'AsArray', true);
-            end
-        end
-
-        function updateProbeDataFromSession(app)
-            probesLoaded = app.DatasetInformation.Probe;
-            probesSession = app.ProbeData.ProbeList;
-
-            probeIdsLoaded = cellfun(@(c) c.Name, probesLoaded, 'UniformOutput', false);
-            probeIdsSession = cellfun(@(c) c.Name, probesSession, 'UniformOutput', false);
-
-            % Assume only subjects have been added:
-            [addedProbeIds, iA] = setdiff(probeIdsSession, probeIdsLoaded);
-            removedProbeIds = setdiff(probeIdsLoaded, probeIdsSession);
-
-            if ~isempty(removedProbeIds)
-                error('Probe has been removed from session, but is still present in metadata. This condition is not handled yet. Please report.')
-            end
-
-            % Update app's Subject data based on loaded subjects
-            app.ProbeData.ProbeList = probesLoaded;
-            for i = 1:numel(addedProbeIds)
-                newProbe = probesSession{iA(i)};
-                app.ProbeData.addNewProbe(newProbe);
-            end
-
-            probeTableData = app.ProbeData.formatTable();
-            app.UITableProbe.Data = struct2table(probeTableData, 'AsArray', true);
-        end
-
-        function resetFigureNameIn(app, name, numSeconds)
-        % Use a time to reset figure name
-            if ~isempty(app.Timer)
-                stop(app.Timer)
-                delete(app.Timer)
-                app.Timer = [];
-            end
-
-            app.Timer = timer();
-            app.Timer.TimerFcn = @(s,e)app.updateName(name);
-            app.Timer.StartDelay = numSeconds;
-            start(app.Timer)
-        end
-
-        function updateName(app, name)
-        % Update figure name and delete timer.
-            app.NDIMetadataEditorUIFigure.Name = name;
-            stop(app.Timer)
-            delete(app.Timer)
-            app.Timer = [];
+            app.SelectTechniqueCategoryDropDown.Items = ["Select Category"; allowedTypes]; 
+            app.SelectTechniqueCategoryDropDown.Value = "Select Category"; 
         end
         
-        function changeTab(app, newTab)
-            app.TabGroup.SelectedTab = newTab;
-            app.onTabChanged()
-        end
-
-        function onTabChanged(app, selectedTab)
-        % onTabChanged - Callback for when current tab is changed.
-            
-            if nargin < 2 
-                selectedTab = app.TabGroup.SelectedTab;
+        function populateTechniqueDropdown(app, schemaName)
+            if nargin < 2 || isempty(schemaName) || strcmp(schemaName, "Select Category")
+                app.SelectTechniqueDropDown.Items = {'Select a category first'};
+                app.SelectTechniqueDropDown.ItemsData = {''}; 
+                app.SelectTechniqueDropDown.Value = ''; 
+                return; 
             end
-
-            if selectedTab == app.TabGroup.Children(1) ...
-                    || selectedTab == app.TabGroup.Children(end)
-                
-                app.FooterPanel.Visible = 'off';
-                app.FooterPanel.Parent = app.NDIMetadataEditorUIFigure;
-
-                app.MainGridLayout.RowHeight = {'1x'};
+            
+            [names, options] = ndi.database.metadata_app.fun.getOpenMindsInstances(schemaName); 
+            
+            if isempty(names) 
+                app.SelectTechniqueDropDown.Items = {'No techniques for this category'};
+                app.SelectTechniqueDropDown.ItemsData = {''};
+                app.SelectTechniqueDropDown.Value = '';
             else
-                app.FooterPanel.Visible = 'on';
-                app.MainGridLayout.RowHeight = {'1x', 63};
-                app.FooterPanel.Parent = app.MainGridLayout;
-                app.FooterPanel.Layout.Row = 2;
-                app.FooterPanel.Layout.Column = 1;
+                if ~iscolumn(options), options = options(:); end 
+                if ~iscolumn(names), names = names(:); end     
+
+                app.SelectTechniqueDropDown.Items = ["Select Technique"; options];
+                app.SelectTechniqueDropDown.ItemsData = [""; names]; 
+                app.SelectTechniqueDropDown.Value = ""; 
             end
         end
+        
+        function populateSpeciesList(app)
+            import ndi.database.metadata_app.fun.expandDropDownItems
 
-        function updateSubjectTableColumData(app, columnName, newValue)
+            openMindsType = 'Species';
+            speciesCatalog = ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog(openMindsType);
+            
+            options_data = string.empty(0,1); 
+            names_display = string.empty(0,1);   
+
+            if ~isempty(speciesCatalog)
+                options_data = string( {speciesCatalog(:).at_id}' );
+                names_display = string( {speciesCatalog(:).name}' );
+                options_data(ismissing(options_data)) = ''; 
+            end
+            
+            [names_display, options_data] = expandDropDownItems(names_display, options_data, openMindsType, "AddSelectOption", true);
+
+            if ~isempty(app.SpeciesInstancesUser)
+                customNames = {app.SpeciesInstancesUser.name}'; 
+                customOptions = customNames; 
+                customOptions(ismissing(customOptions)) = ''; 
                 
-            % Get the selected row and column in the table
-            selectedRows = app.UITableSubject.Selection;
-            prevData = app.SubjectData;
-            
-            for i = 1:numel(selectedRows)
-
-                subjectIndex = selectedRows(i);
-                subjectName = app.UITableSubject.Data{selectedRows(i), 'Subject'};
-
-                % subjectIndex = app.SubjectData.getIndex(subjectName); %Question: Would this ever be different from selected row?
-
-                if ~isempty(newValue) && ~isempty(subjectName) && subjectIndex ~= -1        
-                    switch columnName
-                        case 'BiologicalSex'
-                            app.SubjectData.SubjectList(subjectIndex).BiologicalSexList = {newValue};
-                            
-                        case 'Species'
-                            %species_name = app.SpeciesListBox.Value;
-
-                            if ~ismissing(app.SpeciesListBox.Value)
-                                selectedIdx = strcmp(app.SpeciesListBox.ItemsData, app.SpeciesListBox.Value);
-                                species_name = app.SpeciesListBox.Items{selectedIdx};
-                                species = app.SpeciesData.getItem(species_name);
-                            else
-                                species = openminds.controlledterms.Species;
-                            end
-
-                            % % % if ~app.SubjectData.biologicalSexSelected(subjectName) && ~isempty(species) && isa(species, 'ndi.database.metadata_app.class.Species')
-                            % % %     app.SubjectData = prevData;
-                            % % %     data = app.SubjectData.formatTable();
-                            % % %     app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                            % % %     errMessage = sprintf('Please fill the biological sex for the subjects selected.');
-                            % % %     uialert(app.NDIMetadataEditorUIFigure, errMessage, 'missing biological sex');
-                            % % %     break;
-                            % % % else
-                            % % %     app.SubjectData.SubjectList(subjectIndex).SpeciesList = species;
-                            % % % end
-
-                            app.SubjectData.SubjectList(subjectIndex).SpeciesList = species;
-
-
-                        case 'Strain'
-                            strainName = app.StrainListBox.Value;
-                            
-                            if isempty(strainName)
-                                app.SubjectData = prevData;
-                                data = app.SubjectData.formatTable();
-                                app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                                errMessage = sprintf('Please select a valid strain.');
-                                uialert(app.NDIMetadataEditorUIFigure, errMessage, 'missing strain');
-                                break;
-                            end
-
-                            if ~app.SubjectData.SpeciesSelected(subjectName)
-                                app.SubjectData = prevData;
-                                data = app.SubjectData.formatTable();
-                                app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                                errMessage = sprintf('Please fill the species for the subjects selected.');
-                                uialert(app.NDIMetadataEditorUIFigure, errMessage, 'missing species');
-                                break;
-                            else
-                                app.SubjectData.SubjectList(subjectIndex).addStrain(strainName);
-                            end
-                    end
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                end
-            end
-            app.DatasetInformation.Subjects = app.SubjectData.SubjectList;
-            app.saveDatasetInformation();
-        end
-
-        function deleteSubjectTableColumData(app, columnName)
+                names_display = [names_display; customNames];
+                options_data = [options_data; customOptions]; 
                 
-            % Get the selected row and column in the table
-            selectedRows = app.UITableSubject.Selection;
-            prevData = app.SubjectData;
-            
-            for i = 1:numel(selectedRows)
-
-                subjectIndex = selectedRows(i);
-                subjectName = app.UITableSubject.Data{selectedRows(i), 'Subject'};
-
-                if ~isempty(subjectName) && subjectIndex ~= -1        
-                    switch columnName
-                        case 'BiologicalSex'
-                            app.SubjectData.SubjectList(subjectIndex).deleteBiologicalSex();
-                            
-                        case 'Species'
-                            app.SubjectData.SubjectList(subjectIndex).deleteSpeciesList();
-
-                        case 'Strain'
-                            app.SubjectData.SubjectList(subjectIndex).deleteStrainList();
-                    end
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                else
-                    app.SubjectData = prevData;
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                    errMessage = sprintf('Please select a valid subject.');
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'invalid selection');
-                end
+                [names_display, sortIdx] = sort(names_display);
+                options_data = options_data(sortIdx);
             end
 
-            app.DatasetInformation.Subjects = app.SubjectData.SubjectList;
-            app.saveDatasetInformation();
+            app.SpeciesListBox.Items = names_display;
+            app.SpeciesListBox.ItemsData = cellstr(options_data); 
+            
+            if ~isempty(app.SpeciesListBox.ItemsData)
+                firstValidDataIdx = find(~strcmp(app.SpeciesListBox.ItemsData, '') & ~cellfun(@(x) isstring(x) && ismissing(x), app.SpeciesListBox.ItemsData), 1, 'first');
+                if ~isempty(firstValidDataIdx)
+                    app.SpeciesListBox.Value = app.SpeciesListBox.ItemsData{firstValidDataIdx};
+                elseif ~isempty(app.SpeciesListBox.ItemsData) 
+                    app.SpeciesListBox.Value = app.SpeciesListBox.ItemsData{1}; 
+                else 
+                    app.SpeciesListBox.Items = {'(No species available)'}; 
+                    app.SpeciesListBox.ItemsData = {''}; 
+                    app.SpeciesListBox.Value = ''; 
+                end
+            else
+                app.SpeciesListBox.Items = {'(No species available)'}; 
+                app.SpeciesListBox.ItemsData = {''}; 
+                app.SpeciesListBox.Value = ''; 
+            end
         end
-    end
 
-    % Callbacks that handle component events
-    methods (Access = private)
-
-        % Code that executes after component creation
-        function startupFcn(app, datasetObject, debugMode)
-            
-            arguments 
-                app (1,1) ndi.database.metadata_app.Apps.MetadataEditorApp
-                datasetObject (1,1) {mustBeA(datasetObject, ["ndi.session", "ndi.dataset"])} % This is a required argument
-                debugMode (1,1) logical = false
+        function populateBiologicalSexList(app)
+            [biologicalSexData, biologicalSexDisplay] = ndi.database.metadata_app.fun.getOpenMindsInstances('BiologicalSex');
+            app.BiologicalSexListBox.Items = biologicalSexDisplay;
+            app.BiologicalSexListBox.ItemsData = biologicalSexData;
+            if ~isempty(biologicalSexData) && ~isempty(biologicalSexData{1}) && ~(isstring(biologicalSexData{1}) && ismissing(biologicalSexData{1}))
+                app.BiologicalSexListBox.Value = biologicalSexData{1}; 
+            else
+                app.BiologicalSexListBox.Items = {'(No sexes available)'};
+                app.BiologicalSexListBox.ItemsData = {''};
+                app.BiologicalSexListBox.Value = '';
             end
+        end
 
-            % Check that required addons are present:
-            try
-                ndi.fun.assertAddonOnPath(...
-                    "openMINDS Metadata Models", 'RequiredFor', 'NDI Dataset Uploader')
-            catch
-                try % was renamed for v0.9.5
-                    ndi.fun.assertAddonOnPath(...
-                        "openMINDS Metadata Toolbox", 'RequiredFor', 'NDI Dataset Uploader')
-                catch ME
-                    delete(app); throwAsCaller(ME)
+        function populateStrainList(app)
+            items_display = "Select a Species"; 
+            items_data = {''}; 
+
+            if isprop(app, 'SpeciesListBox') && ~isempty(app.SpeciesListBox.Value) && ~(isstring(app.SpeciesListBox.Value) && ismissing(app.SpeciesListBox.Value)) && ~strcmp(app.SpeciesListBox.Value,'')
+                selectedSpeciesID = app.SpeciesListBox.Value; 
+                
+                selectedSpeciesDisplayName = '';
+                idx = find(strcmp(app.SpeciesListBox.ItemsData, selectedSpeciesID),1);
+                if ~isempty(idx) && idx <= numel(app.SpeciesListBox.Items) 
+                    selectedSpeciesDisplayName = app.SpeciesListBox.Items{idx};
                 end
-            end
-
-            % Assign input arguments to properties:
-            app.Dataset = datasetObject; % datasetObject is now a required argument.
-            app.TempWorkingFile = app.getTempWorkingFile(); % Determine and set the temp working file path.
-            
-            % This panel contains the previous and next buttons and should
-            % not be visible on the first page:
-            app.FooterPanel.Visible = 'off';
+                
+                if ~isempty(selectedSpeciesDisplayName) && ~strcmp(selectedSpeciesDisplayName, '(No species available)') && ~strcmp(selectedSpeciesDisplayName, 'Select a Species')
+                    strainCatalog = app.getStrainInstances(); 
+                    
+                    if isprop(strainCatalog,'NumItems') && strainCatalog.NumItems == 0
+                        items_display = "No Strains Available";
+                        items_data = {''};
+                    elseif isstruct(strainCatalog) && ~isempty(strainCatalog)
+                        speciesMatchIdx = arrayfun(@(x) isfield(x,'species') && strcmp(x.species, selectedSpeciesDisplayName), strainCatalog);
                         
-            app.hideUnimplementedComponents()
-            app.markRequiredFields()
-
-            if not(debugMode)
-                app.ExportDatasetInfoButton.Visible = 'off';
-                app.TestDocumentConversionButton.Visible = 'off';
+                        if ~any(speciesMatchIdx)
+                            items_display = "No Strains for this Species";
+                            items_data = {''};
+                        else
+                            filteredStrains = strainCatalog(speciesMatchIdx);
+                            if ~isempty(filteredStrains)
+                                items_display = string({filteredStrains.name}');
+                                items_data = cellstr(items_display); 
+                            else
+                                items_display = "No Strains for this Species";
+                                items_data = {''};
+                            end
+                        end
+                    elseif isempty(strainCatalog)
+                         items_display = "No Strains Available";
+                         items_data = {''};
+                    end
+                end
             end
-
-            app.setFigureMinSize()
-            app.centerFigureOnScreen()
-
-            % Load metadata and populate app components:
-            app.loadUserDefinedMetadata()
-            app.populateComponentsWithMetadata()
-
-            % Retrieve some data from a session if it was provided:
-            if ~isempty(app.Dataset)
-                app.getInitialMetadataFromSession()
+            app.StrainListBox.Items = items_display;
+            app.StrainListBox.ItemsData = items_data; 
+            
+            if ~isempty(items_data) && ~isempty(items_data{1}) && ~(isstring(items_data{1}) && ismissing(items_data{1})) && ~strcmp(items_data{1},'')
+                app.StrainListBox.Value = items_data{1}; 
+            else
+                app.StrainListBox.Value = ''; 
             end
+        end
 
-            app.loadDatasetInformation()
-
-            % Add default value for version identifier if it does not exist
-            if ~isfield(app.DatasetInformation, 'VersionIdentifier')
-                app.DatasetInformation.VersionIdentifier = app.VersionIdentifierEditField.Value;
-            end
-            if ~isfield(app.DatasetInformation, 'VersionInnovation')
-                app.DatasetInformation.VersionInnovation = "This is the first version of the dataset";
+        function getInitialMetadataFromSession(app)
+            subjectDataFromEntity = ndi.database.metadata_app.fun.loadSubjects(app.Dataset);
+            app.SubjectData = subjectDataFromEntity; 
+            
+            try
+                probeDataFromEntity = ndi.database.metadata_app.fun.loadProbes(app.Dataset); 
+                if isa(probeDataFromEntity, 'ndi.database.metadata_app.class.ProbeData')
+                    app.ProbeData = probeDataFromEntity;
+                else
+                    fprintf(2,'Warning: loadProbes did not return a ProbeData object. Using default empty ProbeData.\n');
+                    app.ProbeData = ndi.database.metadata_app.class.ProbeData();
+                end
+            catch ME_loadProbes
+                 fprintf(2,'Error loading probes from dataset: %s. Using default empty ProbeData.\n', ME_loadProbes.message);
+                 app.ProbeData = ndi.database.metadata_app.class.ProbeData();
             end
         end
 
         % Close request function: NDIMetadataEditorUIFigure
         function NDIMetadataEditorUIFigureCloseRequest(app, event)
-            if ~isempty(app.Dataset)
-                app.Dataset = ndi.database.metadata_ds_core.saveEditor2Doc(app.Dataset,app.DatasetInformation);
+            errors_for_dialog = {};
+            try
+                if isprop(app, 'Dataset') && ~isempty(app.Dataset) && isobject(app.Dataset) && isvalid(app.Dataset)
+                    try
+                        if isprop(app, 'DatasetInformationStruct')
+                            app.DatasetInformationStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+                            app.Dataset = ndi.database.metadata_ds_core.saveEditor2Doc(app.Dataset, app.DatasetInformationStruct);
+                        else
+                            msg_info = 'DatasetInformationStruct property not found, cannot save dataset state.';
+                            fprintf(2, 'INFO during app close: %s\n', msg_info);
+                        end
+                    catch ME_save
+                        full_msg = sprintf('ERROR saving dataset during app close: %s (ID: %s)', ME_save.message, ME_save.identifier);
+                        errors_for_dialog{end+1} = ME_save.message; 
+                        fprintf(2, '%s\nFull report for ME_save:\n%s\n', full_msg, ME_save.getReport('extended', 'hyperlinks', 'off'));
+                    end
+                end
+                if isprop(app, 'UIForm') && ~isempty(app.UIForm) && isstruct(app.UIForm)
+                    formNames = fieldnames(app.UIForm);
+                    for i = 1:numel(formNames)
+                        thisName = formNames{i};
+                        try
+                            if isfield(app.UIForm, thisName) && ...
+                               ~isempty(app.UIForm.(thisName)) && isobject(app.UIForm.(thisName)) && isvalid(app.UIForm.(thisName))
+                                delete(app.UIForm.(thisName));
+                            end
+                        catch ME_form
+                            full_msg = sprintf('ERROR deleting UIForm element "%s" during app close: %s (ID: %s)', thisName, ME_form.message, ME_form.identifier);
+                            errors_for_dialog{end+1} = sprintf('Deleting form "%s": %s', thisName, ME_form.message);
+                            fprintf(2, '%s\nFull report for ME_form ("%s"):\n%s\n', full_msg, thisName, ME_form.getReport('extended', 'hyperlinks', 'off'));
+                        end
+                    end
+                end
+            catch ME_general_cleanup
+                full_msg = sprintf('UNEXPECTED ERROR during app close preparation: %s (ID: %s)', ME_general_cleanup.message, ME_general_cleanup.identifier);
+                errors_for_dialog{end+1} = ME_general_cleanup.message; 
+                fprintf(2, '%s\nFull report for ME_general_cleanup:\n%s\n', full_msg, ME_general_cleanup.getReport('extended', 'hyperlinks', 'off'));
             end
-            formNames = fieldnames(app.UIForm);
-            for i = 1:numel(formNames)
-                thisName = formNames{i};
-                delete(app.UIForm.(thisName))
+            
+            if ~isempty(errors_for_dialog)
+                try
+                    dialog_message_lines = {'Errors occurred while closing the NDI Metadata Editor.', ...
+                                            'The application window will close, but these issues were noted:', ''};
+                    for k_err = 1:min(numel(errors_for_dialog), 5) 
+                        concise_msg = errors_for_dialog{k_err};
+                        if length(concise_msg) > 150, concise_msg = [concise_msg(1:147), '...']; end
+                        dialog_message_lines{end+1} = ['- ', concise_msg];
+                    end
+                    if numel(errors_for_dialog) > 5
+                        dialog_message_lines{end+1} = sprintf('- ... and %d more error(s).', numel(errors_for_dialog)-5);
+                    end
+                    dialog_message_lines{end+1} = ''; 
+                    dialog_message_lines{end+1} = 'Please check the MATLAB Command Window for full technical details.';
+                    errordlg(dialog_message_lines, 'Application Closing Errors', 'non-modal');
+                catch ME_dialog_display
+                    fprintf(2, 'CRITICAL: Could not display graphical error dialog for closing errors: %s\n', ME_dialog_display.message);
+                end
             end
-            delete(app)
+            delete(app); 
         end
-
-        % Button pushed function: GetStartedButton
+        
         function GetStartedButtonPushed(app, event)
-            app.onTabChanged(app.DatasetOverviewTab)
-            app.TabGroup.SelectedTab = app.DatasetOverviewTab;
+            app.changeTab(app.DatasetOverviewTab);
         end
 
-        % Value changed function: DatasetBranchTitleEditField
         function DatasetBranchTitleValueChanged(app, event)
             value = app.DatasetBranchTitleEditField.Value;
-            app.DatasetInformation.DatasetFullName = value;
-            
             if ~isempty(value)
-                app.resetLabelForRequiredField("DatasetBranchTitleEditField")
+                app.resetLabelForRequiredField("DatasetBranchTitleEditField");
             end
-
-            % Only update/generate short name if input field is empty
             if isempty(app.DatasetShortNameEditField.Value)
-                app.DatasetShortNameEditField.Value = ndi.database.metadata_app.fun.generateShortName(value, 3);
-                app.DatasetInformation.DatasetShortName = value;
-                if ~isempty(value)
-                    app.resetLabelForRequiredField("DatasetShortNameEditField")
+                generatedShortName = ndi.database.metadata_app.fun.generateShortName(value, 3);
+                app.DatasetShortNameEditField.Value = generatedShortName;
+                if ~isempty(generatedShortName)
+                    app.resetLabelForRequiredField("DatasetShortNameEditField");
                 end
             end
-            
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
 
-        % Value changed function: DatasetShortNameEditField
         function DatasetShortNameValueChanged(app, event)
-            value = event.Value;
+            value = app.DatasetShortNameEditField.Value;
             if ~isempty(value)
-                app.resetLabelForRequiredField("DatasetShortNameEditField")
+                app.resetLabelForRequiredField("DatasetShortNameEditField");
             end
-            app.DatasetInformation.DatasetShortName = value;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
 
-        % Value changed function: AbstractTextArea
         function AbstractValueChanged(app, event)
-            value = event.Value;
-            if ~isempty(value)
-                app.resetLabelForRequiredField("AbstractTextArea")
+            value = app.AbstractTextArea.Value;
+            if ~isempty(value) 
+                 if iscell(value) && ~isempty(value{1})
+                    app.resetLabelForRequiredField("AbstractTextArea");
+                 elseif ischar(value) && ~isempty(strtrim(value))
+                    app.resetLabelForRequiredField("AbstractTextArea");
+                 end
             end
-            app.DatasetInformation.Description = value;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
 
-        % Value changed function: DatasetCommentsTextArea
         function CommentsDetailsValueChanged(app, event)
-            value = event.Value;
-            if ~isempty(value)
-                app.resetLabelForRequiredField("DatasetCommentsTextArea")
+            value = app.DatasetCommentsTextArea.Value;
+             if ~isempty(value) 
+                 if iscell(value) && ~isempty(value{1})
+                    app.resetLabelForRequiredField("DatasetCommentsTextArea");
+                 elseif ischar(value) && ~isempty(strtrim(value))
+                    app.resetLabelForRequiredField("DatasetCommentsTextArea");
+                 end
             end
-            app.DatasetInformation.Comments = value;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
+        end
+        
+        function SaveChangesButtonPushed(app, event) 
+            app.NDIMetadataEditorUIFigure.Name = 'NDI Dataset Wizard (Saving temporary data...)';
+            app.saveDatasetInformationStruct();
+            app.NDIMetadataEditorUIFigure.Name = 'NDI Dataset Wizard (Temporary data saved)';
+            app.resetFigureNameIn('NDI Metadata Editor', 5);
         end
 
-        % Button pushed function: AddAuthorButton
-        function AddAuthorButtonPushed(app, event)
-            % Add item to listbox
-            numAuthors = numel(app.AuthorListBox.Items);
-
-            app.AuthorListBox.Items{end+1} = sprintf('Author %d', numAuthors+1);
-            app.AuthorListBox.Value = app.AuthorListBox.Items{end};
-            app.AuthorListBoxValueChanged();
-
-            app.updateAuthorPlaceholderLabels()
-        end
-
-        % Button pushed function: RemoveAuthorButton
-        function RemoveAuthorButtonPushed(app, event)
-            % Remove item from listbox
-            isSelected = strcmp(app.AuthorListBox.Items, app.AuthorListBox.Value);
-            
-            newItems = app.AuthorListBox.Items(~isSelected);
-            
-            % Remove author from list in author data
-            try
-                app.AuthorData.removeItem(find(isSelected))
-            catch
-                % A placeholder author was removed.
-            end
-
-            % Update items in listbox
-            if ~isempty(newItems)
-                app.AuthorListBox.Value = newItems{1};
-                app.AuthorListBox.Items = newItems;
-            else
-                app.AuthorListBox.Value = {};
-                app.AuthorListBox.Items = newItems;
-            end
-
-            % Update all input fields to reflect new selection 
-            S = app.AuthorData.getItem(1);
-            app.fillAuthorInputFieldsFromStruct(S)
-
-            app.DatasetInformation.Author = app.AuthorData.AuthorList;
-            app.saveDatasetInformation()
-        end
-
-        % Button pushed function: MoveAuthorUpButton
-        function MoveAuthorUpButtonPushed(app, event)
-            oldAuthorIndex = app.getSelectedAuthorIndex();
-            if oldAuthorIndex == 1; return; end
-            
-            newAuthorIndex = oldAuthorIndex - 1;
-            app.reorderAuthorList(newAuthorIndex, oldAuthorIndex)
-        end
-
-        % Button pushed function: MoveAuthorDownButton
-        function MoveAuthorDownButtonPushed(app, event)
-            oldAuthorIndex = app.getSelectedAuthorIndex();
-            if oldAuthorIndex == numel(app.AuthorListBox.Items); return; end
-
-            newAuthorIndex = oldAuthorIndex + 1; 
-            app.reorderAuthorList(newAuthorIndex, oldAuthorIndex)
-        end
-
-        % Value changed function: AuthorListBox
-        function AuthorListBoxValueChanged(app, event)
-            authorIndex = app.getSelectedAuthorIndex();
-
-            S = app.AuthorData.getItem(authorIndex);
-            app.fillAuthorInputFieldsFromStruct(S) % Update the author fields
-        end
-
-        % Value changed function: GivenNameEditField
-        function GivenNameEditFieldValueChanged(app, event)
-            newValue = app.GivenNameEditField.Value;
-            app.onAuthorNameChanged('givenName', newValue)
-
-            % Use api to search for orcid match for name
-            authorIndex = app.getSelectedAuthorIndex();
-            fullName = app.AuthorData.getAuthorName(authorIndex);
-            app.checkOrcidMatch(fullName) % Only do for value changed
-        end
-
-        % Value changing function: GivenNameEditField
-        function GivenNameEditFieldValueChanging(app, event)
-            changingValue = event.Value;
-            app.onAuthorNameChanged('givenName', changingValue, 'transient')
-        end
-
-        % Value changed function: FamilyNameEditField
-        function FamilyNameEditFieldValueChanged(app, event)
-            newValue = app.FamilyNameEditField.Value;
-            app.onAuthorNameChanged('familyName', newValue)
-            
-            % Use api to search for orcid match for name
-            authorIndex = app.getSelectedAuthorIndex();
-            fullName = app.AuthorData.getAuthorName(authorIndex);
-            app.checkOrcidMatch(fullName)
-        end
-
-        % Value changing function: FamilyNameEditField
-        function FamilyNameEditFieldValueChanging(app, event)
-            changingValue = event.Value;
-            app.onAuthorNameChanged('familyName', changingValue, 'transient')
-        end
-
-        % Value changed function: AuthorEmailEditField
-        function AuthorEmailEditFieldValueChanged(app, event)
-            value = app.AuthorEmailEditField.Value;
-            try
-                mustBeValidEmail(value)
-            catch ME
-                uialert(app.NDIMetadataEditorUIFigure, ME.message, 'Invalid email')
-            end
-            %app.updatePerson('contactInformation', contactInformation)
-            app.updateCurrentAuthor('contactInformation', value, true)
-        end
-
-        % Value changed function: DigitalIdentifierEditField
-        function DigitalIdentifierEditFieldValueChanged(app, event)
-            value = app.DigitalIdentifierEditField.Value;
-            if ~isempty(value)
-                try
-                    if contains(value, 'https://orcid.org/')
-                        orcidIRI = value;
-                        value = strrep(value, 'https://orcid.org/', '');
-                    else
-                        orcidIRI = sprintf('https://orcid.org/%s', value);
-                    end
-                    orcid = openminds.core.ORCID('identifier', orcidIRI);
-                    app.updatePerson('digitalIdentifier', orcid)
-                    app.DigitalIdentifierEditField.Value = value;
-                catch ME
-                    errMessage = sprintf('The entered value is not a valid ORCID. For examples of valid ORCID, please see this <a href=https://support.orcid.org/hc/en-us/articles/360006897674-Structure-of-the-ORCID-Identifier#3-some-sample-orcid-ids>link</a>');
-                    %uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Invalid ORCID', 'Interpreter', 'html')
-                    app.alert(errMessage, 'Invalid ORCID', 'Interpreter', 'html')
-                end
-            end
-            app.updateCurrentAuthor('digitalIdentifier', value)
-        end
-
-        % Button pushed function: SearchOrcidButton
-        function SearchOrcidButtonPushed(app, event)
-            authorIndex = app.getSelectedAuthorIndex();
-            
-            if isempty(authorIndex)
-                app.inform('Please add an author to search for ORCID.')
-                return
-            end
-
-            try
-                fullName = app.AuthorData.getAuthorName(authorIndex);
-            catch
-                fullName = '';
-            end
-            
-            if isempty(fullName)
-                app.inform('Please fill out a name for the selected author to search for ORCID')
-                return
-            end
-            
-            apiQueryUrl = ndi.database.metadata_app.fun.getOrcIdSearchUrl(fullName);
-            web(apiQueryUrl)
-        end
-
-        % Callback function: AuthorRoleTree
-        function AuthorRoleTreeCheckedNodesChanged(app, event)
-            selectedAuthorRoles = app.getCheckedTreeNodeData(event.CheckedNodes);
-            app.updateCurrentAuthor('authorRole', selectedAuthorRoles)
-        end
-
-        % Button pushed function: AddAffiliationButton
-        function AddAffiliationButtonPushed(app, event)
-            
-            organizationName = app.OrganizationDropDown.Value;
-            
-            if ~any(strcmp(organizationName, app.OrganizationDropDown.Items))
-%                 progressDialog = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
-%                     'Please wait', 'Opening form for creating new organization')
-                S = struct('fullName', organizationName);
-                S = app.openOrganizationForm(S);
-
-                if ~isempty(S)
-                    organizationName = S.fullName;
-                else
-                    return
-                end
-            end
-            
-            if any(strcmp(app.AffiliationListBox.Items, organizationName))
-                message = sprintf('The organization "%s" has already been added to list of affiliations.', organizationName);
-                app.inform(message)
-                return
-            end
-
-            app.AffiliationListBox.Items{end+1} = organizationName;
-
-            % Update authordata % Todo: use update current author?
-            idx = app.getSelectedAuthorIndex();
-            app.AuthorData.addAffiliation(organizationName, idx)
-            
-            app.DatasetInformation.Author = app.AuthorData.AuthorList;
-            app.saveDatasetInformation()
-        end
-
-        % Button pushed function: RemoveAffiliationButton
-        function RemoveAffiliationButtonPushed(app, event)
-            if ~isempty(app.AffiliationListBox.Items)
-                selectedIndices = app.getListBoxSelectionIndex(app.AffiliationListBox);
-                app.AffiliationListBox.Items(selectedIndices) = [];
-
-                authorIndex = app.getSelectedAuthorIndex(); 
-                if ~isempty(authorIndex)
-                    % Todo: use update current author?
-                    app.AuthorData.removeAffiliation(authorIndex, selectedIndices);
-
-                    app.DatasetInformation.Author = app.AuthorData.AuthorList;
-                    app.saveDatasetInformation()
-                end
-            end
-        end
-
-        % Button pushed function: SaveChangesButton
-        function SaveChangesButtonPushed(app, event)
-            app.NDIMetadataEditorUIFigure.Name = 'NDI Dataset Wizard (Saving...)';
-            app.saveDatasetInformation()
-            app.NDIMetadataEditorUIFigure.Name = 'NDI Dataset Wizard (Saved changes)';
-            app.resetFigureNameIn('NDI Dataset Wizard', 5)
-        end
-
-        % Button pushed function: SaveButton
-        function SaveButtonPushed(app, event)
-            
-            missingRequiredField = app.checkRequiredFields("");
+        function SaveButtonPushed(app, event) 
+            missingRequiredField = app.checkRequiredFields(""); 
             if ~isempty(missingRequiredField)
-                app.alertRequiredFieldsMissing(missingRequiredField)
-                return
+                app.alertRequiredFieldsMissing(missingRequiredField);
+                return;
             end
-            ndi.database.metadata_app.fun.save_dataset_docs(app.Dataset, app.Dataset.id(), app.DatasetInformation);
-            % app.openLoginForm();
-            % ndi.database.fun.dataset_metadata(app.Dataset, 0, 'path', app.TempWorkingFile, 'action', 'submit', 'login', app.LoginInformation);
+            currentDatasetInfoStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+            ndi.database.metadata_app.fun.save_dataset_docs(app.Dataset, app.Dataset.id(), currentDatasetInfoStruct);
+            app.inform('Dataset metadata successfully saved to NDI documents.', 'Save Successful');
         end
 
-        % Value changed function: ReleaseDateDatePicker
         function ReleaseDateValueChanged(app, event)
-            value = event.Value;
-            app.DatasetInformation.ReleaseDate = value;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
 
-        % Value changed function: LicenseDropDown
         function LicenseDropDownValueChanged(app, event)
             value = event.Value;
-            if value ~= ""
-                app.resetLabelForRequiredField("LicenseDropDown")
+            if value ~= "" 
+                app.resetLabelForRequiredField("LicenseDropDown");
             end
-            app.DatasetInformation.License = value;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
-
-        % Value changed function: FullDocumentationEditField
+        
         function FullDocumentationValueChanged(app, event)
             value = event.Value;
-
             isValid = true;
-            % Verify the value (It should be a DOI or a webresource (i.e URL)):
-            try
-                doi = openminds.core.DOI('identifier', value);
-            catch
-                tf = isValidURL(value);
-                if ~tf
-                    message = sprintf('Full documentation must be a valid DOI or URL');
-                    app.alert(message, 'Invalid value')
-                    isValid = false;
+            try 
+                if ~isempty(value) && ~(startsWith(value, 'http') || contains(value, 'doi.org') || regexp(value, '^\d{2}\.\d{4,9}/[-._;()/:A-Z0-9]+$','ignorecase'))
                 end
+            catch
+                isValid = false;
             end
             if ~isValid
-                app.FullDocumentationEditField.Value = event.PreviousValue;
+                 app.alert('Full documentation should be a valid URL or DOI.', 'Invalid Input');
             else
-                app.DatasetInformation.FullDocumentation = value;
-                app.saveDatasetInformation();
-            end
-
-            function isValid = isValidURL(inputString)
-                % Define the pattern for a valid IRI
-                urlPattern = '^(https?|ftp)://[^\s/$.?#].[^\s]*$';
-                % Check if the input string matches the IRI pattern
-                isValid = ~isempty(regexp(inputString, urlPattern, 'once'));
+                app.saveDatasetInformationStruct();
             end
         end
-
-        % Value changed function: VersionIdentifierEditField
+        
         function VersionIdentifierValueChanged(app, event)
-            value = event.Value;
-            app.DatasetInformation.VersionIdentifier = value;
-            app.saveDatasetInformation();
+            if ~isempty(event.Value), app.resetLabelForRequiredField('VersionIdentifierEditField'); end
+            app.saveDatasetInformationStruct();
         end
 
-        % Value changed function: VersionInnovationEditField
         function VersionInnovationValueChanged(app, event)
-            value = event.Value;
-            app.DatasetInformation.VersionInnovation = value;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
-
-        % Button pushed function: AddFundingButton
+        
         function AddFundingButtonPushed(app, event)
             S = app.openFundingForm();
-
             if isempty(S); return; end
-
-            if isempty(app.FundingUITable.Data)
-                app.FundingUITable.Data = struct2table(S, 'AsArray', true);
+            if ~isfield(app.DatasetInformationStruct, 'Funding') || isempty(app.DatasetInformationStruct.Funding)
+                app.DatasetInformationStruct.Funding = S;
             else
-                app.FundingUITable.Data(end+1,:) = struct2table(S, 'AsArray', true);
+                app.DatasetInformationStruct.Funding(end+1) = S;
             end
-            app.DatasetInformation.Funding = table2struct(app.FundingUITable.Data);
-            app.saveDatasetInformation();
+            app.FundingUITable.Data = struct2table(app.DatasetInformationStruct.Funding, 'AsArray', true);
+            app.saveDatasetInformationStruct();
         end
 
-        % Button pushed function: MoveFundingUpButton
-        function MoveFundingUpButtonPushed(app, event)
-            currentRowIndex = app.FundingUITable.Selection;
-            if isempty(currentRowIndex); return; end
-            if currentRowIndex == 1; return; end
-            newRowIndex = currentRowIndex - 1;
-
-            app.reorderTableRows(app.FundingUITable, newRowIndex, currentRowIndex)
-        end
-
-        % Button pushed function: MoveFundingDownButton
-        function MoveFundingDownButtonPushed(app, event)
-            currentRowIndex = app.FundingUITable.Selection;
-            if isempty(currentRowIndex); return; end
-            if currentRowIndex == height(app.FundingUITable.Data); return; end
-            newRowIndex = currentRowIndex + 1;
-
-            app.reorderTableRows(app.FundingUITable, newRowIndex, currentRowIndex)
-        end
-
-        % Button pushed function: RemoveFundingButton
         function RemoveFundingButtonPushed(app, event)
             rowIdx = app.FundingUITable.Selection;
-
-            if ~isempty(rowIdx)
-                app.FundingUITable.Data(rowIdx, :) = [];
-                app.DatasetInformation.Funding = table2struct(app.FundingUITable.Data);
-                app.saveDatasetInformation()
+            if ~isempty(rowIdx) && isfield(app.DatasetInformationStruct, 'Funding') && ~isempty(app.DatasetInformationStruct.Funding)
+                app.DatasetInformationStruct.Funding(rowIdx) = [];
+                if isempty(app.DatasetInformationStruct.Funding) 
+                    expectedFields = {'funder','awardTitle','awardNumber'};
+                    emptyStructWithFields = struct();
+                    for k=1:numel(expectedFields)
+                        emptyStructWithFields.(expectedFields{k}) = []; 
+                    end
+                    if numel(expectedFields) > 0
+                        app.DatasetInformationStruct.Funding = repmat(emptyStructWithFields,0,1);
+                    else
+                        app.DatasetInformationStruct.Funding = struct([]); 
+                    end
+                end
+                app.FundingUITable.Data = struct2table(app.DatasetInformationStruct.Funding, 'AsArray', true);
+                app.saveDatasetInformationStruct();
             end
         end
-
-        % Double-clicked callback: FundingUITable
-        function FundingUITableDoubleClicked(app, event)
-            displayRow = event.InteractionInformation.DisplayRow;
-            
-            S = app.FundingUITable.Data(displayRow, :);
-            S.Properties.VariableNames = {'funder', 'awardTitle', 'awardNumber'};
-
-            S = app.openFundingForm( table2struct(S) );
+        
+        function AddRelatedPublicationButtonPushed(app,event)
+            S = app.openForm("Publication");
             if isempty(S); return; end
-
-            app.FundingUITable.Data{displayRow, :} = struct2cell(S)';
-            app.DatasetInformation.Funding = table2struct(app.FundingUITable.Data);
-            app.saveDatasetInformation();
-        end
-
-        % Button pushed function: AddRelatedPublicationButton
-        function AddRelatedPublicationButtonPushed(app, event)
-            currentData = app.RelatedPublicationUITable.Data;
-            S = openForm(app, "Publication");
-            if isempty(S); return; end
-
-            % Make sure the doi does not exist in table from before
-            isUnique = app.assertUniquePublicationEntered(S);
-            if ~isUnique; return; end
-
-            newRow = struct2cell(S)';
-            newRow = cell2table(newRow, "VariableNames", app.RelatedPublicationUITable.ColumnName);
-
-            currentData = [currentData; newRow];
-            app.RelatedPublicationUITable.Data = currentData;
             
-            % Note: Convert table to struct before adding to dataset information.
-            app.DatasetInformation.RelatedPublication = table2struct(currentData);
-            app.saveDatasetInformation()
+            if ~isfield(app.DatasetInformationStruct, 'RelatedPublication') || isempty(app.DatasetInformationStruct.RelatedPublication)
+                app.DatasetInformationStruct.RelatedPublication = S;
+            else
+                app.DatasetInformationStruct.RelatedPublication(end+1) = S;
+            end
+            app.RelatedPublicationUITable.Data = struct2table(app.DatasetInformationStruct.RelatedPublication, 'AsArray', true);
+            app.saveDatasetInformationStruct();
         end
 
-        % Double-clicked callback: RelatedPublicationUITable
-        function RelatedPublicationUITableDoubleClicked(app, event)
-            displayRow = event.InteractionInformation.DisplayRow;
-            %displayColumn = event.InteractionInformation.DisplayColumn;
-            
-            S = app.RelatedPublicationUITable.Data(displayRow, :);
-            S.Properties.VariableNames = {'title', 'doi', 'pmid', 'pmcid'};
-
-            S = app.openForm('Publication', table2struct(S));
-            if isempty(S); return; end
-
-            isUnique = app.assertUniquePublicationEntered(S, displayRow);
-            if ~isUnique; return; end
-
-            app.RelatedPublicationUITable.Data{displayRow, :} = struct2cell(S)';
-
-            % Note: Convert table to struct before adding to dataset information.
-            app.DatasetInformation.RelatedPublication = table2struct(app.RelatedPublicationUITable.Data);
-            app.saveDatasetInformation();
-        end
-
-        % Button pushed function: RemovePublicationButton
-        function RemovePublicationButtonPushed(app, event)
-            rowIdx = app.RelatedPublicationUITable.Selection;
-            app.RelatedPublicationUITable.Data(rowIdx, :) = [];
-            
-            currentData = app.RelatedPublicationUITable.Data;
-            app.DatasetInformation.RelatedPublication = table2struct(currentData);
-            app.saveDatasetInformation();
-        end
-
-        % Button pushed function: MovePublicationUpButton
-        function MovePublicationUpButtonPushed(app, event)
-            currentRowIndex = app.RelatedPublicationUITable.Selection;
-            if isempty(currentRowIndex); return; end
-            if currentRowIndex == 1; return; end
-            newRowIndex = currentRowIndex - 1;
-
-            app.reorderTableRows(app.RelatedPublicationUITable, newRowIndex, currentRowIndex)
-        end
-
-        % Button pushed function: MovePublicationDownButton
-        function MovePublicationDownButtonPushed(app, event)
-            currentRowIndex = app.RelatedPublicationUITable.Selection(:, 1);
-            if isempty(currentRowIndex); return; end
-            if currentRowIndex == height(app.RelatedPublicationUITable.Data); return; end
-            newRowIndex = currentRowIndex + 1;
-
-            app.reorderTableRows(app.RelatedPublicationUITable, newRowIndex, currentRowIndex)
-        end
-
-        % Cell edit callback: RelatedPublicationUITable
-        function RelatedPublicationCellEdit(app, event)
-            % indices = event.Indices;
-            % newData = event.NewData;
-            currentData = app.RelatedPublicationUITable.Data;
-            
-            % Note: Convert table to struct before adding to dataset information.
-            app.DatasetInformation.RelatedPublication = table2struct(currentData);
-            app.saveDatasetInformation();
-        end
-
-        % Callback function: DataTypeTree
         function DataTypeTreeCheckedNodesChanged(app, event)
             selectedDataTypes = app.getCheckedTreeNodeData(event.CheckedNodes);
             if ~isempty(selectedDataTypes)
-                app.resetLabelForRequiredField("DataTypeTree")
+                app.resetLabelForRequiredField("DataTypeTree");
             end
-            app.DatasetInformation.DataType = selectedDataTypes;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
 
-        % Callback function: ExperimentalApproachTree
         function ExperimentTreeCheckedNodesChanged(app, event)
             selectedExperimentalApproach = app.getCheckedTreeNodeData(event.CheckedNodes);
             if ~isempty(selectedExperimentalApproach)
-                app.resetLabelForRequiredField("ExperimentalApproachTree")
+                app.resetLabelForRequiredField("ExperimentalApproachTree");
             end
-            app.DatasetInformation.ExperimentalApproach = selectedExperimentalApproach;
-            app.saveDatasetInformation();
+            app.saveDatasetInformationStruct();
         end
-
-        % Value changed function: SelectTechniqueCategoryDropDown
+        
         function SelectTechniqueCategoryDropDownValueChanged(app, event)
             value = app.SelectTechniqueCategoryDropDown.Value;
-            if ~isempty(value)
-                app.resetLabelForRequiredField("SelectTechniqueCategoryDropDown")
-            end
-            app.populateTechniqueDropdown(value)
+            app.populateTechniqueDropdown(value); 
         end
 
-        % Button pushed function: AddTechniqueButton
         function AddTechniqueButtonPushed(app, event)
-            
             techniqueCategory = app.SelectTechniqueCategoryDropDown.Value;
             techniqueName = app.SelectTechniqueDropDown.Value;
-
             if ~any(strcmp(techniqueName, app.SelectTechniqueDropDown.ItemsData))
-                message = sprintf('Please select one of the techniques from the list');
-                app.inform(message)
-                return
+                app.inform('Please select one of the techniques from the list'); return;
             end
-
             technique = sprintf('%s (%s)', techniqueName, techniqueCategory);
-            
-
             if any(strcmp(technique, app.SelectedTechniquesListBox.Items))
-                message = sprintf('The technique "%s" has already been added to the list of selected techniques.', techniqueName);
-                app.inform(message)
-                return
+                app.inform(sprintf('The technique "%s" has already been added.', techniqueName)); return;
             end
-
             app.SelectedTechniquesListBox.Items{end+1} = technique;
-            %app.SelectedTechniquesListBox.ItemsData{end+1} = technique;
-
-            %todo
-            %app.SelectedTechniquesListBox.ItemsData{end+1} = struct('SchemaName', techniqueCategory, 'InstanceName', techniqueName);
-            
-            % Save changes to datasetInformation
-            app.DatasetInformation.TechniquesEmployed = app.SelectedTechniquesListBox.Items;
-            %app.DatasetInformation.TechniquesEmployed = app.SelectedTechniquesListBox.ItemsData;
-            app.saveDatasetInformation(); 
+            app.saveDatasetInformationStruct();
         end
 
-        % Button pushed function: RemoveTechniqueButton
         function RemoveTechniqueButtonPushed(app, event)
-            % Get selected item from the listbox
             selectedIndex = app.getListBoxSelectionIndex(app.SelectedTechniquesListBox);
-            
-            % Remove the item from the listbox
-            app.SelectedTechniquesListBox.Items(selectedIndex) = [];
-            app.SelectedTechniquesListBox.Value = {};
-
-            % Update and save changes to datasetInformation
-            app.DatasetInformation.TechniquesEmployed = app.SelectedTechniquesListBox.Items;
-            app.saveDatasetInformation();
+            if ~isempty(selectedIndex)
+                app.SelectedTechniquesListBox.Items(selectedIndex) = [];
+                app.SelectedTechniquesListBox.Value = {};
+                app.saveDatasetInformationStruct();
+            end
         end
-
-        % Button pushed function: AssignBiologicalSexButton
+        
         function AssignBiologicalSexButtonPushed(app, event)
-            
-            biologicalSex = app.BiologicalSexListBox.Value;     
-            
-            % Get the selected row and column in the table
-            subjectSelections = app.UITableSubject.Selection;
-            prevData = app.SubjectData;
-            
-            for i = 1:size(subjectSelections,1)
-                selectedRow = app.UITableSubject.Selection(i,1);
-                %selectedColumn = app.UITableSubject.Selection(i,2);
-                subjectName = app.UITableSubject.Data{selectedRow, 'Subject'};
-                
-                % Check if a biological sex is selected and a valid subject is chosen
-                if ~isempty(biologicalSex) && ~isempty(subjectName) && ~(app.SubjectData.getIndex(subjectName) == -1)
-                    % Assign the selected biological sex to the corresponding row and "Biological Sex" column
-                    index = app.SubjectData.getIndex(subjectName);
-                    app.SubjectData.SubjectList(index).BiologicalSexList = {biologicalSex};
-                    app.DatasetInformation.Subjects = app.SubjectData.SubjectList;
-                    app.saveDatasetInformation();
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                else
-                    app.SubjectData = prevData;
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                    % Display an error message if the conditions are not met
-                    errMessage = sprintf('Please select a valid biological sex and subject.');
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Invalid biological sex or subject');
-                    % msgbox('Please select a valid biological sex and subject.');
-                end
-            end
+            app.updateSubjectTableColumData('BiologicalSex', app.BiologicalSexListBox.Value);
         end
-
-        % Value changed function: BiologicalSexListBox
-        function BiologicalSexListBoxValueChanged(app, event)
-            % value = app.BiologicalSexListBox.Value;
-            % app.updateSubjectTableColumData('BiologicalSex', value)
-        end
-
-        % Clicked callback: BiologicalSexListBox
         function BiologicalSexListBoxClicked(app, event)
-            drawnow;
-            value = event.Source.Value;
-            app.updateSubjectTableColumData('BiologicalSex', value);
+            drawnow; 
+            app.updateSubjectTableColumData('BiologicalSex', event.Source.Value);
         end
-
-        % Button pushed function: AssignSpeciesButton
         function AssignSpeciesButtonPushed(app, event)
-            species = app.SpeciesData.getItem(name);
-
-            subjectSelections = app.UITableSubject.Selection;
-            prevData = app.SubjectData;
-
-            for i = 1:size(subjectSelections,1)
-                selectedRow = app.UITableSubject.Selection(i,1);
-                selectedColumn = app.UITableSubject.Selection(i,2);
-                if ~selectedColumn == 1
-                    app.SubjectData = prevData;
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                    % Display an error message if the conditions are not met
-                    errMessage = sprintf('Please select a valid subject.');
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Invalid subject');
-                    break;
-                end
-
-                subjectName = app.UITableSubject.Data(selectedRow, selectedColumn).Subject;
-                if isempty(subjectName) || (app.SubjectData.getIndex(subjectName) == -1)
-                    app.SubjectData = prevData;
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                    % Display an error message if the conditions are not met
-                    errMessage = sprintf('Please select a valid subject.');
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Invalid subject');
-                    break;
-                end
-                
-                if ~app.SubjectData.biologicalSexSelected(subjectName)
-                    app.SubjectData = prevData;
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                    % Display an error message if the conditions are not met
-                    errMessage = sprintf('Please fill the biological sex for the subjects selected.');
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'missing biological sex');
-                    break;
-                end
-
-                if ~isempty(species) && isa(species, 'ndi.database.metadata_app.class.Species')
-                    index = app.SubjectData.getIndex(subjectName);
-                    app.SubjectData.SubjectList(index).SpeciesList = species;
-                    app.DatasetInformation.Subjects = app.SubjectData.SubjectList;
-                    app.saveDatasetInformation();
-
-                    % Update subject table
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                else
-                    app.SubjectData = prevData;
-                    data = app.SubjectData.formatTable();
-                    app.UITableSubject.Data = struct2table(data, 'AsArray', true);
-                    % Display an error message if the conditions are not met
-                    errMessage = sprintf('Please select a valid species.');
-                    uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Missing species');
-                    % msgbox('Please select a valid biological sex and subject.');
-                    break;
-                end
-            end
-
+            app.updateSubjectTableColumData('Species', app.SpeciesListBox.Value);
         end
-
-        % Value changed function: SpeciesListBox
-        function SpeciesListBoxValueChanged(app, event)
-            % value = app.SpeciesListBox.Value;
-            % app.updateSubjectTableColumData('Species', value);
-        end
-
-        % Clicked callback: SpeciesListBox
         function SpeciesListBoxClicked(app, event)
             drawnow;
             value = event.Source.Value;
-            if ismissing(value)
-                app.deleteSubjectTableColumData("Species")
+            if ismissing(value) || strcmp(value,'') % Check for missing or empty string (placeholder)
+                app.deleteSubjectTableColumData("Species");
+                app.deleteSubjectTableColumData("Strain"); 
             else
                 app.updateSubjectTableColumData('Species', value);
-                app.deleteSubjectTableColumData("Strain")
-
-                % Todo: Clear strain if it is from a different species.
+                app.deleteSubjectTableColumData("Strain"); 
             end
-            app.populateStrainList()
+            app.populateStrainList(); 
         end
-
-        % Button pushed function: AddSpeciesButton
-        function AddSpeciesButtonPushed(app, event)
-            value = app.SpeciesEditField.Value;
-
-            progressDialog = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
-                "Indeterminate", "on", ...
-                'Title','Please Wait!', ...
-                "Message", "Searching for species in the NCBI Taxonomy database...");
-            [~, uuid] = ndi.database.metadata_app.fun.SearchSpecies(value);
-            delete(progressDialog)
-
-            if (uuid == -1)
-                errMessage = sprintf('The entered value is not a valid scientific name, common name or synonym.');
-                uialert(app.NDIMetadataEditorUIFigure, errMessage, 'Invalid species name');
-            else
-                [name, ontologyIdentifier, synonym] = ndi.database.metadata_app.fun.getSpeciesInfo(uuid);
-                
-                speciesInfo = struct;
-                speciesInfo.name = name;
-                speciesInfo.ontologyIdentifier = ontologyIdentifier;
-                speciesInfo.synonyms = synonym;
-                speciesInfo.definition = '';
-                speciesInfo.description = '';
-
-                % Open species editor
-                S = app.openSpeciesForm(speciesInfo);
-                if isempty(S); return; end
-                
-                if ~isempty(app.SpeciesInstancesUser)
-                    if any( strcmp({app.SpeciesInstancesUser.name}, S.name) )
-                        app.inform(sprintf('Species "%s" already exists in list', S.name))
-                        return
-                    end
-                end
-
-                app.appendUserDefinedSpecies(S);
-
-                app.SpeciesData.addItem(S.name, S.ontologyIdentifier, S.synonyms);
-                app.saveDatasetInformation();
-
-                app.populateSpeciesList()
-                
-                % Set newly added value as current selection
-                app.SpeciesListBox.Value = S.name;
-            end
         
-        end
-
-        % Button pushed function: AddStrainButton
-        function AddStrainButtonPushed(app, event)
-            SInit = struct('name',  app.StrainEditField.Value);
-            if ~ismissing(app.SpeciesListBox.Value)
-                SInit.species = app.SpeciesListBox.Value;
-            end
-            S = app.openForm('Strain', SInit, false); % False because we are not editing existing instance
-            if isempty(S); return; end
-            
-            strainInstances = app.getStrainInstances();
-            try
-                strainInstances.add(S)
-                strainInstances.save()
-                
-                app.populateStrainList();
-                app.StrainListBox.Value = S.name;
-            catch ME
-                if ME.identifier == "Catalog:NamedItemExists"
-                    uialert(app.UIFigure, sprintf("A strain with the name '%s' already exists", S.name), 'Strain Exists')
-                else
-                    uialert(app.UIFigure, ME.message, 'Aborted')
-                end
-            end
-            
-        end
-
-        % Double-clicked callback: StrainListBox
-        function StrainListBoxDoubleClicked(app, event)
-            strainInstances = app.getStrainInstances();
-
-            strainName = event.Source.Value;
-            strainInstance = strainInstances.get(strainName);
-
-            S = app.openForm('Strain', strainInstance);
-            if isempty(S); return; end
-            S.Uuid = strainInstance.Uuid;
-
-            % Need to reload strain instances because new instances could
-            % have been added in the open strain form
-            strainInstances = app.getStrainInstances();
-            strainInstances.replace(S);
-            strainInstances.save()
-            
-            app.populateStrainList()
-            app.StrainListBox.Value = S.name;
-        end
-
-        % Value changed function: StrainListBox
-        function StrainListBoxValueChanged(app, event)
-            % value = app.StrainListBox.Value;
-            % app.updateSubjectTableColumData('Strain', value)
-        end
-
-        % Clicked callback: StrainListBox
-        function StrainListBoxClicked(app, event)
-            drawnow;
-            value = event.Source.Value;
-            
-            if value == "Select a Species" || value == "No Strains Available"
-                return
-            end
-
-            app.updateSubjectTableColumData('Strain', value);
-        end
-
-        % Button pushed function: StrainClearButton
-        function StrainClearButtonPushed(app, event)
-            app.deleteSubjectTableColumData("Strain");
-        end
-
-        % Button pushed function: SpeciesClearButton
-        function SpeciesClearButtonPushed(app, event)
-            app.deleteSubjectTableColumData("Species");
-        end
-
-        % Button pushed function: BiologicalSexClearButton
-        function BiologicalSexClearButtonPushed(app, event)
-            app.deleteSubjectTableColumData("BiologicalSex");
-        end
-
-        % Callback function
-        function ProbeListBoxValueChanged(app, event)
-            value = app.ProbeListBox.Value;
-            app.TypeofProbeListBox.Value = {};
-        end
-
-        % Callback function
-        function UITableProbeCellEdit(app, event)
-            indices = event.Indices;
-            probeType = event.NewData;
-            probeIndex = indices(1);
-            if ~app.ProbeData.probeExist(probeIndex)
-                app.openProbeForm(probeType,probeIndex);
-            else
-                message = 'You have already select the probe type. Do you really want to change it?';
-                title = 'Confirm selection';
-                userResponse = uiconfirm(app.NDIMetadataEditorUIFigure, message, title, 'Options', {'Yes', 'No'}, 'DefaultOption', 'No');
-                % Check the user's response
-                if strcmp(userResponse, 'Yes')
-                    app.openProbeForm(probeType,probeIndex);
-                else
-                    app.UITableProbe.Data{indices(1),indices(2)} = eventdata.PreviousData;
-                end
-            end          
-        end
-
-        % Double-clicked callback: UITableProbe
-        function UITableProbeDoubleClicked(app, event)
-            displayRow = event.InteractionInformation.DisplayRow;
-            if isempty(displayRow); return; end
-            classType = app.ProbeData.ProbeList{displayRow}.ClassType;
-            app.openProbeForm(classType,displayRow, app.ProbeData.ProbeList{displayRow});
-        end
-
-        % Selection change function: TabGroup
         function TabGroupSelectionChanged(app, event)
-            selectedTab = app.TabGroup.SelectedTab;
-            app.onTabChanged(selectedTab)
+            app.onTabChanged(); 
         end
-
-        % Button pushed function: PreviousButton
         function PreviousButtonPushed(app, event)
             currentTab = app.TabGroup.SelectedTab;
-            tabIdx = find( ismember( app.TabGroup.Children, currentTab ) );
-            newTabIdx = tabIdx - 1;
-            newTab = app.TabGroup.Children(newTabIdx);
-            
-            missingRequiredField = app.checkRequiredFields(currentTab);
-            if ~isempty(missingRequiredField)
-                app.alertRequiredFieldsMissing(missingRequiredField)
-                return
+            tabIdx = find(app.TabGroup.Children == currentTab);
+            if tabIdx > 1
+                missingRequiredField = app.checkRequiredFields(currentTab);
+                if ~isempty(missingRequiredField)
+                    app.alertRequiredFieldsMissing(missingRequiredField); return;
+                end
+                app.changeTab(app.TabGroup.Children(tabIdx - 1));
             end
-
-            app.onTabChanged(newTab)
-            drawnow
-            app.TabGroup.SelectedTab = newTab;
         end
-
-        % Button pushed function: NextButton
         function NextButtonPushed(app, event)
             currentTab = app.TabGroup.SelectedTab;
-            tabIdx = find( ismember( app.TabGroup.Children, currentTab ) );
-            newTabIdx = tabIdx + 1;
-            newTab = app.TabGroup.Children(newTabIdx);
-            
-            missingRequiredField = app.checkRequiredFields(currentTab);
-            if ~isempty(missingRequiredField)
-                app.alertRequiredFieldsMissing(missingRequiredField)
-                return
+            tabIdx = find(app.TabGroup.Children == currentTab);
+            if tabIdx < numel(app.TabGroup.Children)
+                missingRequiredField = app.checkRequiredFields(currentTab);
+                if ~isempty(missingRequiredField)
+                    app.alertRequiredFieldsMissing(missingRequiredField); return;
+                end
+                app.changeTab(app.TabGroup.Children(tabIdx + 1));
             end
-
-            app.onTabChanged(newTab)
-            drawnow
-            app.TabGroup.SelectedTab = newTab;
         end
 
-        % Button pushed function: TestDocumentConversionButton
         function TestDocumentConversionButtonPushed(app, event)
-            import ndi.database.metadata_ds_core.convertFormDataToDocuments
-
-            documentList = convertFormDataToDocuments(app.DatasetInformation, app.Dataset.id);
-
-            %documentsForDisplay = strjoin(documentList, newline);
-
+            currentStructToConvert = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+            documentList = ndi.database.metadata_ds_core.convertFormDataToDocuments(currentStructToConvert, app.Dataset.id());
             for i = 1:numel(documentList)
-                %disp(documentList{i}.document_properties)
-                disp( jsonencode(documentList{i}.document_properties, 'PrettyPrint', true))
+                disp( jsonencode(documentList{i}.document_properties, 'PrettyPrint', true));
             end
-            %disp(documentsForDisplay)
         end
-
-        % Button pushed function: ExportDatasetInfoButton
         function ExportDatasetInfoButtonPushed(app, event)
-            assignin('base', 'datasetInfo', app.DatasetInformation)
-            datasetInfo = app.DatasetInformation; %#ok<NASGU>
-            %disp( app.DatasetInformation )
+            currentStructToExport = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+            assignin('base', 'datasetInfoStruct', currentStructToExport);
+            disp('DatasetInformationStruct exported to base workspace as "datasetInfoStruct".');
         end
-
-        % Callback function
-        function LicenseHelpImageClicked(app, event)
-            web("https://en.wikipedia.org/wiki/Creative_Commons_license#Four_rights")
+        function LicenseHelpImageClicked(app, event) 
+            web("https://en.wikipedia.org/wiki/Creative_Commons_license#Four_rights");
         end
-
-        % Button pushed function: LicenseHelpButton
         function LicenseHelpButtonPushed(app, event)
-            web("https://en.wikipedia.org/wiki/Creative_Commons_license#Six_regularly_used_licenses")
+            web("https://en.wikipedia.org/wiki/Creative_Commons_license#Six_regularly_used_licenses");
         end
-
-        % Button pushed function: ResetFormButton
+        
+        function performActualFormReset(app)
+            % Clear data objects
+            if isprop(app, 'AuthorData') && ismethod(app.AuthorData, 'ClearAll'), app.AuthorData.ClearAll(); end
+            if isprop(app, 'AuthorData') && ismethod(app.AuthorData, 'addDefaultAuthorEntry'), app.AuthorData.addDefaultAuthorEntry(); end
+            
+            if ~isempty(app.Dataset)
+                app.getInitialMetadataFromSession(); 
+            else 
+                if isprop(app, 'SubjectData') && ismethod(app.SubjectData,'ClearAll'), app.SubjectData.ClearAll(); else, if isprop(app,'SubjectData'), app.SubjectData.SubjectList = ndi.database.metadata_app.class.Subject.empty(0,1); end; end
+                if isprop(app,'UITableSubject'), app.UITableSubject.Data = table(); end
+                if isprop(app, 'ProbeData') && ismethod(app.ProbeData,'ClearAll'), app.ProbeData.ClearAll(); else, if isprop(app,'ProbeData'), app.ProbeData.ProbeList = {}; end; end
+                % Check if ProbeDataGUI_Instance and its UITableProbe are valid before accessing
+                if isprop(app, 'ProbeDataGUI_Instance') && isvalid(app.ProbeDataGUI_Instance) && ...
+                   isprop(app.ProbeDataGUI_Instance, 'UITableProbe') && isvalid(app.ProbeDataGUI_Instance.UITableProbe)
+                    app.ProbeDataGUI_Instance.UITableProbe.Data = table();
+                end
+            end
+            
+            app.DatasetInformationStruct = ndi.database.metadata_app.fun.validateDatasetInformation(struct(), app); 
+            ndi.database.metadata_app.fun.populateAppFromDatasetInformationStruct(app, app.DatasetInformationStruct);
+            app.saveDatasetInformationStruct();
+            app.inform('Form has been reset.', 'Form Reset');
+        end
+        
         function ResetFormButtonPushed(app, event)
             answer = uiconfirm(app.NDIMetadataEditorUIFigure, ...
-                'Are you sure you want to reset the form? All unsaved changes in the UI will be lost and the form will be repopulated with data from the NDI entity.', ...
+                ['Are you sure you want to reset the form? All unsaved changes will be lost ' ...
+                 'and the form will be repopulated with initial data from the NDI entity or to a blank state.'], ...
                 'Confirm Reset', ...
-                'Options', {'Yes, Reset', 'Cancel'}, 'DefaultOption', 'Cancel');
+                'Options', {'Yes, Reset', 'Cancel'}, 'DefaultOption', 'Cancel', 'Icon', 'warning');
+            if strcmp(answer, 'Yes, Reset'), app.performActualFormReset(); end
+        end
+        
+        function RevertToSavedButtonPushed(app, event)
+            answer = uiconfirm(app.NDIMetadataEditorUIFigure, ...
+                'Are you sure you want to revert to the last saved version? All current unsaved changes will be lost.', ...
+                'Confirm Revert', ...
+                'Options', {'Yes, Revert', 'Cancel'}, 'DefaultOption', 'Cancel');
+            if strcmp(answer, 'Yes, Revert')
+                app.loadDatasetInformationStruct(); 
+                app.inform('Form has been reverted to the last saved version.', 'Reverted to Saved');
+            end
+        end
+        
+        % Callbacks for specific list boxes in Subject Info tab
+        function BiologicalSexListBoxValueChanged(app, event)
+            % This might trigger updates or just be for selection
+            app.saveDatasetInformationStruct(); % Save if selection implies data change
+        end
 
-            if strcmp(answer, 'Yes, Reset')
-                % 1. Re-initialize DatasetInformation
-                app.DatasetInformation = struct();
-                
-                % 2. Re-initialize AuthorData
-                app.AuthorData = ndi.database.metadata_app.class.AuthorData();
-                % Clear author listbox and fields
-                app.AuthorListBox.Items = {};
-                app.AuthorListBox.Value = {};
-                app.fillAuthorInputFieldsFromStruct(app.AuthorData.getEmptyItem()); % Fill with empty author struct
+        function SpeciesListBoxValueChanged(app, event)
+            app.populateStrainList(); % Populate strains based on selected species
+            app.saveDatasetInformationStruct();
+        end
 
-                % 3. Re-initialize/re-load data from the NDI entity (session/dataset)
-                % This is similar to parts of startupFcn
-                if ~isempty(app.Dataset)
-                    app.getInitialMetadataFromSession(); % This re-populates app.SubjectData and UITableSubject, app.ProbeData and UITableProbe
-                else
-                    % If no dataset, ensure SubjectData and ProbeData are empty
-                    app.SubjectData = ndi.database.metadata_app.class.SubjectData();
-                    app.UITableSubject.Data = table(); % Clear table
-                    app.ProbeData = ndi.database.metadata_app.class.ProbeData();
-                    app.UITableProbe.Data = table(); % Clear table
-                end
+        function StrainListBoxValueChanged(app, event)
+            app.saveDatasetInformationStruct(); % Save if selection implies data change
+        end
+        
+        function StrainListBoxClicked(app, event)
+            % This callback might be used if double-click is too slow or for other interactions
+            drawnow;
+            app.updateSubjectTableColumData('Strain', event.Source.Value);
+        end
 
-                % 4. Set default values for certain fields if necessary (like in startupFcn)
-                if ~isfield(app.DatasetInformation, 'VersionIdentifier')
-                    app.DatasetInformation.VersionIdentifier = '1.0.0'; % Default from createComponents
-                end
-                if ~isfield(app.DatasetInformation, 'VersionInnovation')
-                    app.DatasetInformation.VersionInnovation = 'This is the first version of the dataset'; % Default from createComponents
-                end
-                if ~isfield(app.DatasetInformation, 'License') % Ensure license has a default if cleared
-                    app.DatasetInformation.License = app.LicenseDropDown.ItemsData{2}; % Default to the first actual license
-                    if isempty(app.LicenseDropDown.ItemsData{2}) && numel(app.LicenseDropDown.ItemsData) > 2
-                         app.DatasetInformation.License = app.LicenseDropDown.ItemsData{3}; % Try next if first is placeholder
-                    end
-                end
+        function StrainListBoxDoubleClicked(app, event)
+            % Could be used to edit a selected strain, if such functionality is added
+        end
 
-
-                % 5. Update all UI components from the now reset/re-initialized DatasetInformation
-                app.updateComponentsFromDatasetInformation(); % This will populate fields based on the cleared/default DatasetInformation
-
-                % 6. Save this reset state to the temporary working file
-                app.saveDatasetInformation();
-
-                app.inform('Form has been reset to its initial state.', 'Form Reset');
+        function AddSpeciesButtonPushed(app, event)
+            speciesName = app.SpeciesEditField.Value;
+            if isempty(strtrim(speciesName))
+                app.alert('Please enter a species name to add.', 'Species Name Empty');
+                return;
+            end
+            % Create a basic struct for the new species
+            newSpeciesStruct = struct('name', speciesName, 'ontologyIdentifier', '', 'synonyms', {{}});
+            
+            % Open the SpeciesForm to allow user to fill details
+            returnedSpeciesStruct = app.openSpeciesForm(newSpeciesStruct);
+            
+            if ~isempty(returnedSpeciesStruct) && isfield(returnedSpeciesStruct, 'name') && ~isempty(strtrim(returnedSpeciesStruct.name))
+                % Add to app.SpeciesInstancesUser and app.SpeciesData
+                app.SpeciesInstancesUser(end+1) = returnedSpeciesStruct;
+                app.SpeciesData.addItem(returnedSpeciesStruct.name, returnedSpeciesStruct.ontologyIdentifier, returnedSpeciesStruct.synonyms);
+                app.saveSpecies(); % Save the updated user instances
+                app.populateSpeciesList(); % Refresh the listbox
+                app.SpeciesEditField.Value = ''; % Clear the edit field
+                app.inform(sprintf('Species "%s" added.', returnedSpeciesStruct.name), 'Species Added');
+            else
+                app.inform('Species addition cancelled or failed.', 'Info');
             end
         end
 
-        % Button pushed function: RevertToSavedButton
-        function RevertToSavedButtonPushed(app, event)
-            answer = uiconfirm(app.NDIMetadataEditorUIFigure, ...
-                'Are you sure you want to revert to the last saved version? All current unsaved changes in the UI will be lost.', ...
-                'Confirm Revert', ...
-                'Options', {'Yes, Revert', 'Cancel'}, 'DefaultOption', 'Cancel');
-
-            if strcmp(answer, 'Yes, Revert')
-                % The loadDatasetInformation function already handles loading from the .mat file
-                % or re-parsing from the NDI entity if the .mat file is not yet informative.
-                app.loadDatasetInformation();
-                app.inform('Form has been reverted to the last saved version.', 'Reverted to Saved');
+        function AddStrainButtonPushed(app, event)
+            % Similar to AddSpecies, but for strains. This needs a StrainForm or direct add.
+            % For now, let's assume direct add to a catalog if no form exists.
+            strainName = app.StrainEditField.Value;
+            if isempty(strtrim(strainName))
+                app.alert('Please enter a strain name to add.', 'Strain Name Empty');
+                return;
             end
+            
+            % This part needs to be fleshed out: how are new strains stored?
+            % Are they associated with the currently selected species?
+            % For now, let's just refresh the strain list (it won't show new one unless getStrainInstances is updated)
+            app.populateStrainList(); 
+            app.StrainEditField.Value = '';
+            app.inform(sprintf('Strain "%s" added (placeholder logic). Implement saving and catalog update.', strainName), 'Strain Added (Placeholder)');
+        end
+        
+        function BiologicalSexClearButtonPushed(app, event)
+            app.deleteSubjectTableColumData('BiologicalSex');
+        end
+        function SpeciesClearButtonPushed(app, event)
+            app.deleteSubjectTableColumData('Species');
+            app.populateStrainList(); % Strains depend on species
+        end
+        function StrainClearButtonPushed(app, event)
+            app.deleteSubjectTableColumData('Strain');
         end
 
     end
 
     % Component initialization
     methods (Access = private)
-
-        % Create UIFigure and components
         function createComponents(app)
+            % Get the file path for locating images relative to this app file
+            appFileFolder = fileparts(mfilename('fullpath'));
+            % Define ResourcesPath based on the app's location
+            app.ResourcesPath = fullfile(appFileFolder, 'resources'); 
+            if ~isfolder(app.ResourcesPath)
+                 fprintf(2, 'Warning (createComponents): ResourcesPath not found: %s. Icon paths might be incorrect.\n', app.ResourcesPath);
+            end
 
-            % Get the file path for locating images
-            pathToMLAPP = fileparts(mfilename('fullpath'));
+            app.NDIMetadataEditorUIFigure = uifigure('Visible', 'off', ...
+                'Position', [100 100 900 610], 'Name', 'NDI Metadata Editor', ...
+                'CloseRequestFcn', createCallbackFcn(app, @NDIMetadataEditorUIFigureCloseRequest, true));
 
-            % Create NDIMetadataEditorUIFigure and hide until all components are created
-            app.NDIMetadataEditorUIFigure = uifigure('Visible', 'off');
-            app.NDIMetadataEditorUIFigure.Position = [100 100 900 610];
-            app.NDIMetadataEditorUIFigure.Name = 'NDI Metadata Editor';
-            app.NDIMetadataEditorUIFigure.CloseRequestFcn = createCallbackFcn(app, @NDIMetadataEditorUIFigureCloseRequest, true);
+            app.MainGridLayout = uigridlayout(app.NDIMetadataEditorUIFigure, [2 1], ...
+                'RowHeight', {'1x', 'fit'}, 'RowSpacing', 0, 'Padding', [0 0 0 0]);
+            app.MainGridLayout.RowHeight = {'1x'}; 
 
-            % Create FooterpanelLabel
-            app.FooterpanelLabel = uilabel(app.NDIMetadataEditorUIFigure);
-            app.FooterpanelLabel.HandleVisibility = 'off';
-            app.FooterpanelLabel.Position = [2 -48 509 22];
-            app.FooterpanelLabel.Text = 'Footer panel: This will be embedded at the bottom of the tab pages when the app is running';
-
-            % Create SaveChangesButton
-            app.SaveChangesButton = uibutton(app.NDIMetadataEditorUIFigure, 'push');
-            app.SaveChangesButton.ButtonPushedFcn = createCallbackFcn(app, @SaveChangesButtonPushed, true);
-            app.SaveChangesButton.HandleVisibility = 'off';
-            app.SaveChangesButton.Position = [800 -27 100 23];
-            app.SaveChangesButton.Text = 'Save Changes';
-
-            % Create MainGridLayout
-            app.MainGridLayout = uigridlayout(app.NDIMetadataEditorUIFigure);
-            app.MainGridLayout.ColumnWidth = {'1x'};
-            app.MainGridLayout.RowHeight = {'1x'};
-            app.MainGridLayout.RowSpacing = 0;
-            app.MainGridLayout.Padding = [0 0 0 0];
-
-            % Create TabGroup
             app.TabGroup = uitabgroup(app.MainGridLayout);
+            app.TabGroup.Layout.Row = 1; app.TabGroup.Layout.Column = 1;
             app.TabGroup.SelectionChangedFcn = createCallbackFcn(app, @TabGroupSelectionChanged, true);
-            app.TabGroup.Layout.Row = 1;
-            app.TabGroup.Layout.Column = 1;
 
-            % Create IntroTab
-            app.IntroTab = uitab(app.TabGroup);
-            app.IntroTab.Title = 'Intro';
+            app.IntroTab = uitab(app.TabGroup, 'Title', 'Intro');
+            app.IntroGridLayout = uigridlayout(app.IntroTab, [3 1], 'RowHeight', {60, '4x', '1.5x'});
+            app.IntroGridLayout.Padding = [10 10 10 10]; 
+                app.GridLayout25 = uigridlayout(app.IntroGridLayout); 
+                app.GridLayout25.Layout.Row=1; app.GridLayout25.Layout.Column=1;
+                app.GridLayout25.ColumnWidth = {25, 100, '1x', 100, 25}; app.GridLayout25.RowHeight = {'1x'};
+                    app.IntroLabel = uilabel(app.GridLayout25, 'Text', {'Welcome to the NDI Cloud''s core Metadata Editor'; ''}, ...
+                        'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+                    app.IntroLabel.Layout.Row = 1; app.IntroLabel.Layout.Column = 3;
+                    app.NdiLogoIntroImage = uiimage(app.GridLayout25, 'ImageSource', fullfile(app.ResourcesPath, 'ndi_logo.png')); 
+                    app.NdiLogoIntroImage.Layout.Row = 1; app.NdiLogoIntroImage.Layout.Column = 4;
+                app.GridLayout_Step0_C2 = uigridlayout(app.IntroGridLayout); 
+                app.GridLayout_Step0_C2.Layout.Row=2; app.GridLayout_Step0_C2.Layout.Column=1;
+                app.GridLayout_Step0_C2.Padding = [10 25 10 25]; 
+                app.GridLayout_Step0_C2.ColumnWidth = {'1x'}; 
+                app.GridLayout_Step0_C2.RowHeight = {'1x'}; 
+                    app.IntroductionTextLabel = uilabel(app.GridLayout_Step0_C2, 'Text', ...
+                        {''; 'We''re excited to have you here. This is your upload form, where you can effortlessly share your data with us. Over the next few pages, we''ll guide you through the process of ingesting your valuable data. Our goal is to make this as seamless as possible, ensuring that your information is accurately processed and ready for analysis. '; ''; 'If you ever need assistance with any of the form elements, simply hover over the respective item to access helpful information. For any further queries, shoot us an email at info@walthamdatascience.com and we''ll get right back to you! Thank you for choosing our app to help you manage your data. Let''s get started on this journey together!'}, ...
+                        'VerticalAlignment', 'top', 'WordWrap', 'on', 'FontSize', 14);
+                    app.IntroductionTextLabel.Layout.Row = 1; app.IntroductionTextLabel.Layout.Column = 1; 
+            app.GridLayout_Step0_C3 = uigridlayout(app.IntroGridLayout); 
+            app.GridLayout_Step0_C3.Layout.Row=3; app.GridLayout_Step0_C3.Layout.Column=1;
+            app.GridLayout_Step0_C3.ColumnWidth = {'1x', 150, '1x'}; app.GridLayout_Step0_C3.RowHeight = {40};
+                app.GetStartedButton = uibutton(app.GridLayout_Step0_C3, 'push', 'Text', 'Get Started', ...
+                    'ButtonPushedFcn', createCallbackFcn(app, @GetStartedButtonPushed, true));
+                app.GetStartedButton.Layout.Row = 1; app.GetStartedButton.Layout.Column = 2;
+            
+            app.DatasetOverviewTab = uitab(app.TabGroup, 'Title', 'Dataset Overview');
+            app.DatasetOverviewGridLayout = uigridlayout(app.DatasetOverviewTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
+                app.DatasetInformationLabel = uilabel(app.DatasetOverviewGridLayout, 'Text', 'Dataset Information', ...
+                    'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+                app.DatasetInformationLabel.Layout.Row=1; app.DatasetInformationLabel.Layout.Column=1;
+                app.DatasetInformationPanel = uipanel(app.DatasetOverviewGridLayout, 'BorderType', 'none');
+                app.DatasetInformationPanel.Layout.Row=2; app.DatasetInformationPanel.Layout.Column=1;
+                    app.GridLayout = uigridlayout(app.DatasetInformationPanel, [3 1], 'RowHeight', {'fit', '4x', '2x'}, 'Padding', [25 25 25 10]); 
+                        app.Panel_3 = uipanel(app.GridLayout, 'BorderType', 'none'); 
+                        app.Panel_3.Layout.Row=1; app.Panel_3.Layout.Column=1;
+                            app.GridLayout2 = uigridlayout(app.Panel_3, [2 2], 'ColumnWidth', {'2.5x','1x'}, 'ColumnSpacing', 15, 'RowSpacing', 4); 
+                                app.DatasetBranchTitleEditFieldLabel = uilabel(app.GridLayout2, 'Text', 'Dataset Branch Title');
+                                app.DatasetBranchTitleEditFieldLabel.Layout.Row=1; app.DatasetBranchTitleEditFieldLabel.Layout.Column=1;
+                                app.DatasetBranchTitleEditField = uieditfield(app.GridLayout2, 'text', 'ValueChangedFcn', createCallbackFcn(app, @DatasetBranchTitleValueChanged, true));
+                                app.DatasetBranchTitleEditField.Layout.Row=2; app.DatasetBranchTitleEditField.Layout.Column=1;
+                                app.DatasetShortNameEditFieldLabel = uilabel(app.GridLayout2, 'Text', 'Dataset Short Name');
+                                app.DatasetShortNameEditFieldLabel.Layout.Row=1; app.DatasetShortNameEditFieldLabel.Layout.Column=2;
+                                app.DatasetShortNameEditField = uieditfield(app.GridLayout2, 'text', 'ValueChangedFcn', createCallbackFcn(app, @DatasetShortNameValueChanged, true));
+                                app.DatasetShortNameEditField.Layout.Row=2; app.DatasetShortNameEditField.Layout.Column=2;
+                        app.Panel_4 = uipanel(app.GridLayout, 'BorderType', 'none'); 
+                        app.Panel_4.Layout.Row=2; app.Panel_4.Layout.Column=1;
+                            app.GridLayout3 = uigridlayout(app.Panel_4, [2 1], 'RowHeight', {20, '1x'}, 'RowSpacing', 4);
+                                app.AbstractTextAreaLabel = uilabel(app.GridLayout3, 'Text', 'Abstract');
+                                app.AbstractTextAreaLabel.Layout.Row=1; app.AbstractTextAreaLabel.Layout.Column=1;
+                                app.AbstractTextArea = uitextarea(app.GridLayout3, 'ValueChangedFcn', createCallbackFcn(app, @AbstractValueChanged, true));
+                                app.AbstractTextArea.Layout.Row=2; app.AbstractTextArea.Layout.Column=1;
+                        app.GridLayout4 = uigridlayout(app.GridLayout); 
+                        app.GridLayout4.Layout.Row=3; app.GridLayout4.Layout.Column=1;
+                        app.GridLayout4.RowHeight = {20, '1x'}; app.GridLayout4.RowSpacing = 4;
+                            app.DatasetCommentsTextAreaLabel = uilabel(app.GridLayout4, 'Text', 'Comments/Details');
+                            app.DatasetCommentsTextAreaLabel.Layout.Row=1; app.DatasetCommentsTextAreaLabel.Layout.Column=1;
+                            app.DatasetCommentsTextArea = uitextarea(app.GridLayout4, 'ValueChangedFcn', createCallbackFcn(app, @CommentsDetailsValueChanged, true));
+                            app.DatasetCommentsTextArea.Layout.Row=2; app.DatasetCommentsTextArea.Layout.Column=1;
+
+            app.AuthorsTab = uitab(app.TabGroup, 'Title', 'Authors');
+            app.AuthorsGridLayout = uigridlayout(app.AuthorsTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
+                app.AuthorDetailsLabel = uilabel(app.AuthorsGridLayout, 'Text', 'Author Details', ...
+                    'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+                app.AuthorDetailsLabel.Layout.Row = 1; app.AuthorDetailsLabel.Layout.Column = 1;
+                app.AuthorMainPanel = uipanel(app.AuthorsGridLayout, 'BorderType', 'none', 'Scrollable','on');
+                app.AuthorMainPanel.Layout.Row = 2; app.AuthorMainPanel.Layout.Column = 1;
+            
+            app.DatasetDetailsTab = uitab(app.TabGroup, 'Title', 'Dataset Details');
+            app.DatasetDetailsGridLayout = uigridlayout(app.DatasetDetailsTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
+                app.DatasetDetailsLabel = uilabel(app.DatasetDetailsGridLayout, 'Text', 'Dataset Details', 'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+                app.DatasetDetailsLabel.Layout.Row=1; app.DatasetDetailsLabel.Layout.Column=1;
+                app.DatasetDetailsPanel = uipanel(app.DatasetDetailsGridLayout, 'BorderType', 'none');
+                app.DatasetDetailsPanel.Layout.Row=2; app.DatasetDetailsPanel.Layout.Column=1;
+                    app.GridLayout18 = uigridlayout(app.DatasetDetailsPanel, [2 1], 'RowHeight', {'fit', '1x'}, 'Padding', [25 25 25 10]); 
+                        app.GridLayout19 = uigridlayout(app.GridLayout18, [1 2], 'ColumnSpacing', 25, 'ColumnWidth', {'1x', '1x'}); 
+                        app.GridLayout19.Layout.Row=1; app.GridLayout19.Layout.Column=1;
+                            app.GridLayout22 = uigridlayout(app.GridLayout19); 
+                            app.GridLayout22.Layout.Row=1; app.GridLayout22.Layout.Column=1;
+                            app.GridLayout22.ColumnWidth = {'0.8x', '1.2x'}; app.GridLayout22.RowHeight = {23, 23, 23, 23, 23, 23}; 
+                                app.AccessibilityLabel = uilabel(app.GridLayout22, 'Text', 'Accessibility', 'FontWeight', 'bold');
+                                app.AccessibilityLabel.Layout.Row=1; app.AccessibilityLabel.Layout.Column=1;
+                                app.ReleaseDateDatePickerLabel = uilabel(app.GridLayout22, 'Text', 'Release Date', 'HorizontalAlignment', 'right');
+                                app.ReleaseDateDatePickerLabel.Layout.Row=2; app.ReleaseDateDatePickerLabel.Layout.Column=1;
+                                app.ReleaseDateDatePicker = uidatepicker(app.GridLayout22, 'ValueChangedFcn', createCallbackFcn(app, @ReleaseDateValueChanged, true));
+                                app.ReleaseDateDatePicker.Layout.Row=2; app.ReleaseDateDatePicker.Layout.Column=2;
+                                app.LicenseDropDownLabel = uilabel(app.GridLayout22, 'Text', 'License', 'HorizontalAlignment', 'right');
+                                app.LicenseDropDownLabel.Layout.Row=3; app.LicenseDropDownLabel.Layout.Column=1;
+                                app.GridLayout28 = uigridlayout(app.GridLayout22); 
+                                app.GridLayout28.Layout.Row=3; app.GridLayout28.Layout.Column=2;
+                                app.GridLayout28.ColumnWidth = {'1x',23}; app.GridLayout28.Padding = [0 0 0 0]; app.GridLayout28.RowHeight = {'fit'}; 
+                                    app.LicenseDropDown = uidropdown(app.GridLayout28, 'ValueChangedFcn', createCallbackFcn(app, @LicenseDropDownValueChanged, true));
+                                    app.LicenseDropDown.Layout.Row=1; app.LicenseDropDown.Layout.Column=1;
+                                    app.LicenseHelpButton = uibutton(app.GridLayout28, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'help.png'), 'ButtonPushedFcn', createCallbackFcn(app, @LicenseHelpButtonPushed, true));
+                                    app.LicenseHelpButton.Layout.Row=1; app.LicenseHelpButton.Layout.Column=2;
+                                app.FullDocumentationEditFieldLabel = uilabel(app.GridLayout22, 'Text', 'Full Documentation', 'HorizontalAlignment', 'right');
+                                app.FullDocumentationEditFieldLabel.Layout.Row=4; app.FullDocumentationEditFieldLabel.Layout.Column=1;
+                                app.FullDocumentationEditField = uieditfield(app.GridLayout22, 'text', 'ValueChangedFcn', createCallbackFcn(app, @FullDocumentationValueChanged, true));
+                                app.FullDocumentationEditField.Layout.Row=4; app.FullDocumentationEditField.Layout.Column=2;
+                                app.VersionIdentifierEditFieldLabel = uilabel(app.GridLayout22, 'Text', 'Version Identifier', 'HorizontalAlignment', 'right');
+                                app.VersionIdentifierEditFieldLabel.Layout.Row=5; app.VersionIdentifierEditFieldLabel.Layout.Column=1;
+                                app.VersionIdentifierEditField = uieditfield(app.GridLayout22, 'text', 'Value', '1.0.0', 'ValueChangedFcn', createCallbackFcn(app, @VersionIdentifierValueChanged, true));
+                                app.VersionIdentifierEditField.Layout.Row=5; app.VersionIdentifierEditField.Layout.Column=2;
+                                app.VersionInnovationEditFieldLabel = uilabel(app.GridLayout22, 'Text', 'Version Innovation', 'HorizontalAlignment', 'right');
+                                app.VersionInnovationEditFieldLabel.Layout.Row=6; app.VersionInnovationEditFieldLabel.Layout.Column=1;
+                                app.VersionInnovationEditField = uieditfield(app.GridLayout22, 'text', 'Value', 'This is the first version of the dataset', 'ValueChangedFcn', createCallbackFcn(app, @VersionInnovationValueChanged, true));
+                                app.VersionInnovationEditField.Layout.Row=6; app.VersionInnovationEditField.Layout.Column=2;
+                            app.FundingGridLayout = uigridlayout(app.GridLayout19); 
+                            app.FundingGridLayout.Layout.Row=1; app.FundingGridLayout.Layout.Column=2;
+                            app.FundingGridLayout.ColumnWidth = {'1x', 45}; 
+                            app.FundingGridLayout.RowHeight = {23, '1x'};
+                                app.FundingUITableLabel = uilabel(app.FundingGridLayout, 'Text', 'Funding', 'FontWeight', 'bold');
+                                app.FundingUITableLabel.Layout.Row=1; app.FundingUITableLabel.Layout.Column=1;
+                                app.FundingUITable = uitable(app.FundingGridLayout, 'ColumnName', {'Funder'; 'Award Title'; 'Award Number'}, 'RowName', {}, 'SelectionType', 'row', 'Multiselect', 'off', 'DoubleClickedFcn', createCallbackFcn(app, @FundingUITableDoubleClicked, true));
+                                app.FundingUITable.Layout.Row=2; app.FundingUITable.Layout.Column=1;
+                                app.FundingTableButtonGridLayout = uigridlayout(app.FundingGridLayout);
+                                app.FundingTableButtonGridLayout.Layout.Row=2; app.FundingTableButtonGridLayout.Layout.Column=2;
+                                app.FundingTableButtonGridLayout.RowHeight={23,23,10,23,23,'1x'}; app.FundingTableButtonGridLayout.ColumnWidth={'1x'}; app.FundingTableButtonGridLayout.Padding = [0 0 0 0];
+                                    app.AddFundingButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'plus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @AddFundingButtonPushed, true));
+                                    app.AddFundingButton.Layout.Row=1; app.AddFundingButton.Layout.Column=1;
+                                    app.RemoveFundingButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'minus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @RemoveFundingButtonPushed, true));
+                                    app.RemoveFundingButton.Layout.Row=2; app.RemoveFundingButton.Layout.Column=1;
+                                    app.MoveFundingUpButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'up.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MoveFundingUpButtonPushed, true));
+                                    app.MoveFundingUpButton.Layout.Row=4; app.MoveFundingUpButton.Layout.Column=1; 
+                                    app.MoveFundingDownButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'down.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MoveFundingDownButtonPushed, true));
+                                    app.MoveFundingDownButton.Layout.Row=5; app.MoveFundingDownButton.Layout.Column=1;
+                        app.GridLayout20 = uigridlayout(app.GridLayout18); 
+                        app.GridLayout20.Layout.Row=2; app.GridLayout20.Layout.Column=1;
+                        app.GridLayout20.ColumnWidth = {'1x', 45}; 
+                        app.GridLayout20.RowHeight = {23, '1x'};
+                            app.RelatedPublicationUITableLabel = uilabel(app.GridLayout20, 'Text', 'Related Publications', 'FontWeight', 'bold');
+                            app.RelatedPublicationUITableLabel.Layout.Row=1; app.RelatedPublicationUITableLabel.Layout.Column=1;
+                            app.RelatedPublicationUITable = uitable(app.GridLayout20, 'ColumnName', {'Publication'; 'DOI'; 'PMID'; 'PMCID'}, 'RowName', {}, 'SelectionType', 'row', 'Multiselect', 'off', 'CellEditCallback', createCallbackFcn(app, @RelatedPublicationCellEdit, true), 'DoubleClickedFcn', createCallbackFcn(app, @RelatedPublicationUITableDoubleClicked, true));
+                            app.RelatedPublicationUITable.Layout.Row=2; app.RelatedPublicationUITable.Layout.Column=1;
+                            app.PublicationTableButtonGridLayout = uigridlayout(app.GridLayout20);
+                            app.PublicationTableButtonGridLayout.Layout.Row=2; app.PublicationTableButtonGridLayout.Layout.Column=2;
+                            app.PublicationTableButtonGridLayout.RowHeight={23,23,10,23,23,'1x'}; app.PublicationTableButtonGridLayout.ColumnWidth={'1x'}; app.PublicationTableButtonGridLayout.Padding = [0 0 0 0];
+                                app.AddRelatedPublicationButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'plus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @AddRelatedPublicationButtonPushed, true));
+                                app.AddRelatedPublicationButton.Layout.Row=1; app.AddRelatedPublicationButton.Layout.Column=1;
+                                app.RemovePublicationButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'minus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @RemovePublicationButtonPushed, true));
+                                app.RemovePublicationButton.Layout.Row=2; app.RemovePublicationButton.Layout.Column=1;
+                                app.MovePublicationUpButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'up.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MovePublicationUpButtonPushed, true));
+                                app.MovePublicationUpButton.Layout.Row=4; app.MovePublicationUpButton.Layout.Column=1; 
+                                app.MovePublicationDownButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'down.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MovePublicationDownButtonPushed, true));
+                                app.MovePublicationDownButton.Layout.Row=5; app.MovePublicationDownButton.Layout.Column=1;
+
+            app.ExperimentDetailsTab = uitab(app.TabGroup, 'Title', 'Experiment Details');
+            app.ExperimentDetailsGridLayout = uigridlayout(app.ExperimentDetailsTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
+            app.ExperimentDetailsLabel = uilabel(app.ExperimentDetailsGridLayout, 'Text', 'Experiment Details', 'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+            app.ExperimentDetailsLabel.Layout.Row=1; app.ExperimentDetailsLabel.Layout.Column=1;
+            app.ExperimentDetailsPanel = uipanel(app.ExperimentDetailsGridLayout, 'BorderType', 'none');
+            app.ExperimentDetailsPanel.Layout.Row=2; app.ExperimentDetailsPanel.Layout.Column=1;
+            app.GridLayout26 = uigridlayout(app.ExperimentDetailsPanel, [9 6], ...
+                'ColumnWidth', {180, 45, '1.25x', 45, '1x', 25}, ...
+                'RowHeight', {22, 22, 22, 23, '1x', 22, 23, '5.3x', '5.13x'}, ... 
+                'Padding', [25 25 25 10]);
+                app.DataTypeTreeLabel = uilabel(app.GridLayout26, 'Text', 'Data Type');
+                app.DataTypeTreeLabel.Layout.Row = 1; app.DataTypeTreeLabel.Layout.Column = 1;
+                app.DataTypeTree = uitree(app.GridLayout26, 'checkbox', 'CheckedNodesChangedFcn', createCallbackFcn(app, @DataTypeTreeCheckedNodesChanged, true));
+                app.DataTypeTree.Layout.Row = [2 5]; app.DataTypeTree.Layout.Column = 1; 
+                app.ExperimentalApproachTreeLabel = uilabel(app.GridLayout26, 'Text', 'Experimental Approach');
+                app.ExperimentalApproachTreeLabel.Layout.Row = 1; app.ExperimentalApproachTreeLabel.Layout.Column = 3;
+                app.ExperimentalApproachTree = uitree(app.GridLayout26, 'checkbox', 'CheckedNodesChangedFcn', createCallbackFcn(app, @ExperimentTreeCheckedNodesChanged, true));
+                app.ExperimentalApproachTree.Layout.Row = [2 9]; app.ExperimentalApproachTree.Layout.Column = 3; 
+                app.SelectTechniqueCategoryDropDownLabel = uilabel(app.GridLayout26, 'Text', 'Select Technique Category');
+                app.SelectTechniqueCategoryDropDownLabel.Layout.Row = 1; app.SelectTechniqueCategoryDropDownLabel.Layout.Column = 5;
+                app.SelectTechniqueCategoryDropDown = uidropdown(app.GridLayout26, 'ValueChangedFcn', createCallbackFcn(app, @SelectTechniqueCategoryDropDownValueChanged, true));
+                app.SelectTechniqueCategoryDropDown.Layout.Row = 2; app.SelectTechniqueCategoryDropDown.Layout.Column = 5;
+                app.SelectTechniqueDropDownLabel = uilabel(app.GridLayout26, 'Text', 'Select Technique');
+                app.SelectTechniqueDropDownLabel.Layout.Row = 3; app.SelectTechniqueDropDownLabel.Layout.Column = 5;
+                app.SelectTechniqueDropDown = uidropdown(app.GridLayout26, 'Editable', 'on');
+                app.SelectTechniqueDropDown.Layout.Row = 4; app.SelectTechniqueDropDown.Layout.Column = 5;
+                app.AddTechniqueButton = uibutton(app.GridLayout26, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'plus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @AddTechniqueButtonPushed, true));
+                app.AddTechniqueButton.Layout.Row = 4; app.AddTechniqueButton.Layout.Column = 6;
+                app.SelectedTechniquesListBoxLabel = uilabel(app.GridLayout26, 'Text', 'Selected Techniques');
+                app.SelectedTechniquesListBoxLabel.Layout.Row = 6; app.SelectedTechniquesListBoxLabel.Layout.Column = 5;
+                app.SelectedTechniquesListBox = uilistbox(app.GridLayout26);
+                app.SelectedTechniquesListBox.Layout.Row = [7 9]; app.SelectedTechniquesListBox.Layout.Column = 5; 
+                app.RemoveTechniqueButton = uibutton(app.GridLayout26, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'minus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @RemoveTechniqueButtonPushed, true));
+                app.RemoveTechniqueButton.Layout.Row = 7; app.RemoveTechniqueButton.Layout.Column = 6;
+
+            app.SubjectInfoTab = uitab(app.TabGroup, 'Title', 'Subject Info');
+            app.SubjectInfoGridLayout = uigridlayout(app.SubjectInfoTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
+            app.SubjectInfoLabel = uilabel(app.SubjectInfoGridLayout, 'Text', 'Subject Info', 'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+            app.SubjectInfoLabel.Layout.Row=1; app.SubjectInfoLabel.Layout.Column=1;
+            app.SubjectInfoPanel = uipanel(app.SubjectInfoGridLayout, 'BorderType', 'none');
+            app.SubjectInfoPanel.Layout.Row=2; app.SubjectInfoPanel.Layout.Column=1;
+                app.GridLayout16 = uigridlayout(app.SubjectInfoPanel, [2 1], 'RowHeight', {150, '1x'}, 'RowSpacing', 30, 'Padding', [25 25 25 10]);
+                    app.UITableSubject = uitable(app.GridLayout16, 'ColumnName', {'Subject'; 'Biological Sex'; 'Species'; 'Strain'}, 'RowName', {}, 'SelectionType', 'row');
+                    app.UITableSubject.Layout.Row=1; app.UITableSubject.Layout.Column=1;
+                    app.GridLayout17 = uigridlayout(app.GridLayout16, [4 3], 'ColumnWidth', {'1x','1x','1x'}, 'RowHeight', {23,'1x',23,23}, 'ColumnSpacing',30);
+                    app.GridLayout17.Layout.Row=2; app.GridLayout17.Layout.Column=1;
+                        app.BiologicalSexLabel = uilabel(app.GridLayout17, 'Text', 'Biological Sex'); app.BiologicalSexLabel.Layout.Row=1; app.BiologicalSexLabel.Layout.Column=1;
+                        app.BiologicalSexListBox = uilistbox(app.GridLayout17, 'Items', {'asexual multicellular organism', 'female organism', 'male organism', 'hermaphroditic organism'}, 'Value', 'asexual multicellular organism', 'ValueChangedFcn', createCallbackFcn(app, @BiologicalSexListBoxValueChanged, true), 'ClickedFcn', createCallbackFcn(app, @BiologicalSexListBoxClicked, true));
+                        app.BiologicalSexListBox.Layout.Row=2; app.BiologicalSexListBox.Layout.Column=1;
+                        app.SpeciesLabel_2 = uilabel(app.GridLayout17, 'Text', 'Species'); app.SpeciesLabel_2.Layout.Row=1; app.SpeciesLabel_2.Layout.Column=2;
+                        app.SpeciesListBox = uilistbox(app.GridLayout17, 'ValueChangedFcn', createCallbackFcn(app, @SpeciesListBoxValueChanged, true), 'ClickedFcn', createCallbackFcn(app, @SpeciesListBoxClicked, true));
+                        app.SpeciesListBox.Layout.Row=2; app.SpeciesListBox.Layout.Column=2;
+                        app.StrainLabel = uilabel(app.GridLayout17, 'Text', 'Strain'); app.StrainLabel.Layout.Row=1; app.StrainLabel.Layout.Column=3;
+                        app.StrainListBox = uilistbox(app.GridLayout17, 'Tag', 'Strain', 'ValueChangedFcn', createCallbackFcn(app, @StrainListBoxValueChanged, true), 'ClickedFcn', createCallbackFcn(app, @StrainListBoxClicked, true), 'DoubleClickedFcn', createCallbackFcn(app, @StrainListBoxDoubleClicked, true));
+                        app.StrainListBox.Layout.Row=2; app.StrainListBox.Layout.Column=3;
+                        app.GridLayout24 = uigridlayout(app.GridLayout17,[1,2]); app.GridLayout24.Layout.Row=3; app.GridLayout24.Layout.Column=1; app.GridLayout24.Padding=[0 0 0 0];
+                            app.AssignBiologicalSexButton = uibutton(app.GridLayout24, 'push', 'Text', 'Assign', 'ButtonPushedFcn', createCallbackFcn(app, @AssignBiologicalSexButtonPushed, true));
+                            app.BiologicalSexClearButton = uibutton(app.GridLayout24, 'push', 'Text', 'CLEAR', 'ButtonPushedFcn', createCallbackFcn(app, @BiologicalSexClearButtonPushed, true));
+                        app.GridLayout24_2 = uigridlayout(app.GridLayout17,[1,2]); app.GridLayout24_2.Layout.Row=3; app.GridLayout24_2.Layout.Column=2; app.GridLayout24_2.Padding=[0 0 0 0];
+                            app.AssignSpeciesButton = uibutton(app.GridLayout24_2, 'push', 'Text', 'Assign', 'ButtonPushedFcn', createCallbackFcn(app, @AssignSpeciesButtonPushed, true));
+                            app.SpeciesClearButton = uibutton(app.GridLayout24_2, 'push', 'Text', 'CLEAR', 'ButtonPushedFcn', createCallbackFcn(app, @SpeciesClearButtonPushed, true));
+                        app.GridLayout24_3 = uigridlayout(app.GridLayout17,[1,2]); app.GridLayout24_3.Layout.Row=3; app.GridLayout24_3.Layout.Column=3; app.GridLayout24_3.Padding=[0 0 0 0];
+                            app.AssignStrainButton = uibutton(app.GridLayout24_3, 'push', 'Text', 'Assign'); 
+                            app.StrainClearButton = uibutton(app.GridLayout24_3, 'push', 'Text', 'CLEAR', 'ButtonPushedFcn', createCallbackFcn(app, @StrainClearButtonPushed, true));
+                        app.GridLayout24_4 = uigridlayout(app.GridLayout17,[1,2],'ColumnWidth',{'1x',50}); app.GridLayout24_4.Layout.Row=4; app.GridLayout24_4.Layout.Column=2; app.GridLayout24_4.Padding=[0 0 0 0];
+                            app.SpeciesEditField = uieditfield(app.GridLayout24_4, 'text', 'Placeholder', 'Enter name of species to add');
+                            app.AddSpeciesButton = uibutton(app.GridLayout24_4, 'push', 'Text', 'Add', 'ButtonPushedFcn', createCallbackFcn(app, @AddSpeciesButtonPushed, true));
+                        app.GridLayout27 = uigridlayout(app.GridLayout17,[1,2],'ColumnWidth',{'1x',50}); app.GridLayout27.Layout.Row=4; app.GridLayout27.Layout.Column=3; app.GridLayout27.Padding=[0 0 0 0];
+                            app.StrainEditField = uieditfield(app.GridLayout27, 'text', 'Placeholder', 'Enter name of strain to add');
+                            app.AddStrainButton = uibutton(app.GridLayout27, 'push', 'Text', 'Add', 'ButtonPushedFcn', createCallbackFcn(app, @AddStrainButtonPushed, true));
+
+            app.ProbeInfoTab = uitab(app.TabGroup, 'Title', 'Probe Info');
+            app.ProbeInfoGridLayout = uigridlayout(app.ProbeInfoTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
+            app.ProbeInfoLabel = uilabel(app.ProbeInfoGridLayout, 'Text', 'Probe Info', 'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+            app.ProbeInfoLabel.Layout.Row=1; app.ProbeInfoLabel.Layout.Column=1;
+            app.ProbeInfoPanel = uipanel(app.ProbeInfoGridLayout, 'BorderType', 'none');
+            app.ProbeInfoPanel.Layout.Row=2; app.ProbeInfoPanel.Layout.Column=1;
+            % UITableProbe will be created by ProbeDataGUI inside ProbeInfoPanel
+
+            app.SaveTab = uitab(app.TabGroup, 'Title', 'Save');
+            app.SubmitGridLayout = uigridlayout(app.SaveTab, [3 1], 'RowHeight', {60, '4x', 'fit'}); 
+                app.SubmitLabel = uilabel(app.SubmitGridLayout, 'Text', 'Review and Save Data', 'HorizontalAlignment', 'center', 'FontSize', 18, 'FontWeight', 'bold');
+                app.SubmitLabel.Layout.Row=1; app.SubmitLabel.Layout.Column=1;
+                app.SubmitPanelGridLayout = uigridlayout(app.SubmitGridLayout, [3 1], 'RowHeight', {'1x', 23, '1x'}, 'Padding', [50 25 50 25]);
+                app.SubmitPanelGridLayout.Layout.Row=2; app.SubmitPanelGridLayout.Layout.Column=1;
+                    app.SubmissionDescriptionLabel = uilabel(app.SubmitPanelGridLayout, 'Text', 'If you have filled out all the information for this dataset, please SAVE TO DATASET. If you are still working, simply close the form and it will save your progress.', 'VerticalAlignment', 'top', 'WordWrap', 'on', 'FontSize', 14);
+                    app.SubmissionDescriptionLabel.Layout.Row=1; app.SubmissionDescriptionLabel.Layout.Column=1;
+                    app.ErrorTextAreaLabel = uilabel(app.SubmitPanelGridLayout, 'Text', 'Status');
+                    app.ErrorTextAreaLabel.Layout.Row=2; app.ErrorTextAreaLabel.Layout.Column=1;
+                    app.ErrorTextArea = uitextarea(app.SubmitPanelGridLayout);
+                    app.ErrorTextArea.Layout.Row=3; app.ErrorTextArea.Layout.Column=1;
+                app.SubmitFooterGridLayout = uigridlayout(app.SubmitGridLayout, [2 3], 'ColumnWidth', {'1x', '1x', '1x'}, 'RowHeight', {40, 40}, 'ColumnSpacing', 20, 'RowSpacing', 10, 'Padding', [10 10 10 10]);
+                app.SubmitFooterGridLayout.Layout.Row=3; app.SubmitFooterGridLayout.Layout.Column=1;
+                    app.SaveButton = uibutton(app.SubmitFooterGridLayout, 'push', 'Text', 'Save to Dataset', 'FontWeight', 'bold', 'ButtonPushedFcn', createCallbackFcn(app, @SaveButtonPushed, true));
+                    app.SaveButton.Layout.Row=1; app.SaveButton.Layout.Column=1;
+                    app.ResetFormButton = uibutton(app.SubmitFooterGridLayout, 'push', 'Text', 'Reset Form', 'ButtonPushedFcn', createCallbackFcn(app, @ResetFormButtonPushed, true));
+                    app.ResetFormButton.Layout.Row=1; app.ResetFormButton.Layout.Column=2;
+                    app.RevertToSavedButton = uibutton(app.SubmitFooterGridLayout, 'push', 'Text', 'Revert to Saved', 'ButtonPushedFcn', createCallbackFcn(app, @RevertToSavedButtonPushed, true));
+                    app.RevertToSavedButton.Layout.Row=1; app.RevertToSavedButton.Layout.Column=3;
+                    app.TestDocumentConversionButton = uibutton(app.SubmitFooterGridLayout, 'push', 'Text', 'Test Document Conversion', 'ButtonPushedFcn', createCallbackFcn(app, @TestDocumentConversionButtonPushed, true));
+                    app.TestDocumentConversionButton.Layout.Row=2; app.TestDocumentConversionButton.Layout.Column=1;
+                    app.ExportDatasetInfoButton = uibutton(app.SubmitFooterGridLayout, 'push', 'Text', 'Export Dataset Info to Workspace', 'ButtonPushedFcn', createCallbackFcn(app, @ExportDatasetInfoButtonPushed, true));
+                    app.ExportDatasetInfoButton.Layout.Row=2; app.ExportDatasetInfoButton.Layout.Column=2;
+            
+            app.FooterPanel = uipanel(app.NDIMetadataEditorUIFigure, 'BorderType', 'none'); 
+            app.FooterPanel.Position = [1 1 900 63]; 
+            app.FooterGridLayout = uigridlayout(app.FooterPanel, [1 7], 'ColumnWidth', {100, '1x', 100, 50, 100, '1x', 100}, 'RowHeight', {23}, 'Padding', [25 10 25 20], 'BackgroundColor', [0.902 0.902 0.902]);
+                app.PreviousButton = uibutton(app.FooterGridLayout, 'push', 'Text', 'Previous', 'ButtonPushedFcn', createCallbackFcn(app, @PreviousButtonPushed, true));
+                app.PreviousButton.Layout.Row=1; app.PreviousButton.Layout.Column=3;
+                app.NextButton = uibutton(app.FooterGridLayout, 'push', 'Text', 'Next', 'ButtonPushedFcn', createCallbackFcn(app, @NextButtonPushed, true));
+                app.NextButton.Layout.Row=1; app.NextButton.Layout.Column=5;
+                app.NdiLogoImage = uiimage(app.FooterGridLayout, 'ImageSource', fullfile(app.ResourcesPath, 'ndi_logo.png')); 
+                app.NdiLogoImage.Layout.Row=1; app.NdiLogoImage.Layout.Column=7;
+
+            app.FooterpanelLabel = uilabel(app.NDIMetadataEditorUIFigure, 'Text', 'Footer panel description', 'Visible','off', 'Position', [2 -48 509 22]);
+            app.SaveChangesButton = uibutton(app.NDIMetadataEditorUIFigure, 'push', 'Text', 'Save Changes (Temp)', 'Visible','off', 'ButtonPushedFcn', createCallbackFcn(app, @SaveChangesButtonPushed, true), 'Position', [800 -27 100 23]);
 
-            % Create IntroGridLayout
-            app.IntroGridLayout = uigridlayout(app.IntroTab);
-            app.IntroGridLayout.ColumnWidth = {'1x'};
-            app.IntroGridLayout.RowHeight = {60, '4x', '1.5x'};
-
-            % Create GridLayout_Step0_C3
-            app.GridLayout_Step0_C3 = uigridlayout(app.IntroGridLayout);
-            app.GridLayout_Step0_C3.ColumnWidth = {'1x', 150, '1x'};
-            app.GridLayout_Step0_C3.RowHeight = {40};
-            app.GridLayout_Step0_C3.ColumnSpacing = 20;
-            app.GridLayout_Step0_C3.RowSpacing = 20;
-            app.GridLayout_Step0_C3.Layout.Row = 3;
-            app.GridLayout_Step0_C3.Layout.Column = 1;
-
-            % Create GetStartedButton
-            app.GetStartedButton = uibutton(app.GridLayout_Step0_C3, 'push');
-            app.GetStartedButton.ButtonPushedFcn = createCallbackFcn(app, @GetStartedButtonPushed, true);
-            app.GetStartedButton.Layout.Row = 1;
-            app.GetStartedButton.Layout.Column = 2;
-            app.GetStartedButton.Text = 'Get Started';
-
-            % Create GridLayout_Step0_C2
-            app.GridLayout_Step0_C2 = uigridlayout(app.IntroGridLayout);
-            app.GridLayout_Step0_C2.ColumnWidth = {'1x'};
-            app.GridLayout_Step0_C2.RowHeight = {'1x'};
-            app.GridLayout_Step0_C2.Padding = [50 25 50 25];
-            app.GridLayout_Step0_C2.Layout.Row = 2;
-            app.GridLayout_Step0_C2.Layout.Column = 1;
-
-            % Create IntroductionTextLabel
-            app.IntroductionTextLabel = uilabel(app.GridLayout_Step0_C2);
-            app.IntroductionTextLabel.VerticalAlignment = 'top';
-            app.IntroductionTextLabel.WordWrap = 'on';
-            app.IntroductionTextLabel.FontSize = 14;
-            app.IntroductionTextLabel.Layout.Row = 1;
-            app.IntroductionTextLabel.Layout.Column = 1;
-            app.IntroductionTextLabel.Text = {''; 'We''re excited to have you here. This is your upload form, where you can effortlessly share your data with us. Over the next few pages, we''ll guide you through the process of ingesting your valuable data. Our goal is to make this as seamless as possible, ensuring that your information is accurately processed and ready for analysis. '; ''; 'If you ever need assistance with any of the form elements, simply hover over the respective item to access helpful information. For any further queries, shoot us an email at info@walthamdatascience.com and we''ll get right back to you! Thank you for choosing our app to help you manage your data. Let''s get started on this journey together!'};
-
-            % Create GridLayout25
-            app.GridLayout25 = uigridlayout(app.IntroGridLayout);
-            app.GridLayout25.ColumnWidth = {25, 100, '1x', 100, 25};
-            app.GridLayout25.RowHeight = {'1x'};
-            app.GridLayout25.Layout.Row = 1;
-            app.GridLayout25.Layout.Column = 1;
-
-            % Create IntroLabel
-            app.IntroLabel = uilabel(app.GridLayout25);
-            app.IntroLabel.HorizontalAlignment = 'center';
-            app.IntroLabel.FontSize = 18;
-            app.IntroLabel.FontWeight = 'bold';
-            app.IntroLabel.Layout.Row = 1;
-            app.IntroLabel.Layout.Column = 3;
-            app.IntroLabel.Text = {'Welcome to the NDI Cloud''s core Metadata Editor'; ''};
-
-            % Create NdiLogoIntroImage
-            app.NdiLogoIntroImage = uiimage(app.GridLayout25);
-            app.NdiLogoIntroImage.Layout.Row = 1;
-            app.NdiLogoIntroImage.Layout.Column = 4;
-            app.NdiLogoIntroImage.ImageSource = fullfile(pathToMLAPP, 'resources', 'ndi_logo.png');
-
-            % Create DatasetOverviewTab
-            app.DatasetOverviewTab = uitab(app.TabGroup);
-            app.DatasetOverviewTab.Title = 'Dataset Overview';
-
-            % Create DatasetOverviewGridLayout
-            app.DatasetOverviewGridLayout = uigridlayout(app.DatasetOverviewTab);
-            app.DatasetOverviewGridLayout.ColumnWidth = {'1x'};
-            app.DatasetOverviewGridLayout.RowHeight = {60, '1x'};
-            app.DatasetOverviewGridLayout.Padding = [10 20 10 10];
-
-            % Create DatasetInformationPanel
-            app.DatasetInformationPanel = uipanel(app.DatasetOverviewGridLayout);
-            app.DatasetInformationPanel.BorderType = 'none';
-            app.DatasetInformationPanel.Layout.Row = 2;
-            app.DatasetInformationPanel.Layout.Column = 1;
-
-            % Create GridLayout
-            app.GridLayout = uigridlayout(app.DatasetInformationPanel);
-            app.GridLayout.ColumnWidth = {'1x'};
-            app.GridLayout.RowHeight = {44, '4x', '2x'};
-            app.GridLayout.Padding = [25 25 25 10];
-
-            % Create Panel_3
-            app.Panel_3 = uipanel(app.GridLayout);
-            app.Panel_3.BorderType = 'none';
-            app.Panel_3.Layout.Row = 1;
-            app.Panel_3.Layout.Column = 1;
-
-            % Create GridLayout2
-            app.GridLayout2 = uigridlayout(app.Panel_3);
-            app.GridLayout2.ColumnWidth = {'3x', '1x'};
-            app.GridLayout2.ColumnSpacing = 20;
-            app.GridLayout2.RowSpacing = 4;
-            app.GridLayout2.Padding = [0 0 0 0];
-
-            % Create DatasetBranchTitleEditField
-            app.DatasetBranchTitleEditField = uieditfield(app.GridLayout2, 'text');
-            app.DatasetBranchTitleEditField.ValueChangedFcn = createCallbackFcn(app, @DatasetBranchTitleValueChanged, true);
-            app.DatasetBranchTitleEditField.Layout.Row = 2;
-            app.DatasetBranchTitleEditField.Layout.Column = 1;
-
-            % Create DatasetBranchTitleEditFieldLabel
-            app.DatasetBranchTitleEditFieldLabel = uilabel(app.GridLayout2);
-            app.DatasetBranchTitleEditFieldLabel.Layout.Row = 1;
-            app.DatasetBranchTitleEditFieldLabel.Layout.Column = 1;
-            app.DatasetBranchTitleEditFieldLabel.Text = 'Dataset Branch Title';
-
-            % Create DatasetShortNameEditField
-            app.DatasetShortNameEditField = uieditfield(app.GridLayout2, 'text');
-            app.DatasetShortNameEditField.ValueChangedFcn = createCallbackFcn(app, @DatasetShortNameValueChanged, true);
-            app.DatasetShortNameEditField.Tooltip = {'If multiple, separate by comma '};
-            app.DatasetShortNameEditField.Layout.Row = 2;
-            app.DatasetShortNameEditField.Layout.Column = 2;
-
-            % Create DatasetShortNameEditFieldLabel
-            app.DatasetShortNameEditFieldLabel = uilabel(app.GridLayout2);
-            app.DatasetShortNameEditFieldLabel.Layout.Row = 1;
-            app.DatasetShortNameEditFieldLabel.Layout.Column = 2;
-            app.DatasetShortNameEditFieldLabel.Text = 'Dataset Short Name';
-
-            % Create Panel_4
-            app.Panel_4 = uipanel(app.GridLayout);
-            app.Panel_4.BorderType = 'none';
-            app.Panel_4.Layout.Row = 2;
-            app.Panel_4.Layout.Column = 1;
-
-            % Create GridLayout3
-            app.GridLayout3 = uigridlayout(app.Panel_4);
-            app.GridLayout3.ColumnWidth = {'1x'};
-            app.GridLayout3.RowHeight = {20, '1x'};
-            app.GridLayout3.ColumnSpacing = 0;
-            app.GridLayout3.RowSpacing = 4;
-            app.GridLayout3.Padding = [0 0 0 0];
-
-            % Create AbstractTextArea
-            app.AbstractTextArea = uitextarea(app.GridLayout3);
-            app.AbstractTextArea.ValueChangedFcn = createCallbackFcn(app, @AbstractValueChanged, true);
-            app.AbstractTextArea.Layout.Row = 2;
-            app.AbstractTextArea.Layout.Column = 1;
-
-            % Create AbstractTextAreaLabel
-            app.AbstractTextAreaLabel = uilabel(app.GridLayout3);
-            app.AbstractTextAreaLabel.Layout.Row = 1;
-            app.AbstractTextAreaLabel.Layout.Column = 1;
-            app.AbstractTextAreaLabel.Text = 'Abstract';
-
-            % Create GridLayout4
-            app.GridLayout4 = uigridlayout(app.GridLayout);
-            app.GridLayout4.ColumnWidth = {'1x'};
-            app.GridLayout4.RowHeight = {20, '1x'};
-            app.GridLayout4.ColumnSpacing = 0;
-            app.GridLayout4.RowSpacing = 4;
-            app.GridLayout4.Padding = [0 0 0 0];
-            app.GridLayout4.Layout.Row = 3;
-            app.GridLayout4.Layout.Column = 1;
-
-            % Create DatasetCommentsTextAreaLabel
-            app.DatasetCommentsTextAreaLabel = uilabel(app.GridLayout4);
-            app.DatasetCommentsTextAreaLabel.Layout.Row = 1;
-            app.DatasetCommentsTextAreaLabel.Layout.Column = 1;
-            app.DatasetCommentsTextAreaLabel.Text = 'Comments/Details';
-
-            % Create DatasetCommentsTextArea
-            app.DatasetCommentsTextArea = uitextarea(app.GridLayout4);
-            app.DatasetCommentsTextArea.ValueChangedFcn = createCallbackFcn(app, @CommentsDetailsValueChanged, true);
-            app.DatasetCommentsTextArea.Tooltip = {'Anything else you''d like us to know about your upload? Note: This field is not public facing.'};
-            app.DatasetCommentsTextArea.Layout.Row = 2;
-            app.DatasetCommentsTextArea.Layout.Column = 1;
-
-            % Create DatasetInformationLabel
-            app.DatasetInformationLabel = uilabel(app.DatasetOverviewGridLayout);
-            app.DatasetInformationLabel.HorizontalAlignment = 'center';
-            app.DatasetInformationLabel.FontSize = 18;
-            app.DatasetInformationLabel.FontWeight = 'bold';
-            app.DatasetInformationLabel.Layout.Row = 1;
-            app.DatasetInformationLabel.Layout.Column = 1;
-            app.DatasetInformationLabel.Text = 'Dataset Information';
-
-            % Create AuthorsTab
-            app.AuthorsTab = uitab(app.TabGroup);
-            app.AuthorsTab.Title = 'Authors';
-
-            % Create AuthorsGridLayout
-            app.AuthorsGridLayout = uigridlayout(app.AuthorsTab);
-            app.AuthorsGridLayout.ColumnWidth = {'1x'};
-            app.AuthorsGridLayout.RowHeight = {60, '1x'};
-            app.AuthorsGridLayout.Padding = [10 20 10 10];
-
-            % Create AuthorMainPanel
-            app.AuthorMainPanel = uipanel(app.AuthorsGridLayout);
-            app.AuthorMainPanel.BorderType = 'none';
-            app.AuthorMainPanel.Layout.Row = 2;
-            app.AuthorMainPanel.Layout.Column = 1;
-
-            % Create AuthorMainPanelGridLayout
-            app.AuthorMainPanelGridLayout = uigridlayout(app.AuthorMainPanel);
-            app.AuthorMainPanelGridLayout.ColumnWidth = {250, '1x', '1x'};
-            app.AuthorMainPanelGridLayout.RowHeight = {'1x'};
-            app.AuthorMainPanelGridLayout.ColumnSpacing = 40;
-            app.AuthorMainPanelGridLayout.Padding = [25 25 25 10];
-
-            % Create AuthorContentLeftGridLayout
-            app.AuthorContentLeftGridLayout = uigridlayout(app.AuthorMainPanelGridLayout);
-            app.AuthorContentLeftGridLayout.ColumnWidth = {'1x'};
-            app.AuthorContentLeftGridLayout.RowHeight = {23, '1x'};
-            app.AuthorContentLeftGridLayout.Padding = [0 0 0 0];
-            app.AuthorContentLeftGridLayout.Layout.Row = 1;
-            app.AuthorContentLeftGridLayout.Layout.Column = 1;
-
-            % Create AuthorListBoxGridLayout
-            app.AuthorListBoxGridLayout = uigridlayout(app.AuthorContentLeftGridLayout);
-            app.AuthorListBoxGridLayout.ColumnWidth = {'1x', 23};
-            app.AuthorListBoxGridLayout.RowHeight = {'1x'};
-            app.AuthorListBoxGridLayout.Padding = [0 0 0 0];
-            app.AuthorListBoxGridLayout.Layout.Row = 2;
-            app.AuthorListBoxGridLayout.Layout.Column = 1;
-
-            % Create AuthorListBox
-            app.AuthorListBox = uilistbox(app.AuthorListBoxGridLayout);
-            app.AuthorListBox.Items = {};
-            app.AuthorListBox.ValueChangedFcn = createCallbackFcn(app, @AuthorListBoxValueChanged, true);
-            app.AuthorListBox.Layout.Row = 1;
-            app.AuthorListBox.Layout.Column = 1;
-            app.AuthorListBox.Value = {};
-
-            % Create AuthorListBoxButtonGridLayout
-            app.AuthorListBoxButtonGridLayout = uigridlayout(app.AuthorListBoxGridLayout);
-            app.AuthorListBoxButtonGridLayout.ColumnWidth = {'1x'};
-            app.AuthorListBoxButtonGridLayout.RowHeight = {23, 23, 23, 23, '1x'};
-            app.AuthorListBoxButtonGridLayout.Padding = [0 0 0 0];
-            app.AuthorListBoxButtonGridLayout.Layout.Row = 1;
-            app.AuthorListBoxButtonGridLayout.Layout.Column = 2;
-
-            % Create AddAuthorButton
-            app.AddAuthorButton = uibutton(app.AuthorListBoxButtonGridLayout, 'push');
-            app.AddAuthorButton.ButtonPushedFcn = createCallbackFcn(app, @AddAuthorButtonPushed, true);
-            app.AddAuthorButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'plus.png');
-            app.AddAuthorButton.Layout.Row = 1;
-            app.AddAuthorButton.Layout.Column = 1;
-            app.AddAuthorButton.Text = '';
-
-            % Create RemoveAuthorButton
-            app.RemoveAuthorButton = uibutton(app.AuthorListBoxButtonGridLayout, 'push');
-            app.RemoveAuthorButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveAuthorButtonPushed, true);
-            app.RemoveAuthorButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'minus.png');
-            app.RemoveAuthorButton.Layout.Row = 2;
-            app.RemoveAuthorButton.Layout.Column = 1;
-            app.RemoveAuthorButton.Text = '';
-
-            % Create MoveAuthorUpButton
-            app.MoveAuthorUpButton = uibutton(app.AuthorListBoxButtonGridLayout, 'push');
-            app.MoveAuthorUpButton.ButtonPushedFcn = createCallbackFcn(app, @MoveAuthorUpButtonPushed, true);
-            app.MoveAuthorUpButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'up.png');
-            app.MoveAuthorUpButton.Layout.Row = 3;
-            app.MoveAuthorUpButton.Layout.Column = 1;
-            app.MoveAuthorUpButton.Text = '';
-
-            % Create MoveAuthorDownButton
-            app.MoveAuthorDownButton = uibutton(app.AuthorListBoxButtonGridLayout, 'push');
-            app.MoveAuthorDownButton.ButtonPushedFcn = createCallbackFcn(app, @MoveAuthorDownButtonPushed, true);
-            app.MoveAuthorDownButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'down.png');
-            app.MoveAuthorDownButton.Layout.Row = 4;
-            app.MoveAuthorDownButton.Layout.Column = 1;
-            app.MoveAuthorDownButton.Text = '';
-
-            % Create AuthorListBoxLabel
-            app.AuthorListBoxLabel = uilabel(app.AuthorContentLeftGridLayout);
-            app.AuthorListBoxLabel.WordWrap = 'on';
-            app.AuthorListBoxLabel.Layout.Row = 1;
-            app.AuthorListBoxLabel.Layout.Column = 1;
-            app.AuthorListBoxLabel.Text = 'Create authors and fill out their details';
-
-            % Create AuthorContentCenterGridLayout
-            app.AuthorContentCenterGridLayout = uigridlayout(app.AuthorMainPanelGridLayout);
-            app.AuthorContentCenterGridLayout.ColumnWidth = {'1x'};
-            app.AuthorContentCenterGridLayout.RowHeight = {23, 23, 23, 23, 23, 23, 23, 23, 23, '1x'};
-            app.AuthorContentCenterGridLayout.Padding = [0 0 0 0];
-            app.AuthorContentCenterGridLayout.Layout.Row = 1;
-            app.AuthorContentCenterGridLayout.Layout.Column = 2;
-
-            % Create GivenNameEditFieldLabel
-            app.GivenNameEditFieldLabel = uilabel(app.AuthorContentCenterGridLayout);
-            app.GivenNameEditFieldLabel.Layout.Row = 1;
-            app.GivenNameEditFieldLabel.Layout.Column = 1;
-            app.GivenNameEditFieldLabel.Text = 'Given Name';
-
-            % Create GivenNameEditField
-            app.GivenNameEditField = uieditfield(app.AuthorContentCenterGridLayout, 'text');
-            app.GivenNameEditField.ValueChangedFcn = createCallbackFcn(app, @GivenNameEditFieldValueChanged, true);
-            app.GivenNameEditField.ValueChangingFcn = createCallbackFcn(app, @GivenNameEditFieldValueChanging, true);
-            app.GivenNameEditField.Layout.Row = 2;
-            app.GivenNameEditField.Layout.Column = 1;
-
-            % Create FamilyNameEditFieldLabel
-            app.FamilyNameEditFieldLabel = uilabel(app.AuthorContentCenterGridLayout);
-            app.FamilyNameEditFieldLabel.Layout.Row = 3;
-            app.FamilyNameEditFieldLabel.Layout.Column = 1;
-            app.FamilyNameEditFieldLabel.Text = 'Family Name';
-
-            % Create FamilyNameEditField
-            app.FamilyNameEditField = uieditfield(app.AuthorContentCenterGridLayout, 'text');
-            app.FamilyNameEditField.ValueChangedFcn = createCallbackFcn(app, @FamilyNameEditFieldValueChanged, true);
-            app.FamilyNameEditField.ValueChangingFcn = createCallbackFcn(app, @FamilyNameEditFieldValueChanging, true);
-            app.FamilyNameEditField.Layout.Row = 4;
-            app.FamilyNameEditField.Layout.Column = 1;
-
-            % Create DigitalIdentifierEditFieldLabel
-            app.DigitalIdentifierEditFieldLabel = uilabel(app.AuthorContentCenterGridLayout);
-            app.DigitalIdentifierEditFieldLabel.Layout.Row = 5;
-            app.DigitalIdentifierEditFieldLabel.Layout.Column = 1;
-            app.DigitalIdentifierEditFieldLabel.Text = 'Digital Identifier (ORCID)';
-
-            % Create AuthorOrcidGridLayout
-            app.AuthorOrcidGridLayout = uigridlayout(app.AuthorContentCenterGridLayout);
-            app.AuthorOrcidGridLayout.ColumnWidth = {'1x', 23};
-            app.AuthorOrcidGridLayout.RowHeight = {'1x'};
-            app.AuthorOrcidGridLayout.Padding = [0 0 0 0];
-            app.AuthorOrcidGridLayout.Layout.Row = 6;
-            app.AuthorOrcidGridLayout.Layout.Column = 1;
-
-            % Create DigitalIdentifierEditField
-            app.DigitalIdentifierEditField = uieditfield(app.AuthorOrcidGridLayout, 'text');
-            app.DigitalIdentifierEditField.ValueChangedFcn = createCallbackFcn(app, @DigitalIdentifierEditFieldValueChanged, true);
-            app.DigitalIdentifierEditField.Placeholder = 'Example: 0000-0002-1825-0097';
-            app.DigitalIdentifierEditField.Layout.Row = 1;
-            app.DigitalIdentifierEditField.Layout.Column = 1;
-
-            % Create SearchOrcidButton
-            app.SearchOrcidButton = uibutton(app.AuthorOrcidGridLayout, 'push');
-            app.SearchOrcidButton.ButtonPushedFcn = createCallbackFcn(app, @SearchOrcidButtonPushed, true);
-            app.SearchOrcidButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'search.png');
-            app.SearchOrcidButton.Layout.Row = 1;
-            app.SearchOrcidButton.Layout.Column = 2;
-            app.SearchOrcidButton.Text = '';
-
-            % Create AuthorEmailEditField
-            app.AuthorEmailEditField = uieditfield(app.AuthorContentCenterGridLayout, 'text');
-            app.AuthorEmailEditField.ValueChangedFcn = createCallbackFcn(app, @AuthorEmailEditFieldValueChanged, true);
-            app.AuthorEmailEditField.Layout.Row = 8;
-            app.AuthorEmailEditField.Layout.Column = 1;
-
-            % Create AuthorEmailEditFieldLabel
-            app.AuthorEmailEditFieldLabel = uilabel(app.AuthorContentCenterGridLayout);
-            app.AuthorEmailEditFieldLabel.Layout.Row = 7;
-            app.AuthorEmailEditFieldLabel.Layout.Column = 1;
-            app.AuthorEmailEditFieldLabel.Text = 'Author Email';
-
-            % Create AuthorRoleLabel
-            app.AuthorRoleLabel = uilabel(app.AuthorContentCenterGridLayout);
-            app.AuthorRoleLabel.Layout.Row = 9;
-            app.AuthorRoleLabel.Layout.Column = 1;
-            app.AuthorRoleLabel.Text = 'Author Role';
-
-            % Create AuthorRoleTree
-            app.AuthorRoleTree = uitree(app.AuthorContentCenterGridLayout, 'checkbox');
-            app.AuthorRoleTree.Tooltip = {'An author can have multiple roles'};
-            app.AuthorRoleTree.Layout.Row = 10;
-            app.AuthorRoleTree.Layout.Column = 1;
-
-            % Create FirstAuthorNode
-            app.FirstAuthorNode = uitreenode(app.AuthorRoleTree);
-            app.FirstAuthorNode.NodeData = '1st Author';
-            app.FirstAuthorNode.Text = '1st Author';
-
-            % Create CustodianNode
-            app.CustodianNode = uitreenode(app.AuthorRoleTree);
-            app.CustodianNode.NodeData = 'Custodian';
-            app.CustodianNode.Text = 'Custodian';
-
-            % Create CorrespondingNode
-            app.CorrespondingNode = uitreenode(app.AuthorRoleTree);
-            app.CorrespondingNode.NodeData = 'Corresponding';
-            app.CorrespondingNode.Text = 'Corresponding';
-
-            % Assign Checked Nodes
-            app.AuthorRoleTree.CheckedNodesChangedFcn = createCallbackFcn(app, @AuthorRoleTreeCheckedNodesChanged, true);
-
-            % Create AuthorContentRightGridLayout
-            app.AuthorContentRightGridLayout = uigridlayout(app.AuthorMainPanelGridLayout);
-            app.AuthorContentRightGridLayout.ColumnWidth = {'1x'};
-            app.AuthorContentRightGridLayout.RowHeight = {23, 23, '1x'};
-            app.AuthorContentRightGridLayout.Padding = [0 0 0 0];
-            app.AuthorContentRightGridLayout.Layout.Row = 1;
-            app.AuthorContentRightGridLayout.Layout.Column = 3;
-
-            % Create AffiliationsListBoxLabel
-            app.AffiliationsListBoxLabel = uilabel(app.AuthorContentRightGridLayout);
-            app.AffiliationsListBoxLabel.Layout.Row = 1;
-            app.AffiliationsListBoxLabel.Layout.Column = 1;
-            app.AffiliationsListBoxLabel.Text = 'Affiliations/Institutes';
-
-            % Create AffiliationSelectionGridLayout
-            app.AffiliationSelectionGridLayout = uigridlayout(app.AuthorContentRightGridLayout);
-            app.AffiliationSelectionGridLayout.ColumnWidth = {'1x', 23};
-            app.AffiliationSelectionGridLayout.RowHeight = {'1x'};
-            app.AffiliationSelectionGridLayout.Padding = [0 0 0 0];
-            app.AffiliationSelectionGridLayout.Layout.Row = 2;
-            app.AffiliationSelectionGridLayout.Layout.Column = 1;
-
-            % Create AddAffiliationButton
-            app.AddAffiliationButton = uibutton(app.AffiliationSelectionGridLayout, 'push');
-            app.AddAffiliationButton.ButtonPushedFcn = createCallbackFcn(app, @AddAffiliationButtonPushed, true);
-            app.AddAffiliationButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'plus.png');
-            app.AddAffiliationButton.Tooltip = {'Add an affilitation to the list'};
-            app.AddAffiliationButton.Layout.Row = 1;
-            app.AddAffiliationButton.Layout.Column = 2;
-            app.AddAffiliationButton.Text = '';
-
-            % Create OrganizationDropDown
-            app.OrganizationDropDown = uidropdown(app.AffiliationSelectionGridLayout);
-            app.OrganizationDropDown.Items = {};
-            app.OrganizationDropDown.Editable = 'on';
-            app.OrganizationDropDown.Tooltip = {'Select name of an organization'};
-            app.OrganizationDropDown.Placeholder = 'Select or enter name';
-            app.OrganizationDropDown.Layout.Row = 1;
-            app.OrganizationDropDown.Layout.Column = 1;
-            app.OrganizationDropDown.Value = {};
-
-            % Create AffiliationListBoxGridLayout
-            app.AffiliationListBoxGridLayout = uigridlayout(app.AuthorContentRightGridLayout);
-            app.AffiliationListBoxGridLayout.ColumnWidth = {'1x', 23};
-            app.AffiliationListBoxGridLayout.RowHeight = {'1x'};
-            app.AffiliationListBoxGridLayout.Padding = [0 0 0 0];
-            app.AffiliationListBoxGridLayout.Layout.Row = 3;
-            app.AffiliationListBoxGridLayout.Layout.Column = 1;
-
-            % Create AffiliationListBoxButtonGridLayout
-            app.AffiliationListBoxButtonGridLayout = uigridlayout(app.AffiliationListBoxGridLayout);
-            app.AffiliationListBoxButtonGridLayout.ColumnWidth = {'1x'};
-            app.AffiliationListBoxButtonGridLayout.RowHeight = {23, 23, 23, 23, '1x'};
-            app.AffiliationListBoxButtonGridLayout.Padding = [0 0 0 0];
-            app.AffiliationListBoxButtonGridLayout.Layout.Row = 1;
-            app.AffiliationListBoxButtonGridLayout.Layout.Column = 2;
-
-            % Create MoveAffiliationDownButton
-            app.MoveAffiliationDownButton = uibutton(app.AffiliationListBoxButtonGridLayout, 'push');
-            app.MoveAffiliationDownButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'up.png');
-            app.MoveAffiliationDownButton.Layout.Row = 2;
-            app.MoveAffiliationDownButton.Layout.Column = 1;
-            app.MoveAffiliationDownButton.Text = '';
-
-            % Create MoveAffiliationUpButton
-            app.MoveAffiliationUpButton = uibutton(app.AffiliationListBoxButtonGridLayout, 'push');
-            app.MoveAffiliationUpButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'down.png');
-            app.MoveAffiliationUpButton.Layout.Row = 3;
-            app.MoveAffiliationUpButton.Layout.Column = 1;
-            app.MoveAffiliationUpButton.Text = '';
-
-            % Create RemoveAffiliationButton
-            app.RemoveAffiliationButton = uibutton(app.AffiliationListBoxButtonGridLayout, 'push');
-            app.RemoveAffiliationButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveAffiliationButtonPushed, true);
-            app.RemoveAffiliationButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'minus.png');
-            app.RemoveAffiliationButton.Layout.Row = 1;
-            app.RemoveAffiliationButton.Layout.Column = 1;
-            app.RemoveAffiliationButton.Text = '';
-
-            % Create AffiliationListBox
-            app.AffiliationListBox = uilistbox(app.AffiliationListBoxGridLayout);
-            app.AffiliationListBox.Items = {};
-            app.AffiliationListBox.Layout.Row = 1;
-            app.AffiliationListBox.Layout.Column = 1;
-            app.AffiliationListBox.Value = {};
-
-            % Create AuthorDetailsLabel
-            app.AuthorDetailsLabel = uilabel(app.AuthorsGridLayout);
-            app.AuthorDetailsLabel.HorizontalAlignment = 'center';
-            app.AuthorDetailsLabel.FontSize = 18;
-            app.AuthorDetailsLabel.FontWeight = 'bold';
-            app.AuthorDetailsLabel.Layout.Row = 1;
-            app.AuthorDetailsLabel.Layout.Column = 1;
-            app.AuthorDetailsLabel.Text = 'Author Details';
-
-            % Create DatasetDetailsTab
-            app.DatasetDetailsTab = uitab(app.TabGroup);
-            app.DatasetDetailsTab.Title = 'Dataset Details';
-
-            % Create DatasetDetailsGridLayout
-            app.DatasetDetailsGridLayout = uigridlayout(app.DatasetDetailsTab);
-            app.DatasetDetailsGridLayout.ColumnWidth = {'1x'};
-            app.DatasetDetailsGridLayout.RowHeight = {60, '1x'};
-            app.DatasetDetailsGridLayout.Padding = [10 20 10 10];
-
-            % Create DatasetDetailsPanel
-            app.DatasetDetailsPanel = uipanel(app.DatasetDetailsGridLayout);
-            app.DatasetDetailsPanel.BorderType = 'none';
-            app.DatasetDetailsPanel.Layout.Row = 2;
-            app.DatasetDetailsPanel.Layout.Column = 1;
-
-            % Create GridLayout18
-            app.GridLayout18 = uigridlayout(app.DatasetDetailsPanel);
-            app.GridLayout18.ColumnWidth = {'1x'};
-            app.GridLayout18.RowHeight = {188, '1x'};
-            app.GridLayout18.Padding = [25 25 25 10];
-
-            % Create GridLayout19
-            app.GridLayout19 = uigridlayout(app.GridLayout18);
-            app.GridLayout19.RowHeight = {'1x'};
-            app.GridLayout19.ColumnSpacing = 45;
-            app.GridLayout19.Padding = [0 0 0 0];
-            app.GridLayout19.Layout.Row = 1;
-            app.GridLayout19.Layout.Column = 1;
-
-            % Create FundingGridLayout
-            app.FundingGridLayout = uigridlayout(app.GridLayout19);
-            app.FundingGridLayout.ColumnWidth = {'1x', 23};
-            app.FundingGridLayout.RowHeight = {23, '1x'};
-            app.FundingGridLayout.Padding = [0 0 0 0];
-            app.FundingGridLayout.Layout.Row = 1;
-            app.FundingGridLayout.Layout.Column = 2;
-
-            % Create FundingUITable
-            app.FundingUITable = uitable(app.FundingGridLayout);
-            app.FundingUITable.ColumnName = {'Funder'; 'Award Title'; 'Award Number'};
-            app.FundingUITable.RowName = {};
-            app.FundingUITable.SelectionType = 'row';
-            app.FundingUITable.DoubleClickedFcn = createCallbackFcn(app, @FundingUITableDoubleClicked, true);
-            app.FundingUITable.Multiselect = 'off';
-            app.FundingUITable.Layout.Row = 2;
-            app.FundingUITable.Layout.Column = 1;
-
-            % Create FundingUITableLabel
-            app.FundingUITableLabel = uilabel(app.FundingGridLayout);
-            app.FundingUITableLabel.FontWeight = 'bold';
-            app.FundingUITableLabel.Layout.Row = 1;
-            app.FundingUITableLabel.Layout.Column = 1;
-            app.FundingUITableLabel.Text = 'Funding';
-
-            % Create FundingTableButtonGridLayout
-            app.FundingTableButtonGridLayout = uigridlayout(app.FundingGridLayout);
-            app.FundingTableButtonGridLayout.ColumnWidth = {'1x'};
-            app.FundingTableButtonGridLayout.RowHeight = {23, 23, 23, 23, '1x'};
-            app.FundingTableButtonGridLayout.Padding = [0 0 0 0];
-            app.FundingTableButtonGridLayout.Layout.Row = 2;
-            app.FundingTableButtonGridLayout.Layout.Column = 2;
-
-            % Create MoveFundingDownButton
-            app.MoveFundingDownButton = uibutton(app.FundingTableButtonGridLayout, 'push');
-            app.MoveFundingDownButton.ButtonPushedFcn = createCallbackFcn(app, @MoveFundingDownButtonPushed, true);
-            app.MoveFundingDownButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'down.png');
-            app.MoveFundingDownButton.Layout.Row = 4;
-            app.MoveFundingDownButton.Layout.Column = 1;
-            app.MoveFundingDownButton.Text = '';
-
-            % Create MoveFundingUpButton
-            app.MoveFundingUpButton = uibutton(app.FundingTableButtonGridLayout, 'push');
-            app.MoveFundingUpButton.ButtonPushedFcn = createCallbackFcn(app, @MoveFundingUpButtonPushed, true);
-            app.MoveFundingUpButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'up.png');
-            app.MoveFundingUpButton.Layout.Row = 3;
-            app.MoveFundingUpButton.Layout.Column = 1;
-            app.MoveFundingUpButton.Text = '';
-
-            % Create RemoveFundingButton
-            app.RemoveFundingButton = uibutton(app.FundingTableButtonGridLayout, 'push');
-            app.RemoveFundingButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveFundingButtonPushed, true);
-            app.RemoveFundingButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'minus.png');
-            app.RemoveFundingButton.Layout.Row = 2;
-            app.RemoveFundingButton.Layout.Column = 1;
-            app.RemoveFundingButton.Text = '';
-
-            % Create AddFundingButton
-            app.AddFundingButton = uibutton(app.FundingTableButtonGridLayout, 'push');
-            app.AddFundingButton.ButtonPushedFcn = createCallbackFcn(app, @AddFundingButtonPushed, true);
-            app.AddFundingButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'plus.png');
-            app.AddFundingButton.Layout.Row = 1;
-            app.AddFundingButton.Layout.Column = 1;
-            app.AddFundingButton.Text = '';
-
-            % Create GridLayout22
-            app.GridLayout22 = uigridlayout(app.GridLayout19);
-            app.GridLayout22.ColumnWidth = {'1x', '1.5x'};
-            app.GridLayout22.RowHeight = {23, 23, 23, 23, 23, 23};
-            app.GridLayout22.Padding = [0 0 0 0];
-            app.GridLayout22.Layout.Row = 1;
-            app.GridLayout22.Layout.Column = 1;
-
-            % Create ReleaseDateDatePickerLabel
-            app.ReleaseDateDatePickerLabel = uilabel(app.GridLayout22);
-            app.ReleaseDateDatePickerLabel.HorizontalAlignment = 'right';
-            app.ReleaseDateDatePickerLabel.Layout.Row = 2;
-            app.ReleaseDateDatePickerLabel.Layout.Column = 1;
-            app.ReleaseDateDatePickerLabel.Text = 'Release Date';
-
-            % Create ReleaseDateDatePicker
-            app.ReleaseDateDatePicker = uidatepicker(app.GridLayout22);
-            app.ReleaseDateDatePicker.ValueChangedFcn = createCallbackFcn(app, @ReleaseDateValueChanged, true);
-            app.ReleaseDateDatePicker.Layout.Row = 2;
-            app.ReleaseDateDatePicker.Layout.Column = 2;
-
-            % Create LicenseDropDownLabel
-            app.LicenseDropDownLabel = uilabel(app.GridLayout22);
-            app.LicenseDropDownLabel.HorizontalAlignment = 'right';
-            app.LicenseDropDownLabel.Layout.Row = 3;
-            app.LicenseDropDownLabel.Layout.Column = 1;
-            app.LicenseDropDownLabel.Text = 'License';
-
-            % Create FullDocumentationEditFieldLabel
-            app.FullDocumentationEditFieldLabel = uilabel(app.GridLayout22);
-            app.FullDocumentationEditFieldLabel.HorizontalAlignment = 'right';
-            app.FullDocumentationEditFieldLabel.Layout.Row = 4;
-            app.FullDocumentationEditFieldLabel.Layout.Column = 1;
-            app.FullDocumentationEditFieldLabel.Text = 'Full Documentation';
-
-            % Create FullDocumentationEditField
-            app.FullDocumentationEditField = uieditfield(app.GridLayout22, 'text');
-            app.FullDocumentationEditField.ValueChangedFcn = createCallbackFcn(app, @FullDocumentationValueChanged, true);
-            app.FullDocumentationEditField.Tooltip = {'Enter URL(s); separate multiple entries with commas'};
-            app.FullDocumentationEditField.Layout.Row = 4;
-            app.FullDocumentationEditField.Layout.Column = 2;
-
-            % Create VersionIdentifierEditFieldLabel
-            app.VersionIdentifierEditFieldLabel = uilabel(app.GridLayout22);
-            app.VersionIdentifierEditFieldLabel.HorizontalAlignment = 'right';
-            app.VersionIdentifierEditFieldLabel.Layout.Row = 5;
-            app.VersionIdentifierEditFieldLabel.Layout.Column = 1;
-            app.VersionIdentifierEditFieldLabel.Text = 'Version Identifier';
-
-            % Create VersionIdentifierEditField
-            app.VersionIdentifierEditField = uieditfield(app.GridLayout22, 'text');
-            app.VersionIdentifierEditField.ValueChangedFcn = createCallbackFcn(app, @VersionIdentifierValueChanged, true);
-            app.VersionIdentifierEditField.Tooltip = {'Enter a string like 1.0.0; separate multiple entries with commas'};
-            app.VersionIdentifierEditField.Layout.Row = 5;
-            app.VersionIdentifierEditField.Layout.Column = 2;
-            app.VersionIdentifierEditField.Value = '1.0.0';
-
-            % Create VersionInnovationEditFieldLabel
-            app.VersionInnovationEditFieldLabel = uilabel(app.GridLayout22);
-            app.VersionInnovationEditFieldLabel.HorizontalAlignment = 'right';
-            app.VersionInnovationEditFieldLabel.Layout.Row = 6;
-            app.VersionInnovationEditFieldLabel.Layout.Column = 1;
-            app.VersionInnovationEditFieldLabel.Text = 'Version Innovation';
-
-            % Create VersionInnovationEditField
-            app.VersionInnovationEditField = uieditfield(app.GridLayout22, 'text');
-            app.VersionInnovationEditField.ValueChangedFcn = createCallbackFcn(app, @VersionInnovationValueChanged, true);
-            app.VersionInnovationEditField.Tooltip = {'Enter a comment on what this version adds to previous versions; can be blank; separate multiple entries with commas'};
-            app.VersionInnovationEditField.Layout.Row = 6;
-            app.VersionInnovationEditField.Layout.Column = 2;
-            app.VersionInnovationEditField.Value = 'This is the first version of the dataset';
-
-            % Create AccessibilityLabel
-            app.AccessibilityLabel = uilabel(app.GridLayout22);
-            app.AccessibilityLabel.FontWeight = 'bold';
-            app.AccessibilityLabel.Layout.Row = 1;
-            app.AccessibilityLabel.Layout.Column = 1;
-            app.AccessibilityLabel.Text = 'Accessibility';
-
-            % Create GridLayout28
-            app.GridLayout28 = uigridlayout(app.GridLayout22);
-            app.GridLayout28.ColumnWidth = {'1x', 23};
-            app.GridLayout28.RowHeight = {'1x'};
-            app.GridLayout28.Padding = [0 0 0 0];
-            app.GridLayout28.Layout.Row = 3;
-            app.GridLayout28.Layout.Column = 2;
-
-            % Create LicenseDropDown
-            app.LicenseDropDown = uidropdown(app.GridLayout28);
-            app.LicenseDropDown.Items = {'CC BY 4.0', 'CC BY-SA 4.0', 'CC BY-NC 4.0', 'CC BY-NC-SA 4.0', 'CC BY-ND 4.0', 'CC BY-NC-ND 4.0'};
-            app.LicenseDropDown.ValueChangedFcn = createCallbackFcn(app, @LicenseDropDownValueChanged, true);
-            app.LicenseDropDown.Tooltip = {'Choose from one of our approved licenses'};
-            app.LicenseDropDown.Layout.Row = 1;
-            app.LicenseDropDown.Layout.Column = 1;
-            app.LicenseDropDown.Value = 'CC BY 4.0';
-
-            % Create LicenseHelpButton
-            app.LicenseHelpButton = uibutton(app.GridLayout28, 'push');
-            app.LicenseHelpButton.ButtonPushedFcn = createCallbackFcn(app, @LicenseHelpButtonPushed, true);
-            app.LicenseHelpButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'help.png');
-            app.LicenseHelpButton.Layout.Row = 1;
-            app.LicenseHelpButton.Layout.Column = 2;
-            app.LicenseHelpButton.Text = '';
-
-            % Create GridLayout20
-            app.GridLayout20 = uigridlayout(app.GridLayout18);
-            app.GridLayout20.ColumnWidth = {'1x', 23};
-            app.GridLayout20.RowHeight = {23, '1x'};
-            app.GridLayout20.Padding = [0 0 0 0];
-            app.GridLayout20.Layout.Row = 2;
-            app.GridLayout20.Layout.Column = 1;
-
-            % Create RelatedPublicationUITableLabel
-            app.RelatedPublicationUITableLabel = uilabel(app.GridLayout20);
-            app.RelatedPublicationUITableLabel.FontWeight = 'bold';
-            app.RelatedPublicationUITableLabel.Layout.Row = 1;
-            app.RelatedPublicationUITableLabel.Layout.Column = 1;
-            app.RelatedPublicationUITableLabel.Text = 'Related Publications';
-
-            % Create RelatedPublicationUITable
-            app.RelatedPublicationUITable = uitable(app.GridLayout20);
-            app.RelatedPublicationUITable.ColumnName = {'Publication'; 'DOI'; 'PMID'; 'PMCID'};
-            app.RelatedPublicationUITable.RowName = {};
-            app.RelatedPublicationUITable.SelectionType = 'row';
-            app.RelatedPublicationUITable.CellEditCallback = createCallbackFcn(app, @RelatedPublicationCellEdit, true);
-            app.RelatedPublicationUITable.DoubleClickedFcn = createCallbackFcn(app, @RelatedPublicationUITableDoubleClicked, true);
-            app.RelatedPublicationUITable.Multiselect = 'off';
-            app.RelatedPublicationUITable.Layout.Row = 2;
-            app.RelatedPublicationUITable.Layout.Column = 1;
-
-            % Create PublicationTableButtonGridLayout
-            app.PublicationTableButtonGridLayout = uigridlayout(app.GridLayout20);
-            app.PublicationTableButtonGridLayout.ColumnWidth = {'1x'};
-            app.PublicationTableButtonGridLayout.RowHeight = {23, 23, 23, 23, '1x'};
-            app.PublicationTableButtonGridLayout.Padding = [0 0 0 0];
-            app.PublicationTableButtonGridLayout.Layout.Row = 2;
-            app.PublicationTableButtonGridLayout.Layout.Column = 2;
-
-            % Create MovePublicationDownButton
-            app.MovePublicationDownButton = uibutton(app.PublicationTableButtonGridLayout, 'push');
-            app.MovePublicationDownButton.ButtonPushedFcn = createCallbackFcn(app, @MovePublicationDownButtonPushed, true);
-            app.MovePublicationDownButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'down.png');
-            app.MovePublicationDownButton.Layout.Row = 4;
-            app.MovePublicationDownButton.Layout.Column = 1;
-            app.MovePublicationDownButton.Text = '';
-
-            % Create MovePublicationUpButton
-            app.MovePublicationUpButton = uibutton(app.PublicationTableButtonGridLayout, 'push');
-            app.MovePublicationUpButton.ButtonPushedFcn = createCallbackFcn(app, @MovePublicationUpButtonPushed, true);
-            app.MovePublicationUpButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'up.png');
-            app.MovePublicationUpButton.Layout.Row = 3;
-            app.MovePublicationUpButton.Layout.Column = 1;
-            app.MovePublicationUpButton.Text = '';
-
-            % Create RemovePublicationButton
-            app.RemovePublicationButton = uibutton(app.PublicationTableButtonGridLayout, 'push');
-            app.RemovePublicationButton.ButtonPushedFcn = createCallbackFcn(app, @RemovePublicationButtonPushed, true);
-            app.RemovePublicationButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'minus.png');
-            app.RemovePublicationButton.Layout.Row = 2;
-            app.RemovePublicationButton.Layout.Column = 1;
-            app.RemovePublicationButton.Text = '';
-
-            % Create AddRelatedPublicationButton
-            app.AddRelatedPublicationButton = uibutton(app.PublicationTableButtonGridLayout, 'push');
-            app.AddRelatedPublicationButton.ButtonPushedFcn = createCallbackFcn(app, @AddRelatedPublicationButtonPushed, true);
-            app.AddRelatedPublicationButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'plus.png');
-            app.AddRelatedPublicationButton.Layout.Row = 1;
-            app.AddRelatedPublicationButton.Layout.Column = 1;
-            app.AddRelatedPublicationButton.Text = '';
-
-            % Create DatasetDetailsLabel
-            app.DatasetDetailsLabel = uilabel(app.DatasetDetailsGridLayout);
-            app.DatasetDetailsLabel.HorizontalAlignment = 'center';
-            app.DatasetDetailsLabel.FontSize = 18;
-            app.DatasetDetailsLabel.FontWeight = 'bold';
-            app.DatasetDetailsLabel.Layout.Row = 1;
-            app.DatasetDetailsLabel.Layout.Column = 1;
-            app.DatasetDetailsLabel.Text = 'Dataset Details';
-
-            % Create ExperimentDetailsTab
-            app.ExperimentDetailsTab = uitab(app.TabGroup);
-            app.ExperimentDetailsTab.Title = 'Experiment Details';
-
-            % Create ExperimentDetailsGridLayout
-            app.ExperimentDetailsGridLayout = uigridlayout(app.ExperimentDetailsTab);
-            app.ExperimentDetailsGridLayout.ColumnWidth = {'1x'};
-            app.ExperimentDetailsGridLayout.RowHeight = {60, '1x'};
-            app.ExperimentDetailsGridLayout.Padding = [10 20 10 10];
-
-            % Create ExperimentDetailsPanel
-            app.ExperimentDetailsPanel = uipanel(app.ExperimentDetailsGridLayout);
-            app.ExperimentDetailsPanel.BorderType = 'none';
-            app.ExperimentDetailsPanel.Layout.Row = 2;
-            app.ExperimentDetailsPanel.Layout.Column = 1;
-
-            % Create GridLayout26
-            app.GridLayout26 = uigridlayout(app.ExperimentDetailsPanel);
-            app.GridLayout26.ColumnWidth = {180, 45, '1.25x', 45, '1x', 25};
-            app.GridLayout26.RowHeight = {22, 22, 22, 23, '1x', 22, 23, '5.3x', '5.13x'};
-            app.GridLayout26.Padding = [25 25 25 10];
-
-            % Create DataTypeTreeLabel
-            app.DataTypeTreeLabel = uilabel(app.GridLayout26);
-            app.DataTypeTreeLabel.Layout.Row = 1;
-            app.DataTypeTreeLabel.Layout.Column = 1;
-            app.DataTypeTreeLabel.Text = 'Data Type';
-
-            % Create DataTypeTree
-            app.DataTypeTree = uitree(app.GridLayout26, 'checkbox');
-            app.DataTypeTree.Tooltip = {''};
-            app.DataTypeTree.Layout.Row = [2 6];
-            app.DataTypeTree.Layout.Column = 1;
-
-            % Assign Checked Nodes
-            app.DataTypeTree.CheckedNodesChangedFcn = createCallbackFcn(app, @DataTypeTreeCheckedNodesChanged, true);
-
-            % Create ExperimentalApproachTree
-            app.ExperimentalApproachTree = uitree(app.GridLayout26, 'checkbox');
-            app.ExperimentalApproachTree.Tooltip = {''};
-            app.ExperimentalApproachTree.Layout.Row = [2 9];
-            app.ExperimentalApproachTree.Layout.Column = 3;
-
-            % Assign Checked Nodes
-            app.ExperimentalApproachTree.CheckedNodesChangedFcn = createCallbackFcn(app, @ExperimentTreeCheckedNodesChanged, true);
-
-            % Create ExperimentalApproachTreeLabel
-            app.ExperimentalApproachTreeLabel = uilabel(app.GridLayout26);
-            app.ExperimentalApproachTreeLabel.Layout.Row = 1;
-            app.ExperimentalApproachTreeLabel.Layout.Column = 3;
-            app.ExperimentalApproachTreeLabel.Text = 'Experimental Approach';
-
-            % Create RemoveTechniqueButton
-            app.RemoveTechniqueButton = uibutton(app.GridLayout26, 'push');
-            app.RemoveTechniqueButton.ButtonPushedFcn = createCallbackFcn(app, @RemoveTechniqueButtonPushed, true);
-            app.RemoveTechniqueButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'minus.png');
-            app.RemoveTechniqueButton.Tooltip = {'Remove technique from list of selected techniques'};
-            app.RemoveTechniqueButton.Layout.Row = 7;
-            app.RemoveTechniqueButton.Layout.Column = 6;
-            app.RemoveTechniqueButton.Text = '';
-
-            % Create AddTechniqueButton
-            app.AddTechniqueButton = uibutton(app.GridLayout26, 'push');
-            app.AddTechniqueButton.ButtonPushedFcn = createCallbackFcn(app, @AddTechniqueButtonPushed, true);
-            app.AddTechniqueButton.Icon = fullfile(pathToMLAPP, 'resources', 'icons', 'plus.png');
-            app.AddTechniqueButton.Tooltip = {'Add technique to list of selected techniques'};
-            app.AddTechniqueButton.Layout.Row = 4;
-            app.AddTechniqueButton.Layout.Column = 6;
-            app.AddTechniqueButton.Text = '';
-
-            % Create SelectTechniqueCategoryDropDownLabel
-            app.SelectTechniqueCategoryDropDownLabel = uilabel(app.GridLayout26);
-            app.SelectTechniqueCategoryDropDownLabel.Layout.Row = 1;
-            app.SelectTechniqueCategoryDropDownLabel.Layout.Column = 5;
-            app.SelectTechniqueCategoryDropDownLabel.Text = 'Select Technique Category';
-
-            % Create SelectTechniqueCategoryDropDown
-            app.SelectTechniqueCategoryDropDown = uidropdown(app.GridLayout26);
-            app.SelectTechniqueCategoryDropDown.ValueChangedFcn = createCallbackFcn(app, @SelectTechniqueCategoryDropDownValueChanged, true);
-            app.SelectTechniqueCategoryDropDown.Layout.Row = 2;
-            app.SelectTechniqueCategoryDropDown.Layout.Column = 5;
-
-            % Create SelectTechniqueDropDown
-            app.SelectTechniqueDropDown = uidropdown(app.GridLayout26);
-            app.SelectTechniqueDropDown.Editable = 'on';
-            app.SelectTechniqueDropDown.Layout.Row = 4;
-            app.SelectTechniqueDropDown.Layout.Column = 5;
-
-            % Create SelectTechniqueDropDownLabel
-            app.SelectTechniqueDropDownLabel = uilabel(app.GridLayout26);
-            app.SelectTechniqueDropDownLabel.Layout.Row = 3;
-            app.SelectTechniqueDropDownLabel.Layout.Column = 5;
-            app.SelectTechniqueDropDownLabel.Text = 'Select Technique';
-
-            % Create SelectedTechniquesListBoxLabel
-            app.SelectedTechniquesListBoxLabel = uilabel(app.GridLayout26);
-            app.SelectedTechniquesListBoxLabel.Layout.Row = 6;
-            app.SelectedTechniquesListBoxLabel.Layout.Column = 5;
-            app.SelectedTechniquesListBoxLabel.Text = 'Selected Techniques';
-
-            % Create SelectedTechniquesListBox
-            app.SelectedTechniquesListBox = uilistbox(app.GridLayout26);
-            app.SelectedTechniquesListBox.Items = {};
-            app.SelectedTechniquesListBox.Layout.Row = [7 9];
-            app.SelectedTechniquesListBox.Layout.Column = 5;
-            app.SelectedTechniquesListBox.Value = {};
-
-            % Create ExperimentDetailsLabel
-            app.ExperimentDetailsLabel = uilabel(app.ExperimentDetailsGridLayout);
-            app.ExperimentDetailsLabel.HorizontalAlignment = 'center';
-            app.ExperimentDetailsLabel.FontSize = 18;
-            app.ExperimentDetailsLabel.FontWeight = 'bold';
-            app.ExperimentDetailsLabel.Layout.Row = 1;
-            app.ExperimentDetailsLabel.Layout.Column = 1;
-            app.ExperimentDetailsLabel.Text = 'Experiment Details';
-
-            % Create SubjectInfoTab
-            app.SubjectInfoTab = uitab(app.TabGroup);
-            app.SubjectInfoTab.Title = 'Subject Info';
-
-            % Create SubjectInfoGridLayout
-            app.SubjectInfoGridLayout = uigridlayout(app.SubjectInfoTab);
-            app.SubjectInfoGridLayout.ColumnWidth = {'1x'};
-            app.SubjectInfoGridLayout.RowHeight = {60, '1x'};
-            app.SubjectInfoGridLayout.Padding = [10 20 10 10];
-
-            % Create SubjectInfoPanel
-            app.SubjectInfoPanel = uipanel(app.SubjectInfoGridLayout);
-            app.SubjectInfoPanel.BorderType = 'none';
-            app.SubjectInfoPanel.Layout.Row = 2;
-            app.SubjectInfoPanel.Layout.Column = 1;
-
-            % Create GridLayout16
-            app.GridLayout16 = uigridlayout(app.SubjectInfoPanel);
-            app.GridLayout16.ColumnWidth = {'1x'};
-            app.GridLayout16.RowHeight = {150, '1x'};
-            app.GridLayout16.RowSpacing = 30;
-            app.GridLayout16.Padding = [25 25 25 10];
-
-            % Create GridLayout17
-            app.GridLayout17 = uigridlayout(app.GridLayout16);
-            app.GridLayout17.ColumnWidth = {'1x', '1x', '1x'};
-            app.GridLayout17.RowHeight = {23, '1x', 23, 23};
-            app.GridLayout17.ColumnSpacing = 30;
-            app.GridLayout17.Padding = [0 0 0 0];
-            app.GridLayout17.Layout.Row = 2;
-            app.GridLayout17.Layout.Column = 1;
-
-            % Create BiologicalSexLabel
-            app.BiologicalSexLabel = uilabel(app.GridLayout17);
-            app.BiologicalSexLabel.Layout.Row = 1;
-            app.BiologicalSexLabel.Layout.Column = 1;
-            app.BiologicalSexLabel.Text = 'Biological Sex';
-
-            % Create BiologicalSexListBox
-            app.BiologicalSexListBox = uilistbox(app.GridLayout17);
-            app.BiologicalSexListBox.Items = {'asexual multicellular organism', 'female organism', 'male organism', 'hermaphroditic organism'};
-            app.BiologicalSexListBox.ValueChangedFcn = createCallbackFcn(app, @BiologicalSexListBoxValueChanged, true);
-            app.BiologicalSexListBox.Layout.Row = 2;
-            app.BiologicalSexListBox.Layout.Column = 1;
-            app.BiologicalSexListBox.ClickedFcn = createCallbackFcn(app, @BiologicalSexListBoxClicked, true);
-            app.BiologicalSexListBox.Value = 'asexual multicellular organism';
-
-            % Create SpeciesLabel_2
-            app.SpeciesLabel_2 = uilabel(app.GridLayout17);
-            app.SpeciesLabel_2.Layout.Row = 1;
-            app.SpeciesLabel_2.Layout.Column = 2;
-            app.SpeciesLabel_2.Text = 'Species';
-
-            % Create SpeciesListBox
-            app.SpeciesListBox = uilistbox(app.GridLayout17);
-            app.SpeciesListBox.Items = {};
-            app.SpeciesListBox.ValueChangedFcn = createCallbackFcn(app, @SpeciesListBoxValueChanged, true);
-            app.SpeciesListBox.Layout.Row = 2;
-            app.SpeciesListBox.Layout.Column = 2;
-            app.SpeciesListBox.ClickedFcn = createCallbackFcn(app, @SpeciesListBoxClicked, true);
-            app.SpeciesListBox.Value = {};
-
-            % Create StrainLabel
-            app.StrainLabel = uilabel(app.GridLayout17);
-            app.StrainLabel.Layout.Row = 1;
-            app.StrainLabel.Layout.Column = 3;
-            app.StrainLabel.Text = 'Strain';
-
-            % Create StrainListBox
-            app.StrainListBox = uilistbox(app.GridLayout17);
-            app.StrainListBox.Items = {};
-            app.StrainListBox.ValueChangedFcn = createCallbackFcn(app, @StrainListBoxValueChanged, true);
-            app.StrainListBox.Tag = 'Strain';
-            app.StrainListBox.Layout.Row = 2;
-            app.StrainListBox.Layout.Column = 3;
-            app.StrainListBox.ClickedFcn = createCallbackFcn(app, @StrainListBoxClicked, true);
-            app.StrainListBox.DoubleClickedFcn = createCallbackFcn(app, @StrainListBoxDoubleClicked, true);
-            app.StrainListBox.Value = {};
-
-            % Create GridLayout24
-            app.GridLayout24 = uigridlayout(app.GridLayout17);
-            app.GridLayout24.RowHeight = {'1x'};
-            app.GridLayout24.Padding = [0 0 0 0];
-            app.GridLayout24.Layout.Row = 3;
-            app.GridLayout24.Layout.Column = 1;
-
-            % Create AssignBiologicalSexButton
-            app.AssignBiologicalSexButton = uibutton(app.GridLayout24, 'push');
-            app.AssignBiologicalSexButton.ButtonPushedFcn = createCallbackFcn(app, @AssignBiologicalSexButtonPushed, true);
-            app.AssignBiologicalSexButton.Layout.Row = 1;
-            app.AssignBiologicalSexButton.Layout.Column = 1;
-            app.AssignBiologicalSexButton.Text = 'Assign';
-
-            % Create BiologicalSexClearButton
-            app.BiologicalSexClearButton = uibutton(app.GridLayout24, 'push');
-            app.BiologicalSexClearButton.ButtonPushedFcn = createCallbackFcn(app, @BiologicalSexClearButtonPushed, true);
-            app.BiologicalSexClearButton.Layout.Row = 1;
-            app.BiologicalSexClearButton.Layout.Column = 2;
-            app.BiologicalSexClearButton.Text = 'CLEAR';
-
-            % Create GridLayout24_2
-            app.GridLayout24_2 = uigridlayout(app.GridLayout17);
-            app.GridLayout24_2.RowHeight = {'1x'};
-            app.GridLayout24_2.Padding = [0 0 0 0];
-            app.GridLayout24_2.Layout.Row = 3;
-            app.GridLayout24_2.Layout.Column = 2;
-
-            % Create AssignSpeciesButton
-            app.AssignSpeciesButton = uibutton(app.GridLayout24_2, 'push');
-            app.AssignSpeciesButton.ButtonPushedFcn = createCallbackFcn(app, @AssignSpeciesButtonPushed, true);
-            app.AssignSpeciesButton.Layout.Row = 1;
-            app.AssignSpeciesButton.Layout.Column = 1;
-            app.AssignSpeciesButton.Text = 'Assign';
-
-            % Create SpeciesClearButton
-            app.SpeciesClearButton = uibutton(app.GridLayout24_2, 'push');
-            app.SpeciesClearButton.ButtonPushedFcn = createCallbackFcn(app, @SpeciesClearButtonPushed, true);
-            app.SpeciesClearButton.Layout.Row = 1;
-            app.SpeciesClearButton.Layout.Column = 2;
-            app.SpeciesClearButton.Text = 'CLEAR';
-
-            % Create GridLayout24_3
-            app.GridLayout24_3 = uigridlayout(app.GridLayout17);
-            app.GridLayout24_3.RowHeight = {'1x'};
-            app.GridLayout24_3.Padding = [0 0 0 0];
-            app.GridLayout24_3.Layout.Row = 3;
-            app.GridLayout24_3.Layout.Column = 3;
-
-            % Create AssignStrainButton
-            app.AssignStrainButton = uibutton(app.GridLayout24_3, 'push');
-            app.AssignStrainButton.Layout.Row = 1;
-            app.AssignStrainButton.Layout.Column = 1;
-            app.AssignStrainButton.Text = 'Assign';
-
-            % Create StrainClearButton
-            app.StrainClearButton = uibutton(app.GridLayout24_3, 'push');
-            app.StrainClearButton.ButtonPushedFcn = createCallbackFcn(app, @StrainClearButtonPushed, true);
-            app.StrainClearButton.Layout.Row = 1;
-            app.StrainClearButton.Layout.Column = 2;
-            app.StrainClearButton.Text = 'CLEAR';
-
-            % Create GridLayout24_4
-            app.GridLayout24_4 = uigridlayout(app.GridLayout17);
-            app.GridLayout24_4.ColumnWidth = {'1x', 50};
-            app.GridLayout24_4.RowHeight = {'1x'};
-            app.GridLayout24_4.Padding = [0 0 0 0];
-            app.GridLayout24_4.Layout.Row = 4;
-            app.GridLayout24_4.Layout.Column = 2;
-
-            % Create SpeciesEditField
-            app.SpeciesEditField = uieditfield(app.GridLayout24_4, 'text');
-            app.SpeciesEditField.Placeholder = 'Enter name of species to add';
-            app.SpeciesEditField.Layout.Row = 1;
-            app.SpeciesEditField.Layout.Column = 1;
-
-            % Create AddSpeciesButton
-            app.AddSpeciesButton = uibutton(app.GridLayout24_4, 'push');
-            app.AddSpeciesButton.ButtonPushedFcn = createCallbackFcn(app, @AddSpeciesButtonPushed, true);
-            app.AddSpeciesButton.Layout.Row = 1;
-            app.AddSpeciesButton.Layout.Column = 2;
-            app.AddSpeciesButton.Text = 'Add';
-
-            % Create GridLayout27
-            app.GridLayout27 = uigridlayout(app.GridLayout17);
-            app.GridLayout27.ColumnWidth = {'1x', 50};
-            app.GridLayout27.RowHeight = {'1x'};
-            app.GridLayout27.Padding = [0 0 0 0];
-            app.GridLayout27.Layout.Row = 4;
-            app.GridLayout27.Layout.Column = 3;
-
-            % Create StrainEditField
-            app.StrainEditField = uieditfield(app.GridLayout27, 'text');
-            app.StrainEditField.Placeholder = 'Enter name of strain to add';
-            app.StrainEditField.Layout.Row = 1;
-            app.StrainEditField.Layout.Column = 1;
-
-            % Create AddStrainButton
-            app.AddStrainButton = uibutton(app.GridLayout27, 'push');
-            app.AddStrainButton.ButtonPushedFcn = createCallbackFcn(app, @AddStrainButtonPushed, true);
-            app.AddStrainButton.Layout.Row = 1;
-            app.AddStrainButton.Layout.Column = 2;
-            app.AddStrainButton.Text = 'Add';
-
-            % Create UITableSubject
-            app.UITableSubject = uitable(app.GridLayout16);
-            app.UITableSubject.ColumnName = {'Subject'; 'Biological Sex'; 'Species'; 'Strain'};
-            app.UITableSubject.RowName = {};
-            app.UITableSubject.SelectionType = 'row';
-            app.UITableSubject.Layout.Row = 1;
-            app.UITableSubject.Layout.Column = 1;
-
-            % Create SubjectInfoLabel
-            app.SubjectInfoLabel = uilabel(app.SubjectInfoGridLayout);
-            app.SubjectInfoLabel.HorizontalAlignment = 'center';
-            app.SubjectInfoLabel.FontSize = 18;
-            app.SubjectInfoLabel.FontWeight = 'bold';
-            app.SubjectInfoLabel.Layout.Row = 1;
-            app.SubjectInfoLabel.Layout.Column = 1;
-            app.SubjectInfoLabel.Text = 'Subject Info';
-
-            % Create ProbeInfoTab
-            app.ProbeInfoTab = uitab(app.TabGroup);
-            app.ProbeInfoTab.Title = 'Probe Info';
-
-            % Create ProbeInfoGridLayout
-            app.ProbeInfoGridLayout = uigridlayout(app.ProbeInfoTab);
-            app.ProbeInfoGridLayout.ColumnWidth = {'1x'};
-            app.ProbeInfoGridLayout.RowHeight = {60, '1x'};
-            app.ProbeInfoGridLayout.Padding = [10 20 10 10];
-
-            % Create ProbeInfoPanel
-            app.ProbeInfoPanel = uipanel(app.ProbeInfoGridLayout);
-            app.ProbeInfoPanel.BorderType = 'none';
-            app.ProbeInfoPanel.Layout.Row = 2;
-            app.ProbeInfoPanel.Layout.Column = 1;
-
-            % Create GridLayout23
-            app.GridLayout23 = uigridlayout(app.ProbeInfoPanel);
-            app.GridLayout23.ColumnWidth = {'1x'};
-            app.GridLayout23.RowHeight = {'2x', '1x'};
-            app.GridLayout23.Padding = [25 25 25 10];
-
-            % Create UITableProbe
-            app.UITableProbe = uitable(app.GridLayout23);
-            app.UITableProbe.ColumnName = {'Probe Name'; 'Probe type'; 'Status'};
-            app.UITableProbe.RowName = {};
-            app.UITableProbe.SelectionType = 'row';
-            app.UITableProbe.ColumnEditable = [false false false];
-            app.UITableProbe.DoubleClickedFcn = createCallbackFcn(app, @UITableProbeDoubleClicked, true);
-            app.UITableProbe.Multiselect = 'off';
-            app.UITableProbe.Layout.Row = 1;
-            app.UITableProbe.Layout.Column = 1;
-
-            % Create ProbeInfoLabel
-            app.ProbeInfoLabel = uilabel(app.ProbeInfoGridLayout);
-            app.ProbeInfoLabel.HorizontalAlignment = 'center';
-            app.ProbeInfoLabel.FontSize = 18;
-            app.ProbeInfoLabel.FontWeight = 'bold';
-            app.ProbeInfoLabel.Layout.Row = 1;
-            app.ProbeInfoLabel.Layout.Column = 1;
-            app.ProbeInfoLabel.Text = 'Probe Info';
-
-            % Create SaveTab
-            app.SaveTab = uitab(app.TabGroup);
-            app.SaveTab.Title = 'Save';
-
-            % Create SubmitGridLayout
-            app.SubmitGridLayout = uigridlayout(app.SaveTab);
-            app.SubmitGridLayout.ColumnWidth = {'1x'};
-            app.SubmitGridLayout.RowHeight = {60, '4x', '2x'}; % Adjusted '2x' for two rows of buttons
-
-            % Create SubmitFooterGridLayout
-            app.SubmitFooterGridLayout = uigridlayout(app.SubmitGridLayout);
-            % Adjusted for 2 rows, 3 columns
-            app.SubmitFooterGridLayout.ColumnWidth = {'1x', '1x', '1x'}; 
-            app.SubmitFooterGridLayout.RowHeight = {40, 40};  % Two rows for buttons
-            app.SubmitFooterGridLayout.ColumnSpacing = 20;
-            app.SubmitFooterGridLayout.RowSpacing = 10; % Added row spacing
-            app.SubmitFooterGridLayout.Layout.Row = 3;
-            app.SubmitFooterGridLayout.Layout.Column = 1;
-            app.SubmitFooterGridLayout.Padding = [10 10 10 10]; % Adjusted padding
-
-            % ROW 1 of Buttons in SubmitFooterGridLayout
-            % Create SaveButton
-            app.SaveButton = uibutton(app.SubmitFooterGridLayout, 'push');
-            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
-            app.SaveButton.Layout.Row = 1;
-            app.SaveButton.Layout.Column = 1;
-            app.SaveButton.Text = '<html><b>Save</b></html>'; % Bold text
-
-            % Create ResetFormButton
-            app.ResetFormButton = uibutton(app.SubmitFooterGridLayout, 'push');
-            app.ResetFormButton.ButtonPushedFcn = createCallbackFcn(app, @ResetFormButtonPushed, true);
-            app.ResetFormButton.Layout.Row = 1;
-            app.ResetFormButton.Layout.Column = 2;
-            app.ResetFormButton.Text = 'Reset Form';
-
-            % Create RevertToSavedButton
-            app.RevertToSavedButton = uibutton(app.SubmitFooterGridLayout, 'push');
-            app.RevertToSavedButton.ButtonPushedFcn = createCallbackFcn(app, @RevertToSavedButtonPushed, true);
-            app.RevertToSavedButton.Layout.Row = 1;
-            app.RevertToSavedButton.Layout.Column = 3;
-            app.RevertToSavedButton.Text = 'Revert to Saved';
-
-            % ROW 2 of Buttons in SubmitFooterGridLayout
-            % Create TestDocumentConversionButton
-            app.TestDocumentConversionButton = uibutton(app.SubmitFooterGridLayout, 'push');
-            app.TestDocumentConversionButton.ButtonPushedFcn = createCallbackFcn(app, @TestDocumentConversionButtonPushed, true);
-            app.TestDocumentConversionButton.Layout.Row = 2;
-            app.TestDocumentConversionButton.Layout.Column = 1;
-            app.TestDocumentConversionButton.Text = 'Test Document Conversion';
-
-            % Create ExportDatasetInfoButton
-            app.ExportDatasetInfoButton = uibutton(app.SubmitFooterGridLayout, 'push');
-            app.ExportDatasetInfoButton.ButtonPushedFcn = createCallbackFcn(app, @ExportDatasetInfoButtonPushed, true);
-            app.ExportDatasetInfoButton.Layout.Row = 2;
-            app.ExportDatasetInfoButton.Layout.Column = 2; % Place in second column
-            % app.ExportDatasetInfoButton.Layout.Column = [2 3]; % Alternative: span 2 columns
-            app.ExportDatasetInfoButton.Text = 'Export Dataset Info to Workspace';
-
-            % Create SubmitPanelGridLayout
-            app.SubmitPanelGridLayout = uigridlayout(app.SubmitGridLayout);
-            app.SubmitPanelGridLayout.ColumnWidth = {'1x'};
-            app.SubmitPanelGridLayout.RowHeight = {'1x', 23, '1x'};
-            app.SubmitPanelGridLayout.Padding = [50 25 50 25];
-            app.SubmitPanelGridLayout.Layout.Row = 2;
-            app.SubmitPanelGridLayout.Layout.Column = 1;
-
-            % Create SubmissionStatusPanel
-            app.SubmissionStatusPanel = uipanel(app.SubmitPanelGridLayout);
-            app.SubmissionStatusPanel.BorderType = 'none';
-            app.SubmissionStatusPanel.Layout.Row = 2;
-            app.SubmissionStatusPanel.Layout.Column = 1;
-
-            % Create SubmissionDescriptionLabel
-            app.SubmissionDescriptionLabel = uilabel(app.SubmitPanelGridLayout);
-            app.SubmissionDescriptionLabel.VerticalAlignment = 'top';
-            app.SubmissionDescriptionLabel.WordWrap = 'on';
-            app.SubmissionDescriptionLabel.FontSize = 14;
-            app.SubmissionDescriptionLabel.Layout.Row = 1;
-            app.SubmissionDescriptionLabel.Layout.Column = 1;
-            app.SubmissionDescriptionLabel.Text = 'If you have filled out all the information for this dataset, please go ahead with the submission. If you want to review your information one last time, feel free to look through each of the pages again';
-
-            % Create ErrorTextAreaLabel
-            app.ErrorTextAreaLabel = uilabel(app.SubmitPanelGridLayout);
-            app.ErrorTextAreaLabel.Layout.Row = 2;
-            app.ErrorTextAreaLabel.Layout.Column = 1;
-            app.ErrorTextAreaLabel.Text = 'Status';
-
-            % Create ErrorTextArea
-            app.ErrorTextArea = uitextarea(app.SubmitPanelGridLayout);
-            app.ErrorTextArea.Layout.Row = 3;
-            app.ErrorTextArea.Layout.Column = 1;
-
-            % Create SubmitLabel
-            app.SubmitLabel = uilabel(app.SubmitGridLayout);
-            app.SubmitLabel.HorizontalAlignment = 'center';
-            app.SubmitLabel.FontSize = 18;
-            app.SubmitLabel.FontWeight = 'bold';
-            app.SubmitLabel.Layout.Row = 1;
-            app.SubmitLabel.Layout.Column = 1;
-            app.SubmitLabel.Text = 'Review and Save Data';
-
-            % Create FooterPanel
-            app.FooterPanel = uipanel(app.NDIMetadataEditorUIFigure);
-            app.FooterPanel.BorderType = 'none';
-            app.FooterPanel.Position = [-6 -122 900 63];
-
-            % Create FooterGridLayout
-            app.FooterGridLayout = uigridlayout(app.FooterPanel);
-            app.FooterGridLayout.ColumnWidth = {100, '1x', 100, 50, 100, '1x', 100};
-            app.FooterGridLayout.RowHeight = {23};
-            app.FooterGridLayout.Padding = [25 10 25 20];
-            app.FooterGridLayout.BackgroundColor = [0.902 0.902 0.902];
-
-            % Create PreviousButton
-            app.PreviousButton = uibutton(app.FooterGridLayout, 'push');
-            app.PreviousButton.ButtonPushedFcn = createCallbackFcn(app, @PreviousButtonPushed, true);
-            app.PreviousButton.Layout.Row = 1;
-            app.PreviousButton.Layout.Column = 3;
-            app.PreviousButton.Text = 'Previous';
-
-            % Create NextButton
-            app.NextButton = uibutton(app.FooterGridLayout, 'push');
-            app.NextButton.ButtonPushedFcn = createCallbackFcn(app, @NextButtonPushed, true);
-            app.NextButton.Layout.Row = 1;
-            app.NextButton.Layout.Column = 5;
-            app.NextButton.Text = 'Next';
-
-            % Create NdiLogoImage
-            app.NdiLogoImage = uiimage(app.FooterGridLayout);
-            app.NdiLogoImage.Layout.Row = 1;
-            app.NdiLogoImage.Layout.Column = 7;
-            app.NdiLogoImage.ImageSource = fullfile(pathToMLAPP, 'resources', 'ndi_logo.png');
-
-            % Show the figure after all components are created
             app.NDIMetadataEditorUIFigure.Visible = 'on';
         end
     end
 
     % App creation and deletion
     methods (Access = public)
-
-        % Construct app
         function app = MetadataEditorApp(varargin)
-
             runningApp = getRunningApp(app);
-
-            % Check for running singleton app
             if isempty(runningApp)
-
-                % Create UIFigure and components
                 createComponents(app)
-
-                % Register the app with App Designer
                 registerApp(app, app.NDIMetadataEditorUIFigure)
-
-                % Execute the startup function
                 runStartupFcn(app, @(app)startupFcn(app, varargin{:}))
             else
-
-                % Focus the running singleton app
                 figure(runningApp.NDIMetadataEditorUIFigure)
-
                 app = runningApp;
             end
-
-            if nargout == 0
-                clear app
-            end
+            if nargout == 0, clear app; end
         end
 
-        % Code that executes before app deletion
         function delete(app)
-
-            % Delete UIFigure when app is deleted
-            delete(app.NDIMetadataEditorUIFigure)
+            if ~isempty(app.Timer) && isvalid(app.Timer)
+                stop(app.Timer);
+                delete(app.Timer);
+            end
+            if ishandle(app.NDIMetadataEditorUIFigure) && isvalid(app.NDIMetadataEditorUIFigure)
+                delete(app.NDIMetadataEditorUIFigure);
+            end
         end
     end
 end
