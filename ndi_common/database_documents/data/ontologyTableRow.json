@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/ontologyTableRow.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ontologyTableRow_schema.json",
+		"class_name":						"ontologyTableRow",
+		"property_list_name":					"ontologyTableRow",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"ontologyTableRow" : {
+			"names":					"",
+			"variableNames":					"",
+			"ontologyNodes":					"",
+			"data":					""
+	}
+}
+

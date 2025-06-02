@@ -1,9 +1,9 @@
 {
-	"classname": "ontologySet",
+	"classname": "ontologyTableRow",
 	"superclasses":  [ "base" ],
 	"depends_on": [ ],
 	"file": [ ],
-	"ontologySet": [
+	"ontologyTableRow": [
 		{
 			"name": "names",
 			"type": "string",
@@ -34,7 +34,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "A structure with variableNames as fields and arrays of corresponding data as values (e.g. data = struct('behaviorMeasure',[1 1],'GM_neuron',[1 1]))."
+			"documentation": "A structure with variableNames as fields and corresponding data as values (e.g. data = struct('behaviorMeasure',1,'GM_neuron',1))."
 		}
 
 	]
