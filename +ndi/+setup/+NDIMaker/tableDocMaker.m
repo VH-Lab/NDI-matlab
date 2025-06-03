@@ -166,7 +166,7 @@ classdef tableDocMaker < handle
                 % Add values to field
                 names{end+1} = name;
                 variableNames{end+1} = shortName;
-                ontologyNodes{end+1} = [prefix,':',id];
+                ontologyNodes{end+1} = id;
                 data.(shortName) = tableRow.(varNames{i});
             end
 
