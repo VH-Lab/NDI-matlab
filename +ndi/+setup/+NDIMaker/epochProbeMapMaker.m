@@ -132,6 +132,7 @@ classdef epochProbeMapMaker < handle
                 
                 % Skip if not overwriting and file exists
                 if ~options.Overwrite && exist(probeFilename, 'file')
+                    progressBar = progressBar.updateBar('epochprobemap',e/numel(epochstreams));
                     continue
                 end
                 
