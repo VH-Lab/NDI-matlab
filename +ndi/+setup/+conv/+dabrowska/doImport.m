@@ -132,7 +132,7 @@ sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
 
 % Get mixture dictionary
 jsonPath = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+setup','+conv',...
-    '+dabrowska','dabrowksa_mixtures_dictionary.json');
+    '+dabrowska','dabrowska_mixtures_dictionary.json');
 mixture_dictionary = jsondecode(fileread(jsonPath));
 
 % Get stimulus bath docs
