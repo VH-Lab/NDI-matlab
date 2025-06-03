@@ -6,11 +6,11 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory)
 %       updates the file info of the document to point to a file in the
 %       provided (local) file directory
 %
-% Input Arguments: 
+% Input Arguments:
 %   document - The document object that contains file info to be updated
 %   fileDirectory - The directory where local files are stored
 %
-% Output Arguments: 
+% Output Arguments:
 %   document - The updated document object with new file info
 %
 % See also:
@@ -33,8 +33,4 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory)
             end
         end
     end
-
-    
-
 end
-
