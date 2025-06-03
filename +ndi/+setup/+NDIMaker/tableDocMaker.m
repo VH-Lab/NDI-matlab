@@ -13,7 +13,7 @@ classdef tableDocMaker < handle
     end
 
     methods
-        function obj = tableDocMaker(session, labName, options)
+        function obj = tableDocMaker(session, labName)
             %TABLEDOCMAKER Constructor for this class.
             %   Initializes the tableDocMaker by loading a variable-to-ontology
             %   mapping dictionary file specific to the given labName and associating
@@ -57,9 +57,9 @@ classdef tableDocMaker < handle
             end
         end % constructor tableDocMaker
 
-        function doc = createOntologyTableRowDoc(obj, tableRow, dependencies, options)
+        function doc = createOntologyTableRowDoc(obj, tableRow, identifyingVariables, options)
             %CREATEONTOLOGYTABLEROWDOC Creates a single NDI 'ontologyTableRow' document for a row of table data.
-            %   DOC = CREATEONTOLOGYTABLEROWDOC(OBJ, TABLEROW, DEPENDENCIES, OPTIONS)
+            %   DOC = CREATEONTOLOGYTABLEROWDOC(OBJ, TABLEROW, IDENTIFYINGVARIABLES, OPTIONS)
             %
             %   This method constructs an NDI document that links the data fields
             %   from a single table row to ontology terms. The mapping from the
@@ -71,68 +71,74 @@ classdef tableDocMaker < handle
             %
             %   The created NDI document is of type 'ontologyTableRow' and contains:
             %     - 'names': A comma-separated string of full ontology term names.
-            %     - 'variableNames': A comma-separated string, intended for short/code names,
-            %                        but currently populated with full ontology term names
-            %                        based on the existing code logic.
+            %     - 'variableNames': A comma-separated string of full short/code names.
             %     - 'ontologyNodes': A comma-separated string of full ontology IDs (e.g., "PREFIX:ID").
-            %     - 'data': A struct where field names are the 'shortName' (codeName)
+            %     - 'data': A struct where field names are the 'variableNames' (shortName)
             %               obtained from the ontology lookup, and values are the
             %               corresponding data from the input 'tableRow'.
-            %   The document is associated with NDI dependencies specified in the
-            %   'dependencies' argument.
             %
             %   Inputs:
-            %       obj: An instance of the tableDocMaker class.
+            %       obj: An instance of the tableDocMaker class. It must have the
+            %                 'variableMapStruct' property initialized, mapping table variable
+            %                 names to ontology term identifiers, and a valid 'session' property.
             %       tableRow: A 1xN MATLAB table representing a single row of data.
             %                 The variable names (column headers) of this table are used
-            %                 for mapping to ontology terms via 'obj.variableMapStruct'.
-            %       dependencies: (Optional) A scalar struct specifying NDI dependencies.
-            %                     Field names of this struct are the dependency names
-            %                     (e.g., 'epochid', 'stimulator_element_id'), and the
-            %                     values are the corresponding NDI IDs (char arrays).
-            %                     Default: empty struct (no explicit dependencies added
-            %                     beyond session defaults, though the document structure
-            %                     itself might imply an epoch if 'epochid' is a dependency).
-            %       options.Overwrite: (logical) Flag to control whether existing documents
-            %                          that match the specified dependencies (currently a simplified
-            %                          match based on the first dependency) should be overwritten.
-            %                          Default: false.
+            %                 for mapping to ontology terms.
+            %       identifyingVariables: A string, char array, or cellstr array of
+            %                 variable names present in 'tableRow'. These variables
+            %                 and their corresponding values in 'tableRow' are used
+            %                 to query for an existing 'ontologyTableRow' document.
+            %                 The combination of these variable values should
+            %                 form a unique identifier for the row's data context.
+            %
+            %   Optional Name-Value Arguments:
+            %       Overwrite: Controls behavior if a document matching the 'identifyingVariables' is found:
+            %                          - true: The existing document is removed, and a new one is created.
+            %                          - false (default): The existing document is returned, and no
+            %                                           new document is created.
             %
             %   Outputs:
-            %       doc: The newly created (or existing, if not overwriting and found)
-            %            NDI document object of type 'ontologyTableRow'.
+            %       doc: The NDI document object (ndi.document) of type 'ontologyTableRow'.
+            %            This will be the newly created document or the existing document
+            %            if found and 'options.Overwrite' is false.
             %
-            %   See also: ndi.ontology.lookup, jsondecode, table2struct
+            %   See also: ndi.ontology.lookup, ndi.document, ndi.query, tableDocMaker.table2ontologyTableRowDocs
 
             arguments
                 obj
                 tableRow (1,:) table % Input is a single table row
-                dependencies (1,1) struct
+                identifyingVariables {mustBeText}
                 options.Overwrite (1,1) logical = false
             end
 
-            % Get dependency names
-            dependencyNames = fieldnames(dependencies);
+            % Ensure identifyingVariables is a cell array
+            identifyingVariables = cellstr(identifyingVariables);
 
             % Search for existing document(s)
             query = ndi.query('','isa','ontologyTableRow'); % Document type
-            for i = 1:numel(dependencyNames)
-                query = query & ndi.query('','depends_on',dependencyNames{i},...
-                    dependencies.(dependencyNames{i}));
-                 ndi.query('subject.local_identifier', 'exact_string', localIdentifiersToDelete{k});
+            for i = 1:numel(identifyingVariables)
+                termName = obj.variableMapStruct.(identifyingVariables{i});
+                [~,~,~,~,~,shortName] = ndi.ontology.lookup(termName);
+                query = query & ndi.query(['ontologyTableRow.data.',shortName],...
+                    'exact_string',tableRow.(identifyingVariables{i}));
             end
             doc_old = obj.session.database_search(query);
 
             % Remove old document(s) if overwriting
-            if ~isempty(doc_old)
+            if isscalar(doc_old)
                 if options.Overwrite
-                    for i = 1:numel(doc_old)
-                        obj.session.database_rm(doc_old{i});
-                    end
+                    obj.session.database_rm(doc_old{1});
                 else
                     doc = doc_old{1};
                     return;
                 end
+            elseif numel(doc_old) > 1
+                error('tableDocMaker:createOntologyTableRowDoc:NonUniqueFile',...
+                    'The identifying variables %s do not return a unique document',...
+                    join(identifyingVariables,','))
+                % NOTE: We should have a way to tell the difference between
+                % duplicate table rows and those that require additional
+                % identifying variables to distinguish between them
             end
 
             % Get variable (column) names from table
@@ -141,9 +147,6 @@ classdef tableDocMaker < handle
             % Initialize ontologyTableRow field names
             names = {}; variableNames = {}; ontologyNodes = {}; data = struct();
             for i = 1:numel(varNames)
-
-                % DO WE WANT TO USE THE ONTOLOGY NODES FOR ANIMALS,
-                % TREATMENTS?
 
                 % Map variable name to ontology term given variableMapStruct
                 try
@@ -162,7 +165,7 @@ classdef tableDocMaker < handle
 
                 % Add values to field
                 names{end+1} = name;
-                variableNames{end+1} = name;
+                variableNames{end+1} = shortName;
                 ontologyNodes{end+1} = [prefix,':',id];
                 data.(shortName) = tableRow.(varNames{i});
             end
@@ -180,56 +183,45 @@ classdef tableDocMaker < handle
             doc = ndi.document('ontologyTableRow','ontologyTableRow',ontologyTableRow) + ...
                 obj.session.newdocument();
 
-        end % createOntologyTableRowDoc
-
-        function addDocs2session(obj,docs)
-            % Add dependencies
-            for i = 1:numel(dependencies)
-                doc.set_dependency_value(dependencyNames{i},...
-                    dependencies.(dependencyNames{i}));
-            end
-
             % Add document to database
             obj.session.database_add(doc);
-        end
 
-        function docs = table2ontologyTableRowDocs(obj, dataTable, options)
-            %TABLE2ONTOLOGYTABLEROWDOCS Converts rows in a table into NDI documents.
-            %   Processes a MATLAB table where each row represents a set of data
-            %   (e.g., an experimental trial or epoch). For each valid row,
-            %   it extracts the data and calls `createOntologyTableRowDoc` to
-            %   generate and add the corresponding NDI document to the database.
+        end % createOntologyTableRowDoc
+
+        function docs = table2ontologyTableRowDocs(obj, dataTable, identifyingVariables, options)
+            %TABLE2ONTOLOGYTABLEROWDOCS Converts each row in a table into an NDI 'ontologyTableRow' document.
+            %   DOCS = TABLE2ONTOLOGYTABLEROWDOCS(OBJ, DATATABLE, IDENTIFYINGVARIABLES, OPTIONS)
+            %
+            %   This method iterates through each row of the input 'dataTable'.
+            %   For each row, it calls `obj.createOntologyTableRowDoc` to generate
+            %   an NDI document of type 'ontologyTableRow'. The resulting documents
+            %   are collected into a cell array.
             %
             %   Inputs:
             %       obj: An instance of the tableDocMaker class.
-            %       dataTable: A MATLAB table. Each row is processed.
-            %
+            %       dataTable: A MATLAB table. Each row will be processed to create
+            %                  an 'ontologyTableRow' document.
+            %       identifyingVariables: A string, char array, or cellstr array of
+            %                  variable names present in 'dataTable'. This is
+            %                  passed directly to `createOntologyTableRowDoc`
+            %                  for each row to identify potentially existing documents.
             %   Optional Name-Value Arguments:
-            %       FilenameVariable: (char) The name of the column in 'dataTable'
-            %                         containing filenames used to derive NDI 'epochid'.
-            %                         If empty, 'RowNames' of dataTable are used.
-            %       StimulatorIDVariable: (char) The name of the column in 'dataTable'
-            %                             containing the stimulator NDI element ID.
-            %                             If empty or column not found, stimulator_id
-            %                             will be passed as empty to createOntologyTableRowDoc.
-            %       NonNaNVariableNames: (cellstr) Variable names in 'dataTable'.
-            %                            Values in these columns must not be NaN for a
-            %                            row to be considered a valid epoch.
-            %                            Default: {} (all rows processed).
-            %       Overwrite: (logical) Flag passed to createOntologyTableRowDoc
-            %                  to control overwriting of existing documents. Default: false.
+            %       Overwrite: Flag passed directly to `createOntologyTableRowDoc`.
+            %                  Controls whether existing documents matching the
+            %                  'identifyingVariables' for a given row should be
+            %                  overwritten. Default: false.
             %
             %   Outputs:
-            %       docs: A cell array where each cell corresponds to a processed
-            %                 input row from 'dataTable'. Each cell contains the NDI
-            %                 document object created for that row.
+            %       docs: A cell array with the same number of rows as 'dataTable'.
+            %             Each cell contains the NDI document object (ndi.document)
+            %             created by `createOntologyTableRowDoc` for the corresponding row.
+            %
+            %   See also: tableDocMaker.createOntologyTableRowDoc, ndi.gui.component.ProgressBarWindow
 
             arguments
                 obj
                 dataTable table
-                options.FilenameVariable (1,:) char = ''
-                options.StimulatorIDVariable (1,:) char = ''
-                options.NonNaNVariableNames cell = {}
+                identifyingVariables {mustBeText}
                 options.Overwrite (1,1) logical = false
             end
 
@@ -237,14 +229,12 @@ classdef tableDocMaker < handle
             progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
             progressBar = progressBar.addBar('Label','Creating Ontology Table Row Document(s)','Tag','ontologyTableRow');
 
-            docs = cell(size(epochInd)); % Initialize output cell array
-
+            docs = cell(height(dataTable),1); % Initialize output cell array
             for i = 1:height(dataTable)
 
-                dependencies = struct(''); % FILL IN
-
+                % Create onotologyTableRowDoc
                 docs{i} = createOntologyTableRowDoc(obj, dataTable(i,:), ...
-                        dependencies,'Overwrite',options.Overwrite);
+                        identifyingVariables,'Overwrite',options.Overwrite);
 
                 % Update progress bar
                 progressBar = progressBar.updateBar('ontologyTableRow',i/height(dataTable));

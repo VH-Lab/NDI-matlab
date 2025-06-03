@@ -221,11 +221,8 @@ myPath = fullfile(myDir,'data','Dabrowska');
 % Get session
 S = ndi.session.dir(myPath);
 
-% Initialize tableDocMaker
-tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
-
 %% Get combined EPM data table
-filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final.xlsx';
+filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
 sheetnames_EPM = {'Open arm','Closed arm','Center'};
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
 for i = 1:numel(sheetnames_EPM)
@@ -257,10 +254,18 @@ for i = 1:numel(sheetnames_EPM)
     end
 end
 
-tdm.createOntologyTableRowDoc(dataTable(1,:),...
-    struct('subjectid','sdwi_rat_CRFCre_210818@dabrowska-lab.rosalindfranklin.edu'),...
-    'Overwrite',true);
+% Add unique subject identifiers with strain and virus information
+dataTable.Animal = char(arrayfun(@(animal) ['sd_rat_OTRCre_',num2str(animal,'%.3i'),...
+    '@dabrowska-lab.rosalindfranklin.edu'],dataTable.Animal,'UniformOutput',false));
+dataTable.Treatment = char(dataTable.Treatment);
+
+% Initialize tableDocMaker
+tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
+
+% tdm.createOntologyTableRowDoc(dataTable(1,:),'Animal','Overwrite',false);
+tdm.table2ontologyTableRowDocs(dataTable,'Animal','Overwrite',false);
 
 %% Get combined FPS data table
 
 filename_FPS = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final.xlsx';
+sheetnames_FPS = {'Open arm','Closed arm','Center'};
