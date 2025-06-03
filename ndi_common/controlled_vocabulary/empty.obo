@@ -507,7 +507,7 @@ property_value: codeName "experimentalGroupCode" xsd:string
 
 [Term]
 id: EMPTY:00000156
-name: Acoustic Startle Response: number of samples in analysis window
+name: Acoustic Startle Response: number of samples
 namespace: empty_ontology
 def: "The total number of data points (samples) recorded and analyzed for a single acoustic startle response, typically within a defined time window following stimulus onset (e.g., a 200-ms window as mentioned in the manuscript [cite: 1]). Unit of measure: count" []
 is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
@@ -547,7 +547,7 @@ property_value: codeName "asrTimeToMaximumAmplitude" xsd:string
 
 [Term]
 id: EMPTY:00000161
-name: Acoustic Startle Response: average amplitude in analysis window
+name: Acoustic Startle Response: average amplitude
 namespace: empty_ontology
 def: "The average amplitude of the digitized acoustic startle response signal calculated across the entire duration of the defined analysis window (e.g., 200-ms window [cite: 1]). Unit of measure: millivolts (mV) or arbitrary units." []
 is_a: EMPTY:00000092 ! Acoustic Startle Response measurement

@@ -115,31 +115,31 @@ classdef tableDocMaker < handle
             identifyingVariables = cellstr(identifyingVariables);
 
             % Search for existing document(s)
-            query = ndi.query('','isa','ontologyTableRow'); % Document type
-            for i = 1:numel(identifyingVariables)
-                termName = obj.variableMapStruct.(identifyingVariables{i});
-                [~,~,~,~,~,shortName] = ndi.ontology.lookup(termName);
-                query = query & ndi.query(['ontologyTableRow.data.',shortName],...
-                    'exact_string',tableRow.(identifyingVariables{i}));
-            end
-            doc_old = obj.session.database_search(query);
+            % query = ndi.query('','isa','ontologyTableRow'); % Document type
+            % for i = 1:numel(identifyingVariables)
+            %     termName = obj.variableMapStruct.(identifyingVariables{i});
+            %     [~,~,~,~,~,shortName] = ndi.ontology.lookup(termName);
+            %     query = query & ndi.query(['ontologyTableRow.data.',shortName],...
+            %         'exact_string',tableRow.(identifyingVariables{i}));
+            % end
+            % doc_old = obj.session.database_search(query);
 
-            % Remove old document(s) if overwriting
-            if isscalar(doc_old)
-                if options.Overwrite
-                    obj.session.database_rm(doc_old{1});
-                else
-                    doc = doc_old{1};
-                    return;
-                end
-            elseif numel(doc_old) > 1
-                error('tableDocMaker:createOntologyTableRowDoc:NonUniqueFile',...
-                    'The identifying variables %s do not return a unique document',...
-                    join(identifyingVariables,','))
-                % NOTE: We should have a way to tell the difference between
-                % duplicate table rows and those that require additional
-                % identifying variables to distinguish between them
-            end
+            % % Remove old document(s) if overwriting
+            % if isscalar(doc_old)
+            %     if options.Overwrite
+            %         obj.session.database_rm(doc_old{1});
+            %     else
+            %         doc = doc_old{1};
+            %         return;
+            %     end
+            % elseif numel(doc_old) > 1
+            %     error('tableDocMaker:createOntologyTableRowDoc:NonUniqueFile',...
+            %         'The identifying variables %s do not return a unique document',...
+            %         join(identifyingVariables,','))
+            %     % NOTE: We should have a way to tell the difference between
+            %     % duplicate table rows and those that require additional
+            %     % identifying variables to distinguish between them
+            % end
 
             % Get variable (column) names from table
             varNames = tableRow.Properties.VariableNames;
