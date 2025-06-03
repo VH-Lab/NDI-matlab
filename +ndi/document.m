@@ -176,9 +176,10 @@ classdef document
             %                          |   file is only deleted upon the later call to
             %                          |   ndi.database.add_doc(), not at the call to
             %                          |   ndi.document.add_file().
-            % location_type ('file' or | Can be 'file' or 'url'. By default, it is set
-            %   'url')                 |   to 'file' if LOCATION does not begin with
-            %                          |   'http://' or 'https://', and 'url' otherwise.
+            % location_type ('file',   | Can be 'file', 'url' or 'ndicloud'. By default, it 
+            %   'url' or 'ndicloud')   |   is set to 'file' if LOCATION does not begin with
+            %                          |   'http://', 'https://' or 'ndic://', and 'url' or 
+            %                          |   'ndicloud' otherwise.
             %
             ingest = NaN;
             delete_original = NaN;
