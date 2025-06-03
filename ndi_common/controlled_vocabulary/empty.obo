@@ -428,19 +428,18 @@ property_value: codeName "elevatedPlusMazeTestIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000146
-name: Elevated Plus Maze: animal identifier
+name: Subject local identifier
 namespace: empty_ontology
-def: "For an Elevated Plus Maze experiment, this is a unique code or label assigned to an individual animal subject. This allows for tracking and associating behavioral data with specific animals, along with their characteristics like strain, sex, or age." []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeAnimalIdentifier" xsd:string
+def: "For an experiment, this is a unique code or label assigned to an individual animal subject. This allows for tracking and associating behavioral data with specific animals, along with their characteristics like strain, sex, or age." []
+property_value: codeName "subjectLocalIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000147
-name: Elevated Plus Maze: treatment group
+name: Treatment: CNO or saline administration
 namespace: empty_ontology
-def: "For an Elevated Plus Maze experiment, this describes the experimental condition or group to which an animal belongs (e.g., control, specific drug administration, genetic modification). It is used to compare behavioral outcomes between different experimental manipulations." []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeTreatmentGroup" xsd:string
+def: "Specifies the pharmacological treatment assigned to a subject. This assignment dictates the experimental group, with possible values being 'CNO' for Clozapine-N-oxide administration (2 mg/kg, i.p.) or 'Saline' for vehicle control administration (i.p.). These treatments were administered 45 minutes before fear conditioning and before EPM testing." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "treatmentCNOSalineAdministration" xsd:string
 
 [Term]
 id: EMPTY:00000148
