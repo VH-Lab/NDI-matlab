@@ -515,11 +515,10 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
 
         function loadUserDefinedMetadata(app) 
-            app.loadOrganizations();
             app.loadSpecies();
         end
 
-        function loadSpecies(app)
+        function loadSpecies(app)  % needs to move to SubjectInfoGUI
             import ndi.database.metadata_app.fun.loadUserInstances
             app.SpeciesInstancesUser = loadUserInstances('species');
             [names, ~] = ndi.database.metadata_app.fun.getOpenMindsInstances('Species');
@@ -536,42 +535,17 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             end
         end
 
-        function saveSpecies(app)
+        function saveSpecies(app) % needs to move to SubjectInfoGUI
             import ndi.database.metadata_app.fun.saveUserInstances
             saveUserInstances('species', app.SpeciesInstancesUser);
         end
-
-        function loadOrganizations(app)
-            import ndi.database.metadata_app.fun.loadUserInstances
-            app.Organizations = loadUserInstances('affiliation_organization');
-            if ~isempty(app.AuthorDataGUI_Instance) && isvalid(app.AuthorDataGUI_Instance)
-                app.AuthorDataGUI_Instance.populateOrganizationDropdownInternal();
-            end
-        end
-
-        function saveOrganizationInstances(app)
-            import ndi.database.metadata_app.fun.saveUserInstances
-            saveUserInstances('affiliation_organization', app.Organizations);
-        end
         
-        function strainInstances = getStrainInstances(app)
+        function strainInstances = getStrainInstances(app) % needs to move to SubjectInfoGUI
             import ndi.database.metadata_app.fun.loadUserInstanceCatalog
             strainInstances = loadUserInstanceCatalog('Strain');
         end
-        
-        function insertOrganization(app, S_org, insertIndex) 
-            if nargin < 3 || isempty(insertIndex)
-                insertIndex = numel(app.Organizations) + 1;
-            end
-            if isempty(app.Organizations)
-                app.Organizations = S_org;
-            else
-                app.Organizations(insertIndex) = S_org;
-            end
-            app.saveOrganizationInstances();
-        end
 
-        function S = openFundingForm(app, info) 
+        function S = openFundingForm(app, info)  % needs to move to DatasetDetailsGUI.m
             progressDialog = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
                 'Message', 'Opening form for entering funder details', ...
                 'Title', 'Please wait...', 'Indeterminate', "on");
@@ -628,7 +602,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             delete(progressDialog);
         end
         
-        function success = openProbeForm(app, probeType, probeIndexOrData, probeObjIn)
+        function success = openProbeForm(app, probeType, probeIndexOrData, probeObjIn) % needs to move to ProbeDataGUI
             success = false;
             formHandle = [];
             switch probeType
@@ -664,7 +638,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             formHandle.Visible = 'off';
         end
         
-        function S = openSpeciesForm(app, speciesInfoStruct) 
+        function S = openSpeciesForm(app, speciesInfoStruct)  % needs to move to SubjectInfoGUI
              if ~isfield(app.UIForm, 'Species') || ~isvalid(app.UIForm.Species)
                 app.UIForm.Species = ndi.database.metadata_app.Apps.SpeciesForm(); 
             else
@@ -679,25 +653,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             if mode ~= "Save", S = struct.empty; end
             app.UIForm.Species.reset();
             app.UIForm.Species.Visible = 'off';
-        end
-
-        function S = openLoginForm(app)
-             if ~isfield(app.UIForm, 'Login') || ~isvalid(app.UIForm.Login)
-                app.UIForm.Login = ndi.database.metadata_app.Apps.LoginForm();
-            else
-                app.UIForm.Login.Visible = 'on';
-            end
-            app.UIForm.Login.waitfor();
-            S = app.UIForm.Login.LoginInformation;
-            mode = app.UIForm.Login.FinishState;
-            if mode == "Save"
-                app.LoginInformation = S; 
-            else
-                S = struct.empty;
-            end
-            app.UIForm.Login.reset();
-            app.UIForm.Login.Visible = 'off';
-            if ~nargout, clear S; end
         end
 
         function resetFigureNameIn(app, name, numSeconds)
