@@ -72,7 +72,7 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
             rootFilesFolder = ndiDataset.path;
         end
 
-        % Todo: Ensure proper cleanup is anything goes wrong before files
+        % Todo: Ensure proper cleanup if anything goes wrong before files
         % are ingested to database.
         filesTargetFolder = fullfile(rootFilesFolder, ndi.cloud.sync.internal.Constants.FileSyncLocation);
 
@@ -101,25 +101,26 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
             if syncOptions.Verbose
                 fprintf('Updating document file info to point to local files.\n');
             end
-            newNdiDocuments = ndi.cloud.download.internal.update_document_file_info(...
-                newNdiDocuments, syncOptions.SyncFiles, filesTargetFolder);
         else
             if syncOptions.Verbose
                 fprintf('No associated files found for these documents, or files already local.\n');
                 fprintf('Updating document file info (SyncMode.Local, but no new files to point to).\n');
             end
-            % Even if no files, update_document_file_info might be needed to set correct status
-            newNdiDocuments = ndi.cloud.download.internal.update_document_file_info(newNdiDocuments, syncOptions.SyncFiles, filesTargetFolder);
         end
+        documentUpdateFcn = @(doc) ...
+            ndi.cloud.sync.internal.updateFileInfoForLocalFiles(doc, filesTargetFolder);
     else
         if syncOptions.Verbose
             fprintf('"SyncFiles" option is false. Updating document file info to reflect remote files.\n');
         end
-        % Update document file info to point to remote/cloud locations
-        newNdiDocuments = ndi.cloud.download.internal.update_document_file_info(newNdiDocuments, syncOptions.SyncFiles, ''); % No local path needed
+        documentUpdateFcn = @(doc) ...
+            ndi.cloud.sync.internal.updateFileInfoForRemoteFiles(doc, cloudDatasetId);
     end
 
-    % 3. Add documents to the local dataset
+    % 3. Update file info for documents based on local / remote location
+    newNdiDocuments = ndi.docs.docfun(documentUpdateFcn, newNdiDocuments);
+
+    % 4. Add documents to the local dataset
     if ~isempty(ndiDataset)
         if syncOptions.Verbose
             fprintf('Adding %d processed documents to the local dataset...\n', ...
