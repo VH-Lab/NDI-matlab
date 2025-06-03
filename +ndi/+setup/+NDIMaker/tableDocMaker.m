@@ -119,6 +119,7 @@ classdef tableDocMaker < handle
             for i = 1:numel(dependencyNames)
                 query = query & ndi.query('','depends_on',dependencyNames{i},...
                     dependencies.(dependencyNames{i}));
+                 ndi.query('subject.local_identifier', 'exact_string', localIdentifiersToDelete{k});
             end
             doc_old = obj.session.database_search(query);
 
@@ -174,9 +175,14 @@ classdef tableDocMaker < handle
             % Compile ontologyTableRow struct
             ontologyTableRow = struct('names',names,'variableNames',variableNames,...
                 'ontologyNodes',ontologyNodes,'data',data);
+
+            % Create ontologyTableRow doument
             doc = ndi.document('ontologyTableRow','ontologyTableRow',ontologyTableRow) + ...
                 obj.session.newdocument();
-            
+
+        end % createOntologyTableRowDoc
+
+        function addDocs2session(obj,docs)
             % Add dependencies
             for i = 1:numel(dependencies)
                 doc.set_dependency_value(dependencyNames{i},...
@@ -185,8 +191,7 @@ classdef tableDocMaker < handle
 
             % Add document to database
             obj.session.database_add(doc);
-
-        end % createOntologyTableRowDoc
+        end
 
         function docs = table2ontologyTableRowDocs(obj, dataTable, options)
             %TABLE2ONTOLOGYTABLEROWDOCS Converts rows in a table into NDI documents.
