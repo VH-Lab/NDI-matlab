@@ -224,7 +224,7 @@ S = ndi.session.dir(myPath);
 % Initialize tableDocMaker
 tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
 
-%% Get combined data table for each animal
+%% Get combined EPM data table
 filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final.xlsx';
 sheetnames_EPM = {'Open arm','Closed arm','Center'};
 warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
@@ -256,36 +256,11 @@ for i = 1:numel(sheetnames_EPM)
             'MergeKeys',true);
     end
 end
-%%
-tableRow = dataTable(1,:);
-tdm.createOntologyTableRowDoc(tableRow,...
+
+tdm.createOntologyTableRowDoc(dataTable(1,:),...
     struct('subjectid','sdwi_rat_CRFCre_210818@dabrowska-lab.rosalindfranklin.edu'),...
     'Overwrite',true);
 
-%% Create ontology table
-jsonPath = fullfile(userpath,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_EMPTY_dictionary.json');
-varMap = jsondecode(fileread(jsonPath));
+%% Get combined FPS data table
 
-ontologyTable = table();
-varNames = dataTable.Properties.VariableNames;
-for j = 1:numel(varNames)
-
-    % Get term name
-    try
-        termName = varMap.(varNames{j});
-    catch ME
-        if strcmpi(ME.identifier,'MATLAB:nonExistentField')
-            warning(ME.identifier,'%s Skipping.',ME.message)
-            continue
-        else
-            rethrow(ME)
-        end
-    end
-
-    % Lookup term
-    [id, name, prefix, definition, synonyms, shortName] = ...
-        ndi.ontology.lookup(['EMPTY:',termName]);
-
-    % Add column to table with shortName as VariableName
-    ontologyTable.(shortName) = dataTable{:,j};
-end
+filename_FPS = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final.xlsx';

@@ -141,6 +141,9 @@ classdef tableDocMaker < handle
             names = {}; variableNames = {}; ontologyNodes = {}; data = struct();
             for i = 1:numel(varNames)
 
+                % DO WE WANT TO USE THE ONTOLOGY NODES FOR ANIMALS,
+                % TREATMENTS?
+
                 % Map variable name to ontology term given variableMapStruct
                 try
                     termName = obj.variableMapStruct.(varNames{i});
