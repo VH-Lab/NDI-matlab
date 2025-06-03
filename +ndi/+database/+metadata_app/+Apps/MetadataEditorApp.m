@@ -87,20 +87,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         ExperimentDetailsTab          matlab.ui.container.Tab
         ExperimentDetailsGridLayout   matlab.ui.container.GridLayout
         ExperimentDetailsLabel        matlab.ui.control.Label
-        ExperimentDetailsPanel        matlab.ui.container.Panel
-        GridLayout26                  matlab.ui.container.GridLayout % Main grid in ExperimentDetailsPanel
-        SelectedTechniquesListBox     matlab.ui.control.ListBox
-        SelectedTechniquesListBoxLabel matlab.ui.control.Label
-        SelectTechniqueDropDownLabel  matlab.ui.control.Label
-        SelectTechniqueDropDown       matlab.ui.control.DropDown
-        SelectTechniqueCategoryDropDown matlab.ui.control.DropDown
-        SelectTechniqueCategoryDropDownLabel matlab.ui.control.Label
-        AddTechniqueButton            matlab.ui.control.Button
-        RemoveTechniqueButton         matlab.ui.control.Button
-        ExperimentalApproachTreeLabel matlab.ui.control.Label
-        ExperimentalApproachTree      matlab.ui.container.CheckBoxTree
-        DataTypeTree                  matlab.ui.container.CheckBoxTree
-        DataTypeTreeLabel             matlab.ui.control.Label
+        ExperimentDetailsPanel        matlab.ui.container.Panel % Parent for ExperimentalDetailsGUI
         
         SubjectInfoTab                matlab.ui.container.Tab
         SubjectInfoGridLayout         matlab.ui.container.GridLayout
@@ -135,7 +122,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         ProbeInfoGridLayout           matlab.ui.container.GridLayout
         ProbeInfoLabel                matlab.ui.control.Label
         ProbeInfoPanel                matlab.ui.container.Panel % This panel will be parent for ProbeDataGUI
-        % UITableProbe will be created by ProbeDataGUI
         
         SaveTab                       matlab.ui.container.Tab
         SubmitGridLayout              matlab.ui.container.GridLayout
@@ -155,11 +141,11 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         RevertToSavedButton           matlab.ui.control.Button 
     end
 
-    properties (Access = public) % Changed from private for GUI_Instances
+    properties (Access = public) 
         UIForm (1,1) struct 
-        AuthorDataGUI_Instance ndi.database.metadata_app.class.AuthorDataGUI 
-        ProbeDataGUI_Instance  ndi.database.metadata_app.class.ProbeDataGUI % Added
-        % SubjectDataGUI_Instance % Placeholder for future Subject GUI controller
+        AuthorDataGUI_Instance  ndi.database.metadata_app.class.AuthorDataGUI 
+        ProbeDataGUI_Instance   ndi.database.metadata_app.class.ProbeDataGUI
+        ExperimentalDetailsGUI_Instance ndi.database.metadata_app.class.ExperimentalDetailsGUI
     end
 
     properties (Access = public, Constant)
@@ -174,10 +160,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     'VersionIdentifier', 'VersionIdentifierEditField', ...
                     'VersionInnovation', 'VersionInnovationEditField', ...
                                 'Funding', 'FundingUITable', ... 
-                    'RelatedPublication', 'RelatedPublicationUITable', ... 
-                    'ExperimentalApproach', 'ExperimentalApproachTree', ...
-                    'TechniquesEmployed', 'SelectedTechniquesListBox', ...
-                                'DataType', 'DataTypeTree' ...
+                    'RelatedPublication', 'RelatedPublicationUITable' ... 
                     );
         FieldComponentPostfix = ["EditField", "TextArea", "DropDown", "UITable", "Tree", "ListBox"]
     end
@@ -281,7 +264,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
     end
     
-    methods (Access = private) % UI Checks and Highlighting (and other private app logic)
+    methods (Access = public) % UI Checks and Highlighting (and other private app logic)
         function missingRequiredField = checkRequiredFields(app, tab)
             tabTitleStr = '';
             if isa(tab, 'matlab.ui.container.Tab') && isprop(tab,'Title') && ~isempty(tab.Title)
@@ -292,7 +275,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             fprintf('DEBUG (checkRequiredFields): Called for tab: %s\n', tabTitleStr);
             
             requiredFields = ndi.database.metadata_app.fun.getRequiredFields();
-            missingRequiredField = string.empty(0,1); % Initialize as empty string array
+            missingRequiredField = string.empty(0,1); 
             fieldsToCheck = string.empty(0,1); 
 
             currentTabName = tabTitleStr;
@@ -303,23 +286,45 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     fieldsToCheck = ["DatasetFullName", "DatasetShortName", "Description", "Comments"];
                 case app.DatasetDetailsTab.Title
                     fieldsToCheck = ["License", "VersionIdentifier"];
-                case app.ExperimentDetailsTab.Title
-                    fieldsToCheck = ["DataType"]; % Example, add more if needed
-                case {'', app.SaveTab.Title} % Final submission step or SaveTab
+                case app.ExperimentDetailsTab.Title 
+                    fieldsToCheck = ["DataType"]; 
+                case {'', app.SaveTab.Title} 
                     fieldsToCheck = string( fieldnames(requiredFields)' );
                 otherwise
                     fprintf('DEBUG (checkRequiredFields): Tab "%s" not explicitly handled for required fields check, no specific fields added to fieldsToCheck.\n', currentTabName);
             end    
             
-            if isempty(fieldsToCheck)
-                fprintf('DEBUG (checkRequiredFields): No fields to check for this tab based on switch case.\n');
+            if isempty(fieldsToCheck) && ~(isequal(currentTabName, "") || isequal(currentTabName, app.SaveTab.Title))
+                fprintf('DEBUG (checkRequiredFields): No specific fields to check for tab "%s" via FieldComponentMap.\n', currentTabName);
             else
-                fprintf('DEBUG (checkRequiredFields): Fields to check for this tab: %s\n', strjoin(fieldsToCheck,', '));
+                if ~isempty(fieldsToCheck)
+                    fprintf('DEBUG (checkRequiredFields): Fields to check for this tab via FieldComponentMap or conceptual: %s\n', strjoin(fieldsToCheck,', '));
+                end
             end
 
-            for iField_str = fieldsToCheck % Iterate using string for safety
-                iField = char(iField_str); % Convert to char for struct field access
-                fprintf('DEBUG (checkRequiredFields): Checking field: %s\n', iField);
+            for iField_str = fieldsToCheck 
+                iField = char(iField_str); 
+                fprintf('DEBUG (checkRequiredFields): Checking field (from map or conceptual): %s\n', iField);
+
+                isHandledBySubGUI = false;
+                fieldIsRequired = isfield(requiredFields, iField) && requiredFields.(iField);
+
+                if strcmp(iField, 'DataType') && isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance)
+                    isHandledBySubGUI = true;
+                    if fieldIsRequired
+                         if isempty(app.ExperimentalDetailsGUI_Instance.getDataType())
+                             missingRequiredField(end+1) = "Data Type";
+                             fprintf('DEBUG (checkRequiredFields): Field "DataType" (from ExperimentalDetailsGUI) IS MISSING.\n');
+                             app.highlightLabelForRequiredField('DataType'); 
+                         else
+                             app.resetLabelForRequiredField('DataType');
+                             fprintf('DEBUG (checkRequiredFields): Field "DataType" (from ExperimentalDetailsGUI) is PRESENT.\n');
+                         end
+                    end
+                end
+                % Add similar for ExperimentalApproach if it becomes required
+
+                if isHandledBySubGUI, continue; end 
 
                 if ~isfield(app.FieldComponentMap, iField)
                     fprintf('DEBUG (checkRequiredFields): Field "%s" not in FieldComponentMap. Skipping.\n', iField);
@@ -329,12 +334,12 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 componentFieldName = app.FieldComponentMap.(iField);
                 fprintf('DEBUG (checkRequiredFields): Mapped component: %s\n', componentFieldName);
 
-                if isfield(requiredFields, iField) && requiredFields.(iField) 
+                if fieldIsRequired
                     fprintf('DEBUG (checkRequiredFields): Field "%s" is required.\n', iField);
                     if isprop(app, componentFieldName) 
                         uiComponent = app.(componentFieldName);
                         fprintf('DEBUG (checkRequiredFields): Component "%s" exists.\n', componentFieldName);
-                        value = []; % Initialize value
+                        value = []; 
                         if isa(uiComponent, 'matlab.ui.container.CheckBoxTree')
                             value = uiComponent.CheckedNodes; 
                             fprintf('DEBUG (checkRequiredFields): Value from CheckBoxTree "%s": %d nodes checked.\n', componentFieldName, numel(value));
@@ -344,16 +349,16 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                                 fprintf('DEBUG (checkRequiredFields): Value from Table "%s": Table with %d rows.\n', componentFieldName, height(value));
                              else
                                  fprintf('DEBUG (checkRequiredFields): Value from Table "%s": Empty or not a table.\n', componentFieldName);
-                                 value = []; % Treat empty table as empty for check
+                                 value = []; 
                              end
-                        else % EditField, TextArea, DropDown, ListBox
-                            value = char(uiComponent.Value); % Convert to char for isempty check
+                        else 
+                            value = char(uiComponent.Value); 
                             fprintf('DEBUG (checkRequiredFields): Value from "%s" ("%s"): "%s"\n', class(uiComponent), componentFieldName, value);
                         end
 
                         if isempty(value)
                             fieldTitle = app.getFieldTitle(iField);
-                            missingRequiredField(end+1) = fieldTitle; % Append to string array
+                            missingRequiredField(end+1) = fieldTitle; 
                             app.highlightLabelForRequiredField(componentFieldName);
                             fprintf('DEBUG (checkRequiredFields): Field "%s" (Title: "%s") IS MISSING.\n', iField, fieldTitle);
                         else
@@ -396,26 +401,67 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     fprintf(2, 'Warning: Label for component %s (field %s) not found.\n', componentFieldName, fieldName);
                  end
             else
-                fieldTitle = fieldName; 
-                 fprintf(2, 'Warning: Field %s not found in FieldComponentMap for getFieldTitle.\n', fieldName);
+                switch fieldName
+                    case "DataType"
+                        fieldTitle = "Data Type"; 
+                    case "ExperimentalApproach"
+                        fieldTitle = "Experimental Approach"; 
+                    otherwise
+                        fieldTitle = fieldName; 
+                        fprintf(2, 'Warning: Field %s not found in FieldComponentMap for getFieldTitle.\n', fieldName);
+                end
             end
         end
 
-        function highlightLabelForRequiredField(app, componentFieldName)
-            labelFieldName = sprintf('%sLabel', componentFieldName);
-            if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
-                app.(labelFieldName).FontWeight = 'bold';
-                app.(labelFieldName).FontColor = [0.7098    0.0902        0]; 
-                app.(labelFieldName).Tag = 'RequiredValueMissing';
+        function highlightLabelForRequiredField(app, componentFieldNameOrConcept)
+            labelFieldName = '';
+            uiLabelHandle = [];
+
+            if isfield(app.FieldComponentMap, componentFieldNameOrConcept) 
+                 labelFieldName = sprintf('%sLabel', app.FieldComponentMap.(componentFieldNameOrConcept));
+                 if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
+                    uiLabelHandle = app.(labelFieldName);
+                 end
+            else 
+                switch componentFieldNameOrConcept
+                    case 'DataType' 
+                        if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && isprop(app.ExperimentalDetailsGUI_Instance, 'DataTypeTreeLabel')
+                            uiLabelHandle = app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel;
+                        end
+                end
+            end
+
+            if ~isempty(uiLabelHandle) && isvalid(uiLabelHandle)
+                uiLabelHandle.FontWeight = 'bold';
+                uiLabelHandle.FontColor = [0.7098    0.0902        0]; 
+                uiLabelHandle.Tag = 'RequiredValueMissing';
+            else
+                 fprintf(2, 'Warning (highlightLabel): No label handle found for component/concept "%s".\n', componentFieldNameOrConcept);
             end
         end
 
-        function resetLabelForRequiredField(app, componentFieldName)
-            labelFieldName = sprintf('%sLabel', componentFieldName);
-            if isprop(app, labelFieldName) && isvalid(app.(labelFieldName)) && strcmp(app.(labelFieldName).Tag, 'RequiredValueMissing')
-                app.(labelFieldName).FontWeight = 'normal';
-                app.(labelFieldName).FontColor = [0 0 0]; 
-                app.(labelFieldName).Tag = '';
+        function resetLabelForRequiredField(app, componentFieldNameOrConcept)
+            labelFieldName = '';
+            uiLabelHandle = [];
+
+            if isfield(app.FieldComponentMap, componentFieldNameOrConcept)
+                 labelFieldName = sprintf('%sLabel', app.FieldComponentMap.(componentFieldNameOrConcept));
+                 if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
+                    uiLabelHandle = app.(labelFieldName);
+                 end
+            else
+                 switch componentFieldNameOrConcept
+                    case 'DataType' 
+                        if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && isprop(app.ExperimentalDetailsGUI_Instance, 'DataTypeTreeLabel')
+                            uiLabelHandle = app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel;
+                        end
+                end
+            end
+
+            if ~isempty(uiLabelHandle) && isvalid(uiLabelHandle) && strcmp(uiLabelHandle.Tag, 'RequiredValueMissing')
+                uiLabelHandle.FontWeight = 'normal';
+                uiLabelHandle.FontColor = [0 0 0]; 
+                uiLabelHandle.Tag = '';
             end
         end
         
@@ -440,6 +486,16 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     end
                 end
             end
+            
+            if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance)
+                if isfield(requiredFields, 'DataType') && requiredFields.DataType && isprop(app.ExperimentalDetailsGUI_Instance, 'DataTypeTreeLabel') && isvalid(app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel)
+                    if ~contains(app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Text, requiredSymbol)
+                        app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Text = sprintf('%s %s', app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Text, requiredSymbol);
+                    end
+                     app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Tooltip = "Required";
+                end
+            end
+
         end
 
         function hideUnimplementedComponents(app) 
@@ -532,8 +588,8 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             tempSaveFile = app.getTempWorkingFile();
             app.DatasetInformationStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
             
-            datasetInformationToSave = app.DatasetInformationStruct; 
-            save(tempSaveFile, "datasetInformation", datasetInformationToSave); 
+            datasetInformation = app.DatasetInformationStruct; 
+            save(tempSaveFile, "datasetInformation"); 
             fprintf('DEBUG: DatasetInformationStruct saved to %s\n', tempSaveFile);
         end
 
@@ -717,7 +773,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             % Updates app.ProbeData directly if saved.
             success = false;
             formHandle = [];
-            % ... (switch statement for formHandle remains the same) ...
             switch probeType
                 case "Electrode"
                     if ~isfield(app.UIForm, 'Electrode') || ~isvalid(app.UIForm.Electrode)
@@ -965,6 +1020,9 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.ProbeDataGUI_Instance = ndi.database.metadata_app.class.ProbeDataGUI(app, app.ProbeInfoPanel); 
             app.ProbeDataGUI_Instance.initialize(); 
 
+            app.ExperimentalDetailsGUI_Instance = ndi.database.metadata_app.class.ExperimentalDetailsGUI(app, app.ExperimentDetailsPanel);
+            app.ExperimentalDetailsGUI_Instance.initialize();
+
 
             app.loadUserDefinedMetadata(); 
             app.populateComponentsWithMetadata(); 
@@ -984,16 +1042,17 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
 
         function populateComponentsWithMetadata(app)
-            import ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox
-
-            loadInstancesToTreeCheckbox(app.ExperimentalApproachTree, "ExperimentalApproach");
-            loadInstancesToTreeCheckbox(app.DataTypeTree, "SemanticDataType");
+            % Most of this is now handled by individual GUI controllers during their initialize method
             
-            app.populateLicenseDropdown(); 
-            app.populateTechniqueCategoryDropdown(); 
-            app.populateTechniqueDropdown(); 
+            app.populateLicenseDropdown(); % This is still a main app component
             
-            app.populateSpeciesList();
+            % These are now handled by ExperimentalDetailsGUI.initialize()
+            % app.populateTechniqueCategoryDropdown(); 
+            % app.populateTechniqueDropdown(); 
+            % ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox(app.ExperimentalApproachTree, "ExperimentalApproach");
+            % ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox(app.DataTypeTree, "SemanticDataType");
+            
+            app.populateSpeciesList(); % These are for SubjectInfo tab, still in main app for now
             app.populateBiologicalSexList();
             app.populateStrainList();
         end
@@ -1004,41 +1063,8 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.LicenseDropDown.ItemsData = [""; names];
         end
         
-        function populateTechniqueCategoryDropdown(app)
-            allowedTypes = openminds.core.DatasetVersion.LINKED_PROPERTIES.technique;
-            allowedTypes = replace(allowedTypes, 'openminds.controlledterms.', '');
-            if ~iscolumn(allowedTypes) && ~isempty(allowedTypes)
-                allowedTypes = allowedTypes(:);
-            elseif isempty(allowedTypes)
-                allowedTypes = cell(0,1); 
-            end
-            app.SelectTechniqueCategoryDropDown.Items = ["Select Category"; allowedTypes]; 
-            app.SelectTechniqueCategoryDropDown.Value = "Select Category"; 
-        end
-        
-        function populateTechniqueDropdown(app, schemaName)
-            if nargin < 2 || isempty(schemaName) || strcmp(schemaName, "Select Category")
-                app.SelectTechniqueDropDown.Items = {'Select a category first'};
-                app.SelectTechniqueDropDown.ItemsData = {''}; 
-                app.SelectTechniqueDropDown.Value = ''; 
-                return; 
-            end
-            
-            [names, options] = ndi.database.metadata_app.fun.getOpenMindsInstances(schemaName); 
-            
-            if isempty(names) 
-                app.SelectTechniqueDropDown.Items = {'No techniques for this category'};
-                app.SelectTechniqueDropDown.ItemsData = {''};
-                app.SelectTechniqueDropDown.Value = '';
-            else
-                if ~iscolumn(options), options = options(:); end 
-                if ~iscolumn(names), names = names(:); end     
-
-                app.SelectTechniqueDropDown.Items = ["Select Technique"; options];
-                app.SelectTechniqueDropDown.ItemsData = [""; names]; 
-                app.SelectTechniqueDropDown.Value = ""; 
-            end
-        end
+        % populateTechniqueCategoryDropdown moved to ExperimentalDetailsGUI
+        % populateTechniqueDropdown moved to ExperimentalDetailsGUI
         
         function populateSpeciesList(app)
             import ndi.database.metadata_app.fun.expandDropDownItems
@@ -1387,49 +1413,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.saveDatasetInformationStruct();
         end
 
-        function DataTypeTreeCheckedNodesChanged(app, event)
-            selectedDataTypes = app.getCheckedTreeNodeData(event.CheckedNodes);
-            if ~isempty(selectedDataTypes)
-                app.resetLabelForRequiredField("DataTypeTree");
-            end
-            app.saveDatasetInformationStruct();
-        end
-
-        function ExperimentTreeCheckedNodesChanged(app, event)
-            selectedExperimentalApproach = app.getCheckedTreeNodeData(event.CheckedNodes);
-            if ~isempty(selectedExperimentalApproach)
-                app.resetLabelForRequiredField("ExperimentalApproachTree");
-            end
-            app.saveDatasetInformationStruct();
-        end
-        
-        function SelectTechniqueCategoryDropDownValueChanged(app, event)
-            value = app.SelectTechniqueCategoryDropDown.Value;
-            app.populateTechniqueDropdown(value); 
-        end
-
-        function AddTechniqueButtonPushed(app, event)
-            techniqueCategory = app.SelectTechniqueCategoryDropDown.Value;
-            techniqueName = app.SelectTechniqueDropDown.Value;
-            if ~any(strcmp(techniqueName, app.SelectTechniqueDropDown.ItemsData))
-                app.inform('Please select one of the techniques from the list'); return;
-            end
-            technique = sprintf('%s (%s)', techniqueName, techniqueCategory);
-            if any(strcmp(technique, app.SelectedTechniquesListBox.Items))
-                app.inform(sprintf('The technique "%s" has already been added.', techniqueName)); return;
-            end
-            app.SelectedTechniquesListBox.Items{end+1} = technique;
-            app.saveDatasetInformationStruct();
-        end
-
-        function RemoveTechniqueButtonPushed(app, event)
-            selectedIndex = app.getListBoxSelectionIndex(app.SelectedTechniquesListBox);
-            if ~isempty(selectedIndex)
-                app.SelectedTechniquesListBox.Items(selectedIndex) = [];
-                app.SelectedTechniquesListBox.Value = {};
-                app.saveDatasetInformationStruct();
-            end
-        end
+        % Callbacks for ExperimentDetailsTab are now in ExperimentalDetailsGUI
         
         function AssignBiologicalSexButtonPushed(app, event)
             app.updateSubjectTableColumData('BiologicalSex', app.BiologicalSexListBox.Value);
@@ -1444,7 +1428,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         function SpeciesListBoxClicked(app, event)
             drawnow;
             value = event.Source.Value;
-            if ismissing(value) || strcmp(value,'') % Check for missing or empty string (placeholder)
+            if ismissing(value) || strcmp(value,'') 
                 app.deleteSubjectTableColumData("Species");
                 app.deleteSubjectTableColumData("Strain"); 
             else
@@ -1510,7 +1494,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 if isprop(app, 'SubjectData') && ismethod(app.SubjectData,'ClearAll'), app.SubjectData.ClearAll(); else, if isprop(app,'SubjectData'), app.SubjectData.SubjectList = ndi.database.metadata_app.class.Subject.empty(0,1); end; end
                 if isprop(app,'UITableSubject'), app.UITableSubject.Data = table(); end
                 if isprop(app, 'ProbeData') && ismethod(app.ProbeData,'ClearAll'), app.ProbeData.ClearAll(); else, if isprop(app,'ProbeData'), app.ProbeData.ProbeList = {}; end; end
-                % Check if ProbeDataGUI_Instance and its UITableProbe are valid before accessing
                 if isprop(app, 'ProbeDataGUI_Instance') && isvalid(app.ProbeDataGUI_Instance) && ...
                    isprop(app.ProbeDataGUI_Instance, 'UITableProbe') && isvalid(app.ProbeDataGUI_Instance.UITableProbe)
                     app.ProbeDataGUI_Instance.UITableProbe.Data = table();
@@ -1545,27 +1528,24 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         
         % Callbacks for specific list boxes in Subject Info tab
         function BiologicalSexListBoxValueChanged(app, event)
-            % This might trigger updates or just be for selection
-            app.saveDatasetInformationStruct(); % Save if selection implies data change
+            app.saveDatasetInformationStruct(); 
         end
 
         function SpeciesListBoxValueChanged(app, event)
-            app.populateStrainList(); % Populate strains based on selected species
+            app.populateStrainList(); 
             app.saveDatasetInformationStruct();
         end
 
         function StrainListBoxValueChanged(app, event)
-            app.saveDatasetInformationStruct(); % Save if selection implies data change
+            app.saveDatasetInformationStruct(); 
         end
         
         function StrainListBoxClicked(app, event)
-            % This callback might be used if double-click is too slow or for other interactions
             drawnow;
             app.updateSubjectTableColumData('Strain', event.Source.Value);
         end
 
         function StrainListBoxDoubleClicked(app, event)
-            % Could be used to edit a selected strain, if such functionality is added
         end
 
         function AddSpeciesButtonPushed(app, event)
@@ -1574,19 +1554,15 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 app.alert('Please enter a species name to add.', 'Species Name Empty');
                 return;
             end
-            % Create a basic struct for the new species
             newSpeciesStruct = struct('name', speciesName, 'ontologyIdentifier', '', 'synonyms', {{}});
-            
-            % Open the SpeciesForm to allow user to fill details
             returnedSpeciesStruct = app.openSpeciesForm(newSpeciesStruct);
             
             if ~isempty(returnedSpeciesStruct) && isfield(returnedSpeciesStruct, 'name') && ~isempty(strtrim(returnedSpeciesStruct.name))
-                % Add to app.SpeciesInstancesUser and app.SpeciesData
                 app.SpeciesInstancesUser(end+1) = returnedSpeciesStruct;
                 app.SpeciesData.addItem(returnedSpeciesStruct.name, returnedSpeciesStruct.ontologyIdentifier, returnedSpeciesStruct.synonyms);
-                app.saveSpecies(); % Save the updated user instances
-                app.populateSpeciesList(); % Refresh the listbox
-                app.SpeciesEditField.Value = ''; % Clear the edit field
+                app.saveSpecies(); 
+                app.populateSpeciesList(); 
+                app.SpeciesEditField.Value = ''; 
                 app.inform(sprintf('Species "%s" added.', returnedSpeciesStruct.name), 'Species Added');
             else
                 app.inform('Species addition cancelled or failed.', 'Info');
@@ -1594,17 +1570,11 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
 
         function AddStrainButtonPushed(app, event)
-            % Similar to AddSpecies, but for strains. This needs a StrainForm or direct add.
-            % For now, let's assume direct add to a catalog if no form exists.
             strainName = app.StrainEditField.Value;
             if isempty(strtrim(strainName))
                 app.alert('Please enter a strain name to add.', 'Strain Name Empty');
                 return;
             end
-            
-            % This part needs to be fleshed out: how are new strains stored?
-            % Are they associated with the currently selected species?
-            % For now, let's just refresh the strain list (it won't show new one unless getStrainInstances is updated)
             app.populateStrainList(); 
             app.StrainEditField.Value = '';
             app.inform(sprintf('Strain "%s" added (placeholder logic). Implement saving and catalog update.', strainName), 'Strain Added (Placeholder)');
@@ -1615,7 +1585,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
         function SpeciesClearButtonPushed(app, event)
             app.deleteSubjectTableColumData('Species');
-            app.populateStrainList(); % Strains depend on species
+            app.populateStrainList(); 
         end
         function StrainClearButtonPushed(app, event)
             app.deleteSubjectTableColumData('Strain');
@@ -1799,34 +1769,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.ExperimentDetailsLabel.Layout.Row=1; app.ExperimentDetailsLabel.Layout.Column=1;
             app.ExperimentDetailsPanel = uipanel(app.ExperimentDetailsGridLayout, 'BorderType', 'none');
             app.ExperimentDetailsPanel.Layout.Row=2; app.ExperimentDetailsPanel.Layout.Column=1;
-            app.GridLayout26 = uigridlayout(app.ExperimentDetailsPanel, [9 6], ...
-                'ColumnWidth', {180, 45, '1.25x', 45, '1x', 25}, ...
-                'RowHeight', {22, 22, 22, 23, '1x', 22, 23, '5.3x', '5.13x'}, ... 
-                'Padding', [25 25 25 10]);
-                app.DataTypeTreeLabel = uilabel(app.GridLayout26, 'Text', 'Data Type');
-                app.DataTypeTreeLabel.Layout.Row = 1; app.DataTypeTreeLabel.Layout.Column = 1;
-                app.DataTypeTree = uitree(app.GridLayout26, 'checkbox', 'CheckedNodesChangedFcn', createCallbackFcn(app, @DataTypeTreeCheckedNodesChanged, true));
-                app.DataTypeTree.Layout.Row = [2 5]; app.DataTypeTree.Layout.Column = 1; 
-                app.ExperimentalApproachTreeLabel = uilabel(app.GridLayout26, 'Text', 'Experimental Approach');
-                app.ExperimentalApproachTreeLabel.Layout.Row = 1; app.ExperimentalApproachTreeLabel.Layout.Column = 3;
-                app.ExperimentalApproachTree = uitree(app.GridLayout26, 'checkbox', 'CheckedNodesChangedFcn', createCallbackFcn(app, @ExperimentTreeCheckedNodesChanged, true));
-                app.ExperimentalApproachTree.Layout.Row = [2 9]; app.ExperimentalApproachTree.Layout.Column = 3; 
-                app.SelectTechniqueCategoryDropDownLabel = uilabel(app.GridLayout26, 'Text', 'Select Technique Category');
-                app.SelectTechniqueCategoryDropDownLabel.Layout.Row = 1; app.SelectTechniqueCategoryDropDownLabel.Layout.Column = 5;
-                app.SelectTechniqueCategoryDropDown = uidropdown(app.GridLayout26, 'ValueChangedFcn', createCallbackFcn(app, @SelectTechniqueCategoryDropDownValueChanged, true));
-                app.SelectTechniqueCategoryDropDown.Layout.Row = 2; app.SelectTechniqueCategoryDropDown.Layout.Column = 5;
-                app.SelectTechniqueDropDownLabel = uilabel(app.GridLayout26, 'Text', 'Select Technique');
-                app.SelectTechniqueDropDownLabel.Layout.Row = 3; app.SelectTechniqueDropDownLabel.Layout.Column = 5;
-                app.SelectTechniqueDropDown = uidropdown(app.GridLayout26, 'Editable', 'on');
-                app.SelectTechniqueDropDown.Layout.Row = 4; app.SelectTechniqueDropDown.Layout.Column = 5;
-                app.AddTechniqueButton = uibutton(app.GridLayout26, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'plus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @AddTechniqueButtonPushed, true));
-                app.AddTechniqueButton.Layout.Row = 4; app.AddTechniqueButton.Layout.Column = 6;
-                app.SelectedTechniquesListBoxLabel = uilabel(app.GridLayout26, 'Text', 'Selected Techniques');
-                app.SelectedTechniquesListBoxLabel.Layout.Row = 6; app.SelectedTechniquesListBoxLabel.Layout.Column = 5;
-                app.SelectedTechniquesListBox = uilistbox(app.GridLayout26);
-                app.SelectedTechniquesListBox.Layout.Row = [7 9]; app.SelectedTechniquesListBox.Layout.Column = 5; 
-                app.RemoveTechniqueButton = uibutton(app.GridLayout26, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'minus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @RemoveTechniqueButtonPushed, true));
-                app.RemoveTechniqueButton.Layout.Row = 7; app.RemoveTechniqueButton.Layout.Column = 6;
+            % UI elements for this tab are now managed by ExperimentalDetailsGUI_Instance
 
             app.SubjectInfoTab = uitab(app.TabGroup, 'Title', 'Subject Info');
             app.SubjectInfoGridLayout = uigridlayout(app.SubjectInfoTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);

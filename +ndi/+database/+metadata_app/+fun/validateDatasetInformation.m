@@ -1,34 +1,21 @@
 function dsInfoOut = validateDatasetInformation(dsInfoIn, appHandle)
 %VALIDATEDATASETINFORMATION Validates and corrects the datasetInformation structure.
-%   dsInfoOut = VALIDATEDATASETINFORMATION(dsInfoIn)
-%   dsInfoOut = VALIDATEDATASETINFORMATION(dsInfoIn, appHandle) (appHandle is optional)
-%
-%   dsInfoIn: The input datasetInformation structure. If empty, not a struct,
-%             or a struct with no fields, a default structure is created.
-%   appHandle: (Optional) Handle to the MetadataEditorApp instance. Used to
-%              access UI component default values (e.g., license dropdown items)
-%              or initial data object states (e.g. app.SubjectData.SubjectList).
-%   dsInfoOut: The validated and corrected datasetInformation structure.
-%
-%   This function ensures that the output structure `dsInfoOut` contains all
-%   expected fields with appropriate default values and data types, making it
-%   safe for use in populating the MetadataEditorApp UI and its data objects.
+%   Ensures fields like DataType, ExperimentalApproach, TechniquesEmployed
+%   are cell arrays of strings, converting from comma-separated strings if necessary.
 
     if nargin < 2
-        appHandle = []; % Ensure appHandle exists but can be empty
+        appHandle = []; 
     end
 
     isInitializingNew = false;
     if nargin < 1 || ~isstruct(dsInfoIn) || (isstruct(dsInfoIn) && isempty(fieldnames(dsInfoIn)) && numel(dsInfoIn) <=1 )
-        % Handles dsInfoIn being empty, not a struct, struct(), or struct([])
         dsInfoIn = struct(); 
         isInitializingNew = true;
         fprintf('DEBUG (validateDatasetInformation): Input dsInfoIn is empty/invalid, initializing new default structure.\n');
     end
 
-    dsInfoOut = dsInfoIn; % Start with input, then correct/add fields
+    dsInfoOut = dsInfoIn; 
 
-    % --- Define default empty structures for complex types ---
     emptyAuthorStruct = struct('givenName', '', 'familyName', '', ...
                              'contactInformation', struct('email', ''), ...
                              'digitalIdentifier', struct('identifier', ''), ...
@@ -38,24 +25,19 @@ function dsInfoOut = validateDatasetInformation(dsInfoIn, appHandle)
     defaultSpeciesStruct = struct('name','','preferredOntologyIdentifier','','synonym',{{}});
     emptySubjectBase = struct('SubjectName', '', 'BiologicalSexList', {{}}, ...
                               'SpeciesList', defaultSpeciesStruct, 'StrainList', {{}});
-
     emptyProbeBase = struct('Name', '', 'ClassType', ''); 
-    % Add other typical fields for ProbeBase if needed for table display, e.g., 'Manufacturer', 'Model'
 
-    % --- Dataset Overview Tab Fields ---
     dsInfoOut = ensureFieldLocal(dsInfoOut, 'DatasetFullName', '', @(x) ischar(x) || isstring(x));
-    dsInfoOut = ensureStringFieldLocal(dsInfoOut, 'DatasetShortName', ''); 
+    dsInfoOut = ensureStringFieldLocal(dsInfoOut, 'DatasetShortName', '');
     dsInfoOut = ensureStringFieldLocal(dsInfoOut, 'Description', '');
     dsInfoOut = ensureStringFieldLocal(dsInfoOut, 'Comments', '');
-
-    % --- Dataset Details Tab Fields ---
-    % Use NaT (Not-a-Time) for unselected/empty dates
     dsInfoOut = ensureFieldLocal(dsInfoOut, 'ReleaseDate', NaT, @(x) (isdatetime(x) && (isscalar(x) || isempty(x))) || isnat(x) || isempty(x) );
-    if isempty(dsInfoOut.ReleaseDate) && ~isnat(dsInfoOut.ReleaseDate) % Convert [] to NaT
+    if isempty(dsInfoOut.ReleaseDate) && ~isnat(dsInfoOut.ReleaseDate)
         dsInfoOut.ReleaseDate = NaT;
     end
     
     defaultLicense = '';
+    % ... (license default logic remains same) ...
     if ~isempty(appHandle) && isvalid(appHandle) && isprop(appHandle, 'LicenseDropDown') && ...
        isprop(appHandle.LicenseDropDown, 'ItemsData') && ~isempty(appHandle.LicenseDropDown.ItemsData)
         if numel(appHandle.LicenseDropDown.ItemsData) > 1 && ~isempty(appHandle.LicenseDropDown.ItemsData{2}) 
@@ -70,45 +52,58 @@ function dsInfoOut = validateDatasetInformation(dsInfoIn, appHandle)
     dsInfoOut = ensureStringFieldLocal(dsInfoOut, 'VersionIdentifier', '1.0.0');
     dsInfoOut = ensureStringFieldLocal(dsInfoOut, 'VersionInnovation', 'This is the first version of the dataset');
 
-    % Funding Table
     expectedFundingFields = {'funder','awardTitle','awardNumber'};
     dsInfoOut.Funding = validateTableStructArrayLocal(dsInfoOut, 'Funding', expectedFundingFields);
-
-    % RelatedPublication Table
     expectedPublicationFields = {'title','doi','pmid','pmcid'};
     dsInfoOut.RelatedPublication = validateTableStructArrayLocal(dsInfoOut, 'RelatedPublication', expectedPublicationFields);
 
-    % --- Experiment Details Tab Fields ---
-    dsInfoOut = ensureFieldLocal(dsInfoOut, 'ExperimentalApproach', '', @isCellOrEmptyCharLocal);
-    
-    dsInfoOut = ensureFieldLocal(dsInfoOut, 'TechniquesEmployed', {}, ...
-        @(x) (iscellstr(x) || isstring(x) || (iscell(x) && all(cellfun(@ischar,x)))) && (isempty(x) || isvector(x)) || (ischar(x) && isempty(x)) );
-    if ischar(dsInfoOut.TechniquesEmployed) && ~isempty(dsInfoOut.TechniquesEmployed) 
-        dsInfoOut.TechniquesEmployed = {dsInfoOut.TechniquesEmployed}; 
-    elseif isstring(dsInfoOut.TechniquesEmployed) 
-        dsInfoOut.TechniquesEmployed = cellstr(dsInfoOut.TechniquesEmployed);
-    end
-    if ~isempty(dsInfoOut.TechniquesEmployed) && ~iscolumn(dsInfoOut.TechniquesEmployed)
-        dsInfoOut.TechniquesEmployed = dsInfoOut.TechniquesEmployed(:); 
-    end
-     if iscell(dsInfoOut.TechniquesEmployed) && any(~cellfun(@ischar, dsInfoOut.TechniquesEmployed))
-        fprintf(2, 'Warning: TechniquesEmployed contained non-char elements; attempting to convert or clear.\n');
-        validTechniques = {};
-        for tech_idx = 1:numel(dsInfoOut.TechniquesEmployed)
-            if ischar(dsInfoOut.TechniquesEmployed{tech_idx})
-                validTechniques{end+1,1} = dsInfoOut.TechniquesEmployed{tech_idx};
-            elseif isnumeric(dsInfoOut.TechniquesEmployed{tech_idx}) || islogical(dsInfoOut.TechniquesEmployed{tech_idx})
-                 validTechniques{end+1,1} = num2str(dsInfoOut.TechniquesEmployed{tech_idx});
+    % --- Fields that should be cell arrays of strings (e.g., from trees, multi-selects) ---
+    cellStrFields = {'DataType', 'ExperimentalApproach', 'TechniquesEmployed'};
+    for k_csf = 1:numel(cellStrFields)
+        fName = cellStrFields{k_csf};
+        fprintf('DEBUG (validateDatasetInformation): Validating field "%s" to be cell array of strings.\n', fName);
+        if ~isfield(dsInfoOut, fName)
+            fprintf('DEBUG: Field "%s" not present, initializing as empty cell.\n', fName);
+            dsInfoOut.(fName) = {};
+        else
+            currentVal = dsInfoOut.(fName);
+            if ischar(currentVal) % Might be a comma-separated string from previous save
+                if isempty(currentVal)
+                    dsInfoOut.(fName) = {};
+                     fprintf('DEBUG: Field "%s" was empty char, set to empty cell.\n', fName);
+                else
+                    % Split by comma, then trim whitespace.
+                    % This assumes that individual items do not themselves contain ", "
+                    splitVals = strsplit(currentVal, ', ');
+                    dsInfoOut.(fName) = cellfun(@strtrim, splitVals, 'UniformOutput', false);
+                    fprintf('DEBUG: Field "%s" (char) split into cell: %s\n', fName, strjoin(dsInfoOut.(fName), '|'));
+                end
+            elseif isstring(currentVal) % String array or scalar string
+                if all(ismissing(currentVal)) || isempty(currentVal)
+                    dsInfoOut.(fName) = {};
+                else
+                    dsInfoOut.(fName) = cellstr(currentVal); % Convert to cell array of char vectors
+                    % If it was a scalar string that might have been comma-separated:
+                    if numel(dsInfoOut.(fName)) == 1 && contains(dsInfoOut.(fName){1}, ', ')
+                        splitVals = strsplit(dsInfoOut.(fName){1}, ', ');
+                        dsInfoOut.(fName) = cellfun(@strtrim, splitVals, 'UniformOutput', false);
+                    end
+                end
+                 fprintf('DEBUG: Field "%s" (string) converted to cell: %s\n', fName, strjoin(dsInfoOut.(fName), '|'));
+            elseif ~iscell(currentVal) % If it's some other type, default to empty cell
+                fprintf(2, 'Warning: Field "%s" was unexpected type %s. Resetting to empty cell.\n', fName, class(currentVal));
+                dsInfoOut.(fName) = {};
+            else % It's already a cell, ensure it's cell of char
+                dsInfoOut.(fName) = cellfun(@char, currentVal, 'UniformOutput', false);
+                 fprintf('DEBUG: Field "%s" (cell) ensured elements are char.\n', fName);
             end
         end
-        dsInfoOut.TechniquesEmployed = validTechniques;
     end
-
-    dsInfoOut = ensureFieldLocal(dsInfoOut, 'DataType', '', @isCellOrEmptyCharLocal);
     
-    % --- Author field (array of structs) ---
+    % Author field
     if ~isfield(dsInfoOut, 'Author') || ~(isstruct(dsInfoOut.Author) || isempty(dsInfoOut.Author))
         dsInfoOut.Author = repmat(emptyAuthorStruct, 0, 1);
+    % ... (rest of Author validation logic remains same) ...
     elseif ~isempty(dsInfoOut.Author) && ~isvector(dsInfoOut.Author)
         fprintf(2, 'Warning: Author field was a matrix struct; resetting to empty.\n');
         dsInfoOut.Author = repmat(emptyAuthorStruct, 0, 1);
@@ -146,8 +141,9 @@ function dsInfoOut = validateDatasetInformation(dsInfoIn, appHandle)
         end
     end
 
-    % --- Subjects field (array of structs) ---
+    % Subjects field
     dsInfoOut.Subjects = validateTableStructArrayLocal(dsInfoOut, 'Subjects', fieldnames(emptySubjectBase));
+    % ... (rest of Subjects validation logic remains same) ...
     if isstruct(dsInfoOut.Subjects) 
         for k_sub = 1:numel(dsInfoOut.Subjects)
             dsInfoOut.Subjects(k_sub) = ensureStringFieldLocal(dsInfoOut.Subjects(k_sub), 'SubjectName', ['UnnamedSubject' num2str(k_sub)]);
@@ -175,9 +171,10 @@ function dsInfoOut = validateDatasetInformation(dsInfoIn, appHandle)
         end
     end
 
-    % --- Probe field (cell array of structs) ---
+    % Probe field
     if ~isfield(dsInfoOut, 'Probe') || ~iscell(dsInfoOut.Probe)
         dsInfoOut.Probe = {}; 
+    % ... (rest of Probe validation logic remains same) ...
     else
         if ~isvector(dsInfoOut.Probe) && ~isempty(dsInfoOut.Probe)
             fprintf(2, 'Warning: Probe field was a matrix cell array. Linearizing.\n');
@@ -247,7 +244,7 @@ function S_out = ensureStringFieldLocal(S_in, fieldName, defaultValue)
 end
 
 function isCP = isCellOrEmptyCharLocal(val)
-   isCP = (iscellstr(val) || isstring(val) || (iscell(val) && all(cellfun(@ischar,val)))) || (ischar(val) && isempty(val));
+   isCP = (iscellstr(val) || isstring(val) || (iscell(val) && all(cellfun(@ischar,val)))) || (ischar(val) && isempty(val)); %#ok<ISCLSTR>
 end
 
 function outStructArray = validateTableStructArrayLocal(dsInfoStruct, fieldName, expectedFields)
@@ -293,7 +290,6 @@ function outStructArray = validateTableStructArrayLocal(dsInfoStruct, fieldName,
                     outStructArray(i).(fieldNameToCheck) = ''; 
                 end
             else
-                % Field was missing, already defaulted by repmat
             end
         end
     end

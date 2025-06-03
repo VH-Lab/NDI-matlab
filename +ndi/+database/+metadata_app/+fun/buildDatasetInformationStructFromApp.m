@@ -5,8 +5,8 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
 %
 %   This function gathers data from the UI components (for fields directly
 %   managed by MetadataEditorApp) and from the app's data management objects
-%   (AuthorData, SubjectData, ProbeData) to construct an intermediate plain
-%   struct. This intermediate struct is then passed to
+%   (AuthorData, SubjectData, ProbeData, ExperimentalDetailsGUI) to construct
+%   an intermediate plain struct. This intermediate struct is then passed to
 %   ndi.database.metadata_ds_core.convertDatasetInfoToStruct to perform
 %   final conversions (e.g., cell arrays to comma-separated strings,
 %   datetime to ISO strings), making the output `finalDsStruct` suitable for
@@ -17,6 +17,7 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
     intermediateDsStruct = struct();
 
     % 1. Populate from simple UI components mapped in FieldComponentMap
+    %    (This will skip fields now managed by sub-GUIs if FieldComponentMap is updated)
     if isprop(app, 'FieldComponentMap') && isstruct(app.FieldComponentMap)
         propertyNamesFromMap = fieldnames(app.FieldComponentMap);
         for i = 1:numel(propertyNamesFromMap)
@@ -29,15 +30,14 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
                 if isprop(app, componentName) && isvalid(app.(componentName))
                     uiComponent = app.(componentName);
                     if isa(uiComponent, 'matlab.ui.container.CheckBoxTree')
-                        % Use the public getCheckedTreeNodeData method from app
                         intermediateDsStruct.(propertyName) = app.getCheckedTreeNodeData(uiComponent.CheckedNodes);
-                    elseif isa(uiComponent, 'matlab.ui.control.ListBox') % e.g. TechniquesEmployed
+                    elseif isa(uiComponent, 'matlab.ui.control.ListBox') 
                         intermediateDsStruct.(propertyName) = uiComponent.Items; 
                     elseif isa(uiComponent, 'matlab.ui.control.Table')
                         if ~isempty(uiComponent.Data)
                             intermediateDsStruct.(propertyName) = table2struct(uiComponent.Data);
                         else
-                            switch propertyName % Ensure empty tables are correctly structured 0xN structs
+                            switch propertyName 
                                 case 'Funding'
                                     intermediateDsStruct.Funding = repmat(struct('funder','','awardTitle','','awardNumber',''),0,1);
                                 case 'RelatedPublication'
@@ -46,10 +46,10 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
                                     intermediateDsStruct.(propertyName) = struct([]);
                             end
                         end
-                    else % EditFields, TextAreas, DatePickers, DropDowns
+                    else 
                         intermediateDsStruct.(propertyName) = uiComponent.Value;
                     end
-                    fprintf('DEBUG: buildDatasetInformationStructFromApp: Got value for %s.\n', propertyName);
+                    fprintf('DEBUG: buildDatasetInformationStructFromApp: Got value for %s from main app component.\n', propertyName);
                 else
                     fprintf(2, 'Warning (buildDatasetInformationStructFromApp): Component %s for property %s not found or invalid.\n', componentName, propertyName);
                     intermediateDsStruct = initializeDefaultField(intermediateDsStruct, propertyName);
@@ -66,10 +66,10 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
     % disp(intermediateDsStruct);
 
 
-    % 2. Populate from data management objects (AuthorData, SubjectData, ProbeData)
-    fprintf('DEBUG: buildDatasetInformationStructFromApp: Populating from data objects.\n');
+    % 2. Populate from data management objects and GUI controllers
+    fprintf('DEBUG: buildDatasetInformationStructFromApp: Populating from data objects and GUI controllers.\n');
     
-    % Authors
+    % Authors (from AuthorData object via AuthorDataGUI if needed, or directly from AuthorData)
     if isprop(app, 'AuthorData') && isobject(app.AuthorData) && ismethod(app.AuthorData, 'toStructs')
         intermediateDsStruct.Author = app.AuthorData.toStructs();
         fprintf('DEBUG: buildDatasetInformationStructFromApp: Got Authors from AuthorData.toStructs().\n');
@@ -79,10 +79,10 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
         intermediateDsStruct.Author = repmat(emptyAuthorBase, 0, 1);
     end
 
-    % Subjects
-    if isprop(app, 'SubjectData') && isobject(app.SubjectData) && ismethod(app.SubjectData, 'formatTable')
-        subjectStructs = app.SubjectData.formatTable(); 
-        if isempty(subjectStructs) && iscell(subjectStructs) 
+    % Subjects (from SubjectData object)
+    if isprop(app, 'SubjectData') && isobject(app.SubjectData) && ismethod(app.SubjectData, 'formatTable') % or toStructs if implemented
+        subjectStructs = app.SubjectData.formatTable(); % This should return plain structs
+        if isempty(subjectStructs) && iscell(subjectStructs) % formatTable might return {} for empty
             defaultSpeciesStruct = struct('name','','preferredOntologyIdentifier','','synonym',{{}});
             emptySubjectBase = struct('SubjectName', '', 'BiologicalSexList', {{}}, 'SpeciesList', defaultSpeciesStruct, 'StrainList', {{}});
             intermediateDsStruct.Subjects = repmat(emptySubjectBase,0,1);
@@ -97,8 +97,8 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
         intermediateDsStruct.Subjects = repmat(emptySubjectBase,0,1);
     end
 
-    % Probes
-    if isprop(app, 'ProbeData') && isobject(app.ProbeData) && ismethod(app.ProbeData, 'formatTable')
+    % Probes (from ProbeData object via ProbeDataGUI if needed, or directly from ProbeData)
+    if isprop(app, 'ProbeData') && isobject(app.ProbeData) && ismethod(app.ProbeData, 'formatTable') % or toStructs
         probeDataFromObject = app.ProbeData.formatTable(); 
         if iscell(probeDataFromObject)
             intermediateDsStruct.Probe = probeDataFromObject;
@@ -111,6 +111,39 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
     else
         fprintf(2, 'Warning (buildDatasetInformationStructFromApp): app.ProbeData not found or "formatTable" method missing. Probe data will be empty cell array.\n');
         intermediateDsStruct.Probe = {};
+    end
+
+    % Experimental Details (from ExperimentalDetailsGUI_Instance)
+    if isprop(app, 'ExperimentalDetailsGUI_Instance') && isvalid(app.ExperimentalDetailsGUI_Instance)
+        fprintf('DEBUG: buildDatasetInformationStructFromApp: Getting data from ExperimentalDetailsGUI_Instance.\n');
+        if ismethod(app.ExperimentalDetailsGUI_Instance, 'getDataType')
+            intermediateDsStruct.DataType = app.ExperimentalDetailsGUI_Instance.getDataType();
+            fprintf('DEBUG: Got DataType from ExperimentalDetailsGUI.\n');
+        else
+            fprintf(2, 'Warning: ExperimentalDetailsGUI_Instance missing getDataType method.\n');
+            intermediateDsStruct.DataType = {};
+        end
+
+        if ismethod(app.ExperimentalDetailsGUI_Instance, 'getExperimentalApproach')
+            intermediateDsStruct.ExperimentalApproach = app.ExperimentalDetailsGUI_Instance.getExperimentalApproach();
+            fprintf('DEBUG: Got ExperimentalApproach from ExperimentalDetailsGUI.\n');
+        else
+            fprintf(2, 'Warning: ExperimentalDetailsGUI_Instance missing getExperimentalApproach method.\n');
+            intermediateDsStruct.ExperimentalApproach = {};
+        end
+
+        if ismethod(app.ExperimentalDetailsGUI_Instance, 'getSelectedTechniques')
+            intermediateDsStruct.TechniquesEmployed = app.ExperimentalDetailsGUI_Instance.getSelectedTechniques();
+            fprintf('DEBUG: Got TechniquesEmployed from ExperimentalDetailsGUI.\n');
+        else
+            fprintf(2, 'Warning: ExperimentalDetailsGUI_Instance missing getSelectedTechniques method.\n');
+            intermediateDsStruct.TechniquesEmployed = {};
+        end
+    else
+        fprintf(2, 'Warning (buildDatasetInformationStructFromApp): app.ExperimentalDetailsGUI_Instance not found or invalid.\n');
+        intermediateDsStruct.DataType = {};
+        intermediateDsStruct.ExperimentalApproach = {};
+        intermediateDsStruct.TechniquesEmployed = {};
     end
     % disp(intermediateDsStruct);
     
@@ -131,8 +164,6 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
     end
     fprintf('DEBUG: buildDatasetInformationStructFromApp: Ensured fallback defaults for Version fields.\n');
 
-    % Ensure Funding and RelatedPublication fields exist, even if empty, with correct structure
-    % This is important if they were not in FieldComponentMap or if their tables were empty.
     expectedFundingFields = {'funder','awardTitle','awardNumber'};
     if ~isfield(intermediateDsStruct, 'Funding') || ~isstruct(intermediateDsStruct.Funding) || (isempty(intermediateDsStruct.Funding) && isempty(fieldnames(intermediateDsStruct.Funding)))
         emptyF = struct(); 
@@ -151,6 +182,7 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
 
     % --- Final Conversion Step ---
     fprintf('DEBUG: buildDatasetInformationStructFromApp: Calling ndi.database.metadata_ds_core.convertDatasetInfoToStruct.\n');
+    % disp(intermediateDsStruct); % Display struct before final conversion
     finalDsStruct = ndi.database.metadata_ds_core.convertDatasetInfoToStruct(intermediateDsStruct);
     fprintf('DEBUG: buildDatasetInformationStructFromApp: Conversion complete. Final struct ready.\n');
     % disp(finalDsStruct);

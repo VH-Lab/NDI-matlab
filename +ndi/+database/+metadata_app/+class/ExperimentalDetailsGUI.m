@@ -23,7 +23,7 @@ classdef ExperimentalDetailsGUI < handle
     end
 
     properties (Access = private)
-        ResourcesPath % Path to resources, e.g., for icons
+        ResourcesPath % Path to resources directory (parent of 'icons')
     end
 
     methods
@@ -31,45 +31,46 @@ classdef ExperimentalDetailsGUI < handle
             obj.ParentApp = parentAppHandle;
             obj.UIBaseContainer = uiParentContainer;
 
-            if isprop(obj.ParentApp, 'ResourcesPath')
+            if isprop(obj.ParentApp, 'ResourcesPath') && isfolder(obj.ParentApp.ResourcesPath)
                 obj.ResourcesPath = obj.ParentApp.ResourcesPath;
             else
                 guiFilePath = fileparts(mfilename('fullpath'));
-                obj.ResourcesPath = fullfile(guiFilePath, '..', '+Apps', 'resources', 'icons');
-                fprintf(2, 'Warning (ExperimentalDetailsGUI): ParentApp.ResourcesPath not found. Using fallback relative path for icons.\n');
+                obj.ResourcesPath = fullfile(guiFilePath, '..', '+Apps', 'resources'); 
+                if ~isfolder(obj.ResourcesPath)
+                    fprintf(2, 'Warning (ExperimentalDetailsGUI): Calculated ResourcesPath does not exist: %s\n', obj.ResourcesPath);
+                    projectRootGuess = fullfile(guiFilePath, '..', '..', '..', '..'); 
+                    fallbackPath = fullfile(projectRootGuess, 'resources');
+                    if isfolder(fallbackPath)
+                        obj.ResourcesPath = fallbackPath;
+                    else
+                         fprintf(2, 'Warning (ExperimentalDetailsGUI): Fallback project-level ResourcesPath also does not exist: %s\n', fallbackPath);
+                    end
+                end
             end
-            
             obj.createExperimentalDetailsUIComponents();
         end
 
         function initialize(obj)
-            % Set up callbacks
             obj.DataTypeTree.CheckedNodesChangedFcn = @(~,event) obj.dataTypeTreeCheckedNodesChanged(event);
             obj.ExperimentalApproachTree.CheckedNodesChangedFcn = @(~,event) obj.experimentalApproachTreeCheckedNodesChanged(event);
             obj.SelectTechniqueCategoryDropDown.ValueChangedFcn = @(~,event) obj.selectTechniqueCategoryDropDownValueChanged(event);
             obj.AddTechniqueButton.ButtonPushedFcn = @(~,~) obj.addTechniqueButtonPushed();
             obj.RemoveTechniqueButton.ButtonPushedFcn = @(~,~) obj.removeTechniqueButtonPushed();
-            % obj.SelectTechniqueDropDown.ValueChangedFcn = @(~,event) obj.selectTechniqueDropDownValueChanged(event); % If needed
 
-            % Populate initial choices
             obj.populateDataTypeTree();
             obj.populateExperimentalApproachTree();
             obj.populateTechniqueCategoryDropdown();
-            obj.populateTechniqueDropdown(''); % Populate with placeholder initially
-
-            % Draw initial data
+            obj.populateTechniqueDropdown(''); 
             obj.drawExperimentalDetails();
         end
 
         function createExperimentalDetailsUIComponents(obj)
             parent = obj.UIBaseContainer;
-            iconsPath = obj.ResourcesPath;
+            iconsBasePath = obj.ResourcesPath; 
 
-            % Main grid for Experiment Details Panel content
-            % Replicates GridLayout26 from MetadataEditorApp
             gridLayout = uigridlayout(parent, [9 6], ...
-                'ColumnWidth', {180, 45, '1.25x', 45, '1x', 30}, ... % Adjusted button column
-                'RowHeight', {22, 22, 22, 23, '1x', 22, 23, '1x', '1x'}, ... % Made last two rows 1x
+                'ColumnWidth', {180, 45, '1.25x', 45, '1x', 30}, ... 
+                'RowHeight', {22, 22, 22, 23, '1x', 22, 23, '1x', '1x'}, ... 
                 'Padding', [10 10 10 10], 'ColumnSpacing', 10, 'RowSpacing', 5);
 
             obj.DataTypeTreeLabel = uilabel(gridLayout, 'Text', 'Data Type (*)');
@@ -92,15 +93,15 @@ classdef ExperimentalDetailsGUI < handle
             obj.SelectTechniqueDropDown = uidropdown(gridLayout, 'Editable', 'on');
             obj.SelectTechniqueDropDown.Layout.Row = 4; obj.SelectTechniqueDropDown.Layout.Column = 5;
             
-            obj.AddTechniqueButton = uibutton(gridLayout, 'push', 'Text', '', 'Icon', fullfile(iconsPath, 'icons', 'plus.png'));
+            obj.AddTechniqueButton = uibutton(gridLayout, 'push', 'Text', '', 'Icon', fullfile(iconsBasePath, 'icons', 'plus.png'));
             obj.AddTechniqueButton.Layout.Row = 4; obj.AddTechniqueButton.Layout.Column = 6;
             
             obj.SelectedTechniquesListBoxLabel = uilabel(gridLayout, 'Text', 'Selected Techniques');
             obj.SelectedTechniquesListBoxLabel.Layout.Row = 6; obj.SelectedTechniquesListBoxLabel.Layout.Column = 5;
             obj.SelectedTechniquesListBox = uilistbox(gridLayout);
-            obj.SelectedTechniquesListBox.Layout.Row = [7 8]; obj.SelectedTechniquesListBox.Layout.Column = 5; % Spans two '1x' rows
+            obj.SelectedTechniquesListBox.Layout.Row = [7 8]; obj.SelectedTechniquesListBox.Layout.Column = 5; 
             
-            obj.RemoveTechniqueButton = uibutton(gridLayout, 'push', 'Text', '', 'Icon', fullfile(iconsPath, 'icons', 'minus.png'));
+            obj.RemoveTechniqueButton = uibutton(gridLayout, 'push', 'Text', '', 'Icon', fullfile(iconsBasePath, 'icons', 'minus.png'));
             obj.RemoveTechniqueButton.Layout.Row = 7; obj.RemoveTechniqueButton.Layout.Column = 6;
         end
 
@@ -108,24 +109,20 @@ classdef ExperimentalDetailsGUI < handle
             fprintf('DEBUG (ExperimentalDetailsGUI): Drawing Experimental Details UI.\n');
             dsStruct = obj.ParentApp.DatasetInformationStruct;
 
-            % Data Type Tree
             if isfield(dsStruct, 'DataType')
                 obj.ParentApp.setCheckedNodesFromData(obj.DataTypeTree, dsStruct.DataType);
             else
                 obj.ParentApp.setCheckedNodesFromData(obj.DataTypeTree, {});
             end
 
-            % Experimental Approach Tree
             if isfield(dsStruct, 'ExperimentalApproach')
                 obj.ParentApp.setCheckedNodesFromData(obj.ExperimentalApproachTree, dsStruct.ExperimentalApproach);
             else
                 obj.ParentApp.setCheckedNodesFromData(obj.ExperimentalApproachTree, {});
             end
 
-            % Selected Techniques ListBox
-            if isfield(dsStruct, 'TechniquesEmployed') && (iscellstr(dsStruct.TechniquesEmployed) || isstring(dsStruct.TechniquesEmployed)) %#ok<ISCLSTR>
-                obj.SelectedTechniquesListBox.Items = dsStruct.TechniquesEmployed;
-                obj.SelectedTechniquesListBox.Value = {}; % Clear selection
+            if isfield(dsStruct, 'TechniquesEmployed') 
+                obj.setSelectedTechniques(dsStruct.TechniquesEmployed); % This populates the ListBox
             else
                 obj.SelectedTechniquesListBox.Items = {};
                 obj.SelectedTechniquesListBox.Value = {};
@@ -135,12 +132,10 @@ classdef ExperimentalDetailsGUI < handle
         % --- Population Methods ---
         function populateDataTypeTree(obj)
             ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox(obj.DataTypeTree, "SemanticDataType");
-            fprintf('DEBUG (ExperimentalDetailsGUI): DataTypeTree populated.\n');
         end
 
         function populateExperimentalApproachTree(obj)
             ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox(obj.ExperimentalApproachTree, "ExperimentalApproach");
-            fprintf('DEBUG (ExperimentalDetailsGUI): ExperimentalApproachTree populated.\n');
         end
         
         function populateTechniqueCategoryDropdown(obj)
@@ -153,7 +148,6 @@ classdef ExperimentalDetailsGUI < handle
             end
             obj.SelectTechniqueCategoryDropDown.Items = ["Select Category"; allowedTypes]; 
             obj.SelectTechniqueCategoryDropDown.Value = "Select Category"; 
-            fprintf('DEBUG (ExperimentalDetailsGUI): TechniqueCategoryDropDown populated.\n');
         end
         
         function populateTechniqueDropdown(obj, schemaName)
@@ -178,7 +172,6 @@ classdef ExperimentalDetailsGUI < handle
                 obj.SelectTechniqueDropDown.ItemsData = [""; ids]; 
                 obj.SelectTechniqueDropDown.Value = ""; 
             end
-            fprintf('DEBUG (ExperimentalDetailsGUI): TechniqueDropdown populated for category: %s.\n', schemaName);
         end
 
         % --- Callbacks ---
@@ -186,137 +179,151 @@ classdef ExperimentalDetailsGUI < handle
             selectedData = obj.ParentApp.getCheckedTreeNodeData(event.CheckedNodes);
             obj.ParentApp.DatasetInformationStruct.DataType = selectedData;
             if ~isempty(selectedData)
-                obj.ParentApp.resetLabelForRequiredField(obj.ParentApp.FieldComponentMap.DataType);
+                obj.ParentApp.resetLabelForRequiredField('DataType');
+            else
+                requiredFields = ndi.database.metadata_app.fun.getRequiredFields();
+                if isfield(requiredFields, 'DataType') && requiredFields.DataType
+                    obj.ParentApp.highlightLabelForRequiredField('DataType');
+                end
             end
             obj.ParentApp.saveDatasetInformationStruct();
-            fprintf('DEBUG (ExperimentalDetailsGUI): DataTypeTree selection changed.\n');
         end
 
         function experimentalApproachTreeCheckedNodesChanged(obj, event)
             selectedData = obj.ParentApp.getCheckedTreeNodeData(event.CheckedNodes);
             obj.ParentApp.DatasetInformationStruct.ExperimentalApproach = selectedData;
             obj.ParentApp.saveDatasetInformationStruct();
-            fprintf('DEBUG (ExperimentalDetailsGUI): ExperimentalApproachTree selection changed.\n');
         end
 
         function selectTechniqueCategoryDropDownValueChanged(obj, event)
             value = obj.SelectTechniqueCategoryDropDown.Value;
             obj.populateTechniqueDropdown(value); 
-            % No direct save here, selection just populates next dropdown
         end
 
         function addTechniqueButtonPushed(obj, event)
             techniqueCategory = obj.SelectTechniqueCategoryDropDown.Value;
-            selectedValueInTechniqueDropdown = obj.SelectTechniqueDropDown.Value; % This is the display name
+            techniqueID = char(obj.SelectTechniqueDropDown.Value); 
             
-            % Find the corresponding ItemsData (ID) for the selected display name
-            idx = find(strcmp(obj.SelectTechniqueDropDown.Items, selectedValueInTechniqueDropdown));
-            techniqueID = '';
-            if ~isempty(idx) && idx(1) <= numel(obj.SelectTechniqueDropDown.ItemsData)
-                 techniqueID = obj.SelectTechniqueDropDown.ItemsData{idx(1)};
+            isPlaceholderID = false;
+            if isempty(techniqueID) || strcmp(techniqueID, "")
+                isPlaceholderID = true;
+            else 
+                if ~isempty(obj.SelectTechniqueDropDown.ItemsData) && strcmp(techniqueID, obj.SelectTechniqueDropDown.ItemsData{1}) && strcmp(obj.SelectTechniqueDropDown.ItemsData{1},"")
+                    isPlaceholderID = true; 
+                end
+            end
+            
+            if isPlaceholderID || strcmp(techniqueCategory, "Select Category")
+                obj.ParentApp.inform('Please select a valid technique category and technique from the list.', 'Selection Invalid');
+                return;
             end
 
-            if isempty(techniqueID) || strcmp(techniqueID, "") || strcmp(selectedValueInTechniqueDropdown, "Select Technique") || strcmp(selectedValueInTechniqueDropdown, "Select a category first") || strcmp(selectedValueInTechniqueDropdown, "No techniques for this category")
-                obj.ParentApp.inform('Please select a valid technique from the list.', 'Selection Invalid'); return;
+            idx_for_display = find(strcmp(obj.SelectTechniqueDropDown.ItemsData, techniqueID));
+            actualDisplayName = '';
+            if ~isempty(idx_for_display)
+                idx_for_display = idx_for_display(1);
+                if idx_for_display <= numel(obj.SelectTechniqueDropDown.Items)
+                    actualDisplayName = obj.SelectTechniqueDropDown.Items{idx_for_display};
+                else
+                    obj.ParentApp.alert('Internal error: Mismatch in technique dropdown items. Please report.','Error'); return;
+                end
+            else
+                 obj.ParentApp.alert(sprintf('Selected technique ID "%s" not found in internal data. Please re-select from the list.', techniqueID), 'Selection Error'); return;
             end
             
-            % Store the full URI (ID) in the listbox items data, and a readable representation in Items
-            % Or, decide if DatasetInformationStruct.TechniquesEmployed should store IDs or display strings.
-            % For now, let's assume we store a display string like "TechniqueName (Category)" in the listbox
-            % and the actual IDs/full names in DatasetInformationStruct.TechniquesEmployed
+            techniqueDisplayString = sprintf('%s (%s)', actualDisplayName, techniqueCategory);
             
-            % Create the display string for the listbox
-            techniqueDisplayString = sprintf('%s (%s)', selectedValueInTechniqueDropdown, techniqueCategory);
-            
-            currentTechniques = obj.SelectedTechniquesListBox.Items;
-            if any(strcmp(currentTechniques, techniqueDisplayString))
+            if any(strcmp(obj.SelectedTechniquesListBox.Items, techniqueDisplayString))
                 obj.ParentApp.inform(sprintf('The technique "%s" has already been added.', techniqueDisplayString), 'Duplicate Technique'); 
                 return;
             end
             
-            obj.SelectedTechniquesListBox.Items{end+1} = techniqueDisplayString;
-            
-            % Update DatasetInformationStruct.TechniquesEmployed (assuming it stores IDs or full names)
-            if ~isfield(obj.ParentApp.DatasetInformationStruct, 'TechniquesEmployed') || ~iscell(obj.ParentApp.DatasetInformationStruct.TechniquesEmployed)
-                obj.ParentApp.DatasetInformationStruct.TechniquesEmployed = {};
-            end
-            obj.ParentApp.DatasetInformationStruct.TechniquesEmployed{end+1} = techniqueID; % Store the ID/full name
-            
-            obj.ParentApp.saveDatasetInformationStruct();
-            fprintf('DEBUG (ExperimentalDetailsGUI): Technique "%s" added.\n', techniqueDisplayString);
+            obj.SelectedTechniquesListBox.Items{end+1} = techniqueDisplayString; 
+            obj.updateTechniquesEmployedFromListBox(); % This will update dsStruct and save
         end
 
         function removeTechniqueButtonPushed(obj, event)
-            selectedDisplayStrings = obj.SelectedTechniquesListBox.Value; % This is cell array of display strings
-            if isempty(selectedDisplayStrings), return; end
+            selectedDisplayItem_char = char(obj.SelectedTechniquesListBox.Value); 
+            if isempty(selectedDisplayItem_char)
+                obj.ParentApp.inform('Please select a technique to remove.', 'No Selection');
+                return;
+            end
             
-            currentItems = obj.SelectedTechniquesListBox.Items;
-            currentData = obj.ParentApp.DatasetInformationStruct.TechniquesEmployed; % Assuming this stores IDs
+            currentItems_Display = obj.SelectedTechniquesListBox.Items;
+            idxInListbox = find(strcmp(currentItems_Display, selectedDisplayItem_char), 1);
+            
+            if isempty(idxInListbox)
+                fprintf(2, 'Warning (removeTechniqueButtonPushed): Selected display string "%s" not found in ListBox items.\n', selectedDisplayItem_char);
+                return;
+            end
+            
+            obj.SelectedTechniquesListBox.Items(idxInListbox) = [];
+            obj.SelectedTechniquesListBox.Value = {}; 
+            
+            obj.updateTechniquesEmployedFromListBox(); % This will update dsStruct and save
+        end
+        
+        function updateTechniquesEmployedFromListBox(obj)
+            % Reads all items from SelectedTechniquesListBox, converts them to IDs,
+            % and updates DatasetInformationStruct.TechniquesEmployed.
+            fprintf('DEBUG (updateTechniquesEmployedFromListBox): Updating data model from listbox.\n');
+            listBoxItems_Display = obj.SelectedTechniquesListBox.Items;
+            newTechniqueIDs = {};
 
-            indicesToRemove = [];
-            idsToRemove = {};
+            if isempty(listBoxItems_Display)
+                obj.ParentApp.DatasetInformationStruct.TechniquesEmployed = {};
+                obj.ParentApp.saveDatasetInformationStruct();
+                fprintf('DEBUG (updateTechniquesEmployedFromListBox): ListBox is empty. TechniquesEmployed set to {}.\n');
+                return;
+            end
 
-            for i = 1:numel(selectedDisplayStrings)
-                selectedDisplay = selectedDisplayStrings{i};
-                idxInListbox = find(strcmp(currentItems, selectedDisplay));
-                if ~isempty(idxInListbox)
-                    indicesToRemove = [indicesToRemove, idxInListbox(1)]; %#ok<AGROW>
+            for i = 1:numel(listBoxItems_Display)
+                displayString = listBoxItems_Display{i};
+                match = regexp(displayString, '^(.*) \((.*)\)$', 'tokens');
+                if ~isempty(match)
+                    displayNamePart = strtrim(match{1}{1});
+                    categoryNamePart = strtrim(match{1}{2});
                     
-                    % Infer ID from display string (this is fragile, better to store ID in ListBox.ItemsData)
-                    % For now, let's assume we need to find the techniqueID based on display string parts
-                    % This example assumes the display string is "TechniqueName (Category)"
-                    match = regexp(selectedDisplay, '^(.*) \((.*)\)$', 'tokens');
-                    if ~isempty(match)
-                        displayNamePart = strtrim(match{1}{1});
-                        % categoryPart = strtrim(match{1}{2});
-                        % Find the ID from the Technique Dropdown that matches displayNamePart
-                        % This is still complex if multiple categories have same technique name.
-                        % A better way is if SelectedTechniquesListBox.ItemsData stored IDs.
-                        % For simplicity, if TechniquesEmployed stores IDs, we need a mapping
-                        % or to remove by index if it was guaranteed to be parallel.
-                        % Safest: if TechniquesEmployed stores the same display strings, just remove those.
-                        % If it stores IDs, we'd need to find the corresponding ID.
-                        
-                        % Assuming currentData (TechniquesEmployed) stores the IDs, and we need to find it.
-                        % This part is tricky without knowing the exact structure of stored IDs.
-                        % For this pass, let's assume currentData might store display strings or something that matches
-                        % We need a more robust way to link listbox display to data model if they differ.
-                        
-                        % If TechniquesEmployed stores the same display strings:
-                        idxInData = find(strcmp(currentData, selectedDisplay));
-                        if ~isempty(idxInData)
-                           idsToRemove = [idsToRemove, currentData(idxInData(1))]; %#ok<AGROW>
+                    idFound = '';
+                    % Temporarily populate technique dropdown for this category to get its items/data
+                    % This is necessary to map display name + category back to ID
+                    originalCatDropdownVal = obj.SelectTechniqueCategoryDropDown.Value;
+                    originalTechDropdownItems = obj.SelectTechniqueDropDown.Items;
+                    originalTechDropdownItemsData = obj.SelectTechniqueDropDown.ItemsData;
+                    originalTechDropdownValue = obj.SelectTechniqueDropDown.Value;
+
+                    obj.populateTechniqueDropdown(categoryNamePart); % Populates SelectTechniqueDropDown for this category
+                    
+                    currentTechDropdownItems = obj.SelectTechniqueDropDown.Items;
+                    currentTechDropdownItemsData = obj.SelectTechniqueDropDown.ItemsData;
+
+                    for dd_idx = 1:numel(currentTechDropdownItems)
+                        if strcmp(currentTechDropdownItems{dd_idx}, displayNamePart) && dd_idx <= numel(currentTechDropdownItemsData)
+                            idFound = currentTechDropdownItemsData{dd_idx};
+                            break;
                         end
                     end
+                    
+                    % Restore original technique dropdown state
+                    obj.SelectTechniqueCategoryDropDown.Value = originalCatDropdownVal; % Set category back
+                    obj.populateTechniqueDropdown(originalCatDropdownVal); % Re-populate for original category
+                    obj.SelectTechniqueDropDown.Value = originalTechDropdownValue; % Attempt to restore selection
+
+                    if ~isempty(idFound) && ~strcmp(idFound,"")
+                        newTechniqueIDs{end+1} = idFound; %#ok<AGROW>
+                    else
+                        fprintf(2,'Warning (updateTechniquesEmployedFromListBox): Could not map display "%s" back to an ID.\n', displayString);
+                    end
+                else
+                    fprintf(2,'Warning (updateTechniquesEmployedFromListBox): Could not parse display string "%s".\n', displayString);
                 end
             end
             
-            if ~isempty(indicesToRemove)
-                obj.SelectedTechniquesListBox.Items(indicesToRemove) = [];
-                obj.SelectedTechniquesListBox.Value = {}; % Clear selection
-
-                % Remove corresponding entries from DatasetInformationStruct.TechniquesEmployed
-                if ~isempty(idsToRemove) && iscell(currentData)
-                    updatedData = currentData;
-                    for k=1:numel(idsToRemove)
-                       updatedData(strcmp(updatedData, idsToRemove{k})) = [];
-                    end
-                    obj.ParentApp.DatasetInformationStruct.TechniquesEmployed = updatedData;
-                elseif ~isempty(indicesToRemove) && numel(currentData) >= max(indicesToRemove)
-                    % Fallback if we assume parallel arrays and just remove by index (less robust)
-                    % This assumes currentData was parallel to the original full listbox items before selection
-                    % This is NOT SAFE if multiple items are removed or order changed.
-                    % For now, if TechniquesEmployed stores IDs, this part needs a proper mapping.
-                    % The current addTechniqueButtonPushed adds the ID, so we should remove the ID.
-                    % We need to find the ID of the selectedDisplayString to remove it from currentData.
-                    % This is left as a TODO for robust ID-based removal.
-                    fprintf(2, 'Warning (ExperimentalDetailsGUI): Robust removal from TechniquesEmployed (IDs) based on display string not fully implemented.\n');
-                end
-
-                obj.ParentApp.saveDatasetInformationStruct();
-                fprintf('DEBUG (ExperimentalDetailsGUI): Techniques removed.\n');
-            end
+            obj.ParentApp.DatasetInformationStruct.TechniquesEmployed = newTechniqueIDs;
+            obj.ParentApp.saveDatasetInformationStruct();
+            fprintf('DEBUG (updateTechniquesEmployedFromListBox): TechniquesEmployed in dsStruct updated to: %s\n', strjoin(newTechniqueIDs, '; '));
         end
+
 
         % --- Getter/Setter Methods ---
         function data = getDataType(obj)
@@ -331,42 +338,82 @@ classdef ExperimentalDetailsGUI < handle
         function setExperimentalApproach(obj, data)
             obj.ParentApp.setCheckedNodesFromData(obj.ExperimentalApproachTree, data);
         end
-        function techniques = getSelectedTechniques(obj)
-            % This should return the data intended for DatasetInformationStruct
-            % If it's IDs, and ListBox stores display strings, a conversion is needed.
-            % For now, assuming DatasetInformationStruct.TechniquesEmployed is managed directly by callbacks.
-            % This getter should reflect what's in ParentApp.DatasetInformationStruct.TechniquesEmployed
+        function techniques_ids = getSelectedTechniques(obj)
+             currentTechniques = {}; 
              if isfield(obj.ParentApp.DatasetInformationStruct, 'TechniquesEmployed')
-                techniques = obj.ParentApp.DatasetInformationStruct.TechniquesEmployed;
-             else
-                techniques = {};
+                rawData = obj.ParentApp.DatasetInformationStruct.TechniquesEmployed;
+                if iscell(rawData)
+                    currentTechniques = rawData;
+                elseif ~isempty(rawData) 
+                    currentTechniques = {char(rawData)}; 
+                end
+                if ~isempty(currentTechniques)
+                    currentTechniques(cellfun('isempty', currentTechniques)) = [];
+                end
              end
+             techniques_ids = currentTechniques;
         end
-        function setSelectedTechniques(obj, techniques)
-            % This method updates the ListBox display based on the data
-            % (e.g., an array of IDs or full technique names from dsStruct)
-            obj.ParentApp.DatasetInformationStruct.TechniquesEmployed = techniques; % Store the raw data
+        function setSelectedTechniques(obj, techniques_data_ids) 
+            if ~iscell(techniques_data_ids)
+                if ischar(techniques_data_ids) || isstring(techniques_data_ids)
+                    if isempty(techniques_data_ids) || (isstring(techniques_data_ids) && techniques_data_ids == "")
+                        techniques_data_ids = {};
+                    else
+                        techniques_data_ids = {char(techniques_data_ids)}; 
+                    end
+                else
+                    techniques_data_ids = {}; 
+                end
+            else 
+                techniques_data_ids = cellfun(@char, techniques_data_ids, 'UniformOutput', false);
+                techniques_data_ids(cellfun('isempty', techniques_data_ids)) = [];
+            end
+            
+            obj.ParentApp.DatasetInformationStruct.TechniquesEmployed = techniques_data_ids; 
+            fprintf('DEBUG (setSelectedTechniques): TechniquesEmployed in dsStruct set to: %s\n', strjoin(techniques_data_ids, ' | '));
 
-            % Convert these techniques (IDs) to display strings for the listbox
             displayStrings = {};
-            if iscell(techniques)
-                for i = 1:numel(techniques)
-                    techID = techniques{i};
-                    % Need a way to get display name (e.g., "Technique Name (Category)") from ID
-                    % This might involve looking up in openMINDS instances or a predefined map
-                    % For simplicity, if IDs are stored, we might just display IDs or a lookup is needed.
-                    % Placeholder: Use the ID itself as display string if lookup is not implemented.
-                    % Or assume techniques are stored as display strings already if that's the convention.
+            if ~isempty(techniques_data_ids)
+                allCategories = obj.SelectTechniqueCategoryDropDown.Items;
+                idToDisplayInfoMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
+
+                originalCatVal = obj.SelectTechniqueCategoryDropDown.Value;
+                originalTechVal = obj.SelectTechniqueDropDown.Value;
+                originalTechItems = obj.SelectTechniqueDropDown.Items;
+                originalTechItemsData = obj.SelectTechniqueDropDown.ItemsData;
+
+                for cat_idx = 1:numel(allCategories)
+                    categoryName = allCategories{cat_idx};
+                    if strcmp(categoryName, "Select Category"), continue; end
                     
-                    % Assuming 'techniques' contains the display strings directly for now
-                    % or that they are the IDs to be looked up.
-                    % This part needs to be robust based on what 'techniques' actually contains.
+                    obj.populateTechniqueDropdown(categoryName); % Temporarily populate to build map
+                    temp_ids = obj.SelectTechniqueDropDown.ItemsData;
+                    temp_displayNames = obj.SelectTechniqueDropDown.Items;
+
+                    for id_idx = 1:numel(temp_ids)
+                        if ~isempty(temp_ids{id_idx}) && ~isKey(idToDisplayInfoMap, temp_ids{id_idx}) && id_idx <= numel(temp_displayNames)
+                           idToDisplayInfoMap(temp_ids{id_idx}) = struct('name', temp_displayNames{id_idx}, 'category', categoryName);
+                        end
+                    end
+                end
+                
+                % Restore original state of dropdowns
+                obj.SelectTechniqueCategoryDropDown.Value = originalCatVal;
+                obj.SelectTechniqueDropDown.Items = originalTechItems;
+                obj.SelectTechniqueDropDown.ItemsData = originalTechItemsData;
+                obj.SelectTechniqueDropDown.Value = originalTechVal;
+
+
+                for i = 1:numel(techniques_data_ids)
+                    tech_id = char(techniques_data_ids{i});
+                    if isempty(tech_id), continue; end
                     
-                    % If techniques are the IDs from the dropdown:
-                    % We need to find the matching DisplayName and Category from the dropdowns
-                    % This logic is complex here. For now, let's assume `techniques` are displayable.
-                    if ischar(techID) || isstring(techID)
-                        displayStrings{end+1} = char(techID); %#ok<AGROW>
+                    if isKey(idToDisplayInfoMap, tech_id)
+                        info = idToDisplayInfoMap(tech_id);
+                        displayStrings{end+1} = sprintf('%s (%s)', info.name, info.category); %#ok<AGROW>
+                    else
+                        displayStrings{end+1} = tech_id; %#ok<AGROW>
+                         fprintf('Warning (setSelectedTechniques): Could not find full display info for technique ID: %s. Displaying ID.\n', tech_id);
                     end
                 end
             end
