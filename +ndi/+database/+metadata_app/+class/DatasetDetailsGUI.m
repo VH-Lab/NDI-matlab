@@ -45,13 +45,16 @@ classdef DatasetDetailsGUI < handle
     methods
         function obj = DatasetDetailsGUI(parentAppHandle, uiParentContainer)
             obj.ParentApp = parentAppHandle;
-            obj.UIBaseContainer = uiParentContainer;
+            obj.UIBaseContainer = uiParentContainer; % This is app.DatasetDetailsPanel
 
+            % Inherit ResourcesPath from ParentApp
             if isprop(obj.ParentApp, 'ResourcesPath') && isfolder(obj.ParentApp.ResourcesPath)
                 obj.ResourcesPath = obj.ParentApp.ResourcesPath;
             else
-                guiFilePath = fileparts(mfilename('fullpath'));
-                obj.ResourcesPath = fullfile(guiFilePath, '..', '+Apps', 'resources');
+                % Fallback if ParentApp.ResourcesPath is not defined
+                guiFilePath = fileparts(mfilename('fullpath')); % Path to +ndi/+database/+metadata_app/+class/
+                obj.ResourcesPath = fullfile(guiFilePath, '..', '+Apps', 'resources'); 
+                 fprintf(2, 'Warning (DatasetDetailsGUI): ParentApp.ResourcesPath not found. Using fallback: %s\n', obj.ResourcesPath);
             end
             
             obj.createDatasetDetailsUIComponents();
@@ -68,55 +71,57 @@ classdef DatasetDetailsGUI < handle
 
             obj.AddFundingButton.ButtonPushedFcn = @(~,event) obj.addFundingButtonPushed(event);
             obj.RemoveFundingButton.ButtonPushedFcn = @(~,event) obj.removeFundingButtonPushed(event);
-            % Add MoveUp/Down funding callbacks if implemented
-            if isprop(obj,'MoveFundingUpButton'), obj.MoveFundingUpButton.ButtonPushedFcn = @(~,event) obj.moveFundingPushed('Funding', 'up'); end
-            if isprop(obj,'MoveFundingDownButton'), obj.MoveFundingDownButton.ButtonPushedFcn = @(~,event) obj.moveFundingPushed('Funding', 'down'); end
+            obj.MoveFundingUpButton.ButtonPushedFcn = @(~,event) obj.moveFundingPushed('Funding', 'up');
+            obj.MoveFundingDownButton.ButtonPushedFcn = @(~,event) obj.moveFundingPushed('Funding', 'down');
+            obj.FundingUITable.CellEditCallback = @(src,event) obj.fundingTableCellEdited(event);
+            obj.FundingUITable.CellSelectionCallback = @(src,event) obj.tableCellSelected(src,event,'Funding');
+            obj.FundingUITable.DoubleClickedFcn = @(src,event) obj.fundingUITableDoubleClicked(event);
 
 
             obj.AddRelatedPublicationButton.ButtonPushedFcn = @(~,event) obj.addRelatedPublicationButtonPushed(event);
             obj.RemovePublicationButton.ButtonPushedFcn = @(~,event) obj.removePublicationButtonPushed(event);
-            % Add MoveUp/Down publication callbacks if implemented
-            if isprop(obj,'MovePublicationUpButton'), obj.MovePublicationUpButton.ButtonPushedFcn = @(~,event) obj.movePublicationPushed('Publication', 'up'); end
-            if isprop(obj,'MovePublicationDownButton'), obj.MovePublicationDownButton.ButtonPushedFcn = @(~,event) obj.movePublicationPushed('Publication', 'down'); end
-            
-            if isprop(obj,'FundingUITable'), obj.FundingUITable.CellEditCallback = @(src,event) obj.fundingTableCellEdited(event); end % If direct edit is allowed
-            if isprop(obj,'FundingUITable'), obj.FundingUITable.CellSelectionCallback = @(src,event) obj.tableCellSelected(src,event,'Funding'); end
-
-            if isprop(obj,'RelatedPublicationUITable'), obj.RelatedPublicationUITable.CellEditCallback = @(src,event) obj.publicationTableCellEdited(event); end
-            if isprop(obj,'RelatedPublicationUITable'), obj.RelatedPublicationUITable.CellSelectionCallback = @(src,event) obj.tableCellSelected(src,event,'Publication'); end
-
+            obj.MovePublicationUpButton.ButtonPushedFcn = @(~,event) obj.movePublicationPushed('Publication', 'up');
+            obj.MovePublicationDownButton.ButtonPushedFcn = @(~,event) obj.movePublicationPushed('Publication', 'down');
+            obj.RelatedPublicationUITable.CellEditCallback = @(src,event) obj.publicationTableCellEdited(event);
+            obj.RelatedPublicationUITable.CellSelectionCallback = @(src,event) obj.tableCellSelected(src,event,'Publication');
+            obj.RelatedPublicationUITable.DoubleClickedFcn = @(src,event) obj.relatedPublicationUITableDoubleClicked(event);
 
             obj.populateLicenseDropdown();
-            obj.drawDatasetDetails(); % Initial population of UI from data
+            obj.markRequiredFields(); 
+            obj.drawDatasetDetails(); 
         end
 
         function createDatasetDetailsUIComponents(obj)
-            parent = obj.UIBaseContainer; % This is app.DatasetDetailsPanel
+            parent = obj.UIBaseContainer; 
             iconsPath = fullfile(obj.ResourcesPath, 'icons');
 
-            % Main grid within the panel (was GridLayout18 in MetadataEditorApp)
-            mainGrid = uigridlayout(parent, [2 1], 'RowHeight', {'fit', '1x'}, 'Padding', [10 10 10 10], 'RowSpacing', 15); % Adjusted padding
+            mainGrid = uigridlayout(parent);
+            mainGrid.ColumnWidth = {'1x'};
+            mainGrid.RowHeight = {'fit', '1x'}; 
+            mainGrid.Padding = [10 10 10 10]; 
+            mainGrid.RowSpacing = 15;
 
-            % Top part: Accessibility and Funding (was GridLayout19)
             topPartGrid = uigridlayout(mainGrid); 
             topPartGrid.Layout.Row = 1; topPartGrid.Layout.Column = 1;
-            topPartGrid.ColumnWidth = {'1x', '1x'}; topPartGrid.ColumnSpacing = 20;
+            topPartGrid.ColumnWidth = {'1x', '1x'}; 
+            topPartGrid.RowHeight = {'fit'}; 
+            topPartGrid.ColumnSpacing = 20;
 
-            % --- Accessibility Section (was GridLayout22) ---
             accessibilityGrid = uigridlayout(topPartGrid);
             accessibilityGrid.Layout.Row = 1; accessibilityGrid.Layout.Column = 1;
-            accessibilityGrid.ColumnWidth = {'fit', '1x'}; accessibilityGrid.RowHeight = {23, 23, 23, 23, 23, 23};
-            accessibilityGrid.RowSpacing = 5; accessibilityGrid.ColumnSpacing = 10;
+            accessibilityGrid.ColumnWidth = {'fit', '1x'}; 
+            accessibilityGrid.RowHeight = {'fit', 23, 23, 23, 23, 23}; 
+            accessibilityGrid.RowSpacing = 8; accessibilityGrid.ColumnSpacing = 10;
 
             obj.AccessibilityLabel = uilabel(accessibilityGrid, 'Text', 'Accessibility & Versioning', 'FontWeight', 'bold');
-            obj.AccessibilityLabel.Layout.Row=1; obj.AccessibilityLabel.Layout.Column=[1,2]; % Span columns
+            obj.AccessibilityLabel.Layout.Row=1; obj.AccessibilityLabel.Layout.Column=[1,2]; 
 
-            obj.ReleaseDateDatePickerLabel = uilabel(accessibilityGrid, 'Text', 'Release Date', 'HorizontalAlignment', 'right');
+            obj.ReleaseDateDatePickerLabel = uilabel(accessibilityGrid, 'Text', 'Release Date:', 'HorizontalAlignment', 'right');
             obj.ReleaseDateDatePickerLabel.Layout.Row=2; obj.ReleaseDateDatePickerLabel.Layout.Column=1;
             obj.ReleaseDateDatePicker = uidatepicker(accessibilityGrid);
             obj.ReleaseDateDatePicker.Layout.Row=2; obj.ReleaseDateDatePicker.Layout.Column=2;
 
-            obj.LicenseDropDownLabel = uilabel(accessibilityGrid, 'Text', 'License (*)', 'HorizontalAlignment', 'right');
+            obj.LicenseDropDownLabel = uilabel(accessibilityGrid, 'Text', 'License:', 'HorizontalAlignment', 'right');
             obj.LicenseDropDownLabel.Layout.Row=3; obj.LicenseDropDownLabel.Layout.Column=1;
             licenseHelpGrid = uigridlayout(accessibilityGrid); 
             licenseHelpGrid.Layout.Row=3; licenseHelpGrid.Layout.Column=2;
@@ -126,34 +131,33 @@ classdef DatasetDetailsGUI < handle
             obj.LicenseHelpButton = uibutton(licenseHelpGrid, 'push', 'Text', '', 'Icon', fullfile(iconsPath, 'help.png'));
             obj.LicenseHelpButton.Layout.Row=1; obj.LicenseHelpButton.Layout.Column=2;
 
-            obj.FullDocumentationEditFieldLabel = uilabel(accessibilityGrid, 'Text', 'Full Documentation', 'HorizontalAlignment', 'right');
+            obj.FullDocumentationEditFieldLabel = uilabel(accessibilityGrid, 'Text', 'Full Documentation URL/DOI:', 'HorizontalAlignment', 'right');
             obj.FullDocumentationEditFieldLabel.Layout.Row=4; obj.FullDocumentationEditFieldLabel.Layout.Column=1;
             obj.FullDocumentationEditField = uieditfield(accessibilityGrid, 'text');
             obj.FullDocumentationEditField.Layout.Row=4; obj.FullDocumentationEditField.Layout.Column=2;
 
-            obj.VersionIdentifierEditFieldLabel = uilabel(accessibilityGrid, 'Text', 'Version Identifier (*)', 'HorizontalAlignment', 'right');
+            obj.VersionIdentifierEditFieldLabel = uilabel(accessibilityGrid, 'Text', 'Version Identifier:', 'HorizontalAlignment', 'right');
             obj.VersionIdentifierEditFieldLabel.Layout.Row=5; obj.VersionIdentifierEditFieldLabel.Layout.Column=1;
             obj.VersionIdentifierEditField = uieditfield(accessibilityGrid, 'text');
             obj.VersionIdentifierEditField.Layout.Row=5; obj.VersionIdentifierEditField.Layout.Column=2;
 
-            obj.VersionInnovationEditFieldLabel = uilabel(accessibilityGrid, 'Text', 'Version Innovation', 'HorizontalAlignment', 'right');
+            obj.VersionInnovationEditFieldLabel = uilabel(accessibilityGrid, 'Text', 'Version Innovation:', 'HorizontalAlignment', 'right');
             obj.VersionInnovationEditFieldLabel.Layout.Row=6; obj.VersionInnovationEditFieldLabel.Layout.Column=1;
             obj.VersionInnovationEditField = uieditfield(accessibilityGrid, 'text');
             obj.VersionInnovationEditField.Layout.Row=6; obj.VersionInnovationEditField.Layout.Column=2;
 
-            % --- Funding Section (was FundingGridLayout) ---
-            obj.FundingGridLayout = uigridlayout(topPartGrid); 
-            obj.FundingGridLayout.Layout.Row=1; obj.FundingGridLayout.Layout.Column=2;
-            obj.FundingGridLayout.ColumnWidth = {'1x', 40}; 
-            obj.FundingGridLayout.RowHeight = {23, '1x'};
-            obj.FundingGridLayout.RowSpacing = 5;
+            fundingSectionGrid = uigridlayout(topPartGrid); 
+            fundingSectionGrid.Layout.Row=1; fundingSectionGrid.Layout.Column=2;
+            fundingSectionGrid.ColumnWidth = {'1x', 40}; 
+            fundingSectionGrid.RowHeight = {23, '1x'};
+            fundingSectionGrid.RowSpacing = 5;
 
-            obj.FundingUITableLabel = uilabel(obj.FundingGridLayout, 'Text', 'Funding', 'FontWeight', 'bold');
+            obj.FundingUITableLabel = uilabel(fundingSectionGrid, 'Text', 'Funding', 'FontWeight', 'bold');
             obj.FundingUITableLabel.Layout.Row=1; obj.FundingUITableLabel.Layout.Column=1;
-            obj.FundingUITable = uitable(obj.FundingGridLayout, 'ColumnName', {'Funder'; 'Award Title'; 'Award ID'}, 'RowName', {});
+            obj.FundingUITable = uitable(fundingSectionGrid, 'ColumnName', {'Funder'; 'Award Title'; 'Award ID'}, 'RowName', {}, 'ColumnEditable', true); 
             obj.FundingUITable.Layout.Row=2; obj.FundingUITable.Layout.Column=1;
             
-            fundingButtonsGrid = uigridlayout(obj.FundingGridLayout);
+            fundingButtonsGrid = uigridlayout(fundingSectionGrid);
             fundingButtonsGrid.Layout.Row=2; fundingButtonsGrid.Layout.Column=2;
             fundingButtonsGrid.RowHeight={'fit','fit',10,'fit','fit','1x'}; fundingButtonsGrid.ColumnWidth={'1x'}; fundingButtonsGrid.Padding = [0 0 0 0]; fundingButtonsGrid.RowSpacing = 5;
             obj.AddFundingButton = uibutton(fundingButtonsGrid, 'push', 'Text', '', 'Icon', fullfile(iconsPath, 'plus.png'));
@@ -165,19 +169,18 @@ classdef DatasetDetailsGUI < handle
             obj.MoveFundingDownButton = uibutton(fundingButtonsGrid, 'push', 'Text', '', 'Icon', fullfile(iconsPath, 'down.png'));
             obj.MoveFundingDownButton.Layout.Row=5; obj.MoveFundingDownButton.Layout.Column=1;
 
-            % --- Bottom part: Related Publications (was GridLayout20) ---
-            obj.GridLayout20 = uigridlayout(mainGrid); 
-            obj.GridLayout20.Layout.Row=2; obj.GridLayout20.Layout.Column=1;
-            obj.GridLayout20.ColumnWidth = {'1x', 40}; 
-            obj.GridLayout20.RowHeight = {23, '1x'};
-            obj.GridLayout20.RowSpacing = 5;
+            publicationSectionGrid = uigridlayout(mainGrid); 
+            publicationSectionGrid.Layout.Row=2; publicationSectionGrid.Layout.Column=1;
+            publicationSectionGrid.ColumnWidth = {'1x', 40}; 
+            publicationSectionGrid.RowHeight = {23, '1x'};
+            publicationSectionGrid.RowSpacing = 5;
 
-            obj.RelatedPublicationUITableLabel = uilabel(obj.GridLayout20, 'Text', 'Related Publications', 'FontWeight', 'bold');
+            obj.RelatedPublicationUITableLabel = uilabel(publicationSectionGrid, 'Text', 'Related Publications', 'FontWeight', 'bold');
             obj.RelatedPublicationUITableLabel.Layout.Row=1; obj.RelatedPublicationUITableLabel.Layout.Column=1;
-            obj.RelatedPublicationUITable = uitable(obj.GridLayout20, 'ColumnName', {'Publication (e.g., Title, Journal)'; 'DOI'; 'PMID'; 'PMCID'}, 'RowName', {});
+            obj.RelatedPublicationUITable = uitable(publicationSectionGrid, 'ColumnName', {'Publication (e.g., Title, Journal)'; 'DOI'; 'PMID'; 'PMCID'}, 'RowName', {}, 'ColumnEditable', true); 
             obj.RelatedPublicationUITable.Layout.Row=2; obj.RelatedPublicationUITable.Layout.Column=1;
             
-            publicationButtonsGrid = uigridlayout(obj.GridLayout20);
+            publicationButtonsGrid = uigridlayout(publicationSectionGrid);
             publicationButtonsGrid.Layout.Row=2; publicationButtonsGrid.Layout.Column=2;
             publicationButtonsGrid.RowHeight={'fit','fit',10,'fit','fit','1x'}; publicationButtonsGrid.ColumnWidth={'1x'}; publicationButtonsGrid.Padding = [0 0 0 0]; publicationButtonsGrid.RowSpacing = 5;
             obj.AddRelatedPublicationButton = uibutton(publicationButtonsGrid, 'push', 'Text', '', 'Icon', fullfile(iconsPath, 'plus.png'));
@@ -192,41 +195,101 @@ classdef DatasetDetailsGUI < handle
 
         function drawDatasetDetails(obj)
             fprintf('DEBUG (DatasetDetailsGUI): Drawing Dataset Details UI.\n');
+            if isempty(obj.ParentApp) || ~isvalid(obj.ParentApp) || ~isprop(obj.ParentApp, 'DatasetInformationStruct')
+                fprintf(2, 'ERROR (DatasetDetailsGUI/drawDatasetDetails): ParentApp or DatasetInformationStruct not available.\n');
+                obj.ReleaseDateDatePicker.Value = NaT;
+                if ~isempty(obj.LicenseDropDown.ItemsData), obj.LicenseDropDown.Value = obj.LicenseDropDown.ItemsData{1}; else, obj.LicenseDropDown.Items = {'(No licenses)'}; obj.LicenseDropDown.ItemsData = {''}; obj.LicenseDropDown.Value = ''; end
+                obj.FullDocumentationEditField.Value = '';
+                obj.VersionIdentifierEditField.Value = '1.0.0';
+                obj.VersionInnovationEditField.Value = 'This is the first version of the dataset';
+                obj.FundingUITable.Data = table('Size',[0 3],'VariableTypes',{'string','string','string'},'VariableNames', {'funder','awardTitle','awardNumber'});
+                obj.RelatedPublicationUITable.Data = table('Size',[0 4],'VariableTypes',{'string','string','string','string'}, 'VariableNames',  {'title','doi','pmid','pmcid'});
+                return;
+            end
+            
             dsStruct = obj.ParentApp.DatasetInformationStruct;
+            fprintf('DEBUG (DatasetDetailsGUI/drawDatasetDetails): dsStruct type: %s, isstruct: %d, isscalar: %d.\n', class(dsStruct), isstruct(dsStruct), isscalar(dsStruct));
+            if ~(isstruct(dsStruct) && isscalar(dsStruct))
+                fprintf(2, 'ERROR (DatasetDetailsGUI/drawDatasetDetails): dsStruct is not a scalar struct. Setting defaults.\n');
+                obj.ReleaseDateDatePicker.Value = NaT;
+                if ~isempty(obj.LicenseDropDown.ItemsData), obj.LicenseDropDown.Value = obj.LicenseDropDown.ItemsData{1}; else, obj.LicenseDropDown.Items = {'(No licenses)'}; obj.LicenseDropDown.ItemsData = {''}; obj.LicenseDropDown.Value = ''; end
+                obj.FullDocumentationEditField.Value = '';
+                obj.VersionIdentifierEditField.Value = '1.0.0';
+                obj.VersionInnovationEditField.Value = 'This is the first version of the dataset';
+                obj.FundingUITable.Data = table('Size',[0 3],'VariableTypes',{'string','string','string'},'VariableNames', {'funder','awardTitle','awardNumber'});
+                obj.RelatedPublicationUITable.Data = table('Size',[0 4],'VariableTypes',{'string','string','string','string'}, 'VariableNames',  {'title','doi','pmid','pmcid'});
+                return;
+            end
 
-            obj.ReleaseDateDatePicker.Value = ifthenelse(isfield(dsStruct, 'ReleaseDate') && ~isempty(dsStruct.ReleaseDate) && isdatetime(dsStruct.ReleaseDate) && ~isnat(dsStruct.ReleaseDate), dsStruct.ReleaseDate, NaT);
-            obj.LicenseDropDown.Value = ifthenelse(isfield(dsStruct, 'License'), dsStruct.License, obj.LicenseDropDown.ItemsData{1}); % Default to first valid, or placeholder
-            obj.FullDocumentationEditField.Value = ifthenelse(isfield(dsStruct, 'FullDocumentation'), dsStruct.FullDocumentation, '');
-            obj.VersionIdentifierEditField.Value = ifthenelse(isfield(dsStruct, 'VersionIdentifier'), dsStruct.VersionIdentifier, '1.0.0');
-            obj.VersionInnovationEditField.Value = ifthenelse(isfield(dsStruct, 'VersionInnovation'), dsStruct.VersionInnovation, 'This is the first version of the dataset');
+            if isfield(dsStruct, 'ReleaseDate')
+                val = dsStruct.ReleaseDate;
+                if ~isempty(val) && isdatetime(val) && ~isnat(val)
+                    obj.ReleaseDateDatePicker.Value = val;
+                else
+                    obj.ReleaseDateDatePicker.Value = NaT;
+                end
+            else
+                obj.ReleaseDateDatePicker.Value = NaT;
+            end
 
-            if isfield(dsStruct, 'Funding') && (isstruct(dsStruct.Funding) || istable(dsStruct.Funding)) && ~isempty(dsStruct.Funding)
+            defaultLicenseValue = ""; 
+            if ~isempty(obj.LicenseDropDown.ItemsData), defaultLicenseValue = obj.LicenseDropDown.ItemsData{1}; end
+            if isfield(dsStruct, 'License') && ~isempty(dsStruct.License)
+                if any(strcmp(obj.LicenseDropDown.ItemsData, dsStruct.License))
+                    obj.LicenseDropDown.Value = dsStruct.License;
+                else
+                    obj.LicenseDropDown.Value = defaultLicenseValue;
+                end
+            else
+                obj.LicenseDropDown.Value = defaultLicenseValue;
+            end
+            
+            if isfield(dsStruct, 'FullDocumentation')
+                obj.FullDocumentationEditField.Value = dsStruct.FullDocumentation;
+            else
+                obj.FullDocumentationEditField.Value = '';
+            end
+
+            if isfield(dsStruct, 'VersionIdentifier') && ~isempty(dsStruct.VersionIdentifier)
+                obj.VersionIdentifierEditField.Value = dsStruct.VersionIdentifier;
+            else
+                obj.VersionIdentifierEditField.Value = '1.0.0';
+            end
+
+            if isfield(dsStruct, 'VersionInnovation') && ~isempty(dsStruct.VersionInnovation)
+                obj.VersionInnovationEditField.Value = dsStruct.VersionInnovation;
+            else
+                obj.VersionInnovationEditField.Value = 'This is the first version of the dataset';
+            end
+
+            if isfield(dsStruct, 'Funding') && (isstruct(dsStruct.Funding) || istable(dsStruct.Funding)) && (~isempty(dsStruct.Funding) || (isstruct(dsStruct.Funding) && numel(fieldnames(dsStruct.Funding))>0 && numel(dsStruct.Funding) > 0) )
                 if istable(dsStruct.Funding)
                     obj.FundingUITable.Data = dsStruct.Funding;
                 else
                     obj.FundingUITable.Data = struct2table(dsStruct.Funding, 'AsArray',true);
                 end
             else
-                obj.FundingUITable.Data = table([],[],[], 'VariableNames', {'funder','awardTitle','awardNumber'});
+                obj.FundingUITable.Data = table('Size',[0 3],'VariableTypes',{'string','string','string'},'VariableNames', {'funder','awardTitle','awardNumber'});
             end
 
-            if isfield(dsStruct, 'RelatedPublication') && (isstruct(dsStruct.RelatedPublication) || istable(dsStruct.RelatedPublication)) && ~isempty(dsStruct.RelatedPublication)
+            if isfield(dsStruct, 'RelatedPublication') && (isstruct(dsStruct.RelatedPublication) || istable(dsStruct.RelatedPublication)) && (~isempty(dsStruct.RelatedPublication) || (isstruct(dsStruct.RelatedPublication) && numel(fieldnames(dsStruct.RelatedPublication))>0 && numel(dsStruct.RelatedPublication) > 0) )
                  if istable(dsStruct.RelatedPublication)
                     obj.RelatedPublicationUITable.Data = dsStruct.RelatedPublication;
                  else
                     obj.RelatedPublicationUITable.Data = struct2table(dsStruct.RelatedPublication, 'AsArray',true);
                  end
             else
-                obj.RelatedPublicationUITable.Data = table([],[],[],[], 'VariableNames',  {'title','doi','pmid','pmcid'});
+                obj.RelatedPublicationUITable.Data = table('Size',[0 4],'VariableTypes',{'string','string','string','string'}, 'VariableNames',  {'title','doi','pmid','pmcid'});
             end
+            fprintf('DEBUG (DatasetDetailsGUI): drawDatasetDetails finished.\n');
         end
         
         function populateLicenseDropdown(obj)
             [names, shortNames] = ndi.database.metadata_app.fun.getCCByLicences();
             obj.LicenseDropDown.Items = ["Select a License"; shortNames];
-            obj.LicenseDropDown.ItemsData = [""; names];
-            if ~isempty(obj.LicenseDropDown.ItemsData) && strcmp(obj.LicenseDropDown.ItemsData{1},"") && numel(obj.LicenseDropDown.ItemsData) > 1
-                obj.LicenseDropDown.Value = obj.LicenseDropDown.ItemsData{2}; % Default to first actual license
+            obj.LicenseDropDown.ItemsData = [""; names]; 
+            if numel(obj.LicenseDropDown.ItemsData) > 1
+                obj.LicenseDropDown.Value = obj.LicenseDropDown.ItemsData{2}; 
             elseif ~isempty(obj.LicenseDropDown.ItemsData)
                  obj.LicenseDropDown.Value = obj.LicenseDropDown.ItemsData{1};
             end
@@ -241,7 +304,9 @@ classdef DatasetDetailsGUI < handle
         function licenseDropDownValueChanged(obj, event)
             obj.ParentApp.DatasetInformationStruct.License = obj.LicenseDropDown.Value;
             if obj.LicenseDropDown.Value ~= ""
-                obj.ParentApp.resetLabelForRequiredField('License'); % Conceptual name
+                obj.ParentApp.resetLabelForRequiredField('License'); 
+            else
+                obj.ParentApp.highlightLabelForRequiredField('License');
             end
             obj.ParentApp.saveDatasetInformationStruct();
         end
@@ -263,7 +328,9 @@ classdef DatasetDetailsGUI < handle
         function versionIdentifierValueChanged(obj, event)
             obj.ParentApp.DatasetInformationStruct.VersionIdentifier = obj.VersionIdentifierEditField.Value;
             if ~isempty(obj.VersionIdentifierEditField.Value)
-                 obj.ParentApp.resetLabelForRequiredField('VersionIdentifier'); % Conceptual name
+                 obj.ParentApp.resetLabelForRequiredField('VersionIdentifier'); 
+            else
+                 obj.ParentApp.highlightLabelForRequiredField('VersionIdentifier');
             end
             obj.ParentApp.saveDatasetInformationStruct();
         end
@@ -274,14 +341,16 @@ classdef DatasetDetailsGUI < handle
         end
 
         function addFundingButtonPushed(obj, event)
-            S_funding = obj.ParentApp.openFundingForm(); % ParentApp handles form opening
+            S_funding = obj.ParentApp.openFundingForm(); 
             if ~isempty(S_funding)
-                if ~isfield(obj.ParentApp.DatasetInformationStruct, 'Funding') || isempty(obj.ParentApp.DatasetInformationStruct.Funding)
-                    obj.ParentApp.DatasetInformationStruct.Funding = S_funding;
+                currentFunding = obj.getFundingInfo(); 
+                if isempty(currentFunding) || (isstruct(currentFunding) && numel(fieldnames(currentFunding))==0 && numel(currentFunding)==0)
+                    currentFunding = S_funding;
                 else
-                    obj.ParentApp.DatasetInformationStruct.Funding(end+1) = S_funding;
+                    currentFunding(end+1) = S_funding;
                 end
-                obj.FundingUITable.Data = struct2table(obj.ParentApp.DatasetInformationStruct.Funding, 'AsArray', true);
+                obj.ParentApp.DatasetInformationStruct.Funding = currentFunding;
+                obj.FundingUITable.Data = struct2table(currentFunding, 'AsArray', true);
                 obj.ParentApp.saveDatasetInformationStruct();
             end
         end
@@ -289,10 +358,14 @@ classdef DatasetDetailsGUI < handle
         function removeFundingButtonPushed(obj, event)
             selection = obj.FundingUITable.Selection;
             if ~isempty(selection)
-                obj.FundingUITable.Data(selection(1),:) = []; % Remove first selected row
-                obj.ParentApp.DatasetInformationStruct.Funding = table2struct(obj.FundingUITable.Data);
-                if isempty(obj.ParentApp.DatasetInformationStruct.Funding) % Ensure it's 0x1 struct with fields if empty
+                data = table2struct(obj.FundingUITable.Data);
+                data(selection(1),:) = []; 
+                obj.ParentApp.DatasetInformationStruct.Funding = data;
+                if isempty(data) 
                     obj.ParentApp.DatasetInformationStruct.Funding = repmat(struct('funder','','awardTitle','','awardNumber',''),0,1);
+                    obj.FundingUITable.Data = table('Size',[0 3],'VariableTypes',{'string','string','string'},'VariableNames', {'funder','awardTitle','awardNumber'});
+                else
+                    obj.FundingUITable.Data = struct2table(data, 'AsArray', true);
                 end
                 obj.ParentApp.saveDatasetInformationStruct();
             else
@@ -301,14 +374,16 @@ classdef DatasetDetailsGUI < handle
         end
         
         function addRelatedPublicationButtonPushed(obj, event)
-            S_pub = obj.ParentApp.openForm("Publication"); % ParentApp handles form opening
+            S_pub = obj.ParentApp.openForm("Publication"); 
             if ~isempty(S_pub)
-                if ~isfield(obj.ParentApp.DatasetInformationStruct, 'RelatedPublication') || isempty(obj.ParentApp.DatasetInformationStruct.RelatedPublication)
-                    obj.ParentApp.DatasetInformationStruct.RelatedPublication = S_pub;
+                currentPubs = obj.getRelatedPublications();
+                if isempty(currentPubs) || (isstruct(currentPubs) && numel(fieldnames(currentPubs))==0 && numel(currentPubs)==0)
+                    currentPubs = S_pub;
                 else
-                    obj.ParentApp.DatasetInformationStruct.RelatedPublication(end+1) = S_pub;
+                    currentPubs(end+1) = S_pub;
                 end
-                obj.RelatedPublicationUITable.Data = struct2table(obj.ParentApp.DatasetInformationStruct.RelatedPublication, 'AsArray', true);
+                obj.ParentApp.DatasetInformationStruct.RelatedPublication = currentPubs;
+                obj.RelatedPublicationUITable.Data = struct2table(currentPubs, 'AsArray', true);
                 obj.ParentApp.saveDatasetInformationStruct();
             end
         end
@@ -316,10 +391,14 @@ classdef DatasetDetailsGUI < handle
         function removePublicationButtonPushed(obj, event)
             selection = obj.RelatedPublicationUITable.Selection;
             if ~isempty(selection)
-                obj.RelatedPublicationUITable.Data(selection(1),:) = [];
-                obj.ParentApp.DatasetInformationStruct.RelatedPublication = table2struct(obj.RelatedPublicationUITable.Data);
-                 if isempty(obj.ParentApp.DatasetInformationStruct.RelatedPublication) % Ensure it's 0x1 struct with fields if empty
+                data = table2struct(obj.RelatedPublicationUITable.Data);
+                data(selection(1),:) = [];
+                obj.ParentApp.DatasetInformationStruct.RelatedPublication = data;
+                 if isempty(data) 
                     obj.ParentApp.DatasetInformationStruct.RelatedPublication = repmat(struct('title','','doi','','pmid','','pmcid',''),0,1);
+                    obj.RelatedPublicationUITable.Data = table('Size',[0 4],'VariableTypes',{'string','string','string','string'}, 'VariableNames',  {'title','doi','pmid','pmcid'});
+                 else
+                    obj.RelatedPublicationUITable.Data = struct2table(data, 'AsArray', true);
                  end
                 obj.ParentApp.saveDatasetInformationStruct();
             else
@@ -327,109 +406,116 @@ classdef DatasetDetailsGUI < handle
             end
         end
 
-        function moveFundingPushed(obj, tableType, direction)
-            % Generic move for Funding or Publication
-            uit = obj.FundingUITable;
-            fieldName = 'Funding';
-            
+        function moveTableItem(obj, uit, fieldName, direction)
             selection = uit.Selection;
-            if isempty(selection) || numel(selection) > 1, return; end
+            if isempty(selection) || numel(selection) > 1, return; end 
             
-            data = obj.ParentApp.DatasetInformationStruct.(fieldName);
-            n = numel(data);
-            
-            if strcmp(direction,'up') && selection > 1
-                swapIdx = [selection-1, selection];
-            elseif strcmp(direction,'down') && selection < n
-                swapIdx = [selection, selection+1];
-            else
-                return; % Cannot move further
-            end
-            
-            data(swapIdx([2,1])) = data(swapIdx); % Swap elements
-            obj.ParentApp.DatasetInformationStruct.(fieldName) = data;
-            obj.drawDatasetDetails(); % Redraw to reflect change
-            uit.Selection = swapIdx(1); % Re-select the moved item at its new position
-            obj.ParentApp.saveDatasetInformationStruct();
-        end
-        
-         function movePublicationPushed(obj, tableType, direction)
-            uit = obj.RelatedPublicationUITable;
-            fieldName = 'RelatedPublication';
-            
-            selection = uit.Selection;
-            if isempty(selection) || numel(selection) > 1, return; end
-            
-            data = obj.ParentApp.DatasetInformationStruct.(fieldName);
-            n = numel(data);
-            
-            if strcmp(direction,'up') && selection > 1
-                swapIdx = [selection-1, selection];
-            elseif strcmp(direction,'down') && selection < n
-                swapIdx = [selection, selection+1];
+            dataArray = obj.ParentApp.DatasetInformationStruct.(fieldName);
+            if ~isstruct(dataArray) || numel(dataArray) < 2, return; end 
+
+            n = numel(dataArray);
+            currentIndex = selection(1);
+            newIndex = currentIndex;
+
+            if strcmp(direction,'up') && currentIndex > 1
+                newIndex = currentIndex - 1;
+            elseif strcmp(direction,'down') && currentIndex < n
+                newIndex = currentIndex + 1;
             else
                 return; 
             end
             
-            data(swapIdx([2,1])) = data(swapIdx);
-            obj.ParentApp.DatasetInformationStruct.(fieldName) = data;
-            obj.drawDatasetDetails();
-            uit.Selection = swapIdx(1);
+            temp = dataArray(currentIndex);
+            dataArray(currentIndex) = dataArray(newIndex);
+            dataArray(newIndex) = temp;
+            
+            obj.ParentApp.DatasetInformationStruct.(fieldName) = dataArray;
+            obj.drawDatasetDetails(); 
+            uit.Selection = newIndex; 
             obj.ParentApp.saveDatasetInformationStruct();
         end
 
+        function moveFundingPushed(obj, ~, direction) 
+            obj.moveTableItem(obj.FundingUITable, 'Funding', direction);
+        end
 
+        function movePublicationPushed(obj, ~, direction) 
+            obj.moveTableItem(obj.RelatedPublicationUITable, 'RelatedPublication', direction);
+        end
+        
         function fundingTableCellEdited(obj, event)
-            % If direct table editing for Funding is allowed
-            indices = event.Indices;
-            row = indices(1);
-            col = indices(2);
+            indices = event.Indices; row = indices(1); col = indices(2);
             newValue = event.NewData;
-            
-            % Update the DatasetInformationStruct.Funding
-            currentFunding = obj.ParentApp.DatasetInformationStruct.Funding;
+            currentFunding = table2struct(obj.FundingUITable.Data); 
             columnNames = obj.FundingUITable.ColumnName;
             fieldToUpdate = columnNames{col};
             
+            if isnumeric(newValue) || islogical(newValue), newValue = char(string(newValue)); 
+            elseif isstring(newValue), newValue = char(newValue);
+            end
+
             currentFunding(row).(fieldToUpdate) = newValue;
             obj.ParentApp.DatasetInformationStruct.Funding = currentFunding;
             obj.ParentApp.saveDatasetInformationStruct();
-            fprintf('DEBUG (DatasetDetailsGUI): Funding table cell [%d, %d] edited to "%s".\n', row, col, string(newValue));
         end
         
         function publicationTableCellEdited(obj, event)
-            % If direct table editing for Publications is allowed
-            indices = event.Indices;
-            row = indices(1);
-            col = indices(2);
+            indices = event.Indices; row = indices(1); col = indices(2);
             newValue = event.NewData;
-
-            currentPubs = obj.ParentApp.DatasetInformationStruct.RelatedPublication;
+            currentPubs = table2struct(obj.RelatedPublicationUITable.Data);
             columnNames = obj.RelatedPublicationUITable.ColumnName;
             fieldToUpdate = columnNames{col};
+
+            if isnumeric(newValue) || islogical(newValue), newValue = char(string(newValue)); 
+            elseif isstring(newValue), newValue = char(newValue);
+            end
 
             currentPubs(row).(fieldToUpdate) = newValue;
             obj.ParentApp.DatasetInformationStruct.RelatedPublication = currentPubs;
             obj.ParentApp.saveDatasetInformationStruct();
-            fprintf('DEBUG (DatasetDetailsGUI): Publication table cell [%d, %d] edited to "%s".\n', row, col, string(newValue));
         end
         
         function tableCellSelected(obj, src, event, tableName)
-            % Handle cell selection for enabling/disabling move buttons
-            % For now, this is a placeholder. Actual button enabling/disabling
-            % would be based on selection and position in list.
-            % Example:
-            % selection = src.Selection;
-            % if ~isempty(selection)
-            %    if strcmp(tableName, 'Funding')
-            %        % obj.MoveFundingUpButton.Enable = selection(1) > 1;
-            %        % obj.MoveFundingDownButton.Enable = selection(1) < size(src.Data,1);
-            %    end
-            % end
+        end
+        
+        function fundingUITableDoubleClicked(obj, event)
+            if isempty(event.InteractionInformation) || ~isfield(event.InteractionInformation, 'Row') || isempty(event.InteractionInformation.Row)
+                return;
+            end
+            selectedRow = event.InteractionInformation.Row(1);
+            if selectedRow > 0 && selectedRow <= size(obj.FundingUITable.Data,1)
+                fundingEntry = table2struct(obj.FundingUITable.Data(selectedRow,:));
+                updatedEntry = obj.ParentApp.openFundingForm(fundingEntry);
+                if ~isempty(updatedEntry)
+                    currentFunding = table2struct(obj.FundingUITable.Data);
+                    currentFunding(selectedRow) = updatedEntry;
+                    obj.ParentApp.DatasetInformationStruct.Funding = currentFunding;
+                    obj.FundingUITable.Data = struct2table(currentFunding, 'AsArray',true);
+                    obj.ParentApp.saveDatasetInformationStruct();
+                end
+            end
+        end
+
+        function relatedPublicationUITableDoubleClicked(obj, event)
+            if isempty(event.InteractionInformation) || ~isfield(event.InteractionInformation, 'Row') || isempty(event.InteractionInformation.Row)
+                return;
+            end
+            selectedRow = event.InteractionInformation.Row(1);
+            if selectedRow > 0 && selectedRow <= size(obj.RelatedPublicationUITable.Data,1)
+                pubEntry = table2struct(obj.RelatedPublicationUITable.Data(selectedRow,:));
+                updatedEntry = obj.ParentApp.openForm('Publication', pubEntry, true);
+                if ~isempty(updatedEntry)
+                    currentPubs = table2struct(obj.RelatedPublicationUITable.Data);
+                    currentPubs(selectedRow) = updatedEntry;
+                    obj.ParentApp.DatasetInformationStruct.RelatedPublication = currentPubs;
+                    obj.RelatedPublicationUITable.Data = struct2table(currentPubs, 'AsArray',true);
+                    obj.ParentApp.saveDatasetInformationStruct();
+                end
+            end
         end
 
 
-        % --- Getter Methods for buildDatasetInformationStructFromApp ---
+        % --- Getter Methods ---
         function val = getReleaseDate(obj), val = obj.ReleaseDateDatePicker.Value; end
         function val = getLicense(obj), val = obj.LicenseDropDown.Value; end
         function val = getFullDocumentation(obj), val = obj.FullDocumentationEditField.Value; end
@@ -449,22 +535,22 @@ classdef DatasetDetailsGUI < handle
                 val = table2struct(obj.RelatedPublicationUITable.Data);
             end
         end
-
-        % --- Setter Methods for populateAppFromDatasetInformationStruct ---
-        % These are largely handled by drawDatasetDetails, but specific setters can be added if needed.
-        % For example, if a field needs special processing before UI update.
-        % For now, drawDatasetDetails covers these.
         
         % --- Required Field Checks ---
         function missingFields = checkRequiredFields(obj)
             missingFields = string.empty(0,1);
             if isempty(obj.LicenseDropDown.Value) || strcmp(obj.LicenseDropDown.Value, "")
-                missingFields(end+1) = "License";
+                missingFields(end+1) = obj.ParentApp.getFieldTitle('License');
+                obj.ParentApp.highlightLabelForRequiredField('License');
+            else
+                obj.ParentApp.resetLabelForRequiredField('License');
             end
             if isempty(strtrim(obj.VersionIdentifierEditField.Value))
-                missingFields(end+1) = "Version Identifier";
+                missingFields(end+1) = obj.ParentApp.getFieldTitle('VersionIdentifier');
+                obj.ParentApp.highlightLabelForRequiredField('VersionIdentifier');
+            else
+                 obj.ParentApp.resetLabelForRequiredField('VersionIdentifier');
             end
-            % Add more checks as needed for this tab
         end
 
         function markRequiredFields(obj)
@@ -484,7 +570,6 @@ classdef DatasetDetailsGUI < handle
                 obj.VersionIdentifierEditFieldLabel.Tooltip = "Required";
             end
         end
-
     end
 end
 

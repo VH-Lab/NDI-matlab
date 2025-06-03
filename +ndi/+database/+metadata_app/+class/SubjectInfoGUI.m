@@ -52,7 +52,7 @@ classdef SubjectInfoGUI < handle
         function initialize(obj)
             % Set up callbacks
             obj.BiologicalSexListBox.ValueChangedFcn = @(~,event) obj.biologicalSexListBoxValueChanged(event);
-            obj.BiologicalSexListBox.ClickedFcn = @(~,event) obj.biologicalSexListBoxClicked(event); % If direct assignment on click
+            obj.BiologicalSexListBox.ClickedFcn = @(~,event) obj.biologicalSexListBoxClicked(event); 
             obj.SpeciesListBox.ValueChangedFcn = @(~,event) obj.speciesListBoxValueChanged(event);
             obj.SpeciesListBox.ClickedFcn = @(~,event) obj.speciesListBoxClicked(event);
             obj.StrainListBox.ValueChangedFcn = @(~,event) obj.strainListBoxValueChanged(event);
@@ -69,43 +69,31 @@ classdef SubjectInfoGUI < handle
             obj.AddSpeciesButton.ButtonPushedFcn = @(~,event) obj.addSpeciesButtonPushed(event);
             obj.AddStrainButton.ButtonPushedFcn = @(~,event) obj.addStrainButtonPushed(event);
             
-            % UITableSubject selection might influence dropdowns/listboxes or enable/disable buttons
-            % obj.UITableSubject.SelectionChangedFcn = @(~,event) obj.uiTableSubjectSelectionChanged(event);
-
-            % Populate initial choices for listboxes
             obj.populateBiologicalSexList();
             obj.populateSpeciesList();
-            obj.populateStrainList(); % Initial population (likely empty until a species is chosen)
+            obj.populateStrainList(); 
 
-            % Draw initial data
             obj.drawSubjectInfo();
         end
 
         function createSubjectInfoUIComponents(obj)
-            parent = obj.UIBaseContainer; % This is app.SubjectInfoPanel
-            % iconsPath = fullfile(obj.ResourcesPath, 'icons'); % If icons are needed
+            parent = obj.UIBaseContainer; 
 
-            % Main grid for Subject Info Panel content (was GridLayout16 in MetadataEditorApp)
             mainGrid = uigridlayout(parent);
             mainGrid.ColumnWidth = {'1x'};
-            mainGrid.RowHeight = {'2fr', '3fr'}; % Adjust proportions as needed for table and controls
+            mainGrid.RowHeight = {'2x', '3x'}; % Corrected from 'fr' to 'x'
             mainGrid.RowSpacing = 20;
             mainGrid.Padding = [10 10 10 10];
 
             obj.UITableSubject = uitable(mainGrid, 'ColumnName', {'Subject'; 'Biological Sex'; 'Species'; 'Strain'}, 'RowName', {});
             obj.UITableSubject.Layout.Row = 1; obj.UITableSubject.Layout.Column = 1;
-            % Add SelectionChangedFcn if needed:
-            % obj.UITableSubject.SelectionChangedFcn = @(~,event) obj.uiTableSubjectSelectionChanged(event);
 
-
-            % Grid for dropdowns/edits below subject table (was GridLayout17)
             controlsGrid = uigridlayout(mainGrid);
             controlsGrid.Layout.Row = 2; controlsGrid.Layout.Column = 1;
             controlsGrid.ColumnWidth = {'1x','1x','1x'}; 
-            controlsGrid.RowHeight = {23,'1x', 'fit', 'fit'}; % Label, ListBox, Assign/Clear buttons, Add New Field/Button
+            controlsGrid.RowHeight = {23,'1x', 'fit', 'fit'}; 
             controlsGrid.ColumnSpacing = 20; controlsGrid.RowSpacing = 5;
 
-            % Biological Sex
             obj.BiologicalSexLabel = uilabel(controlsGrid, 'Text', 'Biological Sex'); 
             obj.BiologicalSexLabel.Layout.Row=1; obj.BiologicalSexLabel.Layout.Column=1;
             obj.BiologicalSexListBox = uilistbox(controlsGrid);
@@ -116,7 +104,6 @@ classdef SubjectInfoGUI < handle
             obj.AssignBiologicalSexButton = uibutton(sexButtonsGrid, 'push', 'Text', 'Assign');
             obj.BiologicalSexClearButton = uibutton(sexButtonsGrid, 'push', 'Text', 'Clear');
 
-            % Species
             obj.SpeciesLabel_2 = uilabel(controlsGrid, 'Text', 'Species'); 
             obj.SpeciesLabel_2.Layout.Row=1; obj.SpeciesLabel_2.Layout.Column=2;
             obj.SpeciesListBox = uilistbox(controlsGrid);
@@ -134,7 +121,6 @@ classdef SubjectInfoGUI < handle
             obj.AddSpeciesButton = uibutton(speciesAddGrid, 'push', 'Text', 'Add');
             obj.AddSpeciesButton.Layout.Row=1; obj.AddSpeciesButton.Layout.Column=2;
             
-            % Strain
             obj.StrainLabel = uilabel(controlsGrid, 'Text', 'Strain'); 
             obj.StrainLabel.Layout.Row=1; obj.StrainLabel.Layout.Column=3;
             obj.StrainListBox = uilistbox(controlsGrid);
@@ -168,7 +154,6 @@ classdef SubjectInfoGUI < handle
             end
         end
 
-        % --- Population Methods (from MetadataEditorApp) ---
         function populateBiologicalSexList(obj)
             [biologicalSexData, biologicalSexDisplay] = ndi.database.metadata_app.fun.getOpenMindsInstances('BiologicalSex');
             obj.BiologicalSexListBox.Items = biologicalSexDisplay;
@@ -241,16 +226,14 @@ classdef SubjectInfoGUI < handle
             else, obj.StrainListBox.Value = ''; end
         end
 
-        % --- Helper Methods (Adapted from MetadataEditorApp) ---
         function updateSubjectTableColumnData(obj, columnName, newValue)
             selectedRows = obj.UITableSubject.Selection;
             if isempty(selectedRows), return; end 
 
             for i = 1:numel(selectedRows)
                 subjectIndexInTable = selectedRows(i);
-                subjectNameInTable = obj.UITableSubject.Data{subjectIndexInTable, 'SubjectName'}; % Use SubjectName from table
+                subjectNameInTable = obj.UITableSubject.Data{subjectIndexInTable, 'SubjectName'}; 
                 
-                % Find subject in app.SubjectData.SubjectList
                 subjectObjIndex = -1;
                 for k=1:numel(obj.ParentApp.SubjectData.SubjectList)
                     if strcmp(obj.ParentApp.SubjectData.SubjectList(k).SubjectName, subjectNameInTable)
@@ -265,15 +248,15 @@ classdef SubjectInfoGUI < handle
                         case 'BiologicalSex'
                             currentSubjectObj.BiologicalSexList = {char(newValue)};
                         case 'Species'
-                            speciesName = char(newValue); % This should be the species Name or ID from the listbox
+                            speciesName = char(newValue); 
                             speciesObj = obj.ParentApp.SpeciesData.getItem(speciesName); 
                             if ~isempty(speciesObj) 
-                                currentSubjectObj.SpeciesList = speciesObj; % Assign the Species object
-                            else % Try to create/find an openMINDS Species object
+                                currentSubjectObj.SpeciesList = speciesObj; 
+                            else 
                                  fprintf('DEBUG (SubjectInfoGUI): Species "%s" not in SpeciesData. Attempting openMINDS lookup.\n', speciesName);
                                  try
                                     omSpecies = openminds.controlledterms.Species('name',speciesName);
-                                    currentSubjectObj.SpeciesList = omSpecies; % This might error if Subject.SpeciesList expects custom Species class
+                                    currentSubjectObj.SpeciesList = omSpecies; 
                                  catch ME_om
                                      fprintf(2,'Warning: Could not create/assign openminds.controlledterms.Species "%s": %s\n', speciesName, ME_om.message);
                                  end
@@ -285,7 +268,7 @@ classdef SubjectInfoGUI < handle
                     fprintf(2,'Warning: Subject "%s" not found in SubjectData for update.\n', subjectNameInTable);
                 end
             end
-            obj.drawSubjectInfo(); % Refresh table
+            obj.drawSubjectInfo(); 
             obj.ParentApp.saveDatasetInformationStruct();
         end
 
@@ -311,39 +294,34 @@ classdef SubjectInfoGUI < handle
                         case 'BiologicalSex', currentSubjectObj.deleteBiologicalSex();
                         case 'Species'
                             currentSubjectObj.deleteSpeciesList();
-                            currentSubjectObj.deleteStrainList(); % Species change implies strain change
+                            currentSubjectObj.deleteStrainList(); 
                         case 'Strain', currentSubjectObj.deleteStrainList();
                     end
                 end
             end
-            obj.drawSubjectInfo(); % Refresh table
+            obj.drawSubjectInfo(); 
             obj.ParentApp.saveDatasetInformationStruct();
         end
 
         % --- Callbacks for UI Components ---
         function biologicalSexListBoxValueChanged(obj, event)
-            % obj.ParentApp.saveDatasetInformationStruct(); % If direct change to data model
+            % obj.ParentApp.saveDatasetInformationStruct(); 
         end
         function biologicalSexListBoxClicked(obj, event)
-            % If assigning on click rather than button
             % obj.updateSubjectTableColumnData('BiologicalSex', obj.BiologicalSexListBox.Value);
         end
         function speciesListBoxValueChanged(obj, event)
             obj.populateStrainList(); 
-            % obj.ParentApp.saveDatasetInformationStruct();
         end
         function speciesListBoxClicked(obj, event)
-            % obj.updateSubjectTableColumnData('Species', obj.SpeciesListBox.Value);
-            % obj.populateStrainList(); % Update strains based on new species selection
+            obj.populateStrainList(); 
         end
         function strainListBoxValueChanged(obj, event)
-            % obj.ParentApp.saveDatasetInformationStruct();
         end
         function strainListBoxClicked(obj, event)
             % obj.updateSubjectTableColumnData('Strain', obj.StrainListBox.Value);
         end
         function strainListBoxDoubleClicked(obj, event)
-            % Future: Edit selected strain
         end
 
         function assignBiologicalSexButtonPushed(obj, event)
@@ -354,14 +332,13 @@ classdef SubjectInfoGUI < handle
         end
         function assignSpeciesButtonPushed(obj, event)
             obj.updateSubjectTableColumnData('Species', obj.SpeciesListBox.Value);
-            obj.populateStrainList(); % Update strains after assigning species
+            obj.populateStrainList(); 
         end
         function speciesClearButtonPushed(obj, event)
             obj.deleteSubjectTableColumnData('Species');
             obj.populateStrainList(); 
         end
         function assignStrainButtonPushed(obj, event)
-            % Callback was missing in MetadataEditorApp, implementing basic version
              obj.updateSubjectTableColumnData('Strain', obj.StrainListBox.Value);
         end
         function strainClearButtonPushed(obj, event)
@@ -375,13 +352,13 @@ classdef SubjectInfoGUI < handle
                 return;
             end
             newSpeciesStruct = struct('name', speciesName, 'ontologyIdentifier', '', 'synonyms', {{}});
-            returnedSpeciesStruct = obj.ParentApp.openSpeciesForm(newSpeciesStruct); % Call main app's method
+            returnedSpeciesStruct = obj.ParentApp.openSpeciesForm(newSpeciesStruct); 
             
             if ~isempty(returnedSpeciesStruct) && isfield(returnedSpeciesStruct, 'name') && ~isempty(strtrim(returnedSpeciesStruct.name))
-                obj.ParentApp.SpeciesInstancesUser(end+1) = returnedSpeciesStruct; % Add to parent app's list
+                obj.ParentApp.SpeciesInstancesUser(end+1) = returnedSpeciesStruct; 
                 obj.ParentApp.SpeciesData.addItem(returnedSpeciesStruct.name, returnedSpeciesStruct.ontologyIdentifier, returnedSpeciesStruct.synonyms);
                 obj.ParentApp.saveSpecies(); 
-                obj.populateSpeciesList(); % Refresh this GUI's listbox
+                obj.populateSpeciesList(); 
                 obj.SpeciesEditField.Value = ''; 
                 obj.ParentApp.inform(sprintf('Species "%s" added.', returnedSpeciesStruct.name), 'Species Added');
             else
@@ -406,23 +383,27 @@ classdef SubjectInfoGUI < handle
                  obj.ParentApp.alert('Please select a species before adding a strain.', 'Species Not Selected'); return;
             end
             
-            % Here, you'd typically save the new strain to your user instances
-            % For now, this is a placeholder as in MetadataEditorApp
-            % Example: newStrainStruct = struct('name', strainName, 'species', selectedSpeciesName);
-            % obj.ParentApp.UserStrainInstances(end+1) = newStrainStruct;
-            % obj.ParentApp.saveStrainInstances(); % Method to be created in ParentApp
-            
             obj.populateStrainList(); 
             obj.StrainEditField.Value = '';
             obj.ParentApp.inform(sprintf('Strain "%s" for species "%s" added (Note: save logic is placeholder).', strainName, selectedSpeciesName), 'Strain Added (Placeholder)');
-            obj.ParentApp.saveDatasetInformationStruct(); % Save general struct if this action modifies subject
+            obj.ParentApp.saveDatasetInformationStruct(); 
+        end
+        
+        function missingFields = checkRequiredFields(obj)
+            % Placeholder: Add checks if SubjectInfo tab has specific required fields
+            % beyond what's managed by app.SubjectData object itself.
+            % For example, if at least one subject must be present.
+            missingFields = string.empty(0,1);
+            if isempty(obj.ParentApp.SubjectData.SubjectList)
+                % missingFields(end+1) = "At least one Subject"; 
+                % This might be too strict, depends on requirements.
+            end
         end
 
-        % --- Getter/Setter Methods (for build/populate functions) ---
-        % Subject data is primarily managed through app.SubjectData object.
-        % This GUI's role is to display and facilitate modification of app.SubjectData.
-        % So, direct getters/setters for the entire subject data block might not be needed
-        % if populateAppFrom... and buildDatasetFrom... directly use app.SubjectData.
+        function markRequiredFields(obj)
+            % Placeholder: Mark labels of required fields in this GUI
+            % e.g. obj.UITableSubjectLabel.Text = [obj.UITableSubjectLabel.Text ' *'];
+        end
 
     end
 end

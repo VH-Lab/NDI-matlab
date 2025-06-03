@@ -1,5 +1,6 @@
 classdef MetadataEditorApp < matlab.apps.AppBase
     %METADATAEDITORAPP App Edit and upload metadata for NDI datasets
+    %   (Syntax and Inputs documentation remains the same)
 
     % Properties that correspond to app components
     properties (Access = public)
@@ -14,37 +15,37 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         
         IntroTab                      matlab.ui.container.Tab
         IntroGridLayout               matlab.ui.container.GridLayout
-        GridLayout25                  matlab.ui.container.GridLayout 
-        NdiLogoIntroImage             matlab.ui.control.Image      
-        IntroLabel                    matlab.ui.control.Label      
-        GridLayout_Step0_C2           matlab.ui.container.GridLayout 
-        IntroductionTextLabel         matlab.ui.control.Label      
-        GridLayout_Step0_C3           matlab.ui.container.GridLayout 
-        GetStartedButton              matlab.ui.control.Button     
+        GridLayout25                  matlab.ui.container.GridLayout % For Intro Tab
+        NdiLogoIntroImage             matlab.ui.control.Image      % For Intro Tab
+        IntroLabel                    matlab.ui.control.Label      % For Intro Tab
+        GridLayout_Step0_C2           matlab.ui.container.GridLayout % For Intro Tab
+        IntroductionTextLabel         matlab.ui.control.Label      % For Intro Tab
+        GridLayout_Step0_C3           matlab.ui.container.GridLayout % For Intro Tab
+        GetStartedButton              matlab.ui.control.Button     % For Intro Tab
         
         DatasetOverviewTab            matlab.ui.container.Tab
         DatasetOverviewGridLayout     matlab.ui.container.GridLayout
         DatasetInformationLabel       matlab.ui.control.Label
         DatasetInformationPanel       matlab.ui.container.Panel
-        GridLayout                    matlab.ui.container.GridLayout 
-        GridLayout4                   matlab.ui.container.GridLayout 
+        GridLayout                    matlab.ui.container.GridLayout % Inside DatasetInformationPanel
+        GridLayout4                   matlab.ui.container.GridLayout % For Comments
         DatasetCommentsTextArea       matlab.ui.control.TextArea
         DatasetCommentsTextAreaLabel  matlab.ui.control.Label
-        Panel_4                       matlab.ui.container.Panel      
-        GridLayout3                   matlab.ui.container.GridLayout 
+        Panel_4                       matlab.ui.container.Panel      % For Abstract
+        GridLayout3                   matlab.ui.container.GridLayout % For Abstract
         AbstractTextAreaLabel         matlab.ui.control.Label
         AbstractTextArea              matlab.ui.control.TextArea
-        Panel_3                       matlab.ui.container.Panel      
-        GridLayout2                   matlab.ui.container.GridLayout 
+        Panel_3                       matlab.ui.container.Panel      % For Titles
+        GridLayout2                   matlab.ui.container.GridLayout % For Titles
         DatasetShortNameEditFieldLabel matlab.ui.control.Label
         DatasetShortNameEditField     matlab.ui.control.EditField
         DatasetBranchTitleEditFieldLabel matlab.ui.control.Label
         DatasetBranchTitleEditField   matlab.ui.control.EditField
         
         AuthorsTab                    matlab.ui.container.Tab
-        AuthorsGridLayout             matlab.ui.container.GridLayout 
-        AuthorDetailsLabel            matlab.ui.control.Label      
-        AuthorMainPanel               matlab.ui.container.Panel      
+        AuthorsGridLayout             matlab.ui.container.GridLayout % Main grid for Authors Tab
+        AuthorDetailsLabel            matlab.ui.control.Label      % Title for Authors Tab
+        AuthorMainPanel               matlab.ui.container.Panel      % Panel that will contain AuthorDataGUI's UI
         
         DatasetDetailsTab             matlab.ui.container.Tab 
         DatasetDetailsGridLayout      matlab.ui.container.GridLayout 
@@ -60,7 +61,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         SubjectInfoGridLayout         matlab.ui.container.GridLayout 
         SubjectInfoLabel              matlab.ui.control.Label      
         SubjectInfoPanel              matlab.ui.container.Panel      
-        % UI elements for SubjectInfoTab will be managed by SubjectInfoGUI_Instance
         
         ProbeInfoTab                  matlab.ui.container.Tab
         ProbeInfoGridLayout           matlab.ui.container.GridLayout
@@ -91,7 +91,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         ProbeDataGUI_Instance  ndi.database.metadata_app.class.ProbeDataGUI
         ExperimentalDetailsGUI_Instance ndi.database.metadata_app.class.ExperimentalDetailsGUI
         DatasetDetailsGUI_Instance ndi.database.metadata_app.class.DatasetDetailsGUI
-        SubjectInfoGUI_Instance ndi.database.metadata_app.class.SubjectInfoGUI % Added
+        SubjectInfoGUI_Instance ndi.database.metadata_app.class.SubjectInfoGUI
     end
 
     properties (Access = public, Constant)
@@ -99,7 +99,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     'DatasetFullName', 'DatasetBranchTitleEditField', ...
                     'DatasetShortName', 'DatasetShortNameEditField', ...
                             'Description', 'AbstractTextArea', ...
-                                'Comments', 'DatasetCommentsTextArea'
+                                'Comments', 'DatasetCommentsTextArea' ... 
                     );
         FieldComponentPostfix = ["EditField", "TextArea", "DropDown", "UITable", "Tree", "ListBox"]
     end
@@ -172,7 +172,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
     end
     
-    methods (Access = private) 
+    methods (Access = public) % Changed from private for sub-GUI access
         function missingRequiredField = checkRequiredFields(app, tab)
             tabTitleStr = '';
             if isa(tab, 'matlab.ui.container.Tab') && isprop(tab,'Title') && ~isempty(tab.Title)
@@ -203,7 +203,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     end
                 case app.SubjectInfoTab.Title
                    if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'checkRequiredFields')
-                       missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields(); % Assuming SubjectInfoGUI will have this
+                       missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields(); 
                        missingRequiredField = [missingRequiredField, missingFromSub];
                    end
                 case {'', app.SaveTab.Title} 
@@ -220,7 +220,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                        missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields(); 
                        missingRequiredField = [missingRequiredField, missingFromSub];
                    end
-                   % Add for ProbeDataGUI if it implements checkRequiredFields
                 otherwise
                     fprintf('DEBUG (checkRequiredFields): Tab "%s" has no specific fields in main app switch.\n', currentTabName);
             end    
@@ -379,7 +378,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 app.DatasetDetailsGUI_Instance.markRequiredFields();
             end
             if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'markRequiredFields')
-                app.SubjectInfoGUI_Instance.markRequiredFields(); % Assuming this method will be added
+                app.SubjectInfoGUI_Instance.markRequiredFields(); 
             end
         end
         
@@ -396,26 +395,61 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
         
         function setFigureMinSize(app) 
-            isMatch = false; drawnow; pause(0.1); 
-            max_attempts = 20; attempt_count = 0;
+            isMatchFound = false; 
+            drawnow; 
+            pause(0.1); 
+
+            max_attempts = 20; 
+            attempt_count = 0;
+            
             figName = app.NDIMetadataEditorUIFigure.Name; 
-            while ~isMatch && attempt_count < max_attempts
+            targetWindow = []; 
+
+            while ~isMatchFound && attempt_count < max_attempts
                 windowList = matlab.internal.webwindowmanager.instance.findAllWebwindows();
-                if isempty(windowList), attempt_count = attempt_count + 1; pause(0.1); continue; end
-                titles = {windowList.Title}; isMatch = strcmp(titles, figName);
-                if ~any(isMatch) && ~isempty(app.NDIMetadataEditorUIFigure.Tag)
-                     tags = arrayfun(@(w) getfieldifexists(w,'Tag'), windowList, 'UniformOutput', false);
-                     validTags = cellfun(@ischar, tags);
-                     if any(validTags), isMatch = strcmp(tags(validTags), app.NDIMetadataEditorUIFigure.Tag);
-                     else, isMatch = false(1,0); end
+                if isempty(windowList)
+                    attempt_count = attempt_count + 1;
+                    pause(0.1);
+                    continue;
                 end
-                if ~any(isMatch), attempt_count = attempt_count + 1; pause(0.1); end
+                
+                titles = {windowList.Title};
+                matchIndicesByTitle = strcmp(titles, figName);
+                if any(matchIndicesByTitle)
+                    isMatchFound = true;
+                    targetWindow = windowList(find(matchIndicesByTitle,1));
+                    break; 
+                end
+                
+                if ~isempty(app.NDIMetadataEditorUIFigure.Tag)
+                     tags = arrayfun(@(w) getfieldifexists(w,'Tag'), windowList, 'UniformOutput', false);
+                     validTagsIdx = cellfun(@ischar, tags);
+                     if any(validTagsIdx)
+                        matchIndicesByTag = strcmp(tags(validTagsIdx), app.NDIMetadataEditorUIFigure.Tag);
+                        if any(matchIndicesByTag)
+                            isMatchFound = true;
+                            originalIndices = find(validTagsIdx);
+                            targetWindow = windowList(originalIndices(find(matchIndicesByTag,1)));
+                            break; 
+                        end
+                     end
+                end
+
+                if ~isMatchFound 
+                    attempt_count = attempt_count + 1;
+                    pause(0.1);
+                end
             end
-            if any(isMatch)
-                window = windowList(find(isMatch,1)); 
-                try window.setMinSize([840 610]);
-                catch ME_setMinSize, fprintf(2,'Warning: Could not set minimum figure size: %s\n', ME_setMinSize.message); end
-            else, fprintf(2,'Warning: Could not find the app window to set minimum size for "%s".\n', figName); end
+
+            if isMatchFound && ~isempty(targetWindow)
+                try
+                    targetWindow.setMinSize([840 610]);
+                catch ME_setMinSize
+                     fprintf(2,'Warning: Could not set minimum figure size: %s\n', ME_setMinSize.message);
+                end
+            else
+                fprintf(2,'Warning: Could not find the app window to set minimum size for "%s" after %d attempts.\n', figName, attempt_count);
+            end
         end
         
         function centerFigureOnScreen(app) 
@@ -524,35 +558,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             import ndi.database.metadata_app.fun.loadUserInstanceCatalog
             strainInstances = loadUserInstanceCatalog('Strain');
         end
-
-        function S = openOrganizationForm(app, organizationInfo, organizationIndex)
-            if ~isfield(app.UIForm, 'Organization') || ~isvalid(app.UIForm.Organization)
-                app.UIForm.Organization = ndi.database.metadata_app.Apps.OrganizationForm();
-            else
-                app.UIForm.Organization.Visible = 'on';
-            end
-            if nargin > 1 && ~isempty(organizationInfo)
-                app.UIForm.Organization.setOrganizationDetails(organizationInfo);
-            end
-            app.UIForm.Organization.waitfor();
-            S = app.UIForm.Organization.getOrganizationDetails();
-            mode = app.UIForm.Organization.FinishState;
-            if mode == "Save"
-                if nargin > 2 && ~isempty(organizationIndex)
-                    app.insertOrganization(S, organizationIndex);
-                else
-                    app.insertOrganization(S);
-                end
-                if ~isempty(app.AuthorDataGUI_Instance) && isvalid(app.AuthorDataGUI_Instance)
-                    app.AuthorDataGUI_Instance.populateOrganizationDropdownInternal();
-                end
-            else
-                S = struct.empty;
-            end
-            app.UIForm.Organization.reset();
-            app.UIForm.Organization.Visible = 'off';
-            if ~nargout, clear S; end
-        end
         
         function insertOrganization(app, S_org, insertIndex) 
             if nargin < 3 || isempty(insertIndex)
@@ -566,7 +571,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.saveOrganizationInstances();
         end
 
-        function S = openFundingForm(app, info)
+        function S = openFundingForm(app, info) 
             progressDialog = uiprogressdlg(app.NDIMetadataEditorUIFigure, ...
                 'Message', 'Opening form for entering funder details', ...
                 'Title', 'Please wait...', 'Indeterminate', "on");
@@ -905,7 +910,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 app.DatasetDetailsLabel.Layout.Row=1; app.DatasetDetailsLabel.Layout.Column=1;
                 app.DatasetDetailsPanel = uipanel(app.DatasetDetailsGridLayout, 'BorderType', 'none');
                 app.DatasetDetailsPanel.Layout.Row=2; app.DatasetDetailsPanel.Layout.Column=1;
-                % UI elements for this panel are now created by DatasetDetailsGUI_Instance
 
             app.ExperimentDetailsTab = uitab(app.TabGroup, 'Title', 'Experiment Details');
             app.ExperimentDetailsGridLayout = uigridlayout(app.ExperimentDetailsTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
@@ -913,7 +917,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.ExperimentDetailsLabel.Layout.Row=1; app.ExperimentDetailsLabel.Layout.Column=1;
             app.ExperimentDetailsPanel = uipanel(app.ExperimentDetailsGridLayout, 'BorderType', 'none');
             app.ExperimentDetailsPanel.Layout.Row=2; app.ExperimentDetailsPanel.Layout.Column=1;
-            % UI elements for this tab are now managed by ExperimentalDetailsGUI_Instance
 
             app.SubjectInfoTab = uitab(app.TabGroup, 'Title', 'Subject Info');
             app.SubjectInfoGridLayout = uigridlayout(app.SubjectInfoTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
@@ -921,7 +924,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.SubjectInfoLabel.Layout.Row=1; app.SubjectInfoLabel.Layout.Column=1;
             app.SubjectInfoPanel = uipanel(app.SubjectInfoGridLayout, 'BorderType', 'none');
             app.SubjectInfoPanel.Layout.Row=2; app.SubjectInfoPanel.Layout.Column=1;
-            % UI elements for this panel are now created by SubjectInfoGUI_Instance
 
             app.ProbeInfoTab = uitab(app.TabGroup, 'Title', 'Probe Info');
             app.ProbeInfoGridLayout = uigridlayout(app.ProbeInfoTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
@@ -929,7 +931,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.ProbeInfoLabel.Layout.Row=1; app.ProbeInfoLabel.Layout.Column=1;
             app.ProbeInfoPanel = uipanel(app.ProbeInfoGridLayout, 'BorderType', 'none');
             app.ProbeInfoPanel.Layout.Row=2; app.ProbeInfoPanel.Layout.Column=1;
-            % UITableProbe will be created by ProbeDataGUI inside ProbeInfoPanel
 
             app.SaveTab = uitab(app.TabGroup, 'Title', 'Save');
             app.SubmitGridLayout = uigridlayout(app.SaveTab, [3 1], 'RowHeight', {60, '4x', 'fit'}); 
@@ -978,7 +979,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         function app = MetadataEditorApp(varargin)
             runningApp = getRunningApp(app);
             if isempty(runningApp)
-                createComponents(app)
+                createComponents(app) 
                 registerApp(app, app.NDIMetadataEditorUIFigure)
                 runStartupFcn(app, @(app)startupFcn(app, varargin{:}))
             else
@@ -997,5 +998,193 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 delete(app.NDIMetadataEditorUIFigure);
             end
         end
+    end
+
+    % STARTUP FUNCTION - ESSENTIAL FOR APP INITIALIZATION
+    methods (Access = public) 
+        function startupFcn(app, datasetObject, debugMode)
+            arguments 
+                app (1,1) ndi.database.metadata_app.Apps.MetadataEditorApp
+                datasetObject (1,1) {mustBeA(datasetObject, ["ndi.session", "ndi.dataset"])}
+                debugMode (1,1) logical = false
+            end
+            fprintf('DEBUG (startupFcn): MetadataEditorApp startup initiated.\n');
+
+            appFileFolder = fileparts(mfilename('fullpath'));
+            app.ResourcesPath = fullfile(appFileFolder, 'resources'); 
+            if ~isfolder(app.ResourcesPath)
+                 fprintf(2, 'Warning (startupFcn): ResourcesPath not found: %s. Icon paths might be incorrect.\n', app.ResourcesPath);
+            end
+
+            try
+                ndi.fun.assertAddonOnPath("openMINDS Metadata Models", 'RequiredFor', 'NDI Dataset Uploader');
+            catch
+                try 
+                    ndi.fun.assertAddonOnPath("openMINDS Metadata Toolbox", 'RequiredFor', 'NDI Dataset Uploader');
+                catch ME
+                    delete(app); throwAsCaller(ME);
+                end
+            end
+
+            app.Dataset = datasetObject;
+            app.TempWorkingFile = app.getTempWorkingFile();
+            
+            app.FooterPanel.Visible = 'off'; 
+            app.hideUnimplementedComponents(); 
+            
+            app.setFigureMinSize();
+            app.centerFigureOnScreen(); 
+
+            app.AuthorData = ndi.database.metadata_app.class.AuthorData();
+            app.SubjectData = ndi.database.metadata_app.class.SubjectData();
+            app.ProbeData = ndi.database.metadata_app.class.ProbeData();
+            app.SpeciesData = ndi.database.metadata_app.class.SpeciesData();
+
+            app.AuthorDataGUI_Instance = ndi.database.metadata_app.class.AuthorDataGUI(app, app.AuthorMainPanel);
+            app.AuthorDataGUI_Instance.initialize();
+            
+            app.ProbeDataGUI_Instance = ndi.database.metadata_app.class.ProbeDataGUI(app, app.ProbeInfoPanel); 
+            app.ProbeDataGUI_Instance.initialize(); 
+
+            app.ExperimentalDetailsGUI_Instance = ndi.database.metadata_app.class.ExperimentalDetailsGUI(app, app.ExperimentDetailsPanel);
+            app.ExperimentalDetailsGUI_Instance.initialize();
+
+            app.DatasetDetailsGUI_Instance = ndi.database.metadata_app.class.DatasetDetailsGUI(app, app.DatasetDetailsPanel);
+            app.DatasetDetailsGUI_Instance.initialize();
+
+            app.SubjectInfoGUI_Instance = ndi.database.metadata_app.class.SubjectInfoGUI(app, app.SubjectInfoPanel);
+            app.SubjectInfoGUI_Instance.initialize();
+            
+            app.markRequiredFields(); 
+
+            app.loadUserDefinedMetadata(); 
+            app.populateComponentsWithMetadata(); 
+
+            if ~isempty(app.Dataset)
+                app.getInitialMetadataFromSession(); 
+            end
+
+            app.loadDatasetInformationStruct(); 
+            
+            fprintf('DEBUG (startupFcn): MetadataEditorApp startup completed.\n');
+        end
+        
+        function populateComponentsWithMetadata(app)
+            fprintf('DEBUG (populateComponentsWithMetadata): Called.\n');
+            % This method is now minimal as most population is delegated to sub-GUIs.
+        end
+
+        function getInitialMetadataFromSession(app)
+            fprintf('DEBUG (getInitialMetadataFromSession): Called.\n');
+            
+            if ~isempty(app.Dataset)
+                if isprop(app, 'SubjectData') && isobject(app.SubjectData)
+                    subjectDataFromEntity = ndi.database.metadata_app.fun.loadSubjects(app.Dataset);
+                    if isa(subjectDataFromEntity, 'ndi.database.metadata_app.class.SubjectData')
+                        app.SubjectData = subjectDataFromEntity; 
+                        fprintf('DEBUG (getInitialMetadataFromSession): SubjectData loaded from NDI entity.\n');
+                    else
+                        fprintf(2, 'Warning (getInitialMetadataFromSession): loadSubjects did not return a SubjectData object.\n');
+                    end
+                else
+                    fprintf(2, 'Warning (getInitialMetadataFromSession): app.SubjectData property missing or not an object.\n');
+                end
+                
+                if isprop(app, 'ProbeData') && isobject(app.ProbeData)
+                    try
+                        probeDataFromEntity = ndi.database.metadata_app.fun.loadProbes(app.Dataset); 
+                        if isa(probeDataFromEntity, 'ndi.database.metadata_app.class.ProbeData')
+                            app.ProbeData = probeDataFromEntity;
+                            fprintf('DEBUG (getInitialMetadataFromSession): ProbeData loaded from NDI entity.\n');
+                        else
+                            fprintf(2,'Warning (getInitialMetadataFromSession): loadProbes did not return a ProbeData object.\n');
+                        end
+                    catch ME_loadProbes
+                         fprintf(2,'Error loading probes from dataset: %s.\n', ME_loadProbes.message);
+                    end
+                else
+                     fprintf(2, 'Warning (getInitialMetadataFromSession): app.ProbeData property missing or not an object.\n');
+                end
+            else
+                fprintf('DEBUG (getInitialMetadataFromSession): No app.Dataset provided, skipping metadata load from session.\n');
+            end
+        end
+    end
+    
+    % CLOSE REQUEST FUNCTION - ESSENTIAL FOR CLEANUP
+    methods (Access = private)
+        function NDIMetadataEditorUIFigureCloseRequest(app, event)
+            fprintf('DEBUG (NDIMetadataEditorUIFigureCloseRequest): App close requested.\n');
+            errors_for_dialog = {};
+            try
+                if isprop(app, 'Dataset') && ~isempty(app.Dataset) && isobject(app.Dataset) && isvalid(app.Dataset)
+                    try
+                        if isprop(app, 'DatasetInformationStruct')
+                            app.DatasetInformationStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+                            app.Dataset = ndi.database.metadata_ds_core.saveEditor2Doc(app.Dataset, app.DatasetInformationStruct);
+                             fprintf('DEBUG (NDIMetadataEditorUIFigureCloseRequest): Dataset saved to NDI document.\n');
+                        else
+                            msg_info = 'DatasetInformationStruct property not found, cannot save dataset state.';
+                            fprintf(2, 'INFO during app close: %s\n', msg_info);
+                        end
+                    catch ME_save
+                        full_msg = sprintf('ERROR saving dataset during app close: %s (ID: %s)', ME_save.message, ME_save.identifier);
+                        errors_for_dialog{end+1} = ME_save.message; 
+                        fprintf(2, '%s\nFull report for ME_save:\n%s\n', full_msg, ME_save.getReport('extended', 'hyperlinks', 'off'));
+                    end
+                end
+                if isprop(app, 'UIForm') && ~isempty(app.UIForm) && isstruct(app.UIForm)
+                    formNames = fieldnames(app.UIForm);
+                    for i = 1:numel(formNames)
+                        thisName = formNames{i};
+                        try
+                            if isfield(app.UIForm, thisName) && ...
+                               ~isempty(app.UIForm.(thisName)) && isobject(app.UIForm.(thisName)) && isvalid(app.UIForm.(thisName))
+                                delete(app.UIForm.(thisName));
+                            end
+                        catch ME_form
+                            full_msg = sprintf('ERROR deleting UIForm element "%s" during app close: %s (ID: %s)', thisName, ME_form.message, ME_form.identifier);
+                            errors_for_dialog{end+1} = sprintf('Deleting form "%s": %s', thisName, ME_form.message);
+                            fprintf(2, '%s\nFull report for ME_form ("%s"):\n%s\n', full_msg, thisName, ME_form.getReport('extended', 'hyperlinks', 'off'));
+                        end
+                    end
+                end
+            catch ME_general_cleanup
+                full_msg = sprintf('UNEXPECTED ERROR during app close preparation: %s (ID: %s)', ME_general_cleanup.message, ME_general_cleanup.identifier);
+                errors_for_dialog{end+1} = ME_general_cleanup.message; 
+                fprintf(2, '%s\nFull report for ME_general_cleanup:\n%s\n', full_msg, ME_general_cleanup.getReport('extended', 'hyperlinks', 'off'));
+            end
+            
+            if ~isempty(errors_for_dialog)
+                try
+                    dialog_message_lines = {'Errors occurred while closing the NDI Metadata Editor.', ...
+                                            'The application window will close, but these issues were noted:', ''};
+                    for k_err = 1:min(numel(errors_for_dialog), 5) 
+                        concise_msg = errors_for_dialog{k_err};
+                        if length(concise_msg) > 150, concise_msg = [concise_msg(1:147), '...']; end
+                        dialog_message_lines{end+1} = ['- ', concise_msg];
+                    end
+                    if numel(errors_for_dialog) > 5
+                        dialog_message_lines{end+1} = sprintf('- ... and %d more error(s).', numel(errors_for_dialog)-5);
+                    end
+                    dialog_message_lines{end+1} = ''; 
+                    dialog_message_lines{end+1} = 'Please check the MATLAB Command Window for full technical details.';
+                    errordlg(dialog_message_lines, 'Application Closing Errors', 'non-modal');
+                catch ME_dialog_display
+                    fprintf(2, 'CRITICAL: Could not display graphical error dialog for closing errors: %s\n', ME_dialog_display.message);
+                end
+            end
+            delete(app); 
+            fprintf('DEBUG (NDIMetadataEditorUIFigureCloseRequest): App deleted.\n');
+        end
+    end
+end
+
+% Helper function defined outside the classdef
+function result = ifthenelse(condition, trueval, falseval)
+    if condition
+        result = trueval;
+    else
+        result = falseval;
     end
 end
