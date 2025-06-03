@@ -474,6 +474,102 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "microelectrodeVoltageOffset" xsd:string
 
 [Term]
+id: EMPTY:00000152
+name: Fear-Potentiated Startle: trial number
+namespace: empty_ontology
+def: "Sequential number identifying an individual trial within a specific Fear-Potentiated Startle (FPS) experimental session or phase (e.g., habituation, conditioning, recall test) for a subject. As described in the manuscript, experiments consist of multiple trials (e.g., 30 startle trials for habituation, 10 cue-shock pairings for conditioning)[cite: 1]. Unit of measure: count" []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "fpsTrialNumber" xsd:string
+
+[Term]
+id: EMPTY:00000153
+name: Fear-Potentiated Startle: trial type identifier
+namespace: empty_ontology
+def: "A descriptive string identifying the specific type or condition of a trial in a Fear-Potentiated Startle (FPS) experiment. Examples from the manuscript include 'pre-shock' (baseline startle), 'post-shock' (startle in conditioning context after shocks), 'noise-only' (startle to acoustic stimulus alone during recall tests), or 'light+noise' (startle to acoustic stimulus in presence of conditioned cue during recall tests)[cite: 1]. The raw data might contain labels like 'Startle 95 dB Trial'." []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "fpsTrialTypeIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000154
+name: Fear-Potentiated Startle: apparatus chamber identifier
+namespace: empty_ontology
+def: "Identifier for the specific Plexiglas enclosure or sound-attenuating chamber within the Fear-Potentiated Startle (FPS) apparatus (e.g., San Diego Instruments SR-Lab) in which a subject was tested for a given trial[cite: 1]. Unit of measure: count or identifier string" []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "fpsApparatusChamberIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000155
+name: Experimental group code
+namespace: empty_ontology
+def: "A numerical code that assigns a subject to a specific experimental group within the study design. For example, this could numerically represent treatment groups such as 'saline' or 'CNO' as described in the manuscript[cite: 1], or other study-specific groupings." []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "experimentalGroupCode" xsd:string
+
+[Term]
+id: EMPTY:00000156
+name: Acoustic Startle Response: number of samples in analysis window
+namespace: empty_ontology
+def: "The total number of data points (samples) recorded and analyzed for a single acoustic startle response, typically within a defined time window following stimulus onset (e.g., a 200-ms window as mentioned in the manuscript [cite: 1]). Unit of measure: count" []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "asrNumberOfSamplesInWindow" xsd:string
+
+[Term]
+id: EMPTY:00000157
+name: Acoustic Startle Response: sampling rate
+namespace: empty_ontology
+def: "The rate at which the analog startle response signal was digitized during data acquisition. Unit of measure: Hertz (Hz)" []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "asrSamplingRate" xsd:string
+
+[Term]
+id: EMPTY:00000158
+name: Acoustic Startle Response: startle window onset amplitude
+namespace: empty_ontology
+def: "The amplitude of the digitized acoustic startle response signal at the very beginning (onset) of the defined analysis window (e.g., a 200-ms window [cite: 1]) used to quantify the reflex. Unit of measure: millivolts (mV) or arbitrary units based on transducer calibration." []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "asrStartleWindowOnsetAttribute" xsd:string
+
+[Term]
+id: EMPTY:00000159
+name: Acoustic Startle Response: maximum amplitude
+namespace: empty_ontology
+def: "The peak amplitude of the acoustic startle response (e.g., 'jump amplitude' [cite: 1]) detected within the defined analysis window (e.g., 200-ms window [cite: 1]) for a given trial. Unit of measure: millivolts (mV) or arbitrary units." []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "asrMaximumAmplitude" xsd:string
+
+[Term]
+id: EMPTY:00000160
+name: Acoustic Startle Response: time to maximum amplitude
+namespace: empty_ontology
+def: "The latency from the onset of the startle-eliciting stimulus (or the beginning of the analysis window) to the occurrence of the maximum (peak) amplitude of the acoustic startle response. Unit of measure: milliseconds (ms)" []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "asrTimeToMaximumAmplitude" xsd:string
+
+[Term]
+id: EMPTY:00000161
+name: Acoustic Startle Response: average amplitude in analysis window
+namespace: empty_ontology
+def: "The average amplitude of the digitized acoustic startle response signal calculated across the entire duration of the defined analysis window (e.g., 200-ms window [cite: 1]). Unit of measure: millivolts (mV) or arbitrary units." []
+is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
+property_value: codeName "asrAverageAmplitudeInWindow" xsd:string
+
+[Term]
+id: EMPTY:00000162
+name: Experiment trial execution timestamp
+namespace: empty_ontology
+def: "The specific date and time indicating when an individual experimental trial was conducted or its data recorded." []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "experimentTrialExecutionTimestamp" xsd:string
+
+[Term]
+id: EMPTY:00000163
+name: Fear-Potentiated Startle: experimental phase or test name
+namespace: empty_ontology
+def: "A string identifier indicating the specific experimental phase, session, or test condition of the Fear-Potentiated Startle (FPS) paradigm to which the data belongs. Examples derived from the manuscript's protocol include 'chamber and startle habituation', 'baseline pre-shock test', 'fear conditioning', 'cued fear recall in context B', 'contextual fear recall in context A', or specific extinction test sessions[cite: 1]. This often corresponds to the name of the source data sheet (e.g., 'Pre-test 1', 'Cue test 3')." []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "fpsExperimentalPhaseTestName" xsd:string
+
+[Term]
 id: EMPTY:30000000
 name: Approach
 namespace: empty_ontology

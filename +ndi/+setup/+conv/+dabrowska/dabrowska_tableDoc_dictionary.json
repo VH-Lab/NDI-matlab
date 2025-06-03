@@ -45,5 +45,18 @@
   "Center_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: center - percent time in 5 minutes",
   "Center_LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: center - latency to first entry",
   "Center_TimeMovingTowards": "EMPTY:Elevated Plus Maze: center - time moving towards",
-  "Center_TimeFreezing": "EMPTY:Elevated Plus Maze: center - time freezing"
+  "Center_TimeFreezing": "EMPTY:Elevated Plus Maze: center - time freezing",
+  "Trial_Num": "EMPTY:Fear-Potentiated Startle: trial number",
+  "Trial_ID": "EMPTY:Fear-Potentiated Startle: trial type identifier",
+  "Channel_ID": "EMPTY:Fear-Potentiated Startle: apparatus channel identifier",
+  "Subject_ID": "EMPTY:Subject local identifier",
+  "Group_ID": "EMPTY:Experimental group identifier",
+  "Samples": "EMPTY:Acoustic Startle Response: number of samples",
+  "Rate": "EMPTY:Acoustic Startle Response: sampling rate",
+  "V_Start": "EMPTY:Acoustic Startle Response: startle window onset amplitude",
+  "mV_Max": "EMPTY:Acoustic Startle Response: maximum amplitude",
+  "T_Max": "EMPTY:Acoustic Startle Response: time to maximum amplitude",
+  "mV_Avg": "EMPTY:Acoustic Startle Response: average amplitude",
+  "Run_Time": "EMPTY:Experiment trial execution timestamp",
+  "Sheet_Name": "EMPTY:Fear-Potentiated Startle: experimental phase or test name"
 }
