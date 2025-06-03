@@ -23,7 +23,8 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
 %   See also: ndi.cloud.download.download_document_collection,
 %             ndi.cloud.sync.internal.getFileUidsFromDocuments,
 %             ndi.cloud.download.download_dataset_files,
-%             ndi.cloud.download.internal.update_document_file_info
+%             ndi.cloud.sync.internal.updateFileInfoForRemoteFiles,
+%             ndi.cloud.sync.internal.updateFileInfoForLocalFiles
 
     arguments
         cloudDatasetId (1,1) string
