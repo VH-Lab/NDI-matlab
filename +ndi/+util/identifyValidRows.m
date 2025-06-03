@@ -52,9 +52,13 @@ if isempty(checkVariables)
     return
 end
 
-% Ensure checkVariables and invalidValues are cell arrays for consistent processing
+% Ensure checkVariables is a cell array
 checkVariables = cellstr(checkVariables);
-invalidValues = cellstr(invalidValues);
+
+% Ensure invalidValues is a cell array
+if ~iscell(invalidValues)
+    invalidValues = {invalidValues};
+end
 
 % Ensure invalidValues has length equal to check variables
 if isscalar(invalidValues) && ~isscalar(checkVariables)
