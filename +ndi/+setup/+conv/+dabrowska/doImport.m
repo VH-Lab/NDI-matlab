@@ -1,11 +1,11 @@
-function doImport(dataParentDir)
+function doImport(dataParentDir,options)
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
+    options.Overwrite (1,1) logical = false
 end
 
 %%
-
 progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
 
 dataPath = fullfile(dataParentDir,'Dabrowska');
@@ -83,19 +83,22 @@ variableTable{:,'BiologicalSex'} = {'male'};
 % Employ the sessionMaker
 mySessionPath = dataParentDir;
 SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
-    'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
+    'NonNaNVariableNames','IsExpMatFile','Overwrite',options.Overwrite);
 [sessionArray,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
 
 % Add DAQ system
 labName = 'dabrowskalab';
-SM.addDaqSystem(labName,'Overwrite',true)
+SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 
 %% Step 3: SUBJECTS
 
 subM = ndi.setup.NDIMaker.subjectMaker();
-[subjectInfo,variableTable.SubjectString] = subM.getSubjectInfoFromTable(variableTable,@ndi.setup.conv.dabrowska.createSubjectInformation);
+[subjectInfo,variableTable.SubjectString] = ...
+    subM.getSubjectInfoFromTable(variableTable,...
+    @ndi.setup.conv.dabrowska.createSubjectInformation);
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
+subM.deleteSubjectDocs(sessionArray,subjectInfo.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
@@ -121,7 +124,7 @@ variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
 
 % Create epoch probe maps
 ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
-    'Overwrite',true,...
+    'Overwrite',options.Overwrite,...
     'NonNaNVariableNames','IsExpMatFile',...
     'ProbePostfix','ProbePostfix');
 
@@ -141,7 +144,7 @@ stimulus_bath_docs = sd.table2bathDocs(variableTable,...
     'MixtureDictionary',mixture_dictionary,...
     'NonNaNVariableNames','sessionInd', ...
     'MixtureDelimeter','+',...
-    'Overwrite',false);
+    'Overwrite',options.Overwrite);
 
 % Define approachName
 indTLS = ndi.util.identifyValidRows(variableTable,'TLS');
@@ -155,4 +158,4 @@ variableTable.ApproachName(indApproach(indPost)) = {'Approach: After optogenetic
 % Get stimulus approach docs
 stimulus_approach_docs = sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
-    'Overwrite',false);
+    'Overwrite',options.Overwrite);
