@@ -1,6 +1,5 @@
 classdef MetadataEditorApp < matlab.apps.AppBase
     %METADATAEDITORAPP App Edit and upload metadata for NDI datasets
-    %   (Syntax and Inputs documentation remains the same)
 
     % Properties that correspond to app components
     properties (Access = public)
@@ -15,113 +14,58 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         
         IntroTab                      matlab.ui.container.Tab
         IntroGridLayout               matlab.ui.container.GridLayout
-        GridLayout25                  matlab.ui.container.GridLayout % For Intro Tab
-        NdiLogoIntroImage             matlab.ui.control.Image      % For Intro Tab
-        IntroLabel                    matlab.ui.control.Label      % For Intro Tab
-        GridLayout_Step0_C2           matlab.ui.container.GridLayout % For Intro Tab
-        IntroductionTextLabel         matlab.ui.control.Label      % For Intro Tab
-        GridLayout_Step0_C3           matlab.ui.container.GridLayout % For Intro Tab
-        GetStartedButton              matlab.ui.control.Button     % For Intro Tab
+        GridLayout25                  matlab.ui.container.GridLayout 
+        NdiLogoIntroImage             matlab.ui.control.Image      
+        IntroLabel                    matlab.ui.control.Label      
+        GridLayout_Step0_C2           matlab.ui.container.GridLayout 
+        IntroductionTextLabel         matlab.ui.control.Label      
+        GridLayout_Step0_C3           matlab.ui.container.GridLayout 
+        GetStartedButton              matlab.ui.control.Button     
         
         DatasetOverviewTab            matlab.ui.container.Tab
         DatasetOverviewGridLayout     matlab.ui.container.GridLayout
         DatasetInformationLabel       matlab.ui.control.Label
         DatasetInformationPanel       matlab.ui.container.Panel
-        GridLayout                    matlab.ui.container.GridLayout % Inside DatasetInformationPanel
-        GridLayout4                   matlab.ui.container.GridLayout % For Comments
+        GridLayout                    matlab.ui.container.GridLayout 
+        GridLayout4                   matlab.ui.container.GridLayout 
         DatasetCommentsTextArea       matlab.ui.control.TextArea
         DatasetCommentsTextAreaLabel  matlab.ui.control.Label
-        Panel_4                       matlab.ui.container.Panel      % For Abstract
-        GridLayout3                   matlab.ui.container.GridLayout % For Abstract
+        Panel_4                       matlab.ui.container.Panel      
+        GridLayout3                   matlab.ui.container.GridLayout 
         AbstractTextAreaLabel         matlab.ui.control.Label
         AbstractTextArea              matlab.ui.control.TextArea
-        Panel_3                       matlab.ui.container.Panel      % For Titles
-        GridLayout2                   matlab.ui.container.GridLayout % For Titles
+        Panel_3                       matlab.ui.container.Panel      
+        GridLayout2                   matlab.ui.container.GridLayout 
         DatasetShortNameEditFieldLabel matlab.ui.control.Label
         DatasetShortNameEditField     matlab.ui.control.EditField
         DatasetBranchTitleEditFieldLabel matlab.ui.control.Label
         DatasetBranchTitleEditField   matlab.ui.control.EditField
         
         AuthorsTab                    matlab.ui.container.Tab
-        AuthorsGridLayout             matlab.ui.container.GridLayout % Main grid for Authors Tab
-        AuthorDetailsLabel            matlab.ui.control.Label      % Title for Authors Tab
-        AuthorMainPanel               matlab.ui.container.Panel      % Panel that will contain AuthorDataGUI's UI
+        AuthorsGridLayout             matlab.ui.container.GridLayout 
+        AuthorDetailsLabel            matlab.ui.control.Label      
+        AuthorMainPanel               matlab.ui.container.Panel      
         
-        DatasetDetailsTab             matlab.ui.container.Tab
-        DatasetDetailsGridLayout      matlab.ui.container.GridLayout
-        DatasetDetailsLabel           matlab.ui.control.Label
-        DatasetDetailsPanel           matlab.ui.container.Panel
-        GridLayout18                  matlab.ui.container.GridLayout % Main grid in DatasetDetailsPanel
-        GridLayout20                  matlab.ui.container.GridLayout % For Publication Table
-        PublicationTableButtonGridLayout matlab.ui.container.GridLayout
-        AddRelatedPublicationButton   matlab.ui.control.Button
-        RemovePublicationButton       matlab.ui.control.Button
-        MovePublicationUpButton       matlab.ui.control.Button
-        MovePublicationDownButton     matlab.ui.control.Button
-        RelatedPublicationUITable     matlab.ui.control.Table
-        RelatedPublicationUITableLabel matlab.ui.control.Label
-        GridLayout19                  matlab.ui.container.GridLayout % For Accessibility and Funding
-        GridLayout22                  matlab.ui.container.GridLayout % For Accessibility section
-        GridLayout28                  matlab.ui.container.GridLayout % For License Dropdown + Help
-        LicenseHelpButton             matlab.ui.control.Button
-        LicenseDropDown               matlab.ui.control.DropDown
-        AccessibilityLabel            matlab.ui.control.Label
-        VersionInnovationEditField    matlab.ui.control.EditField
-        VersionInnovationEditFieldLabel matlab.ui.control.Label
-        VersionIdentifierEditField    matlab.ui.control.EditField
-        VersionIdentifierEditFieldLabel matlab.ui.control.Label
-        FullDocumentationEditField    matlab.ui.control.EditField
-        FullDocumentationEditFieldLabel matlab.ui.control.Label
-        LicenseDropDownLabel          matlab.ui.control.Label
-        ReleaseDateDatePicker         matlab.ui.control.DatePicker
-        ReleaseDateDatePickerLabel    matlab.ui.control.Label
-        FundingGridLayout             matlab.ui.container.GridLayout % For Funding Table
-        FundingTableButtonGridLayout  matlab.ui.container.GridLayout
-        AddFundingButton              matlab.ui.control.Button
-        RemoveFundingButton           matlab.ui.control.Button
-        MoveFundingUpButton           matlab.ui.control.Button
-        MoveFundingDownButton         matlab.ui.control.Button
-        FundingUITableLabel           matlab.ui.control.Label
-        FundingUITable                matlab.ui.control.Table
+        DatasetDetailsTab             matlab.ui.container.Tab 
+        DatasetDetailsGridLayout      matlab.ui.container.GridLayout 
+        DatasetDetailsLabel           matlab.ui.control.Label      
+        DatasetDetailsPanel           matlab.ui.container.Panel      
         
         ExperimentDetailsTab          matlab.ui.container.Tab
         ExperimentDetailsGridLayout   matlab.ui.container.GridLayout
         ExperimentDetailsLabel        matlab.ui.control.Label
-        ExperimentDetailsPanel        matlab.ui.container.Panel % Parent for ExperimentalDetailsGUI
+        ExperimentDetailsPanel        matlab.ui.container.Panel 
         
-        SubjectInfoTab                matlab.ui.container.Tab
-        SubjectInfoGridLayout         matlab.ui.container.GridLayout
-        SubjectInfoLabel              matlab.ui.control.Label
-        SubjectInfoPanel              matlab.ui.container.Panel
-        GridLayout16                  matlab.ui.container.GridLayout % Main grid in SubjectInfoPanel
-        UITableSubject                matlab.ui.control.Table
-        GridLayout17                  matlab.ui.container.GridLayout % For dropdowns/edits below subject table
-        GridLayout27                  matlab.ui.container.GridLayout % For Strain add
-        AddStrainButton               matlab.ui.control.Button
-        StrainEditField               matlab.ui.control.EditField
-        GridLayout24_4                matlab.ui.container.GridLayout % For Species add
-        AddSpeciesButton              matlab.ui.control.Button
-        SpeciesEditField              matlab.ui.control.EditField
-        GridLayout24_3                matlab.ui.container.GridLayout % For Strain assign/clear
-        StrainClearButton             matlab.ui.control.Button
-        AssignStrainButton            matlab.ui.control.Button
-        GridLayout24_2                matlab.ui.container.GridLayout % For Species assign/clear
-        SpeciesClearButton            matlab.ui.control.Button
-        AssignSpeciesButton           matlab.ui.control.Button
-        GridLayout24                  matlab.ui.container.GridLayout % For Sex assign/clear
-        BiologicalSexClearButton      matlab.ui.control.Button
-        AssignBiologicalSexButton     matlab.ui.control.Button
-        StrainListBox                 matlab.ui.control.ListBox
-        StrainLabel                   matlab.ui.control.Label
-        SpeciesListBox                matlab.ui.control.ListBox
-        SpeciesLabel_2                matlab.ui.control.Label
-        BiologicalSexListBox          matlab.ui.control.ListBox
-        BiologicalSexLabel            matlab.ui.control.Label
+        SubjectInfoTab                matlab.ui.container.Tab 
+        SubjectInfoGridLayout         matlab.ui.container.GridLayout 
+        SubjectInfoLabel              matlab.ui.control.Label      
+        SubjectInfoPanel              matlab.ui.container.Panel      
+        % UI elements for SubjectInfoTab will be managed by SubjectInfoGUI_Instance
         
         ProbeInfoTab                  matlab.ui.container.Tab
         ProbeInfoGridLayout           matlab.ui.container.GridLayout
         ProbeInfoLabel                matlab.ui.control.Label
-        ProbeInfoPanel                matlab.ui.container.Panel % This panel will be parent for ProbeDataGUI
+        ProbeInfoPanel                matlab.ui.container.Panel 
         
         SaveTab                       matlab.ui.container.Tab
         SubmitGridLayout              matlab.ui.container.GridLayout
@@ -143,9 +87,11 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
     properties (Access = public) 
         UIForm (1,1) struct 
-        AuthorDataGUI_Instance  ndi.database.metadata_app.class.AuthorDataGUI 
-        ProbeDataGUI_Instance   ndi.database.metadata_app.class.ProbeDataGUI
+        AuthorDataGUI_Instance ndi.database.metadata_app.class.AuthorDataGUI 
+        ProbeDataGUI_Instance  ndi.database.metadata_app.class.ProbeDataGUI
         ExperimentalDetailsGUI_Instance ndi.database.metadata_app.class.ExperimentalDetailsGUI
+        DatasetDetailsGUI_Instance ndi.database.metadata_app.class.DatasetDetailsGUI
+        SubjectInfoGUI_Instance ndi.database.metadata_app.class.SubjectInfoGUI % Added
     end
 
     properties (Access = public, Constant)
@@ -153,29 +99,19 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     'DatasetFullName', 'DatasetBranchTitleEditField', ...
                     'DatasetShortName', 'DatasetShortNameEditField', ...
                             'Description', 'AbstractTextArea', ...
-                                'Comments', 'DatasetCommentsTextArea', ...
-                            'ReleaseDate', 'ReleaseDateDatePicker', ...
-                                'License', 'LicenseDropDown', ...
-                    'FullDocumentation', 'FullDocumentationEditField', ...
-                    'VersionIdentifier', 'VersionIdentifierEditField', ...
-                    'VersionInnovation', 'VersionInnovationEditField', ...
-                                'Funding', 'FundingUITable', ... 
-                    'RelatedPublication', 'RelatedPublicationUITable' ... 
+                                'Comments', 'DatasetCommentsTextArea'
                     );
         FieldComponentPostfix = ["EditField", "TextArea", "DropDown", "UITable", "Tree", "ListBox"]
     end
 
     properties (Access = public) 
         DatasetInformationStruct (1,1) struct 
-        
         AuthorData (1,1) ndi.database.metadata_app.class.AuthorData
         Organizations (1,:) struct 
-        
         SpeciesInstancesUser (1,:) struct
         SpeciesData (1,1) ndi.database.metadata_app.class.SpeciesData
         SubjectData (1,1) ndi.database.metadata_app.class.SubjectData
         ProbeData (1,1) ndi.database.metadata_app.class.ProbeData
-        
         LoginInformation 
         Dataset          
         TempWorkingFile  
@@ -183,25 +119,19 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         ResourcesPath 
     end
 
-    methods (Access = public) % App utility methods (alert, inform, etc.) - Changed to public for external access
-        
+    methods (Access = public) 
         function alert(app, message, title, varargin)
             if nargin < 3 || isempty(title); title = 'Error'; end
             uialert(app.NDIMetadataEditorUIFigure, message, title, varargin{:})
         end
-
         function inform(app, message, title, varargin)
             if nargin < 3 || isempty(title);title = 'Info'; end
             uialert(app.NDIMetadataEditorUIFigure, message, title, varargin{:}, 'Icon', 'info')
         end
-
         function alertRequiredFieldsMissing(app, missingFields)
             msg = sprintf("The following required field(s) are missing:\n%s", strjoin(" - "+missingFields, newline));
             uialert(app.NDIMetadataEditorUIFigure, msg, 'Required Field(s) Missing')
         end
-    end
-    
-    methods (Access = public) % UI Helper methods - made public for external .fun access
         function selectionIndex = getListBoxSelectionIndex(app, listBoxHandle)
             if isempty(listBoxHandle.Value)
                 selectionIndex = [];
@@ -214,7 +144,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 selectionIndex = find(isSelected);
             end
         end
-
         function data = getCheckedTreeNodeData(app, checkedNodeHandles)
             if ~isempty(checkedNodeHandles)
                 data = {checkedNodeHandles.NodeData};
@@ -222,49 +151,28 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 data = {}; 
             end
         end
-
         function setCheckedNodesFromData(app, treeHandle, data)
-            if isempty(treeHandle.Children)
-                treeHandle.CheckedNodes = []; 
-                return; 
-            end
-            
-            if ischar(data) && ~isempty(data)
-                data = {data}; 
-            elseif isstring(data)
-                data = cellstr(data); 
-            elseif ~iscellstr(data) && ~iscell(data) && ~isempty(data) 
-                data = {}; 
+            if isempty(treeHandle.Children), treeHandle.CheckedNodes = []; return; end
+            if ischar(data) && ~isempty(data), data = {data}; 
+            elseif isstring(data), data = cellstr(data); 
+            elseif ~iscellstr(data) && ~iscell(data) && ~isempty(data), data = {}; 
             elseif iscell(data) && ~isempty(data) && ~all(cellfun(@ischar, data)) 
-                try 
-                    data = cellfun(@char, data, 'UniformOutput', false); 
-                catch
-                    data = {};
-                end
+                try data = cellfun(@char, data, 'UniformOutput', false); catch; data = {}; end
             end
             if isempty(data), data = {}; end 
-
             nodeDataArray = {treeHandle.Children.NodeData};
             nodesToSelect = matlab.ui.container.TreeNode.empty(0,1); 
             if ~isempty(data) && ~isempty(nodeDataArray)
                 try
                     tf = ismember(nodeDataArray, data);
-                    if any(tf)
-                        nodesToSelect = treeHandle.Children(tf);
-                    end
-                catch ME_ismember
-                    fprintf(2, 'Error in setCheckedNodesFromData during ismember: %s\n', ME_ismember.message);
-                end
+                    if any(tf), nodesToSelect = treeHandle.Children(tf); end
+                catch ME_ismember, fprintf(2, 'Error in setCheckedNodesFromData: %s\n', ME_ismember.message); end
             end
-            if isempty(nodesToSelect)
-                treeHandle.CheckedNodes = []; 
-            else
-                treeHandle.CheckedNodes = nodesToSelect;
-            end
+            treeHandle.CheckedNodes = ifthenelse(isempty(nodesToSelect), [], nodesToSelect);
         end
     end
     
-    methods (Access = public) % UI Checks and Highlighting (and other private app logic)
+    methods (Access = private) 
         function missingRequiredField = checkRequiredFields(app, tab)
             tabTitleStr = '';
             if isa(tab, 'matlab.ui.container.Tab') && isprop(tab,'Title') && ~isempty(tab.Title)
@@ -279,108 +187,80 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             fieldsToCheck = string.empty(0,1); 
 
             currentTabName = tabTitleStr;
-            fprintf('DEBUG (checkRequiredFields): currentTabName determined as: "%s"\n', currentTabName);
 
             switch currentTabName 
                 case app.DatasetOverviewTab.Title
                     fieldsToCheck = ["DatasetFullName", "DatasetShortName", "Description", "Comments"];
-                case app.DatasetDetailsTab.Title
-                    fieldsToCheck = ["License", "VersionIdentifier"];
+                case app.DatasetDetailsTab.Title 
+                    if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && ismethod(app.DatasetDetailsGUI_Instance, 'checkRequiredFields')
+                        missingFromSub = app.DatasetDetailsGUI_Instance.checkRequiredFields();
+                        missingRequiredField = [missingRequiredField, missingFromSub];
+                    end
                 case app.ExperimentDetailsTab.Title 
-                    fieldsToCheck = ["DataType"]; 
+                    if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && ismethod(app.ExperimentalDetailsGUI_Instance, 'checkRequiredFields')
+                         missingFromSub = app.ExperimentalDetailsGUI_Instance.checkRequiredFields();
+                         missingRequiredField = [missingRequiredField, missingFromSub];
+                    end
+                case app.SubjectInfoTab.Title
+                   if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'checkRequiredFields')
+                       missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields(); % Assuming SubjectInfoGUI will have this
+                       missingRequiredField = [missingRequiredField, missingFromSub];
+                   end
                 case {'', app.SaveTab.Title} 
-                    fieldsToCheck = string( fieldnames(requiredFields)' );
+                    fieldsToCheck = string( fieldnames(requiredFields)' ); 
+                    if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && ismethod(app.DatasetDetailsGUI_Instance, 'checkRequiredFields')
+                        missingFromSub = app.DatasetDetailsGUI_Instance.checkRequiredFields();
+                        missingRequiredField = [missingRequiredField, missingFromSub];
+                    end
+                    if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && ismethod(app.ExperimentalDetailsGUI_Instance, 'checkRequiredFields')
+                         missingFromSub = app.ExperimentalDetailsGUI_Instance.checkRequiredFields();
+                         missingRequiredField = [missingRequiredField, missingFromSub];
+                    end
+                    if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'checkRequiredFields')
+                       missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields(); 
+                       missingRequiredField = [missingRequiredField, missingFromSub];
+                   end
+                   % Add for ProbeDataGUI if it implements checkRequiredFields
                 otherwise
-                    fprintf('DEBUG (checkRequiredFields): Tab "%s" not explicitly handled for required fields check, no specific fields added to fieldsToCheck.\n', currentTabName);
+                    fprintf('DEBUG (checkRequiredFields): Tab "%s" has no specific fields in main app switch.\n', currentTabName);
             end    
             
-            if isempty(fieldsToCheck) && ~(isequal(currentTabName, "") || isequal(currentTabName, app.SaveTab.Title))
-                fprintf('DEBUG (checkRequiredFields): No specific fields to check for tab "%s" via FieldComponentMap.\n', currentTabName);
-            else
-                if ~isempty(fieldsToCheck)
-                    fprintf('DEBUG (checkRequiredFields): Fields to check for this tab via FieldComponentMap or conceptual: %s\n', strjoin(fieldsToCheck,', '));
-                end
-            end
-
             for iField_str = fieldsToCheck 
                 iField = char(iField_str); 
-                fprintf('DEBUG (checkRequiredFields): Checking field (from map or conceptual): %s\n', iField);
-
-                isHandledBySubGUI = false;
-                fieldIsRequired = isfield(requiredFields, iField) && requiredFields.(iField);
-
-                if strcmp(iField, 'DataType') && isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance)
-                    isHandledBySubGUI = true;
-                    if fieldIsRequired
-                         if isempty(app.ExperimentalDetailsGUI_Instance.getDataType())
-                             missingRequiredField(end+1) = "Data Type";
-                             fprintf('DEBUG (checkRequiredFields): Field "DataType" (from ExperimentalDetailsGUI) IS MISSING.\n');
-                             app.highlightLabelForRequiredField('DataType'); 
-                         else
-                             app.resetLabelForRequiredField('DataType');
-                             fprintf('DEBUG (checkRequiredFields): Field "DataType" (from ExperimentalDetailsGUI) is PRESENT.\n');
-                         end
-                    end
-                end
-                % Add similar for ExperimentalApproach if it becomes required
-
-                if isHandledBySubGUI, continue; end 
-
-                if ~isfield(app.FieldComponentMap, iField)
-                    fprintf('DEBUG (checkRequiredFields): Field "%s" not in FieldComponentMap. Skipping.\n', iField);
-                    continue; 
-                end
+                if ~isfield(app.FieldComponentMap, iField), continue; end
 
                 componentFieldName = app.FieldComponentMap.(iField);
-                fprintf('DEBUG (checkRequiredFields): Mapped component: %s\n', componentFieldName);
-
-                if fieldIsRequired
-                    fprintf('DEBUG (checkRequiredFields): Field "%s" is required.\n', iField);
+                if isfield(requiredFields, iField) && requiredFields.(iField) 
                     if isprop(app, componentFieldName) 
                         uiComponent = app.(componentFieldName);
-                        fprintf('DEBUG (checkRequiredFields): Component "%s" exists.\n', componentFieldName);
                         value = []; 
                         if isa(uiComponent, 'matlab.ui.container.CheckBoxTree')
                             value = uiComponent.CheckedNodes; 
-                            fprintf('DEBUG (checkRequiredFields): Value from CheckBoxTree "%s": %d nodes checked.\n', componentFieldName, numel(value));
                         elseif isa(uiComponent, 'matlab.ui.control.Table')
                             value = uiComponent.Data;
-                             if istable(value) && ~isempty(value)
-                                fprintf('DEBUG (checkRequiredFields): Value from Table "%s": Table with %d rows.\n', componentFieldName, height(value));
-                             else
-                                 fprintf('DEBUG (checkRequiredFields): Value from Table "%s": Empty or not a table.\n', componentFieldName);
-                                 value = []; 
-                             end
+                             if ~(istable(value) && ~isempty(value)), value = []; end
                         else 
                             value = char(uiComponent.Value); 
-                            fprintf('DEBUG (checkRequiredFields): Value from "%s" ("%s"): "%s"\n', class(uiComponent), componentFieldName, value);
                         end
-
                         if isempty(value)
                             fieldTitle = app.getFieldTitle(iField);
                             missingRequiredField(end+1) = fieldTitle; 
                             app.highlightLabelForRequiredField(componentFieldName);
-                            fprintf('DEBUG (checkRequiredFields): Field "%s" (Title: "%s") IS MISSING.\n', iField, fieldTitle);
                         else
                             app.resetLabelForRequiredField(componentFieldName); 
-                            fprintf('DEBUG (checkRequiredFields): Field "%s" is PRESENT.\n', iField);
                         end
-                    else
-                         fprintf(2, 'Warning (checkRequiredFields): Component "%s" for required field "%s" not found on app.\n', componentFieldName, iField);
                     end
-                else
-                     fprintf('DEBUG (checkRequiredFields): Field "%s" is NOT required or not in requiredFields struct.\n', iField);
                 end
             end
             
             if isequal(currentTabName, "") || isequal(currentTabName, app.SaveTab.Title)
-                fprintf('DEBUG (checkRequiredFields): Performing final checks for SaveTab or empty tab name.\n');
                 if isempty(app.AuthorData.AuthorList) || ...
                    all(arrayfun(@(x) isempty(strtrim(x.givenName)) && isempty(strtrim(x.familyName)), app.AuthorData.AuthorList))
                     missingRequiredField(end+1) = "At least one Author with a name";
-                    fprintf('DEBUG (checkRequiredFields): MISSING: At least one Author with a name.\n');
                 end
             end
+            
+            missingRequiredField = unique(missingRequiredField, 'stable'); 
 
             if isempty(missingRequiredField)
                 fprintf('DEBUG (checkRequiredFields): Final missing fields: None\n');
@@ -398,25 +278,19 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     fieldTitle = string(strrep(fieldTitle, ' *', ''));
                  else
                     fieldTitle = fieldName; 
-                    fprintf(2, 'Warning: Label for component %s (field %s) not found.\n', componentFieldName, fieldName);
                  end
-            else
-                switch fieldName
-                    case "DataType"
-                        fieldTitle = "Data Type"; 
-                    case "ExperimentalApproach"
-                        fieldTitle = "Experimental Approach"; 
-                    otherwise
-                        fieldTitle = fieldName; 
-                        fprintf(2, 'Warning: Field %s not found in FieldComponentMap for getFieldTitle.\n', fieldName);
+            else 
+                switch fieldName 
+                    case "DataType", fieldTitle = "Data Type"; 
+                    case "License", fieldTitle = "License";
+                    case "VersionIdentifier", fieldTitle = "Version Identifier";
+                    otherwise, fieldTitle = fieldName; 
                 end
             end
         end
 
         function highlightLabelForRequiredField(app, componentFieldNameOrConcept)
-            labelFieldName = '';
             uiLabelHandle = [];
-
             if isfield(app.FieldComponentMap, componentFieldNameOrConcept) 
                  labelFieldName = sprintf('%sLabel', app.FieldComponentMap.(componentFieldNameOrConcept));
                  if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
@@ -428,6 +302,14 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                         if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && isprop(app.ExperimentalDetailsGUI_Instance, 'DataTypeTreeLabel')
                             uiLabelHandle = app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel;
                         end
+                    case 'License'
+                        if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && isprop(app.DatasetDetailsGUI_Instance, 'LicenseDropDownLabel')
+                            uiLabelHandle = app.DatasetDetailsGUI_Instance.LicenseDropDownLabel;
+                        end
+                    case 'VersionIdentifier'
+                         if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && isprop(app.DatasetDetailsGUI_Instance, 'VersionIdentifierEditFieldLabel')
+                            uiLabelHandle = app.DatasetDetailsGUI_Instance.VersionIdentifierEditFieldLabel;
+                        end
                 end
             end
 
@@ -436,14 +318,13 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 uiLabelHandle.FontColor = [0.7098    0.0902        0]; 
                 uiLabelHandle.Tag = 'RequiredValueMissing';
             else
-                 fprintf(2, 'Warning (highlightLabel): No label handle found for component/concept "%s".\n', componentFieldNameOrConcept);
+                 fprintf(2, 'Warning (highlightLabel): No label handle found for "%s".\n', componentFieldNameOrConcept);
             end
         end
 
         function resetLabelForRequiredField(app, componentFieldNameOrConcept)
             labelFieldName = '';
             uiLabelHandle = [];
-
             if isfield(app.FieldComponentMap, componentFieldNameOrConcept)
                  labelFieldName = sprintf('%sLabel', app.FieldComponentMap.(componentFieldNameOrConcept));
                  if isprop(app, labelFieldName) && isvalid(app.(labelFieldName))
@@ -454,6 +335,14 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     case 'DataType' 
                         if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && isprop(app.ExperimentalDetailsGUI_Instance, 'DataTypeTreeLabel')
                             uiLabelHandle = app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel;
+                        end
+                     case 'License'
+                        if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && isprop(app.DatasetDetailsGUI_Instance, 'LicenseDropDownLabel')
+                            uiLabelHandle = app.DatasetDetailsGUI_Instance.LicenseDropDownLabel;
+                        end
+                    case 'VersionIdentifier'
+                         if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && isprop(app.DatasetDetailsGUI_Instance, 'VersionIdentifierEditFieldLabel')
+                            uiLabelHandle = app.DatasetDetailsGUI_Instance.VersionIdentifierEditFieldLabel;
                         end
                 end
             end
@@ -468,36 +357,32 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         function markRequiredFields(app) 
             requiredFields = ndi.database.metadata_app.fun.getRequiredFields();
             requiredSymbol = '*'; 
-
             allFieldNamesInMap = string(fieldnames(app.FieldComponentMap));
 
             for iFieldName = reshape(allFieldNamesInMap, 1, [])
                 if isfield(requiredFields, iFieldName) && requiredFields.(iFieldName)
                     componentName = app.FieldComponentMap.(iFieldName);
                     labelComponentName = sprintf("%sLabel", componentName);
-                    
                     if isprop(app, labelComponentName) && isvalid(app.(labelComponentName))
                         if ~contains(app.(labelComponentName).Text, requiredSymbol)
                             app.(labelComponentName).Text = sprintf('%s %s', app.(labelComponentName).Text, requiredSymbol);
                         end
                         app.(labelComponentName).Tooltip = "Required";
-                    else
-                        fprintf(2, 'Warning (markRequiredFields): Label component "%s" not found for required field "%s".\n', labelComponentName, iFieldName);
                     end
                 end
             end
             
-            if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance)
-                if isfield(requiredFields, 'DataType') && requiredFields.DataType && isprop(app.ExperimentalDetailsGUI_Instance, 'DataTypeTreeLabel') && isvalid(app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel)
-                    if ~contains(app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Text, requiredSymbol)
-                        app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Text = sprintf('%s %s', app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Text, requiredSymbol);
-                    end
-                     app.ExperimentalDetailsGUI_Instance.DataTypeTreeLabel.Tooltip = "Required";
-                end
+            if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && ismethod(app.ExperimentalDetailsGUI_Instance, 'markRequiredFields')
+                app.ExperimentalDetailsGUI_Instance.markRequiredFields();
             end
-
+             if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && ismethod(app.DatasetDetailsGUI_Instance, 'markRequiredFields')
+                app.DatasetDetailsGUI_Instance.markRequiredFields();
+            end
+            if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'markRequiredFields')
+                app.SubjectInfoGUI_Instance.markRequiredFields(); % Assuming this method will be added
+            end
         end
-
+        
         function hideUnimplementedComponents(app) 
             if isprop(app, 'ErrorTextAreaLabel') && isvalid(app.ErrorTextAreaLabel)
                 app.ErrorTextAreaLabel.Visible = 'off';
@@ -511,53 +396,26 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         end
         
         function setFigureMinSize(app) 
-            isMatch = false;
-            drawnow 
-            pause(0.1); 
-
-            max_attempts = 20; 
-            attempt_count = 0;
-            
+            isMatch = false; drawnow; pause(0.1); 
+            max_attempts = 20; attempt_count = 0;
             figName = app.NDIMetadataEditorUIFigure.Name; 
-
             while ~isMatch && attempt_count < max_attempts
                 windowList = matlab.internal.webwindowmanager.instance.findAllWebwindows();
-                if isempty(windowList)
-                    attempt_count = attempt_count + 1;
-                    pause(0.1);
-                    continue;
+                if isempty(windowList), attempt_count = attempt_count + 1; pause(0.1); continue; end
+                titles = {windowList.Title}; isMatch = strcmp(titles, figName);
+                if ~any(isMatch) && ~isempty(app.NDIMetadataEditorUIFigure.Tag)
+                     tags = arrayfun(@(w) getfieldifexists(w,'Tag'), windowList, 'UniformOutput', false);
+                     validTags = cellfun(@ischar, tags);
+                     if any(validTags), isMatch = strcmp(tags(validTags), app.NDIMetadataEditorUIFigure.Tag);
+                     else, isMatch = false(1,0); end
                 end
-                titles = {windowList.Title};
-                isMatch = strcmp(titles, figName);
-                
-                if ~any(isMatch)
-                    if ~isempty(app.NDIMetadataEditorUIFigure.Tag)
-                         tags = arrayfun(@(w) getfieldifexists(w,'Tag'), windowList, 'UniformOutput', false);
-                         validTags = cellfun(@ischar, tags);
-                         if any(validTags)
-                            isMatch = strcmp(tags(validTags), app.NDIMetadataEditorUIFigure.Tag);
-                         else
-                            isMatch = false(1,0); 
-                         end
-                    end
-                end
-
-                if ~any(isMatch)
-                    attempt_count = attempt_count + 1;
-                    pause(0.1);
-                end
+                if ~any(isMatch), attempt_count = attempt_count + 1; pause(0.1); end
             end
-
             if any(isMatch)
                 window = windowList(find(isMatch,1)); 
-                try
-                    window.setMinSize([840 610]);
-                catch ME_setMinSize
-                     fprintf(2,'Warning: Could not set minimum figure size: %s\n', ME_setMinSize.message);
-                end
-            else
-                fprintf(2,'Warning: Could not find the app window to set minimum size for "%s".\n', figName);
-            end
+                try window.setMinSize([840 610]);
+                catch ME_setMinSize, fprintf(2,'Warning: Could not set minimum figure size: %s\n', ME_setMinSize.message); end
+            else, fprintf(2,'Warning: Could not find the app window to set minimum size for "%s".\n', figName); end
         end
         
         function centerFigureOnScreen(app) 
@@ -567,9 +425,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     app.NDIMetadataEditorUIFigure.Units = 'pixels';
                     movegui(app.NDIMetadataEditorUIFigure, 'center');
                     app.NDIMetadataEditorUIFigure.Units = originalUnits; 
-                catch ME_center
-                    fprintf(2, 'Warning: Could not center figure on screen: %s\n', ME_center.message);
-                end
+                catch ME_center, fprintf(2, 'Warning: Could not center figure on screen: %s\n', ME_center.message); end
             end
         end
     end
@@ -767,10 +623,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             delete(progressDialog);
         end
         
-        % MODIFIED openProbeForm
         function success = openProbeForm(app, probeType, probeIndexOrData, probeObjIn)
-            % Returns true if form was saved, false otherwise.
-            % Updates app.ProbeData directly if saved.
             success = false;
             formHandle = [];
             switch probeType
@@ -798,7 +651,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             
             if strcmp(formHandle.FinishState, "Save")
                 updatedProbeObjDetails = formHandle.getProbeDetails(); 
-                app.ProbeData.replaceProbe(probeIndexOrData, updatedProbeObjDetails); % Use probeIndexOrData
+                app.ProbeData.replaceProbe(probeIndexOrData, updatedProbeObjDetails); 
                 app.saveDatasetInformationStruct(); 
                 success = true; 
             end
@@ -880,563 +733,6 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 app.MainGridLayout.RowHeight = {'1x', 63};
             end
         end
-
-        function updateSubjectTableColumData(app, columnName, newValue)
-            selectedRows = app.UITableSubject.Selection;
-            if isempty(selectedRows), return; end 
-
-            for i = 1:numel(selectedRows)
-                subjectIndexInTable = selectedRows(i);
-                subjectNameInTable = app.UITableSubject.Data{subjectIndexInTable, 'Subject'};
-                subjectObjIndex = find(strcmp({app.SubjectData.SubjectList.SubjectName}, subjectNameInTable), 1);
-
-                if ~isempty(subjectObjIndex)
-                    currentSubjectObj = app.SubjectData.SubjectList(subjectObjIndex);
-                    switch columnName
-                        case 'BiologicalSex'
-                            currentSubjectObj.BiologicalSexList = {char(newValue)};
-                        case 'Species'
-                            speciesName = char(newValue);
-                            speciesObj = app.SpeciesData.getItem(speciesName); 
-                            if ~isempty(speciesObj) 
-                                currentSubjectObj.SpeciesList = speciesObj;
-                            else
-                                fprintf(2,'Warning: Species "%s" not found in SpeciesData.\n', speciesName);
-                            end
-                        case 'Strain'
-                            currentSubjectObj.addStrain(char(newValue)); 
-                    end
-                else
-                    fprintf(2,'Warning: Subject "%s" not found in SubjectData for update.\n', subjectNameInTable);
-                end
-            end
-            app.UITableSubject.Data = struct2table(app.SubjectData.formatTable(), 'AsArray', true);
-            app.saveDatasetInformationStruct();
-        end
-
-        function deleteSubjectTableColumData(app, columnName)
-            selectedRows = app.UITableSubject.Selection;
-            if isempty(selectedRows), return; end
-
-            for i = 1:numel(selectedRows)
-                subjectIndexInTable = selectedRows(i);
-                subjectNameInTable = app.UITableSubject.Data{subjectIndexInTable, 'Subject'};
-                subjectObjIndex = find(strcmp({app.SubjectData.SubjectList.SubjectName}, subjectNameInTable), 1);
-
-                if ~isempty(subjectObjIndex)
-                    currentSubjectObj = app.SubjectData.SubjectList(subjectObjIndex);
-                    switch columnName
-                        case 'BiologicalSex'
-                            currentSubjectObj.deleteBiologicalSex();
-                        case 'Species'
-                            currentSubjectObj.deleteSpeciesList();
-                            currentSubjectObj.deleteStrainList(); 
-                        case 'Strain'
-                            currentSubjectObj.deleteStrainList();
-                    end
-                end
-            end
-            app.UITableSubject.Data = struct2table(app.SubjectData.formatTable(), 'AsArray', true);
-            app.saveDatasetInformationStruct();
-        end
-        
-        function probeObj = createProbeObjectFromStruct(app, probeStruct)
-            probeObj = []; 
-            if ~isstruct(probeStruct) || ~isfield(probeStruct, 'ClassType') || ~isfield(probeStruct, 'Name')
-                fprintf(2, 'Warning (createProbeObjectFromStruct): Invalid probeStruct provided.\n');
-                return;
-            end
-            className = probeStruct.ClassType;
-            probeName = probeStruct.Name;
-            try
-                switch className
-                    case {'Electrode', 'ElectrodeArray', 'ndi.daq.metadatabundle.EphysProbe'} 
-                        fprintf(1, 'DEBUG (createProbeObjectFromStruct): Placeholder for creating %s object "%s". Returning struct.\n', className, probeName);
-                        probeObj = probeStruct; % PLACEHOLDER - MUST INSTANTIATE ACTUAL OBJECT
-                    case {'Pipette', 'ndi.daq.metadatabundle.Pipette'}
-                        fprintf(1, 'DEBUG (createProbeObjectFromStruct): Placeholder for creating %s object "%s". Returning struct.\n', className, probeName);
-                        probeObj = probeStruct; % PLACEHOLDER
-                    otherwise
-                        fprintf(2, 'Warning (createProbeObjectFromStruct): Unknown probe ClassType "%s" for probe "%s". Returning struct.\n', className, probeName);
-                        probeObj = probeStruct; 
-                end
-            catch ME_probeCreate
-                 fprintf(2, 'Error creating probe object for "%s" of type "%s": %s\n', probeName, className, ME_probeCreate.message);
-                 probeObj = probeStruct; 
-            end
-        end
-    end
-
-    % Callbacks that handle component events (non-author related)
-    methods (Access = public) % Changed from private for callbacks
-
-        % Code that executes after component creation
-        function startupFcn(app, datasetObject, debugMode)
-            arguments 
-                app (1,1) ndi.database.metadata_app.Apps.MetadataEditorApp
-                datasetObject (1,1) {mustBeA(datasetObject, ["ndi.session", "ndi.dataset"])}
-                debugMode (1,1) logical = false
-            end
-
-            appFileFolder = fileparts(mfilename('fullpath'));
-            app.ResourcesPath = fullfile(appFileFolder, 'resources'); 
-            if ~isfolder(app.ResourcesPath)
-                 fprintf(2, 'Warning (startupFcn): ResourcesPath not found: %s. Icon paths might be incorrect.\n', app.ResourcesPath);
-            end
-
-            try
-                ndi.fun.assertAddonOnPath("openMINDS Metadata Models", 'RequiredFor', 'NDI Dataset Uploader');
-            catch
-                try 
-                    ndi.fun.assertAddonOnPath("openMINDS Metadata Toolbox", 'RequiredFor', 'NDI Dataset Uploader');
-                catch ME
-                    delete(app); throwAsCaller(ME);
-                end
-            end
-
-            app.Dataset = datasetObject;
-            app.TempWorkingFile = app.getTempWorkingFile();
-            
-            app.FooterPanel.Visible = 'off';
-            app.hideUnimplementedComponents(); 
-            app.markRequiredFields(); 
-
-            if not(debugMode)
-                app.ExportDatasetInfoButton.Visible = 'off';
-                app.TestDocumentConversionButton.Visible = 'off';
-            end
-
-            app.setFigureMinSize();
-            app.centerFigureOnScreen(); 
-
-            app.AuthorData = ndi.database.metadata_app.class.AuthorData();
-            app.SubjectData = ndi.database.metadata_app.class.SubjectData();
-            app.ProbeData = ndi.database.metadata_app.class.ProbeData();
-            app.SpeciesData = ndi.database.metadata_app.class.SpeciesData();
-
-            app.AuthorDataGUI_Instance = ndi.database.metadata_app.class.AuthorDataGUI(app, app.AuthorMainPanel);
-            app.AuthorDataGUI_Instance.initialize();
-            
-            app.ProbeDataGUI_Instance = ndi.database.metadata_app.class.ProbeDataGUI(app, app.ProbeInfoPanel); 
-            app.ProbeDataGUI_Instance.initialize(); 
-
-            app.ExperimentalDetailsGUI_Instance = ndi.database.metadata_app.class.ExperimentalDetailsGUI(app, app.ExperimentDetailsPanel);
-            app.ExperimentalDetailsGUI_Instance.initialize();
-
-
-            app.loadUserDefinedMetadata(); 
-            app.populateComponentsWithMetadata(); 
-
-            if ~isempty(app.Dataset)
-                app.getInitialMetadataFromSession(); 
-            end
-
-            app.loadDatasetInformationStruct(); 
-
-            if ~isfield(app.DatasetInformationStruct, 'VersionIdentifier') || isempty(app.DatasetInformationStruct.VersionIdentifier)
-                app.DatasetInformationStruct.VersionIdentifier = app.VersionIdentifierEditField.Value;
-            end
-            if ~isfield(app.DatasetInformationStruct, 'VersionInnovation') || isempty(app.DatasetInformationStruct.VersionInnovation)
-                app.DatasetInformationStruct.VersionInnovation = 'This is the first version of the dataset';
-            end
-        end
-
-        function populateComponentsWithMetadata(app)
-            % Most of this is now handled by individual GUI controllers during their initialize method
-            
-            app.populateLicenseDropdown(); % This is still a main app component
-            
-            % These are now handled by ExperimentalDetailsGUI.initialize()
-            % app.populateTechniqueCategoryDropdown(); 
-            % app.populateTechniqueDropdown(); 
-            % ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox(app.ExperimentalApproachTree, "ExperimentalApproach");
-            % ndi.database.metadata_app.fun.loadInstancesToTreeCheckbox(app.DataTypeTree, "SemanticDataType");
-            
-            app.populateSpeciesList(); % These are for SubjectInfo tab, still in main app for now
-            app.populateBiologicalSexList();
-            app.populateStrainList();
-        end
-        
-        function populateLicenseDropdown(app)
-            [names, shortNames] = ndi.database.metadata_app.fun.getCCByLicences();
-            app.LicenseDropDown.Items = ["Select a License"; shortNames];
-            app.LicenseDropDown.ItemsData = [""; names];
-        end
-        
-        % populateTechniqueCategoryDropdown moved to ExperimentalDetailsGUI
-        % populateTechniqueDropdown moved to ExperimentalDetailsGUI
-        
-        function populateSpeciesList(app)
-            import ndi.database.metadata_app.fun.expandDropDownItems
-
-            openMindsType = 'Species';
-            speciesCatalog = ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog(openMindsType);
-            
-            options_data = string.empty(0,1); 
-            names_display = string.empty(0,1);   
-
-            if ~isempty(speciesCatalog)
-                options_data = string( {speciesCatalog(:).at_id}' );
-                names_display = string( {speciesCatalog(:).name}' );
-                options_data(ismissing(options_data)) = ''; 
-            end
-            
-            [names_display, options_data] = expandDropDownItems(names_display, options_data, openMindsType, "AddSelectOption", true);
-
-            if ~isempty(app.SpeciesInstancesUser)
-                customNames = {app.SpeciesInstancesUser.name}'; 
-                customOptions = customNames; 
-                customOptions(ismissing(customOptions)) = ''; 
-                
-                names_display = [names_display; customNames];
-                options_data = [options_data; customOptions]; 
-                
-                [names_display, sortIdx] = sort(names_display);
-                options_data = options_data(sortIdx);
-            end
-
-            app.SpeciesListBox.Items = names_display;
-            app.SpeciesListBox.ItemsData = cellstr(options_data); 
-            
-            if ~isempty(app.SpeciesListBox.ItemsData)
-                firstValidDataIdx = find(~strcmp(app.SpeciesListBox.ItemsData, '') & ~cellfun(@(x) isstring(x) && ismissing(x), app.SpeciesListBox.ItemsData), 1, 'first');
-                if ~isempty(firstValidDataIdx)
-                    app.SpeciesListBox.Value = app.SpeciesListBox.ItemsData{firstValidDataIdx};
-                elseif ~isempty(app.SpeciesListBox.ItemsData) 
-                    app.SpeciesListBox.Value = app.SpeciesListBox.ItemsData{1}; 
-                else 
-                    app.SpeciesListBox.Items = {'(No species available)'}; 
-                    app.SpeciesListBox.ItemsData = {''}; 
-                    app.SpeciesListBox.Value = ''; 
-                end
-            else
-                app.SpeciesListBox.Items = {'(No species available)'}; 
-                app.SpeciesListBox.ItemsData = {''}; 
-                app.SpeciesListBox.Value = ''; 
-            end
-        end
-
-        function populateBiologicalSexList(app)
-            [biologicalSexData, biologicalSexDisplay] = ndi.database.metadata_app.fun.getOpenMindsInstances('BiologicalSex');
-            app.BiologicalSexListBox.Items = biologicalSexDisplay;
-            app.BiologicalSexListBox.ItemsData = biologicalSexData;
-            if ~isempty(biologicalSexData) && ~isempty(biologicalSexData{1}) && ~(isstring(biologicalSexData{1}) && ismissing(biologicalSexData{1}))
-                app.BiologicalSexListBox.Value = biologicalSexData{1}; 
-            else
-                app.BiologicalSexListBox.Items = {'(No sexes available)'};
-                app.BiologicalSexListBox.ItemsData = {''};
-                app.BiologicalSexListBox.Value = '';
-            end
-        end
-
-        function populateStrainList(app)
-            items_display = "Select a Species"; 
-            items_data = {''}; 
-
-            if isprop(app, 'SpeciesListBox') && ~isempty(app.SpeciesListBox.Value) && ~(isstring(app.SpeciesListBox.Value) && ismissing(app.SpeciesListBox.Value)) && ~strcmp(app.SpeciesListBox.Value,'')
-                selectedSpeciesID = app.SpeciesListBox.Value; 
-                
-                selectedSpeciesDisplayName = '';
-                idx = find(strcmp(app.SpeciesListBox.ItemsData, selectedSpeciesID),1);
-                if ~isempty(idx) && idx <= numel(app.SpeciesListBox.Items) 
-                    selectedSpeciesDisplayName = app.SpeciesListBox.Items{idx};
-                end
-                
-                if ~isempty(selectedSpeciesDisplayName) && ~strcmp(selectedSpeciesDisplayName, '(No species available)') && ~strcmp(selectedSpeciesDisplayName, 'Select a Species')
-                    strainCatalog = app.getStrainInstances(); 
-                    
-                    if isprop(strainCatalog,'NumItems') && strainCatalog.NumItems == 0
-                        items_display = "No Strains Available";
-                        items_data = {''};
-                    elseif isstruct(strainCatalog) && ~isempty(strainCatalog)
-                        speciesMatchIdx = arrayfun(@(x) isfield(x,'species') && strcmp(x.species, selectedSpeciesDisplayName), strainCatalog);
-                        
-                        if ~any(speciesMatchIdx)
-                            items_display = "No Strains for this Species";
-                            items_data = {''};
-                        else
-                            filteredStrains = strainCatalog(speciesMatchIdx);
-                            if ~isempty(filteredStrains)
-                                items_display = string({filteredStrains.name}');
-                                items_data = cellstr(items_display); 
-                            else
-                                items_display = "No Strains for this Species";
-                                items_data = {''};
-                            end
-                        end
-                    elseif isempty(strainCatalog)
-                         items_display = "No Strains Available";
-                         items_data = {''};
-                    end
-                end
-            end
-            app.StrainListBox.Items = items_display;
-            app.StrainListBox.ItemsData = items_data; 
-            
-            if ~isempty(items_data) && ~isempty(items_data{1}) && ~(isstring(items_data{1}) && ismissing(items_data{1})) && ~strcmp(items_data{1},'')
-                app.StrainListBox.Value = items_data{1}; 
-            else
-                app.StrainListBox.Value = ''; 
-            end
-        end
-
-        function getInitialMetadataFromSession(app)
-            subjectDataFromEntity = ndi.database.metadata_app.fun.loadSubjects(app.Dataset);
-            app.SubjectData = subjectDataFromEntity; 
-            
-            try
-                probeDataFromEntity = ndi.database.metadata_app.fun.loadProbes(app.Dataset); 
-                if isa(probeDataFromEntity, 'ndi.database.metadata_app.class.ProbeData')
-                    app.ProbeData = probeDataFromEntity;
-                else
-                    fprintf(2,'Warning: loadProbes did not return a ProbeData object. Using default empty ProbeData.\n');
-                    app.ProbeData = ndi.database.metadata_app.class.ProbeData();
-                end
-            catch ME_loadProbes
-                 fprintf(2,'Error loading probes from dataset: %s. Using default empty ProbeData.\n', ME_loadProbes.message);
-                 app.ProbeData = ndi.database.metadata_app.class.ProbeData();
-            end
-        end
-
-        % Close request function: NDIMetadataEditorUIFigure
-        function NDIMetadataEditorUIFigureCloseRequest(app, event)
-            errors_for_dialog = {};
-            try
-                if isprop(app, 'Dataset') && ~isempty(app.Dataset) && isobject(app.Dataset) && isvalid(app.Dataset)
-                    try
-                        if isprop(app, 'DatasetInformationStruct')
-                            app.DatasetInformationStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
-                            app.Dataset = ndi.database.metadata_ds_core.saveEditor2Doc(app.Dataset, app.DatasetInformationStruct);
-                        else
-                            msg_info = 'DatasetInformationStruct property not found, cannot save dataset state.';
-                            fprintf(2, 'INFO during app close: %s\n', msg_info);
-                        end
-                    catch ME_save
-                        full_msg = sprintf('ERROR saving dataset during app close: %s (ID: %s)', ME_save.message, ME_save.identifier);
-                        errors_for_dialog{end+1} = ME_save.message; 
-                        fprintf(2, '%s\nFull report for ME_save:\n%s\n', full_msg, ME_save.getReport('extended', 'hyperlinks', 'off'));
-                    end
-                end
-                if isprop(app, 'UIForm') && ~isempty(app.UIForm) && isstruct(app.UIForm)
-                    formNames = fieldnames(app.UIForm);
-                    for i = 1:numel(formNames)
-                        thisName = formNames{i};
-                        try
-                            if isfield(app.UIForm, thisName) && ...
-                               ~isempty(app.UIForm.(thisName)) && isobject(app.UIForm.(thisName)) && isvalid(app.UIForm.(thisName))
-                                delete(app.UIForm.(thisName));
-                            end
-                        catch ME_form
-                            full_msg = sprintf('ERROR deleting UIForm element "%s" during app close: %s (ID: %s)', thisName, ME_form.message, ME_form.identifier);
-                            errors_for_dialog{end+1} = sprintf('Deleting form "%s": %s', thisName, ME_form.message);
-                            fprintf(2, '%s\nFull report for ME_form ("%s"):\n%s\n', full_msg, thisName, ME_form.getReport('extended', 'hyperlinks', 'off'));
-                        end
-                    end
-                end
-            catch ME_general_cleanup
-                full_msg = sprintf('UNEXPECTED ERROR during app close preparation: %s (ID: %s)', ME_general_cleanup.message, ME_general_cleanup.identifier);
-                errors_for_dialog{end+1} = ME_general_cleanup.message; 
-                fprintf(2, '%s\nFull report for ME_general_cleanup:\n%s\n', full_msg, ME_general_cleanup.getReport('extended', 'hyperlinks', 'off'));
-            end
-            
-            if ~isempty(errors_for_dialog)
-                try
-                    dialog_message_lines = {'Errors occurred while closing the NDI Metadata Editor.', ...
-                                            'The application window will close, but these issues were noted:', ''};
-                    for k_err = 1:min(numel(errors_for_dialog), 5) 
-                        concise_msg = errors_for_dialog{k_err};
-                        if length(concise_msg) > 150, concise_msg = [concise_msg(1:147), '...']; end
-                        dialog_message_lines{end+1} = ['- ', concise_msg];
-                    end
-                    if numel(errors_for_dialog) > 5
-                        dialog_message_lines{end+1} = sprintf('- ... and %d more error(s).', numel(errors_for_dialog)-5);
-                    end
-                    dialog_message_lines{end+1} = ''; 
-                    dialog_message_lines{end+1} = 'Please check the MATLAB Command Window for full technical details.';
-                    errordlg(dialog_message_lines, 'Application Closing Errors', 'non-modal');
-                catch ME_dialog_display
-                    fprintf(2, 'CRITICAL: Could not display graphical error dialog for closing errors: %s\n', ME_dialog_display.message);
-                end
-            end
-            delete(app); 
-        end
-        
-        function GetStartedButtonPushed(app, event)
-            app.changeTab(app.DatasetOverviewTab);
-        end
-
-        function DatasetBranchTitleValueChanged(app, event)
-            value = app.DatasetBranchTitleEditField.Value;
-            if ~isempty(value)
-                app.resetLabelForRequiredField("DatasetBranchTitleEditField");
-            end
-            if isempty(app.DatasetShortNameEditField.Value)
-                generatedShortName = ndi.database.metadata_app.fun.generateShortName(value, 3);
-                app.DatasetShortNameEditField.Value = generatedShortName;
-                if ~isempty(generatedShortName)
-                    app.resetLabelForRequiredField("DatasetShortNameEditField");
-                end
-            end
-            app.saveDatasetInformationStruct();
-        end
-
-        function DatasetShortNameValueChanged(app, event)
-            value = app.DatasetShortNameEditField.Value;
-            if ~isempty(value)
-                app.resetLabelForRequiredField("DatasetShortNameEditField");
-            end
-            app.saveDatasetInformationStruct();
-        end
-
-        function AbstractValueChanged(app, event)
-            value = app.AbstractTextArea.Value;
-            if ~isempty(value) 
-                 if iscell(value) && ~isempty(value{1})
-                    app.resetLabelForRequiredField("AbstractTextArea");
-                 elseif ischar(value) && ~isempty(strtrim(value))
-                    app.resetLabelForRequiredField("AbstractTextArea");
-                 end
-            end
-            app.saveDatasetInformationStruct();
-        end
-
-        function CommentsDetailsValueChanged(app, event)
-            value = app.DatasetCommentsTextArea.Value;
-             if ~isempty(value) 
-                 if iscell(value) && ~isempty(value{1})
-                    app.resetLabelForRequiredField("DatasetCommentsTextArea");
-                 elseif ischar(value) && ~isempty(strtrim(value))
-                    app.resetLabelForRequiredField("DatasetCommentsTextArea");
-                 end
-            end
-            app.saveDatasetInformationStruct();
-        end
-        
-        function SaveChangesButtonPushed(app, event) 
-            app.NDIMetadataEditorUIFigure.Name = 'NDI Dataset Wizard (Saving temporary data...)';
-            app.saveDatasetInformationStruct();
-            app.NDIMetadataEditorUIFigure.Name = 'NDI Dataset Wizard (Temporary data saved)';
-            app.resetFigureNameIn('NDI Metadata Editor', 5);
-        end
-
-        function SaveButtonPushed(app, event) 
-            missingRequiredField = app.checkRequiredFields(""); 
-            if ~isempty(missingRequiredField)
-                app.alertRequiredFieldsMissing(missingRequiredField);
-                return;
-            end
-            currentDatasetInfoStruct = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
-            ndi.database.metadata_app.fun.save_dataset_docs(app.Dataset, app.Dataset.id(), currentDatasetInfoStruct);
-            app.inform('Dataset metadata successfully saved to NDI documents.', 'Save Successful');
-        end
-
-        function ReleaseDateValueChanged(app, event)
-            app.saveDatasetInformationStruct();
-        end
-
-        function LicenseDropDownValueChanged(app, event)
-            value = event.Value;
-            if value ~= "" 
-                app.resetLabelForRequiredField("LicenseDropDown");
-            end
-            app.saveDatasetInformationStruct();
-        end
-        
-        function FullDocumentationValueChanged(app, event)
-            value = event.Value;
-            isValid = true;
-            try 
-                if ~isempty(value) && ~(startsWith(value, 'http') || contains(value, 'doi.org') || regexp(value, '^\d{2}\.\d{4,9}/[-._;()/:A-Z0-9]+$','ignorecase'))
-                end
-            catch
-                isValid = false;
-            end
-            if ~isValid
-                 app.alert('Full documentation should be a valid URL or DOI.', 'Invalid Input');
-            else
-                app.saveDatasetInformationStruct();
-            end
-        end
-        
-        function VersionIdentifierValueChanged(app, event)
-            if ~isempty(event.Value), app.resetLabelForRequiredField('VersionIdentifierEditField'); end
-            app.saveDatasetInformationStruct();
-        end
-
-        function VersionInnovationValueChanged(app, event)
-            app.saveDatasetInformationStruct();
-        end
-        
-        function AddFundingButtonPushed(app, event)
-            S = app.openFundingForm();
-            if isempty(S); return; end
-            if ~isfield(app.DatasetInformationStruct, 'Funding') || isempty(app.DatasetInformationStruct.Funding)
-                app.DatasetInformationStruct.Funding = S;
-            else
-                app.DatasetInformationStruct.Funding(end+1) = S;
-            end
-            app.FundingUITable.Data = struct2table(app.DatasetInformationStruct.Funding, 'AsArray', true);
-            app.saveDatasetInformationStruct();
-        end
-
-        function RemoveFundingButtonPushed(app, event)
-            rowIdx = app.FundingUITable.Selection;
-            if ~isempty(rowIdx) && isfield(app.DatasetInformationStruct, 'Funding') && ~isempty(app.DatasetInformationStruct.Funding)
-                app.DatasetInformationStruct.Funding(rowIdx) = [];
-                if isempty(app.DatasetInformationStruct.Funding) 
-                    expectedFields = {'funder','awardTitle','awardNumber'};
-                    emptyStructWithFields = struct();
-                    for k=1:numel(expectedFields)
-                        emptyStructWithFields.(expectedFields{k}) = []; 
-                    end
-                    if numel(expectedFields) > 0
-                        app.DatasetInformationStruct.Funding = repmat(emptyStructWithFields,0,1);
-                    else
-                        app.DatasetInformationStruct.Funding = struct([]); 
-                    end
-                end
-                app.FundingUITable.Data = struct2table(app.DatasetInformationStruct.Funding, 'AsArray', true);
-                app.saveDatasetInformationStruct();
-            end
-        end
-        
-        function AddRelatedPublicationButtonPushed(app,event)
-            S = app.openForm("Publication");
-            if isempty(S); return; end
-            
-            if ~isfield(app.DatasetInformationStruct, 'RelatedPublication') || isempty(app.DatasetInformationStruct.RelatedPublication)
-                app.DatasetInformationStruct.RelatedPublication = S;
-            else
-                app.DatasetInformationStruct.RelatedPublication(end+1) = S;
-            end
-            app.RelatedPublicationUITable.Data = struct2table(app.DatasetInformationStruct.RelatedPublication, 'AsArray', true);
-            app.saveDatasetInformationStruct();
-        end
-
-        % Callbacks for ExperimentDetailsTab are now in ExperimentalDetailsGUI
-        
-        function AssignBiologicalSexButtonPushed(app, event)
-            app.updateSubjectTableColumData('BiologicalSex', app.BiologicalSexListBox.Value);
-        end
-        function BiologicalSexListBoxClicked(app, event)
-            drawnow; 
-            app.updateSubjectTableColumData('BiologicalSex', event.Source.Value);
-        end
-        function AssignSpeciesButtonPushed(app, event)
-            app.updateSubjectTableColumData('Species', app.SpeciesListBox.Value);
-        end
-        function SpeciesListBoxClicked(app, event)
-            drawnow;
-            value = event.Source.Value;
-            if ismissing(value) || strcmp(value,'') 
-                app.deleteSubjectTableColumData("Species");
-                app.deleteSubjectTableColumData("Strain"); 
-            else
-                app.updateSubjectTableColumData('Species', value);
-                app.deleteSubjectTableColumData("Strain"); 
-            end
-            app.populateStrainList(); 
-        end
         
         function TabGroupSelectionChanged(app, event)
             app.onTabChanged(); 
@@ -1476,28 +772,14 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             assignin('base', 'datasetInfoStruct', currentStructToExport);
             disp('DatasetInformationStruct exported to base workspace as "datasetInfoStruct".');
         end
-        function LicenseHelpImageClicked(app, event) 
-            web("https://en.wikipedia.org/wiki/Creative_Commons_license#Four_rights");
-        end
-        function LicenseHelpButtonPushed(app, event)
-            web("https://en.wikipedia.org/wiki/Creative_Commons_license#Six_regularly_used_licenses");
-        end
         
         function performActualFormReset(app)
-            % Clear data objects
-            if isprop(app, 'AuthorData') && ismethod(app.AuthorData, 'ClearAll'), app.AuthorData.ClearAll(); end
-            if isprop(app, 'AuthorData') && ismethod(app.AuthorData, 'addDefaultAuthorEntry'), app.AuthorData.addDefaultAuthorEntry(); end
+            if isprop(app, 'AuthorData') && ismethod(app.AuthorData, 'ClearAll'), app.AuthorData.ClearAll(); app.AuthorData.addDefaultAuthorEntry(); end
+            if isprop(app, 'SubjectData') && ismethod(app.SubjectData,'ClearAll'), app.SubjectData.ClearAll(); end
+            if isprop(app, 'ProbeData') && ismethod(app.ProbeData,'ClearAll'), app.ProbeData.ClearAll(); end
             
             if ~isempty(app.Dataset)
                 app.getInitialMetadataFromSession(); 
-            else 
-                if isprop(app, 'SubjectData') && ismethod(app.SubjectData,'ClearAll'), app.SubjectData.ClearAll(); else, if isprop(app,'SubjectData'), app.SubjectData.SubjectList = ndi.database.metadata_app.class.Subject.empty(0,1); end; end
-                if isprop(app,'UITableSubject'), app.UITableSubject.Data = table(); end
-                if isprop(app, 'ProbeData') && ismethod(app.ProbeData,'ClearAll'), app.ProbeData.ClearAll(); else, if isprop(app,'ProbeData'), app.ProbeData.ProbeList = {}; end; end
-                if isprop(app, 'ProbeDataGUI_Instance') && isvalid(app.ProbeDataGUI_Instance) && ...
-                   isprop(app.ProbeDataGUI_Instance, 'UITableProbe') && isvalid(app.ProbeDataGUI_Instance.UITableProbe)
-                    app.ProbeDataGUI_Instance.UITableProbe.Data = table();
-                end
             end
             
             app.DatasetInformationStruct = ndi.database.metadata_app.fun.validateDatasetInformation(struct(), app); 
@@ -1525,83 +807,15 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 app.inform('Form has been reverted to the last saved version.', 'Reverted to Saved');
             end
         end
-        
-        % Callbacks for specific list boxes in Subject Info tab
-        function BiologicalSexListBoxValueChanged(app, event)
-            app.saveDatasetInformationStruct(); 
-        end
-
-        function SpeciesListBoxValueChanged(app, event)
-            app.populateStrainList(); 
-            app.saveDatasetInformationStruct();
-        end
-
-        function StrainListBoxValueChanged(app, event)
-            app.saveDatasetInformationStruct(); 
-        end
-        
-        function StrainListBoxClicked(app, event)
-            drawnow;
-            app.updateSubjectTableColumData('Strain', event.Source.Value);
-        end
-
-        function StrainListBoxDoubleClicked(app, event)
-        end
-
-        function AddSpeciesButtonPushed(app, event)
-            speciesName = app.SpeciesEditField.Value;
-            if isempty(strtrim(speciesName))
-                app.alert('Please enter a species name to add.', 'Species Name Empty');
-                return;
-            end
-            newSpeciesStruct = struct('name', speciesName, 'ontologyIdentifier', '', 'synonyms', {{}});
-            returnedSpeciesStruct = app.openSpeciesForm(newSpeciesStruct);
-            
-            if ~isempty(returnedSpeciesStruct) && isfield(returnedSpeciesStruct, 'name') && ~isempty(strtrim(returnedSpeciesStruct.name))
-                app.SpeciesInstancesUser(end+1) = returnedSpeciesStruct;
-                app.SpeciesData.addItem(returnedSpeciesStruct.name, returnedSpeciesStruct.ontologyIdentifier, returnedSpeciesStruct.synonyms);
-                app.saveSpecies(); 
-                app.populateSpeciesList(); 
-                app.SpeciesEditField.Value = ''; 
-                app.inform(sprintf('Species "%s" added.', returnedSpeciesStruct.name), 'Species Added');
-            else
-                app.inform('Species addition cancelled or failed.', 'Info');
-            end
-        end
-
-        function AddStrainButtonPushed(app, event)
-            strainName = app.StrainEditField.Value;
-            if isempty(strtrim(strainName))
-                app.alert('Please enter a strain name to add.', 'Strain Name Empty');
-                return;
-            end
-            app.populateStrainList(); 
-            app.StrainEditField.Value = '';
-            app.inform(sprintf('Strain "%s" added (placeholder logic). Implement saving and catalog update.', strainName), 'Strain Added (Placeholder)');
-        end
-        
-        function BiologicalSexClearButtonPushed(app, event)
-            app.deleteSubjectTableColumData('BiologicalSex');
-        end
-        function SpeciesClearButtonPushed(app, event)
-            app.deleteSubjectTableColumData('Species');
-            app.populateStrainList(); 
-        end
-        function StrainClearButtonPushed(app, event)
-            app.deleteSubjectTableColumData('Strain');
-        end
-
     end
 
     % Component initialization
     methods (Access = private)
         function createComponents(app)
-            % Get the file path for locating images relative to this app file
             appFileFolder = fileparts(mfilename('fullpath'));
-            % Define ResourcesPath based on the app's location
             app.ResourcesPath = fullfile(appFileFolder, 'resources'); 
             if ~isfolder(app.ResourcesPath)
-                 fprintf(2, 'Warning (createComponents): ResourcesPath not found: %s. Icon paths might be incorrect.\n', app.ResourcesPath);
+                 fprintf(2, 'Warning (createComponents): ResourcesPath not found: %s.\n', app.ResourcesPath);
             end
 
             app.NDIMetadataEditorUIFigure = uifigure('Visible', 'off', ...
@@ -1691,77 +905,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 app.DatasetDetailsLabel.Layout.Row=1; app.DatasetDetailsLabel.Layout.Column=1;
                 app.DatasetDetailsPanel = uipanel(app.DatasetDetailsGridLayout, 'BorderType', 'none');
                 app.DatasetDetailsPanel.Layout.Row=2; app.DatasetDetailsPanel.Layout.Column=1;
-                    app.GridLayout18 = uigridlayout(app.DatasetDetailsPanel, [2 1], 'RowHeight', {'fit', '1x'}, 'Padding', [25 25 25 10]); 
-                        app.GridLayout19 = uigridlayout(app.GridLayout18, [1 2], 'ColumnSpacing', 25, 'ColumnWidth', {'1x', '1x'}); 
-                        app.GridLayout19.Layout.Row=1; app.GridLayout19.Layout.Column=1;
-                            app.GridLayout22 = uigridlayout(app.GridLayout19); 
-                            app.GridLayout22.Layout.Row=1; app.GridLayout22.Layout.Column=1;
-                            app.GridLayout22.ColumnWidth = {'0.8x', '1.2x'}; app.GridLayout22.RowHeight = {23, 23, 23, 23, 23, 23}; 
-                                app.AccessibilityLabel = uilabel(app.GridLayout22, 'Text', 'Accessibility', 'FontWeight', 'bold');
-                                app.AccessibilityLabel.Layout.Row=1; app.AccessibilityLabel.Layout.Column=1;
-                                app.ReleaseDateDatePickerLabel = uilabel(app.GridLayout22, 'Text', 'Release Date', 'HorizontalAlignment', 'right');
-                                app.ReleaseDateDatePickerLabel.Layout.Row=2; app.ReleaseDateDatePickerLabel.Layout.Column=1;
-                                app.ReleaseDateDatePicker = uidatepicker(app.GridLayout22, 'ValueChangedFcn', createCallbackFcn(app, @ReleaseDateValueChanged, true));
-                                app.ReleaseDateDatePicker.Layout.Row=2; app.ReleaseDateDatePicker.Layout.Column=2;
-                                app.LicenseDropDownLabel = uilabel(app.GridLayout22, 'Text', 'License', 'HorizontalAlignment', 'right');
-                                app.LicenseDropDownLabel.Layout.Row=3; app.LicenseDropDownLabel.Layout.Column=1;
-                                app.GridLayout28 = uigridlayout(app.GridLayout22); 
-                                app.GridLayout28.Layout.Row=3; app.GridLayout28.Layout.Column=2;
-                                app.GridLayout28.ColumnWidth = {'1x',23}; app.GridLayout28.Padding = [0 0 0 0]; app.GridLayout28.RowHeight = {'fit'}; 
-                                    app.LicenseDropDown = uidropdown(app.GridLayout28, 'ValueChangedFcn', createCallbackFcn(app, @LicenseDropDownValueChanged, true));
-                                    app.LicenseDropDown.Layout.Row=1; app.LicenseDropDown.Layout.Column=1;
-                                    app.LicenseHelpButton = uibutton(app.GridLayout28, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'help.png'), 'ButtonPushedFcn', createCallbackFcn(app, @LicenseHelpButtonPushed, true));
-                                    app.LicenseHelpButton.Layout.Row=1; app.LicenseHelpButton.Layout.Column=2;
-                                app.FullDocumentationEditFieldLabel = uilabel(app.GridLayout22, 'Text', 'Full Documentation', 'HorizontalAlignment', 'right');
-                                app.FullDocumentationEditFieldLabel.Layout.Row=4; app.FullDocumentationEditFieldLabel.Layout.Column=1;
-                                app.FullDocumentationEditField = uieditfield(app.GridLayout22, 'text', 'ValueChangedFcn', createCallbackFcn(app, @FullDocumentationValueChanged, true));
-                                app.FullDocumentationEditField.Layout.Row=4; app.FullDocumentationEditField.Layout.Column=2;
-                                app.VersionIdentifierEditFieldLabel = uilabel(app.GridLayout22, 'Text', 'Version Identifier', 'HorizontalAlignment', 'right');
-                                app.VersionIdentifierEditFieldLabel.Layout.Row=5; app.VersionIdentifierEditFieldLabel.Layout.Column=1;
-                                app.VersionIdentifierEditField = uieditfield(app.GridLayout22, 'text', 'Value', '1.0.0', 'ValueChangedFcn', createCallbackFcn(app, @VersionIdentifierValueChanged, true));
-                                app.VersionIdentifierEditField.Layout.Row=5; app.VersionIdentifierEditField.Layout.Column=2;
-                                app.VersionInnovationEditFieldLabel = uilabel(app.GridLayout22, 'Text', 'Version Innovation', 'HorizontalAlignment', 'right');
-                                app.VersionInnovationEditFieldLabel.Layout.Row=6; app.VersionInnovationEditFieldLabel.Layout.Column=1;
-                                app.VersionInnovationEditField = uieditfield(app.GridLayout22, 'text', 'Value', 'This is the first version of the dataset', 'ValueChangedFcn', createCallbackFcn(app, @VersionInnovationValueChanged, true));
-                                app.VersionInnovationEditField.Layout.Row=6; app.VersionInnovationEditField.Layout.Column=2;
-                            app.FundingGridLayout = uigridlayout(app.GridLayout19); 
-                            app.FundingGridLayout.Layout.Row=1; app.FundingGridLayout.Layout.Column=2;
-                            app.FundingGridLayout.ColumnWidth = {'1x', 45}; 
-                            app.FundingGridLayout.RowHeight = {23, '1x'};
-                                app.FundingUITableLabel = uilabel(app.FundingGridLayout, 'Text', 'Funding', 'FontWeight', 'bold');
-                                app.FundingUITableLabel.Layout.Row=1; app.FundingUITableLabel.Layout.Column=1;
-                                app.FundingUITable = uitable(app.FundingGridLayout, 'ColumnName', {'Funder'; 'Award Title'; 'Award Number'}, 'RowName', {}, 'SelectionType', 'row', 'Multiselect', 'off', 'DoubleClickedFcn', createCallbackFcn(app, @FundingUITableDoubleClicked, true));
-                                app.FundingUITable.Layout.Row=2; app.FundingUITable.Layout.Column=1;
-                                app.FundingTableButtonGridLayout = uigridlayout(app.FundingGridLayout);
-                                app.FundingTableButtonGridLayout.Layout.Row=2; app.FundingTableButtonGridLayout.Layout.Column=2;
-                                app.FundingTableButtonGridLayout.RowHeight={23,23,10,23,23,'1x'}; app.FundingTableButtonGridLayout.ColumnWidth={'1x'}; app.FundingTableButtonGridLayout.Padding = [0 0 0 0];
-                                    app.AddFundingButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'plus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @AddFundingButtonPushed, true));
-                                    app.AddFundingButton.Layout.Row=1; app.AddFundingButton.Layout.Column=1;
-                                    app.RemoveFundingButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'minus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @RemoveFundingButtonPushed, true));
-                                    app.RemoveFundingButton.Layout.Row=2; app.RemoveFundingButton.Layout.Column=1;
-                                    app.MoveFundingUpButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'up.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MoveFundingUpButtonPushed, true));
-                                    app.MoveFundingUpButton.Layout.Row=4; app.MoveFundingUpButton.Layout.Column=1; 
-                                    app.MoveFundingDownButton = uibutton(app.FundingTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'down.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MoveFundingDownButtonPushed, true));
-                                    app.MoveFundingDownButton.Layout.Row=5; app.MoveFundingDownButton.Layout.Column=1;
-                        app.GridLayout20 = uigridlayout(app.GridLayout18); 
-                        app.GridLayout20.Layout.Row=2; app.GridLayout20.Layout.Column=1;
-                        app.GridLayout20.ColumnWidth = {'1x', 45}; 
-                        app.GridLayout20.RowHeight = {23, '1x'};
-                            app.RelatedPublicationUITableLabel = uilabel(app.GridLayout20, 'Text', 'Related Publications', 'FontWeight', 'bold');
-                            app.RelatedPublicationUITableLabel.Layout.Row=1; app.RelatedPublicationUITableLabel.Layout.Column=1;
-                            app.RelatedPublicationUITable = uitable(app.GridLayout20, 'ColumnName', {'Publication'; 'DOI'; 'PMID'; 'PMCID'}, 'RowName', {}, 'SelectionType', 'row', 'Multiselect', 'off', 'CellEditCallback', createCallbackFcn(app, @RelatedPublicationCellEdit, true), 'DoubleClickedFcn', createCallbackFcn(app, @RelatedPublicationUITableDoubleClicked, true));
-                            app.RelatedPublicationUITable.Layout.Row=2; app.RelatedPublicationUITable.Layout.Column=1;
-                            app.PublicationTableButtonGridLayout = uigridlayout(app.GridLayout20);
-                            app.PublicationTableButtonGridLayout.Layout.Row=2; app.PublicationTableButtonGridLayout.Layout.Column=2;
-                            app.PublicationTableButtonGridLayout.RowHeight={23,23,10,23,23,'1x'}; app.PublicationTableButtonGridLayout.ColumnWidth={'1x'}; app.PublicationTableButtonGridLayout.Padding = [0 0 0 0];
-                                app.AddRelatedPublicationButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'plus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @AddRelatedPublicationButtonPushed, true));
-                                app.AddRelatedPublicationButton.Layout.Row=1; app.AddRelatedPublicationButton.Layout.Column=1;
-                                app.RemovePublicationButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'minus.png'), 'ButtonPushedFcn', createCallbackFcn(app, @RemovePublicationButtonPushed, true));
-                                app.RemovePublicationButton.Layout.Row=2; app.RemovePublicationButton.Layout.Column=1;
-                                app.MovePublicationUpButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'up.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MovePublicationUpButtonPushed, true));
-                                app.MovePublicationUpButton.Layout.Row=4; app.MovePublicationUpButton.Layout.Column=1; 
-                                app.MovePublicationDownButton = uibutton(app.PublicationTableButtonGridLayout, 'push', 'Text', '', 'Icon', fullfile(app.ResourcesPath, 'icons', 'down.png'), 'ButtonPushedFcn', createCallbackFcn(app, @MovePublicationDownButtonPushed, true));
-                                app.MovePublicationDownButton.Layout.Row=5; app.MovePublicationDownButton.Layout.Column=1;
+                % UI elements for this panel are now created by DatasetDetailsGUI_Instance
 
             app.ExperimentDetailsTab = uitab(app.TabGroup, 'Title', 'Experiment Details');
             app.ExperimentDetailsGridLayout = uigridlayout(app.ExperimentDetailsTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
@@ -1777,35 +921,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.SubjectInfoLabel.Layout.Row=1; app.SubjectInfoLabel.Layout.Column=1;
             app.SubjectInfoPanel = uipanel(app.SubjectInfoGridLayout, 'BorderType', 'none');
             app.SubjectInfoPanel.Layout.Row=2; app.SubjectInfoPanel.Layout.Column=1;
-                app.GridLayout16 = uigridlayout(app.SubjectInfoPanel, [2 1], 'RowHeight', {150, '1x'}, 'RowSpacing', 30, 'Padding', [25 25 25 10]);
-                    app.UITableSubject = uitable(app.GridLayout16, 'ColumnName', {'Subject'; 'Biological Sex'; 'Species'; 'Strain'}, 'RowName', {}, 'SelectionType', 'row');
-                    app.UITableSubject.Layout.Row=1; app.UITableSubject.Layout.Column=1;
-                    app.GridLayout17 = uigridlayout(app.GridLayout16, [4 3], 'ColumnWidth', {'1x','1x','1x'}, 'RowHeight', {23,'1x',23,23}, 'ColumnSpacing',30);
-                    app.GridLayout17.Layout.Row=2; app.GridLayout17.Layout.Column=1;
-                        app.BiologicalSexLabel = uilabel(app.GridLayout17, 'Text', 'Biological Sex'); app.BiologicalSexLabel.Layout.Row=1; app.BiologicalSexLabel.Layout.Column=1;
-                        app.BiologicalSexListBox = uilistbox(app.GridLayout17, 'Items', {'asexual multicellular organism', 'female organism', 'male organism', 'hermaphroditic organism'}, 'Value', 'asexual multicellular organism', 'ValueChangedFcn', createCallbackFcn(app, @BiologicalSexListBoxValueChanged, true), 'ClickedFcn', createCallbackFcn(app, @BiologicalSexListBoxClicked, true));
-                        app.BiologicalSexListBox.Layout.Row=2; app.BiologicalSexListBox.Layout.Column=1;
-                        app.SpeciesLabel_2 = uilabel(app.GridLayout17, 'Text', 'Species'); app.SpeciesLabel_2.Layout.Row=1; app.SpeciesLabel_2.Layout.Column=2;
-                        app.SpeciesListBox = uilistbox(app.GridLayout17, 'ValueChangedFcn', createCallbackFcn(app, @SpeciesListBoxValueChanged, true), 'ClickedFcn', createCallbackFcn(app, @SpeciesListBoxClicked, true));
-                        app.SpeciesListBox.Layout.Row=2; app.SpeciesListBox.Layout.Column=2;
-                        app.StrainLabel = uilabel(app.GridLayout17, 'Text', 'Strain'); app.StrainLabel.Layout.Row=1; app.StrainLabel.Layout.Column=3;
-                        app.StrainListBox = uilistbox(app.GridLayout17, 'Tag', 'Strain', 'ValueChangedFcn', createCallbackFcn(app, @StrainListBoxValueChanged, true), 'ClickedFcn', createCallbackFcn(app, @StrainListBoxClicked, true), 'DoubleClickedFcn', createCallbackFcn(app, @StrainListBoxDoubleClicked, true));
-                        app.StrainListBox.Layout.Row=2; app.StrainListBox.Layout.Column=3;
-                        app.GridLayout24 = uigridlayout(app.GridLayout17,[1,2]); app.GridLayout24.Layout.Row=3; app.GridLayout24.Layout.Column=1; app.GridLayout24.Padding=[0 0 0 0];
-                            app.AssignBiologicalSexButton = uibutton(app.GridLayout24, 'push', 'Text', 'Assign', 'ButtonPushedFcn', createCallbackFcn(app, @AssignBiologicalSexButtonPushed, true));
-                            app.BiologicalSexClearButton = uibutton(app.GridLayout24, 'push', 'Text', 'CLEAR', 'ButtonPushedFcn', createCallbackFcn(app, @BiologicalSexClearButtonPushed, true));
-                        app.GridLayout24_2 = uigridlayout(app.GridLayout17,[1,2]); app.GridLayout24_2.Layout.Row=3; app.GridLayout24_2.Layout.Column=2; app.GridLayout24_2.Padding=[0 0 0 0];
-                            app.AssignSpeciesButton = uibutton(app.GridLayout24_2, 'push', 'Text', 'Assign', 'ButtonPushedFcn', createCallbackFcn(app, @AssignSpeciesButtonPushed, true));
-                            app.SpeciesClearButton = uibutton(app.GridLayout24_2, 'push', 'Text', 'CLEAR', 'ButtonPushedFcn', createCallbackFcn(app, @SpeciesClearButtonPushed, true));
-                        app.GridLayout24_3 = uigridlayout(app.GridLayout17,[1,2]); app.GridLayout24_3.Layout.Row=3; app.GridLayout24_3.Layout.Column=3; app.GridLayout24_3.Padding=[0 0 0 0];
-                            app.AssignStrainButton = uibutton(app.GridLayout24_3, 'push', 'Text', 'Assign'); 
-                            app.StrainClearButton = uibutton(app.GridLayout24_3, 'push', 'Text', 'CLEAR', 'ButtonPushedFcn', createCallbackFcn(app, @StrainClearButtonPushed, true));
-                        app.GridLayout24_4 = uigridlayout(app.GridLayout17,[1,2],'ColumnWidth',{'1x',50}); app.GridLayout24_4.Layout.Row=4; app.GridLayout24_4.Layout.Column=2; app.GridLayout24_4.Padding=[0 0 0 0];
-                            app.SpeciesEditField = uieditfield(app.GridLayout24_4, 'text', 'Placeholder', 'Enter name of species to add');
-                            app.AddSpeciesButton = uibutton(app.GridLayout24_4, 'push', 'Text', 'Add', 'ButtonPushedFcn', createCallbackFcn(app, @AddSpeciesButtonPushed, true));
-                        app.GridLayout27 = uigridlayout(app.GridLayout17,[1,2],'ColumnWidth',{'1x',50}); app.GridLayout27.Layout.Row=4; app.GridLayout27.Layout.Column=3; app.GridLayout27.Padding=[0 0 0 0];
-                            app.StrainEditField = uieditfield(app.GridLayout27, 'text', 'Placeholder', 'Enter name of strain to add');
-                            app.AddStrainButton = uibutton(app.GridLayout27, 'push', 'Text', 'Add', 'ButtonPushedFcn', createCallbackFcn(app, @AddStrainButtonPushed, true));
+            % UI elements for this panel are now created by SubjectInfoGUI_Instance
 
             app.ProbeInfoTab = uitab(app.TabGroup, 'Title', 'Probe Info');
             app.ProbeInfoGridLayout = uigridlayout(app.ProbeInfoTab, [2 1], 'RowHeight', {60, '1x'}, 'Padding', [10 20 10 10]);
