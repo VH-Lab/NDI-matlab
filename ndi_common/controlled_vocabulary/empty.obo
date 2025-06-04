@@ -586,7 +586,7 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "experimentSessionIdentifier" xsd:string
 
 [Term]
-id: EMPTY:00000196
+id: EMPTY:00000166
 name: Ambient temperature
 namespace: empty_ontology
 def: "The ambient room temperature recorded during an experiment. Unit: degrees Celsius." []
@@ -594,7 +594,7 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "ambientTemperature" xsd:string
 
 [Term]
-id: EMPTY:00000197
+id: EMPTY:00000167
 name: Ambient humidity
 namespace: empty_ontology
 def: "The ambient room humidity recorded during an experiment. Unit: percentage (%)." []
@@ -602,7 +602,7 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "ambientHumidity" xsd:string
 
 [Term]
-id: EMPTY:00000166
+id: EMPTY:00000168
 name: Data exclusion flag
 namespace: empty_ontology
 def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to predefined quality control issues or experimental failure." []
@@ -610,143 +610,144 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "dataExclusionFlag" xsd:string
 
 [Term]
-id: EMPTY:00000168
+id: EMPTY:00000169
 name: C. elegans: strain name
 namespace: empty_ontology
-def: "The commonly used name of the genetic strain of *Caenorhabditis elegans* used as the experimental subject (e.g., 'N2', 'mec-4', 'osm-6')." []
+def: "The commonly used name of the genetic strain of Caenorhabditis elegans used as the experimental subject (e.g., 'N2', 'mec-4', 'osm-6')." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansStrainName" xsd:string
 
 [Term]
-id: EMPTY:00000169
+id: EMPTY:00000170
 name: C. elegans: strain genotype
 namespace: empty_ontology
-def: "Specific genetic identifier or detailed genotype of the *C. elegans* strain used, which may include allele names and chromosomal locations (e.g., 'osm-6(p811) V', 'mec-4(u253) X')." []
+def: "Specific genetic identifier or detailed genotype of the C. elegans strain used, which may include allele names and chromosomal locations (e.g., 'osm-6(p811) V', 'mec-4(u253) X')." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansStrainGenotype" xsd:string
 
 [Term]
-id: EMPTY:00000170
+id: EMPTY:00000171
 name: C. elegans: L4 timestamp
 namespace: empty_ontology
-def: "The date and time when L4 larval stage *C. elegans* were picked from cultivation plates to be used in an experiment." []
+def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansL4Timestamp" xsd:string
 
 [Term]
-id: EMPTY:00000183
+id: EMPTY:00000172
 name: C. elegans: age at assay
 namespace: empty_ontology
-def: "The developmental stage or age of the *C. elegans* subjects at the time of the behavioral assay, commonly specified (e.g., 'L4', '1-Day-Old Adult')." []
+def: "The developmental stage or age of the C. elegans subjects at the time of the behavioral assay, commonly specified (e.g., 'L4', '1-Day-Old Adult')." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansAgeAtAssay" xsd:string
 
 [Term]
-id: EMPTY:00000182
+id: EMPTY:00000173
 name: C. elegans: growth duration since L4
 namespace: empty_ontology
-def: "The total duration of *C. elegans* development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours." []
+def: "The total duration of C. elegans development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansGrowthDurationSinceL4" xsd:string
 
 [Term]
-id: EMPTY:00000172
+id: EMPTY:00000174
 name: C. elegans Cultivation: bacterial plate seeding timestamp
 namespace: empty_ontology
-def: "The date and time when the bacterial lawn (e.g., OP50) was seeded onto the NGM agar plates used for the cultivation and growth of *C. elegans* prior to an experiment." []
+def: "The date and time when the bacterial lawn (e.g., OP50) was seeded onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansCultivationBacterialPlateSeedingTimestamp" xsd:string
 
 [Term]
-id: EMPTY:00000173
+id: EMPTY:00000175
 name: C. elegans Cultivation: bacterial plate cold storage timestamp
 namespace: empty_ontology
-def: "The date and time when NGM plates seeded for *C. elegans* cultivation were transferred to cold storage (e.g., $4^{\circ}C$) to arrest or slow bacterial/worm development, if part of the protocol." []
+def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (e.g., 4C) to arrest or slow bacterial/worm development, if part of the protocol." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansCultivationBacterialPlateColdStorageTimestamp" xsd:string
 
 [Term]
-id: EMPTY:00000174
+id: EMPTY:00000176
 name: C. elegans Cultivation: bacterial plate room temperature acclimation timestamp
 namespace: empty_ontology
-def: "The date and time when *C. elegans* cultivation plates were moved from cold storage to room temperature to allow them to acclimate before selecting worms for an experiment." []
+def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before selecting worms for an experiment." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansCultivationBacterialPlateRoomTempAcclimationTimestamp" xsd:string
 
 [Term]
-id: EMPTY:00000175
-name:  C. elegans Cultivation: bacteria growth duration after seeding
+id: EMPTY:00000177
+name: C. elegans Cultivation: bacteria growth duration after seeding
 namespace: empty_ontology
-def: "The total duration for which the bacterial lawn was allowed to grow on the *C. elegans* cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: hours or days." []
+def: "The total duration for which the bacterial lawn was allowed to grow on the C. elegans cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: hours or days." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansCultivationBacteriaGrowthDuration" xsd:string
 
 [Term]
-id: EMPTY:00000176
+id: EMPTY:00000178
 name: C. elegans Cultivation: bacterial OD600 target
 namespace: empty_ontology
-def: "The target or nominal optical density at 600 nm ($OD_{600}$)  to which the bacterial solution was diluted for creating food patches on *C. elegans* cultivation plates. Unit: dimensionless." []
+def: "The target or nominal optical density at 600 nm (OD 
+600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansCultivationBacterialOD600Target" xsd:string
 
 [Term]
-id: EMPTY:00000167
+id: EMPTY:00000179
 name: C. elegans Behavioral Assay: experiment plate identifier
 namespace: empty_ontology
-def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a *C. elegans* experimental trial or a set of trials was conducted." []
+def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a C. elegans experimental trial or a set of trials was conducted." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorExperimentPlateIdentifier" xsd:string
 
 [Term]
-id: EMPTY:00000184
+id: EMPTY:00000180
 name: C. elegans Behavioral Assay: bacterial strain
 namespace: empty_ontology
-def: "The strain of bacteria used as the food source on the assay plates for *C. elegans*, typically a specific *Escherichia coli* strain (e.g., OP50, HB101, OP50-GFP)." []
+def: "The strain of bacteria used as the food source on the assay plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP)." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialStrain" xsd:string
 
 [Term]
-id: EMPTY:00000185
+id: EMPTY:00000181
 name: C. elegans Behavioral Assay: bacterial OD600 measurement
 namespace: empty_ontology
-def: "The actual measured optical density at 600 nm ($OD_{600}$) of the prepared bacterial solution before it was pipetted to create food patches on *C. elegans* assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless." []
+def: "The actual measured optical density at 600 nm (OD600) of the prepared bacterial solution before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialOD600Measurement" xsd:string
 
 [Term]
-id: EMPTY:00000186
-name: C. elegans Behavioral Assay: bacterial colony forming units (CFU) measurement 
+id: EMPTY:00000182
+name: C. elegans Behavioral Assay: bacterial colony forming units (CFU) measurement
 namespace: empty_ontology
-def: "The concentration of viable bacterial cells in the food source solution for *C. elegans* assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL." []
+def: "The concentration of viable bacterial cells in the food source solution for C. elegans assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialCFU" xsd:string
 
 [Term]
-id: EMPTY:00000187
+id: EMPTY:00000183
 name: C. elegans Behavioral Assay: bacterial OD600 target
 namespace: empty_ontology
-def: "The target or nominal optical density at 600 nm ($OD_{600}$) to which the bacterial solution was diluted for creating food patches on *C. elegans* assay plates. Different nominal $OD_{600}$ values are used to create patches of varying initial densities. Unit: dimensionless." []
+def: "The target or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans assay plates. Different nominal OD600  values are used to create patches of varying initial densities. Unit: dimensionless." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialOD600Target" xsd:string
 
 [Term]
-id: EMPTY:00000188
+id: EMPTY:00000184
 name: C. elegans Behavioral Assay: bacterial OD600 label
 namespace: empty_ontology
-def: "A string label used to categorize or identify the nominal $OD_{600}$ condition of the food patches in a *C. elegans* experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions." []
+def: "A string label used to categorize or identify the nominal OD600 condition of the food patches in a C. elegans experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialOD600Label" xsd:string
 
 [Term]
-id: EMPTY:00000171
+id: EMPTY:00000185
 name: C. elegans Behavioral Assay: bacterial distribution descriptor
 namespace: empty_ontology
-def: "A textual descriptor of the overall experimental setup or paradigm for a *C. elegans* experiment, such as the layout of food patches (e.g., 'grid', 'single patch') or other environmental manipulations." []
+def: "A textual descriptor of the overall experimental setup or paradigm for a C. elegans experiment, such as the layout of food patches (e.g., 'grid', 'single patch') or other environmental manipulations." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacteriaDistribution" xsd:string
 
 [Term]
-id: EMPTY:00000177
+id: EMPTY:00000186
 name: C. elegans Behavioral Assay: bacterial plate peptone flag
 namespace: empty_ontology
 def: "Indicates whether peptone was included in the Nematode Growth Medium (NGM) agar for the assay plates. Peptone presence can affect bacterial growth on assay patches. Typically 'with' or 'without'." []
@@ -754,90 +755,90 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialPlatePeptoneFlag" xsd:string
 
 [Term]
-id: EMPTY:00000178
+id: EMPTY:00000187
 name: C. elegans Behavioral Assay: bacterial plate seeding timestamp
 namespace: empty_ontology
-def: "The date and time when bacterial food patches (e.g., OP50 *E. coli*) were pipetted onto the NGM assay plates for *C. elegans* experiments." []
+def: "The date and time when bacterial food patches (e.g., OP50 E. coli) were pipetted onto the NGM assay plates for C. elegans experiments." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialPlateSeedingTimestamp" xsd:string
 
 [Term]
-id: EMPTY:00000179
+id: EMPTY:00000188
 name: C. elegans Behavioral Assay: bacterial plate cold storage timestamp
 namespace: empty_ontology
-def: "The date and time when prepared assay plates (with bacterial patches for *C. elegans*) were transferred to cold storage (e.g., $4^{\circ}C$) to control bacterial growth before the experiment." []
+def: "The date and time when prepared assay plates (with bacterial patches for C. elegans) were transferred to cold storage (e.g., 4C) to control bacterial growth before the experiment." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialPlateColdStorageTimestamp" xsd:string
 
 [Term]
-id: EMPTY:00000180
+id: EMPTY:00000189
 name: C. elegans Behavioral Assay: bacterial plate room temperature acclimation timestamp
 namespace: empty_ontology
-def: "The date and time when *C. elegans* assay plates were moved from cold storage to room temperature to allow them to acclimate before starting behavioral recordings." []
+def: "The date and time when C. elegans assay plates were moved from cold storage to room temperature to allow them to acclimate before starting behavioral recordings." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacterialPlateRoomTempAcclimationTimestamp" xsd:string
 
 [Term]
-id: EMPTY:00000181
+id: EMPTY:00000190
 name: C. elegans Behavioral Assay: bacteria growth duration
 namespace: empty_ontology
-def: "The duration for which bacteria on *C. elegans* assay plate patches were allowed to grow at room temperature after seeding and before experimental use or cold storage. This is a controlled variable to achieve different patch densities. Unit: hours." []
+def: "The duration for which bacteria on C. elegans assay plate patches were allowed to grow at room temperature after seeding and before experimental use or cold storage. This is a controlled variable to achieve different patch densities. Unit: hours." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "celegansBehaviorBacteriaGrowthDuration" xsd:string
 
 [Term]
-id: EMPTY:00000189
+id: EMPTY:00000191
 name: C. elegans Behavioral Assay: bacterial plate growth condition label
 namespace: empty_ontology
-def: "A descriptor for the specific growth time condition applied to bacterial patches on *C. elegans* assay plates after seeding, which contributes to the final patch density (e.g., hours of growth at a specific temperature)." []
+def: "A descriptor for the specific growth time condition applied to bacterial patches on C. elegans assay plates after seeding, which contributes to the final patch density (e.g., hours of growth at a specific temperature)." []
 is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "assayPlateLawnGrowthConditionDescriptor" xsd:string
-
-[Term]
-id: EMPTY:00000190
-name: C. elegans Behavioral Assay: bacterial plate patch volume
-namespace: empty_ontology
-def: "The volume of bacterial solution pipetted to create each individual food patch on the *C. elegans* assay plate. Unit: microliters (µL)." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "assayPlatePatchVolume" xsd:string
-
-[Term]
-id: EMPTY:00000191
-name: Assay plate patch target diameter
-namespace: empty_ontology
-def: "The intended or characteristic diameter of the bacterial food patches created on the *C. elegans* assay plate. Unit: millimeters (mm)." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "assayPlatePatchTargetDiameter" xsd:string
+property_value: codeName "celegansBehaviorBacterialPlateLawnGrowthConditionLabel" xsd:string
 
 [Term]
 id: EMPTY:00000192
-name: Assay plate patch target spacing
+name: C. elegans Behavioral Assay: bacterial plate patch volume
 namespace: empty_ontology
-def: "The intended center-to-center distance between adjacent bacterial food patches when arranged in a grid on the *C. elegans* assay plate. Unit: millimeters (mm)." []
+def: "The volume of bacterial solution pipetted to create each individual food patch on the C. elegans assay plate. Unit: microliters (µL)." []
 is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "assayPlatePatchTargetSpacing" xsd:string
+property_value: codeName "celegansBehaviorBacterialPlatePatchVolume" xsd:string
 
 [Term]
 id: EMPTY:00000193
+name: C. elegans Behavioral Assay: bacterial plate patch target diameter
+namespace: empty_ontology
+def: "The intended or characteristic diameter of the bacterial food patches created on the C. elegans assay plate. Unit: millimeters (mm)." []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "celegansBehaviorBacterialPlatePatchTargetDiameter" xsd:string
+
+[Term]
+id: EMPTY:00000194
+name: C. elegans Behavioral Assay: bacterial plate patch target spacing
+namespace: empty_ontology
+def: "The intended center-to-center distance between adjacent bacterial food patches when arranged in a grid on the C. elegans assay plate. Unit: millimeters (mm)." []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "celegansBehaviorBacterialPlatePatchTargetSpacing" xsd:string
+
+[Term]
+id: EMPTY:00000195
 name: Video recording filename
 namespace: empty_ontology
-def: "The filename of the digital video file containing the primary recording of *C. elegans* behavior during an assay." []
+def: "The filename of the digital video file containing the primary recording of C. elegans behavior during an assay." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "videoRecordingFilename" xsd:string
 
 [Term]
-id: EMPTY:00000194
+id: EMPTY:00000196
 name: Lawn mask filename
 namespace: empty_ontology
-def: "The filename of the data file that stores the binary mask or location information for the bacterial food patches within the *C. elegans* assay arena. This is often generated from a separate image or image processing step." []
+def: "The filename of the data file that stores the binary mask or location information for the bacterial food patches within the C. elegans assay arena. This is often generated from a separate image or image processing step." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "lawnMaskFilename" xsd:string
 
 [Term]
-id: EMPTY:00000195
+id: EMPTY:00000197
 name: Worm tracking data filename
 namespace: empty_ontology
-def: "The filename of the output data file generated by tracking software (e.g., WormLab), which contains the tracked coordinates and potentially other behavioral metrics of *C. elegans* subjects." []
+def: "The filename of the output data file generated by tracking software (e.g., WormLab), which contains the tracked coordinates and potentially other behavioral metrics of C. elegans subjects." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "wormTrackingDataFilename" xsd:string
 
@@ -845,7 +846,7 @@ property_value: codeName "wormTrackingDataFilename" xsd:string
 id: EMPTY:00000198
 name: Recording camera identifier
 namespace: empty_ontology
-def: "An identifier for the specific camera model or setup used to capture the video recording of the *C. elegans* behavioral assay." []
+def: "An identifier for the specific camera model or setup used to capture the video recording of the C. elegans behavioral assay." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "recordingCameraIdentifier" xsd:string
 
@@ -853,7 +854,7 @@ property_value: codeName "recordingCameraIdentifier" xsd:string
 id: EMPTY:00000199
 name: Video total frames
 namespace: empty_ontology
-def: "The total number of individual frames contained within the *C. elegans* behavioral video recording. Unit: count." []
+def: "The total number of individual frames contained within the C. elegans behavioral video recording. Unit: count." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "videoTotalFrames" xsd:string
 
@@ -861,7 +862,7 @@ property_value: codeName "videoTotalFrames" xsd:string
 id: EMPTY:00000200
 name: Video frame rate
 namespace: empty_ontology
-def: "The rate at which frames were captured and recorded in the *C. elegans* behavioral video, typically measured in frames per second (fps). Unit: frames per second (fps)." []
+def: "The rate at which frames were captured and recorded in the C. elegans behavioral video, typically measured in frames per second (fps). Unit: frames per second (fps)." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "videoFrameRate" xsd:string
 
@@ -869,7 +870,7 @@ property_value: codeName "videoFrameRate" xsd:string
 id: EMPTY:00000201
 name: Video pixel dimensions
 namespace: empty_ontology
-def: "The resolution of the video frames from a *C. elegans* experiment, specified as the number of pixels in width and height (e.g., 1024x1024 pixels). Unit: pixels." []
+def: "The resolution of the video frames from a C. elegans experiment, specified as the number of pixels in width and height (e.g., 1024x1024 pixels). Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "videoPixelDimensions" xsd:string
 
@@ -877,7 +878,7 @@ property_value: codeName "videoPixelDimensions" xsd:string
 id: EMPTY:00000202
 name: Video first frame image
 namespace: empty_ontology
-def: "The raw image data corresponding to the first frame of the *C. elegans* behavioral video recording. This can be used for arena registration, initial worm position, or background subtraction." []
+def: "The raw image data corresponding to the first frame of the C. elegans behavioral video recording. This can be used for arena registration, initial worm position, or background subtraction." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "videoFirstFrameImage" xsd:string
 
@@ -885,7 +886,7 @@ property_value: codeName "videoFirstFrameImage" xsd:string
 id: EMPTY:00000203
 name: Video spatial scale
 namespace: empty_ontology
-def: "The spatial calibration factor for the video recording of a *C. elegans* experiment, representing the number of pixels per unit of physical distance (e.g., pixels per millimeter). This is crucial for converting pixel-based measurements to real-world units. Unit: pixels/mm." []
+def: "The spatial calibration factor for the video recording of a C. elegans experiment, representing the number of pixels per unit of physical distance (e.g., pixels per millimeter). This is crucial for converting pixel-based measurements to real-world units. Unit: pixels/mm." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "videoSpatialScale" xsd:string
 
@@ -893,7 +894,7 @@ property_value: codeName "videoSpatialScale" xsd:string
 id: EMPTY:00000204
 name: Analysis arena mask
 namespace: empty_ontology
-def: "A binary image (logical matrix) where pixels within the experimental arena for *C. elegans* are marked and pixels outside are unmarked. This mask defines the region of interest for worm tracking and behavioral analysis." []
+def: "A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked and pixels outside are unmarked. This mask defines the region of interest for worm tracking and behavioral analysis." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaMask" xsd:string
 
@@ -901,7 +902,7 @@ property_value: codeName "analysisArenaMask" xsd:string
 id: EMPTY:00000205
 name: Analysis arena center coordinates
 namespace: empty_ontology
-def: "The (X,Y) pixel coordinates representing the geometric center of the detected experimental arena mask in a *C. elegans* assay. Unit: pixels." []
+def: "The (X,Y) pixel coordinates representing the geometric center of the detected experimental arena mask in a C. elegans assay. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaCenterCoordinates" xsd:string
 
@@ -909,7 +910,7 @@ property_value: codeName "analysisArenaCenterCoordinates" xsd:string
 id: EMPTY:00000206
 name: Analysis arena offset vector
 namespace: empty_ontology
-def: "An (X,Y) vector representing the displacement of the *C. elegans* arena's center from a defined origin or reference point in the image, used for spatial alignment or correction. Unit: pixels." []
+def: "An (X,Y) vector representing the displacement of the C. elegans arena's center from a defined origin or reference point in the image, used for spatial alignment or correction. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaOffsetVector" xsd:string
 
@@ -917,7 +918,7 @@ property_value: codeName "analysisArenaOffsetVector" xsd:string
 id: EMPTY:00000207
 name: Analysis arena rotation angle
 namespace: empty_ontology
-def: "The angle of rotation of the detected *C. elegans* arena relative to a standard coordinate system. This is used to correct for any tilt in arena placement. Unit: degrees or radians." []
+def: "The angle of rotation of the detected C. elegans arena relative to a standard coordinate system. This is used to correct for any tilt in arena placement. Unit: degrees or radians." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaRotationAngle" xsd:string
 
@@ -925,7 +926,7 @@ property_value: codeName "analysisArenaRotationAngle" xsd:string
 id: EMPTY:00000208
 name: Analysis arena actual diameter
 namespace: empty_ontology
-def: "The measured diameter of the experimental arena used for *C. elegans*, as determined from image analysis of the arena mask. Unit: millimeters (mm) or pixels." []
+def: "The measured diameter of the experimental arena used for C. elegans, as determined from image analysis of the arena mask. Unit: millimeters (mm) or pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaActualDiameter" xsd:string
 
@@ -933,7 +934,7 @@ property_value: codeName "analysisArenaActualDiameter" xsd:string
 id: EMPTY:00000209
 name: Analysis arena shape descriptor
 namespace: empty_ontology
-def: "A textual descriptor of the geometric shape of the experimental arena for *C. elegans* as determined by image analysis (e.g., 'circle', 'rectangle')." []
+def: "A textual descriptor of the geometric shape of the experimental arena for C. elegans as determined by image analysis (e.g., 'circle', 'rectangle')." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaShapeDescriptor" xsd:string
 
@@ -941,7 +942,7 @@ property_value: codeName "analysisArenaShapeDescriptor" xsd:string
 id: EMPTY:00000210
 name: Analysis arena circularity
 namespace: empty_ontology
-def: "A quantitative measure (typically 0 to 1, where 1 is a perfect circle) assessing how closely the shape of the detected *C. elegans* arena mask conforms to a circle." []
+def: "A quantitative measure (typically 0 to 1, where 1 is a perfect circle) assessing how closely the shape of the detected C. elegans arena mask conforms to a circle." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisArenaCircularity" xsd:string
 
@@ -949,7 +950,7 @@ property_value: codeName "analysisArenaCircularity" xsd:string
 id: EMPTY:00000211
 name: Analysis reference mark mask
 namespace: empty_ontology
-def: "A binary image mask identifying the location and extent of a physical reference mark within the *C. elegans* arena, used for consistent image registration and spatial alignment." []
+def: "A binary image mask identifying the location and extent of a physical reference mark within the C. elegans arena, used for consistent image registration and spatial alignment." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisReferenceMarkMask" xsd:string
 
@@ -957,7 +958,7 @@ property_value: codeName "analysisReferenceMarkMask" xsd:string
 id: EMPTY:00000212
 name: Analysis reference mark center coordinates
 namespace: empty_ontology
-def: "The (X,Y) pixel coordinates of the geometric center of the detected reference mark mask in a *C. elegans* assay. Unit: pixels." []
+def: "The (X,Y) pixel coordinates of the geometric center of the detected reference mark mask in a C. elegans assay. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisReferenceMarkCenterCoordinates" xsd:string
 
@@ -965,7 +966,7 @@ property_value: codeName "analysisReferenceMarkCenterCoordinates" xsd:string
 id: EMPTY:00000213
 name: Analysis reference mark distance
 namespace: empty_ontology
-def: "A distance measured from or related to the reference mark in a *C. elegans* assay, such as its distance to the arena center or edge, used for validating spatial calibration or registration." []
+def: "A distance measured from or related to the reference mark in a C. elegans assay, such as its distance to the arena center or edge, used for validating spatial calibration or registration." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisReferenceMarkDistance" xsd:string
 
@@ -973,7 +974,7 @@ property_value: codeName "analysisReferenceMarkDistance" xsd:string
 id: EMPTY:00000214
 name: Analysis patch center coordinates
 namespace: empty_ontology
-def: "A collection of (X,Y) pixel coordinates, where each pair represents the geometric center of an individual detected bacterial food patch within the *C. elegans* assay arena." []
+def: "A collection of (X,Y) pixel coordinates, where each pair represents the geometric center of an individual detected bacterial food patch within the C. elegans assay arena." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchCenterCoordinates" xsd:string
 
@@ -981,7 +982,7 @@ property_value: codeName "analysisPatchCenterCoordinates" xsd:string
 id: EMPTY:00000215
 name: Analysis patch radii
 namespace: empty_ontology
-def: "A collection of values, each representing the radius of an individual detected bacterial food patch in a *C. elegans* assay, assuming patches are circular or near-circular. Unit: pixels or millimeters." []
+def: "A collection of values, each representing the radius of an individual detected bacterial food patch in a C. elegans assay, assuming patches are circular or near-circular. Unit: pixels or millimeters." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchRadii" xsd:string
 
@@ -989,7 +990,7 @@ property_value: codeName "analysisPatchRadii" xsd:string
 id: EMPTY:00000216
 name: Analysis patch total area
 namespace: empty_ontology
-def: "The sum of the areas of all detected bacterial food patches within the *C. elegans* assay arena, typically measured from the binary patch mask. Unit: square pixels or square millimeters." []
+def: "The sum of the areas of all detected bacterial food patches within the C. elegans assay arena, typically measured from the binary patch mask. Unit: square pixels or square millimeters." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchTotalArea" xsd:string
 
@@ -997,7 +998,7 @@ property_value: codeName "analysisPatchTotalArea" xsd:string
 id: EMPTY:00000217
 name: Analysis patch mean diameter
 namespace: empty_ontology
-def: "The average diameter calculated from all individual bacterial food patches detected on the *C. elegans* assay plate. This provides an empirical measure of actual patch size. Unit: millimeters or pixels." []
+def: "The average diameter calculated from all individual bacterial food patches detected on the C. elegans assay plate. This provides an empirical measure of actual patch size. Unit: millimeters or pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchMeanDiameter" xsd:string
 
@@ -1005,7 +1006,7 @@ property_value: codeName "analysisPatchMeanDiameter" xsd:string
 id: EMPTY:00000218
 name: Analysis patch diameter standard deviation
 namespace: empty_ontology
-def: "The standard deviation of the diameters of all individual bacterial food patches detected on the *C. elegans* assay plate, indicating the variability in patch size. Unit: millimeters or pixels." []
+def: "The standard deviation of the diameters of all individual bacterial food patches detected on the C. elegans assay plate, indicating the variability in patch size. Unit: millimeters or pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchDiameterSTD" xsd:string
 
@@ -1013,7 +1014,7 @@ property_value: codeName "analysisPatchDiameterSTD" xsd:string
 id: EMPTY:00000219
 name: Analysis patch distribution center coordinates
 namespace: empty_ontology
-def: "The (X,Y) pixel coordinates representing the geometric center of the overall spatial distribution of multiple bacterial food patches in a *C. elegans* assay, particularly relevant for grid layouts. Unit: pixels." []
+def: "The (X,Y) pixel coordinates representing the geometric center of the overall spatial distribution of multiple bacterial food patches in a C. elegans assay, particularly relevant for grid layouts. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchDistributionCenterCoordinates" xsd:string
 
@@ -1021,7 +1022,7 @@ property_value: codeName "analysisPatchDistributionCenterCoordinates" xsd:string
 id: EMPTY:00000220
 name: Analysis patch distribution standard deviation
 namespace: empty_ontology
-def: "A measure of the spatial spread or standard deviation of individual patch positions relative to the center of their overall distribution in a *C. elegans* assay. This quantifies the regularity of a patch grid. Unit: pixels or millimeters." []
+def: "A measure of the spatial spread or standard deviation of individual patch positions relative to the center of their overall distribution in a C. elegans assay. This quantifies the regularity of a patch grid. Unit: pixels or millimeters." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchDistributionSTD" xsd:string
 
@@ -1029,7 +1030,7 @@ property_value: codeName "analysisPatchDistributionSTD" xsd:string
 id: EMPTY:00000221
 name: Analysis patch mean spacing
 namespace: empty_ontology
-def: "The average center-to-center distance computed between adjacent bacterial food patches in a grid arrangement on a *C. elegans* assay plate, based on their detected locations. Unit: millimeters or pixels." []
+def: "The average center-to-center distance computed between adjacent bacterial food patches in a grid arrangement on a C. elegans assay plate, based on their detected locations. Unit: millimeters or pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchMeanSpacing" xsd:string
 
@@ -1037,7 +1038,7 @@ property_value: codeName "analysisPatchMeanSpacing" xsd:string
 id: EMPTY:00000222
 name: Analysis patch spacing standard deviation
 namespace: empty_ontology
-def: "The standard deviation of the center-to-center distances between adjacent bacterial food patches in a grid on a *C. elegans* assay plate, indicating variability in patch spacing. Unit: millimeters or pixels." []
+def: "The standard deviation of the center-to-center distances between adjacent bacterial food patches in a grid on a C. elegans assay plate, indicating variability in patch spacing. Unit: millimeters or pixels." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchSpacingSTD" xsd:string
 
@@ -1045,7 +1046,7 @@ property_value: codeName "analysisPatchSpacingSTD" xsd:string
 id: EMPTY:00000223
 name: Analysis patch circularity
 namespace: empty_ontology
-def: "A quantitative measure (typically 0 to 1) assessing how closely the shape of an individual detected bacterial food patch in a *C. elegans* assay conforms to a perfect circle. Can be averaged or reported for all patches." []
+def: "A quantitative measure (typically 0 to 1) assessing how closely the shape of an individual detected bacterial food patch in a C. elegans assay conforms to a perfect circle. Can be averaged or reported for all patches." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchCircularity" xsd:string
 
@@ -1053,7 +1054,7 @@ property_value: codeName "analysisPatchCircularity" xsd:string
 id: EMPTY:00000224
 name: Analysis combined patch mask
 namespace: empty_ontology
-def: "A single binary image mask representing the union of all individually detected bacterial food patch areas on the *C. elegans* assay plate. This mask defines all food-containing regions." []
+def: "A single binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisCombinedPatchMask" xsd:string
 
@@ -1061,7 +1062,7 @@ property_value: codeName "analysisCombinedPatchMask" xsd:string
 id: EMPTY:00000225
 name: Analysis closest patch identifier
 namespace: empty_ontology
-def: "An identifier (e.g., index, coordinates, or label) for the bacterial food patch that is currently closest to a *C. elegans*' position or a point of interest. This is dynamically determined during behavioral analysis." []
+def: "An identifier (e.g., index, coordinates, or label) for the bacterial food patch that is currently closest to a C. elegans' position or a point of interest. This is dynamically determined during behavioral analysis." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisClosestPatchIdentifier" xsd:string
 
@@ -1069,7 +1070,7 @@ property_value: codeName "analysisClosestPatchIdentifier" xsd:string
 id: EMPTY:00000226
 name: Analysis closest patch OD600
 namespace: empty_ontology
-def: "The nominal OD600 or relative density label associated with the bacterial food patch currently identified as being closest to a *C. elegans* subject. This is particularly relevant in assays featuring patches of multiple densities." []
+def: "The nominal OD600 or relative density label associated with the bacterial food patch currently identified as being closest to a C. elegans subject. This is particularly relevant in assays featuring patches of multiple densities." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisClosestPatchOD600" xsd:string
 
@@ -1077,7 +1078,7 @@ property_value: codeName "analysisClosestPatchOD600" xsd:string
 id: EMPTY:00000227
 name: Analysis patch detection method
 namespace: empty_ontology
-def: "A descriptor of the computational algorithm or manual procedure employed to identify and delineate the boundaries of bacterial food patches from the experimental images in a *C. elegans* assay." []
+def: "A descriptor of the computational algorithm or manual procedure employed to identify and delineate the boundaries of bacterial food patches from the experimental images in a C. elegans assay." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchDetectionMethod" xsd:string
 
@@ -1085,6 +1086,6 @@ property_value: codeName "analysisPatchDetectionMethod" xsd:string
 id: EMPTY:00000228
 name: Analysis patch registration quality
 namespace: empty_ontology
-def: "Parameters or a qualitative/quantitative metric assessing the accuracy and success of aligning the detected bacterial patch locations with the corresponding frames of the *C. elegans* behavioral video recording." []
+def: "Parameters or a qualitative/quantitative metric assessing the accuracy and success of aligning the detected bacterial patch locations with the corresponding frames of the C. elegans behavioral video recording." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "analysisPatchRegistrationQuality" xsd:string
