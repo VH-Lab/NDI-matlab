@@ -10,16 +10,21 @@ function datasetInformation = convertDocumentToDatasetInfo(document)
     %       DATASETINFO - struct containing the dataset information
 
     datasetInformation = document; % Initialize datasetInfo with the same structure
-    datasetInformation.ReleaseDate = datetime(datasetInformation.ReleaseDate);
-    Subjects = ndi.database.metadata_app.class.Subject.fromStruct(datasetInformation.Subjects);
-    datasetInformation.Subjects = Subjects;
+    if isfield(datasetInformation, 'ReleaseDate')
+        datasetInformation.ReleaseDate = datetime(datasetInformation.ReleaseDate);
+    end
+    if isfield(datasetInformation, 'Subjects')
+        datasetInformation.Subjects = ...
+            ndi.database.metadata_app.class.Subject.fromStruct(datasetInformation.Subjects);
+    end
+
     fieldsToConvert = {'Description', 'DataType', 'ExperimentalApproach', 'TechniquesEmployed', 'Author', 'Subjects'};
 
     for i = 1:numel(fieldsToConvert)
         fieldName = fieldsToConvert{i};
-        v = getfield(datasetInformation, fieldName);
-        for j = 1:numel(v)
-            if isfield(datasetInformation, fieldName)
+        if isfield(datasetInformation, fieldName)
+            v = datasetInformation.(fieldName);
+            for j = 1:numel(v)
                 % Check for nested fields and convert if they exist
                 if strcmp(fieldName, 'Author') && isfield(datasetInformation.Author(j), 'authorRole')
                     if ischar(datasetInformation.Author(j).authorRole)
