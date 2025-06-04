@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   run_tests:
-    name: Run tests (${{ MATLAB "lastest" }})
+    name: Run tests (MATLAB latest release)
     runs-on: ubuntu-latest
     steps:      
       - name: Check out repo
