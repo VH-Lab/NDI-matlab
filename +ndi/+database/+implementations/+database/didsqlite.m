@@ -86,7 +86,23 @@ classdef  didsqlite < ndi.database
         end; % do_search()
 
         function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
-            ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id,filename);
+            function download_file_from_cloud(destPath, sourcePath)
+                if startsWith(sourcePath, 'ndic://')
+                    cloudPath = split( extractAfter(sourcePath, 'ndic://'), "/" );
+                    cloudDatasetId = cloudPath{1};
+                    ndiFileUid = cloudPath{2};
+    
+                    [~, fileUrl, ~] = ndi.cloud.api.datasets.get_file_details(cloudDatasetId, ndiFileUid);
+                    websave(destPath, fileUrl);
+                else
+                    error('NDI:Didsqlite:UnsupportedFileLocationType', ...
+                        ['The source path "%s" uses an unsupported file location type. ' ...
+                        'Expected a path starting with "ndic://".'], ...
+                        sourcePath);
+                end
+            end
+            ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id, filename, ...
+                'customFileHandler', @download_file_from_cloud);
             ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
         end; % do_openbinarydoc()
 

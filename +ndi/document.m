@@ -176,9 +176,10 @@ classdef document
             %                          |   file is only deleted upon the later call to
             %                          |   ndi.database.add_doc(), not at the call to
             %                          |   ndi.document.add_file().
-            % location_type ('file' or | Can be 'file' or 'url'. By default, it is set
-            %   'url')                 |   to 'file' if LOCATION does not begin with
-            %                          |   'http://' or 'https://', and 'url' otherwise.
+            % location_type ('file',   | Can be 'file', 'url' or 'ndicloud'. By default, it 
+            %   'url' or 'ndicloud')   |   is set to 'file' if LOCATION does not begin with
+            %                          |   'http://', 'https://' or 'ndic://', and 'url' or 
+            %                          |   'ndicloud' otherwise.
             %
             ingest = NaN;
             delete_original = NaN;
@@ -197,13 +198,15 @@ classdef document
             % Step 2: detect the default property values, if necessary, and build the structure
             detected_location_type = 'file'; % default
             location = strip(location);  % remove whitespace
-            if (startsWith(location,'https://','IgnoreCase',true) | startsWith(location,'http://','IgnoreCase',true)),
+            if (startsWith(location,'https://','IgnoreCase',true) || startsWith(location,'http://','IgnoreCase',true)),
                 detected_location_type = 'url';
+            elseif startsWith(location, 'ndic://', 'IgnoreCase', true)
+                detected_location_type = 'ndicloud';
             end;
 
             if isnan(ingest), % assign default value
                 switch detected_location_type,
-                    case 'url',
+                    case {'url', 'ndicloud'}
                         ingest = 0;
                     case 'file',
                         ingest = 1;
@@ -213,7 +216,7 @@ classdef document
             end;
             if isnan(delete_original), % assign default value
                 switch detected_location_type,
-                    case 'url',
+                    case {'url', 'ndicloud'}
                         delete_original = 0;
                     case 'file',
                         delete_original = 1;
