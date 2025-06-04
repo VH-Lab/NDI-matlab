@@ -77,20 +77,24 @@ function isSuccess = authenticatedWithSecret(userName, interactionEnabled)
     if nargin < 2; interactionEnabled = matlab.lang.OnOffSwitchState.on; end
     isSuccess = false;
     if exist("isSecret", "file") % Introduced in R2024a
-        if isSecret("NDICloud:Email")
-            secretUserName = getSecret("NDICloud:Email");
-            secretPassword = getSecret("NDICloud:Password");
-            if ismissing(userName) || strcmp(secretUserName, userName)
-                isSuccess = login(secretUserName, secretPassword);
+        try
+            if isSecret("NDICloud:Email")
+                secretUserName = getSecret("NDICloud:Email");
+                secretPassword = getSecret("NDICloud:Password");
+                if ismissing(userName) || strcmp(secretUserName, userName)
+                    isSuccess = login(secretUserName, secretPassword);
+                else
+                    isSuccess = false;
+                end
             else
-                isSuccess = false;
-            end
-        else
-            if getpref('NDICloud', 'UseSecretVaultForCredentials', true)
-                if interactionEnabled
-                    isSuccess = promptAddCredentialsToVault();
+                if getpref('NDICloud', 'UseSecretVaultForCredentials', true)
+                    if interactionEnabled
+                        isSuccess = promptAddCredentialsToVault();
+                    end
                 end
             end
+        catch ME                
+            warning('Could not get credentials from MATLAB Vault. Reason:\n%s', ME.message)
         end
     end
 end
