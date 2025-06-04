@@ -15,11 +15,13 @@ dataPath = fullfile(dataParentDir,'haley');
 fileList = vlt.file.manifest(dataPath);
 fileList(~contains(fileList,'.mat')) = [];
 
-% Process tables
+%% Process tables (experimentInfo, data, encounter)
 for i = 1:numel(fileList)
     dataTable = load(fullfile(dataParentDir,fileList{i}));
     fields = fieldnames(dataTable);
     dataTable = dataTable.(fields{1});
+
+    
 end
 
 end
