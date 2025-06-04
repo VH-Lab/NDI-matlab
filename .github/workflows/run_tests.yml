@@ -75,7 +75,6 @@ jobs:
 
       - name: Upload code coverage report to Codecov
         uses: codecov/codecov-action@v4
-        if: ${{ secrets.CODECOV_TOKEN != '' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: docs/reports/codecoverage.xml
