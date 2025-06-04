@@ -183,9 +183,6 @@ classdef tableDocMaker < handle
             doc = ndi.document('ontologyTableRow','ontologyTableRow',ontologyTableRow) + ...
                 obj.session.newdocument();
 
-            % Add document to database
-            obj.session.database_add(doc);
-
         end % createOntologyTableRowDoc
 
         function docs = table2ontologyTableRowDocs(obj, dataTable, identifyingVariables, options)
@@ -230,6 +227,8 @@ classdef tableDocMaker < handle
             progressBar = progressBar.addBar('Label','Creating Ontology Table Row Document(s)','Tag','ontologyTableRow');
 
             docs = cell(height(dataTable),1); % Initialize output cell array
+            onePercent = ceil(height(dataTable)/100);
+            
             for i = 1:height(dataTable)
 
                 % Create onotologyTableRowDoc
@@ -237,8 +236,14 @@ classdef tableDocMaker < handle
                         identifyingVariables,'Overwrite',options.Overwrite);
 
                 % Update progress bar
-                progressBar = progressBar.updateBar('ontologyTableRow',i/height(dataTable));
+                if mod(i,onePercent)==1 % update every 1% so it doesn't slow down the process too much
+                    progressBar = progressBar.updateBar('ontologyTableRow',i/height(dataTable));
+                end
             end
+
+            % Add documents to the database all at once, will be a little
+            % faster
+            obj.session.database_add(docs);         
 
         end % table2ontologyTableRowDocs
 

@@ -132,11 +132,11 @@ property_value: codeName "elevatedPlusMazeOpenArmTotalTime" xsd:string
 
 [Term]
 id: EMPTY:00000109
-name: Elevated Plus Maze: open arm total - percent time in 5 minutes
+name: Elevated Plus Maze: open arm total - percent time during test duration
 namespace: empty_ontology
-def: "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). Unit of measure: %" []
+def: "In the Elevated Plus Maze task, this represents the percentage of the total test duration that the animal spends in any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). Unit of measure: %" []
 is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalPercentTimeIn5Minutes" xsd:string
+property_value: codeName "elevatedPlusMazeOpenArmTotalPercentTimeDuringTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000110
@@ -284,11 +284,11 @@ property_value: codeName "elevatedPlusMazeClosedArmTotalTime" xsd:string
 
 [Term]
 id: EMPTY:00000128
-name: Elevated Plus Maze: closed arm total - percent time in 5 minutes
+name: Elevated Plus Maze: closed arm total - percent time during test duration
 namespace: empty_ontology
-def: "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Unit of measure: %" []
+def: "In the Elevated Plus Maze task, this represents the percentage of the total test duration that the animal spends in any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Unit of measure: %" []
 is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalPercentTimeIn5Minutes" xsd:string
+property_value: codeName "elevatedPlusMazeClosedArmTotalPercentTimeDuringTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000129
@@ -388,11 +388,11 @@ property_value: codeName "elevatedPlusMazeCenterTime" xsd:string
 
 [Term]
 id: EMPTY:00000141
-name: Elevated Plus Maze: center - percent time in 5 minutes
+name: Elevated Plus Maze: center - percent time during test duration
 namespace: empty_ontology
-def: "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in the user-defined 'Center' zone of the maze. Unit of measure: %" []
+def: "In the Elevated Plus Maze task, this represents the percentage of the total test duration that the animal spends in the user-defined 'Center' zone of the maze. Unit of measure: %" []
 is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterPercentTimeIn5Minutes" xsd:string
+property_value: codeName "elevatedPlusMazeCenterPercentTimeDuringTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000142
@@ -568,6 +568,15 @@ namespace: empty_ontology
 def: "A string identifier indicating the specific experimental phase, session, or test condition of the Fear-Potentiated Startle (FPS) paradigm to which the data belongs. Examples derived from the manuscript's protocol include 'chamber and startle habituation', 'baseline pre-shock test', 'fear conditioning', 'cued fear recall in context B', 'contextual fear recall in context A', or specific extinction test sessions[cite: 1]. This often corresponds to the name of the source data sheet (e.g., 'Pre-test 1', 'Cue test 3')." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "fpsExperimentalPhaseTestName" xsd:string
+
+[Term]
+id: EMPTY:00000164
+name: Elevated Plus Maze: test duration
+namespace: empty_ontology
+def: "In the Elevated Plus Maze task, this is the time of the total test duration in seconds'). Unit of measure: seconds" []
+is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
+property_value: codeName "elevatedPlusMazeTestDuration" xsd:string
+
 
 [Term]
 id: EMPTY:30000000
