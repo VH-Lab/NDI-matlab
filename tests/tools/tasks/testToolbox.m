@@ -1,5 +1,5 @@
 function testToolbox(varargin)
-    nditools.installMatBox()
+    %nditools.installMatBox()
     if isempty(userpath)
         userFolder = fullfile(pwd, 'matlab-userdata');
         if ~isfolder(userFolder)
@@ -11,7 +11,7 @@ function testToolbox(varargin)
     projectRootDir = nditools.projectdir();
     matbox.installRequirements(fullfile(projectRootDir, 'tests'))
     matbox.tasks.testToolbox(projectRootDir, ...
-        "SourceFolderName", "", ...
-        "ToolsFolderName", "", ...
+        "SourceFolderName", "+ndi", ...
+        "ToolsFolderName", "tests", ...
         varargin{:})
 end
