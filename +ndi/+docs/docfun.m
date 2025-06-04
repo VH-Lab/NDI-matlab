@@ -47,7 +47,7 @@ function mustBeNdiDocuments(ndiDocuments)
             'All elements of cell array must be of type `ndi.document`')
     else
         error('NDI:Docfun:NotNDIDocuments', ...
-            ['Expected an array or a cell array of ndi.documents, ', ...
-            'instead the was a `%s`'], class(ndiDocuments))
+            ['Expected an array or cell array of `ndi.document` objects, ', ...
+            'but received a value of type `%s`.'], class(ndiDocuments));
     end
 end
