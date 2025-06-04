@@ -306,12 +306,21 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % Returns the epoch table for NDI_DAQSYSTEM_OBJ
             %
             et = ndi_daqsystem_obj.filenavigator.epochtable;
+            currentProgBar = ndi.gui.component.ProgressBarWindow('Setting up daq.system','GrabMostRecent',true);
+            ProgBarUuid = did.ido.unique_id();
+            currentProgBar.addBar('Label','Loading epochprobemaps...','Tag',ProgBarUuid,'Auto',true); % Add a bar that will autoclose
             for i=1:numel(et),
                 % need slight adjustment from filenavigator epochtable
                 et(i).epochprobemap = getepochprobemap(ndi_daqsystem_obj,et(i).epoch_number);
                 et(i).epoch_clock = epochclock(ndi_daqsystem_obj, et(i).epoch_number);
                 et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
+                if mod(i,10)==0 % only update every tenth so we don't slow it down
+                    currentProgBar.updateBar(ProgBarUuid,i/numel(et)); % Update the bar's progress
+                end
             end
+            currentProgBar.updateBar(ProgBarUuid,1); % Update the bar's progress
+            currentProgBar.deleteIfNoOpenBars();
+
         end % epochtable
 
         function ecfname = epochprobemapfilename(ndi_daqsystem_obj, epochnumber)

@@ -51,6 +51,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %                   progress bar window with the same title. 
             %                   If false (default), returns the handle to 
             %                   the existing window.
+            %       options.GrabMostRecent - If true, ignores title and
+            %                   returns the most recently-created window.
+            %                   If there is no window, then it makes a new
+            %                   window.
             %
             %   Outputs:
             %       app - The handle to the created or existing app instance.
@@ -59,13 +63,22 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             arguments
                 title (1,:) char = ''
                 options.Overwrite logical = false
+                options.GrabMostRecent logical = false
             end
 
-            % Find existing figures with the same title and tag
-            openFigs = findall(groot,'Type','figure');
+            % Find existing figure with that tag
+            openFigs = findall(groot,'Type','figure','tag','progressbar');
             if ~isempty(openFigs)
-                ind = strcmpi({openFigs.Name},title) & ...
-                    strcmpi({openFigs.Tag},'progressbar');
+                if options.GrabMostRecent
+                    app = guidata(openFigs(end)); % we've got it
+                    if isvalid(app)
+                        figure(app.ProgressFigure);
+                        return;
+                    end
+                end
+            end
+            if ~isempty(openFigs)
+                ind = strcmpi({openFigs.Name},title);
 
                 if any(ind)
                     % If overwriting, close matching progress bar
@@ -90,6 +103,8 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                     end
                 end
             end
+
+            %create a new window now
 
             % Add listeners
             app.ProgressFigureListener = addlistener(app,'ProgressFigure','PostSet',@app.handleAppChange);
@@ -394,14 +409,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.ProgressGrid.RowHeight);
             app = app.setFigureSize(sum(rowHeight));
 
-            % Throw error if terminated in the middle of task
+            % Throw warning if terminated in the middle of task
             if app.ProgressBars(barNum).Progress < 1
                 if strcmpi(state,'Button')
-                    error('ProgressBarWindow:UserTermination',...
+                    warning('ProgressBarWindow:UserTermination',...
                         'Execution of task %s terminated by user.',...
                         app.ProgressBars(barNum).Tag)
                 elseif strcmpi(state,'Timeout')
-                    error('ProgressBarWindow:AutoCloseOnTimeout',...
+                    warning('ProgressBarWindow:AutoCloseOnTimeout',...
                         'Execution of task %s terminated due to inactivity.',...
                         app.ProgressBars(barNum).Tag)
                 elseif strcmpi(state,'Open')
@@ -677,5 +692,21 @@ classdef ProgressBarWindow < matlab.apps.AppBase
 
         end % HANDLEAPPCHANGE
 
+        function deleteIfNoOpenBars(app)
+            %deleteIfNoOpenBars - delete the app if there are no open bars
+            %   Deletes (closes the window) if all bars are 'Closed'
+
+            doDelete = false;
+            if numel(app.ProgressBars) == 0
+                doDelete = true;
+            elseif all(strcmpi({app.ProgressBars.State},'Closed'))
+                doDelete = true;
+            end
+
+            if doDelete
+                close(app.ProgressFigure);
+                delete(app);
+            end
+        end
     end
 end
