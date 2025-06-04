@@ -136,19 +136,25 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     if isfield(appUserData, 'RelatedPublication')
         datasetVersion.relatedPublication = cellfun(@(value) ...
             openminds.core.DOI('identifier', addDoiPrefix(value)), ...
-            {appUserData.RelatedPublication.DOI} );
+            {appUserData.RelatedPublication.doi} );
     end
 
-    datasetVersion.dataType = cellfun(@(value) ...
-        openminds.controlledterms.SemanticDataType(value), ...
-        appUserData.DataType );
+    if ~isempty(datasetVersion.dataType)
+        datasetVersion.dataType = cellfun(@(value) ...
+            openminds.controlledterms.SemanticDataType(value), ...
+            ensureCellStr(appUserData.DataType) );
+    end
 
-    datasetVersion.experimentalApproach = cellfun(@(value) ...
+    if ~isempty(datasetVersion.experimentalApproach)
+        datasetVersion.experimentalApproach = cellfun(@(value) ...
         openminds.controlledterms.ExperimentalApproach(value), ...
-        appUserData.ExperimentalApproach );
+        ensureCellStr(appUserData.ExperimentalApproach) );
+    end
 
-    datasetVersion.technique = cellfun(@(value) convertTechnique(value), ...
-        appUserData.TechniquesEmployed, 'UniformOutput', false );
+    if ~isempty(datasetVersion.technique)
+        datasetVersion.technique = cellfun(@(value) convertTechnique(value), ...
+            ensureCellStr(appUserData.TechniquesEmployed), 'UniformOutput', false );
+    end
 
     subjectMap = containers.Map;
 
@@ -166,8 +172,12 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
                 currentSubject.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
             end
     
-            speciesName = strrep(subjectItem.SpeciesList.Name, ' ', '');
-            isMatchedInstance = strcmpi (openminds.controlledterms.Species.CONTROLLED_INSTANCES, speciesName);
+            speciesName = ensureCellStr(subjectItem.SpeciesList);
+            if ~isempty(speciesName)
+                speciesName = speciesName{1};
+            end
+            speciesCatalog = ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog('Species'); 
+            isMatchedInstance = strcmpi ({speciesCatalog(:).name}', speciesName);
             if any( isMatchedInstance )
                 speciesName = openminds.controlledterms.Species.CONTROLLED_INSTANCES(isMatchedInstance);
                 speciesInstance = openminds.controlledterms.Species(speciesName);
@@ -175,7 +185,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
                 speciesInstance = subjectItem.SpeciesList.convertToOpenMinds();
             end
     
-            if isempty( subjectItem.StrainList )
+            if isempty( subjectItem.StrainList ) || isequal(subjectItem.StrainList, {''})
                 currentSubject.species = speciesInstance;
             else
                 strainName = subjectItem.StrainList.Name;
@@ -399,5 +409,75 @@ function modifiedValue = addOrcidUriPrefix(value)
         modifiedValue = ['https://orcid.org/' value];
     else
         modifiedValue = value;
+    end
+end
+
+
+
+function cellStrArray = ensureCellStr(fieldValue)
+    % ensureCellStr Converts various input types to a cell array of char vectors.
+    % Handles char, string (scalar or array), and cell arrays.
+    % Empty inputs of these types result in an empty cell array {}.
+    % Unexpected non-empty types result in an empty cell array and a warning.
+
+    if ischar(fieldValue)
+        if isempty(fieldValue)
+            cellStrArray = {}; % Empty char becomes empty cell
+        else
+            cellStrArray = {fieldValue}; % Non-empty char becomes 1x1 cell
+        end
+    elseif isstring(fieldValue)
+        if any(ismissing(fieldValue)) % If any element is <missing>
+            % Create cell array, then replace <missing> with empty char
+            tempCell = cellstr(fieldValue);
+            tempCell(ismissing(fieldValue)) = {''}; % Replace <missing> strings with empty char
+            cellStrArray = tempCell;
+            if all(cellfun('isempty', cellStrArray)) % If all were missing and are now empty chars
+                cellStrArray = {}; % Treat as completely empty
+            end
+        elseif isempty(fieldValue) % Handle empty string array (0x0 or 0xN string)
+            cellStrArray = {};
+        else
+            cellStrArray = cellstr(fieldValue); % Convert non-empty, non-missing string array to cell
+        end
+    elseif iscell(fieldValue)
+        if isempty(fieldValue)
+            cellStrArray = {}; % Empty cell remains empty cell
+        else
+            % Ensure all elements are char vectors if the cell is not empty
+            cellStrArray = cell(size(fieldValue)); % Preallocate with original size
+            for i = 1:numel(fieldValue)
+                if ischar(fieldValue{i})
+                    cellStrArray{i} = fieldValue{i};
+                elseif isstring(fieldValue{i}) && (numel(fieldValue{i}) > 1 || (numel(fieldValue{i})==1 && fieldValue{i}~="")) % Handle string arrays or non-empty scalar strings within cells
+                    cellStrArray{i} = char(fieldValue{i});
+                elseif isstring(fieldValue{i}) && (numel(fieldValue{i})==1 && fieldValue{i}=="") % empty scalar string
+                     cellStrArray{i} = '';
+                elseif isnumeric(fieldValue{i}) || islogical(fieldValue{i})
+                    cellStrArray{i} = char(string(fieldValue{i})); % Convert to string then char
+                elseif ismissing(fieldValue{i}) % Handle <missing> within a cell
+                    cellStrArray{i} = '';
+                else % Other types within cells become empty char with a warning
+                    warning('ensureCellStr:UnsupportedCellElement', ...
+                            'Cell element of type %s at index %d converted to empty char.', class(fieldValue{i}), i);
+                    cellStrArray{i} = '';
+                end
+            end
+        end
+    elseif isempty(fieldValue) % Catches other empty types like [] double, etc.
+        cellStrArray = {};
+    else % Handle other unexpected non-empty types
+        warning('ensureCellStr:UnexpectedInputType', ...
+                'Input value of type %s was not char, string, or cell. Returning empty cell array.', class(fieldValue));
+        cellStrArray = {};
+    end
+
+    % Ensure the output is a row vector if it's not already empty
+    if ~isempty(cellStrArray) && ~isrow(cellStrArray) && iscolumn(cellStrArray)
+        cellStrArray = cellStrArray'; % Transpose column cell to row cell
+    elseif ~isempty(cellStrArray) && ~isvector(cellStrArray)
+        warning('ensureCellStr:OutputCellMatrix',...
+                'Resulting cell array is a matrix. Flattening to a row vector. Review source data for field.');
+        cellStrArray = reshape(cellStrArray, 1, []); % Flatten to row vector
     end
 end

@@ -157,6 +157,12 @@ function finalDsStruct = buildDatasetInformationStructFromApp(app)
     fprintf('DEBUG: buildDatasetInformationStructFromApp: Conversion complete. Final struct ready.\n');
     % disp(finalDsStruct);
 
+    [b,errorStruct] = ndi.util.isAlphaNumericStruct(finalDsStruct);
+
+    if ~b
+        errorStruct(1),
+        error(['Output structure has cell arrays in it']);
+    end;
 end
 
 function S_out = initializeDefaultField(S_in, propertyName)

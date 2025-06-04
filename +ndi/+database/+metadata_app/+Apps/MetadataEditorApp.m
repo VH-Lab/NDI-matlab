@@ -178,31 +178,31 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 case app.DatasetDetailsTab.Title 
                     if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && ismethod(app.DatasetDetailsGUI_Instance, 'checkRequiredFields')
                         missingFromSub = app.DatasetDetailsGUI_Instance.checkRequiredFields();
-                        missingRequiredField = [missingRequiredField, missingFromSub];
+                        missingRequiredField = [missingRequiredField; missingFromSub(:)]; % MODIFIED
                     end
                 case app.ExperimentDetailsTab.Title 
                     if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && ismethod(app.ExperimentalDetailsGUI_Instance, 'checkRequiredFields')
                          missingFromSub = app.ExperimentalDetailsGUI_Instance.checkRequiredFields();
-                         missingRequiredField = [missingRequiredField, missingFromSub];
+                         missingRequiredField = [missingRequiredField; missingFromSub(:)]; % MODIFIED
                     end
                 case app.SubjectInfoTab.Title
                    if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'checkRequiredFields')
                        missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields();
-                       missingRequiredField = [missingRequiredField, missingFromSub];
+                       missingRequiredField = [missingRequiredField; missingFromSub(:)]; % MODIFIED
                    end
                 case {'', app.SaveTab.Title} 
                     fieldsToCheck = string( fieldnames(requiredFields)' );
                     if isprop(app, 'DatasetDetailsGUI_Instance') && ~isempty(app.DatasetDetailsGUI_Instance) && isvalid(app.DatasetDetailsGUI_Instance) && ismethod(app.DatasetDetailsGUI_Instance, 'checkRequiredFields')
                         missingFromSub = app.DatasetDetailsGUI_Instance.checkRequiredFields();
-                        missingRequiredField = [missingRequiredField, missingFromSub];
+                        missingRequiredField = [missingRequiredField; missingFromSub(:)]; % MODIFIED
                     end
                     if isprop(app, 'ExperimentalDetailsGUI_Instance') && ~isempty(app.ExperimentalDetailsGUI_Instance) && isvalid(app.ExperimentalDetailsGUI_Instance) && ismethod(app.ExperimentalDetailsGUI_Instance, 'checkRequiredFields')
                          missingFromSub = app.ExperimentalDetailsGUI_Instance.checkRequiredFields();
-                         missingRequiredField = [missingRequiredField, missingFromSub];
+                         missingRequiredField = [missingRequiredField; missingFromSub(:)]; % MODIFIED
                     end
                     if isprop(app, 'SubjectInfoGUI_Instance') && ~isempty(app.SubjectInfoGUI_Instance) && isvalid(app.SubjectInfoGUI_Instance) && ismethod(app.SubjectInfoGUI_Instance, 'checkRequiredFields')
                        missingFromSub = app.SubjectInfoGUI_Instance.checkRequiredFields();
-                       missingRequiredField = [missingRequiredField, missingFromSub];
+                       missingRequiredField = [missingRequiredField; missingFromSub(:)]; % MODIFIED
                    end
                 otherwise
                     fprintf('DEBUG (checkRequiredFields): Tab "%s" has no specific fields in main app switch.\n', currentTabName);
@@ -227,8 +227,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                         end
                         if isempty(value)
                             fieldTitle = app.getFieldTitle(iField);
-                            missingRequiredField(end+1) = fieldTitle; 
-                            app.highlightLabelForRequiredField(componentFieldName);
+                            missingRequiredField(end+1,1) = fieldTitle; % Ensure column append
                         else
                             app.resetLabelForRequiredField(componentFieldName);
                         end
@@ -239,11 +238,15 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             if isequal(currentTabName, "") || isequal(currentTabName, app.SaveTab.Title)
                 if isempty(app.AuthorData.AuthorList) || ...
                    all(arrayfun(@(x) isempty(strtrim(x.givenName)) && isempty(strtrim(x.familyName)), app.AuthorData.AuthorList))
-                    missingRequiredField(end+1) = "At least one Author with a name";
+                    missingRequiredField(end+1,1) = "At least one Author with a name"; % Ensure column append
                 end
             end
             
             missingRequiredField = unique(missingRequiredField, 'stable');
+            if isempty(missingRequiredField)
+                missingRequiredField = string.empty(0,1); % Ensure consistent empty shape
+            end
+
             if isempty(missingRequiredField)
                 fprintf('DEBUG (checkRequiredFields): Final missing fields: None\n');
             else
@@ -570,6 +573,78 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             end
         end
         
+        % START - Added/Restored Callbacks
+        % Button pushed function: GetStartedButton
+        function GetStartedButtonPushed(app, event)
+            app.changeTab(app.DatasetOverviewTab);
+        end
+
+        % Value changed function: DatasetBranchTitleEditField
+        function DatasetBranchTitleValueChanged(app, event)
+            value = app.DatasetBranchTitleEditField.Value;
+            app.DatasetInformationStruct.DatasetFullName = value;
+            
+            if ~isempty(value)
+                app.resetLabelForRequiredField("DatasetBranchTitleEditField")
+            end
+
+            % Only update/generate short name if input field is empty
+            if isempty(app.DatasetShortNameEditField.Value)
+                shortNameValue = ndi.database.metadata_app.fun.generateShortName(value, 3);
+                app.DatasetShortNameEditField.Value = shortNameValue; % Assign generated name to UI
+                app.DatasetInformationStruct.DatasetShortName = shortNameValue; % Assign to struct
+                if ~isempty(shortNameValue) % Check if generated short name is not empty
+                    app.resetLabelForRequiredField("DatasetShortNameEditField")
+                end
+            end
+            
+            app.saveDatasetInformationStruct();
+        end
+
+        % Value changed function: DatasetShortNameEditField
+        function DatasetShortNameValueChanged(app, event)
+            value = event.Value;
+            if ~isempty(value)
+                app.resetLabelForRequiredField("DatasetShortNameEditField")
+            end
+            app.DatasetInformationStruct.DatasetShortName = value;
+            app.saveDatasetInformationStruct();
+        end
+
+        % Value changed function: AbstractTextArea
+        function AbstractValueChanged(app, event)
+            value = event.Value;
+            if ~isempty(value)
+                app.resetLabelForRequiredField("AbstractTextArea")
+            end
+            app.DatasetInformationStruct.Description = value;
+            app.saveDatasetInformationStruct();
+        end
+
+        % Button pushed function: SaveButton
+        function SaveButtonPushed(app, event) % Added event argument
+            currentStructToConvert = ndi.database.metadata_app.fun.buildDatasetInformationStructFromApp(app);
+            missingRequiredField = app.checkRequiredFields("");
+            if ~isempty(missingRequiredField)
+                app.alertRequiredFieldsMissing(missingRequiredField)
+                return
+            end
+            ndi.database.metadata_app.fun.save_dataset_docs(app.Dataset, app.Dataset.id(), currentStructToConvert);
+            app.inform('Dataset metadata saved successfully.', 'Save Successful');
+        end
+
+
+        % Value changed function: DatasetCommentsTextArea
+        function CommentsDetailsValueChanged(app, event)
+            value = event.Value;
+            if ~isempty(value)
+                app.resetLabelForRequiredField("DatasetCommentsTextArea")
+            end
+            app.DatasetInformationStruct.Comments = value;
+            app.saveDatasetInformationStruct();
+        end
+        % END - Added/Restored Callbacks
+
         function TabGroupSelectionChanged(app, event)
             app.onTabChanged();
         end
