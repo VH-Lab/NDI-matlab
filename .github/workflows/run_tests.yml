@@ -44,7 +44,7 @@ jobs:
       - name: Check code and upload report
         uses: ehennestad/matbox/.github/actions/check-code@add-reusable-test-workflow
         with:
-          code_directory: +ndi
+          code_directory: '.'
 
       - name: Run tests
         uses: matlab-actions/run-command@v2
@@ -53,6 +53,7 @@ jobs:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            addpath('.')
             addpath(genpath( "tests" ));
             testToolbox()
 
