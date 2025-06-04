@@ -53,6 +53,7 @@ jobs:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath('.')
             addpath(genpath( "tests" ));
             testToolbox()
