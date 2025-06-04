@@ -1,0 +1,25 @@
+{
+	"classname":	"dataset_remote",
+	"superclasses": [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"dataset_remote": [
+		{
+			"name": "dataset_id",
+			"type": "char",
+			"default_value": "",
+			"parameters": 24, 
+			"queryable": 1,
+			"documentation": "Dataset ID for dataset_remote document class."
+		},
+		{
+			"name": "organization_id",
+			"type": "char",
+			"default_value": "",
+			"parameters": 24, 
+			"queryable": 1,
+			"documentation": "Organization ID for dataset_remote document class."
+		}
+	]
+}
+

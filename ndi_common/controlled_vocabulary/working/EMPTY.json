@@ -1,0 +1,352 @@
+[
+  {
+    "identifier": "EMPTY:00000090",
+    "Name": "Behavioral measurement",
+    "Definition": "A type of scientific measurement that quantifies an observable action, reaction, or pattern of conduct exhibited by an organism. Behavioral measurements are typically used in biological, psychological, and ethological studies to assess an organism's response to internal states, external stimuli, or experimental manipulations. These can range from simple reflexes to complex social interactions and are obtained through methods including direct observation, video tracking, or specialized automated apparatuses.",
+    "is_a": []
+  },
+  {
+    "identifier": "EMPTY:00000091",
+    "Name": "Elevated Plus Maze measurement",
+    "Definition": "A specific category of behavioral measurement obtained from the Elevated Plus Maze (EPM) apparatus, an assay widely used in neuroscience and pharmacology to study anxiety-like behavior and the effects of anxiolytic or anxiogenic compounds in laboratory animals, typically rodents. These measurements quantify various aspects of the animal's exploratory activity, spatial preference (e.g., for open vs. enclosed arms), and specific behaviors (e.g., entries, time spent in zones, freezing) within the maze, providing insights into its emotional state and response to perceived risk.",
+    "is_a": ["Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000100",
+    "Name": "Elevated Plus Maze: open arm (north) - entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000101",
+    "Name": "Elevated Plus Maze: open arm (south) - entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (South)'. The 'Open Arm (South)' is one of the two open arms, distinguished by its assigned 'south' orientation or designation in the experimental setup.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000102",
+    "Name": "Elevated Plus Maze: open arm total entries",
+    "Definition": "In the Elevated Plus Maze task, this represents the total number of times the animal's body (typically defined by its center point or a significant portion) fully enters the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). It is a common measure of exploration and anxiety.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000103",
+    "Name": "Elevated Plus Maze: open arm (north) - head entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's head (specifically tracked by the software) enters the user-defined 'Open Arm (North)' zone, irrespective of full body entry. This can indicate risk assessment or tentative exploration of the arm designated as 'north'.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000104",
+    "Name": "Elevated Plus Maze: open arm (south) - head entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's head (specifically tracked by the software) enters the user-defined 'Open Arm (South)' zone, irrespective of full body entry, often reflecting cautious exploration of the open arm designated as 'south'.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000105",
+    "Name": "Elevated Plus Maze: open arm total head entries",
+    "Definition": "In the Elevated Plus Maze task, this is the total number of times the animal's head (specifically tracked by the software) enters any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'), considered an indicator of risk-assessment behavior.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000106",
+    "Name": "Elevated Plus Maze: open arm (north) - time",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Open Arm (North)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000107",
+    "Name": "Elevated Plus Maze: open arm (south) - time",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Open Arm (South)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000108",
+    "Name": "Elevated Plus Maze: open arm total time",
+    "Definition": "In the Elevated Plus Maze task, this is the cumulative total duration the animal's body spends within any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). Less time is generally indicative of higher anxiety.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000109",
+    "Name": "Elevated Plus Maze: open arm total - percent time in 5 minutes",
+    "Definition": "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)').",
+    "Unit of measure": "%",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000110",
+    "Name": "Elevated Plus Maze: open arm (north) - latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Open Arm (North)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000111",
+    "Name": "Elevated Plus Maze: open arm (south) - latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Open Arm (South)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000112",
+    "Name": "Elevated Plus Maze: open arm total latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'). Longer latencies often suggest higher anxiety.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000113",
+    "Name": "Elevated Plus Maze: open arm (north) - time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Open Arm (North)' zone, as detected by the tracking software.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000114",
+    "Name": "Elevated Plus Maze: open arm (south) - time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Open Arm (South)' zone, as detected by the tracking software.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000115",
+    "Name": "Elevated Plus Maze: open arm total time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this is the cumulative duration the animal spends actively moving towards any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'), reflecting approach motivation.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000116",
+    "Name": "Elevated Plus Maze: open arm (north) - time freezing",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior (a state of immobility except for respiratory movements) while within the user-defined 'Open Arm (North)' zone. Freezing is a common fear response.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000117",
+    "Name": "Elevated Plus Maze: open arm (south) - time freezing",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Open Arm (South)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000118",
+    "Name": "Elevated Plus Maze: open arm total time freezing",
+    "Definition": "In the Elevated Plus Maze task, this is the cumulative duration the animal exhibits freezing behavior while within any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'), indicating fear or anxiety.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000119",
+    "Name": "Elevated Plus Maze: closed arm (west) - entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Closed Arm (West)' zone, representing the enclosed arm designated as 'west'.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000120",
+    "Name": "Elevated Plus Maze: closed arm (east) - entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Closed Arm (East)' zone, representing the enclosed arm designated as 'east'.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000121",
+    "Name": "Elevated Plus Maze: closed arm total entries",
+    "Definition": "In the Elevated Plus Maze task, this is the total number of times the animal's body fully enters any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). It is often used as an indicator of general locomotor activity.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000122",
+    "Name": "Elevated Plus Maze: closed arm (west) - head entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Closed Arm (West)' zone.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000123",
+    "Name": "Elevated Plus Maze: closed arm (east) - head entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Closed Arm (East)' zone.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000124",
+    "Name": "Elevated Plus Maze: closed arm total head entries",
+    "Definition": "In the Elevated Plus Maze task, this is the total number of times the animal's head enters any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)').",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000125",
+    "Name": "Elevated Plus Maze: closed arm (west) - time",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Closed Arm (West)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000126",
+    "Name": "Elevated Plus Maze: closed arm (east) - time",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Closed Arm (East)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000127",
+    "Name": "Elevated Plus Maze: closed arm total time",
+    "Definition": "In the Elevated Plus Maze task, this is the cumulative total duration the animal's body spends within any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Animals typically spend more time in these 'safer' areas.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000128",
+    "Name": "Elevated Plus Maze: closed arm total - percent time in 5 minutes",
+    "Definition": "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)').",
+    "Unit of measure": "%",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000129",
+    "Name": "Elevated Plus Maze: closed arm (west) - latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Closed Arm (West)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000130",
+    "Name": "Elevated Plus Maze: closed arm (east) - latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Closed Arm (East)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000131",
+    "Name": "Elevated Plus Maze: closed arm total latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)').",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000132",
+    "Name": "Elevated Plus Maze: closed arm (west) - time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Closed Arm (West)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000133",
+    "Name": "Elevated Plus Maze: closed arm (east) - time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Closed Arm (East)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000134",
+    "Name": "Elevated Plus Maze: closed arm total time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this is the cumulative duration the animal spends actively moving towards any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)').",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000135",
+    "Name": "Elevated Plus Maze: closed arm (west) - time freezing",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Closed Arm (West)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000136",
+    "Name": "Elevated Plus Maze: closed arm (east) - time freezing",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Closed Arm (East)' zone.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000137",
+    "Name": "Elevated Plus Maze: closed arm total time freezing",
+    "Definition": "In the Elevated Plus Maze task, this is the cumulative duration the animal exhibits freezing behavior while within any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)').",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000138",
+    "Name": "Elevated Plus Maze: center - entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Center' zone of the maze, typically from one of the arms. The center zone is the area where all four arms meet.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000139",
+    "Name": "Elevated Plus Maze: center - head entries",
+    "Definition": "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Center' zone of the maze.",
+    "Unit of measure": "count",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000140",
+    "Name": "Elevated Plus Maze: center - time",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Center' zone. Time in the center can indicate decision-making or risk assessment.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000141",
+    "Name": "Elevated Plus Maze: center - percent time in 5 minutes",
+    "Definition": "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in the user-defined 'Center' zone of the maze.",
+    "Unit of measure": "%",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000142",
+    "Name": "Elevated Plus Maze: center - latency to first entry",
+    "Definition": "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Center' zone. If the animal starts in the center, this value may be zero or not applicable.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000143",
+    "Name": "Elevated Plus Maze: center - time moving towards",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Center' zone of the maze (e.g., from an arm).",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000144",
+    "Name": "Elevated Plus Maze: center - time freezing",
+    "Definition": "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Center' zone of the maze. Freezing in this relatively exposed area can indicate high anxiety.",
+    "Unit of measure": "seconds",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000145",
+    "Name": "Elevated Plus Maze: test identifier",
+    "Definition": "For an Elevated Plus Maze experiment, this is a unique code or descriptive name assigned to identify a specific experimental session, trial, or a particular set of recorded data. It helps in organizing and referencing data from distinct observations.",
+    "Unit of measure": "N/A (text/identifier)",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000146",
+    "Name": "Elevated Plus Maze: animal identifier",
+    "Definition": "For an Elevated Plus Maze experiment, this is a unique code or label assigned to an individual animal subject. This allows for tracking and associating behavioral data with specific animals, along with their characteristics like strain, sex, or age.",
+    "Unit of measure": "N/A (text/identifier)",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  },
+  {
+    "identifier": "EMPTY:00000147",
+    "Name": "Elevated Plus Maze: treatment group",
+    "Definition": "For an Elevated Plus Maze experiment, this describes the experimental condition or group to which an animal belongs (e.g., control, specific drug administration, genetic modification). It is used to compare behavioral outcomes between different experimental manipulations.",
+    "Unit of measure": "N/A (text/categorical)",
+    "is_a": ["Elevated Plus Maze measurement (EMPTY:00000091)", "Behavioral measurement (EMPTY:00000090)"]
+  }
+]
+
+

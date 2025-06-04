@@ -1,0 +1,33 @@
+{
+    "document_class": {
+		"definition":                       "$NDIDOCUMENTPATH\/virus_injection.json",
+		"validation":						"$NDISCHEMAPATH\/virus_injection_schema.json",
+		"class_name":                       "virus_injection",
+		"property_list_name":               "virus_injection",
+		"class_version":                    1,
+		"superclasses": [
+			{  "definition":                "$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+
+	"depends_on": [
+		{	"name": "subject_id",
+			"value": ""
+		}
+	],
+
+	"files": {
+        "file_list": []
+    },
+    "virus_injection": {
+        "virus_OntologyName":               "",
+        "virus_name":                       "",
+        "virusLocation_OntologyName":       "",
+        "virusLocation_name":               "",
+        "virus_AdministrationDate":         "",
+        "virus_AdministrationPND":          0,
+        "dilution":                         0.0,
+        "diluent_OntologyName":             "",
+        "diluent_name":                     ""
+    }
+}

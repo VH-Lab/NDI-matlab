@@ -37,7 +37,7 @@ classdef sessiontable
             fname = ndi.session.sessiontable.localtablefilename();
             if isfile(fname),
                 try,
-                    t = vlt.file.loadStructArray(fname);
+                    t = table2struct(readtable(fname,'Delimiter','tab'))';
                     if ~isfield(t,'path'),
                         error(['path is a required field.']);
                     end;
