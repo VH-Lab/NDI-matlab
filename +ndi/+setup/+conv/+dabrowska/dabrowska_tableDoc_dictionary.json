@@ -10,7 +10,7 @@
   "OpenArm_Wall__Time": "EMPTY:Elevated Plus Maze: open arm (north) - time",
   "OpenArm_OpenField__Time": "EMPTY:Elevated Plus Maze: open arm (south) - time",
   "OpenArmTotalTime": "EMPTY:Elevated Plus Maze: open arm total time",
-  "Openarm_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: open arm total - percent time in 5 minutes",
+  "Openarm_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: open arm total - percent time during test duration",
   "OpenArm_Wall__LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: open arm (north) - latency to first entry",
   "OpenArm_OpenField__LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: open arm (south) - latency to first entry",
   "OpenArmTotalLatencyToFirstEntry": "EMPTY:Elevated Plus Maze: open arm total latency to first entry",
@@ -29,7 +29,7 @@
   "ClosedArm_L__Time": "EMPTY:Elevated Plus Maze: closed arm (west) - time",
   "ClosedArm_R__Time": "EMPTY:Elevated Plus Maze: closed arm (east) - time",
   "ClosedArmTotalTime": "EMPTY:Elevated Plus Maze: closed arm total time",
-  "Closedarm_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: closed arm total - percent time in 5 minutes",
+  "Closedarm_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: closed arm total - percent time during test duration",
   "ClosedArm_L__LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: closed arm (west) - latency to first entry",
   "ClosedArm_R__LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: closed arm (east) - latency to first entry",
   "ClosedArmTotalLatencyToFirstEntry": "EMPTY:Elevated Plus Maze: closed arm total latency to first entry",
@@ -42,7 +42,7 @@
   "Center_Entries": "EMPTY:Elevated Plus Maze: center - entries",
   "Center_HeadEntries": "EMPTY:Elevated Plus Maze: center - head entries",
   "Center_Time": "EMPTY:Elevated Plus Maze: center - time",
-  "Center_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: center - percent time in 5 minutes",
+  "Center_TimePer300S_5Min_": "EMPTY:Elevated Plus Maze: center - percent time during test duration",
   "Center_LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: center - latency to first entry",
   "Center_TimeMovingTowards": "EMPTY:Elevated Plus Maze: center - time moving towards",
   "Center_TimeFreezing": "EMPTY:Elevated Plus Maze: center - time freezing",
@@ -58,5 +58,6 @@
   "T_Max": "EMPTY:Acoustic Startle Response: time to maximum amplitude",
   "mV_Avg": "EMPTY:Acoustic Startle Response: average amplitude",
   "Run_Time": "EMPTY:Experiment trial execution timestamp",
-  "Sheet_Name": "EMPTY:Fear-Potentiated Startle: experimental phase or test name"
+  "Sheet_Name": "EMPTY:Fear-Potentiated Startle: experimental phase or test name",
+  "Test_Duration": "EMPTY:Elevated Plus Maze: test duration"
 }
