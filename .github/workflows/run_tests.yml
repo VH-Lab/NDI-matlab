@@ -29,8 +29,6 @@ jobs:
     steps:      
       - name: Check out repo
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
 
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v2
@@ -59,7 +57,11 @@ jobs:
             testToolbox()
 
       - name: Commit SVG badges if updated
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: ehennestad/matbox/.github/actions/push-badges@add-reusable-test-workflow
+        with:
+          pr-ref: ${{ github.event.pull_request.head.ref }}
+          pr-repo: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Upload code coverage report to Codecov
         uses: codecov/codecov-action@v4
