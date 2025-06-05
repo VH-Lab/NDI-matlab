@@ -29,6 +29,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         ProgressGridListener % Listens for changes to the grid layout.
         ProgressBarListener % Listens for changes to the progress bar data.
         Timeout duration = minutes(1) % Time after last update before a bar times out.
+        AutoDelete logical = true % Flag to automatically delete the ProgressBarWindow if all bars are closed.
     end
 
     properties (SetObservable)
@@ -47,14 +48,22 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %   Inputs:
             %       title - The title to display on the figure window.
             %                   Defaults to ''.
-            %       options.Overwrite - If true, closes any existing 
-            %                   progress bar window with the same title. 
-            %                   If false (default), returns the handle to 
-            %                   the existing window.
-            %       options.GrabMostRecent - If true, ignores title and
-            %                   returns the most recently-created window.
-            %                   If there is no window, then it makes a new
-            %                   window.
+            %
+            %   Optional Name-Value Arguments:
+            %       Overwrite - If true, closes any existing progress bar window
+            %                   with the same title. If false, returns the handle
+            %                   to the existing window. Defaults to false.
+            %       GrabMostRecent - If true, will search open figures for the
+            %                   most recently created progress bar window. Uses
+            %                   this handle if no figure with matching title is
+            %                   found or IgnoreTitle is true. Defaults to true.
+            %       IgnoreTitle - If true, will return the most recently created
+            %                   progress bar window regardless of its title.
+            %                   Defaults to false.
+            %       AutoDelete - If true, automatically closes the progress bar
+            %                   figure and deletes the app handle when there are
+            %                   no more progress bars remaining in the window.
+            %                   Defaults to true.
             %
             %   Outputs:
             %       app - The handle to the created or existing app instance.
@@ -63,22 +72,27 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             arguments
                 title (1,:) char = ''
                 options.Overwrite logical = false
-                options.GrabMostRecent logical = false
+                options.GrabMostRecent logical = true
+                options.IgnoreTitle logical = false
+                options.AutoDelete logical = true
             end
 
             % Find existing figure with that tag
             openFigs = findall(groot,'Type','figure','tag','progressbar');
             if ~isempty(openFigs)
-                if options.GrabMostRecent
-                    app = guidata(openFigs(end)); % we've got it
-                    if isvalid(app)
-                        figure(app.ProgressFigure);
-                        return;
+
+                % Check for figure with same title
+                ind = strcmpi({openFigs.Name},title);
+
+                % If no title (or ignoring it), try most recent figure 
+                if options.GrabMostRecent && (~any(ind) || options.IgnoreTitle)
+                    for i = numel(openFigs):-1:1
+                        if isa(guidata(openFigs(i)), 'ndi.gui.component.ProgressBarWindow')
+                            ind(i) = true;
+                            continue
+                        end
                     end
                 end
-            end
-            if ~isempty(openFigs)
-                ind = strcmpi({openFigs.Name},title);
 
                 if any(ind)
                     % If overwriting, close matching progress bar
@@ -104,7 +118,8 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 end
             end
 
-            %create a new window now
+            % Add auto-delete tag
+            app.AutoDelete = options.AutoDelete;
 
             % Add listeners
             app.ProgressFigureListener = addlistener(app,'ProgressFigure','PostSet',@app.handleAppChange);
@@ -143,14 +158,13 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %
             %   Inputs:
             %       app - The app instance.
-            %       options.Label - Text label displayed above the bar. 
-            %                   Defaults to ''.
-            %       options.Tag - A unique identifier for this bar.
-            %                   Defaults to the Label if empty.
-            %       options.Color - RGB color for the progress bar.
-            %                   Defaults to a random color.
-            %       options.Auto - If true, automatically removes the bar
-            %                    when complete or timed out. Defaults to false.
+            %
+            %   Optional Name-Value Arguments:
+            %       Label - Text label displayed above the bar. Defaults to ''.
+            %       Tag - A unique identifier for this bar. Defaults to the Label if empty.
+            %       Color - RGB color for the progress bar. Defaults to a random color.
+            %       Auto - If true, automatically removes the bar when complete or timed out.
+            %              Defaults to false.
             %
             %   Outputs:
             %       app - The updated app instance.
@@ -409,21 +423,27 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.ProgressGrid.RowHeight);
             app = app.setFigureSize(sum(rowHeight));
 
-            % Throw warning if terminated in the middle of task
+            % Throw error/warning if terminated in the middle of task
             if app.ProgressBars(barNum).Progress < 1
                 if strcmpi(state,'Button')
-                    warning('ProgressBarWindow:UserTermination',...
+                    error('ProgressBarWindow:UserTermination',...
                         'Execution of task %s terminated by user.',...
                         app.ProgressBars(barNum).Tag)
                 elseif strcmpi(state,'Timeout')
                     warning('ProgressBarWindow:AutoCloseOnTimeout',...
-                        'Execution of task %s terminated due to inactivity.',...
-                        app.ProgressBars(barNum).Tag)
+                        'Task %s has been inactive for %.f minutes.',...
+                        app.ProgressBars(barNum).Tag,...
+                        minutes(datetime('now') - app.ProgressBars(i).Clock{2}))
                 elseif strcmpi(state,'Open')
                     warning('ProgressBarWindow:BarRemoved',...
                         'BarID %s no longer exists.',...
                         app.ProgressBars(barNum).Tag)
                 end
+            end
+
+            % Check for auto delete
+            if app.AutoDelete
+                app.deleteIfNoOpenBars;
             end
 
         end % REMOVEBAR
