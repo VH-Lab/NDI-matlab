@@ -1,17 +1,30 @@
 function doImport(dataParentDir,options)
+% Section A: Import electrophysiology dataset
+%   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
+%   Step 2: SESSIONS. Now that we have the file manifest, build sessions
+%   Step 3: SUBJECTS. Build subject documents.
+%   Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
+%   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
+%
+% Section B: Import behavioral dataset
+%   Step 6: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%   Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%   Step 8: SUBJECTS. Build subject documents.
+%   Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
+% Input argument validation
 arguments
     dataParentDir (1,:) char {mustBeFolder}
     options.Overwrite (1,1) logical = false
 end
 
-%%
+% Create progress bar
 progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
 
+% Get data path
 dataPath = fullfile(dataParentDir,'Dabrowska');
 
-%% Deal with bad paths
-
+% Deal with bad paths
 badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
 if isfolder(badFolder)
     disp(['Removing extra space in known folder ' badFolder])
@@ -72,7 +85,7 @@ variableTable = variableTable_ephys(:,common_vars);
 variableTable(opto_rows,:) = variableTable_opto(opto_rows,common_vars);
 
 % Add additional metadata
-variableTable{:,'SessionRef'} = {'Dabrowska'};
+variableTable{:,'SessionRef'} = {'Dabrowska_Electrophysiology'};
 variableTable{:,'SessionPath'} = {'Dabrowska'};
 variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
 variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
@@ -84,13 +97,13 @@ variableTable{:,'BiologicalSex'} = {'male'};
 mySessionPath = dataParentDir;
 SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
     'NonNaNVariableNames','IsExpMatFile','Overwrite',options.Overwrite);
-[sessionArray,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
+[sessionsEphys,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
 
 % Add DAQ system
 labName = 'dabrowskalab';
 SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 
-%% Step 3: SUBJECTS
+%% Step 3: SUBJECTS. Build subject documents.
 
 subM = ndi.setup.NDIMaker.subjectMaker();
 [subjectInfo,variableTable.SubjectString] = ...
@@ -98,11 +111,11 @@ subM = ndi.setup.NDIMaker.subjectMaker();
     @ndi.setup.conv.dabrowska.createSubjectInformation);
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
-subM.deleteSubjectDocs(sessionArray,subjectInfo.subjectName);
+subM.deleteSubjectDocs(sessionsEphys,subjectInfo.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo);
-subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
+subM.addSubjectsToSessions(sessionsEphys, subDocStruct.documents);
 
-%% Step 4: PROBETABLE. Create a table that will help us build epochprobemaps.
+%% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
 
 % Create probeTable
 name = {'bath';'Vm';'I'};
@@ -128,9 +141,9 @@ ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
     'NonNaNVariableNames','IsExpMatFile',...
     'ProbePostfix','ProbePostfix');
 
-%% Step 5: STIMULUS DOCS. Build the stimulus documents
+%% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
 
-sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
+sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionsEphys{1},'dabrowska',...
     'GetProbes',true);
 
 % Get mixture dictionary
@@ -160,15 +173,9 @@ stimulus_approach_docs = sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',options.Overwrite);
 
-%% Create EPM and FPS table docs
+%% Step 6: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
 
-% Get session
-S = ndi.session.dir(dataPath);
-
-% Initialize tableDocMaker
-tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
-
-%% Get combined EPM data table
+% Get combined EPM data table
 filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
 filename_EPM = fullfile(dataPath,'Behavioral Data','EPM',filename_EPM);
 [~,sheetnames_EPM] = xlsfinfo(filename_EPM);
@@ -203,19 +210,15 @@ for i = 1:numel(sheetnames_EPM)
 end
 
 % Add unique subject identifiers with strain and virus information
-dataTable_EPM.Animal = char(arrayfun(@(animal) ['sd_rat_OTRCre_',num2str(animal,'%.3i'),...
-    '@dabrowska-lab.rosalindfranklin.edu'],dataTable_EPM.Animal,'UniformOutput',false));
-dataTable_EPM.Treatment = char(dataTable_EPM.Treatment);
+% dataTable_EPM.Animal = char(arrayfun(@(animal) ['sd_rat_OTRCre_',num2str(animal,'%.3i'),...
+%     '@dabrowska-lab.rosalindfranklin.edu'],dataTable_EPM.Animal,'UniformOutput',false));
 dataTable_EPM.Test_Duration(:) = 300;
 
-docsEPM = tdm.table2ontologyTableRowDocs(dataTable_EPM,{'Animal','Treatment'},...
-    'Overwrite',false);
+%% Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
 
-%% Get combined FPS data table
-
+% Get combined FPS data table
 filename_FPS = 'FPS_OTR-Cre+_Saline vs CNO_DREADDs-Gi_Experiment 1-final.xlsx';
 filename_FPS = fullfile(dataPath,'Behavioral Data','FPS',filename_FPS);
-% [~,sheetnames_FPS] = xlsfinfo(filename_FPS);
 sheetnames_FPS = {'Pre-test 1','Pre-test 2','Shock Reactivity','Cue test 1',...
     'Context 1','Cue test 2','Context 2','Cue test 3'};
 
@@ -240,8 +243,8 @@ end
 dataTable_FPS = ndi.fun.table.vstack(dataTable_FPS);
 
 % Add unique subject and group identifiers
-dataTable_FPS.Subject_ID = char(arrayfun(@(subject) ['sd_rat_OTRCre_',subject{1},...
-    '@dabrowska-lab.rosalindfranklin.edu'],dataTable_FPS.Subject_ID,'UniformOutput',false));
+% dataTable_FPS.Subject_ID = char(arrayfun(@(subject) ['sd_rat_OTRCre_',subject{1},...
+%     '@dabrowska-lab.rosalindfranklin.edu'],dataTable_FPS.Subject_ID,'UniformOutput',false));
 dataTable_FPS.Group_ID = char(cellfun(@(sid) sid(6),dataTable_FPS.Session_ID));
 
 % Convert cells to char arrays
@@ -253,5 +256,44 @@ dataTable_FPS.Sheet_Name = char(dataTable_FPS.Sheet_Name);
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
     'TimeStampPT'}) = [];
 
+%% Step 8: SUBJECTS. Build subject documents.
+
+% Create subject table
+subjectTableBehavior = dataTable_EPM(:,'Animal');
+subjectTableBehavior{:,'SessionRef'} = {'Dabrowska_Behavior'};
+subjectTableBehavior{:,'SessionPath'} = {'Dabrowska'};
+subjectTableBehavior{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
+subjectTableBehavior{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
+subjectTableBehavior{:,'BiologicalSex'} = {'male'};
+subjectTableBehavior{:,'IsOTRCre'} = 'OTRCre';
+
+% Employ the sessionMaker
+mySessionPath = dataParentDir;
+SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,subjectTableBehavior,...
+    'Overwrite',options.Overwrite);
+[sessionsBehavior,subjectTableBehavior.sessionInd,subjectTableBehavior.sessionID] = SM.sessionIndices;
+
+% Employ the subjectMaker
+[subjectInfo_behavior,subjectTableBehavior.SubjectString] = ...
+    subM.getSubjectInfoFromTable(subjectTableBehavior,...
+    @ndi.setup.conv.dabrowska.createSubjectInformation);
+%% We have no need to delete any previously made subjects because we remade all the sessions
+% but if we did we could use the subM.deleteSubjectDocs method
+subM.deleteSubjectDocs(sessionsBehavior,subjectInfo_behavior.subjectName);
+subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
+subM.addSubjectsToSessions(sessionsBehavior, subDocStruct.documents);
+
+%% Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+
+% Get session
+S = ndi.session.dir(dataPath);
+% Initialize tableDocMaker
+tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
+
+% Create EPM docs
+docsEPM = tdm.table2ontologyTableRowDocs(dataTable_EPM,{'Animal','Treatment'},...
+    'Overwrite',options.Overwrite);
+
+% Create FPS docs
 docsFPS = tdm.table2ontologyTableRowDocs(dataTable_FPS,...
-    {'Subject_ID','Trial_Num','Sheet_Name'},'Overwrite',false);
+    {'Subject_ID','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
