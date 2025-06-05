@@ -206,9 +206,10 @@ end
 dataTable_EPM.Animal = char(arrayfun(@(animal) ['sd_rat_OTRCre_',num2str(animal,'%.3i'),...
     '@dabrowska-lab.rosalindfranklin.edu'],dataTable_EPM.Animal,'UniformOutput',false));
 dataTable_EPM.Treatment = char(dataTable_EPM.Treatment);
+dataTable_EPM.Test_Duration(:) = 300;
 
-% tdm.createOntologyTableRowDoc(dataTable(1,:),'Animal','Overwrite',false);
-docsEPM = tdm.table2ontologyTableRowDocs(dataTable_EPM,'Animal','Overwrite',false);
+docsEPM = tdm.table2ontologyTableRowDocs(dataTable_EPM,{'Animal','Treatment'},...
+    'Overwrite',false);
 
 %% Get combined FPS data table
 
