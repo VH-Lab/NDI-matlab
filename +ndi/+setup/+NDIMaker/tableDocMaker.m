@@ -48,16 +48,20 @@ classdef tableDocMaker < handle
             
             obj.variableMapFilename = fullfile(labFolder,[labName,'_tableDoc_dictionary.json']); % UPDATED FILENAME
             if ~isfile(obj.variableMapFilename)
-                error('tableDocMaker:VariableMapFileNotFound', 'Variable map dictionary file not found: %s', obj.variableMapFilename);
+                error('tableDocMaker:VariableMapFileNotFound',...
+                    'Variable map dictionary file not found: %s',...
+                    obj.variableMapFilename);
             end
             try
                 obj.variableMapStruct = jsondecode(fileread(obj.variableMapFilename));
             catch ME
-                error('tableDocMaker:VariableMapFileInvalidJSON', 'Failed to decode JSON from variable map dictionary file: %s. Error: %s', obj.variableMapFilename, ME.message);
+                error('tableDocMaker:VariableMapFileInvalidJSON',...
+                    'Failed to decode JSON from variable map dictionary file: %s. Error: %s',...
+                    obj.variableMapFilename, ME.message);
             end
         end % constructor tableDocMaker
 
-        function doc = createOntologyTableRowDoc(obj, tableRow, identifyingVariables, options)
+        function [doc,inDatabase] = createOntologyTableRowDoc(obj, tableRow, identifyingVariables, options)
             %CREATEONTOLOGYTABLEROWDOC Creates a single NDI 'ontologyTableRow' document for a row of table data.
             %   DOC = CREATEONTOLOGYTABLEROWDOC(OBJ, TABLEROW, IDENTIFYINGVARIABLES, OPTIONS)
             %
@@ -93,14 +97,20 @@ classdef tableDocMaker < handle
             %
             %   Optional Name-Value Arguments:
             %       Overwrite: Controls behavior if a document matching the 'identifyingVariables' is found:
-            %                          - true: The existing document is removed, and a new one is created.
-            %                          - false (default): The existing document is returned, and no
+            %                   - true: The existing document is removed, and a new one is created.
+            %                   - false (default): The existing document is returned, and no
             %                                           new document is created.
+            %       OldDocs: A cell array of existing documents in the database that match
+            %                the identifiying variables of the current document. Depending on the behavior
+            %                of Overwrite, the OldDocs will be returned or overwritten. Passing this argument
+            %                speeds up processing by reducing calls to the database.
             %
             %   Outputs:
             %       doc: The NDI document object (ndi.document) of type 'ontologyTableRow'.
             %            This will be the newly created document or the existing document
             %            if found and 'options.Overwrite' is false.
+            %       inDatabase: Flag reporting whether the document already
+            %            exists in the database and Overwrite is false.
             %
             %   See also: ndi.ontology.lookup, ndi.document, ndi.query, tableDocMaker.table2ontologyTableRowDocs
 
@@ -109,37 +119,51 @@ classdef tableDocMaker < handle
                 tableRow (1,:) table % Input is a single table row
                 identifyingVariables {mustBeText}
                 options.Overwrite (1,1) logical = false
+                options.OldDocs cell = {NaN}
             end
 
             % Ensure identifyingVariables is a cell array
             identifyingVariables = cellstr(identifyingVariables);
 
             % Search for existing document(s)
-            % query = ndi.query('','isa','ontologyTableRow'); % Document type
-            % for i = 1:numel(identifyingVariables)
-            %     termName = obj.variableMapStruct.(identifyingVariables{i});
-            %     [~,~,~,~,~,shortName] = ndi.ontology.lookup(termName);
-            %     query = query & ndi.query(['ontologyTableRow.data.',shortName],...
-            %         'exact_string',tableRow.(identifyingVariables{i}));
-            % end
-            % doc_old = obj.session.database_search(query);
+            if isempty(options.OldDocs)| isa(options.OldDocs{1},'ndi.document')
+                doc_old = options.OldDocs;
+            else
+                query = ndi.query('','isa','ontologyTableRow'); % Document type
+                for i = 1:numel(identifyingVariables)
+                    termName = obj.variableMapStruct.(identifyingVariables{i});
+                    [~,~,~,~,~,shortName] = ndi.ontology.lookup(termName);
+                    query = query & ndi.query(['ontologyTableRow.data.',shortName],...
+                        'exact_string',tableRow.(identifyingVariables{i}));
+                end
+                doc_old = obj.session.database_search(query);
+            end
 
-            % % Remove old document(s) if overwriting
-            % if isscalar(doc_old)
-            %     if options.Overwrite
-            %         obj.session.database_rm(doc_old{1});
-            %     else
-            %         doc = doc_old{1};
-            %         return;
-            %     end
-            % elseif numel(doc_old) > 1
-            %     error('tableDocMaker:createOntologyTableRowDoc:NonUniqueFile',...
-            %         'The identifying variables %s do not return a unique document',...
-            %         join(identifyingVariables,','))
-            %     % NOTE: We should have a way to tell the difference between
-            %     % duplicate table rows and those that require additional
-            %     % identifying variables to distinguish between them
-            % end
+            % Remove duplicates from database
+            if numel(doc_old) > 1
+                for i = 2:length(doc_old)
+                    if isequaln(doc_old{1}.document_properties.ontologyTableRow.data,...
+                            doc_old{i}.document_properties.ontologyTableRow.data)
+                        obj.session.database_rm(doc_old{i});
+                    else
+                        error('tableDocMaker:createOntologyTableRowDoc:NonUniqueFile',...
+                            'The identifying variables %s do not return a unique document',...
+                            join(identifyingVariables,','))
+                    end
+                end
+            end
+
+            % Remove old document(s) if overwriting
+            inDatabase = false;
+            if isscalar(doc_old)
+                if options.Overwrite
+                    obj.session.database_rm(doc_old{1});
+                else
+                    doc = doc_old{1};
+                    inDatabase = true;
+                    return;
+                end
+            end
 
             % Get variable (column) names from table
             varNames = tableRow.Properties.VariableNames;
@@ -161,7 +185,7 @@ classdef tableDocMaker < handle
                 end
 
                 % Lookup term from ontology
-                [id,name,prefix,~,~,shortName] = ndi.ontology.lookup(termName);
+                [id,name,~,~,~,shortName] = ndi.ontology.lookup(termName);
 
                 % Add values to field
                 names{end+1} = name;
@@ -224,26 +248,72 @@ classdef tableDocMaker < handle
 
             % Create progress bar
             progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
-            progressBar = progressBar.addBar('Label','Creating Ontology Table Row Document(s)','Tag','ontologyTableRow');
+            progressBar = progressBar.addBar('Label','Creating Ontology Table Row Document(s)',...
+                'Tag','ontologyTableRow');
 
             docs = cell(height(dataTable),1); % Initialize output cell array
+            inDatabase = false(height(dataTable),1);
             onePercent = ceil(height(dataTable)/100);
+
+            % Get all existing old docs now (only once) for faster
+            query = ndi.query('','isa','ontologyTableRow');
+            old_docs = obj.session.database_search(query);
+
+            % Get only existing docs with matching fields
+            ind = true(size(old_docs));
+            shortNames = cell(size(identifyingVariables));
+            for j = 1:numel(identifyingVariables)
+                termName = obj.variableMapStruct.(identifyingVariables{j});
+                [~,~,~,~,~,shortNames{j}] = ndi.ontology.lookup(termName);
+                ind = ind & cellfun(@(d) isfield(d.document_properties.ontologyTableRow.data,shortNames{j}),old_docs);
+            end
+            old_docs = old_docs(ind);
+
+            % Get identifying variable values from existing docs
+            variableData = cell(numel(old_docs),numel(shortNames));
+            for j = 1:numel(shortNames)
+                existingValues = cellfun(@(d) d.document_properties.ontologyTableRow.data.(shortNames{j}),...
+                    old_docs,'UniformOutput',false);
+                variableData(:,j) = existingValues;
+            end
+            variableTable = array2table(variableData,'VariableNames',shortNames);
             
             for i = 1:height(dataTable)
 
-                % Create onotologyTableRowDoc
-                docs{i} = createOntologyTableRowDoc(obj, dataTable(i,:), ...
-                        identifyingVariables,'Overwrite',options.Overwrite);
+                % Search existing docs for match(s)
+                if ~isempty(old_docs)
+                    ind = true(height(variableTable),1);
+                    for j = 1:numel(identifyingVariables)
+                        if isnumeric(dataTable{i,identifyingVariables{j}})
+                            ind = ind & cell2mat(variableTable.(shortNames{j})) == ...
+                                dataTable{i,identifyingVariables{j}};
+                        else
+                            ind = ind & strcmpi(variableTable.(shortNames{j}),...
+                                dataTable{i,identifyingVariables{j}});
+                        end
+
+                    end
+                    OldDocs = old_docs(ind);
+                else
+                    OldDocs = {};
+                end
+
+                % Create ontologyTableRowDoc
+                [docs{i},inDatabase(i)] = createOntologyTableRowDoc(obj, dataTable(i,:), ...
+                    identifyingVariables,'Overwrite',options.Overwrite,...
+                    'OldDocs',OldDocs);
 
                 % Update progress bar
-                if mod(i,onePercent)==1 % update every 1% so it doesn't slow down the process too much
+                if mod(i,onePercent)==1 || onePercent == 1 % update every 1% so it doesn't slow down the process too much
                     progressBar = progressBar.updateBar('ontologyTableRow',i/height(dataTable));
                 end
             end
 
-            % Add documents to the database all at once, will be a little
-            % faster
-            obj.session.database_add(docs);         
+            % Add documents to the database all at once
+            obj.session.database_add(docs(~inDatabase));
+
+            % Complete progress bar
+            progressBar = progressBar.updateBar('ontologyTableRow',1);
 
         end % table2ontologyTableRowDocs
 
