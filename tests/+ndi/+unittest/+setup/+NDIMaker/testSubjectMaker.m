@@ -157,37 +157,37 @@ classdef testSubjectMaker < matlab.unittest.TestCase
 
         % --- Tests for makeSubjectDocuments ---
 
-        % function testMakeSubjectDocs_Basic(testCase)
-        %     subjectInfo.subjectName = {'SubX'; 'SubY'};
-        %     subjectInfo.strain = {NaN; ndi.unittest.setup.NDIMaker.testSubjectMaker.createMockOpenMINDS('Strain')}; 
-        %     subjectInfo.species = {ndi.unittest.setup.NDIMaker.testSubjectMaker.createMockOpenMINDS('Species'); NaN}; 
-        %     subjectInfo.biologicalSex = {NaN; NaN};
-        %     subjectInfo.tableRowIndex = [1; 2]; 
-        %     subjectInfo.sessionID = {'session_abc'; 'session_def'}; 
-        % 
-        %     output = testCase.Maker.makeSubjectDocuments(subjectInfo); 
-        % 
-        %     testCase.verifyEqual(numel(output.subjectName), 2);
-        %     testCase.verifyEqual(numel(output.documents), 2);
-        % 
-        %     testCase.verifyEqual(numel(output.documents{1}), 2, 'Diagnostic: SubX should have 2 documents.');
-        %     mainDocX = output.documents{1}{1};
-        %     speciesDocX = output.documents{1}{2};
-        %     testCase.verifyEqual(mainDocX.document_properties.subject.local_identifier, 'SubX');
-        %     testCase.verifyEqual(mainDocX.document_properties.base.session_id, 'session_abc');
-        %     testCase.verifyEqual(speciesDocX.document_properties.base.session_id, 'session_abc', 'Diagnostic: Species doc session ID mismatch for SubX.');
-        %     testCase.verifyNotEqual(speciesDocX.id(), mainDocX.id(), 'Diagnostic: Species doc ID should be different from main doc for SubX.');
-        %     testCase.verifyNotEqual(speciesDocX.document_properties.document_class.class_name, 'subject', 'Diagnostic: Species document should not be of class_name "subject".');
-        % 
-        %     testCase.verifyEqual(numel(output.documents{2}), 2, 'Diagnostic: SubY should have 2 documents.');
-        %     mainDocY = output.documents{2}{1};
-        %     strainDocY = output.documents{2}{2};
-        %     testCase.verifyEqual(mainDocY.document_properties.subject.local_identifier, 'SubY');
-        %     testCase.verifyEqual(mainDocY.document_properties.base.session_id, 'session_def');
-        %     testCase.verifyEqual(strainDocY.document_properties.base.session_id, 'session_def', 'Diagnostic: Strain doc session ID mismatch for SubY.');
-        %     testCase.verifyNotEqual(strainDocY.id(), mainDocY.id(), 'Diagnostic: Strain doc ID should be different from main doc for SubY.');
-        %     testCase.verifyNotEqual(strainDocY.document_properties.document_class.class_name, 'subject', 'Diagnostic: Strain document should not be of class_name "subject".');
-        % end
+        function testMakeSubjectDocs_Basic(testCase)
+            subjectInfo.subjectName = {'SubX'; 'SubY'};
+            subjectInfo.strain = {NaN; ndi.unittest.setup.NDIMaker.testSubjectMaker.createMockOpenMINDS('Strain')}; 
+            subjectInfo.species = {ndi.unittest.setup.NDIMaker.testSubjectMaker.createMockOpenMINDS('Species'); NaN}; 
+            subjectInfo.biologicalSex = {NaN; NaN};
+            subjectInfo.tableRowIndex = [1; 2]; 
+            subjectInfo.sessionID = {'session_abc'; 'session_def'}; 
+            
+            output = testCase.Maker.makeSubjectDocuments(subjectInfo); 
+
+            testCase.verifyEqual(numel(output.subjectName), 2);
+            testCase.verifyEqual(numel(output.documents), 2);
+            
+            testCase.verifyEqual(numel(output.documents{1}), 2, 'Diagnostic: SubX should have 2 documents.');
+            mainDocX = output.documents{1}{1};
+            speciesDocX = output.documents{1}{2};
+            testCase.verifyEqual(mainDocX.document_properties.subject.local_identifier, 'SubX');
+            testCase.verifyEqual(mainDocX.document_properties.base.session_id, 'session_abc');
+            testCase.verifyEqual(speciesDocX.document_properties.base.session_id, 'session_abc', 'Diagnostic: Species doc session ID mismatch for SubX.');
+            testCase.verifyNotEqual(speciesDocX.id(), mainDocX.id(), 'Diagnostic: Species doc ID should be different from main doc for SubX.');
+            testCase.verifyNotEqual(speciesDocX.document_properties.document_class.class_name, 'subject', 'Diagnostic: Species document should not be of class_name "subject".');
+
+            testCase.verifyEqual(numel(output.documents{2}), 2, 'Diagnostic: SubY should have 2 documents.');
+            mainDocY = output.documents{2}{1};
+            strainDocY = output.documents{2}{2};
+            testCase.verifyEqual(mainDocY.document_properties.subject.local_identifier, 'SubY');
+            testCase.verifyEqual(mainDocY.document_properties.base.session_id, 'session_def');
+            testCase.verifyEqual(strainDocY.document_properties.base.session_id, 'session_def', 'Diagnostic: Strain doc session ID mismatch for SubY.');
+            testCase.verifyNotEqual(strainDocY.id(), mainDocY.id(), 'Diagnostic: Strain doc ID should be different from main doc for SubY.');
+            testCase.verifyNotEqual(strainDocY.document_properties.document_class.class_name, 'subject', 'Diagnostic: Strain document should not be of class_name "subject".');
+        end
 
         function testMakeSubjectDocs_NoSubjects(testCase)
             subjectInfo.subjectName = {};
