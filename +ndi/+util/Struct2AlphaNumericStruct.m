@@ -1,51 +1,25 @@
 function S_out = Struct2AlphaNumericStruct(S_in)
-%STRUCT2ALPHANUMERICSTRUCT Converts an arbitrary structure to one containing
+%STRUCT2ALPHANUMERICSTRUCT Converts an arbitrary structure array to one containing
 %only alphanumeric data (numbers, char arrays) or other (sub)structures.
 %
 %   S_OUT = ndi.util.Struct2AlphaNumericStruct(S_IN)
 %
 %   Inputs:
-%       S_IN (1,1 struct): The input structure to convert.
+%       S_IN (struct): The input structure array to convert. Can be any size.
 %
 %   Outputs:
-%       S_OUT (struct): The converted structure. Leaf nodes will be numeric,
+%       S_OUT (struct): The converted structure array, returned with the same
+%                       dimensions as S_IN. Leaf nodes will be numeric,
 %                       logical, or character arrays. Cell arrays of strings
 %                       are converted to comma-separated character arrays.
 %                       String arrays/scalars are converted to comma-separated char arrays.
 %
 %   Description:
-%       The function recursively traverses the input structure S_IN.
-%       - Numeric and logical fields are kept as is.
-%       - Character array fields are kept as is.
-%       - String array/scalar fields are converted to comma-separated character arrays.
-%       - Cell arrays containing only character arrays or scalar strings are
-%         joined into a single comma-separated character array.
-%       - Structures and structure arrays are traversed recursively.
-%       - Any other data types (e.g., cell arrays with mixed types, tables,
-%         function handles, other objects) will cause an error.
-%
-%   Example:
-%       s.a = 10;
-%       s.b = 'hello';
-%       s.c = "world"; % string scalar
-%       s.d = {"alpha", "beta", "gamma"}; % cell array of strings
-%       s.e.f = 20;
-%       s.e.g = ["string1"; "string2"]; % string array
-%       s.h(1).i = 30;
-%       s.h(2).i = 40;
-%       s.h(2).j = {'part1', 'part2'};
-%
-%       s_out = ndi.util.Struct2AlphaNumericStruct(s);
-%       % s_out.c will be 'world' (char)
-%       % s_out.d will be 'alpha, beta, gamma' (char)
-%       % s_out.e.g will be 'string1, string2' (char)
-%       % s_out.h(2).j will be 'part1, part2' (char)
-%
-%       s_invalid.k = {1, 'mixed'};
-%       % Calling ndi.util.Struct2AlphaNumericStruct(s_invalid) will error.
+%       The function iterates through each element of the input structure array
+%       S_IN and recursively traverses its fields.
 
     arguments
-        S_in (1,1) struct % Input must be a scalar structure at the top level
+        S_in struct % Input can be a struct array of any size
     end
 
     S_out = convertElementValueRecursive(S_in, 'S_in'); % Provide a base name for path tracking
@@ -57,32 +31,41 @@ function convertedValue = convertElementValueRecursive(value, currentPath)
 %convertElementValueRecursive Helper to process individual elements.
 
     if isstruct(value)
-        if isempty(value) % Handles struct([]) or 0xN struct array if all fields are removed
+        if isempty(value) % Handles struct([]) or 0xN struct array
             convertedValue = value; % Return empty struct/array as is
             return;
         end
         
-        % Process struct or struct array
-        if isscalar(value)
-            tempStruct = value; % Work on a copy for scalar struct
-            fieldNames = fieldnames(value);
-            if isempty(fieldNames) % Handles struct() which is scalar but has no fields
-                convertedValue = value;
-                return;
+        % Process struct or struct array by element
+        convertedValue = value; % Start with a copy to preserve structure and size
+        for k = 1:numel(value)
+            elementPathForArrayElement = currentPath;
+            if ~isscalar(value) % Only add index to path if it's an array
+                if isvector(value)
+                    % Use linear index for vectors
+                    elementPathForArrayElement = sprintf('%s(%d)', currentPath, k);
+                else
+                    % Use ind2sub for multi-dimensional arrays
+                    siz = size(value);
+                    sub_indices = cell(1, numel(siz));
+                    [sub_indices{:}] = ind2sub(siz, k);
+                    elementPathForArrayElement = sprintf('%s(%s)', currentPath, strjoin(cellfun(@num2str, sub_indices, 'UniformOutput', false), ','));
+                end
+            end
+
+            % Recursively convert the k-th struct element's fields
+            tempStruct = value(k); % Get scalar struct
+            fieldNames = fieldnames(tempStruct);
+            if isempty(fieldNames)
+                % Handles struct() which has no fields, no change needed
+                continue; 
             end
             for i = 1:numel(fieldNames)
                 fn = fieldNames{i};
-                fieldPath = [currentPath '.' fn];
-                tempStruct.(fn) = convertElementValueRecursive(value.(fn), fieldPath);
+                fieldPath = [elementPathForArrayElement '.' fn];
+                tempStruct.(fn) = convertElementValueRecursive(tempStruct.(fn), fieldPath);
             end
-            convertedValue = tempStruct;
-        else % Struct array
-            convertedValue = value; % Start with a copy to preserve structure
-            for k = 1:numel(value)
-                elementPathForArrayElement = sprintf('%s(%d)', currentPath, k);
-                % Recursively convert the k-th struct in the array.
-                convertedValue(k) = convertElementValueRecursive(value(k), elementPathForArrayElement);
-            end
+            convertedValue(k) = tempStruct;
         end
 
     elseif iscell(value)
@@ -116,7 +99,6 @@ function convertedValue = convertElementValueRecursive(value, currentPath)
             convertedValue = '';
         else % handles scalar strings (including "") and non-empty string arrays
             charCell = cellstr(value); % Convert to cell array of char vectors
-                                       % cellstr of scalar "" is {''}, cellstr of empty string array is empty cell {}
             if isempty(charCell)
                 convertedValue = '';
             else
