@@ -100,7 +100,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 
     switch validGenotypeName
         case 'IsWildType'
-            prefix = 'sd_rat_wt_';
+            prefix = 'sd_rat_WT_';
         case 'IsCRFCre' 
             prefix = 'sdwi_rat_CRFCre_';
         case 'IsOTRCre' 

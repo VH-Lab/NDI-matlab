@@ -106,13 +106,13 @@ SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 %% Step 3: SUBJECTS. Build subject documents.
 
 subM = ndi.setup.NDIMaker.subjectMaker();
-[subjectInfo,variableTable.SubjectString] = ...
+[subjectInfo_ephys,variableTable.SubjectString] = ...
     subM.getSubjectInfoFromTable(variableTable,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
-subM.deleteSubjectDocs(sessionArray,subjectInfo.subjectName);
-subDocStruct = subM.makeSubjectDocuments(subjectInfo);
+subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
+subDocStruct = subM.makeSubjectDocuments(subjectInfo_ephys);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
 %% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
@@ -252,8 +252,11 @@ end
 % Join sheet tables
 dataTable_FPS = ndi.fun.table.vstack(dataTable_FPS);
 
+% Convert Subject_ID to double
+dataTable_FPS.Subject_ID = cellfun(@(s) str2double(s),dataTable_FPS.Subject_ID);
+
 % Add group identifiers and recording date
-dataTable_FPS.Group_ID = cellfun(@(sid) sid(6),dataTable_FPS.Session_ID);
+dataTable_FPS.Group_ID = cellfun(@(s) str2double(s(6)),dataTable_FPS.Session_ID);
 
 % Remove redundant (or unused columns)
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
@@ -262,32 +265,39 @@ dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
 %% Step 8: SUBJECTS. Build subject documents.
 
 % Create subject table
-subjectTableBehavior = dataTable_EPM(:,'Animal');
-subjectTableBehavior{:,'SessionRef'} = {'Dabrowska_Behavior'};
-subjectTableBehavior{:,'SessionPath'} = {'Dabrowska'};
-subjectTableBehavior{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
-subjectTableBehavior{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
-subjectTableBehavior{:,'BiologicalSex'} = {'male'};
-subjectTableBehavior{:,'IsWildType'} = NaN;
-subjectTableBehavior{:,'IsOTRCre'} = {'OTRCre'};
-subjectTableBehavior{:,'IsCRFCre'} = NaN;
-subjectTableBehavior{:,'IsAVPCre'} = NaN;
-subjectTableBehavior{:,'sessionID'} = sessionArray{1}.identifier;
-subjectTableBehavior{:,'RecordingDate'} = 'Aug 19 2022';
-subjectTableBehavior{:,'ProbePostfix'} = arrayfun(@(si) ['_220819_',num2str(si)],...
-    subjectTableBehavior.Animal,'UniformOutput',false);
+subjectTable_behavior = dataTable_EPM(:,'Animal');
+subjectTable_behavior{:,'SessionRef'} = {'Dabrowska_Behavior'};
+subjectTable_behavior{:,'SessionPath'} = {'Dabrowska'};
+subjectTable_behavior{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
+subjectTable_behavior{:,'BiologicalSex'} = {'male'};
+subjectTable_behavior{:,'IsWildType'} = NaN;
+subjectTable_behavior{:,'IsOTRCre'} = {'OTRCre'};
+subjectTable_behavior{:,'IsCRFCre'} = NaN;
+subjectTable_behavior{:,'IsAVPCre'} = NaN;
+subjectTable_behavior{:,'sessionID'} = sessionArray{1}.identifier;
+subjectTable_behavior{:,'RecordingDate'} = 'Aug 19 2022';
+subjectTable_behavior{:,'SubjectPostfix'} = arrayfun(@(si) ...
+    ['_',num2str(si),'@dabrowska-lab.rosalindfranklin.edu'],...
+    subjectTable_behavior.Animal,'UniformOutput',false);
 
-%% Employ the subjectMaker
-[subjectInfo_behavior,subjectTableBehavior.SubjectString] = ...
-    subM.getSubjectInfoFromTable(subjectTableBehavior,...
+% Employ the subjectMaker
+[subjectInfo_behavior,subjectTable_behavior.SubjectString] = ...
+    subM.getSubjectInfoFromTable(subjectTable_behavior,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
 subM.deleteSubjectDocs(sessionArray,subjectInfo_behavior.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
-% Add subject names to datatables
+% Add subject strings to data tables
+dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectString'}),'Keys','Animal');
+dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),'LeftKeys','Subject_ID','RightKeys','Animal');
 
 %% Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+
+% In tableDocMaker - check for isscalar & iscell and unpack; if ~isscalar,
+% error letting user know that they must have only one value; try making
+% comma separated list if needed
+% Check dictionary/ontology for new variables
 
 % Initialize tableDocMaker
 tdm = ndi.setup.NDIMaker.tableDocMaker(sessionArray{1},'dabrowska');
