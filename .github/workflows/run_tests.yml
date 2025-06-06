@@ -63,6 +63,14 @@ jobs:
             addpath(genpath( "tests" ));
             testToolbox()
 
+      - name: Restore MATLAB Path
+        uses: matlab-actions/run-command@v2
+        if: always()
+        with:
+          command: |
+            restoredefaultpath()
+            savepath()
+
       - name: Commit SVG badges if updated
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: ehennestad/matbox/.github/actions/push-badges@v0.9
