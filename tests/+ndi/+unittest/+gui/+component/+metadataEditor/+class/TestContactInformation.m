@@ -10,8 +10,7 @@ classdef TestContactInformation < matlab.unittest.TestCase
         function testDefaultConstructor(testCase)
             ci = feval(testCase.ContactInfoClassName);
             testCase.verifyClass(ci, testCase.ContactInfoClassName);
-            % Corrected: The class correctly creates a 1x0 char. The test must expect this.
-            testCase.verifyEqual(ci.email, char.empty(1,0), 'Default email should be a 1x0 empty char.');
+            testCase.verifyEqual(ci.email, char.empty(1,0));
         end
 
         function testPropertyAssignmentValid(testCase)
@@ -29,6 +28,9 @@ classdef TestContactInformation < matlab.unittest.TestCase
             testCase.verifyTrue(isstruct(s));
             testCase.verifyTrue(isfield(s, 'email'));
             testCase.verifyEqual(s.email, testEmail);
+            % Verify CellStrDelimiter is also included now
+            testCase.verifyTrue(isfield(s, 'CellStrDelimiter'));
+            testCase.verifyEqual(s.CellStrDelimiter, ', ');
         end
 
         function testToAlphaNumericStruct(testCase)
@@ -46,27 +48,31 @@ classdef TestContactInformation < matlab.unittest.TestCase
         % --- Tests for static fromStruct (inherited) ---
         function testFromStructValid(testCase)
             s.email = 'valid@struct.com';
+            s.CellStrDelimiter = ';'; % Test with a non-default delimiter
             ci = ndi.util.StructSerializable.fromStruct(testCase.ContactInfoClassName, s, false);
             testCase.verifyClass(ci, testCase.ContactInfoClassName);
             testCase.verifyEqual(ci.email, s.email);
+            testCase.verifyEqual(ci.CellStrDelimiter, ';');
         end
 
         function testFromStructMissingFieldOptional(testCase)
-            s = struct(); 
+            s = struct('CellStrDelimiter', '|'); 
             ci = ndi.util.StructSerializable.fromStruct(testCase.ContactInfoClassName, s, false);
             testCase.verifyClass(ci, testCase.ContactInfoClassName);
-            % Corrected: The default email will be 1x0 empty char.
-            testCase.verifyEqual(ci.email, char.empty(1,0), 'Email should default to 1x0 empty char.');
+            testCase.verifyEqual(ci.email, char.empty(1,0));
+            testCase.verifyEqual(ci.CellStrDelimiter, '|');
         end
 
         function testFromStructMissingFieldRequired(testCase)
-            s = struct(); 
+            % Corrected: Provide one field so only 'email' is missing.
+            s = struct('CellStrDelimiter', ', '); 
             testCase.verifyError(@() ndi.util.StructSerializable.fromStruct(testCase.ContactInfoClassName, s, true), ...
                 'ndi:validators:mustHaveFields:MissingField');
         end
         
         function testFromStructExtraField(testCase)
             s.email = 'test@example.com';
+            s.CellStrDelimiter = ', ';
             s.extraField = 'unexpected';
             testCase.verifyError(@() ndi.util.StructSerializable.fromStruct(testCase.ContactInfoClassName, s, false), ...
                 'ndi:validators:mustHaveOnlyFields:ExtraField');
@@ -75,35 +81,50 @@ classdef TestContactInformation < matlab.unittest.TestCase
         % --- Tests for static fromAlphaNumericStruct ---
         function testFromAlphaNumericStructValidScalar(testCase)
             alphaS.email = 'alpha@example.com';
+            alphaS.CellStrDelimiter = ';';
             f = str2func([testCase.ContactInfoClassName '.fromAlphaNumericStruct']);
-            ci = f(alphaS, false);
+            ci = f(alphaS);
             testCase.verifyClass(ci, testCase.ContactInfoClassName);
             testCase.verifyEqual(ci.email, alphaS.email);
+            testCase.verifyEqual(ci.CellStrDelimiter, ';');
         end
 
         function testFromAlphaNumericStructValidArray(testCase)
             alphaS(1,1).email = 'user1@example.com';
+            alphaS(1,1).CellStrDelimiter = ', ';
             alphaS(1,2).email = 'user2@example.com';
+            alphaS(1,2).CellStrDelimiter = '|';
             
             f = str2func([testCase.ContactInfoClassName '.fromAlphaNumericStruct']);
-            ciArray = f(alphaS, false);
+            ciArray = f(alphaS);
             testCase.verifyClass(ciArray, testCase.ContactInfoClassName);
             testCase.verifySize(ciArray, [1 2]);
             testCase.verifyEqual(ciArray(1,2).email, alphaS(1,2).email);
+            testCase.verifyEqual(ciArray(1,2).CellStrDelimiter, '|');
         end
         
         function testFromAlphaNumStruct_InvalidInputFormat(testCase)
             alphaS.email = {'not', 'a', 'char'};
+            alphaS.CellStrDelimiter = ', ';
             f = str2func([testCase.ContactInfoClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, false), ...
+            testCase.verifyError(@() f(alphaS), ...
                 'ndi:validators:mustBeAlphaNumericStruct:InvalidFormat');
         end
 
         function testFromAlphaNumericStructMissingFieldRequired(testCase)
-            alphaS = struct();
+            % Corrected: Provide CellStrDelimiter so only 'email' is missing
+            alphaS = struct('CellStrDelimiter', ', ');
             f = str2func([testCase.ContactInfoClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, true), ...
+            testCase.verifyError(@() f(alphaS, 'errorIfFieldNotPresent', true), ...
                 'ndi:validators:mustHaveFields:MissingField');
+        end
+
+        function testFromAlphaNumericStructExtraField(testCase)
+            alphaS.email = 'test@example.com';
+            alphaS.CellStrDelimiter = ', ';
+            alphaS.extraField = 'extra';
+            f = str2func([testCase.ContactInfoClassName '.fromAlphaNumericStruct']);
+            testCase.verifyError(@() f(alphaS), 'ndi:validators:mustHaveOnlyFields:ExtraField');
         end
     end
 end

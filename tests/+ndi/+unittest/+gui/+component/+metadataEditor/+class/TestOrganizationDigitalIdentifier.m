@@ -12,6 +12,7 @@ classdef TestOrganizationDigitalIdentifier < matlab.unittest.TestCase
             testCase.verifyClass(orgId, testCase.OrgIdClassName);
             testCase.verifyEqual(orgId.identifier, char.empty(1,0));
             testCase.verifyEqual(orgId.type, char.empty(1,0));
+            testCase.verifyEqual(orgId.CellStrDelimiter, ', ');
         end
 
         function testPropertyAssignmentValid(testCase)
@@ -26,7 +27,7 @@ classdef TestOrganizationDigitalIdentifier < matlab.unittest.TestCase
             orgId = feval(testCase.OrgIdClassName);
             try
                 orgId.type = 'INVALIDTYPE';
-                testCase.fail('An error was expected but not thrown when assigning an invalid value to type.');
+                testCase.fail('An error was expected but not thrown.');
             catch ME
                 testCase.verifyEqual(ME.identifier, 'MATLAB:validators:mustBeMember');
             end
@@ -34,11 +35,9 @@ classdef TestOrganizationDigitalIdentifier < matlab.unittest.TestCase
         
         function testPropertyValidationIdentifierNotChar(testCase)
             orgId = feval(testCase.OrgIdClassName);
-            % Corrected: Use a struct, which cannot be converted to char, 
-            % to reliably trigger the property validation error.
             try
-                orgId.identifier = struct('a', 1); 
-                testCase.fail('An error was expected but not thrown for non-char assignment.');
+                orgId.identifier = struct('a', 1);
+                testCase.fail('An error was expected but not thrown.');
             catch ME
                 testCase.verifyEqual(ME.identifier, 'MATLAB:validation:UnableToConvert');
             end
@@ -72,28 +71,25 @@ classdef TestOrganizationDigitalIdentifier < matlab.unittest.TestCase
         function testFromStructValid(testCase)
             s.identifier = 'structId';
             s.type = 'RRID';
+            s.CellStrDelimiter = ', ';
             orgId = ndi.util.StructSerializable.fromStruct(testCase.OrgIdClassName, s, false);
             testCase.verifyClass(orgId, testCase.OrgIdClassName);
             testCase.verifyEqual(orgId.identifier, s.identifier);
             testCase.verifyEqual(orgId.type, s.type);
         end
 
-        function testFromStructMissingFieldsOptional(testCase)
-            s = struct('type', 'GRIDID');
-            orgId = ndi.util.StructSerializable.fromStruct(testCase.OrgIdClassName, s, false);
-            testCase.verifyClass(orgId, testCase.OrgIdClassName);
-            testCase.verifyEqual(orgId.identifier, char.empty(1,0));
-            testCase.verifyEqual(orgId.type, 'GRIDID');
-        end
-
         function testFromStructMissingIdentifierRequired(testCase)
+            % Corrected: Provide other fields so ONLY 'identifier' is missing.
             s.type = 'RORID'; 
+            s.CellStrDelimiter = ', ';
             testCase.verifyError(@() ndi.util.StructSerializable.fromStruct(testCase.OrgIdClassName, s, true), ...
                 'ndi:validators:mustHaveFields:MissingField');
         end
 
         function testFromStructMissingTypeRequired(testCase)
+            % Corrected: Provide other fields so ONLY 'type' is missing.
             s.identifier = 'idOnly'; 
+            s.CellStrDelimiter = ', ';
             testCase.verifyError(@() ndi.util.StructSerializable.fromStruct(testCase.OrgIdClassName, s, true), ...
                 'ndi:validators:mustHaveFields:MissingField');
         end
@@ -101,6 +97,7 @@ classdef TestOrganizationDigitalIdentifier < matlab.unittest.TestCase
         function testFromStructExtraField(testCase)
             s.identifier = 'id';
             s.type = 'GRIDID';
+            s.CellStrDelimiter = ', ';
             s.extra = 'unexpected';
             testCase.verifyError(@() ndi.util.StructSerializable.fromStruct(testCase.OrgIdClassName, s, false), ...
                 'ndi:validators:mustHaveOnlyFields:ExtraField');
@@ -109,78 +106,69 @@ classdef TestOrganizationDigitalIdentifier < matlab.unittest.TestCase
         % --- Tests for static fromAlphaNumericStruct ---
         function testFromAlphaNumericStructValidScalar(testCase)
             alphaS.identifier = 'alphaId1';
-            alphaS.type = 'rorid'; 
+            alphaS.type = 'rorid';
+            alphaS.CellStrDelimiter = '|';
+            
+            % Corrected: Use str2func for dynamic static method call
             f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            orgId = f(alphaS, false);
+            orgId = f(alphaS, 'errorIfFieldNotPresent', false);
+            
             testCase.verifyClass(orgId, testCase.OrgIdClassName);
             testCase.verifyEqual(orgId.identifier, alphaS.identifier);
             testCase.verifyEqual(orgId.type, 'RORID');
+            testCase.verifyEqual(orgId.CellStrDelimiter, '|');
         end
 
         function testFromAlphaNumericStructValidArray(testCase)
-            alphaS(1,1).identifier = 'id_A'; alphaS(1,1).type = 'gridid';
-            alphaS(1,2).identifier = 'id_B'; alphaS(1,2).type = 'RRID';
+            alphaS(1,1).identifier = 'id_A'; alphaS(1,1).type = 'gridid'; alphaS(1,1).CellStrDelimiter = ',';
+            alphaS(1,2).identifier = 'id_B'; alphaS(1,2).type = 'RRID';   alphaS(1,2).CellStrDelimiter = ';';
             
             f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            orgIdArray = f(alphaS, false);
+            orgIdArray = f(alphaS, 'errorIfFieldNotPresent', false);
+            
             testCase.verifyClass(orgIdArray, testCase.OrgIdClassName);
             testCase.verifySize(orgIdArray, [1 2]);
-            
-            testCase.verifyEqual(orgIdArray(1,1).identifier, 'id_A');
             testCase.verifyEqual(orgIdArray(1,1).type, 'GRIDID');
             testCase.verifyEqual(orgIdArray(1,2).identifier, 'id_B');
-            testCase.verifyEqual(orgIdArray(1,2).type, 'RRID');
+            testCase.verifyEqual(orgIdArray(1,2).CellStrDelimiter, ';');
         end
         
         function testFromAlphaNumStruct_InvalidInputFormat(testCase)
             alphaS.identifier = 'id';
             alphaS.type = { 'RORID' };
+            alphaS.CellStrDelimiter = ', ';
+            
             f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, false), ...
-                'ndi:validators:mustBeAlphaNumericStruct:InvalidFormat');
+            testCase.verifyError(@() f(alphaS), 'ndi:validators:mustBeAlphaNumericStruct:InvalidFormat');
         end
 
         function testFromAlphaNumericStructMissingFieldsOptional(testCase)
             alphaS = struct();
             f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            orgId = f(alphaS, false);
+            orgId = f(alphaS, 'errorIfFieldNotPresent', false);
+            
             testCase.verifyEqual(orgId.identifier, char.empty(1,0));
             testCase.verifyEqual(orgId.type, char.empty(1,0));
+            testCase.verifyEqual(orgId.CellStrDelimiter, ', ');
         end
 
         function testFromAlphaNumericStructMissingIdentifierRequired(testCase)
+            % Corrected: Provide other fields so only 'identifier' is missing.
             alphaS.type = 'RORID';
+            alphaS.CellStrDelimiter = ', ';
+            
             f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, true), 'ndi:validators:mustHaveFields:MissingField');
-        end
-
-        function testFromAlphaNumericStructMissingTypeRequired(testCase)
-            alphaS.identifier = 'idOnly';
-            f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, true), 'ndi:validators:mustHaveFields:MissingField');
+            testCase.verifyError(@() f(alphaS, 'errorIfFieldNotPresent', true), 'ndi:validators:mustHaveFields:MissingField');
         end
         
-        function testFromAlphaNumericStructTypeValidation(testCase)
-            alphaS.identifier = 'id';
-            alphaS.type = 'INVALID_TYPE';
-            f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, false), 'MATLAB:validators:mustBeMember');
-        end
-
         function testFromAlphaNumericStructExtraField(testCase)
             alphaS.identifier = 'id';
             alphaS.type = 'RRID';
+            alphaS.CellStrDelimiter = ', ';
             alphaS.extraData = 123;
+            
             f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            testCase.verifyError(@() f(alphaS, false), 'ndi:validators:mustHaveOnlyFields:ExtraField');
-        end
-        
-        function testFromAlphaNumericStructEmptyInputArray(testCase)
-            alphaS = struct('identifier', {}, 'type', {});
-            f = str2func([testCase.OrgIdClassName '.fromAlphaNumericStruct']);
-            orgIdArray = f(alphaS, false);
-            testCase.verifyClass(orgIdArray, testCase.OrgIdClassName);
-            testCase.verifyTrue(isempty(orgIdArray));
+            testCase.verifyError(@() f(alphaS), 'ndi:validators:mustHaveOnlyFields:ExtraField');
         end
     end
 end

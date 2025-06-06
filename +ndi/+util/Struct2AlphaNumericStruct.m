@@ -1,51 +1,48 @@
-function S_out = Struct2AlphaNumericStruct(S_in)
+function S_out = Struct2AlphaNumericStruct(S_in, options)
 %STRUCT2ALPHANUMERICSTRUCT Converts an arbitrary structure array to one containing
-%only alphanumeric data (numbers, char arrays) or other (sub)structures.
+%only alphanumeric data.
 %
 %   S_OUT = ndi.util.Struct2AlphaNumericStruct(S_IN)
+%   S_OUT = ndi.util.Struct2AlphaNumericStruct(S_IN, 'Delimiter', DELIM)
 %
 %   Inputs:
 %       S_IN (struct): The input structure array to convert. Can be any size.
 %
+%   Name-Value Pairs:
+%       Delimiter (char vector): The delimiter to use when joining
+%           cell arrays of strings. Defaults to ', '.
+%
 %   Outputs:
 %       S_OUT (struct): The converted structure array, returned with the same
-%                       dimensions as S_IN. Leaf nodes will be numeric,
-%                       logical, or character arrays. Cell arrays of strings
-%                       are converted to comma-separated character arrays.
-%                       String arrays/scalars are converted to comma-separated char arrays.
-%
-%   Description:
-%       The function iterates through each element of the input structure array
-%       S_IN and recursively traverses its fields.
+%                       dimensions as S_IN. datetime objects are converted to
+%                       ISO 8601 character vectors.
 
     arguments
-        S_in struct % Input can be a struct array of any size
+        S_in struct
+        options.Delimiter (1,:) char = ', ' % Optional name-value pair
     end
-
-    S_out = convertElementValueRecursive(S_in, 'S_in'); % Provide a base name for path tracking
+    
+    S_out = convertElementValueRecursive(S_in, 'S_in', options.Delimiter);
 
 end
 
 % --- Local Recursive Helper Function ---
-function convertedValue = convertElementValueRecursive(value, currentPath)
+function convertedValue = convertElementValueRecursive(value, currentPath, delimiter)
 %convertElementValueRecursive Helper to process individual elements.
 
     if isstruct(value)
-        if isempty(value) % Handles struct([]) or 0xN struct array
-            convertedValue = value; % Return empty struct/array as is
+        if isempty(value)
+            convertedValue = value;
             return;
         end
         
-        % Process struct or struct array by element
-        convertedValue = value; % Start with a copy to preserve structure and size
+        convertedValue = value; 
         for k = 1:numel(value)
             elementPathForArrayElement = currentPath;
-            if ~isscalar(value) % Only add index to path if it's an array
+            if ~isscalar(value)
                 if isvector(value)
-                    % Use linear index for vectors
                     elementPathForArrayElement = sprintf('%s(%d)', currentPath, k);
                 else
-                    % Use ind2sub for multi-dimensional arrays
                     siz = size(value);
                     sub_indices = cell(1, numel(siz));
                     [sub_indices{:}] = ind2sub(siz, k);
@@ -53,64 +50,62 @@ function convertedValue = convertElementValueRecursive(value, currentPath)
                 end
             end
 
-            % Recursively convert the k-th struct element's fields
-            tempStruct = value(k); % Get scalar struct
+            tempStruct = value(k);
             fieldNames = fieldnames(tempStruct);
             if isempty(fieldNames)
-                % Handles struct() which has no fields, no change needed
                 continue; 
             end
             for i = 1:numel(fieldNames)
                 fn = fieldNames{i};
                 fieldPath = [elementPathForArrayElement '.' fn];
-                tempStruct.(fn) = convertElementValueRecursive(tempStruct.(fn), fieldPath);
+                tempStruct.(fn) = convertElementValueRecursive(tempStruct.(fn), fieldPath, delimiter);
             end
             convertedValue(k) = tempStruct;
         end
 
     elseif iscell(value)
         if isempty(value)
-            convertedValue = ''; % Empty cell becomes empty char
+            convertedValue = ''; 
         else
-            isAllCharOrString = true;
-            firstNonStringType = '';
-            for i = 1:numel(value)
-                % Each cell element must be a char row vector or a scalar string
-                if ~((ischar(value{i}) && (isrow(value{i}) || isempty(value{i}))) || ...
-                     (isstring(value{i}) && isscalar(value{i})))
-                    isAllCharOrString = false;
-                    firstNonStringType = class(value{i});
-                    break;
-                end
-            end
+            isAllCharOrString = all(cellfun(@(x) (ischar(x) && (isrow(x) || isempty(x))) || (isstring(x) && isscalar(x)), value));
+            
             if isAllCharOrString
-                % Convert all to char for strjoin (handles strings correctly)
                 charCell = cellfun(@char, value, 'UniformOutput', false);
-                convertedValue = strjoin(charCell, ', ');
+                convertedValue = strjoin(charCell, delimiter);
             else
+                firstNonStringIdx = find(~cellfun(@(x) (ischar(x) && (isrow(x) || isempty(x))) || (isstring(x) && isscalar(x)), value), 1);
+                firstNonStringType = class(value{firstNonStringIdx});
                 error('ndi:util:Struct2AlphaNumericStruct:InvalidCellContent', ...
-                      'Field "%s" is a cell array that does not exclusively contain character arrays (row vectors) or scalar strings. Encountered type: %s.', ...
+                      'Field "%s" is a cell array that does not exclusively contain text. Encountered type: %s.', ...
                       currentPath, firstNonStringType);
             end
         end
     elseif isstring(value)
-        % Convert string array/scalar to a cell array of char vectors, then join.
-        if isempty(value) && ~(isscalar(value) && value == "") % handles strings(0,N) etc. but not scalar ""
+        if isempty(value) && ~(isscalar(value) && value == "")
             convertedValue = '';
-        else % handles scalar strings (including "") and non-empty string arrays
-            charCell = cellstr(value); % Convert to cell array of char vectors
+        else
+            charCell = cellstr(value); 
             if isempty(charCell)
                 convertedValue = '';
             else
-                convertedValue = strjoin(charCell(:)', ', '); % Join, ensuring row vector for strjoin
+                convertedValue = strjoin(charCell(:)', delimiter);
             end
         end
-    elseif isnumeric(value) || islogical(value) % Logical is also numeric
-        convertedValue = value; % Keep as is
-    elseif ischar(value)
-        convertedValue = value; % Keep as is
+    elseif isdatetime(value)
+        % Corrected: Handle datetime objects using MATLAB syntax
+        if isempty(value) || all(isnat(value(:)))
+            convertedValue = '';
+        else
+            % Ensure timezone is UTC for consistent ISO 8601 representation
+            value.TimeZone = 'UTC';
+            % Set the display format to ISO 8601 with milliseconds and 'Z' for UTC
+            value.Format = 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z''';
+            % Convert to string, then to char array
+            convertedValue = char(string(value));
+        end
+    elseif isnumeric(value) || islogical(value) || ischar(value)
+        convertedValue = value;
     else
-        % Unsupported type
         error('ndi:util:Struct2AlphaNumericStruct:UnsupportedType', ...
               'Field "%s" contains an unsupported data type: %s.', ...
               currentPath, class(value));

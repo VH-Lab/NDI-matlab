@@ -1,0 +1,29 @@
+{
+  "TitleAbstractTabController": [
+    {
+      "tag": "TitleEditField",
+      "emptyText": "Enter the full title of the dataset",
+      "tip": "The official, human-readable title for this dataset or dataset branch. This will be used in publications and citations.",
+      "required": true
+    },
+    {
+      "tag": "ShortNameEditField",
+      "emptyText": "A short, machine-friendly name",
+      "tip": "A brief, unique, machine-readable identifier for the dataset (e.g., 'vis-ctx-exp-01'). Use lowercase letters, numbers, and hyphens.",
+      "required": true
+    },
+    {
+      "tag": "AbstractTextArea",
+      "emptyText": "Provide a detailed summary of the dataset, including the scientific questions, methods, and key findings...",
+      "tip": "The abstract should be a comprehensive summary of the project, suitable for helping other researchers understand the dataset's context and purpose.",
+      "required": true
+    },
+    {
+      "tag": "CommentsTextArea",
+      "emptyText": "(Optional) Add any other relevant details or comments here...",
+      "tip": "Use this field for any additional notes, details about data collection, or other comments that do not fit into the other fields.",
+      "required": false
+    }
+  ]
+}
+

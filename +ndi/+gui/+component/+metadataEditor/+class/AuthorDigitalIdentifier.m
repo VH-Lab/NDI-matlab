@@ -1,10 +1,12 @@
-% ContactInformation.m (in +ndi/+gui/+component/+metadataEditor/+class/)
-classdef ContactInformation < ndi.util.StructSerializable
-    %CONTACTINFORMATION Stores contact information, specifically an email address.
+% AuthorDigitalIdentifier.m (in +ndi/+gui/+component/+metadataEditor/+class/)
+classdef AuthorDigitalIdentifier < ndi.util.StructSerializable
+    %AUTHORDIGITALIDENTIFIER Stores a specific type of digital identifier for an author.
     %   Inherits from ndi.util.StructSerializable for common conversion methods.
 
     properties
-        email (1,:) char = '' % Email address, initialized to empty char
+        identifier (1,:) char = ''
+        % The 'type' property for an author identifier is typically ORCID.
+        type (1,:) char {mustBeMember(type, {'', 'ORCID'})} = ''
     end
 
     % Constructor is implicitly inherited. Properties are initialized directly.
@@ -13,9 +15,7 @@ classdef ContactInformation < ndi.util.StructSerializable
 
     methods (Static)
         function obj = fromAlphaNumericStruct(alphaS_in, options)
-            %FROMALPHANUMERICSTRUCT Creates ContactInformation object(s) from an AlphaNumericStruct array.
-            %   This method can accept a struct array of any size and will return an
-            %   object array of the same dimensions.
+            %FROMALPHANUMERICSTRUCT Creates AuthorDigitalIdentifier object(s) from an AlphaNumericStruct array.
             %
             %   Name-Value Pairs:
             %       errorIfFieldNotPresent (logical): If true, errors if alphaS_in
@@ -26,35 +26,35 @@ classdef ContactInformation < ndi.util.StructSerializable
             end
             
             if isempty(alphaS_in)
-                obj = ndi.gui.component.metadataEditor.class.ContactInformation.empty(size(alphaS_in));
+                obj = feval(mfilename('class')).empty(size(alphaS_in));
                 return;
             end
             
-            % Define allowed fields, which now includes the inherited CellStrDelimiter
-            allowedFields = {'email', 'CellStrDelimiter'};
+            % The allowedFields should include all properties of this class plus the inherited ones.
+            allowedFields = {'identifier', 'type', 'CellStrDelimiter'};
             ndi.util.StructSerializable.validateStructArrayFields(alphaS_in, allowedFields, options.errorIfFieldNotPresent);
-            
-            % Pre-allocate a cell array to hold new, distinct objects
+
             obj_cell = cell(size(alphaS_in));
             
-            % Iterate through each element of the input struct array
             for i = 1:numel(alphaS_in)
-                % Create a new, distinct object in each iteration
-                newObj = ndi.gui.component.metadataEditor.class.ContactInformation();
+                newObj = feval(mfilename('class'));
                 currentAlphaStruct = alphaS_in(i);
-                
-                if isfield(currentAlphaStruct, 'email')
-                    newObj.email = currentAlphaStruct.email;
+
+                if isfield(currentAlphaStruct, 'identifier')
+                    newObj.identifier = currentAlphaStruct.identifier;
                 end
 
+                if isfield(currentAlphaStruct, 'type')
+                    newObj.type = upper(currentAlphaStruct.type);
+                end
+                
                 if isfield(currentAlphaStruct, 'CellStrDelimiter')
                     newObj.CellStrDelimiter = currentAlphaStruct.CellStrDelimiter;
                 end
                 
                 obj_cell{i} = newObj;
             end
-
-            % Convert cell array to an object array and reshape
+            
             obj = [obj_cell{:}];
             obj = reshape(obj, size(alphaS_in));
         end

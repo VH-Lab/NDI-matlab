@@ -19,11 +19,11 @@ classdef Organization < ndi.util.StructSerializable
     end
 
     methods (Static)
-        function obj = fromAlphaNumericStruct(alphaS_in, errorIfFieldNotPresent)
+        function obj = fromAlphaNumericStruct(alphaS_in, options)
             %FROMALPHANUMERICSTRUCT Creates Organization object(s) from an AlphaNumericStruct array.
             arguments
                 alphaS_in struct {ndi.validators.mustBeAlphaNumericStruct(alphaS_in)}
-                errorIfFieldNotPresent (1,1) logical = false
+                options.errorIfFieldNotPresent (1,1) logical = false
             end
             
             if isempty(alphaS_in)
@@ -31,8 +31,9 @@ classdef Organization < ndi.util.StructSerializable
                 return;
             end
             
-            allowedFields = {'fullName', 'DigitalIdentifier'};
-            ndi.util.StructSerializable.validateStructArrayFields(alphaS_in, allowedFields, errorIfFieldNotPresent);
+            % Updated: allowedFields now includes the inherited CellStrDelimiter
+            allowedFields = {'fullName', 'DigitalIdentifier', 'CellStrDelimiter'};
+            ndi.util.StructSerializable.validateStructArrayFields(alphaS_in, allowedFields, options.errorIfFieldNotPresent);
             
             obj_cell = cell(size(alphaS_in));
             
@@ -46,9 +47,15 @@ classdef Organization < ndi.util.StructSerializable
 
                 if isfield(currentAlphaStruct, 'DigitalIdentifier')
                     if isstruct(currentAlphaStruct.DigitalIdentifier)
-                        newObj.DigitalIdentifier = ndi.gui.component.metadataEditor.class.OrganizationDigitalIdentifier.fromAlphaNumericStruct(currentAlphaStruct.DigitalIdentifier, errorIfFieldNotPresent);
+                        newObj.DigitalIdentifier = ndi.gui.component.metadataEditor.class.OrganizationDigitalIdentifier.fromAlphaNumericStruct(currentAlphaStruct.DigitalIdentifier, 'errorIfFieldNotPresent', options.errorIfFieldNotPresent);
                     end
                 end
+                
+                % Updated: Populate the inherited CellStrDelimiter property
+                if isfield(currentAlphaStruct, 'CellStrDelimiter')
+                    newObj.CellStrDelimiter = currentAlphaStruct.CellStrDelimiter;
+                end
+
                 obj_cell{i} = newObj;
             end
             
