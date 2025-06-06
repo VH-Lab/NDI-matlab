@@ -19,7 +19,7 @@ arguments
 end
 
 % Create progress bar
-progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
+ndi.gui.component.ProgressBarWindow('Import Dataset');
 
 % Get data path
 dataPath = fullfile(dataParentDir,'Dabrowska');
@@ -97,7 +97,7 @@ variableTable{:,'BiologicalSex'} = {'male'};
 mySessionPath = dataParentDir;
 SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
     'NonNaNVariableNames','IsExpMatFile','Overwrite',options.Overwrite);
-[sessionsEphys,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
+[sessionArray,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
 
 % Add DAQ system
 labName = 'dabrowskalab';
@@ -111,9 +111,9 @@ subM = ndi.setup.NDIMaker.subjectMaker();
     @ndi.setup.conv.dabrowska.createSubjectInformation);
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
-subM.deleteSubjectDocs(sessionsEphys,subjectInfo.subjectName);
+subM.deleteSubjectDocs(sessionArray,subjectInfo.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo);
-subM.addSubjectsToSessions(sessionsEphys, subDocStruct.documents);
+subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
 %% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
 
@@ -152,7 +152,7 @@ jsonPath = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+setup','+conv',
 mixture_dictionary = jsondecode(fileread(jsonPath));
 
 % Get stimulus bath docs
-stimulus_bath_docs = sd.table2bathDocs(variableTable,...
+sd.table2bathDocs(variableTable,...
     'bath','BathConditionString',...
     'MixtureDictionary',mixture_dictionary,...
     'NonNaNVariableNames','sessionInd', ...
@@ -169,7 +169,7 @@ variableTable.ApproachName(indApproach(indPre)) = {'Approach: Before optogenetic
 variableTable.ApproachName(indApproach(indPost)) = {'Approach: After optogenetic tetanus'};
 
 % Get stimulus approach docs
-stimulus_approach_docs = sd.table2approachDocs(variableTable,'ApproachName',...
+sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',options.Overwrite);
 
@@ -191,8 +191,9 @@ for i = 1:numel(sheetnames_EPM)
 
     % Remove unused columns
     varNames = sheetTable.Properties.VariableNames;
-    ind = contains(varNames,'Var') | contains(varNames,'Test');
+    ind = contains(varNames,'Var');
     sheetTable(:,ind) = [];
+    sheetTable.Test(isnan(sheetTable.Test)) = 0; % remove NaN for proper table join
 
     % Edit varname that does not contain sheetname
     sheetVar = replace(sheetnames_EPM{i},' ','');
@@ -204,15 +205,24 @@ for i = 1:numel(sheetnames_EPM)
     if i == 1
         dataTable_EPM = sheetTable;
     else
-        dataTable_EPM = outerjoin(dataTable_EPM,sheetTable,'Keys',{'Animal','Treatment'},...
+        dataTable_EPM = outerjoin(dataTable_EPM,sheetTable,'Keys',{'Animal','Test','Treatment'},...
             'MergeKeys',true);
     end
 end
 
-% Add unique subject identifiers with strain and virus information
-% dataTable_EPM.Animal = char(arrayfun(@(animal) ['sd_rat_OTRCre_',num2str(animal,'%.3i'),...
-%     '@dabrowska-lab.rosalindfranklin.edu'],dataTable_EPM.Animal,'UniformOutput',false));
-dataTable_EPM.Test_Duration(:) = 300;
+% Replace NaNs for undefined test numbers
+dataTable_EPM.Test(dataTable_EPM.Test == 0) = NaN;
+
+% Add test duration variable
+dataTable_EPM.Test_Duration(:) = 300; % seconds
+
+% Add experiment id
+dataTable_EPM.Experiment_ID(:) = 1;
+dataTable_EPM.Experiment_ID(dataTable_EPM.Animal >= 300) = 2;
+
+% Exclude animals not expressing mCherry
+dataTable_EPM.Exclude(:) = false;
+dataTable_EPM.Exclude(dataTable_EPM.Animal == 239 | dataTable_EPM.Animal == 258) = true;
 
 %% Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
 
@@ -242,15 +252,8 @@ end
 % Join sheet tables
 dataTable_FPS = ndi.fun.table.vstack(dataTable_FPS);
 
-% Add unique subject and group identifiers
-% dataTable_FPS.Subject_ID = char(arrayfun(@(subject) ['sd_rat_OTRCre_',subject{1},...
-%     '@dabrowska-lab.rosalindfranklin.edu'],dataTable_FPS.Subject_ID,'UniformOutput',false));
-dataTable_FPS.Group_ID = char(cellfun(@(sid) sid(6),dataTable_FPS.Session_ID));
-
-% Convert cells to char arrays
-dataTable_FPS.Trial_ID = char(dataTable_FPS.Trial_ID);
-dataTable_FPS.Run_Time = char(dataTable_FPS.Run_Time);
-dataTable_FPS.Sheet_Name = char(dataTable_FPS.Sheet_Name);
+% Add group identifiers and recording date
+dataTable_FPS.Group_ID = cellfun(@(sid) sid(6),dataTable_FPS.Session_ID);
 
 % Remove redundant (or unused columns)
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
@@ -265,35 +268,34 @@ subjectTableBehavior{:,'SessionPath'} = {'Dabrowska'};
 subjectTableBehavior{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
 subjectTableBehavior{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 subjectTableBehavior{:,'BiologicalSex'} = {'male'};
-subjectTableBehavior{:,'IsOTRCre'} = 'OTRCre';
+subjectTableBehavior{:,'IsWildType'} = NaN;
+subjectTableBehavior{:,'IsOTRCre'} = {'OTRCre'};
+subjectTableBehavior{:,'IsCRFCre'} = NaN;
+subjectTableBehavior{:,'IsAVPCre'} = NaN;
+subjectTableBehavior{:,'sessionID'} = sessionArray{1}.identifier;
+subjectTableBehavior{:,'RecordingDate'} = 'Aug 19 2022';
+subjectTableBehavior{:,'ProbePostfix'} = arrayfun(@(si) ['_220819_',num2str(si)],...
+    subjectTableBehavior.Animal,'UniformOutput',false);
 
-% Employ the sessionMaker
-mySessionPath = dataParentDir;
-SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,subjectTableBehavior,...
-    'Overwrite',options.Overwrite);
-[sessionsBehavior,subjectTableBehavior.sessionInd,subjectTableBehavior.sessionID] = SM.sessionIndices;
-
-% Employ the subjectMaker
+%% Employ the subjectMaker
 [subjectInfo_behavior,subjectTableBehavior.SubjectString] = ...
     subM.getSubjectInfoFromTable(subjectTableBehavior,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
-%% We have no need to delete any previously made subjects because we remade all the sessions
-% but if we did we could use the subM.deleteSubjectDocs method
-subM.deleteSubjectDocs(sessionsBehavior,subjectInfo_behavior.subjectName);
+subM.deleteSubjectDocs(sessionArray,subjectInfo_behavior.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
-subM.addSubjectsToSessions(sessionsBehavior, subDocStruct.documents);
+subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
+
+% Add subject names to datatables
 
 %% Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
-% Get session
-S = ndi.session.dir(dataPath);
 % Initialize tableDocMaker
-tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
+tdm = ndi.setup.NDIMaker.tableDocMaker(sessionArray{1},'dabrowska');
 
 % Create EPM docs
-docsEPM = tdm.table2ontologyTableRowDocs(dataTable_EPM,{'Animal','Treatment'},...
+tdm.table2ontologyTableRowDocs(dataTable_EPM,{'Animal','Treatment'},...
     'Overwrite',options.Overwrite);
 
 % Create FPS docs
-docsFPS = tdm.table2ontologyTableRowDocs(dataTable_FPS,...
+tdm.table2ontologyTableRowDocs(dataTable_FPS,...
     {'Subject_ID','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
