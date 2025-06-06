@@ -169,7 +169,9 @@ classdef tableDocMaker < handle
             varNames = tableRow.Properties.VariableNames;
 
             % Initialize ontologyTableRow field names
-            names = {}; variableNames = {}; ontologyNodes = {}; data = struct();
+            names = cell(numel(varNames),1); variableNames = cell(numel(varNames),1);
+            ontologyNodes = cell(numel(varNames),1); data = struct();
+            invalidInd = false(numel(varNames),1);
             for i = 1:numel(varNames)
 
                 % Map variable name to ontology term given variableMapStruct
@@ -178,6 +180,7 @@ classdef tableDocMaker < handle
                 catch ME
                     if strcmpi(ME.identifier,'MATLAB:nonExistentField')
                         warning(ME.identifier,'%s Skipping.',ME.message)
+                        invalidInd(i) = true;
                         continue
                     else
                         rethrow(ME)
@@ -185,14 +188,26 @@ classdef tableDocMaker < handle
                 end
 
                 % Lookup term from ontology
-                [id,name,~,~,~,shortName] = ndi.ontology.lookup(termName);
+                [ontologyNodes{i},names{i},~,~,~,variableNames{i}] = ndi.ontology.lookup(termName);
+
+                % Unpack data values from cell (if applicable)
+                value = tableRow.(varNames{i});
+                if iscell(value)
+                    if isscalar(value)
+                        value = value{1};
+                    else
+                        error('tableDocMaker:TableValueIsCellArray',...
+                            ['A table cell can only contain a single value, not a cell array. ' ...
+                            'Check that values of the variable: %s'],varNames{i});
+                    end
+                end
 
                 % Add values to field
-                names{end+1} = name;
-                variableNames{end+1} = shortName;
-                ontologyNodes{end+1} = id;
-                data.(shortName) = tableRow.(varNames{i});
+                data.(variableNames{i}) = value;
             end
+
+            % Remove empty fields
+            names(invalidInd) = []; variableNames(invalidInd) = []; ontologyNodes(invalidInd) = [];
 
             % Convert names, shortNames, and ids to comma-seperated char arrays
             names = join(names,','); names = names{1};
@@ -313,7 +328,7 @@ classdef tableDocMaker < handle
             obj.session.database_add(docs(~inDatabase));
 
             % Complete progress bar
-            progressBar = progressBar.updateBar('ontologyTableRow',1);
+            progressBar.updateBar('ontologyTableRow',1);
 
         end % table2ontologyTableRowDocs
 

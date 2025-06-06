@@ -143,7 +143,7 @@ ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
 
 %% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
 
-sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionsEphys{1},'dabrowska',...
+sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
     'GetProbes',true);
 
 % Get mixture dictionary
@@ -290,22 +290,20 @@ subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
 % Add subject strings to data tables
 dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectString'}),'Keys','Animal');
-dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),'LeftKeys','Subject_ID','RightKeys','Animal');
+dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),...
+    'LeftKeys','Subject_ID','RightKeys','Animal');
 
 %% Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
-% In tableDocMaker - check for isscalar & iscell and unpack; if ~isscalar,
-% error letting user know that they must have only one value; try making
-% comma separated list if needed
 % Check dictionary/ontology for new variables
 
 % Initialize tableDocMaker
 tdm = ndi.setup.NDIMaker.tableDocMaker(sessionArray{1},'dabrowska');
 
 % Create EPM docs
-tdm.table2ontologyTableRowDocs(dataTable_EPM,{'Animal','Treatment'},...
+tdm.table2ontologyTableRowDocs(dataTable_EPM,{'SubjectString','Treatment'},...
     'Overwrite',options.Overwrite);
 
 % Create FPS docs
 tdm.table2ontologyTableRowDocs(dataTable_FPS,...
-    {'Subject_ID','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
+    {'SubjectString','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);

@@ -1,5 +1,5 @@
 {
-  "Animal": "EMPTY:Subject local identifier",
+  "SubjectString": "EMPTY:Subject local identifier",
   "Treatment": "EMPTY:Treatment: CNO or saline administration",
   "OpenArm_Wall__Entries": "EMPTY:Elevated Plus Maze: open arm (north) - entries",
   "OpenArm_OpenField__Entries": "EMPTY:Elevated Plus Maze: open arm (south) - entries",
@@ -49,7 +49,6 @@
   "Trial_Num": "EMPTY:Fear-Potentiated Startle: trial number",
   "Trial_ID": "EMPTY:Fear-Potentiated Startle: trial type identifier",
   "Channel_ID": "EMPTY:Fear-Potentiated Startle: apparatus chamber identifier",
-  "Subject_ID": "EMPTY:Subject local identifier",
   "Group_ID": "EMPTY:Experimental group code",
   "Samples": "EMPTY:Acoustic Startle Response: number of samples",
   "Rate": "EMPTY:Acoustic Startle Response: sampling rate",
@@ -59,5 +58,8 @@
   "mV_Avg": "EMPTY:Acoustic Startle Response: average amplitude",
   "Run_Time": "EMPTY:Experiment trial execution timestamp",
   "Sheet_Name": "EMPTY:Fear-Potentiated Startle: experimental phase or test name",
-  "Test_Duration": "EMPTY:Elevated Plus Maze: test duration"
+  "Test_Duration": "EMPTY:Elevated Plus Maze: test duration",
+  "Test": "EMPTY:Elevated Plus Maze: test identifier",
+  "Experiment_ID": "EMPTY:Experimental group code",
+  "Exclude": "EMPTY:Data exclusion flag"
 }

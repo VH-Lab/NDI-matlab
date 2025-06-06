@@ -579,6 +579,14 @@ property_value: codeName "elevatedPlusMazeTestDuration" xsd:string
 
 
 [Term]
+id: EMPTY:00000165
+name: Data exclusion flag
+namespace: empty_ontology
+def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to due to predefined quality control issues or experimental failure." []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "dataExclusionFlag" xsd:string
+
+[Term]
 id: EMPTY:30000000
 name: Approach
 namespace: empty_ontology
