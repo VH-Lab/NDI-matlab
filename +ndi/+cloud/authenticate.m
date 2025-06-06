@@ -94,7 +94,7 @@ function isSuccess = authenticatedWithSecret(userName, interactionEnabled)
                 end
             end
         catch ME                
-            warning('Could not get credentials from MATLAB Vault. Reason:\n%s', ME.message)
+            warning(ME.identifier,'Could not get credentials from MATLAB Vault. Reason:\n%s', ME.message)
         end
     end
 end
