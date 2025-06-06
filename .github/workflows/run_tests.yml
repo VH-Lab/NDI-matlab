@@ -44,12 +44,12 @@ jobs:
           cache: true
 
       - name: Install MatBox
-        uses: ehennestad/matbox/.github/actions/install-matbox@add-reusable-test-workflow
+        uses: ehennestad/matbox/.github/actions/install-matbox@v0.9
 
       - name: Check code and upload report
-        uses: ehennestad/matbox/.github/actions/check-code@add-reusable-test-workflow
+        uses: ehennestad/matbox/.github/actions/check-code@v0.9
         with:
-          code_directory: '.'
+          code_directory: '+ndi'
 
       - name: Run tests
         uses: matlab-actions/run-command@v2
@@ -65,7 +65,7 @@ jobs:
 
       - name: Commit SVG badges if updated
         if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: ehennestad/matbox/.github/actions/push-badges@add-reusable-test-workflow
+        uses: ehennestad/matbox/.github/actions/push-badges@v0.9
         with:
           pr-ref: ${{ github.event.pull_request.head.ref }}
           pr-repo: ${{ github.event.pull_request.head.repo.full_name }}
