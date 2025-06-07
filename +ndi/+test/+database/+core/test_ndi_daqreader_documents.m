@@ -41,25 +41,25 @@ function test_ndi_daqreader_documents
 
     daqreader_docs = {};
 
-    for i=1:numel(object_list),
+    for i=1:numel(object_list)
         disp(['Making ' object_list{i} '...']);
         dr{i} = eval([object_list{i} '();']);
         disp(['Making document for ' object_list{i} '...']);
         dr_doc{i} = dr{i}.newdocument();
         E.database_add(dr_doc{i});
         daqreader_docs{i} = E.database_search(dr{i}.searchquery());
-        if numel(daqreader_docs{i})~=1,
+        if numel(daqreader_docs{i})~=1
             error(['Did not find exactly 1 match.']);
         end;
     end;
 
     dr_fromdoc = {};
 
-    for i=1:numel(daqreader_docs),
+    for i=1:numel(daqreader_docs)
         dr_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(daqreader_docs{i}{1},E);
-        if eq(dr_fromdoc{i},dr{i}),
+        if eq(dr_fromdoc{i},dr{i})
             disp(['Daqreader number ' int2str(i) ' matches.']);
-        else,
+        else
             dr{i}, dr_doc{i}.document_properties.ndi_document,
             dr_fromdoc{i}, daqreader_docs{i}{1}.document_properties.ndi_document
             error(['Daqreader number ' int2str(i) ' does not match.']);

@@ -10,6 +10,6 @@ function fix_empty_records(dirname, N)
 
     T = getalltests(ds);
 
-    for t=1:numel(T),
+    for t=1:numel(T)
 
     end;

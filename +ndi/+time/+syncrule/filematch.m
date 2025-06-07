@@ -1,6 +1,6 @@
 classdef filematch < ndi.time.syncrule
 
-    properties (SetAccess=protected,GetAccess=public),
+    properties (SetAccess=protected,GetAccess=public)
     end % properties
     properties (SetAccess=protected,GetAccess=protected)
     end % properties
@@ -21,7 +21,7 @@ classdef filematch < ndi.time.syncrule
             % number_fullpath_matches (2)  | The number of full path matches of the underlying
             %                              |  filenames that must match in order for the epochs to match.
             %
-            if nargin==0,
+            if nargin==0
                 parameters = struct('number_fullpath_matches', 2);
                 varargin = {parameters};
             end
@@ -47,8 +47,8 @@ classdef filematch < ndi.time.syncrule
             % See also: ndi.time.syncrule/SETPARAMETERS
 
             [b,msg] = vlt.data.hasAllFields(parameters,{'number_fullpath_matches'}, {[1 1]});
-            if b,
-                if ~isnumeric(parameters.number_fullpath_matches),
+            if b
+                if ~isnumeric(parameters.number_fullpath_matches)
                     b = 0;
                     msg = 'number_fullpath_matches must be a number.';
                 end
@@ -119,7 +119,7 @@ classdef filematch < ndi.time.syncrule
             % okay, proceed
 
             common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);
-            if numel(common)>=ndi_syncrule_filematch_obj.parameters.number_fullpath_matches,
+            if numel(common)>=ndi_syncrule_filematch_obj.parameters.number_fullpath_matches
                 cost = 1;
                 mapping = ndi.time.timemapping([1 0]); % equality
             end

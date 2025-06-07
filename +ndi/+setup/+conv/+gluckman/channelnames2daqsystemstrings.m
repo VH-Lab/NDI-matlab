@@ -16,7 +16,7 @@ function [name, ref, daqsysstr,subjectlist, probetype] = channelnames2daqsystems
     subjectlist = {};
     probetype = {};
 
-    if isempty(options.channelnumbers),
+    if isempty(options.channelnumbers)
         options.channelnumbers = 1:numel(chNames);
     end;
 
@@ -24,13 +24,13 @@ function [name, ref, daqsysstr,subjectlist, probetype] = channelnames2daqsystems
 
     good = [];
 
-    for i=1:numel(chNames),
-        if ~isempty(findstr(lower(chNames{i}),'acc')),
+    for i=1:numel(chNames)
+        if ~isempty(findstr(lower(chNames{i}),'acc'))
             accelStruct(end+1) = struct('key',chNames{i}(4),'value',i);
         end;
-        if i==1,
+        if i==1
             daqsysstr = ndi.daq.daqsystemstring(daqname, {'ai'}, options.channelnumbers(i));
-        else,
+        else
             daqsysstr(end+1) = ndi.daq.daqsystemstring(daqname, {'ai'}, options.channelnumbers(i));
         end;
         [name{i},ref(i),subjectlist{i},probetype{i}] = ndi.setup.conv.gluckman.channelname2probename(chNames{i},subjects);
@@ -45,13 +45,13 @@ function [name, ref, daqsysstr,subjectlist, probetype] = channelnames2daqsystems
     subjectlist = subjectlist(good);
     probetype = probetype(good);
 
-    if ~(numel(accelStruct)==3 | numel(accelStruct)==0),
+    if ~(numel(accelStruct)==3 | numel(accelStruct)==0)
         error(['new case for accelerometer.']);
     end;
 
     [dummy,theorder] = sort({accelStruct.key});
 
-    if numel(accelStruct)==3,
+    if numel(accelStruct)==3
         name{end+1} = 'accel';
         ref(end+1) = 1;
         probetype{end+1} = 'accelerometer';

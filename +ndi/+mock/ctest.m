@@ -73,8 +73,8 @@ classdef ctest
             b = [];
             errormsg = {};
             b_expected = [];
-            for i=1:numel(doc_output),
-                for j=1:numel(doc_output),
+            for i=1:numel(doc_output)
+                for j=1:numel(doc_output)
                     [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
                         doc_output{i}, scope);
                     b(i,j) = doesitmatch;
@@ -87,8 +87,8 @@ classdef ctest
                 end;
             end;
 
-            if plot_it,
-                for i=1:numel(doc_output),
+            if plot_it
+                for i=1:numel(doc_output)
                     figure;
                     ctest_obj.plot(doc_output{i});
                 end;
@@ -130,13 +130,13 @@ classdef ctest
             doc_output = {};
             doc_expected_output = {};
 
-            switch (scope),
+            switch (scope)
 
-                case 'standard',
+                case 'standard'
 
-                case 'low-noise',
+                case 'low-noise'
 
-                case 'high-noise',
+                case 'high-noise'
 
             end;
 
@@ -213,10 +213,10 @@ classdef ctest
             % Nth standard mock test.
             %
             fname = ctest_obj.mock_expected_filename(number);
-            if vlt.file.isfile(fname),
+            if vlt.file.isfile(fname)
                 json_data = vlt.file.textfile2char(fname);
                 doc = ndi.document(jsondecode(json_data));
-            else,
+            else
                 error(['File ' fname ' does not exist.']);
             end;
 
@@ -250,11 +250,11 @@ classdef ctest
             %
             fname = ctest_obj.mock_expected_filename(number);
             json_output = char(did.datastructures.jsonencodenan(doc.document_properties));
-            if isfile(fname),
+            if isfile(fname)
                 error(['File ' fname ' already exists. Delete to overwrite.']);
             end;
             parentdir = fileparts(fname);
-            if ~isfolder(parentdir),
+            if ~isfolder(parentdir)
                 mkdir(parentdir);
             end;
             vlt.file.str2text(fname,json_output);

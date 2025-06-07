@@ -37,7 +37,7 @@ classdef AngelucciStims < ndi.daq.metadatareader
             parameters = {};
             stimorder = z.stimData.stimParams.stimOrder(:);
             stimtimes = z.stimData.stimTimes(:);
-            for i=1:numel(z.stimData.stimParams.Value), % if stimIDs change, this will use last value
+            for i=1:numel(z.stimData.stimParams.Value) % if stimIDs change, this will use last value
                 stimid = z.stimData.stimParams.stimOrder(i);
                 params_here = base_parameters;
                 params_here.Value = z.stimData.stimParams.Value(i);

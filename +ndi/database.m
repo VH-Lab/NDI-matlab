@@ -30,10 +30,10 @@ classdef database
             path = '';
             session_unique_reference = '';
 
-            if nargin>0,
+            if nargin>0
                 path = varargin{1};
             end
-            if nargin>1,
+            if nargin>1
                 session_unique_reference = varargin{2};
             end
 
@@ -49,7 +49,7 @@ classdef database
             % Creates a new/blank ndi.document document object that can be used with this
             % ndi.database.
             %
-            if nargin<2,
+            if nargin<2
                 document_type = 'base';
             end;
             ndi_document_obj = ndi.document(document_type, ...
@@ -103,9 +103,9 @@ classdef database
             % The locked nature of the binary doc is a property of the database, not the document, which is why
             % the database is needed.
             %
-            if isa(ndi_document_or_id,'ndi.document'),
+            if isa(ndi_document_or_id,'ndi.document')
                 ndi_document_id = ndi_document_or_id.id();
-            else,
+            else
                 ndi_document_id = ndi_document_or_id;
             end;
             [ndi_document_obj] = ndi_database_obj.read(ndi_document_id);
@@ -121,7 +121,7 @@ classdef database
             %  exists for an ndi.document and, if it exists, the full file
             %  path (FILE_PATH) to the file where the binary data is stored.
 
-            if isa(ndi_document_or_id,'ndi.document'),
+            if isa(ndi_document_or_id,'ndi.document')
                 ndi_document_id = ndi_document_or_id.id();
             else
                 ndi_document_id = ndi_document_or_id;
@@ -154,25 +154,25 @@ classdef database
             % ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
             % all of the documents are removed.
             %
-            if isempty(ndi_document_id),
+            if isempty(ndi_document_id)
                 return; % nothing to do
             end;
 
             ndi_document_id_list = {};
 
-            if ~iscell(ndi_document_id),
+            if ~iscell(ndi_document_id)
                 ndi_document_id = {ndi_document_id};
             end;
 
             for i=1:numel(ndi_document_id)
-                if isa(ndi_document_id{i}, 'ndi.document'),
+                if isa(ndi_document_id{i}, 'ndi.document')
                     ndi_document_id_list{end+1} = ndi_document_id{i}.id();
-                else,
+                else
                     ndi_document_id_list{end+1} = ndi_document_id{i};
                 end;
             end;
 
-            for i=1:numel(ndi_document_id_list),
+            for i=1:numel(ndi_document_id_list)
                 do_remove(ndi_database_obj, ndi_document_id_list{i});
             end;
         end % remove()
@@ -200,15 +200,15 @@ classdef database
             %
             % See also: ndi.database/REMOVE
 
-            if nargin<2,
+            if nargin<2
                 areyousure = 'no';
             end;
             if strcmpi(areyousure,'Yes')
                 ids = ndi_database_obj.alldocids;
-                for i=1:numel(ids),
+                for i=1:numel(ids)
                     ndi_database_obj.remove(ids{i}); % remove the entry
                 end
-            else,
+            else
                 disp('Not clearing because user did not indicate they are sure.');
             end;
         end % clear

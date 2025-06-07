@@ -249,7 +249,7 @@ classdef Lab < handle
                 src = varargin{3};
                 obj.symbol(src);
             end
-            if isempty(src),
+            if isempty(src)
                 return;
             end;
             ind = find([obj.subjects obj.probes obj.DAQs] == src, 1);

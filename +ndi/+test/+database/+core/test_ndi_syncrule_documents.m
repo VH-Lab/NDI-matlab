@@ -32,25 +32,25 @@ function test_ndi_syncrule_documents
 
     syncrule_docs = {};
 
-    for i=1:numel(object_list),
+    for i=1:numel(object_list)
         disp(['Making ' object_list{i} '...']);
         sr{i} = eval([object_list{i} '();']);
         disp(['Making document for ' object_list{i} '...']);
         sr_docs{i} = sr{i}.newdocument();
         E.database_add(sr_docs{i});
         syncrule_docs{i} = E.database_search(sr{i}.searchquery());
-        if numel(syncrule_docs{i})~=1,
+        if numel(syncrule_docs{i})~=1
             error(['Did not find exactly 1 match.']);
         end;
     end;
 
     sr_fromdoc = {};
 
-    for i=1:numel(syncrule_docs),
+    for i=1:numel(syncrule_docs)
         sr_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncrule_docs{i}{1},E);
-        if eq(sr_fromdoc{i},sr{i}),
+        if eq(sr_fromdoc{i},sr{i})
             disp(['Syncrule number ' int2str(i) ' matches.']);
-        else,
+        else
             error(['Syncrule number ' int2str(i) ' does not match.']);
         end;
     end;

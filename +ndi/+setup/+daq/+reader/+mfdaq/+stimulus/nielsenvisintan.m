@@ -85,7 +85,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             timestamps = {};
             data = {};
 
-            if ~iscell(channeltype),
+            if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
             end;
 
@@ -127,10 +127,10 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             stimsetuptimes = timeData(1+find(digData(1:end-1,1)==0&digData(2:end,1)==1));
             stimcleartimes = timeData(1+find(digData(1:end-1,1)==1&digData(2:end,1)==0));
 
-            for i=1:numel(channel),
+            for i=1:numel(channel)
                 % ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}),
-                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i})),
-                    case 'mk',
+                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}))
+                    case 'mk'
                         % put them together, alternating stimtimes and stimofftimes in the final product
                         time1 = [stimontimes(:)' ; stimofftimes(:)'];
                         data1 = [ones(size(stimontimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
@@ -150,20 +150,20 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
 
                         timestamps{i} = ch{channel(i)}(:,1);
                         data{i} = ch{channel(i)}(:,2:end);
-                    case 'md',
+                    case 'md'
 
-                    otherwise,
+                    otherwise
                         error(['Unknown channel.']);
                 end
             end
 
-            for i=1:numel(timestamps),
+            for i=1:numel(timestamps)
                 inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
                 timestamps{i} = timestamps{i}(inds_here);
                 data{i} = data{i}(inds_here);
             end;
 
-            if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+            if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
             end;

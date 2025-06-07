@@ -34,7 +34,7 @@ classdef epochprobemap
             %
             st = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
             l = numel(find(s==sprintf('\n')));
-            for i=2:l,
+            for i=2:l
                 st=cat(1,st,vlt.data.tabstr2struct(vlt.string.line_n(s,i),fieldnames(st)));
             end;
         end; % decode()

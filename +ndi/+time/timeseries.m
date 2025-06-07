@@ -62,14 +62,14 @@ classdef timeseries < ndi.documentservice
 
             % TODO: convert times to dev_local_clock
             sr = ndi_timeseries_obj.samplerate(epoch);
-            if sr>0,
+            if sr>0
                 et = ndi_timeseries_obj.epochtableentry(epoch);
                 samples = 1 + round ((times-et.t0_t1{1}(1))*sr);
                 g = (isinf(times) & (times < 0));
                 samples(g) = 1;
                 g = (isinf(times) & (times > 0));
                 samples(g) = 1+sr*diff(et.t0_t1{1}(1:2));
-            else,
+            else
                 samples = []; % need to be overridden
             end;
         end;
@@ -86,10 +86,10 @@ classdef timeseries < ndi.documentservice
             %
             % TODO: convert times to dev_local_clock
             sr = ndi_timeseries_obj.samplerate(epoch);
-            if sr>0,
+            if sr>0
                 et = ndi_timeseries_obj.epochtableentry(epoch);
                 times = et.t0_t1{1}(1) + (samples-1)/sr;
-            else,
+            else
                 times = []; % need to be overridden
             end;
         end;

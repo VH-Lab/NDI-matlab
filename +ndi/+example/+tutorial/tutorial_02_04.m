@@ -19,17 +19,17 @@ function tutorial_02_04(prefix, testing)
     %
     %
 
-    if nargin<1 | isempty(prefix),
+    if nargin<1 | isempty(prefix)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
     end;
 
-    if nargin<2,
+    if nargin<2
         testing = 0;
     end;
 
     tutorial_dir = 'ts_exper2';
 
-    if testing, % copy the files to the temp directory
+    if testing % copy the files to the temp directory
         prefix = ndi.common.PathConstants.TempFolder;
         disp(['Assuming data files ts_exper2 are in ' prefix '.']);
     end
@@ -125,7 +125,7 @@ function tutorial_02_04(prefix, testing)
 
     oapp = ndi.app.oridirtuning(S);
 
-    for i=1:2,
+    for i=1:2
         tdoc{i} = oapp.calculate_all_tuning_curves(e{i},'Replace'); % replace any existing
         oriprops{i} = oapp.calculate_all_oridir_indexes(e{i},'Replace'); % this takes a few minutes
     end;

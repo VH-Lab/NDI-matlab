@@ -34,7 +34,7 @@ classdef simple < ndi.calculator
 
             % Step 3: place the results of the calculator into an NDI document
             doc = ndi.document(ndi_calculator_obj.doc_document_types{1},'simple',simple);
-            for i=1:numel(parameters.depends_on),
+            for i=1:numel(parameters.depends_on)
                 doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
             end;
         end; % calculate

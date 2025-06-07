@@ -32,9 +32,9 @@ function [item] = uberon_ontology_lookup(field, value)
            item.Name = labels{1};
        end;
     elseif strcmp(field,'Identifier')
-        if ischar(value) | isstring(value),
+        if ischar(value) | isstring(value)
             valueStr = char(value);
-        else,
+        else
             valueStr = ['UBERON:' int2str(value)];
         end;
         [labels,docs] = ndi.database.fun.lookup_uberon_term(valueStr,'queryFields','obo_id','exact',true);

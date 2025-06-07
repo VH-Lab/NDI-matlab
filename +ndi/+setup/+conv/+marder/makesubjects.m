@@ -10,7 +10,7 @@ function makesubjects(S, n)
 
     [parentdir,this_dir] = fileparts(dirname);
 
-    for i=1:n,
+    for i=1:n
         vlt.file.str2text(...
             [dirname filesep 'subject' int2str(i) '.txt'], ...
             [this_dir '_' sprintf('%.2d',i) '@marderlab.brandeis.edu']);

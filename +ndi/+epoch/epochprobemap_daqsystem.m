@@ -33,7 +33,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             % one line per ndi.epoch.epochprobemap_daqsystem entry.
             %
 
-            if nargin==0, % undocumented 0 input constructor
+            if nargin==0 % undocumented 0 input constructor
                 name_='a';
                 reference_=0;
                 type_='a';
@@ -42,21 +42,21 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             end
 
             is_struct = 0;
-            if nargin>0,
-                if numel(find(name_==sprintf('\n')))>0,
+            if nargin>0
+                if numel(find(name_==sprintf('\n')))>0
                     is_struct = 1;
                 end;
             end;
 
-            if nargin==1 | is_struct,
+            if nargin==1 | is_struct
                 % name_ should be a filename or serialization string
                 ndi_struct = [];
-                if numel(find(name_==sprintf('\n')))>0,
+                if numel(find(name_==sprintf('\n')))>0
                     ndi_struct = ndi.epoch.epochprobemap_daqsystem.decode(name_);
-                elseif isfile(name_),
+                elseif isfile(name_)
                     ndi_struct= table2struct(readtable(name_,'Delimiter','\t','FileType','text'));
                 end;
-                if isempty(ndi_struct),
+                if isempty(ndi_struct)
                     ndi_struct = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
                 end
                 fn = fieldnames(ndi_struct);
@@ -65,7 +65,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
                         vlt.data.cell2str(fn) '.']);
                 end;
                 obj = [];
-                for i=1:length(ndi_struct),
+                for i=1:length(ndi_struct)
                     nextentry = ndi.epoch.epochprobemap_daqsystem(ndi_struct(i).name,...
                         ndi_struct(i).reference,...
                         ndi_struct(i).type, ...
@@ -73,7 +73,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
                         ndi_struct(i).subjectstring);
                     obj = cat(1,obj,nextentry);
                 end;
-                if isempty(obj),
+                if isempty(obj)
                     obj = ndi.epoch.epochprobemap_daqsystem;
                     obj = obj([]);
                 end
@@ -86,7 +86,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
                 errormsg = join(errormsg,'');
                 errormsg = errormsg{1};
             end
-            if ~b,
+            if ~b
                 error(['Error in name field: ' errormsg ]);
             end;
 
@@ -94,19 +94,19 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
 
             % reference, check for errors
 
-            if reference_ < 0 | ~vlt.data.isint(reference_) | ~vlt.data.eqlen(size(reference_),[1 1]),
+            if reference_ < 0 | ~vlt.data.isint(reference_) | ~vlt.data.eqlen(size(reference_),[1 1])
                 error(['reference of ndi.epoch.epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(char(reference_))]);
             end;
             obj.reference = fix(reference_);
 
             [b,errormsg] = vlt.data.islikevarname(type_);
-            if ~b,
+            if ~b
                 error(['Error in type field: ' errormsg ]);
             end;
             obj.type = type_;
 
             [b,errormsg] = vlt.data.islikevarname(devicestring_);
-            if ~b,
+            if ~b
                 error(['Error in devicestring field: ' errormsg ]);
             end;
             obj.devicestring = devicestring_;
@@ -124,9 +124,9 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             %
             fn = {'name','reference','type','devicestring','subjectstring'};
             st = vlt.data.emptystruct(fn{:});
-            for i=1:length(ndi_epochprobemap_daqsystem_obj),
+            for i=1:length(ndi_epochprobemap_daqsystem_obj)
                 mynewstruct = struct;
-                for j=1:length(fn),
+                for j=1:length(fn)
                     mynewstruct = setfield(mynewstruct,fn{j},getfield(ndi_epochprobemap_daqsystem_obj(i),fn{j}));
                 end;
                 st(i) = mynewstruct;
@@ -143,22 +143,22 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             s = '';
             st = ndi_epochprobemap_daqsystem_obj.serialization_struct();
             fn = fieldnames(st);
-            for i=1:numel(fn),
+            for i=1:numel(fn)
                 s=cat(2,s,fn{i});
-                if i~=numel(fn),
+                if i~=numel(fn)
                     s=cat(2,s,sprintf('\t'));
                 end;
             end;
             s=cat(2,s,sprintf('\n'));
-            for i=1:numel(st),
-                for j=1:numel(fn),
-                    switch(fn{j}),
-                        case {'name','type','devicestring','subjectstring'},
+            for i=1:numel(st)
+                for j=1:numel(fn)
+                    switch(fn{j})
+                        case {'name','type','devicestring','subjectstring'}
                             s=cat(2,s,getfield(st(i),fn{j}));
-                        case 'reference',
+                        case 'reference'
                             s=cat(2,s,int2str(getfield(st(i),fn{j})));
                     end;
-                    if j~=numel(fn),
+                    if j~=numel(fn)
                         s=cat(2,s,sprintf('\t'));
                     end;
                 end;
@@ -193,20 +193,20 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             %
             st = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
             c = vlt.data.string2cell(s,sprintf('\n'));
-            if numel(c)<1,
+            if numel(c)<1
                 error(['There is no information in the serialized string s']);
             end;
             fn = vlt.data.string2cell(c{1},sprintf('\t'));
-            for i=2:numel(c),
+            for i=2:numel(c)
                 line_here = vlt.data.string2cell(c{i},sprintf('\t'));
-                if numel(line_here)==numel(fn),
+                if numel(line_here)==numel(fn)
                     entry_here = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
                     entry_here(1).name = '';
-                    for j=1:numel(fn),
-                        switch(fn{j}),
-                            case {'name','type','devicestring','subjectstring'},
+                    for j=1:numel(fn)
+                        switch(fn{j})
+                            case {'name','type','devicestring','subjectstring'}
                                 entry_here(1) = setfield(entry_here(1),fn{j},line_here{j});
-                            case 'reference',
+                            case 'reference'
                                 entry_here(1) = setfield(entry_here(1),fn{j},str2num(line_here{j}));
                         end;
                     end;

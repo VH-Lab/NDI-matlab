@@ -30,13 +30,13 @@ t = vlt.data.emptytable("ontologyName","string","name","string","value",...
 f = fieldnames(mixtureStruct);
 
 tokens = extractTokens(str);
-for i=1:numel(tokens),
+for i=1:numel(tokens)
     coef = tokens{i}{1};
     name = tokens{i}{2};
     index = find(strcmp(name,f));
     assert(~isempty(index),["No name " + name + " found."]);
     v = getfield(mixtureStruct,f{index});
-    for j=1:numel(v),
+    for j=1:numel(v)
         v(j).value = coef * v(j).value;
         t(end+1,:) = struct2cell(v(j))';
     end;

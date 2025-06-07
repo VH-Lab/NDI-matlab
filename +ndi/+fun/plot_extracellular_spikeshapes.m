@@ -9,7 +9,7 @@ function [g] = plot_extracellular_spikeshapes(S, space, g)
     % waveform).
     %
 
-    if nargin<3,
+    if nargin<3
         g = S.database_search(ndi.query('','isa','extracellular',''));
     end;
 
@@ -20,7 +20,7 @@ function [g] = plot_extracellular_spikeshapes(S, space, g)
     x_axis = [Inf -Inf];
     y_axis = [Inf -Inf];
 
-    for i=1:numel(g),
+    for i=1:numel(g)
 
         vlt.plot.supersubplot(f,4,4,i);
         cla;
@@ -33,7 +33,7 @@ function [g] = plot_extracellular_spikeshapes(S, space, g)
 
     end;
 
-    for i=1:numel(g),
+    for i=1:numel(g)
         vlt.plot.supersubplot(f,4,4,i);
         axis([x_axis y_axis]);
     end;

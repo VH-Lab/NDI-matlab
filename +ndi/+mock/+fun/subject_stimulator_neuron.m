@@ -84,7 +84,7 @@ function [output] = subject_stimulator_neuron(ndi_session_obj)
     presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
     stim_pres_struct.stimuli = emptystruct('parameters');
 
-    for i=1:numel(stim_pres_struct.presentation_order),
+    for i=1:numel(stim_pres_struct.presentation_order)
         pt_here = vlt.data.emptystruct(fieldnames(stim_pres_struct.presentation_time));
         pt_here(1).clocktype = 'utc';
         pt_here(1).stimopen = i * 5;
@@ -94,14 +94,14 @@ function [output] = subject_stimulator_neuron(ndi_session_obj)
         presentation_time(i,1) = pt_here;
     end;
 
-    for i=1:numel(values{1}),
+    for i=1:numel(values{1})
         stimulus_here = emptystruct('parameters');
-        for j=1:numel(parameters),
+        for j=1:numel(parameters)
             eval(['stimulus_here(1).parameters.' parameters{j} '=values{1}(i);']);
         end;
         stim_pres_struct.stimuli(end+1,1) = stimulus_here;
     end;
 
-    if add_blank,
+    if add_blank
         stim_pres_struct.stimuli(end+1,1) = struct('parameters',struct('isblank',1));
     end;

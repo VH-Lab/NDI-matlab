@@ -39,30 +39,30 @@ classdef subject < ndi.ido & ndi.documentservice
             local_identifier_ = '';
             description_ = '';
 
-            if numel(varargin==2),
+            if numel(varargin==2)
                 E = varargin{1};
-                if ~isa(E,'ndi.session'),
+                if ~isa(E,'ndi.session')
                     local_identifier_ = varargin{1};
                     [b,msg] = ndi.subject.isvalidlocalidentifierstring(local_identifier_);
-                    if ~b,
+                    if ~b
                         error(msg);
                     end;
                     description_ = varargin{2};
                     if ~ischar(description_)
                         error(['description must be a string.']);
                     end;
-                else,
-                    if ~isa(E,'ndi.session'),
+                else
+                    if ~isa(E,'ndi.session')
                         error(['First input argument must be an ndi.session input']);
                     end;
-                    if ~isa(varargin{2},'ndi.document'),
+                    if ~isa(varargin{2},'ndi.document')
                         subject_search = E.database_search(ndi.query('base.id',...
                             'exact_string',varargin{2},''));
-                        if numel(subject_search)~=1,
+                        if numel(subject_search)~=1
                             error(['When 2 input arguments are given, 2nd input must be an ndi.document or document ID.']);
                         end;
                         subject_doc = subject_search{1};
-                    else,
+                    else
                         subject_doc = varargin{2};
                     end;
                     local_identifier_ = subject_doc.document_properties.subject.local_identifer;
@@ -113,15 +113,15 @@ classdef subject < ndi.ido & ndi.documentservice
             % if it has an '@' in it. If B is 0, then an error message string is returned
             % in MSG.
             b = 1; msg = '';
-            if ~ischar(local_identifier),
+            if ~ischar(local_identifier)
                 msg = 'local_identifier must be a character string';
                 b = 0;
             end;
-            if ~any(local_identifier=='@'),
+            if ~any(local_identifier=='@')
                 msg = 'local_identifier must have an @ character.';
                 b = 0;
             end;
-            if any(local_identifier==' '),
+            if any(local_identifier==' ')
                 msg = 'local_identifier must not have any spaces.';
                 b = 0;
             end;
@@ -145,28 +145,28 @@ classdef subject < ndi.ido & ndi.documentservice
             subject_id = '';
 
             islocal = ndi.subject.isvalidlocalidentifierstring(subjectstring);
-            if islocal,
+            if islocal
                 subject_doc = ndi_session_obj.database_search(...
                     ndi.query('subject.local_identifier','exact_string',subjectstring,''));
-            else,
+            else
                 subject_doc = ndi_session_obj.database_search(...
                     ndi.query('base.id','exact_string',subjectstring,''));
             end;
-            if numel(subject_doc)==1,
+            if numel(subject_doc)==1
                 subject_id = subject_doc{1}.document_properties.base.id;
                 b = 1;
                 return;
-            elseif numel(subject_doc)==0,
-                if islocal&makeit,
+            elseif numel(subject_doc)==0
+                if islocal&makeit
                     newsubject = ndi.subject(subjectstring,'');
                     subject_doc = newsubject.newdocument();
                     ndi_session_obj.database_add(subject_doc);
                     subject_id = subject_doc.document_properties.base.id;
                     b = 1;
-                else,
+                else
                     return;
                 end;
-            elseif numel(subject_doc)>1,
+            elseif numel(subject_doc)>1
                 error(['More than one subject doc matches..should only be 1!']);
             end;
         end; % does_subjectstring_match_session_document()

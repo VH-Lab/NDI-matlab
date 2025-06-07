@@ -24,7 +24,7 @@ classdef  matlabdumbjsondb < ndi.database
         end; % ndi.database.implementations.database.matlabdumbjsondb()
     end
 
-    methods, % public
+    methods % public
         function docids = alldocids(ndi_matlabdumbjsondb_obj)
             % ALLDOCIDS - return all document unique reference numbers for the database
             %
@@ -37,13 +37,13 @@ classdef  matlabdumbjsondb < ndi.database
         end; % alldocids()
     end;
 
-    methods (Access=protected),
+    methods (Access=protected)
 
         function ndi_matlabdumbjsondb_obj = do_add(ndi_matlabdumbjsondb_obj, ndi_document_obj, add_parameters)
             namevaluepairs = {};
             fn = fieldnames(add_parameters);
-            for i=1:numel(fn),
-                if strcmpi(fn{i},'Update'),
+            for i=1:numel(fn)
+                if strcmpi(fn{i},'Update')
                     namevaluepairs{end+1} = 'Overwrite';
                     namevaluepairs{end+1} = getfield(add_parameters,fn{i});
                 end;
@@ -53,7 +53,7 @@ classdef  matlabdumbjsondb < ndi.database
         end; % do_add
 
         function [ndi_document_obj, version] = do_read(ndi_matlabdumbjsondb_obj, ndi_document_id, version);
-            if nargin<3,
+            if nargin<3
                 version = [];
             end;
             [doc, version] = ndi_matlabdumbjsondb_obj.db.read(ndi_document_id, version);
@@ -61,7 +61,7 @@ classdef  matlabdumbjsondb < ndi.database
         end; % do_read
 
         function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id, versions)
-            if nargin<3,
+            if nargin<3
                 versions = [];
             end;
             ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj.db.remove(ndi_document_id, versions);
@@ -69,11 +69,11 @@ classdef  matlabdumbjsondb < ndi.database
         end; % do_remove
 
         function [ndi_document_objs,doc_versions] = do_search(ndi_matlabdumbjsondb_obj, searchoptions, searchparams)
-            if isa(searchparams,'ndi.query'),
+            if isa(searchparams,'ndi.query')
                 searchparams = searchparams.to_searchstructure;
-                if 0, % display
+                if 0 % display
                     disp('search params');
-                    for i=1:numel(searchparams),
+                    for i=1:numel(searchparams)
                         searchparams(i),
                         searchparams(i).param1,
                         searchparams(i).param2,
@@ -82,7 +82,7 @@ classdef  matlabdumbjsondb < ndi.database
             end;
             ndi_document_objs = {};
             [docs,doc_versions] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
-            for i=1:numel(docs),
+            for i=1:numel(docs)
                 ndi_document_objs{i} = ndi.document(docs{i});
             end;
         end; % do_search()
@@ -90,7 +90,7 @@ classdef  matlabdumbjsondb < ndi.database
         function [ndi_binarydoc_obj, key] = do_openbinarydoc(ndi_matlabdumbjsondb_obj, ndi_document_id, version)
             ndi_binarydoc_obj = [];
             [fid, key] = ndi_matlabdumbjsondb_obj.db.openbinaryfile(ndi_document_id, version);
-            if fid>0,
+            if fid>0
                 [filename,permission,machineformat,encoding] = fopen(fid);
                 ndi_binarydoc_obj = ndi.database.implementations.binarydoc.matfid('fid',fid,'fullpathfilename',filename,...
                     'machineformat',machineformat,'permission',permission, 'doc_unique_id', ndi_document_id, 'key', key);

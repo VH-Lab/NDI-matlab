@@ -15,7 +15,7 @@ function ndi_test_sessiontable
 
     t = st.getsessiontable();
 
-    if numel(t)~=1,
+    if numel(t)~=1
         error(['Session table does not have right number of entries.']);
     end;
 
@@ -25,7 +25,7 @@ function ndi_test_sessiontable
 
     t = st.getsessiontable();
 
-    if numel(t)~=0,
+    if numel(t)~=0
         error(['Session table does not have right number of entries.']);
     end;
 
@@ -33,7 +33,7 @@ function ndi_test_sessiontable
 
     f = st.backupfilelist();
 
-    if numel(f)>0,
+    if numel(f)>0
         % small risk, file not locked or checked out
         movefile(f{end},ndi.session.sessiontable.localtablefilename());
     end;

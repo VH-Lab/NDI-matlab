@@ -23,17 +23,17 @@ classdef  didsqlite < ndi.database
             ndi_didsqlite_obj = ndi_didsqlite_obj@ndi.database(varargin{:});
             database_filename = fullfile(ndi_didsqlite_obj.path, 'did-sqlite.sqlite');
             ndi_didsqlite_obj.db = did.implementations.sqlitedb(database_filename);
-            if ~isfolder(ndi_didsqlite_obj.file_directory),
+            if ~isfolder(ndi_didsqlite_obj.file_directory)
                 mkdir(ndi_didsqlite_obj.file_directory);
             end;
             bid = ndi_didsqlite_obj.db.all_branch_ids();
-            if isempty(bid),
+            if isempty(bid)
                 ndi_didsqlite_obj.db.add_branch('a');
             end;
         end; % ndi.database.implementations.database.didsqlite()
     end
 
-    methods, % public
+    methods % public
         function docids = alldocids(ndi_didsqlite_obj)
             % ALLDOCIDS - return all document unique reference numbers for the database
             %
@@ -46,7 +46,7 @@ classdef  didsqlite < ndi.database
         end; % alldocids()
     end;
 
-    methods (Access=protected),
+    methods (Access=protected)
 
         function [hCleanup, filename] = do_open_database(ndi_didsqlite_obj)
             [hCleanup, filename] = ndi_didsqlite_obj.db.open();
@@ -59,11 +59,11 @@ classdef  didsqlite < ndi.database
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id);
             [ndi_document_obj] = ndi_didsqlite_obj.db.get_docs(ndi_document_id);
             % now typecast to ndi.document from did.document
-            if iscell(ndi_document_obj),
-                for i=1:numel(ndi_document_obj),
+            if iscell(ndi_document_obj)
+                for i=1:numel(ndi_document_obj)
                     ndi_document_obj{i} = ndi.document(ndi_document_obj{i});
                 end;
-            else,
+            else
                 ndi_document_obj = ndi.document(ndi_document_obj);
             end;
         end; % do_read
@@ -73,14 +73,14 @@ classdef  didsqlite < ndi.database
         end; % do_remove
 
         function [ndi_document_objs] = do_search(ndi_didsqlite_obj, searchoptions, searchparams)
-            if ~isa(searchparams,'ndi.query') & ~isa(searchparams,'did.query'),
+            if ~isa(searchparams,'ndi.query') & ~isa(searchparams,'did.query')
                 error(['We need an ndi.query or did.query']);
             end;
 
             ndi_document_objs = {};
             [doc_ids] = ndi_didsqlite_obj.db.search(searchparams,'a');
             ndi_document_objs = {};
-            for i=1:numel(doc_ids),
+            for i=1:numel(doc_ids)
                 ndi_document_objs{i} = ndi_didsqlite_obj.do_read(doc_ids{i});
             end;
         end; % do_search()

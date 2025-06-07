@@ -45,7 +45,7 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
     % open file so we are ready and don't have a permissions error after 2 hours of running code
 
     fid = fopen([dirname filesep outname],'wt');
-    if fid<0,
+    if fid<0
         error(['Could not open file ' [dirname filesep outname] ' for writing.']);
     end;
 
@@ -77,30 +77,30 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
 
     progressbar('Writing output file...');
 
-    for i=1:numel(H),
-        if mod(i,1000) == 0,
+    for i=1:numel(H)
+        if mod(i,1000) == 0
             progressbar(i/numel(H));
         end;
 
-        if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'environmental')),
+        if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'environmental'))
             continue; % skip it
         end;
-        if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'sample')),
+        if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'sample'))
             continue; % skip it;
         end;
 
         fprintf(fid,[genBankNames.scientific_name{H(i)} '\t']);
         fprintf(fid,[genBankNames.genbank_commonname{H(i)} '\t']);
-        for j=1:numel(genBankNames.synonym{H(i)}),
+        for j=1:numel(genBankNames.synonym{H(i)})
             fprintf(fid,[genBankNames.synonym{H(i)}{j}]);
-            if j~=numel(genBankNames.synonym{H(i)}),
+            if j~=numel(genBankNames.synonym{H(i)})
                 fprintf(fid,', ');
             end;
         end;
         fprintf(fid,'\t');
-        for j=1:numel(genBankNames.other_commonname{H(i)}),
+        for j=1:numel(genBankNames.other_commonname{H(i)})
             fprintf(fid,[genBankNames.other_commonname{H(i)}{j}]);
-            if j~=numel(genBankNames.other_commonname{H(i)}),
+            if j~=numel(genBankNames.other_commonname{H(i)})
                 fprintf(fid,', ');
             end;
         end;

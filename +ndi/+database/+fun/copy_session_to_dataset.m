@@ -19,7 +19,7 @@ function [b,errmsg] = copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj)
 
     match = strcmp(ndi_session_obj.id(), session_ids);
 
-    if any(match),
+    if any(match)
         b = 0;
         errmsg = ['Session with ID ' ndi_session_obj.id() ...
             ' and reference ' ndi_session_obj.reference ...
@@ -38,14 +38,14 @@ function [b,errmsg] = copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj)
 
     are_empty_session_id_docs = 0;
 
-    for i=1:numel(docs),
-        if isempty(docs{i}.document_properties.base.session_id),
+    for i=1:numel(docs)
+        if isempty(docs{i}.document_properties.base.session_id)
             are_empty_session_id_docs = are_empty_session_id_docs + 1;
             docs{i} = docs{i}.set_session_id(ndi_session_obj.id());
         end;
     end;
 
-    if are_empty_session_id_docs>0,
+    if are_empty_session_id_docs>0
         warning(['Found ' int2str(are_empty_session_id_docs) ' documents with empty session_id. Setting them to match the current session.']);
     end;
 

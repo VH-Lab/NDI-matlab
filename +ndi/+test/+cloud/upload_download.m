@@ -6,7 +6,7 @@ function [b,msg] = upload_download(D,metadatafile)
     % Test uploading and then downloading an example ndi.dataset D.
     %
 
-    if nargin<1,
+    if nargin<1
         dirname = fullfile(ndi.common.PathConstants.ExampleDataFolder, '..' ,'example_datasets', 'sample_test');
         D = ndi.dataset.dir(dirname);
         metadatafile = fullfile(ndi.common.PathConstants.ExampleDataFolder,'..',...
@@ -32,7 +32,7 @@ function [b,msg] = upload_download(D,metadatafile)
 
     [b_upload, msg_upload] = ndi.cloud.upload.upload_to_NDI_cloud(D, dataset_id);
 
-    if ~b_upload,
+    if ~b_upload
         msg = msg_upload;
         return;
     end;
@@ -55,7 +55,7 @@ function [b,msg] = upload_download(D,metadatafile)
 
     [b_download,msg_download] = ndi.cloud.download.dataset(dataset_id,'local',newdir);
 
-    if ~b_download,
+    if ~b_download
         msg = msg_download;
         return;
     end;

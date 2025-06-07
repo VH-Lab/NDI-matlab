@@ -20,7 +20,7 @@ classdef sessiontable
             thepath = [];
             t = ndi_sessiontable_obj.getsessiontable();
             i = find(strcmp(session_id,{t.session_id}));
-            if ~isempty(i),
+            if ~isempty(i)
                 thepath = t(i(1)).path; % pick first match, should be only match
             end;
         end; % getsessionpath()
@@ -35,20 +35,20 @@ classdef sessiontable
             %
             t = vlt.data.emptystruct('session_id','path');
             fname = ndi.session.sessiontable.localtablefilename();
-            if isfile(fname),
-                try,
+            if isfile(fname)
+                try
                     t = table2struct(readtable(fname,'Delimiter','tab'))';
-                    if ~isfield(t,'path'),
+                    if ~isfield(t,'path')
                         error(['path is a required field.']);
                     end;
-                    if ~isfield(t,'session_id'),
+                    if ~isfield(t,'session_id')
                         error(['session_id is a required field.']);
                     end;
-                catch,
+                catch
                     warning(['Local session table file ' fname ' appears corrupted, ignoring.']);
                 end;
-                for i=1:numel(t),
-                    if ~ischar(t(i).session_id),
+                for i=1:numel(t)
+                    if ~ischar(t(i).session_id)
                         t(i).session_id = int2str(t(i).session_id);
                     end;
                 end;
@@ -63,10 +63,10 @@ classdef sessiontable
             % Adds SESSION_ID and PATH as an entry to the session table.
             % If SESSION_ID is already in the table, then the entry is replaced.
             %
-            if ~ischar(session_id),
+            if ~ischar(session_id)
                 error(['Session_id must be a character array.']);
             end;
-            if ~ischar(path),
+            if ~ischar(path)
                 error(['PATH must be a character array.']);
             end;
             ndi_sessiontable_obj.removetableentry(session_id);
@@ -86,7 +86,7 @@ classdef sessiontable
             %
             t = ndi_sessiontable_obj.getsessiontable();
             i = find(strcmp(session_id,{t.session_id}));
-            if ~isempty(i), % only act if we need to
+            if ~isempty(i) % only act if we need to
                 t = t(setdiff(1:numel(t),i));
                 ndi_sessiontable_obj.writesessiontable(t);
             end;
@@ -110,8 +110,8 @@ classdef sessiontable
             results = vlt.data.emptystruct('exists');
             t = ndi_sessiontable_obj.getsessiontable();
             [b,msg] = ndi_sessiontable_obj.isvalidtable(t);
-            if b,
-                for i=1:numel(t),
+            if b
+                for i=1:numel(t)
                     resultshere.exists = isfolder(t(i).path);
                     results(i) = resultshere;
                 end;
@@ -133,26 +133,26 @@ classdef sessiontable
             b = 1;
             msg = '';
 
-            if nargin<2,
+            if nargin<2
                 t = ndi_sessiontable_obj.getsessiontable();
             end;
-            if ~isfield(t,'path'),
+            if ~isfield(t,'path')
                 b = 0;
                 msg = ['path is a required field.'];
                 return;
             end;
-            if ~isfield(t,'session_id'),
+            if ~isfield(t,'session_id')
                 b = 0;
                 msg = ['session_id is a required field.'];
                 return;
             end;
-            for i=1:numel(t),
-                if ~ischar(t(i).path),
+            for i=1:numel(t)
+                if ~ischar(t(i).path)
                     b = 0;
                     msg = ['Entry ' int2str(i) ' of session table path is not a character array.'];
                     return;
                 end;
-                if ~ischar(t(i).session_id),
+                if ~ischar(t(i).session_id)
                     b = 0;
                     msg = ['Entry ' int2str(i) ' of session table session_id is not a character array.'];
                     return;
@@ -170,10 +170,10 @@ classdef sessiontable
             % and be named 'local_sessiontableNNN.txt', where NNN is a number.
             %
             fname = ndi.session.sessiontable.localtablefilename();
-            if isfile(fname), % nothing to do if there's no file
+            if isfile(fname) % nothing to do if there's no file
                 backupname = vlt.file.filebackup(fname);
                 [success,message]=copyfile(fname,backupname);
-                if ~success,
+                if ~success
                     error(['Could not make backup file: ' message]);
                 end;
             end;
@@ -191,7 +191,7 @@ classdef sessiontable
             [parentdir,fn,ext] = fileparts(fname);
             d = dir([parentdir filesep fn '_*' ext]);
             f = {};
-            for i=1:numel(d),
+            for i=1:numel(d)
                 f{i} = [parentdir filesep d(i).name];
             end;
         end; % backupfilelist()
@@ -205,11 +205,11 @@ classdef sessiontable
             % If MAKEBACKUP is present and is 1, then the session table file
             % is backed up first (in the Preferences/NDI directory).
             %
-            if nargin<2,
+            if nargin<2
                 makebackup = 0;
             end;
             t = vlt.data.emptystruct('session_id','path');
-            if makebackup,
+            if makebackup
                 ndi_sessiontable_obj.backupsessiontable();
             end;
             ndi_sessiontable_obj.writesessiontable(t);
@@ -227,13 +227,13 @@ classdef sessiontable
             % An error is triggered if the table is invalid or cannot be written.
             %
             [b,msg] = ndi_sessiontable_obj.isvalidtable(t);
-            if ~b,
+            if ~b
                 error(['Session table not valid: ' msg ]);
             end;
             fname = ndi.session.sessiontable.localtablefilename();
             lockfilename = [fname '-lockfile'];
             lockfid = vlt.file.checkout_lock_file(lockfilename);
-            if lockfid > 0,
+            if lockfid > 0
                 vlt.file.saveStructArray(fname,t);
                 fclose(lockfid);
                 delete(lockfilename);

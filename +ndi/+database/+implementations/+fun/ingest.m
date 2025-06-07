@@ -18,20 +18,20 @@ function [b,msg] = ingest(source_filename_list, destination_filename_list, to_de
     b = 1;
     msg = '';
 
-    for i=1:numel(source_filename_list),
-        try,
+    for i=1:numel(source_filename_list)
+        try
             % now actually ingest, yum yum
             copyfile(source_filename_list{i},destination_filename_list{i});
-        catch,
+        catch
             b = 0;
             msg = ['Copying: ' lasterr];
         end;
     end;
 
-    for i=1:numel(to_delete_list),
-        try,
+    for i=1:numel(to_delete_list)
+        try
             delete(to_delete_list{i});
-        catch,
+        catch
             b = 0;
             msg = ['Deleting: ' lasterr];
         end;

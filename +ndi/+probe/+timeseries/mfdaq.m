@@ -38,19 +38,19 @@ classdef mfdaq < ndi.probe.timeseries
             if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
             if numel(vlt.data.equnique(dev))>1, error(['At present, do not know how to mix devices.']); end;
 
-            if nargout>=1,
+            if nargout>=1
                 [data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
             end
-            if nargout>=2,
+            if nargout>=2
                 ch = dev{1}.getchannelsepoch(devepoch{1});
                 timechannel = ndi.daq.reader.mfdaq.channelsepoch2timechannelinfo(ch,channeltype,channel);
-                if isnan(timechannel(1)),
+                if isnan(timechannel(1))
                     t = NaN;
-                else,
+                else
                     [t] = readchannels_epochsamples(dev{1}, {'time'}, timechannel(1), devepoch{1}, s0, s1);
                 end;
             end
-            if nargout>=3,
+            if nargout>=3
                 timeref_out = ndi.time.timereference(ndi_probe_timeseries_mfdaq_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
             end
         end % read_epochsamples()
@@ -73,7 +73,7 @@ classdef mfdaq < ndi.probe.timeseries
             if numel(vlt.data.equnique(dev))>1, error(['At present, do not know how to mix devices.']); end;
 
             sr = samplerate(dev{1}, devepoch{1}, channeltype, channel);
-            if numel(unique(sr))~=1,
+            if numel(unique(sr))~=1
                 error(['Do not know how to handle multiple sampling rates across channels.']);
             end;
 
@@ -82,11 +82,11 @@ classdef mfdaq < ndi.probe.timeseries
             s1 = 1+round(sr*t1);
 
             % save some time
-            if nargout==1,
+            if nargout==1
                 [data] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1);
-            elseif nargout==2,
+            elseif nargout==2
                 [data,t] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1);
-            elseif nargout>2,
+            elseif nargout>2
                 [data,t,timeref_out] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1);
             end
 

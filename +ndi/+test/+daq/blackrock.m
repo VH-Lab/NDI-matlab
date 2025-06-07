@@ -14,7 +14,7 @@ function blackrock(dirname)
 
     error('not ready yet');
 
-    if nargin<1,
+    if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_blackrock'];
     end;
 

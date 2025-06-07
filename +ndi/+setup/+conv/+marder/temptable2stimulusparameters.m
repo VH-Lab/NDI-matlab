@@ -30,15 +30,15 @@ function docs = temptable2stimulusparameters(S)
 
     docs = {};
 
-    for i=1:numel(et),
+    for i=1:numel(et)
         ind = find(strcmp(et(i).epoch_id,temptable.("epoch_id")));
-        if ~isempty(ind),
+        if ~isempty(ind)
             last_match = temptable(ind,:);
         end;
         if isempty(last_match), continue; end;
 
         for p=1:numel(stim)
-            if strcmp(last_match.type,"constant"),
+            if strcmp(last_match.type,"constant")
                 eid.epochid = et(i).epoch_id;
                 d_struct.ontology_name = const_o;
                 d_struct.name = 'Command temperature constant';

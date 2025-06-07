@@ -78,7 +78,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % See also: DAQSYSTEM_RM, ndi.session
 
-            if ~isa(dev,'ndi.daq.system'),
+            if ~isa(dev,'ndi.daq.system')
                 error(['dev is not a ndi.daq.system']);
             end;
             % search if the daqsystem_obj already exists in the database(based on daqsystem name and session_id)
@@ -96,7 +96,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 % no match was found, can add to the database
                 doc_set = dev.newdocument();
                 ndi_session_obj.database_add(doc_set);
-            else,
+            else
                 error(['dev or dev with same name already exists in the database.']);
             end
         end;
@@ -115,12 +115,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end;
             daqsys = ndi_session_obj.daqsystem_load('name',dev.name);
             if ~isempty(daqsys)
-                if ~iscell(daqsys),
+                if ~iscell(daqsys)
                     daqsys = {daqsys};
                 end;
                 docs = ndi_session_obj.database_search(daqsys{1}.searchquery());
-                for k=1:numel(docs), % should be 1 only, but keep deleting even if not
-                    for i=1:numel(docs{k}.document_properties.depends_on),
+                for k=1:numel(docs) % should be 1 only, but keep deleting even if not
+                    for i=1:numel(docs{k}.document_properties.depends_on)
                         dochere = ndi_session_obj.database_search(...
                             ndi.query('base.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
                         ndi_session_obj.database_rm(dochere);
@@ -152,9 +152,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             q1 = ndi.query('','isa','daqsystem','');
             q2 = ndi.query('base.session_id','exact_string',ndi_session_obj.id(),'');
             q = q1 & q2;
-            if numel(varargin)>0,
-                for i=1:2:numel(varargin),
-                    if strcmpi(varargin{i},'name'),
+            if numel(varargin)>0
+                for i=1:2:numel(varargin)
+                    if strcmpi(varargin{i},'name')
                         varargin{i} = 'base.name'; % case matters here
                     end;
                 end;
@@ -162,11 +162,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end;
             dev_doc = ndi_session_obj.database_search(q);
             % dev is cell list of ndi.document objects
-            for i=1:numel(dev_doc),
+            for i=1:numel(dev_doc)
                 dev{i} = ndi.database.fun.ndi_document2ndi_object(dev_doc{i},ndi_session_obj);
             end;
 
-            if numel(dev)==1,
+            if numel(dev)==1
                 dev = dev{1};
             end;
         end; % daqsystem_load()
@@ -181,10 +181,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Be sure you mean it!
             %
             dev = ndi_session_obj.daqsystem_load('name','(.*)');
-            if ~isempty(dev) & ~iscell(dev),
+            if ~isempty(dev) & ~iscell(dev)
                 dev = {dev};
             end;
-            for i=1:numel(dev),
+            for i=1:numel(dev)
                 ndi_session_obj = ndi_session_obj.daqsystem_rm(dev{i});
             end;
 
@@ -207,7 +207,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % Example: mydoc = ndi_session_obj.newdocument('base','base.name','myname');
             %
-            if nargin<2,
+            if nargin<2
                 document_type = 'base';
             end
             inputs = cat(2,varargin,{'base.session_id', ndi_session_obj.id()});
@@ -285,26 +285,26 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ErrIfNotFound = 0;
             vlt.data.assign(varargin{:});
 
-            if isempty(doc_unique_id),
+            if isempty(doc_unique_id)
                 return;
             end; % nothing to do
 
             doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_unique_id);
             [b,errmsg] = ndi_session_obj.validate_documents(doc_list);
-            if ~b,
+            if ~b
                 error(errmsg);
             end;
 
-            if iscell(doc_list),
+            if iscell(doc_list)
                 dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_list{:});
-                if numel(dependent_docs)>1,
+                if numel(dependent_docs)>1
                     warning('NDISESSION:deletingDependents',['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
                 end;
-                for i=1:numel(dependent_docs),
+                for i=1:numel(dependent_docs)
                     ndi_session_obj.database.remove(dependent_docs{i});
                 end;
                 ndi_session_obj.database.remove(doc_list);
-            else,
+            else
                 error(['Did not think we could get here..notify steve.']);
             end;
         end; % database_rm
@@ -347,22 +347,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
             b = 1;
             errmsg = '';
-            if ~iscell(document),
+            if ~iscell(document)
                 document = {document};
             end;
-            for i=1:numel(document),
+            for i=1:numel(document)
                 b = b & isa(document{i},'ndi.document');
-                if ~b,
+                if ~b
                     errmsg = ['All entries of DOCUMENT must be ndi.document objects.'];
                     break;
                 end;
                 session_id_here = document{i}.document_properties.base.session_id;
                 b_ = strcmp(session_id_here,ndi_session_obj.id());
-                if ~b_,
+                if ~b_
                     b_= strcmp(document{i}.document_properties.base.session_id,ndi.session.empty_id());
                 end;
                 b = b & b_;
-                if ~b,
+                if ~b
                     errmsg = ['All documents associated with the session) must have a session_id equal to the session id (document ' int2str(i) ' does not match and has session_id '  ').'];
                     ndi_session_obj.id(),
                     document{i}.document_properties.base.session_id,
@@ -444,23 +444,23 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             errmsg = '';
 
             daqs = ndi_session_obj.daqsystem_load('name','(.*)');
-            if ~iscell(daqs),
+            if ~iscell(daqs)
                 daqs = {daqs};
             end;
             daq_d = {};
             b = 1;
-            for i=1:numel(daqs),
+            for i=1:numel(daqs)
                 [b_here,daq_d{i}] = daqs{i}.ingest();
                 b = b & b_here;
-                if ~b,
+                if ~b
                     errmsg = ['Error in daq ' daqs{i}.name];
                 end;
             end;
-            if b==0, % things didn't go well, bail
-                for i=1:numel(daqs),
+            if b==0 % things didn't go well, bail
+                for i=1:numel(daqs)
                     ndi_session_obj.database_rm(daq_d{i});
                 end;
-            else, % add the syncgraph documents and we are done
+            else % add the syncgraph documents and we are done
                 ndi_session_obj.database_add(d_syncgraph);
             end;
         end; % ingest()
@@ -496,14 +496,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % this performs no ingestion on its own
 
             daqs = ndi_session_obj.daqsystem_load('name','(.*)');
-            if ~iscell(daqs),
+            if ~iscell(daqs)
                 daqs = {daqs};
             end;
             daq_d = {};
             b = 1;
-            for i=1:numel(daqs),
+            for i=1:numel(daqs)
                 [docs_out] = daqs{i}.filenavigator.ingest();
-                if ~isempty(docs_out),
+                if ~isempty(docs_out)
                     b = 0;
                     return;
                 end;
@@ -545,18 +545,18 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             trydatabase = 0;
             tryprobelist = 0;
 
-            if vlt.matlab.isa_text(obj_classname,'ndi.probe'),
+            if vlt.matlab.isa_text(obj_classname,'ndi.probe')
                 tryprobelist = 1;
-            elseif isa(obj_classname,'ndi.daq.system'),
+            elseif isa(obj_classname,'ndi.daq.system')
                 trydaqsystem = 1;
-            else,
+            else
                 trydatabase = 1;
             end;
 
-            if trydaqsystem,
+            if trydaqsystem
                 obj_here = ndi_session_obj.daqsystem_load('name',obj_name);
-                if ~isempty(obj_here),
-                    if strcmp(class(obj_here),obj_classname),
+                if ~isempty(obj_here)
+                    if strcmp(class(obj_here),obj_classname)
                         % it is our match
                         obj = obj_here;
                         return;
@@ -564,10 +564,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 end;
             end
 
-            if tryprobelist,
+            if tryprobelist
                 probes = ndi_session_obj.getprobes();
-                for i=1:numel(probes),
-                    if strcmp(class(probes{i}),obj_classname) & strcmp(probes{i}.epochsetname,obj_name),
+                for i=1:numel(probes)
+                    if strcmp(class(probes{i}),obj_classname) & strcmp(probes{i}.epochsetname,obj_name)
                         obj = probes{i};
                         return;
                     end;
@@ -603,10 +603,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             probestruct = [];
             devs = ndi_session_obj.daqsystem_load('name','(.*)');
-            if ~isempty(devs),
+            if ~isempty(devs)
                 probestruct = getprobes(vlt.data.celloritem(devs,1));
             end
-            for d=2:numel(devs),
+            for d=2:numel(devs)
                 probestruct = cat(1,probestruct,getprobes(devs{d}));
             end
             probestruct = vlt.data.equnique(probestruct);
@@ -614,59 +614,59 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
             existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
             subjectlist.a = 0;
-            for i=1:numel(existing_subjects),
+            for i=1:numel(existing_subjects)
                 subjectlist = setfield(subjectlist,['a' existing_subjects{i}.document_properties.base.id],...
                     [existing_subjects{i}.document_properties.subject.local_identifier]);
             end;
             existing_probe_objects = {};
-            for i=1:numel(existing_probes),
+            for i=1:numel(existing_probes)
                 existing_probe_objects{end+1} = ndi.database.fun.ndi_document2ndi_object(existing_probes{i},ndi_session_obj);
             end;
 
             match_probestruct_in_existing = [];
-            for i=1:numel(probestruct),
-                for j=1:numel(existing_probes),
+            for i=1:numel(probestruct)
+                for j=1:numel(existing_probes)
                     if strcmp(probestruct(i).subject_id,getfield(subjectlist,['a' existing_probes{j}.dependency_value('subject_id')])) & ...
                             strcmp(probestruct(i).name,existing_probes{j}.document_properties.element.name) & ...
                             (probestruct(i).reference==existing_probes{j}.document_properties.element.reference) & ...
-                            strcmp(probestruct(i).type,existing_probes{j}.document_properties.element.type),
+                            strcmp(probestruct(i).type,existing_probes{j}.document_properties.element.type)
                         match_probestruct_in_existing(end+1,[1 2]) = [i j];
                     end;
                 end;
             end;
-            if ~isempty(match_probestruct_in_existing),
+            if ~isempty(match_probestruct_in_existing)
                 probestruct = probestruct(setdiff(1:numel(probestruct),match_probestruct_in_existing(:,1)));
             end;
 
             probes = ndi.probe.fun.probestruct2probe(probestruct, ndi_session_obj);
             probes = cat(1,probes(:),existing_probe_objects(:));
 
-            if numel(varargin)==1,
+            if numel(varargin)==1
                 include = [];
-                for i=1:numel(probes),
+                for i=1:numel(probes)
                     includehere = isa(probes{i},varargin{1});
-                    if includehere,
+                    if includehere
                         include(end+1) = i;
                     end;
                 end;
                 probes = probes(include);
-            elseif numel(varargin)>1,
+            elseif numel(varargin)>1
                 include = [];
-                for i=1:numel(probes),
+                for i=1:numel(probes)
                     includehere = 1;
                     fn = fieldnames(probes{i});
-                    for j=1:2:numel(varargin),
+                    for j=1:2:numel(varargin)
                         includehere = includehere & ~isempty(intersect(fn,varargin{j}));
-                        if includehere,
+                        if includehere
                             value = getfield(probes{i},varargin{j});
-                            if ischar(varargin{j+1}),
+                            if ischar(varargin{j+1})
                                 includehere = strcmp(value,varargin{j+1});
-                            else,
+                            else
                                 includehere = (value==varargin{j+1});
                             end;
                         end;
                     end;
-                    if includehere,
+                    if includehere
                         include(end+1) = i;
                     end;
                 end;
@@ -692,16 +692,16 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             q_E = ndi.query(ndi_session_obj.searchquery());
             q_t = ndi.query('','isa','element','');
-            for i=1:2:numel(varargin),
-                if strfind(varargin{i},'reference'),
+            for i=1:2:numel(varargin)
+                if strfind(varargin{i},'reference')
                     q_t = q_t & ndi.query(varargin{i},'exact_number',varargin{i+1},'');
-                else,
+                else
                     q_t = q_t & ndi.query(varargin{i},'exact_string',varargin{i+1},'');
                 end;
             end;
             doc = ndi_session_obj.database_search(q_E&q_t);
             elements = {};
-            for i=1:numel(doc),
+            for i=1:numel(doc)
                 elements{i} = ndi.database.fun.ndi_document2ndi_object(doc{i}, ndi_session_obj);
             end;
         end; % getelements()
@@ -712,9 +712,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % B = EQ(E1, E2)
             %
             % Returns 1 if and only if the sessions have the same unique reference number.
-            if ~isa(e2,'ndi.session'),
+            if ~isa(e2,'ndi.session')
                 b = 0;
-            else,
+            else
                 b = strcmp(e1.id(), e2.id());
             end;
         end; % eq()
@@ -759,7 +759,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 ndi_session_obj.syncgraph.id());
 
             newsyncgraph = ndi.time.syncgraph(ndi_session_obj);
-            for i=1:numel(ndi_session_obj.syncgraph.rules),
+            for i=1:numel(ndi_session_obj.syncgraph.rules)
                 newsyncgraph = newsyncgraph.addrule(ndi_session_obj.syncgraph.rules{i});
             end;
 
@@ -771,10 +771,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % now, delete old docs and add new ones
 
             gooddelete = 0;
-            if ~isempty(syncgraph_doc),
+            if ~isempty(syncgraph_doc)
                 ndi_session_obj.database_rm(syncgraph_doc);
             end;
-            if ~isempty(syncrule_doc),
+            if ~isempty(syncrule_doc)
                 ndi_session_obj.database_rm(syncrule_doc);
             end;
             gooddelete = 1;
@@ -782,7 +782,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % now add new docs
             ndi_session_obj.database_add(newdocs);
 
-            if ~gooddelete,
+            if ~gooddelete
                 error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
             end;
         end; % update_syncgraph_in_db()
@@ -809,41 +809,41 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             doc_list = {};
             b = 1;
 
-            if ~iscell(doc_input),
+            if ~iscell(doc_input)
                 doc_input = {doc_input};
             end;
             q = [];
-            for i=1:numel(doc_input),
-                if ~isa(doc_input{i},'ndi.document'),
-                    if isempty(q),
+            for i=1:numel(doc_input)
+                if ~isa(doc_input{i},'ndi.document')
+                    if isempty(q)
                         q = ndi.query('base.id','exact_string',doc_input{i});
-                    else,
+                    else
                         q = q | ndi.query('base.id','exact_string',doc_input{i});
                     end;
                 end;
             end;
             docs_to_fetch = {};
-            if ~isempty(q),
+            if ~isempty(q)
                 docs_to_fetch = ndi_session_obj.database_search(q);
             end;
             include = [];
-            for i=1:numel(doc_input),
-                if isa(doc_input{i},'ndi.document'),
+            for i=1:numel(doc_input)
+                if isa(doc_input{i},'ndi.document')
                     doc_list{i} = doc_input{i};
-                else,
+                else
                     doc_list{i} = [];
-                    for k=1:numel(docs_to_fetch),
+                    for k=1:numel(docs_to_fetch)
                         if strcmp(docs_to_fetch{k}.document_properties.base.id,...
-                                doc_input{i}),
+                                doc_input{i})
                             doc_list{i} = docs_to_fetch{k};
                             break;
                         end;
                     end;
                 end;
-                if ~isa(doc_list{i},'ndi.document'),
+                if ~isa(doc_list{i},'ndi.document')
                     b = 0;
                     errmsg = ['Unable to locate document ' doc_input{i} '.'];
-                else,
+                else
                     include(end+1) = i;
                 end;
             end;
@@ -861,18 +861,18 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             b = zeros(numel(docs),1);
             errmsg = ['The following documents are not in session_id ' session_id ': '];
-            for i=1:numel(docs),
+            for i=1:numel(docs)
                 session_id_here = docs{i}.document_properties.base.session_id;
                 b(i) = strcmp(session_id,session_id_here);
-                if ~b(i),
+                if ~b(i)
                     errmsg = cat(2,errmsg,[session_id_here ', ']);
                 end;
             end;
-            if any(b),
+            if any(b)
                 errmsg = errmsg(1:end-2); % trim last ', '
                 errmsg(end+1) = '.';
                 b = 1; % make it a scalar
-            else,
+            else
                 b = 0; % make it a scalar
             end;
 

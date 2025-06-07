@@ -9,11 +9,11 @@ function database2json(S, output_path)
 
     d = S.database_search(ndi.query('base.id','regexp','(.*)'));
 
-    for i=1:numel(d),
+    for i=1:numel(d)
         [i numel(d)],
 
-        if isfield(d{i}.document_properties,'files'),
-            for f=1:numel(d{i}.document_properties.files.file_list),
+        if isfield(d{i}.document_properties,'files')
+            for f=1:numel(d{i}.document_properties.files.file_list)
                 bfile = S.database_openbinarydoc(d{i},d{i}.document_properties.files.file_list{f}),
                 [parentdir,filename_here] = fileparts(bfile.fullpathfilename);
                 d{i} = d{i}.add_file(d{i}.document_properties.files.file_list{f},filename_here,...

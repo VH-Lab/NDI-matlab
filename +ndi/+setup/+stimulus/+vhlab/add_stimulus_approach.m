@@ -16,7 +16,7 @@ function dnew = add_stimulus_approach(S, filename)
     % The function for epochs in the device 'vhvis_spike2'. If the entries are already
     % added, then they are not re-added.
 
-    if nargin<2,
+    if nargin<2
         filename = [S.getpath filesep 'stimulus_approaches.txt'];
     end;
 
@@ -24,7 +24,7 @@ function dnew = add_stimulus_approach(S, filename)
 
     daqsys = S.daqsystem_load('name','vhvis_spike2');
 
-    if isempty(daqsys),
+    if isempty(daqsys)
         error(['Could not find daq system vhvis_spike2.']);
     end;
 
@@ -38,13 +38,13 @@ function dnew = add_stimulus_approach(S, filename)
 
     dnew = {};
 
-    for i=1:numel(tab),
+    for i=1:numel(tab)
         item = ndi.database.fun.ndicloud_ontology_lookup('Name',tab(i).Approach);
-        if isempty(item),
+        if isempty(item)
             error(['Could not find item that matches ' tab(i).Approach '.']);
         end;
         % make sure epoch is in epochtable
-        if isempty(find(strcmp(tab(i).Epoch,{et.epoch_id}))),
+        if isempty(find(strcmp(tab(i).Epoch,{et.epoch_id})))
             error(['Could not find epoch ' tab(i).Epoch '.']);
         end;
 
@@ -55,7 +55,7 @@ function dnew = add_stimulus_approach(S, filename)
         q_s = ndi.query('openminds.fields.name','exact_string',tab(i).Approach) & ...
             ndi.query('openminds.fields.preferredOntologyIdentifier','exact_string',ont_id);
         d_test = S.database_search(q_e&q_s);
-        if isempty(d_test),
+        if isempty(d_test)
             new_approach = openminds.controlledterms.StimulationApproach(...
                 'name',item.Name,...
                 'preferredOntologyIdentifier',ont_id,...

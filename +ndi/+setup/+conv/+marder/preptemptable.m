@@ -17,9 +17,9 @@ function preptemptable(S)
 
     p = S.getprobes('type','thermometer');
 
-    for P = 1:numel(p),
+    for P = 1:numel(p)
         et = p{P}.epochtable();
-        for j=1:numel(et),
+        for j=1:numel(et)
             [D,t] = p{P}.readtimeseries(et(j).epoch_id,-Inf,Inf);
             out = ndi.setup.conv.marder.preptemp(t,D,standard_temps);
             newtable = cell2table({ p{P}.id() et(j).epoch_id out.type mat2cell(out.temp,1) mat2cell(out.raw,1)},...

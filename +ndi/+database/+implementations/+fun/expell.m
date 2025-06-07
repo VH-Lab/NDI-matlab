@@ -14,14 +14,14 @@ function [b,msg] = expell(to_delete_list)
     b = 1;
     msg = '';
 
-    if isempty(to_delete_list),
+    if isempty(to_delete_list)
         return;
     end;
 
-    for i=1:numel(to_delete_list),
-        try,
+    for i=1:numel(to_delete_list)
+        try
             delete(to_delete_list{i});
-        catch,
+        catch
             b = 0;
             msg = ['Deleting: ' lasterr];
         end;

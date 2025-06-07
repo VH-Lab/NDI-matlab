@@ -11,7 +11,7 @@ function intan_flat_saved(dirname)
     %  [NDIPATH]/example_sessions/exp1_eg_saved is used.
     %
 
-    if nargin<1,
+    if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
     end;
 

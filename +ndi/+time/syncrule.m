@@ -1,6 +1,6 @@
 classdef syncrule < ndi.ido & ndi.documentservice
 
-    properties (SetAccess=protected,GetAccess=public),
+    properties (SetAccess=protected,GetAccess=public)
         parameters;        % parameters, a structure
     end % properties
     properties (SetAccess=protected,GetAccess=protected)
@@ -17,10 +17,10 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % This is an abstract class, so PARAMETERS must be empty.
             %
             parameters = [];
-            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
+            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 parameters = varargin{2}.document_properties.syncrule.parameters;
                 ndi_syncrule_obj.identifier = varargin{2}.document_properties.base.id;
-            elseif nargin >0,
+            elseif nargin >0
                 parameters = varargin{1};
             end;
 
@@ -38,9 +38,9 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % See also: ndi.time.syncrule/ISVALIDPARAMETERS
             %
             [b,msg] = ndi_syncrule_obj.isvalidparameters(parameters);
-            if b,
+            if b
                 ndi_syncrule_obj.parameters = parameters;
-            else,
+            else
                 error(['Could not set parameters: ' msg ]);
             end
         end % setparameters

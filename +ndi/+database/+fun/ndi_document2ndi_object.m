@@ -12,12 +12,12 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
 
     % TODO: what if ndi_session_obj does not match the current session?
 
-    if ~isa(ndi_document_obj, 'ndi.document'),
+    if ~isa(ndi_document_obj, 'ndi.document')
         % try to look it up
         mydoc = ndi_session_obj.database_search(ndi.query('base.id','exact_string',ndi_document_obj,''));
-        if numel(mydoc)==1,
+        if numel(mydoc)==1
             ndi_document_obj = mydoc{1};
-        else,
+        else
             error(['NDI_DOCUMENT_OBJ must be of type ndi.document or an ID of a valid ndi.document.']);
         end;
     end;
@@ -27,15 +27,15 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
     doc_string = 'ndi_document_';
     index = findstr(classname,doc_string);
 
-    if ~isempty(index),
+    if ~isempty(index)
         obj_parent_string = classname(index+numel(doc_string):end);
-    else,
+    else
         obj_parent_string = classname;
     end;
 
-    if ~isfield(ndi_document_obj.document_properties, obj_parent_string),
+    if ~isfield(ndi_document_obj.document_properties, obj_parent_string)
         error(['NDI_DOCUMENT_OBJ does not have a ''' obj_parent_string  ''' field.']);
-    else,
+    else
         obj_struct = getfield(ndi_document_obj.document_properties, obj_parent_string);
         obj_string = getfield(obj_struct,['ndi_' obj_parent_string '_class']);
     end;

@@ -39,7 +39,7 @@ classdef blackrock < ndi.daq.reader.mfdaq
             [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles);
             % to do: need to search nev file
             channels = vlt.data.emptystruct('name','type');
-            for i=1:numel(ns_h.MetaTags.ChannelID),
+            for i=1:numel(ns_h.MetaTags.ChannelID)
                 newchannel.type = 'analog_in';
                 newchannel.name = ['ai' int2str(ns_h.MetaTags.ChannelID(i))];
                 channels(end+1) = newchannel;
@@ -79,38 +79,38 @@ classdef blackrock < ndi.daq.reader.mfdaq
             [ns_h,nev_h,headers] = ndi_daqreader_mfdaq_blackrock_obj.read_blackrock_headers(epochfiles);
 
             uniquechannel = unique(channeltype);
-            if numel(uniquechannel)~=1,
+            if numel(uniquechannel)~=1
                 error(['Only one type of channel may be read per function call at present.']);
             end
 
             data = [];
 
-            if s0 < 1,
+            if s0 < 1
                 s0 = 1; % in Blackrock, the first sample is always 1
-            elseif s0 > ns_h.MetaTags.DataPoints,
+            elseif s0 > ns_h.MetaTags.DataPoints
                 s0 = ns_h.MetaTags.DataPoints;
             end;
 
-            if s1 > ns_h.MetaTags.DataPoints,
+            if s1 > ns_h.MetaTags.DataPoints
                 s1 = ns_h.MetaTags.DataPoints;
             end;
 
-            if s1 < s0,
+            if s1 < s0
                 data = zeros(0, numel(channel));
                 return;
             end;
 
-            if strcmp(vlt.data.celloritem(channeltype,1),'ai'),
-                for i=1:numel(channel),
+            if strcmp(vlt.data.celloritem(channeltype,1),'ai')
+                for i=1:numel(channel)
                     ns_out = openNSx(nsv_files{1},'read','precision','double','uV','sample',...
                         ['t:' int2str(s0) ':' int2str(s1)], ['c:' int2str(channel(i))]);
-                    if ~isstruct(ns_out),
+                    if ~isstruct(ns_out)
                         error(['No data read from channel ' int2str(i) ' of blackrock record.']);
                     end;
                     data = cat(2,data,ns_out.Data');
                 end;
 
-            elseif strcmp(vlt.data.celloritem(channeltype,1),'time'),
+            elseif strcmp(vlt.data.celloritem(channeltype,1),'time')
                 data = cat(1,data,ns_h.MetaTags.Timestamp+((s0:s1)'-1)*1./ns_h.MetaTags.SamplingFreq);
             end;
 
@@ -131,11 +131,11 @@ classdef blackrock < ndi.daq.reader.mfdaq
 
             [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channel);
 
-            for i=1:numel(channel),
+            for i=1:numel(channel)
                 ct = vlt.data.celloritem(channeltype,i);
-                if strcmpi(ct,'ai') | strcmpi(ct,'time'),
+                if strcmpi(ct,'ai') | strcmpi(ct,'time')
                     sr(i) = ns_h.MetaTags.SamplingFreq;
-                else,
+                else
                     error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
                 end;
             end;
@@ -147,38 +147,38 @@ classdef blackrock < ndi.daq.reader.mfdaq
             % [NS_H, NEV_H, HEADERS] = READ_BLACKROCK_HEADERS(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES, [CHANNELTYPE, CHANNELS])
             %
             [nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
-            if ~isempty(nsv_files{1}),
+            if ~isempty(nsv_files{1})
                 ns_h = openNSx(nsv_files{1},'noread');
-            else,
+            else
                 ns_h = [];
             end;
-            if ~isempty(nev_files{1}),
+            if ~isempty(nev_files{1})
                 nev_h = openNEV(nev_files{1},'noread');
                 nev_h = [];
             end;
 
             headers.ns_rate = [];
-            if ~isempty(ns_h),
+            if ~isempty(ns_h)
                 headers.ns_rate = ns_h.MetaTags.SamplingFreq;
             end;
             headers.requestedchanneltype = [];
             headers.requestedchannelindexes= [];
 
-            if nargin>=3,
-                for i=1:numel(channels),
+            if nargin>=3
+                for i=1:numel(channels)
                     ct = vlt.data.celloritem(channeltype,i);
-                    if strcmpi(ct,'ai'),
-                        if isempty(ns_h),
+                    if strcmpi(ct,'ai')
+                        if isempty(ns_h)
                             error(['ai channels in Blackrock must be stored in .ns# files, but there is none.']);
                         end;
                         index = find(ns_h.MetaTags.ChannelID==channels(i));
-                        if isempty(index),
+                        if isempty(index)
                             error(['Channel ' int2str(channels(i)) ' not recorded.']);
-                        else,
+                        else
                             headers.requestedchannelindexes(i) = index;
                             headers.requestedchanneltype(i) = 1; % ns==1, nev==2
                         end;
-                    else,
+                    else
                         error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
                     end;
                 end;
@@ -225,11 +225,11 @@ classdef blackrock < ndi.daq.reader.mfdaq
             tf_ne = vlt.string.strcmp_substitution(ne_search,filename_array,'UseSubstituteString',0);
             nevfiles = filename_array(find(tf_ne));
 
-            if numel(nsvfiles)+numel(nevfiles) == 0,
+            if numel(nsvfiles)+numel(nevfiles) == 0
                 error(['No .ns# or .nev files found.']);
             end;
 
-            if numel(nsvfiles)>1,
+            if numel(nsvfiles)>1
                 error(['More than 1 NS# file in this file list; do not know what to do.']);
             end;
         end % filenamefromepoch

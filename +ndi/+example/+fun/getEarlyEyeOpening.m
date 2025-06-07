@@ -68,7 +68,7 @@ for i=1:numel(s)
 
     probes_sub = D.getprobes('type','n-trode','subject_id',s{i}.id());
 
-    for j=1:numel(probes_sub),
+    for j=1:numel(probes_sub)
         fData.probe_name = probes_sub{j}.elementstring();
     
         q_left = ndi.query('probe_location.name','exact_string','left cerebral hemisphere');
@@ -77,9 +77,9 @@ for i=1:numel(s)
 
         locDoc = D.database_search( (q_left | q_right) & q_probe);
         
-        if isempty(locDoc),
+        if isempty(locDoc)
             fData.probe_hemisphere = 'unknown';
-        else,
+        else
             fData.probe_hemisphere = locDoc{1}.document_properties.probe_location;
         end;
 

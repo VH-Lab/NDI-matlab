@@ -73,7 +73,7 @@ classdef RRID < ndi.ontology
             id = ''; name = ''; definition = ''; synonyms = {}; % Initialize
 
             apiUrlBase = 'https://scicrunch.org/resolver/';
-            try, encoded_rrid_path_segment = urlencode(full_rrid);
+            try encoded_rrid_path_segment = urlencode(full_rrid);
             catch ME_encode, error('ndi:ontology:RRID:EncodingError', 'Failed URL encode for %s: %s', full_rrid, ME_encode.message); end
             apiUrl = [apiUrlBase encoded_rrid_path_segment '.json'];
 

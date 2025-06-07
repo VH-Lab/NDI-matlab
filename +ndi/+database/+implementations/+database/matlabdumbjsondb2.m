@@ -23,13 +23,13 @@ classdef  matlabdumbjsondb2 < ndi.database
             ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj@ndi.database(varargin{:});
             ndi_matlabdumbjsondb_obj.db = vlt.file.dumbjsondb(varargin{3:end},...
                 'dirname','dumbjsondb','unique_object_id_field','base.id');
-            if ~isfolder(ndi_matlabdumbjsondb_obj.file_directory),
+            if ~isfolder(ndi_matlabdumbjsondb_obj.file_directory)
                 mkdir(ndi_matlabdumbjsondb_obj.file_directory);
             end;
         end; % ndi.database.implementations.database.matlabdumbjsondb()
     end
 
-    methods, % public
+    methods % public
         function docids = alldocids(ndi_matlabdumbjsondb_obj)
             % ALLDOCIDS - return all document unique reference numbers for the database
             %
@@ -42,7 +42,7 @@ classdef  matlabdumbjsondb2 < ndi.database
         end; % alldocids()
     end;
 
-    methods (Access=protected),
+    methods (Access=protected)
 
         function ndi_matlabdumbjsondb_obj = do_add(ndi_matlabdumbjsondb_obj, ndi_document_obj, add_parameters)
             namevaluepairs = {};
@@ -58,9 +58,9 @@ classdef  matlabdumbjsondb2 < ndi.database
 
         function [ndi_document_obj] = do_read(ndi_matlabdumbjsondb_obj, ndi_document_id);
             [doc] = ndi_matlabdumbjsondb_obj.db.read(ndi_document_id,0); % all versions are 0
-            if isempty(doc),
+            if isempty(doc)
                 ndi_document_obj = [];
-            else,
+            else
                 ndi_document_obj = ndi.document(doc);
             end;
         end; % do_read
@@ -69,9 +69,9 @@ classdef  matlabdumbjsondb2 < ndi.database
             
             % need to read document to delete files
             ndi_doc = ndi_matlabdumbjsondb_obj.do_read(ndi_document_id);
-            if isempty(ndi_doc),
+            if isempty(ndi_doc)
                 to_delete_list = {};
-            else,
+            else
                 [to_delete_list] = ndi.database.implementations.fun.expell_plan(ndi_doc, ...
                     ndi_matlabdumbjsondb_obj.file_directory);
             end;
@@ -80,11 +80,11 @@ classdef  matlabdumbjsondb2 < ndi.database
         end; % do_remove
 
         function [ndi_document_objs] = do_search(ndi_matlabdumbjsondb_obj, searchoptions, searchparams)
-            if isa(searchparams,'ndi.query'),
+            if isa(searchparams,'ndi.query')
                 searchparams = searchparams.to_searchstructure;
-                if 0, % display
+                if 0 % display
                     disp('search params');
-                    for i=1:numel(searchparams),
+                    for i=1:numel(searchparams)
                         searchparams(i),
                         searchparams(i).param1,
                         searchparams(i).param2,
@@ -93,7 +93,7 @@ classdef  matlabdumbjsondb2 < ndi.database
             end;
             ndi_document_objs = {};
             [docs] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
-            for i=1:numel(docs),
+            for i=1:numel(docs)
                 ndi_document_objs{i} = ndi.document(docs{i});
             end;
         end; % do_search()
@@ -106,7 +106,7 @@ classdef  matlabdumbjsondb2 < ndi.database
             fullfilename = [ndi_matlabdumbjsondb_obj.file_directory filesep filename];
 
             fid = fopen(fullfilename,'r','ieee-le');
-            if fid>0,
+            if fid>0
                 [fullfilename,permission,machineformat,encoding] = fopen(fid);
                 ndi_binarydoc_obj = ndi.database.implementations.binarydoc.matfid('fid',fid,...
                     'fullpathfilename',fullfilename, 'machineformat',machineformat,...

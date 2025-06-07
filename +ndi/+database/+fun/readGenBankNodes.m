@@ -8,9 +8,9 @@ function [G] = ndi_readGenBankNodes(filename)
     % G(i,j) = 1 iff node number i is a parent of node j.
     %
 
-    if ischar(filename),
+    if ischar(filename)
         T = vlt.file.text2cellstr(filename);
-    else,
+    else
         T = filename; % hidden mode for debugging
     end;
 
@@ -22,9 +22,9 @@ function [G] = ndi_readGenBankNodes(filename)
 
     progressbar('Interpreting nodes...');
 
-    for t=1:numel(T),
+    for t=1:numel(T)
 
-        if mod(t,1000)==0,
+        if mod(t,1000)==0
             progressbar(t/numel(T));
         end;
         mystr = split(T{t},sprintf('\t|\t'));

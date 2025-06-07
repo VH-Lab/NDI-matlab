@@ -16,10 +16,10 @@ classdef app < ndi.documentservice
             %
             session = [];
             name = 'generic';
-            if nargin>0,
+            if nargin>0
                 session = varargin{1};
             end
-            if nargin>1,
+            if nargin>1
                 name = varargin{2};
             end
 
@@ -38,7 +38,7 @@ classdef app < ndi.documentservice
             % a Matlab variable or a name in a document.
             %
             an = ndi_app_obj.name;
-            if ~isvarname(an),
+            if ~isvarname(an)
                 an = matlab.lang.makeValidName(an);
             end;
         end; % varappname ()
@@ -56,7 +56,7 @@ classdef app < ndi.documentservice
             % different version control system.
             %
             classfilename = which(class(ndi_app_obj));
-            if iscell(classfilename),
+            if iscell(classfilename)
                 classfilename = classfilename{1}; % take the first one if there are multiple
             end;
             [parentdir,filename] = fileparts(classfilename);
@@ -88,7 +88,7 @@ classdef app < ndi.documentservice
             %
             [~,osversion] = detectOS;
             osversion_strings = {};
-            for i=1:numel(osversion),
+            for i=1:numel(osversion)
                 osversion_strings{i} = int2str(osversion(i));
             end;
             osversion = strjoin(osversion_strings,'.');

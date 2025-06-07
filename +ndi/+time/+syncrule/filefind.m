@@ -1,6 +1,6 @@
 classdef filefind < ndi.time.syncrule
 
-    properties (SetAccess=protected,GetAccess=public),
+    properties (SetAccess=protected,GetAccess=public)
     end % properties
     properties (SetAccess=protected,GetAccess=protected)
     end % properties
@@ -28,7 +28,7 @@ classdef filefind < ndi.time.syncrule
             % daqsystem2 ('mydaq2')        | The name of the second daq system
             %
             %
-            if nargin==0,
+            if nargin==0
                 parameters = struct('number_fullpath_matches', 1, ...
                     'syncfilename','syncfile.txt',...
                     'daqsystem1','mydaq1','daqsystem2','mydaq2');
@@ -55,20 +55,20 @@ classdef filefind < ndi.time.syncrule
             %
             % See also: ndi.time.syncrule/SETPARAMETERS
             [b,msg] = vlt.data.hasAllFields(parameters,{'number_fullpath_matches','syncfilename','daqsystem1','daqsystem2'}, {[1 1],[1 -1],[1 -1],[1 -1]});
-            if b,
-                if ~isnumeric(parameters.number_fullpath_matches),
+            if b
+                if ~isnumeric(parameters.number_fullpath_matches)
                     b = 0;
                     msg = 'number_fullpath_matches must be a number.';
                 end
-                if ~ischar(parameters.syncfilename),
+                if ~ischar(parameters.syncfilename)
                     b = 0;
                     msg = 'syncfilename must be a character string';
                 end;
-                if ~ischar(parameters.daqsystem1),
+                if ~ischar(parameters.daqsystem1)
                     b = 0;
                     msg = 'daqsystem1 must be a character string';
                 end;
-                if ~ischar(parameters.daqsystem2),
+                if ~ischar(parameters.daqsystem2)
                     b = 0;
                     msg = 'daqsystem2 must be a character string';
                 end;
@@ -133,7 +133,7 @@ classdef filefind < ndi.time.syncrule
             backward = strcmp(epochnode_b.objectname,ndi_syncrule_filefind_obj.parameters.daqsystem1) & ...
                 strcmp(epochnode_a.objectname,ndi_syncrule_filefind_obj.parameters.daqsystem2);
             % these epochnodes do not come from the daq systems we know how to sync
-            if ~forward & ~backward,
+            if ~forward & ~backward
                 return;
             end;
             eval(['dummy_a = ' epochnode_a.objectclass '();']);
@@ -146,17 +146,17 @@ classdef filefind < ndi.time.syncrule
             % okay, proceed
 
             common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);
-            if numel(common)>=ndi_syncrule_filefind_obj.parameters.number_fullpath_matches,
+            if numel(common)>=ndi_syncrule_filefind_obj.parameters.number_fullpath_matches
                 % we can proceed
                 cost = 1;
 
                 % now, this can happen one of two ways. We can map from a->b or b->a
 
                 % here is a->b
-                if forward,
-                    for i=1:numel(epochnode_a.underlying_epochs.underlying),
+                if forward
+                    for i=1:numel(epochnode_a.underlying_epochs.underlying)
                         [filepath,filename,fileext] = fileparts(epochnode_a.underlying_epochs.underlying{i});
-                        if strcmp([filename fileext],ndi_syncrule_filefind_obj.parameters.syncfilename), % match!
+                        if strcmp([filename fileext],ndi_syncrule_filefind_obj.parameters.syncfilename) % match!
                             syncdata = load(epochnode_a.underlying_epochs.underlying{i},'-ascii');
                             shift = syncdata(1);
                             scale = syncdata(2);
@@ -169,10 +169,10 @@ classdef filefind < ndi.time.syncrule
 
                 % here is b->a
 
-                if backward,
-                    for i=1:numel(epochnode_b.underlying_epochs.underlying),
+                if backward
+                    for i=1:numel(epochnode_b.underlying_epochs.underlying)
                         [filepath,filename,fileext] = fileparts(epochnode_b.underlying_epochs.underlying{i});
-                        if strcmp([filename fileext],ndi_syncrule_filefind_obj.parameters.syncfilename), % match!
+                        if strcmp([filename fileext],ndi_syncrule_filefind_obj.parameters.syncfilename) % match!
                             syncdata = load(epochnode_b.underlying_epochs.underlying{i},'-ascii');
                             shift = syncdata(1);
                             scale = syncdata(2);

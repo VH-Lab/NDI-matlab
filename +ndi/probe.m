@@ -44,7 +44,7 @@ classdef probe < ndi.element & ndi.documentservice
             %  ndi.probe is a essentially an abstract class, and a specific implementation must be called.
             %
             inputs = varargin;
-            if nargin==5,
+            if nargin==5
                 inputs{7} = varargin{5};
                 inputs{5} = [];
                 inputs{6} = 1;
@@ -81,22 +81,22 @@ classdef probe < ndi.element & ndi.documentservice
 
             d_et = {};
 
-            for d=1:numel(D),
+            for d=1:numel(D)
                 d_et{d} = epochtable(D{d});
 
-                for n=1:numel(d_et{d}),
+                for n=1:numel(d_et{d})
                     % for each epoch in this device
                     underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
                     underlying_epochs(1).underlying = D{d};
                     match_probe_and_device = [];
                     H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
-                    for h=1:numel(H),
+                    for h=1:numel(H)
                         daqst = ndi.daq.daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
-                        if strcmpi(D{d}.name,daqst.devicename),
+                        if strcmpi(D{d}.name,daqst.devicename)
                             match_probe_and_device(end+1) = H(h);
                         end;
                     end;
-                    if ~isempty(match_probe_and_device),
+                    if ~isempty(match_probe_and_device)
                         % underlying_epochs.epoch_number = n;
                         underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
                         underlying_epochs.epoch_session_id = d_et{d}(n).epoch_session_id;
@@ -182,16 +182,16 @@ classdef probe < ndi.element & ndi.documentservice
             %
             et = epochtable(ndi_probe_obj);
 
-            if ischar(epoch_number_or_id),
+            if ischar(epoch_number_or_id)
                 epoch_number = find(strcmpi(epoch_number_or_id, {et.epoch_id}));
-                if isempty(epoch_number),
+                if isempty(epoch_number)
                     error(['Could not identify epoch with id ' epoch_number_or_id '.']);
                 end
-            else,
+            else
                 epoch_number = epoch_number_or_id;
             end
 
-            if epoch_number>numel(et),
+            if epoch_number>numel(et)
                 error(['Epoch number ' epoch_number ' out of range 1..' int2str(numel(et)) '.']);
             end;
 
@@ -203,10 +203,10 @@ classdef probe < ndi.element & ndi.documentservice
             channeltype = {};
             channellist = [];
 
-            for i = 1:numel(et),
-                for j=1:numel(et(i).underlying_epochs),
-                    for k=1:numel(et(i).underlying_epochs(j).epochprobemap),
-                        if ndi_probe_obj.epochprobemapmatch(et(i).underlying_epochs(j).epochprobemap(k)),
+            for i = 1:numel(et)
+                for j=1:numel(et(i).underlying_epochs)
+                    for k=1:numel(et(i).underlying_epochs(j).epochprobemap)
+                        if ndi_probe_obj.epochprobemapmatch(et(i).underlying_epochs(j).epochprobemap(k))
                             devstr = ndi.daq.daqsystemstring(et(i).underlying_epochs(j).epochprobemap(k).devicestring);
                             [devname_here, channeltype_here, channellist_here] = devstr.ndi_daqsystemstring2channel();
                             dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
@@ -240,7 +240,7 @@ classdef probe < ndi.element & ndi.documentservice
             % Returns 1 if the objects share an object class, session, and probe string.
             %
             b = 0;
-            if isa(ndi_probe_obj2,'ndi.probe'),
+            if isa(ndi_probe_obj2,'ndi.probe')
                 b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
                     strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
                     strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );

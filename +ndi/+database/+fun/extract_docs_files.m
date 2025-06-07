@@ -12,7 +12,7 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
     % an output.
     %
 
-    if nargin<2,
+    if nargin<2
         target_path = ndi.file.temp_name();
         mkdir(target_path);
     end;
@@ -25,25 +25,25 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
 
     docs = d;
 
-    for i = 1:numel(d),
-        if isfield(d{i}.document_properties,'files'),
+    for i = 1:numel(d)
+        if isfield(d{i}.document_properties,'files')
             file_info = did.datastructures.emptystruct('file_name','fullpathfilename');
             fl = docs{i}.current_file_list();
             docs{i} = docs{i}.reset_file_info;
-            for f = 1:numel(fl),
+            for f = 1:numel(fl)
                 file_info_here = [];
                 file_info_here.file_name = fl{f};
                 doc_id = d{i}.document_properties.base.id;
                 file_obj = ndi_session_obj.database_openbinarydoc(doc_id,file_info_here.file_name);
                 [~,uid,~] = fileparts(file_obj.fullpathfilename);
                 file_info_here.fullpathfilename = [target_path filesep uid];
-                try,
+                try
                     copyfile(file_obj.fullpathfilename,file_info_here.fullpathfilename);
                     files_I_made{end+1} = file_info_here.fullpathfilename;
-                catch,
+                catch
                     % probably disk space error or something, bail out
                     % try to recover some of the user's precious disk space
-                    for j=1:numel(files_I_made),
+                    for j=1:numel(files_I_made)
                         delete(files_I_made{j});
                     end;
                     error(['Extraction failed: ' lasterr]);

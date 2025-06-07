@@ -18,21 +18,21 @@ function tutorial_02_01(prefix, testing)
     % in the directory called PREFIX are not touched.
     %
 
-    if nargin<1 | isempty(prefix),
+    if nargin<1 | isempty(prefix)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
     end;
 
-    if nargin<2,
+    if nargin<2
         testing = 0;
     end;
 
     tutorial_dir = 'ts_exper1';
 
-    if testing, % copy the files to the temp directory
+    if testing % copy the files to the temp directory
         prefix = [userpath filesep 'Documents' filesep 'NDI' filesep 'Test'];
         disp(['Assuming clean data files ts_exper1 are in ' prefix '.']);
         disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
-        try,
+        try
             rmdir([ndi.common.PathConstants.TempFolder filesep tutorial_dir],'s');
         end;
         disp(['Copying ''' tutorial_dir ''' to the temporary directory']);

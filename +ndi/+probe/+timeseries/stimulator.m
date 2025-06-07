@@ -98,7 +98,7 @@ classdef stimulator < ndi.probe.timeseries
                 end                
             end
             [timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
-            if ~iscell(edata),
+            if ~iscell(edata)
                 timestamps = {timestamps};
                 edata = {edata};
             end;
@@ -114,55 +114,55 @@ classdef stimulator < ndi.probe.timeseries
             channeltype = cat(1,channeltype(:),channeltype_metadata(:));
             channel = cat(1,channel(:),channel_metadata(:));
 
-            if markermode,
-                for i=1:numel(channeltype),
-                    switch(channeltype{i}),
-                        case {'mk','text'},
+            if markermode
+                for i=1:numel(channeltype)
+                    switch(channeltype{i})
+                        case {'mk','text'}
                             mk_ = mk_ + 1;
-                            switch mk_,
-                                case 1, % stimonoff
+                            switch mk_
+                                case 1 % stimonoff
                                     t.stimon = timestamps{i}(find(edata{i}(:,1)>0),1);
                                     t.stimoff = timestamps{i}(find(edata{i}(:,1)==-1),1);
-                                case 2, % stimid
-                                    for dd=1:size(edata{i},1),
-                                        if strcmp(channeltype{i},'text'),
+                                case 2 % stimid
+                                    for dd=1:size(edata{i},1)
+                                        if strcmp(channeltype{i},'text')
                                             data.stimid(dd,1) = eval([edata{i}{dd}]);
-                                        else,
+                                        else
                                             data.stimid(dd,:) = edata{i}(dd,:);
                                         end;
                                     end;
-                                case 3, % stimopenclose
+                                case 3 % stimopenclose
                                     t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1);
                                     t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1);
-                                otherwise,
+                                otherwise
                                     error(['Got more mark channels than expected.']);
                             end;
-                        case 'e',
+                        case 'e'
                             e_ = e_ + 1;
                             event_data{e_} = timestamps{i};
-                        case {'md'},
+                        case {'md'}
                             data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
-                        otherwise,
+                        otherwise
                             error(['Unknown channel.']);
                     end
                 end
                 t.stimevents = event_data;
-            elseif dimmode,
+            elseif dimmode
                 t.stimon = [];
                 t.stimoff = [];
                 data.stimid = [];
                 counter = 0;
-                for i=1:numel(edata),
-                    if ~isempty(intersect(channeltype(i),{'dimp','dimn'})),
+                for i=1:numel(edata)
+                    if ~isempty(intersect(channeltype(i),{'dimp','dimn'}))
                         counter = counter + 1;
                         t.stimon = [t.stimon(:); vlt.data.colvec(timestamps{i}(find(edata{i}(:,1)>0),1))];
                         t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,1)==-1),1))];
                         data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,1)==1)),1)];
                     end;
-                    if strcmp(channeltype(i),'md'),
+                    if strcmp(channeltype(i),'md')
                         data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
                     end;
-                    if strcmp(channeltype(i),'e'),
+                    if strcmp(channeltype(i),'e')
                         event_data{end+1} = timestamps{i};
                     end;
                 end;

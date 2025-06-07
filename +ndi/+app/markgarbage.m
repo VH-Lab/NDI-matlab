@@ -31,7 +31,7 @@ classdef markgarbage < ndi.app
             %
             session = [];
             name = 'ndi_app_markgarbage';
-            if numel(varargin)>0,
+            if numel(varargin)>0
                 session = varargin{1};
             end
             ndi_app_markgarbage_obj = ndi_app_markgarbage_obj@ndi.app(session, name);
@@ -73,7 +73,7 @@ classdef markgarbage < ndi.app
             % If the entry is a duplicate, it is not saved but b is still 1.
             %
 
-            if ~isa(ndi_epochset_obj, 'ndi.probe'),
+            if ~isa(ndi_epochset_obj, 'ndi.probe')
                 error(['do not know how to handle non-probes yet.']);
             end
 
@@ -81,8 +81,8 @@ classdef markgarbage < ndi.app
             b = 1;
 
             match = -1;
-            for i=1:numel(vi),
-                if vlt.data.eqlen(vi(i),validintervalstruct),
+            for i=1:numel(vi)
+                if vlt.data.eqlen(vi(i),validintervalstruct)
                     match = i;
                     return;
                 end;
@@ -112,7 +112,7 @@ classdef markgarbage < ndi.app
             %      ndi.app.markgarbage/LOADVALIDINTERVAL
 
             [vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
-            if ~isempty(mydoc),
+            if ~isempty(mydoc)
                 ndi_app_markgarbage_obj.session.database_rm(mydoc);
             end
 
@@ -131,25 +131,25 @@ classdef markgarbage < ndi.app
 
             searchq = ndi.query(ndi_app_markgarbage_obj.searchquery()) & ndi.query('','isa','valid_interval','');
 
-            if isa(ndi_epochset_obj,'ndi.element'),
+            if isa(ndi_epochset_obj,'ndi.element')
                 searchq2 = ndi.query('','depends_on','element_id',ndi_epochset_obj.id());
                 searchq = searchq & searchq2;
             end
 
             mydoc = ndi_app_markgarbage_obj.session.database_search(searchq);
 
-            if ~isempty(mydoc),
-                for i=1:numel(mydoc),
+            if ~isempty(mydoc)
+                for i=1:numel(mydoc)
                     vi = cat(1,vi,mydoc{i}.document_properties.valid_interval);
                 end;
             end;
 
-            if isempty(vi), % underlying elements could still have garbage intervals
+            if isempty(vi) % underlying elements could still have garbage intervals
                 % check here: is there a potential for a bug or error if the clocks differ?
-                if isprop(ndi_epochset_obj,'underlying_element'),
-                    if ~isempty(ndi_epochset_obj.underlying_element),
+                if isprop(ndi_epochset_obj,'underlying_element')
+                    if ~isempty(ndi_epochset_obj.underlying_element)
                         [vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_element);
-                        if ~isempty(vi_try),
+                        if ~isempty(vi_try)
                             vi = vi_try;
                             mydoc = mydoc_try;
                         end;
@@ -173,11 +173,11 @@ classdef markgarbage < ndi.app
             baseline_interval = [t0 t1];
             explicitly_good_intervals = [];
             vi = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
-            if isempty(vi),
+            if isempty(vi)
                 intervals = [t0 t1];
                 return;
             end;
-            for i=1:size(vi,1),
+            for i=1:size(vi,1)
                 % for each marked valid region
                 %    Can we project the marked valid region into this timeref?
                 interval_t0_timeref = ndi.time.timereference(ndi_app_markgarbage_obj.session, vi(i).timeref_structt0);
@@ -188,18 +188,18 @@ classdef markgarbage < ndi.app
                 [epoch_t1_out, epoch_t1_timeref, msg_t1] = ...
                     ndi_app_markgarbage_obj.session.syncgraph.time_convert(interval_t1_timeref, ...
                     vi(i).t1, timeref.referent, timeref.clocktype);
-                if isempty(epoch_t0_out) | isempty(epoch_t1_out),
+                if isempty(epoch_t0_out) | isempty(epoch_t1_out)
                     % so we say the region is valid, we have no restrictions to add
-                elseif ~strcmp(epoch_t0_timeref.epoch,timeref.epoch) | ~strcmp(epoch_t1_timeref.epoch,timeref.epoch),
+                elseif ~strcmp(epoch_t0_timeref.epoch,timeref.epoch) | ~strcmp(epoch_t1_timeref.epoch,timeref.epoch)
                     % we can find a match but not in the right epoch
-                else, % we have to carve out a bit of this region
+                else % we have to carve out a bit of this region
                     % do we need to check that epoch_t0_timeref matches our timeref? I think it is guaranteed
                     explicitly_good_intervals = vlt.math.interval_add(explicitly_good_intervals, [epoch_t0_out epoch_t1_out]);
                 end;
             end;
-            if isempty(explicitly_good_intervals),
+            if isempty(explicitly_good_intervals)
                 intervals = baseline_interval;
-            else,
+            else
                 intervals = explicitly_good_intervals;
             end;
 

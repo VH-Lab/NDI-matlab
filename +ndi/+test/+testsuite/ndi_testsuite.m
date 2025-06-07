@@ -33,18 +33,18 @@ function output = ndi_testsuite
 
     output = vlt.data.emptystruct('outcome','errormsg');
 
-    for i=1:numel(jobs),
+    for i=1:numel(jobs)
         output_here = output([]);
         output_here(1).errormsg = '';
         output_here(1).outcome = 0;
-        if jobs(i).runit,
-            try,
+        if jobs(i).runit
+            try
                 eval(jobs(i).code);
                 output_here(1).outcome = 1;
-            catch,
+            catch
                 output_here(1).errormsg = lasterr;
             end;
-        else,
+        else
             output_here(1).outcome = -1; % not run
         end;
         output(i) = output_here;
@@ -56,17 +56,17 @@ function output = ndi_testsuite
     disp(sprintf('\n'));
     disp('TESTSUITE OUTCOME');
 
-    for i=1:numel(output),
-        if output(i).outcome>0,
+    for i=1:numel(output)
+        if output(i).outcome>0
             beginstr = ['  SUCCESS: '];
             endstr = '';
-        elseif output(i).outcome==0,
+        elseif output(i).outcome==0
             beginstr = ['  FAILURE: '];
             endstr = ['Error: ' output(i).errormsg];
         end;
-        if output(i).outcome >= 0,
+        if output(i).outcome >= 0
             disp([beginstr jobs(i).code ' (' jobs(i).comment ')']);
-            if ~isempty(endstr),
+            if ~isempty(endstr)
                 disp(['      ' endstr]);
             end
         end;

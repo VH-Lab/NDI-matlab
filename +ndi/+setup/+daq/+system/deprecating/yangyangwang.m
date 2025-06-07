@@ -23,13 +23,13 @@ function S = yangyangwang(S, daqsystemname)
     %
     % See also: ndi.file.navigator.epochdir
 
-    if nargin == 0,
+    if nargin == 0
         S = {'yangyang_tdt_sev'};
         return;
     end;
 
-    if iscell(daqsystemname),
-        for i=1:length(daqsystemname),
+    if iscell(daqsystemname)
+        for i=1:length(daqsystemname)
             S = ndi.setup.daq.system.yangyangwang(S, daqsystemname{i});
         end
         return;
@@ -37,13 +37,13 @@ function S = yangyangwang(S, daqsystemname)
 
     epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
-    switch daqsystemname,
-        case 'yangyang_tdt_sev',
+    switch daqsystemname
+        case 'yangyang_tdt_sev'
             fileparameters = {'.*_Ch1\.sev\>','Notes.txt','StoresListing.txt','probemap.txt'};
             readerobjectclass = ['ndi.daq.reader.mfdaq.ndr(''SEV'') '];
             epochprobemapfileparameters = {'probemap.txt'};
             mdr = {};
-        otherwise,
+        otherwise
             error(['Unknown device requested ' daqsystemname '.']);
     end
 

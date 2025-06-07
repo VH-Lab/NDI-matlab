@@ -58,15 +58,15 @@ classdef epochset
             % unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
             %
             [cached_et, cached_hash] = cached_epochtable(ndi_epochset_obj);
-            if isempty(cached_et) & ~isstruct(cached_et), % is it not a struct? could be a correctly computed empty epochtable, which would be struct
+            if isempty(cached_et) & ~isstruct(cached_et) % is it not a struct? could be a correctly computed empty epochtable, which would be struct
                 et = ndi_epochset_obj.buildepochtable();
                 hashvalue = vlt.data.hashmatlabvariable(et);
                 [cache,key] = getcache(ndi_epochset_obj);
-                if ~isempty(cache),
+                if ~isempty(cache)
                     priority = 1; % use higher than normal priority
                     cache.add(key,'epochtable-hash',struct('epochtable',et,'hashvalue',hashvalue),priority);
                 end
-            else,
+            else
                 et = cached_et;
                 hashvalue = cached_hash;
             end;
@@ -84,15 +84,15 @@ classdef epochset
             [et, ~] = ndi_epochset_obj.epochtable();
             
             epochobjectarray = ndi.epoch.empty();
-            for i=1:numel(et),
+            for i=1:numel(et)
                 underlying_epochs = ndi.epoch.empty();
                 for j=1:numel(et(i).underlying_epochs)
                    epm = vlt.data.conditional(isempty(et(i).underlying_epochs(j).epochprobemap),...
                         ndi.epoch.epochprobemap.empty(), et(i).underlying_epochs(j).epochprobemap);
-                   if iscell(et(i).underlying_epochs(j).underlying),
+                   if iscell(et(i).underlying_epochs(j).underlying)
                        underlying_files = et(i).underlying_epochs(j).underlying;
                        underlying_epochset_object = ndi.epoch.epochset.empty();
-                   else,
+                   else
                        underlying_files = {};
                        underlying_epochset_object = et(i).underlying_epochs(j).underlying;
                    end;
@@ -161,9 +161,9 @@ classdef epochset
             et = [];
             hashvalue = [];
             [cache,key] = getcache(ndi_epochset_obj);
-            if (~isempty(cache) & ~isempty(key)),
+            if (~isempty(cache) & ~isempty(key))
                 table_entry = cache.lookup(key,'epochtable-hash');
-                if ~isempty(table_entry),
+                if ~isempty(table_entry)
                     et = table_entry(1).data.epochtable;
                     hashvalue = table_entry(1).data.hashvalue;
                 end;
@@ -195,7 +195,7 @@ classdef epochset
             % See also: ndi.epoch.epochset/EPOCHTABLE
 
             [cache,key]=getcache(ndi_epochset_obj);
-            if (~isempty(cache) & ~isempty(key)),
+            if (~isempty(cache) & ~isempty(key))
                 cache.remove(key,'epochtable-hash');
             end
         end % resetepochtable
@@ -210,7 +210,7 @@ classdef epochset
 
             b = 0;
             [cached_et, cached_hashvalue] = cached_epochtable(ndi_epochset_obj);
-            if ~isempty(cached_et),
+            if ~isempty(cached_et)
                 b = (hashvalue == cached_hashvalue);
             end
         end % matchedepochtable
@@ -229,14 +229,14 @@ classdef epochset
             % ndi.daq.system) will override this method.
             %
             et = epochtable(ndi_epochset_obj);
-            if isnumeric(epoch_number),
-                if epoch_number > numel(et),
+            if isnumeric(epoch_number)
+                if epoch_number > numel(et)
                     error(['epoch_number out of range (number of epochs==' int2str(numel(et)) ')']);
                 end
                 eid = et(epoch_number).epoch_id;
-            else,  % verify the epoch_id string
+            else  % verify the epoch_id string
                 index = find(strcmpi(epoch_number,{et.epoch_id}));
-                if isempty(index),
+                if isempty(index)
                     error(['epoch_number is a string but does not correspond to any epoch_id']);
                 end
                 eid = et(index).epoch_id; % gets the capitalization exactly right
@@ -255,7 +255,7 @@ classdef epochset
             et = ndi_epochset_obj.epochtable();
             eid = ndi_epochset_obj.epochid(epoch_number);
             index = find(strcmpi(eid,{et.epoch_id}));
-            if isempty(index),
+            if isempty(index)
                 error(['epoch_number does not correspond to a valid epoch.']);
             end;
             et_entry = et(index);
@@ -301,17 +301,17 @@ classdef epochset
             % identifier string, then it is returned.
             if isnumeric(number)
                 s = int2str(number);
-            elseif iscell(number), % a cell array of strings
+            elseif iscell(number) % a cell array of strings
                 s = [];
-                for i=1:numel(number),
+                for i=1:numel(number)
                     if (i>2)
                         s=cat(2,s,[', ']);
                     end;
                     s=cat(2,s,number{i});
                 end
-            elseif ischar(number),
+            elseif ischar(number)
                 s = number;
-            else,
+            else
                 error(['Unknown epoch number or identifier.']);
             end;
         end % epoch2str()
@@ -351,13 +351,13 @@ classdef epochset
             et = epochtable(ndi_epochset_obj);
             nodes = vlt.data.emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
                 'epoch_clock','t0_t1', 'underlying_epochs', 'objectname', 'objectclass');
-            if nargout>1, % only build this if we are asked to do so
+            if nargout>1 % only build this if we are asked to do so
                 underlyingnodes = vlt.data.emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
                     'epoch_clock', 't0_t1', 'underlying_epochs');
             end
 
-            for i=1:numel(et),
-                for j=1:numel(et(i).epoch_clock),
+            for i=1:numel(et)
+                for j=1:numel(et(i).epoch_clock)
                     newnode = et(i);
                     newnode = rmfield(newnode,'epoch_number');
                     newnode.epoch_clock = et(i).epoch_clock{j};
@@ -366,7 +366,7 @@ classdef epochset
                     newnode.objectclass = class(ndi_epochset_obj);
                     nodes(end+1) = newnode;
                 end
-                if nargout>1,
+                if nargout>1
                     newunodes = underlyingepochnodes(ndi_epochset_obj,epochnode);
                     underlyingnodes = cat(2,underlyingnodes,newunodes);
                 end
@@ -385,7 +385,7 @@ classdef epochset
             %
             name = 'unknown';
             % default behavior is to use the 'name' field
-            if any(strcmp('name',fieldnames(ndi_epochset_obj))),
+            if any(strcmp('name',fieldnames(ndi_epochset_obj)))
                 name = getfield(ndi_epochset_obj,'name');
             end
         end % epochsetname
@@ -408,7 +408,7 @@ classdef epochset
             mapping = {trivial_map};  % we can get to ourself
 
             utc = ndi.time.clocktype('utc');
-            if unodes(1).epoch_clock == utc,
+            if unodes(1).epoch_clock == utc
                 % add a dev_local_time mapping
                 unode_here = unodes(1);
                 unode_here.t0_t1 = [0 diff(unodes(1).t0_t1)];
@@ -424,10 +424,10 @@ classdef epochset
                 mapping{2,2} = trivial_map;
             end;
 
-            if ~issyncgraphroot(ndi_epochset_obj),
-                for i=1:numel(epochnode.underlying_epochs),
-                    for j=1:numel(epochnode.underlying_epochs(i).epoch_clock),
-                        if epochnode.underlying_epochs(i).epoch_clock{j}==epochnode.epoch_clock,
+            if ~issyncgraphroot(ndi_epochset_obj)
+                for i=1:numel(epochnode.underlying_epochs)
+                    for j=1:numel(epochnode.underlying_epochs(i).epoch_clock)
+                        if epochnode.underlying_epochs(i).epoch_clock{j}==epochnode.epoch_clock
                             % we have found a new unode, build it and add it
                             unode_here = vlt.data.emptystruct(fieldnames(unodes));
                             unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
@@ -435,10 +435,10 @@ classdef epochset
                             unode_here(1).epochprobemap = epochnode.underlying_epochs(i).epochprobemap;
                             unode_here(1).epoch_clock = epochnode.underlying_epochs(i).epoch_clock{j};
                             unode_here(1).t0_t1 = epochnode.underlying_epochs(i).t0_t1{j};
-                            if isa(epochnode.underlying_epochs(i).underlying,'ndi.epoch.epochset'),
+                            if isa(epochnode.underlying_epochs(i).underlying,'ndi.epoch.epochset')
                                 etd = epochtable(epochnode.underlying_epochs(i).underlying);
                                 z = find(strcmp(unode_here.epoch_id, {etd.epoch_id}));
-                                if ~isempty(z),
+                                if ~isempty(z)
                                     unode_here(1).underlying_epochs = etd(z);
                                     unode_here(1).underlying_epochs = rmfield(unode_here(1).underlying_epochs,'epoch_number');
                                 end
@@ -460,26 +460,26 @@ classdef epochset
                             % developer node: if we ever have multiple devices underlying an epoch,
                             %                 then  this needs editing
 
-                            if numel(epochnode.underlying_epochs(i).underlying) > 1,
+                            if numel(epochnode.underlying_epochs(i).underlying) > 1
                                 error(['The day has come. More than one ndi.epoch.epochset underlying an epoch. Updating needed. Tell the developers.']);
                             end;
 
                             % now add the underlying nodes of the newly added underlying node, down to when issyncgraphroot == 1
 
-                            if isa(epochnode.underlying_epochs(i).underlying,'ndi.epoch.epochset'),
+                            if isa(epochnode.underlying_epochs(i).underlying,'ndi.epoch.epochset')
                                 if ~issyncgraphroot(epochnode.underlying_epochs(i).underlying)
                                     % we need to go deeper
 
                                     epochnode_d = epochnodes(epochnode.underlying_epochs(i).underlying);
                                     match = 0;
                                     z = find(strcmp(epochnode.underlying_epochs(i).epoch_id, {epochnode_d.epoch_id}));
-                                    for zi = 1:numel(z),
+                                    for zi = 1:numel(z)
                                         if (epochnode.epoch_clock==epochnode_d(z(zi)).epoch_clock)
                                             match = z(zi);
                                             break;
                                         end
                                     end
-                                    if match,
+                                    if match
                                         [unodes_d, cost_d, mapping_d] = ...
                                             underlyingepochnodes(epochnode.underlying_epochs(i).underlying, epochnode_d(match));
 
@@ -518,11 +518,11 @@ classdef epochset
             % MAPPING is the ndi.time.timemapping object that describes the mapping.
             %
             [cost, mapping] = cached_epochgraph(ndi_epochset_obj);
-            if isempty(cost),
+            if isempty(cost)
                 [cost,mapping] = ndi_epochset_obj.buildepochgraph;
                 [et,hash] = cached_epochtable(ndi_epochset_obj);
                 [cache,key] = getcache(ndi_epochset_obj);
-                if ~isempty(cache),
+                if ~isempty(cache)
                     epochgraph_type = ['epochgraph-hashvalue'];
                     priority = 1; % use higher than normal priority
                     ginfo.cost = cost;
@@ -612,15 +612,15 @@ classdef epochset
             cost = [];
             mapping = [];
             [cache,key] = getcache(ndi_epochset_obj);
-            if ( ~isempty(cache)  & ~isempty(key) ),
+            if ( ~isempty(cache)  & ~isempty(key) )
                 epochgraph_type = ['epochgraph-hashvalue'];
                 eg_data = cache.lookup(key,epochgraph_type);
-                if ~isempty(eg_data),
+                if ~isempty(eg_data)
                     if matchedepochtable(ndi_epochset_obj, eg_data(1).data.hashvalue);
                         ginfo = ndi.epoch.epochset.cache2ginfo(eg_data(1).data.ginfo);
                         cost = ginfo.cost;
                         mapping = ginfo.mapping;
-                    else,
+                    else
                         cache.remove(key,epochgraph_type); % it's out of date, clean it up
                     end
                 end

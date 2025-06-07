@@ -17,12 +17,12 @@ function d = marderprobe2uberon(S)
 
     d = {};
 
-    for i=1:numel(p),
+    for i=1:numel(p)
         index = find(strcmp(p{i}.name,t.("probe")));
-        if ~isempty(index),
+        if ~isempty(index)
             disp(['Found entry for ' p{i}.name '...']);
             ontol = ndi.database.fun.uberon_ontology_lookup('Name',t{index,"name"}{1});
-            if isempty(ontol),
+            if isempty(ontol)
                 error(['Could not find entry ' char(t{index,"name"}{1}) '.']);
             end;
             identifier = ['UBERON:' int2str(ontol(1).Identifier)];

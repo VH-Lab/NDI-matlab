@@ -121,7 +121,7 @@ end
 ecs = {'dev_local_time'};
 t0_t1 = [t0_t1_local(:)];
 
-if isGlobal,
+if isGlobal
     ecs{end+1} = clockTarget.type;
     tr = ndi.time.timereference(ndi_element_timeseries_obj_in,ndi.time.clocktype('dev_local_time'),1,0);
     t0 = D.syncgraph.time_convert(tr,et(1).t0_t1{idx}(1),ndi_element_timeseries_obj_in.underlying_element,clockTarget);

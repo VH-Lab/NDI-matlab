@@ -28,12 +28,12 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             %  DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
             %  ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
             %
-            if ndi_element_timeseries_obj.direct,
+            if ndi_element_timeseries_obj.direct
                 [data,t,timeref] = ndi_element_timeseries_obj.underlying_element.readtimeseries(timeref_or_epoch, t0, t1);
-            else,
-                if isa(timeref_or_epoch,'ndi.time.timereference'),
+            else
+                if isa(timeref_or_epoch,'ndi.time.timereference')
                     timeref = timeref_or_epoch;
-                else,
+                else
                     timeref_or_epoch = ndi_element_timeseries_obj.epochid(timeref_or_epoch);
                     % find the first type of epochclock listed for this epoch
                     et_entry = ndi_element_timeseries_obj.epochtableentry(timeref_or_epoch);
@@ -46,7 +46,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 [epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
                     ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 
-                if isempty(epoch_timeref),
+                if isempty(epoch_timeref)
                     error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
                 end;
 
@@ -59,10 +59,10 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 E = ndi_element_timeseries_obj.session;
 
                 epochdoc = E.database_search(sq);
-                if numel(epochdoc)==0,
+                if numel(epochdoc)==0
                     error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
                 end;
-                if numel(epochdoc)>1,
+                if numel(epochdoc)>1
                     error(['Found too many epochdoc for epoch ' epoch_timeref.epoch '.']);
                 end;
                 epochdoc = epochdoc{1};
@@ -71,7 +71,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 [data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
                 E.database_closebinarydoc(f);
 
-                if isnumeric(t),
+                if isnumeric(t)
                     t = ndi_element_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, ...
                         timeref.referent, timeref.clocktype);
                 end;
@@ -103,7 +103,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             % Outputs:
             %    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
             %
-            if ndi_element_timeseries_obj.direct,
+            if ndi_element_timeseries_obj.direct
                 error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
             end;
             if nargin < 7
@@ -114,7 +114,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             fname = [ndi.common.PathConstants.TempFolder filesep epochdoc.id() '.vhsb'];
             vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);
             epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);
-            if nargout<2,
+            if nargout<2
                 ndi_element_timeseries_obj.session.database_add(epochdoc);
             end;
 

@@ -23,13 +23,13 @@ function exp = marderlab(exp, devname)
     %
     % See also: ndi.file.navigator.epochdir
 
-    if nargin == 0,
+    if nargin == 0
         exp = {'marder_ced'};
         return;
     end;
 
-    if iscell(devname),
-        for i=1:length(devname),
+    if iscell(devname)
+        for i=1:length(devname)
             exp = ndi.setups.marderlab.makedev(exp, devname{i});
         end
         return;
@@ -40,13 +40,13 @@ function exp = marderlab(exp, devname)
     readerobjectclass = 'ndi.daq.reader.mfdaq';
     epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
-    switch devname,
-        case 'marder_ced',
+    switch devname
+        case 'marder_ced'
             fileparameters{end+1} = '#\.smr\>';
             fileparameters{end+1} = '#\.epochprobemap.txt\>';
             readerobjectclass = [readerobjectclass '.cedspike2'];
             epochprobemapfileparameters = {'(.*)epochprobemap.txt'};
-        otherwise,
+        otherwise
             error(['Unknown device requested ' devname '.']);
     end
 

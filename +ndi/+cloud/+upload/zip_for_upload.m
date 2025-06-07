@@ -45,7 +45,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
                 cur_size = cur_size + doc_file_struct(i).bytes;
                 size_gb = cur_size/1e9;
                 uploaded_size = uploaded_size + size_gb;
-                if verbose,
+                if verbose
                     disp(['Zipping ' int2str(numel(files_to_zip)) ' binary files for upload.' int2str(size_gb) ' GB in total ' ])
                 end;
                 try
@@ -74,7 +74,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
         cur_size = cur_size + doc_file_struct(i).bytes;
         size_gb = cur_size/1e9;
         uploaded_size = uploaded_size + size_gb;
-        if verbose,
+        if verbose
             disp(['Zipping ' int2str(numel(files_to_zip)) ' files.' int2str(size_gb) ' GB in total ' ])
         end;
         try

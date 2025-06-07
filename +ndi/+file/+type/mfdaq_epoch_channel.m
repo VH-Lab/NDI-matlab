@@ -22,20 +22,20 @@ classdef mfdaq_epoch_channel
             filename = '';
             channel_structure = '';
 
-            if nargin>0,
-                if isstruct(varargin{1}),
+            if nargin>0
+                if isstruct(varargin{1})
                     channel_structure = varargin{1};
-                elseif ischar(varargin{1}),
+                elseif ischar(varargin{1})
                     filename = varargin{1};
-                elseif isstring(varargin{1}),
+                elseif isstring(varargin{1})
                     filename = char(varargin{1});
                 end;
             end;
 
-            if ~isempty(channel_structure),
+            if ~isempty(channel_structure)
                 obj = obj.create_properties(varargin{:});
             end;
-            if ~isempty(filename),
+            if ~isempty(filename)
                 obj = obj.readFromFile(filename);
             end;
 
@@ -102,22 +102,22 @@ classdef mfdaq_epoch_channel
             types_available(index_emt) = [];
             types_available{end+1} = 'eventmarktext';
 
-            for i=1:numel(types_available),
-                if ~strcmp(types_available{i},'eventmarktext'),
+            for i=1:numel(types_available)
+                if ~strcmp(types_available{i},'eventmarktext')
                     indexes = find(strcmp(types_available{i},{channel_structure.type}));
-                else,
+                else
                     indexes = find(strcmp('event',{channel_structure.type}) | ...
                         strcmp('marker',{channel_structure.type}) | strcmp('text',{channel_structure.type}));
                 end;
                 numbers_here = [];
-                for j=1:numel(indexes),
+                for j=1:numel(indexes)
                     [prefix,numbers_here(j)] = ndi.fun.channelname2prefixnumber(channel_structure(indexes(j)).name);
                 end;
                 [dummy,indexes_sorted_type] = sort(numbers_here);
                 channels_here = channel_structure(indexes(indexes_sorted_type));
 
                 channels_per_group = eval([types_available{i} '_channels_per_group;']);
-                for j=1:numel(channels_here),
+                for j=1:numel(channels_here)
                     channel_info_here = [];
                     channel_info_here.name = channels_here(j).name;
                     channel_info_here.type = channels_here(j).type;
@@ -167,10 +167,10 @@ classdef mfdaq_epoch_channel
 
             b = 0;
             errmsg = '';
-            try,
+            try
                 vlt.file.saveStructArray(filename,obj.channel_information);
                 b = 1;
-            catch,
+            catch
                 errmsg = lasterr;
             end;
 
@@ -178,7 +178,7 @@ classdef mfdaq_epoch_channel
 
     end; % methods
 
-    methods(Static),
+    methods(Static)
 
         function [groups,channel_indexes_in_groups,channel_indexes_in_output] = channelgroupdecoding(channel_info, channel_type, channels)
             % CHANNELGROUPDECODING - decode channel list into the groups where the channels are stored
@@ -195,16 +195,16 @@ classdef mfdaq_epoch_channel
             indexes_type = find(strcmp(channel_type,{channel_info.type}));
 
             ci = channel_info(indexes_type); % look only at channels with the right type
-            for c=1:numel(channels),
+            for c=1:numel(channels)
                 index = find([ci.number]==channels(c));
-                if isempty(index),
+                if isempty(index)
                     error(['Channel number ' int2str(channels(c)) ' not found in record.']);
                 end;
-                if numel(index)>1,
+                if numel(index)>1
                     error(['Channel number ' int2str(channels(c)) ' found multiple times in record.']);
                 end;
                 group_loc = ismember(groups,ci(index).group);
-                if isempty(group_loc),
+                if isempty(group_loc)
                     groups(end+1) = ci(index).group;
                     group_loc = numel(groups);
                     channel_indexes_in_groups{group_loc} = [];

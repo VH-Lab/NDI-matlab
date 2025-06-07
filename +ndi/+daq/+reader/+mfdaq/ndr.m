@@ -28,26 +28,26 @@ classdef ndr < ndi.daq.reader.mfdaq
 
             finished = 0;
 
-            if nargin==0,
+            if nargin==0
                 reader_string = 'RHD';
-            elseif nargin==1,
+            elseif nargin==1
                 % should be a reader_string
                 reader_string = char(varargin{1});
-                if isempty(reader_string),
+                if isempty(reader_string)
                     error(['READER_STRING must be not empty.']);
                 end;
-            elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
+            elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
                 obj.ndr_reader_string = varargin{2}.document_properties.daqreader_ndr.ndr_reader_string;
                 finished = 1;
-            else,
+            else
                 error(['Unknown arguments.']);
             end;
 
-            if ~finished,
+            if ~finished
                 kr = ndr.known_readers();
                 index = find(strcmpi(reader_string,kr));
-                if isempty(index),
+                if isempty(index)
                     error(['READER_STRING must be a member of the known readers of NDR, as listed in ndr.known_readers()']);
                 end;
                 obj.ndr_reader_string = kr{index};

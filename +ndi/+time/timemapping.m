@@ -41,19 +41,19 @@ classdef timemapping
             %
             % See also: POLYVAL
             %
-            if nargin==0,
+            if nargin==0
                 mapping = [1 0];
-            elseif nargin==1,
+            elseif nargin==1
                 mapping = varargin{1};
-            else,
+            else
                 error(['Too many inputs to ndi.time.timemapping creator.']);
             end;
 
             ndi_timemapping_obj.mapping = mapping;
 
-            try,
+            try
                 t_out = ndi_timemapping_obj.map(0);
-            catch,
+            catch
                 error(['A test of the mapping with t_in = 0 failed: ' lasterr]);
             end
 

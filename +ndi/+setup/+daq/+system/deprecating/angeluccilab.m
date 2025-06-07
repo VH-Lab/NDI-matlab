@@ -24,13 +24,13 @@ function exp = angeluccilab(exp, devname)
     %
     % See also: ndi.file.navigator.epochdir
 
-    if nargin == 0,
+    if nargin == 0
         exp = {'angelucci_blackrock5', 'angelucci_visstim'};
         return;
     end;
 
-    if iscell(devname),
-        for i=1:length(devname),
+    if iscell(devname)
+        for i=1:length(devname)
             exp = ndi.setup.daq.system.angeluccilab(exp, devname{i});
         end
         return;
@@ -44,17 +44,17 @@ function exp = angeluccilab(exp, devname)
     readerobjectclass = 'ndi.daq.reader.mfdaq';
     epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
-    switch devname,
-        case 'angelucci_blackrock5',
+    switch devname
+        case 'angelucci_blackrock5'
             fileparameters{end+1} = '#.ns5';
             readerobjectclass = [readerobjectclass '.blackrock'];
             mdr = {};
-        case 'angelucci_visstim',
+        case 'angelucci_visstim'
             fileparameters{end+1} = '#.nev';
             fileparameters{end+1} = '#.ns4';
             readerobjectclass = ['ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim'];
             mdr = {ndi.setup.daq.metadatareader.AngelucciStims('stimData.mat')};
-        otherwise,
+        otherwise
             error(['Unknown device requested ' devname '.']);
     end
 

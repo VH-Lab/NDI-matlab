@@ -33,7 +33,7 @@ classdef NewStimStims < ndi.daq.metadatareader
             % document, this function loads in the metadata.
             [parentdir,filename,ext] = fileparts(file);
             [ss,mti]=getstimscript(parentdir);
-            for i=1:numStims(ss),
+            for i=1:numStims(ss)
                 parameters{i} = getparameters(get(ss,i));
             end;
         end; % readmetadatafromfile()

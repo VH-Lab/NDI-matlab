@@ -51,9 +51,9 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
                 j = 1;
                 is_finished = false;
                 while ~is_finished % we could potentially read a series of files
-                    if file_name(end)=='#', % this file is a series of files
+                    if file_name(end)=='#' % this file is a series of files
                         filename_here = sprintf('%s%d', file_name(1:end-1), j);
-                    else,
+                    else
                         filename_here = file_name;
                         is_finished = true; % only 1 file
                     end;
@@ -66,7 +66,7 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
                     end
 
                     j = j + 1;
-                    if ~isempty(full_file_path),
+                    if ~isempty(full_file_path)
                         curr_idx = numel(doc_file_struct)+1;
                         [~,uid,~] = fileparts(full_file_path);
                         doc_file_struct(curr_idx).uid = uid;

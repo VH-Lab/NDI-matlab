@@ -33,18 +33,18 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
             is_struct = 0;
 
-            if nargin==0,
+            if nargin==0
                 name_ = 'a';
             end
-            if nargin==1,
+            if nargin==1
                 filename = name_;
                 name_ = 'a';
-                if numel(find(filename==sprintf('\n'))) > 0,
+                if numel(find(filename==sprintf('\n'))) > 0
                     is_struct = 1;
                     ndi_struct = ndi.epoch.epochprobemap.decode(filename);
                 end;
             end
-            if nargin<4,
+            if nargin<4
                 reference_ = 0;
                 type_ = 'a';
                 devicestring_ = 'a';
@@ -53,34 +53,34 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
             obj = obj@ndi.epoch.epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_);
 
-            if is_struct,
-                for i=1:numel(ndi_struct),
+            if is_struct
+                for i=1:numel(ndi_struct)
                     obj(i)=ndi.setup.epoch.epochprobemap_daqsystem_vhlab(...
                         ndi_struct(i).name,ndi_struct(i).reference,ndi_struct(i).type,ndi_struct(i).devicestring,ndi_struct(i).subjectstring);
                 end;
                 return;
             end;
 
-            if nargin==1,
+            if nargin==1
                 [filepath, localfile, ext] = fileparts(filename);
 
                 [parentpath, localdirname] = fileparts(filepath);
                 subjectfile = [parentpath filesep 'subject.txt'];
-                if vlt.file.isfile(subjectfile),
+                if vlt.file.isfile(subjectfile)
                     subjecttext = vlt.file.textfile2char(subjectfile);
                     subject_id = vlt.string.trimws(vlt.string.line_n(subjecttext,1));
-                else,
+                else
                     error(['No subject.txt file found:' subjectfile '.']);
                 end;
 
                 [b,msg] = ndi.subject.isvalidlocalidentifierstring(subject_id);
-                if ~b,
+                if ~b
                     error(['subject_id string ' subject_id ' is not a valid subject id: ' msg]);
                 end;
 
-                if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
+                if strcmp([localfile ext],'stimtimes.txt') % vhvis_spike2
                     mylist = {'mk1','mk2','mk3','e1','e2','e3','md1'};
-                    for i=1:numel(mylist),
+                    for i=1:numel(mylist)
                         nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab('vhvis_spike2',...
                             1,...
                             ['stimulator'  ] , ...  % type
@@ -91,12 +91,12 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     return;
                 end
 
-                if ~contains([localfile],'channelgrouping'),
+                if ~contains([localfile],'channelgrouping')
                     error(['Expected file ' [localfile ] ' to include the string channelgrouping. Maybe unintended files in epoch?']);
                 end;
 
                 vhdevice_string = regexp(lower([localfile ext]),'(\w*)_channelgrouping.txt','tokens');
-                if isempty(vhdevice_string),
+                if isempty(vhdevice_string)
                     error(['File name not of expected form VHDEVICENAME_channelgrouping.txt']);
                 end
                 vhdevice_string = vhdevice_string{1}{1};
@@ -109,7 +109,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
                 ndi_struct = vlt.file.loadStructArray(filename);
                 fn = fieldnames(ndi_struct);
-                if ~vlt.data.eqlen(fn,{'name','ref','channel_list'}'),
+                if ~vlt.data.eqlen(fn,{'name','ref','channel_list'}')
                     fn,
                     error(['fields must be (case-sensitive match): name, ref, channel_list. See HELP VHINTAN_CHANNELGROUPING.']);
                 end;
@@ -118,11 +118,11 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 [myfilepath,myfilename] = fileparts(filename);
                 ref_struct = vlt.file.loadStructArray([myfilepath filesep 'reference.txt']);
 
-                for i=1:length(ndi_struct),
+                for i=1:length(ndi_struct)
                     tf_name = strcmp(ndi_struct(i).name,{ref_struct.name});
                     tf_ref = [ndi_struct(i).ref == [ref_struct.ref]];
                     index = intersect(tf_name,tf_ref);
-                    if numel(index)~=1,
+                    if numel(index)~=1
                         disp(['Error: Looking for name ' ndi_struct(i).name ' and ref ' int2str(ndi_struct(i).ref) '.']);
                         disp(['Ref struct is '])
                         ref_struct,
@@ -131,11 +131,11 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     end;
                     ec_type = ref_struct(index).type;
                     probeTypeMap = ndi.probe.fun.getProbeTypeMap();
-                    if ~isKey(probeTypeMap, ec_type),
+                    if ~isKey(probeTypeMap, ec_type)
                         % examine vhlab table
-                        if strcmpi(ec_type,'singleEC') | strcmpi(ec_type,'ntrode'),
+                        if strcmpi(ec_type,'singleEC') | strcmpi(ec_type,'ntrode')
                             ec_type = 'n-trode';
-                        else,
+                        else
                             error(['Unknown type ' ec_type '.']);
 
                         end;

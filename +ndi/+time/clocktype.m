@@ -31,7 +31,7 @@ classdef clocktype < matlab.mixin.Heterogeneous
             %
             obj.type = '';
 
-            if nargin>0,
+            if nargin>0
                 obj = setclocktype(obj,type);
             end
         end % ndi_clock()
@@ -59,18 +59,18 @@ classdef clocktype < matlab.mixin.Heterogeneous
             % 'inherited'               | The timing information is inherited from another device.
             %
             %
-            if ~ischar(type),
+            if ~ischar(type)
                 error(['TYPE must be a character string.']);
             end
 
             type = lower(type);
 
-            switch type,
+            switch type
                 case {'utc','approx_utc','exp_global_time','approx_exp_global_time',...
                         'dev_global_time', 'approx_dev_global_time', 'dev_local_time', ...
-                        'no_time','inherited'},
+                        'no_time','inherited'}
                     % no error
-                otherwise,
+                otherwise
                     error(['Unknown clock type ' type '.']);
             end
 
@@ -100,7 +100,7 @@ classdef clocktype < matlab.mixin.Heterogeneous
             cost = Inf;
             mapping = [];
 
-            if strcmp(ndi_clocktype_a.type,'no_time') | strcmp(ndi_clocktype_b.type,'no_time'),
+            if strcmp(ndi_clocktype_a.type,'no_time') | strcmp(ndi_clocktype_b.type,'no_time')
                 % stop the search if its trivial
                 return;
             end
@@ -110,7 +110,7 @@ classdef clocktype < matlab.mixin.Heterogeneous
                 'dev_global_time','approx_dev_global_time'};
 
             index = find(  strcmp(ndi_clocktype_a.type,from_list) & strcmp(ndi_clocktype_b.type,to_list) );
-            if ~isempty(index),
+            if ~isempty(index)
                 cost = 100;
                 mapping = ndi.time.timemapping([1 0]); % trivial mapping
             end

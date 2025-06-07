@@ -67,13 +67,13 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
     presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
     stim_pres_struct.stimuli = vlt.data.emptystruct('parameters');
 
-    for i=1:stimulus_N,
+    for i=1:stimulus_N
         stim_params_here = parameter_struct;
 
-        for j=1:size(X,2), % go over each column
-            if isnan(X(i,j)),
+        for j=1:size(X,2) % go over each column
+            if isnan(X(i,j))
                 stim_params_here = setfield(stim_params_here,'isblank',1);
-            else,
+            else
                 stim_params_here = setfield(stim_params_here,independent_variables{j},X(i,j));
             end;
         end;
@@ -82,7 +82,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
 
     spiketimes = [];
 
-    for i=1:numel(stim_pres_struct.presentation_order),
+    for i=1:numel(stim_pres_struct.presentation_order)
         pt_here = vlt.data.emptystruct(fieldnames(presentation_time));
         pt_here(1).clocktype = 'utc';
         pt_here(1).stimopen = i * (stim_duration+interstimulus_interval);
@@ -91,7 +91,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
         % now see how many spikes to fire for this stimulus
         stimid = stim_pres_struct.presentation_order(i);
         R_here = R(stimid) + noise * randn * R(stimid);
-        if ~isnan(R_here) & (R_here>0),
+        if ~isnan(R_here) & (R_here>0)
             n_spikes_mean = R_here * stim_duration;
             n_spikes_floor = floor( n_spikes_mean );
             n_spikes_ceil = ceil( n_spikes_mean );
@@ -99,16 +99,16 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
             deltat_ceil = stim_duration - (n_spikes_ceil/R_here);
             stim_duration_here_floor = max(stim_duration_min, min(stim_duration+interstimulus_interval, stim_duration-deltat_floor));
             stim_duration_here_ceil = max(stim_duration_min, min(stim_duration+interstimulus_interval, stim_duration-deltat_ceil));
-            if abs(n_spikes_floor/stim_duration_here_floor - R_here) < abs(n_spikes_ceil/stim_duration_here_ceil - R_here),
+            if abs(n_spikes_floor/stim_duration_here_floor - R_here) < abs(n_spikes_ceil/stim_duration_here_ceil - R_here)
                 n_spikes = n_spikes_floor;
                 stim_duration_here = stim_duration_here_floor;
-            else,
+            else
                 n_spikes = n_spikes_ceil;
                 stim_duration_here = stim_duration_here_ceil;
             end;
             spiketimes=cat(1,spiketimes,...
                 vlt.data.colvec(linspace(pt_here(1).onset+t_eps,pt_here(1).onset+stim_duration_here-t_eps,n_spikes)));
-        else,
+        else
             stim_duration_here = stim_duration;
         end;
 

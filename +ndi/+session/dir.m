@@ -22,7 +22,7 @@ classdef dir < ndi.session
         %
         % See also: ndi.session, ndi.session.dir/GETPATH
 
-            if nargin<2,
+            if nargin<2
                 if nargin >= 1
                     path = reference;
                 end
@@ -33,7 +33,7 @@ classdef dir < ndi.session
 
             if nargin < 1 || isempty(path); return; end
 
-            if ~isfolder(path),
+            if ~isfolder(path)
                 error(['Directory ' path ' does not exist.']);
             end;
 
@@ -41,18 +41,18 @@ classdef dir < ndi.session
 
             should_we_try_to_read_from_database = 1;
 
-            if nargin>2, % we have the session_id % undocumented 3rd input argument
+            if nargin>2 % we have the session_id % undocumented 3rd input argument
                 ndi_session_dir_obj.identifier = session_id;
                 ndi_session_dir_obj.reference = reference;
                 should_we_try_to_read_from_database = 0;
-            else,
+            else
                 % next, figure out the ID; we won't use the one on disk unless we don't have a database entry
 
                 d = dir([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']);
-                if ~isempty(d),
+                if ~isempty(d)
                     ndi_session_dir_obj.identifier = strtrim(vlt.file.textfile2char(...
                         [ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']));
-                else,
+                else
                     % make a provisional new one
                     ndi_session_dir_obj.identifier = ndi.ido.unique_id();
                 end
@@ -63,17 +63,17 @@ classdef dir < ndi.session
 
             read_from_database = 0;
 
-            if should_we_try_to_read_from_database,
+            if should_we_try_to_read_from_database
                 session_doc = ndi_session_dir_obj.database_search(ndi.query('','isa','session'));
-                if ~isempty(session_doc),
+                if ~isempty(session_doc)
                     % use the oldest
                     time_diff_max = 0;
                     time_loc = 0;
                     now_time = datetime('now','TimeZone','UTCLeapSeconds');
-                    for i=1:numel(session_doc),
+                    for i=1:numel(session_doc)
                         time_here = datetime(session_doc{i}.document_properties.base.datestamp,'TimeZone','UTCLeapSeconds');
                         time_diff_here = seconds(now_time-time_here);
-                        if time_diff_here>time_diff_max,
+                        if time_diff_here>time_diff_max
                             time_diff_max = time_diff_here;
                             time_loc = i;
                         end;
@@ -86,12 +86,12 @@ classdef dir < ndi.session
                 end;
             end;
 
-            if should_we_try_to_read_from_database & ~read_from_database,
+            if should_we_try_to_read_from_database & ~read_from_database
                 d = dir([ndi_session_dir_obj.ndipathname() filesep 'reference.txt']);
-                if ~isempty(d),
+                if ~isempty(d)
                     ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char(...
                         [ndi_session_dir_obj.ndipathname() filesep 'reference.txt']));
-                elseif nargin==1,
+                elseif nargin==1
                     error(['Could not load the REFERENCE field from the database or path ' ndi_session_dir_obj.ndipathname() '.']);
                 end
                 % now we have both reference and id from either the files or the database, add it to db
@@ -103,10 +103,10 @@ classdef dir < ndi.session
             syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','syncgraph','') & ...
                 ndi.query('base.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
 
-            if isempty(syncgraph_doc),
+            if isempty(syncgraph_doc)
                 ndi_session_dir_obj.syncgraph = ndi.time.syncgraph(ndi_session_dir_obj);
-            else,
-                if numel(syncgraph_doc)~=1,
+            else
+                if numel(syncgraph_doc)~=1
                     error(['Too many syncgraph documents found. Confused. There should be only 1.']);
                 end;
                 ndi_session_dir_obj.syncgraph = ndi.database.fun.ndi_document2ndi_object(syncgraph_doc{1},ndi_session_dir_obj);
@@ -145,7 +145,7 @@ classdef dir < ndi.session
 
             ndi_dir = '.ndi';
             p = [ndi_session_dir_obj.path filesep ndi_dir ];
-            if ~isfolder(p),
+            if ~isfolder(p)
                 mkdir(p);
             end;
         end; % ndipathname()
@@ -160,7 +160,7 @@ classdef dir < ndi.session
             % (that is, have the same location in memory).
             %
             b = 0;
-            if eq@ndi.session(ndi_session_dir_obj_a, ndi_session_dir_obj_b),
+            if eq@ndi.session(ndi_session_dir_obj_a, ndi_session_dir_obj_b)
                 b = strcmp(ndi_session_dir_obj_a.path,ndi_session_dir_obj_b.path);
             end;
         end; % eq()

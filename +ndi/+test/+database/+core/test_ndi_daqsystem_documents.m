@@ -32,7 +32,7 @@ function test_ndi_daqsystem_documents
     daqsys = {};
     daqsys_docs = {};
 
-    for i=1:numel(devlist),
+    for i=1:numel(devlist)
         disp(['Making object ' devlist{i} '.']);
         daqSystemConfig = ndi.setup.DaqSystemConfiguration.fromLabDevice('vhlab', devlist{i});
         E = daqSystemConfig.addToSession(E);
@@ -42,18 +42,18 @@ function test_ndi_daqsystem_documents
         % we can't add it back, it's already there
         % E.database_add(daqsys_docs{i});
         ds_doc{i} = E.database_search(daqsys{i}.searchquery());
-        if numel(ds_doc{i})~=1,
+        if numel(ds_doc{i})~=1
             error(['Did not find exactly 1 match.']);
         end;
     end;
 
     ds_fromdoc = {};
 
-    for i=1:numel(ds_doc),
+    for i=1:numel(ds_doc)
         ds_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(daqsys_docs{i}{3},E);
-        if eq(ds_fromdoc{i},daqsys{i}),
+        if eq(ds_fromdoc{i},daqsys{i})
             disp(['Daqsystem number ' int2str(i) ' matches.']);
-        else,
+        else
             error(['Daqsystem number ' int2str(i) ' does not match.']);
         end;
     end;

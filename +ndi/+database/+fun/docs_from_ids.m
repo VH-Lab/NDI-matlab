@@ -12,18 +12,18 @@ function docs = docs_from_ids(DorS,document_ids)
     % DOCS is a cell array the same size as DOCUMENT_IDS. If the document is found, it
     % is provided in DOCS{i}. Otherwise, DOCS{i} is empty.
 
-    if isempty(document_ids),
+    if isempty(document_ids)
         docs = {};
         return;
     end;
 
     q = [];
 
-    for i=1:numel(document_ids),
+    for i=1:numel(document_ids)
         q_here = ndi.query('base.id','exact_string',document_ids{i});
-        if isempty(q),
+        if isempty(q)
             q = q_here;
-        else,
+        else
             q = q | q_here;
         end;
     end;
@@ -32,9 +32,9 @@ function docs = docs_from_ids(DorS,document_ids)
 
     docs = cell(size(document_ids));
 
-    for i=1:numel(document_ids),
-        for j=1:numel(docs_here),
-            if strcmp(document_ids{i},docs_here{j}.document_properties.base.id),
+    for i=1:numel(document_ids)
+        for j=1:numel(docs_here)
+            if strcmp(document_ids{i},docs_here{j}.document_properties.base.id)
                 docs{i} = docs_here{j};
                 break; % stop when we found it
             end;

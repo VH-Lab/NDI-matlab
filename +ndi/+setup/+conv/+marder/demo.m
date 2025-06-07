@@ -13,7 +13,7 @@ m_doc = S.database_search(qm);
 
 % We will now loop over sessions
 
-for i=1:numel(m_doc),
+for i=1:numel(m_doc)
 
     % Step 2: Find all eopchs in this session that have a constant temperature stimulus
 
@@ -29,7 +29,7 @@ for i=1:numel(m_doc),
     probe_locs_q = ndi.query('probe_location.ontology_name','exact_string',['UBERON:' int2str(lvn.Identifier)]);
     pD = S.database_search(probe_locs_q);
     P = {}; % probe list
-    for p=1:numel(pD),
+    for p=1:numel(pD)
         probeObj = S.database_search(ndi.query('base.id','exact_string',pD{p}.dependency_value('probe_id')));
         P{p} = ndi.database.fun.ndi_document2ndi_object(probeObj{1},S);
     end;
@@ -40,8 +40,8 @@ for i=1:numel(m_doc),
     temps = [];
 
     pet = P{1}.epochtable();
-    for j=1:numel(stim_param_docs),
-        if ismember(stim_param_docs{j}.document_properties.epochid.epochid,{pet.epoch_id}),
+    for j=1:numel(stim_param_docs)
+        if ismember(stim_param_docs{j}.document_properties.epochid.epochid,{pet.epoch_id})
             epoch_ids{end+1} = stim_param_docs{j}.document_properties.epochid.epochid;
             temps(end+1) = stim_param_docs{j}.document_properties.stimulus_parameter.value;
         end
@@ -53,14 +53,14 @@ for i=1:numel(m_doc),
     % Step 3, plot the records
 
     %
-    for p=1:numel(P), % loop over probes
+    for p=1:numel(P) % loop over probes
         subject_here = S.database_search(ndi.query('base.id','exact_string',P{p}.subject_id));
         figure;
-        for t=1:numel(all_temps),
+        for t=1:numel(all_temps)
             index = find(temps_sorted==all_temps(t));
-            if all_temps(t)==11, %
+            if all_temps(t)==11 %
                 index = index(1); % for 11, start with first
-            else,
+            else
                 index = index(end); % find the last one
             end;
             [D,ts] = P{p}.readtimeseries(epoch_ids_sorted{index},-Inf,Inf);

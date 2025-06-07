@@ -24,19 +24,19 @@ classdef reader < ndi.ido & ndi.documentservice
 
             loadfromfile = 0;
 
-            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
+            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
-            elseif nargin>=2,
-                if ischar(varargin{2}), % it is a command
+            elseif nargin>=2
+                if ischar(varargin{2}) % it is a command
                     loadfromfile = 1;
                     filename = varargin{1};
-                    if ~strcmp(lower(varargin{2}), lower('OpenFile')),
+                    if ~strcmp(lower(varargin{2}), lower('OpenFile'))
                         error(['Unknown command.']);
                     end
                 end;
             end;
 
-            if loadfromfile,
+            if loadfromfile
                 error(['Load from file no longer supported.']);
             end
         end % ndi.daq.reader
@@ -91,7 +91,7 @@ classdef reader < ndi.ido & ndi.documentservice
             ec = {};
             d = ndi_daqreader_obj.getingesteddocument(epochfiles,S);
             et = d.document_properties.daqreader_epochdata_ingested.epochtable;
-            for i=1:numel(et.epochclock),
+            for i=1:numel(et.epochclock)
                 ec{i} = ndi.time.clocktype(et.epochclock{i});
             end;
         end % epochclock_ingested
@@ -126,12 +126,12 @@ classdef reader < ndi.ido & ndi.documentservice
             d = ndi_daqreader_obj.getingesteddocument(epochfiles, S);
             et = d.document_properties.daqreader_epochdata_ingested.epochtable;
             t0t1 = et.t0_t1;
-            if ~iscell(t0t1),
+            if ~iscell(t0t1)
                 t = {};
-                if isvector(t0t1), % this fixes a to-json, from-json, to-json conversion problem
+                if isvector(t0t1) % this fixes a to-json, from-json, to-json conversion problem
                     t{1} = t0t1(:)';
-                else,
-                    for i=1:size(et.t0_t1,2),
+                else
+                    for i=1:size(et.t0_t1,2)
                         t{i} = t0t1(:,i)';
                     end;
                 end;
@@ -153,15 +153,15 @@ classdef reader < ndi.ido & ndi.documentservice
             % See also: ndi.daq.reader, ndi.epoch.epochprobemap_daqsystem
             msg = '';
             b = isa(epochprobemap, 'ndi.epoch.epochprobemap_daqsystem');
-            if ~b,
+            if ~b
                 msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
                 return;
             end;
 
-            for i=1:numel(epochprobemap),
-                try,
+            for i=1:numel(epochprobemap)
+                try
                     thedevicestring = ndi_daqreaderstring(epochprobemap(i).devicestring);
-                catch,
+                catch
                     b = 0;
                     msg = ['Error evaluating devicestring ' epochprobemap(i).devicestring '.'];
                 end

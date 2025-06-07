@@ -9,7 +9,7 @@ function fn = all_doc_fields()
 
     fn = {};
 
-    for i=1:numel(json_filenames),
+    for i=1:numel(json_filenames)
         t = vlt.file.textfile2char(json_filenames{i});
         s = jsondecode(t);
         s = rmfield(s,'document_class');

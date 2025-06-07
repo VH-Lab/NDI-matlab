@@ -18,7 +18,7 @@ function build()
     % make sure we don't traverse the the 'site' directory
     ndi_path = ndi.common.PathConstants.RootFolder;
 
-    if ~isfolder([ndi_path filesep 'site']),
+    if ~isfolder([ndi_path filesep 'site'])
         mkdir([ndi_path filesep 'site']);
     end;
 

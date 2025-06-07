@@ -73,9 +73,9 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
             stimid = stimid(here);
             stimofftimes = stimtimes + parameters{1}.stimOnDuration / 30000;
 
-            for i=1:numel(channel),
-                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i})),
-                    case 'mk',
+            for i=1:numel(channel)
+                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}))
+                    case 'mk'
                         % put them together, alternating stimtimes and stimofftimes in the final product
                         time1 = [stimtimes(:)' ; stimofftimes(:)'];
                         data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
@@ -89,14 +89,14 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
 
                         timestamps{i} = ch{channel(i)}(:,1);
                         data{i} = ch{channel(i)}(:,2:end);
-                    case 'md',
+                    case 'md'
 
-                    otherwise,
+                    otherwise
                         error(['Unknown channel.']);
                 end
             end
 
-            if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+            if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
             end;

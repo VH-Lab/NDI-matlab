@@ -1,11 +1,11 @@
 classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
 
-    properties,
+    properties
         key            %  The key that is created when the binary doc is locked
         doc_unique_id  %  The document unique id
     end;
 
-    methods,
+    methods
         function ndi_binarydoc_matfid_obj = matfid(varargin)
             % ndi.database.implementations.binarydoc.matfid - create a new ndi.database.implementations.binarydoc.matfid object
             %

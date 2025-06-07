@@ -14,7 +14,7 @@ function test_ndi_document(dirname)
 
     test_struct = 0;
 
-    if nargin<1,
+    if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
     end;
 
@@ -24,8 +24,8 @@ function test_ndi_document(dirname)
     % if we ran the demo before, delete the entry
 
     doc = E.database_search(ndi.query('','isa','demoNDI',''));
-    if ~isempty(doc),
-        for i=1:numel(doc),
+    if ~isempty(doc)
+        for i=1:numel(doc)
             E.database_rm(id(doc{i}));
         end;
     end;
@@ -38,8 +38,8 @@ function test_ndi_document(dirname)
 
     binary_filename = [dirname filesep 'myfile.bin'];
     myfid = fopen(binary_filename,'w','ieee-le');
-    if myfid>0,
-    else,
+    if myfid>0
+    else
         error(['unable to open file: ' binary_filename '.']);
     end;
 
@@ -55,13 +55,13 @@ function test_ndi_document(dirname)
     % now read the object back
 
     doc = E.database_search(ndi.query('demoNDI.value','exact_number',5,''));
-    if numel(doc)~=1,
+    if numel(doc)~=1
         error(['Found <1 or >1 document with demoNDI.value of 5; this means there is a database problem.']);
     end;
     doc = doc{1}, % should be only one match
 
     doc = E.database_search(ndi.query('','isa','demoNDI',''));
-    if numel(doc)~=1,
+    if numel(doc)~=1
         error(['Found <1 or >1 document of type demoNDI; this means there is a database problem.']);
     end;
     doc = doc{1}, % should be only one match
@@ -72,15 +72,15 @@ function test_ndi_document(dirname)
     data = double(binarydoc.fread(10,'char'))',
     binarydoc = E.database_closebinarydoc(binarydoc);
 
-    if ~vlt.data.eqlen(0:9,data),
+    if ~vlt.data.eqlen(0:9,data)
         error(['Data does not match.']);
     end;
 
     % remove the document
 
     doc = E.database_search(ndi.query('','isa','demoNDI',''));
-    if ~isempty(doc),
-        for i=1:numel(doc),
+    if ~isempty(doc)
+        for i=1:numel(doc)
             E.database_rm(doc{i}.id());
         end;
     end;

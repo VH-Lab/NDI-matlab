@@ -14,7 +14,7 @@ function test_ndi_element(dirname)
 
     test_struct = 0;
 
-    if nargin<1,
+    if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
     end;
 
@@ -24,14 +24,14 @@ function test_ndi_element(dirname)
     % if we ran the demo before, delete the entry
 
     doc = E.database_search(ndi.query('','isa','element',''));
-    if ~isempty(doc),
-        for i=1:numel(doc),
+    if ~isempty(doc)
+        for i=1:numel(doc)
             E.database_rm(doc{i}.id());
         end;
     end;
 
     p = E.getprobes(); % should return 1 probe
-    if numel(p)==0, % ndi.test.daq.build_intan_flat_exp hasn't been run yet
+    if numel(p)==0 % ndi.test.daq.build_intan_flat_exp hasn't been run yet
         disp(['Need to run ndi.test.daq.build_intan_flat_exp first, doing that now...']);
         ndi.test.daq.build_intan_flat_exp(dirname);
         p = E.getprobes(); % should return 1 probe
@@ -78,8 +78,8 @@ function test_ndi_element(dirname)
     % remove the element documents
 
     doc = E.database_search(ndi.query('','isa','element',''));
-    if ~isempty(doc),
-        for i=1:numel(doc),
+    if ~isempty(doc)
+        for i=1:numel(doc)
             E.database_rm(doc{i}.id());
         end;
     end;

@@ -13,7 +13,7 @@ function db = opendatabase(database_path, session_unique_reference)
     % Otherwise, DB is empty.
     %
 
-    if nargin<2,
+    if nargin<2
         session_unique_reference = '12345'; % this is not required for most database types
     end;
 
@@ -21,10 +21,10 @@ function db = opendatabase(database_path, session_unique_reference)
 
     databasehierarchy = ndi.common.getDatabaseHierarchy();
 
-    for i=1:numel(databasehierarchy),
+    for i=1:numel(databasehierarchy)
         d = dir([database_path filesep '*' databasehierarchy(i).extension]);
-        if ~isempty(d), % found one
-            if numel(d)>1,
+        if ~isempty(d) % found one
+            if numel(d)>1
                 error(['Too many matching files.']);
             end;
             fname = [database_path filesep d(1).name];
@@ -36,9 +36,9 @@ function db = opendatabase(database_path, session_unique_reference)
         end;
     end;
 
-    if isempty(db),
-        for i=1:numel(databasehierarchy),
-            if ~isempty(databasehierarchy(i).newcode),
+    if isempty(db)
+        for i=1:numel(databasehierarchy)
+            if ~isempty(databasehierarchy(i).newcode)
                 evalstr = strrep(databasehierarchy(i).newcode,'FILEPATH',[database_path filesep]);
                 evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
                 eval(evalstr);

@@ -39,7 +39,7 @@ classdef BriggsStims < ndi.daq.metadatareader
             parameters = {};
             stimorder = z.stimData.stimParams.stimOrder(:);
             stimtimes = z.stimData.stimTimes(:);
-            for i=1:numel(z.stimData.stimParams.Value), % if stimIDs change, this will use last value
+            for i=1:numel(z.stimData.stimParams.Value) % if stimIDs change, this will use last value
                 stimid = z.stimData.stimParams.stimOrder(i);
                 params_here = base_parameters;
                 params_here.Value = z.stimData.stimParams.Value(i);
@@ -175,7 +175,7 @@ classdef BriggsStims < ndi.daq.metadatareader
                     error(['Required field in data(X).results1 not found, for example: ' reqFields1{index(1)}]);
                 end
                 % make all values numbers instead of strings
-                for i=1:numel(fn1), 
+                for i=1:numel(fn1) 
                     if ischar(getfield(p1,fn1{i})) | isstring(getfield(p1,fn1{i}))
                         p1 = setfield(p1,fn1{i},str2num(getfield(p1,fn1{i})));
                     end;
