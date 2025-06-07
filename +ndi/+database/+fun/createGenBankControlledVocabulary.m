@@ -1,5 +1,5 @@
-function ndi_createGenBankControlledVocabulary(dirname, varargin)
-    % NDI_CREATEGENBANKCONTROLLEDVOCABULARY - create the controlled vocabulary dictionary for animals
+function createGenBankControlledVocabulary(dirname, varargin)
+    % CREATEGENBANKCONTROLLEDVOCABULARY - create the controlled vocabulary dictionary for animals
     %
     % ndi.database.fun.createGenBankControlledVocabulary(DIRNAME, ...)
     %

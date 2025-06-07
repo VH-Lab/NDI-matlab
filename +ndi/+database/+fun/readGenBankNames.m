@@ -1,5 +1,5 @@
-function [genbanknames] = ndi_readGenBankNames(filename)
-    % NDI_READGENBANKNAMES - read the GenBank names from the 'names.dmp' file
+function [genbanknames] = readGenBankNames(filename)
+    % READGENBANKNAMES - read the GenBank names from the 'names.dmp' file
     %
     % GENBANK_NAMES = ndi.database.fun.readGenBankNames(FILENAME)
     %

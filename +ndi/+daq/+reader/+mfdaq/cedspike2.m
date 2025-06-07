@@ -329,7 +329,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                     channeltype = 'marker';
                 case {8}
                     channeltype = 'text';
-                case {7,9}
+                case {7}
                     error(['do not know this event yet--programmer should look it up.']);
                 otherwise
                     error(['Could not convert channeltype ' cedspike2channeltype '.']);

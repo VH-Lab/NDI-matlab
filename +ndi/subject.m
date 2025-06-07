@@ -39,7 +39,7 @@ classdef subject < ndi.ido & ndi.documentservice
             local_identifier_ = '';
             description_ = '';
 
-            if numel(varargin==2)
+            if numel(varargin)==2
                 E = varargin{1};
                 if ~isa(E,'ndi.session')
                     local_identifier_ = varargin{1};

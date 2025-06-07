@@ -1,5 +1,5 @@
-function [G] = ndi_readGenBankNodes(filename)
-    % NDI_READGENBANKNODES - read the node tree from GenBank data dump
+function [G] = readGenBankNodes(filename)
+    % READGENBANKNODES - read the node tree from GenBank data dump
     %
     % G = ndi.database.fun.readGenBankNodes(FILENAME)
     %

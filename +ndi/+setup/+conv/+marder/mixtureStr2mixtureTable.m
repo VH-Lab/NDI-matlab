@@ -1,7 +1,7 @@
-function t = mixtureString2mixtureTable(str,mixtureStruct)
-% MIXTURESTRING2MIXTURETABLE - convert a mixture string to a mixture table
+function t = mixtureStr2mixtureTable(str,mixtureStruct)
+% MIXTURESTR2MIXTURETABLE - convert a mixture string to a mixture table
 %
-% T = MIXTURESTRING2MIXTURETABLE(STR, MIXTURESTRUCT)
+% T = ndi.setup.conv.marder.MIXTURESTR2MIXTURETABLE(STR, MIXTURESTRUCT)
 %
 % Converts a mixture string STR to a table of mixtures.
 %
