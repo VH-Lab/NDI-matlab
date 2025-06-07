@@ -49,8 +49,8 @@ function postsetup(S)
     d = S.database_search(ndi.query('','isa','treatment'));
     S.database_rm(d);
     subs = S.database_search(ndi.query('','isa','subject'));
-    if isfile([S.path filesep 'acclimate.txt']),
-        for i=1:numel(subs),
+    if isfile([S.path filesep 'acclimate.txt'])
+        for i=1:numel(subs)
             d = ndi.database.metadata.table2treatment(S,[S.path filesep 'acclimate.txt'],subs{i}.id());
         end
     else

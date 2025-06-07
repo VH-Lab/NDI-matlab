@@ -60,37 +60,37 @@ function ba = ndi_createNIFbrainareas(varargin)
     ba = J.nodes(keepindexes);
 
     fid = fopen([outname],'wt');
-    if fid<0,
+    if fid<0
         error(['Could not open file ' [pwd filesep outname] ' for writing.']);
-    end;
+    end
 
     fprintf(fid,['ID\tLabel\tSynonyms\n']);
 
     included = [];
 
-    for i=1:numel(ba),
+    for i=1:numel(ba)
         strs = split(ba(i).id,':');
-        if any(strcmp(strs{1},exclude_ontologies)),
+        if any(strcmp(strs{1},exclude_ontologies))
             continue; % skip
-        end;
+        end
         included(end+1) = i;
 
         fprintf(fid,[ba(i).id '\t']);
         fprintf(fid,[ba(i).lbl '\t']);
 
-        if isfield(ba(i).meta,'synonym'),
-            for j=1:numel(ba(i).meta.synonym),
+        if isfield(ba(i).meta,'synonym')
+            for j=1:numel(ba(i).meta.synonym)
                 fprintf(fid,[ba(i).meta.synonym{j}]);
-                if j~=numel(ba(i).meta.synonym),
+                if j~=numel(ba(i).meta.synonym)
                     fprintf(fid,', ');
-                end;
-            end;
+                end
+            end
 
-        end;
+        end
 
         % end the line
         fprintf(fid,'\n');
-    end;
+    end
 
     fclose(fid);
 

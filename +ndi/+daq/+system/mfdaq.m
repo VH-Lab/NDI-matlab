@@ -38,12 +38,12 @@ classdef mfdaq < ndi.daq.system
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.system(varargin{:});
 
-            if ~isempty(obj.daqreader),
-                if ~isa(obj.daqreader,'ndi.daq.reader.mfdaq'),
+            if ~isempty(obj.daqreader)
+                if ~isa(obj.daqreader,'ndi.daq.reader.mfdaq')
                     error(['The DAQREADER for an ndi.daq.system.mfdaq object must be a type of ndi.daq.reader.mfdaq.']);
-                end;
-            end;
-        end; % ndi.daq.system.mfdaq
+                end
+            end
+        end % ndi.daq.system.mfdaq
 
         % functions that override ndi.epoch.epochset
 
@@ -61,12 +61,12 @@ classdef mfdaq < ndi.daq.system
             % See also: ndi.time.clocktype
             %
             epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
-            if ~ndi.file.navigator.isingested(epochfiles),
+            if ~ndi.file.navigator.isingested(epochfiles)
                 ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
-            else,
+            else
                 ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock_ingested(epochfiles ,...
                     ndi_daqsystem_mfdaq_obj.session());
-            end;
+            end
         end % epochclock()
 
         function t0t1 = t0_t1(ndi_daqsystem_mfdaq_obj, epoch)
@@ -78,12 +78,12 @@ classdef mfdaq < ndi.daq.system
             % in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
             %
             epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
-            if ~ndi.file.navigator.isingested(epochfiles),
+            if ~ndi.file.navigator.isingested(epochfiles)
                 t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1(epochfiles);
-            else,
+            else
                 t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1_ingested(epochfiles,...
                     ndi_daqsystem_mfdaq_obj.session());
-            end;
+            end
         end % t0_t1()
 
         function channels = getchannels(ndi_daqsystem_mfdaq_obj)
@@ -113,17 +113,17 @@ classdef mfdaq < ndi.daq.system
 
             N = numepochs(ndi_daqsystem_mfdaq_obj);
 
-            for n=1:N,
+            for n=1:N
                 epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, n);
-                if ~ndi.file.navigator.isingested(epochfiles),
+                if ~ndi.file.navigator.isingested(epochfiles)
                     channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
-                else,
+                else
                     channels_here = getchannelsepoch_ingested(ndi_daqsystem_mfdaq_obj.daqreader, ...
                         epochfiles, ndi_daqsystem_mfdaq_obj.session());
-                end;
+                end
                 channels = vlt.data.equnique( [channels(:); channels_here(:)] );
             end
-        end; % getchannels
+        end % getchannels
 
         function channels = getchannelsepoch(ndi_daqsystem_mfdaq_obj, epoch)
             % GETCHANNELSEPOCH - List the channels that are available on this device for an epoch
@@ -153,14 +153,14 @@ classdef mfdaq < ndi.daq.system
             channels = channels([]);
 
             epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
-            if ~ndi.file.navigator.isingested(epochfiles),
+            if ~ndi.file.navigator.isingested(epochfiles)
                 channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
-            else,
+            else
                 channels_here = getchannelsepoch_ingested(ndi_daqsystem_mfdaq_obj.daqreader, ...
                     epochfiles, ndi_daqsystem_mfdaq_obj.session());
-            end;
+            end
             channels = vlt.data.equnique( [channels(:); channels_here(:)] );
-        end; % getchannels
+        end % getchannels
 
         function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, s0, s1)
             % READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
@@ -176,12 +176,12 @@ classdef mfdaq < ndi.daq.system
             %  DATA will have one column per channel.
             %
             epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
-            if ~ndi.file.navigator.isingested(epochfiles),
+            if ~ndi.file.navigator.isingested(epochfiles)
                 data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples(channeltype, channel, epochfiles, s0, s1);
-            else,
+            else
                 data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples_ingested(channeltype,...
                     channel,epochfiles,s0,s1,ndi_daqsystem_mfdaq_obj.session());
-            end;
+            end
         end % readchannels_epochsamples()
 
         function data = readchannels(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
@@ -203,29 +203,29 @@ classdef mfdaq < ndi.daq.system
 
             % error('this function presently does not work, needs to know how to get to session');
 
-            if t1<t0,
+            if t1<t0
                 error(['t0 must be <= t1']);
-            end;
+            end
 
-            if isa(timeref_or_epoch,'ndi.time.timereference'),
+            if isa(timeref_or_epoch,'ndi.time.timereference')
                 exp = ndi_daqsystem_mfdaq_obj.session;
                 [t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...
                     ndi_daqsystem_mfdaq_obj,ndi.time.clocktype('devlocal'));
                 [t1,epoch1_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t1,...
                     ndi_daqsystem_mfdaq_obj,ndi.time.clocktype('dev_local_time'));
-                if epoch0_timeref.epoch~=epoch1_timeref.epoch,
+                if epoch0_timeref.epoch~=epoch1_timeref.epoch
                     error(['Do not know how to read across epochs yet; request spanned ' ...
                         ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch0_timeref.epoch) ...
                         ' and ' ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch1_timeref.epoch) '.']);
                 end
                 epoch = epoch0;
-            else,
+            else
                 epoch = timeref_or_epoch;
             end
             sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel);
-            if numel(unique(sr))~=1,
+            if numel(unique(sr))~=1
                 error(['Do not know how to handle multiple sampling rates across channels.']);
-            end;
+            end
             sr = unique(sr);
             s0 = 1+round(sr*t0);
             s1 = 1+round(sr*t1);
@@ -251,10 +251,10 @@ classdef mfdaq < ndi.daq.system
             %  DATA is an array of the event data. If more than one channel is requested, then DATA will be a cell array of
             %  data arrays, one per channel.
             %
-            if isa(timeref_or_epoch,'ndi.time.timereference'),
+            if isa(timeref_or_epoch,'ndi.time.timereference')
                 tref = timeref_or_epoch;
                 error(['this function does not handle working with clocks yet.']);
-            else,
+            else
                 epoch = timeref_or_epoch;
                 % disp('here, about to call readchannels_epochsamples')
                 [timestamps,data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
@@ -284,13 +284,13 @@ classdef mfdaq < ndi.daq.system
             epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
             epochclocks  = ndi_daqsystem_mfdaq_obj.epochclock(epoch);
             timeref = ndi.time.timereference(ndi_daqsystem_mfdaq_obj, epochclocks{1}, epoch, 0);
-            if ~ndi.file.navigator.isingested(epochfiles),
+            if ~ndi.file.navigator.isingested(epochfiles)
                 [timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype,channel,epochfiles,t0,t1);
-            else,
+            else
                 [timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples_ingested(...
                     channeltype,channel,epochfiles,t0,t1,ndi_daqsystem_mfdaq_obj.session());
-            end;
-        end; % readevents_epochsamples
+            end
+        end % readevents_epochsamples
 
         function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)
             % SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
@@ -305,17 +305,17 @@ classdef mfdaq < ndi.daq.system
             % that CHANNELTYPE applies to every entry of CHANNEL.
 
             epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
-            if ~ndi.file.navigator.isingested(epochfiles),
+            if ~ndi.file.navigator.isingested(epochfiles)
                 sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate(epochfiles, channeltype, channel);
-            else,
+            else
                 sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate_ingested(epochfiles, ...
                     channeltype, channel, ndi_daqsystem_mfdaq_obj.session());
-            end;
-        end;
+            end
+        end
 
-    end; % methods
+    end % methods
 
-    methods (Static), % functions that don't need the object
+    methods (Static) % functions that don't need the object
         function ct = mfdaq_channeltypes
             % MFDAQ_CHANNELTYPES - channel types for ndi.daq.system.mfdaq objects
             %
@@ -335,7 +335,7 @@ classdef mfdaq < ndi.daq.system
             %
             % See also: ndi.daq.system.mfdaq/MFDAQ_TYPE
             ct = { 'analog_in', 'aux_in', 'analog_out', 'digital_in', 'digital_out', 'marker', 'event', 'time' };
-        end;
+        end
 
         function prefix = mfdaq_prefix(channeltype)
             % MFDAQ_PREFIX - Give the channel prefix for a channel type
@@ -366,36 +366,36 @@ classdef mfdaq < ndi.daq.system
             %
             % See also: ndi.daq.system.mfdaq/MFDAQ_TYPE
             %
-            switch channeltype,
-                case {'analog_in','ai'},
+            switch channeltype
+                case {'analog_in','ai'}
                     prefix = 'ai';
-                case {'analog_out','ao'},
+                case {'analog_out','ao'}
                     prefix = 'ao';
-                case {'digital_in','di'},
+                case {'digital_in','di'}
                     prefix = 'di';
-                case {'digital_out','do'},
+                case {'digital_out','do'}
                     prefix = 'do';
-                case {'digital_in_event','digital_in_event_pos','de','dep'},
+                case {'digital_in_event','digital_in_event_pos','de','dep'}
                     prefix = 'dep';
-                case {'digital_in_event_neg','den'},
+                case {'digital_in_event_neg','den'}
                     prefix = 'den';
-                case {'digital_in_mark', 'digital_in_mark_pos','dim','dimp'},
+                case {'digital_in_mark', 'digital_in_mark_pos','dim','dimp'}
                     prefix = 'dimp';
-                case {'digital_in_mark_neg','dimn'},
+                case {'digital_in_mark_neg','dimn'}
                     prefix = 'dimn';
-                case {'time','timestamp','t'},
+                case {'time','timestamp','t'}
                     prefix = 't';
-                case {'auxiliary','aux','ax','auxiliary_in'},
+                case {'auxiliary','aux','ax','auxiliary_in'}
                     prefix = 'ax';
-                case {'marker','mark','mk'},
+                case {'marker','mark','mk'}
                     prefix = 'mk';
-                case {'event','e'},
+                case {'event','e'}
                     prefix = 'e';
-                case {'metadata','md'},
+                case {'metadata','md'}
                     prefix = 'md';
-                case {'text'},
+                case {'text'}
                     prefix = 'tx';
-            end;
+            end
         end % mfdaq_prefix()
 
         function type = mfdaq_type(channeltype)
@@ -419,24 +419,24 @@ classdef mfdaq < ndi.daq.system
             %
             % See also: ndi.daq.system.mfdaq/MFDAQ_PREFIX
             %
-            switch channeltype,
-                case {'analog_in','ai'},
+            switch channeltype
+                case {'analog_in','ai'}
                     type = 'analog_in';
-                case {'analog_out','ao'},
+                case {'analog_out','ao'}
                     type = 'analog_out';
-                case {'digital_in','di'},
+                case {'digital_in','di'}
                     type = 'digital_in';
-                case {'digital_out','do'},
+                case {'digital_out','do'}
                     type = 'digital_out';
-                case {'time','timestamp','t'},
+                case {'time','timestamp','t'}
                     type = 'time';
-                case {'auxiliary','aux','ax','auxiliary_in'},
+                case {'auxiliary','aux','ax','auxiliary_in'}
                     type = 'ax';
-                case {'marker','mark','mk'},
+                case {'marker','mark','mk'}
                     type = 'mark';
-                case {'event','e'},
+                case {'event','e'}
                     type = 'event';
-            end;
+            end
         end
 
     end % methods (Static)

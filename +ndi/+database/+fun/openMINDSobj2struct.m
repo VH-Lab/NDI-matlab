@@ -23,26 +23,26 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
     % we have to build a stack, which we will store in a cache object, that
     % remembers if we have visited all the openMinds object
 
-    if nargin<2,
+    if nargin<2
         % we are just getting started on a new conversion
         newid = ndi.ido;
         cachekey = newid.id(); % build a cache stack
         s = did.datastructures.emptystruct('openminds_type','matlab_type','openminds_id','ndi_id','fields','complete');
         initial_call = 1;
-    else,
+    else
         sdata = ndi_cache.lookup(cachekey, cachetype);
         s = sdata.data;
-    end;
+    end
 
-    if ~iscell(openmindsObj),
+    if ~iscell(openmindsObj)
         newcell = {};
-        for i=1:numel(openmindsObj),
+        for i=1:numel(openmindsObj)
             newcell{i} = openmindsObj(i);
-        end;
+        end
         openmindsObj = newcell; % make it a cell no matter what
-    end;
+    end
 
-    for i=1:numel(openmindsObj),
+    for i=1:numel(openmindsObj)
 
         % fill out preliminary entry
 
@@ -58,14 +58,14 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 
         index = find(strcmp(s_here.openminds_id,{s.openminds_id}));
 
-        if ~isempty(index),
-            if s(index).complete,
+        if ~isempty(index)
+            if s(index).complete
                 % we already built this, skip it
                 continue;
-            end;
-        else,
+            end
+        else
             index = numel(s)+1;
-        end;
+        end
 
         % if we are here, we have to start building it
 
@@ -76,37 +76,37 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 
         fn = fieldnames(openmindsObj{i});
 
-        for j=1:numel(fn),
+        for j=1:numel(fn)
             f = getfield(openmindsObj{i},fn{j});
-            if strcmp(class(f),'string'),
+            if strcmp(class(f),'string')
                 f = char(f); % we have to insert character arrays into the sql database
-            end;
-            if strcmp(class(f),'datetime'),
+            end
+            if strcmp(class(f),'datetime')
                 f = char(f);
-            end;
+            end
             mt = startsWith(class(f),'openminds.internal.mixedtype');
-            if isa(f,'openminds.abstract.Schema') | mt,
+            if isa(f,'openminds.abstract.Schema') | mt
                 fields_here = {};
-                for k=1:numel(f),
-                    if mt,
+                for k=1:numel(f)
+                    if mt
                         f_here = f(k).Instance;
-                    else,
+                    else
                         f_here = f(k);
-                    end;
+                    end
                     s = ndi.database.fun.openMINDSobj2struct({f_here},cachekey);
                     child_index = find(strcmp(f_here.id,{s.openminds_id}));
-                    if isempty(child_index),
+                    if isempty(child_index)
                         % stop this nonsense
                         ndi_cache.remove(cachekey,cachetype);
                         error(['A child was not built successfully.']);
-                    end;
+                    end
                     fields_here{k} = ['ndi://' s(child_index).ndi_id];
-                end;
+                end
                 s_here.fields = setfield(s_here.fields,fn{j},fields_here);
-            else,
+            else
                 s_here.fields = setfield(s_here.fields,fn{j},f);
-            end;
-        end;
+            end
+        end
 
         % fill the table, mark it as complete
         s_here.complete = 1;
@@ -116,9 +116,9 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
         ndi_cache.remove(cachekey,cachetype);
         ndi_cache.add(cachekey,cachetype,s);
 
-    end;
+    end
 
-    if initial_call,
+    if initial_call
         % if we were the first function, remove the cache
         ndi_cache.remove(cachekey,cachetype);
-    end;
+    end

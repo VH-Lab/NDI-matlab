@@ -16,21 +16,21 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
     end
     methods
         function obj = ndi_image_tiffstack(obj,exp,name,thefilenavigator,reference)
-            if nargin==1 || nargin ==2 || nargin ==3,
+            if nargin==1 || nargin ==2 || nargin ==3
                 error(['Not enough input arguments.']);
-            elseif nargin==4,
+            elseif nargin==4
                 obj.exp = exp;
                 obj.name = name;
                 obj.filenavigator = thefilenavigator;
                 obj.reference = 'time';
-            elseif nargin==5,
+            elseif nargin==5
                 obj.exp = exp;
                 obj.name = name;
                 obj.filenavigator = thefilenavigator;
                 obj.reference = reference;
-            else,
+            else
                 error(['Too many input arguments.']);
-            end;
+            end
         end
 
         function channels = getchannels(sAPI_dev)
@@ -61,7 +61,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
 
             sapi_multifunctiondaq_channel_types = { 'image' };
 
-            for i=1:length(filelist),
+            for i=1:length(filelist)
                 % then, open RHD files, and examine the headers for all channels present
                 %   for any new channel that hasn't been identified before,
                 %   add it to the list
@@ -71,18 +71,18 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
                 obj = read_Intan_RHD2000_header(filelist{i});
                 list_field = fieldnames(obj);
                 structSize = size(list_field,1);
-                for k = 1:structSize,
+                for k = 1:structSize
                     occur = strcmp(list_field{k},intan_channel_types);  %%if the field is channel
-                    if any(occur),
+                    if any(occur)
                         channel = getfield(obj, list_field{k});
                         num = numel(channel);             %% number of channels with specific type
                         lc = {channels(:).name};
                         channel_type_entry = find(strcmp(list_field{k},intan_channel_types));
                         channel_type_name = sapi_multifunctiondaq_channel_types{channel_type_entry};
-                        for p = 1:num,
+                        for p = 1:num
                             name = name_convert_to_standard(channel_type_name, channel(p).native_channel_name);
                             answer = strcmp(name,{channels(:).name});
-                            if ~any(answer),
+                            if ~any(answer)
                                 channels(end+1).name = name;  % needs modifying
                                 channels(end).type = channel_type_name;
                             end
@@ -122,13 +122,13 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
 
             report = vlt.data.emptystruct('channeltype','channel','epoch','frame','data');     %%initial structure
-            for i = 1:size(file_names,1),
+            for i = 1:size(file_names,1)
                 [sz,~] = getsamplesize(file_names{i});
-                if t1 - t0 > sz,
+                if t1 - t0 > sz
                     disp('the required frame number is larger than the existing frame of the image');
                     return;
                 end
-                for j = t0:t1,
+                for j = t0:t1
                     image = imread(file_names{i},j);
                     report(end+1).channeltype = channeltype;
                     report(end).channel = channel;
@@ -184,7 +184,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             intervals = ([]);
 
             filelist = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');
-            for i=1:length(filelist),
+            for i=1:length(filelist)
                 intervals(end+1).file = filelist{i};
                 intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparison and get the order list
             end

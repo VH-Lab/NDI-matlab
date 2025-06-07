@@ -47,7 +47,7 @@ for i=1:numel(et)
                     locList = bathTargets.(bT{b});
                     for l=1:numel(locList)
                         index = find(strcmp(locList(l).location,{locTable.Identifier}));
-                        if isempty(index),
+                        if isempty(index)
                             bathLoc = ndi.database.fun.uberon_ontology_lookup("Identifier",locList(l).location);
                             locTable(end+1) = struct('Identifier',locList(l).location,'bathLoc',bathLoc);
                         else

@@ -19,6 +19,6 @@ function d = find_calc_directories()
 
     d = {d.name};
 
-    for i=1:numel(d),
+    for i=1:numel(d)
         d{i} = [tool_path filesep d{i}];
-    end;
+    end

@@ -17,6 +17,6 @@ function [fid,fname] = temp_fid()
 
     fid = fopen(fname,'w','l'); % open for writing, little-endian
 
-    if fid<0,
+    if fid<0
         error(['Could not open the file ' fname ' for writing.']);
-    end;
+    end

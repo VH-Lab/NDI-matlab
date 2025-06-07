@@ -20,26 +20,26 @@ function [source_filename_list, destination_filename_list, to_delete_list] = ing
 
     to_delete_list = {};
 
-    if isfield(ndi_document_obj.document_properties,'files'),
-        if isfield(ndi_document_obj.document_properties.files,'file_info'),
-            for i=1:numel(ndi_document_obj.document_properties.files.file_info),
+    if isfield(ndi_document_obj.document_properties,'files')
+        if isfield(ndi_document_obj.document_properties.files,'file_info')
+            for i=1:numel(ndi_document_obj.document_properties.files.file_info)
                 locs = ndi_document_obj.document_properties.files.file_info(i).locations;
-                for j=1:numel(locs),
-                    if locs(j).ingest,
+                for j=1:numel(locs)
+                    if locs(j).ingest
                         source_filename_list{end+1} = locs(j).location;
                         destination_filename_list{end+1} = [ingestion_directory filesep ...
                             locs(j).uid];
-                        if ~isfile(source_filename_list{end}),
+                        if ~isfile(source_filename_list{end})
                             error(['File to ingest does not exist: ' source_filename_list{end}]);
-                        end;
-                        if isfile(destination_filename_list{end}),
+                        end
+                        if isfile(destination_filename_list{end})
                             error(['Destination file already exists: ' destination_filename_list{end} ]);
-                        end;
-                    end;
-                    if locs(j).delete_original,
+                        end
+                    end
+                    if locs(j).delete_original
                         to_delete_list{end+1} = locs(j).location;
-                    end;
-                end;
-            end;
-        end;
-    end;
+                    end
+                end
+            end
+        end
+    end

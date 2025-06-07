@@ -4,9 +4,9 @@ classdef NewStimStims < ndi.daq.metadatareader
     %
 
     properties (GetAccess=public, SetAccess=protected)
-    end;
+    end
     properties (Access=private)
-    end;
+    end
 
     methods
 
@@ -22,7 +22,7 @@ classdef NewStimStims < ndi.daq.metadatareader
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
             obj = obj@ndi.daq.metadatareader(varargin{:});
-        end; % ndi_daqmetadatareader_NewStimStim
+        end % ndi_daqmetadatareader_NewStimStim
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_newstimstims_obj, file)
             % READMETADATAFROMFILE - read in metadata from the file that is identified
@@ -33,11 +33,11 @@ classdef NewStimStims < ndi.daq.metadatareader
             % document, this function loads in the metadata.
             [parentdir,filename,ext] = fileparts(file);
             [ss,mti]=getstimscript(parentdir);
-            for i=1:numStims(ss),
+            for i=1:numStims(ss)
                 parameters{i} = getparameters(get(ss,i));
-            end;
-        end; % readmetadatafromfile()
+            end
+        end % readmetadatafromfile()
 
-    end; % methods
+    end % methods
 
 end % classdef

@@ -9,7 +9,7 @@ classdef ingestion_help
             % OBJ = ndi.database.ingestion_help()
             %
 
-        end; % ingestion_help() creator
+        end % ingestion_help() creator
 
         function cname = ingestion_class(ingestion_help_obj)
             % INGESTION_CLASS - the name of the ingestion class for this object
@@ -22,7 +22,7 @@ classdef ingestion_help
             %
             % For the base class, this simply returns empty.
             cname = '';
-        end; % ingestion_class()
+        end % ingestion_class()
 
         function [docs_out, doc_ids_remove] = ingest(ingestion_help_obj)
             % INGEST - create new documents that produce the ingestion of an ingestion_help_obj
@@ -40,7 +40,7 @@ classdef ingestion_help
             %
             docs_out = {};
             doc_ids_remove = {};
-        end; % ingest()
+        end % ingest()
 
-    end; % methods
+    end % methods
 end % class

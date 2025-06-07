@@ -16,7 +16,7 @@ classdef decoder < ndi.app
             %
             session = [];
             name = 'ndi_app_stimulus_decoder';
-            if numel(varargin)>0,
+            if numel(varargin)>0
                 session = varargin{1};
             end
             ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi.app(session, name);
@@ -40,9 +40,9 @@ classdef decoder < ndi.app
             %
             % Note that this function DOES add the new documents to the database.
             %
-            if nargin<3,
+            if nargin<3
                 reset = 0;
-            end;
+            end
             newdocs = {};
             existingdocs = {};
 
@@ -54,52 +54,52 @@ classdef decoder < ndi.app
 
             existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
 
-            if reset,
+            if reset
                 % delete existing documents
                 E.database_rm(existing_doc_stim);
                 existing_doc_stim = {};
-            end;
+            end
 
             existingdocs = cat(1,existing_doc_stim(:));
 
             % determine epochs that are finished
             epoch_finished = {};
 
-            for i=1:numel(existing_doc_stim),
+            for i=1:numel(existing_doc_stim)
                 epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
-            end;
+            end
 
             et = ndi_element_stim.epochtable();
 
             epochsremaining = setdiff({et.epoch_id}, epoch_finished);
 
-            for j=1:numel(epochsremaining),
+            for j=1:numel(epochsremaining)
                 % decode stimuli
                 [data,t,timeref] = ndi_element_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
                 % stimulus
                 mystim = vlt.data.emptystruct('parameters');
-                for k=1:numel(data.parameters),
+                for k=1:numel(data.parameters)
                     mystim(k) = struct('parameters',data.parameters{k});
-                end;
+                end
                 presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose','stimevents');
-                for z=1:numel(t.stimon),
+                for z=1:numel(t.stimon)
                     timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
                         'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
                         'stimclose', t.stimopenclose(z,2) );
                     stimevents = [];
-                    if isfield(t,'stimevents')&~isempty(t.stimevents),
-                        for kk=1:numel(t.stimevents),
+                    if isfield(t,'stimevents')&~isempty(t.stimevents)
+                        for kk=1:numel(t.stimevents)
                             stim_onset = nanmin(timestruct.onset,timestruct.stimopen);
                             stim_offset = nanmax(timestruct.offset,timestruct.stimclose);
                             stimevents_indexes = find(t.stimevents{kk}>=stim_onset & t.stimevents{kk}<=stim_offset);
                             stimevents = cat(1,stimevents,[ vlt.data.colvec(t.stimevents{kk}(stimevents_indexes)) kk*ones(numel(stimevents_indexes),1)]);
-                        end;
+                        end
                         [dummy,sortorder] = sort(stimevents(:,1));
                         stimevents = stimevents(sortorder,:);
-                    end;
+                    end
                     timestruct.stimevents = stimevents;
                     presentation_time(end+1) = timestruct;
-                end;
+                end
 
                 %  make a file and write the presentation_time structure
                 presentation_time_filename = ndi.file.temp_name();
@@ -115,7 +115,7 @@ classdef decoder < ndi.app
                 nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
                 nd = nd.add_file('presentation_time.bin',presentation_time_filename);
                 newdocs{end+1} = nd;
-            end;
+            end
             E.database_add(newdocs);
         end %
 
@@ -128,15 +128,15 @@ classdef decoder < ndi.app
             % Given a 'stimulus_presentation' type ndi.document, loads the presentation_time data from
             % the binary portion.
             %
-            if isfield(stimulus_presentation_doc.document_properties.stimulus_presentation,'presentation_time'), % old way
+            if isfield(stimulus_presentation_doc.document_properties.stimulus_presentation,'presentation_time') % old way
                 warning('stimulus presentation document uses deprecated form of presentation_time storage.');
                 presentation_time = stimulus_presentation_doc.document_properties.stimulus_presentation.presentation_time;
-            else,
+            else
                 fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
                 [header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
                 fobj.fclose();
-            end;
-        end; % load_presentation_time
-    end; % methods
+            end
+        end % load_presentation_time
+    end % methods
 
 end % ndi.app.stimulus.decoder

@@ -37,7 +37,7 @@ classdef timereference
 
             struct_option = 0;
 
-            if nargin==2 & isstruct(clocktype),
+            if nargin==2 & isstruct(clocktype)
                 struct_option = 1;
                 session = referent; % 1st argument
                 session_ID = session.id();
@@ -47,39 +47,39 @@ classdef timereference
                 clocktype = ndi.time.clocktype(timeref_struct.clocktypestring);
                 epoch = timeref_struct.epoch;
                 time = timeref_struct.time;
-            end;
-
-            if ~( isa(referent,'ndi.epoch.epochset') ),
-                error(['referent must be a subclass of ndi.epoch.epochset.']);
-            else,
-                if isprop(referent,'session') | ismethod(referent,'session'),
-                    if ~isa(referent.session,'ndi.session'),
-                        error(['The referent must have an ndi.session with a valid id.']);
-                    else,
-                        session_ID = referent.session.id(); % TODO: this doesn't explicitly check out from types
-                    end;
-                else,
-                    error(['The referent must have a session with a valid id.']);
-                end;
             end
 
-            if ~isa(clocktype,'ndi.time.clocktype'),
+            if ~( isa(referent,'ndi.epoch.epochset') )
+                error(['referent must be a subclass of ndi.epoch.epochset.']);
+            else
+                if isprop(referent,'session') | ismethod(referent,'session')
+                    if ~isa(referent.session,'ndi.session')
+                        error(['The referent must have an ndi.session with a valid id.']);
+                    else
+                        session_ID = referent.session.id(); % TODO: this doesn't explicitly check out from types
+                    end
+                else
+                    error(['The referent must have a session with a valid id.']);
+                end
+            end
+
+            if ~isa(clocktype,'ndi.time.clocktype')
                 error(['clocktype must be a member or subclass of ndi.time.clocktype.']);
             end
 
-            if nargin<3 & ~struct_option,
+            if nargin<3 & ~struct_option
                 epoch = [];
-            end;
+            end
 
-            if nargin<4 & ~struct_option,
+            if nargin<4 & ~struct_option
                 time = [];
-            end;
+            end
 
-            if clocktype.needsepoch(),
-                if isempty(epoch),
+            if clocktype.needsepoch()
+                if isempty(epoch)
                     error(['time is local; an EPOCH must be specified.']);
                 end
-            end;
+            end
 
             obj.referent = referent;
             obj.session_ID = session_ID;

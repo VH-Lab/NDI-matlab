@@ -12,9 +12,9 @@ function sg_flat(dirname)
     % Developer note: function can be expanded to take in a specific tetrode to plot
     % from specific epoch n, along with sample0 and sample1.
 
-    if nargin < 1,
+    if nargin < 1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_sg'];
-    end;
+    end
 
     disp(['creating a new session object...']);
     E = ndi.session.dir('exp1',dirname);
@@ -29,7 +29,7 @@ function sg_flat(dirname)
     % Step 2: create the daqsystem object and add it to the session:
 
     dev1 = E.daqsystem_load('name','sgtest');
-    if isempty(dev1),
+    if isempty(dev1)
         dev1 = ndi.daq.system.mfdaq('sgtest', dt, ndi.daq.reader.mfdaq.spikegadgets());
         E.daqsystem_add(dev1);
     end

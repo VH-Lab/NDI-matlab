@@ -12,20 +12,20 @@ function cache
 
     key = 'mykey';
 
-    for i=1:5,
-        if i==1,
+    for i=1:5
+        if i==1
             priority = 1;
-        else,
+        else
             priority = 0;
-        end;
+        end
         cache.add(key,['type' int2str(i)],rand(25,1),priority);
     end
 
     disp(['About to read elements from the cache..']);
 
-    for i=1:5,
+    for i=1:5
         t = cache.lookup(key,['type' int2str(i)]),
-    end;
+    end
 
     disp(['About to add an element that will cause the cache to eject its lowest priority entry, which should be entry ''type 2'' ']);
 

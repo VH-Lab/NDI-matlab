@@ -16,10 +16,10 @@ classdef app < ndi.documentservice
             %
             session = [];
             name = 'generic';
-            if nargin>0,
+            if nargin>0
                 session = varargin{1};
             end
-            if nargin>1,
+            if nargin>1
                 name = varargin{2};
             end
 
@@ -38,10 +38,10 @@ classdef app < ndi.documentservice
             % a Matlab variable or a name in a document.
             %
             an = ndi_app_obj.name;
-            if ~isvarname(an),
+            if ~isvarname(an)
                 an = matlab.lang.makeValidName(an);
-            end;
-        end; % varappname ()
+            end
+        end % varappname ()
 
         function [v,url] = version_url(ndi_app_obj)
             % VERSION_URL - return the app version and url
@@ -56,13 +56,13 @@ classdef app < ndi.documentservice
             % different version control system.
             %
             classfilename = which(class(ndi_app_obj));
-            if iscell(classfilename),
+            if iscell(classfilename)
                 classfilename = classfilename{1}; % take the first one if there are multiple
-            end;
+            end
             [parentdir,filename] = fileparts(classfilename);
             [v,url] = vlt.git.git_repo_version(parentdir);
 
-        end; % version_url()
+        end % version_url()
 
         function c = searchquery(ndi_app_obj)
             % SEARCHQUERY - return a search query for an ndi.document related to this app
@@ -76,7 +76,7 @@ classdef app < ndi.documentservice
             c = {'base.session_id', ...
                 ndi_app_obj.session.id(), ...
                 'app.name',ndi_app_obj.varappname() };
-        end;
+        end
 
         function ndi_document_obj = newdocument(ndi_app_obj)
             % NEWDOCUMENT - return a new database document of type ndi.document based on an app
@@ -88,9 +88,9 @@ classdef app < ndi.documentservice
             %
             [~,osversion] = detectOS;
             osversion_strings = {};
-            for i=1:numel(osversion),
+            for i=1:numel(osversion)
                 osversion_strings{i} = int2str(osversion(i));
-            end;
+            end
             osversion = strjoin(osversion_strings,'.');
             matlab_ver = ver('MATLAB');
             matlab_version = matlab_ver.Version;
@@ -107,6 +107,6 @@ classdef app < ndi.documentservice
                 'app.interpreter_version',matlab_version ...
                 };
             ndi_document_obj = ndi_app_obj.session.newdocument('app', c{:});
-        end;
-    end; % methods
+        end
+    end % methods
 end

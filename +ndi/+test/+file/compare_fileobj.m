@@ -15,11 +15,11 @@ function [b] = compare_fileobj(f1,f2)
 
     b = 1;
 
-    while ~feof(f1),
+    while ~feof(f1)
         data1 = fread(f1,buffer_size,'char');
         data2 = fread(f2,buffer_size,'char');
-        if ~isequal(data1,data2),
+        if ~isequal(data1,data2)
             b = 0;
             return;
-        end;
-    end;
+        end
+    end

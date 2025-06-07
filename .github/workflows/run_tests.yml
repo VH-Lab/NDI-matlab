@@ -72,7 +72,7 @@ jobs:
             savepath()
 
       - name: Commit SVG badges if updated
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: always() && ( github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository )
         uses: ehennestad/matbox/.github/actions/push-badges@v0.9
         with:
           pr-ref: ${{ github.event.pull_request.head.ref }}

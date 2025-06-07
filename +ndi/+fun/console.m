@@ -8,7 +8,7 @@ function console(filename)
     % Right now, only MacOS is supported.
     %
 
-    if ismac(),
+    if ismac()
         f = ndi.file.temp_name();
         s = {'tell application "Terminal"'};
         s{end+1} = [sprintf('\t') 'activate'];
@@ -17,8 +17,8 @@ function console(filename)
         s{end+1} = ['end tell'];
         vlt.file.cellstr2text(f,s);
         system(['osascript ' f]);
-    elseif isunix(),
+    elseif isunix()
         error(['Linux/Unix not supported yet.']);
-    elseif iswin(),
+    elseif iswin()
         error(['Windows not supported yet.']);
-    end;
+    end
