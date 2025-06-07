@@ -8,7 +8,7 @@ function probeData = loadProbes(S)
     %  PROBEDATA - a ndi.database.metadat_app.class.ProbeData object that contains all the probe data in session S
 
     if (~(isa(S,'ndi.dataset.dir') || isa(S,'ndi.session.dir')))
-        error('METADATA_APP:loadProbes:InvalidSession, InvalidDataset',...
+        error('METADATA_APP:loadProbes:InvalidInput',...
             'Input must be an ndi.session object or ndi.dataset object.');
     end
     probes = {};
