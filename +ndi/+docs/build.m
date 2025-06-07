@@ -20,7 +20,7 @@ function build()
 
     if ~isfolder([ndi_path filesep 'site'])
         mkdir([ndi_path filesep 'site']);
-    end;
+    end
 
     vlt.file.touch([ndi_path filesep 'site' filesep '.matlab2markdown-ignore']);
 

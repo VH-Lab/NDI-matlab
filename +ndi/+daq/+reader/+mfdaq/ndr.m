@@ -35,24 +35,24 @@ classdef ndr < ndi.daq.reader.mfdaq
                 reader_string = char(varargin{1});
                 if isempty(reader_string)
                     error(['READER_STRING must be not empty.']);
-                end;
+                end
             elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
                 obj.ndr_reader_string = varargin{2}.document_properties.daqreader_ndr.ndr_reader_string;
                 finished = 1;
             else
                 error(['Unknown arguments.']);
-            end;
+            end
 
             if ~finished
                 kr = ndr.known_readers();
                 index = find(strcmpi(reader_string,kr));
                 if isempty(index)
                     error(['READER_STRING must be a member of the known readers of NDR, as listed in ndr.known_readers()']);
-                end;
+                end
                 obj.ndr_reader_string = kr{index};
-            end;
-        end;
+            end
+        end
 
         function channels = getchannelsepoch(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
             % GETCHANNELSEPOCH - List the channels that are available for this epoch for the NDR daq reader
@@ -70,7 +70,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
             channels = ndr_reader.getchannelsepoch(epochfiles,1);
-        end; % getchannelsepoch
+        end % getchannelsepoch
 
         function data = readchannels_epochsamples(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s0, s1)
             %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
@@ -88,7 +88,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
             data = ndr_reader.readchannels_epochsamples(channeltype,channel,epochfiles,1,s0,s1);
-        end; % readchannels_epochsamples
+        end % readchannels_epochsamples
 
         function ec = epochclock(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
             % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -164,7 +164,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
             [timestamps,data] = ndr_reader.readevents_epochsamples_native(channeltype, channel, epochfiles, 1, t0, t1);
-        end; % readevents_epochsamples_native
+        end % readevents_epochsamples_native
 
         function sr = samplerate(ndi_daq_reader_mfdaq_ndr_obj, epochfiles, channeltype, channel)
             % SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
@@ -175,7 +175,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
             sr = ndr_reader.samplerate(epochfiles,1,channeltype,channel);
-        end; % samplerate
+        end % samplerate
 
         function ndi_document_obj = newdocument(ndi_daqreader_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
@@ -190,7 +190,7 @@ classdef ndr < ndi.daq.reader.mfdaq
                 'daqreader_ndr.ndi_daqreader_ndr_class',class(ndi_daqreader_obj),...
                 'base.id', ndi_daqreader_obj.id(),...
                 'base.session_id',ndi.session.empty_id());
-        end; % newdocument()
+        end % newdocument()
 
-    end; % methods
+    end % methods
 end % class

@@ -42,7 +42,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 if numel(find(filename==sprintf('\n'))) > 0
                     is_struct = 1;
                     ndi_struct = ndi.epoch.epochprobemap.decode(filename);
-                end;
+                end
             end
             if nargin<4
                 reference_ = 0;
@@ -57,9 +57,9 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 for i=1:numel(ndi_struct)
                     obj(i)=ndi.setup.epoch.epochprobemap_daqsystem_vhlab(...
                         ndi_struct(i).name,ndi_struct(i).reference,ndi_struct(i).type,ndi_struct(i).devicestring,ndi_struct(i).subjectstring);
-                end;
+                end
                 return;
-            end;
+            end
 
             if nargin==1
                 [filepath, localfile, ext] = fileparts(filename);
@@ -71,12 +71,12 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     subject_id = vlt.string.trimws(vlt.string.line_n(subjecttext,1));
                 else
                     error(['No subject.txt file found:' subjectfile '.']);
-                end;
+                end
 
                 [b,msg] = ndi.subject.isvalidlocalidentifierstring(subject_id);
                 if ~b
                     error(['subject_id string ' subject_id ' is not a valid subject id: ' msg]);
-                end;
+                end
 
                 if strcmp([localfile ext],'stimtimes.txt') % vhvis_spike2
                     mylist = {'mk1','mk2','mk3','e1','e2','e3','md1'};
@@ -93,7 +93,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
                 if ~contains([localfile],'channelgrouping')
                     error(['Expected file ' [localfile ] ' to include the string channelgrouping. Maybe unintended files in epoch?']);
-                end;
+                end
 
                 vhdevice_string = regexp(lower([localfile ext]),'(\w*)_channelgrouping.txt','tokens');
                 if isempty(vhdevice_string)
@@ -112,7 +112,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 if ~vlt.data.eqlen(fn,{'name','ref','channel_list'}')
                     fn,
                     error(['fields must be (case-sensitive match): name, ref, channel_list. See HELP VHINTAN_CHANNELGROUPING.']);
-                end;
+                end
 
                 % now pull reference.txt file to determine type
                 [myfilepath,myfilename] = fileparts(filename);
@@ -128,7 +128,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                         ref_struct,
                         disp(['Looking in filename ' filename]);
                         error(['Cannot find exclusive match for name/ref in reference.txt file.']);
-                    end;
+                    end
                     ec_type = ref_struct(index).type;
                     probeTypeMap = ndi.probe.fun.getProbeTypeMap();
                     if ~isKey(probeTypeMap, ec_type)
@@ -138,7 +138,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                         else
                             error(['Unknown type ' ec_type '.']);
 
-                        end;
+                        end
                     end
                     nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab(ndi_struct(i).name,...
                         ndi_struct(i).ref,...
@@ -146,10 +146,10 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                         [vhdevice_string ':ai' vlt.string.intseq2str(ndi_struct(i).channel_list)], ...  % device string
                         subject_id);
                     obj(i) = nextentry;
-                end;
+                end
             end
 
-        end;
+        end
 
         function savetofile(obj, filename)
             %  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
@@ -160,6 +160,6 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
             %
             %
             error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);
-        end;
+        end
     end  % methods
 end

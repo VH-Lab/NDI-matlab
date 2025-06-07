@@ -26,8 +26,8 @@ function smrepochprobemap(S, options)
             mysub = ndi.subject(subject{i},['Crab from Eve Marder Lab at Brandeis']);
             mysubdoc = mysub.newdocument + S.newdocument();
             S.database_add(mysubdoc);
-        end;
-    end;
+        end
+    end
 
     for i=1:numel(d)
         h = ndr.format.ced.read_SOMSMR_header([dirname filesep d(i).name]);
@@ -39,8 +39,8 @@ function smrepochprobemap(S, options)
                 probemap = ndi.epoch.epochprobemap_daqsystem(name{j},ref(j),'n-trode',daqsysstr(j).devicestring(),subjectlist{j});
             else
                 probemap(end+1) = ndi.epoch.epochprobemap_daqsystem(name{j},ref(j),'n-trode',daqsysstr(j).devicestring(),subjectlist{j});
-            end;
-        end;
+            end
+        end
         [myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
         probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
-    end;
+    end

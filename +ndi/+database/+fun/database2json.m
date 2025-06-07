@@ -18,9 +18,9 @@ function database2json(S, output_path)
                 [parentdir,filename_here] = fileparts(bfile.fullpathfilename);
                 d{i} = d{i}.add_file(d{i}.document_properties.files.file_list{f},filename_here,...
                     'ingest',1,'delete_original',0,'location_type','file','uid',filename_here);
-            end;
-        end;
+            end
+        end
 
         j = vlt.data.jsonencodenan(d{i}.document_properties);
         vlt.file.str2text([output_path filesep d{i}.document_properties.base.id '.json'],j);
-    end;
+    end

@@ -81,7 +81,7 @@ for i=1:numel(s)
             fData.probe_hemisphere = 'unknown';
         else
             fData.probe_hemisphere = locDoc{1}.document_properties.probe_location;
-        end;
+        end
 
         fData.spike_data = ndi.example.fun.probe2spiketimes(probes_sub{j});
 

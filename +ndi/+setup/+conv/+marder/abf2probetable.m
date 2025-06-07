@@ -33,7 +33,7 @@ function abf2probetable(S, options)
     subject = {};
     for i=1:numel(s)
         subject{i} = fileread([dirname filesep s(i).name]);
-    end;
+    end
 
     cols = {'channelName','probeName','probeRef','probeType','subject','firstAppears'};
     datatypes = {'string','string','double','string','string','string'};
@@ -57,15 +57,15 @@ function abf2probetable(S, options)
                         probeType = 'thermometer';
                     else
                         probeType = 'n-trode';
-                    end;
+                    end
                     probetable_new = cell2table({ h.recChNames{j} name{j} ref(j) probeType subjectlist{j} d(i).name},...
                         'VariableNames',cols);
                     probetable = cat(1,probetable,probetable_new);
-                end;
+                end
             else, probetable_new = cell2table({ 'nothing' name{j} ref(j) 'unknown' subjectlist{j} d(i).name},...
                         'VariableNames',cols);
-            end;
-         end;
-    end;
+            end
+         end
+    end
 
     writetable(probetable,[dirname filesep 'probeTable.csv']);

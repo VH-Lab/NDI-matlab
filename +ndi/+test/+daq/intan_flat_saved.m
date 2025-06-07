@@ -13,7 +13,7 @@ function intan_flat_saved(dirname)
 
     if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
-    end;
+    end
 
     disp(['reading a new session object from directory ' dirname ' ... ' ]);
     E = ndi.session.dir(dirname);

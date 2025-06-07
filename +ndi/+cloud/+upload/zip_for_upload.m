@@ -47,7 +47,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
                 uploaded_size = uploaded_size + size_gb;
                 if verbose
                     disp(['Zipping ' int2str(numel(files_to_zip)) ' binary files for upload.' int2str(size_gb) ' GB in total ' ])
-                end;
+                end
                 try
                     waitbar(file_count/files_left, h, sprintf('Uploading file %d of %d. Size %.2f GB out of %.2f GB...', file_count, files_left, uploaded_size, total_size));
                 catch
@@ -76,7 +76,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
         uploaded_size = uploaded_size + size_gb;
         if verbose
             disp(['Zipping ' int2str(numel(files_to_zip)) ' files.' int2str(size_gb) ' GB in total ' ])
-        end;
+        end
         try
             waitbar(file_count/files_left, h, sprintf('Uploading file %d of %d. Size %.2f GB out of %.2f GB...', file_count, files_left, uploaded_size, total_size));
         catch

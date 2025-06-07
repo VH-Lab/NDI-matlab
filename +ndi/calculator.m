@@ -2,7 +2,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
     properties (SetAccess=protected,GetAccess=public)
         fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
-    end; % properties
+    end % properties
 
     methods
 
@@ -22,22 +22,22 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             session = [];
             if nargin>0
                 session = varargin{1};
-            end;
+            end
             ndi_calculator_obj = ndi_calculator_obj@ndi.app(session);
             if nargin>1
                 document_type = varargin{2};
             else
                 document_type = '';
-            end;
+            end
             if nargin>2
                 path_to_doc_type = varargin{3};
             else
                 path_to_doc_type = '';
-            end;
+            end
             ndi_calculator_obj = ndi_calculator_obj@ndi.app.appdoc({document_type}, ...
                 {path_to_doc_type},session);
             ndi_calculator_obj.name = class(ndi_calculator_obj);
-        end; % calculator creator
+        end % calculator creator
 
         function docs = run(ndi_calculator_obj, docExistsAction, parameters)
             % RUN - run calculator on all possible inputs that match some parameters
@@ -61,7 +61,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
             if nargin<3
                 parameters = ndi_calculator_obj.default_search_for_input_parameters();
-            end;
+            end
 
             % Step 2: identify all sets of possible input parameters that are compatible with
             % what was specified by 'parameters'
@@ -88,30 +88,30 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         case {'Replace'}
                             ndi_calculator_obj.session.database_rm(previous_calculators_here);
                             do_calc = 1;
-                    end;
+                    end
                 else
                     do_calc = 1;
-                end;
+                end
                 if do_calc
                     docs_out = ndi_calculator_obj.calculate(all_parameters{i});
                     if ~iscell(docs_out)
                         docs_out = {docs_out};
-                    end;
+                    end
                     docs_tocat{i} = docs_out;
-                end;
-            end;
+                end
+            end
             for i=1:numel(all_parameters)
                 docs = cat(2,docs,docs_tocat{i});
-            end;
+            end
             app_doc = ndi_calculator_obj.newdocument();
             for i=1:numel(docs)
                 docs{i} = docs{i}.setproperties('app',app_doc.document_properties.app);
-            end;
+            end
             if ~isempty(docs)
                 ndi_calculator_obj.session.database_add(docs);
-            end;
+            end
             mylog.msg('system',1,'Concluding calculator.');
-        end; % run()
+        end % run()
 
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)
             % DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
@@ -127,7 +127,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %
             parameters.input_parameters = [];
             parameters.depends_on = vlt.data.emptystruct('name','value');
-        end; % default_search_for_input_parameters
+        end % default_search_for_input_parameters
 
         function parameters = search_for_input_parameters(ndi_calculator_obj, parameters_specification, varargin)
             % SEARCH_FOR_INPUT_PARAMETERS - search for valid inputs to the calculator
@@ -164,19 +164,19 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 fixed_depends_on = parameters_specification.depends_on;
             else
                 fixed_depends_on = vlt.data.emptystruct('name','value');
-            end;
+            end
             % validate fixed depends_on values
             for i=1:numel(fixed_depends_on)
                 q = ndi.query('base.id','exact_string',fixed_depends_on(i).value,'');
                 l = ndi_calculator_obj.session.database_search(q);
                 if numel(l)~=1
                     error(['Could not locate ndi document with id ' fixed_depends_on(i).value ' that corresponded to name ' fixed_depends_on(i).name '.']);
-                end;
-            end;
+                end
+            end
 
             if ~isfield(parameters_specification,'query')
                 parameters_specification.query = ndi_calculator_obj.default_parameters_query(parameters_specification);
-            end;
+            end
 
             if numel(parameters_specification.query)==0
                 % we are done, everything is fixed
@@ -184,14 +184,14 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 parameters.depends_on = fixed_depends_on;
                 parameters = {parameters}; % a single cell entry
                 return;
-            end;
+            end
 
             doclist = {};
             V = [];
             for i=1:numel(parameters_specification.query)
                 doclist{i} = ndi_calculator_obj.session.database_search(parameters_specification.query(i).query);
                 V(i) = numel(doclist{i});
-            end;
+            end
 
             parameters = {};
 
@@ -205,15 +205,15 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     extra_depends(end+1) = s;
                     if ~is_valid
                         break;
-                    end;
-                end;
+                    end
+                end
                 if is_valid
                     parameters_here.input_parameters = fixed_input_parameters;
                     parameters_here.depends_on = cat(1,fixed_depends_on(:),extra_depends(:));
                     parameters{end+1} = parameters_here;
-                end;
-            end;
-        end; % search_for_input_parameters()
+                end
+            end
+        end % search_for_input_parameters()
 
         function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
             % DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
@@ -250,10 +250,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             'query',...
                             ndi.query('base.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
                         query(end+1) = query_here;
-                    end;
-                end;
-            end;
-        end; % default_parameters_query()
+                    end
+                end
+            end
+        end % default_parameters_query()
 
         function docs = search_for_calculator_docs(ndi_calculator_obj, parameters)  % can call find_appdoc, most of the code should be put in find_appdoc
             % SEARCH_FOR_CALCULATOR_DOCS - search for previous calculators
@@ -293,9 +293,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 for i=1:numel(parameters.depends_on)
                     if ~isempty(parameters.depends_on(i).value)
                         q = q & ndi.query('','depends_on',parameters.depends_on(i).name,parameters.depends_on(i).value);
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
             docs = ndi_calculator_obj.session.database_search(q);
             % now identify the subset that have the same input_parameters
             matches = [];
@@ -304,13 +304,13 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     input_param = eval(['docs{i}.document_properties.' property_list_name '.input_parameters;']);
                 catch
                     input_param = []
-                end;
+                end
                 if ndi_calculator_obj.are_input_parameters_equivalent(input_param,parameters.input_parameters)
                     matches(end+1) = i;
-                end;
-            end;
+                end
+            end
             docs = docs(matches);
-        end; % search_for_calculator_docs()
+        end % search_for_calculator_docs()
 
         function b = are_input_parameters_equivalent(ndi_calculator_obj, input_parameters1, input_parameters2)
             % ARE_INPUT_PARAMETERS_EQUIVALENT? - are two sets of input parameters equivalent?
@@ -333,12 +333,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %
             if ~isempty(input_parameters1)
                 input_parameters1 = vlt.data.columnize_struct(input_parameters1);
-            end;
+            end
             if ~isempty(input_parameters2)
                 input_parameters2 = vlt.data.columnize_struct(input_parameters2);
-            end;
+            end
             b = eqlen(input_parameters1, input_parameters2);
-        end;
+        end
 
         function b = is_valid_dependency_input(ndi_calculator_obj, name, value)
             % IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculator?
@@ -358,7 +358,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % not call this function.
             %
             b = 1; % base class behavior
-        end; % is_valid_dependency_input()
+        end % is_valid_dependency_input()
 
         function doc = calculate(ndi_calculator_obj, parameters)
             % CALCULATE - perform calculator and generate an ndi document with the answer
@@ -374,7 +374,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % In the base class, this always returns empty.
             doc = {};
 
-        end; % calculate()
+        end % calculate()
 
         function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
             % PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
@@ -408,20 +408,20 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 h.figure = figure;
             else
                 h.figure = gcf;
-            end;
+            end
             h.axes = gca;
             if ~params.suppress_title
                 if isa(doc_or_parameters,'ndi.document')
                     id = doc_or_parameters.id();
                     h.title = title([id],'interp','none');
-                end;
-            end;
+                end
+            end
             if params.holdstate
                 hold on;
             else
                 hold off;
-            end;
-        end; % plot()
+            end
+        end % plot()
 
         %%%% methods that override ndi.appdoc %%%%
 
@@ -440,7 +440,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
             %
             b = vlt.data.partial_struct_match(appdoc_struct1, appdoc_struct2);
-        end; % isequal_appdoc_struct()
+        end % isequal_appdoc_struct()
 
         function text = doc_about(ndi_calculator_obj)
             % DOC_ABOUT - return the about information for an NDI calculator
@@ -453,7 +453,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % This function is intended to be called by external users or code.
             %
             text = ndi.calculator.docfiletext(class(ndi_calculator_obj), 'output');
-        end; %doc_about()
+        end %doc_about()
 
         function text = appdoc_description(ndi_calculator_obj)
             % APPDOC_DESCRIPTION - return documentation for the type of document that is created by this calculator.
@@ -466,13 +466,13 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % This function is intended to be called by external users or code.
             %
             text = ndi_calculator_obj.doc_about();
-        end; % appdoc_description()
+        end % appdoc_description()
 
-    end; % methods
+    end % methods
 
     methods (Static)
 
-        function param = plot_parameters(varargin);
+        function param = plot_parameters(varargin)
             % PLOT_PARAMETERS - provide a diagnostic plot to show the results of the calculator, if appropriate
             %
             % PLOT_PARAMETERS(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
@@ -506,7 +506,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             vlt.data.assign(varargin{:});
             param = vlt.data.workspace2struct();
             param = rmfield(param,'varargin');
-        end;
+        end
 
         function graphical_edit_calculator(varargin)
             % GRAPHICAL_EDIT_CALCULATOR - create and control a GUI to graphically edit an NDI calculator instance
@@ -542,7 +542,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 calc.parameter_code_default = ndi.calculator.parameter_default(calc.type);
                 calc.parameter_code = calc.parameter_code_default;
                 [calc.parameter_example_names,calc.parameter_example_code] = ndi.calculator.parameter_examples(calc.type);
-            end;
+            end
 
             varlist_ud = {'calc','window_params','session'};
             edit = false;
@@ -551,10 +551,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 % set up for new window
                 for i=1:numel(varlist_ud)
                     eval(['ud.' varlist_ud{i} '=' varlist_ud{i} ';']);
-                end;
+                end
                 if isempty(fig)
                     fig = figure;
-                end;
+                end
                 command = 'NewWindow';
                 % would check calc name and calc type and calc filename for validity here
             elseif strcmpi(command,'edit')
@@ -579,12 +579,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 command = 'NewWindow';
                 if isempty(fig)
                     fig = figure;
-                end;
-            end;
+                end
+            end
 
             if isempty(fig)
                 error(['Empty figure, do not know what to work on.']);
-            end;
+            end
 
             disp(['Command is ' command '.']);
             switch (command)
@@ -627,7 +627,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     session_title = ['Empty session'];
                     if isa(ud.session,'ndi.session')
                         session_title = session.reference;
-                    end;
+                    end
 
                     x = edge;
                     y = top-row;
@@ -714,7 +714,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             % set(docTextObj,'string','Some Output Document');
                         otherwise
                             disp(['Popup ' val ' is out of bound.']);
-                    end;
+                    end
 
                     mytext = ndi.calculator.docfiletext(ud.ndi_pipeline_element.calculator,type);
                     set(docTextObj,'string',mytext);
@@ -729,7 +729,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     if lastval == 1 & val ~=1 % if we are switching away from user code, save it
                         ud.calc.parameter_code = get(paramTextObj,'string');
                         set(fig,'userdata',ud);
-                    end;
+                    end
                     % Step 2, take action
                     if val==1 % this is the users's code
                         set(paramTextObj,'string',ud.calc.parameter_code);
@@ -738,10 +738,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         set(paramTextObj,'string',ud.calc.parameter_code_default);
                     elseif val>=5 % this is an example
                         set(paramTextObj,'string',ud.calc.parameter_example_code{val-4});
-                    end;
+                    end
                     if ~any(val==[2 4]) % if it's not a spacer
                         set(paramPopupObj,'userdata',val); % store the last menu setting in userdata
-                    end;
+                    end
                 case 'CommandPopup'
                     % Step 1: search for the objects you need to work with
                     ud = get(fig,'userdata');
@@ -756,7 +756,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             set(docTextObj,'string','Try searching for inputs');
                             if isempty(ud.session)
                                 error('No session is linked to the calculator editor.');
-                            end;
+                            end
                             assignin('base','pipeline_session',ud.session);
                             disp(['About to evaluate parameter code on the main workspace.']);
                             param_code = ud.calc.parameter_code;
@@ -770,7 +770,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             set(docTextObj,'string','Show existing outputs');
                             if isempty(ud.session)
                                 error('No session is linked to the calculator editor.');
-                            end;
+                            end
                             assignin('base','pipeline_session',ud.session);
                             evalin('base','clear parameters;');
                             disp(['About to evaluate parameter code on the main workspace.']);
@@ -788,16 +788,16 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                 else % we need to build it
                                     ud.docViewer = ndi.gui.docViewer();
                                     set(fig,'userdata',ud);
-                                end;
+                                end
                                 ud.docViewer.addDoc(ED);
-                            end;
+                            end
                         case 5 % Plot existing outputs
                             disp(['Popup is ' str{val} '.']);
                             set(docTextObj,'string','Plot existing outputs');
 
                             if isempty(ud.session)
                                 error('No session is linked to the calculator editor.');
-                            end;
+                            end
                             assignin('base','pipeline_session',ud.session);
                             disp(['About to evaluate parameter code on the main workspace.']);
                             param_code = ud.calc.parameter_code;
@@ -816,7 +816,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
                             if isempty(ud.session)
                                 error('No session is linked to the calculator editor.');
-                            end;
+                            end
                             assignin('base','pipeline_session',ud.session);
                             disp(['About to evaluate parameter code on the main workspace.']);
                             param_code = ud.calc.parameter_code;
@@ -832,7 +832,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
                             if isempty(ud.session)
                                 error('No session is linked to the calculator editor.');
-                            end;
+                            end
                             assignin('base','pipeline_session',ud.session);
                             disp(['About to evaluate parameter code on the main workspace.']);
                             param_code = ud.calc.parameter_code;
@@ -844,7 +844,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
                         otherwise
                             disp(['Popup ' val ' is out of bounds.']);
-                    end;
+                    end
                 case 'LoadBt'
                     [file,path] = uigetfile('*.json');
                     if isequal(file,0)
@@ -905,7 +905,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     if exist('ud','var') && isfield(ud,'calc') && isfield(ud.calc, 'filename')
                         [filepath,filename,ext] = fileparts(ud.calc.filename);
                         filepath = strcat(filepath, filesep);
-                    end;
+                    end
 
                     % save doc
                     docPopupObj = findobj(fig,'tag','DocPopup');
@@ -956,8 +956,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 otherwise
                     disp(['Unknown command ' command '.']);
 
-            end; % switch(command)
-        end; % graphical_edit_calculation ()
+            end % switch(command)
+        end % graphical_edit_calculation ()
 
         function text = docfiletext(calculator_type, doc_type)
             % ndi.calculator.docfiletext - return the text in the requested documentation file
@@ -982,12 +982,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     doctype = 'output';
                 otherwise
                     error(['Unknown document type ' doc_type '.']);
-            end;
+            end
 
             w = which(calculator_type);
             if isempty(w)
                 error(['No known calculator on the path called ' calculator_type '.']);
-            end;
+            end
             [parentdir, appname] = fileparts(w);
             filename = [parentdir filesep 'docs' filesep appname '.docs.' doctype '.txt'];
 
@@ -996,8 +996,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 text = vlt.file.text2cellstr(filename);
             else
                 error(['No such file ' filename '.']);
-            end;
-        end;
+            end
+        end
 
         function [names, contents] = parameter_examples(calculator_type)
             % ndi.calculator.parameter_examples - return the parameter code examples for a given calculator_type
@@ -1016,7 +1016,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             w = which(calculator_type);
             if isempty(w)
                 error(['No known calculator on the path called ' calculator_type '.']);
-            end;
+            end
             [parentdir, appname] = fileparts(w);
 
             dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples']
@@ -1029,9 +1029,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             for i=1:numel(d)
                 names{end+1} = d(i).name;
                 contents{end+1} = vlt.file.textfile2char([dirname filesep d(i).name]);
-            end;
+            end
 
-        end;
+        end
 
         function [contents] = parameter_default(calculator_type)
             % ndi.calculator.parameter_default - return the default parameter code for a given calculator_type
@@ -1048,7 +1048,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             w = which(calculator_type);
             if isempty(w)
                 error(['No known calculator on the path called ' calculator_type '.']);
-            end;
+            end
             [parentdir, appname] = fileparts(w);
 
             filename = [parentdir filesep 'docs' filesep appname '.docs.parameter.default.txt'];
@@ -1057,8 +1057,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             else
                 warning(['No default parameter code file ' filename ' found.']);
                 contents = '';
-            end;
-        end;
+            end
+        end
 
-    end; % Static methods
+    end % Static methods
 end

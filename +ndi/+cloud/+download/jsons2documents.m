@@ -25,15 +25,15 @@ function ndiDocuments = jsons2documents(jsonpath, options)
         d_struct = jsondecode(d_json);
         if isfield(d_struct,'id')
             d_struct = rmfield(d_struct,'id'); % remove API field
-        end;
+        end
 
         ndiDocuments{i} = ndi.document(d_struct.document_properties);
 
         if strcmp(ndiDocuments{i}.doc_class,'dataset_session_info')
             session_id = ndiDocuments{i}.document_properties.base.session_id;
-        end;
-    end;
+        end
+    end
 
     if isempty(session_id)
         error(['Could not find session_id among documents specified. (You should not see this error.)']);
-    end;
+    end

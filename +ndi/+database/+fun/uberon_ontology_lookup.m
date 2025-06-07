@@ -30,13 +30,13 @@ function [item] = uberon_ontology_lookup(field, value)
            item.Description = docs.description{1};
            item.Identifier = str2double(regexp(docs.obo_id, 'UBERON:(\d+)', 'tokens', 'once'));
            item.Name = labels{1};
-       end;
+       end
     elseif strcmp(field,'Identifier')
         if ischar(value) | isstring(value)
             valueStr = char(value);
         else
             valueStr = ['UBERON:' int2str(value)];
-        end;
+        end
         [labels,docs] = ndi.database.fun.lookup_uberon_term(valueStr,'queryFields','obo_id','exact',true);
         if numel(docs)==1
            isRealUberon = true;

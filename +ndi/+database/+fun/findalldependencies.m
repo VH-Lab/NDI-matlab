@@ -14,17 +14,17 @@ function [d] = findalldependencies(E, visited, varargin)
 
     if ~isa(E,'ndi.session') & ~isa(E,'ndi.dataset')
         error(['Input E must be an ndi.session or ndi.dataset']);
-    end;
+    end
 
     d = {};
 
     if isempty(visited)
         visited = {};
-    end;
+    end
 
     for i=1:numel(varargin)
         visited = cat(1,visited,{varargin{i}.id()});
-    end;
+    end
 
     for i=1:numel(varargin)
         q_v = ndi.query('','depends_on','*',varargin{i}.id());
@@ -39,13 +39,13 @@ function [d] = findalldependencies(E, visited, varargin)
                 if ~isempty(newdocs)
                     for k=1:numel(newdocs)
                         visited = cat(1,visited,newdocs{k}.id());
-                    end;
+                    end
                     d = cat(1,d,newdocs(:));
-                end;
-            end;
-        end;
-    end;
+                end
+            end
+        end
+    end
 
     if ~iscell(d)
         error(['This should always return a cell list, even if it is empty. Someelement is wrong, debug necessary.']);
-    end;
+    end

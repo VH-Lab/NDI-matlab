@@ -31,7 +31,7 @@ function S = vhlab(S, daqsystemname)
     if nargin == 0
         S = {'vhintan', 'vhspike2', 'vhvis_spike2'};
         return;
-    end;
+    end
 
     if iscell(daqsystemname)
         for i=1:length(daqsystemname)

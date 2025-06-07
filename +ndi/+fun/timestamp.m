@@ -19,4 +19,4 @@ function timestamp_string = timestamp()
 
     if strcmp(timestamp_string(end-6:end-1),'60.000')
         timestamp_string(end-6:end-1) = '59.999';
-    end;
+    end

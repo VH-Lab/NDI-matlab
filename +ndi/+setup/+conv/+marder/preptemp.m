@@ -76,6 +76,6 @@ function [out] = preptemp(t, d, temp_table, options)
         [i,temp0] = vlt.data.findclosest(temp_table,raw(1));
         [i,temp1] = vlt.data.findclosest(temp_table,raw(2));
         temp = [ temp0 temp1 ];
-    end;
+    end
 
     out = vlt.data.var2struct('type','temp','raw','range');

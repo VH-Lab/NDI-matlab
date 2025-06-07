@@ -13,5 +13,5 @@ function run_Linux_checks
         v = ver('MATLAB');
         if strcmpi(v(1).Version,'9.11')
             % this problem was fixed by no longer requiring Simulink
-        end;
-    end;
+        end
+    end

@@ -22,11 +22,11 @@ function tutorial_02_03(prefix, testing)
 
     if nargin<1 | isempty(prefix)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
-    end;
+    end
 
     if nargin<2
         testing = 0;
-    end;
+    end
 
     tutorial_dir = 'ts_exper2';
 

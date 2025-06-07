@@ -251,7 +251,7 @@ classdef Lab < handle
             end
             if isempty(src)
                 return;
-            end;
+            end
             ind = find([obj.subjects obj.probes obj.DAQs] == src, 1);
             if obj.transmitting
                 obj.row = ind;

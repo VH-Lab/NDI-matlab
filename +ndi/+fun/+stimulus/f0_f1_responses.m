@@ -19,7 +19,7 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
 
     if nargin<3
         response_index = [];
-    end;
+    end
 
     [rt,stim_resp_scalar_doc] = ndi.fun.stimulus.tuning_curve_to_response_type(S,doc);
 
@@ -35,12 +35,12 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
             newdoc = S.database_search(q_doc);
             if numel(newdoc)~=1
                 error(['Could not find dependent doc ' d '.']);
-            end;
+            end
             tc_doc = newdoc{1};
         else
             error(['DOC is not a stimulus_tuningcurve AND it does not have a dependency of ''stimulus_tuningcurve_id''.']);
-        end;
-    end;
+        end
+    end
 
     switch lower(rt)
         case 'mean'
@@ -53,7 +53,7 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
 
         otherwise
             error(['Unknown response type (expected mean or F1): ' rt]);
-    end;
+    end
 
     % how to find tuning curve for f1?
     % first find stimulus responses
@@ -76,11 +76,11 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
             q_tc_r = q_here;
         else
             q_tc_r = q_tc_r | q_here;
-        end;
-    end;
+        end
+    end
     if isempty(q_tc_r) % we don't have any
         return;
-    end;
+    end
 
     tc_candidates = S.database_search(q_tc_r&ndi.query('','isa','stimulus_tuningcurve'));
     matches = [];
@@ -88,13 +88,13 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
         if vlt.data.eqlen(tc_candidates{i}.document_properties.stimulus_tuningcurve.independent_variable_label, ...
                 tc_doc.document_properties.stimulus_tuningcurve.independent_variable_label)
             matches(end+1) = i;
-        end;
-    end;
+        end
+    end
 
     if numel(matches)>1
         warning(['Too many ' target_response_type ' found (' int2str(numel(matches))   ').']);
         matches = matches(1);
-    end;
+    end
 
     if numel(matches)==0
         error(['No corresponding ' target_response_type ' found.']);
@@ -106,8 +106,8 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
                 f1_tuning_curve = tc_candidates{matches};
             case 'F1'
                 f0_tuning_curve = tc_candidates{matches};
-        end;
-    end;
+        end
+    end
 
     % now we have f1_tuning_curve and f0_tuning_curve
 
@@ -121,8 +121,8 @@ function [f0,f1,f0_tuningcurve_doc,f1_tuningcurve_doc] = f0_f1_responses(S, doc,
             response_index = mx_local_f0;
         else
             response_index = mx_local_f1;
-        end;
-    end;
+        end
+    end
 
     f0 = resp_f0.curve(2,response_index);
     f1 = resp_f1.curve(2,response_index);

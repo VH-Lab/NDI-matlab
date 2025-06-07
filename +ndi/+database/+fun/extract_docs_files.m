@@ -15,7 +15,7 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
     if nargin<2
         target_path = ndi.file.temp_name();
         mkdir(target_path);
-    end;
+    end
 
     q_all = ndi.query('','isa','base');
 
@@ -45,12 +45,12 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
                     % try to recover some of the user's precious disk space
                     for j=1:numel(files_I_made)
                         delete(files_I_made{j});
-                    end;
+                    end
                     error(['Extraction failed: ' lasterr]);
-                end;
+                end
 
                 file_info(end+1) = file_info_here;
                 docs{i} = docs{i}.add_file(file_info_here.file_name,file_info_here.fullpathfilename);
-            end;
-        end;
-    end;
+            end
+        end
+    end

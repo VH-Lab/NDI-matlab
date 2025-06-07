@@ -12,7 +12,7 @@ function [prefix,number] = channelname2prefixnumber(channelname)
 
     if ~(isa(channelname,'char') | isa(channelname,'string'))
         error(['channelname must be a character array or a string.']);
-    end;
+    end
 
     channelname = char(channelname);
 
@@ -20,11 +20,11 @@ function [prefix,number] = channelname2prefixnumber(channelname)
 
     if isempty(numeric_chars)
         error(['No numeric characters found for string ' channelname '.']);
-    end;
+    end
 
     if numeric_chars(1)==1
         error(['No non-numeric characters found at prefix.']);
-    end;
+    end
 
     prefix = channelname(1:numeric_chars(1)-1);
 

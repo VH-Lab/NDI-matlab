@@ -11,7 +11,7 @@ function h = multichan(data,t,space)
     for i=1:size(data,2)
         if i~=1
             hold on;
-        end;
+        end
         h(i) = plot(t,(i-1)*space+data(:,i),'color',[0.7 0.7 0.7]);
 
-    end;
+    end

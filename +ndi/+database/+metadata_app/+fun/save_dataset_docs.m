@@ -16,17 +16,17 @@ function save_dataset_docs(S, session_id, datasetInformation)
         answer = questdlg('This will replace any previously saved core metadata information in the dataset or session. Continue?','Continue?','Yes','No','Yes');
     else
         answer = 'Yes';
-    end;
+    end
 
     if ~strcmp(answer,'Yes')
         return; % leave if user said no
-    end;
+    end
 
     if ~isempty(oldDocs)
         antecedents = ndi.database.fun.findallantecedents(S,[],oldDocs{:});
         S.database_rm(oldDocs);
         S.database_rm(antecedents);
-    end;
+    end
 
     S.database_add(documentList);
 end

@@ -16,7 +16,7 @@ function test_ndi_document(dirname)
 
     if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
-    end;
+    end
 
     disp(['Creating a new session object in directory ' dirname '.']);
     E = ndi.session.dir('exp1',dirname);
@@ -27,8 +27,8 @@ function test_ndi_document(dirname)
     if ~isempty(doc)
         for i=1:numel(doc)
             E.database_rm(id(doc{i}));
-        end;
-    end;
+        end
+    end
 
     doc = E.newdocument('demoNDI',...
         'base.name','Demo document',...
@@ -41,7 +41,7 @@ function test_ndi_document(dirname)
     if myfid>0
     else
         error(['unable to open file: ' binary_filename '.']);
-    end;
+    end
 
     disp(['Storing ' mat2str(0:9) '...'])
     fwrite(myfid,char([0:9]),'char');
@@ -57,13 +57,13 @@ function test_ndi_document(dirname)
     doc = E.database_search(ndi.query('demoNDI.value','exact_number',5,''));
     if numel(doc)~=1
         error(['Found <1 or >1 document with demoNDI.value of 5; this means there is a database problem.']);
-    end;
+    end
     doc = doc{1}, % should be only one match
 
     doc = E.database_search(ndi.query('','isa','demoNDI',''));
     if numel(doc)~=1
         error(['Found <1 or >1 document of type demoNDI; this means there is a database problem.']);
-    end;
+    end
     doc = doc{1}, % should be only one match
 
     % read the binary data
@@ -74,7 +74,7 @@ function test_ndi_document(dirname)
 
     if ~vlt.data.eqlen(0:9,data)
         error(['Data does not match.']);
-    end;
+    end
 
     % remove the document
 
@@ -82,5 +82,5 @@ function test_ndi_document(dirname)
     if ~isempty(doc)
         for i=1:numel(doc)
             E.database_rm(doc{i}.id());
-        end;
-    end;
+        end
+    end

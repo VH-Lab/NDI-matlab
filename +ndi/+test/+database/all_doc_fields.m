@@ -15,6 +15,6 @@ function fn = all_doc_fields()
         s = rmfield(s,'document_class');
         fn_here = vlt.data.structfullfields(s);
         fn = cat(1,fn,fn_here);
-    end;
+    end
 
     fn = unique(fn);

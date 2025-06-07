@@ -39,7 +39,7 @@ for i=1:numel(tokens)
     for j=1:numel(v)
         v(j).value = coef * v(j).value;
         t(end+1,:) = struct2cell(v(j))';
-    end;
+    end
 end
 
 function tokens = extractTokens(text)

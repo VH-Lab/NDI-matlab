@@ -29,17 +29,17 @@ classdef mfdaq_epoch_channel
                     filename = varargin{1};
                 elseif isstring(varargin{1})
                     filename = char(varargin{1});
-                end;
-            end;
+                end
+            end
 
             if ~isempty(channel_structure)
                 obj = obj.create_properties(varargin{:});
-            end;
+            end
             if ~isempty(filename)
                 obj = obj.readFromFile(filename);
-            end;
+            end
 
-        end; % creator
+        end % creator
 
         function obj = create_properties(obj, channel_structure, varargin)
             % CREATE_PROPERTIES - make a structure that describes segmented storage of MFDAQ data
@@ -108,11 +108,11 @@ classdef mfdaq_epoch_channel
                 else
                     indexes = find(strcmp('event',{channel_structure.type}) | ...
                         strcmp('marker',{channel_structure.type}) | strcmp('text',{channel_structure.type}));
-                end;
+                end
                 numbers_here = [];
                 for j=1:numel(indexes)
                     [prefix,numbers_here(j)] = ndi.fun.channelname2prefixnumber(channel_structure(indexes(j)).name);
-                end;
+                end
                 [dummy,indexes_sorted_type] = sort(numbers_here);
                 channels_here = channel_structure(indexes(indexes_sorted_type));
 
@@ -129,12 +129,12 @@ classdef mfdaq_epoch_channel
                     channel_info_here.group = 1+floor( channel_info_here.number / channels_per_group);
                     channel_info_here.dataclass = eval([types_available{i} '_dataclass;']);
                     channel_information(end+1) = channel_info_here;
-                end;
-            end;
+                end
+            end
 
             obj.channel_information = channel_information;
 
-        end; % create_properties()
+        end % create_properties()
 
         function mfdaq_epoch_channel_obj = readFromFile(mfdaq_epoch_channel_obj, filename)
             % READFROMFILE - read an mfdaq_epoch_channel object from a file
@@ -149,7 +149,7 @@ classdef mfdaq_epoch_channel
             channel_information = vlt.file.loadStructArray(filename);
             mfdaq_epoch_channel_obj.channel_information = channel_information;
 
-        end; % readFromFile()
+        end % readFromFile()
 
         function [b,errmsg] = writeToFile(obj, filename)
             % WRITETOFILE - write the channel_structure to a file
@@ -172,11 +172,11 @@ classdef mfdaq_epoch_channel
                 b = 1;
             catch
                 errmsg = lasterr;
-            end;
+            end
 
-        end; % writeToFile()
+        end % writeToFile()
 
-    end; % methods
+    end % methods
 
     methods(Static)
 
@@ -199,23 +199,23 @@ classdef mfdaq_epoch_channel
                 index = find([ci.number]==channels(c));
                 if isempty(index)
                     error(['Channel number ' int2str(channels(c)) ' not found in record.']);
-                end;
+                end
                 if numel(index)>1
                     error(['Channel number ' int2str(channels(c)) ' found multiple times in record.']);
-                end;
+                end
                 group_loc = ismember(groups,ci(index).group);
                 if isempty(group_loc)
                     groups(end+1) = ci(index).group;
                     group_loc = numel(groups);
                     channel_indexes_in_groups{group_loc} = [];
                     channel_indexes_in_output{group_loc} = [];
-                end;
+                end
                 subset_group = find([ci.group]==groups(group_loc)); % subset of group and channel type
                 chan_index_in_group = find([ci(subset_group).number]==channels(c));
                 channel_indexes_in_groups{group_loc}(end+1) = chan_index_in_group;
                 channel_indexes_in_output{group_loc}(end+1) = c;
-            end;
-        end; % channelgroupdecoding()
+            end
+        end % channelgroupdecoding()
 
-    end; % methods(static)
+    end % methods(static)
 end

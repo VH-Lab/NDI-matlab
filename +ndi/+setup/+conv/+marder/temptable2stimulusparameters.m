@@ -34,8 +34,8 @@ function docs = temptable2stimulusparameters(S)
         ind = find(strcmp(et(i).epoch_id,temptable.("epoch_id")));
         if ~isempty(ind)
             last_match = temptable(ind,:);
-        end;
-        if isempty(last_match), continue; end;
+        end
+        if isempty(last_match), continue; end
 
         for p=1:numel(stim)
             if strcmp(last_match.type,"constant")

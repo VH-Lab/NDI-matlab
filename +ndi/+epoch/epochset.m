@@ -69,7 +69,7 @@ classdef epochset
             else
                 et = cached_et;
                 hashvalue = cached_hash;
-            end;
+            end
 
         end % epochtable
 
@@ -95,7 +95,7 @@ classdef epochset
                    else
                        underlying_files = {};
                        underlying_epochset_object = et(i).underlying_epochs(j).underlying;
-                   end;
+                   end
                    e_underlying_here = ndi.epoch('epoch_number',0,...
                        'epoch_id',et(i).underlying_epochs(j).epoch_id,...
                        'epoch_session_id',et(i).underlying_epochs(j).epoch_session_id,...
@@ -106,7 +106,7 @@ classdef epochset
                        'underlying_epochs',ndi.epoch.empty(),...
                        'underlying_files', underlying_files);
                    underlying_epochs(end+1) = e_underlying_here; %#ok<AGROW>
-                end;
+                end
                 epm = vlt.data.conditional(isempty(et(i).epochprobemap),...
                         ndi.epoch.epochprobemap.empty(), et(i).epochprobemap);
                 e_here = ndi.epoch('epoch_number',et(i).epoch_number,...
@@ -166,7 +166,7 @@ classdef epochset
                 if ~isempty(table_entry)
                     et = table_entry(1).data.epochtable;
                     hashvalue = table_entry(1).data.hashvalue;
-                end;
+                end
             end
         end % cached_epochtable
 
@@ -257,7 +257,7 @@ classdef epochset
             index = find(strcmpi(eid,{et.epoch_id}));
             if isempty(index)
                 error(['epoch_number does not correspond to a valid epoch.']);
-            end;
+            end
             et_entry = et(index);
         end % epochtableentry
 
@@ -306,14 +306,14 @@ classdef epochset
                 for i=1:numel(number)
                     if (i>2)
                         s=cat(2,s,[', ']);
-                    end;
+                    end
                     s=cat(2,s,number{i});
                 end
             elseif ischar(number)
                 s = number;
             else
                 error(['Unknown epoch number or identifier.']);
-            end;
+            end
         end % epoch2str()
 
         % epochgraph
@@ -422,7 +422,7 @@ classdef epochset
                 mapping{1,2} = utc_2_local_map;
                 mapping{2,1} = local_map_2_utc;
                 mapping{2,2} = trivial_map;
-            end;
+            end
 
             if ~issyncgraphroot(ndi_epochset_obj)
                 for i=1:numel(epochnode.underlying_epochs)
@@ -462,7 +462,7 @@ classdef epochset
 
                             if numel(epochnode.underlying_epochs(i).underlying) > 1
                                 error(['The day has come. More than one ndi.epoch.epochset underlying an epoch. Updating needed. Tell the developers.']);
-                            end;
+                            end
 
                             % now add the underlying nodes of the newly added underlying node, down to when issyncgraphroot == 1
 
@@ -532,7 +532,7 @@ classdef epochset
                     data.hashvalue = hash;                    
                     cache.add(key,epochgraph_type,data,priority);
                 end
-            end;
+            end
         end % epochgraph
 
         function [cost, mapping] = buildepochgraph(ndi_epochset_obj)
@@ -616,7 +616,7 @@ classdef epochset
                 epochgraph_type = ['epochgraph-hashvalue'];
                 eg_data = cache.lookup(key,epochgraph_type);
                 if ~isempty(eg_data)
-                    if matchedepochtable(ndi_epochset_obj, eg_data(1).data.hashvalue);
+                    if matchedepochtable(ndi_epochset_obj, eg_data(1).data.hashvalue)
                         ginfo = ndi.epoch.epochset.cache2ginfo(eg_data(1).data.ginfo);
                         cost = ginfo.cost;
                         mapping = ginfo.mapping;

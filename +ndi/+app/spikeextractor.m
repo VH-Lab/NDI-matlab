@@ -47,8 +47,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     filterstruct = [];
                 otherwise
                     error(['Unknown filter type: ' extraction_doc.document_properties.spike_extraction_parameters.filter_type]);
-            end;
-        end; % makefilterstruct()
+            end
+        end % makefilterstruct()
 
         function data_out = filter(ndi_app_spikeextractor_obj, data_in, filterstruct)
             % FILTER - filter data based on a filter structure
@@ -61,8 +61,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 data_out = data_in;
             else
                 data_out = filtfilt(filterstruct.b,filterstruct.a,data_in);
-            end;
-        end; % filter()
+            end
+        end % filter()
 
         function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo, t0_t1)
             % EXTRACT - method that extracts spikes from epochs of an NDI_ELEMENT_TIMESERIES_OBJ
@@ -85,7 +85,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 epoch = {et.epoch_id};
             elseif ~iscell(epoch)
                 epoch = {epoch};
-            end;
+            end
 
             extraction_doc = ndi_app_spikeextractor_obj.find_appdoc('extraction_parameters',extraction_name);
 
@@ -95,15 +95,15 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
             else
                 extraction_doc = extraction_doc{1};
-            end;
+            end
 
             if nargin<5
                 redo = 0;
-            end;
+            end
 
             if nargin<6
                 t0_t1 = repmat([-Inf Inf],numel(epoch),1);
-            end;
+            end
 
             % loop over requested epochs
             for n=1:numel(epoch)
@@ -119,7 +119,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo
                     % we already have this epoch
                     continue; % skip to next epoch
-                end;
+                end
 
                 % now use extraction_parameters to set spikewave parameters
 
@@ -128,12 +128,12 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 start_sample = ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,1));
                 if isnan(start_sample)
                     start_sample = 1;
-                end;
+                end
                 read_start_sample = start_sample;
                 end_sample =  ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,2));
                 if isnan(end_sample)
                     end_sample = Inf;
-                end;
+                end
                 endReached = 0; % Variable to know if end of file reached
 
                 % convert from parameter file units of time to samples here
@@ -186,7 +186,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     read_end_sample = ceil(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
                     if read_end_sample > end_sample
                         read_end_sample = end_sample;
-                    end;
+                    end
                     % Read from element in epoch n from start_time to end_time
                     read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]);
                     data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2));
@@ -200,7 +200,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
                     if ~isempty(filterstruct)
                         data = ndi_app_spikeextractor_obj.filter(data,filterstruct);
-                    end;
+                    end
 
                     % Spike locations stored here
                     locs = [];
@@ -299,12 +299,12 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 extraction_name = varargin{3};
                 if ~isa(ndi_timeseries_obj,'ndi.time.timeseries')
                     error(['ndi_timeseries_obj must be a member of class ndi.time.timeseries.']);
-                end;
+                end
                 epoch_string = ndi_timeseries_obj.epoch2str(epochid); % make sure to use string form
                 extraction_doc = ndi_app_spikeextractor_obj.find_appdoc('extraction_parameters', extraction_name);
                 if isempty(extraction_doc)
                     error(['Could not find an extraction parameters document named ' extraction_name '.']);
-                end;
+                end
 
                 doc = ndi.document('spike_extraction_parameters_modification',...
                     'spike_extraction_parameters_modification',appdoc_struct,'epochid.epochid',epoch_string) + ...
@@ -315,9 +315,9 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 error(['spikewaves documents are created internally.']);
             else
                 error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-            end;
+            end
 
-        end; % struct2doc()
+        end % struct2doc()
 
         function [b,errormsg] = isvalid_appdoc_struct(ndi_app_spikeextractor_obj, appdoc_type, appdoc_struct)
             % ISVALID_APPDOC_STRUCT - is an input structure a valid descriptor for an APPDOC?
@@ -351,9 +351,9 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 b = 1;
             else
                 error(['Unknown appdoc_type ' appdoc_type '.']);
-            end;
+            end
 
-        end; % isvalid_appdoc_struct()
+        end % isvalid_appdoc_struct()
 
         function doc = find_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
             % FIND_APPDOC - find an ndi_app_appdoc document in the session database
@@ -366,7 +366,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 case 'extraction_parameters'
                     if numel(varargin)<1
                         error(['extraction_parameters documents need a name. Please pass a name. See help ndi.app.spikeextractor/appdoc_description']);
-                    end;
+                    end
                     extraction_parameters_name = varargin{1};
 
                     extract_searchq = ndi.query('base.name','exact_string',extraction_parameters_name,'') & ...
@@ -394,14 +394,14 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                         spikedocs_searchq = spikedocs_searchq & spiketimes_search;
                     elseif strcmp(appdoc_type,'extraction_parameters_modification')
                         spikedocs_searchq = spikedocs_searchq & extraction_parameters_modification_search;
-                    end;
+                    end
 
                     doc = ndi_app_spikeextractor_obj.session.database_search(spikedocs_searchq);
 
                 otherwise
                     error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-            end; % switch
-        end; % find_appdoc
+            end % switch
+        end % find_appdoc
 
         function varargout = loaddata_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
             % LOADDATA_APPDOC - load data from an application document
@@ -412,7 +412,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %
             if ~ischar(appdoc_type)
                 error(['appdoc_type must be a character string indicating the document type to use. Got a ' class(appdoc_type) '.']);
-            end;
+            end
             switch(lower(appdoc_type))
                 case {'extraction_parameters','extraction_parameters_modification'}
                     varargout{1} = ndi_app_spikeextractor_obj.find_appdoc(appdoc_type,varargin{:});
@@ -434,7 +434,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     else
                         waveforms = [];
                         waveparameters = [];
-                    end;
+                    end
 
                     varargout{1} = waveforms;
                     varargout{2} = waveparameters;
@@ -442,8 +442,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     varargout{4} = spikewaves_doc;
                 otherwise
                     error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-            end; % switch
-        end; % loaddata_appdoc()
+            end % switch
+        end % loaddata_appdoc()
 
         function appdoc_description(ndi_app_appdoc_obj)
             % APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
@@ -662,8 +662,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %      SPIKEWAVES_DOC - the ndi.document of the extracted spike waves.
             %
             eval(['help ndi_app_spikeextractor/appdoc_description']);
-        end; % appdoc_description()
+        end % appdoc_description()
 
-    end; % methods
+    end % methods
 
 end % ndi.app.spikeextractor

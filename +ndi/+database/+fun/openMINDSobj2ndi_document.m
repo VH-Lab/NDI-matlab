@@ -24,23 +24,23 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
         newcell = {};
         for i=1:numel(openmindsObj)
             newcell{i} = openmindsObj(i);
-        end;
+        end
         openmindsObj = newcell;
-    end;
+    end
 
     s = ndi.database.fun.openMINDSobj2struct(openmindsObj);
 
     if nargin<3
         dependency_type = '';
-    end;
+    end
 
     if nargin<4
         dependency_value = '';
-    end;
+    end
 
     if ~isempty(dependency_type) & isempty(dependency_value)
         error(['DEPENDENCY_VALUE must not be empty if DEPENDENCY_TYPE is given.']);
-    end;
+    end
 
     docName = 'openminds';
 
@@ -59,7 +59,7 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
             docName = ['openminds_stimulus'];
         otherwise
             error(['Unknown DEPENDENCY_TYPE ' dependency_type '.']);
-    end;
+    end
 
     d = {};
 
@@ -83,15 +83,15 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
                                 'openminds',id_here,...
                                 'ErrorIfNotFound',0);
                             added_dependency = 1;
-                        end;
-                    end;
-                end;
-            end;
-        end;
+                        end
+                    end
+                end
+            end
+        end
         if ~added_dependency
             d{i} = set_dependency_value(d{i},'openminds','','ErrorIfNotFound',0);
-        end;
+        end
         if ~isempty(dependency_name)
             d{i} = d{i}.set_dependency_value(dependency_name,dependency_value);
-        end;
-    end;
+        end
+    end

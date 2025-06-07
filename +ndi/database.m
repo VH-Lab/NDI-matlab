@@ -51,7 +51,7 @@ classdef database
             %
             if nargin<2
                 document_type = 'base';
-            end;
+            end
             ndi_document_obj = ndi.document(document_type, ...
                 'session_unique_refrence', ndi_database_obj.session_unique_reference);
         end % newdocument
@@ -107,10 +107,10 @@ classdef database
                 ndi_document_id = ndi_document_or_id.id();
             else
                 ndi_document_id = ndi_document_or_id;
-            end;
+            end
             [ndi_document_obj] = ndi_database_obj.read(ndi_document_id);
             ndi_binarydoc_obj = do_openbinarydoc(ndi_database_obj, ndi_document_id, filename);
-        end; % openbinarydoc
+        end % openbinarydoc
 
         function [tf, file_path] = existbinarydoc(ndi_database_obj, ndi_document_or_id, filename)
             % EXISTBINARYDOC - check if a binary doc exists for a given document id
@@ -138,7 +138,7 @@ classdef database
             % database, which is why it is necessary to call this function through the database.
             %
             ndi_binarydoc_obj = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj);
-        end; % closebinarydoc
+        end % closebinarydoc
 
         function ndi_database_obj = remove(ndi_database_obj, ndi_document_id)
             % REMOVE - remove a document from an ndi.database
@@ -156,25 +156,25 @@ classdef database
             %
             if isempty(ndi_document_id)
                 return; % nothing to do
-            end;
+            end
 
             ndi_document_id_list = {};
 
             if ~iscell(ndi_document_id)
                 ndi_document_id = {ndi_document_id};
-            end;
+            end
 
             for i=1:numel(ndi_document_id)
                 if isa(ndi_document_id{i}, 'ndi.document')
                     ndi_document_id_list{end+1} = ndi_document_id{i}.id();
                 else
                     ndi_document_id_list{end+1} = ndi_document_id{i};
-                end;
-            end;
+                end
+            end
 
             for i=1:numel(ndi_document_id_list)
                 do_remove(ndi_database_obj, ndi_document_id_list{i});
-            end;
+            end
         end % remove()
 
         function docids = alldocids(ndi_database_obj)
@@ -186,7 +186,7 @@ classdef database
             % are no documents, empty is returned.
             %
             docids = {}; % needs to be overridden
-        end; % alldocids()
+        end % alldocids()
 
         function clear(ndi_database_obj, areyousure)
             % CLEAR - remove/delete all records from an ndi.database
@@ -202,7 +202,7 @@ classdef database
 
             if nargin<2
                 areyousure = 'no';
-            end;
+            end
             if strcmpi(areyousure,'Yes')
                 ids = ndi_database_obj.alldocids;
                 for i=1:numel(ids)
@@ -210,7 +210,7 @@ classdef database
                 end
             else
                 disp('Not clearing because user did not indicate they are sure.');
-            end;
+            end
         end % clear
 
         function [ndi_document_objs] = search(ndi_database_obj, searchparams)
@@ -235,7 +235,7 @@ classdef database
     methods (Access=protected)
         function ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters)
         end % do_add
-        function [ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id);
+        function [ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id)
         end % do_read
         function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id)
         end % do_remove

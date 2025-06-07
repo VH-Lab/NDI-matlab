@@ -43,10 +43,10 @@ function output = ndi_testsuite
                 output_here(1).outcome = 1;
             catch
                 output_here(1).errormsg = lasterr;
-            end;
+            end
         else
             output_here(1).outcome = -1; % not run
-        end;
+        end
         output(i) = output_here;
     end
 
@@ -63,11 +63,11 @@ function output = ndi_testsuite
         elseif output(i).outcome==0
             beginstr = ['  FAILURE: '];
             endstr = ['Error: ' output(i).errormsg];
-        end;
+        end
         if output(i).outcome >= 0
             disp([beginstr jobs(i).code ' (' jobs(i).comment ')']);
             if ~isempty(endstr)
                 disp(['      ' endstr]);
             end
-        end;
-    end;
+        end
+    end

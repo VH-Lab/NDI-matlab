@@ -15,7 +15,7 @@ function docs = docs_from_ids(DorS,document_ids)
     if isempty(document_ids)
         docs = {};
         return;
-    end;
+    end
 
     q = [];
 
@@ -25,8 +25,8 @@ function docs = docs_from_ids(DorS,document_ids)
             q = q_here;
         else
             q = q | q_here;
-        end;
-    end;
+        end
+    end
 
     docs_here = DorS.database_search(q);
 
@@ -37,6 +37,6 @@ function docs = docs_from_ids(DorS,document_ids)
             if strcmp(document_ids{i},docs_here{j}.document_properties.base.id)
                 docs{i} = docs_here{j};
                 break; % stop when we found it
-            end;
-        end;
-    end;
+            end
+        end
+    end

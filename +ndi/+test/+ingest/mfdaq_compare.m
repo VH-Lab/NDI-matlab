@@ -30,7 +30,7 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
 
     for i=1:numel(et1)
         number = sscanf(et1(i).epoch_id,'t%d')
-        if number<63, continue; end;
+        if number<63, continue; end
         disp(['Testing epoch ' et1(i).epoch_id '...']);
         f1 = fn1.getepochfiles(et1(i).epoch_id);
         f2 = fn2.getepochfiles(et1(i).epoch_id);
@@ -43,7 +43,7 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
         if ~isequaln(c1,c2)
             errmsg{end+1} = ['Channel list in ' et1(i).epoch_id ' do not match.'];
             return;
-        end;
+        end
 
         % now try common channel types in turn
 
@@ -54,7 +54,7 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
                 channels_here = [];
                 for k=1:numel(channels_entries)
                     [dummy,channels_here(k)] = ndi.fun.channelname2prefixnumber(c1(channels_entries(k)).name);
-                end;
+                end
                 t_start = et1(i).t0_t1{1}(1) + rand * diff(et1(i).t0_t1{1});
                 t_stop = min(t_start + 300,et1(i).t0_t1{1}(2));
                 D1 = daq1.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
@@ -63,7 +63,7 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
                     if ~isequaln(D1,D2)
                         errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
                         keyboard
-                    end;
+                    end
                 else
                     disp('checking time values')
                     passing = 1;
@@ -74,14 +74,14 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
                         if mx>1e-6
                             passing = 0;
                         else, disp(['Time matches close enough.']);
-                        end;
-                    end;
+                        end
+                    end
                     if ~passing
                         errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
-                    end;
-                end;
-            end;
-        end;
+                    end
+                end
+            end
+        end
 
         % non-continuous
 
@@ -92,7 +92,7 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
                 channels_here = [];
                 for k=1:numel(channels_entries)
                     [dummy,channels_here(k)] = ndi.fun.channelname2prefixnumber(c1(channels_entries(k)).name);
-                end;
+                end
                 t_start = et1(i).t0_t1{1}(1) + rand * diff(et1(i).t0_t1{1});
                 t_stop = min(t_start + 300,et1(i).t0_t1{1}(2));
                 [T1,D1] = daq1.readevents(event_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
@@ -101,37 +101,37 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
                     for TT=1:numel(T1)
                         if isempty(T1{TT})
                             T1{TT} = zeros(0,1);
-                        end;
-                    end;
-                end;
+                        end
+                    end
+                end
                 if ~isequaln(T1,T2)
                     errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in time.'];
                     keyboard
 
-                end;
+                end
                 if iscell(D1)
                     for TT=1:numel(D1)
                         if isempty(D1{TT})
                             D1{TT} = zeros(0,1);
-                        end;
-                    end;
+                        end
+                    end
                 else
-                    if isempty(D1),D1=zeros(0,1);end;
-                end;
-                if isempty(D2) & isempty(D1), D2 = D1; end;
+                    if isempty(D1),D1=zeros(0,1);end
+                end
+                if isempty(D2) & isempty(D1), D2 = D1; end
                 if ~isequaln(D1,D2)
                     errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in codes/text.'];
                     keyboard
 
-                end;
-            end;
-        end;
-    end;
+                end
+            end
+        end
+    end
 
     b = 1;
 
     for i=1:numel(errmsg)
         if ~isempty(errmsg{i})
             b = 0;
-        end;
-    end;
+        end
+    end

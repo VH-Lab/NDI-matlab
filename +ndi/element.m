@@ -10,7 +10,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
         direct       % is it direct from the element it underlies, or is it different with its own possibly modified epochs?
         subject_id   % ID of the subject that is related to the ndi.element
         dependencies % a structure of name/value pairs of document dependencies (with exception of underlying_element and subject_id)
-    end; % properties
+    end % properties
 
     methods
         function [ndi_element_obj,element_doc] = element(varargin)
@@ -29,7 +29,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %
             set_identifier = 0;
 
-            if nargin == 0;
+            if nargin == 0
                 return % Support 0-argument construction
             end
 
@@ -47,30 +47,30 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 if ~isempty(element_underlying_element)
                     if ~isa(element_underlying_element,'ndi.element')
                         error(['Underlying element must be an ndi.element.']);
-                    end;
-                end;
+                    end
+                end
                 if ~isempty(element_underlying_element)
                     subject_id = element_underlying_element.subject_id;
                     if numel(varargin)==7
                         warning(['Ignoring input subject_id because underlying element is given.']);
-                    end;
+                    end
                 elseif numel(varargin)>=7 & ~isempty(varargin{7})
                     subject_id = varargin{7};
                     [b,subject_id] = ndi.subject.does_subjectstring_match_session_document(element_session,subject_id,1);
                     if ~b
                         error(['Subject does not correspond to a valid document_id entry in the database.']);
-                    end;
-                end;
+                    end
+                end
                 if numel(varargin)>=8
                     dependencies = varargin{8};
                 else
                     dependencies = {};
-                end;
+                end
             elseif numel(varargin)==2
                 element_session = varargin{1};
                 if ~isa(element_session,'ndi.session')
                     error(['When 2 input arguments are given, 1st input must be an ndi.session.']);
-                end;
+                end
                 needs_newdocument_call = 0;
                 element_doc = [];
                 if ~isa(varargin{2},'ndi.document')
@@ -80,13 +80,13 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         error(['When 2 input arguments are given, 2nd input argument must be an ndi.document or document ID.']);
                     else
                         element_doc = element_search{1};
-                    end;
+                    end
                 else
                     element_doc = varargin{2};
-                end;
+                end
                 if ~isfield(element_doc.document_properties, 'element')
                     error(['This document does not have parameters ''element''.']);
-                end;
+                end
                 % now we have the document and can start reading
                 ndi_element_class = element_doc.document_properties.element.ndi_element_class;
                 element_name = element_doc.document_properties.element.name;
@@ -97,12 +97,12 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else
                     element_underlying_element = ndi.database.fun.ndi_document2ndi_object(...
                         dependency_value(element_doc,'underlying_element_id'), element_session);
-                end;
+                end
                 if ischar(element_doc.document_properties.element.direct)
                     direct = logical(eval(element_doc.document_properties.element.direct));
                 else
                     direct = logical(element_doc.document_properties.element.direct);
-                end;
+                end
                 subject_id = element_doc.dependency_value('subject_id');
                 [dependency_names,dependencies] = element_doc.dependency();
                 [dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id'});
@@ -119,11 +119,11 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 warning('empty call to ndi.element(); did not think this would happen...');
             else
                 error(['Improper number of input arguments']);
-            end;
+            end
 
             if (set_identifier)
                 ndi_element_obj.identifier = identifier_value;
-            end;
+            end
             ndi_element_obj.session = element_session;
             ndi_element_obj.name = element_name;
             ndi_element_obj.reference = element_reference;
@@ -135,8 +135,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             if needs_newdocument_call % do we need to create the document and add it to the database?
                 % or, do we already have it?
                 element_doc = ndi_element_obj.newdocument();
-            end;
-        end; % ndi.element()
+            end
+        end % ndi.element()
 
         % ndi.epoch.epochset-based methods
 
@@ -150,7 +150,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
         %
         % For ndi.element objects, this returns 0 so that underlying ndi.probe epochs are added.
             b = isempty(ndi_element_obj.underlying_element);
-        end; % issyncgraphroot
+        end % issyncgraphroot
 
         function name = epochsetname(ndi_element_obj)
         % EPOCHSETNAME - the name of the ndi.element object, for EPOCHNODES
@@ -161,7 +161,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
         %
         % For ndi.element objects, this is ndi.element/ELEMENTSTRING.
             name = ['element: ' ndi_element_obj.elementstring()];
-        end; % epochsetname
+        end % epochsetname
 
         function ec = epochclock(ndi_element_obj, epoch_number)
         % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -174,7 +174,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
         %
             et = epochtableentry(ndi_element_obj, epoch_number);
             ec = et.epoch_clock;
-        end; % epochclock()
+        end % epochclock()
 
         function t0t1 = t0_t1(ndi_element_obj, epoch_number)
             %
@@ -192,7 +192,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             % TODO: this must be a bug, it's just self-referential
             et = epochtableentry(ndi_element_obj, epoch_number);
             t0t1 = et.t0_t1;
-        end; % t0t1()
+        end % t0t1()
 
         function [cache,key] = getcache(ndi_element_obj)
             % GETCACHE - return the NDI_CACHE and key for ndi.element
@@ -213,7 +213,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 cache = E.cache;
                 key = [ndi_element_obj.elementstring() ' | ' ndi_element_obj.type];
             end
-        end; % getcache()
+        end % getcache()
 
         function et = buildepochtable(ndi_element_obj)
             % BUILDEPOCHTABLE - build the epoch table for an ndi.element
@@ -244,7 +244,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 underlying_et = et;
                 if ~isempty(ndi_element_obj.underlying_element)
                     underlying_et = ndi_element_obj.underlying_element.epochtable();
-                end;
+                end
 
                 if ndi_element_obj.direct
                     ib = 1:numel(underlying_et);
@@ -281,7 +281,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         end
                     else
                         et_(1).epoch_id = et_added(ia(n)).epoch_id;
-                    end;
+                    end
                     if ndi_element_obj.direct
                         et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
                         et_(1).t0_t1 = underlying_et(ib(n)).t0_t1;
@@ -290,7 +290,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         et_(1).epochprobemap = []; % not applicable for non-direct elements
                         et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
                         et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
-                    end;
+                    end
                     underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
                     if ~isempty(ndi_element_obj.underlying_element)
                         underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
@@ -299,11 +299,11 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
                         underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
                         underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;
-                    end;
+                    end
                     et_(1).underlying_epochs = underlying_epochs;
                     et(end+1) = et_;
                 end
-        end; % buildepochtable()
+        end % buildepochtable()
 
         %% unique ndi.element methods
 
@@ -317,7 +317,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             % For ndi.element objects, this is the string 'element: ' followed by its name
             %
             elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
-        end; %elementstring()
+        end %elementstring()
 
         function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1, add_to_db, epochids)
             % ADDEPOCH - add an epoch to the ndi.element
@@ -338,11 +338,11 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             
             if nargin < 5
                 add_to_db = 0;
-            end;
+            end
             epochdoc = [];
             if ndi_element_obj.direct
                 error(['Cannot add external observations to an ndi.element that is directly based on ndi.probe.*']);
-            end;
+            end
             E = ndi_element_obj.session;
             if ~isempty(E)
                 elementdoc = E.database_search(ndi_element_obj.searchquery());
@@ -352,7 +352,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     error(['More than one document corresponds to this ndi.element; shouldn''t happen.']);
                 else
                     elementdoc = elementdoc{1};
-                end;
+                end
                 if isa(epochclock,'ndi.time.clocktype')
                     epochclockstr = epochclock.ndi_clocktype2char();
                 else
@@ -378,9 +378,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
                 if add_to_db
                     E.database_add(epochdoc);
-                end;
+                end
             end
-        end; % addepoch()
+        end % addepoch()
 
         function [et_added, epochdocs] = loadaddedepochs(ndi_element_obj)
             % LOADADDEDEPOCHS - load the added epochs from an ndi.element
@@ -396,11 +396,11 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             if ndi_element_obj.direct
                 % nothing can be added
                 return;
-            end;
+            end
             % loads from database
             potential_epochdocs = ndi_element_obj.load_all_element_docs();
             for i=1:numel(potential_epochdocs)
-                if isfield(potential_epochdocs{i}.document_properties,'element_epoch');
+                if isfield(potential_epochdocs{i}.document_properties,'element_epoch')
                     clear newet;
                     newet.epoch_number = i;
                     newet.epoch_id = potential_epochdocs{i}.document_properties.epochid.epochid;
@@ -417,9 +417,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     newet.underlying_epochs = []; % leave this for buildepochtable
                     et_added(end+1) = newet;
                     epochdocs{end+1} = potential_epochdocs{i};
-                end;
-            end;
-        end; % LOADEDEPOCHS(NDI_ELEMENT_OBJ)
+                end
+            end
+        end % LOADEDEPOCHS(NDI_ELEMENT_OBJ)
 
         function element_doc = load_element_doc(ndi_element_obj)
             % LOAD_ELEMENT_DOC - load a element doc from the session database
@@ -437,8 +437,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 error(['More than one document matches the ELEMENT definition. This should not happen.']);
             elseif ~isempty(element_doc)
                 element_doc = element_doc{1};
-            end;
-        end; % load_element_doc()
+            end
+        end % load_element_doc()
 
         function element_ref = doc_unique_id(ndi_element_obj)
             % DOC_UNIQUE_ID - return the document unique reference for an ndi.element object
@@ -452,8 +452,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             element_doc = ndi_element_obj.load_element_doc();
             if ~isempty(element_doc)
                 element_ref = element_doc.id();
-            end;
-        end; % doc_unique_ref()
+            end
+        end % doc_unique_ref()
 
         function element_id = id(ndi_element_obj)
             % ID - return the document unique identifier for an ndi.element object
@@ -466,9 +466,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             element_doc = ndi_element_obj.load_element_doc();
             if isempty(element_doc)
                 error('no element document.');
-            end;
+            end
             element_id = element_doc.id();
-        end; % id()
+        end % id()
 
         function element_docs = load_all_element_docs(ndi_element_obj)
             % LOAD_ALL_ELEMENT_DOCS - load all of the ndi.element objects from an session database
@@ -487,8 +487,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             else
                 epochdocs = {};
                 element_docs = {};
-            end;
-        end; % LOAD_ALL_ELEMENT_DOCS
+            end
+        end % LOAD_ALL_ELEMENT_DOCS
 
         %%% ndi.documentservice methods
 
@@ -521,18 +521,18 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     if isempty(underlying_id) % underlying element hasn't been saved yet
                         newdoc = ndi_element_obj.underlying_element.newdocument();
                         underlying_id = newdoc.id();
-                    end;
-                end;
+                    end
+                end
                 ndi_document_obj = ndi_document_obj.setproperties('base.id',ndi_element_obj.identifier);
                 ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
                 ndi_document_obj = set_dependency_value(ndi_document_obj,'subject_id',ndi_element_obj.subject_id);
                 for i=1:numel(ndi_element_obj.dependencies)
                     ndi_document_obj = ndi_document_obj.set_dependency_value(ndi_element_obj.dependencies(i).name,...
                         ndi_element_obj.dependencies(i).value,'ErrorIfNotFound',0);
-                end;
+                end
                 ndi_element_obj.session.database_add(ndi_document_obj);
-            end;
-        end; % newdocument()
+            end
+        end % newdocument()
 
         function sq = searchquery(ndi_element_obj, epochid)
             % SEARCHQUERY - return a search query for an ndi.document based on this element
@@ -550,10 +550,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
 
             if nargin>1
                 sq = sq & ndi.query('epochid.epochid','exact_string',epochid,'');
-            end;
+            end
 
-        end; % searchquery()
+        end % searchquery()
 
-    end; % methods
+    end % methods
 
 end % classdef

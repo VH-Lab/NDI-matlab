@@ -19,11 +19,11 @@ function tutorial_02_02(prefix, testing)
 
     if nargin<1 | isempty(prefix)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
-    end;
+    end
 
     if nargin<2
         testing = 0;
-    end;
+    end
 
     tutorial_dir = 'ts_exper2';
 
@@ -34,7 +34,7 @@ function tutorial_02_02(prefix, testing)
         disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
         try
             rmdir([ndi.common.PathConstants.TempFolder filesep tutorial_dir],'s');
-        end;
+        end
         disp(['Copying ''' tutorial_dir ''' to the temporary directory']);
         copyfile([prefix filesep tutorial_dir], [ndi.common.PathConstants.TempFolder filesep tutorial_dir]);
 

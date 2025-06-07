@@ -25,7 +25,7 @@ function [genbanknames] = ndi_readGenBankNames(filename)
         T = vlt.file.text2cellstr(filename);
     else
         T = filename; % hidden mode for debugging
-    end;
+    end
 
     mystr = split(T{end},sprintf('\t|\t'));
     maxnode = eval(mystr{1});
@@ -41,14 +41,14 @@ function [genbanknames] = ndi_readGenBankNames(filename)
 
         if mod(t,1000) == 0
             progressbar(t/numel(T));
-        end;
+        end
 
         mystr = split(T{t},sprintf('\t|\t'));
         % remove tab and line at end of line
         lasttab = strfind(mystr{end},sprintf('\t|'));
         if ~isempty(lasttab)
             mystr{end} = mystr{end}(1:lasttab-1);
-        end;
+        end
         node_here = eval(mystr{1});
         name_here = mystr{2};
         category = mystr{end};
@@ -57,28 +57,28 @@ function [genbanknames] = ndi_readGenBankNames(filename)
             case 'scientific name'
                 if ~isempty(scientific_name{node_here})
                     error(['Multiply scientific names for node ' num2str(node_here) '.']);
-                end;
+                end
                 scientific_name{node_here} = name_here;
             case 'synonym'
                 if isempty(synonym{node_here})
                     synonym{node_here} = {};
-                end;
+                end
                 synonym{node_here}{end+1} = name_here;
             case 'genbank common name'
                 if ~isempty(genbank_commonname{node_here})
                     error(['Multiply genbank common names for node ' num2str(node_here) '.']);
-                end;
+                end
                 genbank_commonname{node_here} = name_here;
             case 'common name'
                 if isempty(other_commonname{node_here})
                     other_commonname{node_here} = {};
-                end;
+                end
                 other_commonname{node_here}{end+1} = name_here;
 
             otherwise
                 % do nothing
-        end;
-    end;
+        end
+    end
 
     progressbar(1);
 

@@ -21,11 +21,11 @@ function tutorial_02_04(prefix, testing)
 
     if nargin<1 | isempty(prefix)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
-    end;
+    end
 
     if nargin<2
         testing = 0;
-    end;
+    end
 
     tutorial_dir = 'ts_exper2';
 
@@ -128,7 +128,7 @@ function tutorial_02_04(prefix, testing)
     for i=1:2
         tdoc{i} = oapp.calculate_all_tuning_curves(e{i},'Replace'); % replace any existing
         oriprops{i} = oapp.calculate_all_oridir_indexes(e{i},'Replace'); % this takes a few minutes
-    end;
+    end
 
     % Code block 2.4.5.2
     disp(['Code block 2.4.5.2:']);

@@ -14,7 +14,7 @@ function E = dbkatzlab_narendra(ref, dirname)
         disp(['No reference or dirname given, using defaults:']);
         ref = 'NM43',
         dirname = '/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Katz/NM43_Raw',
-    end;
+    end
 
     E = ndi.setup.dbkatzlab(ref, dirname);
 
@@ -25,19 +25,19 @@ function E = dbkatzlab_narendra(ref, dirname)
     ioc = E.getprobes('type','intraoral-cannula');
     if numel(ioc)~=1
         error(['Expected exactly 1 ioc; got ' int2str(numel(ioc)) '.']);
-    end;
+    end
     ioc = ioc{1};
 
     leftlaser = E.getprobes('name','gctx_opto_left');
     if numel(leftlaser)~=1
         error(['Expected exactly 1 left laser; got ' int2str(numel(leftlaser)) '.']);
-    end;
+    end
     leftlaser = leftlaser{1};
 
     rightlaser = E.getprobes('name','gctx_opto_right');
     if numel(rightlaser)~=1
         error(['Expected exactly 1 right laser; got ' int2str(numel(rightlaser)) '.']);
-    end;
+    end
     rightlaser = rightlaser{1};
 
     t_start = 67;
@@ -60,11 +60,11 @@ function E = dbkatzlab_narendra(ref, dirname)
         text(timevalues.stimon(i),A(4)+0.05*diff(A([3 4])),...
             [num2str(1e3*ioc_data.parameters{ioc_data.stimid(i)}.concentration) ' mM '  ioc_data.parameters{ioc_data.stimid(i)}.tastant],...
             'horizontalalignment','center');
-    end;
+    end
 
     for i=1:numel(lasertimevalues.stimon)
         plot(lasertimevalues.stimon(i)*[1 1],A([3 4]),'m-');
-    end;
+    end
 
     hold on
     plot(t_emg,d_emg-2000,'g-');

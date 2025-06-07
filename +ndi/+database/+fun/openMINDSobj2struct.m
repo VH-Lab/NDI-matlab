@@ -32,15 +32,15 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
     else
         sdata = ndi_cache.lookup(cachekey, cachetype);
         s = sdata.data;
-    end;
+    end
 
     if ~iscell(openmindsObj)
         newcell = {};
         for i=1:numel(openmindsObj)
             newcell{i} = openmindsObj(i);
-        end;
+        end
         openmindsObj = newcell; % make it a cell no matter what
-    end;
+    end
 
     for i=1:numel(openmindsObj)
 
@@ -62,10 +62,10 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
             if s(index).complete
                 % we already built this, skip it
                 continue;
-            end;
+            end
         else
             index = numel(s)+1;
-        end;
+        end
 
         % if we are here, we have to start building it
 
@@ -80,10 +80,10 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
             f = getfield(openmindsObj{i},fn{j});
             if strcmp(class(f),'string')
                 f = char(f); % we have to insert character arrays into the sql database
-            end;
+            end
             if strcmp(class(f),'datetime')
                 f = char(f);
-            end;
+            end
             mt = startsWith(class(f),'openminds.internal.mixedtype');
             if isa(f,'openminds.abstract.Schema') | mt
                 fields_here = {};
@@ -92,21 +92,21 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
                         f_here = f(k).Instance;
                     else
                         f_here = f(k);
-                    end;
+                    end
                     s = ndi.database.fun.openMINDSobj2struct({f_here},cachekey);
                     child_index = find(strcmp(f_here.id,{s.openminds_id}));
                     if isempty(child_index)
                         % stop this nonsense
                         ndi_cache.remove(cachekey,cachetype);
                         error(['A child was not built successfully.']);
-                    end;
+                    end
                     fields_here{k} = ['ndi://' s(child_index).ndi_id];
-                end;
+                end
                 s_here.fields = setfield(s_here.fields,fn{j},fields_here);
             else
                 s_here.fields = setfield(s_here.fields,fn{j},f);
-            end;
-        end;
+            end
+        end
 
         % fill the table, mark it as complete
         s_here.complete = 1;
@@ -116,9 +116,9 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
         ndi_cache.remove(cachekey,cachetype);
         ndi_cache.add(cachekey,cachetype,s);
 
-    end;
+    end
 
     if initial_call
         % if we were the first function, remove the cache
         ndi_cache.remove(cachekey,cachetype);
-    end;
+    end

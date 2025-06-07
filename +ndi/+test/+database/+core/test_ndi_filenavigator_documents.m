@@ -49,10 +49,10 @@ function test_ndi_filenavigator_documents(dirname)
         read_doc = E.database_search(fn{i}.searchquery());
         if numel(read_doc)~=1
             error(['Could not find document, i=' int2str(i)]);
-        end;
+        end
         read_doc{1}.document_properties.filenavigator,
         fn_withdoc{i} = ndi.database.fun.ndi_document2ndi_object(read_doc{1},E);
-    end;
+    end
 
     % Initialize the filenavigator using the ndi.document
 
@@ -61,6 +61,6 @@ function test_ndi_filenavigator_documents(dirname)
             disp(['Object i=' int2str(i) ' created from database is successful']);
         else
             error(['For i=' int2str(i) ', ndi.file.navigator objects do not match.']);
-        end;
-    end;
+        end
+    end
 end

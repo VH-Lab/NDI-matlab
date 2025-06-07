@@ -35,7 +35,7 @@ classdef dir < ndi.session
 
             if ~isfolder(path)
                 error(['Directory ' path ' does not exist.']);
-            end;
+            end
 
             ndi_session_dir_obj.path = char(path); % Ensure type is character vector
 
@@ -56,7 +56,7 @@ classdef dir < ndi.session
                     % make a provisional new one
                     ndi_session_dir_obj.identifier = ndi.ido.unique_id();
                 end
-            end;
+            end
 
             ndi_session_dir_obj.database = ndi.database.fun.opendatabase(...
                 ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
@@ -76,15 +76,15 @@ classdef dir < ndi.session
                         if time_diff_here>time_diff_max
                             time_diff_max = time_diff_here;
                             time_loc = i;
-                        end;
-                    end;
+                        end
+                    end
                     session_doc = session_doc{time_loc};
 
                     ndi_session_dir_obj.identifier = session_doc.document_properties.base.session_id;
                     ndi_session_dir_obj.reference = session_doc.document_properties.session.reference;
                     read_from_database = 1;
-                end;
-            end;
+                end
+            end
 
             if should_we_try_to_read_from_database & ~read_from_database
                 d = dir([ndi_session_dir_obj.ndipathname() filesep 'reference.txt']);
@@ -98,7 +98,7 @@ classdef dir < ndi.session
                 g = ndi.document('session','session.reference',ndi_session_dir_obj.reference) + ...
                     ndi_session_dir_obj.newdocument();
                 ndi_session_dir_obj.database_add(g);
-            end;
+            end
 
             syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','syncgraph','') & ...
                 ndi.query('base.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
@@ -108,9 +108,9 @@ classdef dir < ndi.session
             else
                 if numel(syncgraph_doc)~=1
                     error(['Too many syncgraph documents found. Confused. There should be only 1.']);
-                end;
+                end
                 ndi_session_dir_obj.syncgraph = ndi.database.fun.ndi_document2ndi_object(syncgraph_doc{1},ndi_session_dir_obj);
-            end;
+            end
 
             vlt.file.str2text([ndi_session_dir_obj.ndipathname() filesep 'reference.txt'], ...
                 ndi_session_dir_obj.reference);
@@ -119,7 +119,7 @@ classdef dir < ndi.session
 
             st = ndi.session.sessiontable();
             st.addtableentry(ndi_session_dir_obj.id(), ndi_session_dir_obj.path);
-        end;
+        end
 
         function p = getpath(ndi_session_dir_obj)
         % GETPATH - Return the path of the session
@@ -132,7 +132,7 @@ classdef dir < ndi.session
         % the session. This might be a URL, or a file directory.
         %
             p = ndi_session_dir_obj.path;
-        end;
+        end
 
         function p = ndipathname(ndi_session_dir_obj)
         % NDIPATHNAME - Return the path of the NDI files within the session
@@ -147,8 +147,8 @@ classdef dir < ndi.session
             p = [ndi_session_dir_obj.path filesep ndi_dir ];
             if ~isfolder(p)
                 mkdir(p);
-            end;
-        end; % ndipathname()
+            end
+        end % ndipathname()
 
         function b = eq(ndi_session_dir_obj_a, ndi_session_dir_obj_b)
             % EQ - Are two ndi.session.dir objects equivalent?
@@ -162,8 +162,8 @@ classdef dir < ndi.session
             b = 0;
             if eq@ndi.session(ndi_session_dir_obj_a, ndi_session_dir_obj_b)
                 b = strcmp(ndi_session_dir_obj_a.path,ndi_session_dir_obj_b.path);
-            end;
-        end; % eq()
+            end
+        end % eq()
 
         function inputs = creator_args(ndi_session_obj)
             % CREATOR_ARGS - return the arguments needed to build an ndi.session object
@@ -180,8 +180,8 @@ classdef dir < ndi.session
             inputs{1} = ndi_session_obj.reference;
             inputs{2} = ndi_session_obj.getpath();
             inputs{3} = ndi_session_obj.id();
-        end; % creator_args()
-    end; % methods
+        end % creator_args()
+    end % methods
 
     methods (Static)
         function exists = exists(path)

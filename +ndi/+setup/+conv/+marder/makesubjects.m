@@ -15,4 +15,4 @@ function makesubjects(S, n)
             [dirname filesep 'subject' int2str(i) '.txt'], ...
             [this_dir '_' sprintf('%.2d',i) '@marderlab.brandeis.edu']);
 
-    end;
+    end

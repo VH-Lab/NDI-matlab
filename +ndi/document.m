@@ -37,7 +37,7 @@ classdef document
                 end
                 if mod(numel(varargin),2)~=0
                     error(['Variable inputs must be name/value pairs'.']);
-                end;
+                end
 
                 for i=1:2:numel(varargin) % assign variable arguments
                     try
@@ -60,7 +60,7 @@ classdef document
             % Sets the document_properties.base.session_id field to the value indicated.
             %
             ndi_document_obj.document_properties.base.session_id = session_id;
-        end; % set_session_id
+        end % set_session_id
 
         function ndi_document_obj = add_dependency_value_n(ndi_document_obj, dependency_name, value, varargin)
             % ADD_DEPENDENCY_VALUE_N - add a dependency to a named list
@@ -89,8 +89,8 @@ classdef document
             else
                 d_struct = struct('name',[dependency_name '_' int2str(numel(d)+1)],'value',value);
                 ndi_document_obj = set_dependency_value(ndi_document_obj, d_struct.name, d_struct.value, 'ErrorIfNotFound', 0);
-            end;
-        end; %
+            end
+        end %
 
         function t = to_table(ndi_document_obj)
             % TO_TABLE - convert an ndi.document to a table
@@ -111,29 +111,29 @@ classdef document
             s = ndi_document_obj.document_properties;
             if isfield(s,'depends_on')
                 s = rmfield(s,'depends_on');
-            end;
+            end
             if isfield(s,'files')
                 s = rmfield(s,'files');
-            end;
+            end
 
             t = table();
             [names,depend] = ndi_document_obj.dependency();
             for i=1:numel(names)
                 t_new = cell2table({depend(i).value},'variableNames',{['depends_on_' depend(i).name]});
                 t = cat(2,t,t_new);
-            end;
+            end
 
             abbrev = {};
             abbrevName = fullfile(ndi.common.PathConstants.CommonFolder,'config','ndi_document2table_abbreviations.json');
             if isfile(abbrevName)
                 j = vlt.file.textfile2char(abbrevName);
                 abbrev = jsondecode(j);
-            end;
+            end
 
             ts = vlt.data.flattenstruct2table(s,abbrev);
 
             t = cat(2,t,ts);
-        end;
+        end
 
         function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
             % ADD_FILE - add a file to a ndi.document
@@ -185,14 +185,14 @@ classdef document
             [b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
             if ~b
                 error(msg);
-            end;
+            end
 
             % Step 2: detect the default property values, if necessary, and build the structure
             detected_location_type = 'file'; % default
             location = strip(location);  % remove whitespace
             if (startsWith(location,'https://','IgnoreCase',true) | startsWith(location,'http://','IgnoreCase',true))
                 detected_location_type = 'url';
-            end;
+            end
 
             if isnan(ingest) % assign default value
                 switch detected_location_type
@@ -202,8 +202,8 @@ classdef document
                         ingest = 1;
                     otherwise
                         error(['Unknown detected_location_type ' detected_location_type '.']);
-                end;
-            end;
+                end
+            end
             if isnan(delete_original) % assign default value
                 switch detected_location_type
                     case 'url'
@@ -212,11 +212,11 @@ classdef document
                         delete_original = 1;
                     otherwise
                         error(['Unknown detected_location_type ' detected_location_type '.']);
-                end;
-            end;
+                end
+            end
             if isnan(location_type) % assign default value
                 location_type = detected_location_type;
-            end;
+            end
 
             % Step 2b: build the structure to add
 
@@ -234,12 +234,12 @@ classdef document
                 else
                     fI_index = numel(ndi_document_obj.document_properties.files.file_info)+1;
                     ndi_document_obj.document_properties.files.file_info(fI_index) = file_info_here;
-                end;
+                end
             else
                 ndi_document_obj.document_properties.files.file_info(fI_index).locations(end+1) = location_here;
-            end;
+            end
 
-        end; % add_file
+        end % add_file
 
         function [names, depend_struct] = dependency(ndi_document_obj)
             % DEPENDENCY - return names and a structure with all dependencies for an ndi.object
@@ -256,8 +256,8 @@ classdef document
             if hasdependencies
                 names = {ndi_document_obj.document_properties.depends_on.name};
                 depend_struct = ndi_document_obj.document_properties.depends_on;
-            end;
-        end; % dependency()
+            end
+        end % dependency()
 
         function d = dependency_value(ndi_document_obj, dependency_name, varargin)
             % DEPENDENCY_VALUE - return dependency value given dependency name
@@ -288,13 +288,13 @@ classdef document
                 if numel(matches)>0
                     notfound = 0;
                     d = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
-                end;
-            end;
+                end
+            end
 
             if notfound & ErrorIfNotFound
                 error(['Dependency name ' dependency_name ' not found.']);
-            end;
-        end; %
+            end
+        end %
 
         function d = dependency_value_n(ndi_document_obj, dependency_name, varargin)
             % DEPENDENCY_VALUE_N - return dependency values from list given dependency name
@@ -322,7 +322,7 @@ classdef document
             hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
             if hasdependencies
                 hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
-            end;
+            end
 
             if hasdependencies
                 finished = 0;
@@ -332,16 +332,16 @@ classdef document
                     if numel(matches)>0
                         notfound = 0;
                         d{i} = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
-                    end;
+                    end
                     finished = numel(matches)==0;
                     i = i + 1;
-                end;
-            end;
+                end
+            end
 
             if notfound & ErrorIfNotFound
                 error(['Dependency name ' dependency_name ' not found.']);
-            end;
-        end; %
+            end
+        end %
 
         function b = doc_isa(ndi_document_obj, document_class)
             % DOC_ISA - is an ndi.document a member of a particular document_class?
@@ -354,7 +354,7 @@ classdef document
             sc = ndi_document_obj.doc_superclass();
             c = ndi_document_obj.doc_class();
             b = any(strcmp(document_class, cat(1,c(:),sc(:))));
-        end; % doc_isa()
+        end % doc_isa()
 
         function c = doc_class(ndi_document_obj)
             % DOC_CLASS what is the document class type of an ndi.document object?
@@ -365,7 +365,7 @@ classdef document
             % (Found at ndi_document_obj.document_properties.document_class.class_name)
             %
             c = ndi_document_obj.document_properties.document_class.class_name;
-        end; % doc_class()
+        end % doc_class()
 
         function sc = doc_superclass(ndi_document_obj)
             % DOC_SUPERCLASS - return the document superclasses of an ndi.document object
@@ -379,9 +379,9 @@ classdef document
             for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses)
                 s = ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
                 sc{i} = s.doc_class();
-            end;
+            end
             sc = unique(sc); % alphabetize and remove any duplicates
-        end; % doc_superclass
+        end % doc_superclass
 
         function uid = doc_unique_id(ndi_document_obj)
             % DOC_UNIQUE_ID - return the document unique identifier for an ndi.document
@@ -405,7 +405,7 @@ classdef document
             %
             b = strcmp(ndi_document_obj1.document_properties.base.id,...
                 ndi_document_obj2.document_properties.base.id);
-        end; % eq()
+        end % eq()
 
         function uid = id(ndi_document_obj)
             % ID - return the document unique identifier for an ndi.document
@@ -416,7 +416,7 @@ classdef document
             % (Found at NDI_DOCUMENT_OBJ.documentproperties.base.id)
             %
             uid = ndi_document_obj.document_properties.base.id;
-        end; % id()
+        end % id()
 
         function uid = session_id(ndi_document_obj)
             % ID - return the document session unique identifier for an ndi.document
@@ -427,7 +427,7 @@ classdef document
             % (Found at NDI_DOCUMENT_OBJ.documentproperties.base.session_id)
             %
             uid = ndi_document_obj.document_properties.base.session_id;
-        end; % session_id()
+        end % session_id()
         
         function [b, msg, fI_index] = is_in_file_list(ndi_document_obj, name)
             % IS_IN_FILE_LIST - is a file name in a ndi.document's file list?
@@ -459,7 +459,7 @@ classdef document
                 b = 0;
                 msg = 'This type of document does not accept files; it has no ''files'' field';
                 return;
-            end;
+            end
 
             % Step 2: is it a valid filename for this document? It must appear in files.file_list
             %   or be a proper numbered file if files.file_list{i} has has the form 'filename.ext_#'.
@@ -476,8 +476,8 @@ classdef document
                     number = n;
                     ends_with_number = 1;
                     search_name = [name(1:underscores(end)) '#'];
-                end;
-            end;
+                end
+            end
 
             % Step 2b: now we have the name to search for; make sure it is in the file list
 
@@ -486,14 +486,14 @@ classdef document
                 b = 0;
                 msg = ['No such file ' name ' in file_list of ndi.document; file must match an expected name.'];
                 return;
-            end;
+            end
 
             % Step 3: now, find which file_info corresponds to search_name, if any
 
             if isfield(ndi_document_obj.document_properties.files,'file_info')
                 fI_index = find(strcmpi(name,{ndi_document_obj.document_properties.files.file_info.name}));
-            end;
-        end; % is_in_file_list()
+            end
+        end % is_in_file_list()
 
         function fl = current_file_list(ndi_document_obj)
             % CURRENT_FILE_LIST - return the list of files that have been associated with an ndi.document
@@ -509,9 +509,9 @@ classdef document
             if isfield(ndi_document_obj.document_properties,'files')
                 if isfield(ndi_document_obj.document_properties.files,'file_info')
                     fl = {ndi_document_obj.document_properties.files.file_info.name};
-                end;
-            end;
-        end; %  current_file_list()
+                end
+            end
+        end %  current_file_list()
 
         function ndi_document_obj_out = plus(ndi_document_obj_a, ndi_document_obj_b)
             % PLUS - merge two ndi.document objects
@@ -546,11 +546,11 @@ classdef document
                     else
                         ndi_document_obj_out.document_properties.depends_on(end+1) = ...
                             ndi_document_obj_b.document_properties.depends_on(k);
-                    end;
-                end;
+                    end
+                end
                 otherproperties = rmfield(otherproperties,'depends_on');
 
-            end;
+            end
 
             % Step 3): Merge file_list
             if isfield(ndi_document_obj_b.document_properties,'files')
@@ -562,19 +562,19 @@ classdef document
                         ndi_document_obj_b.document_properties.files.file_info(:));
                     if numel(unique(file_list))~=numel(file_list)
                         error(['Documents have files of the same name. Cannot be combined.']);
-                    end;
+                    end
                     ndi_document_obj_out.document_properties.files.file_list = file_list;
                     ndi_document_obj_out.document_properties.files.file_info = file_info;
                 else
                     % doc a doesn't have it, just use doc b's info
                     ndi_document_obj_out.document_properties.files = ndi_document_obj_b.document_properties.files;
-                end;
-            end;
+                end
+            end
 
             % Step 4): Merge the other fields
             ndi_document_obj_out.document_properties = vlt.data.structmerge(ndi_document_obj_out.document_properties,...
                 otherproperties);
-        end; % plus()
+        end % plus()
 
         function ndi_document_obj = remove_dependency_value_n(ndi_document_obj, dependency_name, value, n, varargin)
             % REMOVE_DEPENDENCY_VALUE_N - remove a dependency from a named list
@@ -598,16 +598,16 @@ classdef document
             hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
             if ~hasdependencies & ErrorIfNotFound
                 error(['This document does not have any dependencies.']);
-            end;
+            end
 
             if n>numel(d) & ErrorIfNotFound
                 error(['Number to be removed ' int2str(n) ' is greater than total number of entries ' int2str(numel(d)) '.']);
-            end;
+            end
 
             match = find(strcmpi([dependency_name '_' int2str(n)],{ndi_document_obj.document_properties.depends_on.name}));
             if numel(match)~=1
                 error(['Could not locate entry ' dependency_name '_' int2str(n)]);
-            end;
+            end
 
             ndi_document_obj.document_properties.depends_on = ndi_document_obj.document_properties.depends_on([1:match-1 match+1:end]);
 
@@ -615,10 +615,10 @@ classdef document
                 match = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
                 if numel(match)~=1
                     error(['Could not locate entry ' dependency_name '_' int2str(i)]);
-                end;
+                end
                 ndi_document_obj.document_properties.depends_on(match).name = [dependency_name '_' int2str(i-1)];
-            end;
-        end; %
+            end
+        end %
 
         function ndi_document_obj = set_dependency_value(ndi_document_obj, dependency_name, value, varargin)
             % SET_DEPENDENCY_VALUE - set the value of a dependency field
@@ -644,7 +644,7 @@ classdef document
             hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
             if hasdependencies
                 hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
-            end;
+            end
             d_struct = struct('name',dependency_name,'value',value);
 
             if hasdependencies
@@ -654,15 +654,15 @@ classdef document
                     ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
                 elseif ~ErrorIfNotFound % add it
                     ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
-                end;
+                end
             elseif ~ErrorIfNotFound
                 ndi_document_obj.document_properties.depends_on = d_struct;
-            end;
+            end
 
             if notfound & ErrorIfNotFound
                 error(['Dependency name ' dependency_name ' not found.']);
-            end;
-        end; %
+            end
+        end %
 
         function ndi_document_obj = remove_file(ndi_document_obj, name, location, varargin)
             % REMOVE_FILE - remove file information from a did.document
@@ -686,7 +686,7 @@ classdef document
 
             if nargin<3
                 location = [];
-            end;
+            end
 
             ErrorIfNoFileInfo = 0;
             vlt.data.assign(varargin{:});
@@ -694,31 +694,31 @@ classdef document
             [b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
             if ~b
                 error(msg);
-            end;
+            end
 
             if isempty(fI_index)
                 if ErrorIfNoFileInfo
                     error(['No file_info for name ' name ' .']);
-                end;
-            end;
+                end
+            end
 
             if isempty(location)
                 ndi_document_obj.document_properties.files.file_info(fI_index) = [];
                 return;
-            end;
+            end
 
             location_match_index = find(strcmpi(location,{ndi_document_obj.document_properties.files.file_info(fI_index).locations.location}));
 
             if isempty(location_match_index)
                 if ErrorIfNoFileInfo
                     error(['No match found for file ' name ' with location ' location '.']);
-                end;
+                end
             else
                 ndi_document_obj.document_properties.files.file_info(fI_index).locations = ...
                     ndi_document_obj.document_properties.files.file_info(fI_index).locations([1:location_match_index-1 location_match_index+1:end]);
-            end;
+            end
 
-        end; % remove_file
+        end % remove_file
 
         function ndi_document_obj = reset_file_info(ndi_document_obj)
             % RESET_FILE_INFO - reset the file information parameters for a new did.document
@@ -733,12 +733,12 @@ classdef document
             % First, check if we even have file info
             if ~isfield(ndi_document_obj.document_properties,'files')
                 return;
-            end;
+            end
 
             ndi_document_obj.document_properties.files.file_info = ...
                 did.datastructures.emptystruct('name','locations');
 
-        end; % reset_file_info()
+        end % reset_file_info()
 
         function ndi_document_obj = setproperties(ndi_document_obj, varargin)
             % SETPROPERTIES - Set property values of an ndi.document object
@@ -763,7 +763,7 @@ classdef document
             end
 
             ndi_document_obj.document_properties = newproperties;
-        end; % setproperties
+        end % setproperties
 
         function b = validate(ndi_document_obj)
             % VALIDATE - 0/1 evaluate whether ndi.document object is valid by its schema
@@ -799,12 +799,12 @@ classdef document
                     d = docArray{i};
                     foundIt = 1;
                     break;
-                end;
-            end;
+                end
+            end
 
             if ~foundIt
                 i = [];
-            end;
+            end
 
         end % find_doc_by_id
 
@@ -820,12 +820,12 @@ classdef document
             %
             for i=1:numel(docArray)
                 t(i) = datetime(docArray{i}.document_properties.base.datestamp,'timezone','UTCLeapSeconds');
-            end;
+            end
 
             [tsort,tsortindex] = sort(t);
             i = tsortindex(end);
             d = docArray{i};
-        end; % find_newest
+        end % find_newest
 
         function s = readblankdefinition(jsonfilelocationstring, s)
             % READBLANKDEFINITION - read a blank JSON class definitions from a file location string
@@ -883,7 +883,7 @@ classdef document
                     s.document_class.superclasses = s.document_class.superclasses(unique_indexes);
                 else
                     error(['Documents lack ''document_class'' fields.']);
-                end;
+                end
 
                 s_super{i} = rmfield(s_super{i},'document_class');
 
@@ -895,7 +895,7 @@ classdef document
                     s.depends_on= s.depends_on(unique_indexes);
                 else
                     % regular vlt.data.structmerge is fine, will use 'depends_on' field of whichever structure has it, or none
-                end;
+                end
 
                 % part 3: merge file_list
                 if isfield(s,'files') & isfield(s_super{i},'files') % if only s or super_s has it, merge handles it fine
@@ -911,14 +911,14 @@ classdef document
                         s_super{i} = rmfield(s_super{i},'files');
                         [dummy,unique_indexes] = unique(s.files.file_list);
                         s.files.file_list = s.files.file_list(unique_indexes);
-                    end;
+                    end
                 else
                     % nothing to do, only one has it and merge will do it
-                end;
+                end
 
                 % now do the merge
                 s = vlt.data.structmerge(s,s_super{i});
-            end;
+            end
         end % readblankdefinition()
 
     end % methods Static

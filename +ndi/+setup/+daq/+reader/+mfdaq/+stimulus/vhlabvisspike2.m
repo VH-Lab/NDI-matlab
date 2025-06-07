@@ -31,7 +31,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             %  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.reader.mfdaq.cedspike2(varargin{:});
-        end; % vhlabvisspike2()
+        end % vhlabvisspike2()
 
         function ec = epochclock(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles)
             % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -69,7 +69,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             channels(end+1) = struct('name','e1','type','event','time_channel',NaN);
             channels(end+1) = struct('name','e2','type','event','time_channel',NaN);
             channels(end+1) = struct('name','e3','type','event','time_channel',NaN);
-        end; % getchannelsepoch()
+        end % getchannelsepoch()
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
@@ -95,7 +95,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
 
             pathname = {};
             fname = {};
@@ -132,14 +132,14 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             for i=1:numel(mti)
                 if stimid(i)~=mod(mti{i}.stimid,256)
                     error(['Stimulus number ' int2str(i) ' does not line up between Spike2 and stimulus computer record: Spike2 says ' int2str(stimid(i)) ' while stimulus computer says ' int2str(mti{i}.stimid) '.']);
-                end;
+                end
                 stimid(i) = mti{i}.stimid; % needed because now we only know stims on Spike2 up to mod 256
                 % spike2time = mactime + timeshift
                 timeshift = stimtimes(i) - mti{i}.startStopTimes(2);
                 stimofftimes(i) = mti{i}.startStopTimes(3) + timeshift;
                 stimsetuptimes(i) = mti{i}.startStopTimes(1) + timeshift;
                 stimcleartimes(i) = mti{i}.startStopTimes(4) + timeshift;
-            end;
+            end
 
             for i=1:numel(channel)
                 % ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}),
@@ -188,12 +188,12 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
                 inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
                 timestamps{i} = timestamps{i}(inds_here);
                 data{i} = data{i}(inds_here);
-            end;
+            end
 
             if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
-            end;
+            end
 
         end % readevents_epochsamples()
 
@@ -211,7 +211,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             sr = NaN;
         end
 
-    end; % methods
+    end % methods
 
     methods (Static)  % helper functions
     end % static methods

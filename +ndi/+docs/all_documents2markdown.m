@@ -16,7 +16,7 @@ function t = all_documents2markdown(varargin)
 
     if input_path(end)~=filesep
         input_path(end+1) = filesep;
-    end;
+    end
     
     t = [];
 
@@ -26,7 +26,7 @@ function t = all_documents2markdown(varargin)
         [doc_path d(i).name],
         if strcmp([doc_path d(i).name],'ndi_validate_config.json')
             continue;
-        end; % special file        
+        end % special file        
         doc = ndi.document([d(i).name(1:end-5)]); % drop .json
         [md,info] = ndi.docs.document2markdown(doc);
         [input_path filesep d(i).name],
@@ -34,7 +34,7 @@ function t = all_documents2markdown(varargin)
         vlt.file.str2text([output_path info.localurl],md);
         t = cat(2,t,[repmat(' ',1,spaces) '- ' info.localurl(1:end-3) ...
             ' : ''' [doc_output_path info.localurl] '''' newline]);
-    end;
+    end
 
     folders = vlt.file.dirlist_trimdots(dir([input_path]));
 
@@ -48,8 +48,8 @@ function t = all_documents2markdown(varargin)
             'doc_path',[doc_path folders{i} filesep ],...
             'write_yml',0);
         t = cat(2,t,tnew);
-    end;
+    end
 
     if write_yml
         vlt.file.str2text([output_path filesep 'documents.yml'],t);
-    end;
+    end

@@ -68,7 +68,7 @@ classdef stimulator < ndi.probe.timeseries
             [dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
             eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
 
-            if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
+            if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end
             % developer note: it would be pretty easy to extend this, just loop over the devices
 
             md_index = find(strcmp('md',channeltype));
@@ -101,7 +101,7 @@ classdef stimulator < ndi.probe.timeseries
             if ~iscell(edata)
                 timestamps = {timestamps};
                 edata = {edata};
-            end;
+            end
             channel_labels = getchannels(dev{1});
 
             markermode = any(strcmp('mk',channeltype));
@@ -129,14 +129,14 @@ classdef stimulator < ndi.probe.timeseries
                                             data.stimid(dd,1) = eval([edata{i}{dd}]);
                                         else
                                             data.stimid(dd,:) = edata{i}(dd,:);
-                                        end;
-                                    end;
+                                        end
+                                    end
                                 case 3 % stimopenclose
                                     t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1);
                                     t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1);
                                 otherwise
                                     error(['Got more mark channels than expected.']);
-                            end;
+                            end
                         case 'e'
                             e_ = e_ + 1;
                             event_data{e_} = timestamps{i};
@@ -158,24 +158,24 @@ classdef stimulator < ndi.probe.timeseries
                         t.stimon = [t.stimon(:); vlt.data.colvec(timestamps{i}(find(edata{i}(:,1)>0),1))];
                         t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,1)==-1),1))];
                         data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,1)==1)),1)];
-                    end;
+                    end
                     if strcmp(channeltype(i),'md')
                         data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
-                    end;
+                    end
                     if strcmp(channeltype(i),'e')
                         event_data{end+1} = timestamps{i};
-                    end;
-                end;
+                    end
+                end
                 [dummy,order] = sort(t.stimon);
                 t.stimon = t.stimon(order(:));
                 t.stimoff = t.stimoff(order(:));
                 data.stimid = data.stimid(order(:));
                 t.stimopenclose(:,1) = t.stimon;
                 t.stimopenclose(:,2) = t.stimoff;
-            end;
+            end
 
             timeref = ndi.time.timereference(ndi_probe_timeseries_stimulator_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
         end %readtimeseriesepoch()
 
-    end; % methods
+    end % methods
 end

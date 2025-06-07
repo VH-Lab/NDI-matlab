@@ -40,7 +40,7 @@ mylog = ndi.common.getLogger();
 
 e = D.getelements('element.name',name_out,'element.reference',reference_out);
 
-if ~isempty(e), D.database_rm(e{1}.id()); e = []; end;
+if ~isempty(e), D.database_rm(e{1}.id()); e = []; end
 
 assert(isempty(e),['Element with name ' name_out ' and reference ' int2str(reference_out) ' already exists. Delete it before making a new one.']);
 
@@ -66,7 +66,7 @@ for i=1:numel(globalClocks)
     if ~isempty(t_out)
         match = i;
         break;
-    end;
+    end
 end
 
 if match>0

@@ -12,7 +12,7 @@ function [G] = ndi_readGenBankNodes(filename)
         T = vlt.file.text2cellstr(filename);
     else
         T = filename; % hidden mode for debugging
-    end;
+    end
 
     mystr = split(T{end},sprintf('\t|\t')); % get last string
     node_max = eval(mystr{1});
@@ -26,12 +26,12 @@ function [G] = ndi_readGenBankNodes(filename)
 
         if mod(t,1000)==0
             progressbar(t/numel(T));
-        end;
+        end
         mystr = split(T{t},sprintf('\t|\t'));
 
         parents(t) = str2num(mystr{2});
         children(t) = str2num(mystr{1});
-    end;
+    end
 
     G = sparse(parents,children,ones(size(parents)),node_max,node_max,length(parents));
 

@@ -48,7 +48,7 @@ classdef probe < ndi.element & ndi.documentservice
                 inputs{7} = varargin{5};
                 inputs{5} = [];
                 inputs{6} = 1;
-            end;
+            end
             obj = obj@ndi.element(inputs{:});
         end % ndi.probe
 
@@ -77,7 +77,7 @@ classdef probe < ndi.element & ndi.documentservice
             % pull all the devices from the session and look for device strings that match this probe
 
             D = ndi_probe_obj.session.daqsystem_load('name','(.*)');
-            if ~iscell(D), D = {D}; end; % make sure it has cell form
+            if ~iscell(D), D = {D}; end % make sure it has cell form
 
             d_et = {};
 
@@ -94,8 +94,8 @@ classdef probe < ndi.element & ndi.documentservice
                         daqst = ndi.daq.daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
                         if strcmpi(D{d}.name,daqst.devicename)
                             match_probe_and_device(end+1) = H(h);
-                        end;
-                    end;
+                        end
+                    end
                     if ~isempty(match_probe_and_device)
                         % underlying_epochs.epoch_number = n;
                         underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
@@ -193,7 +193,7 @@ classdef probe < ndi.element & ndi.documentservice
 
             if epoch_number>numel(et)
                 error(['Epoch number ' epoch_number ' out of range 1..' int2str(numel(et)) '.']);
-            end;
+            end
 
             et = et(epoch_number);
 
@@ -244,7 +244,7 @@ classdef probe < ndi.element & ndi.documentservice
                 b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
                     strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
                     strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );
-            end;
-        end; % eq()
+            end
+        end % eq()
     end % methods
 end

@@ -5,7 +5,7 @@ classdef sessiontable
 
     properties
 
-    end;
+    end
 
     methods
 
@@ -22,8 +22,8 @@ classdef sessiontable
             i = find(strcmp(session_id,{t.session_id}));
             if ~isempty(i)
                 thepath = t(i(1)).path; % pick first match, should be only match
-            end;
-        end; % getsessionpath()
+            end
+        end % getsessionpath()
 
         function t = getsessiontable(ndi_sessiontable_obj)
             % GETSESSIONTABLE - return the session table
@@ -40,22 +40,22 @@ classdef sessiontable
                     t = table2struct(readtable(fname,'Delimiter','tab'))';
                     if ~isfield(t,'path')
                         error(['path is a required field.']);
-                    end;
+                    end
                     if ~isfield(t,'session_id')
                         error(['session_id is a required field.']);
-                    end;
+                    end
                 catch
                     warning(['Local session table file ' fname ' appears corrupted, ignoring.']);
-                end;
+                end
                 for i=1:numel(t)
                     if ~ischar(t(i).session_id)
                         t(i).session_id = int2str(t(i).session_id);
-                    end;
-                end;
-            end;
-        end; % getsessiontable()
+                    end
+                end
+            end
+        end % getsessiontable()
 
-        function addtableentry(ndi_sessiontable_obj, session_id, path);
+        function addtableentry(ndi_sessiontable_obj, session_id, path)
             % ADDTABLEENTRY - add an entry to an ndi.session.sessiontable
             %
             % ADDTABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID, PATH)
@@ -65,16 +65,16 @@ classdef sessiontable
             %
             if ~ischar(session_id)
                 error(['Session_id must be a character array.']);
-            end;
+            end
             if ~ischar(path)
                 error(['PATH must be a character array.']);
-            end;
+            end
             ndi_sessiontable_obj.removetableentry(session_id);
             t = ndi_sessiontable_obj.getsessiontable();
             t(end+1) = struct('session_id',session_id,'path',path);
             ndi_sessiontable_obj.writesessiontable(t);
 
-        end; % addtableentry()
+        end % addtableentry()
 
         function removetableentry(ndi_sessiontable_obj, session_id)
             % REMOVETABLEENTRY - remove an entry of an ndi.session.sessiontable
@@ -89,9 +89,9 @@ classdef sessiontable
             if ~isempty(i) % only act if we need to
                 t = t(setdiff(1:numel(t),i));
                 ndi_sessiontable_obj.writesessiontable(t);
-            end;
+            end
 
-        end; % removetableentry()
+        end % removetableentry()
 
         function [b,results] = checktable(ndi_sessiontable_obj)
             %CHECKTABLE - check the session table for proper form, accessibility
@@ -114,10 +114,10 @@ classdef sessiontable
                 for i=1:numel(t)
                     resultshere.exists = isfolder(t(i).path);
                     results(i) = resultshere;
-                end;
-            end;
+                end
+            end
 
-        end; % checktable()
+        end % checktable()
 
         function [b,msg] = isvalidtable(ndi_sessiontable_obj, t)
             % ISVALIDTABLE - Does the session table have the correct fields?
@@ -135,30 +135,30 @@ classdef sessiontable
 
             if nargin<2
                 t = ndi_sessiontable_obj.getsessiontable();
-            end;
+            end
             if ~isfield(t,'path')
                 b = 0;
                 msg = ['path is a required field.'];
                 return;
-            end;
+            end
             if ~isfield(t,'session_id')
                 b = 0;
                 msg = ['session_id is a required field.'];
                 return;
-            end;
+            end
             for i=1:numel(t)
                 if ~ischar(t(i).path)
                     b = 0;
                     msg = ['Entry ' int2str(i) ' of session table path is not a character array.'];
                     return;
-                end;
+                end
                 if ~ischar(t(i).session_id)
                     b = 0;
                     msg = ['Entry ' int2str(i) ' of session table session_id is not a character array.'];
                     return;
-                end;
-            end;
-        end; % isvalidtable()
+                end
+            end
+        end % isvalidtable()
 
         function backupsessiontable(ndi_sessiontable_obj)
             % BACKUPSESSIONTABLE - create a backup file for an ndi.session.sessiontable
@@ -175,9 +175,9 @@ classdef sessiontable
                 [success,message]=copyfile(fname,backupname);
                 if ~success
                     error(['Could not make backup file: ' message]);
-                end;
-            end;
-        end; % backup_sessiontable()
+                end
+            end
+        end % backup_sessiontable()
 
         function f = backupfilelist(NDI_SESSIONTABLE_OBJ)
             % BACKUPFILELIST - a list of backup files that are present on disk
@@ -193,8 +193,8 @@ classdef sessiontable
             f = {};
             for i=1:numel(d)
                 f{i} = [parentdir filesep d(i).name];
-            end;
-        end; % backupfilelist()
+            end
+        end % backupfilelist()
 
         function clearsessiontable(ndi_sessiontable_obj, makebackup)
             % CLEARSESSIONTABLE - clear an ndi.session.sessiontable object's data
@@ -207,14 +207,14 @@ classdef sessiontable
             %
             if nargin<2
                 makebackup = 0;
-            end;
+            end
             t = vlt.data.emptystruct('session_id','path');
             if makebackup
                 ndi_sessiontable_obj.backupsessiontable();
-            end;
+            end
             ndi_sessiontable_obj.writesessiontable(t);
-        end; % clearsessiontable()
-    end; % methods
+        end % clearsessiontable()
+    end % methods
 
     methods (Access=protected)
         function writesessiontable(ndi_sessiontable_obj, t)
@@ -229,7 +229,7 @@ classdef sessiontable
             [b,msg] = ndi_sessiontable_obj.isvalidtable(t);
             if ~b
                 error(['Session table not valid: ' msg ]);
-            end;
+            end
             fname = ndi.session.sessiontable.localtablefilename();
             lockfilename = [fname '-lockfile'];
             lockfid = vlt.file.checkout_lock_file(lockfilename);
@@ -240,8 +240,8 @@ classdef sessiontable
             else
                 error(['Could not check out lock file to gain exclusive write access; ' ...
                     'delete file if you think it exists in error: ' lockfilename]);
-            end;
-        end; % writesessiontable()
+            end
+        end % writesessiontable()
 
     end % methods (Protected)
 
@@ -253,8 +253,8 @@ classdef sessiontable
             % F = LOCALTABLEFILENAME()
             %
             f = [ndi.common.PathConstants.Preferences filesep 'local_sessiontable.txt'];
-        end; % tablefilename()
+        end % tablefilename()
 
-    end; % static methods
+    end % static methods
 
 end % class

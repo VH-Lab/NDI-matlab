@@ -11,7 +11,7 @@ function [b,msg] = upload_download(D,metadatafile)
         D = ndi.dataset.dir(dirname);
         metadatafile = fullfile(ndi.common.PathConstants.ExampleDataFolder,'..',...
             'example_datasets','NDIDatasetUpload','metadata.mat');
-    end;
+    end
 
     metadata = load(metadatafile);
     datasetInformation = metadata.datasetInformation;
@@ -28,14 +28,14 @@ function [b,msg] = upload_download(D,metadatafile)
     catch
         msg = 'ndi.cloud.api.datasets.create_dataset() failed to create a new dataset';
         return;
-    end;
+    end
 
     [b_upload, msg_upload] = ndi.cloud.upload.upload_to_NDI_cloud(D, dataset_id);
 
     if ~b_upload
         msg = msg_upload;
         return;
-    end;
+    end
 
     time_taken = toc;
 
@@ -58,7 +58,7 @@ function [b,msg] = upload_download(D,metadatafile)
     if ~b_download
         msg = msg_download;
         return;
-    end;
+    end
 
     time_taken = toc;
 

@@ -27,14 +27,14 @@ function newDocStruct = set_file_info(docStruct,mode,filepath)
                             filename = docStruct.files.file_info(j).name;
                             file_location = fullfile(filepath,file_uid);
                             mydoc = mydoc.add_file(filename,file_location);
-                        end;
+                        end
                         newDocStruct = struct(mydoc.document_properties);
                     otherwise
                         for j=1:numel(docStruct.files.file_info(i).locations)
                             newDocStruct.files.file_info(i).locations(j).delete_original = 0;
                             newDocStruct.files.file_info(i).locations(j).ingest = 0;
-                        end;
-                end;
-            end;
-        end;
-    end;
+                        end
+                end
+            end
+        end
+    end

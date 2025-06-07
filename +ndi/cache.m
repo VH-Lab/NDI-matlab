@@ -41,7 +41,7 @@ classdef cache < handle
                 ndi_cache_obj.replacement_rule = replacement_rule;
                 ndi_cache_obj.table = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
                 return;
-            end;
+            end
 
             ndi_cache_obj = ndi.cache();
 
@@ -149,9 +149,9 @@ classdef cache < handle
                 for i=1:numel(index)
                     if ishandle(ndi_cache_obj.table(index(i)).data)
                         delete(ndi_cache_obj.table(index(i)).data);
-                    end;
+                    end
                 end
-            end;
+            end
             ndi_cache_obj.table = ndi_cache_obj.table(setdiff(1:numel(ndi_cache_obj.table),index));
 
         end % remove
@@ -189,7 +189,7 @@ classdef cache < handle
             spot = find(cumulative_memory_saved>=freebytes,1,'first');
             if isempty(spot)
                 error(['did not expect to be here.']);
-            end;
+            end
             ndi_cache_obj.remove(i(1:spot),[]);
         end
 

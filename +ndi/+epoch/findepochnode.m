@@ -27,13 +27,13 @@ function index = findepochnode(epochnode, epochnodearray)
 
     if numel(epochnode)>1
         error(['EPOCHNODE must be a single entry.']);
-    end;
+    end
 
     for i=1:numel(parameters)
         value = [];
         if isfield(epochnode,parameters{i})
             value = getfield(epochnode,parameters{i});
-        end;
+        end
         if ~isempty(value)
             switch(parameters{i})
                 case {'objectname','objectclass','epoch_id','epoch_session_id'}

@@ -13,5 +13,5 @@ function check_Matlab_toolboxes
         index = find(strcmp(r.toolboxes.required(j),{V.Name}));
         if isempty(index)
             warning(['Required toolbox "' char(r.toolboxes.required(j)) '" is not found in your Matlab installation. Key components of NDI-matlab will likely not work.']);
-        end;
-    end;
+        end
+    end

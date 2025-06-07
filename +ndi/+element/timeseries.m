@@ -8,7 +8,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
     methods
         function [ndi_element_timeseries_obj] = timeseries(varargin)
             [ndi_element_timeseries_obj] = ndi_element_timeseries_obj@ndi.element(varargin{:});
-        end; % ndi.element.timeseries()
+        end % ndi.element.timeseries()
 
         %%%%% ndi.time.timeseries methods
 
@@ -39,7 +39,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                     et_entry = ndi_element_timeseries_obj.epochtableentry(timeref_or_epoch);
                     timeref = ndi.time.timereference(ndi_element_timeseries_obj, ...
                         et_entry.epoch_clock{1}, timeref_or_epoch, 0);
-                end;
+                end
 
                 [epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
                     ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
@@ -48,7 +48,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 
                 if isempty(epoch_timeref)
                     error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
-                end;
+                end
 
                 % now we know the epoch to read, finally!
 
@@ -61,10 +61,10 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 epochdoc = E.database_search(sq);
                 if numel(epochdoc)==0
                     error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
-                end;
+                end
                 if numel(epochdoc)>1
                     error(['Found too many epochdoc for epoch ' epoch_timeref.epoch '.']);
-                end;
+                end
                 epochdoc = epochdoc{1};
 
                 f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
@@ -74,8 +74,8 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 if isnumeric(t)
                     t = ndi_element_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, ...
                         timeref.referent, timeref.clocktype);
-                end;
-            end;
+                end
+            end
         end %readtimeseries()
 
         %%%%% ndi.element methods
@@ -105,7 +105,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             %
             if ndi_element_timeseries_obj.direct
                 error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
-            end;
+            end
             if nargin < 7
                 [ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, 0);
             else
@@ -116,15 +116,15 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);
             if nargout<2
                 ndi_element_timeseries_obj.session.database_add(epochdoc);
-            end;
+            end
 
-        end; % addepoch()
+        end % addepoch()
 
         function sr = samplerate(ndi_element_timeseries_obj, epoch)
             et = ndi_element_timeseries_obj.epochtableentry(epoch);
             [data, t, timeref] = readtimeseries(ndi_element_timeseries_obj, epoch, et.t0_t1{1}(1), et.t0_t1{1}(1)+0.5);
             sr = 1/median(diff(t));
-        end; % samplerate()
+        end % samplerate()
 
         function ndi_document_obj = newdocument(ndi_element_timeseries_obj, varargin)
             % NEWDOCUMENT - Todo: need docs here
@@ -136,5 +136,5 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             sq = searchquery@ndi.element(ndi_element_timeseries_obj, varargin{:});
         end % searchquery
 
-    end; % methods
+    end % methods
 end % classdef

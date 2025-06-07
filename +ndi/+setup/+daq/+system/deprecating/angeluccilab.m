@@ -27,7 +27,7 @@ function exp = angeluccilab(exp, devname)
     if nargin == 0
         exp = {'angelucci_blackrock5', 'angelucci_visstim'};
         return;
-    end;
+    end
 
     if iscell(devname)
         for i=1:length(devname)

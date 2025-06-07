@@ -21,5 +21,5 @@ function [b] = compare_fileobj(f1,f2)
         if ~isequal(data1,data2)
             b = 0;
             return;
-        end;
-    end;
+        end
+    end

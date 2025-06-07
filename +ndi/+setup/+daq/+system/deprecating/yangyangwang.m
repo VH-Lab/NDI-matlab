@@ -26,7 +26,7 @@ function S = yangyangwang(S, daqsystemname)
     if nargin == 0
         S = {'yangyang_tdt_sev'};
         return;
-    end;
+    end
 
     if iscell(daqsystemname)
         for i=1:length(daqsystemname)

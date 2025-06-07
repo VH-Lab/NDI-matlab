@@ -28,7 +28,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
         end % ndi.app.oridirtuning() creator
 
-        function tuning_doc = calculate_all_tuning_curves(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction);
+        function tuning_doc = calculate_all_tuning_curves(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction)
             %
             %
             tuning_doc = {};
@@ -44,10 +44,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     appdoc_struct.response_doc_id = rdoc{r}.id();
                     % call add_appdoc'=
                     tuning_doc{end+1} = ndi_app_oridirtuning_obj.add_appdoc('stimulus_tuningcurve',appdoc_struct,docexistsaction,ndi_element_obj,rdoc{r});
-                end;
-            end;
+                end
+            end
 
-        end; % calculate_all_tuning_curves()
+        end % calculate_all_tuning_curves()
 
         function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, ndi_response_doc, do_add)
             % CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
@@ -57,7 +57,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             %
             if nargin < 4
                 do_add = 1;
-            end;
+            end
 
             E = ndi_app_oridirtuning_obj.session;
             rapp = ndi.app.stimulus.tuning_response(E);
@@ -74,12 +74,12 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                 tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',rdoc.id());
                 if do_add == 1
                     E.database_add(tuning_doc);
-                end;
-            end;
+                end
+            end
 
-        end; % calculate_tuning_curve()
+        end % calculate_tuning_curve()
 
-        function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction);
+        function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction)
             %
             %
             oriprops = {};
@@ -100,11 +100,11 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                         % call add_appdoc
                         % oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
                         oriprops{end+1} = ndi_app_oridirtuning_obj.add_appdoc('orientation_direction_tuning',appdoc_struct,docexistsaction,tdoc{t});
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
 
-        end; % calculate_all_oridir_indexes()
+        end % calculate_all_oridir_indexes()
 
         function oriprops = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tuning_doc, do_add, do_plot)
             % CALCULATE_ORIDIR_INDEXES
@@ -113,10 +113,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             %
             if nargin < 3
                 do_add = 1;
-            end;
+            end
             if nargin < 4
                 do_plot = 1;
-            end;
+            end
             E = ndi_app_oridirtuning_obj.session;
             tapp = ndi.app.stimulus.tuning_response(E);
             ind = {};
@@ -132,7 +132,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
             if isempty(stim_response_doc)
                 error(['cannot find stimulus response document. Do not know what to do.']);
-            end;
+            end
 
             % grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
             tuning_doc = ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static(tuning_doc);
@@ -141,20 +141,20 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                 ind{i} = tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_real{i} + ...
                     sqrt(-1)*tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_imaginary{i};
                 ind_real{i} = ind{i};
-                if any(~isreal(ind_real{i})), ind_real{i} = abs(ind_real{i}); end;
+                if any(~isreal(ind_real{i})), ind_real{i} = abs(ind_real{i}); end
                 control_ind{i} = tuning_doc.document_properties.stimulus_tuningcurve.control_individual_responses_real{i} + ...
                     sqrt(-1)*tuning_doc.document_properties.stimulus_tuningcurve.control_individual_responses_imaginary{i};
                 control_ind_real{i} = control_ind{i};
-                if any(~isreal(control_ind_real{i})), control_ind_real{i} = abs(control_ind_real{i}); end;
+                if any(~isreal(control_ind_real{i})), control_ind_real{i} = abs(control_ind_real{i}); end
                 response_ind{i} = ind{i} - control_ind{i};
                 response_mean(i) = nanmean(response_ind{i});
-                if ~isreal(response_mean(i)), response_mean(i) = abs(response_mean(i)); end;
+                if ~isreal(response_mean(i)), response_mean(i) = abs(response_mean(i)); end
                 response_stddev(i) = nanstd(response_ind{i});
                 response_stderr(i) = vlt.data.nanstderr(response_ind{i});
                 if any(~isreal(response_ind{i}))
                     response_ind{i} = abs(response_ind{i});
-                end;
-            end;
+                end
+            end
 
             resp.ind = ind_real;
             resp.blankind = control_ind_real{1};
@@ -210,14 +210,14 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
             if do_add == 1
                 E.database_add(oriprops);
-            end;
+            end
 
             if do_plot == 1
                 figure;
                 ndi_app_oridirtuning_obj.plot_oridir_response(oriprops);
-            end;
+            end
 
-        end; % calculate_oridir_indexes()
+        end % calculate_oridir_indexes()
 
         function b = is_oridir_stimulus_response(ndi_app_oridirtuning_obj, response_doc)
             %
@@ -226,7 +226,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             stim_pres_doc = E.database_search(ndi.query('base.id', 'exact_string', dependency_value(response_doc, 'stimulus_presentation_id'),''));
             if isempty(stim_pres_doc)
                 error(['empty stimulus response doc, do not know what to do.']);
-            end;
+            end
             stim_props = {stim_pres_doc{1}.document_properties.stimulus_presentation.stimuli.parameters};
             % need to make this more general TODO
             included = [];
@@ -235,11 +235,11 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     included(end+1) = n;
                 elseif ~stim_props{n}.isblank
                     included(end+1) = n;
-                end;
-            end;
+                end
+            end
             desc = vlt.data.structwhatvaries(stim_props(included));
             b = vlt.data.eqlen(desc,{'angle'});
-        end; % is_oridir_stimulus_response()
+        end % is_oridir_stimulus_response()
 
         function plot_oridir_response(ndi_app_oridirtuning_obj, oriprops_doc)
 
@@ -262,13 +262,13 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             element_doc = E.database_search(ndi.query('base.id','exact_string',dependency_value(oriprops_doc,'element_id'),''));
             if isempty(element_doc)
                 error(['Empty element document, don''t know what to do.']);
-            end;
+            end
             element = ndi.database.fun.ndi_document2ndi_object(element_doc{1}, E);
             xlabel('Direction (\circ)');
             ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
             title([element.elementstring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
 
-        end; % plot_oridir_response
+        end % plot_oridir_response
 
         %%% functions that override ndi_app_appdoc  %%
 
@@ -296,7 +296,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     error(['Too many tuning documents.']); % should not happen
                 elseif numel(td)==0
                     error(['No tuning doc with id ' tuning_doc_id '.']);
-                end;
+                end
                 doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);
             elseif strcmpi(appdoc_type,'stimulus_tuningcurve')
                 element_id = appdoc_struct.element_id;
@@ -307,15 +307,15 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     error(['Too many response documents.']); % should not happen
                 elseif numel(response_doc)==0
                     error(['No response doc with id ' appdoc_struct.response_doc_id '.']);
-                end;
+                end
                 ndi_element_obj = ndi.database.fun.ndi_document2ndi_object(element_id, ndi_app_oridirtuning_obj.session);
                 doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, response_doc, 0);
                 %                    doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, response_doc{1}, 0);
 
             else
                 error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-            end;
-        end; %struct2doc()
+            end
+        end %struct2doc()
 
         function doc = find_appdoc(ndi_app_oridirtuning_obj, appdoc_type, varargin)
             % FIND_APPDOC - find an ndi_app_appdoc document in the session database
@@ -331,14 +331,14 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                         tuning_doc=varargin{1};
                         if ~isempty(tuning_doc)
                             q = q&ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_doc.id());
-                        end;
-                    end;
+                        end
+                    end
                     if numel(varargin)>=2
                         element_id = varargin{2};
                         if ~isempty(element_id)
                             q = q&ndi.query('','depends_on','element_id',element_id);
-                        end;
-                    end;
+                        end
+                    end
                     doc = ndi_app_oridirtuning_obj.session.database_search(q);
                 case 'stimulus_tuningcurve'
                     q = ndi.query('','isa','stimulus_tuningcurve','');
@@ -347,11 +347,11 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     if numel(varargin)>=1
                         element = varargin{1};
                         q = q&ndi.query('','depends_on','element_id',element.id());
-                    end;
+                    end
                     if numel(varargin)>=2
                         response_doc = varargin{2};
                         q = q&ndi.query('','depends_on','stimulus_response_scalar_id',response_doc.id());
-                    end;
+                    end
                     doc = ndi_app_oridirtuning_obj.session.database_search(q);
                 otherwise
                     error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
@@ -372,8 +372,8 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             elseif strcmpi(appdoc_type,'stimulus_tuningcurve')
                 appdoc_struct.element_id = doc.dependency_value('element_id');
                 appdoc_struct.response_doc_id = doc.dependency_value('stimulus_response_scalar_id');
-            end;
-        end; % doc2struct()
+            end
+        end % doc2struct()
 
         function appdoc_description(ndi_app_appdoc_obj)
 
@@ -460,12 +460,12 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             %      STIMULUS_TUNINGCURVE - The ndi.document(s) of the specified spike element's stimulus tuning curve
             %
             eval(['help ndi_app_oridirtuning/appdoc_description']);
-        end; % appdoc_description()
+        end % appdoc_description()
 
-    end; % methods
+    end % methods
 
     methods (Static)
 
-    end; % static methods
+    end % static methods
 
 end % ndi.app.oridirtuning

@@ -35,8 +35,8 @@ classdef mfdaq < ndi.probe.timeseries
             [dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch);
             eid = ndi_probe_timeseries_mfdaq_obj.epochid(epoch);
 
-            if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
-            if numel(vlt.data.equnique(dev))>1, error(['At present, do not know how to mix devices.']); end;
+            if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end
+            if numel(vlt.data.equnique(dev))>1, error(['At present, do not know how to mix devices.']); end
 
             if nargout>=1
                 [data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
@@ -48,7 +48,7 @@ classdef mfdaq < ndi.probe.timeseries
                     t = NaN;
                 else
                     [t] = readchannels_epochsamples(dev{1}, {'time'}, timechannel(1), devepoch{1}, s0, s1);
-                end;
+                end
             end
             if nargout>=3
                 timeref_out = ndi.time.timereference(ndi_probe_timeseries_mfdaq_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
@@ -69,13 +69,13 @@ classdef mfdaq < ndi.probe.timeseries
             [dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch);
             eid = ndi_probe_timeseries_mfdaq_obj.epochid(epoch);
 
-            if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
-            if numel(vlt.data.equnique(dev))>1, error(['At present, do not know how to mix devices.']); end;
+            if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end
+            if numel(vlt.data.equnique(dev))>1, error(['At present, do not know how to mix devices.']); end
 
             sr = samplerate(dev{1}, devepoch{1}, channeltype, channel);
             if numel(unique(sr))~=1
                 error(['Do not know how to handle multiple sampling rates across channels.']);
-            end;
+            end
 
             sr = unique(sr);
             s0 = 1+round(sr*t0);
@@ -101,9 +101,9 @@ classdef mfdaq < ndi.probe.timeseries
             % from epoch number EPOCH.
             %
             [dev, devname, devepoch, channeltype, channellist] = ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch);
-            if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
+            if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end
             sr = dev{1}.samplerate(devepoch{1}, channeltype{1}, channellist(1));
         end
 
-    end; % methods
+    end % methods
 end

@@ -24,12 +24,12 @@ function d = marderprobe2uberon(S)
             ontol = ndi.database.fun.uberon_ontology_lookup('Name',t{index,"name"}{1});
             if isempty(ontol)
                 error(['Could not find entry ' char(t{index,"name"}{1}) '.']);
-            end;
+            end
             identifier = ['UBERON:' int2str(ontol(1).Identifier)];
             pl.ontology_name = identifier;
             pl.name = t{index,"name"}{1};
             d_here = ndi.document('probe_location','probe_location',pl) + S.newdocument();
             d_here = d_here.set_dependency_value("probe_id",p{i}.id());
             d{end+1} = d_here;
-        end;
-    end;
+        end
+    end

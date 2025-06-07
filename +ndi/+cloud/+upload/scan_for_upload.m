@@ -23,7 +23,7 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
 
     verbose = 1;
 
-    if verbose, disp(['Loading documents...']); end;
+    if verbose, disp(['Loading documents...']); end
 
     all_doc_ids = cell(1, numel(d));
     doc_json_struct = struct('docid',{},'is_uploaded', {});
@@ -56,7 +56,7 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
                     else
                         filename_here = file_name;
                         is_finished = true; % only 1 file
-                    end;
+                    end
 
                     [file_exists, full_file_path] = S.database_existbinarydoc(ndi_doc_id, filename_here);
 
@@ -77,8 +77,8 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
                         file_size = file_info.bytes / 1024;
                         total_size = file_size + total_size;
                         doc_file_struct(curr_idx).is_uploaded = false;
-                    end;
-                end;
+                    end
+                end
             end
         end
     end
@@ -89,7 +89,7 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
 
         [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
         already_uploaded_docs = {};
-        if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end; % prior version
+        if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end % prior version
         % if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
         % [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs); % prior version
         [ids_left, document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);

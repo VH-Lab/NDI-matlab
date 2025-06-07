@@ -16,7 +16,7 @@ function [b,msg] = expell(to_delete_list)
 
     if isempty(to_delete_list)
         return;
-    end;
+    end
 
     for i=1:numel(to_delete_list)
         try
@@ -24,5 +24,5 @@ function [b,msg] = expell(to_delete_list)
         catch
             b = 0;
             msg = ['Deleting: ' lasterr];
-        end;
-    end;
+        end
+    end

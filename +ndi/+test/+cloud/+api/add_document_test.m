@@ -122,13 +122,13 @@ function test_post_files(S, d, dataset_id)
                     else
                         filename_here = file_name;
                         j = 1000000; % only 1 file
-                    end;
+                    end
                     try
                         file_obj = S.database_openbinarydoc(doc_id,filename_here);
                     catch
                         j = 1000000;
                         file_obj = [];
-                    end;
+                    end
                     j = j + 1;
                     if ~isempty(file_obj)
                         [~,uid,~] = fileparts(file_obj.fullpathfilename);
@@ -138,8 +138,8 @@ function test_post_files(S, d, dataset_id)
 
                         [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
                         return;
-                    end;
-                end;
+                    end
+                end
             end
         end
     end

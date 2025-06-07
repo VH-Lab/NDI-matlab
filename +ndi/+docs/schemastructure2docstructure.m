@@ -32,13 +32,13 @@ function docs = schemastructure2docstructure(schema, varargin)
         if ~isstruct(v)
             warning(['Expected ''properties'' field to be a struct.']);
             return;
-        end;
+        end
         fns = fieldnames(v);
 
         hasdependson = find(strcmpi('depends_on',fns));
         if ~isempty(hasdependson)
             fns = fns([hasdependson 1:hasdependson-1 hasdependson+1:end]);
-        end;
+        end
 
         for i=1:numel(fns)
             % fns{i}
@@ -49,7 +49,7 @@ function docs = schemastructure2docstructure(schema, varargin)
                     p_here(1).property = ['**' fns{i} '**'];
                 else
                     p_here(1).property = [fns{i}];
-                end;
+                end
                 fnss = fieldnames(v_i);
                 subproperty_match = find(strcmpi('properties',fnss));
                 subitem_match = find(strcmpi('items',fnss));
@@ -58,16 +58,16 @@ function docs = schemastructure2docstructure(schema, varargin)
                     if ~isempty(ds)
                         p_here(1)=setfield(p_here(1),docstring{j},...
                             getfield(v_i,docstring{j}));
-                    end;
-                end;
+                    end
+                end
             else
                 subproperty_match = [];
                 subitem_match = [];
-            end;
+            end
 
             if ~isempty(p_here) % we have something to add
                 docs(end+1) = p_here;
-            end;
+            end
 
             if strcmpi(fns{i},'depends_on') % special case, depends on:
                 p_here = vlt.data.emptystruct('property',docstring{:});
@@ -84,22 +84,22 @@ function docs = schemastructure2docstructure(schema, varargin)
                         p_here(1).property = ['**depends_on**: ' v_i.items(j).properties.name.const];
                     else
                         p_here(1).property = ['**depends_on**: *variable dependencies*'];
-                    end;
+                    end
                     fni = fieldnames(v_i.items(j).properties);
                     for k=1:numel(docstring)
                         ds = find(strcmpi(docstring{k},fni));
                         if ~isempty(ds)
                             p_here(1)=setfield(p_here(1),docstring{k},...
                                 getfield(v_i.items(j).properties,docstring{k}));
-                        end;
-                    end;
+                        end
+                    end
                     if ~isempty(p_here)
                         docs(end+1) = p_here;
-                    end;
+                    end
 
-                end;
+                end
                 subitem_match = []; % we don't want to follow this type of item, we handled it
-            end;
+            end
 
             % it remains possible that there is more to explore here
             % such as properties.thing.properties
@@ -112,9 +112,9 @@ function docs = schemastructure2docstructure(schema, varargin)
                         pmore(j).property = ['**' fns{i} '**.' pmore(j).property];
                     else
                         pmore(j).property = [fns{i} '.' pmore(j).property];
-                    end;
+                    end
                     docs(end+1) = pmore(j);
-                end;
-            end;
-        end;
-    end;
+                end
+            end
+        end
+    end

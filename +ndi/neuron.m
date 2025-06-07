@@ -6,7 +6,7 @@ classdef neuron < ndi.element.timeseries
     %
 
     properties (GetAccess=public,SetAccess=protected)
-    end; % properties
+    end % properties
 
     methods
         function ndi_neuron_obj = neuron(varargin)
@@ -19,6 +19,6 @@ classdef neuron < ndi.element.timeseries
             %
             % See ndi.element.timeseries/timeseries
             ndi_neuron_obj=ndi_neuron_obj@ndi.element.timeseries(varargin{:});
-        end; %neuron()
-    end; % methods
+        end %neuron()
+    end % methods
 end % classdef

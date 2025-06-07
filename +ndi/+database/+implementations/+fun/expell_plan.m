@@ -22,9 +22,9 @@ function [to_delete_list] = expell_plan(ndi_document_obj, ingestion_directory)
                             locs(j).uid];
                         if ~isfile(to_delete_list{end})
                             error(['File to delete does not exist: ' to_delete_list{end}]);
-                        end;
-                    end;
-                end;
-            end;
-        end;
-    end;
+                        end
+                    end
+                end
+            end
+        end
+    end

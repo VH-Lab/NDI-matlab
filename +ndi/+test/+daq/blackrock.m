@@ -16,7 +16,7 @@ function blackrock(dirname)
 
     if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_blackrock'];
-    end;
+    end
 
     disp(['creating a new session object...']);
     exp = ndi.session.dir('exp1',dirname);

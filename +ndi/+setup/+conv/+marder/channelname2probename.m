@@ -29,14 +29,14 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
     hastwo = ismember(theintegers,2);
     if isempty(hasone)
         hasone = false;
-    end;
+    end
     if isempty(hastwo)
         hastwo = false;
-    end;
+    end
 
     if hasone&hastwo
         error(['Do not know how to proceed with both 1 and 2 in string ' chName '.']);
-    end;
+    end
 
     if ~hastwo | options.forceIgnore2
         channel_str = '1';
@@ -44,7 +44,7 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
     elseif hastwo
         channel_str = '2';
         subjectname = subjects{2};
-    end;
+    end
 
     standard_strings = {'dgn','lgn','lvn','pdn','pyn','mvn','PhysiTemp'};
 
@@ -52,8 +52,8 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
         if ~isempty(findstr(lower(chName),lower(standard_strings{i})))
             probename = [standard_strings{i} '_' channel_str];
             break;
-        end;
-    end;
+        end
+    end
 
     if isempty(probename) % did not match standard_string,
         probename = matlab.lang.makeValidName(chName);

@@ -30,7 +30,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
                 obj.reference = reference;
             else
                 error(['Too many input arguments.']);
-            end;
+            end
         end
 
         function channels = getchannels(sAPI_dev)

@@ -25,7 +25,7 @@ function exp = katzlab_makedev(exp, devname)
     if nargin == 0
         exp = {'narendra_intan'};
         return;
-    end;
+    end
 
     if iscell(devname)
         for i=1:length(devname)

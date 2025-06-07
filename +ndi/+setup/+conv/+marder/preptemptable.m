@@ -25,7 +25,7 @@ function preptemptable(S)
             newtable = cell2table({ p{P}.id() et(j).epoch_id out.type mat2cell(out.temp,1) mat2cell(out.raw,1)},...
                 'VariableNames',cols);
             temptable = cat(1,temptable,newtable);
-        end;
-    end;
+        end
+    end
 
     save([dirname filesep 'temptable.mat'],'temptable','-mat');

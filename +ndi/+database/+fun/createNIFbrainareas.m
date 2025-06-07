@@ -62,7 +62,7 @@ function ba = ndi_createNIFbrainareas(varargin)
     fid = fopen([outname],'wt');
     if fid<0
         error(['Could not open file ' [pwd filesep outname] ' for writing.']);
-    end;
+    end
 
     fprintf(fid,['ID\tLabel\tSynonyms\n']);
 
@@ -72,7 +72,7 @@ function ba = ndi_createNIFbrainareas(varargin)
         strs = split(ba(i).id,':');
         if any(strcmp(strs{1},exclude_ontologies))
             continue; % skip
-        end;
+        end
         included(end+1) = i;
 
         fprintf(fid,[ba(i).id '\t']);
@@ -83,14 +83,14 @@ function ba = ndi_createNIFbrainareas(varargin)
                 fprintf(fid,[ba(i).meta.synonym{j}]);
                 if j~=numel(ba(i).meta.synonym)
                     fprintf(fid,', ');
-                end;
-            end;
+                end
+            end
 
-        end;
+        end
 
         % end the line
         fprintf(fid,'\n');
-    end;
+    end
 
     fclose(fid);
 

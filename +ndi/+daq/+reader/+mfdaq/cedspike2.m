@@ -52,7 +52,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 
             if isempty(header.channelinfo)
                 channels = vlt.data.emptystruct('name','type','time_channel');
-            end;
+            end
 
             for k=1:length(header.channelinfo)
                 newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
@@ -65,7 +65,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                     newtimechannel.name = [ ndi.daq.system.mfdaq.mfdaq_prefix(newtimechannel.type) int2str(header.channelinfo(k).number) ];
                     newtimechannel.time_channel = header.channelinfo(k).number;
                     channels(end+1) = newtimechannel;
-                end;
+                end
             end
         end % getchannels()
 
@@ -103,7 +103,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
             uniquechannel = unique(channeltype);
             if numel(uniquechannel)~=1
                 error(['Only one type of channel may be read per function call at present.']);
@@ -114,7 +114,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             sr_unique = unique(sr); % get all sample rates
             if numel(sr_unique)~=1
                 error(['Do not know how to handle different sampling rates across channels.']);
-            end;
+            end
 
             sr = sr_unique;
 
@@ -130,16 +130,16 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                         t0 = t0t1_here{1}(1);
                     elseif t0_orig>0
                         t0 = t0t1_here{1}(2);
-                    end;
-                end;
+                    end
+                end
                 if isinf(t1_orig)
                     if t1_orig<0
                         t1 = t0t1_here{1}(1);
                     elseif t1_orig>0
                         t2 = t0t1_here{1}(2);
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
 
             for i=1:length(channel) % can only read 1 channel at a time
                 if strcmpi(channeltype,'time')
@@ -189,7 +189,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             % disp('reading here')
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
             timestamps = {};
             data = {};
             filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
@@ -198,22 +198,22 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                     '',channel(i),t0,t1);
                 if strcmp(channeltype{i},'event')
                     data{i} = ones(size(data{i}));
-                end;
+                end
                 if strcmp(channeltype{i},'marker')
                     if ~isempty(data{i})
                         try
                             data{i} = sum( double(data{i}) .* repmat([2^0 2^8 2^16 2^24],size(data{i},1),1),2);
                         catch, keyboard; end
                     end
-                end;
+                end
                 if strcmp(channeltype{i},'text')
                     data{i} = vlt.data.matrow2cell(data{i})';
-                end;
+                end
             end
             if numel(channel)==1
                 timestamps = timestamps{1};
                 data = data{1};
-            end;
+            end
         end % readevents_epochsamples_native()
 
         function sr = samplerate(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles, channeltype, channel)
@@ -263,7 +263,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                         s2 = Info.scale/6553.6;
                         o2 = Info.offset;
                         p = [p ; [-o2/s2 s2]];
-                    end;
+                    end
                     fclose(fid);
                 case {'auxiliary_in'}
                     datatype = 'uint16';
@@ -283,8 +283,8 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                     p = repmat([0 1],numel(channel),1);
                 otherwise
                     error(['Unknown channel type ' channeltype '.']);
-            end; %
-        end;
+            end %
+        end
 
     end % methods
 
@@ -303,7 +303,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                 if strcmpi(extpart,'.smr')
                     smrfile = filelist{k}; % assume only 1 file
                     return;
-                end; % got the .smr file
+                end % got the .smr file
             end
             error(['Could not find any .smr file in the file list.']);
         end
@@ -333,7 +333,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                     error(['do not know this event yet--programmer should look it up.']);
                 otherwise
                     error(['Could not convert channeltype ' cedspike2channeltype '.']);
-            end;
+            end
 
         end % mfdaqchanneltype2cedspike2headertype()
 

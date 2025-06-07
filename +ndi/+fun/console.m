@@ -21,4 +21,4 @@ function console(filename)
         error(['Linux/Unix not supported yet.']);
     elseif iswin()
         error(['Windows not supported yet.']);
-    end;
+    end

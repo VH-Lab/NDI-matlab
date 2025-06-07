@@ -92,16 +92,16 @@ function [output] = subject_stimulator_neuron(ndi_session_obj)
         pt_here(1).offset   = pt_here(1).onset + stim_duration;
         pt_here(1).stimclose = pt_here(1).offset;
         presentation_time(i,1) = pt_here;
-    end;
+    end
 
     for i=1:numel(values{1})
         stimulus_here = emptystruct('parameters');
         for j=1:numel(parameters)
             eval(['stimulus_here(1).parameters.' parameters{j} '=values{1}(i);']);
-        end;
+        end
         stim_pres_struct.stimuli(end+1,1) = stimulus_here;
-    end;
+    end
 
     if add_blank
         stim_pres_struct.stimuli(end+1,1) = struct('parameters',struct('isblank',1));
-    end;
+    end

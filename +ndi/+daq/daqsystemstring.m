@@ -75,7 +75,7 @@ classdef daqsystemstring
                 obj.devicename = devicename;
                 obj.channeltype = channeltype;
                 obj.channellist = channellist;
-            end;
+            end
         end % ndi.daq.daqsystemstring
 
         function [devicename, channeltype, channel] = ndi_daqsystemstring2channel(self, devstr)
@@ -111,7 +111,7 @@ classdef daqsystemstring
             % now read semi-colon-delimited segments
             if devstr(end)~=';'
                 devstr(end+1)=';';
-            end; % add a superfluous ending semi-colon to make code easier
+            end % add a superfluous ending semi-colon to make code easier
             separators= [colon find(devstr==';')];
             for i=1:numel(separators)-1
                 mysubstr = devstr(separators(i)+1:separators(i+1)-1);
@@ -125,7 +125,7 @@ classdef daqsystemstring
             end
         end % ndi_daqsystemstring2channel
 
-        function devstr = devicestring(self);
+        function devstr = devicestring(self)
             % DEVICESTRING - Produce an ndi.daq.daqsystemstring character string
             %
             % DEVSTR = DEVICESTRING(SELF)
@@ -159,7 +159,7 @@ classdef daqsystemstring
                     devstr = cat(2,devstr, [currentchanneltype vlt.string.intseq2str(newchannellist) ]);
                 end
                 prevchanneltype = currentchanneltype;
-            end;
+            end
         end % devicestring
     end
 end

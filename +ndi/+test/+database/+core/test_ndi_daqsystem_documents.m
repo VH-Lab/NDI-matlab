@@ -44,8 +44,8 @@ function test_ndi_daqsystem_documents
         ds_doc{i} = E.database_search(daqsys{i}.searchquery());
         if numel(ds_doc{i})~=1
             error(['Did not find exactly 1 match.']);
-        end;
-    end;
+        end
+    end
 
     ds_fromdoc = {};
 
@@ -55,8 +55,8 @@ function test_ndi_daqsystem_documents
             disp(['Daqsystem number ' int2str(i) ' matches.']);
         else
             error(['Daqsystem number ' int2str(i) ' does not match.']);
-        end;
-    end;
+        end
+    end
 
     % clean up for next time
     E.daqsystem_clear();

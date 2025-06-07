@@ -12,4 +12,4 @@ function fix_empty_records(dirname, N)
 
     for t=1:numel(T)
 
-    end;
+    end

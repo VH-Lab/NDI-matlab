@@ -41,8 +41,8 @@ function test_ndi_syncrule_documents
         syncrule_docs{i} = E.database_search(sr{i}.searchquery());
         if numel(syncrule_docs{i})~=1
             error(['Did not find exactly 1 match.']);
-        end;
-    end;
+        end
+    end
 
     sr_fromdoc = {};
 
@@ -52,6 +52,6 @@ function test_ndi_syncrule_documents
             disp(['Syncrule number ' int2str(i) ' matches.']);
         else
             error(['Syncrule number ' int2str(i) ' does not match.']);
-        end;
-    end;
+        end
+    end
 end

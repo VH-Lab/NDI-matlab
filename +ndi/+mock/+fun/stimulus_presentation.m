@@ -75,10 +75,10 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
                 stim_params_here = setfield(stim_params_here,'isblank',1);
             else
                 stim_params_here = setfield(stim_params_here,independent_variables{j},X(i,j));
-            end;
-        end;
+            end
+        end
         stim_pres_struct.stimuli(i).parameters = stim_params_here;
-    end;
+    end
 
     spiketimes = [];
 
@@ -105,17 +105,17 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
             else
                 n_spikes = n_spikes_ceil;
                 stim_duration_here = stim_duration_here_ceil;
-            end;
+            end
             spiketimes=cat(1,spiketimes,...
                 vlt.data.colvec(linspace(pt_here(1).onset+t_eps,pt_here(1).onset+stim_duration_here-t_eps,n_spikes)));
         else
             stim_duration_here = stim_duration;
-        end;
+        end
 
         pt_here(1).offset   = pt_here(1).onset + stim_duration_here;
         pt_here(1).stimclose = pt_here(1).offset;
         presentation_time(i,1) = pt_here;
-    end;
+    end
 
     epochid_struct.epochid = epochid;
 

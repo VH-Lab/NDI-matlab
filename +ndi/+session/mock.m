@@ -20,7 +20,7 @@ classdef mock < ndi.session.dir
 
             if vlt.file.isfolder(dirname)
                 rmdir(dirname,'s');
-            end;
+            end
             mkdir(dirname);
 
             ndi_session_mock_obj = ndi_session_mock_obj@ndi.session.dir(ref,dirname);
@@ -43,9 +43,9 @@ classdef mock < ndi.session.dir
                         mytable = vlt.file.loadStructArray([dirname filesep fnames{i}]);
                         mytable.devicestring = 'testdevice:ai1';
                         vlt.file.saveStructArray([dirname filesep fnames{i}],mytable);
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
 
             % make sure the mock daqdevice is present
 
@@ -54,13 +54,13 @@ classdef mock < ndi.session.dir
                 dt = ndi.file.navigator(ndi_session_mock_obj, '.*\.rhd\>');  % look for .rhd files
                 dev1 = ndi.daq.system.mfdaq('testdevice',dt,ndi.daq.reader.mfdaq.intan());
                 ndi_session_mock_obj.daqsystem_add(dev1);
-            end;
+            end
 
             a = ndi_session_mock_obj.database_search(ndi.query('subject','exact_string','anteater27@nosuchlab.org',''));
             if isempty(a)
                 subject = ndi.subject('anteater27@nosuchlab.org','');
                 ndi_session_mock_obj.database_add(subject.newdocument());
-            end;
-        end; % (ndi.session.mock)
-    end; % methods()
+            end
+        end % (ndi.session.mock)
+    end % methods()
 end

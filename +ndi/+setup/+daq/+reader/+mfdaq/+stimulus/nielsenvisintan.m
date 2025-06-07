@@ -29,7 +29,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             %  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.reader.mfdaq.intan(varargin{:});
-        end; % nielsenvisintan()
+        end % nielsenvisintan()
 
         function ec = epochclock(ndi_daqreader_mfdaq_stimulus_nielsenvisintan_obj, epochfiles)
             % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -61,7 +61,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             channels        = struct('name','mk1','type','marker','time_channel',NaN);
             channels(end+1) = struct('name','mk2','type','marker','time_channel',NaN);
             channels(end+1) = struct('name','mk3','type','marker','time_channel',NaN);
-        end; % getchannelsepoch()
+        end % getchannelsepoch()
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_nielsenvisintan_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
@@ -87,7 +87,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
 
             pathname = {};
             fname = {};
@@ -161,12 +161,12 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
                 inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
                 timestamps{i} = timestamps{i}(inds_here);
                 data{i} = data{i}(inds_here);
-            end;
+            end
 
             if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
-            end;
+            end
 
         end % readevents_epochsamples()
 
@@ -184,7 +184,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             sr = samplerate@ndi.daq.reader.mfdaq.intan(ndi_daqreader_mfdaq_stimulus_nielsenvisintan_obj, epochfiles, channeltype, channel);
         end
 
-    end; % methods
+    end % methods
 
     methods (Static)  % helper functions
     end % static methods

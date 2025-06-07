@@ -25,8 +25,8 @@ function [b,msg] = ingest(source_filename_list, destination_filename_list, to_de
         catch
             b = 0;
             msg = ['Copying: ' lasterr];
-        end;
-    end;
+        end
+    end
 
     for i=1:numel(to_delete_list)
         try
@@ -34,5 +34,5 @@ function [b,msg] = ingest(source_filename_list, destination_filename_list, to_de
         catch
             b = 0;
             msg = ['Deleting: ' lasterr];
-        end;
-    end;
+        end
+    end

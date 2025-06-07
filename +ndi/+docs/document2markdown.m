@@ -20,14 +20,14 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
 
     if current_depth > max_depth
         error(['Maximum depth of ' int2str(max_depth) ' exceeded. Check for loops in schema definitions.']);
-    end;
+    end
 
     info.class_name = ndi_document_obj.document_properties.document_class.class_name;
     info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/', urldocpath);
     [info.url, shortname, ext] = fileparts(info.url);
     if ~isempty(info.url)
         info.url(end+1) = '/';
-    end;
+    end
     info.shortname = shortname;
     info.url = [info.url info.shortname '.md'];
     info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
@@ -59,12 +59,12 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
                 superclass_info{end+1} = info_here;
                 if i~=numel(ndi_document_obj.document_properties.document_class.superclasses)
                     md = cat(2,md,', ');
-                end;
-            end;
-        end;
+                end
+            end
+        end
 
         md = cat(2,md,[newline newline]);
-    end;
+    end
     info.superclass_info = superclass_info;
 
     info.definition = ndi_document_obj.document_properties.document_class.definition;
@@ -77,7 +77,7 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
         info.validation_json = struct('properties',vlt.data.emptystruct());
     else
         info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
-    end;
+    end
     md = cat(2,md,['**Schema for validation**: [' info.validation '](' info.validation_url ')<br>' newline]);
     info.property_list_name = ndi_document_obj.document_properties.document_class.property_list_name;
     md = cat(2,md,['**Property_list_name**: `' info.property_list_name '`<br>' newline]);
@@ -107,19 +107,19 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
                         v=getfield(info.validation_json.properties,fn{i});
                         if isfield(v,'doc_description')
                             phere.doc_description = getfield(v,'doc_description');
-                        end;
+                        end
                         if isfield(v,'doc_data_type')
                             phere.doc_data_type = getfield(v,'doc_data_type');
-                        end;
+                        end
                         if isfield(v,'doc_default_value')
                             phere.doc_default_value = getfield(v,'doc_default_value');
-                        end;
-                    end;
-                end;
+                        end
+                    end
+                end
                 info.prop_list(end+1) = phere;
-            end;
-        end;
-    end;
+            end
+        end
+    end
 
     if ~isempty(info.prop_list)
         md = cat(2,md,['## [' info.shortname '](' info.localurl ') fields' newline newline]);
@@ -129,10 +129,10 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
         for i=1:numel(info.prop_list)
             phere = info.prop_list(i);
             md = cat(2,md,['| ' phere.property  ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
-        end;
+        end
 
         md = cat(2,md,[newline newline]);
-    end;
+    end
 
     % superclass fields
 
@@ -147,8 +147,8 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
                 for j=1:numel(info.superclass_info{i}.prop_list)
                     phere = info.superclass_info{i}.prop_list(j);
                     md=cat(2,md,['| ' phere.property ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
-                end;
+                end
                 md = cat(2,md,[newline newline]);
-            end;
-        end;
-    end;
+            end
+        end
+    end

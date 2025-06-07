@@ -27,7 +27,7 @@ function [success,filename,replaces] = choosefileordir(dir, prompt, defaultfilen
     for s = extension_list
         if isfolder(strcat(dir,filename,char(s))) | isfile(strcat(dir,filename,char(s)))
             exist = 1;
-        end;
+        end
     end
 
     while exist
@@ -56,7 +56,7 @@ function [success,filename,replaces] = choosefileordir(dir, prompt, defaultfilen
         for s = extension_list
             if isfolder(strcat(dir,filename,char(s))) | isfile(strcat(dir,filename,char(s)))
                 exist = 1;
-            end;
+            end
         end
     end  % while
 

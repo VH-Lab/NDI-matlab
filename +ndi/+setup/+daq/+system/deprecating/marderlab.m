@@ -26,7 +26,7 @@ function exp = marderlab(exp, devname)
     if nargin == 0
         exp = {'marder_ced'};
         return;
-    end;
+    end
 
     if iscell(devname)
         for i=1:length(devname)

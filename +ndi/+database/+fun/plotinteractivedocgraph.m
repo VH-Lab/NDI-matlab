@@ -55,7 +55,7 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         disp(['Global variable ''clicked_node'' set to clicked document']);
 
         return;
-    end;
+    end
 
     docs = varargin{1};
     G = varargin{2};
@@ -65,12 +65,12 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         layout = 'layered';
     else
         layout = varargin{5};
-    end;
+    end
     if nargin<6
         interactive = 0;
     else
         interactive = varargin{6};
-    end;
+    end
 
     f = figure;
 
@@ -85,7 +85,7 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         doc_properties{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties);'])];
         doc_properties_doc_class{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.document_class);'])];
         doc_properties_ndi_doc{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.base);'])];
-    end;
+    end
 
     h=plot(mdigraph,'layout',layout);
     set(h,'interpreter','none');
@@ -95,10 +95,10 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
         DTT.DataTipRows(end+1) = dataTipTextRow('base:', doc_properties_ndi_doc);
         set(DTT,'interpreter','none');
-    end;
+    end
     box off;
     set(gca,'ydir','reverse')
 
     if interactive
         set(gca,'ButtonDownFcn','ndi.database.fun.plotinteractivedocgraph');
-    end;
+    end

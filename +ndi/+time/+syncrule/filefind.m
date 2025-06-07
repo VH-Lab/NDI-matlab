@@ -63,15 +63,15 @@ classdef filefind < ndi.time.syncrule
                 if ~ischar(parameters.syncfilename)
                     b = 0;
                     msg = 'syncfilename must be a character string';
-                end;
+                end
                 if ~ischar(parameters.daqsystem1)
                     b = 0;
                     msg = 'daqsystem1 must be a character string';
-                end;
+                end
                 if ~ischar(parameters.daqsystem2)
                     b = 0;
                     msg = 'daqsystem2 must be a character string';
-                end;
+                end
             end
         end % isvalidparameters
 
@@ -135,14 +135,14 @@ classdef filefind < ndi.time.syncrule
             % these epochnodes do not come from the daq systems we know how to sync
             if ~forward & ~backward
                 return;
-            end;
+            end
             eval(['dummy_a = ' epochnode_a.objectclass '();']);
             eval(['dummy_b = ' epochnode_b.objectclass '();']);
-            if ~(isa(dummy_a,'ndi.daq.system')) | ~(isa(dummy_b,'ndi.daq.system')), return; end;
-            if isempty(epochnode_a.underlying_epochs), return; end;
-            if isempty(epochnode_b.underlying_epochs), return; end;
-            if isempty(epochnode_a.underlying_epochs.underlying), return; end;
-            if isempty(epochnode_b.underlying_epochs.underlying), return; end;
+            if ~(isa(dummy_a,'ndi.daq.system')) | ~(isa(dummy_b,'ndi.daq.system')), return; end
+            if isempty(epochnode_a.underlying_epochs), return; end
+            if isempty(epochnode_b.underlying_epochs), return; end
+            if isempty(epochnode_a.underlying_epochs.underlying), return; end
+            if isempty(epochnode_b.underlying_epochs.underlying), return; end
             % okay, proceed
 
             common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);
@@ -162,10 +162,10 @@ classdef filefind < ndi.time.syncrule
                             scale = syncdata(2);
                             mapping = ndi.time.timemapping([scale shift]);
                             return;
-                        end;
-                    end;
+                        end
+                    end
                     error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
-                end;
+                end
 
                 % here is b->a
 
@@ -180,10 +180,10 @@ classdef filefind < ndi.time.syncrule
                             scale_reverse = 1/scale;
                             mapping = ndi.time.timemapping([scale_reverse shift_reverse]);
                             return;
-                        end;
-                    end;
+                        end
+                    end
                     error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
-                end;
+                end
             end
         end % apply
     end % methods

@@ -21,5 +21,5 @@ function log_str = stimulus_tuningcurve_log(S, doc)
     if ~isempty(stim_tune_doc)
         if isfield(stim_tune_doc{1}.document_properties.tuningcurve_calc,'log')
             log_str = stim_tune_doc{1}.document_properties.tuningcurve_calc.log;
-        end;
-    end;
+        end
+    end

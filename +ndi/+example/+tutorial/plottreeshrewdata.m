@@ -49,14 +49,14 @@ function plottreeshrewdata(filename, varargin)
 
     if verbose
         disp(['Reading ePhys data...']);
-    end;
+    end
 
     eData = r.readchannels_epochsamples('ai',electrodeChannel,{filename},1,-Inf,Inf);
     eTime = r.readchannels_epochsamples('time',electrodeChannel,{filename},1,-Inf,Inf);
 
     if verbose
         disp(['Reading stimulus trigger information...']);
-    end;
+    end
 
     stimTriggers = r.readevents_epochsamples('event', stimTriggerChannel, {filename}, 1, -Inf, Inf);
     stimTriggers = stimTriggers(1:2:end,:); % for this data, 2 triggers per stimulus
@@ -64,7 +64,7 @@ function plottreeshrewdata(filename, varargin)
     stimCodes_value = [];
     for i=1:size(stimCodes_text,1)
         stimCodes_value(i,1) = str2num(stimCodes_text(i,:));
-    end;
+    end
 
     scData = [];
     scTime = [];
@@ -72,18 +72,18 @@ function plottreeshrewdata(filename, varargin)
     if plotstimsync
         if verbose
             disp(['Reading stimulus video frame sync information...']);
-        end;
+        end
         scData = r.readchannels_epochsamples('ai',syncChannel, {filename},1,-Inf,Inf);
         scTime = r.readchannels_epochsamples('time',syncChannel, {filename},1,-Inf,Inf);
-    end;
+    end
 
     if ~plotit % if we aren't plotting, just stop
         return;
-    end;
+    end
 
     if isempty(fig)
         fig = figure;
-    end;
+    end
 
     figure(fig); % bring this figure to the front, if necessary
 
@@ -91,7 +91,7 @@ function plottreeshrewdata(filename, varargin)
         ax_ephys = axes('units','normalized','position',[0.10 0.4 0.8 0.5]);
     else
         ax_ephys = axes;
-    end;
+    end
     plot(eTime,eData);
     box off;
     ylabel('Potential (Volts)');
@@ -114,4 +114,4 @@ function plottreeshrewdata(filename, varargin)
         linkaxes([ax_ephys ax_sync],'x');
     else
         ax_sync = [];
-    end;
+    end

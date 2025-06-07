@@ -27,7 +27,7 @@ function [b, successes, failures] = test_ndi_document_jsons(generate_error)
     for i=1:numel(ndi.common.PathConstants.CalcDoc)
         more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i},{'.*\.json\>'});
         json_docs = cat(1,json_docs,more_json_docs);
-    end;
+    end
 
     for i=1:numel(json_docs)
         [parentdir,filename,ext] = fileparts(json_docs{i}{1});
@@ -35,15 +35,15 @@ function [b, successes, failures] = test_ndi_document_jsons(generate_error)
 
         if filename(1)=='.'  % ignore swap files and hidden files
             continue;
-        end;
+        end
         try
             mydoc = ndi.document(ndidoc);
             successes{end+1} = ndidoc;
         catch
             error_msg{end+1} = lasterr;
             failures{end+1} = ndidoc;
-        end;
-    end;
+        end
+    end
 
     b = isempty(failures);
 
@@ -52,4 +52,4 @@ function [b, successes, failures] = test_ndi_document_jsons(generate_error)
         failures'
         error_msg'
         error(['At least one ndi.document failed to be built from its definition:']);
-    end;
+    end

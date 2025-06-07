@@ -23,7 +23,7 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
             %  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.reader.mfdaq.blackrock(varargin{:});
-        end; % ndi.daq.reader.mfdaq.stimulus.angelucci_visstim()
+        end % ndi.daq.reader.mfdaq.stimulus.angelucci_visstim()
 
         function channels = getchannelsepoch(thedev, epochfiles)
             % GETCHANNELSEPOCH - List the channels that are available on this device
@@ -38,7 +38,7 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
             %
             channels        = struct('name','mk1','type','marker');
             channels(end+1) = struct('name','mk2','type','marker');
-        end; % getchannelsepoch()
+        end % getchannelsepoch()
 
         function [timestamps,data] = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_angelucci_visstim_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
@@ -99,11 +99,11 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
             if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
-            end;
+            end
 
         end % readevents_epochsamples()
 
-    end; % methods
+    end % methods
 
     methods (Static)  % helper functions
     end % static methods

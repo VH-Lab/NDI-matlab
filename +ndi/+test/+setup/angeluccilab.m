@@ -14,7 +14,7 @@ function E = angeluccilab(ref, dirname)
         disp(['No reference or dirname given, using defaults:']);
         ref = '2017-09-11',
         dirname = '/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Angelucci/2017-09-11'
-    end;
+    end
 
     E = ndi.setup.angeluccilab(ref, dirname);
 
@@ -45,7 +45,7 @@ function E = angeluccilab(ref, dirname)
         for i=1:numel(ts.stimon)
             plot(ts.stimon(i)*[1 1], [A(3) -200],'k-');
             text(ts.stimon(i),A(3)-400,int2str(ds.stimid(i)),'horizontalalignment','center');
-        end;
+        end
 
         A = axis;
         axis([t_start t_stop A(3) A(4)]);
@@ -59,7 +59,7 @@ function E = angeluccilab(ref, dirname)
 
         for i=1:size(d,2)
             d(:,i) = filtfilt(b,a,d(:,i));
-        end;
+        end
 
         figure;
         vlt.plot.plot_multichan(d,t,150); % plot with 100 units of space between channels
@@ -73,10 +73,10 @@ function E = angeluccilab(ref, dirname)
         for i=1:numel(ts.stimon)
             plot(ts.stimon(i)*[1 1], [A(3) -100],'k-');
             text(ts.stimon(i),A(3)-100,int2str(ds.stimid(i)),'horizontalalignment','center');
-        end;
+        end
 
         A = axis;
         axis([t_start t_stop A(3) A(4)]);
         box off;
 
-    end;
+    end

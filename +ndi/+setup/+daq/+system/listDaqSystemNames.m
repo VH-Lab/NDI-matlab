@@ -13,5 +13,5 @@ function daqSystemNames = listDaqSystemNames(labName)
 
     if ~isa(daqSystemNames,'cell')
         daqSystemNames = {daqSystemNames};
-    end;
+    end
 end

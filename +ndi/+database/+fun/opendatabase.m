@@ -15,7 +15,7 @@ function db = opendatabase(database_path, session_unique_reference)
 
     if nargin<2
         session_unique_reference = '12345'; % this is not required for most database types
-    end;
+    end
 
     db = [];
 
@@ -26,15 +26,15 @@ function db = opendatabase(database_path, session_unique_reference)
         if ~isempty(d) % found one
             if numel(d)>1
                 error(['Too many matching files.']);
-            end;
+            end
             fname = [database_path filesep d(1).name];
             evalstr = strrep(databasehierarchy(i).code,'FILENAME',fname);
             evalstr = strrep(evalstr,'FILEPATH',[database_path filesep]);
             evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
             eval(evalstr);
             break;
-        end;
-    end;
+        end
+    end
 
     if isempty(db)
         for i=1:numel(databasehierarchy)
@@ -42,7 +42,7 @@ function db = opendatabase(database_path, session_unique_reference)
                 evalstr = strrep(databasehierarchy(i).newcode,'FILEPATH',[database_path filesep]);
                 evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
                 eval(evalstr);
-            end;
+            end
             break;
         end
     end

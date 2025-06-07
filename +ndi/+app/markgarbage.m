@@ -85,7 +85,7 @@ classdef markgarbage < ndi.app
                 if vlt.data.eqlen(vi(i),validintervalstruct)
                     match = i;
                     return;
-                end;
+                end
             end
 
             % if we are here, we found no match
@@ -97,7 +97,7 @@ classdef markgarbage < ndi.app
                 'valid_interval',vi) + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
             newdoc = newdoc.set_dependency_value('element_id',ndi_epochset_obj.id());
             ndi_app_markgarbage_obj.session.database_add(newdoc);
-        end; % savevalidinterval()
+        end % savevalidinterval()
 
         function b = clearvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
             % CLEARVALIDINTERVAL - clear all 'valid_interval' records for an ndi.epoch.epochset from session database
@@ -141,8 +141,8 @@ classdef markgarbage < ndi.app
             if ~isempty(mydoc)
                 for i=1:numel(mydoc)
                     vi = cat(1,vi,mydoc{i}.document_properties.valid_interval);
-                end;
-            end;
+                end
+            end
 
             if isempty(vi) % underlying elements could still have garbage intervals
                 % check here: is there a potential for a bug or error if the clocks differ?
@@ -152,10 +152,10 @@ classdef markgarbage < ndi.app
                         if ~isempty(vi_try)
                             vi = vi_try;
                             mydoc = mydoc_try;
-                        end;
-                    end;
-                end;
-            end;
+                        end
+                    end
+                end
+            end
 
         end % loadvalidinterval()
 
@@ -176,7 +176,7 @@ classdef markgarbage < ndi.app
             if isempty(vi)
                 intervals = [t0 t1];
                 return;
-            end;
+            end
             for i=1:size(vi,1)
                 % for each marked valid region
                 %    Can we project the marked valid region into this timeref?
@@ -195,16 +195,16 @@ classdef markgarbage < ndi.app
                 else % we have to carve out a bit of this region
                     % do we need to check that epoch_t0_timeref matches our timeref? I think it is guaranteed
                     explicitly_good_intervals = vlt.math.interval_add(explicitly_good_intervals, [epoch_t0_out epoch_t1_out]);
-                end;
-            end;
+                end
+            end
             if isempty(explicitly_good_intervals)
                 intervals = baseline_interval;
             else
                 intervals = explicitly_good_intervals;
-            end;
+            end
 
-        end; % identifyvalidintervals
+        end % identifyvalidintervals
 
-    end; % methods
+    end % methods
 
 end % ndi.app.markgarbage

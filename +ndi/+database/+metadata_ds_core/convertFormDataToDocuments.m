@@ -161,7 +161,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         if ~isempty(subjectItem.BiologicalSexList)
             if ~iscell(subjectItem.BiologicalSexList)
                 subjectItem.BiologicalSexList = {subjectItem.BiologicalSexList};
-            end;
+            end
             subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
         end
 

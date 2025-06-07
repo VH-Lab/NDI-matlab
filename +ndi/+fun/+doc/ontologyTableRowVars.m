@@ -26,7 +26,7 @@ for i=1:numel(l)
         nameCellArray = strsplit(l{i}.document_properties.ontologyTableRow.names,',');
         variableNamesArray = strsplit(l{i}.document_properties.ontologyTableRow.variableNames,',');
         ontologyNodeArray = strsplit(l{i}.document_properties.ontologyTableRow.ontologyNodes,',');
-    end;
+    end
     nameList = cat(1,names,nameCellArray(:));
     variableNamesArrayList = cat(1,variableNames,variableNamesArray(:));
     ontologyNodeArrayList = cat(1,ontologyNodes,ontologyNodeArray(:));

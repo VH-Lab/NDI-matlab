@@ -29,7 +29,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             obj = obj@ndi.ido();
             loadfromfile = 0;
-            if nargin==2 & isa(name,'ndi.session') & isa(thefilenavigator,'ndi.document');
+            if nargin==2 & isa(name,'ndi.session') & isa(thefilenavigator,'ndi.document')
                 session = name;
                 daqsystem_doc = thefilenavigator;
                 daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
@@ -37,12 +37,12 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 docs = session.database_search(ndi.query('base.id','exact_string',daqreader_id,''));
                 if numel(docs)~=1
                     error(['Could not find daqreader document with id ' daqreader_id '.']);
-                end;
+                end
                 daqreader_doc = docs{1};
                 docs = session.database_search(ndi.query('base.id','exact_string',filenavigator_id,''));
                 if numel(docs)~=1
                     error(['Could not find file navivgator document with id ' filenavigator_id'.']);
-                end;
+                end
                 filenavigator_doc = docs{1};
 
                 D = daqsystem_doc.dependency_value_n('daqmetadatareader_id','ErrorIfNotFound',0);
@@ -52,10 +52,10 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                     metadatadocs{i} = session.database_search(ndi.query('base.id','exact_string',D{i},''));
                     if numel(metadatadocs{i})~=1
                         error(['Could not find daqmetadatareader document with id ' D{i} '.']);
-                    end;
+                    end
                     metadatadocs{i} = metadatadocs{i}{1};
                     thedaqmetadatareader{i} = ndi.database.fun.ndi_document2ndi_object(metadatadocs{i},session);
-                end;
+                end
 
                 obj.daqreader = ndi.database.fun.ndi_document2ndi_object(daqreader_doc, session);
                 obj.filenavigator = ndi.database.fun.ndi_document2ndi_object(filenavigator_doc,session);
@@ -67,7 +67,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                     name = '';
                     thefilenavigator = [];
                     thedaqreader = [];
-                end;
+                end
                 if nargin>=2
                     if ischar(thefilenavigator) % it is a command
                         loadfromfile = 1;
@@ -78,20 +78,20 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                             error(['Unknown command.']);
                         else
                             thefilenavigator=[];
-                        end;
-                    end;
-                end;
+                        end
+                    end
+                end
                 if nargin>=3
                     if ~isa(thedaqreader,'ndi.daq.reader')
                         error(['thedaqreader must be of type ndi.daq.reader']);
-                    end;
-                end;
+                    end
+                end
 
                 if nargin>=4
 
                 else
                     thedaqmetadatareader = {};
-                end;
+                end
 
                 if (nargin==1) | (nargin>4)
                     error(['Function requires 2, 3, or 4 input arguments exactly.']);
@@ -105,9 +105,9 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                     obj.filenavigator = thefilenavigator;
                     obj.daqreader = thedaqreader;
                     obj = obj.set_daqmetadatareader(thedaqmetadatareader);
-                end;
-            end;
-        end; % ndi.daq.system()
+                end
+            end
+        end % ndi.daq.system()
 
         function ndi_daqsystem_obj = set_daqmetadatareader(ndi_daqsystem_obj, thedaqmetadatareaders)
             % SET_DAQMETADATAREADER - set the cell array of ndi.daq.metadatareader objects
@@ -120,16 +120,16 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             if ~iscell(thedaqmetadatareaders)
                 error(['THEDAQMETADATAREADERS must be a cell array.']);
-            end;
+            end
 
             for i=1:numel(thedaqmetadatareaders)
                 if ~isa(thedaqmetadatareaders{i},'ndi.daq.metadatareader')
                     error(['Element ' int2str(i) ' of THEDAQMETADATAREADERS is not of type ndi.daq.metadatareader.']);
-                end;
-            end;
+                end
+            end
             % if we are here, there are no errors
             ndi_daqsystem_obj.daqmetadatareader = thedaqmetadatareaders;
-        end; % set_daqmetadatareader
+        end % set_daqmetadatareader
 
         %% GUI functions
         function obj = ndi_daqsystem_gui_edit(ndi_daqsystem_obj)
@@ -143,7 +143,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             %
             error(['Not implemented yet.']);
             % insert code here
-        end;
+        end
 
         %% functions that used to override HANDLE, now just implement equal:
 
@@ -387,9 +387,9 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 epochprobemap = ndi_daqsystem_obj.daqreader.getepochprobemap(ecfname,epochfiles);
             else
                 epochprobemap = ndi_daqsystem_obj.filenavigator.getepochprobemap(epoch);
-            end;
+            end
 
-        end; % getepochprobemap
+        end % getepochprobemap
 
         function metadata = getmetadata(ndi_daqsystem_obj, epoch, channel)
             % GETMETADATA - get metadata for an epoch
@@ -402,15 +402,15 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             N = numel(ndi_daqsystem_obj.daqmetadatareader);
             if ~ (channel >=1 & channel <= N)
                 error(['Metadata channel out of range of ' int2str(min(N,1)) '..' int2str(N) '.']);
-            end;
+            end
             epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
             if ~ndi.file.navigator.isingested(epochfiles)
                 metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
             else
                 metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata_ingested(epochfiles,...
                     ndi_daqsystem_obj.session());
-            end;
-        end; % getmetadata()
+            end
+        end % getmetadata()
 
         function [b,d] = ingest(ndi_daqsystem_obj)
             % INGEST - ingest the data from an ndi.daq.system into the database
@@ -435,28 +435,28 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                         new_d = ndi_daqsystem_obj.filenavigator.ingest();
                         d = cat(1,d,new_d(:));
                         filenavigator_ingest_called = 1;
-                    end;
+                    end
                     new_d = ndi_daqsystem_obj.daqreader.ingest_epochfiles(ef,et(i).epoch_id);
                     if ~iscell(new_d)
                         new_d = {new_d};
-                    end;
+                    end
                     d = cat(1,d,new_d(:));
                     for j=1:numel(ndi_daqsystem_obj.daqmetadatareader)
                         new_d = ndi_daqsystem_obj.daqmetadatareader{j}.ingest_epochfiles(ef,et(i).epoch_id);
                         if ~iscell(new_d)
                             new_d = {new_d};
-                        end;
+                        end
                         d = cat(1,d,new_d(:));
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
             for i=1:numel(d)
                 d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
-            end;
+            end
             ndi_daqsystem_obj.filenavigator.session.database_add(d);
             ndi_daqsystem_obj.session.cache.clear();
             b = 1;
-        end; % ingest()
+        end % ingest()
 
         %% functions that override ndi.documentservice
 
@@ -482,8 +482,8 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 ndi_document_obj_set{end+1} = ndi_daqsystem_obj.daqmetadatareader{i}.newdocument();
                 ndi_document_obj_set{3} = ndi_document_obj_set{3}.add_dependency_value_n('daqmetadatareader_id',...
                     ndi_document_obj_set{end}.id());
-            end;
-        end;  % newdocument()
+            end
+        end  % newdocument()
 
         function sq = searchquery(ndi_daqsystem_obj)
             % SEARCHQUERY - search for an ndi.daq.system
@@ -499,7 +499,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             sq = sq & ndi.query('','depends_on','filenavigator_id',ndi_daqsystem_obj.filenavigator.id()) & ...
                 ndi.query('','depends_on','daqreader_id',ndi_daqsystem_obj.daqreader.id());
 
-        end; % searchquery()
+        end % searchquery()
 
     end % methods
 end % ndi.daq.system classdef

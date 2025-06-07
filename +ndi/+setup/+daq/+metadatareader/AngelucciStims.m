@@ -4,9 +4,9 @@ classdef AngelucciStims < ndi.daq.metadatareader
     %
 
     properties (GetAccess=public, SetAccess=protected)
-    end;
+    end
     properties (Access=private)
-    end;
+    end
 
     methods
 
@@ -22,7 +22,7 @@ classdef AngelucciStims < ndi.daq.metadatareader
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
             obj = obj@ndi.daq.metadatareader(varargin{:});
-        end; % ndi.setup.daq.metadatareader.AngelucciStims
+        end % ndi.setup.daq.metadatareader.AngelucciStims
 
         function [parameters,stimorder,stimtimes] = readmetadatafromfile(ndi_daqmetadatareader_angelucci_stims_obj, file)
             % READMETADATAFROMFILE - read in metadata from the file that is identified
@@ -42,9 +42,9 @@ classdef AngelucciStims < ndi.daq.metadatareader
                 params_here = base_parameters;
                 params_here.Value = z.stimData.stimParams.Value(i);
                 parameters{stimid} = params_here;
-            end;
-        end; % readmetadatafromfile()
+            end
+        end % readmetadatafromfile()
 
-    end; % methods
+    end % methods
 
 end % classdef

@@ -67,7 +67,7 @@ classdef epochdir < ndi.file.navigator
             else
                 [pathdir,filename] = fileparts(epochfiles{1});
                 [abovepath, id] = fileparts(pathdir);
-            end;
+            end
         end % epochid
 
         %% methods overriding ndi.file.navigator

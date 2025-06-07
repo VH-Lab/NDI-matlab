@@ -25,12 +25,12 @@ classdef  didsqlite < ndi.database
             ndi_didsqlite_obj.db = did.implementations.sqlitedb(database_filename);
             if ~isfolder(ndi_didsqlite_obj.file_directory)
                 mkdir(ndi_didsqlite_obj.file_directory);
-            end;
+            end
             bid = ndi_didsqlite_obj.db.all_branch_ids();
             if isempty(bid)
                 ndi_didsqlite_obj.db.add_branch('a');
-            end;
-        end; % ndi.database.implementations.database.didsqlite()
+            end
+        end % ndi.database.implementations.database.didsqlite()
     end
 
     methods % public
@@ -43,8 +43,8 @@ classdef  didsqlite < ndi.database
             % are no documents, empty is returned.
             %
             docids = ndi_didsqlite_obj.db.get_doc_ids('a');
-        end; % alldocids()
-    end;
+        end % alldocids()
+    end
 
     methods (Access=protected)
 
@@ -54,41 +54,41 @@ classdef  didsqlite < ndi.database
 
         function ndi_didsqlite_obj = do_add(ndi_didsqlite_obj, ndi_document_obj, add_parameters)
             ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a');
-        end; % do_add
+        end % do_add
 
-        function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id);
+        function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id)
             [ndi_document_obj] = ndi_didsqlite_obj.db.get_docs(ndi_document_id);
             % now typecast to ndi.document from did.document
             if iscell(ndi_document_obj)
                 for i=1:numel(ndi_document_obj)
                     ndi_document_obj{i} = ndi.document(ndi_document_obj{i});
-                end;
+                end
             else
                 ndi_document_obj = ndi.document(ndi_document_obj);
-            end;
-        end; % do_read
+            end
+        end % do_read
 
         function ndi_didsqlite_obj = do_remove(ndi_didsqlite_obj, ndi_document_id)
             ndi_didsqlite_obj.db.remove_docs(ndi_document_id,'a');
-        end; % do_remove
+        end % do_remove
 
         function [ndi_document_objs] = do_search(ndi_didsqlite_obj, searchoptions, searchparams)
             if ~isa(searchparams,'ndi.query') & ~isa(searchparams,'did.query')
                 error(['We need an ndi.query or did.query']);
-            end;
+            end
 
             ndi_document_objs = {};
             [doc_ids] = ndi_didsqlite_obj.db.search(searchparams,'a');
             ndi_document_objs = {};
             for i=1:numel(doc_ids)
                 ndi_document_objs{i} = ndi_didsqlite_obj.do_read(doc_ids{i});
-            end;
-        end; % do_search()
+            end
+        end % do_search()
 
         function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
             ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id,filename);
             ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
-        end; % do_openbinarydoc()
+        end % do_openbinarydoc()
 
         function [tf, file_path] = check_exist_binarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
             [tf, file_path] = ndi_didsqlite_obj.db.exist_doc(ndi_document_id, filename);
@@ -102,7 +102,7 @@ classdef  didsqlite < ndi.database
             % Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
             %
             ndi_didsqlite_obj.db.close_doc(ndi_binarydoc_matfid_obj);
-        end; % do_closebinarydoc()
+        end % do_closebinarydoc()
 
         function [file_dir] = file_directory(ndi_didsqlite_obj)
             % FILE_DIRECTORY - return the file directory where ingested files are stored
@@ -113,6 +113,6 @@ classdef  didsqlite < ndi.database
             % are stored.
             %
             file_dir = [ndi_didsqlite_obj.path filesep 'files'];
-        end; % file_directory
-    end;
+        end % file_directory
+    end
 end

@@ -14,7 +14,7 @@ function json_filenames = load_all_docs()
         more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i},...
             {'.*\.json\>'});
         json_docs = cat(1,json_docs,more_json_docs);
-    end;
+    end
 
     json_filenames = {};
 
@@ -22,5 +22,5 @@ function json_filenames = load_all_docs()
         [parentdir,filename,ext] = fileparts(json_docs{i}{1});
         if filename(1)~='.' % ignore hidden files
             json_filenames = cat(1,json_filenames,json_docs{i}{1});
-        end;
-    end;
+        end
+    end

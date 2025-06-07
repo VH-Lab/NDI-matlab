@@ -24,7 +24,7 @@ function [response_type,stim_response_scalar_doc] = tuning_curve_to_response_typ
             newdoc = S.database_search(q_doc);
             if numel(newdoc)~=1
                 error(['Could not find dependent doc ' d '.']);
-            end;
+            end
             switch(dependency_action{i})
                 case 'recursive'
                     [response_type,stim_response_scalar_doc] = ndi.fun.stimulus.tuning_curve_to_response_type(S,newdoc{1});
@@ -35,10 +35,10 @@ function [response_type,stim_response_scalar_doc] = tuning_curve_to_response_typ
                         stim_response_scalar_doc = newdoc{1};
                     catch
                         error(['Could not find field ''response_type'' in document.']);
-                    end;
+                    end
                     return;
                 otherwise
                     error(['Unknown action type']);
-            end;
-        end;
-    end;
+            end
+        end
+    end

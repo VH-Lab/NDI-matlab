@@ -14,7 +14,7 @@ function sg_flat(dirname)
 
     if nargin < 1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_sg'];
-    end;
+    end
 
     disp(['creating a new session object...']);
     E = ndi.session.dir('exp1',dirname);

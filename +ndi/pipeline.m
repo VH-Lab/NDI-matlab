@@ -44,7 +44,7 @@ classdef pipeline
             if strcmpi(command,'new')
                 if isempty(fig)
                     fig = figure;
-                end;
+                end
                 command = 'NewWindow';
                 % new window, set userdata
                 if exist('pipelinePath','var')
@@ -57,19 +57,19 @@ classdef pipeline
                         set(fig,'userdata',ud);
                     else
                         error(['The provided pipeline path does not exist: ' pipelinePath '.']);
-                    end;
+                    end
                 else
                     error(['No pipelinePath provided.']);
-                end;
+                end
             else
                 fig = gcf;
                 % not new window, get userdata
                 ud = get(fig,'userdata');
-            end;
+            end
 
             if isempty(fig)
                 error(['Empty figure, do not know what to work on.']);
-            end;
+            end
 
             disp(['Command is ' command '.']);
 
@@ -215,7 +215,7 @@ classdef pipeline
                     msgBox = sprintf('Do you want to delete this pipeline?');
                     title = 'Delete file';
                     b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
-                    if strcmpi(b, 'Yes');
+                    if strcmpi(b, 'Yes')
                         rmdir([read_dir filesep filename], 's');
                     end
                     % update and load pipelines
@@ -274,7 +274,7 @@ classdef pipeline
                     msgBox = sprintf('Do you want to delete this calculator?');
                     title = 'Delete calculator';
                     b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
-                    if strcmpi(b, 'Yes');
+                    if strcmpi(b, 'Yes')
                         pipeline_name = pip_str{pip_val};
                         piplineContentObj = findobj(fig,'tag','PipelineContentList')
                         calc_val = get(piplineContentObj, 'value')
@@ -310,7 +310,7 @@ classdef pipeline
                     disp([command 'is not supposed to do anything.'])
                 otherwise
                     disp(['Unknown command ' command '.']);
-            end; % switch(command)
+            end % switch(command)
 
         end % pipeline_edit()
 

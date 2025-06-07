@@ -19,11 +19,11 @@ function d = ndi_finddocs_missing_dependencies(E, varargin)
 
     d = E.database_search(ndi.query('depends_on','hasfield','',''));
 
-    if ~iscell(d), d = {d}; end;
+    if ~iscell(d), d = {d}; end
 
     for i=1:numel(d)
         documents_observed{end+1} = d{i}.id();
-    end;
+    end
 
     include = [];
 
@@ -33,7 +33,7 @@ function d = ndi_finddocs_missing_dependencies(E, varargin)
                 match = any(strcmpi(d{i}.document_properties.depends_on(j).name,varargin));
             else
                 match = 1;
-            end;
+            end
             if match
                 id_here = d{i}.document_properties.depends_on(j).value;
                 if ~isempty(id_here)
@@ -42,16 +42,16 @@ function d = ndi_finddocs_missing_dependencies(E, varargin)
                     else   % we need to look more
                         dhere = E.database_search(ndi.query('base.id','exact_string',id_here,''));
                         if ~isempty(dhere)
-                            if ~iscell(dhere), dhere = {dhere}; end;
+                            if ~iscell(dhere), dhere = {dhere}; end
                             documents_observed{end+1} = dhere{1}.id();
                         else % no match
                             include(end+1) = i;
                             break; % move on to next document, skip for loop over j
-                        end;
-                    end;
-                end;
-            end;
-        end;
-    end;
+                        end
+                    end
+                end
+            end
+        end
+    end
 
     d = d(include);

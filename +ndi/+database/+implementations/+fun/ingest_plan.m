@@ -31,15 +31,15 @@ function [source_filename_list, destination_filename_list, to_delete_list] = ing
                             locs(j).uid];
                         if ~isfile(source_filename_list{end})
                             error(['File to ingest does not exist: ' source_filename_list{end}]);
-                        end;
+                        end
                         if isfile(destination_filename_list{end})
                             error(['Destination file already exists: ' destination_filename_list{end} ]);
-                        end;
-                    end;
+                        end
+                    end
                     if locs(j).delete_original
                         to_delete_list{end+1} = locs(j).location;
-                    end;
-                end;
-            end;
-        end;
-    end;
+                    end
+                end
+            end
+        end
+    end

@@ -18,7 +18,7 @@ function dnew = add_stimulus_approach(S, filename)
 
     if nargin<2
         filename = [S.getpath filesep 'stimulus_approaches.txt'];
-    end;
+    end
 
     tab = loadStructArray(filename);
 
@@ -26,7 +26,7 @@ function dnew = add_stimulus_approach(S, filename)
 
     if isempty(daqsys)
         error(['Could not find daq system vhvis_spike2.']);
-    end;
+    end
 
     daq_id = daqsys.id();
     session_id = S.id();
@@ -42,11 +42,11 @@ function dnew = add_stimulus_approach(S, filename)
         item = ndi.database.fun.ndicloud_ontology_lookup('Name',tab(i).Approach);
         if isempty(item)
             error(['Could not find item that matches ' tab(i).Approach '.']);
-        end;
+        end
         % make sure epoch is in epochtable
         if isempty(find(strcmp(tab(i).Epoch,{et.epoch_id})))
             error(['Could not find epoch ' tab(i).Epoch '.']);
-        end;
+        end
 
         ont_id = ['NDIC:' sprintf('%0.8d',item.Identifier)]
 
@@ -62,6 +62,6 @@ function dnew = add_stimulus_approach(S, filename)
                 'description',item.Description);
             dnew = cat(1,dnew,ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
                 session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch));
-        end;
+        end
 
-    end;
+    end

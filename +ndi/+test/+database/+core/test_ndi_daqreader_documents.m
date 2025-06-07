@@ -50,8 +50,8 @@ function test_ndi_daqreader_documents
         daqreader_docs{i} = E.database_search(dr{i}.searchquery());
         if numel(daqreader_docs{i})~=1
             error(['Did not find exactly 1 match.']);
-        end;
-    end;
+        end
+    end
 
     dr_fromdoc = {};
 
@@ -63,6 +63,6 @@ function test_ndi_daqreader_documents
             dr{i}, dr_doc{i}.document_properties.ndi_document,
             dr_fromdoc{i}, daqreader_docs{i}{1}.document_properties.ndi_document
             error(['Daqreader number ' int2str(i) ' does not match.']);
-        end;
-    end;
+        end
+    end
 end

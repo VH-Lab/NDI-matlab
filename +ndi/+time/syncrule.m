@@ -22,7 +22,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
                 ndi_syncrule_obj.identifier = varargin{2}.document_properties.base.id;
             elseif nargin >0
                 parameters = varargin{1};
-            end;
+            end
 
             ndi_syncrule_obj = setparameters(ndi_syncrule_obj,parameters);
         end
@@ -183,7 +183,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
                 'base.id', ndi_syncrule_obj.id(),...
                 'base.session_id',ndi.session.empty_id(),...
                 'syncrule.parameters', ndi_syncrule_obj.parameters);
-        end; % newdocument()
+        end % newdocument()
 
         function sq = searchquery(ndi_syncrule_obj)
             % SEARCHQUERY - create a search for this ndi.time.syncrule object
@@ -193,7 +193,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % Creates a search query for the ndi.time.syncgraph object.
             %
             sq = ndi.query({'base.id', ndi_syncrule_obj.id() });
-        end; % searchquery()
+        end % searchquery()
 
     end % methods
 end % classdef ndi.time.syncrule

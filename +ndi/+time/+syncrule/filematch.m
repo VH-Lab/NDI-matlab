@@ -111,11 +111,11 @@ classdef filematch < ndi.time.syncrule
             % quick content checks
             eval(['dummy_a = ' epochnode_a.objectclass '();']);
             eval(['dummy_b = ' epochnode_b.objectclass '();']);
-            if ~(isa(dummy_a,'ndi.daq.system')) | ~(isa(dummy_b,'ndi.daq.system')), return; end;
-            if isempty(epochnode_a.underlying_epochs), return; end;
-            if isempty(epochnode_b.underlying_epochs), return; end;
-            if isempty(epochnode_a.underlying_epochs.underlying), return; end;
-            if isempty(epochnode_b.underlying_epochs.underlying), return; end;
+            if ~(isa(dummy_a,'ndi.daq.system')) | ~(isa(dummy_b,'ndi.daq.system')), return; end
+            if isempty(epochnode_a.underlying_epochs), return; end
+            if isempty(epochnode_b.underlying_epochs), return; end
+            if isempty(epochnode_a.underlying_epochs.underlying), return; end
+            if isempty(epochnode_b.underlying_epochs.underlying), return; end
             % okay, proceed
 
             common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);

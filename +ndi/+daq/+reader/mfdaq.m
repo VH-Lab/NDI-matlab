@@ -37,7 +37,7 @@ classdef mfdaq < ndi.daq.reader
             %  Creates a new ndi.daq.reader.mfdaq object.
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.reader(varargin{:});
-        end; % ndi.daq.reader.mfdaq
+        end % ndi.daq.reader.mfdaq
 
         % functions that override ndi.epoch.epochset
 
@@ -99,7 +99,7 @@ classdef mfdaq < ndi.daq.reader
             %
             channels = struct('name',[],'type',[],'time_channel',[]);
             channels = channels([]);
-        end; % getchannelsepoch
+        end % getchannelsepoch
 
         % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
@@ -134,7 +134,7 @@ classdef mfdaq < ndi.daq.reader
             fullchannelinfo = mfdaq_epoch_channel_obj.channel_information;
             to_remove = setdiff(fieldnames(fullchannelinfo),{'name','type','time_channel'});
             channels = rmfield(fullchannelinfo,to_remove);
-        end; % getchannelsepoch_ingested
+        end % getchannelsepoch_ingested
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1)
             %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
@@ -178,21 +178,21 @@ classdef mfdaq < ndi.daq.reader
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
             channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
 
             ch_unique = unique(channeltype);
 
             if numel(ch_unique)~=1
                 error(['Only one type of channel may be read per function call at present.']);
-            end;
+            end
 
             [sr,offset,scale] = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
 
             sr_unique = unique(sr);
             if numel(sr_unique)~=1
                 error(['Do not know how to handle different sampling rates across channels in one function call.']);
-            end;
+            end
 
             sr = sr_unique;
 
@@ -203,20 +203,20 @@ classdef mfdaq < ndi.daq.reader
             if isinf(s0) | isinf(s1) % need to figure out actual values if user gave -inf/inf for either value
                 if isinf(s0)
                     s0 = absolute_beginning;
-                end;
+                end
                 if isinf(s1)
                     s1 = absolute_end;
-                end;
-            end;
+                end
+            end
 
             using_absolute_end = 0;
             if s1==absolute_end
                 using_absolute_end = 1;
-            end;
+            end
 
             if s0>s1
                 error(['sample number s0 must be less than or equal to s1.']);
-            end;
+            end
 
             % we have two issues here:
             %   1) identify the groups to which the requested channels belong
@@ -243,13 +243,13 @@ classdef mfdaq < ndi.daq.reader
                     use_ephys = 0;
                 otherwise
                     error(['Unknown channel type ' ch_unique{1} '. Use readevents for events, markers, text markers, etc.']);
-            end;
+            end
             [mytypes,myabbrev] = ndi.daq.reader.mfdaq.channel_types();
             ind = find(strcmp(ch_unique{1},mytypes));
             prefix = myabbrev{ind};
             if strcmp(ch_unique{1},'time')
                 prefix = 'ti';
-            end;
+            end
 
             SEG_start = ceil(s0/samples_segment);
             SEG_stop = ceil(s1/samples_segment);
@@ -261,15 +261,15 @@ classdef mfdaq < ndi.daq.reader
                     s0_ = mod(s0,samples_segment);
                     if s0_ == 0 % it's the last sample),
                         s0_ = samples_segment;
-                    end;
-                end;
+                    end
+                end
                 s1_ = samples_segment;
                 if seg==SEG_stop
                     s1_ = mod(s1,samples_segment);
                     if s1_ == 0 % it's the last sample),
                         s1_ = samples_segment;
-                    end;
-                end;
+                    end
+                end
 
                 samples_here = s0_:s1_;
 
@@ -282,7 +282,7 @@ classdef mfdaq < ndi.daq.reader
                         data_here = ndi.compress.expand_digital(tname_without_extension);
                     else
                         data_here = ndi.compress.expand_time(tname_without_extension);
-                    end;
+                    end
                     delete(tname);
 
                     if using_absolute_end&seg==SEG_stop
@@ -294,13 +294,13 @@ classdef mfdaq < ndi.daq.reader
                             mylog.msg('debug',5,['ndi.daq.reader.mfdaq.readchannels_epochsamples_ingested dropping a sample; can happen if reading from a channel that is sampled at a different rate than the rate that determines the time...']);
                         elseif size(data_here,1)<s1_-1 % if we are more than 1 sample short, complain
                             error(['I''m confused; data does not have the size I expect']);
-                        end;
-                    end;
+                        end
+                    end
                     data((1+count):(count+numel(samples_here)),channel_indexes_in_output{g}) = ...
                         data_here(s0_:s1_,channel_indexes_in_groups{g});
-                end;
+                end
                 count = count + numel(samples_here);
-            end;
+            end
             data = ndi.compress.underlying2scaled(data,[offset scale]);
 
         end % readchannels_epochsamples_ingested()
@@ -357,35 +357,35 @@ classdef mfdaq < ndi.daq.reader
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         else
                             transitions_off_samples = [];
-                        end;
+                        end
                     elseif any(strcmp(channeltype{i},{'den','dimn'})) % look for 1 to 0 transitions
                         transitions_on_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         if strcmp(channeltype{i},'dimp')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         else
                             transitions_off_samples = [];
-                        end;
-                    end;
+                        end
+                    end
                     timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
                     data{i} = [ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ];
                     if ~isempty(transitions_off_samples)
                         [dummy,order] = sort(timestamps{i}(:,1));
                         timestamps{i} = timestamps{i}(order,:);
                         data{i} = data{i}(order,:); % sort by on/off
-                    end;
-                end;
+                    end
+                end
 
                 if numel(channel)==1
                     timestamps = timestamps{1};
                     data = data{1};
-                end;
+                end
             else
                 % if the user doesn't want a derived channel, we need to read it from the file natively (using the class's reader function)
                 [timestamps, data] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype, ...
                     channel, epochfiles, t0, t1); % abstract class
-            end;
+            end
 
-        end; % readevents_epochsamples
+        end % readevents_epochsamples
 
         function [timestamps, data] = readevents_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1, S)
             %  READEVENTS_EPOCHSAMPLES_INGESTED - read events, markers, and digital events of specified channels for a specified epoch
@@ -439,28 +439,28 @@ classdef mfdaq < ndi.daq.reader
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         else
                             transitions_off_samples = [];
-                        end;
+                        end
                     elseif any(strcmp(channeltype{i},{'den','dimn'})) % look for 1 to 0 transitions
                         transitions_on_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         if strcmp(channeltype{i},'dimp')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         else
                             transitions_off_samples = [];
-                        end;
-                    end;
+                        end
+                    end
                     timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
                     data{i} = [ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ];
                     if ~isempty(transitions_off_samples)
                         [dummy,order] = sort(timestamps{i}(:,1));
                         timestamps{i} = timestamps{i}(order,:);
                         data{i} = data{i}(order,:); % sort by on/off
-                    end;
-                end;
+                    end
+                end
 
                 if numel(channel)==1
                     timestamps = timestamps{1};
                     data = data{1};
-                end;
+                end
             else
                 % if the user doesn't want a derived channel, we need to read it from the file from ingested epochfiles
 
@@ -471,7 +471,7 @@ classdef mfdaq < ndi.daq.reader
 
                 if ~iscell(channeltype)
                     channeltype = repmat({channeltype},numel(channel),1);
-                end;
+                end
                 channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
 
                 groups = 1; g = 1;
@@ -481,7 +481,7 @@ classdef mfdaq < ndi.daq.reader
                     [tname,tname_without_extension] = ndi.database.fun.copydocfile2temp(d,S,fname,'.nbf.tgz');
                 catch
                     error(['No event data found for this epoch.']);
-                end;
+                end
                 [channeltype_out,channel_out,T,D] = ndi.compress.expand_eventmarktext(tname_without_extension);
                 delete(tname);
 
@@ -490,9 +490,9 @@ classdef mfdaq < ndi.daq.reader
                     order_here = find(strcmp(channeltype{i},channeltype_out) & channel_out==channel(i));
                     if isempty(order_here)
                         error(['Channel type ' channeltype{i} ' and channel ' int2str(channel(i)) ' not found.']);
-                    end;
+                    end
                     order(i) = order_here;
-                end;
+                end
 
                 timestamps = T(order);
                 data = D(order);
@@ -502,15 +502,15 @@ classdef mfdaq < ndi.daq.reader
                     timestamps{i} = timestamps{i}(included,:);
                     data{i} = data{i}(:); % make sure we are column
                     data{i} = data{i}(included,:);
-                end;
+                end
 
                 if numel(timestamps)==1 % only one entry,
                     timestamps = timestamps{1};
                     data = data{1};
-                end;
-            end;
+                end
+            end
 
-        end; % readevents_epochsamples_ingested
+        end % readevents_epochsamples_ingested
 
         function [timestamps, data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
@@ -534,7 +534,7 @@ classdef mfdaq < ndi.daq.reader
             %
             timestamps = {};
             data = {}; % abstract class
-        end; % readevents_epochsamples_native ()
+        end % readevents_epochsamples_native ()
 
         % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
         function sr = samplerate(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
@@ -549,7 +549,7 @@ classdef mfdaq < ndi.daq.reader
             % If CHANNELTYPE is a single string, then it is assumed that
             % that CHANNELTYPE applies to every entry of CHANNEL.
             sr = []; % abstract class;
-        end; % samplerate()
+        end % samplerate()
 
         % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
         function [sr,offset,scale] = samplerate_ingested(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel, S)
@@ -572,7 +572,7 @@ classdef mfdaq < ndi.daq.reader
 
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
             channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
 
             sr = [];
@@ -583,16 +583,16 @@ classdef mfdaq < ndi.daq.reader
                     ([fullchannelinfo.number]==channel(i)) );
                 if isempty(index_here)
                     error(['No such channel: ' channeltype{i} ' : ' int2str(channel(i)) '.']);
-                end;
+                end
                 sr(i) = fullchannelinfo(index_here).sample_rate;
                 offset(i) = fullchannelinfo(index_here).offset;
                 scale(i) = fullchannelinfo(index_here).scale;
-            end;
+            end
             sr = sr(:);
             offset = offset(:);
             scale = scale(:);
 
-        end; % samplerate_ingested
+        end % samplerate_ingested
 
         function [datatype,p,datasize] = underlying_datatype(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
             % UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
@@ -630,8 +630,8 @@ classdef mfdaq < ndi.daq.reader
                     p = repmat([0 1],numel(channel),1);
                 otherwise
                     error(['Unknown channel type ' channeltype '.']);
-            end; %
-        end;
+            end %
+        end
 
         % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
@@ -658,7 +658,7 @@ classdef mfdaq < ndi.daq.reader
             ec_ = {};
             for i=1:numel(ec)
                 ec_{i} = ec{i}.ndi_clocktype2char();
-            end;
+            end
             daqreader_epochdata_ingested.epochtable.epochclock = ec_;
             daqreader_epochdata_ingested.epochtable.t0_t1 = ndi.fun.doc.t0_t1cell2array(ndi_daqreader_mfdaq_obj.t0_t1(epochfiles));
 
@@ -682,14 +682,14 @@ classdef mfdaq < ndi.daq.reader
                 numbers_here = 0 * indexes_here;
                 for j=1:numel(indexes_here)
                     [dummy,numbers_here(j)] = ndi.fun.channelname2prefixnumber(ch(indexes_here(j)).name);
-                end;
+                end
                 if ~isempty(indexes_here)
                     sr = ndi_daqreader_mfdaq_obj.samplerate(epochfiles,samplerate_types{i},numbers_here);
                     for j=1:numel(indexes_here)
                         sample_rates{indexes_here(j)} = sr(j);
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
             [ch.sample_rate] = sample_rates{:};
             thepoly1 = {}; thepoly2 = {};
             for i=1:numel(ch)
@@ -697,7 +697,7 @@ classdef mfdaq < ndi.daq.reader
                 [ut,thepoly,~]=ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,ch(i).type,chan_number);
                 thepoly1{i} = thepoly(1);
                 thepoly2{i} = thepoly(2);
-            end;
+            end
             [ch.offset] = thepoly1{:};
             [ch.scale] = thepoly2{:};
 
@@ -706,7 +706,7 @@ classdef mfdaq < ndi.daq.reader
             [b,errmsg] = mfdaq_epoch_channel_obj.writeToFile(channel_file_name);
             if ~b
                 error(errmsg);
-            end;
+            end
             filenames_we_made{end+1} = channel_file_name;
             d = d.add_file('channel_list.bin',channel_file_name);
 
@@ -723,7 +723,7 @@ classdef mfdaq < ndi.daq.reader
                     chan_entries_indexes = find(strcmp('event',{ci.type}) | strcmp('marker',{ci.type}) | strcmp('text',{ci.type}) );
                 else
                     chan_entries_indexes = find(strcmp(types{i},{ci.type}));
-                end;
+                end
 
                 fileprefix = 'ai';
                 switch(types{i})
@@ -741,7 +741,7 @@ classdef mfdaq < ndi.daq.reader
                         fileprefix = 'evmktx';
                     case 'time'
                         fileprefix = 'ti';
-                end;
+                end
 
                 % now find the groups
                 groups = unique([ci(chan_entries_indexes).group]);
@@ -756,16 +756,16 @@ classdef mfdaq < ndi.daq.reader
                         sample_rates_here(k) = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, ...
                             ci(chan_entries_indexes(group_indexes(k))).type,...
                             ci(chan_entries_indexes(group_indexes(k))).number);
-                    end;
+                    end
 
                     sample_rates_here_unique = unique(sample_rates_here);
                     indexes_nan = find(isnan(sample_rates_here_unique));
                     if numel(indexes_nan)>1
                         sample_rates_here_unique(indexes_nan(2:end)) = [];
-                    end;
+                    end
                     if numel(unique(sample_rates_here_unique))~=1
                         error(['Sample rates are not all identical for ' types{i} ' group ' int2str(groups(g)) '.']);
-                    end;
+                    end
 
                     % now, do different things depending upon the underlying data types
 
@@ -776,7 +776,7 @@ classdef mfdaq < ndi.daq.reader
 
                             if isnan(sample_rates_here_unique)
                                 error(['Analog records have a NaN sample rate.']);
-                            end;
+                            end
 
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
@@ -797,12 +797,12 @@ classdef mfdaq < ndi.daq.reader
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
-                            end;
+                            end
                         case 'digital'
                             % do prep
                             if isnan(sample_rates_here_unique)
                                 error(['Analog records have a NaN sample rate.']);
-                            end;
+                            end
 
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
@@ -822,14 +822,14 @@ classdef mfdaq < ndi.daq.reader
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
-                            end;
+                            end
                         case 'eventmarktext'
                             mylog.msg('system',1,['Working on event/marker/text ingestion segment 1 of 1.']);
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             channeltype = {};
                             for ii=1:numel(channels_here)
                                 channeltype{end+1} = ci(chan_entries_indexes(group_indexes(ii))).type;
-                            end;
+                            end
                             [T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype,channels_here,epochfiles,-Inf,Inf);
                             filename_here = ndi.file.temp_name();
                             ratio = ndi.compress.compress_eventmarktext(channeltype,channels_here,T,D,filename_here);
@@ -847,15 +847,15 @@ classdef mfdaq < ndi.daq.reader
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
-                            end;
+                            end
 
                         otherwise
                             error(['Unknown channel type ' types{i} '.']);
-                    end;
-                end;
-            end;
-        end; % ingest_epochfiles()
-    end; % methods
+                    end
+                end
+            end
+        end % ingest_epochfiles()
+    end % methods
 
     methods(Static)
         function [types,abbrev] = channel_types()
@@ -886,7 +886,7 @@ classdef mfdaq < ndi.daq.reader
             types =  {'analog_in','analog_out','auxiliary_in','digital_in','digital_out','event','marker','text','time'};
             abbrev = {'ai'      , 'ao',        'ax',          'di',        'do',         'e',    'mk',  'tx',  't'   };
 
-        end; % channelTypes
+        end % channelTypes
 
         function [stdchanneltypes] = standardize_channel_types(channeltypes)
             % STANDARDIZE_CHANNEL_TYPES - return standard channel type names
@@ -903,9 +903,9 @@ classdef mfdaq < ndi.daq.reader
                 index = find(strcmp(channeltypes{i},abbrev));
                 if ~isempty(index)
                     stdchanneltypes{i}=types{index};
-                end;
-            end;
-        end; % standardize_channel_types
+                end
+            end
+        end % standardize_channel_types
 
         function tc = channelsepoch2timechannelinfo(channelsepoch, channeltype, channelnumber)
             % CHANNELSEPOCH2TIMECHANNELINFO - look up time channel info
@@ -918,7 +918,7 @@ classdef mfdaq < ndi.daq.reader
             %
             if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channelnumber),1);
-            end;
+            end
             channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
             tc = NaN(size(channeltype));
             [types,abbrev] = ndi.daq.reader.mfdaq.channel_types;
@@ -929,9 +929,9 @@ classdef mfdaq < ndi.daq.reader
                 otherindex = find(strcmp(chname,{channelsepoch.name}));
                 if ~isempty(otherindex)
                     tc(i) = channelsepoch(otherindex).time_channel;
-                end;
-            end;
+                end
+            end
 
-        end; % channelsepoch2timechannelinfo
+        end % channelsepoch2timechannelinfo
     end % methods(Static)
 end % classdef

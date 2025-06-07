@@ -13,7 +13,7 @@ function test_ndi_probe(dirname)
 
     if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
-    end;
+    end
 
     disp(['reading session from directory ' dirname ' ...']);
     E = ndi.session.dir(dirname),
@@ -25,7 +25,7 @@ function test_ndi_probe(dirname)
         disp(['Need to run ndi.test.daq.build_intan_flat_exp first, doing that now...']);
         ndi.test.daq.build_intan_flat_exp(dirname);
         probes = E.getprobes(); % should return 1 probe
-    end;
+    end
 
     % now let's play with the first probe
 

@@ -21,4 +21,4 @@ function d = find_calc_directories()
 
     for i=1:numel(d)
         d{i} = [tool_path filesep d{i}];
-    end;
+    end

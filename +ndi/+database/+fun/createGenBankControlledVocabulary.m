@@ -47,7 +47,7 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
     fid = fopen([dirname filesep outname],'wt');
     if fid<0
         error(['Could not open file ' [dirname filesep outname] ' for writing.']);
-    end;
+    end
 
     % takes 5 minutes on my medium-speed laptop
     genBankNames = ndi.database.fun.readGenBankNames(T);
@@ -80,14 +80,14 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
     for i=1:numel(H)
         if mod(i,1000) == 0
             progressbar(i/numel(H));
-        end;
+        end
 
         if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'environmental'))
             continue; % skip it
-        end;
+        end
         if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'sample'))
             continue; % skip it;
-        end;
+        end
 
         fprintf(fid,[genBankNames.scientific_name{H(i)} '\t']);
         fprintf(fid,[genBankNames.genbank_commonname{H(i)} '\t']);
@@ -95,17 +95,17 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
             fprintf(fid,[genBankNames.synonym{H(i)}{j}]);
             if j~=numel(genBankNames.synonym{H(i)})
                 fprintf(fid,', ');
-            end;
-        end;
+            end
+        end
         fprintf(fid,'\t');
         for j=1:numel(genBankNames.other_commonname{H(i)})
             fprintf(fid,[genBankNames.other_commonname{H(i)}{j}]);
             if j~=numel(genBankNames.other_commonname{H(i)})
                 fprintf(fid,', ');
-            end;
-        end;
+            end
+        end
         fprintf(fid,'\n');
-    end;
+    end
 
     progressbar(1);
 

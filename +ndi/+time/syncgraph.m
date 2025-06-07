@@ -29,13 +29,13 @@ classdef syncgraph < ndi.ido
                 ndi_syncgraph_obj.identifier = varargin{2}.id();
                 for i=1:numel(syncrule_doc)
                     ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi.database.fun.ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
-                end;
+                end
             else
                 session = [];
 
                 if nargin>0
                     session = varargin{1};
-                end;
+                end
 
                 ndi_syncgraph_obj.session = session;
 
@@ -43,9 +43,9 @@ classdef syncgraph < ndi.ido
                     if strcmp(lower(varargin{2}),lower('OpenFile'))
                         error(['Load from file no longer supported.']);
                         ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
         end % ndi.time.syncgraph
 
         function b = eq(ndi_syncgraph_obj1, ndi_syncgraph_obj2)
@@ -61,9 +61,9 @@ classdef syncgraph < ndi.ido
             if b
                 for i=1:numel(ndi_syncgraph_obj1.rules)
                     b = b & (ndi_syncgraph_obj1.rules{i} == ndi_syncgraph_obj2.rules{i});
-                end;
-            end;
-        end; % eq();
+                end
+            end
+        end % eq();
 
         function ndi_syncgraph_obj = addrule(ndi_syncgraph_obj, ndi_syncrule_obj)
             % ADDRULE - add an ndi.time.syncrule to an ndi.time.syncgraph object
@@ -101,7 +101,7 @@ classdef syncgraph < ndi.ido
             end
             if did_add
                 ndi_syncgraph_obj.remove_cached_graphinfo();
-            end;
+            end
         end % addrule()
 
         function ndi_syncgraph_obj = removerule(ndi_syncgraph_obj, index)
@@ -117,7 +117,7 @@ classdef syncgraph < ndi.ido
 
         end % removerule()
 
-        function [ginfo,hashvalue] = graphinfo(ndi_syncgraph_obj);
+        function [ginfo,hashvalue] = graphinfo(ndi_syncgraph_obj)
             % GRAPHINFO - return the graph information
             %
             %
@@ -170,10 +170,10 @@ classdef syncgraph < ndi.ido
 
             for i=1:numel(ndi_syncgraph_obj.rules)
                 ginfo.syncRuleIDs{i} = ndi_syncgraph_obj.rules{i}.id();
-            end;
+            end
 
             d = ndi_syncgraph_obj.session.daqsystem_load('name','(.*)');
-            if ~iscell(d) & ~isempty(d), d = {d}; end; % make sure we are a cell
+            if ~iscell(d) & ~isempty(d), d = {d}; end % make sure we are a cell
 
             for i=1:numel(d)
                 ginfo = ndi_syncgraph_obj.addepoch(d{i}, ginfo);
@@ -198,7 +198,7 @@ classdef syncgraph < ndi.ido
                     ginfo = table_entry(1).data.graphinfo;
                     hashvalue = table_entry(1).data.hashvalue;
                     ginfo = ndi.time.syncgraph.cache2ginfo(ginfo);
-                end;
+                end
             end
         end % cached_epochtable
 
@@ -267,32 +267,32 @@ classdef syncgraph < ndi.ido
                 for k=1:numel(d_i)
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.epoch_id,...
                         ginfo.nodes(I(i)).epoch_id);
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.epoch_id,...
                         ginfo.nodes(J(i)).epoch_id);
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.epoch_clock,...
                         ginfo.nodes(I(i)).epoch_clock.ndi_clocktype2char());
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.epoch_clock,...
                         ginfo.nodes(J(i)).epoch_clock.ndi_clocktype2char());
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.objectname,...
                         ginfo.nodes(I(i)).objectname);
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.objectname,...
                         ginfo.nodes(J(i)).objectname);
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.epoch_session_id,...
                         ginfo.nodes(I(i)).epoch_session_id);
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.epoch_session_id,...
                         ginfo.nodes(J(i)).epoch_session_id);
-                    if ~test, continue; end;
+                    if ~test, continue; end
                     % if we are still here, we match
                     match = k;
                     disp(['We matched!']);
-                end;
+                end
 
                 if match==0 % we don't have it already saved
                     sync_mapping_struct = [];
@@ -309,7 +309,7 @@ classdef syncgraph < ndi.ido
                             setfield(sync_mapping_struct.epochnode_b,...
                             epoch_node_fields{f},...
                             getfield(ginfo.nodes(J(i)),epoch_node_fields{f}));
-                    end;
+                    end
                     sync_mapping_struct.epochnode_a.epochprobemap = sync_mapping_struct.epochnode_a.epochprobemap.serialize();
                     sync_mapping_struct.epochnode_b.epochprobemap = sync_mapping_struct.epochnode_b.epochprobemap.serialize();
                     sync_mapping_struct.epochnode_a.epoch_clock = sync_mapping_struct.epochnode_a.epoch_clock.ndi_clocktype2char();
@@ -317,10 +317,10 @@ classdef syncgraph < ndi.ido
                     d{end+1} = ndi.document('syncrule_mapping','syncrule_mapping',sync_mapping_struct) + ndi_syncgraph_obj.session.newdocument();
                     d{end} = d{end}.set_dependency_value('syncgraph_id',syncgraph_id);
                     d{end} = d{end}.set_dependency_value('syncrule_id',ginfo.syncRuleIDs{ginfo.syncRuleG(I(i),J(i))});
-                end;
-            end;
+                end
+            end
 
-        end; % ingest
+        end % ingest
 
         function d = get_ingested(ndi_syncgraph_obj)
             % GET_INGESTED - get ingested documents for an ndi.syncgraph object
@@ -334,7 +334,7 @@ classdef syncgraph < ndi.ido
             %  ( ndi.query('syncrule_mapping.epochnode_a.objectname','exact_string',ndi_daqsystem_obj.name) | ...
             %    ndi.query('syncrule_mapping.epochnode_b.objectname','exact_string',ndi_daqsystem_obj.name));
             d = ndi_syncgraph_obj.session.database_search(q_savedRules);
-        end; % get_ingested()
+        end % get_ingested()
 
         function ginfo = addepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
             % ADDEPOCH - add an ndi.epoch.epochset to the graph
@@ -418,7 +418,7 @@ classdef syncgraph < ndi.ido
                             else
                                 i_ = j;
                                 j_ = i;
-                            end;
+                            end
                             lowcost = Inf;
                             mappinghere = [];
                             match = 0;
@@ -432,16 +432,16 @@ classdef syncgraph < ndi.ido
                                     lowcost = c;
                                     mappinghere = m;
                                     match = K;
-                                end;
+                                end
                             end
                             if isempty(mappinghere) & ~isinf(lowcost)
                                 error('this is an error. notify developers. we did not think we could get here.');
-                            end;
+                            end
                             ginfo.G(i_,j_) = lowcost;
                             ginfo.mapping{i_,j_} = mappinghere;
                             if match
                                 ginfo.syncRuleG(i_,j_) = K;
-                            end;
+                            end
                         end
                     end
                 end
@@ -465,7 +465,7 @@ classdef syncgraph < ndi.ido
             % Step 1: make sure we have the right kind of input object
             if ~isa(ndi_epochset_obj, 'ndi.epoch.epochset')
                 error(['The input NDI_EPOCHSET_OBJ must be of class ndi.epoch.epochset or a subclass.']);
-            end;
+            end
 
             enodes = epochnodes(ndi_epochset_obj);
             % do we search for duplicates?
@@ -652,11 +652,11 @@ classdef syncgraph < ndi.ido
                 elseif numel(sourcenodeindex)>1
                     msg = ['expected start epochnode to be a single node, but it is not.'];
                     return;
-                end;
+                end
                 % if we made it here, we are in good shape with a sourcenodeindex that is real
             end
 
-            if isempty(sourcenodeindex), return; end; % if we did not find it, we failed
+            if isempty(sourcenodeindex), return; end % if we did not find it, we failed
 
             % STEP 2: narrow the search for the destination node. It has to match our referent and it has to
             %     match the requested clock type
@@ -736,7 +736,7 @@ classdef syncgraph < ndi.ido
                 cache = exp.cache;
                 key = ['syncgraph_' ndi_syncgraph_obj.id()];
             end
-        end; % getcache()
+        end % getcache()
 
         %% functions that override ndi.documentservice
 
@@ -754,8 +754,8 @@ classdef syncgraph < ndi.ido
             for i=1:numel(ndi_syncgraph_obj.rules)
                 ndi_document_obj_set{end+1} = ndi_syncgraph_obj.rules{i}.newdocument();
                 ndi_document_obj_set{1} = ndi_document_obj_set{1}.add_dependency_value_n('syncrule_id',ndi_syncgraph_obj.rules{i}.id());
-            end;
-        end; % newdocument()
+            end
+        end % newdocument()
 
         function sq = searchquery(ndi_syncgraph_obj)
             % SEARCHQUERY - create a search for this ndi.time.syncgraph object
@@ -766,7 +766,7 @@ classdef syncgraph < ndi.ido
             %
             sq = ndi.query({'base.id', ndi_syncgraph_obj.id() , ...
                 'base.session_id', ndi_syncgraph_obj.session.id() });
-        end; % searchquery()
+        end % searchquery()
     end % methods
 
     methods (Static)
@@ -792,7 +792,7 @@ classdef syncgraph < ndi.ido
                 otherwise
                     error(['More than 1 document with base.id value of ' ...
                         syncgraph_doc_id '. Do not know what to do.']);
-            end;
+            end
 
             rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id','ErrorIfNotFound',0);
             for i=1:numel(rules_id_list)
@@ -801,12 +801,12 @@ classdef syncgraph < ndi.ido
                 if numel(rules_doc)~=1
                     error(['Could not find syncrule with id ' rules_id_list{i} ...
                         '; found ' int2str(numel(rules_doc)) ' occurrences']);
-                end;
+                end
                 syncrule_docs{i} = rules_doc{1};
             end
-        end; % load_all_syncgraph_docs()
+        end % load_all_syncgraph_docs()
 
-        function [c,m] = checkingestedrules(ingested_syncrule_docs, ndi_syncrule_obj_id, gnode_i, gnode_j);
+        function [c,m] = checkingestedrules(ingested_syncrule_docs, ndi_syncrule_obj_id, gnode_i, gnode_j)
             % CHECKINGESTEDRULES - check for a mapping between two nodes in the ingested syncrules
             %
             % [C,M] = CHECKINGESTEDRULES(INGESTED_SYNCRULE_DOCS, NDI_SYNCRULE_OBJ, GNODE_I, GNODE_J)
@@ -824,28 +824,28 @@ classdef syncgraph < ndi.ido
 
             for i=1:numel(ingested_syncrule_docs)
                 test = strcmp(ingested_syncrule_docs{i}.dependency_value('syncrule_id'), ndi_syncrule_obj_id);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_i.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_id);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_i.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_session_id);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_i.epoch_clock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_clock);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_j.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_id);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_j.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_session_id);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_j.epoch_clock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_clock);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_i.objectname,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.objectname);
-                if ~test, continue; end;
+                if ~test, continue; end
                 test = strcmp(gnode_j.objectname,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.objectname);
-                if ~test, continue; end;
+                if ~test, continue; end
 
                 c(i) = ingested_syncrule_docs{i}.document_properties.syncrule_mapping.cost;
                 m{i} = ingested_syncrule_docs{i}.document_properties.syncrule_mapping.mapping;
 
-            end;
+            end
 
             [min_c,min_c_loc] = min(c);
             if isinf(c)
@@ -853,8 +853,8 @@ classdef syncgraph < ndi.ido
             else
                 c = min_c;
                 m = ndi.time.timemapping(m{min_c_loc});
-            end;
-        end;
+            end
+        end
 
         function ginfo_small = ginfo2cache(ginfo)
         % GINFO2CACHE Make a smaller version of the GINFO for storage in the cache

@@ -14,7 +14,7 @@ function build_intan_flat_exp(dirname)
 
     if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
-    end;
+    end
 
     disp(['creating a new session object...']);
     E = ndi.session.dir('exp1',dirname);
@@ -25,10 +25,10 @@ function build_intan_flat_exp(dirname)
     dev = E.daqsystem_load('name','(.*)'),
     if ~isempty(dev) & ~iscell(dev)
         dev = {dev};
-    end;
+    end
     for i=1:numel(dev)
         E.daqsystem_rm(dev{i});
-    end;
+    end
 
     disp(['Now adding our acquisition daqsystem (intan):']);
 

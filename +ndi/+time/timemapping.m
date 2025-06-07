@@ -47,7 +47,7 @@ classdef timemapping
                 mapping = varargin{1};
             else
                 error(['Too many inputs to ndi.time.timemapping creator.']);
-            end;
+            end
 
             ndi_timemapping_obj.mapping = mapping;
 

@@ -43,7 +43,7 @@ classdef blackrock < ndi.daq.reader.mfdaq
                 newchannel.type = 'analog_in';
                 newchannel.name = ['ai' int2str(ns_h.MetaTags.ChannelID(i))];
                 channels(end+1) = newchannel;
-            end;
+            end
 
         end % getchannels()
 
@@ -89,16 +89,16 @@ classdef blackrock < ndi.daq.reader.mfdaq
                 s0 = 1; % in Blackrock, the first sample is always 1
             elseif s0 > ns_h.MetaTags.DataPoints
                 s0 = ns_h.MetaTags.DataPoints;
-            end;
+            end
 
             if s1 > ns_h.MetaTags.DataPoints
                 s1 = ns_h.MetaTags.DataPoints;
-            end;
+            end
 
             if s1 < s0
                 data = zeros(0, numel(channel));
                 return;
-            end;
+            end
 
             if strcmp(vlt.data.celloritem(channeltype,1),'ai')
                 for i=1:numel(channel)
@@ -106,13 +106,13 @@ classdef blackrock < ndi.daq.reader.mfdaq
                         ['t:' int2str(s0) ':' int2str(s1)], ['c:' int2str(channel(i))]);
                     if ~isstruct(ns_out)
                         error(['No data read from channel ' int2str(i) ' of blackrock record.']);
-                    end;
+                    end
                     data = cat(2,data,ns_out.Data');
-                end;
+                end
 
             elseif strcmp(vlt.data.celloritem(channeltype,1),'time')
                 data = cat(1,data,ns_h.MetaTags.Timestamp+((s0:s1)'-1)*1./ns_h.MetaTags.SamplingFreq);
-            end;
+            end
 
         end % readchannels_epochsamples
 
@@ -137,8 +137,8 @@ classdef blackrock < ndi.daq.reader.mfdaq
                     sr(i) = ns_h.MetaTags.SamplingFreq;
                 else
                     error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
-                end;
-            end;
+                end
+            end
         end % samplerate()
 
         function [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channels)
@@ -151,16 +151,16 @@ classdef blackrock < ndi.daq.reader.mfdaq
                 ns_h = openNSx(nsv_files{1},'noread');
             else
                 ns_h = [];
-            end;
+            end
             if ~isempty(nev_files{1})
                 nev_h = openNEV(nev_files{1},'noread');
                 nev_h = [];
-            end;
+            end
 
             headers.ns_rate = [];
             if ~isempty(ns_h)
                 headers.ns_rate = ns_h.MetaTags.SamplingFreq;
-            end;
+            end
             headers.requestedchanneltype = [];
             headers.requestedchannelindexes= [];
 
@@ -170,20 +170,20 @@ classdef blackrock < ndi.daq.reader.mfdaq
                     if strcmpi(ct,'ai')
                         if isempty(ns_h)
                             error(['ai channels in Blackrock must be stored in .ns# files, but there is none.']);
-                        end;
+                        end
                         index = find(ns_h.MetaTags.ChannelID==channels(i));
                         if isempty(index)
                             error(['Channel ' int2str(channels(i)) ' not recorded.']);
                         else
                             headers.requestedchannelindexes(i) = index;
                             headers.requestedchanneltype(i) = 1; % ns==1, nev==2
-                        end;
+                        end
                     else
                         error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
-                    end;
-                end;
-            end;
-        end; % read_blackrock_headers()
+                    end
+                end
+            end
+        end % read_blackrock_headers()
 
         function t0t1 = t0_t1(ndi_daqreader_mfdaq_blackrock_obj, epochfiles)
             % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
@@ -227,11 +227,11 @@ classdef blackrock < ndi.daq.reader.mfdaq
 
             if numel(nsvfiles)+numel(nevfiles) == 0
                 error(['No .ns# or .nev files found.']);
-            end;
+            end
 
             if numel(nsvfiles)>1
                 error(['More than 1 NS# file in this file list; do not know what to do.']);
-            end;
+            end
         end % filenamefromepoch
 
     end % methods (Static)

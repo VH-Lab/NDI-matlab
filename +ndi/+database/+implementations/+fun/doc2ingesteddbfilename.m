@@ -12,7 +12,7 @@ function dbfilename = doc2ingesteddbfilename(ndi_document_obj, filename)
 
     if b==0
         error(['Document does not have a file ' filename '.']);
-    end;
+    end
 
     % if we are here, we know we have files.file_info
 
@@ -23,8 +23,8 @@ function dbfilename = doc2ingesteddbfilename(ndi_document_obj, filename)
         if locs(i).ingest==1 % we found one we can open locally
             dbfilename = locs(i).uid;
             return;
-        end;
-    end;
+        end
+    end
 
     % if we are here, we didn't find one
 
