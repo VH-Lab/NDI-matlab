@@ -36,6 +36,11 @@ arguments
     options.type (1,:) char = ''
 end
 
+% Add progress bar
+progressbar = ndi.gui.component.ProgressBarWindow('','GrabMostRecent',true);
+pid = did.ido.unique_id();
+progressbar.addBar('Label','Finding elements from epoch ids','Tag',pid,'Auto',true);
+
 % Get element arguments for filtering if options are provided
 elementArgs = {};
 argNames = fieldnames(options);
@@ -64,7 +69,13 @@ for p = 1:numel(elements)
             element{epochInd} = elements(p);
         end
     end
+
+    % Update the progressbar
+    if mod(p,10)==0
+        progressbar.updateBar(pid,p/numel(elements));
+    end
 end
+progressbar.updateBar(pid,1); % Update the bar's progress
 
 % Check output size/type
 missingID = cellfun(@isempty,element);

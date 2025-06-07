@@ -86,11 +86,11 @@ classdef epochProbeMapMaker < handle
                 variableTable table
                 probeTable table
                 options.Overwrite (1,1) logical = false;
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {};
-                options.ProbePostfix {mustBeA(options.ProbePostfix,{'char','str','cell'})} = {};
+                options.NonNaNVariableNames {mustBeText} = {};
+                options.ProbePostfix {mustBeText} = {};
             end
 
-             % Assign properties from inputs
+            % Assign properties from inputs
             obj.path = path;
             obj.variableTable = variableTable;
             obj.probeTable = probeTable;
@@ -132,6 +132,7 @@ classdef epochProbeMapMaker < handle
                 
                 % Skip if not overwriting and file exists
                 if ~options.Overwrite && exist(probeFilename, 'file')
+                    progressBar = progressBar.updateBar('epochprobemap',e/numel(epochstreams));
                     continue
                 end
                 

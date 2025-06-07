@@ -73,8 +73,9 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     % --- Validate sessionID ---
     % Must be a non-empty character array or string.
     if ~(ischar(sessionIDValue) && ~isempty(sessionIDValue))
-        warning_msg = sprintf('sessionID did not resolve to a non-empty character array (type: %s). Returning NaN for all outputs.', class(sessionIDValue));
-        warning('ndi:createSubjectInformation:InvalidSessionID', warning_msg);
+        warning('ndi:createSubjectInformation:InvalidSessionID',...
+            ['sessionID did not resolve to a non-empty character array (type: %s). ' ...
+            'Returning NaN for all outputs.'], class(sessionIDValue));
         return; % Return initial NaN values for all outputs.
     end
 
@@ -87,19 +88,19 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     if sum(isValidGenotype) ~= 1
         % If not exactly one valid genotype indicator is found, issue a warning
         % and return with subjectString (and other outputs) as NaN.
-        warning_msg = sprintf('Expected exactly one valid genotype indicator from (%s). Found %d. Returning NaN for subjectString.', ...
-                strjoin(genotypeNames, ', '), sum(isValidGenotype));
-        warning('ndi:createSubjectInformation:GenotypeIssue', warning_msg);
+        warning('ndi:createSubjectInformation:GenotypeIssue',...
+            ['Expected exactly one valid genotype indicator from (%s). Found %d. ' ...
+            'Returning NaN for subjectString.'], ...
+            strjoin(genotypeNames, ', '), sum(isValidGenotype));
         return; 
     end
 
     % Identify the valid genotype and set the prefix for subjectString.
-    validGenotypeIndex = find(isValidGenotype);
-    validGenotypeName = genotypeNames{validGenotypeIndex}; 
+    validGenotypeName = genotypeNames{isValidGenotype}; 
 
     switch validGenotypeName
         case 'IsWildType'
-            prefix = 'sd_rat_wt_';
+            prefix = 'sd_rat_WT_';
         case 'IsCRFCre' 
             prefix = 'sdwi_rat_CRFCre_';
         case 'IsOTRCre' 
@@ -114,13 +115,15 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     % These must be non-empty char arrays to proceed.
     if ~(ischar(recordingDateValue) && ~isempty(recordingDateValue))
         escaped_genotype = strrep(validGenotypeName, '%', '%%'); % Escape for sprintf
-        warning_msg = sprintf('RecordingDate did not resolve to valid text for genotype %s. Returning NaN outputs.', escaped_genotype);
-        warning('ndi:createSubjectInformation:InvalidDateInput', warning_msg);
+        warning('ndi:createSubjectInformation:InvalidDateInput',...
+            ['RecordingDate did not resolve to valid text for genotype %s. ' ...
+            'Returning NaN outputs.'], escaped_genotype);
         return; % Return initial NaN values.
     end
      if ~(ischar(subjectPostfixValue) && ~isempty(subjectPostfixValue))
-         warning_msg = sprintf('SubjectPostfix did not resolve to valid text (expected non-empty char, got type %s). Returning NaN outputs.', class(subjectPostfixValue));
-         warning('ndi:createSubjectInformation:InvalidPostfixInput', warning_msg);
+         warning('ndi:createSubjectInformation:InvalidPostfixInput',...
+             ['SubjectPostfix did not resolve to valid text (expected non-empty char, got type %s). ' ...
+             'Returning NaN outputs.'], class(subjectPostfixValue));
         return; % Return initial NaN values.
     end
 
@@ -134,9 +137,9 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     catch ME_DateFormat
         escaped_date_val = strrep(recordingDateValue, '%', '%%');
         escaped_msg = strrep(ME_DateFormat.message, '%', '%%');
-        warning_msg = sprintf('Could not parse RecordingDate "%s" with format "%s". Error: %s. Returning NaN outputs.', ...
+        warning('ndi:createSubjectInformation:DateFormatError',...
+            'Could not parse RecordingDate "%s" with format "%s". Error: %s. Returning NaN outputs.', ...
                 escaped_date_val, inputDateFormat, escaped_msg);
-        warning('ndi:createSubjectInformation:DateFormatError', warning_msg);
         return; % Return initial NaN values.
     end
 
@@ -157,13 +160,14 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
             sp = species; % For use in strain creation
         catch ME_SpeciesCreate
              escaped_message = strrep(ME_SpeciesCreate.message, '%', '%%');
-             warning_msg = sprintf('Could not create openMINDS Species object. Error: %s', escaped_message);
-             warning('ndi:createSubjectInformation:SpeciesCreationFailed', warning_msg);
+             warning('ndi:createSubjectInformation:SpeciesCreationFailed',...
+                 'Could not create openMINDS Species object. Error: %s', escaped_message);
              % species and sp remain NaN
         end
     else
-         warning_msg = sprintf('SpeciesOntologyID column (value type: %s) did not resolve to valid text. Cannot determine species or related strain.', class(speciesOntologyIDValue));
-         warning('ndi:createSubjectInformation:InvalidSpeciesOntologyID', warning_msg);
+         warning('ndi:createSubjectInformation:InvalidSpeciesOntologyID',...
+             ['SpeciesOntologyID column (value type: %s) did not resolve to valid text' ...
+             ' Cannot determine species or related strain.'], class(speciesOntologyIDValue));
          % species and sp remain NaN
     end
 
@@ -207,8 +211,9 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     catch ME_StrainCreate
         escaped_genotype = strrep(validGenotypeName, '%', '%%');
         escaped_message = strrep(ME_StrainCreate.message, '%', '%%');
-        warning_msg = sprintf('Could not create openMINDS Strain object for genotype %s. Error: %s', escaped_genotype, escaped_message);
-        warning('ndi:createSubjectInformation:StrainCreationFailed', warning_msg);
+        warning('ndi:createSubjectInformation:StrainCreationFailed',...
+            'Could not create openMINDS Strain object for genotype %s. Error: %s',...
+            escaped_genotype, escaped_message);
         strain = NaN;
     end
 
@@ -217,7 +222,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     isBiologicalSexValid = ismember(biologicalSexValue, {'male', 'female', 'hermaphrodite', 'notDetectable'});
     if isBiologicalSexValid
         ontologyIdentifiers = {'PATO:0000384','PATO:0000383','PATO:0001340',''};
-        f = find(strcmp(biologicalSexValue,{'male', 'female', 'hermaphrodite', 'notDetectable'}));
+        f = strcmp(biologicalSexValue,{'male', 'female', 'hermaphrodite', 'notDetectable'});
         biologicalSex = openminds.controlledterms.BiologicalSex('name',biologicalSexValue,'preferredOntologyIdentifier',ontologyIdentifiers{f});
     else
         biologicalSex = NaN;

@@ -40,10 +40,10 @@ classdef EMPTY < ndi.ontology
             end
         end % constructor
 
-        function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name_fragment)
+        function [id, name, definition, synonyms, shortName] = lookupTermOrID(obj, term_or_id_or_name_fragment)
             % LOOKUPTERMORID - Looks up a term in the local EMPTY.obo file.
             %
-            %   [ID, NAME, DEFINITION, SYNONYMS] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME_FRAGMENT)
+            %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME_FRAGMENT)
             %
             %   Overrides the base class method. It uses the static helper
             %   ndi.ontology.lookupOBOFile to parse and search the OBO file.
@@ -62,7 +62,7 @@ classdef EMPTY < ndi.ontology
 
             try
                 % Call the static helper from the base class
-                [id, name, definition, synonyms] = ndi.ontology.lookupOBOFile(...
+                [id, name, definition, synonyms, shortName] = ndi.ontology.lookupOBOFile(...
                     obj.OboFilePath, ...
                     obj.ONTOLOGY_PREFIX, ...
                     term_or_id_or_name_fragment);

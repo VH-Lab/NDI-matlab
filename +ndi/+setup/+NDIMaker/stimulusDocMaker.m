@@ -113,16 +113,14 @@ classdef stimulusDocMaker < handle
                 obj
                 stimulator_id (1,:) char
                 epoch_id (1,:) char
-                bathtargetStrings {mustBeA(bathtargetStrings,{'char','str','cell'})}
-                mixtureStrings {mustBeA(mixtureStrings,{'char','str','cell'})}
+                bathtargetStrings {mustBeText}
+                mixtureStrings {mustBeText}
                 options.Overwrite (1,1) logical = false;
             end
 
             % --- Process Mixture Strings ---
             mixtureNames = fieldnames(obj.mixtureStruct); % Get valid mixture names
-            if ischar(mixtureStrings) % Ensure mixtureStrings is a cell array
-                mixtureStrings = {mixtureStrings};
-            end
+            mixtureStrings = cellstr(mixtureStrings); % Ensure mixtureStrings is a cell array
             mixtureTable = table(); % Initialize mixture component table
             for i = 1:numel(mixtureStrings)
                 % Validate mixture string
@@ -141,9 +139,7 @@ classdef stimulusDocMaker < handle
 
             % --- Process Bath Target Strings ---
             bathtargetNames = fieldnames(obj.bathtargetsStruct); % Get valid bath target names
-            if ischar(bathtargetStrings) % Ensure bathtargetStrings is a cell array
-                bathtargetStrings = {bathtargetStrings};
-            end
+            bathtargetStrings = cellstr(bathtargetStrings);  % Ensure bathtargetStrings is a cell array
             locList = struct('location',{}); % Initialize location list
             for i = 1:numel(bathtargetStrings)
                 % Validate bath target string
@@ -263,7 +259,7 @@ classdef stimulusDocMaker < handle
                 bathVariable (1,:) char
                 mixtureVariable (1,:) char
                 options.FilenameVariable (1,:) char = ''
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {}
+                options.NonNaNVariableNames {mustBeText} = {}
                 options.MixtureDictionary struct = struct()
                 options.MixtureDelimeter (1,:) char = ','
                 options.Overwrite (1,1) logical = false
@@ -371,14 +367,12 @@ classdef stimulusDocMaker < handle
                 obj
                 stimulator_id (1,:) char
                 epoch_id (1,:) char
-                approachStrings {mustBeA(approachStrings,{'char','str','cell'})}
+                approachStrings {mustBeText}
                 options.Overwrite (1,1) logical = false;
             end
 
             % Ensure approach Strings is a cell array
-            if ischar(approachStrings) 
-                approachStrings = {approachStrings};
-            end
+            approachStrings = cellstr(approachStrings);
 
             % --- Create and Add Documents ---
             docs = cell(size(approachStrings)); % Initialize output cell array
@@ -465,7 +459,7 @@ classdef stimulusDocMaker < handle
                 variableTable table
                 approachVariable (1,:) char
                 options.FilenameVariable (1,:) char = ''
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {}
+                options.NonNaNVariableNames {mustBeText} = {}
                 options.Overwrite (1,1) logical = false
             end
 

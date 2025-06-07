@@ -6,6 +6,16 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
     %
     %   Ensure ProgressBarWindow.m (and its package +ndi) is on the path.
 
+    methods (TestClassSetup)
+        function cleanUpBeforeAllTests(testCase)
+            % This function runs once before any test in this class.
+            % It ensures no progress bars from previous runs interfere.
+            testCase.log(1, 'Closing all pre-existing progress bar windows...');
+            figs = findall(groot, 'Type', 'figure', 'Tag', 'progressbar');
+            delete(figs);
+        end
+    end
+
     methods (TestMethodTeardown)
         function closeAllProgressBars(testCase)
             % Close any progress bar figures created during tests
@@ -73,6 +83,28 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyNotSameHandle(app2.ProgressFigure, fig1Handle, ...
                 'Should create a new figure if Overwrite is true.');
             testCase.verifyFalse(ishandle(fig1Handle), 'Old figure should be deleted.');
+        end
+
+        function testConstructorGrabMostRecent(testCase)
+            % Tests the 'GrabMostRecent' constructor option.
+
+            % Create a first, older window with a different title
+            app1 = ndi.gui.component.ProgressBarWindow('Old Window');
+            testCase.addTeardown(@delete, app1.ProgressFigure);
+            guidata(app1.ProgressFigure, app1);
+            pause(0.1); % Ensure timestamp is different
+
+            % Create a second, newer window
+            app2 = ndi.gui.component.ProgressBarWindow('New Window');
+            testCase.addTeardown(@delete, app2.ProgressFigure);
+            guidata(app2.ProgressFigure, app2);
+            drawnow;
+            
+            % Now, construct with a non-matching title but with GrabMostRecent
+            app3 = ndi.gui.component.ProgressBarWindow('NonExistent Title', 'GrabMostRecent', true);
+            
+            testCase.verifySameHandle(app3.ProgressFigure, app2.ProgressFigure, ...
+                'Should have grabbed the most recent progress bar window.');
         end
 
         % AddBar Tests
@@ -264,7 +296,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.addTeardown(@delete, app.ProgressFigure);
             app.addBar('Tag', 'TTimeoutTerm');
             app.ProgressBars(1).State = 'Timeout';
-            testCase.verifyError(@() app.removeBar('TTimeoutTerm'), 'ProgressBarWindow:AutoCloseOnTimeout');
+            testCase.verifyWarning(@() app.removeBar('TTimeoutTerm'), 'ProgressBarWindow:AutoCloseOnTimeout');
             delete(findall(groot, 'Type', 'figure', 'Tag', 'progressbar'));
 
             % Test 'Open' state leading to BarRemoved warning
@@ -275,22 +307,60 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyWarning(@() app.removeBar('TOpenTerm'), 'ProgressBarWindow:BarRemoved');
         end
 
+        function testRemoveBarDifferentIncompleteStates(testCase)
+            % Tests the specific error/warning logic in removeBar for
+            % incomplete tasks. This replaces testRemoveBarIncompleteWarning.
+
+            % Test 'Button' state leading to UserTermination error
+            app = ndi.gui.component.ProgressBarWindow();
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag', 'TButtonTerm');
+            app.ProgressBars(1).State = 'Button'; % Simulate state set by handleButtonPress
+            testCase.verifyError(@() app.removeBar('TButtonTerm'), 'ProgressBarWindow:UserTermination');
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'progressbar'));
+
+            % Test 'Timeout' state leading to AutoCloseOnTimeout warning
+            app = ndi.gui.component.ProgressBarWindow();
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag', 'TTimeoutTerm');
+            app.ProgressBars(1).State = 'Timeout';
+            testCase.verifyWarning(@() app.removeBar('TTimeoutTerm'), 'ProgressBarWindow:AutoCloseOnTimeout');
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'progressbar'));
+
+            % Test 'Open' state leading to BarRemoved warning
+            app = ndi.gui.component.ProgressBarWindow();
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag', 'TOpenTerm');
+            app.ProgressBars(1).State = 'Open';
+            testCase.verifyWarning(@() app.removeBar('TOpenTerm'), 'ProgressBarWindow:BarRemoved');
+        end
+
         % Button Press Test
         function testHandleButtonPressRemovesBar(testCase)
             app = ndi.gui.component.ProgressBarWindow('Button Press Test');
             testCase.addTeardown(@delete, app.ProgressFigure);
-            app.addBar('Tag', 'TButton');
+            app.addBar('Tag', 'TButton1');
+            app.addBar('Tag', 'TButton2');
+            figHandle = app.ProgressFigure; % Store the figure handle to check it's closed
             
-            app.updateBar('TButton', 1); % Complete it so removeBar doesn't error
-            
+            app.updateBar('TButton1', 1); % Complete it
             buttonHandle = app.ProgressBars(1).Button;
-            
             buttonHandle.ButtonPushedFcn(buttonHandle, []); % Programmatic press
-            drawnow; 
+            drawnow;
             
-            testCase.verifyNumElements(app.ProgressBars,1, 'Bar metadata should remain after button press.');
-            testCase.verifyEmpty(app.ProgressGrid.RowHeight, 'Grid rows should be empty.');
+            testCase.verifyNumElements(app.ProgressBars,2, 'Bar metadata should remain after button press.');
+            testCase.verifyNumElements(app.ProgressGrid.RowHeight,2, 'There should be 2 grid rows.');
             testCase.verifyFalse(isvalid(app.ProgressBars(1).Patch),'Bar patch should be deleted after button press.')
+
+            app.updateBar('TButton2', 1); % Complete it
+            buttonHandle = app.ProgressBars(2).Button;
+            buttonHandle.ButtonPushedFcn(buttonHandle, []); % Programmatic press
+            drawnow;
+            
+            testCase.verifyFalse(isvalid(app), ...
+                'The app handle should be invalid after the last bar is removed with AutoDelete=true.');
+            testCase.verifyFalse(ishandle(figHandle), ...
+                'The figure handle should be invalid after the last bar is removed with AutoDelete=true.');
         end
 
         % SetFigureTitle Test
@@ -355,15 +425,16 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
         function testAutoCloseOnComplete(testCase)
             app = ndi.gui.component.ProgressBarWindow('Auto Close Complete');
             testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag','TStay');
             app.addBar('Tag', 'TAutoClose', 'Auto', true);
 
             app.updateBar('TAutoClose', 1); % This will trigger checkComplete and auto-close
             drawnow;
             
-            testCase.verifyNumElements(app.ProgressBars, 1, 'The auto-closed bar should still remain in progress bars.');
-            testCase.verifyEqual(app.ProgressBars(1).Tag, 'TAutoClose', 'Auto-closed bar tag is incorrect.');
-            testCase.verifyEqual(app.ProgressBars(1).State, 'Closed', 'Auto-closed bar state incorrect.');
-            testCase.verifyFalse(isvalid(app.ProgressBars(1).Patch),'Auto-closed bar patch was not deleted.')
+            testCase.verifyNumElements(app.ProgressBars, 2, 'The auto-closed bar should still remain in progress bars.');
+            testCase.verifyEqual(app.ProgressBars(2).Tag, 'TAutoClose', 'Auto-closed bar tag is incorrect.');
+            testCase.verifyEqual(app.ProgressBars(2).State, 'Closed', 'Auto-closed bar state incorrect.');
+            testCase.verifyFalse(isvalid(app.ProgressBars(2).Patch),'Auto-closed bar patch was not deleted.')
         end
         
         function testAutoCloseOnTimeout(testCase)
@@ -378,8 +449,49 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             app.addBar('Tag', 'TUpdated', 'Auto', true);
             
             pause(0.2); % Wait for timeout
-            testCase.verifyError(@() app.updateBar('TUpdated', 0.2), 'ProgressBarWindow:AutoCloseOnTimeout');
+            testCase.verifyWarning(@() app.updateBar('TUpdated', 0.2), 'ProgressBarWindow:AutoCloseOnTimeout');
         end
+
+        function testAutoDeleteFigureOnLastBarRemoved(testCase)
+            % Tests that the figure closes when the last bar is removed
+            % and AutoDelete is true.
+            
+            app = ndi.gui.component.ProgressBarWindow('AutoDelete Test', 'AutoDelete', true);
+            figHandle = app.ProgressFigure; % Grab handle before it's deleted
+            
+            app.addBar('Tag', 'T1');
+            app.addBar('Tag', 'T2');
+            
+            app.updateBar('T1', 1); % Mark as complete
+            app.removeBar('T1');    % Remove first bar
+            
+            testCase.verifyTrue(ishandle(figHandle), 'Figure should not be deleted while one bar remains.');
+            
+            app.updateBar('T2', 1); % Mark as complete
+            app.removeBar('T2');    % Remove final bar
+            
+            drawnow; % Allow delete operation to process
+            
+            testCase.verifyFalse(ishandle(figHandle), 'Figure should be deleted when the last bar is removed.');
+        end
+        
+        function testNoAutoDeleteFigure(testCase)
+            % Tests that the figure remains open when AutoDelete is false.
+            
+            app = ndi.gui.component.ProgressBarWindow('No AutoDelete Test', 'AutoDelete', false);
+            figHandle = app.ProgressFigure;
+            testCase.addTeardown(@delete, figHandle); % Ensure cleanup
+            
+            app.addBar('Tag', 'T1');
+            app.updateBar('T1', 1);
+            app.removeBar('T1');
+            
+            drawnow;
+            
+            testCase.verifyTrue(ishandle(figHandle), 'Figure should NOT be deleted when AutoDelete is false.');
+        end
+        
+        
 
     end
 end
