@@ -1,5 +1,5 @@
-function pvd = ndi_projectvardef(name, type, description, data)
-    % NDI_PROJECTVARDEF - shorthand function for building an 'projectvar' document
+function pvd = projectvardef(name, type, description, data)
+    % PROJECTVARDEF - shorthand function for building an 'projectvar' document
     %
     % PVD = ndi.database.fun.projectvardef(NAME, TYPE, DESCRIPTION, DATA)
     %

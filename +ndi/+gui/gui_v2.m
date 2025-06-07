@@ -1,4 +1,4 @@
-function ndi_gui_v2(ndi_session_obj)
+function gui_v2(ndi_session_obj)
     scr_siz = get(0,'ScreenSize') ;
     scissor = rand(32);
     scissor(1:32,1:32) = NaN;

@@ -1,5 +1,5 @@
-function [G,nodes,mdigraph] = ndi_docs2graph(ndi_document_obj)
-    % NDI_DOCS2GRAPH - create a directed graph from a cell array of NDI_DOCUMENT objects
+function [G,nodes,mdigraph] = docs2graph(ndi_document_obj)
+    % DOCS2GRAPH - create a directed graph from a cell array of NDI_DOCUMENT objects
     %
     % [G,NODES,MDIGRAPH] = ndi.database.fun.docs2graph(NDI_DOCUMENT_OBJ)
     %

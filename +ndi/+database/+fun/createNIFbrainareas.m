@@ -1,5 +1,5 @@
-function ba = ndi_createNIFbrainareas(varargin)
-    % NDI_CREATENIFBRAINAREAS - create a list of allowable brain areas from the NIF-Ontology
+function ba = createNIFbrainareas(varargin)
+    % CREATENIFBRAINAREAS - create a list of allowable brain areas from the NIF-Ontology
     %
     % BA = ndi.database.fun.createNIFbrainareas(...)
     %

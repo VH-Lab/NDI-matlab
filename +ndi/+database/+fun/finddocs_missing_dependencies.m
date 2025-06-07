@@ -1,5 +1,5 @@
-function d = ndi_finddocs_missing_dependencies(E, varargin)
-    % NDI_FINDDOCS_MISSING_DEPENDENCIES - find documents that have dependencies on documents that do not exist
+function d = finddocs_missing_dependencies(E, varargin)
+    % FINDDOCS_MISSING_DEPENDENCIES - find documents that have dependencies on documents that do not exist
     %
     % D = ndi.database.fun.finddocs_missing_dependencies(E)
     %
