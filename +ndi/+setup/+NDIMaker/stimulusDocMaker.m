@@ -113,16 +113,14 @@ classdef stimulusDocMaker < handle
                 obj
                 stimulator_id (1,:) char
                 epoch_id (1,:) char
-                bathtargetStrings {mustBeA(bathtargetStrings,{'char','str','cell'})}
-                mixtureStrings {mustBeA(mixtureStrings,{'char','str','cell'})}
+                bathtargetStrings {mustBeText}
+                mixtureStrings {mustBeText}
                 options.Overwrite (1,1) logical = false;
             end
 
             % --- Process Mixture Strings ---
             mixtureNames = fieldnames(obj.mixtureStruct); % Get valid mixture names
-            if ischar(mixtureStrings) % Ensure mixtureStrings is a cell array
-                mixtureStrings = {mixtureStrings};
-            end
+            mixtureStrings = cellstr(mixtureStrings); % Ensure mixtureStrings is a cell array
             mixtureTable = table(); % Initialize mixture component table
             for i = 1:numel(mixtureStrings)
                 % Validate mixture string
@@ -141,9 +139,7 @@ classdef stimulusDocMaker < handle
 
             % --- Process Bath Target Strings ---
             bathtargetNames = fieldnames(obj.bathtargetsStruct); % Get valid bath target names
-            if ischar(bathtargetStrings) % Ensure bathtargetStrings is a cell array
-                bathtargetStrings = {bathtargetStrings};
-            end
+            bathtargetStrings = cellstr(bathtargetStrings);  % Ensure bathtargetStrings is a cell array
             locList = struct('location',{}); % Initialize location list
             for i = 1:numel(bathtargetStrings)
                 % Validate bath target string
@@ -263,11 +259,15 @@ classdef stimulusDocMaker < handle
                 bathVariable (1,:) char
                 mixtureVariable (1,:) char
                 options.FilenameVariable (1,:) char = ''
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {}
+                options.NonNaNVariableNames {mustBeText} = {}
                 options.MixtureDictionary struct = struct()
                 options.MixtureDelimeter (1,:) char = ','
                 options.Overwrite (1,1) logical = false
             end
+
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Stimulus Bath Document(s)','Tag','stimulusbath');
 
             % If no FilenameVariable specified, use 'RowNames' of VariableTable
             if isempty(options.FilenameVariable)
@@ -333,6 +333,9 @@ classdef stimulusDocMaker < handle
                 % Create stimulus bath doc and add to database
                 docs{e} = createBathDoc(obj, stimulatorid, epochids{e}, ...
                     bathtargetStrings, mixtureStrings,'Overwrite',options.Overwrite);
+                
+                % Update progress bar
+                progressBar = progressBar.updateBar('stimulusbath',e/numel(epochInd));
             end
         end % TABLE2BATHDOCS
 
@@ -364,14 +367,12 @@ classdef stimulusDocMaker < handle
                 obj
                 stimulator_id (1,:) char
                 epoch_id (1,:) char
-                approachStrings {mustBeA(approachStrings,{'char','str','cell'})}
+                approachStrings {mustBeText}
                 options.Overwrite (1,1) logical = false;
             end
 
             % Ensure approach Strings is a cell array
-            if ischar(approachStrings) 
-                approachStrings = {approachStrings};
-            end
+            approachStrings = cellstr(approachStrings);
 
             % --- Create and Add Documents ---
             docs = cell(size(approachStrings)); % Initialize output cell array
@@ -458,9 +459,13 @@ classdef stimulusDocMaker < handle
                 variableTable table
                 approachVariable (1,:) char
                 options.FilenameVariable (1,:) char = ''
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {}
+                options.NonNaNVariableNames {mustBeText} = {}
                 options.Overwrite (1,1) logical = false
             end
+
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Stimulus Approach Document(s)','Tag','stimulusapproach');
 
             % If no FilenameVariable specified, use 'RowNames' of VariableTable
             if isempty(options.FilenameVariable)
@@ -508,6 +513,9 @@ classdef stimulusDocMaker < handle
                     docs{e} = createApproachDoc(obj, stimulatorid, epochids{e}, ...
                         approachStrings, 'Overwrite',options.Overwrite);
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('stimulusapproach',e/numel(epochInd));
             end
         end % TABLE2APPROACHDOCS
     end

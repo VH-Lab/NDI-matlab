@@ -47,10 +47,10 @@ methods
         % Does not require arguments. Intended primarily for subclassing.
     end
 
-    function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name)
+    function [id, name, definition, synonyms, shortName] = lookupTermOrID(obj, term_or_id_or_name)
         % LOOKUPTERMORID - Base implementation for looking up a term within a specific ontology instance.
         %
-        %   [ID, NAME, DEFINITION, SYNONYMS] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME)
+        %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME)
         %
         %   This base class method should be overridden by specific ontology subclasses
         %   (e.g., ndi.ontology.CL, ndi.ontology.OM). It defines the standard interface
@@ -69,6 +69,7 @@ methods
         name = '';
         definition = '';
         synonyms = {};
+        shortName = '';
     end
 
 end % methods
@@ -78,10 +79,10 @@ methods (Static)
     % --------------------------------------------------------------------
     % Main Static Lookup Function (Dispatcher)
     % --------------------------------------------------------------------
-    function [id, name, prefix, definition, synonyms] = lookup(lookupString)
+    function [id, name, prefix, definition, synonyms, shortName] = lookup(lookupString)
         % LOOKUP - Look up a term in an ontology using a prefixed string.
         %
-        %   [ID, NAME, PREFIX, DEFINITION, SYNONYMS] = ndi.ontology.lookup(LOOKUPSTRING)
+        %   [ID, NAME, PREFIX, DEFINITION, SYNONYMS, SHORTNAME] = ndi.ontology.lookup(LOOKUPSTRING)
         %
         %   Looks up a term using a prefixed string (e.g., 'CL:0000000', 'OM:metre').
         %   It identifies the ontology from the prefix using the mappings in
@@ -95,12 +96,12 @@ methods (Static)
         %     PREFIX       - The ontology prefix used in the lookup.
         %     DEFINITION   - A textual definition, if available.
         %     SYNONYMS     - A cell array of synonyms, if available.
+        %     SHORTNAME    - The short name for the term, if available.
         %
         %   Examples:
         %       % Lookup neuron in Cell Ontology by ID
         %       [id, name, prefix] = ndi.ontology.lookup('CL:0000540');
         %       % Expected: id='CL:0000540', name='neuron', prefix='CL'
-        %
         %
         %       % Lookup ethanol in ChEBI by ID
         %       [id, name, prefix] = ndi.ontology.lookup('CHEBI:16236');
@@ -129,7 +130,7 @@ methods (Static)
         %   See also: ndi.ontology.lookupTermOrID (instance method to be overridden)
 
         % Initialize outputs
-        id = ''; name = ''; prefix = ''; definition = ''; synonyms = {};
+        id = ''; name = ''; prefix = ''; definition = ''; synonyms = {}; shortName = '';
 
         % 1. Get Ontology Name and Remainder from Prefix
         try
@@ -169,12 +170,27 @@ methods (Static)
 
         % 5. Call the Instance Method lookupTermOrID
         try
-             [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
+            % Attempt to get all 5 outputs
+            [id, name, definition, synonyms, shortName] = lookupTermOrID(ontologyObj, remainder);
         catch ME_lookup
-             baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
-                 'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
-             baseME = addCause(baseME, ME_lookup);
-             throw(baseME);
+            % This error means the specific lookupTermOrID method returned fewer than 5 outputs.
+            if strcmp(ME_lookup.identifier, 'MATLAB:TooManyOutputs') || ...
+                    (isprop(ME_lookup, 'cause') && ~isempty(ME_lookup.cause) && strcmp(ME_lookup.cause{1}.identifier, 'MATLAB:unassignedOutputs')) % Older MATLAB might use this for unassigned outputs
+                try
+                    [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
+                    shortName = ''; % Explicitly set shortName to default as it wasn't returned
+                catch ME_lookup_4
+                    baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
+                        'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
+                    baseME = addCause(baseME, ME_lookup_4);
+                    throw(baseME);
+                end
+            else
+                baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
+                    'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
+                baseME = addCause(baseME, ME_lookup);
+                throw(baseME);
+            end
         end
 
         % 6. Return results
@@ -325,9 +341,9 @@ methods (Static)
         end
     end % function getPrefixOntologyMappings
 
-    function [id, name, definition, synonyms] = lookupOBOFile(oboFilePath, ontologyPrefix, term_to_lookup_fragment)
+    function [id, name, definition, synonyms, shortName] = lookupOBOFile(oboFilePath, ontologyPrefix, term_to_lookup_fragment)
         % LOOKUPOBOFILE - Looks up a term in a parsed OBO file.
-        %   [ID, NAME, DEFINITION, SYNONYMS] = ndi.ontology.lookupOBOFile(...
+        %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = ndi.ontology.lookupOBOFile(...
         %       OBOFILEPATH, ONTOLOGYPREFIX, TERM_TO_LOOKUP_FRAGMENT)
         %
         %   Parses an OBO file (if not already cached) and searches for a term.
@@ -344,6 +360,8 @@ methods (Static)
         %       DEFINITION - The term's definition.
         %       SYNONYMS   - A cell array of synonym strings (currently basic,
         %                    not parsing synonym types).
+        %       SHORTNAME  - The term's short name, typically derived from
+        %                    a 'property_value: codeName "..."' tag in the OBO file.
         %
         %   Throws:
         %       ndi:ontology:lookupOBOFile:FileNotFound
@@ -357,7 +375,7 @@ methods (Static)
             term_to_lookup_fragment (1,:) char % Can be empty if original lookup was just "PREFIX:"
         end
 
-        id = ''; name = ''; definition = ''; synonyms = {};
+        id = ''; name = ''; definition = ''; synonyms = {}; shortName = '';
 
         if isempty(term_to_lookup_fragment)
             error('ndi:ontology:lookupOBOFile:InvalidInput', ...
@@ -421,6 +439,7 @@ methods (Static)
                     name = term.name;
                     definition = term.definition;
                     synonyms = term.synonyms;
+                    shortName = term.shortName;
                     foundTerm = true;
                     break;
                 end
@@ -431,6 +450,7 @@ methods (Static)
                     name = term.name;
                     definition = term.definition;
                     synonyms = term.synonyms;
+                    shortName = term.shortName;
                     foundTerm = true;
                     break;
                 end
@@ -442,6 +462,7 @@ methods (Static)
                             name = term.name; % Return primary name even if found by synonym
                             definition = term.definition;
                             synonyms = term.synonyms;
+                            shortName = term.shortName;
                             foundTerm = true;
                             break; % break from synonym loop
                         end
@@ -519,7 +540,7 @@ methods (Static, Access = private)
         %   TERMS = ndi.ontology.parseOBOFile_(OBOFILEPATH)
         %
         %   This is a basic OBO parser, focusing on [Term] stanzas and
-        %   id, name, def, and synonym tags.
+        %   id, name, def, synonym, and shortName tags.
         %
         %   Input:
         %       oboFilePath - Full path to the .obo file.
@@ -530,6 +551,7 @@ methods (Static, Access = private)
         %               .name       (string)
         %               .definition (string)
         %               .synonyms   (cell array of strings)
+        %               .shortName  (string, from property_value codeName)
         %
         %   Note: This parser is not fully compliant with the OBO 1.2/1.4 spec
         %   but should handle common structures like the example provided.
@@ -538,8 +560,8 @@ methods (Static, Access = private)
         %   though OBO can have multi-line quoted strings.
         %   Synonym parsing is basic (extracts quoted string, ignores type).
 
-        terms = struct('id', {}, 'name', {}, 'definition', {}, 'synonyms', {});
-        currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
+        terms = struct('id', {}, 'name', {}, 'definition', {}, 'synonyms', {}, 'shortName', {});
+        currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}}, 'shortName', '');
         inTermStanza = false;
 
         try
@@ -572,7 +594,7 @@ methods (Static, Access = private)
                     terms(end+1) = currentTerm; % Save previous term
                 end
                 % Reset for new term
-                currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
+                currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}}, 'shortName', '');
                 inTermStanza = true;
                 continue;
             end
@@ -608,9 +630,18 @@ methods (Static, Access = private)
                         currentTerm.synonyms{end+1} = synMatches{1};
                     end
                     % More advanced parsing could extract synonym type, scope, xrefs.
-                % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
-                % For now, we only strictly need id, name, def for the lookup.
+                elseif startsWith(line,'property_value:')
+                    % Expecting format: property_value: codeName "actualShortName" xsd:string
+                    % We only want to extract the shortName if the property is 'codeName'
+                    % and if currentTerm.shortName has not been filled yet (takes the first one)
+                    if isempty(currentTerm.shortName) % Only take the first codeName found per term
+                        propertyMatches = regexp(line, 'property_value:\s*codeName\s*"(.*?)"', 'tokens', 'once');
+                        if ~isempty(propertyMatches)
+                            currentTerm.shortName = propertyMatches{1};
+                        end
+                    end
                 end
+                % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
             end
         end
 

@@ -244,28 +244,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % See also: DATABASE_RM, ndi.session, ndi.database, ndi.session/SEARCH
 
-            % dev note: we should make this so it calls the database with a list of docs to
-            % add instead of one at a time
+            if ~iscell(document)
+                document = {document};
+            end
 
-            if iscell(document),
-                for i=1:numel(document),
-                    ndi_session_obj.database_add(document{i});
-                end;
-                return;
-            end;
-            if ~isa(document,'ndi.document'),
-                error(['document is not an ndi.document']);
-            end;
-
-            session_id_here = document.document_properties.base.session_id;
-            if ~strcmp(session_id_here,ndi_session_obj.id()),
-                if strcmp(session_id_here,ndi.session.empty_id), % ok, set it to our id
-                    document = document.set_session_id(ndi_session_obj.id());
-                else,
-                    error(['ndi.document with id ' document.document_properties.base.id ...
-                        ' has session_id ' session_id_here ' that does not match session''s id ' ...
-                        ndi_session_obj.id()]);
-                end;
+            current_session_id = ndi_session_obj.id();
+            session_id_list = cellfun(@(x) session_id(x),document,'UniformOutput',false);
+            I = ~strcmp(session_id_list,current_session_id);
+            J = strcmp(session_id_list,ndi.session.empty_id);
+            E = find(I&~J); % these are non-empty, non-matching documents
+            if ~isempty(E)
+                error([int2str(numel(E)) ' ndi.document objects, including that with id==' ...
+                    document{E(1)}.id() ', does not match session''s id ' current_session_id]);
+            end
+            Ji = find(J);
+            for j=1:numel(Ji)
+                document{Ji(j)}=document{Ji(j)}.set_session_id(current_session_id);
             end;
             ndi_session_obj.database.add(document);
         end; % database_add()

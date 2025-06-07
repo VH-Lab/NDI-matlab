@@ -46,8 +46,13 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                 path (1,:) char {mustBeFolder}
                 variableTable table
                 options.Overwrite (1,1) logical = false;
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {};
+                options.NonNaNVariableNames {mustBeText} = {};
             end
+
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Session(s)','Tag','sessions');
+
             % Assign properties from inputs
             obj.path = path;
             obj.variableTable = variableTable;
@@ -88,6 +93,9 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                     % Session does not exist: Create it
                     obj.sessions{i} = ndi.session.dir(sessionRef, sessionPath); % Create with reference and path
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('sessions',i/numel(sessionRefs));
                 
                 % Close any open database connections
                 % mksqlite('close');

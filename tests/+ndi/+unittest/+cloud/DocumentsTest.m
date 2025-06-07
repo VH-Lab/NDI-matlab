@@ -190,8 +190,12 @@ classdef DocumentsTest < matlab.unittest.TestCase
             [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
             testCase.verifyEqual(numel(dataset.documents), numDocuments, message)
 
-            [~, summary] = ndi.cloud.api.documents.list_dataset_documents(testCase.DatasetID);
-            testCase.verifyEqual(numel(summary.documents), numDocuments, message)
+            % list_dataset_documents api endpoint will return deleted
+            % documents as well, so this is actually not a good way to
+            % verify number of documents post deletion. 
+            % Keeping the current code for future reference:
+            % % [~, summary] = ndi.cloud.api.documents.list_dataset_documents(testCase.DatasetID);
+            % % testCase.verifyEqual(numel(summary.documents), numDocuments, message)
         end
     end
 end

@@ -226,6 +226,10 @@ classdef subjectMaker
                 subjectInfo (1,1) struct {ndi.setup.NDIMaker.subjectMaker.mustBeValidSubjectInfoForDocCreation(subjectInfo)}
             end
 
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Making Subject Document(s)','Tag','subjectDoc');
+
             numSubjects = numel(subjectInfo.subjectName);
 
             if numSubjects == 0
@@ -256,6 +260,7 @@ classdef subjectMaker
                      warning_msg = sprintf('Session ID for subject "%s" (index %d from subjectInfo.sessionID) is not a valid string. Skipping document creation.', escaped_sName, i);
                      warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo', warning_msg);
                      output_documents{i} = {}; 
+                     progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                      continue;
                 end
 
@@ -328,6 +333,9 @@ classdef subjectMaker
                     warning('ndi:setup:NDIMaker:subjectMaker:DocumentCreationError', warning_msg);
                     output_documents{i} = {}; 
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
             end
 
             output = struct('subjectName', {output_subjectNames}, 'documents', {output_documents});
@@ -395,6 +403,10 @@ classdef subjectMaker
                 return;
             end
 
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Adding Subject(s) to Session(s)','Tag','subjectSession');
+
             numDocSets = numel(documentsToAddSets);
             added_status = false(1, numDocSets); 
 
@@ -426,6 +438,7 @@ classdef subjectMaker
                 if isempty(current_doc_set) || ~iscell(current_doc_set) || ~isa(current_doc_set{1}, 'ndi.document')
                     warning_msg = sprintf('Document set at index %d is empty, not a cell, or does not start with an ndi.document. Skipping.', i);
                     warning('ndi:setup:NDIMaker:subjectMaker:InvalidDocSetEntry', warning_msg);
+                    progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                     continue; 
                 end
 
@@ -435,6 +448,7 @@ classdef subjectMaker
                     if ~(ischar(target_session_id) && ~isempty(target_session_id))
                         warning_msg = sprintf('Target session ID for document set %d is invalid or empty. Skipping.', i);
                         warning('ndi:setup:NDIMaker:subjectMaker:InvalidTargetSessionID', warning_msg);
+                        progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                         continue;
                     end
 
@@ -442,6 +456,7 @@ classdef subjectMaker
                     escaped_message = strrep(ME_TargetSessID.message, '%', '%%');
                     warning_msg = sprintf('Error retrieving target session ID from document set %d: %s. Skipping.', i, escaped_message);
                     warning('ndi:setup:NDIMaker:subjectMaker:TargetSessionIDError', warning_msg);
+                    progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                     continue;
                 end
 
@@ -467,6 +482,9 @@ classdef subjectMaker
                         escaped_target_id, i);
                     warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', warning_msg);
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('subjectSession',i/numDocSets);
             end
         end % function addSubjectsToSessions
 

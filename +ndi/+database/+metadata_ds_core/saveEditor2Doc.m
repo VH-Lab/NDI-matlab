@@ -1,4 +1,4 @@
-function d = saveEditor2Doc(D, datasetInfo)
+function D = saveEditor2Doc(D, datasetInfo)
     %SAVEEDITOR2DOC function to save the editor content to NDI document
     %   D = ndi.database.metadata_app.fun.SAVEEDITOR2DOC(D, DATASETINFO)
     %   Inputs:

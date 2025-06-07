@@ -1,0 +1,42 @@
+{
+	"classname": "ontologyTableRow",
+	"superclasses":  [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"ontologyTableRow": [
+		{
+			"name": "names",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The full name(s) of the data variable(s) in a comma-seperated list (e.g 'Behavioral Measurement,Gastric Mill Neuron')."
+		},
+		{
+			"name": "variableNames",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The shortened name(s) of the data variable(s) in a comma-seperated list (e.g 'behaviorMeasure,GM_neuron'). Must be valid MATLAB variable names."
+		},
+		{
+			"name": "ontologyNodes",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id(s) of the data variable (s) in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:00000090,UBERON:3373')."
+		},
+		{
+			"name": "data",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure with variableNames as fields and corresponding data as values (e.g. data = struct('behaviorMeasure',1,'GM_neuron',1))."
+		}
+
+	]
+}
+

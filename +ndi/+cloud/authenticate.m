@@ -16,11 +16,17 @@ function [token, organizationID] = authenticate(options)
 %          will be prompted for username (email) and password in a login
 %          dialog.
 %
+%   ndi.cloud.authenticate("UserName", anotherUserName) to force
+%   authentication with new/different credentials
+%
 % Input Arguments:
 %   options (optional name, value pairs)
 %       - UserName (string) : Username to use for login. If a token already
 %       exists and the provided username is different than the username the
 %       token was issued for, this function will force a re-login.
+%       - InteractionDisabled (matlab.lang.OnOffSwitchState) : On/off switch 
+%       state to control whether interactive steps are enabled or not 
+%       (i.e for disabling during tesing)
 %
 % Output Arguments: (optional)
 %   token - The authentication token retrieved after successful authentication.
@@ -28,17 +34,21 @@ function [token, organizationID] = authenticate(options)
 
     arguments
         options.UserName (1,1) string = missing
+        options.InteractionEnabled (1,1) matlab.lang.OnOffSwitchState = "on"
     end
 
     if isAuthenticated(options.UserName)
         % pass
-    elseif authenticatedWithSecret(options.UserName)
+    elseif authenticatedWithSecret(options.UserName, options.InteractionEnabled)
         % pass
     elseif authenticatedWithEnvironmentVariable(options.UserName)
         % pass
     else
-        % Todo: need to relogin?
-        ndi.cloud.uilogin('UserName', options.UserName);
+        if options.InteractionEnabled
+            ndi.cloud.uilogin('UserName', options.UserName);
+        else
+            % Skip login dialog in "no interaction" mode.
+        end
     end
 
     if nargout >= 1
@@ -62,21 +72,29 @@ function result = isAuthenticated(username)
     end
 end
 
-function isSuccess = authenticatedWithSecret(userName)
+function isSuccess = authenticatedWithSecret(userName, interactionEnabled)
+    if nargin < 1; userName = string(missing); end
+    if nargin < 2; interactionEnabled = matlab.lang.OnOffSwitchState.on; end
     isSuccess = false;
     if exist("isSecret", "file") % Introduced in R2024a
-        if isSecret("NDICloud:Email")
-            secretUserName = getSecret("NDICloud:Email");
-            secretPassword = getSecret("NDICloud:Password");
-            if strcmp(secretUserName, userName)
-                isSuccess = login(secretUserName, secretPassword);
+        try
+            if isSecret("NDICloud:Email")
+                secretUserName = getSecret("NDICloud:Email");
+                secretPassword = getSecret("NDICloud:Password");
+                if ismissing(userName) || strcmp(secretUserName, userName)
+                    isSuccess = login(secretUserName, secretPassword);
+                else
+                    isSuccess = false;
+                end
             else
-                isSuccess = false;
+                if getpref('NDICloud', 'UseSecretVaultForCredentials', true)
+                    if interactionEnabled
+                        isSuccess = promptAddCredentialsToVault();
+                    end
+                end
             end
-        else
-            if getpref('NDICloud', 'UseSecretVaultForCredentials', true)
-                isSuccess = promptAddCredentialsToVault();
-            end
+        catch ME                
+            warning(ME.identifier,'Could not get credentials from MATLAB Vault. Reason:\n%s', ME.message)
         end
     end
 end
