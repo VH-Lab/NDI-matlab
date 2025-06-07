@@ -78,10 +78,10 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 
         for j=1:numel(fn)
             f = getfield(openmindsObj{i},fn{j});
-            if strcmp(class(f),'string')
+            if isa(f, 'string')
                 f = char(f); % we have to insert character arrays into the sql database
             end
-            if strcmp(class(f),'datetime')
+            if isa(f, 'datetime')
                 f = char(f);
             end
             mt = startsWith(class(f),'openminds.internal.mixedtype');
