@@ -1,6 +1,5 @@
 classdef TestUIElementSubclasses < matlab.unittest.TestCase
-    % TESTUIELEMENTSUBCLASSES Unit tests for the core NDI GUI Element classes.
-    % This test suite now uses the "smart dispatcher" fromAlphaNumericStruct method.
+    % TESTUIELEMENTSUBCLASSES Unit tests for concrete subclasses of UIElement.
     
     methods (Test)
 
@@ -9,7 +8,6 @@ classdef TestUIElementSubclasses < matlab.unittest.TestCase
             label.Tag = 'title-label';
             alphaS = label.toAlphaNumericStruct();
             
-            % --- UNIFIED CALLING SYNTAX ---
             className = 'ndi.gui.component.internal.uie.UILabel';
             reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
             
@@ -21,7 +19,6 @@ classdef TestUIElementSubclasses < matlab.unittest.TestCase
             editField.Value = 'Initial Text';
             alphaS = editField.toAlphaNumericStruct();
 
-            % --- UNIFIED CALLING SYNTAX ---
             className = 'ndi.gui.component.internal.uie.UIEditField';
             reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
 
@@ -35,7 +32,6 @@ classdef TestUIElementSubclasses < matlab.unittest.TestCase
             
             alphaS = cb.toAlphaNumericStruct();
 
-            % --- UNIFIED CALLING SYNTAX ---
             className = 'ndi.gui.component.internal.uie.UICheckbox';
             reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
             
@@ -44,15 +40,12 @@ classdef TestUIElementSubclasses < matlab.unittest.TestCase
         end
 
         function testUIListbox(testCase)
-            % Verifies the UIListbox class, which has a custom override.
             lb = ndi.gui.component.internal.uie.UIListbox();
             lb.Items = {'Item A'; 'Item B'; 'Item C'};
             
             alphaS = lb.toAlphaNumericStruct();
             testCase.verifyEqual(alphaS.Items, 'Item A, Item B, Item C');
             
-            % --- UNIFIED CALLING SYNTAX ---
-            % The base class will detect the override in UIListbox and call it.
             className = 'ndi.gui.component.internal.uie.UIListbox';
             reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
             
@@ -64,11 +57,57 @@ classdef TestUIElementSubclasses < matlab.unittest.TestCase
             button.Callback = 'goButtonPushed';
             alphaS = button.toAlphaNumericStruct();
 
-            % --- UNIFIED CALLING SYNTAX ---
             className = 'ndi.gui.component.internal.uie.UIButton';
             reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
 
             testCase.verifyEqual(reconstructedObj.Callback, 'goButtonPushed');
+        end
+
+        % --- NEW TESTS ---
+
+        function testUIDropdown(testCase)
+            % Verifies the UIDropdown class and its custom deserialization.
+            
+            dd = ndi.gui.component.internal.uie.UIDropdown();
+            dd.Tag = 'selection-dropdown';
+            dd.Items = {'Option 1'; 'Option 2'};
+            dd.Editable = 'on';
+            
+            % Perform serialization round-trip
+            alphaS = dd.toAlphaNumericStruct();
+            testCase.verifyEqual(alphaS.Items, 'Option 1, Option 2');
+            
+            % Use the base class dispatcher, which should call the override
+            className = 'ndi.gui.component.internal.uie.UIDropdown';
+            reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
+            
+            % Verify properties
+            testCase.verifyEqual(reconstructedObj.Tag, 'selection-dropdown');
+            testCase.verifyEqual(reconstructedObj.Items, {'Option 1'; 'Option 2'});
+            testCase.verifyEqual(reconstructedObj.Editable, 'on');
+        end
+
+        function testUIContextMenu(testCase)
+            % Verifies the UIContextMenu class and its custom deserialization.
+            
+            cm = ndi.gui.component.internal.uie.UIContextMenu();
+            cm.Tag = 'file-context-menu';
+            cm.Items = {'Open'; 'Rename'; 'Delete'};
+            cm.Callbacks = {'open_cb'; 'rename_cb'; 'delete_cb'};
+            
+            % Perform serialization round-trip
+            alphaS = cm.toAlphaNumericStruct();
+            testCase.verifyEqual(alphaS.Items, 'Open, Rename, Delete');
+            testCase.verifyEqual(alphaS.Callbacks, 'open_cb, rename_cb, delete_cb');
+
+            % Use the base class dispatcher
+            className = 'ndi.gui.component.internal.uie.UIContextMenu';
+            reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
+            
+            % Verify properties
+            testCase.verifyEqual(reconstructedObj.Tag, 'file-context-menu');
+            testCase.verifyEqual(reconstructedObj.Items, {'Open'; 'Rename'; 'Delete'});
+            testCase.verifyEqual(reconstructedObj.Callbacks, {'open_cb'; 'rename_cb'; 'delete_cb'});
         end
 
     end
