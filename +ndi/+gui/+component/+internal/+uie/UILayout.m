@@ -21,16 +21,4 @@ classdef UILayout < ndi.util.StructSerializable
         end
     end
     
-    methods (Static)
-        function obj = fromAlphaNumericStruct(alphaS_in, options)
-            % FROMALPHANUMERICSTRUCT Create a UILayout from an alphanumeric struct
-            arguments
-                alphaS_in (1,1) struct
-                options.errorIfFieldNotPresent (1,1) logical = false
-            end
-            % For this class, the alphanumeric struct is the same as the standard struct.
-            S_in = alphaS_in; 
-            obj = ndi.util.StructSerializable.fromStruct(mfilename('class'), S_in, 'errorIfFieldNotPresent', options.errorIfFieldNotPresent);
-        end
-    end
 end

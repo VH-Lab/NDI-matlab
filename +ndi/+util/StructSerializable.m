@@ -176,17 +176,36 @@ classdef StructSerializable < handle
             arguments
                 className (1,1) string
                 alphaS_in struct
-                options.errorIfFieldNotPresent (1,1) logical = false 
+                options.errorIfFieldNotPresent (1,1) logical = false
+                options.dispatch (1,1) logical = true % Your recursion guard
             end
-            if exist(className, 'class') ~= 8
-                error('StructSerializable:ClassNotFound', 'Class "%s" not found.', className);
-            end
-            obj = feval(className);
 
-            warning('StructSerializable:fromAlphaNumericStruct:BaseImplementation', ...
-                    ['Base StructSerializable.fromAlphaNumericStruct called for class "%s". ' ...
-                     'Object returned with default values. Subclasses must override this method.'], ...
-                     className);
+            % If dispatch is disabled, just run the default behavior. This is
+            % called by the custom override in a subclass.
+            if ~options.dispatch
+                S_in = alphaS_in;
+                obj = ndi.util.StructSerializable.fromStruct(className, S_in, 'errorIfFieldNotPresent', options.errorIfFieldNotPresent);
+                return;
+            end
+
+            % Use metaclass to inspect the target class definition
+            mc = meta.class.fromName(char(className));
+            methodMeta = findobj(mc.MethodList, 'Name', 'fromAlphaNumericStruct', '-depth', 0);
+            
+            isOverridden = ~isempty(methodMeta);
+            
+            if isOverridden
+                % The subclass has a custom implementation. Delegate the call to it,
+                % but turn off dispatching to prevent infinite recursion.
+                customMethodHandle = str2func([char(className) '.fromAlphaNumericStruct']);
+                obj = customMethodHandle(className, alphaS_in, ...
+                    'errorIfFieldNotPresent', options.errorIfFieldNotPresent, ...
+                    'dispatch', false);
+            else
+                % The subclass does NOT have a custom override. Use the default behavior.
+                S_in = alphaS_in;
+                obj = ndi.util.StructSerializable.fromStruct(className, S_in, 'errorIfFieldNotPresent', options.errorIfFieldNotPresent);
+            end
         end
     end
 end

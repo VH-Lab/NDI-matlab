@@ -1,0 +1,19 @@
+classdef UIEditField < ndi.gui.component.internal.uie.UIElement & ...
+                       ndi.gui.component.internal.uie.UIVisualComponent & ...
+                       ndi.gui.component.internal.uie.UITextComponent & ...
+                       ndi.gui.component.internal.uie.UIInteractiveComponent & ...
+                       ndi.gui.component.internal.uie.UIValue & ...
+                       ndi.gui.component.internal.uie.UIValueChangedFcn & ...
+                       ndi.gui.component.internal.uie.UIValueChangingFcn
+    % UIEDITFIELD Describes an editable, single-line text field.
+
+    properties
+        % Placeholder - Text that appears in the edit field when it is empty.
+        Placeholder (1,:) char = ''
+        
+        % HorizontalAlignment - The horizontal alignment of the text.
+        HorizontalAlignment (1,:) char {mustBeMember(HorizontalAlignment,{'left','center','right'})} = 'left'
+    end
+
+    % Note: The 'Value' property is inherited from the UIValue mixin.
+end

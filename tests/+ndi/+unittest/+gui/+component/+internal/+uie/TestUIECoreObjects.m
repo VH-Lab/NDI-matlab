@@ -3,59 +3,53 @@ classdef TestUIECoreObjects < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testUILayout(testCase)
-            % Test the UILayout class
-            layout = ndi.gui.component.internal.uie.UILayout('Row', 1, 'Column', [2 3]);
-            testCase.verifyEqual(layout.Row, 1);
+        function testMixinClasses(testCase)
+            % This test verifies the individual mixin classes can be created
+            % and serialized, but does not test for inherited properties.
             
-            s = layout.toStruct();
-            alphaS = layout.toAlphaNumericStruct();
-            obj_alpha = ndi.gui.component.internal.uie.UILayout.fromAlphaNumericStruct(alphaS);
-            testCase.verifyEqual(obj_alpha.Row, 1);
-        end
-
-        function testUIElement(testCase)
-            % Test direct creation of the base UIElement class
-            elem = ndi.gui.component.internal.uie.UIElement();
-            elem.Tag = 'base-element';
-            
-            s = elem.toStruct();
-            testCase.verifyEqual(s.Tag, 'base-element');
-            
-            alphaS = elem.toAlphaNumericStruct();
-            obj_alpha = ndi.gui.component.internal.uie.UIElement.fromAlphaNumericStruct(alphaS);
-            testCase.verifyEqual(obj_alpha.Tag, 'base-element');
-        end
-
-        function testUIVisualComponent(testCase)
-            % Test the UIVisualComponent class
+            % Test UIVisualComponent
             vis = ndi.gui.component.internal.uie.UIVisualComponent();
-            vis.ParentTag = 'MainPanel';
-            testCase.verifyEqual(vis.ParentTag, 'MainPanel');
+            vis.Position = [1 1 1 1];
+            alphaS_vis = vis.toAlphaNumericStruct();
+            className_vis = 'ndi.gui.component.internal.uie.UIVisualComponent';
+            recon_vis = ndi.util.StructSerializable.fromAlphaNumericStruct(className_vis, alphaS_vis);
+            testCase.verifyEqual(recon_vis.Position, [1 1 1 1]);
 
-            alphaS = vis.toAlphaNumericStruct();
-            obj_alpha = ndi.gui.component.internal.uie.UIVisualComponent.fromAlphaNumericStruct(alphaS);
-            testCase.verifyEqual(obj_alpha.ParentTag, 'MainPanel');
-        end
-
-        function testUITextComponent(testCase)
-            % Test the UITextComponent class
+            % Test UITextComponent
             textComp = ndi.gui.component.internal.uie.UITextComponent();
-            textComp.FontWeight = 'bold';
-            
-            alphaS = textComp.toAlphaNumericStruct();
-            obj_alpha = ndi.gui.component.internal.uie.UITextComponent.fromAlphaNumericStruct(alphaS);
-            testCase.verifyEqual(obj_alpha.FontWeight, 'bold');
+            textComp.FontAngle = 'italic';
+            alphaS_text = textComp.toAlphaNumericStruct();
+            className_text = 'ndi.gui.component.internal.uie.UITextComponent';
+            recon_text = ndi.util.StructSerializable.fromAlphaNumericStruct(className_text, alphaS_text);
+            testCase.verifyEqual(recon_text.FontAngle, 'italic');
         end
-        
-        function testUIInteractiveComponent(testCase)
-            % Test the UIInteractiveComponent class
-            interact = ndi.gui.component.internal.uie.UIInteractiveComponent();
-            interact.Tooltip = 'This is a test.';
 
-            alphaS = interact.toAlphaNumericStruct();
-            obj_alpha = ndi.gui.component.internal.uie.UIInteractiveComponent.fromAlphaNumericStruct(alphaS);
-            testCase.verifyEqual(obj_alpha.Tooltip, 'This is a test.');
+        function testUIButtonComposition(testCase)
+            % This test verifies that UIButton correctly composes properties
+            % from all its superclasses.
+            
+            button = ndi.gui.component.internal.uie.UIButton();
+            
+            % Set properties from each inherited class
+            button.Tag = 'confirm-button';         % from UIElement
+            button.Position = [10 20 100 30];    % from UIVisualComponent
+            button.FontWeight = 'bold';            % from UITextComponent
+            button.Icon = 'check.png';             % from UIIconComponent
+            button.Enable = 'off';                 % from UIInteractiveComponent
+            button.Callback = 'confirmAction';     % from UIButton itself
+            
+            % Test round-trip serialization
+            alphaS = button.toAlphaNumericStruct();
+            className = 'ndi.gui.component.internal.uie.UIButton';
+            reconstructedObj = ndi.util.StructSerializable.fromAlphaNumericStruct(className, alphaS);
+
+            % Verify one property from each superclass was restored correctly
+            testCase.verifyEqual(reconstructedObj.Tag, 'confirm-button');
+            testCase.verifyEqual(reconstructedObj.Position, [10 20 100 30]);
+            testCase.verifyEqual(reconstructedObj.FontWeight, 'bold');
+            testCase.verifyEqual(reconstructedObj.Icon, 'check.png');
+            testCase.verifyEqual(reconstructedObj.Enable, 'off');
+            testCase.verifyEqual(reconstructedObj.Callback, 'confirmAction');
         end
         
     end
