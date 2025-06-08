@@ -111,11 +111,11 @@ classdef StructSerializable < handle
             end
         end
 
-        function obj = fromStruct(className, S_in, errorIfFieldNotPresent)
+        function obj = fromStruct(className, S_in, options)
             arguments
                 className (1,1) string
                 S_in (1,1) struct
-                errorIfFieldNotPresent (1,1) logical = false
+                options.errorIfFieldNotPresent (1,1) logical = false
             end
 
             if exist(className, 'class') ~= 8
@@ -125,7 +125,7 @@ classdef StructSerializable < handle
             obj = feval(className); 
             objProps = properties(obj);
 
-            ndi.util.StructSerializable.validateStructArrayFields(S_in, objProps, errorIfFieldNotPresent);
+            ndi.util.StructSerializable.validateStructArrayFields(S_in, objProps, options.errorIfFieldNotPresent);
             
             fieldNames_S_in = fieldnames(S_in);
             for i = 1:numel(fieldNames_S_in)
@@ -148,13 +148,13 @@ classdef StructSerializable < handle
                         if isstruct(S_in.(fn)) && isSSubclass
                             if isscalar(S_in.(fn))
                                 % Recursive call for a scalar nested object
-                                obj.(fn) = ndi.util.StructSerializable.fromStruct(propTypeStr, S_in.(fn), errorIfFieldNotPresent);
+                                obj.(fn) = ndi.util.StructSerializable.fromStruct(propTypeStr, S_in.(fn), 'errorIfFieldNotPresent',options.errorIfFieldNotPresent);
                             else
                                 % Loop through the struct array for a nested object array
                                 struct_array_in = S_in.(fn);
                                 obj_array = feval(propTypeStr).empty(0,0); % Create typed empty array
                                 for k = 1:numel(struct_array_in)
-                                    obj_array(k) = ndi.util.StructSerializable.fromStruct(propTypeStr, struct_array_in(k), errorIfFieldNotPresent);
+                                    obj_array(k) = ndi.util.StructSerializable.fromStruct(propTypeStr, struct_array_in(k), 'errorIfFieldNotPresent',options.errorIfFieldNotPresent);
                                 end
                                 obj.(fn) = reshape(obj_array, size(struct_array_in));
                             end
