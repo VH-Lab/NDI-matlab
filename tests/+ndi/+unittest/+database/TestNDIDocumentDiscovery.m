@@ -9,7 +9,7 @@ classdef TestNDIDocumentDiscovery < matlab.unittest.TestCase
     %
 
     methods (Test)
-        function testDocDiscoveryAndValidation(testCase)
+        function testDocumentDiscoveryAndValidation(testCase)
             % This test executes the file discovery logic and verifies the results.
             
             fprintf('Searching for all NDI JSON document definition files...\n');
