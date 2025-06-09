@@ -13,7 +13,6 @@ classdef markgarbage < ndi.app
     %
     %   G = ndi.app.markgarbage(S); % create app instance
     %   G.clearvalidinterval(E);
-    %
 
     properties (SetAccess=protected,GetAccess=public)
 
