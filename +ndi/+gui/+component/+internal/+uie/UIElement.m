@@ -1,7 +1,7 @@
 classdef UIElement < ndi.util.StructSerializable & matlab.mixin.Heterogeneous
     % UIELEMENT A base class for describing a generic UI element.
 
-    properties (constant)
+    properties (Constant)
         NotMatlabUIProps = {'UUid','IsContainer','creatorFcn','ParentTag','ParentUuid'};
         CallBackTypes = {'ButtonDownFcn','ValueChangedFcn','ValueChangingFcn'};
     end
@@ -14,7 +14,7 @@ classdef UIElement < ndi.util.StructSerializable & matlab.mixin.Heterogeneous
         ParentUuid (1,:) char = ''
     end
 
-    properties (protected)
+    properties (Access=protected)
         Uuid (1,:) char = ''
     end
 
@@ -25,8 +25,6 @@ classdef UIElement < ndi.util.StructSerializable & matlab.mixin.Heterogeneous
 
     methods
         function value = get.IsContainer(obj)
-            % For the base UIElement class, IsContainer is always false.
-            % Container subclasses will override this method.
             value = logical(isa(obj,'ndi.gui.component.internal.uie.mixin.UIContainer'));
         end
         
