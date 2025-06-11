@@ -60,7 +60,7 @@ classdef TestNDIDocumentJSON < matlab.unittest.TestCase
                     continue;
                 end
                 
-                docTypes(i) = filename;
+                docTypes{i} = filename;
             end
             
             % 3. Ensure the list is unique and sort it for consistent test order
