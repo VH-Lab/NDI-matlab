@@ -28,7 +28,7 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
     %   ndi.database.fun.plotinteractivedocgraph(docs,G,mdigraph,nodes,'layered');
     %
 
-    if nargin==0,
+    if nargin==0
 
         global clicked_node;
 
@@ -55,22 +55,22 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         disp(['Global variable ''clicked_node'' set to clicked document']);
 
         return;
-    end;
+    end
 
     docs = varargin{1};
     G = varargin{2};
     mdigraph = varargin{3};
     nodes = varargin{4};
-    if nargin<5,
+    if nargin<5
         layout = 'layered';
-    else,
+    else
         layout = varargin{5};
-    end;
-    if nargin<6,
+    end
+    if nargin<6
         interactive = 0;
-    else,
+    else
         interactive = varargin{6};
-    end;
+    end
 
     f = figure;
 
@@ -81,24 +81,24 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
     doc_properties = {};
     doc_properties_doc_class = {};
     doc_properties_ndi_doc = {};
-    for i=1:numel(docs),
+    for i=1:numel(docs)
         doc_properties{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties);'])];
         doc_properties_doc_class{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.document_class);'])];
         doc_properties_ndi_doc{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.base);'])];
-    end;
+    end
 
     h=plot(mdigraph,'layout',layout);
     set(h,'interpreter','none');
     DTT = get(h,'DataTipTemplate');
-    try, % requires Matlab > 2019a
+    try % requires Matlab > 2019a
         DTT.DataTipRows(end+1) = dataTipTextRow('document_properties:', doc_properties);
         DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
         DTT.DataTipRows(end+1) = dataTipTextRow('base:', doc_properties_ndi_doc);
         set(DTT,'interpreter','none');
-    end;
+    end
     box off;
     set(gca,'ydir','reverse')
 
-    if interactive,
+    if interactive
         set(gca,'ButtonDownFcn','ndi.database.fun.plotinteractivedocgraph');
-    end;
+    end

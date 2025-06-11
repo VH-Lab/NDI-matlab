@@ -63,11 +63,11 @@ function [out] = preptemp(t, d, temp_table, options)
 
     range = max(filtered_signal(:)) - min(filtered_signal(:));
 
-    if range<options.change_threshold,
+    if range<options.change_threshold
         type = 'constant';
         raw = mean(filtered_signal);
         [i,temp] = vlt.data.findclosest(temp_table,raw);
-    else,
+    else
         type = 'change';
         i0 = find(t<=options.beginning_time);
         i1 = find(t>=(t(end)-options.ending_time));
@@ -76,6 +76,6 @@ function [out] = preptemp(t, d, temp_table, options)
         [i,temp0] = vlt.data.findclosest(temp_table,raw(1));
         [i,temp1] = vlt.data.findclosest(temp_table,raw(2));
         temp = [ temp0 temp1 ];
-    end;
+    end
 
     out = vlt.data.var2struct('type','temp','raw','range');

@@ -24,19 +24,19 @@ classdef reader < ndi.ido & ndi.documentservice
 
             loadfromfile = 0;
 
-            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
+            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
-            elseif nargin>=2,
-                if ischar(varargin{2}), % it is a command
+            elseif nargin>=2
+                if ischar(varargin{2}) % it is a command
                     loadfromfile = 1;
                     filename = varargin{1};
-                    if ~strcmp(lower(varargin{2}), lower('OpenFile')),
+                    if ~strcmp(lower(varargin{2}), lower('OpenFile'))
                         error(['Unknown command.']);
                     end
-                end;
-            end;
+                end
+            end
 
-            if loadfromfile,
+            if loadfromfile
                 error(['Load from file no longer supported.']);
             end
         end % ndi.daq.reader
@@ -91,9 +91,9 @@ classdef reader < ndi.ido & ndi.documentservice
             ec = {};
             d = ndi_daqreader_obj.getingesteddocument(epochfiles,S);
             et = d.document_properties.daqreader_epochdata_ingested.epochtable;
-            for i=1:numel(et.epochclock),
+            for i=1:numel(et.epochclock)
                 ec{i} = ndi.time.clocktype(et.epochclock{i});
-            end;
+            end
         end % epochclock_ingested
 
         function t0t1 = t0_t1(ndi_daqreader_obj, epochfiles)
@@ -126,17 +126,17 @@ classdef reader < ndi.ido & ndi.documentservice
             d = ndi_daqreader_obj.getingesteddocument(epochfiles, S);
             et = d.document_properties.daqreader_epochdata_ingested.epochtable;
             t0t1 = et.t0_t1;
-            if ~iscell(t0t1),
+            if ~iscell(t0t1)
                 t = {};
-                if isvector(t0t1), % this fixes a to-json, from-json, to-json conversion problem
+                if isvector(t0t1) % this fixes a to-json, from-json, to-json conversion problem
                     t{1} = t0t1(:)';
-                else,
-                    for i=1:size(et.t0_t1,2),
+                else
+                    for i=1:size(et.t0_t1,2)
                         t{i} = t0t1(:,i)';
-                    end;
-                end;
+                    end
+                end
                 t0t1 = t;
-            end;
+            end
         end % t0t1
 
         function [b,msg] = verifyepochprobemap(ndi_daqreader_obj, epochprobemap, epochfiles)
@@ -153,15 +153,15 @@ classdef reader < ndi.ido & ndi.documentservice
             % See also: ndi.daq.reader, ndi.epoch.epochprobemap_daqsystem
             msg = '';
             b = isa(epochprobemap, 'ndi.epoch.epochprobemap_daqsystem');
-            if ~b,
+            if ~b
                 msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
                 return;
-            end;
+            end
 
-            for i=1:numel(epochprobemap),
-                try,
+            for i=1:numel(epochprobemap)
+                try
                     thedevicestring = ndi_daqreaderstring(epochprobemap(i).devicestring);
-                catch,
+                catch
                     b = 0;
                     msg = ['Error evaluating devicestring ' epochprobemap(i).devicestring '.'];
                 end
@@ -186,7 +186,7 @@ classdef reader < ndi.ido & ndi.documentservice
                 'daqreader_epochdata_ingested', daqreader_epochdata_ingested);
             d = d.set_dependency_value('daqreader_id',ndi_daqreader_obj.id());
 
-        end; % ingest_epochfiles()
+        end % ingest_epochfiles()
 
         function b = eq(ndi_daqreader_obj1, ndi_daqreader_obj2)
             % EQ - tests whether 2 ndi.daq.reader objects are equal
@@ -197,7 +197,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             b = strcmp(class(ndi_daqreader_obj1),class(ndi_daqreader_obj2));
             b = b & strcmp(ndi_daqreader_obj1.id(), ndi_daqreader_obj2.id());
-        end; % eq()
+        end % eq()
 
         %% functions that override ndi.documentservice
 
@@ -212,7 +212,7 @@ classdef reader < ndi.ido & ndi.documentservice
                 'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
                 'base.id', ndi_daqreader_obj.id(),...
                 'base.session_id',ndi.session.empty_id());
-        end; % newdocument()
+        end % newdocument()
 
         function sq = searchquery(ndi_daqreader_obj)
             % SEARCHQUERY - create a search for this ndi.daq.reader object
@@ -222,7 +222,7 @@ classdef reader < ndi.ido & ndi.documentservice
             % Creates a search query for the ndi.daq.reader object.
             %
             sq = ndi.query('base.id','exact_string', ndi_daqreader_obj.id(), '');
-        end; % searchquery()
+        end % searchquery()
 
     end % methods
 

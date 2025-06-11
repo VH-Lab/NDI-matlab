@@ -53,7 +53,7 @@ if ~isempty(options.IgnoreFile)
             ignoreList{i} = [options.ParentDir filesep ignoreList{i}];
         end
     catch e
-        warning('Error reading or parsing ignore file: %s. Ignoring ignore list.', e.message);
+        warning(e.identifier, 'Error reading or parsing ignore file: %s. Ignoring ignore list.', e.message);
     end
 end
 

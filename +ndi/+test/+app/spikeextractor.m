@@ -16,9 +16,9 @@ function spikeextractor
     % remove any old acq devices
 
     devs = E.daqsystem_load('name','(.*)');
-    for i=1:numel(devs),
+    for i=1:numel(devs)
         E.daqsystem_rm(vlt.data.celloritem(devs,i));
-    end;
+    end
 
     disp(['Now adding our acquisition device (SpikeGadgets):']);
     ft = ndi.file.navigator(E, '.*\.rec\>');  % look for .rec files

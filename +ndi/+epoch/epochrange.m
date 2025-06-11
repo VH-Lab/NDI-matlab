@@ -60,7 +60,7 @@ t0_t1 = NaN(index2-index1+1,2);
 for i=index1:index2
     er{end+1} = et(i).epoch_id;
     clockIndex = find(cellfun(@(x) eq(x,clocktype), et(i).epoch_clock));
-    if isempty(clockIndex),
+    if isempty(clockIndex)
        error(['Epoch ' er{end} ' lacks clocktype ' clocktype.type '.']);
     end
     t0_t1(i,1) = et(i).t0_t1{clockIndex}(1);

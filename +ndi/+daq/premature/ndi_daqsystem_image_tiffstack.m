@@ -159,7 +159,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                 end
                 % translating the byte order of the file so it matches arguments of fread()
             else
-                if strcmp(info.ByteOrder,'big-endian');
+                if strcmp(info.ByteOrder,'big-endian')
                     byteOrder = 'ieee-be';
                 else
                     byteOrder = 'ieee-le';

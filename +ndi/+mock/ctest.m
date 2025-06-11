@@ -4,7 +4,7 @@ classdef ctest
 
     properties
         base_scope % structure with the base scope information for the class
-    end; % properties
+    end % properties
 
     methods
         % 80 character reference; documentation should be within 80 character limit
@@ -17,7 +17,7 @@ classdef ctest
             % Create an ndi.mock.ctest object.
             %
             ctest_obj.base_scope = ndi.mock.ctest.default_scope();
-        end; % ctest (creator)
+        end % ctest (creator)
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -73,8 +73,8 @@ classdef ctest
             b = [];
             errormsg = {};
             b_expected = [];
-            for i=1:numel(doc_output),
-                for j=1:numel(doc_output),
+            for i=1:numel(doc_output)
+                for j=1:numel(doc_output)
                     [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
                         doc_output{i}, scope);
                     b(i,j) = doesitmatch;
@@ -84,16 +84,16 @@ classdef ctest
                         doc_expected_output{j}, scope);
                     b_expected(i,j) = doesitmatch;
                     b_expected(j,i) = doesitmatch;
-                end;
-            end;
+                end
+            end
 
-            if plot_it,
-                for i=1:numel(doc_output),
+            if plot_it
+                for i=1:numel(doc_output)
                     figure;
                     ctest_obj.plot(doc_output{i});
-                end;
-            end;
-        end; % test()
+                end
+            end
+        end % test()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -106,7 +106,7 @@ classdef ctest
             %
             % In the abstract class, nothing is done.
 
-        end; % plot()
+        end % plot()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -130,17 +130,17 @@ classdef ctest
             doc_output = {};
             doc_expected_output = {};
 
-            switch (scope),
+            switch (scope)
 
-                case 'standard',
+                case 'standard'
 
-                case 'low-noise',
+                case 'low-noise'
 
-                case 'high-noise',
+                case 'high-noise'
 
-            end;
+            end
 
-        end; % generate_mock_docs()
+        end % generate_mock_docs()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -164,14 +164,14 @@ classdef ctest
             %
             b = 1;
             errormsg = '';
-        end; % compare_mock_docs()
+        end % compare_mock_docs()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function clean_mock_docs(ctest_obj)
             % CLEAN_MOCK_DOCS - remove mock/test documents
 
-        end; % clean_mock_docs()
+        end % clean_mock_docs()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -185,7 +185,7 @@ classdef ctest
             w = which(class(ctest_obj));
             [parent,classname,ext] = fileparts(w);
             path = [parent filesep];
-        end; % calc_path
+        end % calc_path
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -200,7 +200,7 @@ classdef ctest
             w = which(class(ctest_obj));
             [parent,classname,ext] = fileparts(w);
             mp = [ctest_obj.calc_path() filesep 'mock' filesep classname filesep];
-        end; % mock_path
+        end % mock_path
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -213,14 +213,14 @@ classdef ctest
             % Nth standard mock test.
             %
             fname = ctest_obj.mock_expected_filename(number);
-            if vlt.file.isfile(fname),
+            if vlt.file.isfile(fname)
                 json_data = vlt.file.textfile2char(fname);
                 doc = ndi.document(jsondecode(json_data));
-            else,
+            else
                 error(['File ' fname ' does not exist.']);
-            end;
+            end
 
-        end; % load_mock_expected_output()
+        end % load_mock_expected_output()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -233,7 +233,7 @@ classdef ctest
             % answer for the Nth standard mock test.
             %
             fname = [ctest_obj.mock_path() 'mock.' int2str(number) '.json'];
-        end; % mock_expected_filename()
+        end % mock_expected_filename()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -250,17 +250,17 @@ classdef ctest
             %
             fname = ctest_obj.mock_expected_filename(number);
             json_output = char(did.datastructures.jsonencodenan(doc.document_properties));
-            if isfile(fname),
+            if isfile(fname)
                 error(['File ' fname ' already exists. Delete to overwrite.']);
-            end;
+            end
             parentdir = fileparts(fname);
-            if ~isfolder(parentdir),
+            if ~isfolder(parentdir)
                 mkdir(parentdir);
-            end;
+            end
             vlt.file.str2text(fname,json_output);
-        end; % write_mock_expected_output()
+        end % write_mock_expected_output()
 
-    end;
+    end
 
     methods(Static)
         % 80 character reference; documentation should be within 80 character limit
@@ -282,7 +282,7 @@ classdef ctest
             base_scope(4) = struct(...
                 'scope', 'high_noise', 'autocompare', 0);
 
-        end; % ndi.mock.ctest.default_scope()
+        end % ndi.mock.ctest.default_scope()
 
-    end; % static methods
+    end % static methods
 end

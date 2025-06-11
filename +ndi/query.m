@@ -113,7 +113,7 @@ classdef query < did.query
             end
             if nargin>3
                 inputs{4} = param2;
-            end;
+            end
             ndi_query_obj@did.query(inputs{:});
         end % query() constructor
     end % methods

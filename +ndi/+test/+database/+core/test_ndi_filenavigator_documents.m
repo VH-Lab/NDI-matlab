@@ -45,22 +45,22 @@ function test_ndi_filenavigator_documents(dirname)
     % Step c)
 
     % Step d)
-    for i=1:numel(fn_doc),
+    for i=1:numel(fn_doc)
         read_doc = E.database_search(fn{i}.searchquery());
-        if numel(read_doc)~=1,
+        if numel(read_doc)~=1
             error(['Could not find document, i=' int2str(i)]);
-        end;
+        end
         read_doc{1}.document_properties.filenavigator,
         fn_withdoc{i} = ndi.database.fun.ndi_document2ndi_object(read_doc{1},E);
-    end;
+    end
 
     % Initialize the filenavigator using the ndi.document
 
-    for i=1:numel(fn_doc),
-        if eq(fn_withdoc{i},fn{i}),
+    for i=1:numel(fn_doc)
+        if eq(fn_withdoc{i},fn{i})
             disp(['Object i=' int2str(i) ' created from database is successful']);
-        else,
+        else
             error(['For i=' int2str(i) ', ndi.file.navigator objects do not match.']);
-        end;
-    end;
+        end
+    end
 end

@@ -40,7 +40,7 @@ mylog = ndi.common.getLogger();
 
 e = D.getelements('element.name',name_out,'element.reference',reference_out);
 
-if ~isempty(e), D.database_rm(e{1}.id()); e = []; end;
+if ~isempty(e), D.database_rm(e{1}.id()); e = []; end
 
 assert(isempty(e),['Element with name ' name_out ' and reference ' int2str(reference_out) ' already exists. Delete it before making a new one.']);
 
@@ -66,7 +66,7 @@ for i=1:numel(globalClocks)
     if ~isempty(t_out)
         match = i;
         break;
-    end;
+    end
 end
 
 if match>0
@@ -121,7 +121,7 @@ end
 ecs = {'dev_local_time'};
 t0_t1 = [t0_t1_local(:)];
 
-if isGlobal,
+if isGlobal
     ecs{end+1} = clockTarget.type;
     tr = ndi.time.timereference(ndi_element_timeseries_obj_in,ndi.time.clocktype('dev_local_time'),1,0);
     t0 = D.syncgraph.time_convert(tr,et(1).t0_t1{idx}(1),ndi_element_timeseries_obj_in.underlying_element,clockTarget);

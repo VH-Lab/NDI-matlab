@@ -4,9 +4,9 @@ classdef BriggsStims < ndi.daq.metadatareader
     %
 
     properties (GetAccess=public, SetAccess=protected)
-    end;
+    end
     properties (Access=private)
-    end;
+    end
 
     methods
 
@@ -22,7 +22,7 @@ classdef BriggsStims < ndi.daq.metadatareader
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
             obj = obj@ndi.daq.metadatareader(varargin{:});
-        end; % ndi.daq.metadatareader.BriggsStims
+        end % ndi.daq.metadatareader.BriggsStims
 
         function [parameters,stimorder,stimtimes] = readmetadatafromfile(ndi_daqmetadatareader_briggsStims_obj, file)
             % READMETADATAFROMFILE - read in metadata from the file that is identified
@@ -39,15 +39,15 @@ classdef BriggsStims < ndi.daq.metadatareader
             parameters = {};
             stimorder = z.stimData.stimParams.stimOrder(:);
             stimtimes = z.stimData.stimTimes(:);
-            for i=1:numel(z.stimData.stimParams.Value), % if stimIDs change, this will use last value
+            for i=1:numel(z.stimData.stimParams.Value) % if stimIDs change, this will use last value
                 stimid = z.stimData.stimParams.stimOrder(i);
                 params_here = base_parameters;
                 params_here.Value = z.stimData.stimParams.Value(i);
                 parameters{stimid} = params_here;
-            end;
-        end; % readmetadatafromfile()
+            end
+        end % readmetadatafromfile()
 
-    end; % methods
+    end % methods
 
     methods (Static)
         function stimStructArray = briggsStruct2stimulusStruct(briggsStruct)
@@ -95,13 +95,13 @@ classdef BriggsStims < ndi.daq.metadatareader
                 for i=1:numel(fn1) 
                     if ischar(getfield(p1,fn1{i})) | isstring(getfield(p1,fn1{i}))
                         p1 = setfield(p1,fn1{i},str2num(getfield(p1,fn1{i})));
-                    end;
-                end;
+                    end
+                end
                 for i=1:numel(fn2)
                     if ischar(getfield(p2,fn2{i})) | isstring(getfield(p2,fn2{i}))
                         p2 = setfield(p2,fn2{i},str2num(getfield(p2,fn2{i})));
-                    end;
-                end;
+                    end
+                end
 
                 % probably there are other stim type besides gratings
                 % for right now assume gratings
@@ -142,9 +142,9 @@ classdef BriggsStims < ndi.daq.metadatareader
                         p_here.tFrequency = p_base.tFrequency(i);
                     elseif p1.tuning==tuningTypeSize
                         p_here.rect = p_base.rect(i,:);
-                    end;
+                    end
                     stimStructArray{i} = p_here;
-                end;
+                end
         end % briggsStruct2stimulusStruct()
 
         function [stimOn,stimOff,stimGratCycle] = briggsStruct2stimulusTiming(briggsStruct)
@@ -175,11 +175,11 @@ classdef BriggsStims < ndi.daq.metadatareader
                     error(['Required field in data(X).results1 not found, for example: ' reqFields1{index(1)}]);
                 end
                 % make all values numbers instead of strings
-                for i=1:numel(fn1), 
+                for i=1:numel(fn1) 
                     if ischar(getfield(p1,fn1{i})) | isstring(getfield(p1,fn1{i}))
                         p1 = setfield(p1,fn1{i},str2num(getfield(p1,fn1{i})));
-                    end;
-                end;
+                    end
+                end
 
                 interstimulusInterval = p1.ITT;
                 stimulusDuration = p1.gratDur;

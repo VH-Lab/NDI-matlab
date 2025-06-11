@@ -83,11 +83,11 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     parameters.input_parameters.selection = struct('property',independent_variables{1},'operation','hasfield','value','varies'); %what to do if multiple independent variables?
     I = tc.search_for_input_parameters(parameters);
 
-    for i=1:numel(stim_response_doc),
-        for j=1:numel(stim_response_doc{i}),
+    for i=1:numel(stim_response_doc)
+        for j=1:numel(stim_response_doc{i})
             parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{i}{j}.id());
             tc_docs{end+1} = tc.run('Replace',parameters);
-        end;
-    end;
+        end
+    end
 
     docs = { mock_output.mock_subject stimulator_doc spikes_doc stim_pres_doc control_stim_doc stim_response_doc{1}{:} tc_docs{1}{:} };

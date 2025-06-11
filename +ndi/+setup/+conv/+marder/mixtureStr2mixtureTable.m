@@ -1,7 +1,7 @@
-function t = mixtureString2mixtureTable(str,mixtureStruct)
-% MIXTURESTRING2MIXTURETABLE - convert a mixture string to a mixture table
+function t = mixtureStr2mixtureTable(str,mixtureStruct)
+% MIXTURESTR2MIXTURETABLE - convert a mixture string to a mixture table
 %
-% T = MIXTURESTRING2MIXTURETABLE(STR, MIXTURESTRUCT)
+% T = ndi.setup.conv.marder.MIXTURESTR2MIXTURETABLE(STR, MIXTURESTRUCT)
 %
 % Converts a mixture string STR to a table of mixtures.
 %
@@ -30,16 +30,16 @@ t = vlt.data.emptytable("ontologyName","string","name","string","value",...
 f = fieldnames(mixtureStruct);
 
 tokens = extractTokens(str);
-for i=1:numel(tokens),
+for i=1:numel(tokens)
     coef = tokens{i}{1};
     name = tokens{i}{2};
     index = find(strcmp(name,f));
     assert(~isempty(index),["No name " + name + " found."]);
     v = getfield(mixtureStruct,f{index});
-    for j=1:numel(v),
+    for j=1:numel(v)
         v(j).value = coef * v(j).value;
         t(end+1,:) = struct2cell(v(j))';
-    end;
+    end
 end
 
 function tokens = extractTokens(text)

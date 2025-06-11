@@ -10,7 +10,7 @@ classdef tuningcurve < ndi.calculator
             %
             tuningcurve_obj = tuningcurve_obj@ndi.calculator(session,'tuningcurve_calc',...
                 fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','tuningcurve_calc.json'));
-        end; % tuningcurve()
+        end % tuningcurve()
 
         function doc = calculate(ndi_calculator_obj, parameters)
             % CALCULATE - perform the calculator for ndi.calc.example.tuningcurve
@@ -22,17 +22,17 @@ classdef tuningcurve < ndi.calculator
             % The document that is created tuningcurve
             % by the input parameters.
             % check inputs
-            if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters''.']); end;
-            if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on''.']); end;
+            if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters''.']); end
+            if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on''.']); end
 
             % Step 1: set up the output structure
             tuningcurve_calc = parameters;
 
             stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id','exact_string',...
                 vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_response_scalar_id'),''));
-            if numel(stim_response_doc)~=1,
+            if numel(stim_response_doc)~=1
                 error(['Could not find stimulus response doc..']);
-            end;
+            end
             stim_response_doc = stim_response_doc{1};
 
             % Step 2: perform the calculator, which here creates a tuning curve from instructions
@@ -41,13 +41,13 @@ classdef tuningcurve < ndi.calculator
 
             independent_label = split(parameters.input_parameters.independent_label,',');
             independent_parameter = split(parameters.input_parameters.independent_parameter,',');
-            if numel(independent_label)~=numel(independent_parameter),
+            if numel(independent_label)~=numel(independent_parameter)
                 error(['There are not the same number of independent labels and independent parameters specified.']);
-            end;
-            for i=1:numel(independent_label),
+            end
+            for i=1:numel(independent_label)
                 independent_label{i} = strtrim(independent_label{i});
                 independent_parameter{i} = strtrim(independent_parameter{i});
-            end;
+            end
 
             constraint = vlt.data.emptystruct('field','operation','param1','param2');
 
@@ -56,57 +56,57 @@ classdef tuningcurve < ndi.calculator
             deal_constraints = {};
             stim_property_list = {};
 
-            for i=1:numel(parameters.input_parameters.selection),
-                if strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue'),
+            for i=1:numel(parameters.input_parameters.selection)
+                if strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     match = 0;
-                    for j=1:numel(pva),
-                        if pva{j}==parameters.input_parameters.selection(i).value,
+                    for j=1:numel(pva)
+                        if pva{j}==parameters.input_parameters.selection(i).value
                             match = 1;
                             break;
-                        end;
-                    end;
-                    if match==0, %if it doesn't have it, then quit
+                        end
+                    end
+                    if match==0 %if it doesn't have it, then quit
                         doc = {};
                         return;
-                    end;
-                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue>'),
+                    end
+                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue>')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     match = 0;
-                    for j=1:numel(pva),
-                        if pva{j}>parameters.input_parameters.selection(i).value,
+                    for j=1:numel(pva)
+                        if pva{j}>parameters.input_parameters.selection(i).value
                             match = 1;
                             break;
-                        end;
-                    end;
-                    if match==0, %if it doesn't have it, then quit
+                        end
+                    end
+                    if match==0 %if it doesn't have it, then quit
                         doc = {};
                         return;
-                    end;
-                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue<'),
+                    end
+                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue<')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     match = 0;
-                    for j=1:numel(pva),
-                        if pva{j}<parameters.input_parameters.selection(i).value,
+                    for j=1:numel(pva)
+                        if pva{j}<parameters.input_parameters.selection(i).value
                             match = 1;
                             break;
-                        end;
-                    end;
-                    if match==0, %if it doesn't have it, then quit
+                        end
+                    end
+                    if match==0 %if it doesn't have it, then quit
                         doc = {};
                         return;
-                    end;
-                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'numberatleast'),
+                    end
+                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'numberatleast')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     if ~isnumeric(parameters.input_parameters.selection(i).value)
                         error(['NumberAtLeast value must be numeric.']);
                     end
                     match = numel(pva)>=parameters.input_parameters.selection(i).value;
-                    if match==0, %if it doesn't have it, then quit
+                    if match==0 %if it doesn't have it, then quit
                         doc = {};
                         return;
-                    end;
-               elseif strcmpi(char(parameters.input_parameters.selection(i).value),'best'),
+                    end
+               elseif strcmpi(char(parameters.input_parameters.selection(i).value),'best')
                     % calculate best value
                     [n,v,stim_property_value] = ndi_calculator_obj.best_value(parameters.input_parameters.best_algorithm,...
                         stim_response_doc, parameters.input_parameters.selection(i).property);
@@ -114,65 +114,65 @@ classdef tuningcurve < ndi.calculator
                         'operation','exact_number','param1',stim_property_value,'param2','');
                     constraint(end+1) = constraint_here;
                     log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' best value is ' num2str(stim_property_value) ',']);
-                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'greatest'),
+                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'greatest')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     match = 0;
                     greatest = -Inf;
-                    for j=1:numel(pva),
-                        if pva{j}>greatest,
+                    for j=1:numel(pva)
+                        if pva{j}>greatest
                             match = 1;
                             greatest = pva{j};
-                        end;
-                    end;
-                    if match==0, %if it doesn't have it, then quit
+                        end
+                    end
+                    if match==0 %if it doesn't have it, then quit
                         doc = {};
                         return;
-                    end;
+                    end
                     stim_property_value = greatest;
                     constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
                         'operation','exact_number','param1',stim_property_value,'param2','');
                     constraint(end+1) = constraint_here;
                     log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' greatest value is ' num2str(stim_property_value) ',']);
-                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'least'),
+                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'least')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     match = 0;
                     least = Inf;
-                    for j=1:numel(pva),
-                        if pva{j}<least,
+                    for j=1:numel(pva)
+                        if pva{j}<least
                             match = 1;
                             least= pva{j};
-                        end;
-                    end;
-                    if match==0, %if it doesn't have it, then quit
+                        end
+                    end
+                    if match==0 %if it doesn't have it, then quit
                         doc = {};
                         return;
-                    end;
+                    end
                     stim_property_value = least;
                     constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
                         'operation','exact_number','param1',stim_property_value,'param2','');
                     constraint(end+1) = constraint_here;
                     log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' least value is ' num2str(stim_property_value) ',']);
-                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal'),
+                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal')
                     stim_property_list{end+1} = parameters.input_parameters.selection(i).property;
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
                     deal_constraints_group = vlt.data.emptystruct('field','operation','param1','param2');
-                    for j=1:numel(pva),
+                    for j=1:numel(pva)
                         deal_constraints_here.field = parameters.input_parameters.selection(i).property;
                         deal_constraints_here.operation = 'exact_number';
                         deal_constraints_here.param1 = pva{j};
                         deal_constraints_here.param2 = '';
                         deal_constraints_group(end+1) = deal_constraints_here;
-                    end;
+                    end
                     deal_constraints{end+1} = deal_constraints_group;
-                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'varies'),
+                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'varies')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
-                    if numel(pva)<2, % we don't have any variation in the parameter requested, quit
+                    if numel(pva)<2 % we don't have any variation in the parameter requested, quit
                         doc = {};
                         return;
-                    end;
+                    end
                 elseif strcmpi(char(parameters.input_parameters.selection(i).value),'constant')
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
-                    if numel(pva)~=1, % we have variation in the parameter requested, quit
+                    if numel(pva)~=1 % we have variation in the parameter requested, quit
                         doc = {};
                         return;
                     end
@@ -186,36 +186,36 @@ classdef tuningcurve < ndi.calculator
                         'param1',parameters.input_parameters.selection(i).value,...
                         'param2','');
                     constraint(end+1) = constraint_here;
-                end;
-            end;
+                end
+            end
 
-            if numel(deal_constraints)==0,
+            if numel(deal_constraints)==0
                 deal_constraints{1} = 1;
-            end;
+            end
             N_deal = 1;
             deal_str = '';
 
             sz_ = {};
             deal_constraints_dim = [];
-            for i=1:numel(deal_constraints),
+            for i=1:numel(deal_constraints)
                 N_deal = N_deal * numel(deal_constraints{i});
                 deal_constraints_dim(i) = numel(deal_constraints{i});
                 deal_str = cat(2,deal_str,['sz_{' int2str(i) '},']);
-            end;
+            end
             deal_str(end) = '';
 
             % Step 3: place the results of the calculator into an NDI document
             tapp = ndi.app.stimulus.tuning_response(ndi_calculator_obj.session);
 
-            if numel(log_str)>1,
-                if log_str(end)==',',
+            if numel(log_str)>1
+                if log_str(end)==','
                     log_str(end) = '.';
-                end;
-            end;
+                end
+            end
             tuningcurve_calc.log = log_str;
 
             doc = {};
-            for i=1:N_deal,
+            for i=1:N_deal
                 deal_log_str = '';
                 stim_property_list_values = [];
 
@@ -225,16 +225,16 @@ classdef tuningcurve < ndi.calculator
                 else
                     eval(['[' deal_str ']=ind2sub(deal_constraints_dim,i);']);
                 end
-                for j=1:numel(deal_constraints),
+                for j=1:numel(deal_constraints)
                     deal_here = deal_constraints{j}(sz_{j});
-                    if isstruct(deal_here),
+                    if isstruct(deal_here)
                         constraints_mod(end+1) = deal_here;
                         deal_log_str = cat(2,deal_str,['dealing ' deal_here.field ' = ' num2str(deal_here.param1) ',']);
                         stim_prop_index = find(strcmp(deal_here.field,stim_property_list));
                         % has to be a match, all dealt properties are in stim_property_list
                         stim_property_list_values(stim_prop_index) = deal_here.param1;
-                    end;
-                end;
+                    end
+                end
 
                 tuningcurve_calc_here = tuningcurve_calc;
                 tuningcurve_calc_here.log = cat(2,tuningcurve_calc_here.log,deal_log_str);
@@ -244,15 +244,15 @@ classdef tuningcurve < ndi.calculator
                 % we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
                 doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
                     'independent_parameter',independent_parameter,'constraint',constraints_mod,'do_Add',0);
-                if ~isempty(doc_here), % if doc is actually created, that is, all stimuli were not excluded
+                if ~isempty(doc_here) % if doc is actually created, that is, all stimuli were not excluded
                     doc_here = ndi.document(ndi_calculator_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc_here) + doc_here;
                     doc{end+1} = doc_here;
-                end;
-            end;
-            if numel(doc)==1,
+                end
+            end
+            if numel(doc)==1
                 doc = doc{1};
-            end;
-        end; % calculate
+            end
+        end % calculate
 
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)
             % DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
@@ -270,7 +270,7 @@ classdef tuningcurve < ndi.calculator
             parameters.query(end+1) = struct('name','will_fail','query',...
                 ndi.query('base.id','exact_string','123',''));
 
-        end; % default_search_for_input_parameters
+        end % default_search_for_input_parameters
 
         function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
             % DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
@@ -298,10 +298,10 @@ classdef tuningcurve < ndi.calculator
 
             q_default = default_parameters_query@ndi.calculator(ndi_calculator_obj, parameters_specification);
 
-            if ~isempty(q_default),
+            if ~isempty(q_default)
                 query = q_default;
                 return;
-            end;
+            end
 
             q1 = ndi.query('','isa','stimulus_response_scalar','');
             q2 = ndi.query('stimulus_response_scalar.response_type','contains_string','mean','');
@@ -311,7 +311,7 @@ classdef tuningcurve < ndi.calculator
             q_total = q1 & q234;
 
             query = struct('name','stimulus_response_scalar_id','query',q_total);
-        end; % default_parameters_query()
+        end % default_parameters_query()
 
         function b = is_valid_dependency_input(ndi_calculator_obj, name, value)
             % IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculator?
@@ -333,7 +333,7 @@ classdef tuningcurve < ndi.calculator
             q2 = ndi.query('','isa','tuningcurve_calc','');
             % can't also be a tuningcurve_calc document or we could have infinite recursion
             b = isempty(ndi_calculator_obj.session.database_search(q1&q2));
-        end; % is_valid_dependency_input()
+        end % is_valid_dependency_input()
 
         function doc_about(ndi_calculator_obj)
             % ----------------------------------------------------------------------------------------------
@@ -351,7 +351,7 @@ classdef tuningcurve < ndi.calculator
             %   Definition: apps/tuningcurve_calc.json
             %
             eval(['help ndi.calc.example.tuningcurve.doc_about']);
-        end; %doc_about()
+        end %doc_about()
 
         function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
             % PLOT - provide a diagnostic plot to show the results of the calculator
@@ -368,23 +368,23 @@ classdef tuningcurve < ndi.calculator
             % call superclass plot method to set up axes
             h=plot@ndi.calculator(ndi_calculator_obj, doc_or_parameters, varargin{:});
 
-            if isa(doc_or_parameters,'ndi.document'),
+            if isa(doc_or_parameters,'ndi.document')
                 doc = doc_or_parameters;
-            else,
+            else
                 error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
-            end;
+            end
 
             tc = doc.document_properties.stimulus_tuningcurve; % shorten our typing
 
             % if more than 2-d, complain
 
-            if numel(tc.independent_variable_label)>2,
+            if numel(tc.independent_variable_label)>2
                 a = axis;
                 h.objects(end+1) = text(mean(a(1:2)),mean(a(3:4)),['Do not know how to plot with more than 2 independent axes.']);
                 return;
-            end;
+            end
 
-            if numel(tc.independent_variable_label)==1,
+            if numel(tc.independent_variable_label)==1
                 hold on;
                 h_baseline = plot([min(tc.independent_variable_value) max(tc.independent_variable_value)],...
                     [0 0],'k--','linewidth',1.0001);
@@ -396,16 +396,16 @@ classdef tuningcurve < ndi.calculator
                     net_responses(sortorder(:)),tc.response_stderr(sortorder(:)),tc.response_stderr(sortorder(:)));
                 set(h_errorbar,'color',[0 0 0],'linewidth',1);
                 h.objects = cat(2,h.objects,h_errorbar);
-                if ~h.params.suppress_x_label,
+                if ~h.params.suppress_x_label
                     h.xlabel = xlabel(tc.independent_variable_label);
-                end;
-                if ~h.params.suppress_y_label,
+                end
+                if ~h.params.suppress_y_label
                     h.ylabel = ylabel(['Response (' tc.response_units ')']);
-                end;
+                end
                 box off;
-            end;
+            end
 
-            if numel(tc.independent_variable_label)==2,
+            if numel(tc.independent_variable_label)==2
                 net_responses = tc.response_mean - tc.control_response_mean;
                 first_dim = unique(tc.independent_variable_value(:,1));
                 colormap = spring(numel(first_dim));
@@ -414,7 +414,7 @@ classdef tuningcurve < ndi.calculator
                 h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
                 h.objects(end+1) = h_baseline;
                 hold on;
-                for i=1:numel(first_dim),
+                for i=1:numel(first_dim)
                     indexes = find(tc.independent_variable_value(:,1)==first_dim(i));
                     [v,sortorder] = sort(tc.independent_variable_value(indexes,2));
                     h_errorbar = errorbar(tc.independent_variable_value(indexes(sortorder),2),...
@@ -424,17 +424,17 @@ classdef tuningcurve < ndi.calculator
                         'DisplayName',...
                         [tc.independent_variable_label{1} '=' num2str(tc.independent_variable_value(indexes(1),1))]);
                     h.objects = cat(2,h.objects,h_errorbar);
-                end;
-                if ~h.params.suppress_x_label,
+                end
+                if ~h.params.suppress_x_label
                     h.xlabel = xlabel(tc.independent_variable_label{2});
-                end;
-                if ~h.params.suppress_y_label,
+                end
+                if ~h.params.suppress_y_label
                     h.ylabel = ylabel(['Response (' tc.response_units ')']);
-                end;
+                end
                 legend;
                 box off;
-            end;
-        end; % plot()
+            end
+        end % plot()
 
         % NEW functions in tuningcurve_calc that are not overriding any superclass functions
 
@@ -457,13 +457,13 @@ classdef tuningcurve < ndi.calculator
             %
             n = NaN;
             v = -Inf;
-            switch lower(algorithm),
-                case 'empirical_maximum',
+            switch lower(algorithm)
+                case 'empirical_maximum'
                     [n,v,property_value] = ndi_calculator_obj.best_value_empirical(stim_response_doc,property);
-                otherwise,
+                otherwise
                     error(['Unknown algorithm ' algorithm '.']);
-            end;
-        end; % best_value
+            end
+        end % best_value
 
         function [n,v,property_value] = best_value_empirical(ndi_calculator_obj, stim_response_doc, property)
             % BEST_VALUE_EMPIRICAL - find the best response value for a given stimulus property
@@ -483,19 +483,19 @@ classdef tuningcurve < ndi.calculator
             stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id', 'exact_string', ...
                 stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 
-            if numel(stim_pres_doc)~=1,
+            if numel(stim_pres_doc)~=1
                 error(['Could not find stimulus presentation doc for document ' stim_response_doc.id() '.']);
-            end;
+            end
             stim_pres_doc = stim_pres_doc{1};
 
             % see which stimuli to include
 
             include = [];
-            for i=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
-                if isfield(stim_pres_doc.document_properties.stimulus_presentation.stimuli(i).parameters,property),
+            for i=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli)
+                if isfield(stim_pres_doc.document_properties.stimulus_presentation.stimuli(i).parameters,property)
                     include(end+1) = i;
-                end;
-            end;
+                end
+            end
 
             n = NaN;
             v = -Inf;
@@ -503,30 +503,30 @@ classdef tuningcurve < ndi.calculator
 
             R = stim_response_doc.document_properties.stimulus_response_scalar.responses;
 
-            for i=1:numel(include),
+            for i=1:numel(include)
                 indexes = find(stim_pres_doc.document_properties.stimulus_presentation.presentation_order==include(i));
                 r_value = [];
-                if ~isempty(indexes),
-                    for j=1:numel(indexes),
+                if ~isempty(indexes)
+                    for j=1:numel(indexes)
                         r_value(end+1) = R.response_real(indexes(j)) + sqrt(-1)*R.response_imaginary(indexes(j));
                         control_value = R.control_response_real(indexes(j)) + sqrt(-1)*R.control_response_imaginary(indexes(j));
-                        if ~isnan(control_value),
+                        if ~isnan(control_value)
                             r_value(end) = r_value(end) - control_value;
-                        end;
-                    end;
+                        end
+                    end
                     mn = nanmean(r_value);
-                    if ~isreal(mn),
+                    if ~isreal(mn)
                         mn = abs(mn);
-                    end;
-                    if mn> v,
+                    end
+                    if mn> v
                         v = mn;
                         n = include(i);
                         property_value = getfield(stim_pres_doc.document_properties.stimulus_presentation.stimuli(include(i)).parameters,property);
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
 
-        end; % best_value_empirical()
+        end % best_value_empirical()
 
         function [pva] = property_value_array(ndi_calculator_obj, stim_response_doc, property)
             % PROPERTY_VALUE_ARRAY - find all values of a stimulus property
@@ -544,30 +544,30 @@ classdef tuningcurve < ndi.calculator
             stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id', 'exact_string', ...
                 stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 
-            if numel(stim_pres_doc)~=1,
+            if numel(stim_pres_doc)~=1
                 error(['Could not find stimulus presentation doc for document ' stim_response_doc.id() '.']);
-            end;
+            end
             stim_pres_doc = stim_pres_doc{1};
 
             pva = {};
 
-            for i=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
-                if isfield(stim_pres_doc.document_properties.stimulus_presentation.stimuli(i).parameters,property),
+            for i=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli)
+                if isfield(stim_pres_doc.document_properties.stimulus_presentation.stimuli(i).parameters,property)
                     % why not just use UNIQUE? because it cares about whether the data are numbers or strings, doesn't work on numbers
                     value_here = getfield(stim_pres_doc.document_properties.stimulus_presentation.stimuli(i).parameters,property);
                     match_already = 0;
-                    for k=1:numel(pva),
-                        if vlt.data.eqlen(pva{k},value_here),
+                    for k=1:numel(pva)
+                        if vlt.data.eqlen(pva{k},value_here)
                             match_already = 1;
                             break;
-                        end;
-                    end;
-                    if ~match_already,
+                        end
+                    end
+                    if ~match_already
                         pva{end+1} = value_here;
-                    end;
-                end;
-            end;
+                    end
+                end
+            end
 
-        end; % property_value_array
-    end; % methods()
+        end % property_value_array
+    end % methods()
 end % tuningcurve

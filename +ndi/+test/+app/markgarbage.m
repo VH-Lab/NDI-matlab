@@ -8,9 +8,9 @@ function markgarbage
     %
     %
 
-    if nargin<1,
+    if nargin<1
         dirname = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions' filesep 'markgarbage_ex'];
-    end;
+    end
 
     disp(['creating a new session object at path ' dirname '...']);
     E = ndi.session.dir('exp1_markgarbage_eg',dirname);
@@ -27,9 +27,9 @@ function markgarbage
 
     % if it is there from before, remove it
     devs = E.daqsystem_load('name','(.*)');
-    for i=1:numel(devs),
+    for i=1:numel(devs)
         E.daqsystem_rm(vlt.data.celloritem(devs,i));
-    end;
+    end
 
     dev1 = ndi.daq.system.mfdaq('intan1',fn,ndi.daq.reader.mfdaq.intan());
     E.daqsystem_add(dev1);

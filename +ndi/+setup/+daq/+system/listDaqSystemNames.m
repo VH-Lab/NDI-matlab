@@ -11,7 +11,7 @@ function daqSystemNames = listDaqSystemNames(labName)
 
     [~, daqSystemNames] = fileparts({L.name});
 
-    if ~isa(daqSystemNames,'cell'),
+    if ~isa(daqSystemNames,'cell')
         daqSystemNames = {daqSystemNames};
-    end;
+    end
 end

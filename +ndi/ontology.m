@@ -256,7 +256,7 @@ methods (Static)
             term_component = '';
             if startsWith(processed_input, prefix_with_colon, 'IgnoreCase', true), remainder = strtrim(processed_input(numel(prefix_with_colon)+1:end)); if ~isempty(regexp(remainder, '^\d+$', 'once')), error('ndi:ontology:preprocessLookupInput:NumericIDUnsupported_OM', 'Lookup by prefixed numeric ID ("%s") is not supported for OM.', original_input); elseif isempty(remainder), error('ndi:ontology:preprocessLookupInput:InvalidPrefixFormat_OM', 'Input "%s" has prefix "%s" but is missing term component.', original_input, prefix_with_colon); else, term_component = remainder; end
             else, term_component = processed_input; end
-            try, likely_label = ndi.ontology.convertComponentToLabel_OMHeuristic(term_component); catch ME_regexp, error('ndi:ontology:preprocessLookupInput:HeuristicError_OM', 'Failed to convert OM term component "%s" to label format: %s', term_component, ME_regexp.message); end
+            try likely_label = ndi.ontology.convertComponentToLabel_OMHeuristic(term_component); catch ME_regexp, error('ndi:ontology:preprocessLookupInput:HeuristicError_OM', 'Failed to convert OM term component "%s" to label format: %s', term_component, ME_regexp.message); end
             if isempty(likely_label), error('ndi:ontology:preprocessLookupInput:HeuristicError_OM', 'Derived empty search label from OM term component "%s".', term_component); end
             search_query = likely_label; search_field = 'label'; lookup_type_msg = sprintf('input "%s" (searching label as "%s")', original_input, likely_label);
         else % --- Standard Handling ---
@@ -299,7 +299,7 @@ methods (Static)
         end
         % --- Perform IRI Lookup ---
         if ~isempty(term_iri)
-            try, [id, name, definition, synonyms] = ndi.ontology.performIriLookup(term_iri, ontology_name_ols, ontology_prefix);
+            try [id, name, definition, synonyms] = ndi.ontology.performIriLookup(term_iri, ontology_name_ols, ontology_prefix);
             catch ME, baseME = MException('ndi:ontology:searchOLSAndPerformIRILookup:PostSearchLookupFailed', 'IRI lookup failed following search for %s (IRI: %s).', lookup_type_msg, term_iri); baseME = addCause(baseME, ME); throw(baseME); end
         else, error('ndi:ontology:searchOLSAndPerformIRILookup:InternalError', 'Could not determine unique IRI after search for %s.', lookup_type_msg); end
     end % function searchOLSAndPerformIRILookup
@@ -531,7 +531,7 @@ methods (Static, Access = private)
 
     function likely_label = convertComponentToLabel_OMHeuristic(comp)
         % CONVERTCOMPONENTTOLABEL_OMHEURISTIC - OM-specific heuristic conversion.
-        try, spaced = regexprep(comp,'([a-z])([A-Z])','$1 $2'); likely_label = lower(strtrim(spaced));
+        try spaced = regexprep(comp,'([a-z])([A-Z])','$1 $2'); likely_label = lower(strtrim(spaced));
         catch err, warning('ndi:ontology:preprocessLookupInput:ConversionHelperWarning', 'Error in OM heuristic for "%s": %s. Using lower(comp).', comp, err.message); likely_label = lower(comp); end
     end % function convertComponentToLabel_OMHeuristic
 

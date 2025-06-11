@@ -25,7 +25,7 @@ function [success,filename,replaces] = choosefile(prompt, defaultfilename, dlgti
     for s = extension_list
         if isfile(strcat(filename,char(s)))
             exist = 1;
-        end;
+        end
     end
 
     while exist
@@ -54,7 +54,7 @@ function [success,filename,replaces] = choosefile(prompt, defaultfilename, dlgti
         for s = extension_list
             if isfile(strcat(filename,char(s)))
                 exist = 1;
-            end;
+            end
         end
     end % while
 

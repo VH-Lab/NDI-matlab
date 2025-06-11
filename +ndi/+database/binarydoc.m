@@ -90,7 +90,7 @@ classdef binarydoc < handle
 
         % end; % fclose()
 
-    end; % Abstract methods
+    end % Abstract methods
 
     methods
 
@@ -103,7 +103,7 @@ classdef binarydoc < handle
             %
             fclose(ndi_binarydoc_obj);
             delete@handle(ndi_binarydoc_obj); % call superclass
-        end; % delete()
+        end % delete()
 
     end % methods
 end

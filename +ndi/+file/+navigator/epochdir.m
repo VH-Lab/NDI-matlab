@@ -59,15 +59,15 @@ classdef epochdir < ndi.file.navigator
             %
             % Then ID is 't00001'
             %
-            if nargin < 3,
+            if nargin < 3
                 epochfiles = getepochfiles(ndi_filenavigator_epochdir_obj, epoch_number);
             end
-            if ndi.file.navigator.isingested(epochfiles),
+            if ndi.file.navigator.isingested(epochfiles)
                 id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-            else,
+            else
                 [pathdir,filename] = fileparts(epochfiles{1});
                 [abovepath, id] = fileparts(pathdir);
-            end;
+            end
         end % epochid
 
         %% methods overriding ndi.file.navigator

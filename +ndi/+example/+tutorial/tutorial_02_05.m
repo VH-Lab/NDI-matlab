@@ -19,17 +19,17 @@ function tutorial_02_05(prefix, testing)
     %
     %
 
-    if nargin<1 | isempty(prefix),
+    if nargin<1 | isempty(prefix)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
-    end;
+    end
 
-    if nargin<2,
+    if nargin<2
         testing = 0;
-    end;
+    end
 
     tutorial_dir = 'ts_exper2';
 
-    if testing, % copy the files to the temp directory
+    if testing % copy the files to the temp directory
         prefix = ndi.common.PathConstants.TempFolder;
         disp(['Assuming data files ts_exper2 are in ' prefix '.']);
     end
@@ -198,9 +198,9 @@ function tutorial_02_05(prefix, testing)
     spikes_doc = S.database_search(ndi.query('base.id','exact_string',e{1}.id(),''))
     spikes_doc = spikes_doc{1}
 
-    for i=1:numel(spikes_doc.document_properties.depends_on),
+    for i=1:numel(spikes_doc.document_properties.depends_on)
         disp(['Depends on ' spikes_doc.document_properties.depends_on(i).name ': ' spikes_doc.document_properties.depends_on(i).value]);
-    end;
+    end
 
     % Should see 3 entries, with your own unique IDs:
     %   Depends on underlying_element_id: 412687d3ad57c851_40860c116cfc64c2

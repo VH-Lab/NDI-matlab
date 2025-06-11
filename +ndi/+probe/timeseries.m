@@ -35,11 +35,11 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
             %  DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
             %  ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
             %
-            if isa(timeref_or_epoch,'ndi.time.timereference'),
+            if isa(timeref_or_epoch,'ndi.time.timereference')
                 timeref = timeref_or_epoch;
-            else,
+            else
                 timeref = ndi.time.timereference(ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'), timeref_or_epoch, 0);
-            end;
+            end
 
             [epoch_t0_out, epoch0_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
                 ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'));
@@ -57,7 +57,7 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
             data = [];
             t = [];
 
-            if nargin <2,  % some readtimeseriesepoch() methods may be able to save time if the time information is not requested
+            if nargin <2  % some readtimeseriesepoch() methods may be able to save time if the time information is not requested
                 for i=1:numel(er)
                     if (i==1)
                         startTime = epoch_t0_out;
@@ -86,9 +86,9 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
                     end
                     [data_here,t_here] = ndi_probe_timeseries_obj.readtimeseriesepoch(er{i}, startTime, stopTime);
                     t_here = t_here(:);
-                    if size(data_here,1)==-1+size(t_here,1), % sometimes some readers are a data sample short
+                    if size(data_here,1)==-1+size(t_here,1) % sometimes some readers are a data sample short
                         t_here(end) = [];
-                    end;
+                    end
                     data = cat(1,data,data_here);                    
                     % now need to convert t back to timeref units
                     epoch_here_timeref = ndi.time.timereference(epoch0_timeref.referent,epoch0_timeref.clocktype,er{i},epoch0_timeref.time);
@@ -137,5 +137,5 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
             sq = searchquery@ndi.probe(ndi_probe_timeseries_obj, varargin{:});
         end % newdocument
 
-    end; % methods
+    end % methods
 end

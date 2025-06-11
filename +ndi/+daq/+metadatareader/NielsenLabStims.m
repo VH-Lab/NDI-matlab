@@ -4,9 +4,9 @@ classdef NielsenLabStims < ndi.daq.metadatareader
     %
 
     properties (GetAccess=public, SetAccess=protected)
-    end;
+    end
     properties (Access=private)
-    end;
+    end
 
     methods
 
@@ -22,7 +22,7 @@ classdef NielsenLabStims < ndi.daq.metadatareader
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
             obj = obj@ndi.daq.metadatareader(varargin{:});
-        end; % ndi_daqmetadatareader_NielsenLabStims
+        end % ndi_daqmetadatareader_NielsenLabStims
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_nielsenlabstims_obj, file)
             % READMETADATAFROMFILE - read in metadata from the file that is identified
@@ -35,9 +35,9 @@ classdef NielsenLabStims < ndi.daq.metadatareader
             z = load(file,'-mat');
             parameters = ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(z.Analyzer);
 
-        end; % readmetadatafromfile()
+        end % readmetadatafromfile()
 
-    end; % methods
+    end % methods
 
 end % classdef
 

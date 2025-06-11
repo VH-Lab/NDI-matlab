@@ -56,7 +56,7 @@ classdef epoch < handle & matlab.mixin.SetGet
                   propsList = properties(obj);
 
                   try
-                      for i=1:2:numel(varargin),
+                      for i=1:2:numel(varargin)
                           obj.set(varargin{i},varargin{i+1});
                           propsSet{end+1} = char(varargin{i});
                       end

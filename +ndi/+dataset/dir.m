@@ -17,12 +17,12 @@ classdef dir < ndi.dataset
             %
             % D = ndi.dataset.dir(PATH_NAME)
             %
-            if nargin==1,
+            if nargin==1
                 path_name = reference;
                 ndi_dataset_dir_obj.session = ndi.session.dir(path_name);
-            elseif nargin==2,
+            elseif nargin==2
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
-            elseif nargin==3, % hidden third option
+            elseif nargin==3 % hidden third option
                 % Todo: Switch off specific warnings using warning ids
                 warningStruct = warning('off');
                 resetWarningCleanupObj = onCleanup(@() warning(warningStruct));
@@ -31,27 +31,27 @@ classdef dir < ndi.dataset
                 mystruct.database.add(docs);
                 clear resetWarningCleanupObj
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
-            end;
+            end
 
             % Use the session.dir's path as the path for this object
             ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
 
             q = ndi.query('','isa','dataset_session_info');
             d = ndi_dataset_dir_obj.database_search(q);
-            if ~isempty(d),
-                if numel(d)>1,
+            if ~isempty(d)
+                if numel(d)>1
                     error(['More than one dataset_session_info object found in dataset.']);
-                end;
+                end
                 session_id = d{1}.document_properties.base.session_id;
                 q2 = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',session_id);
                 d2 = ndi_dataset_dir_obj.database_search(q2);
-                if ~isempty(d2),
+                if ~isempty(d2)
                     ref = d2{1}.document_properties.session.reference;
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
-                end;
-            end;
-        end; % dir(), creator
-    end; % methods
+                end
+            end
+        end % dir(), creator
+    end % methods
 
     methods (Static)
         function dataset_erase(ndi_dataset_dir_obj, areyousure)
