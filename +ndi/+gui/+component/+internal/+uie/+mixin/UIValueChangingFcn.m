@@ -1,4 +1,4 @@
-classdef UIValueChangingFcn < ndi.util.StructSerializable
+classdef UIValueChangingFcn < handle
     % UIVALUECHANGINGFCN A mixin class for naming the ValueChangingFcn callback.
     %
     % This is for components where an action should be taken in real-time as

@@ -1,10 +1,5 @@
-classdef UIIconComponent < ndi.util.StructSerializable
+classdef UIIconComponent < handle
     % UIICONCOMPONENT A mixin class for describing components that have an icon.
-    %
-    % This class provides the Icon and IconAlignment properties. It is not
-    % intended to be used on its own, but rather as a superclass for other
-    % UI element classes (like UIButton or UILabel) that can display an icon.
-    % It inherits from StructSerializable to be compatible with the data framework.
 
     properties
         % Icon - The image to be displayed on the component.

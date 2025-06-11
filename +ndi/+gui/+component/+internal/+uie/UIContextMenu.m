@@ -1,4 +1,7 @@
-classdef UIContextMenu < ndi.util.StructSerializable
+classdef UIContextMenu < ndi.gui.component.internal.uie.mixin.UIContainer & ...
+    ndi.gui.component.internal.uie.UIElement & ...
+    ndi.gui.component.internal.uie.mixin.UIItems
+    
     % UICONTEXTMENU Describes a context menu (right-click menu).
     %
     % This class holds the descriptive properties for a context menu, including
@@ -7,18 +10,7 @@ classdef UIContextMenu < ndi.util.StructSerializable
 
     properties
         % Tag - A string to identify this context menu object.
-        Tag (1,:) char = ''
-
-        % Items - A cell array of strings for each menu item's label.
-        Items (:,1) cell = {}
-        
-        % Callbacks - A cell array of callback function names.
-        %
-        % This cell array should have the same number of elements as 'Items'.
-        % Each entry is a character vector with the name of a public method
-        % in the TabController that will be executed when the corresponding
-        % menu item is clicked.
-        Callbacks (:,1) cell = {}
+        OpeningFcn (:,1) char = ''
     end
     
     methods (Static)

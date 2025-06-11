@@ -1,4 +1,4 @@
-classdef UIInteractiveComponent < ndi.util.StructSerializable
+classdef UIInteractiveComponent < handle
     % UIINTERACTIVECOMPONENT A mixin for describing interactive UI properties.
     properties
         % Enable - Controls whether the component can be interacted with.

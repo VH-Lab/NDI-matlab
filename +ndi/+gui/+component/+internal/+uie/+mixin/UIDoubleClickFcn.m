@@ -1,6 +1,5 @@
-classdef UIDoubleClickFcn < ndi.util.StructSerializable
-    % UIDOUBLECLICKFCN A mixin class for naming the callback that responds
-    % to a double-click action.
+classdef UIDoubleClickFcn < handle
+    % UIDOUBLECLICKFCN A mixin class for naming the callback that responds to a double-click action.
 
     properties
         % DoubleClickFcn - The name of the function to execute on a double-click.
