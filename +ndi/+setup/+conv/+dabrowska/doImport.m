@@ -1,4 +1,4 @@
-function doImport(dataParentDir,options)
+ function sessionArray = doImport(dataParentDir,options)
 % Section A: Import electrophysiology dataset
 %   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
 %   Step 2: SESSIONS. Now that we have the file manifest, build sessions
