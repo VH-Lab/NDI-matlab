@@ -13,7 +13,6 @@ classdef markgarbage < ndi.app
     %
     %   G = ndi.app.markgarbage(S); % create app instance
     %   G.clearvalidinterval(E);
-    %
 
     properties (SetAccess=protected,GetAccess=public)
 
@@ -74,16 +73,14 @@ classdef markgarbage < ndi.app
             %
 
             if ~isa(ndi_epochset_obj, 'ndi.probe')
-                error(['do not know how to handle non-probes yet.']);
+                error('do not know how to handle non-probes yet.');
             end
 
-            [vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
+            [vi,~] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
             b = 1;
 
-            match = -1;
             for i=1:numel(vi)
                 if vlt.data.eqlen(vi(i),validintervalstruct)
-                    match = i;
                     return;
                 end
             end
@@ -111,10 +108,11 @@ classdef markgarbage < ndi.app
             % See also: ndi.app.markgarbage/MARKVALIDINTERVAL, ndi.app.markgarbage/SAVEALIDINTERVAL, ...
             %      ndi.app.markgarbage/LOADVALIDINTERVAL
 
-            [vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
+            [~,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
             if ~isempty(mydoc)
                 ndi_app_markgarbage_obj.session.database_rm(mydoc);
             end
+            b = 1;
 
         end % clearvalidinteraval()
 
@@ -182,10 +180,10 @@ classdef markgarbage < ndi.app
                 %    Can we project the marked valid region into this timeref?
                 interval_t0_timeref = ndi.time.timereference(ndi_app_markgarbage_obj.session, vi(i).timeref_structt0);
                 interval_t1_timeref = ndi.time.timereference(ndi_app_markgarbage_obj.session, vi(i).timeref_structt1);
-                [epoch_t0_out, epoch_t0_timeref, msg_t0] = ...
+                [epoch_t0_out, epoch_t0_timeref, ~] = ...
                     ndi_app_markgarbage_obj.session.syncgraph.time_convert(interval_t0_timeref, ...
                     vi(i).t0, timeref.referent, timeref.clocktype);
-                [epoch_t1_out, epoch_t1_timeref, msg_t1] = ...
+                [epoch_t1_out, epoch_t1_timeref, ~] = ...
                     ndi_app_markgarbage_obj.session.syncgraph.time_convert(interval_t1_timeref, ...
                     vi(i).t1, timeref.referent, timeref.clocktype);
                 if isempty(epoch_t0_out) | isempty(epoch_t1_out)
