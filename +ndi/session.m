@@ -598,7 +598,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % PROBES = GETPROBES(NDI_SESSION_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
             %
             % returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2'
-            % has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_ID'.
+            % has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_id'.
             %
             %
             probestruct = [];
