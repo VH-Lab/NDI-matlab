@@ -133,6 +133,13 @@ classdef StructSerializable < handle
                 if isprop(obj, fn)
                     try
                         propMeta = findprop(obj, fn);
+                        
+                        % CORRECTED: Check if the property is constant or dependent.
+                        % If so, skip it, as it cannot be set directly.
+                        if propMeta.Constant || propMeta.Dependent
+                            continue;
+                        end
+
                         propTypeStr = '';
                         isSSubclass = false;
                         
@@ -144,7 +151,6 @@ classdef StructSerializable < handle
                             end
                         end
                         
-                        % --- CORRECTED LOGIC ---
                         if isstruct(S_in.(fn)) && isSSubclass
                             if isscalar(S_in.(fn))
                                 % Recursive call for a scalar nested object

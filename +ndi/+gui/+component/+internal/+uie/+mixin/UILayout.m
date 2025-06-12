@@ -1,4 +1,4 @@
-classdef UILayout
+classdef UILayout < ndi.util.StructSerializable
     % UILAYOUT Describes the row and column position for a component within a GridLayout.
     
     properties
