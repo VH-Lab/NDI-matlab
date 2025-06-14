@@ -9,7 +9,7 @@
 			"name": "control_stimulus_ids",
 			"type": "matrix",
 			"default_value": [],
-			"parameters": [NaN,1],
+			"parameters": [NaN,NaN],
 			"queryable": 1,
 			"documentation": "An array of the control stimulus identifier for each stimulus. For example, if a stimulus set has IDs [1;2;3], and 3 is a control (or 'blank') stimulus, then this is indicated by control_stimulus_ids = [3;3;3]"
 		},

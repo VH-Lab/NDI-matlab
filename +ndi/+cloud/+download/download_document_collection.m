@@ -36,7 +36,7 @@ function documents = download_document_collection(datasetId, documentIds, option
     arguments
         datasetId (1,1) string
         documentIds (1,:) string = "" % Default: Will download all documents
-        options.Timeout = 10
+        options.Timeout = 100
     end
     
     downloadUrl = ndi.cloud.api.documents.get_bulk_download_url(datasetId, documentIds);
@@ -72,6 +72,8 @@ function documents = download_document_collection(datasetId, documentIds, option
     documentStructs = jsondecode(fileread(jsonFile));
 
     documents = ndi.cloud.download.internal.structs_to_ndi_documents(documentStructs);
+
+    keyboard
 end
 
 function deleteIfExists(filePath)
