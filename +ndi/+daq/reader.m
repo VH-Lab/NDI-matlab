@@ -60,6 +60,59 @@ classdef reader < ndi.ido & ndi.documentservice
 
         end % getingesteddocument();
 
+        function m = ingested2epochs_t0t1_epochclock(ndi_daqreader_mfdaq_obj, S)
+           % INGESTED2EPOCHS_T0T1_EPOCHCLOCK - make a map of all ingested epochs to t0t1 and epochclock
+           %
+           % M = ingested2epochs_epochprobemaps_t0t1_epochclock(NDI_DAQREADER_OBJ, S)
+           %
+           % Examines the ingested epochfiles and returns a structure of maps:
+           %   M.t0t1 maps epochid to t0t1
+           %   M.epochclock maps epochid to epochclock
+
+            q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
+                ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id());
+
+           d_ingested = S.database_search(q);
+
+           epochid = {};
+           t0t1 = {};
+           epochclock = {};
+           
+           for i=1:numel(d_ingested)
+                epochid{i} = d_ingested{i}.document_properties.epochid.epochid;
+                et = d_ingested{i}.document_properties.daqreader_epochdata_ingested.epochtable;
+                ec_here = {};
+                for j=1:numel(et.epochclock)
+                   ec_here{j} = ndi.time.clocktype(et.epochclock{j});
+                end
+                epochclock{i} = ec_here;
+
+                t0t1_here = et.t0_t1;
+                if ~iscell(t0t1_here)
+                    t = {};
+                    if isvector(t0t1_here) % this fixes a to-json, from-json, to-json conversion problem
+                        t{1} = t0t1_here(:)';
+                    else
+                        for k=1:size(et.t0_t1,2)
+                            t{k} = t0t1_here(:,k)';
+                        end
+                    end
+                    t0t1_here = t;
+                end;
+                t0t1{i} = t0t1_here;
+           end
+
+           if ~isempty(epochid)
+               m.t0t1 = containers.Map(epochid,t0t1);
+               m.epochclock = containers.Map(epochid,epochclock);
+           else
+               m.t0t1 = containers.Map;
+               m.epochclock = containers.Map;
+           end
+
+        end
+
+
         % EPOCHSET functions, although this object is NOT an EPOCHSET object
 
         function ec = epochclock(ndi_daqreader_obj, epochfiles)
