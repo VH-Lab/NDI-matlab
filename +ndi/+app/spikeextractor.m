@@ -92,7 +92,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             if isempty(extraction_doc)
                 error(['No spike_extraction_parameters document named ' extraction_name ' found.']);
             elseif numel(extraction_doc)>1
-                error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
+                error('More than one extraction_parameters document with same name. Should not happen but needs to be fixed.');
             else
                 extraction_doc = extraction_doc{1};
             end
@@ -176,7 +176,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
                 vlt.file.custom_file_formats.newvhlspikewaveformfile(spikewaves_binarydoc_filename, fileparameters);
 
-                epochtic = tic; % Timer variable to measure duration of epoch extraction
+                % epochtic = tic; % Timer variable to measure duration of epoch extraction
                 logger.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
 
                 % we have spikewaves_binarydoc and spiketimes_binarydoc open as we go into this loop
@@ -221,11 +221,11 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                                     [extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter ...
                                     extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]);
                             otherwise
-                                error(['unknown threshold method']);
+                                error('unknown threshold method');
                         end
                         % Accommodates spikes according to refractory period
                         % locs_here = vlt.signal.refractory(locs_here, refractory_samples); % only apply to all events
-                        locs_here = locs_here(find(locs_here > -spike_sample_start & locs_here <= length(data(:,channel))-spike_sample_end));
+                        locs_here = locs_here(locs_here > -spike_sample_start & locs_here <= length(data(:,channel))-spike_sample_end);
                         locs = [locs(:) ; locs_here];
                     end % for
 
@@ -234,8 +234,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     % Apply refractory period to all events
                     locs = vlt.signal.refractory(locs, refractory_samples);
 
-                    sample_offsets = repmat([spike_sample_selection]',1,size(data,2));
-                    channel_offsets = repmat([0:size(data,2)-1], spike_sample_end - spike_sample_start + 1,1);
+                    sample_offsets = repmat((spike_sample_selection)',1,size(data,2));
+                    channel_offsets = repmat(0:size(data,2)-1, spike_sample_end - spike_sample_start + 1,1);
                     single_spike_selection = sample_offsets + channel_offsets*size(data,1);
                     spike_selections = repmat(single_spike_selection(:)', length(locs), 1) + repmat(locs(:), 1, prod(size(sample_offsets)));
                     waveforms = single(data(spike_selections))'; % (spike-spike-spike-spike) X Nspikes
@@ -312,7 +312,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 doc = doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
                 doc = doc.set_dependency_value('element_id',ndi_timeseries_obj.id());
             elseif strcmpi(appdoc_type,'spikewaves')
-                error(['spikewaves documents are created internally.']);
+                error('spikewaves documents are created internally.');
             else
                 error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
             end
@@ -365,7 +365,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             switch(lower(appdoc_type))
                 case 'extraction_parameters'
                     if numel(varargin)<1
-                        error(['extraction_parameters documents need a name. Please pass a name. See help ndi.app.spikeextractor/appdoc_description']);
+                        error('extraction_parameters documents need a name. Please pass a name. See help ndi.app.spikeextractor/appdoc_description');
                     end
                     extraction_parameters_name = varargin{1};
 
@@ -379,7 +379,10 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     extraction_parameters_name = varargin{3};
 
                     extraction_parameters_doc = ndi_app_spikeextractor_obj.find_appdoc('extraction_parameters',extraction_parameters_name);
-
+                    if isempty(extraction_parameters_doc)
+                        doc = {};
+                        return;
+                    end
                     epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
                     spikedocs_searchq = ndi.query(ndi_app_spikeextractor_obj.searchquery()) & ...
                         ndi.query('epochid.epochid','exact_string',epoch_string,'') & ...
@@ -419,7 +422,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 case 'spikewaves'
                     spikewaves_doc = ndi_app_spikeextractor_obj.find_appdoc(appdoc_type,varargin{:});
 
-                    if numel(spikewaves_doc)==1
+                    if isscalar(spikewaves_doc)
                         spikewaves_doc = spikewaves_doc{1};
                         spikewaves_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spikewaves_doc,'spikewaves.vsw');
                         [waveforms,waveparameters] = vlt.file.custom_file_formats.readvhlspikewaveformfile(spikewaves_binarydoc);
@@ -661,7 +664,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %      SPIKETIMES - the time of each spike wave, in local epoch time coordinates
             %      SPIKEWAVES_DOC - the ndi.document of the extracted spike waves.
             %
-            eval(['help ndi_app_spikeextractor/appdoc_description']);
+            help ndi_app_spikeextractor/appdoc_description
         end % appdoc_description()
 
     end % methods
