@@ -121,8 +121,9 @@ classdef subjectMaker
                     validRowProcessedSuccessfully(i) = true;
                 catch ME_Func
                     escaped_message = strrep(ME_Func.message, '%', '%%');
-                    warning_msg = sprintf('Error executing subjectInfoFun for table row %d: %s. Skipping this row for subject info extraction.', i, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:subjectInfoFunError', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:subjectInfoFunError',...
+                        ['Error executing subjectInfoFun for table row %d: %s. ' ...
+                        'Skipping this row for subject info extraction.'], i, escaped_message);
                 end
 
                 allSubjectNames{i} = local_id_from_fun; % Store for allSubjectNamesFromTable output
@@ -146,14 +147,16 @@ classdef subjectMaker
                          allSessionIDs{i} = ''; 
                     else
                         % If it's not char and not numeric NaN, it's an unexpected type for sessionID
-                        warning_msg = sprintf('Data in "sessionID" column for table row %d (type %s after unwrapping) is not char/string or NaN. Storing as empty.', i, class(valueToProcess));
-                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDType', warning_msg);
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDType',...
+                            ['Data in "sessionID" column for table row %d (type %s after unwrapping) ' ...
+                            'is not char/string or NaN. Storing as empty.'], i, class(valueToProcess));
                         allSessionIDs{i} = ''; % Ensure it's an empty char for filtering
                     end
                 catch ME_SessionID
                     escaped_message = strrep(ME_SessionID.message, '%', '%%');
-                    warning_msg = sprintf('Error accessing "sessionID" for table row %d: %s. Storing as empty.', i, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:SessionIDAccessError', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionIDAccessError',...
+                        'Error accessing "sessionID" for table row %d: %s. Storing as empty.',...
+                        i, escaped_message);
                     allSessionIDs{i} = ''; 
                 end
                 
@@ -168,8 +171,10 @@ classdef subjectMaker
                     end
 
                     if isEffectivelyNaNOrEmpty
-                        warning_msg = sprintf('subjectInfoFun completed for table row %d but returned an invalid or empty subject ID. This may be due to an internal issue in the function (e.g., invalid date, potentially indicated by a separate warning from that function).', i);
-                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectIDReturned', warning_msg);
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectIDReturned',...
+                            ['subjectInfoFun completed for table row %d but returned an invalid or empty subject ID. ' ...
+                            'This may be due to an internal issue in the function ' ...
+                            '(e.g., invalid date, potentially indicated by a separate warning from that function).'], i);
                     end
                 end
             end
@@ -257,8 +262,9 @@ classdef subjectMaker
                 current_session_id_for_doc = subjectInfo.sessionID{i}; 
                 if ~(ischar(current_session_id_for_doc) && ~isempty(current_session_id_for_doc))
                      escaped_sName = strrep(sName, '%', '%%');
-                     warning_msg = sprintf('Session ID for subject "%s" (index %d from subjectInfo.sessionID) is not a valid string. Skipping document creation.', escaped_sName, i);
-                     warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo', warning_msg);
+                     warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo',...
+                         ['Session ID for subject "%s" (index %d from subjectInfo.sessionID) is not a valid string. ' ...
+                         'Skipping document creation.'], escaped_sName, i);
                      output_documents{i} = {}; 
                      progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                      continue;
@@ -285,8 +291,9 @@ classdef subjectMaker
                             catch ME_SpeciesConv
                                 escaped_sName = strrep(sName, '%', '%%');
                                 escaped_message = strrep(ME_SpeciesConv.message, '%', '%%');
-                                warning_msg = sprintf('Failed to convert/add species NDI document(s) for subject %s: %s', escaped_sName, escaped_message);
-                                warning('ndi:setup:NDIMaker:subjectMaker:OpenMINDSConversionError', warning_msg);
+                                warning('ndi:setup:NDIMaker:subjectMaker:OpenMINDSConversionError',...
+                                    'Failed to convert/add species NDI document(s) for subject %s: %s', ...
+                                    escaped_sName, escaped_message);
                             end
                         end
                     end
@@ -302,8 +309,9 @@ classdef subjectMaker
                             catch ME_StrainConv
                                 escaped_sName = strrep(sName, '%', '%%');
                                 escaped_message = strrep(ME_StrainConv.message, '%', '%%');
-                                warning_msg = sprintf('Failed to convert/add strain NDI document(s) for subject %s: %s', escaped_sName, escaped_message);
-                                warning('ndi:setup:NDIMaker:subjectMaker:OpenMINDSConversionError', warning_msg);
+                                warning('ndi:setup:NDIMaker:subjectMaker:OpenMINDSConversionError',...
+                                    'Failed to convert/add strain NDI document(s) for subject %s: %s',...
+                                    escaped_sName, escaped_message);
                             end
                         end
                     end
@@ -319,8 +327,9 @@ classdef subjectMaker
                             catch ME_SexConv
                                 escaped_sName = strrep(sName, '%', '%%');
                                 escaped_message = strrep(ME_SexConv.message, '%', '%%');
-                                warning_msg = sprintf('Failed to convert/add biological sex NDI document(s) for subject %s: %s', escaped_sName, escaped_message);
-                                warning('ndi:setup:NDIMaker:subjectMaker:OpenMINDSConversionError', warning_msg);
+                                warning('ndi:setup:NDIMaker:subjectMaker:OpenMINDSConversionError', ...
+                                    'Failed to convert/add biological sex NDI document(s) for subject %s: %s', ...
+                                    escaped_sName, escaped_message);
                             end
                         end
                     end
@@ -329,8 +338,9 @@ classdef subjectMaker
                 catch ME_DocCreation
                     escaped_sName = strrep(sName, '%', '%%');
                     escaped_message = strrep(ME_DocCreation.message, '%', '%%');
-                    warning_msg = sprintf('Failed to create base NDI document for subject %s: %s', escaped_sName, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:DocumentCreationError', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:DocumentCreationError', ...
+                        'Failed to create base NDI document for subject %s: %s', ...
+                        escaped_sName, escaped_message);
                     output_documents{i} = {}; 
                 end
 
@@ -393,12 +403,14 @@ classdef subjectMaker
             end
 
             if isempty(documentsToAddSets)
-                warning('ndi:setup:NDIMaker:subjectMaker:EmptyDocSetInput', 'documentsToAddSets is empty. No documents to add.');
+                warning('ndi:setup:NDIMaker:subjectMaker:EmptyDocSetInput', ...
+                    'documentsToAddSets is empty. No documents to add.');
                 added_status = logical([]); 
                 return;
             end
             if isempty(sessionCellArray)
-                warning('ndi:setup:NDIMaker:subjectMaker:EmptySessionArray', 'sessionCellArray is empty. Cannot add documents.');
+                warning('ndi:setup:NDIMaker:subjectMaker:EmptySessionArray', ...
+                    'sessionCellArray is empty. Cannot add documents.');
                 added_status = false(1, numel(documentsToAddSets)); 
                 return;
             end
@@ -417,18 +429,20 @@ classdef subjectMaker
                     if isa(sess_obj, 'ndi.session.dir') % Ensure it's the correct type
                         session_id_map(sess_obj.id()) = k_sess; 
                     else
-                        warning_msg = sprintf('Item at index %d in sessionCellArray is not an ndi.session.dir object. Skipping.', k_sess);
-                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionObjectTypeInArray',warning_msg);
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionObjectTypeInArray',...
+                            'Item at index %d in sessionCellArray is not an ndi.session.dir object. Skipping.', k_sess);
                     end
                 catch ME_SessIDMap
                     escaped_message = strrep(ME_SessIDMap.message, '%', '%%');
-                    warning_msg = sprintf('Could not get ID for a session in sessionCellArray at index %d: %s. This session will be unavailable for adding documents.', k_sess, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:SessionMapCreationError',warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionMapCreationError', ...
+                        ['Could not get ID for a session in sessionCellArray at index %d: %s. ' ...
+                        'This session will be unavailable for adding documents.'], k_sess, escaped_message);
                 end
             end
             
             if isempty(session_id_map) && numDocSets > 0 
-                 warning('ndi:setup:NDIMaker:subjectMaker:NoUsableSessions', 'No usable sessions found in sessionCellArray. Cannot add documents.');
+                 warning('ndi:setup:NDIMaker:subjectMaker:NoUsableSessions', ...
+                     'No usable sessions found in sessionCellArray. Cannot add documents.');
                  return; 
             end
 
@@ -436,8 +450,8 @@ classdef subjectMaker
                 current_doc_set = documentsToAddSets{i};
 
                 if isempty(current_doc_set) || ~iscell(current_doc_set) || ~isa(current_doc_set{1}, 'ndi.document')
-                    warning_msg = sprintf('Document set at index %d is empty, not a cell, or does not start with an ndi.document. Skipping.', i);
-                    warning('ndi:setup:NDIMaker:subjectMaker:InvalidDocSetEntry', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:InvalidDocSetEntry', ...
+                        'Document set at index %d is empty, not a cell, or does not start with an ndi.document. Skipping.', i);
                     progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                     continue; 
                 end
@@ -446,16 +460,17 @@ classdef subjectMaker
                     target_session_id = current_doc_set{1}.document_properties.base.session_id;
                     
                     if ~(ischar(target_session_id) && ~isempty(target_session_id))
-                        warning_msg = sprintf('Target session ID for document set %d is invalid or empty. Skipping.', i);
-                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidTargetSessionID', warning_msg);
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidTargetSessionID', ...
+                            'Target session ID for document set %d is invalid or empty. Skipping.', i);
                         progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                         continue;
                     end
 
                 catch ME_TargetSessID
                     escaped_message = strrep(ME_TargetSessID.message, '%', '%%');
-                    warning_msg = sprintf('Error retrieving target session ID from document set %d: %s. Skipping.', i, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:TargetSessionIDError', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:TargetSessionIDError', ...
+                        'Error retrieving target session ID from document set %d: %s. Skipping.', ...
+                        i, escaped_message);
                     progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
                     continue;
                 end
@@ -472,15 +487,15 @@ classdef subjectMaker
                     catch ME_DbAdd 
                         escaped_message = strrep(ME_DbAdd.message, '%', '%%');
                         escaped_target_id = strrep(target_session_id, '%', '%%');
-                        warning_msg = sprintf('Failed to add document set %d (target session: %s) to database for session %s: %s', ...
+                        warning('ndi:setup:NDIMaker:subjectMaker:DatabaseAddError', ...
+                            'Failed to add document set %d (target session: %s) to database for session %s: %s', ...
                             i, escaped_target_id, strrep(actual_session_object.reference,'%','%%'), escaped_message);
-                        warning('ndi:setup:NDIMaker:subjectMaker:DatabaseAddError', warning_msg);
                     end
                 else 
                     escaped_target_id = strrep(target_session_id, '%', '%%');
-                    warning_msg = sprintf('Session with ID "%s" (for document set %d) not found in the provided sessionCellArray. Skipping document set.', ...
-                        escaped_target_id, i);
-                    warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', ...
+                        ['Session with ID "%s" (for document set %d) not found in the provided sessionCellArray. ' ...
+                        'Skipping document set.'],escaped_target_id, i);
                 end
 
                 % Update progress bar
@@ -517,8 +532,8 @@ classdef subjectMaker
             for s = 1:numSessions
                 currentSession = sessionCellArray{s}; % Access from cell array
                 if ~isa(currentSession, 'ndi.session.dir') % Defensive check
-                    warning_msg = sprintf('Item at index %d in sessionCellArray is not an ndi.session.dir object. Skipping session.', s);
-                    warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionObjectTypeForDelete',warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionObjectTypeForDelete', ...
+                        'Item at index %d in sessionCellArray is not an ndi.session.dir object. Skipping session.', s);
                     deletion_report(s).errors{end+1} = MException('ndi:setup:NDIMaker:subjectMaker:InvalidSessionObjectTypeForDelete', warning_msg);
                     continue;
                 end
@@ -534,8 +549,9 @@ classdef subjectMaker
                     deletion_report(s).session_reference = current_session_ref;
                 catch ME_SessionInfo
                     escaped_message = strrep(ME_SessionInfo.message, '%', '%%');
-                    warning_msg = sprintf('Could not get ID or Reference for session %d: %s. Skipping session.', s, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:SessionInfoError', warning_msg);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionInfoError',...
+                        'Could not get ID or Reference for session %d: %s. Skipping session.', ...
+                        s, escaped_message);
                     deletion_report(s).errors{end+1} = ME_SessionInfo;
                     continue;
                 end
@@ -549,7 +565,7 @@ classdef subjectMaker
                 for k = 1:numel(localIdentifiersToDelete)
                     id_queries{k} = ndi.query('subject.local_identifier', 'exact_string', localIdentifiersToDelete{k});
                 end
-                if numel(id_queries) == 1
+                if isscalar(id_queries)
                     combined_local_id_query = id_queries{1};
                 else
                     combined_local_id_query = id_queries{1};
@@ -559,16 +575,15 @@ classdef subjectMaker
                 end
                 final_query = type_query & combined_local_id_query;
 
-                docs_found = {};
                 try
                     docs_found = currentSession.database_search(final_query);
                 catch ME_Search
                     escaped_sRef = strrep(current_session_ref, '%', '%%');
                     escaped_sID = strrep(current_session_id_val, '%', '%%');
                     escaped_message = strrep(ME_Search.message, '%', '%%');
-                    warning_msg = sprintf('Database search failed for session %s (ID: %s): %s.', ...
+                    warning('ndi:setup:NDIMaker:subjectMaker:DBSearchError', ...
+                        'Database search failed for session %s (ID: %s): %s.', ...
                         escaped_sRef, escaped_sID, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:DBSearchError', warning_msg);
                     session_errors{end+1} = ME_Search;
                     deletion_report(s).errors = session_errors;
                     continue;
@@ -582,9 +597,9 @@ classdef subjectMaker
                         escaped_sRef = strrep(current_session_ref, '%', '%%');
                         escaped_sID = strrep(current_session_id_val, '%', '%%');
                         escaped_message = strrep(ME_DocID.message, '%', '%%');
-                        warning_msg = sprintf('Could not extract database IDs from found documents for session %s (ID: %s): %s.', ...
+                         warning('ndi:setup:NDIMaker:subjectMaker:DocIDError', ...
+                             'Could not extract database IDs from found documents for session %s (ID: %s): %s.', ...
                             escaped_sRef, escaped_sID, escaped_message);
-                         warning('ndi:setup:NDIMaker:subjectMaker:DocIDError', warning_msg);
                         session_errors{end+1} = ME_DocID;
                         deletion_report(s).errors = session_errors;
                         continue;
@@ -601,9 +616,9 @@ classdef subjectMaker
                             escaped_sRef = strrep(current_session_ref, '%', '%%');
                             escaped_sID = strrep(current_session_id_val, '%', '%%');
                             escaped_message = strrep(ME_Delete.message, '%', '%%');
-                            warning_msg = sprintf('Database delete operation (database_rm) failed for session %s (ID: %s): %s.', ...
-                                escaped_sRef, escaped_sID, escaped_message);
-                            warning('ndi:setup:NDIMaker:subjectMaker:DBRemoveError', warning_msg); 
+                            warning('ndi:setup:NDIMaker:subjectMaker:DBRemoveError', ...
+                                'Database delete operation (database_rm) failed for session %s (ID: %s): %s.', ...
+                                escaped_sRef, escaped_sID, escaped_message); 
                             session_errors{end+1} = ME_Delete;
                         end
                     end

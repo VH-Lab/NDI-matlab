@@ -105,13 +105,16 @@ SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 
 %% Step 3: SUBJECTS. Build subject documents.
 
+% query = ndi.query('','isa','subject');
+% subjects = sessionArray{1}.database_search(query);
+% sessionArray{1}.database_rm(subjects);
 subM = ndi.setup.NDIMaker.subjectMaker();
 [subjectInfo_ephys,variableTable.SubjectString] = ...
     subM.getSubjectInfoFromTable(variableTable,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
-subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
+% subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo_ephys);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
@@ -284,7 +287,6 @@ subjectTable_behavior{:,'SubjectPostfix'} = arrayfun(@(si) ...
 [subjectInfo_behavior,subjectTable_behavior.SubjectString] = ...
     subM.getSubjectInfoFromTable(subjectTable_behavior,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
-subM.deleteSubjectDocs(sessionArray,subjectInfo_behavior.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
