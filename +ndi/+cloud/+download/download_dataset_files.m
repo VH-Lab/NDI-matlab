@@ -75,7 +75,7 @@ function files = filterFilesToDownload(files, fileUuids)
         [~, idx] = intersect(allFileUuids, fileUuids, "stable");
 
         files = files(idx);
-               
+files, numel(fileUuids),
         assert(isequal(sort(string({files.uid})), sort(fileUuids)), ...
             'Expected filtered files list to match IDs for filtering.')
     end
