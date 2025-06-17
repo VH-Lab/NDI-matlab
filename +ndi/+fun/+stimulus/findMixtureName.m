@@ -1,4 +1,39 @@
 function matchingNames = findMixtureName(mixtureDictionaryPath,mixture)
+% FINDMIXTURENAME Identifies matching mixture names from a dictionary.
+%
+%   matchingNames = FINDMIXTURENAME(mixtureDictionaryPath, mixture)
+%   compares input 'mixture' structure(s) or table against a dictionary
+%   of mixtures loaded from a JSON file specified by 'mixtureDictionaryPath'.
+%   It returns a cell array of field names from the mixture dictionary
+%   that completely match the provided 'mixture' based on specific fields.
+%
+%   The function assumes both the 'mixture' input and the individual
+%   mixture entries within the 'mixtureDictionary' have the following
+%   fields for comparison:
+%       - 'ontologyName' (string)
+%       - 'name' (string)
+%       - 'value' (numeric)
+%       - 'ontologyUnit' (string)
+%       - 'unitName' (string)
+%
+%   Input Arguments:
+%   - mixtureDictionaryPath: A string scalar or character vector specifying the
+%     full path to a JSON file containing the mixture dictionary. This file
+%     is expected to be a flat structure where each field name represents a
+%     mixture name, and its value is either a single struct or a struct array
+%     containing the mixture's properties.
+%     (e.g., 'path/to/dabrowska_mixtures.json')
+%   - mixture: A scalar struct, a struct array, or a table. Each row/element
+%     of 'mixture' should contain the fields required for comparison.
+%
+%   Output Arguments:
+%   - matchingNames: A cell array of strings containing the field names from
+%     the 'mixtureDictionary' that fully match the provided 'mixture' input.
+%     A dictionary entry is considered a match if ALL of its constituent
+%     elements (if it's a struct array) can find a corresponding exact match
+%     within the 'mixture' input.
+%
+% See also JSONDECODE, FILEREAD, STRCMPI, EQ, TABLE2STRUCT.
 
 % Input argument validation
 arguments
