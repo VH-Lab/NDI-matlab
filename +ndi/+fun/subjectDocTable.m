@@ -26,7 +26,7 @@ function [subjectTable] = subjectDocTable(session)
 
 % Input argument validation
 arguments
-    session {mustBeA(session,{'ndi.session.dir','ndi.database.dir'})}
+    session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
 end
 
 % Get all subject documents in the session
