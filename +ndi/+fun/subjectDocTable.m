@@ -42,6 +42,28 @@ subjectTable = table();
 % column with a default (empty) value. This is expected behavior here.
 warning('off', 'MATLAB:table:RowsAddedExistingVars');
 
+ % find all the dependent docs in one go
+
+if numel(subjectDocs) > 0
+    i = 1;
+    querySubjectID = ndi.query('','depends_on','subject_id',subjectDocs{i}.document_properties.base.id);
+    for i = 2:numel(subjectDocs)
+        querySubjectID = querySubjectID | ndi.query('','depends_on','subject_id',subjectDocs{i}.document_properties.base.id);
+    end
+    dependentDocs = session.database_search(querySubjectID);
+    dependentDocsSubject = {};
+    for i=1:numel(subjectDocs)
+        dependentDocsSubject{i} = {};
+        for j=1:numel(dependentDocs)
+            if strcmp(subjectDocs{i}.document_properties.base.id,dependency_value(dependentDocs{j},'subject_id'))
+                dependentDocsSubject{i} = cat(1,dependentDocsSubject{i},dependentDocs(j));
+            end
+        end
+    end
+
+end
+
+
 % Loop through each subject document found
 for i = 1:numel(subjectDocs)
     
@@ -50,8 +72,7 @@ for i = 1:numel(subjectDocs)
     subjectTable.localID(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
 
     % Get all documents associated with that subject
-    querySubjectID = ndi.query('','depends_on','subject_id',subjectTable.documentID{i});
-    dependentDocs = session.database_search(querySubjectID);
+    dependentDocs = dependentDocsSubject{i};
 
     % Initialize temporary structs to aggregate data for the current subject
     element = struct();     % For 'element' document types
