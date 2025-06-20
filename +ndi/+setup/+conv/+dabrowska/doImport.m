@@ -67,9 +67,9 @@ j = jsondecode(fileread(jsonPath));
 variableTable_opto = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
 
 % Deal with OTA and TLS
-indEpoch = ndi.util.identifyValidRows(variableTable_opto,'BathConditionString');
+indEpoch = ndi.fun.table.identifyValidRows(variableTable_opto,'BathConditionString');
 variableTable_opto.BathConditionString(indEpoch) = replace(variableTable_opto.BathConditionString(indEpoch),'TLS','Post');
-OTAInd = find(ndi.util.identifyValidRows(variableTable_opto,'OTA') & indEpoch);
+OTAInd = find(ndi.fun.table.identifyValidRows(variableTable_opto,'OTA') & indEpoch);
 for i = 1:numel(OTAInd)
     bcs = variableTable_opto.BathConditionString{OTAInd(i)};
     if ~contains(bcs,'OTA')
@@ -128,7 +128,7 @@ deviceString = {'dabrowska_mat:ai1';'dabrowska_mat:ai1';'dabrowska_mat:ao1'};
 probeTable = table(name,reference,type,deviceString);
 
 % Create probePostfix
-indEpoch = ndi.util.identifyValidRows(variableTable,'IsExpMatFile');
+indEpoch = ndi.fun.table.identifyValidRows(variableTable,'IsExpMatFile');
 recordingDates = datetime(variableTable.RecordingDate(indEpoch),...
     'InputFormat','MMM dd yyyy');
 recordingDates = cellstr(char(recordingDates,'yyMMdd'));
@@ -163,7 +163,7 @@ sd.table2bathDocs(variableTable,...
     'Overwrite',options.Overwrite);
 
 % Define approachName
-indTLS = ndi.util.identifyValidRows(variableTable,'TLS');
+indTLS = ndi.fun.table.identifyValidRows(variableTable,'TLS');
 indApproach = find(indTLS & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
 indPost = cellfun(@(bcs) contains(bcs,'Post'),variableTable.BathConditionString(indApproach));
@@ -190,7 +190,7 @@ for i = 1:numel(sheetnames_EPM)
         'VariableNamingRule','modify');
 
     % Remove rows where Animal value is NaN
-    sheetTable = sheetTable(ndi.util.identifyValidRows(sheetTable,'Animal'),:);
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Animal'),:);
 
     % Remove unused columns
     varNames = sheetTable.Properties.VariableNames;
@@ -243,7 +243,7 @@ for i = 1:numel(sheetnames_FPS)
         'VariableNamingRule','modify');
 
     % Remove rows where SubjectID value is ''
-    sheetTable = sheetTable(ndi.util.identifyValidRows(sheetTable,'Trial_Num'),:);
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Trial_Num'),:);
 
     % Edit varname that does not contain sheetname
     sheetTable.Sheet_Name = repmat(sheetnames_FPS(i),height(sheetTable),1);

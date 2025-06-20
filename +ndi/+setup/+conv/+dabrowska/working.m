@@ -236,7 +236,7 @@ for i = 1:numel(sheetnames_EPM)
         'VariableNamingRule','modify');
 
     % Remove rows where Animal value is NaN
-    sheetTable = sheetTable(ndi.util.identifyValidRows(sheetTable,'Animal'),:);
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Animal'),:);
 
     % Remove unused columns
     varNames = sheetTable.Properties.VariableNames;
@@ -282,7 +282,7 @@ for i = 1:numel(sheetnames_FPS)
         'VariableNamingRule','modify');
 
     % Remove rows where SubjectID value is ''
-    sheetTable = sheetTable(ndi.util.identifyValidRows(sheetTable,'Trial_Num'),:);
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Trial_Num'),:);
 
     % Edit varname that does not contain sheetname
     sheetTable.Sheet_Name = repmat(sheetnames_FPS(i),height(sheetTable),1);
