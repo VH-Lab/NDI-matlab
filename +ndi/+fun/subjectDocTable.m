@@ -42,44 +42,46 @@ subjectTable = table();
 % column with a default (empty) value. This is expected behavior here.
 warning('off', 'MATLAB:table:RowsAddedExistingVars');
 
- % find all the dependent docs in one go
-
+% Find all the dependent docs
 if numel(subjectDocs) > 0
-    i = 1;
-    querySubjectID = ndi.query('','depends_on','subject_id',subjectDocs{i}.document_properties.base.id);
+
+    % Build query containing all subject ids
+    querySubjectID = ndi.query('','depends_on','subject_id',subjectDocs{1}.document_properties.base.id);
     for i = 2:numel(subjectDocs)
         querySubjectID = querySubjectID | ndi.query('','depends_on','subject_id',subjectDocs{i}.document_properties.base.id);
     end
-    dependentDocs = session.database_search(querySubjectID);
-    dependentDocsSubject = {};
-    for i=1:numel(subjectDocs)
-        dependentDocsSubject{i} = {};
-        for j=1:numel(dependentDocs)
-            if strcmp(subjectDocs{i}.document_properties.base.id,dependency_value(dependentDocs{j},'subject_id'))
-                dependentDocsSubject{i} = cat(1,dependentDocsSubject{i},dependentDocs(j));
-            end
-        end
-    end
 
+    % Find dependent docs for all subjects
+    dependentDocs = session.database_search(querySubjectID);
 end
 
+% Find all stimulus bath documents
+queryStimulusBath = ndi.query('','isa','stimulus_bath');
+stimulusBathDocs = session.database_search(queryStimulusBath);
 
-% Loop through each subject document found
+% Find all stimulus approach documents
+queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
+stimulusApproachDocs = session.database_search(queryStimulusApproach);
+
+% Loop through each subject document
 for i = 1:numel(subjectDocs)
+
+    % Get dependent docs corresponding to this subject
+    dependentDocsInd = cellfun(@(d) strcmp(subjectDocs{i}.document_properties.base.id,...
+        dependency_value(d,'subject_id')),dependentDocs);
+    dependentDocsSubject = dependentDocs(dependentDocsInd);
     
     % Get subject's local and document id
     subjectTable.documentID(i) = {subjectDocs{i}.document_properties.base.id};
     subjectTable.localID(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
 
-    % Get all documents associated with that subject
-    dependentDocs = dependentDocsSubject{i};
-
     % Initialize temporary structs to aggregate data for the current subject
     element = struct();     % For 'element' document types
     openMINDs = struct();   % For 'openminds_subject' document type
+    stimulus = struct();    % For 'stimulus_bath' and 'openminds_stimulus' document types
 
-    for j = 1:numel(dependentDocs)
-        docProp = dependentDocs{j}.document_properties;
+    for j = 1:numel(dependentDocsSubject)
+        docProp = dependentDocsSubject{j}.document_properties;
         
         % Switch based on the document's class
         switch docProp.document_class.class_name
@@ -117,6 +119,53 @@ for i = 1:numel(subjectDocs)
                 % Append the element's name and type to our temporary struct
                 element.(dataType).name{end+1} = docProp.element.name;
                 element.(dataType).type{end+1} = docProp.element.type;
+
+                if strcmpi(docProp.element.type,'stimulator')
+
+                    % Get stimulus bath docs corresponding to stimulator
+                    stimulusBathDocsInd = cellfun(@(d) strcmp(docProp.base.id,...
+                        dependency_value(d,'stimulus_element_id')),stimulusBathDocs);
+                    stimulusBathDocsSubject = stimulusBathDocs(stimulusBathDocsInd);
+
+                    if any(stimulusBathDocsInd)
+
+                        % If this is the first time we've seen a mixture, initialize its field
+                        if ~isfield(stimulus, 'mixture')
+                            stimulus.mixture.name = {};
+                            stimulus.mixture.ontology = {};
+                        end
+
+                        % Compile mixture table
+                        for k = 1:numel(stimulusBathDocsSubject)
+                            mixture = stimulusBathDocsSubject{k}.document_properties.stimulus_bath.mixture_table;
+                            mixture = ndi.database.fun.readtablechar(mixture,'.txt','Delimiter',',');
+                            stimulus.mixture.name(end+(1:height(mixture))) = mixture.name;
+                            stimulus.mixture.ontology(end+(1:height(mixture))) = mixture.ontologyName;
+                        end
+                    end
+
+                    % Get stimulus approach docs corresponding to stimulator
+                    stimulusApproachDocsInd = cellfun(@(d) strcmp(docProp.base.id,...
+                        dependency_value(d,'stimulus_element_id')),stimulusApproachDocs);
+                    stimulusApproachDocsSubject = stimulusApproachDocs(stimulusApproachDocsInd);
+
+                    if any(stimulusApproachDocsInd)
+
+                        % If this is the first time we've seen an approach, initialize its field
+                        if ~isfield(stimulus, 'approach')
+                            stimulus.approach.name = {};
+                            stimulus.approach.ontology = {};
+                        end
+
+                        % Append approaches to the stimulus structure
+                        for k = 1:numel(stimulusApproachDocsSubject)
+                            stimulus.approach.name{end+1} = ...
+                                stimulusApproachDocsSubject{k}.document_properties.openminds.fields.name;
+                            stimulus.approach.ontology{end+1} = ...
+                                stimulusApproachDocsSubject{k}.document_properties.openminds.fields.preferredOntologyIdentifier;
+                        end
+                    end
+                end
         end
     end
 
@@ -146,6 +195,20 @@ for i = 1:numel(subjectDocs)
         % Create comma-separated strings and assign to the table.
         subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
         subjectTable(i,[currentType,'Type']) = {strjoin(unique(types), ', ')};
+    end
+
+    % Process the aggregated stimulus approach data
+    stimulusTypes = fieldnames(stimulus);
+    for k = 1:numel(stimulusTypes)
+        currentType = stimulusTypes{k};
+        
+        % Get unique, non-empty values
+        names = stimulus.(currentType).name(~cellfun('isempty', stimulus.(currentType).name));
+        ontologys = stimulus.(currentType).ontology(~cellfun('isempty', stimulus.(currentType).ontology));
+
+        % Create comma-separated strings and assign to the table.
+        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
+        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
     end
 end
 end
