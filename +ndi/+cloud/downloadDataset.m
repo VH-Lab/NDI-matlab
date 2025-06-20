@@ -10,7 +10,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
 %   CLOUD_DATASET_ID (string)       - Identifier for the dataset in the cloud.
 %   TARGET_FOLDER (string)          - Local folder to save the downloaded dataset.
 %   OPTIONS (name, value pairs)     - Optional synchronization options:
-%       - SyncFiles (logical)       - If true, files will be synced (default: true).
+%       - SyncFiles (logical)       - If true, files will be synced (default: false).
 %       - Verbose (logical)         - If true, verbose output is printed (default: true).
 %
 % Outputs:

@@ -10,7 +10,7 @@ function upload_files_for_dataset_documents(cloudDatasetId, ndiDataset, dataset_
     file_manifest = ...
         ndi.database.internal.list_binary_files(...
         ndiDataset, dataset_documents, options.Verbose);
-    [file_manifest(:).is_uploaded] = false;
+    [file_manifest(:).is_uploaded] = deal(false);
 
     totalSizeKb = sum([file_manifest.bytes]) / 1e3;
     [~, ~] = ndi.cloud.upload.zip_for_upload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);

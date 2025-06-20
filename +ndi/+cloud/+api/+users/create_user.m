@@ -17,7 +17,8 @@ function response = create_user(email, name, password)
     json_str = jsonencode(json);
 
     % Construct the curl command with the organization ID and authentication token
-    url = 'https://dev-api.ndi-cloud.com/v1/users';
+    uri = ndi.cloud.api.url('create_user');
+    url = uri.EncodedURI;
     cmd = sprintf("curl -X 'POST' '%s' " + ...
         "-H 'accept: application/json' " + ...
         "-H 'Content-Type: application/json' " +...

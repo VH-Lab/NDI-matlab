@@ -12,10 +12,14 @@ function url = url(endpointName, options)
         options.organization_id (1,1) string = ""
         options.page (1,1) double = 1
         options.page_size (1,1) double = 20
+        options.useDevAPI (1,1) logical = false
     end
     options = processOptions(options);
-    
-    apiBaseUrl = "https://dev-api.ndi-cloud.com/v1";
+
+    apiBaseUrl = "https://api.ndi-cloud.com/v1";    
+    if options.useDevAPI
+        apiBaseUrl = "https://dev-api.ndi-cloud.com/v1";
+    end
 
     persistent endpointMap
     if isempty(endpointMap)

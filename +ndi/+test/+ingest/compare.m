@@ -28,6 +28,9 @@ function b = compare(dirname1, dirname2)
         ts_here = [];
         ts_here.S = ndi.session.dir(dirname{i});
         ts_here.ds_list = ts_here.S.daqsystem_load('name','(.*)');
+        if ~iscell(ts_here.ds_list) % if only 1 will not be a cell
+            ts_here.ds_list = {ts_here.ds_list};
+        end
         ts(i) = ts_here;
     end
 

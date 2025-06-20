@@ -306,14 +306,23 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             % Returns the epoch table for NDI_DAQSYSTEM_OBJ
             %
             et = ndi_daqsystem_obj.filenavigator.epochtable;
+            m = ndi_daqsystem_obj.daqreader.ingested2epochs_t0t1_epochclock(ndi_daqsystem_obj.session);
             currentProgBar = ndi.gui.component.ProgressBarWindow('Setting up daq.system','GrabMostRecent',true);
             ProgBarUuid = did.ido.unique_id();
             currentProgBar.addBar('Label','Loading epochprobemaps','Tag',ProgBarUuid,'Auto',true); % Add a bar that will autoclose
             for i=1:numel(et)
                 % need slight adjustment from filenavigator epochtable
-                et(i).epochprobemap = getepochprobemap(ndi_daqsystem_obj,et(i).epoch_number);
-                et(i).epoch_clock = epochclock(ndi_daqsystem_obj, et(i).epoch_number);
-                et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
+                et(i).epochprobemap = getepochprobemap(ndi_daqsystem_obj,et(i).epoch_number,et(i).epochprobemap);
+                if m.epochclock.isKey(et(i).epoch_id)
+                   et(i).epoch_clock = m.epochclock(et(i).epoch_id);
+                else
+                   et(i).epoch_clock = epochclock(ndi_daqsystem_obj, et(i).epoch_number);
+                end
+                if m.t0t1.isKey(et(i).epoch_id)
+                    et(i).t0_t1 = m.t0t1(et(i).epoch_id);
+                else
+                    et(i).t0_t1 = t0_t1(ndi_daqsystem_obj, et(i).epoch_number);
+                end
                 if mod(i,10)==0 % only update every tenth so we don't slow it down
                     currentProgBar.updateBar(ProgBarUuid,i/numel(et)); % Update the bar's progress
                 end
@@ -361,7 +370,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             etfname = ndi.epoch.epochset.param.obj.filenavigator.epochtagfilename(epochnumber);
         end % epochtagfilename()
 
-        function epochprobemap = getepochprobemap(ndi_daqsystem_obj, epoch)
+        function epochprobemap = getepochprobemap(ndi_daqsystem_obj, epoch, filenaveepochprobemap)
             % GETEPOCHPROBEMAP - Return the epoch record for an ndi.daq.system object
             %
             % EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCH)
@@ -386,7 +395,11 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 % it is remarkable that this is allowed in Matlab but it is beautiful
                 epochprobemap = ndi_daqsystem_obj.daqreader.getepochprobemap(ecfname,epochfiles);
             else
-                epochprobemap = ndi_daqsystem_obj.filenavigator.getepochprobemap(epoch);
+                if nargin>2
+                    epochprobemap = filenaveepochprobemap;
+                else
+                    epochprobemap = ndi_daqsystem_obj.filenavigator.getepochprobemap(epoch);
+                end
             end
 
         end % getepochprobemap

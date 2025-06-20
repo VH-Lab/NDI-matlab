@@ -30,8 +30,9 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
 
     for i=1:numel(et1)
         number = sscanf(et1(i).epoch_id,'t%d')
-        if number<63, continue; end
+        %if number<63, continue; end
         disp(['Testing epoch ' et1(i).epoch_id '...']);
+        disp(['(Epoch ' int2str(i) ' of ' int2str(numel(et1)) '.']);
         f1 = fn1.getepochfiles(et1(i).epoch_id);
         f2 = fn2.getepochfiles(et1(i).epoch_id);
         c1 = dr1.getchannelsepoch(f1);
@@ -58,11 +59,16 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
                 t_start = et1(i).t0_t1{1}(1) + rand * diff(et1(i).t0_t1{1});
                 t_stop = min(t_start + 300,et1(i).t0_t1{1}(2));
                 D1 = daq1.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
-                D2 = daq2.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
+                try
+                   D2 = daq2.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
+                catch,
+                    disp('Could not read from epoch');
+                    D2 = NaN;
+                end;
+
                 if ~strcmp(continuous_types{j},'time')
                     if ~isequaln(D1,D2)
-                        errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
-                        keyboard
+                        errmsg{end+1} = ['Epoch ' et1(i).epoch_id ' Reading ' continuous_types{j} ' produced unequal results.'];
                     end
                 else
                     disp('checking time values')
