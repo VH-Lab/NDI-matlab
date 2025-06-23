@@ -3,10 +3,19 @@ function T_stacked = vstack(tablesCellArray)
 %   (Help text as before)
 
 arguments
-    tablesCellArray (1,:) cell {mustBeNonempty, localMustBeTablesInCell_vstack} % Standardized validator name
+    tablesCellArray (1,:) cell {mustBeNonempty}
 end
 
-    if numel(tablesCellArray) == 1
+    % Remove empty cells (if applicable) 
+    ind = cellfun(@(x) ~isempty(x), tablesCellArray);
+    tablesCellArray = tablesCellArray(ind);
+
+    % Check that all remaining cells contain tables
+    if ~all(cellfun(@(x) isa(x, 'table'), tablesCellArray))
+        error('vstack:InvalidCellContent', 'All elements in the cell array must be tables.');
+    end
+
+    if isscalar(tablesCellArray)
         T_stacked = tablesCellArray{1};
         return;
     end
@@ -197,12 +206,5 @@ end
              newExc = addCause(newExc, ME_vertcat.cause);
         end
         throw(newExc);
-    end
-end
-
-% Local validation function, name must match usage in arguments block
-function localMustBeTablesInCell_vstack(c) 
-    if ~all(cellfun(@(x) isa(x, 'table'), c))
-        error('vstack:InvalidCellContent', 'All elements in the cell array must be tables.');
     end
 end
