@@ -1,4 +1,4 @@
-function [stimulusArray] = stimulusDocTable(session)
+function [stimulusTable] = stimulusDocTable(session)
 %STIMULUSDOCTABLE Creates a summary table of stimulus epochs and their associated metadata.
 %
 %   stimulusTable = stimulusDocTable(SESSION)
@@ -94,33 +94,37 @@ for i = 1:height(stimulusTable)
     % Find corresponding stimulus bath docs
     ind = find(strcmpi(epochid_SB,stimulusTable.epoch_id(i)));
     
-    % Get mixtures from all corresponding stimulus bath docs
-    mixtures = table();
-    for j = 1:numel(ind)
-        mixture = stimulusBathDocs{ind(j)}.document_properties.stimulus_bath.mixture_table;
-        mixture = ndi.database.fun.readtablechar(mixture,'.txt','Delimiter',',');
-        mixtures = ndi.fun.table.vstack({mixtures,mixture});
-    end
-    mixtures = unique(mixtures,'stable');
+    if ~isempty(ind)
+        % Get mixtures from all corresponding stimulus bath docs
+        mixtures = table();
+        for j = 1:numel(ind)
+            mixture = stimulusBathDocs{ind(j)}.document_properties.stimulus_bath.mixture_table;
+            mixture = ndi.database.fun.readtablechar(mixture,'.txt','Delimiter',',');
+            mixtures = ndi.fun.table.vstack({mixtures,mixture});
+        end
+        mixtures = unique(mixtures,'stable');
 
-    % Add mixture to epoch table
-    stimulusTable.mixtureName(i) = join(mixtures.name,',');
-    stimulusTable.mixtureOntology(i) = join(mixtures.ontologyName,',');
+        % Add mixture to epoch table
+        stimulusTable.mixtureName(i) = join(mixtures.name,',');
+        stimulusTable.mixtureOntology(i) = join(mixtures.ontologyName,',');
+    end
 
     % Find corresponding stimulus bath docs
     ind = find(strcmpi(epochid_SA,stimulusTable.epoch_id(i)));
     
-    % Get mixtures from all corresponding stimulus bath docs
-    approaches = table();
-    for j = 1:numel(ind)
-        openminds = struct2table(stimulusApproachDocs{ind(j)}.document_properties.openminds.fields,'AsArray',true);
-        approaches = ndi.fun.table.vstack({approaches,openminds});
-    end
-    approaches = unique(approaches,'stable');
+    if ~isempty(ind)
+        % Get mixtures from all corresponding stimulus bath docs
+        approaches = table();
+        for j = 1:numel(ind)
+            openminds = struct2table(stimulusApproachDocs{ind(j)}.document_properties.openminds.fields,'AsArray',true);
+            approaches = ndi.fun.table.vstack({approaches,openminds});
+        end
+        approaches = unique(approaches,'stable');
 
-    % Add mixture to epoch table
-    stimulusTable.approachName(i) = join(approaches.name,',');
-    stimulusTable.approachOntology(i) = join(approaches.preferredOntologyIdentifier,',');
+        % Add mixture to epoch table
+        stimulusTable.approachName(i) = join(approaches.name,',');
+        stimulusTable.approachOntology(i) = join(approaches.preferredOntologyIdentifier,',');
+    end
 end
 
 end
