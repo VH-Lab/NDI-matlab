@@ -1,4 +1,4 @@
-function [subjectTable,epochTable] = subjectDocTable(session)
+function [subjectTable] = subjectDocTable(session)
 %SUBJECTDOCTABLE Creates a summary table of subjects and their associated metadata.
 %
 %   subjectTable = subjectDocTable(SESSION)
@@ -14,7 +14,7 @@ function [subjectTable,epochTable] = subjectDocTable(session)
 %   unique properties found in its associated documents.
 %
 %   Inputs:
-%       SESSION - An active and connected ndi.session object.
+%       SESSION - An active and connected ndi.session or ndi.dataset object.
 %
 %   Outputs:
 %       subjectTable - A MATLAB table where each row is a subject and columns
@@ -33,9 +33,8 @@ end
 query = ndi.query('','isa','subject');
 subjectDocs = session.database_search(query);
 
-% Initialize tables
+% Initialize table
 subjectTable = table();
-epochTable = cell(numel(subjectDocs),1);
 
 % This warning is suppressed because we are building the table "unevenly".
 % One subject might have a 'Strain' and add a 'StrainName' column. The next
@@ -56,14 +55,6 @@ if numel(subjectDocs) > 0
     dependentDocs = session.database_search(querySubjectID);
 end
 
-% Find all stimulus bath documents
-queryStimulusBath = ndi.query('','isa','stimulus_bath');
-stimulusBathDocs = session.database_search(queryStimulusBath);
-
-% Find all stimulus approach documents
-queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
-stimulusApproachDocs = session.database_search(queryStimulusApproach);
-
 % Loop through each subject document
 for i = 1:numel(subjectDocs)
 
@@ -79,7 +70,6 @@ for i = 1:numel(subjectDocs)
     % Initialize temporary structs to aggregate data for the current subject
     element = struct();     % For 'element' document types
     openMINDs = struct();   % For 'openminds_subject' document type
-    stimulus = struct();    % For 'stimulus_bath' and 'openminds_stimulus' document types
 
     for j = 1:numel(dependentDocsSubject)
         docProp = dependentDocsSubject{j}.document_properties;
@@ -120,86 +110,6 @@ for i = 1:numel(subjectDocs)
                 % Append the element's name and type to our temporary struct
                 element.(dataType).name{end+1} = docProp.element.name;
                 element.(dataType).type{end+1} = docProp.element.type;
-
-                if strcmpi(docProp.element.type,'stimulator')
-
-                    % Get epochs
-                    probeObj = ndi.database.fun.ndi_document2ndi_object(dependentDocsSubject{j},session);
-                    epochs = struct2table(probeObj.epochtable);
-
-                    % Add epoch info to epochTable
-                    epochTable{i} = epochs(:,{'epoch_number','epoch_id'});
-                    epochTable{i}.subject_id(:) = subjectTable.documentID(i);
-                    for k = 1:height(epochs)
-                        ecs = cellfun(@(c) c.type,epochs.epoch_clock(k,:),'UniformOutput',false);
-                        clock_local_ind = find(contains(ecs,'dev_local_time'));
-                        clock_global_ind = find(cellfun(@(c) ndi.time.clocktype.isGlobal(c),epochs.epoch_clock(k,:)));
-                        epochTable{i}.local_t0(k) = epochs.t0_t1{k,clock_local_ind}(1);
-                        epochTable{i}.local_t1(k) = epochs.t0_t1{k,clock_local_ind}(2);
-                        if ~isempty(clock_global_ind)
-                            epochTable{i}.global_t0(k) = datetime(epochs.t0_t1{k,clock_global_ind}(1),...
-                                'convertFrom','datenum');
-                            epochTable{i}.global_t1(k) = datetime(epochs.t0_t1{k,clock_global_ind}(2),...
-                                'convertFrom','datenum');
-                        end
-                    end
-
-                    % Get stimulus bath docs corresponding to stimulator
-                    stimulusBathDocsInd = cellfun(@(d) strcmp(docProp.base.id,...
-                        dependency_value(d,'stimulus_element_id')),stimulusBathDocs);
-                    stimulusBathDocsSubject = stimulusBathDocs(stimulusBathDocsInd);
-
-                    if any(stimulusBathDocsInd)
-
-                        % If this is the first time we've seen a mixture, initialize its field
-                        if ~isfield(stimulus, 'mixture')
-                            stimulus.mixture.name = {};
-                            stimulus.mixture.ontology = {};
-                        end
-
-                        % Compile mixture table
-                        for k = 1:numel(stimulusBathDocsSubject)
-                            mixture = stimulusBathDocsSubject{k}.document_properties.stimulus_bath.mixture_table;
-                            mixture = ndi.database.fun.readtablechar(mixture,'.txt','Delimiter',',');
-                            stimulus.mixture.name(end+(1:height(mixture))) = mixture.name;
-                            stimulus.mixture.ontology(end+(1:height(mixture))) = mixture.ontologyName;
-
-                            % Add mixture to epoch table
-                            epochInd = strcmpi(epochTable{i}.epoch_id,...
-                                stimulusBathDocsSubject{k}.document_properties.epochid.epochid);
-                            epochTable{i}.mixtureName(epochInd) = join(mixture.name,',');
-                            epochTable{i}.mixtureOntology(epochInd) = join(mixture.ontologyName,',');
-                        end
-                    end
-
-                    % Get stimulus approach docs corresponding to stimulator
-                    stimulusApproachDocsInd = cellfun(@(d) strcmp(docProp.base.id,...
-                        dependency_value(d,'stimulus_element_id')),stimulusApproachDocs);
-                    stimulusApproachDocsSubject = stimulusApproachDocs(stimulusApproachDocsInd);
-
-                    if any(stimulusApproachDocsInd)
-
-                        % If this is the first time we've seen an approach, initialize its field
-                        if ~isfield(stimulus, 'approach')
-                            stimulus.approach.name = {};
-                            stimulus.approach.ontology = {};
-                        end
-
-                        % Append approaches to the stimulus structure
-                        for k = 1:numel(stimulusApproachDocsSubject)
-                            stimulus.approach.name{end+1} = ...
-                                stimulusApproachDocsSubject{k}.document_properties.openminds.fields.name;
-                            stimulus.approach.ontology{end+1} = ...
-                                stimulusApproachDocsSubject{k}.document_properties.openminds.fields.preferredOntologyIdentifier;
-                        
-                            % Add stimulus approach to epoch table
-                            epochInd = strcmpi(epochTable{i}.epoch_id,...
-                                stimulusApproachDocsSubject{k}.document_properties.epochid.epochid);
-                            epochTable{i}.approachName(epochInd) = stimulus.approach.name(end);
-                            epochTable{i}.approachOntology(epochInd) = stimulus.approach.ontology(end);
-                        end
-                    end
-                end
         end
     end
 
@@ -216,36 +126,5 @@ for i = 1:numel(subjectDocs)
         subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
         subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
     end
-
-    % Process the aggregated element data
-    elementTypes = fieldnames(element);
-    for k = 1:numel(elementTypes)
-        currentType = elementTypes{k};
-
-        % Get unique, non-empty values
-        names = element.(currentType).name(~cellfun('isempty', element.(currentType).name));
-        types = element.(currentType).type(~cellfun('isempty', element.(currentType).type));
-
-        % Create comma-separated strings and assign to the table.
-        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
-        subjectTable(i,[currentType,'Type']) = {strjoin(unique(types), ', ')};
-    end
-
-    % Process the aggregated stimulus approach data
-    stimulusTypes = fieldnames(stimulus);
-    for k = 1:numel(stimulusTypes)
-        currentType = stimulusTypes{k};
-        
-        % Get unique, non-empty values
-        names = stimulus.(currentType).name(~cellfun('isempty', stimulus.(currentType).name));
-        ontologys = stimulus.(currentType).ontology(~cellfun('isempty', stimulus.(currentType).ontology));
-
-        % Create comma-separated strings and assign to the table.
-        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
-        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
-    end
 end
-
-% Concatenate epochTable
-epochTable = ndi.fun.table.vstack(epochTable);
 end
