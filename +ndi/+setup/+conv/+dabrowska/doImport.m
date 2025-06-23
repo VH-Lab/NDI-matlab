@@ -164,8 +164,9 @@ sd.table2bathDocs(variableTable,...
     'Overwrite',options.Overwrite);
 
 % Define approachName
-indTLS = ndi.fun.table.identifyValidRows(variableTable,'TLS');
-indApproach = find(indTLS & indEpoch);
+% indTLS = ndi.fun.table.identifyValidRows(variableTable,'TLS'); % some paths missing TLS
+indOpto = contains(variableTable.Properties.RowNames,'Optogenetics');
+indApproach = find(indOpto & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
 indPost = cellfun(@(bcs) contains(bcs,'Post'),variableTable.BathConditionString(indApproach));
 variableTable.ApproachName = cell(height(variableTable),1);
@@ -179,59 +180,61 @@ sd.table2approachDocs(variableTable,'ApproachName',...
 
 %% Step 6: INTRACELLULAR-VM ELEMENTS. Add intracellular-Vm elements and openMinds celltypes.
 
-% Get patch-Vm probes
+% Get patch-Vm and patch-I probes
 patchVm = sessionArray{1}.getprobes('type','patch-Vm');
-subjectIDs = cellfun(@(p) p.subject_id,patchVm,'UniformOutput',false);
+patchI = sessionArray{1}.getprobes('type','patch-I');
+subjectID_Vm = cellfun(@(p) p.subject_id,patchVm,'UniformOutput',false);
+subjectID_I = cellfun(@(p) p.subject_id,patchI,'UniformOutput',false);
 
 % Intialize cell arrays to hold docs
-elementDocs = cell(numel(subDocStruct),1);
-cellTypeDocs = cell(numel(subDocStruct),1);
-probeLocationDocs = cell(numel(subDocStruct),1);
-for i = 1:numel(subDocStruct.documents)
+cellTypeDocs = cell(numel(subDocStruct),2);
+probeLocationDocs = cell(numel(subDocStruct),2);
+for p = 1:2
+    for i = 1:numel(subDocStruct.documents)
 
-    % Get ids and subject name
-    subjectID = subDocStruct(i).documents.document_properties.base.id;
-    subjectLocalID = subDocStruct(i).documents.document_properties.subject.local_identifier;
-    subjectName = split(subjectLocalID,'@'); subjectName = subjectName{1};
-    ind = strcmpi(subjectIDs,subjectID);
+        % Get ids and subject name
+        subjectID = subDocStruct(i).documents.document_properties.base.id;
+        subjectLocalID = subDocStruct(i).documents.document_properties.subject.local_identifier;
+        switch p
+            case 1
+                probe_id = patchVm{strcmpi(subjectID_Vm,subjectID)}.id;
+            case 2
+                probe_id = patchI{strcmpi(subjectID_I,subjectID)}.id;
+        end
 
-    % Create intracellular-Vm element document
-    [~,elementDocs{i}] = ndi.element(sessionArray{1},subjectName,1,'intracellular-Vm',...
-        patchVm{ind},true);
+        % Create openMinds cell type doc
+        ind = strcmpi(variableTable.SubjectString,subjectLocalID);
+        typeString = variableTable.CellType{ind};
+        switch typeString
+            case 'Type I'
+                celltype = openminds.controlledterms.CellType(...
+                    'name','Type I',...
+                    'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
+            case 'Type III'
+                celltype = openminds.controlledterms.CellType(...
+                    'name','Type III',...
+                    'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
+        end
+        if ~all(isnan(typeString)) % skip if type not specified
+            cellTypeDocs{i,p} = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
+                obj.session.id,'element_id',probe_id);
+        end
 
-    % Create openMinds cell type doc
-    ind = strcmpi(variableTable.SubjectString,subjectLocalID);
-    typeString = variableTable.CellType{ind};
-    switch typeString
-        case 'Type I'
-            celltype = openminds.controlledterms.CellType(...
-                'name','Type I',...
-                'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
-        case 'Type III'
-            celltype = openminds.controlledterms.CellType(...
-                'name','Type III',...
-                'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
+        % Create probe location doc
+        probe_location = struct('ontology_name','UBERON:0034894',...
+            'name','dorsolateral bed of the nucleus strialis'); % Is this the correct uberon id?
+        probeLocationDocs{i,p} = ndi.document('probe_location',...
+            'probe_location', probe_location) + sessionArray{1}.newdocument();
+        probeLocationDocs{i,p} = probeLocationDocs{i}.set_dependency_value(...
+            'probe_id', probe_id);
     end
-    if ~all(isnan(typeString)) % skip if type not specified
-        element_id = elementDocs{i}.document_properties.base.id; % Is this the correct id? Or should it be patch-Vm/I?
-        cellTypeDocs{i} = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
-            obj.session.id,'element_id',element_id);
-    end
-
-    % Create probe location doc
-    probe_location = struct('ontology_name','UBERON:0034894',...
-        'name','dorsolateral bed of the nucleus strialis'); % Is this the correct uberon id?
-    probe_id = elementDocs{i}.document_properties.base.id; % Is this the correct id? Or should it be patch-Vm/I?
-    probeLocationDocs{i} = ndi.document('probe_location',...
-        'probe_location', probe_location) + sessionArray{1}.newdocument();
-    probeLocationDocs{i} = probeLocationDocs{i}.set_dependency_value(...
-        'probe_id', probe_id);
 end
 
-% Add documents to database
-sessionArray{1}.database_add(elementDocs);
+%% Add documents to database
 sessionArray{1}.database_add(cellTypeDocs);
 sessionArray{1}.database_add(probeLocationDocs);
+
+% Add optogentic location and non-survival experiment time treatment docs to each subject
 
 %% Step 7: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
 
