@@ -8,14 +8,21 @@ on:
   # Allows for manually running this workflow from the Actions tab
   workflow_dispatch:
 
+  push:
+    branches:
+      - add-cloud-api-testing # todo: remove this branch when merged
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   run_tests:
-    name: Run tests (MATLAB latest release)
+    name: Test Cloud API (env - ${{ matrix.environment }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [prod, dev]
     steps:      
       - name: Check out repo
         uses: actions/checkout@v4
@@ -36,10 +43,11 @@ jobs:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            setenv("CLOUD_API_ENVIRONMENT", "${{ matrix.environment }}")
             ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath('.')
             addpath(genpath( "tests" ));
-            testToolbox()
+            testCloudApi()
 
       - name: Restore MATLAB Path
         uses: matlab-actions/run-command@v2

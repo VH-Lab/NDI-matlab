@@ -27,7 +27,8 @@ function url = url(endpointName, options)
             apiBaseUrl = "https://dev-api.ndi-cloud.com/v1";
         otherwise
             error('NDICloud:GetURL:UnknownApiEnvironment', ...
-                'Expected value for cloud api environment to be `prod` or `dev`, but got %s instead.', apiEnvironment)
+                ['Expected value for cloud api environment to be `prod` ', ...
+                'or `dev`, but got %s instead.'], apiEnvironment)
     end
     
     persistent endpointMap
@@ -87,6 +88,7 @@ function url = url(endpointName, options)
     end
 
     url = matlab.net.URI( apiBaseUrl + endpointPath );
+    disp(apiBaseUrl + endpointPath) % Debugging - todo: Remove
 end
 
 function endpointPath = replacePathParameter(endpointPath, parameterName, params)
