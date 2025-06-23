@@ -64,6 +64,14 @@
     "FunctionName": ""
   },
   {
+    "VariableName": "CellType",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)Type (III|II|I))",
+    "FunctionName": ""
+  },
+  {
     "VariableName": "SliceLabel",
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
