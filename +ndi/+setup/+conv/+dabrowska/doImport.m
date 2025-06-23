@@ -1,16 +1,17 @@
  function sessionArray = doImport(dataParentDir,options)
 % Section A: Import electrophysiology dataset
-%   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
-%   Step 2: SESSIONS. Now that we have the file manifest, build sessions
+%   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
+%   Step 2: SESSIONS. Now that we have the file manifest, build sessions.
 %   Step 3: SUBJECTS. Build subject documents.
 %   Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
-%   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
+%   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
+%   Step 6: INTRACELLULAR-VM ELEMENTS. Add intracellular-Vm elements and openMinds celltypes.
 %
 % Section B: Import behavioral dataset
-%   Step 6: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
-%   Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
-%   Step 8: SUBJECTS. Build subject documents.
-%   Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%   Step 7: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%   Step 8: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%   Step 9: SUBJECTS. Build subject documents.
+%   Step 10: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Input argument validation
 arguments
@@ -48,7 +49,7 @@ if ~isempty(badFileInd)
     end
 end
 
-%% Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
+%% Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
 
 [dirList,isDir] = vlt.file.manifest(dataPath);
 fileList = dirList(~isDir);
@@ -91,7 +92,7 @@ variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
 variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 variableTable{:,'BiologicalSex'} = {'male'};
 
-%% Step 2: SESSIONS. Now that we have the file manifest, build sessions
+%% Step 2: SESSIONS. Now that we have the file manifest, build sessions.
 
 % Employ the sessionMaker
 mySessionPath = dataParentDir;
@@ -144,7 +145,7 @@ ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
     'NonNaNVariableNames','IsExpMatFile',...
     'ProbePostfix','ProbePostfix');
 
-%% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
+%% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
 
 sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
     'GetProbes',true);
@@ -176,7 +177,63 @@ sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',options.Overwrite);
 
-%% Step 6: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%% Step 6: INTRACELLULAR-VM ELEMENTS. Add intracellular-Vm elements and openMinds celltypes.
+
+% Get patch-Vm probes
+patchVm = sessionArray{1}.getprobes('type','patch-Vm');
+subjectIDs = cellfun(@(p) p.subject_id,patchVm,'UniformOutput',false);
+
+% Intialize cell arrays to hold docs
+elementDocs = cell(numel(subDocStruct),1);
+cellTypeDocs = cell(numel(subDocStruct),1);
+probeLocationDocs = cell(numel(subDocStruct),1);
+for i = 1:numel(subDocStruct.documents)
+
+    % Get ids and subject name
+    subjectID = subDocStruct(i).documents.document_properties.base.id;
+    subjectLocalID = subDocStruct(i).documents.document_properties.subject.local_identifier;
+    subjectName = split(subjectLocalID,'@'); subjectName = subjectName{1};
+    ind = strcmpi(subjectIDs,subjectID);
+
+    % Create intracellular-Vm element document
+    [~,elementDocs{i}] = ndi.element(sessionArray{1},subjectName,1,'intracellular-Vm',...
+        patchVm{ind},true);
+
+    % Create openMinds cell type doc
+    ind = strcmpi(variableTable.SubjectString,subjectLocalID);
+    typeString = variableTable.CellType{ind};
+    switch typeString
+        case 'Type I'
+            celltype = openminds.controlledterms.CellType(...
+                'name','Type I',...
+                'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
+        case 'Type III'
+            celltype = openminds.controlledterms.CellType(...
+                'name','Type III',...
+                'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
+    end
+    if ~all(isnan(typeString)) % skip if type not specified
+        element_id = elementDocs{i}.document_properties.base.id; % Is this the correct id? Or should it be patch-Vm/I?
+        cellTypeDocs{i} = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
+            obj.session.id,'element_id',element_id);
+    end
+
+    % Create probe location doc
+    probe_location = struct('ontology_name','UBERON:0034894',...
+        'name','dorsolateral bed of the nucleus strialis'); % Is this the correct uberon id?
+    probe_id = elementDocs{i}.document_properties.base.id; % Is this the correct id? Or should it be patch-Vm/I?
+    probeLocationDocs{i} = ndi.document('probe_location',...
+        'probe_location', probe_location) + sessionArray{1}.newdocument();
+    probeLocationDocs{i} = probeLocationDocs{i}.set_dependency_value(...
+        'probe_id', probe_id);
+end
+
+% Add documents to database
+sessionArray{1}.database_add(elementDocs);
+sessionArray{1}.database_add(cellTypeDocs);
+sessionArray{1}.database_add(probeLocationDocs);
+
+%% Step 7: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
 
 % Get combined EPM data table
 filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
@@ -227,7 +284,7 @@ dataTable_EPM.Experiment_ID(dataTable_EPM.Animal >= 300) = 2;
 dataTable_EPM.Exclude(:) = false;
 dataTable_EPM.Exclude(dataTable_EPM.Animal == 239 | dataTable_EPM.Animal == 258) = true;
 
-%% Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%% Step 8: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
 
 % Get combined FPS data table
 filename_FPS = 'FPS_OTR-Cre+_Saline vs CNO_DREADDs-Gi_Experiment 1-final.xlsx';
@@ -265,7 +322,7 @@ dataTable_FPS.Group_ID = cellfun(@(s) str2double(s(6)),dataTable_FPS.Session_ID)
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
     'TimeStampPT'}) = [];
 
-%% Step 8: SUBJECTS. Build subject documents.
+%% Step 9: SUBJECTS. Build subject documents.
 
 % Create subject table
 subjectTable_behavior = dataTable_EPM(:,'Animal');
@@ -295,7 +352,7 @@ dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectStr
 dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),...
     'LeftKeys','Subject_ID','RightKeys','Animal');
 
-%% Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%% Step 10: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Check dictionary/ontology for new variables
 
