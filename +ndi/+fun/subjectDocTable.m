@@ -1,4 +1,4 @@
-function [subjectTable] = subjectDocTable(session)
+function [subjectTable,epochTable] = subjectDocTable(session)
 %SUBJECTDOCTABLE Creates a summary table of subjects and their associated metadata.
 %
 %   subjectTable = subjectDocTable(SESSION)
@@ -33,8 +33,9 @@ end
 query = ndi.query('','isa','subject');
 subjectDocs = session.database_search(query);
 
-% Initialize table
+% Initialize tables
 subjectTable = table();
+epochTable = cell(numel(subjectDocs),1);
 
 % This warning is suppressed because we are building the table "unevenly".
 % One subject might have a 'Strain' and add a 'StrainName' column. The next
@@ -122,6 +123,27 @@ for i = 1:numel(subjectDocs)
 
                 if strcmpi(docProp.element.type,'stimulator')
 
+                    % Get epochs
+                    probeObj = ndi.database.fun.ndi_document2ndi_object(dependentDocsSubject{j},session);
+                    epochs = struct2table(probeObj.epochtable);
+
+                    % Add epoch info to epochTable
+                    epochTable{i} = epochs(:,{'epoch_number','epoch_id'});
+                    epochTable{i}.subject_id(:) = subjectTable.documentID(i);
+                    for k = 1:height(epochs)
+                        ecs = cellfun(@(c) c.type,epochs.epoch_clock(k,:),'UniformOutput',false);
+                        clock_local_ind = find(contains(ecs,'dev_local_time'));
+                        clock_global_ind = find(cellfun(@(c) ndi.time.clocktype.isGlobal(c),epochs.epoch_clock(k,:)));
+                        epochTable{i}.local_t0(k) = epochs.t0_t1{k,clock_local_ind}(1);
+                        epochTable{i}.local_t1(k) = epochs.t0_t1{k,clock_local_ind}(2);
+                        if ~isempty(clock_global_ind)
+                            epochTable{i}.global_t0(k) = datetime(epochs.t0_t1{k,clock_global_ind}(1),...
+                                'convertFrom','datenum');
+                            epochTable{i}.global_t1(k) = datetime(epochs.t0_t1{k,clock_global_ind}(2),...
+                                'convertFrom','datenum');
+                        end
+                    end
+
                     % Get stimulus bath docs corresponding to stimulator
                     stimulusBathDocsInd = cellfun(@(d) strcmp(docProp.base.id,...
                         dependency_value(d,'stimulus_element_id')),stimulusBathDocs);
@@ -141,6 +163,12 @@ for i = 1:numel(subjectDocs)
                             mixture = ndi.database.fun.readtablechar(mixture,'.txt','Delimiter',',');
                             stimulus.mixture.name(end+(1:height(mixture))) = mixture.name;
                             stimulus.mixture.ontology(end+(1:height(mixture))) = mixture.ontologyName;
+
+                            % Add mixture to epoch table
+                            epochInd = strcmpi(epochTable{i}.epoch_id,...
+                                stimulusBathDocsSubject{k}.document_properties.epochid.epochid);
+                            epochTable{i}.mixtureName(epochInd) = join(mixture.name,',');
+                            epochTable{i}.mixtureOntology(epochInd) = join(mixture.ontologyName,',');
                         end
                     end
 
@@ -163,6 +191,12 @@ for i = 1:numel(subjectDocs)
                                 stimulusApproachDocsSubject{k}.document_properties.openminds.fields.name;
                             stimulus.approach.ontology{end+1} = ...
                                 stimulusApproachDocsSubject{k}.document_properties.openminds.fields.preferredOntologyIdentifier;
+                        
+                            % Add stimulus approach to epoch table
+                            epochInd = strcmpi(epochTable{i}.epoch_id,...
+                                stimulusApproachDocsSubject{k}.document_properties.epochid.epochid);
+                            epochTable{i}.approachName(epochInd) = stimulus.approach.name(end);
+                            epochTable{i}.approachOntology(epochInd) = stimulus.approach.ontology(end);
                         end
                     end
                 end
@@ -211,4 +245,7 @@ for i = 1:numel(subjectDocs)
         subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
     end
 end
+
+% Concatenate epochTable
+epochTable = ndi.fun.table.vstack(epochTable);
 end
