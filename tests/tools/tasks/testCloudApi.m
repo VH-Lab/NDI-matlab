@@ -10,5 +10,6 @@ function testCloudApi(varargin)
 
     runner = TestRunner.withTextOutput('OutputDetail', 'Terse');
     results = runner.run(suite);
+    display(results)
     results.assertSuccess()
 end

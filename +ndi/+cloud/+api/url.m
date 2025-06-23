@@ -30,7 +30,6 @@ function url = url(endpointName, options)
                 ['Expected value for cloud api environment to be `prod` ', ...
                 'or `dev`, but got %s instead.'], apiEnvironment)
     end
-    
     persistent endpointMap
     if isempty(endpointMap)
         try
@@ -88,7 +87,6 @@ function url = url(endpointName, options)
     end
 
     url = matlab.net.URI( apiBaseUrl + endpointPath );
-    disp(apiBaseUrl + endpointPath) % Debugging - todo: Remove
 end
 
 function endpointPath = replacePathParameter(endpointPath, parameterName, params)
