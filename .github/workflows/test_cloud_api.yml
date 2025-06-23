@@ -21,6 +21,7 @@ jobs:
     name: Test Cloud API (env - ${{ matrix.environment }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         environment: [prod, dev]
     steps:      
@@ -43,6 +44,7 @@ jobs:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            setenv("GITHUB_TOKEN", "${{ github.token }}")
             setenv("CLOUD_API_ENVIRONMENT", "${{ matrix.environment }}")
             ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath('.')
