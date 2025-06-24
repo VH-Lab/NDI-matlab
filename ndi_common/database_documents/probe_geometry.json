@@ -10,21 +10,25 @@
         "definition": "$NDIDOCUMENTPATH/base.json"
       }
     ]
+    
   },
+  "depends_on": [
+    {           "name": "probe_id", 
+                "value": "" 
+    }
+  ]
   "probe_geometry": {
-    "probeID": "",
-    "siteLocations": [],
-    "shankID": [],
+    "site_locations": [],
+    "shank_id": [],
     "contact_shape": "",
     "contact_shape_width": [],
     "contact_shape_height": [],
     "contact_shape_radius": [],
-    "probeModel": "",
+    "probe_model": "",
     "manufacturer": "",
-    "device_channel_indices": [],
     "ndim": 2,
     "unit": "um",
-    "has_planar_contour": false,
+    "has_planar_contour": true,
     "contour_x": [],
     "contour_y": []
   }

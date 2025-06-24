@@ -1,17 +1,12 @@
 {
   "classname": "probe_geometry",
   "superclasses": ["base"],
-  "depends_on": [],
+  "depends_on": [
+		{ "name": "probe_id", "mustbenotempty": 1}
+	],
   "probe_geometry": [
     {
-      "name": "probeID",
-      "type": "did_uid",
-      "default_value": "",
-      "queryable": 1,
-      "documentation": "Unique id of probe type"
-    },
-    {
-      "name": "siteLocations",
+      "name": "site_locations",
       "type": "matrix",
       "default_value": [],
       "parameters": "int,double",
@@ -19,7 +14,7 @@
       "documentation": "[chan_number, x, y, z] positions"
     },
     {
-      "name": "probeModel",
+      "name": "probe_model",
       "type": "string",
       "default_value": "",
       "queryable": 1,
@@ -33,7 +28,7 @@
       "documentation": "Manufacturer of the probe"
     },
     {
-      "name": "shankID",
+      "name": "shank_id",
       "type": "matrix",
       "default_value": [],
       "parameters": "int",
@@ -72,14 +67,6 @@
       "documentation": "Radius per contact"
     },
     {
-      "name": "device_channel_indices",
-      "type": "matrix",
-      "default_value": [],
-      "parameters": "int",
-      "queryable": 0,
-      "documentation": "Channel index on acquisition device"
-    },
-    {
       "name": "ndim",
       "type": "int",
       "default_value": 2,
@@ -90,7 +77,7 @@
       "name": "unit",
       "type": "string",
       "default_value": "um",
-      "queryable": 0,
+      "queryable": 1,
       "documentation": "Spatial units"
     },
     {
