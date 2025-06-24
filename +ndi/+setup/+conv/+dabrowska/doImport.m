@@ -92,6 +92,9 @@ variableTable{:,'SessionPath'} = {'Dabrowska'};
 variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
 variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 variableTable{:,'BiologicalSex'} = {'male'};
+variableTable{:,'SubjectPostfix'} = arrayfun(@(si) ...
+    ['_',num2str(si),'@dabrowska-lab.rosalindfranklin.edu'],...
+    subjectTable_behavior.Animal,'UniformOutput',false);
 
 %% Step 2: SESSIONS. Now that we have the file manifest, build sessions.
 
