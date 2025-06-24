@@ -1,0 +1,120 @@
+{
+  "classname": "probe_geometry",
+  "superclasses": ["base"],
+  "depends_on": [],
+  "probe_geometry": [
+    {
+      "name": "probeID",
+      "type": "did_uid",
+      "default_value": "",
+      "queryable": 1,
+      "documentation": "Unique id of probe type"
+    },
+    {
+      "name": "siteLocations",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "int,double",
+      "queryable": 1,
+      "documentation": "[chan_number, x, y, z] positions"
+    },
+    {
+      "name": "probeModel",
+      "type": "string",
+      "default_value": "",
+      "queryable": 1,
+      "documentation": "Model of the probe"
+    },
+    {
+      "name": "manufacturer",
+      "type": "string",
+      "default_value": "",
+      "queryable": 1,
+      "documentation": "Manufacturer of the probe"
+    },
+    {
+      "name": "shankID",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "int",
+      "queryable": 1,
+      "documentation": "Shank integer ID per contact"
+    },
+    {
+      "name": "contact_shape",
+      "type": "char",
+      "default_value": "",
+      "queryable": 1,
+      "documentation": "Comma-separated shape names"
+    },
+    {
+      "name": "contact_shape_width",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "double",
+      "queryable": 0,
+      "documentation": "Width per contact"
+    },
+    {
+      "name": "contact_shape_height",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "double",
+      "queryable": 0,
+      "documentation": "Height per contact"
+    },
+    {
+      "name": "contact_shape_radius",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "double",
+      "queryable": 0,
+      "documentation": "Radius per contact"
+    },
+    {
+      "name": "device_channel_indices",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "int",
+      "queryable": 0,
+      "documentation": "Channel index on acquisition device"
+    },
+    {
+      "name": "ndim",
+      "type": "int",
+      "default_value": 2,
+      "queryable": 1,
+      "documentation": "Number of spatial dimensions"
+    },
+    {
+      "name": "unit",
+      "type": "string",
+      "default_value": "um",
+      "queryable": 0,
+      "documentation": "Spatial units"
+    },
+    {
+      "name": "has_planar_contour",
+      "type": "boolean",
+      "default_value": true,
+      "queryable": 0,
+      "documentation": "True if planar contour exists"
+    },
+    {
+      "name": "contour_x",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "double",
+      "queryable": 0,
+      "documentation": "X coordinates of body outline"
+    },
+    {
+      "name": "contour_y",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "double",
+      "queryable": 0,
+      "documentation": "Y coordinates of body outline"
+    }
+  ]
+}
