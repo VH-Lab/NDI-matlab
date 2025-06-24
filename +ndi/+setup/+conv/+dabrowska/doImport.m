@@ -5,13 +5,14 @@
 %   Step 3: SUBJECTS. Build subject documents.
 %   Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
 %   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
-%   Step 6: INTRACELLULAR-VM ELEMENTS. Add intracellular-Vm elements and openMinds celltypes.
+%   Step 6: CELL TYPES. Add openMinds celltypes and probe location documents.
+%   Step 7: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
 %
 % Section B: Import behavioral dataset
-%   Step 7: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
-%   Step 8: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
-%   Step 9: SUBJECTS. Build subject documents.
-%   Step 10: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%   Step 8: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%   Step 9: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%   Step 10: SUBJECTS. Build subject documents.
+%   Step 11: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Input argument validation
 arguments
@@ -28,7 +29,7 @@ dataPath = fullfile(dataParentDir,'Dabrowska');
 % Deal with bad paths
 badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
 if isfolder(badFolder)
-    disp(['Removing extra space in known folder ' badFolder])
+    disp(['Removing extra space chacter in known folder ' badFolder])
     movefile(badFolder,replace(badFolder,'  ',' '));
 end
 
@@ -165,8 +166,7 @@ sd.table2bathDocs(variableTable,...
 
 % Define approachName
 % indTLS = ndi.fun.table.identifyValidRows(variableTable,'TLS'); % some paths missing TLS
-indOpto = contains(variableTable.Properties.RowNames,'Optogenetics');
-indApproach = find(indOpto & indEpoch);
+indApproach = find(opto_rows & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
 indPost = cellfun(@(bcs) contains(bcs,'Post'),variableTable.BathConditionString(indApproach));
 variableTable.ApproachName = cell(height(variableTable),1);
@@ -178,65 +178,114 @@ sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',options.Overwrite);
 
-%% Step 6: INTRACELLULAR-VM ELEMENTS. Add intracellular-Vm elements and openMinds celltypes.
+%% Step 6: CELL TYPES. Add openMinds celltypes and probe location documents.
+
+% Get subjects
+query = ndi.query('','isa','subject');
+subjects = sessionArray{1}.database_search(query);
+subjectID = cellfun(@(s) s.id, subjects, 'UniformOutput', false);
+subjectLocalID = cellfun(@(s) s.document_properties.subject.local_identifier, subjects, 'UniformOutput', false); 
 
 % Get patch-Vm and patch-I probes
-patchVm = sessionArray{1}.getprobes('type','patch-Vm');
-patchI = sessionArray{1}.getprobes('type','patch-I');
-subjectID_Vm = cellfun(@(p) p.subject_id,patchVm,'UniformOutput',false);
-subjectID_I = cellfun(@(p) p.subject_id,patchI,'UniformOutput',false);
+query = ndi.query('element.type','contains_string','patch');
+probes = sessionArray{1}.database_search(query);
+subjectID_probes = cellfun(@(p) p.dependency_value('subject_id'),probes,'UniformOutput',false);
 
 % Intialize cell arrays to hold docs
-cellTypeDocs = cell(numel(subDocStruct),2);
-probeLocationDocs = cell(numel(subDocStruct),2);
-for p = 1:2
-    for i = 1:numel(subDocStruct.documents)
+cellTypeDocs = cell(numel(subjects),1);
+probeLocationDocs = cell(numel(subjects),1);
+for i = 1:numel(probes)
 
-        % Get ids and subject name
-        subjectID = subDocStruct(i).documents.document_properties.base.id;
-        subjectLocalID = subDocStruct(i).documents.document_properties.subject.local_identifier;
-        switch p
-            case 1
-                probe_id = patchVm{strcmpi(subjectID_Vm,subjectID)}.id;
-            case 2
-                probe_id = patchI{strcmpi(subjectID_I,subjectID)}.id;
-        end
-
-        % Create openMinds cell type doc
-        ind = strcmpi(variableTable.SubjectString,subjectLocalID);
-        typeString = variableTable.CellType{ind};
-        switch typeString
-            case 'Type I'
-                celltype = openminds.controlledterms.CellType(...
-                    'name','Type I',...
-                    'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
-            case 'Type III'
-                celltype = openminds.controlledterms.CellType(...
-                    'name','Type III',...
-                    'preferredOntologyIdentifier','EMPTY:'); % need ontology nodes
-        end
-        if ~all(isnan(typeString)) % skip if type not specified
-            cellTypeDocs{i,p} = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
-                obj.session.id,'element_id',probe_id);
-        end
-
-        % Create probe location doc
-        probe_location = struct('ontology_name','UBERON:0034894',...
-            'name','dorsolateral bed of the nucleus strialis'); % Is this the correct uberon id?
-        probeLocationDocs{i,p} = ndi.document('probe_location',...
-            'probe_location', probe_location) + sessionArray{1}.newdocument();
-        probeLocationDocs{i,p} = probeLocationDocs{i}.set_dependency_value(...
-            'probe_id', probe_id);
+    % Create openMinds cell type doc
+    subjectInd = strcmpi(subjectID,subjectID_probes{i});
+    variableTableInd = strcmpi(variableTable.SubjectString,subjectLocalID{subjectInd});
+    typeString = variableTable.CellType{variableTableInd};
+    switch typeString
+        case 'Type I'
+            celltype = openminds.controlledterms.CellType(...
+                'name','Type I BNST neuron',...
+                'preferredOntologyIdentifier','EMPTY:00000169',...
+                'description',['A type of neuron located in the dorsolateral ' ...
+                'bed nucleus of the stria terminalis (BNSTDL) that fires regularly, ' ...
+                'displays moderate spike frequency adaptation, and exhibits a voltage sag ' ...
+                'indicating the presence of the hyperpolarization-activated cation current (Ih). ' ...
+                '[Source: https://doi.org/10.1016/j.celrep.2025.115768]']);
+        case 'Type III'
+            celltype = openminds.controlledterms.CellType(...
+                'name','Type III BNST neuron',...
+                'preferredOntologyIdentifier','EMPTY:00000170',...
+                'description',['A type of neuron located in the dorsolateral ' ...
+                'bed nucleus of the stria terminalis (BNSTDL) characterized by a ' ...
+                'high rheobase, absence of voltage sag under negative current steps, ' ...
+                'prominent inward rectification due to the activation of the inward ' ...
+                'rectifying K+ current (IKIR) at membrane potentials more negative ' ...
+                'than approximately -50 mV, and firing onset after a characteristic ' ...
+                'slow voltage ramp mediated by the K+ delayed current (ID). ' ...
+                '[Source: https://doi.org/10.1016/j.celrep.2025.115768]']);
     end
+    if ~all(isnan(typeString)) % skip if type not specified
+        cellTypeDocs(i) = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
+            sessionArray{1}.id,'element',probes{i}.id);
+    else
+        cellTypeDocs{i} = 'remove';
+    end
+
+    % Create probe location doc
+    probe_location = struct('ontology_name','UBERON:0001880',...
+        'name','bed nucleus of stria terminalis (BNST)');
+    probeLocationDocs{i} = ndi.document('probe_location',...
+        'probe_location', probe_location) + sessionArray{1}.newdocument();
+    probeLocationDocs{i} = probeLocationDocs{i}.set_dependency_value(...
+        'probe_id', probes{i}.id);
 end
 
-%% Add documents to database
+% Remove cellTypeDoc indices with no document
+cellTypeDocs(strcmpi(cellTypeDocs,'remove')) = [];
+
+% Add documents to database
 sessionArray{1}.database_add(cellTypeDocs);
 sessionArray{1}.database_add(probeLocationDocs);
 
-% Add optogentic location and non-survival experiment time treatment docs to each subject
+%% Step 7: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
 
-%% Step 7: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+% Indices of optogenetic subjects
+subjectLocalID_opto = unique(variableTable.SubjectString(opto_rows));
+[~,subjectInd_opto] = intersect(subjectLocalID,subjectLocalID_opto);
+
+% Location key
+anatomy = containers.Map({'PVN','SCN','SON'},...
+    {'UBERON:0001930','UBERON:0002034','UBERON:0001929'});
+
+% Intialize cell array to hold docs
+treatmentDocs = cell(numel(subDocStruct),1);
+
+for i = 1:numel(subjectInd_opto)
+
+    % Get subject id
+    subject_id = subjectID{subjectInd_opto(i)};
+
+    % Get indices of variableTable matching that subject
+    variableTableInd = ndi.fun.table.identifyMatchingRows(variableTable,'SubjectString',...
+        subjectLocalID{subjectInd_opto(i)});
+
+    % Get optogenetic location
+    optoLocation = unique(variableTable.ProbeLocationString(variableTableInd));
+
+    % Create treatment document
+    treatment = struct('ontologyName','EMPTY:00000171',...
+        'name','Optogenetic Tetanus Stimulation Target Location',...
+        'numeric_value',[],...
+        'string_value',anatomy(optoLocation{:}));
+    treatmentDocs{i} = ndi.document('treatment',...
+        'treatment', treatment) + sessionArray{1}.newdocument();
+    treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
+        'subject_id', subject_id);
+end
+
+% Add documents to database
+sessionArray{1}.database_add(treatmentDocs);
+
+%% Step 8: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
 
 % Get combined EPM data table
 filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
@@ -287,7 +336,7 @@ dataTable_EPM.Experiment_ID(dataTable_EPM.Animal >= 300) = 2;
 dataTable_EPM.Exclude(:) = false;
 dataTable_EPM.Exclude(dataTable_EPM.Animal == 239 | dataTable_EPM.Animal == 258) = true;
 
-%% Step 8: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%% Step 9: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
 
 % Get combined FPS data table
 filename_FPS = 'FPS_OTR-Cre+_Saline vs CNO_DREADDs-Gi_Experiment 1-final.xlsx';
@@ -325,7 +374,7 @@ dataTable_FPS.Group_ID = cellfun(@(s) str2double(s(6)),dataTable_FPS.Session_ID)
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
     'TimeStampPT'}) = [];
 
-%% Step 9: SUBJECTS. Build subject documents.
+%% Step 10: SUBJECTS. Build subject documents.
 
 % Create subject table
 subjectTable_behavior = dataTable_EPM(:,'Animal');
@@ -355,7 +404,7 @@ dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectStr
 dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),...
     'LeftKeys','Subject_ID','RightKeys','Animal');
 
-%% Step 10: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%% Step 11: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Check dictionary/ontology for new variables
 
