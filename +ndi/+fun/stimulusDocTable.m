@@ -58,6 +58,10 @@ stimulusBathDocs = session.database_search(queryStimulusBath);
 queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
 stimulusApproachDocs = session.database_search(queryStimulusApproach);
 
+% Find all stimulus approach documents
+queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
+stimulusApproachDocs = session.database_search(queryStimulusApproach);
+
 % Loop through each stimulator
 for i = 1:numel(stimulators)
 

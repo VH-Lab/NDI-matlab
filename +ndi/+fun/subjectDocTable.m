@@ -4,8 +4,8 @@ function [subjectTable] = subjectDocTable(session)
 %   subjectTable = subjectDocTable(SESSION)
 %
 %   This function queries an NDI session to find all subject documents. For each
-%   subject, it then finds all associated 'element' and 'openminds_subject'
-%   documents that depend on it.
+%   subject, it then finds all associated 'element', 'openminds_subject', and
+%   'treatment' documents that depend on it.
 %
 %   The function aggregates the properties from these dependent documents (like
 %   species, strain, mfdaq names, etc.) and formats them into a single summary
