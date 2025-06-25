@@ -1,13 +1,13 @@
 {
   "document_class": {
-    "definition": "$NDIDOCUMENTPATH/probe_geometry.json",
-    "validation": "$NDISCHEMAPATH/probe_geometry_schema.json",
+    "definition": "$NDIDOCUMENTPATH\/probe\/probe_geometry.json",
+    "validation": "$NDISCHEMAPATH\/probe\/probe_geometry_schema.json",
     "class_name": "probe_geometry",
     "property_list_name": "probe_geometry",
     "class_version": 1,
     "superclasses": [
       {
-        "definition": "$NDIDOCUMENTPATH/base.json"
+        "definition": "$NDIDOCUMENTPATH\/base.json"
       }
     ]
     
@@ -16,9 +16,10 @@
     {           "name": "probe_id", 
                 "value": "" 
     }
-  ]
+  ],
   "probe_geometry": {
     "site_locations": [],
+    "site_list": [],
     "shank_id": [],
     "contact_shape": "",
     "contact_shape_width": [],

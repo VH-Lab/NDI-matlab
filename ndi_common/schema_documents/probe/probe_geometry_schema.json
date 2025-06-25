@@ -9,21 +9,31 @@
       "name": "site_locations",
       "type": "matrix",
       "default_value": [],
-      "parameters": "int,double",
+      "parameters": "",
       "queryable": 1,
-      "documentation": "[chan_number, x, y, z] positions"
+      "documentation": "[x, y, z] positions"
+    },
+    {
+      "name": "site_list",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "",
+      "queryable": 1,
+      "documentation": "site enumeration of site_locations (start from 1)"
     },
     {
       "name": "probe_model",
-      "type": "string",
+      "type": "char",
       "default_value": "",
+      "parameters": "",
       "queryable": 1,
       "documentation": "Model of the probe"
     },
     {
       "name": "manufacturer",
-      "type": "string",
+      "type": "char",
       "default_value": "",
+      "parameters": "",
       "queryable": 1,
       "documentation": "Manufacturer of the probe"
     },
@@ -31,7 +41,7 @@
       "name": "shank_id",
       "type": "matrix",
       "default_value": [],
-      "parameters": "int",
+      "parameters": "",
       "queryable": 1,
       "documentation": "Shank integer ID per contact"
     },
@@ -39,6 +49,7 @@
       "name": "contact_shape",
       "type": "char",
       "default_value": "",
+      "parameters": "",
       "queryable": 1,
       "documentation": "Comma-separated shape names"
     },
@@ -46,7 +57,7 @@
       "name": "contact_shape_width",
       "type": "matrix",
       "default_value": [],
-      "parameters": "double",
+      "parameters": "",
       "queryable": 0,
       "documentation": "Width per contact"
     },
@@ -54,7 +65,7 @@
       "name": "contact_shape_height",
       "type": "matrix",
       "default_value": [],
-      "parameters": "double",
+      "parameters": "",
       "queryable": 0,
       "documentation": "Height per contact"
     },
@@ -62,7 +73,7 @@
       "name": "contact_shape_radius",
       "type": "matrix",
       "default_value": [],
-      "parameters": "double",
+      "parameters": "",
       "queryable": 0,
       "documentation": "Radius per contact"
     },
@@ -70,13 +81,15 @@
       "name": "ndim",
       "type": "int",
       "default_value": 2,
+      "parameters": "",
       "queryable": 1,
       "documentation": "Number of spatial dimensions"
     },
     {
       "name": "unit",
-      "type": "string",
+      "type": "char",
       "default_value": "um",
+      "parameters": "",
       "queryable": 1,
       "documentation": "Spatial units"
     },
@@ -84,6 +97,7 @@
       "name": "has_planar_contour",
       "type": "boolean",
       "default_value": true,
+      "parameters": "",
       "queryable": 0,
       "documentation": "True if planar contour exists"
     },
@@ -91,7 +105,7 @@
       "name": "contour_x",
       "type": "matrix",
       "default_value": [],
-      "parameters": "double",
+      "parameters": "",
       "queryable": 0,
       "documentation": "X coordinates of body outline"
     },
@@ -99,7 +113,7 @@
       "name": "contour_y",
       "type": "matrix",
       "default_value": [],
-      "parameters": "double",
+      "parameters": "",
       "queryable": 0,
       "documentation": "Y coordinates of body outline"
     }

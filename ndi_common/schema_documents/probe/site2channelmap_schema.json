@@ -3,7 +3,7 @@
   "superclasses": ["base"],
   "depends_on": [
     { "name": "probe_id", "mustbenotempty": 1 }
-    { "name": "probe_geometry", "mustbenotempty": 1 }
+    { "name": "probe_geometry_id", "mustbenotempty": 1 }
   ],
   "site2channelmap": [
     {
