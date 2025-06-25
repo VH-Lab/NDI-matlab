@@ -70,6 +70,7 @@ for i = 1:numel(subjectDocs)
     % Initialize temporary structs to aggregate data for the current subject
     element = struct();     % For 'element' document types
     openMINDs = struct();   % For 'openminds_subject' document type
+    treatment = struct();   % For 'treatment' document type
 
     for j = 1:numel(dependentDocsSubject)
         docProp = dependentDocsSubject{j}.document_properties;
@@ -110,6 +111,46 @@ for i = 1:numel(subjectDocs)
                 % Append the element's name and type to our temporary struct
                 element.(dataType).name{end+1} = docProp.element.name;
                 element.(dataType).type{end+1} = docProp.element.type;
+
+            case 'treatment'
+                
+                % Get datatype and values
+                dataType = replace(docProp.treatment.name,' ','');
+                numericValue = docProp.treatment.numeric_value;
+                stringValue = docProp.treatment.string_value;
+
+                % If this is the first time we've seen this element type, initialize its field
+                if ~isfield(treatment, dataType)
+                    treatment.(dataType).name = {};
+                    treatment.(dataType).ontology = {};
+                    treatment.(dataType).value = {};
+                    treatment.(dataType).numericValue = {};
+                    treatment.(dataType).stringValue = {};
+                end
+
+                % Check if string value is an ontology node
+                if contains(stringValue,':')
+                    try
+                        [stringOntology,stringName] = ndi.ontology.lookup(stringValue);
+                    catch
+                        stringOntology = [];
+                        stringName = [];
+                    end
+                end
+
+                % Get values
+                if ~isempty(numericValue) & isempty(stringValue)
+                    treatment.(dataType).value{end+1} = numericValue;
+                end
+                if ~isempty(stringOntology)
+                    treatment.(dataType).name{end+1} = stringName;
+                    treatment.(dataType).ontology{end+1} = stringOntology;
+                elseif ~isempty(stringValue) & isempty(numericValue)
+                    treatment.(dataType).value{end+1} = stringValue;
+                elseif ~isempty(stringValue) & ~isempty(numericValue)
+                    treatment.(dataType).numericValue{end+1} = numericValue;
+                    treatment.(dataType).stringValue{end+1} = stringValue;
+                end
         end
     end
 
@@ -126,5 +167,44 @@ for i = 1:numel(subjectDocs)
         subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
         subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
     end
+
+    % Process the aggregated element data
+    elementTypes = fieldnames(element);
+    for k = 1:numel(elementTypes)
+        currentType = elementTypes{k};
+
+        % Get unique, non-empty values
+        names = element.(currentType).name(~cellfun('isempty', element.(currentType).name));
+        types = element.(currentType).type(~cellfun('isempty', element.(currentType).type));
+
+        % Create comma-separated strings and assign to the table.
+        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
+        subjectTable(i,[currentType,'Type']) = {strjoin(unique(types), ', ')};
+    end
+
+    % Process the aggregated treatment data
+    treatmentTypes = fieldnames(treatment);
+    for k = 1:numel(treatmentTypes)
+        currentType = treatmentTypes{k};
+
+        % Get unique, non-empty values
+        names = treatment.(currentType).name(~cellfun('isempty', treatment.(currentType).name));
+        ontologys = treatment.(currentType).ontology(~cellfun('isempty', treatment.(currentType).ontology));
+        values = treatment.(currentType).value(~cellfun('isempty', treatment.(currentType).value));
+        numericValues = treatment.(currentType).numericValue(~cellfun('isempty', treatment.(currentType).numericValue));
+        stringValues = treatment.(currentType).stringValue(~cellfun('isempty', treatment.(currentType).stringValue));
+        
+        % Create comma-separated strings and assign to the table.
+        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
+        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
+        subjectTable(i,currentType) = {strjoin(unique(values), ', ')};
+        subjectTable(i,[currentType,'Number']) = {strjoin(unique(numericValues), ', ')};
+        subjectTable(i,[currentType,'String']) = {strjoin(unique(stringValues), ', ')};
+    end
 end
+
+% Remove empty columns
+indEmpty = cellfun(@(t) isempty(t),subjectTable.Variables);
+subjectTable(:,all(indEmpty)) = [];
+
 end
