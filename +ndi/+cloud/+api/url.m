@@ -14,9 +14,22 @@ function url = url(endpointName, options)
         options.page_size (1,1) double = 20
     end
     options = processOptions(options);
-    
-    apiBaseUrl = "https://dev-api.ndi-cloud.com/v1";
 
+    apiEnvironment = getenv('CLOUD_API_ENVIRONMENT');
+    if isempty(apiEnvironment)
+        apiEnvironment = 'prod';
+    end
+
+    switch apiEnvironment
+        case 'prod'
+            apiBaseUrl = "https://api.ndi-cloud.com/v1";
+        case 'dev'
+            apiBaseUrl = "https://dev-api.ndi-cloud.com/v1";
+        otherwise
+            error('NDICloud:GetURL:UnknownApiEnvironment', ...
+                ['Expected value for cloud api environment to be `prod` ', ...
+                'or `dev`, but got %s instead.'], apiEnvironment)
+    end
     persistent endpointMap
     if isempty(endpointMap)
         try

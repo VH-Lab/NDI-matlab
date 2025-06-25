@@ -6,6 +6,9 @@ function upload_document_collection(datasetId, documentList)
 %    from the provided document list, retrieves a bulk upload URL for the 
 %    dataset, and then uploads the ZIP file to the cloud.
 %
+%  IF the environment variable 'NDI_CLOUD_UPLOAD_NO_ZIP' exists and is true
+%    then the documents are uploaded one at a time via a slower process.
+%
 % INPUTS:
 %    datasetId    - (1,1) string
 %                   Unique identifier for the dataset to which the documents 
@@ -38,8 +41,23 @@ function upload_document_collection(datasetId, documentList)
         end
     end
 
-    [zipFilePath, fileCleanupObj] = ...
-        ndi.cloud.upload.internal.zip_documents_for_upload(documentList); %#ok<ASGLU>
-    uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(datasetId);
-    ndi.cloud.api.files.put_files(uploadUrl, zipFilePath);
+    ndiCloudUploadNoZipEnvironment = getenv('NDI_CLOUD_UPLOAD_NO_ZIP');
+    if isempty(ndiCloudUploadNoZipEnvironment)
+       ndiCloudUploadNoZipEnvironment = "false";
+    end
+
+    if strcmp(ndiCloudUploadNoZipEnvironment,'true')
+        app = ndi.gui.component.ProgressBarWindow('NDI tasks');
+        uuid = did.ido.unique_id();
+        app.addBar('Label','Uploading documents','tag',uuid,'Auto',true);
+        for i=1:numel(documentList)
+            r=ndi.cloud.api.documents.add_document(datasetId,jsonencodenan(documentList{i}));
+            app.updateBar(uuid,i/numel(documentList));
+        end
+    else % follow standard procedures
+        [zipFilePath, fileCleanupObj] = ...
+            ndi.cloud.upload.internal.zip_documents_for_upload(documentList); %#ok<ASGLU>
+        uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(datasetId);
+        ndi.cloud.api.files.put_files(uploadUrl, zipFilePath);
+    end
 end
