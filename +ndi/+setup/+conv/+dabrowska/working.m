@@ -310,3 +310,27 @@ dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
 
 docsFPS = tdm.table2ontologyTableRowDocs(dataTable_FPS,...
     {'Subject_ID','Trial_Num','Sheet_Name'},'Overwrite',false);
+
+%% Compiling a table of the file paths
+
+exportTable = cell2table(variableTable.Properties.RowNames,'VariableNames',{'filePath'});
+[filePath,fileName] = fileparts(exportTable.filePath);
+exportTable{:,{'subjectName','cellID'}} = {''};
+
+for i = 1:numel(fileName)
+    probeMapFileName = [filePath{i},filesep,fileName{i},'.epochprobemap.txt'];
+    try
+        probeMap = readtable(probeMapFileName, 'Delimiter', '\t', 'PreserveVariableNames', true);
+        exportTable.subjectName(i) = probeMap.subjectstring(1);
+        exportTable.cellID(i) = {probeMap.name{1}(end)};
+    end
+end
+
+[~,~,cellNum] = unique(exportTable(:,{'subjectName','cellID'}),'rows','stable');
+cellNum = cellNum - 1; cellNum(cellNum == 0) = NaN;
+exportTable.cellNum = cellNum;
+exportTable = movevars(exportTable,'filePath','After','cellNum');
+exportTable = movevars(exportTable,'cellNum','Before','subjectName');
+
+exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250625.xls');
+writetable(exportTable,exportPath);
