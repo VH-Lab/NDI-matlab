@@ -18,8 +18,9 @@
     }
   ],
   "probe_geometry": {
-    "site_locations": [],
-    "site_list": [],
+    "site_locations_leftright": [],
+    "site_locations_frontback": [],
+    "site_locations_depth": [],
     "shank_id": [],
     "contact_shape": "",
     "contact_shape_width": [],
@@ -29,7 +30,7 @@
     "manufacturer": "",
     "ndim": 2,
     "unit": "um",
-    "has_planar_contour": true,
+    "has_planar_contour": 1,
     "contour_x": [],
     "contour_y": []
   }

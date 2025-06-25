@@ -10,7 +10,7 @@
       "name": "map",
       "type": "matrix",
       "default_value": [],
-      "parameters": "int",
+      "parameters": [1,NaN],
       "queryable": 0,
       "documentation": "List of channel indices; i-th element corresponds to site i from probe_geometry"
     }

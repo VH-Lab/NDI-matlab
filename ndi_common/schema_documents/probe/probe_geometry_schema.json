@@ -6,34 +6,40 @@
 	],
   "probe_geometry": [
     {
-      "name": "site_locations",
+      "name": "site_locations_leftright",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 1,
-      "documentation": "[x, y, z] positions"
+      "documentation": "Left (negative)/ right (positive) site positions from facing the electrode"
     },
     {
-      "name": "site_list",
+      "name": "site_locations_frontback",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 1,
-      "documentation": "site enumeration of site_locations (start from 1)"
+      "documentation": "Front (negative)/ back (positive) site positions from facing the electrode"
+    },
+    {
+      "name": "site_locations_depth",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": [NaN,1],
+      "queryable": 1,
+      "documentation": "Depth of site positions"
     },
     {
       "name": "probe_model",
-      "type": "char",
+      "type": "string",
       "default_value": "",
-      "parameters": "",
       "queryable": 1,
       "documentation": "Model of the probe"
     },
     {
       "name": "manufacturer",
-      "type": "char",
+      "type": "string",
       "default_value": "",
-      "parameters": "",
       "queryable": 1,
       "documentation": "Manufacturer of the probe"
     },
@@ -41,7 +47,7 @@
       "name": "shank_id",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 1,
       "documentation": "Shank integer ID per contact"
     },
@@ -49,15 +55,15 @@
       "name": "contact_shape",
       "type": "char",
       "default_value": "",
-      "parameters": "",
       "queryable": 1,
+      "parameters": NaN,
       "documentation": "Comma-separated shape names"
     },
     {
       "name": "contact_shape_width",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 0,
       "documentation": "Width per contact"
     },
@@ -65,7 +71,7 @@
       "name": "contact_shape_height",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 0,
       "documentation": "Height per contact"
     },
@@ -73,15 +79,15 @@
       "name": "contact_shape_radius",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 0,
       "documentation": "Radius per contact"
     },
     {
       "name": "ndim",
-      "type": "int",
+      "type": "integer",
       "default_value": 2,
-      "parameters": "",
+      "parameters": [1,null,0],
       "queryable": 1,
       "documentation": "Number of spatial dimensions"
     },
@@ -89,15 +95,15 @@
       "name": "unit",
       "type": "char",
       "default_value": "um",
-      "parameters": "",
+      "parameters": 2,
       "queryable": 1,
       "documentation": "Spatial units"
     },
     {
       "name": "has_planar_contour",
-      "type": "boolean",
-      "default_value": true,
-      "parameters": "",
+      "type": "integer",
+      "default_value": 1,
+      "parameters": [0,1,0],
       "queryable": 0,
       "documentation": "True if planar contour exists"
     },
@@ -105,15 +111,14 @@
       "name": "contour_x",
       "type": "matrix",
       "default_value": [],
-      "parameters": "",
+      "parameters": [NaN,1],
       "queryable": 0,
       "documentation": "X coordinates of body outline"
     },
     {
       "name": "contour_y",
       "type": "matrix",
-      "default_value": [],
-      "parameters": "",
+      "default_value": [],"parameters": [NaN,1],
       "queryable": 0,
       "documentation": "Y coordinates of body outline"
     }
