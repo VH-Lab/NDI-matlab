@@ -1,7 +1,7 @@
-function [stimulusTable] = stimulusDocTable(session)
-%STIMULUSDOCTABLE Creates a summary table of stimulus epochs and their associated metadata.
+function [epochTable] = epochDocTable(session)
+%EPOCHDOCTABLE Creates a summary table of epochs and their associated metadata.
 %
-%   stimulusTable = stimulusDocTable(SESSION)
+%   epochTable = epochDocTable(SESSION)
 %
 %   This function queries an NDI session to find all stimulator probes and their
 %   corresponding epochs. For each epoch, it extracts timing information (local
@@ -19,7 +19,7 @@ function [stimulusTable] = stimulusDocTable(session)
 %       SESSION - An active and connected ndi.session object.
 %
 %   Outputs:
-%       stimulusTable - A MATLAB table where each row is a stimulus epoch and
+%       epochTable - A MATLAB table where each row is a stimulus epoch and
 %                       columns are dynamically generated based on the data found.
 %                       Common columns include:
 %                       - 'epoch_number': The epoch number within the stimulator.
@@ -58,10 +58,6 @@ stimulusBathDocs = session.database_search(queryStimulusBath);
 queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
 stimulusApproachDocs = session.database_search(queryStimulusApproach);
 
-% Find all stimulus approach documents
-queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
-stimulusApproachDocs = session.database_search(queryStimulusApproach);
-
 % Loop through each stimulator
 for i = 1:numel(stimulators)
 
@@ -88,15 +84,15 @@ for i = 1:numel(stimulators)
 end
 
 % Concatenate stimulus table
-stimulusTable = ndi.fun.table.vstack(stimulusArray);
+epochTable = ndi.fun.table.vstack(stimulusArray);
 
 % Add stimulus bath and approach document info
 epochid_SB = cellfun(@(sb) sb.document_properties.epochid.epochid,stimulusBathDocs,'UniformOutput',false);
 epochid_SA = cellfun(@(sb) sb.document_properties.epochid.epochid,stimulusApproachDocs,'UniformOutput',false);
-for i = 1:height(stimulusTable)
+for i = 1:height(epochTable)
 
     % Find corresponding stimulus bath docs
-    ind = find(strcmpi(epochid_SB,stimulusTable.epoch_id(i)));
+    ind = find(strcmpi(epochid_SB,epochTable.epoch_id(i)));
     
     if ~isempty(ind)
         % Get mixtures from all corresponding stimulus bath docs
@@ -109,15 +105,15 @@ for i = 1:height(stimulusTable)
         mixtures = unique(mixtures,'stable');
 
         % Add mixture to epoch table
-        stimulusTable.mixtureName(i) = join(mixtures.name,',');
-        stimulusTable.mixtureOntology(i) = join(mixtures.ontologyName,',');
+        epochTable.mixtureName(i) = join(mixtures.name,',');
+        epochTable.mixtureOntology(i) = join(mixtures.ontologyName,',');
     end
 
-    % Find corresponding stimulus bath docs
-    ind = find(strcmpi(epochid_SA,stimulusTable.epoch_id(i)));
+    % Find corresponding stimulus approach docs
+    ind = find(strcmpi(epochid_SA,epochTable.epoch_id(i)));
     
     if ~isempty(ind)
-        % Get mixtures from all corresponding stimulus bath docs
+        % Get approaches from all corresponding stimulus approach docs
         approaches = table();
         for j = 1:numel(ind)
             openminds = struct2table(stimulusApproachDocs{ind(j)}.document_properties.openminds.fields,'AsArray',true);
@@ -125,9 +121,9 @@ for i = 1:height(stimulusTable)
         end
         approaches = unique(approaches,'stable');
 
-        % Add mixture to epoch table
-        stimulusTable.approachName(i) = join(approaches.name,',');
-        stimulusTable.approachOntology(i) = join(approaches.preferredOntologyIdentifier,',');
+        % Add approach to epoch table
+        epochTable.approachName(i) = join(approaches.name,',');
+        epochTable.approachOntology(i) = join(approaches.preferredOntologyIdentifier,',');
     end
 end
 

@@ -164,8 +164,8 @@ for i = 1:numel(subjectDocs)
         ontologys = openMINDs.(currentType).ontology(~cellfun('isempty', openMINDs.(currentType).ontology));
 
         % Create comma-separated strings and assign to the table.
-        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
-        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
+        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
+        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys,'stable'), ', ')};
     end
 
     % Process the aggregated element data
@@ -178,8 +178,8 @@ for i = 1:numel(subjectDocs)
         types = element.(currentType).type(~cellfun('isempty', element.(currentType).type));
 
         % Create comma-separated strings and assign to the table.
-        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
-        subjectTable(i,[currentType,'Type']) = {strjoin(unique(types), ', ')};
+        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
+        subjectTable(i,[currentType,'Type']) = {strjoin(unique(types,'stable'), ', ')};
     end
 
     % Process the aggregated treatment data
@@ -195,11 +195,11 @@ for i = 1:numel(subjectDocs)
         stringValues = treatment.(currentType).stringValue(~cellfun('isempty', treatment.(currentType).stringValue));
         
         % Create comma-separated strings and assign to the table.
-        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names), ', ')};
-        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys), ', ')};
-        subjectTable(i,currentType) = {strjoin(unique(values), ', ')};
-        subjectTable(i,[currentType,'Number']) = {strjoin(unique(numericValues), ', ')};
-        subjectTable(i,[currentType,'String']) = {strjoin(unique(stringValues), ', ')};
+        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
+        subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys,'stable'), ', ')};
+        subjectTable(i,currentType) = {strjoin(unique(values,'stable'), ', ')};
+        subjectTable(i,[currentType,'Number']) = {strjoin(unique(numericValues,'stable'), ', ')};
+        subjectTable(i,[currentType,'String']) = {strjoin(unique(stringValues,'stable'), ', ')};
     end
 end
 
