@@ -1,0 +1,18 @@
+{
+  "classname": "site2channelmap",
+  "superclasses": ["base"],
+  "depends_on": [
+    { "name": "probe_id", "mustbenotempty": 1 }
+    { "name": "probe_geometry", "mustbenotempty": 1 }
+  ],
+  "site2channelmap": [
+    {
+      "name": "map",
+      "type": "matrix",
+      "default_value": [],
+      "parameters": "int",
+      "queryable": 0,
+      "documentation": "List of channel indices; i-th element corresponds to site i from probe_geometry"
+    }
+  ]
+}
