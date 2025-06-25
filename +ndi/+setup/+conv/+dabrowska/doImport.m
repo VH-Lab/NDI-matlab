@@ -20,7 +20,7 @@ arguments
     options.Overwrite (1,1) logical = false
 end
 
-% Create progress bar
+%% Create progress bar
 ndi.gui.component.ProgressBarWindow('Import Dataset');
 
 % Get data path
@@ -86,15 +86,26 @@ common_vars = intersect(variableTable_ephys.Properties.VariableNames,...
 variableTable = variableTable_ephys(:,common_vars);
 variableTable(opto_rows,:) = variableTable_opto(opto_rows,common_vars);
 
+% Fix cell type string
+cellTypeInd = ndi.fun.table.identifyValidRows(variableTable,'CellType');
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'_',' '),...
+    variableTable.CellType(cellTypeInd),'UniformOutput',false);
+variableTable.CellType(~cellTypeInd) = {''};
+
+% Create opto postfix
+variableTable.OptoPostfix(:) = {''};
+variableTable.OptoPostfix(opto_rows) = cellfun(@(p) ['_',p],...
+    variableTable.ProbeLocationString(opto_rows), 'UniformOutput', false);
+
 % Add additional metadata
 variableTable{:,'SessionRef'} = {'Dabrowska_Electrophysiology'};
 variableTable{:,'SessionPath'} = {'Dabrowska'};
 variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
-variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 variableTable{:,'BiologicalSex'} = {'male'};
-variableTable{:,'SubjectPostfix'} = arrayfun(@(si) ...
-    ['_',num2str(si),'@dabrowska-lab.rosalindfranklin.edu'],...
-    subjectTable_behavior.Animal,'UniformOutput',false);
+variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
+variableTable{:,'SubjectPostfix'} = cellfun(@(celltype,opto) ...
+    ['_BNST',celltype(6:end),opto,'@dabrowska-lab.rosalindfranklin.edu'],...
+    variableTable.CellType,variableTable.OptoPostfix,'UniformOutput',false);
 
 %% Step 2: SESSIONS. Now that we have the file manifest, build sessions.
 
@@ -140,8 +151,10 @@ recordingDates = cellstr(char(recordingDates,'yyMMdd'));
 sliceLabel = variableTable.SliceLabel(indEpoch);
 sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
 variableTable.ProbePostfix = cell(height(variableTable),1);
-variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
-    recordingDates,sliceLabel,'UniformOutput',false);
+variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,celltype,opto,sl) ...
+    ['_',rd,'_BNST',celltype(6:end),opto,'_',sl],...
+    recordingDates,variableTable.CellType(indEpoch),...
+    variableTable.OptoPostfix(indEpoch),sliceLabel,'UniformOutput',false);
 
 % Create epoch probe maps
 ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
@@ -226,7 +239,7 @@ for i = 1:numel(probes)
                 'slow voltage ramp mediated by the K+ delayed current (ID). ' ...
                 '[Source: https://doi.org/10.1016/j.celrep.2025.115768]']);
     end
-    if ~all(isnan(typeString)) % skip if type not specified
+    if contains(typeString,'Type') % skip if type not specified
         cellTypeDocs(i) = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
             sessionArray{1}.id,'element',probes{i}.id);
     else

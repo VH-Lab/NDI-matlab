@@ -68,7 +68,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "((?i)Type (III|II|I))",
+    "StringFormat": "((?i)Type[ _](III|II|I))",
     "FunctionName": ""
   },
   {
