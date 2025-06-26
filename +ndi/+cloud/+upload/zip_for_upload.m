@@ -37,7 +37,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
         end
         file_count = file_count + 1;
         file_path = fullfile(dir, doc_file_struct(i).uid);
-        if exist(file_path, 'file') == 2
+        if isfile(file_path)
             if cur_size + doc_file_struct(i).bytes > size_limit
                 files_to_zip{end+1} = file_path;
                 zip_file = [ndi.file.temp_name() '.zip'];
@@ -55,7 +55,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
                 [response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
                 [response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
 
-                if exist(zip_file, 'file')
+                if isfile(zip_file)
                     delete(zip_file);
                 end
                 % reset the size
@@ -83,7 +83,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
         end
         [response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
         [response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
-        if exist(zip_file, 'file')
+        if isfile(zip_file)
             delete(zip_file);
         end
     end
