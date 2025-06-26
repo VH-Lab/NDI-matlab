@@ -32,6 +32,7 @@ function response = update_dataset(dataset_id, dataset)
         % Request succeeded
         response = response.Body.Data;
     else
+        response.Body,
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
 end

@@ -587,6 +587,52 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "dataExclusionFlag" xsd:string
 
 [Term]
+id: EMPTY:00000166
+name: Cell Type
+namespace: empty_ontology
+def: "A fundamental structural and functional unit of all known organisms. It is the smallest unit of life that can replicate independently, and is often called the 'building block of life'." []
+property_value: codeName "cellType" xsd:string
+
+[Term]
+id: EMPTY:00000167
+name: Neuron
+namespace: empty_ontology
+def: "An electrically excitable cell that transmits information through electrical and chemical signals. Neurons are the basic building blocks of the nervous system." []
+is_a: EMPTY:00000166 ! Cell Type
+property_value: codeName "neuron" xsd:string
+
+[Term]
+id: EMPTY:00000168
+name: Anatomical Location
+namespace: empty_ontology
+def: "A specific place or region within a biological organism or structure." []
+property_value: codeName "anatomicalLocation" xsd:string
+
+[Term]
+id: EMPTY:00000169
+name: Type I BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) that fires regularly, displays moderate spike frequency adaptation, and exhibits a voltage sag indicating the presence of the hyperpolarization-activated cation current (Ih). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+is_a: EMPTY:00000167 ! Neuron
+property_value: codeName "BNSTNeuronTypeI" xsd:string
+
+[Term]
+id: EMPTY:00000170
+name: Type III BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) characterized by a high rheobase, absence of voltage sag under negative current steps, prominent inward rectification due to the activation of the inward rectifying K+ current (IKIR) at membrane potentials more negative than approximately -50 mV, and firing onset after a characteristic slow voltage ramp mediated by the K+ delayed current (ID). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+is_a: EMPTY:00000167 ! Neuron
+property_value: codeName "BNSTNeuronTypeIII" xsd:string
+
+[Term]
+id: EMPTY:00000171
+name: Optogenetic Tetanus Stimulation Target Location
+namespace: empty_ontology
+def: "The specific anatomical region where tetanic light stimulation (TLS) is applied in optogenetic experiments to evoke neuronal activity. The value should be defined by the ONTOLOGY_NAME:ONTOLOGY_NODE (e.g. 'UBERON:0000123')." []
+is_a: EMPTY:00000168 ! Anatomical Location
+property_value: codeName "optogeneticTetanusStimulationTargetLocation" xsd:string
+
+[Term]
 id: EMPTY:30000000
 name: Approach
 namespace: empty_ontology

@@ -114,7 +114,7 @@ classdef epochProbeMapMaker < handle
             end
 
             % Get valid epoch rows
-            validInd = find(ndi.util.identifyValidRows(variableTable,options.NonNaNVariableNames));
+            validInd = find(ndi.fun.table.identifyValidRows(variableTable,options.NonNaNVariableNames));
             if isempty(validInd)
                 warning('epochProbeMapMaker:NoValidEpochs', ...
                     'No valid epochs found in variableTable after NaN checks. No epochprobemaps will be created.');

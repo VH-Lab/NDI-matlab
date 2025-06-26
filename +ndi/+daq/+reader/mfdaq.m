@@ -784,6 +784,7 @@ classdef mfdaq < ndi.daq.reader
                             S1 = 1+ (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 
                             s_starts = [S0:sample_analog_segment:S1];
+                            compressClass = ndi.compress.datatypestring(underlying_format);
                             for s=1:numel(s_starts)
                                 mylog.msg('system',1,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
@@ -793,7 +794,7 @@ classdef mfdaq < ndi.daq.reader
                                 data = ndi.compress.scaled2underlying(data, mypoly);
                                 output_bit_size = datasize;
                                 filename_here = ndi.file.temp_name();
-                                [ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here,'data_is_unsigned','u'==lower(underlying_format(1)));
+                                [ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here,'data_format',compressClass,'data_is_unsigned','u'==lower(underlying_format(1)));
                                 d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
                                     [filename_here '.nbf.tgz']);
                                 filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
