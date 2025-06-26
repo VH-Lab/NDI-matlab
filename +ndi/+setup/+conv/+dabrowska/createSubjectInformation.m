@@ -102,11 +102,11 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
         case 'IsWildType'
             prefix = 'sd_rat_WT_';
         case 'IsCRFCre' 
-            prefix = 'sdwi_rat_CRFCre_';
+            prefix = 'wi_rat_CRFCre_';
         case 'IsOTRCre' 
-            prefix = 'sdwi_rat_OTRCre_';
+            prefix = 'sd_rat_OTRCre_';
         case 'IsAVPCre' 
-            prefix = 'sdwi_rat_AVPCre_';
+            prefix = 'sd_rat_AVPCre_';
         otherwise 
              error('ndi:createSubjectInformation:InternalGenotypeError', 'Unexpected valid genotype identified.');
     end
@@ -179,33 +179,32 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 
     try
         wt_strain_type = "wildtype"; 
-        ki_strain_type = "knockin"; 
-
+        ki_strain_type = "knockin";
+        
+        st_sd = openminds.core.research.Strain('name', "SD", 'species', sp, ...
+            'ontologyIdentifier', "RRID:RGD_70508", 'geneticStrainType', wt_strain_type);
+        st_wi = openminds.core.research.Strain('name', "WI", 'species', sp, ...
+            'ontologyIdentifier', "RRID:RGD_13508588", 'geneticStrainType', wt_strain_type);
         switch validGenotypeName
             case 'IsWildType'
-                 st_sd = openminds.core.research.Strain;
-                 st_sd.name = "SD";
-                 st_sd.species = sp;
-                 st_sd.ontologyIdentifier = "RRID:RGD_70508";
-                 st_sd.geneticStrainType = wt_strain_type;
                  strain = st_sd;
-            case {'IsCRFCre', 'IsOTRCre', 'IsAVPCre'} 
-                 st_sd = openminds.core.research.Strain('name', "SD", 'species', sp, ...
-                     'ontologyIdentifier', "RRID:RGD_70508", 'geneticStrainType', wt_strain_type);
-                 st_wi = openminds.core.research.Strain('name', "WI", 'species', sp, ...
-                     'ontologyIdentifier', "RRID:RGD_13508588", 'geneticStrainType', wt_strain_type);
+            case {'IsOTRCre', 'IsAVPCre'}
                  st_trans = openminds.core.research.Strain;
-                 st_trans.species = sp;
-                 st_trans.backgroundStrain = [st_sd st_wi];
-                 st_trans.geneticStrainType = ki_strain_type;
-
-                 if strcmp(validGenotypeName, 'IsCRFCre') 
-                     st_trans.name = 'CRF-Cre';
-                 elseif strcmp(validGenotypeName, 'IsOTRCre') 
+                 if strcmp(validGenotypeName, 'IsOTRCre') 
                      st_trans.name = 'OTR-IRES-Cre';
                  elseif strcmp(validGenotypeName, 'IsAVPCre') 
                      st_trans.name = 'AVP-Cre';
                  end
+                 st_trans.species = sp;
+                 st_trans.backgroundStrain = st_sd;
+                 st_trans.geneticStrainType = ki_strain_type;
+                 strain = st_trans;
+            case 'IsCRFCre'
+                 st_trans = openminds.core.research.Strain;
+                 st_trans.name = 'CRF-Cre';
+                 st_trans.species = sp;
+                 st_trans.backgroundStrain = st_wi;
+                 st_trans.geneticStrainType = ki_strain_type;
                  strain = st_trans;
         end 
     catch ME_StrainCreate

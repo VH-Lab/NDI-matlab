@@ -8,12 +8,12 @@ classdef SyncOptions < matlab.mixin.SetGet
 %   functions in order to provide a reusable set of sync options.
 %
 %   Available options:
-%     SyncFiles (logical) - If true, files will be synced (default: true).
+%     SyncFiles (logical) - If true, files will be synced (default: false).
 %     Verbose (logical) - If true, verbose output is printed (default: true).
 %     DryRun (logical) - If true, actions are simulated but not performed (default: false).
 
     properties
-        SyncFiles (1,1) logical = true  % Whether to sync file portion (binary data) of documents
+        SyncFiles (1,1) logical = false  % Whether to sync file portion (binary data) of documents
         Verbose (1,1) logical = true    % Whether to print verbose output
         DryRun (1,1) logical = false    % Simulate actions without executing
     end

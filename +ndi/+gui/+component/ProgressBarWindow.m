@@ -355,7 +355,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % Handle error occuring if removeBar is triggered while updateBar is still running
             catch ME
                 if strcmp(ME.identifier,'MATLAB:class:InvalidHandle')
-                    error('Execution of task %s terminated by user.',...
+                    warning('Execution of task %s terminated by user.',...
                         app.ProgressBars(barNum).Tag)
                 else
                     rethrow(ME)
