@@ -1,0 +1,37 @@
+{
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH\/probe\/probe_geometry.json",
+    "validation": "$NDISCHEMAPATH\/probe\/probe_geometry_schema.json",
+    "class_name": "probe_geometry",
+    "property_list_name": "probe_geometry",
+    "class_version": 1,
+    "superclasses": [
+      {
+        "definition": "$NDIDOCUMENTPATH\/base.json"
+      }
+    ]
+    
+  },
+  "depends_on": [
+    {           "name": "probe_id", 
+                "value": "" 
+    }
+  ],
+  "probe_geometry": {
+    "site_locations_leftright": [],
+    "site_locations_frontback": [],
+    "site_locations_depth": [],
+    "shank_id": [],
+    "contact_shape": "",
+    "contact_shape_width": [],
+    "contact_shape_height": [],
+    "contact_shape_radius": [],
+    "probe_model": "",
+    "manufacturer": "",
+    "ndim": 2,
+    "unit": "um",
+    "has_planar_contour": 1,
+    "contour_x": [],
+    "contour_y": []
+  }
+}
