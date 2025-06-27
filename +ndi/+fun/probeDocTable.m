@@ -1,55 +1,54 @@
 function [probeTable] = probeDocTable(session)
-%STIMULUSDOCTABLE Creates a summary table of stimulus epochs and their associated metadata.
+%PROBEDOCTABLE Creates a summary table of probe documents and their associated metadata.
 %
-%   stimulusTable = stimulusDocTable(SESSION)
+%   probeTable = probeDocTable(SESSION)
 %
-%   This function queries an NDI session to find all stimulator probes and their
-%   corresponding epochs. For each epoch, it extracts timing information (local
-%   and global timestamps). It then associates each epoch with relevant
-%   'stimulus_bath' and 'openminds_stimulus' documents based on their epoch IDs,
-%   aggregating properties such as mixture names, mixture ontologies, approach
-%   names, and approach ontologies into a single summary table.
+%   This function queries an NDI session to find all 'probe' documents. For each
+%   probe, it extracts core properties such as its ID, name, type, and
+%   reference. It then associates each probe with relevant 'probe_location' and
+%   'openminds_element' (representing cell types) documents based on their
+%   dependencies, aggregating properties such as location names, location
+%   ontologies, cell type names, and cell type ontologies into a single summary
+%   table.
 %
-%   Each row in the output table represents a single stimulus epoch, and the
-%   columns contain epoch identifiers, subject ID, timing information, and
-%   comma-separated lists of unique properties from associated stimulus bath
-%   and approach documents.
+%   Each row in the output table represents a single probe document, and the
+%   columns contain probe identifiers, subject ID, and comma-separated lists of
+%   unique properties from associated probe location and cell type documents.
 %
 %   Inputs:
-%       SESSION - An active and connected ndi.session object.
+%       SESSION - An active and connected ndi.session or ndi.dataset object.
 %
 %   Outputs:
-%       stimulusTable - A MATLAB table where each row is a stimulus epoch and
-%                       columns are dynamically generated based on the data found.
-%                       Common columns include:
-%                       - 'epoch_number': The epoch number within the stimulator.
-%                       - 'epoch_id': The unique identifier for the epoch.
-%                       - 'subject_id': The ID of the subject associated with the stimulator.
-%                       - 'local_t0', 'local_t1': Start and end times in local clock units.
-%                       - 'global_t0', 'global_t1': Start and end times as datetime objects
-%                                                    in global time (if available).
-%                       - 'mixtureName': Comma-separated list of unique mixture names
-%                                        from associated stimulus_bath documents.
-%                       - 'mixtureOntology': Comma-separated list of unique mixture
-%                                            ontology names from associated stimulus_bath documents.
-%                       - 'approachName': Comma-separated list of unique approach names
-%                                         from associated openminds_stimulus documents.
-%                       - 'approachOntology': Comma-separated list of unique approach
-%                                             ontology identifiers from associated openminds_stimulus documents.
+%       probeTable - A MATLAB table where each row is a probe and columns are
+%                    dynamically generated based on the data found.
+%                    Common columns include:
+%                    - 'subject_id': The ID of the subject associated with the probe.
+%                    - 'probe_id': The unique identifier for the probe.
+%                    - 'probe_name': The name of the probe.
+%                    - 'probe_type': The type of the probe.
+%                    - 'probe_reference': The reference identifier for the probe.
+%                    - 'probeLocationName': Comma-separated list of unique probe
+%                                           location names from associated
+%                                           'probe_location' documents.
+%                    - 'probeLocationOntology': Comma-separated list of unique
+%                                               probe location ontology names
+%                                               from associated 'probe_location' documents.
+%                    - 'cellTypeName': Comma-separated list of unique cell type
+%                                      names from associated 'openminds_element' documents.
+%                    - 'cellTypeOntology': Comma-separated list of unique cell
+%                                          type ontology identifiers from
+%                                          associated 'openminds_element' documents.
 %
-%   See also: ndi.session, ndi.query, table, struct2table, ndi.fun.table.vstack
+%   See also: ndi.session, ndi.query, ndi.fun.table.vstack
 
 % Input argument validation
 arguments
-    session {mustBeA(session,{'ndi.session.dir'})}
+    session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
 end
 
-% Find all probes
-probes = session.getprobes;
-probeType = cellfun(@(p) p.type,probes,'UniformOutput',false);
-probeSubjectID = cellfun(@(p) p.subject_id,probes,'UniformOutput',false);
-probeID = cellfun(@(p) p.identifier,probes,'UniformOutput',false);
-stimulators = probes(strcmpi(probeType,'stimulator'));
+% Get all probe documents in the session
+query = ndi.query('element.ndi_element_class','contains_string','probe');
+probeDocs = session.database_search(query);
 
 % Initialize table
 probeTable = table();
@@ -67,21 +66,22 @@ probeID_cellType = cellfun(@(ctd) dependency_value(ctd,'element_id'),...
     cellTypeDocs,'UniformOutput',false);
 
 % Loop through each stimulator
-for i = 1:numel(stimulators)
+for i = 1:numel(probeDocs)
 
-    % Get stimulator and its epochtable
-    stimulator = stimulators{i};
-    subject_id = stimulator.subject_id;
+    % Get probe and subject id
+    probe = probeDocs{i};
+    probeTable.subject_id{i} = dependency_value(probe,'subject_id');
+    probeTable.probe_id{i} = probe.id;
+    probeTable.probe_name{i} = probe.document_properties.element.name;
+    probeTable.probe_type{i} = probe.document_properties.element.type;
+    probeTable.probe_reference{i} = probe.document_properties.element.reference;
 
-    % Find probes with matching subject
-    probeInd = strcmpi(probeSubjectID,stimulator.subject_id); % this is WRONG; probes could have different cells same subject how to deal with?
-
-    % Initialize temporary structs to aggregate data for the current subject
+    % Initialize temporary structs to aggregate data for the current probe
     probeLocation = struct();   % For 'probe_location' document type
     cellType = struct();        % For 'openminds_element' document type
 
-    % Find probe location documents corresponding to this subject
-    [~,ind] = intersect(probeID_probeLocation,probeID(probeInd));
+    % Find probe location documents corresponding to this probe
+    [~,ind] = intersect(probeID_probeLocation,probe.id);
     for k = 1:numel(ind)
 
         % Initialize the fields
@@ -95,8 +95,8 @@ for i = 1:numel(stimulators)
         probeLocation.ontology{end+1} = probeLocationDocs{ind(k)}.document_properties.probe_location.ontology_name;
     end
 
-    % Find cell type documents corresponding to this subject
-    [~,ind] = intersect(probeID_cellType,probeID(probeInd));
+    % Find cell type documents corresponding to this probe
+    [~,ind] = intersect(probeID_cellType,probe.id);
     for k = 1:numel(ind)
 
         % Initialize the fields
@@ -111,18 +111,30 @@ for i = 1:numel(stimulators)
     end
 
     % Process the aggregated probeLocation data
-    names = probeLocation.name(~cellfun('isempty', probeLocation.name));
-    ontologys = probeLocation.ontology(~cellfun('isempty', probeLocation.ontology));
-    probeTable(i,'probeLocationName') = {strjoin(unique(names,'stable'), ', ')};
-    probeTable(i,'probeLocationOntology') = {strjoin(unique(ontologys,'stable'), ', ')};
+    if isfield(probeLocation,'name')
+        names = probeLocation.name(~cellfun('isempty', probeLocation.name));
+        ontologys = probeLocation.ontology(~cellfun('isempty', probeLocation.ontology));
+        probeTable(i,'probeLocationName') = {strjoin(unique(names,'stable'), ', ')};
+        probeTable(i,'probeLocationOntology') = {strjoin(unique(ontologys,'stable'), ', ')};
+    else
+        probeTable(i,'probeLocationName') = {''};
+        probeTable(i,'probeLocationOntology') = {''};
+    end
 
     % Process the aggregated cellType data
-    names = cellType.name(~cellfun('isempty', cellType.name));
-    ontologys = cellType.ontology(~cellfun('isempty', cellType.ontology));
-
-    % Create comma-separated strings and assign to the table.
-    probeTable(i,'cellTypeName') = {strjoin(unique(names,'stable'), ', ')};
-    probeTable(i,'cellTypeOntology') = {strjoin(unique(ontologys,'stable'), ', ')};
+    if isfield(cellType,'name')
+        names = cellType.name(~cellfun('isempty', cellType.name));
+        ontologys = cellType.ontology(~cellfun('isempty', cellType.ontology));
+        probeTable(i,'cellTypeName') = {strjoin(unique(names,'stable'), ', ')};
+        probeTable(i,'cellTypeOntology') = {strjoin(unique(ontologys,'stable'), ', ')};
+    else
+        probeTable(i,'cellTypeName') = {''};
+        probeTable(i,'cellTypeOntology') = {''};
+    end
 end
+
+% Remove empty columns
+indEmpty = cellfun(@(t) isempty(t),probeTable.Variables);
+probeTable(:,all(indEmpty)) = [];
 
 end
