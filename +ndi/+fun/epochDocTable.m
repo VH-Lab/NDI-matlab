@@ -37,18 +37,18 @@ function [epochTable] = epochDocTable(session)
 %                       - 'approachOntology': Comma-separated list of unique approach
 %                                             ontology identifiers from associated openminds_stimulus documents.
 %
-%   See also: ndi.session, ndi.query, table, struct2table, ndi.fun.table.vstack
+%   See also: ndi.session, ndi.query, ndi.fun.table.vstack
 
 % Input argument validation
 arguments
     session {mustBeA(session,{'ndi.session.dir'})}
 end
 
-% Find all stimulator probes
-stimulators = session.getprobes('type','stimulator');
+% Find all probes
+probes = session.getprobes;
 
 % Initialize table
-stimulusArray = cell(numel(stimulators),1);
+probeArray = cell(numel(probes),1);
 
 % Find all stimulus bath documents
 queryStimulusBath = ndi.query('','isa','stimulus_bath');
@@ -59,32 +59,35 @@ queryStimulusApproach = ndi.query('','isa','openminds_stimulus');
 stimulusApproachDocs = session.database_search(queryStimulusApproach);
 
 % Loop through each stimulator
-for i = 1:numel(stimulators)
+for i = 1:numel(probes)
 
     % Get stimulator and its epochtable
-    stimulator = stimulators{i};
-    epochtable = struct2table(stimulator.epochtable);
+    probe = probes{i};
+    epochtable = struct2table(probe.epochtable);
 
-    % Add epoch info to epochTable
-    stimulusArray{i} = epochtable(:,{'epoch_number','epoch_id'});
-    stimulusArray{i}.subject_id(:) = {stimulator.subject_id};
+    % Add epoch info to probeArray
+    probeArray{i} = table;
+    probeArray{i}.epoch_number = num2cell(epochtable.epoch_number);
+    probeArray{i}.epoch_id = epochtable.epoch_id;
+    probeArray{i}.probe_id(:) = {probe.identifier};
+    probeArray{i}.subject_id(:) = {probe.subject_id};
     for k = 1:height(epochtable)
         ecs = cellfun(@(c) c.type,epochtable.epoch_clock(k,:),'UniformOutput',false);
         clock_local_ind = find(contains(ecs,'dev_local_time'));
         clock_global_ind = find(cellfun(@(c) ndi.time.clocktype.isGlobal(c),epochtable.epoch_clock(k,:)));
-        stimulusArray{i}.local_t0(k) = epochtable.t0_t1{k,clock_local_ind}(1);
-        stimulusArray{i}.local_t1(k) = epochtable.t0_t1{k,clock_local_ind}(2);
+        probeArray{i}.local_t0{k} = epochtable.t0_t1{k,clock_local_ind}(1);
+        probeArray{i}.local_t1{k} = epochtable.t0_t1{k,clock_local_ind}(2);
         if ~isempty(clock_global_ind)
-            stimulusArray{i}.global_t0(k) = datetime(epochtable.t0_t1{k,clock_global_ind}(1),...
+            probeArray{i}.global_t0{k} = datetime(epochtable.t0_t1{k,clock_global_ind}(1),...
                 'convertFrom','datenum');
-            stimulusArray{i}.global_t1(k) = datetime(epochtable.t0_t1{k,clock_global_ind}(2),...
+            probeArray{i}.global_t1{k} = datetime(epochtable.t0_t1{k,clock_global_ind}(2),...
                 'convertFrom','datenum');
         end
     end
 end
 
 % Concatenate stimulus table
-epochTable = ndi.fun.table.vstack(stimulusArray);
+epochTable = ndi.fun.table.vstack(probeArray);
 
 % Add stimulus bath and approach document info
 epochid_SB = cellfun(@(sb) sb.document_properties.epochid.epochid,stimulusBathDocs,'UniformOutput',false);
@@ -126,5 +129,12 @@ for i = 1:height(epochTable)
         epochTable.approachOntology(i) = join(approaches.preferredOntologyIdentifier,',');
     end
 end
+
+% Remove empty columns and convert empty double to string to match column datatype
+indEmpty = cellfun(@(t) isempty(t),epochTable.Variables);
+stringColumn = arrayfun(@(c) ischar([epochTable{~indEmpty(:,c),c}{:}]), 1:width(epochTable));
+[rowConvert,colConvert] = find(indEmpty.*stringColumn);
+epochTable(rowConvert,colConvert) = {''};
+epochTable(:,all(indEmpty)) = [];
 
 end

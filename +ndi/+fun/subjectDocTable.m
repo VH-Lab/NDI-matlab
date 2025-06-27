@@ -64,11 +64,11 @@ for i = 1:numel(subjectDocs)
     dependentDocsSubject = dependentDocs(dependentDocsInd);
     
     % Get subject's local and document id
-    subjectTable.documentID(i) = {subjectDocs{i}.document_properties.base.id};
-    subjectTable.localID(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
+    subjectTable.subject_id(i) = {subjectDocs{i}.document_properties.base.id};
+    subjectTable.subject_name(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
 
     % Initialize temporary structs to aggregate data for the current subject
-    element = struct();     % For 'element' document types
+    % element = struct();     % For 'element' document types
     openMINDs = struct();   % For 'openminds_subject' document type
     treatment = struct();   % For 'treatment' document type
 
@@ -97,20 +97,20 @@ for i = 1:numel(subjectDocs)
                 openMINDs.(dataType).name{end+1} = docProp.openminds.fields.name;
                 openMINDs.(dataType).ontology{end+1} = docProp.openminds.fields.(ontologyField);     
 
-            case 'element'
-                
-                % Extract the specific element type (e.g., 'mfdaq') from the full class name
-                dataType = regexp(docProp.element.ndi_element_class, '[^.]*$', 'match', 'once');
-
-                % If this is the first time we've seen this element type, initialize its field
-                if ~isfield(element, dataType)
-                    element.(dataType).name = {};
-                    element.(dataType).type = {};
-                end
-                
-                % Append the element's name and type to our temporary struct
-                element.(dataType).name{end+1} = docProp.element.name;
-                element.(dataType).type{end+1} = docProp.element.type;
+            % case 'element'
+            % 
+            %     % Extract the specific element type (e.g., 'mfdaq') from the full class name
+            %     dataType = regexp(docProp.element.ndi_element_class, '[^.]*$', 'match', 'once');
+            % 
+            %     % If this is the first time we've seen this element type, initialize its field
+            %     if ~isfield(element, dataType)
+            %         element.(dataType).name = {};
+            %         element.(dataType).type = {};
+            %     end
+            % 
+            %     % Append the element's name and type to our temporary struct
+            %     element.(dataType).name{end+1} = docProp.element.name;
+            %     element.(dataType).type{end+1} = docProp.element.type;
 
             case 'treatment'
                 
@@ -169,18 +169,18 @@ for i = 1:numel(subjectDocs)
     end
 
     % Process the aggregated element data
-    elementTypes = fieldnames(element);
-    for k = 1:numel(elementTypes)
-        currentType = elementTypes{k};
-
-        % Get unique, non-empty values
-        names = element.(currentType).name(~cellfun('isempty', element.(currentType).name));
-        types = element.(currentType).type(~cellfun('isempty', element.(currentType).type));
-
-        % Create comma-separated strings and assign to the table.
-        subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
-        subjectTable(i,[currentType,'Type']) = {strjoin(unique(types,'stable'), ', ')};
-    end
+    % elementTypes = fieldnames(element);
+    % for k = 1:numel(elementTypes)
+    %     currentType = elementTypes{k};
+    % 
+    %     % Get unique, non-empty values
+    %     names = element.(currentType).name(~cellfun('isempty', element.(currentType).name));
+    %     types = element.(currentType).type(~cellfun('isempty', element.(currentType).type));
+    % 
+    %     % Create comma-separated strings and assign to the table.
+    %     subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
+    %     subjectTable(i,[currentType,'Type']) = {strjoin(unique(types,'stable'), ', ')};
+    % end
 
     % Process the aggregated treatment data
     treatmentTypes = fieldnames(treatment);
@@ -203,8 +203,11 @@ for i = 1:numel(subjectDocs)
     end
 end
 
-% Remove empty columns
+% Remove empty columns and convert empty double to string to match column datatype
 indEmpty = cellfun(@(t) isempty(t),subjectTable.Variables);
+stringColumn = arrayfun(@(c) ischar([subjectTable{~indEmpty(:,c),c}{:}]), 1:width(subjectTable));
+[rowConvert,colConvert] = find(indEmpty.*stringColumn);
+subjectTable(rowConvert,colConvert) = {''};
 subjectTable(:,all(indEmpty)) = [];
 
 end
