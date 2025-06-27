@@ -46,7 +46,7 @@
   "Center_LatencyToFirstEntry": "EMPTY:Elevated Plus Maze: center - latency to first entry",
   "Center_TimeMovingTowards": "EMPTY:Elevated Plus Maze: center - time moving towards",
   "Center_TimeFreezing": "EMPTY:Elevated Plus Maze: center - time freezing",
-  "Trial_Num": "EMPTY:Fear-Potentiated Startle: trial number",
+  "Trial_Num": "EMPTY:Experimental trial number",
   "Trial_ID": "EMPTY:Fear-Potentiated Startle: trial type identifier",
   "Channel_ID": "EMPTY:Fear-Potentiated Startle: apparatus chamber identifier",
   "Group_ID": "EMPTY:Experimental group code",
