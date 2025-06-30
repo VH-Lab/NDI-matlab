@@ -10,7 +10,7 @@ function response = reset_password(email)
     % Outputs:
     %   RESPONSE - the response summary
     %
-    
+
     auth_token = ndi.cloud.uilogin();
     json = struct('email', email);
 
