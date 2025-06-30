@@ -14,11 +14,11 @@ function [response, name, email, organizations] = get_user(user_id, auth_token)
     %   ORGANIZATIONS - a json object representing the organization information
 
     % Construct the curl command with the organization ID and authentication token
-
+    
     uri = ndi.cloud.api.url('get_user');
     url = uri.EncodedURI;
-
     url = sprintf([url '/%s'], char(user_id));
+    
     cmd = sprintf("curl -X 'GET' '%s' " + ...
         "-H 'accept: application/json' " + ...
         "-H 'Authorization: Bearer %s' ", url, auth_token);

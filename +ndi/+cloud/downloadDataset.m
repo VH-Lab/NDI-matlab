@@ -21,9 +21,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
         targetFolder (1,1) string = missing
         syncOptions.?ndi.cloud.sync.SyncOptions
     end
-    
-    import ndi.cloud.sync.enum.SyncMode
-       
+        
     syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
 
     if syncOptions.DryRun
