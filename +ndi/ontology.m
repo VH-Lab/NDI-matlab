@@ -174,7 +174,7 @@ methods (Static)
         catch ME_lookup
             baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
                 'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
-            baseME = addCause(baseME, ME_lookup_4);
+            baseME = addCause(baseME, ME_lookup);
             throw(baseME);
         end
 
