@@ -6,13 +6,11 @@ function result = add_document(dataset_id, json_document)
         json_document (1,1) string
     end
 
-    API_BASE_URL = "https://api.ndi-cloud.com/v1/";
     auth_token = ndi.cloud.uilogin();
-
-    endpoint_path = sprintf("datasets/%s/documents", dataset_id);
-    api_url = API_BASE_URL + endpoint_path;
-
     opts = weboptions('HeaderFields', ["Authorization", sprintf("Bearer %s", auth_token)]);
+
+    uri = ndi.cloud.api.url('add_document','dataset_id',dataset_id);
+    api_url = uri.EncodedURI;
 
     result = webwrite(api_url, json_document, opts);
 end

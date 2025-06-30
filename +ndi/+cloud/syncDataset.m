@@ -51,6 +51,10 @@ function syncDataset(ndiDataset, syncOptions)
 %       'DryRun' (1,1) logical - If true, synchronization actions are
 %           simulated (logged if Verbose is true) but not actually executed.
 %           Default is false (as per SyncOptions class).
+%       'FileUploadStrategy' (1,1) (string) - "serial" to upload files one by one or
+%           "batch" (default) to upload a bundles of files using zip files. 
+%           The "batch" option is recommended when uploading many files,
+%           and the serial option can be used as a fallback if batch upload fails.
 %
 %   The function determines the cloud dataset identifier associated with the
 %   local NDI dataset and relies on the individual sync mode functions to manage

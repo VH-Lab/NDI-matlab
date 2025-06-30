@@ -1,4 +1,4 @@
-function cloudDatasetId = uploadDataset(ndiDataset, options)
+function cloudDatasetId = uploadDataset(ndiDataset, syncOptions)
     % UPLOADDATASET - upload a dataset to NDI cloud
     %
     % DATASETID = ndi.cloud.UPLOADDATASET(ndiDataset)
@@ -12,7 +12,7 @@ function cloudDatasetId = uploadDataset(ndiDataset, options)
 
     arguments
         ndiDataset (1,1) ndi.dataset
-        options.Verbose (1,1) logical = true
+        syncOptions.?ndi.cloud.sync.SyncOptions
     end
 
     % Step 1: Create the dataset record on NDI Cloud and insert the metadata
@@ -31,11 +31,13 @@ function cloudDatasetId = uploadDataset(ndiDataset, options)
     ndiDataset.database_add(remoteDatasetDoc)
 
     % Step 2: Upload documents
-    if options.Verbose, disp('Uploading dataset documents...'); end
+    if syncOptions.Verbose, disp('Uploading dataset documents...'); end
     dataset_documents = ndiDataset.database_search( ndi.query('','isa','base') );
     ndi.cloud.upload.upload_document_collection(cloudDatasetId, dataset_documents)
 
     % Step 3: Upload files
     ndi.cloud.sync.internal.upload_files_for_dataset_documents( ...
-        cloudDatasetId, ndiDataset, dataset_documents, "Verbose", options.Verbose)
+        cloudDatasetId, ndiDataset, dataset_documents, ...
+        "Verbose", syncOptions.Verbose, ...
+        "FileUploadStrategy", syncOptions.FileUploadStrategy)
 end
