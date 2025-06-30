@@ -577,7 +577,6 @@ def: "In the Elevated Plus Maze task, this is the time of the total test duratio
 is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
 property_value: codeName "elevatedPlusMazeTestDuration" xsd:string
 
-
 [Term]
 id: EMPTY:00000165
 name: Data exclusion flag
@@ -585,6 +584,36 @@ namespace: empty_ontology
 def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to due to predefined quality control issues or experimental failure." []
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "dataExclusionFlag" xsd:string
+
+[Term]
+id: EMPTY:00000166
+name: Investigator-defined cell type
+def: "A cell type proposed by an investigator on the basis of electrophysiological or anatomical criteria." []
+is_a: EMPTY:00000001 ! empty
+property_value: codeName "investigatorDefinedCellType" xsd:string
+
+[Term]
+id: EMPTY:00000167
+name: Type I BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) that fires regularly, displays moderate spike frequency adaptation, and exhibits a voltage sag indicating the presence of the hyperpolarization-activated cation current (Ih). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+is_a: EMPTY:00000166 ! Investigator-defined cell type
+property_value: codeName "BNSTNeuronTypeI" xsd:string
+
+[Term]
+id: EMPTY:00000168
+name: Type III BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) characterized by a high rheobase, absence of voltage sag under negative current steps, prominent inward rectification due to the activation of the inward rectifying K+ current (IKIR) at membrane potentials more negative than approximately -50 mV, and firing onset after a characteristic slow voltage ramp mediated by the K+ delayed current (ID). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+is_a: EMPTY:00000166 ! Investigator-defined cell type
+property_value: codeName "BNSTNeuronTypeIII" xsd:string
+
+[Term]
+id: EMPTY:00000169
+name: Optogenetic Tetanus Stimulation Target Location
+namespace: empty_ontology
+def: "The specific anatomical region where tetanic light stimulation (TLS) is applied in optogenetic experiments to evoke neuronal activity. The value should be defined by the ONTOLOGY_NAME:ONTOLOGY_NODE (e.g. 'UBERON:0000123')." []
+property_value: codeName "optogeneticTetanusStimulationTargetLocation" xsd:string
 
 [Term]
 id: EMPTY:30000000

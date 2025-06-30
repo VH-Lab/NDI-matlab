@@ -1,16 +1,18 @@
  function sessionArray = doImport(dataParentDir,options)
 % Section A: Import electrophysiology dataset
-%   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
-%   Step 2: SESSIONS. Now that we have the file manifest, build sessions
+%   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
+%   Step 2: SESSIONS. Now that we have the file manifest, build sessions.
 %   Step 3: SUBJECTS. Build subject documents.
 %   Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
-%   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
+%   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
+%   Step 6: CELL TYPES. Add openMinds celltypes and probe location documents.
+%   Step 7: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
 %
 % Section B: Import behavioral dataset
-%   Step 6: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
-%   Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
-%   Step 8: SUBJECTS. Build subject documents.
-%   Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%   Step 8: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%   Step 9: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%   Step 10: SUBJECTS. Build subject documents.
+%   Step 11: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Input argument validation
 arguments
@@ -18,7 +20,7 @@ arguments
     options.Overwrite (1,1) logical = false
 end
 
-% Create progress bar
+%% Create progress bar
 ndi.gui.component.ProgressBarWindow('Import Dataset');
 
 % Get data path
@@ -27,7 +29,7 @@ dataPath = fullfile(dataParentDir,'Dabrowska');
 % Deal with bad paths
 badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
 if isfolder(badFolder)
-    disp(['Removing extra space in known folder ' badFolder])
+    disp(['Removing extra space chacter in known folder ' badFolder])
     movefile(badFolder,replace(badFolder,'  ',' '));
 end
 
@@ -48,7 +50,7 @@ if ~isempty(badFileInd)
     end
 end
 
-%% Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
+%% Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
 
 [dirList,isDir] = vlt.file.manifest(dataPath);
 fileList = dirList(~isDir);
@@ -67,9 +69,9 @@ j = jsondecode(fileread(jsonPath));
 variableTable_opto = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
 
 % Deal with OTA and TLS
-indEpoch = ndi.util.identifyValidRows(variableTable_opto,'BathConditionString');
+indEpoch = ndi.fun.table.identifyValidRows(variableTable_opto,'BathConditionString');
 variableTable_opto.BathConditionString(indEpoch) = replace(variableTable_opto.BathConditionString(indEpoch),'TLS','Post');
-OTAInd = find(ndi.util.identifyValidRows(variableTable_opto,'OTA') & indEpoch);
+OTAInd = find(ndi.fun.table.identifyValidRows(variableTable_opto,'OTA') & indEpoch);
 for i = 1:numel(OTAInd)
     bcs = variableTable_opto.BathConditionString{OTAInd(i)};
     if ~contains(bcs,'OTA')
@@ -84,14 +86,28 @@ common_vars = intersect(variableTable_ephys.Properties.VariableNames,...
 variableTable = variableTable_ephys(:,common_vars);
 variableTable(opto_rows,:) = variableTable_opto(opto_rows,common_vars);
 
+% Fix cell type string
+cellTypeInd = ndi.fun.table.identifyValidRows(variableTable,'CellType');
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'_',' '),...
+    variableTable.CellType(cellTypeInd),'UniformOutput',false);
+variableTable.CellType(~cellTypeInd) = {''};
+
+% Create opto postfix
+variableTable.OptoPostfix(:) = {''};
+variableTable.OptoPostfix(opto_rows) = cellfun(@(p) ['_',p],...
+    variableTable.ProbeLocationString(opto_rows), 'UniformOutput', false);
+
 % Add additional metadata
 variableTable{:,'SessionRef'} = {'Dabrowska_Electrophysiology'};
 variableTable{:,'SessionPath'} = {'Dabrowska'};
 variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
-variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 variableTable{:,'BiologicalSex'} = {'male'};
+variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
+variableTable{:,'SubjectPostfix'} = cellfun(@(celltype,opto) ...
+    ['_BNST',celltype(6:end),opto,'@dabrowska-lab.rosalindfranklin.edu'],...
+    variableTable.CellType,variableTable.OptoPostfix,'UniformOutput',false);
 
-%% Step 2: SESSIONS. Now that we have the file manifest, build sessions
+%% Step 2: SESSIONS. Now that we have the file manifest, build sessions.
 
 % Employ the sessionMaker
 mySessionPath = dataParentDir;
@@ -105,13 +121,16 @@ SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 
 %% Step 3: SUBJECTS. Build subject documents.
 
+% query = ndi.query('','isa','subject');
+% subjects = sessionArray{1}.database_search(query);
+% sessionArray{1}.database_rm(subjects);
 subM = ndi.setup.NDIMaker.subjectMaker();
 [subjectInfo_ephys,variableTable.SubjectString] = ...
     subM.getSubjectInfoFromTable(variableTable,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
 % We have no need to delete any previously made subjects because we remade all the sessions
 % but if we did we could use the subM.deleteSubjectDocs method
-subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
+% subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo_ephys);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
@@ -125,15 +144,17 @@ deviceString = {'dabrowska_mat:ai1';'dabrowska_mat:ai1';'dabrowska_mat:ao1'};
 probeTable = table(name,reference,type,deviceString);
 
 % Create probePostfix
-indEpoch = ndi.util.identifyValidRows(variableTable,'IsExpMatFile');
+indEpoch = ndi.fun.table.identifyValidRows(variableTable,'IsExpMatFile');
 recordingDates = datetime(variableTable.RecordingDate(indEpoch),...
     'InputFormat','MMM dd yyyy');
 recordingDates = cellstr(char(recordingDates,'yyMMdd'));
 sliceLabel = variableTable.SliceLabel(indEpoch);
 sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
 variableTable.ProbePostfix = cell(height(variableTable),1);
-variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
-    recordingDates,sliceLabel,'UniformOutput',false);
+variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,celltype,opto,sl) ...
+    ['_',rd,'_BNST',celltype(6:end),opto,'_',sl],...
+    recordingDates,variableTable.CellType(indEpoch),...
+    variableTable.OptoPostfix(indEpoch),sliceLabel,'UniformOutput',false);
 
 % Create epoch probe maps
 ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
@@ -141,7 +162,7 @@ ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
     'NonNaNVariableNames','IsExpMatFile',...
     'ProbePostfix','ProbePostfix');
 
-%% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents
+%% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
 
 sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
     'GetProbes',true);
@@ -160,8 +181,8 @@ sd.table2bathDocs(variableTable,...
     'Overwrite',options.Overwrite);
 
 % Define approachName
-indTLS = ndi.util.identifyValidRows(variableTable,'TLS');
-indApproach = find(indTLS & indEpoch);
+% indTLS = ndi.fun.table.identifyValidRows(variableTable,'TLS'); % some paths missing TLS
+indApproach = find(opto_rows & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
 indPost = cellfun(@(bcs) contains(bcs,'Post'),variableTable.BathConditionString(indApproach));
 variableTable.ApproachName = cell(height(variableTable),1);
@@ -173,7 +194,95 @@ sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',options.Overwrite);
 
-%% Step 6: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%% Step 6: CELL TYPES. Add openMinds celltypes and probe location documents.
+
+% Get subjects
+query = ndi.query('','isa','subject');
+subjects = sessionArray{1}.database_search(query);
+subjectID = cellfun(@(s) s.id, subjects, 'UniformOutput', false);
+subjectLocalID = cellfun(@(s) s.document_properties.subject.local_identifier, subjects, 'UniformOutput', false); 
+
+% Get patch-Vm and patch-I probes
+query = ndi.query('element.type','contains_string','patch');
+probes = sessionArray{1}.database_search(query);
+subjectID_probes = cellfun(@(p) p.dependency_value('subject_id'),probes,'UniformOutput',false);
+
+% Intialize cell arrays to hold docs
+cellTypeDocs = cell(numel(subjects),1);
+probeLocationDocs = cell(numel(subjects),1);
+for i = 1:numel(probes)
+
+    % Create openMinds cell type doc
+    subjectInd = strcmpi(subjectID,subjectID_probes{i});
+    variableTableInd = strcmpi(variableTable.SubjectString,subjectLocalID{subjectInd});
+    typeString = variableTable.CellType{variableTableInd};
+    if contains(typeString,'Type') % skip if type not specified
+        [ontologyID,name,~,description,~] = ndi.ontology.lookup(['EMPTY:',typeString,' BNST neuron']);
+        celltype = openminds.controlledterms.CellType('name',name,...
+                'preferredOntologyIdentifier',ontologyID,'description',description);
+        cellTypeDocs(i) = ndi.database.fun.openMINDSobj2ndi_document(celltype,...
+            sessionArray{1}.id,'element',probes{i}.id);
+    else
+        cellTypeDocs{i} = 'remove';
+    end
+
+    % Create probe location doc
+    probe_location = struct('ontology_name','UBERON:0001880',...
+        'name','bed nucleus of stria terminalis (BNST)');
+    probeLocationDocs{i} = ndi.document('probe_location',...
+        'probe_location', probe_location) + sessionArray{1}.newdocument();
+    probeLocationDocs{i} = probeLocationDocs{i}.set_dependency_value(...
+        'probe_id', probes{i}.id);
+end
+
+% Remove cellTypeDoc indices with no document
+cellTypeDocs(strcmpi(cellTypeDocs,'remove')) = [];
+
+% Add documents to database
+sessionArray{1}.database_add(cellTypeDocs);
+sessionArray{1}.database_add(probeLocationDocs);
+
+%% Step 7: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
+
+% Indices of optogenetic subjects
+subjectLocalID_opto = unique(variableTable.SubjectString(opto_rows));
+[~,subjectInd_opto] = intersect(subjectLocalID,subjectLocalID_opto);
+
+% Location key
+anatomy = containers.Map({'PVN','SCN','SON'},...
+    {'UBERON:0001930','UBERON:0002034','UBERON:0001929'});
+
+% Intialize cell array to hold docs
+treatmentDocs = cell(numel(subDocStruct),1);
+
+for i = 1:numel(subjectInd_opto)
+
+    % Get subject id
+    subject_id = subjectID{subjectInd_opto(i)};
+
+    % Get indices of variableTable matching that subject
+    variableTableInd = ndi.fun.table.identifyMatchingRows(variableTable,'SubjectString',...
+        subjectLocalID{subjectInd_opto(i)});
+
+    % Get optogenetic location
+    optoLocation = unique(variableTable.ProbeLocationString(variableTableInd));
+
+    % Create treatment document
+    ontologyID = ndi.ontology.lookup('EMPTY:Optogenetic Tetanus Stimulation Target Location');
+    treatment = struct('ontologyName',ontologyID,...
+        'name','Optogenetic Tetanus Stimulation Target Location',...
+        'numeric_value',[],...
+        'string_value',anatomy(optoLocation{:}));
+    treatmentDocs{i} = ndi.document('treatment',...
+        'treatment', treatment) + sessionArray{1}.newdocument();
+    treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
+        'subject_id', subject_id);
+end
+
+% Add documents to database
+sessionArray{1}.database_add(treatmentDocs);
+
+%% Step 8: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
 
 % Get combined EPM data table
 filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
@@ -187,7 +296,7 @@ for i = 1:numel(sheetnames_EPM)
         'VariableNamingRule','modify');
 
     % Remove rows where Animal value is NaN
-    sheetTable = sheetTable(ndi.util.identifyValidRows(sheetTable,'Animal'),:);
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Animal'),:);
 
     % Remove unused columns
     varNames = sheetTable.Properties.VariableNames;
@@ -224,7 +333,7 @@ dataTable_EPM.Experiment_ID(dataTable_EPM.Animal >= 300) = 2;
 dataTable_EPM.Exclude(:) = false;
 dataTable_EPM.Exclude(dataTable_EPM.Animal == 239 | dataTable_EPM.Animal == 258) = true;
 
-%% Step 7: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%% Step 9: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
 
 % Get combined FPS data table
 filename_FPS = 'FPS_OTR-Cre+_Saline vs CNO_DREADDs-Gi_Experiment 1-final.xlsx';
@@ -240,7 +349,7 @@ for i = 1:numel(sheetnames_FPS)
         'VariableNamingRule','modify');
 
     % Remove rows where SubjectID value is ''
-    sheetTable = sheetTable(ndi.util.identifyValidRows(sheetTable,'Trial_Num'),:);
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Trial_Num'),:);
 
     % Edit varname that does not contain sheetname
     sheetTable.Sheet_Name = repmat(sheetnames_FPS(i),height(sheetTable),1);
@@ -262,7 +371,7 @@ dataTable_FPS.Group_ID = cellfun(@(s) str2double(s(6)),dataTable_FPS.Session_ID)
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
     'TimeStampPT'}) = [];
 
-%% Step 8: SUBJECTS. Build subject documents.
+%% Step 10: SUBJECTS. Build subject documents.
 
 % Create subject table
 subjectTable_behavior = dataTable_EPM(:,'Animal');
@@ -284,7 +393,6 @@ subjectTable_behavior{:,'SubjectPostfix'} = arrayfun(@(si) ...
 [subjectInfo_behavior,subjectTable_behavior.SubjectString] = ...
     subM.getSubjectInfoFromTable(subjectTable_behavior,...
     @ndi.setup.conv.dabrowska.createSubjectInformation);
-subM.deleteSubjectDocs(sessionArray,subjectInfo_behavior.subjectName);
 subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
 subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
@@ -293,7 +401,7 @@ dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectStr
 dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),...
     'LeftKeys','Subject_ID','RightKeys','Animal');
 
-%% Step 9: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%% Step 11: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Check dictionary/ontology for new variables
 

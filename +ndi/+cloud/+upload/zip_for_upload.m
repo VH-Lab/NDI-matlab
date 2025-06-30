@@ -23,7 +23,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
     h = waitbar(0, 'Uploading Files...');
     files_left = sum(~[doc_file_struct.is_uploaded]);
     % set the maximum size of the zip file to be 5GB
-    size_limit = 5e9;
+    size_limit = 1e8;
     cur_size = 0;
     files_to_zip = {};
     dir = [D.path filesep '.ndi' filesep 'files' filesep];
@@ -52,8 +52,8 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
                     waitbar(file_count/files_left, h, sprintf('Uploading file %d of %d. Size %.2f GB out of %.2f GB...', file_count, files_left, uploaded_size, total_size));
                 catch
                 end
-                [response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
-                [response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
+                [response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id)
+                [response] = ndi.cloud.api.files.put_files(upload_url, zip_file)
 
                 if isfile(zip_file)
                     delete(zip_file);

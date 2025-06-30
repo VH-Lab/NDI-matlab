@@ -169,7 +169,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %                           |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
             %                           |   match those of NDI_FILENAVIGATOR_OBJ
 
-            all_epochs = ndi_filenavigator_obj.selectfilegroups();
+            [all_epochs,epochprobemaps] = ndi_filenavigator_obj.selectfilegroups();
 
             ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock');
             et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap',...
@@ -185,7 +185,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 et_here(1).underlying_epochs(1).epoch_clock = {ndi.time.clocktype('no_time')}; % filenavigator does not keep time
                 et_here(1).underlying_epochs(1).t0_t1 = {[NaN NaN]}; % filenavigator does not keep time
                 et_here(1).epoch_number = i;
-                et_here(1).epochprobemap = getepochprobemap(ndi_filenavigator_obj,i, all_epochs{i});
+                if ~isempty(epochprobemaps{i})
+                    et_here(1).epochprobemap = epochprobemaps{i};
+                else
+                    et_here(1).epochprobemap = getepochprobemap(ndi_filenavigator_obj,i, all_epochs{i});
+                end
                 et_here(1).epoch_clock = epochclock(ndi_filenavigator_obj,i);
                 et_here(1).t0_t1 = t0_t1(ndi_filenavigator_obj,i);
                 et_here(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
@@ -474,7 +478,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             epochfiles_disk = epochfiles_disk(incl);
         end
 
-        function [epochfiles] = selectfilegroups(ndi_filenavigator_obj)
+        function [epochfiles, epochprobemaps] = selectfilegroups(ndi_filenavigator_obj)
             % SELECTFILEGROUPS - Return groups of files that will comprise epochs
             %
             % EPOCHFILES = SELECTFILEGROUPS(NDI_FILENAVIGATOR_OBJ)
@@ -507,6 +511,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             if isempty(d_ingested) % nothing ingested,
                 epochfiles = epochfiles_disk;
+                epochprobemaps = cell(numel(epochfiles),1);
                 return;
             end
 
@@ -516,18 +521,20 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             for i=1:numel(epochfiles_disk)
                 epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk{i});
             end
-            epoch_id_ingested = {};
-            for i=1:numel(d_ingested)
-                epoch_id_ingested{i} = d_ingested{i}.document_properties.epochfiles_ingested.epoch_id;
-            end
+
+            epoch_id_ingested = cellfun(@(x) x.document_properties.epochfiles_ingested.epoch_id, d_ingested, 'UniformOutput', false);
 
             [c,ia] = unique(cat(1,epoch_id_ingested(:),epoch_id_disk(:)));
+
             epochfiles = {};
+            epochprobemaps = {};
             for i=1:numel(c)
                 if ia(i)<=numel(epoch_id_ingested)
                     epochfiles{i} = d_ingested{ia(i)}.document_properties.epochfiles_ingested.files;
+                    epochprobemaps{i} = feval(ndi_filenavigator_obj.epochprobemap_class, d_ingested{ia(i)}.document_properties.epochfiles_ingested.epochprobemap);
                 else
                     epochfiles{i} = epochfiles_disk{ia(i)-numel(epoch_id_ingested)};
+                    epochprobemaps{i} = [];
                 end
             end
 
