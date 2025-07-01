@@ -1,6 +1,7 @@
       - animalsubject : 'NDI-matlab/documents/animalsubject.md'
       - app : 'NDI-matlab/documents/app.md'
       - base : 'NDI-matlab/documents/base.md'
+      - dataset_remote : 'NDI-matlab/documents/dataset_remote.md'
       - dataset_session_info : 'NDI-matlab/documents/dataset_session_info.md'
       - demoNDI : 'NDI-matlab/documents/demoNDI.md'
       - element : 'NDI-matlab/documents/element.md'
@@ -47,6 +48,7 @@
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
         - ngrid : 'NDI-matlab/documents/data/ngrid.md'
+        - ontologyTableRow : 'NDI-matlab/documents/data/ontologyTableRow.md'
       - ingestion:
         - daqmetadatareader_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqmetadatareader_epochdata_ingested.md'
         - daqreader_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqreader_epochdata_ingested.md'
@@ -63,7 +65,9 @@
         - neuron_extracellular : 'NDI-matlab/documents/neuron/neuron_extracellular.md'
       - probe:
         - electrode_offset_voltage : 'NDI-matlab/documents/probe/electrode_offset_voltage.md'
+        - probe_geometry : 'NDI-matlab/documents/probe/probe_geometry.md'
         - probe_location : 'NDI-matlab/documents/probe/probe_location.md'
+        - site2channelmap : 'NDI-matlab/documents/probe/site2channelmap.md'
       - stimulus:
         - control_stimulus_ids : 'NDI-matlab/documents/stimulus/control_stimulus_ids.md'
         - stimulus_bath : 'NDI-matlab/documents/stimulus/stimulus_bath.md'
@@ -75,6 +79,7 @@
         - stimulus_response_scalar_parameters : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters.md'
         - stimulus_response_scalar_parameters_basic : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters_basic.md'
         - stimulus_tuningcurve : 'NDI-matlab/documents/stimulus/stimulus_tuningcurve.md'
+        - virus_injection : 'NDI-matlab/documents/stimulus/virus_injection.md'
         - vision:
           - oridir:
             - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
