@@ -1,3 +1,15 @@
+properties and measurements can be of the:
+- agar plate (peptone)
+- patches (volume, diameter, spacing, radii, coordinates, distribution)
+- bacteria (strain, OD600, growth)
+- arena (size, coordinates, mask, angle)
+	- reference mark (position, angle)
+- behavior video (frame rate, spatial resolution, total frames)
+- c. elegans (age, strain)
+
+cultivation conditions, behavioral assay conditions
+measurements, timestamps, durations, flags, identifiers, treatments, approaches, images
+
 name: Experiment video identifier
 def: "A unique numerical identifier for a specific video recording or an experimental setup."
 
@@ -20,28 +32,28 @@ name: C. elegans: strain genotype
 def: "Specific genetic identifier or detailed genotype of the C. elegans strain used, which may include allele names and chromosomal locations (e.g., 'osm-6(p811) V', 'mec-4(u253) X')."
 
 name: C. elegans: L4 timestamp
-def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment."
+def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment. Unit: datetime."
 
 name: C. elegans: age at assay
 def: "The developmental stage or age of the C. elegans subjects at the time of the behavioral assay, commonly specified (e.g., 'L4', '1-Day-Old Adult')."
 
 name: C. elegans: growth duration since L4
-def: "The total duration of C. elegans development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours."
+def: "The total duration of C. elegans development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours. Unit: duration."
 
 name: C. elegans Cultivation: bacterial plate seeding timestamp
-def: "The date and time when the bacterial lawn (e.g., OP50) was seeded onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment."
+def: "The date and time when a large bacterial food patch was seeded  onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment. Unit: datetime."
 
 name: C. elegans Cultivation: bacterial plate cold storage timestamp
-def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (e.g., 4C) to arrest or slow bacterial/worm development, if part of the protocol."
+def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (at approximately 4 degrees Celsisus) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime."
 
 name: C. elegans Cultivation: bacterial plate room temperature acclimation timestamp
-def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before selecting worms for an experiment."
+def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before picking worms onto them to avoid temperature affecting the animals. Unit: datetime."
 
 name: C. elegans Cultivation: bacteria growth duration after seeding
-def: "The total duration for which the bacterial lawn was allowed to grow on the C. elegans cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: hours or days."
+def: "The total duration for which the bacterial food patch was allowed to grow on the C. elegans cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: duration."
 
-name: C. elegans Cultivation: bacterial OD600 target
-def: "The target or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
+name: C. elegans Cultivation: bacterial OD600 (target) at seeding
+def: "The estimated or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
 
 name: C. elegans Behavioral Assay: experiment plate identifier
 def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a C. elegans experimental trial or a set of trials was conducted."
@@ -50,152 +62,148 @@ name: C. elegans Behavioral Assay: bacterial strain
 def: "The strain of bacteria used as the food source on the assay plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP)."
 
 name: C. elegans Behavioral Assay: bacterial OD600 measurement
-def: "The actual measured optical density at 600 nm (OD600) of the prepared bacterial solution before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless."
+def: "The measured optical density at 600 nm (OD600) of the prepared bacterial solution immediately before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless."
 
 name: C. elegans Behavioral Assay: bacterial colony forming units (CFU) measurement
 def: "The concentration of viable bacterial cells in the food source solution for C. elegans assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL."
 
-name: C. elegans Behavioral Assay: bacterial OD600 target
-def: "The target or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans assay plates. Different nominal OD600 values are used to create patches of varying initial densities. Unit: dimensionless."
+name: C. elegans Behavioral Assay: bacterial OD600 (target) at seeding
+def: "The estimated or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans assay plates. Unit: dimensionless."
 
 name: C. elegans Behavioral Assay: bacterial OD600 label
 def: "A string label used to categorize or identify the nominal OD600 condition of the food patches in a C. elegans experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions."
 
-name: C. elegans Behavioral Assay: bacterial distribution descriptor
-def: "A textual descriptor of the overall experimental setup or paradigm for a C. elegans experiment, such as the layout of food patches (e.g., 'grid', 'single patch') or other environmental manipulations."
+name: C. elegans Behavioral Assay: bacterial distribution label
+def: "A string label of the layout of food patches (i.e., 'grid', 'single') for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]"
+
+name: C. elegans Behavioral Assay: bacterial plate growth duration label
+def: "A string label (e.g. '1','12','48') indicating the approximate duration of bacterial growth at room temperature (in hours) for C. elegans assay plates."
 
 name: C. elegans Behavioral Assay: bacterial plate peptone flag
-def: "Indicates whether peptone was included in the Nematode Growth Medium (NGM) agar for the assay plates. Peptone presence can affect bacterial growth on assay patches. Typically 'with' or 'without'."
+def: "Textual flag (i.e. 'with' or 'without') indicating whether peptone was included in the Nematode Growth Medium (NGM) agar for the assay plates. Peptone presence supports bacterial growth."
 
 name: C. elegans Behavioral Assay: bacterial plate seeding timestamp
-def: "The date and time when bacterial food patches (e.g., OP50 E. coli) were pipetted onto the NGM assay plates for C. elegans experiments."
+def: "The date and time when bacterial food patch(s) were pipetted onto the NGM assay plates for C. elegans experiments. Unit: datetime."
 
 name: C. elegans Behavioral Assay: bacterial plate cold storage timestamp
-def: "The date and time when prepared assay plates (with bacterial patches for C. elegans) were transferred to cold storage (e.g., 4C) to control bacterial growth before the experiment."
+def: "The date and time when prepared C. elegans behavioral assay plates (with bacterial patches) were transferred to cold storage (at approximately 4 degrees Celsisus) to slow bacterial growth before the experiment. Unit: datetime."
 
 name: C. elegans Behavioral Assay: bacterial plate room temperature acclimation timestamp
-def: "The date and time when C. elegans assay plates were moved from cold storage to room temperature to allow them to acclimate before starting behavioral recordings."
+def: "The date and time when C. elegans assay plates were moved from cold storage to room temperature to allow them to acclimate before before picking worms onto them to avoid temperature affecting the animals. Unit: datetime."
 
-name: C. elegans Behavioral Assay: bacteria growth duration
-def: "The duration for which bacteria on C. elegans assay plate patches were allowed to grow at room temperature after seeding and before experimental use or cold storage. This is a controlled variable to achieve different patch densities. Unit: hours."
+name: C. elegans Behavioral Assay: bacteria growth duration after seeding
+def: "The total duration for which the bacteria food patch(s) on the C. elegans assay plate patches were allowed to grow at room temperature tarting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: duration."
 
-name: C. elegans Behavioral Assay: bacterial plate growth condition label
-def: "A descriptor for the specific growth time condition applied to bacterial patches on C. elegans assay plates after seeding, which contributes to the final patch density (e.g., hours of growth at a specific temperature)."
+name: C. elegans Behavioral Assay: bacterial patch volume
+def: "The volume of bacterial solution pipetted to create each individual food patch on the C. elegans assay plate. Note: Volumes under 1 µL are approximate due to the difficulty of pipetting liquids at this scale. Unit: microliters (µL)."
 
-name: C. elegans Behavioral Assay: bacterial plate patch volume
-def: "The volume of bacterial solution pipetted to create each individual food patch on the C. elegans assay plate. Unit: microliters (µL)."
+name: C. elegans Behavioral Assay: bacterial patch diameter (target)
+def: "The estimated diameter of the bacterial food patches created on the C. elegans assay plate. Unit: millimeters (mm)."
 
-name: C. elegans Behavioral Assay: bacterial plate patch target diameter
-def: "The intended or characteristic diameter of the bacterial food patches created on the C. elegans assay plate. Unit: millimeters (mm)."
+name: C. elegans Behavioral Assay: bacterial patch spacing (target)
+def: "The estimated center-to-center distance between adjacent bacterial food patches when arranged in a grid on the C. elegans assay plate. Unit: millimeters (mm)."
 
-name: C. elegans Behavioral Assay: bacterial plate patch target spacing
-def: "The intended center-to-center distance between adjacent bacterial food patches when arranged in a grid on the C. elegans assay plate. Unit: millimeters (mm)."
-
-name: Video recording filename
+name: C. elegans Behavioral Assay: behavior video filename
 def: "The filename of the digital video file containing the primary recording of C. elegans behavior during an assay."
 
-name: Lawn mask filename
-def: "The filename of the data file that stores the binary mask or location information for the bacterial food patches within the C. elegans assay arena. This is often generated from a separate image or image processing step."
+name: C. elegans Behavioral Assay: contrast video filename
+def: "The filename of the digital video file containing a recording of a piece of dark cardstock moving in between the light source and the assay plate. This produced an effect where diffraction of light through the patches provided enough contrast to visualize (and quantitatively locate) low density bacterial patches."
 
-name: Worm tracking data filename
-def: "The filename of the output data file generated by tracking software (e.g., WormLab), which contains the tracked coordinates and potentially other behavioral metrics of C. elegans subjects."
+name: C. elegans Behavioral Assay: WormLab coordinates filename
+def: "The filename of the output data file generated by the C. elegans tracking software WormLab (MBF Bioscience), which contains the tracked coordinates of one or more C. elegans subjects."
 
-name: Recording camera identifier
-def: "An identifier for the specific camera model or setup used to capture the video recording of the C. elegans behavioral assay."
+name: C. elegans Behavioral Assay: camera identifier
+def: "A numerical identifier for the camera used to capture the video recording of the C. elegans behavioral assay. Consecutive recordings on the same camera are likely to share properties related to the camera's field-of-view and illumination conditions."
 
-name: Video total frames
+name: C. elegans Behavioral Assay: behavior video frames
 def: "The total number of individual frames contained within the C. elegans behavioral video recording. Unit: count."
 
-name: Video frame rate
-def: "The rate at which frames were captured and recorded in the C. elegans behavioral video, typically measured in frames per second (fps). Unit: frames per second (fps)."
+name: C. elegans Behavioral Assay: behavior video frame rate
+def: "The temporal resolution (i.e. rate at which frames were captured) of the C. elegans behavioral video measured in frames per second (fps). Unit: frames per second (fps)."
 
-name: Video pixel dimensions
-def: "The resolution of the video frames from a C. elegans experiment, specified as the number of pixels in width and height (e.g., 1024x1024 pixels). Unit: pixels."
+name: C. elegans Behavioral Assay: behavior video pixel dimensions
+def: "The dimensions of the C. elegans behavior video, specified as the number of pixels in width and height (e.g. [1024,1024]). Unit: pixels."
 
-name: Video first frame image
-def: "The raw image data corresponding to the first frame of the C. elegans behavioral video recording. This can be used for arena registration, initial worm position, or background subtraction."
+name: C. elegans Behavioral Assay: behavior video spatial scale
+def: "The spatial resolution of the C. elegans behavioral video measured in pixels per millimiter. This number can be computed via a calibration process involving measuring an object of known size in an image. Unit: pixels/mm."
 
-name: Video spatial scale
-def: "The spatial calibration factor for the video recording of a C. elegans experiment, representing the number of pixels per unit of physical distance (e.g., pixels per millimeter). This is crucial for converting pixel-based measurements to real-world units. Unit: pixels/mm."
+name: C. elegans Behavioral Assay: behavior video first frame image
+def: "An image corresponding to the first frame of the C. elegans behavioral video recording."
 
-name: Analysis arena mask
-def: "A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked and pixels outside are unmarked. This mask defines the region of interest for worm tracking and behavioral analysis."
+name: C. elegans Behavioral Assay: arena mask
+def: "A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked (true) and pixels outside are unmarked (false). This mask defines the region of interest for worm tracking and behavioral analysis."
 
-name: Analysis arena center coordinates
-def: "The (X,Y) pixel coordinates representing the geometric center of the detected experimental arena mask in a C. elegans assay. Unit: pixels."
+name: C. elegans Behavioral Assay: arena center coordinates
+def: "The [X,Y] pixel coordinates representing the geometric center of the detected experimental arena mask in a C. elegans assay. Unit: pixels."
 
-name: Analysis arena offset vector
-def: "An (X,Y) vector representing the displacement of the C. elegans arena's center from a defined origin or reference point in the image, used for spatial alignment or correction. Unit: pixels."
+name: C. elegans Behavioral Assay: arena offset vector
+def: "An [X,Y] vector representing the displacement of the C. elegans arena's center from a defined origin or reference point in the image, used for spatial alignment or correction. Unit: pixels."
 
-name: Analysis arena rotation angle
-def: "The angle of rotation of the detected C. elegans arena relative to a standard coordinate system. This is used to correct for any tilt in arena placement. Unit: degrees or radians."
+name: C. elegans Behavioral Assay:arena rotation angle
+def: "The angle of rotation of the detected C. elegans arena relative to a standard coordinate system. This is used to correct for any tilt in arena placement. Unit: degrees."
 
-name: Analysis arena actual diameter
-def: "The measured diameter of the experimental arena used for C. elegans, as determined from image analysis of the arena mask. Unit: millimeters (mm) or pixels."
+name: C. elegans Behavioral Assay: arena diameter
+def: "The diameter of the experimental arena used for C. elegans behavioral assays. The arena can be used to compute the spatial scale of the video recording. For example, if the arena is known to be 30 mm in diameter and measures 300 pixels, the spatial scale must be 10 pixels per millimiter. Unit: millimeters (mm)."
 
-name: Analysis arena shape descriptor
+name: C. elegans Behavioral Assay: arena shape label
 def: "A textual descriptor of the geometric shape of the experimental arena for C. elegans as determined by image analysis (e.g., 'circle', 'rectangle')."
 
-name: Analysis arena circularity
-def: "A quantitative measure (typically 0 to 1, where 1 is a perfect circle) assessing how closely the shape of the detected C. elegans arena mask conforms to a circle."
+name: C. elegans Behavioral Assay: arena circularity
+def: "A quantitative measure assessing how closely the shape of the detected C. elegans arena mask conforms to a circle. 1 is a perfect circle."
 
-name: Analysis reference mark mask
+name: C. elegans Behavioral Assay: arena reference mark mask
 def: "A binary image mask identifying the location and extent of a physical reference mark within the C. elegans arena, used for consistent image registration and spatial alignment."
 
-name: Analysis reference mark center coordinates
-def: "The (X,Y) pixel coordinates of the geometric center of the detected reference mark mask in a C. elegans assay. Unit: pixels."
+name: C. elegans Behavioral Assay: arena reference mark center coordinates
+def: "The [X,Y] pixel coordinates of the geometric center of the detected reference mark mask in a C. elegans assay. Unit: pixels."
 
-name: Analysis reference mark distance
-def: "A distance measured from or related to the reference mark in a C. elegans assay, such as its distance to the arena center or edge, used for validating spatial calibration or registration."
+name: C. elegans Behavioral Assay: arena reference mark distance
+def: "The Euclidean distance measured between the center of the arena and the center of the reference mark in a C. elegans assay."
 
-name: Analysis patch center coordinates
-def: "A collection of (X,Y) pixel coordinates, where each pair represents the geometric center of an individual detected bacterial food patch within the C. elegans assay arena."
+name: C. elegans Behavioral Assay: arena registration quality
+def: "Quantitative metric assessing the accuracy and success of aligning the detected bacterial patch locations with the corresponding frames of the C. elegans behavioral video recording. ????"
 
-name: Analysis patch radii
-def: "A collection of values, each representing the radius of an individual detected bacterial food patch in a C. elegans assay, assuming patches are circular or near-circular. Unit: pixels or millimeters."
+name: C. elegans Behavioral Assay: bacterial patch center coordinates
+def: "A collection of [X,Y] pixel coordinates, where each pair represents the geometric center of an individual detected bacterial food patch within the C. elegans assay arena."
 
-name: Analysis patch total area
-def: "The sum of the areas of all detected bacterial food patches within the C. elegans assay arena, typically measured from the binary patch mask. Unit: square pixels or square millimeters."
+name: C. elegans Behavioral Assay: bacterial patch radii
+def: "A collection of values, each representing the radius of an individual detected bacterial food patch in a C. elegans assay, assuming patches are circular or near-circular. Unit: pixels."
 
-name: Analysis patch mean diameter
-def: "The average diameter calculated from all individual bacterial food patches detected on the C. elegans assay plate. This provides an empirical measure of actual patch size. Unit: millimeters or pixels."
+name: C. elegans Behavioral Assay: bacterial patch total area
+def: "The sum of the areas of all detected bacterial food patches within the C. elegans assay arena. Unit: square millimeters."
 
-name: Analysis patch diameter standard deviation
-def: "The standard deviation of the diameters of all individual bacterial food patches detected on the C. elegans assay plate, indicating the variability in patch size. Unit: millimeters or pixels."
+name: C. elegans Behavioral Assay: bacterial patch mean diameter
+def: "The mean diameter calculated from all individual bacterial food patches detected on the C. elegans assay plate. Unit: millimeters."
 
-name: Analysis patch distribution center coordinates
-def: "The (X,Y) pixel coordinates representing the geometric center of the overall spatial distribution of multiple bacterial food patches in a C. elegans assay, particularly relevant for grid layouts. Unit: pixels."
+name: C. elegans Behavioral Assay: bacterial patch diameter standard deviation
+def: "The standard deviation of the diameters of all individual bacterial food patches detected on the C. elegans assay plate, indicating the variability in patch size. Unit: millimeters."
 
-name: Analysis patch distribution standard deviation
-def: "A measure of the spatial spread or standard deviation of individual patch positions relative to the center of their overall distribution in a C. elegans assay. This quantifies the regularity of a patch grid. Unit: pixels or millimeters."
+name: C. elegans Behavioral Assay: bacterial patch distribution center coordinates
+def: "The [X,Y] pixel coordinates representing the geometric center of the overall spatial distribution of multiple bacterial food patches in a C. elegans assay, particularly relevant for grid layouts. Unit: pixels."
 
-name: Analysis patch mean spacing
+name: C. elegans Behavioral Assay: bacterial patch distribution standard deviation
+def: "A measure of the spatial spread or standard deviation of individual patch positions relative to the center of their overall distribution in a C. elegans assay. Unit: millimeters."
+
+name: C. elegans Behavioral Assay: bacterial patch mean spacing
 def: "The average center-to-center distance computed between adjacent bacterial food patches in a grid arrangement on a C. elegans assay plate, based on their detected locations. Unit: millimeters or pixels."
 
-name: Analysis patch spacing standard deviation
-def: "The standard deviation of the center-to-center distances between adjacent bacterial food patches in a grid on a C. elegans assay plate, indicating variability in patch spacing. Unit: millimeters or pixels."
+name: C. elegans Behavioral Assay: bacterial patch spacing standard deviation
+def: "The standard deviation of the center-to-center distances between adjacent bacterial food patches in a grid on a C. elegans assay plate, indicating variability in patch spacing. Unit: millimeters."
 
-name: Analysis patch circularity
-def: "A quantitative measure (typically 0 to 1) assessing how closely the shape of an individual detected bacterial food patch in a C. elegans assay conforms to a perfect circle. Can be averaged or reported for all patches."
+name: C. elegans Behavioral Assay: bacterial patch circularity
+def: "A quantitative measure assessing how closely the shape of each individual detected bacterial food patch in a C. elegans assay conforms to a perfect circle. 1 is a perfect circle."
 
-name: Analysis combined patch mask
-def: "A single binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions."
+name: C. elegans Behavioral Assay: bacterial patch mask
+def: "A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions."
+
+name: C. elegans Behavioral Assay: bacterial patch detection method
+def: "A textual descriptor of the computational algorithm or manual procedure employed to identify and delineate the boundaries of bacterial food patches from the experimental images in a C. elegans assay."
 
 name: Analysis closest patch identifier
-def: "An identifier (e.g., index, coordinates, or label) for the bacterial food patch that is currently closest to a C. elegans' position or a point of interest. This is dynamically determined during behavioral analysis."
+def: "An identifier (e.g., index, coordinates, or label) for the bacterial food patch that is currently closest to a C. elegans' position or a point of interest. This is dynamically determined during behavioral analysis. ????"
 
 name: Analysis closest patch OD600
-def: "The nominal OD600 or relative density label associated with the bacterial food patch currently identified as being closest to a C. elegans subject. This is particularly relevant in assays featuring patches of multiple densities."
-
-name: Analysis patch detection method
-def: "A descriptor of the computational algorithm or manual procedure employed to identify and delineate the boundaries of bacterial food patches from the experimental images in a C. elegans assay."
-
-name: Analysis patch registration quality
-def: "Parameters or a qualitative/quantitative metric assessing the accuracy and success of aligning the detected bacterial patch locations with the corresponding frames of the C. elegans behavioral video recording."
-
-You're right. I can provide more detailed definitions for each of these terms based on the provided manuscript. Please note that for some terms, the manuscript provides usage context rather than a formal definition. In such cases, I will synthesize a definition from the way the term is used in the text.
-
-Here are the more detailed definitions for the new terms:
+def: "The nominal OD600 or relative density label associated with the bacterial food patch currently identified as being closest to a C. elegans subject. This is particularly relevant in assays featuring patches of multiple densities. ????"
 
 name: Frame number
 def: "The sequential numerical identifier for each individual image captured in a video recording of C. elegans behavior. These numbers are used to track the progression of the experiment over time."
