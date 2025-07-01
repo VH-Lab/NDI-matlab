@@ -1,0 +1,292 @@
+{
+  "app": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "base": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "binnedspikeratevm": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "binaryseries_parameters": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "control_stimulus_ids": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "daqmetadatareader_epochdata_ingested": {
+    "attributes": [
+      "Raw timeseries"
+    ]
+  },
+  "daqreader": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "daqreader_epochdata_ingested": {
+    "attributes": [
+      "Raw timeseries"
+    ]
+  },
+  "daqreader_mfdaq_epochdata_ingested": {
+    "attributes": [
+      "Raw timeseries"
+    ]
+  },
+  "daqreader_ndr": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "daqsystem": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "demoNDI": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "element": {
+    "attributes": [
+      "Raw timeseries"
+    ]
+  },
+  "element_epoch": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "epochfiles_ingested": {
+    "attributes": [
+      "Raw timeseries"
+    ]
+  },
+  "epochid": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "fitcurve": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "jrclust_clusters": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "metadata_editor": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "mock": {
+    "attributes": [
+      "System test data"
+    ]
+  },
+  "ngrid": {
+    "attributes": [
+      "Raw images"
+    ]
+  },
+  "neuron_extracellular": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "openminds": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "openminds_element": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "openminds_stimulus": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "openminds_subject": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "orientation_direction_tuning": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "probe_location": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "projectvar": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "session": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "simple_calc": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "sorting_parameters": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "spike_clusters": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "spike_extraction_parameters": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "spike_extraction_parameters_modification": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "spikewaves": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "stimid": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "stimulus_bath": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "stimulus_parameter": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "stimulus_parameter_table": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "stimulus_presentation": {
+    "attributes": [
+      "Stimulation Metadata"
+    ]
+  },
+  "stimulus_response": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "stimulus_response_scalar": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "stimulus_response_scalar_parameters": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "stimulus_response_scalar_parameters_basic": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "stimulus_tuningcurve": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "subject": {
+    "attributes": [
+      "Subject"
+    ]
+  },
+  "subjectmeasurement": {
+    "attributes": [
+      "Subject"
+    ]
+  },
+  "syncgraph": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "syncrule": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "syncrule_mapping": {
+    "attributes": [
+      "Data acqusiiton metadata"
+    ]
+  },
+  "treatment": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "tuningcurve_calc": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "valid_interval": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "vmneuralresponseresiduals": {
+    "attributes": [
+      "Calculation"
+    ]
+  },
+  "vmspikefilteringparameters": {
+    "attributes": [
+      "Metadata"
+    ]
+  },
+  "vmspikefit": {
+    "attributes": [
+      "Derived data"
+    ]
+  },
+  "vmspikesummary": {
+    "attributes": [
+      "Derived data"
+    ]
+  }
+}
