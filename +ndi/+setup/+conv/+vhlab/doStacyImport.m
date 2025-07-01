@@ -59,6 +59,9 @@ function doStacyImport(S, options)
     % Add any newly created documents to the session
     subM.addSubjectsToSessions({S}, subDocStruct.documents);
 
+    treatmentTable = ndi.setup.conv.vhlab.treatmentTable(S);
+    subM.makeSubjectTreatments(S,treatmentTable,"doAdd",true);
+
     disp('Stage 1: Subject information processing complete.');
     
     %% Stage 2: Stimulus Approaches and Purposes
@@ -96,12 +99,19 @@ function doStacyImport(S, options)
     %
     disp('Stage 3: Complete.');
 
-    disp('Stage 4: Import extracellular spike recordings')
+    disp('Stage 4: Add probe locations for Andrea Stacy (LGN always)')
 
-    ndi.setup.conv.vhlab.importMeasuredDataCells(S);
+    p = S.getprobes('type','n-trode')
+    pld = ndi.fun.doc.probe.probeLocations4probes(S,p,repmat({'UBERON:0002479'},numel(p),1),'doAdd',true);
 
     disp('Stage 4: Complete')
     
+
+    disp('Stage 5: Import extracellular spike recordings')
+
+    ndi.setup.conv.vhlab.importMeasuredDataCells(S);
+
+    disp('Stage 5: Complete')    
 
     disp('VH Lab import process finished.');
 end
