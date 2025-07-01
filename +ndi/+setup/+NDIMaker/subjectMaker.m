@@ -224,11 +224,27 @@ classdef subjectMaker
 
         end % function getSubjectInfoFromTable
 
-        function output = makeSubjectDocuments(obj, subjectInfo)
+        function output = makeSubjectDocuments(obj, subjectInfo, options)
             %MAKESUBJECTDOCUMENTS Creates NDI subject documents from subjectInfo structure.
+            %
+            %   OUTPUT = MAKESUBJECTDOCUMENTS(OBJ, SUBJECTINFO, ...)
+            %
+            %   Creates NDI documents for subjects described in the SUBJECTINFO struct.
+            %
+            %   This function can also take name/value pairs that modify its behavior:
+            %   |-----------------------|-------------------------------------------|
+            %   | 'existingSubjectDocs' | A cell array of existing NDI subject      |
+            %   | ({})                  | documents. If a subject in SUBJECTINFO    |
+            %   |                       | matches an existing document (by local    |
+            %   |                       | identifier), the existing document is used|
+            %   |                       | and not re-created. Dependent documents   |
+            %   |                       | (strain, etc.) are still created.         |
+            %   |-----------------------|-------------------------------------------|
+            %
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
                 subjectInfo (1,1) struct {ndi.setup.NDIMaker.subjectMaker.mustBeValidSubjectInfoForDocCreation(subjectInfo)}
+                options.existingSubjectDocs (1,:) cell = {}
             end
 
             % Create progress bar
@@ -259,6 +275,23 @@ classdef subjectMaker
                 sName = subjectInfo.subjectName{i}; 
                 output_subjectNames{i} = sName;
 
+                % --- Check for existing subject document ---
+                main_subject_doc = [];
+                is_new_main_doc = true;
+                for k = 1:numel(options.existingSubjectDocs)
+                    existing_doc = options.existingSubjectDocs{k};
+                    if isa(existing_doc, 'ndi.document') && ...
+                       isfield(existing_doc.document_properties, 'subject') && ...
+                       isfield(existing_doc.document_properties.subject, 'local_identifier') && ...
+                       strcmp(existing_doc.document_properties.subject.local_identifier, sName)
+                        
+                        main_subject_doc = existing_doc;
+                        is_new_main_doc = false;
+                        fprintf('Found existing subject document for "%s". Using it.\n', sName);
+                        break; % Found a match, no need to search further
+                    end
+                end
+
                 current_session_id_for_doc = subjectInfo.sessionID{i}; 
                 if ~(ischar(current_session_id_for_doc) && ~isempty(current_session_id_for_doc))
                      escaped_sName = strrep(sName, '%', '%%');
@@ -274,10 +307,14 @@ classdef subjectMaker
                 main_subject_doc_id = ''; 
 
                 try
-                    main_subject_doc = ndi.document('subject', ...
-                        'subject.local_identifier', sName, ...
-                        'base.session_id', current_session_id_for_doc);
-                    all_docs_for_this_subject{end+1} = main_subject_doc; 
+                    if is_new_main_doc
+                        % Create a new main subject document if none was found
+                        main_subject_doc = ndi.document('subject', ...
+                            'subject.local_identifier', sName, ...
+                            'base.session_id', current_session_id_for_doc);
+                        all_docs_for_this_subject{end+1} = main_subject_doc; 
+                    end
+                    
                     main_subject_doc_id = main_subject_doc.id(); 
 
                     if isfield(subjectInfo, 'species') && numel(subjectInfo.species) >= i
@@ -339,7 +376,7 @@ classdef subjectMaker
                     escaped_sName = strrep(sName, '%', '%%');
                     escaped_message = strrep(ME_DocCreation.message, '%', '%%');
                     warning('ndi:setup:NDIMaker:subjectMaker:DocumentCreationError', ...
-                        'Failed to create base NDI document for subject %s: %s', ...
+                        'Failed to create or process NDI document for subject %s: %s', ...
                         escaped_sName, escaped_message);
                     output_documents{i} = {}; 
                 end
@@ -629,6 +666,118 @@ classdef subjectMaker
                 deletion_report(s).errors = session_errors;
             end % loop through sessions
         end % function deleteSubjectDocs
+
+        function treatment_docs = makeSubjectTreatments(obj, S, treatmentTable, options)
+            % MAKESUBJECTTREATMENTS - Create NDI treatment documents from a table
+            %
+            %   TREATMENT_DOCS = MAKESUBJECTTREATMENTS(OBJ, S, TREATMENTTABLE, ...)
+            %
+            %   Given a subjectMaker object SELF, an ndi.session S, and a MATLAB 
+            %   table TREATMENTTABLE with treatment information, this function creates 
+            %   and returns a cell array of NDI documents of type 'treatment'.
+            %
+            %   The TREATMENTTABLE must contain the following columns:
+            %     'treatment'         - The name of the treatment, prefixed with its ontology (e.g., 'NDIC:Treatment Name').
+            %     'stringValue'       - A string value for the treatment.
+            %     'numericValue'      - A numeric value for the treatment.
+            %     'subjectIdentifier' - The local identifier for the subject.
+            %     'sessionPath'       - The path for the session (not used here but
+            %                           part of the standard table).
+            %
+            %   The function iterates through all subjects present in the session `S`.
+            %   For each subject, it finds matching entries in the TREATMENTTABLE
+            %   based on 'subjectIdentifier' and creates the corresponding 'treatment'
+            %   documents.
+            %
+            %   For each treatment, it looks up the treatment name in the appropriate
+            %   ontology using ndi.ontology.lookup to get the formal 'ontologyName'.
+            %
+            %   This function also accepts an optional name-value argument:
+            %
+            %   | Parameter (default) | Description                                  |
+            %   |---------------------|----------------------------------------------|
+            %   | doAdd (true)        | If true, adds the created documents to the   |
+            %   |                     |   session database `S`.                      |
+            %
+            %   Returns a cell array of the newly created ndi.document objects.
+            %
+            
+            arguments
+                obj (1,1) 
+                S (1,1) ndi.session
+                treatmentTable table
+                options.doAdd (1,1) logical = true
+            end
+        
+            treatment_docs = {};
+        
+            % Step 1: Find all subjects in the session
+            all_subject_docs = S.database_search(ndi.query('', 'isa', 'subject'));
+        
+            if isempty(all_subject_docs)
+                warning('No subjects found in the session.');
+                return;
+            end
+        
+            % Step 2: Loop through each subject found in the session
+            for s_idx = 1:numel(all_subject_docs)
+                subject_doc = all_subject_docs{s_idx};
+                subject_id = subject_doc.id();
+                subjectIdentifier = subject_doc.document_properties.subject.local_identifier;
+        
+                % Step 2a: Filter treatmentTable for the current subject
+                subject_rows = strcmp(treatmentTable.subjectIdentifier, subjectIdentifier);
+                subjectTreatmentTable = treatmentTable(subject_rows, :);
+                
+                if isempty(subjectTreatmentTable)
+                    % No treatments for this subject in the table, continue to the next
+                    continue;
+                end
+        
+                % Step 2b: Iterate through the treatments for this subject
+                for i = 1:height(subjectTreatmentTable)
+                    row = subjectTreatmentTable(i, :);
+        
+                    % Step 2c: Look up the ontology name for the treatment
+                    try
+                        [id, name, prefix] = ndi.ontology.lookup(row.treatment{1});
+                        % Check if the returned ID already includes the prefix, as behavior can vary.
+                        if startsWith(id, [prefix ':'])
+                            ontologyName = id;
+                        else
+                            ontologyName = [prefix ':' id];
+                        end
+                    catch ME
+                        warning(['Error during ontology lookup for treatment ''' row.treatment{1} ''': ' ME.message '. Skipping this treatment.']);
+                        continue;
+                    end
+                    
+                    % Step 2d: Create a new treatment document
+                    new_doc = S.newdocument('treatment');
+                    
+                    % Step 2e: Populate document fields
+                    new_doc = new_doc.setproperties(...
+                        'treatment.ontologyName', ontologyName, ...
+                        'treatment.name', name, ... % Use the canonical name from the lookup
+                        'treatment.string_value', row.stringValue{1}, ...
+                        'treatment.numeric_value', row.numericValue(1) ...
+                        );
+        
+                    % Step 2f: Set the dependency on the subject
+                    new_doc = new_doc.set_dependency_value('subject_id', subject_id);
+                    
+                    treatment_docs{end+1} = new_doc;
+                end
+            end
+        
+            % Step 3: Add all created documents to the database if requested
+            if options.doAdd && ~isempty(treatment_docs)
+                S.database_add(treatment_docs);
+            end
+        
+        end
+
+
 
     end % methods block
 

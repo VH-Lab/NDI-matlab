@@ -1,0 +1,60 @@
+{
+  "approachMappings": [
+    {
+      "name": "preSpatialPhase",
+      "value": "EMPTY:Approach: Before artificial visual stimulation"
+    },
+    {
+      "name": "preDirSF",
+      "value": "EMPTY:Approach: Before artificial visual stimulation"
+    },
+    {
+      "name": "preDirSF",
+      "value": "EMPTY:Purpose: Assessing direction of motion tuning"
+    },
+    {
+      "name": "preDirSF",
+      "value": "EMPTY:Purpose: Assessing spatial frequency tuning"
+    },
+    {
+      "name": "preDirTF",
+      "value": "EMPTY:Approach: Before artificial visual stimulation"
+    },
+    {
+      "name": "preDirTF",
+      "value": "EMPTY:Purpose: Assessing direction of motion tuning"
+    },
+    {
+      "name": "preDirTF",
+      "value": "EMPTY:Purpose: Assessing temporal frequency tuning"
+    },
+    {
+      "name": "postDirSF",
+      "value": "EMPTY:Approach: After artificial visual stimulation"
+    },
+    {
+      "name": "postDirSF",
+      "value": "EMPTY:Purpose: Assessing direction of motion tuning"
+    },
+    {
+      "name": "postDirSF",
+      "value": "EMPTY:Purpose: Assessing spatial frequency tuning"
+    },
+    {
+      "name": "postDirTF",
+      "value": "EMPTY:Approach: After artificial visual stimulation"
+    },
+    {
+      "name": "postDirTF",
+      "value": "EMPTY:Purpose: Assessing direction of motion tuning"
+    },
+    {
+      "name": "postDirTF",
+      "value": "EMPTY:Purpose: Assessing temporal frequency tuning"
+    },
+    {
+      "name": "postSpatialPhase",
+      "value": "EMPTY:Approach: After artificial visual stimulation"
+    }
+  ]
+}

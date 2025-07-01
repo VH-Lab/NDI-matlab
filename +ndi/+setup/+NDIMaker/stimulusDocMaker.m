@@ -64,16 +64,20 @@ classdef stimulusDocMaker < handle
             % Get mixture structure
             obj.mixtureFilename = fullfile(labFolder,[labName,'_mixtures.json']);
             if ~isfile(obj.mixtureFilename)
-                error('stimulusDocMaker:MixtureFileNotFound', 'Mixture file not found: %s', obj.mixtureFilename);
+                warning('stimulusDocMaker:MixtureFileNotFound', 'Mixture file not found: %s. Proceeding without mixture information.', obj.mixtureFilename);
+                obj.mixtureStruct = struct();
+            else
+                obj.mixtureStruct = jsondecode(fileread(obj.mixtureFilename));
             end
-            obj.mixtureStruct = jsondecode(fileread(obj.mixtureFilename));
 
             % Get bath targets structure
             obj.bathtargetsFilename = fullfile(labFolder,[labName,'_bathtargets.json']);
             if ~isfile(obj.bathtargetsFilename)
-                error('stimulusDocMaker:BathTargetFileNotFound', 'Bath target file not found: %s', obj.bathtargetsFilename);
+                warning('stimulusDocMaker:BathTargetFileNotFound', 'Bath target file not found: %s. Proceeding without bath target information.', obj.bathtargetsFilename);
+                obj.bathtargetsStruct = struct();
+            else
+                obj.bathtargetsStruct = jsondecode(fileread(obj.bathtargetsFilename));
             end
-            obj.bathtargetsStruct = jsondecode(fileread(obj.bathtargetsFilename));
         end % STIMULUSDOCMAKER
 
         function docs = createBathDoc(obj, stimulator_id, epoch_id, bathtargetStrings, mixtureStrings,options)
@@ -379,8 +383,8 @@ classdef stimulusDocMaker < handle
             for a = 1:numel(approachStrings)
 
                 % Get approach id and description
-                item = ndi.database.fun.ndicloud_ontology_lookup('Name',approachStrings{a});
-                if isempty(item)
+                [ontology_id,ontology_name,ontology_prefix,ontology_definition] = ndi.ontology.lookup(approachStrings{a});
+                if isempty(ontology_id)
                     error('STIMULUSDOCMAKER:InvalidApproachString',...
                         '%s is not a valid approach name.',approachStrings{a})
                 end
@@ -405,9 +409,9 @@ classdef stimulusDocMaker < handle
 
                 % Create stimulus approach document
                 new_approach = openminds.controlledterms.StimulationApproach(...
-                    'name',item.Name,...
-                    'preferredOntologyIdentifier',['NDIC:' sprintf('%0.8d',item.Identifier)],...
-                    'description',item.Description);
+                    'name',ontology_name,...
+                    'preferredOntologyIdentifier',ontology_id,...
+                    'description',ontology_definition);
                 current_doc = ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
                     obj.session.id,'stimulus',stimulator_id,'epochid.epochid', epoch_id);
 

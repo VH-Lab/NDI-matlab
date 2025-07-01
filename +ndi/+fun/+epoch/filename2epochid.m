@@ -43,7 +43,10 @@ for d = 1:numel(dev)
         fileInd = cellfun(@(f) any(contains(underlyingFiles,f)),filename);
 
         if any(fileInd)
-            epochid{fileInd} = et(e).epoch_id;
+            myFileInds = find(fileInd);
+            for k=1:numel(myFileInds)
+                epochid{myFileInds(k)} = et(e).epoch_id;
+            end
         end
     end
 end
