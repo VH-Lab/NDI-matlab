@@ -170,30 +170,18 @@ methods (Static)
 
         % 5. Call the Instance Method lookupTermOrID
         try
-            % Attempt to get all 5 outputs
-            [id, name, definition, synonyms, shortName] = lookupTermOrID(ontologyObj, remainder);
+            [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
         catch ME_lookup
-            % This error means the specific lookupTermOrID method returned fewer than 5 outputs.
-            if strcmp(ME_lookup.identifier, 'MATLAB:TooManyOutputs') || ...
-                    (isprop(ME_lookup, 'cause') && ~isempty(ME_lookup.cause) && strcmp(ME_lookup.cause{1}.identifier, 'MATLAB:unassignedOutputs')) % Older MATLAB might use this for unassigned outputs
-                try
-                    [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
-                    shortName = ''; % Explicitly set shortName to default as it wasn't returned
-                catch ME_lookup_4
-                    baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
-                        'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
-                    baseME = addCause(baseME, ME_lookup_4);
-                    throw(baseME);
-                end
-            else
-                baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
-                    'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
-                baseME = addCause(baseME, ME_lookup);
-                throw(baseME);
-            end
+            baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
+                'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
+            baseME = addCause(baseME, ME_lookup);
+            throw(baseME);
         end
 
-        % 6. Return results
+        % 6. Creat shortName (valid MATLAB variable name)
+        shortName = ndi.fun.name2variableName(name);
+
+        % 7. Return results
 
     end % function lookup
 

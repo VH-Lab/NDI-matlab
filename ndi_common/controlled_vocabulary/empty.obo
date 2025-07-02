@@ -441,6 +441,12 @@ is_a: EMPTY:00000001 ! empty
 property_value: IAO:0000118 "optogeneticTetanusStimulationTargetLocation" xsd:string
 
 [Term]
+id: EMPTY:00000172
+name: Experimental trial number
+def: "The index of individual experimental trial within a set." []
+is_a: EMPTY:00000001 ! empty
+
+[Term]
 id: EMPTY:0000146
 name: Subject local identifier
 def: "For an experiment, this is a unique code or label assigned to an individual animal subject. This allows for tracking and associating behavioral data with specific animals, along with their characteristics like strain, sex, or age." []
