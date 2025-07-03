@@ -1,0 +1,28 @@
+{
+	"document_class": {
+		"definition":						"$NDICALCDOCUMENTPATH\/heart\/spectrogram.json",
+		"validation":						"$NDICALCSCHEMAPATH\/heart\/spectrogram_schema.json",
+		"class_name":						"spectrogram",
+		"property_list_name":               "spectrogram",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"},
+			{ "definition":                 "$NDIDOCUMENTPATH\/data\/ngrid.json"},
+			{ "definition":                 "$NDIDOCUMENTPATH\/epochid.json"}
+		]
+	},
+	"depends_on": [
+		{	"name":		"element_id",
+			"value":	"" 
+		}
+	],
+	"files": {
+		"file_list": [ "spectrogram_results.ngrid" ]
+    },
+	"spectrogram":  {
+		"frequency_ngrid_dim":		"",
+		"timestamp_ngrid_dim":		"",
+		"decibels":					""
+	}
+}
+
