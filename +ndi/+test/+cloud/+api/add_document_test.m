@@ -112,25 +112,25 @@ end
 function test_post_files(S, d, dataset_id)
     for i=1:numel(d)
         doc_id = d{i}.document_properties.base.id;
-        if isfield(d{i}.document_properties, 'files'),
+        if isfield(d{i}.document_properties, 'files')
             for f = 1:numel(d{i}.document_properties.files.file_list)
                 file_name = d{i}.document_properties.files.file_list{f};
                 j = 1;
-                while j<10000, % we could potentially read a series of files
-                    if file_name(end)=='#', % this file is a series of files
+                while j<10000 % we could potentially read a series of files
+                    if file_name(end)=='#' % this file is a series of files
                         filename_here = [file_name(1:end-1) int2str(j)];
-                    else,
+                    else
                         filename_here = file_name;
                         j = 1000000; % only 1 file
-                    end;
-                    try,
+                    end
+                    try
                         file_obj = S.database_openbinarydoc(doc_id,filename_here);
-                    catch,
+                    catch
                         j = 1000000;
                         file_obj = [];
-                    end;
+                    end
                     j = j + 1;
-                    if ~isempty(file_obj),
+                    if ~isempty(file_obj)
                         [~,uid,~] = fileparts(file_obj.fullpathfilename);
                         [response, upload_url] = ndi.cloud.api.files.get_file_upload_url(dataset_id, uid);
                         response = ndi.cloud.api.files.put_files(upload_url, file_obj.fullpathfilename);
@@ -138,8 +138,8 @@ function test_post_files(S, d, dataset_id)
 
                         [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
                         return;
-                    end;
-                end;
+                    end
+                end
             end
         end
     end

@@ -43,7 +43,7 @@ classdef EMPTY < ndi.ontology
         function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name_fragment)
             % LOOKUPTERMORID - Looks up a term in the local EMPTY.obo file.
             %
-            %   [ID, NAME, DEFINITION, SYNONYMS] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME_FRAGMENT)
+            %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME_FRAGMENT)
             %
             %   Overrides the base class method. It uses the static helper
             %   ndi.ontology.lookupOBOFile to parse and search the OBO file.

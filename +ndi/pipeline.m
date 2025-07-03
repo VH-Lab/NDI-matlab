@@ -41,40 +41,40 @@ classdef pipeline
             window_params.width = 400;
             fig = []; % figure to use
 
-            if strcmpi(command,'new'),
-                if isempty(fig),
+            if strcmpi(command,'new')
+                if isempty(fig)
                     fig = figure;
-                end;
+                end
                 command = 'NewWindow';
                 % new window, set userdata
-                if exist('pipelinePath','var'),
+                if exist('pipelinePath','var')
                     % is it a valid directory?
-                    if isfolder(pipelinePath),
+                    if isfolder(pipelinePath)
                         ud.pipelinePath = pipelinePath;
                         ud.pipelineList = []; % initially empty
                         ud.pipelineListChar = []; % initially empty
                         ud.session = session;
                         set(fig,'userdata',ud);
-                    else,
+                    else
                         error(['The provided pipeline path does not exist: ' pipelinePath '.']);
-                    end;
-                else,
+                    end
+                else
                     error(['No pipelinePath provided.']);
-                end;
+                end
             else
                 fig = gcf;
                 % not new window, get userdata
                 ud = get(fig,'userdata');
-            end;
+            end
 
-            if isempty(fig),
+            if isempty(fig)
                 error(['Empty figure, do not know what to work on.']);
-            end;
+            end
 
             disp(['Command is ' command '.']);
 
-            switch (command),
-                case 'NewWindow',
+            switch (command)
+                case 'NewWindow'
                     set(fig,'tag','ndi.pipeline.edit');
 
                     uid = vlt.ui.basicuitools_defs;
@@ -133,12 +133,12 @@ classdef pipeline
                         'string','Edit','tooltipstring','Edit selected calculator','tag','EditBt','callback',callbackstr);
                     ndi.pipeline.edit('command','LoadPipelines'); % load the pipelines from disk
 
-                case 'UpdatePipelines', % invented command that is not a callback
+                case 'UpdatePipelines' % invented command that is not a callback
                     ud.pipelineList = ndi.pipeline.getPipelines(ud.pipelinePath);
                     ud.pipelineListChar = ndi.pipeline.pipelineListToChar(ud.pipelineList);
                     set(fig,'userdata',ud);
 
-                case 'LoadPipelines', % invented command that is not a callback
+                case 'LoadPipelines' % invented command that is not a callback
                     % called on startup or if the user ever changes the file path through some future mechanism
                     ud.pipelineList = ndi.pipeline.getPipelines(ud.pipelinePath);
                     ud.pipelineListChar = ndi.pipeline.pipelineListToChar(ud.pipelineList);
@@ -159,13 +159,13 @@ classdef pipeline
                         set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
                     end
 
-                case 'UpdateCalculatorList', % invented command that is not a callback
+                case 'UpdateCalculatorList' % invented command that is not a callback
                     calcList = ndi.pipeline.getCalcFromPipeline(ud.pipelineList, pipeline_name);
                     calcListChar = ndi.pipeline.calculationsToChar(calcList);
                     pipelineContentObj = findobj(fig,'tag','PipelineContentList');
                     set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
 
-                case 'PipelinePopup',
+                case 'PipelinePopup'
                     % Step 1: search for the objects you need to work with
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
@@ -180,7 +180,7 @@ classdef pipeline
                     pipeline_name = str{val};
                     ndi.pipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
 
-                case 'NewPipelineBt',
+                case 'NewPipelineBt'
                     % get dir
                     read_dir = [ud.pipelinePath filesep];
                     % create dialog box
@@ -199,7 +199,7 @@ classdef pipeline
                         ndi.pipeline.edit('command','LoadPipelines','selectedPipeline',filename);
                     end
 
-                case 'DltPipelineBt',
+                case 'DltPipelineBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -215,13 +215,13 @@ classdef pipeline
                     msgBox = sprintf('Do you want to delete this pipeline?');
                     title = 'Delete file';
                     b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
-                    if strcmpi(b, 'Yes');
+                    if strcmpi(b, 'Yes')
                         rmdir([read_dir filesep filename], 's');
                     end
                     % update and load pipelines
                     ndi.pipeline.edit('command','LoadPipelines');
 
-                case 'NewCalcBt',
+                case 'NewCalcBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -262,7 +262,7 @@ classdef pipeline
                         ndi.pipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
                     end
 
-                case 'DltCalcBt',
+                case 'DltCalcBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     pip_val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -274,7 +274,7 @@ classdef pipeline
                     msgBox = sprintf('Do you want to delete this calculator?');
                     title = 'Delete calculator';
                     b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
-                    if strcmpi(b, 'Yes');
+                    if strcmpi(b, 'Yes')
                         pipeline_name = pip_str{pip_val};
                         piplineContentObj = findobj(fig,'tag','PipelineContentList')
                         calc_val = get(piplineContentObj, 'value')
@@ -308,9 +308,9 @@ classdef pipeline
                     disp([command 'is not implemented yet.']);
                 case 'PipelineContentList'
                     disp([command 'is not supposed to do anything.'])
-                otherwise,
+                otherwise
                     disp(['Unknown command ' command '.']);
-            end; % switch(command)
+            end % switch(command)
 
         end % pipeline_edit()
 
@@ -392,7 +392,7 @@ classdef pipeline
                 pipelineList{i}.pipeline_name = nameList{i-1};
                 pipelineList{i}.calculations = {};
                 D = dir([read_dir filesep char(pipelineList{i}.pipeline_name) filesep '*.json']);
-                for d = 1:numel(D),
+                for d = 1:numel(D)
                     % D(d).name is the name of the nth calculator in the pipeline; you can use that to build your list of calculators
                     pipelineList{i}.calculations{d} = jsondecode(vlt.file.textfile2char([read_dir filesep char(pipelineList{i}.pipeline_name) filesep D(d).name]));
                 end

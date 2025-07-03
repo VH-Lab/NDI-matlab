@@ -1,0 +1,25 @@
+{
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH\/probe\/site2channelmap.json",
+    "validation": "$NDISCHEMAPATH\/probe\/site2channelmap_schema.json",
+    "class_name": "site2channelmap",
+    "property_list_name": "site2channelmap",
+    "class_version": 1,
+    "superclasses": [
+      { "definition": "$NDIDOCUMENTPATH\/base.json" }
+    ]
+  },
+  "depends_on": [
+    {
+      "name": "probe_id",
+      "value": ""
+    },
+    {
+      "name": "probe_geometry_id",
+      "value": ""
+    }
+  ],
+  "site2channelmap": {
+    "map": []
+  }
+}

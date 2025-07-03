@@ -5,9 +5,9 @@ function file_ids = get_uploaded_file_ids(dataset_id)
         % [~, result, ~] = ndi.cloud.datasets.get_dataset(dataset_id, auth_token);
         [~, ~, datasets] = ndi.cloud.datasets.list_datasets();
         dataset_names = {};
-        for i=1:numel(datasets),
+        for i=1:numel(datasets)
             dataset_names{i} = datasets{i}.id;
-        end;
+        end
         is_match =  strcmp(dataset_names, dataset_id);
         if any(is_match)
             dataset = datasets{is_match};

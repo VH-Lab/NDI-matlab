@@ -314,7 +314,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 end
                 data = read_SpikeGadgets_analogChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
 
-            elseif (strcmp(channeltype,'digital_in') || strcmp(channeltype, 'digital_out')), %Reads digital inputs
+            elseif (strcmp(channeltype,'digital_in') || strcmp(channeltype, 'digital_out')) %Reads digital inputs
                 % for every channel in device
                 for i=1:length(detailedchannels)
                     % based on every channel to read
@@ -338,11 +338,11 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
             s1 = ['.*\.rec\>']; % equivalent of *.ext on the command line
             [tf, matchstring, substring] = vlt.string.strcmp_substitution(s1,filename,'UseSubstituteString',0);
             index = find(tf);
-            if numel(index)> 1,
+            if numel(index)> 1
                 error(['Need only 1 .rec file per epoch.']);
-            elseif numel(index)==0,
+            elseif numel(index)==0
                 error(['Need 1 .rec file per epoch.']);
-            else,
+            else
                 filename = filename{index};
             end
         end % filenamefromepoch

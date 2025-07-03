@@ -52,14 +52,8 @@ if isempty(checkVariables)
     return
 end
 
-% Ensure checkVariables is a cell array for consistent processing
-if ischar(checkVariables)
-    checkVariables = {checkVariables};
-elseif isstring(checkVariables) && isscalar(checkVariables)
-    checkVariables = {char(checkVariables)};
-elseif isstring(checkVariables) && ~isscalar(checkVariables)
-    checkVariables = cellstr(checkVariables);
-end
+% Ensure checkVariables is a cell array
+checkVariables = cellstr(checkVariables);
 
 % Ensure invalidValues is a cell array
 if ~iscell(invalidValues)

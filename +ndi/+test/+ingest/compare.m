@@ -12,33 +12,36 @@ function b = compare(dirname1, dirname2)
     %
     %
 
-    if nargin<1,
+    if nargin<1
         dirname1 = '/Users/vanhoosr/test/3019-11-19';
-    end;
+    end
 
-    if nargin<2,
+    if nargin<2
         dirname2 = '/Users/vanhoosr/test/2019-11-19';
-    end;
+    end
 
     dirname = {dirname1 dirname2};
 
     ts = vlt.data.emptystruct('S','ds_list');
 
-    for i=1:numel(dirname),
+    for i=1:numel(dirname)
         ts_here = [];
         ts_here.S = ndi.session.dir(dirname{i});
         ts_here.ds_list = ts_here.S.daqsystem_load('name','(.*)');
+        if ~iscell(ts_here.ds_list) % if only 1 will not be a cell
+            ts_here.ds_list = {ts_here.ds_list};
+        end
         ts(i) = ts_here;
-    end;
+    end
 
     % assume same daq systems
 
-    for i=1:numel(ts(1).ds_list),
+    for i=1:numel(ts(1).ds_list)
         daq1 = ts(1).ds_list{i};
         daq2 = ts(2).ds_list{i};
         [b,errmsg] = ndi.test.ingest.mfdaq_compare(daq1,daq2);
-        if any(~b),
+        if any(~b)
             errmsg(:),
             error(['Daqs ' daq1.name ' and ' daq2.name ' do not match.']);
-        end;
-    end;
+        end
+    end

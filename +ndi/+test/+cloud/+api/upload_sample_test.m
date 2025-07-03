@@ -89,7 +89,7 @@ function dataset_id = upload_sample_test()
         error('Documents summary should be empty');
     end
     %% test list_datasets
-    if 0,
+    if 0
         try
             [response, datasets] = ndi.cloud.api.datasets.list_datasets();
         catch

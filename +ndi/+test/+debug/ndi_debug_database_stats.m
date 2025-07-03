@@ -12,9 +12,9 @@ function out = ndi_debug_database_stats(E)
 
     sq_stim = ndi.query('','isa','stimulus_presentation','');
     stim_doc = E.database_search(sq_stim);
-    if ~isempty(stim_doc),
+    if ~isempty(stim_doc)
         d_dep = ndi.database.fun.findalldependencies(E,[],stim_doc{1});
-    end;
+    end
 
     out = vlt.data.workspace2struct;
     out = rmfield(out,'E');

@@ -13,6 +13,9 @@ function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datase
     %   DATASET - the newly created dataset
     %   DATASET_ID - the dataset id of the uploaded dataset
 
+    % Todo: Delete
+    error('ndi.database.metadata_app.fun.submit_dataset is deprecated. Use ndi.cloud.uploadDataset instead')
+
     documentList = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, session_id);
     S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
     [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);

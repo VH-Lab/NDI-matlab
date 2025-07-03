@@ -29,7 +29,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             %  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.reader.mfdaq.intan(varargin{:});
-        end; % nielsenvisintan()
+        end % nielsenvisintan()
 
         function ec = epochclock(ndi_daqreader_mfdaq_stimulus_nielsenvisintan_obj, epochfiles)
             % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -61,7 +61,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             channels        = struct('name','mk1','type','marker','time_channel',NaN);
             channels(end+1) = struct('name','mk2','type','marker','time_channel',NaN);
             channels(end+1) = struct('name','mk3','type','marker','time_channel',NaN);
-        end; % getchannelsepoch()
+        end % getchannelsepoch()
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_nielsenvisintan_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
@@ -85,9 +85,9 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             timestamps = {};
             data = {};
 
-            if ~iscell(channeltype),
+            if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
 
             pathname = {};
             fname = {};
@@ -127,10 +127,10 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             stimsetuptimes = timeData(1+find(digData(1:end-1,1)==0&digData(2:end,1)==1));
             stimcleartimes = timeData(1+find(digData(1:end-1,1)==1&digData(2:end,1)==0));
 
-            for i=1:numel(channel),
+            for i=1:numel(channel)
                 % ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}),
-                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i})),
-                    case 'mk',
+                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}))
+                    case 'mk'
                         % put them together, alternating stimtimes and stimofftimes in the final product
                         time1 = [stimontimes(:)' ; stimofftimes(:)'];
                         data1 = [ones(size(stimontimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
@@ -150,23 +150,23 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
 
                         timestamps{i} = ch{channel(i)}(:,1);
                         data{i} = ch{channel(i)}(:,2:end);
-                    case 'md',
+                    case 'md'
 
-                    otherwise,
+                    otherwise
                         error(['Unknown channel.']);
                 end
             end
 
-            for i=1:numel(timestamps),
+            for i=1:numel(timestamps)
                 inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
                 timestamps{i} = timestamps{i}(inds_here);
                 data{i} = data{i}(inds_here);
-            end;
+            end
 
-            if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+            if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
-            end;
+            end
 
         end % readevents_epochsamples()
 
@@ -184,7 +184,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
             sr = samplerate@ndi.daq.reader.mfdaq.intan(ndi_daqreader_mfdaq_stimulus_nielsenvisintan_obj, epochfiles, channeltype, channel);
         end
 
-    end; % methods
+    end % methods
 
     methods (Static)  % helper functions
     end % static methods

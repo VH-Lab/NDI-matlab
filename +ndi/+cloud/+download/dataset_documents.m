@@ -44,8 +44,6 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
         end
     end
 
-    
-
     for i = 1:numel(d)
         if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
         document_id = d{i};
@@ -60,7 +58,7 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
         if verbose, disp(['Saving document ' int2str(i) '...']); end
 
         docStruct = rmfield(docStruct, 'id');
-        docStruct = ndi.cloud.download.set_file_info(docStruct,mode,filepath);
+        docStruct = ndi.cloud.download.internal.set_file_info(docStruct,mode,filepath);
 
         document_obj = ndi.document(docStruct);
         % save the document in .json file

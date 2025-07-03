@@ -3,7 +3,7 @@ classdef documentservice
     %
     properties (SetAccess=protected, GetAccess=public)
 
-    end; % properties
+    end % properties
 
     methods
         function ndi_documentservice_obj = documentservice()
@@ -12,7 +12,7 @@ classdef documentservice
             % NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();
             %
 
-        end; % ndi.documentservice()
+        end % ndi.documentservice()
 
         function ndi_document_obj = newdocument(ndi_documentservice_obj)
             % NEWDOCUMENT - create a new ndi.document based on information in this object
@@ -24,7 +24,7 @@ classdef documentservice
             % The base ndi.documentservice class returns empty.
             %
             ndi_document_obj = [];
-        end; % newdocument
+        end % newdocument
 
         function sq = searchquery(ndi_documentservice_obj)
             % SEARCHQUERY - create a search query to find this object as an ndi.document
@@ -36,6 +36,6 @@ classdef documentservice
             %
             % The base class ndi.documentservice just returns empty.
             sq = [];
-        end; % searchquery
-    end;
+        end % searchquery
+    end
 end

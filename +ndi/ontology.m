@@ -47,10 +47,10 @@ methods
         % Does not require arguments. Intended primarily for subclassing.
     end
 
-    function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name)
+    function [id, name, definition, synonyms, shortName] = lookupTermOrID(obj, term_or_id_or_name)
         % LOOKUPTERMORID - Base implementation for looking up a term within a specific ontology instance.
         %
-        %   [ID, NAME, DEFINITION, SYNONYMS] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME)
+        %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME)
         %
         %   This base class method should be overridden by specific ontology subclasses
         %   (e.g., ndi.ontology.CL, ndi.ontology.OM). It defines the standard interface
@@ -69,6 +69,7 @@ methods
         name = '';
         definition = '';
         synonyms = {};
+        shortName = '';
     end
 
 end % methods
@@ -78,10 +79,10 @@ methods (Static)
     % --------------------------------------------------------------------
     % Main Static Lookup Function (Dispatcher)
     % --------------------------------------------------------------------
-    function [id, name, prefix, definition, synonyms] = lookup(lookupString)
+    function [id, name, prefix, definition, synonyms, shortName] = lookup(lookupString)
         % LOOKUP - Look up a term in an ontology using a prefixed string.
         %
-        %   [ID, NAME, PREFIX, DEFINITION, SYNONYMS] = ndi.ontology.lookup(LOOKUPSTRING)
+        %   [ID, NAME, PREFIX, DEFINITION, SYNONYMS, SHORTNAME] = ndi.ontology.lookup(LOOKUPSTRING)
         %
         %   Looks up a term using a prefixed string (e.g., 'CL:0000000', 'OM:metre').
         %   It identifies the ontology from the prefix using the mappings in
@@ -95,12 +96,12 @@ methods (Static)
         %     PREFIX       - The ontology prefix used in the lookup.
         %     DEFINITION   - A textual definition, if available.
         %     SYNONYMS     - A cell array of synonyms, if available.
+        %     SHORTNAME    - The short name for the term.
         %
         %   Examples:
         %       % Lookup neuron in Cell Ontology by ID
         %       [id, name, prefix] = ndi.ontology.lookup('CL:0000540');
         %       % Expected: id='CL:0000540', name='neuron', prefix='CL'
-        %
         %
         %       % Lookup ethanol in ChEBI by ID
         %       [id, name, prefix] = ndi.ontology.lookup('CHEBI:16236');
@@ -129,7 +130,7 @@ methods (Static)
         %   See also: ndi.ontology.lookupTermOrID (instance method to be overridden)
 
         % Initialize outputs
-        id = ''; name = ''; prefix = ''; definition = ''; synonyms = {};
+        id = ''; name = ''; prefix = ''; definition = ''; synonyms = {}; shortName = '';
 
         % 1. Get Ontology Name and Remainder from Prefix
         try
@@ -169,15 +170,18 @@ methods (Static)
 
         % 5. Call the Instance Method lookupTermOrID
         try
-             [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
+            [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
         catch ME_lookup
-             baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
-                 'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
-             baseME = addCause(baseME, ME_lookup);
-             throw(baseME);
+            baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
+                'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
+            baseME = addCause(baseME, ME_lookup);
+            throw(baseME);
         end
 
-        % 6. Return results
+        % 6. Creat shortName (valid MATLAB variable name)
+        shortName = ndi.fun.name2variableName(name);
+
+        % 7. Return results
 
     end % function lookup
 
@@ -240,7 +244,7 @@ methods (Static)
             term_component = '';
             if startsWith(processed_input, prefix_with_colon, 'IgnoreCase', true), remainder = strtrim(processed_input(numel(prefix_with_colon)+1:end)); if ~isempty(regexp(remainder, '^\d+$', 'once')), error('ndi:ontology:preprocessLookupInput:NumericIDUnsupported_OM', 'Lookup by prefixed numeric ID ("%s") is not supported for OM.', original_input); elseif isempty(remainder), error('ndi:ontology:preprocessLookupInput:InvalidPrefixFormat_OM', 'Input "%s" has prefix "%s" but is missing term component.', original_input, prefix_with_colon); else, term_component = remainder; end
             else, term_component = processed_input; end
-            try, likely_label = ndi.ontology.convertComponentToLabel_OMHeuristic(term_component); catch ME_regexp, error('ndi:ontology:preprocessLookupInput:HeuristicError_OM', 'Failed to convert OM term component "%s" to label format: %s', term_component, ME_regexp.message); end
+            try likely_label = ndi.ontology.convertComponentToLabel_OMHeuristic(term_component); catch ME_regexp, error('ndi:ontology:preprocessLookupInput:HeuristicError_OM', 'Failed to convert OM term component "%s" to label format: %s', term_component, ME_regexp.message); end
             if isempty(likely_label), error('ndi:ontology:preprocessLookupInput:HeuristicError_OM', 'Derived empty search label from OM term component "%s".', term_component); end
             search_query = likely_label; search_field = 'label'; lookup_type_msg = sprintf('input "%s" (searching label as "%s")', original_input, likely_label);
         else % --- Standard Handling ---
@@ -283,7 +287,7 @@ methods (Static)
         end
         % --- Perform IRI Lookup ---
         if ~isempty(term_iri)
-            try, [id, name, definition, synonyms] = ndi.ontology.performIriLookup(term_iri, ontology_name_ols, ontology_prefix);
+            try [id, name, definition, synonyms] = ndi.ontology.performIriLookup(term_iri, ontology_name_ols, ontology_prefix);
             catch ME, baseME = MException('ndi:ontology:searchOLSAndPerformIRILookup:PostSearchLookupFailed', 'IRI lookup failed following search for %s (IRI: %s).', lookup_type_msg, term_iri); baseME = addCause(baseME, ME); throw(baseME); end
         else, error('ndi:ontology:searchOLSAndPerformIRILookup:InternalError', 'Could not determine unique IRI after search for %s.', lookup_type_msg); end
     end % function searchOLSAndPerformIRILookup
@@ -510,7 +514,7 @@ methods (Static, Access = private)
 
     function likely_label = convertComponentToLabel_OMHeuristic(comp)
         % CONVERTCOMPONENTTOLABEL_OMHEURISTIC - OM-specific heuristic conversion.
-        try, spaced = regexprep(comp,'([a-z])([A-Z])','$1 $2'); likely_label = lower(strtrim(spaced));
+        try spaced = regexprep(comp,'([a-z])([A-Z])','$1 $2'); likely_label = lower(strtrim(spaced));
         catch err, warning('ndi:ontology:preprocessLookupInput:ConversionHelperWarning', 'Error in OM heuristic for "%s": %s. Using lower(comp).', comp, err.message); likely_label = lower(comp); end
     end % function convertComponentToLabel_OMHeuristic
 
@@ -555,7 +559,7 @@ methods (Static, Access = private)
 
         % Split file into lines, handling both \n and \r\n
         lines = strsplit(rawText, {'\n', '\r\n'}, 'CollapseDelimiters', false);
-        if iscell(lines) && numel(lines)==1 && isempty(lines{1}) % Handle empty file
+        if iscell(lines) && isscalar(lines) && isempty(lines{1}) % Handle empty file
             lines = {};
         end
 
@@ -608,9 +612,8 @@ methods (Static, Access = private)
                         currentTerm.synonyms{end+1} = synMatches{1};
                     end
                     % More advanced parsing could extract synonym type, scope, xrefs.
-                % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
-                % For now, we only strictly need id, name, def for the lookup.
                 end
+                % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
             end
         end
 

@@ -95,7 +95,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
 
     ndiDocuments = ndi.cloud.download.jsons2documents(jsonpath);
 
-    if verbose, disp(['Building dataset from documents...']); end;
-    if verbose & strcmp(mode,'local'), disp(['Will copy downloaded files into dataset..may take several minutes if the dataset is large...']); end;
+    if verbose, disp(['Building dataset from documents...']); end
+    if verbose & strcmp(mode,'local'), disp(['Will copy downloaded files into dataset..may take several minutes if the dataset is large...']); end
 
     D = ndi.dataset.dir([],output_path,ndiDocuments);

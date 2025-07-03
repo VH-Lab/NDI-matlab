@@ -36,18 +36,18 @@ function test_ndi_syncgraph_documents
     sg_docs{1} = sg{1}.newdocument();
     E.database_add(sg_docs{1});
     syncgraph_docs{1} = E.database_search(sg{1}.searchquery());
-    if numel(syncgraph_docs{1})~=1,
+    if numel(syncgraph_docs{1})~=1
         error(['Did not find exactly 1 match.']);
-    end;
+    end
 
     sg_fromdoc = {};
 
-    for i=1:numel(syncgraph_docs),
+    for i=1:numel(syncgraph_docs)
         sg_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncgraph_docs{i}{1},E);
-        if eq(sg_fromdoc{i},sg{i}),
+        if eq(sg_fromdoc{i},sg{i})
             disp(['Syncgraph number ' int2str(i) ' matches.']);
-        else,
+        else
             error(['Syncgraph number ' int2str(i) ' does not match.']);
-        end;
-    end;
+        end
+    end
 end

@@ -35,7 +35,7 @@ classdef timeseries < ndi.documentservice
             %  DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
             %  ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 
-        end; % readtimeseries()
+        end % readtimeseries()
 
         function sr = samplerate(ndi_timeseries_obj, epoch)
             % SAMPLERATE - return the sample rate of an ndi.time.timeseries object
@@ -47,7 +47,7 @@ classdef timeseries < ndi.documentservice
             %
             % If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.
             sr = -1; % -1 for abstract class
-        end; % sample_rate
+        end % sample_rate
 
         function samples = times2samples(ndi_timeseries_obj, epoch, times)
             % TIMES2SAMPLES - convert from the timeseries time to sample numbers
@@ -62,17 +62,17 @@ classdef timeseries < ndi.documentservice
 
             % TODO: convert times to dev_local_clock
             sr = ndi_timeseries_obj.samplerate(epoch);
-            if sr>0,
+            if sr>0
                 et = ndi_timeseries_obj.epochtableentry(epoch);
                 samples = 1 + round ((times-et.t0_t1{1}(1))*sr);
                 g = (isinf(times) & (times < 0));
                 samples(g) = 1;
                 g = (isinf(times) & (times > 0));
                 samples(g) = 1+sr*diff(et.t0_t1{1}(1:2));
-            else,
+            else
                 samples = []; % need to be overridden
-            end;
-        end;
+            end
+        end
 
         function times = samples2times(ndi_timeseries_obj, epoch, samples)
             % SAMPLES2TIMES - convert from the timeseries time to sample numbers
@@ -86,13 +86,13 @@ classdef timeseries < ndi.documentservice
             %
             % TODO: convert times to dev_local_clock
             sr = ndi_timeseries_obj.samplerate(epoch);
-            if sr>0,
+            if sr>0
                 et = ndi_timeseries_obj.epochtableentry(epoch);
                 times = et.t0_t1{1}(1) + (samples-1)/sr;
-            else,
+            else
                 times = []; % need to be overridden
-            end;
-        end;
+            end
+        end
 
     end % methods
 end % class ndi.time.timereference

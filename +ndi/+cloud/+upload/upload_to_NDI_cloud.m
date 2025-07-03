@@ -16,12 +16,12 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
 
     vlt.data.assign(varargin{:});
 
-    if verbose, disp(['Loading documents...']); end;
+    if verbose, disp(['Loading documents...']); end
     d = S.database_search(ndi.query('','isa','base'));
 
-    if verbose, disp(['Working on documents...']); end;
+    if verbose, disp(['Working on documents...']); end
 
-    if verbose, disp(['Getting list of previously uploaded documents...']); end;
+    if verbose, disp(['Getting list of previously uploaded documents...']); end
     [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.upload.scan_for_upload(S, d, 0, dataset_id);
     % count the number of documents to be upload by checking the is_upload flag in doc_json_struct
     docs_left = sum(~[doc_json_struct.is_uploaded]);
@@ -38,15 +38,15 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
     cur_doc_idx = 1;
     h_document = waitbar(0, 'Uploading Documents...');
 
-    for i=1:numel(d),
+    for i=1:numel(d)
         % upload instruction - need to learn
         doc_id = d{i}.document_properties.base.id;
         if (~doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded)
             document = did.datastructures.jsonencodenan(d{i}.document_properties);
             waitbar(cur_doc_idx/docs_left, h_document, sprintf('Uploading Document: %s. %d of %d...', doc_id, cur_doc_idx, docs_left));
-            if verbose,
+            if verbose
                 disp(['Uploading ' int2str(cur_doc_idx) ' JSON portions of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
-            end;
+            end
             ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
             doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded = 1;
             cur_doc_idx = cur_doc_idx + 1;

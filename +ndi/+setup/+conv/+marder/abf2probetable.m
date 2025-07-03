@@ -31,41 +31,41 @@ function abf2probetable(S, options)
     s = dir([dirname filesep  'subje*.txt']);
 
     subject = {};
-    for i=1:numel(s),
+    for i=1:numel(s)
         subject{i} = fileread([dirname filesep s(i).name]);
-    end;
+    end
 
     cols = {'channelName','probeName','probeRef','probeType','subject','firstAppears'};
     datatypes = {'string','string','double','string','string','string'};
 
     probetable = table('Size',[0 numel(cols)],'VariableNames',cols,'VariableTypes',datatypes);
 
-    for i=1:numel(d),
+    for i=1:numel(d)
         h = ndr.format.axon.read_abf_header([dirname filesep d(i).name]);
         [name,ref,daqsysstr,subjectlist] = ndi.setup.conv.marder.channelnames2daqsystemstrings(h.recChNames,'marder_abf',subject,...
             'forceIgnore2',options.forceIgnore2);
-        for j=1:numel(name),
-            if j<=numel(h.recChNames),
-                if isempty(find(strcmp(h.recChNames{j},probetable.("channelName")))),
-                    if any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='v'),
+        for j=1:numel(name)
+            if j<=numel(h.recChNames)
+                if isempty(find(strcmp(h.recChNames{j},probetable.("channelName"))))
+                    if any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='v')
                         probeType = 'sharp-Vm';
                         name{j} = 'XP';
-                    elseif any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='i'),
+                    elseif any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='i')
                         probeType = 'sharp-Im';
                         name{j} = 'XP';
-                    elseif ~isempty(findstr(lower(h.recChNames{j}),'temp')),
+                    elseif ~isempty(findstr(lower(h.recChNames{j}),'temp'))
                         probeType = 'thermometer';
-                    else,
+                    else
                         probeType = 'n-trode';
-                    end;
+                    end
                     probetable_new = cell2table({ h.recChNames{j} name{j} ref(j) probeType subjectlist{j} d(i).name},...
                         'VariableNames',cols);
                     probetable = cat(1,probetable,probetable_new);
-                end;
+                end
             else, probetable_new = cell2table({ 'nothing' name{j} ref(j) 'unknown' subjectlist{j} d(i).name},...
                         'VariableNames',cols);
-            end;
-         end;
-    end;
+            end
+         end
+    end
 
     writetable(probetable,[dirname filesep 'probeTable.csv']);

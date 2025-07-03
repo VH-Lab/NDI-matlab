@@ -22,13 +22,13 @@ function exp = katzlab_makedev(exp, devname)
     %
     % See also: ndi.file.navigator.epochdir
 
-    if nargin == 0,
+    if nargin == 0
         exp = {'narendra_intan'};
         return;
-    end;
+    end
 
-    if iscell(devname),
-        for i=1:length(devname),
+    if iscell(devname)
+        for i=1:length(devname)
             exp = ndi.setups.katzlab_makedev(exp, devname{i});
         end
         return;
@@ -39,8 +39,8 @@ function exp = katzlab_makedev(exp, devname)
     readerobjectclass = 'ndi.daq.reader.mfdaq';
     epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
-    switch devname,
-        case 'narendra_intan',
+    switch devname
+        case 'narendra_intan'
             fileparameters{end+1} = 'time.dat';
             fileparameters{end+1} = 'info.rhd';
             fileparameters{end+1} = 'epochprobemap.txt';
@@ -52,7 +52,7 @@ function exp = katzlab_makedev(exp, devname)
                 ndi.daq.metadatareader('stimulus_metadata_optical_fiber1.tsv') ...
                 ndi.daq.metadatareader('stimulus_metadata_optical_fiber2.tsv')};
             epochprobemapfileparameters = {'epochprobemap.txt'};
-        otherwise,
+        otherwise
             error(['Unknown device requested ' devname '.']);
     end
 

@@ -33,7 +33,7 @@ function test_ndi_filenavigator
 
     disp(['The epoch table entries:']);
 
-    for i=1:numel(et),
+    for i=1:numel(et)
         et(i),
     end
 

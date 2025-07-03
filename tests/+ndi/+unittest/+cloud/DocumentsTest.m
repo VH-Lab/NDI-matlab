@@ -139,7 +139,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 ndi.cloud.download.download_document_collection(testCase.DatasetID);
            
             for i = 1:numDocuments
-                testCase.verifyEqual(testDocuments{i}, jsonencode(downloadedDocuments(i)))
+                testCase.verifyEqual(...
+                    testDocuments{i}, ...
+                    jsonencode(downloadedDocuments{i}.document_properties))
             end
 
             % Download subset of documents using bulk download
@@ -150,7 +152,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
            
             for i = 1:numel(docIdx)
-                testCase.verifyEqual(testDocuments{docIdx(i)}, jsonencode(downloadedDocumentSubset(i)))
+                testCase.verifyEqual(...
+                    testDocuments{docIdx(i)}, ...
+                    jsonencode(downloadedDocumentSubset{i}.document_properties))
             end
 
             % Clean up (delete documents)
@@ -186,8 +190,12 @@ classdef DocumentsTest < matlab.unittest.TestCase
             [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
             testCase.verifyEqual(numel(dataset.documents), numDocuments, message)
 
-            [~, summary] = ndi.cloud.api.documents.list_dataset_documents(testCase.DatasetID);
-            testCase.verifyEqual(numel(summary.documents), numDocuments, message)
+            % list_dataset_documents api endpoint will return deleted
+            % documents as well, so this is actually not a good way to
+            % verify number of documents post deletion. 
+            % Keeping the current code for future reference:
+            % % [~, summary] = ndi.cloud.api.documents.list_dataset_documents(testCase.DatasetID);
+            % % testCase.verifyEqual(numel(summary.documents), numDocuments, message)
         end
     end
 end

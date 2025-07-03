@@ -3,9 +3,9 @@ function out=plot_epoch(S, epoch, spacing)
     %
     %
 
-    if nargin<3,
+    if nargin<3
         spacing = 3;
-    end;
+    end
 
     dirname = S.getpath()
     [parentdir,this_dir] = fileparts(dirname);
@@ -18,12 +18,12 @@ function out=plot_epoch(S, epoch, spacing)
     t = ndr.format.axon.read_abf(fname,[],'time', ...
         1,-Inf,Inf);
 
-    for i=1:size(D,2),
+    for i=1:size(D,2)
         D(:,i) = D(:,i)-mean(D(:,i));
-        if strcmp(h.recChUnits{i},'mV'),
+        if strcmp(h.recChUnits{i},'mV')
             D(:,i) = D(:,i) / 10;
-        end;
-    end;
+        end
+    end
 
     h.recChNames,
     figure;

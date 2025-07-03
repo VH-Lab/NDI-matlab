@@ -1,11 +1,11 @@
 classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
 
-    properties,
+    properties
         key            %  The key that is created when the binary doc is locked
         doc_unique_id  %  The document unique id
-    end;
+    end
 
-    methods,
+    methods
         function ndi_binarydoc_matfid_obj = matfid(varargin)
             % ndi.database.implementations.binarydoc.matfid - create a new ndi.database.implementations.binarydoc.matfid object
             %
@@ -22,7 +22,7 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
             ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
             ndi_binarydoc_matfid_obj.key = key;
             ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
-        end; % ndi.database.implementations.binarydoc.matfid() creator
+        end % ndi.database.implementations.binarydoc.matfid() creator
 
         function ndi_binarydoc_matfid_obj = fclose(ndi_binarydoc_matfid_obj)
             % FCLOSE - close an ndi.database.implementations.binarydoc.matfid object
@@ -34,5 +34,5 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
             ndi_binarydoc_matfid_obj.fclose@vlt.file.fileobj();
             ndi_binarydoc_matfid_obj.permission = 'r';
         end % fclose()
-    end;
+    end
 end

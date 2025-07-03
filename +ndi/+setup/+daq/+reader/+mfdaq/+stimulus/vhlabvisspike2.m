@@ -31,7 +31,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             %  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
             %  This is an abstract class that is overridden by specific devices.
             obj = obj@ndi.daq.reader.mfdaq.cedspike2(varargin{:});
-        end; % vhlabvisspike2()
+        end % vhlabvisspike2()
 
         function ec = epochclock(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles)
             % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -69,7 +69,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             channels(end+1) = struct('name','e1','type','event','time_channel',NaN);
             channels(end+1) = struct('name','e2','type','event','time_channel',NaN);
             channels(end+1) = struct('name','e3','type','event','time_channel',NaN);
-        end; % getchannelsepoch()
+        end % getchannelsepoch()
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
@@ -93,21 +93,21 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             timestamps = {};
             data = {};
 
-            if ~iscell(channeltype),
+            if ~iscell(channeltype)
                 channeltype = repmat({channeltype},numel(channel),1);
-            end;
+            end
 
             pathname = {};
             fname = {};
             ext = {};
-            for i=1:numel(epochfiles),
+            for i=1:numel(epochfiles)
                 [pathname{i},fname{i},ext{i}] = fileparts(epochfiles{i});
             end
 
             % do the decoding
             [stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
             mappingfile1 = [pathname{1} filesep 'stimtimes2stimtimes_mapping.txt'];
-            if isfile(mappingfile1),
+            if isfile(mappingfile1)
                 mapping = load(mappingfile1,'-ascii');
                 stimid = stimid(vlt.data.dropnan(mapping));
                 stimtimes = stimtimes(vlt.data.dropnan(mapping));
@@ -115,7 +115,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             end
             [ss,mti]=getstimscript(pathname{1});
             mappingfile2 = [pathname{1} filesep 'mti2stimtimes_mapping.txt'];
-            if isfile(mappingfile2),
+            if isfile(mappingfile2)
                 mapping = load(mappingfile2,'-ascii');
                 mti = mti(vlt.data.dropnan(mapping));
             end
@@ -123,28 +123,28 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             stimofftimes = [];
             stimsetuptimes = [];
             stimcleartimes = [];
-            if numel(mti)~=numel(stimtimes),
+            if numel(mti)~=numel(stimtimes)
                 error(['Error: The number of stim triggers present in the stimtimes.txt file (' ...
                     int2str(numel(stimtimes)) ') differs from what is expected from the content of stims.mat file (' ...
                     int2str(length(mti)) ') in ' pathname{1} '.']);
             end
 
-            for i=1:numel(mti),
-                if stimid(i)~=mod(mti{i}.stimid,256),
+            for i=1:numel(mti)
+                if stimid(i)~=mod(mti{i}.stimid,256)
                     error(['Stimulus number ' int2str(i) ' does not line up between Spike2 and stimulus computer record: Spike2 says ' int2str(stimid(i)) ' while stimulus computer says ' int2str(mti{i}.stimid) '.']);
-                end;
+                end
                 stimid(i) = mti{i}.stimid; % needed because now we only know stims on Spike2 up to mod 256
                 % spike2time = mactime + timeshift
                 timeshift = stimtimes(i) - mti{i}.startStopTimes(2);
                 stimofftimes(i) = mti{i}.startStopTimes(3) + timeshift;
                 stimsetuptimes(i) = mti{i}.startStopTimes(1) + timeshift;
                 stimcleartimes(i) = mti{i}.startStopTimes(4) + timeshift;
-            end;
+            end
 
-            for i=1:numel(channel),
+            for i=1:numel(channel)
                 % ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}),
-                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i})),
-                    case 'mk',
+                switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}))
+                    case 'mk'
                         % put them together, alternating stimtimes and stimofftimes in the final product
                         time1 = [stimtimes(:)' ; stimofftimes(:)'];
                         data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
@@ -164,36 +164,36 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 
                         timestamps{i} = ch{channel(i)}(:,1);
                         data{i} = ch{channel(i)}(:,2:end);
-                    case 'e',
-                        if channel(i)==1, % frametimes
+                    case 'e'
+                        if channel(i)==1 % frametimes
                             allframetimes = cat(1,frametimes{:});
                             timestamps{end+1} = [allframetimes(:)];
                             data{end+1} = [ones(size(allframetimes(:)))];
-                        elseif channel(i)==2, % vertical refresh
+                        elseif channel(i)==2 % vertical refresh
                             vr = load(epochfiles{find(strcmp('verticalblanking',fname))},'-ascii');
                             timestamps{end+1} = [vr(:)];
                             data{end+1} = [ones(size(vr(:)))];
-                        elseif channel(i)==3, % background trigger, simulated
+                        elseif channel(i)==3 % background trigger, simulated
                             timestamps{end+1} = stimsetuptimes(:);
                             data{end+1} = [ones(size(stimsetuptimes(:)))];
                         end
-                    case 'md',
+                    case 'md'
 
-                    otherwise,
+                    otherwise
                         error(['Unknown channel.']);
                 end
             end
 
-            for i=1:numel(timestamps),
+            for i=1:numel(timestamps)
                 inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
                 timestamps{i} = timestamps{i}(inds_here);
                 data{i} = data{i}(inds_here);
-            end;
+            end
 
-            if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+            if numel(data)==1% if only 1 channel entry to return, make it non-cell
                 timestamps = timestamps{1};
                 data = data{1};
-            end;
+            end
 
         end % readevents_epochsamples()
 
@@ -211,7 +211,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             sr = NaN;
         end
 
-    end; % methods
+    end % methods
 
     methods (Static)  % helper functions
     end % static methods

@@ -19,9 +19,9 @@ function [probename, proberef, probetype, subjectname] = channelnametable2proben
 
     i = find(strcmp(chName,probetable.("channelName")));
 
-    if isempty(i),
+    if isempty(i)
         warning(['No match found.']);
-    end;
+    end
 
     probename = probetable{i,"probeName"};
     proberef = probetable{i,"probeRef"};

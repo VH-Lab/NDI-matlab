@@ -32,13 +32,13 @@ nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
 S.syncgraph_addrule(nsf);
 
 p = S.getprobes() % get all of the probes that are in the ndi.session S
-for i=1:numel(p), p{i}, end; % display the probe information for each probe
+for i=1:numel(p), p{i}, end % display the probe information for each probe
 
 % look at the number of epochs recorded for probe 1
 p_ctx1_list = S.getprobes('name','ctx','reference',1) % returns a cell array of matches
 p_ctx1 = p_ctx1_list{1}; % take the first one, should be the only one
 et = p_ctx1.epochtable()
-for i=1:numel(et), et(i), end; % display the epoch table entries
+for i=1:numel(et), et(i), end % display the epoch table entries
 epoch_to_read = 1;
 
 [data,t,timeref_p_ctx1]=p_ctx1.readtimeseries(epoch_to_read,-Inf,Inf); % read all data from epoch 1
@@ -52,7 +52,7 @@ box off;
 p_visstim_list = S.getprobes('name','vis_stim','reference',1) % returns a cell array of matches
 p_visstim = p_visstim_list{1}; % take the first one, should be the only one
 et = p_visstim.epochtable()
-for i=1:numel(et), et(i), end; % display the epoch table entries
+for i=1:numel(et), et(i), end % display the epoch table entries
 
 [data,t,timeref_stim]=p_visstim.readtimeseries(timeref_p_ctx1,-Inf,Inf); % read all data from epoch 1 of p_ctx1 !
 figure(100);

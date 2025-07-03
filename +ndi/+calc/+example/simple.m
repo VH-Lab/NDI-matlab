@@ -11,7 +11,7 @@ classdef simple < ndi.calculator
             %
             simple_obj = simple_obj@ndi.calculator(session,'simple_calc',...
                 fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','simple_calc.json'));
-        end; % simple()
+        end % simple()
 
         function doc = calculate(ndi_calculator_obj, parameters)
             % CALCULATE - perform the calculator for ndi.calc.example.simple
@@ -23,8 +23,8 @@ classdef simple < ndi.calculator
             % The document that is created simple has an 'answer' that is given
             % by the input parameters.
             % check inputs
-            if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
-            if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
+            if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end
+            if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end
 
             % Step 1: set up the output structure
             simple = parameters;
@@ -34,10 +34,10 @@ classdef simple < ndi.calculator
 
             % Step 3: place the results of the calculator into an NDI document
             doc = ndi.document(ndi_calculator_obj.doc_document_types{1},'simple',simple);
-            for i=1:numel(parameters.depends_on),
+            for i=1:numel(parameters.depends_on)
                 doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
-            end;
-        end; % calculate
+            end
+        end % calculate
 
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)
             % DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
@@ -50,7 +50,7 @@ classdef simple < ndi.calculator
             parameters.input_parameters = struct('answer',5);
             parameters.depends_on = vlt.data.emptystruct('name','value');
             parameters.query = struct('name','probe_id','query',ndi.query('element.ndi_element_class','contains_string','ndi.probe',''));
-        end; % default_search_for_input_parameters
+        end % default_search_for_input_parameters
 
         function doc_about(ndi_calculator_obj)
             % ----------------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ classdef simple < ndi.calculator
             %   Definition: apps/simple_calc.json
             %
             eval(['help ndi.calc.example.simple.doc_about']);
-        end; %doc_about()
-    end; % methods()
+        end %doc_about()
+    end % methods()
 
 end % simple

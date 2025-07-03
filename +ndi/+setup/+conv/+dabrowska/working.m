@@ -212,3 +212,128 @@ stimulus_bath_docs = sb.table2bathDocs(variableTable,...
 %% Create stimulus approach docs
 
 %stimulus_approach_docs = ndi.setup.stimulus.vhlab.add_stimulus_approach(sessionArray{1},filename);
+
+%% Create EPM and FPS table docs
+
+myDir = '/Users/jhaley/Documents/MATLAB';
+myPath = fullfile(myDir,'data','Dabrowska');
+
+% Get session
+S = ndi.session.dir(myPath);
+
+% Initialize tableDocMaker
+tdm = ndi.setup.NDIMaker.tableDocMaker(S,'dabrowska');
+
+%% Get combined EPM data table
+filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
+filename_EPM = fullfile(myPath,'Behavioral Data','EPM',filename_EPM);
+[~,sheetnames_EPM] = xlsfinfo(filename_EPM);
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
+for i = 1:numel(sheetnames_EPM)
+
+    % Get data table and variable names
+    sheetTable = readtable(filename_EPM,'Sheet',sheetnames_EPM{i},...
+        'VariableNamingRule','modify');
+
+    % Remove rows where Animal value is NaN
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Animal'),:);
+
+    % Remove unused columns
+    varNames = sheetTable.Properties.VariableNames;
+    ind = contains(varNames,'Var') | contains(varNames,'Test');
+    sheetTable(:,ind) = [];
+
+    % Edit varname that does not contain sheetname
+    sheetVar = replace(sheetnames_EPM{i},' ','');
+    varNames = sheetTable.Properties.VariableNames;
+    ind = contains(varNames,'300S');
+    sheetTable.Properties.VariableNames{ind} = replace(varNames{ind},'x',sheetVar);
+   
+    % Join data tables
+    if i == 1
+        dataTable_EPM = sheetTable;
+    else
+        dataTable_EPM = outerjoin(dataTable_EPM,sheetTable,'Keys',{'Animal','Treatment'},...
+            'MergeKeys',true);
+    end
+end
+
+% Add unique subject identifiers with strain and virus information
+dataTable_EPM.Animal = char(arrayfun(@(animal) ['sd_rat_OTRCre_',num2str(animal,'%.3i'),...
+    '@dabrowska-lab.rosalindfranklin.edu'],dataTable_EPM.Animal,'UniformOutput',false));
+dataTable_EPM.Treatment = char(dataTable_EPM.Treatment);
+
+% tdm.createOntologyTableRowDoc(dataTable(1,:),'Animal','Overwrite',false);
+docsEPM = tdm.table2ontologyTableRowDocs(dataTable_EPM,'Animal','Overwrite',false);
+
+%% Get combined FPS data table
+
+filename_FPS = 'FPS_OTR-Cre+_Saline vs CNO_DREADDs-Gi_Experiment 1-final.xlsx';
+filename_FPS = fullfile(myPath,'Behavioral Data','FPS',filename_FPS);
+% [~,sheetnames_FPS] = xlsfinfo(filename_FPS);
+sheetnames_FPS = {'Pre-test 1','Pre-test 2','Shock Reactivity','Cue test 1',...
+    'Context 1','Cue test 2','Context 2','Cue test 3'};
+
+dataTable_FPS = cell(size(sheetnames_FPS));
+for i = 1:numel(sheetnames_FPS)
+
+    % Get data table and variable names
+    sheetTable = readtable(filename_FPS,'Sheet',sheetnames_FPS{i},...
+        'VariableNamingRule','modify');
+
+    % Remove rows where SubjectID value is ''
+    sheetTable = sheetTable(ndi.fun.table.identifyValidRows(sheetTable,'Trial_Num'),:);
+
+    % Edit varname that does not contain sheetname
+    sheetTable.Sheet_Name = repmat(sheetnames_FPS(i),height(sheetTable),1);
+   
+    % Store sheet table
+    dataTable_FPS{i} = sheetTable;
+end
+
+% Join sheet tables
+dataTable_FPS = ndi.fun.table.vstack(dataTable_FPS);
+
+% Add unique subject and group identifiers
+dataTable_FPS.Subject_ID = char(arrayfun(@(subject) ['sd_rat_OTRCre_',subject{1},...
+    '@dabrowska-lab.rosalindfranklin.edu'],dataTable_FPS.Subject_ID,'UniformOutput',false));
+dataTable_FPS.Group_ID = char(cellfun(@(sid) sid(6),dataTable_FPS.Session_ID));
+
+% Convert cells to char arrays
+dataTable_FPS.Trial_ID = char(dataTable_FPS.Trial_ID);
+dataTable_FPS.Run_Time = char(dataTable_FPS.Run_Time);
+dataTable_FPS.Sheet_Name = char(dataTable_FPS.Sheet_Name);
+
+% Remove redundant (or unused columns)
+dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
+    'TimeStampPT'}) = [];
+
+docsFPS = tdm.table2ontologyTableRowDocs(dataTable_FPS,...
+    {'Subject_ID','Trial_Num','Sheet_Name'},'Overwrite',false);
+
+%% Compiling a table of the file paths
+
+exportTable = cell2table(variableTable.Properties.RowNames,'VariableNames',{'filePath'});
+[filePath,fileName] = fileparts(exportTable.filePath);
+exportTable{:,{'subjectName','cellID'}} = {''};
+
+for i = 1:numel(fileName)
+    probeMapFileName = [filePath{i},filesep,fileName{i},'.epochprobemap.txt'];
+    try
+        probeMap = readtable(probeMapFileName, 'Delimiter', '\t', 'PreserveVariableNames', true);
+        exportTable.subjectName(i) = probeMap.subjectstring(1);
+        exportTable.cellID(i) = {probeMap.name{1}(end)};
+    end
+end
+
+[~,~,cellNum] = unique(exportTable(:,{'subjectName','cellID'}),'rows','stable');
+cellNum = cellNum - 1; cellNum(cellNum == 0) = NaN;
+exportTable.cellNum = cellNum;
+[~,~,subjectNum] = unique(exportTable(:,{'subjectName'}),'rows','stable');
+subjectNum = subjectNum - 1; subjectNum(subjectNum == 0) = NaN;
+exportTable.subjectNum = subjectNum;
+exportTable = movevars(exportTable,'filePath','After','cellNum');
+exportTable = movevars(exportTable,{'subjectNum','cellNum'},'Before','subjectName');
+
+exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250702.xls');
+writetable(exportTable,exportPath);

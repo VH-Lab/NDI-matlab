@@ -27,7 +27,7 @@ classdef appdoc
             ndi_app_appdoc_obj.doc_types = doc_types;
             ndi_app_appdoc_obj.doc_document_types = doc_document_types;
             ndi_app_appdoc_obj.doc_session = doc_session;
-        end; % ndi.app.appdoc()
+        end % ndi.app.appdoc()
 
         function doc = add_appdoc(ndi_app_appdoc_obj, appdoc_type, appdoc_struct, docexistsaction, varargin)
             % ADD_APPDOC - Load data from an application document
@@ -63,59 +63,59 @@ classdef appdoc
 
             % Step 1, load the appdoc_struct if it is not already a structure
 
-            if isempty(appdoc_struct),
+            if isempty(appdoc_struct)
                 appdoc_struct = ndi_app_appdoc_obj.defaultstruct_appdoc(appdoc_type);
-            elseif isa(appdoc_struct,'ndi.document'),
+            elseif isa(appdoc_struct,'ndi.document')
                 appdoc_struct = ndi_app_appdoc_obj.doc2struct(appdoc_type,appdoc_struct);
-            elseif isa(appdoc_struct,'char'),
-                try,
+            elseif isa(appdoc_struct,'char')
+                try
                     appdoc_struct = vlt.file.loadStructArray(appdoc_strut);
-                catch,
+                catch
                     error(['APPDOC_STRUCT was a character array, so it was assumed to be a file.' ...
                         ' But file reading failed with error ' lasterr '.']);
-                end;
-            elseif isstruct(appdoc_struct),
+                end
+            elseif isstruct(appdoc_struct)
                 % we are happy, nothing to do
-            else,
+            else
                 error(['Do not know how to process APPDOC_STRUCT as provided.']);
-            end;
+            end
 
             % Step 2, see if a document by this description already exists
 
             doc = ndi_app_appdoc_obj.find_appdoc(appdoc_type, varargin{:});
 
-            if ~isempty(doc),
-                switch (lower(docexistsaction)),
-                    case 'error',
+            if ~isempty(doc)
+                switch (lower(docexistsaction))
+                    case 'error'
                         error([int2str(numel(doc)) ' document(s) of application document type '...
                             appdoc_type ' already exist.']);
-                    case 'noaction',
+                    case 'noaction'
                         return; % we are done
-                    case {'replace','replaceifdifferent'},
+                    case {'replace','replaceifdifferent'}
                         aredifferent = 1; % by default, we will replace unless told to check
-                        if strcmpi(docexistsaction,'ReplaceIfDifferent'),
+                        if strcmpi(docexistsaction,'ReplaceIfDifferent')
                             % see if they really are different
-                            if numel(doc)>1, % there are multiple versions, must be different
+                            if numel(doc)>1 % there are multiple versions, must be different
                                 aredifferent = 1;
-                            else,
+                            else
                                 appdoc_struct_here = ndi_app_appdoc_obj.doc2struct(appdoc_type, doc{1});
                                 b = ndi_app_appdoc_obj.isequal_appdoc_struct(appdoc_type, appdoc_struct, ...
                                     appdoc_struct_here);
                                 aredifferent = ~b;
-                            end;
-                        end;
-                        if aredifferent,
+                            end
+                        end
+                        if aredifferent
                             b = ndi_app_appdoc_obj.clear_appdoc(appdoc_type, varargin{:});
-                            if ~b,
+                            if ~b
                                 error(['Could not delete existing ' appdoc_type ' document(s).']);
-                            end;
-                        else,
+                            end
+                        else
                             return; % nothing to do, it's already there and the same as we wanted
-                        end;
-                    otherwise,
+                        end
+                    otherwise
                         error(['Unknown DOCEXISTSACTION: ' docexistsaction '.']);
-                end; % switch(docexistsaction)
-            end;
+                end % switch(docexistsaction)
+            end
 
             % if we haven't returned, we need to make a document and add it
 
@@ -125,7 +125,7 @@ classdef appdoc
 
             doc = {doc}; % make it a cell array
 
-        end; % add_appdoc
+        end % add_appdoc
 
         function doc = struct2doc(ndi_app_appdoc_obj, appdoc_type, appdoc_struct, varargin)
             % STRUCT2DOC - create an ndi.document from an input structure and input parameters
@@ -139,7 +139,7 @@ classdef appdoc
             % The documentation for overridden functions should be in the function APPDOC_DESCRIPTION.
             %
             doc = [];
-        end; % struct2doc()
+        end % struct2doc()
 
         function appdoc_struct = doc2struct(ndi_app_appdoc_obj, appdoc_type, doc)
             % DOC2STRUCT - create an ndi.document from an input structure and input parameters
@@ -153,7 +153,7 @@ classdef appdoc
             %
             listname = doc.document_properties.document_class.property_list_name;
             appdoc_struct = getfield(doc.document_properties,listname);
-        end; % doc2struct()
+        end % doc2struct()
 
         function appdoc_struct = defaultstruct_appdoc(ndi_app_appdoc_obj, appdoc_type)
             % DEFAULTSTRUCT_APPDOC - return a default appdoc structure for a given APPDOC type
@@ -166,13 +166,13 @@ classdef appdoc
             % default structure is built from the ndi.document's class property list.
             %
             ind = find(strcmpi(appdoc_type,ndi_app_appdoc_obj.doc_types));
-            if ~isempty(ind),
+            if ~isempty(ind)
                 appdoc_doc = ndi.document(ndi_app_appdoc_obj.doc_document_types{ind});
                 appdoc_struct = ndi_app_appdoc_obj.doc2struct(appdoc_type, appdoc_doc);
-            else,
+            else
                 error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-            end;
-        end; % defaultstruct_appdoc()
+            end
+        end % defaultstruct_appdoc()
 
         function varargout = loaddata_appdoc(ndi_app_appdoc_obj, appdoc_type, varargin)
             % LOADDATA_APPDOC - Load data from an application document
@@ -190,7 +190,7 @@ classdef appdoc
             % The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.
             %
             varargout = {};
-        end; % loaddata_appdoc()
+        end % loaddata_appdoc()
 
         function b = clear_appdoc(ndi_app_appdoc_obj, appdoc_type, varargin)
             % CLEAR_APPDOC - remove an ndi.app.appdoc document from a session database
@@ -206,12 +206,12 @@ classdef appdoc
             %
             b = 0;
             doc = ndi_app_appdoc_obj.find_appdoc(appdoc_type,varargin{:});
-            if ~isempty(doc),
+            if ~isempty(doc)
                 ndi_app_appdoc_obj.doc_session.database_rm(doc);
                 b = 1;
-            end;
+            end
 
-        end; % clear_appdoc()
+        end % clear_appdoc()
 
         function doc = find_appdoc(ndi_app_appdoc_obj, appdoc_type, varargin)
             % FIND_APPDOC - find an ndi.app.appdoc document in the session database
@@ -231,7 +231,7 @@ classdef appdoc
             % APPDOC_DESCRIPTION.
             %
             doc = [];
-        end; % find_appdoc
+        end % find_appdoc
 
         function [b,errormsg] = isvalid_appdoc_struct(ndi_app_appdoc_obj, appdoc_type, appdoc_struct)
             % ISVALID_APPDOC_STRUCT - is an input structure a valid descriptor for an APPDOC?
@@ -245,7 +245,7 @@ classdef appdoc
             %
             b = 0;
             errormsg = 'Base class always returns invalid';
-        end; % isvalid_appdoc_struct()
+        end % isvalid_appdoc_struct()
 
         function b = isequal_appdoc_struct(ndi_app_appdoc_obj, appdoc_type, appdoc_struct1, appdoc_struct2)
             % ISEQUAL_APPDOC_STRUCT - are two APPDOC data structures the same (equal)?
@@ -259,10 +259,10 @@ classdef appdoc
             b = 0;
             b1 = ndi_app_appdoc_obj.isvalid_appdoc_struct(appdoc_type, appdoc_struct1);
             b2 = ndi_app_appdoc_obj.isvalid_appdoc_struct(appdoc_type, appdoc_struct2);
-            if b1&b2,
+            if b1&b2
                 b = vlt.data.eqlen(appdoc_struct1,appdoc_struct2);
-            end;
-        end; % isequal_appdoc_struct
+            end
+        end % isequal_appdoc_struct
 
         function appdoc_description(ndi_app_appdoc_obj)
             % APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
@@ -332,8 +332,8 @@ classdef appdoc
             %
             % (If there were more appdoc types, list them here...)
             eval(['help ndi.app.appdoc/appdoc_description']); % change to your class here
-        end; % appdoc_description()
+        end % appdoc_description()
 
-    end;
+    end
 
 end % ndi.app.appdoc

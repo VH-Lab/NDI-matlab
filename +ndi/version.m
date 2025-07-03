@@ -1,5 +1,5 @@
-function [v, url] = ndi_version
-    % NDI_VERSION - return the version string for NDI
+function [v, url] = version
+    % VERSION - return the version string for NDI
     %
     % [V, URL] = ndi.version()
     %
@@ -14,4 +14,4 @@ function [v, url] = ndi_version
 
     [parentdir,file,ext] = fileparts(filename);
 
-    [v,url] = git_repo_version(parentdir);
+    [v,url] = vlt.git.git_repo_version(parentdir);

@@ -10,21 +10,21 @@ function dbfilename = doc2ingesteddbfilename(ndi_document_obj, filename)
 
     [b,msg,fi_index] = ndi_document_obj.is_in_file_list(filename);
 
-    if b==0,
+    if b==0
         error(['Document does not have a file ' filename '.']);
-    end;
+    end
 
     % if we are here, we know we have files.file_info
 
     locs = ndi_document_obj.document_properties.files.file_info(fi_index).locations;
 
-    for i=1:numel(locs),
+    for i=1:numel(locs)
 
-        if locs(i).ingest==1, % we found one we can open locally
+        if locs(i).ingest==1 % we found one we can open locally
             dbfilename = locs(i).uid;
             return;
-        end;
-    end;
+        end
+    end
 
     % if we are here, we didn't find one
 

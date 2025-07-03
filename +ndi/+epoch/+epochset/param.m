@@ -18,9 +18,9 @@ classdef param < ndi.epoch.epochset
             % EPOCHPROBEMAP_CLASS, a string, that specifies the name of the class or subclass
             % of ndi.epoch.epochprobemap_daqsystem to be used.
             %
-            if nargin==0,
+            if nargin==0
                 obj.epochprobemap_class = 'ndi.epoch.epochprobemap_daqsystem';
-            else,
+            else
                 obj.epochprobemap_class = epochprobemap_class_;
             end
         end % ndi.epoch.epochset.param
@@ -58,7 +58,7 @@ classdef param < ndi.epoch.epochset
             % See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
             msg = '';
             b = isa(epochprobemap, 'ndi.epoch.epochprobemap');
-            if ~b,
+            if ~b
                 msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
             end
         end % verifyepochprobemap()
@@ -78,7 +78,7 @@ classdef param < ndi.epoch.epochset
             epochprobemapfile_fullpath = epochprobemapfilename(ndi_epochset_param_obj, N);
             eval(['epochprobemap = ' ndi_epochset_param_obj.epochprobemap_class '(epochprobemapfile_fullpath);']);
             [b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap, N);
-            if ~b,
+            if ~b
                 error(['The epochprobemap are not valid for this object: ' msg]);
             end
         end
@@ -94,19 +94,19 @@ classdef param < ndi.epoch.epochset
             %
             % See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
-            if nargin<4,
+            if nargin<4
                 overwrite = 0;
             end
 
             [b,msg] = verifyepochprobemap(ndi_epochset_param_obj,epochprobemap,number);
 
-            if b,
+            if b
                 ecfname = ndi_epochset_param_obj.epochprobemapfilename(number);
-                if isfile(ecfname) & ~overwrite,
+                if isfile(ecfname) & ~overwrite
                     error(['epochprobemap file exists and overwrite was not requested.']);
                 end
                 epochprobemap.savetofile(ecfname);
-            else,
+            else
                 error(['Invalid epochprobemap: ' msg '.']);
             end
         end % setepochprobemap()
@@ -134,9 +134,9 @@ classdef param < ndi.epoch.epochset
             % EPOCHNUMBER then an error is returned.
             %
             etfname = epochtagfilename(ndi_epochset_param_obj, number);
-            if isfile(etfname),
+            if isfile(etfname)
                 tag = vlt.file.loadStructArray(etfname);
-            else,
+            else
                 tag = vlt.data.emptystruct('name','value');
             end
         end % getepochtag()
@@ -151,15 +151,15 @@ classdef param < ndi.epoch.epochset
             % tags in the epoch directory. If there is no epoch EPOCHNUMBER, then
             % an error is returned.
             %
-            if ~isfield(tag,'name') | ~isfield(tag,'value') | ~(numel(fieldnames(tag))==2),
+            if ~isfield(tag,'name') | ~isfield(tag,'value') | ~(numel(fieldnames(tag))==2)
                 error(['TAG should have fields ''name'' and ''value'' only.']);
             end
 
             etfname = epochtagfilename(ndi_epochset_param_obj, number, epochfiles);
-            if ~isempty(tag),
+            if ~isempty(tag)
                 vlt.file.saveStructArray(etfname,tag);
-            else, % delete the file so it is empty
-                if isfile(etfname),
+            else % delete the file so it is empty
+                if isfile(etfname)
                     delete(etfname);
                 end
             end
@@ -176,18 +176,18 @@ classdef param < ndi.epoch.epochset
             % already exist, they will be overwritten. If there is no epoch
             % EPOCHNUMBER, then an error is returned.
             %
-            if ~isfield(tag,'name') | ~isfield(tag,'value'),
+            if ~isfield(tag,'name') | ~isfield(tag,'value')
                 error(['TAG should have fields ''name'' and ''value'' only.']);
             end
             etfname = epochtagfilename(ndi_epochset_param_obj, number, epochfiles);
             currenttag = getepochtag(ndi_epochset_param_obj, number);
             % update current tags, replacing any existing names
             tagsadded = [];
-            if ~isempty(currenttag),
-                for i=1:numel(tag),
+            if ~isempty(currenttag)
+                for i=1:numel(tag)
                     % check for matches
                     index = find(strcmp(tag(i).name,{currenttag.name}));
-                    if ~isempty(index),
+                    if ~isempty(index)
                         currenttag(index) = tag(i);
                         tagsadded(end+1) = i;
                     end
@@ -217,10 +217,10 @@ classdef param < ndi.epoch.epochset
             currenttag = getepochtag(ndi_epochparams_obj, number);
             % update current tags, replacing any existing names
             tagstoremove = [];
-            if ~isempty(currenttag),
-                for i=1:numel(name),
+            if ~isempty(currenttag)
+                for i=1:numel(name)
                     index = find(strcmp(name,{currenttag.name}));
-                    if ~isempty(index),
+                    if ~isempty(index)
                         tagstoremove(end+1) = i;
                     end
                 end

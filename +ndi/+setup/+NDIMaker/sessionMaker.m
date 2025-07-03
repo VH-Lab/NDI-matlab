@@ -46,7 +46,7 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                 path (1,:) char {mustBeFolder}
                 variableTable table
                 options.Overwrite (1,1) logical = false;
-                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {};
+                options.NonNaNVariableNames {mustBeText} = {};
             end
 
             % Create progress bar
@@ -58,7 +58,7 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             obj.variableTable = variableTable;
             
             % Get valid epoch rows
-            validInd = find(ndi.util.identifyValidRows(variableTable,options.NonNaNVariableNames));
+            validInd = find(ndi.fun.table.identifyValidRows(variableTable,options.NonNaNVariableNames));
             
             % --- Determine Unique Sessions ---
             % Extract SessionRef values from the valid rows
