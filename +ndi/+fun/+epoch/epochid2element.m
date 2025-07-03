@@ -66,7 +66,10 @@ for p = 1:numel(elements)
         epochInd = strcmpi(epochid,et(e).epoch_id);
         
         if any(epochInd)
-            element{epochInd} = elements(p);
+            myEpochInd = find(epochInd);
+            for k=1:numel(myEpochInd)
+                element{myEpochInd(k)} = elements(p);
+            end
         end
     end
 
