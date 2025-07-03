@@ -7,7 +7,23 @@ properties and measurements can be of the:
 - behavior video (frame rate, spatial resolution, total frames)
 - c. elegans (age, strain)
 
-cultivation conditions, behavioral assay conditions
+
+C. elegans assay conditions
+- C. elegans cultivation conditions
+	- C. elegans Cultivation: bacterial plate seeding timestamp
+- C. elegans behavioral assay conditions
+
+Behavioral assay conditions
+- C. elegans behavioral assay conditions
+	- C. elegans behavior video properties
+
+Video properties
+- C. elegans behavior video properties
+
+Bacterial properties
+- C. elegans Cultivation: bacterial plate seeding timestamp
+
+
 measurements, timestamps, durations, flags, identifiers, treatments, approaches, images
 
 name: Experiment video identifier
