@@ -329,8 +329,11 @@ end
 [~,~,cellNum] = unique(exportTable(:,{'subjectName','cellID'}),'rows','stable');
 cellNum = cellNum - 1; cellNum(cellNum == 0) = NaN;
 exportTable.cellNum = cellNum;
+[~,~,subjectNum] = unique(exportTable(:,{'subjectName'}),'rows','stable');
+subjectNum = subjectNum - 1; subjectNum(subjectNum == 0) = NaN;
+exportTable.subjectNum = subjectNum;
 exportTable = movevars(exportTable,'filePath','After','cellNum');
-exportTable = movevars(exportTable,'cellNum','Before','subjectName');
+exportTable = movevars(exportTable,{'subjectNum','cellNum'},'Before','subjectName');
 
-exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250625.xls');
+exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250702.xls');
 writetable(exportTable,exportPath);
