@@ -4,7 +4,7 @@ arguments
     dataDir (1,:) char {mustBeFolder}
 end
 
-sessionPath = fullfile(dataPath,'data');
+sessionPath = fullfile(dataDir);
 sessionPathNDI = fullfile(sessionPath,'.ndi');
 
 if isfolder(sessionPathNDI)
@@ -12,17 +12,17 @@ if isfolder(sessionPathNDI)
     disp(['Session exists, exiting'])
     return;
 else
-    S = ndi.setup.lab('sjbirrenlab','saya',fullfile(dataDir,'data'));
+    S = ndi.setup.lab('sjbirrenlab','saya',sessionPath);
 end
 
 variableTable = readtable(fullfile(dataDir,"total_dataset.xlsx"));
 
+variableTable.sessionID = repmat({S.id()}, height(variableTable), 1)
 
-variableTable.sessionID = repmat({S.id()}, height(t), 1)
+[subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(variableTable, @ndi.setup.conv.birren.createSubjectInformation);
 
-
-
-[subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(t, @ndi.setup.conv.birren.createSubjectInformation);
+variableTable.SubjectString = allSubjectNamesFromTable;
+variableTable.Properties.RowNames = variableTable.filename;
 
 
 %% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
