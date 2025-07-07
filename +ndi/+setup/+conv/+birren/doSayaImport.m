@@ -17,6 +17,13 @@ end
 
 variableTable = readtable(fullfile(dataDir,"total_dataset.xlsx"));
 
+for i=1:height(T),
+ [par,fname,ext]=fileparts(variableTable.filename{i});
+ if isempty(ext),
+    variableTable.filename{i} = [variableTable.filename{i} '.abf'];
+ end;
+end;
+
 variableTable.sessionID = repmat({S.id()}, height(variableTable), 1)
 
 [subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(variableTable, @ndi.setup.conv.birren.createSubjectInformation);
@@ -52,3 +59,22 @@ ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
     'Overwrite',options.Overwrite,...
     'NonNaNVariableNames','IsExpMatFile',...
     'ProbePostfix','ProbePostfix');
+
+
+%% Step 5: Treatments
+
+ % glia
+
+cultureID = ndi.ontology.lookup('EMPTY:Culture from cell type');
+
+gliaCultureStruct = struct('ontologyName', cultureID,...
+    'name', 'Culture from cell type', ...
+    'numeric_value',[],...
+    'string_value','CL:0000516');
+
+neuronCultureStruct = struct('ontologyName', cultureID, ...
+    'name', 'Culture from cell type', ...
+    'numeric_value',[],...
+    'string_value','CL:0011103');
+
+
