@@ -88,8 +88,10 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 We have created tools to filter a table by its values. Try finding **subjects** matching a given criterion.
 
 Examples:
-- columnName = StrainName; dataValue = AVP-Cre;
-- columnName = StrainName; dataValue = SD;
+| columnName | dataValue |
+| :--- | :--- |
+| StrainName | AVP-Cre |
+| StrainName | SD |
 
 *Type this into MATLAB:*
 ```matlab
@@ -164,10 +166,12 @@ combinedSummary = ndi.fun.table.moveColumnsLeft(combinedSummary,...
 #### Filter epochs <a name="filterEpochs"></a>
 Try finding epochs matching a given criterion.
 Examples:
-- columnName = approachName     dataValue = optogenetic           stringMatch = contains
-- columnName = mixtureName      dataValue = FE201874              stringMatch = contains
-- columnName = cellTypeName     dataValue = Type I BNST neuron    stringMatch = identical
-- columnName = global_t0        dataValue = Jun-2023              stringMatch = contains
+| columnName | dataValue | stringMatch |
+| :--- | :--- | :--- |
+| approachName | optogenetic | contains |
+| mixtureName | FE201874 | contains |
+| cellTypeName | Type I BNST neuron | identical |
+| global_t0 | Jun-2023 | contains |
 
 *Type this into MATLAB:*
 ```matlab
