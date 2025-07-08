@@ -64,7 +64,7 @@ session = dataset.open_session(session_list{1});
 ## View subjects, probes and epochs <a name="metadata"></a>
 
 ### View subject summary table <a name="subjects"></a>
-Each individual animal is referred to as a **subject** and has a unique alphanumeric `documentID` along with a `localID` which contains references to the animal's strain, species, genotype, experiment date, and cell type. Our database contains documents which store metadata about each subject including their species, strain, genetic strain type, and biological sex which are linked to well-defined ontologies such as [NCBI](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock), [RRID](https://rgd.mcw.edu/rgdweb/report/strain/main.html?id=13508588), [PATO](https://www.ebi.ac.uk/ols4/ontologies/pato/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FPATO_0000384), and [UBERON](https://www.ebi.ac.uk/ols4/ontologies/uberon/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001880). Additionally, metadata about any **treatments** that a **subject** received such as the location of optogenetic stimulation are stored. A summary table showing the metadata for each **subject**) can be viewed below.
+Each individual animal is referred to as a **subject** and has a unique alphanumeric `subject_id` along with a `subject_name` which contains references to the animal's strain, species, genotype, experiment date, and cell type. Our database contains documents which store metadata about each subject including their species, strain, genetic strain type, and biological sex which are linked to well-defined ontologies such as [NCBI](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock), [RRID](https://rgd.mcw.edu/rgdweb/report/strain/main.html?id=13508588), [PATO](https://www.ebi.ac.uk/ols4/ontologies/pato/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FPATO_0000384), and [UBERON](https://www.ebi.ac.uk/ols4/ontologies/uberon/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001880). Additionally, metadata about any **treatments** that a **subject** received such as the location of optogenetic stimulation are stored. A summary table showing the metadata for each **subject**) can be viewed below.
 
 *Type this into MATLAB:*
 ```matlab
@@ -86,9 +86,10 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 
 #### Filter subjects <a name="filterSubjects"></a>
 We have created tools to filter a table by its values. Try finding **subjects** matching a given criterion.
-> Examples:
-> 	columnName = StrainName          dataValue = AVP-Cre
-> 	columnName = StrainName          dataValue = SD
+
+Examples:
+- columnName = StrainName; dataValue = AVP-Cre;
+- columnName = StrainName; dataValue = SD;
 
 *Type this into MATLAB:*
 ```matlab
@@ -162,11 +163,11 @@ combinedSummary = ndi.fun.table.moveColumnsLeft(combinedSummary,...
 
 #### Filter epochs <a name="filterEpochs"></a>
 Try finding epochs matching a given criterion.
->Examples:
->	columnName = approachName     dataValue = optogenetic           stringMatch = contains
->	columnName = mixtureName      dataValue = FE201874              stringMatch = contains
->	columnName = cellTypeName     dataValue = Type I BNST neuron    stringMatch = identical
->	columnName = global_t0        dataValue = Jun-2023              stringMatch = contains
+Examples:
+- columnName = approachName     dataValue = optogenetic           stringMatch = contains
+- columnName = mixtureName      dataValue = FE201874              stringMatch = contains
+- columnName = cellTypeName     dataValue = Type I BNST neuron    stringMatch = identical
+- columnName = global_t0        dataValue = Jun-2023              stringMatch = contains
 
 *Type this into MATLAB:*
 ```matlab
