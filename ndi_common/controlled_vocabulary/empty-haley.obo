@@ -1,3 +1,93 @@
+name: C. elegans assay conditions
+def:
+
+name: C. elegans behavioral assay conditions
+def:
+is_a: C. elegans assay conditions
+
+name: C. elegans cultivation conditions
+def:
+is_a: C. elegans assay conditions
+
+name: C. elegans behavior video properties
+def:
+is_a: C. elegans behavioral assay conditions
+is_a: Video properties
+
+
+---
+Search in other ontology:
+	Bacterial properties
+	Bacterial strain
+	Timestamp
+	Video properties
+
+----
+
+name: Experiment session identifier
+def: "A unique numerical identifier for a distinct experimental session."
+
+---
+
+name: C. elegans cultivation: bacterial strain
+def: "The strain of bacteria used as the food source on the cultivation plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP). Reported as ontologyName:ontologyID (e.g. NCBITaxon:637912)."
+is_a: Bacterial properties
+is_a: C. elegans cultivation conditions
+is_a: Bacterial strain
+
+name: C. elegans cultivation: bacterial OD600 (target) at seeding
+def: "The estimated or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
+is_a: Bacterial properties
+is_a: C. elegans cultivation conditions
+is_a: SNOMED:118289000
+
+name: C. elegans cultivation: bacterial plate seeding timestamp
+def: "The date and time when a large bacterial food patch was seeded  onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment. Unit: datetime."
+is_a: Bacterial properties
+is_a: C. elegans cultivation conditions
+is_a: Timestamp
+
+name: C. elegans cultivation: bacterial plate cold storage timestamp
+def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (at approximately 4 degrees Celsisus) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime."
+is_a: Bacterial properties
+is_a: C. elegans cultivation conditions
+is_a: Timestamp
+
+name: C. elegans cultivation: bacterial plate room temperature acclimation timestamp
+def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before picking worms onto them to avoid temperature affecting the animals. Unit: datetime."
+is_a: Bacterial properties
+is_a: C. elegans cultivation conditions
+is_a: Timestamp
+
+name: C. elegans cultivation: L4 timestamp
+def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment. Unit: datetime."
+is_a: C. elegans cultivation conditions
+is_a: Timestamp
+
+name: C. elegans assay: bacterial OD600 measurement
+def: "The measured optical density at 600 nm (OD600) of the prepared bacterial solution immediately before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless."
+is_a: C. elegans assay conditions
+is_a: Bacterial properties
+is_a: Measurement
+
+name: C. elegans assay: bacterial colony forming units (CFU) measurement
+def: "The concentration of viable bacterial cells in the food source solution for C. elegans assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL."
+is_a: C. elegans assay conditions
+is_a: Bacterial properties
+is_a: Measurement
+
+---
+
+name: C. elegans assay: experiment properties document identifier
+def:
+is_a: C. elegans assay conditions
+
+name: C. elegans assay: experiment plate identifier
+def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a C. elegans experimental trial or a set of trials was conducted."
+is_a: C. elegans assay conditions
+
+------------------------------------------------------------------------------------
+
 properties and measurements can be of the:
 - agar plate (peptone)
 - patches (volume, diameter, spacing, radii, coordinates, distribution)
@@ -29,9 +119,6 @@ measurements, timestamps, durations, flags, identifiers, treatments, approaches,
 name: Experiment video identifier
 def: "A unique numerical identifier for a specific video recording or an experimental setup."
 
-name: Experiment session identifier
-def: "A unique numerical identifier for a distinct experimental session."
-
 name: Ambient temperature
 def: "The ambient room temperature recorded during an experiment. Unit: degrees Celsius."
 
@@ -47,41 +134,19 @@ def: "The commonly used name of the genetic strain of Caenorhabditis elegans use
 name: C. elegans: strain genotype
 def: "Specific genetic identifier or detailed genotype of the C. elegans strain used, which may include allele names and chromosomal locations (e.g., 'osm-6(p811) V', 'mec-4(u253) X')."
 
-name: C. elegans: L4 timestamp
-def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment. Unit: datetime."
-
 name: C. elegans: age at assay
 def: "The developmental stage or age of the C. elegans subjects at the time of the behavioral assay, commonly specified (e.g., 'L4', '1-Day-Old Adult')."
 
 name: C. elegans: growth duration since L4
 def: "The total duration of C. elegans development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours. Unit: duration."
 
-name: C. elegans Cultivation: bacterial plate seeding timestamp
-def: "The date and time when a large bacterial food patch was seeded  onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment. Unit: datetime."
-
-name: C. elegans Cultivation: bacterial plate cold storage timestamp
-def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (at approximately 4 degrees Celsisus) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime."
-
-name: C. elegans Cultivation: bacterial plate room temperature acclimation timestamp
-def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before picking worms onto them to avoid temperature affecting the animals. Unit: datetime."
-
-name: C. elegans Cultivation: bacteria growth duration after seeding
+name: C. elegans cultivation: bacteria growth duration after seeding
 def: "The total duration for which the bacterial food patch was allowed to grow on the C. elegans cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: duration."
 
-name: C. elegans Cultivation: bacterial OD600 (target) at seeding
-def: "The estimated or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
 
-name: C. elegans Behavioral Assay: experiment plate identifier
-def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a C. elegans experimental trial or a set of trials was conducted."
 
 name: C. elegans Behavioral Assay: bacterial strain
 def: "The strain of bacteria used as the food source on the assay plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP)."
-
-name: C. elegans Behavioral Assay: bacterial OD600 measurement
-def: "The measured optical density at 600 nm (OD600) of the prepared bacterial solution immediately before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless."
-
-name: C. elegans Behavioral Assay: bacterial colony forming units (CFU) measurement
-def: "The concentration of viable bacterial cells in the food source solution for C. elegans assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL."
 
 name: C. elegans Behavioral Assay: bacterial OD600 (target) at seeding
 def: "The estimated or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans assay plates. Unit: dimensionless."
