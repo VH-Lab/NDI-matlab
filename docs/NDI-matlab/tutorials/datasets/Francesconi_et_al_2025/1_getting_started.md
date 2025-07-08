@@ -262,5 +262,7 @@ cb = colorbar(ax); cb.Label.String = 'Current (pA)';
 ```
 
 *You will see a plot that looks like:*
-[Electrophysiology Traces](electrophysiology_traces.png)
+~[Electrophysiology traces](electrophysiology_traces.png)
+
+
 
