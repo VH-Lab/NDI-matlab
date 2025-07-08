@@ -213,7 +213,7 @@ patchI = patchI{1};
 epochConditions = combinedSummary(epochIndex,:)
 ```
 
-Select an epoch to view the associated electrophysiology traces. This may take a minute to load.
+Select an **epoch** to view the associated electrophysiology traces. This may take a minute to load.
 
 *Type this into MATLAB:*
 ```matlab
@@ -264,5 +264,82 @@ cb = colorbar(ax); cb.Label.String = 'Current (pA)';
 *You will see a plot that looks like:*
 ![Electrophysiology traces](electrophysiology_traces.png)
 
+## Plot Elevated Plus Maze data <a name="EPM"></a>
 
+*Type this into MATLAB:*
+```matlab
+% Get Elevated Plus Maze documents/table
+query = ndi.query('ontologyTableRow.names','contains_string','Elevated Plus Maze');
+docsEPM = session.database_search(query);
+tableEPM = ndi.fun.doc.ontologyTableRowDoc2Table(docsEPM);
+varEPM = tableEPM.Properties.VariableNames;
+
+% Get list of all variables
+[fullNames,shortNames,ontologyNodes] = ...
+    ndi.fun.doc.ontologyTableRowVars(session);
+
+% Reorganize table variables
+tableEPM = ndi.fun.table.moveColumnsLeft(tableEPM,{'SubjectLocalIdentifier',...
+    'Treatment_CnoOrSalineAdministration','ExperimentalGroupCode',...
+    'ElevatedPlusMaze_TestIdentifier','DataExclusionFlag'})
+```
+
+*You will see a table that looks like:*
+| SubjectLocalIdentifier | Treatment_CnoOrSalineAdministration | ExperimentalGroupCode | ElevatedPlusMaze_TestIdentifier | DataExclusionFlag | ElevatedPlusMaze_OpenArmNorth_Entries | ElevatedPlusMaze_OpenArmSouth_Entries | ElevatedPlusMaze_OpenArmTotalEntries | ElevatedPlusMaze_OpenArmNorth_HeadEntries | ElevatedPlusMaze_OpenArmSouth_HeadEntries | ElevatedPlusMaze_OpenArmTotalHeadEntries | ElevatedPlusMaze_OpenArmNorth_Time | ElevatedPlusMaze_OpenArmSouth_Time | ElevatedPlusMaze_OpenArmTotalTime | ElevatedPlusMaze_OpenArmTotal_PercentTimeDuringTestDuration | ElevatedPlusMaze_OpenArmNorth_LatencyToFirstEntry | ElevatedPlusMaze_OpenArmSouth_LatencyToFirstEntry | ElevatedPlusMaze_OpenArmTotalLatencyToFirstEntry | ElevatedPlusMaze_OpenArmNorth_TimeMovingTowards | ElevatedPlusMaze_OpenArmSouth_TimeMovingTowards | ElevatedPlusMaze_OpenArmTotalTimeMovingTowards | ElevatedPlusMaze_OpenArmNorth_TimeFreezing | ElevatedPlusMaze_OpenArmSouth_TimeFreezing | ElevatedPlusMaze_OpenArmTotalTimeFreezing | ElevatedPlusMaze_ClosedArmWest_Entries | ElevatedPlusMaze_ClosedArmEast_Entries | ElevatedPlusMaze_ClosedArmTotalEntries | ElevatedPlusMaze_ClosedArmWest_HeadEntries | ElevatedPlusMaze_ClosedArmEast_HeadEntries | ElevatedPlusMaze_ClosedArmTotalHeadEntries | ElevatedPlusMaze_ClosedArmWest_Time | ElevatedPlusMaze_ClosedArmEast_Time | ElevatedPlusMaze_ClosedArmTotalTime | ElevatedPlusMaze_ClosedArmTotal_PercentTimeDuringTestDuration | ElevatedPlusMaze_ClosedArmWest_LatencyToFirstEntry | ElevatedPlusMaze_ClosedArmEast_LatencyToFirstEntry | ElevatedPlusMaze_ClosedArmTotalLatencyToFirstEntry | ElevatedPlusMaze_ClosedArmWest_TimeMovingTowards | ElevatedPlusMaze_ClosedArmEast_TimeMovingTowards | ElevatedPlusMaze_ClosedArmTotalTimeMovingTowards | ElevatedPlusMaze_ClosedArmWest_TimeFreezing | ElevatedPlusMaze_ClosedArmEast_TimeFreezing | ElevatedPlusMaze_ClosedArmTotalTimeFreezing | ElevatedPlusMaze_Center_Entries | ElevatedPlusMaze_Center_HeadEntries | ElevatedPlusMaze_Center_Time | ElevatedPlusMaze_Center_PercentTimeDuringTestDuration | ElevatedPlusMaze_Center_LatencyToFirstEntry | ElevatedPlusMaze_Center_TimeMovingTowards | ElevatedPlusMaze_Center_TimeFreezing | ElevatedPlusMaze_TestDuration |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | Saline | 1 | 18 | false | 4 | 5 | 9 | 13 | 12 | 25 | 46.3 | 59.9 | 106.2 | 35.4000 | 0 | 18.4000 | 18.4 | 101.8 | 90.4 | 192.2 | 2.3 | 7 | 9.3 | 7 | 11 | 18 | 9 | 14 | 23 | 52.6 | 73.4 | 126 | 42 | 49.5 | 39.3 | 88.8 | 99.4 | 94.1 | 193.5 | 0 | 9.3 | 9.3 | 26 | 46 | 67.9000 | 22.6333 | 14.4000 | 188.9000 | 1.5000 | 300 |
+| `sd_rat_OTRCre_220819_180@dabrowska-lab.rosalindfranklin.edu` | Saline | 1 | 19 | false | 3 | 3 | 6 | 11 | 12 | 23 | 52.3 | 65.3 | 117.6 | 39.2000 | 0 | 37.3000 | 37.3 | 94.8 | 96.1 | 190.9 | 0 | 13.3 | 13.3 | 4 | 5 | 9 | 8 | 9 | 17 | 62.6 | 39 | 101.6 | 33.8667 | 53.9 | 22.2 | 76.1 | 99.8 | 80.5 | 180.3 | 0 | 0 | 0 | 15 | 40 | 80.8000 | 26.9333 | 18.4000 | 221.7000 | 7.4000 | 300 |
+| `sd_rat_OTRCre_220819_181@dabrowska-lab.rosalindfranklin.edu` | CNO | 1 | 26 | false | 4 | 0 | 4 | 9 | 22 | 31 | 8.2 | 0 | 8.2 | 2.7333 | 46.9000 | | 46.9 | 80.3 | 89.4 | 169.7 | 1.3 | 0 | 1.3 | 10 | 15 | 25 | 7 | 19 | 26 | 73.6 | 124.5 | 198.1 | 66.0333 | 9.9 | 1.2 | 11.1 | 128.5 | 100.5 | 229 | 6.8 | 15.1 | 21.9 | 29 | 54 | 93.6000 | 31.2000 | 0 | 254.3000 | 6.6000 | 300 |
+| `sd_rat_OTRCre_220819_183@dabrowska-lab.rosalindfranklin.edu` | CNO | 1 | 13 | false | 6 | 4 | 10 | 8 | 13 | 21 | 37.2 | 67.9 | 105.1 | 35.0333 | 0 | 26.7000 | 26.7 | 95.6 | 71.9 | 167.5 | 0 | 7.3 | 7.3 | 4 | 8 | 12 | 11 | 9 | 20 | 59.4 | 68.4 | 127.8 | 42.6000 | 84.4 | 65.2 | 149.6 | 112 | 77.6 | 189.6 | 9 | 3.5 | 12.5 | 22 | 37 | 67.1000 | | 22.9000 | 199 | 10.3000 | 300 |
+| `sd_rat_OTRCre_220819_195@dabrowska-lab.rosalindfranklin.edu` | Saline | 1 | 22 | false | 4 | 9 | 13 | 7 | 30 | 37 | 34.5 | 111.2 | 145.7 | 48.5667 | 30.9000 | 45.7000 | 76.6 | 82.9 | 59.3 | 142.2 | 1.9 | 18.3 | 20.2 | 4 | 3 | 7 | 7 | 8 | 15 | 26.4 | 26.3 | 52.7 | 17.5667 | 15.3 | 1.6 | 16.9 | 23.1 | 68.7 | 91.8 | 0 | 0 | 0 | 21 | 46 | 101.6000 | 33.8667 | 0 | 169.1000 | 16.9000 | 300 |
+
+Select a variable to view it's definition and plot the data.
+
+*Type this into MATLAB:*
+```matlab
+% Define grouping and plotting variables
+groupingVariable = 'Treatment_CnoOrSalineAdministration';
+plottingVariable = varEPM(3);
+plottingVariable = plottingVariable{1};
+
+% Look up the variable in the ontology
+termIndex = strcmpi(shortNames,plottingVariable);
+termID = ontologyNodes{termIndex};
+[id,name,prefix,definition,synonyms,shortName] = ...
+    ndi.ontology.lookup(termID);
+
+% Get valid row indices
+validationFunc = @(x) isnumeric(x) && isscalar(x) && ~isnan(x);
+validRows = ~tableEPM.DataExclusionFlag; % missing mCherry expression
+if iscell(tableEPM.(plottingVariable)) % missing data points
+    validRows = validRows & cellfun(validationFunc,tableEPM.(plottingVariable)); 
+else
+    validRows = validRows & arrayfun(validationFunc,tableEPM.(plottingVariable));
+end
+
+% Display the variable's id, name, definition, and short name
+termInfo = cell2table({id,name,definition,shortName}',...
+    'RowNames',{'id','name','definition','shortName'},...
+    'VariableNames',{'value'})
+```
+
+*You will see a table that looks like:*
+| Property | Value |
+| :--- | :--- |
+| id | EMPTY:00000100 |
+| name | Elevated Plus Maze: open arm (north) - entries |
+| definition | In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup. Unit of measure: count |
+| shortName | ElevatedPlusMaze_OpenArmNorth_Entries |
+
+*Type this into MATLAB:*
+```matlab
+% Plot data
+x = categorical(tableEPM{validRows,groupingVariable});
+y = tableEPM{validRows,plottingVariable}; if iscell(y), y = cell2mat(y); end
+figure; violinplot(y,x,'GroupOrder',{'Saline','CNO'});
+ylabel(fullNames{termIndex})
+```
+
+*You will see a plot that looks like:*
+![Elevated Plus Maze](elevated_plus_maze.png)
 
