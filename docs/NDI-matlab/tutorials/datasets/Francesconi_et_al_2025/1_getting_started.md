@@ -6,7 +6,6 @@ This is a tutorial to view the electrophysiology and behavioral data which relat
 
 > Francesconi W, Olivera-Pasilio V, Berton F, Olson SL, Chudoba R, Monroy LM, Krabichler Q, Grinvech V, Dabrowska J (2025). Dataset: vasopressin and oxytocin excite BNST neurons via oxytocin receptors, which reduce anxious arousal. *NDI Cloud*. DOI: [10.63884/ndic.2025.jyxfer8m](https://doi.org/10.63884/ndic.2025.jyxfer8m).
 
-
 ## Table of Contents
 1. [Download NDI](#NDI)
 2. [Import the NDI dataset](#import)
@@ -343,3 +342,118 @@ ylabel(fullNames{termIndex})
 *You will see a plot that looks like:*
 ![Elevated Plus Maze](elevated_plus_maze.png)
 
+## Plot Fear-Potentiated Startle data <a name="FPS"></a>
+
+*Type this into MATLAB:*
+```matlab
+% Get Fear-Potentiated documents/table
+query = ndi.query('ontologyTableRow.names','contains_string','Fear-Potentiated Startle');
+docsFPS = session.database_search(query);
+tableFPS = ndi.fun.doc.ontologyTableRowDoc2Table(docsFPS);
+
+% Reorganize table variables
+tableFPS = ndi.fun.table.moveColumnsLeft(tableFPS,{'Fear_potentiatedStartle_ExperimentalPhaseOrTestName',...
+    'SubjectLocalIdentifier'})
+```
+
+*You will see a table that looks like:*
+| Fear_potentiatedStartle_ExperimentalPhaseOrTestName | SubjectLocalIdentifier | ExperimentalTrialNumber | Fear_potentiatedStartle_TrialTypeIdentifier | Fear_potentiatedStartle_ApparatusChamberIdentifier | ExperimentalGroupCode | AcousticStartleResponse_NumberOfSamples | AcousticStartleResponse_SamplingRate | AcousticStartleResponse_StartleWindowOnsetAmplitude | AcousticStartleResponse_MaximumAmplitude | AcousticStartleResponse_TimeToMaximumAmplitude | AcousticStartleResponse_AverageAmplitude | ExperimentTrialExecutionTimestamp |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 1 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 18 | 64 | 5 | 8/19/2022 10:27:46 AM |
+| Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 2 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 27 | 45 | 6 | 8/19/2022 10:28:19 AM |
+| Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 3 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 21 | 47 | 4 | 8/19/2022 10:28:52 AM |
+| Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 4 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 4 | 21 | 104 | 6 | 8/19/2022 10:29:24 AM |
+| Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 5 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 62 | 66 | 2 | 13 | 8/19/2022 10:29:57 AM |
+
+We can reanalyze this data to get values such as the % of cued and non-cued fear.
+
+*Type this into MATLAB:*
+```matlab
+% Get list of all variables
+[fullNames,shortNames,ontologyNodes] = ...
+    ndi.fun.doc.ontologyTableRowVars(session);
+
+% Get average startle amplitude for each context, subject, and trial
+tableStartleAmplitude = groupsummary(tableFPS,...
+    {'Fear_potentiatedStartle_ExperimentalPhaseOrTestName','SubjectLocalIdentifier',...
+    'Fear_potentiatedStartle_TrialTypeIdentifier'},...
+    'mean','AcousticStartleResponse_MaximumAmplitude');
+experimentalPhases = unique(tableStartleAmplitude.Fear_potentiatedStartle_ExperimentalPhaseOrTestName);
+experimentalPhases = experimentalPhases(contains(experimentalPhases,'Cue test'));
+
+% Get row indices corresponding to each trial type
+lightNoiseRows = strcmpi(tableStartleAmplitude.Fear_potentiatedStartle_TrialTypeIdentifier,'FPS (L+N) Testing Trial');
+noiseOnlyRows = strcmpi(tableStartleAmplitude.Fear_potentiatedStartle_TrialTypeIdentifier,'FPS (N) Testing Trial');
+startleRows = strcmpi(tableStartleAmplitude.Fear_potentiatedStartle_TrialTypeIdentifier,'Startle 95 dB Trial');
+
+% Get tables of startle amplitude for each trial type
+tableLightNoise = tableStartleAmplitude(lightNoiseRows,...
+    {'Fear_potentiatedStartle_ExperimentalPhaseOrTestName','SubjectLocalIdentifier','mean_AcousticStartleResponse_MaximumAmplitude'});
+tableNoiseOnly = tableStartleAmplitude(noiseOnlyRows,...
+    {'Fear_potentiatedStartle_ExperimentalPhaseOrTestName','SubjectLocalIdentifier','mean_AcousticStartleResponse_MaximumAmplitude'});
+tableStartle = tableStartleAmplitude(startleRows,...
+    {'Fear_potentiatedStartle_ExperimentalPhaseOrTestName','SubjectLocalIdentifier','mean_AcousticStartleResponse_MaximumAmplitude'});
+
+% Rename startle amplitude variable
+tableLightNoise = renamevars(tableLightNoise,'mean_AcousticStartleResponse_MaximumAmplitude','startleAmplitudeLightNoise');
+tableNoiseOnly = renamevars(tableNoiseOnly,'mean_AcousticStartleResponse_MaximumAmplitude','startleAmplitudeNoiseOnly');
+tableStartle = renamevars(tableStartle,'mean_AcousticStartleResponse_MaximumAmplitude','startleAmplitudeStartle');
+
+% Join trial type tables
+tableCueTest = join(tableLightNoise,tableNoiseOnly,...
+    'Keys',{'Fear_potentiatedStartle_ExperimentalPhaseOrTestName','SubjectLocalIdentifier'});
+tableCueTest = join(tableCueTest,tableStartle,...
+    'Keys',{'Fear_potentiatedStartle_ExperimentalPhaseOrTestName','SubjectLocalIdentifier'});
+
+% Calculate cued fear %
+tableCueTest.cuedFear = 100*(tableCueTest.startleAmplitudeLightNoise - ...
+    tableCueTest.startleAmplitudeNoiseOnly)./...
+    tableCueTest.startleAmplitudeNoiseOnly; % 100*(LN - N)/N
+
+% Calculate non-cued fear %
+tableCueTest.nonCuedFear = 100*(tableCueTest.startleAmplitudeNoiseOnly - ...
+    tableCueTest.startleAmplitudeStartle)./...
+    tableCueTest.startleAmplitudeStartle; % 100*(N - S)/S
+
+varFPS = tableCueTest.Properties.VariableNames;
+
+% Display table
+tableCueTest
+```
+
+*You will see a table that looks like:*
+| Fear_potentiatedStartle_ExperimentalPhaseOrTestName | SubjectLocalIdentifier | startleAmplitudeLightNoise | startleAmplitudeNoiseOnly | startleAmplitudeStartle | cuedFear | nonCuedFear |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Cue test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 38.7 | 28.4 | 22.1 | 36.268 | 28.507 |
+| Cue test 1 | `sd_rat_OTRCre_220819_180@dabrowska-lab.rosalindfranklin.edu` | 91.5 | 46.1 | 22.5 | 98.482 | 104.89 |
+| Cue test 1 | `sd_rat_OTRCre_220819_181@dabrowska-lab.rosalindfranklin.edu` | 87 | 13.8 | 11.5 | 530.43 | 20 |
+| Cue test 1 | `sd_rat_OTRCre_220819_183@dabrowska-lab.rosalindfranklin.edu` | 104.5 | 85.9 | 26.8 | 21.653 | 220.52 |
+| Cue test 1 | `sd_rat_OTRCre_220819_195@dabrowska-lab.rosalindfranklin.edu` | 214.1 | 36.2 | 53.8 | 491.44 | -32.714 |
+
+Select an experimental phase and plotting variable to plot the data.
+
+*Type this into MATLAB:*
+```matlab
+% Choose an experimental phase
+experimentalPhase = 'Cue test 2'; % select experimental phase
+
+% Define grouping and plotting variables
+groupingVariable = 'Treatment_CnoOrSalineAdministration';
+plottingVariable = 'cuedFear'; % select variable to plot
+plottingVariable = plottingVariable{1};
+
+% Add grouping variable info from EPM table
+tableCueTest = join(tableCueTest,tableEPM(:,{'SubjectLocalIdentifier',groupingVariable}));
+
+% Get row indices corresponding to the experimental phase
+phaseRows = strcmpi(tableCueTest.Fear_potentiatedStartle_ExperimentalPhaseOrTestName,experimentalPhase{1});
+
+% Plot data
+x = categorical(tableCueTest{phaseRows,groupingVariable});
+y = tableCueTest{phaseRows,plottingVariable};
+figure; violinplot(y,x,'GroupOrder',{'Saline','CNO'});
+ylabel(plottingVariable)
+```
+
+*You will see a plot that looks like:*
+![Fear-Potentiated Startle](fear_potentiated_startle.png)
