@@ -1,0 +1,51 @@
+{
+	"classname": "treatment_drug",
+	"superclasses":  [ "base" ],
+	"depends_on": [ 
+		{ "name":"subject_id", "mustbenotempty":1 }
+	],
+	"treatment_drug": [
+		{
+			"name": "location",
+			"type": "structure",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Location of the drug application (ontologyNode, name)"
+		},
+		{
+			"name": "mixture_table",
+			"type": "string",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Table of drug contents (ontologyNode, name, value, ontologyUnit, unitName)"
+		},
+		{
+		    "name": "administration_onset_time",
+		    "type": "string",
+		    "default_value": "",
+		    "parameters": "",
+		    "queryable": 1,
+		    "documentation": "Onset of drug administration YYYY-MM-DDThh:mm:ssZ"
+		},
+		{
+		    "name": "administration_offset_time",
+		    "type": "string",
+		    "default_value": "",
+		    "parameters": "",
+		    "queryable": 1,
+		    "documentation": "Offset of drug administration YYYY-MM-DDThh:mm:ssZ"
+		},
+		{
+		    "name": "administration_duration",
+		    "type": "double",
+		    "default_value": [0,1000000,1,1],
+		    "parameters": "",
+		    "queryable": 1,
+		    "documentation": "Duration of drug administration duration in days"
+		}
+	]
+}
+
+
