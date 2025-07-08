@@ -1,26 +1,44 @@
 # Francesconi et al (2025) Tutorial: Getting Started
-
 This is a tutorial to view the electrophysiology and behavioral data which relates to:
-> [Francesconi W, Olivera-Pasilio V, Berton F, Olson SL, Chudoba R, Monroy LM, Krabichler Q, Grinvech V, Dabrowska J (2025). Vasopressin and oxytocin excite BNST neurons via oxytocin receptors, which reduce anxious arousal. *Cell Reports* **44**(6): 115768. DOI: 10.1016/j.celrep.2025.115768](https://doi.org/10.1016/j.celrep.2025.115768).
-> ![Graphical Abstract](graphical_abstract.png)
+> **Paper**: Francesconi W, Olivera-Pasilio V, Berton F, Olson SL, Chudoba R, Monroy LM, Krabichler Q, Grinvech V, Dabrowska J (2025). Vasopressin and oxytocin excite BNST neurons via oxytocin receptors, which reduce anxious arousal. *Cell Reports* **44**(6): 115768. DOI: [10.1016/j.celrep.2025.115768](https://doi.org/10.1016/j.celrep.2025.115768).
+> **Dataset**: DOI: [10.63884/ndic.2025.jyxfer8m](https://doi.org/10.63884/ndic.2025.jyxfer8m)
 
-> Dataset: https://doi.org/10.63884/ndic.2025.jyxfer8m
-Table of Contents
-Download NDI
-Import the NDI dataset
-    Download or load the NDI dataset 
-    Retrieve the NDI session
-View subjects, probes and epochs
-    View subject summary table
-        Filter subjects
-    View probe and epoch summary tables
-    Combine metadata tables
-        Filter epochs
-Plot electrophysiology data
-Plot Elevated Plus Maze data
-Plot Fear-Potentiated Startle data
 
-This tutorial is an alternative to [Tutorial 2.1](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/analyzing_first_physiology_experiment/1_example_dataset/) that is designed for users who are less familiar with programming. It will provide a brief overview of Matlab and object-oriented programming, more in-depth information about the methods and syntax used, and a guide on how to navigate the website and its documentation. 
+## Table of Contents
+1. [Download NDI](#NDI)
+2. [Import the NDI dataset](#import)
+	- [Download or load the NDI dataset](#dataset)
+	- [Retrieve the NDI session](#session)
+3. [View subjects, probes and epochs](#metadata)
+	- [View subject summary table](#subjects)
+        - [Filter subjects](#filterSubjects)
+    - [View probe and epoch summary tables](#probes)
+    - [Combine metadata tables](#combine)
+        - [Filter epochs](#filterEpochs)
+4. [Plot electrophysiology data](#electrophysiology)
+5. [Plot Elevated Plus Maze data](#EPM)
+6. [Plot Fear-Potentiated Startle data](#FPS)
+
+## Download NDI <a name="NDI"></a>
+In order to view the dataset, you will need access to the NDI platform. Follow the [installation instructions](https://vh-lab.github.io/NDI-matlab/NDI-matlab/installation/ to download NDI and gain access to the suite of tools we have created!
+
+## Import the NDI dataset <a name="import"></a>
+Define the dataset path and id.
+% Choose the folder where the dataset is (or will be) stored
+% (e.g. /Users/myusername/Documents/MATLAB/Datasets)
+dataPath = [userpath filesep 'Datasets'];
+cloudDatasetId = '67f723d574f5f79c6062389d';
+datasetPath = fullfile(dataPath,cloudDatasetId);
+Download or load the NDI dataset 
+The first time you try to access the data, it needs to be downloaded from NDI-cloud. This may take a few minutes. Once you have the dataset downloaded, every other time you examine the data you can just load it.
+if isfolder(datasetPath)
+    % Load if already downloaded
+    dataset = ndi.dataset.dir(datasetPath);
+else
+    % Download
+    if ~isfolder(dataPath), mkdir(dataPath); end
+    dataset = ndi.cloud.downloadDataset(cloudDatasetId,dataPath);
+end
 
 ## Basics of Matlab
 Matlab is a language specifically designed for calculations, data visualization, and pattern recognition. It is less flexible in some areas than traditional programming languages, but it excels when working with matrices and **arrays**, which are data structures that contain multiple elements. It includes many built-in tools and additional libraries for a large variety of tasks.
