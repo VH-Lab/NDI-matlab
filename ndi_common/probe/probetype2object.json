@@ -10,6 +10,8 @@
 	},{
 		"type":"patch-I","classname":"ndi.probe.timeseries.mfdaq"
 	},{
+		"type":"patch-IVm","classname":"ndi.probe.timeseries.mfdaq"
+	},{
 		"type":"patch-attached","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"sharp","classname":"ndi.probe.timeseries.mfdaq"
