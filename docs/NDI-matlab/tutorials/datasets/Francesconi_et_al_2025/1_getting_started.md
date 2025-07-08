@@ -27,6 +27,8 @@ In order to view the dataset, you will need access to the NDI platform. If you h
 
 ## Import the NDI dataset <a name="import"></a>
 Define the dataset path and id.
+
+##### Code block 1 (type this into MATLAB)
 ```matlab
 % Choose the folder where the dataset is (or will be) stored
 % (e.g. /Users/myusername/Documents/MATLAB/Datasets)
@@ -37,6 +39,8 @@ datasetPath = fullfile(dataPath,cloudDatasetId);
 
 ### Download or load the NDI dataset <a name="dataset"></a>
 The first time you try to access the data, it needs to be downloaded from NDI-cloud. This may take a few minutes. Once you have the **dataset** downloaded, every other time you examine the data you can just load it.
+
+##### Code block 2 (type this into MATLAB)
 ```matlab
 if isfolder(datasetPath)
     % Load if already downloaded
@@ -50,6 +54,8 @@ end
 
 ### Retrieve the NDI session <a name="session"></a>
 A dataset can have multiple **sessions**, but this **dataset** has only one. We must retrieve it in order to access the accompanying experimental **probes** (i.e. a virtual or physical instrument that makes a measurement of or produces a stimulus for a **subject**).
+
+##### Code block 3 (type this into MATLAB)
 ```matlab
 % Retrieve the session from this dataset
 [session_ref_list,session_list] = dataset.session_list();
@@ -60,10 +66,14 @@ session = dataset.open_session(session_list{1});
 
 ### View subject summary table <a name="subjects"></a>
 Each individual animal is referred to as a **subject** and has a unique alphanumeric `documentID` along with a `localID` which contains references to the animal's strain, species, genotype, experiment date, and cell type. Our database contains documents which store metadata about each subject including their species, strain, genetic strain type, and biological sex which are linked to well-defined ontologies such as [NCBI](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock), [RRID](https://rgd.mcw.edu/rgdweb/report/strain/main.html?id=13508588), [PATO](https://www.ebi.ac.uk/ols4/ontologies/pato/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FPATO_0000384), and [UBERON](https://www.ebi.ac.uk/ols4/ontologies/uberon/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001880). Additionally, metadata about any **treatments** that a **subject** received such as the location of optogenetic stimulation are stored. A summary table showing the metadata for each **subject**) can be viewed below.
+
+##### Code block 4 (type this into MATLAB)
 ```matlab
 % View summary table of all subject metadata
 subjectSummary = ndi.fun.subjectDocTable(dataset)
 ```
+
+You will see a table that looks like:
 | subject_id | subject_name | SpeciesName | SpeciesOntology | StrainName | StrainOntology | GeneticStrainTypeName | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 412693bb0b2a75c8_c0dc4139300a673e | `wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | |
