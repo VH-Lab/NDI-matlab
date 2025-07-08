@@ -96,8 +96,8 @@ Examples:
 *Type this into MATLAB:*
 ```matlab
 % Search for subjects
-columnName = 'StrainName';
-dataValue = 'AVP-Cre';
+columnName = 'StrainName'; % select a column name from the subjectSummary table
+dataValue = 'AVP-Cre'; % select a value to search for
 rowInd = ndi.fun.table.identifyMatchingRows(subjectSummary,...
     columnName{1},dataValue,'stringMatch','contains');
 filteredSubjects = subjectSummary(rowInd,:)
@@ -177,7 +177,7 @@ Examples:
 ```matlab
 % Search for epochs
 columnName = 'approachName';
-dataValue = 'Jun-2023';
+dataValue = 'optogenetic';
 stringMatch = 'contains';
 rowInd = ndi.fun.table.identifyMatchingRows(combinedSummary,...
     columnName{1},dataValue,'stringMatch',stringMatch{1});
@@ -185,14 +185,14 @@ filteredEpochs = combinedSummary(rowInd,:)
 ```
 
 ## Plot electrophysiology data <a name="electrophysiology"></a>
-Each **subject** is associated with a set of experimental **epochs**. One **epoch** corresponds to one of the original ``.mat` files. Select a **subject** to view that subject's **epochs** and the associated stimulus conditions for each epoch. This may take a minute to load.
+Each **subject** is associated with a set of experimental **epochs**. One **epoch** corresponds to one of the original `.mat` files. Select a **subject** to view that subject's **epochs** and the associated stimulus conditions for each epoch. This may take a minute to load.
 
 *Type this into MATLAB:*
 ```matlab
 % Select a subject
+subjectName = 'sd_rat_AVPCre_230706_BNSTIII_SON@dabrowska-lab.rosalindfranklin.edu'; % select a subject
 subjectID = subjectSummary.subject_id;
 subjectNames = subjectSummary.subject_name;
-subjectName = 'sd_rat_AVPCre_230706_BNSTIII_SON@dabrowska-lab.rosalindfranklin.edu';
 subjectIndex = strcmpi(subjectNames,subjectName);
 epochIndex = ndi.fun.table.identifyMatchingRows(combinedSummary,'subject_id',...
     subjectID{subjectIndex});
@@ -222,7 +222,7 @@ Select an **epoch** to view the associated electrophysiology traces. This may ta
 *Type this into MATLAB:*
 ```matlab
 % Select an epoch
-epochNum = 3;
+epochNum = 3; % select an epoch
 
 % Read the patch-Vm timeseries
 [dataVm,time] = patchVm.readtimeseries(epochNum,-inf,inf);
@@ -303,8 +303,7 @@ Select a variable to view it's definition and plot the data.
 ```matlab
 % Define grouping and plotting variables
 groupingVariable = 'Treatment_CnoOrSalineAdministration';
-plottingVariable = varEPM(3);
-plottingVariable = plottingVariable{1};
+plottingVariable = 'ElevatedPlusMaze_OpenArmNorth_Entries'; % select a variable to plot
 
 % Look up the variable in the ontology
 termIndex = strcmpi(shortNames,plottingVariable);
@@ -370,7 +369,7 @@ tableFPS = ndi.fun.table.moveColumnsLeft(tableFPS,{'Fear_potentiatedStartle_Expe
 | Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 4 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 4 | 21 | 104 | 6 | 8/19/2022 10:29:24 AM |
 | Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 5 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 62 | 66 | 2 | 13 | 8/19/2022 10:29:57 AM |
 
-We can reanalyze this data to get values such as the % of cued and non-cued fear.
+We can reanalyze this data to get the values reported in the paper (e.g. % of cued and non-cued fear).
 
 *Type this into MATLAB:*
 ```matlab
