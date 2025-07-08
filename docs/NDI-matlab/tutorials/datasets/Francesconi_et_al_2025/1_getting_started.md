@@ -75,4 +75,34 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 | 412693bb0b367f65_c0c1ae36954547f5 | `sd_rat_AVPCre_221205_BNSTI_SON@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | supraoptic nucleus | UBERON:0001929 |
 | 412693bb0ebeaa0d_c09caf14c3d790a7 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | OTR-IRES-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | | |
 
-###
+#### Filter subjects <a name="filterSubjects"></a>
+We have created tools to filter a table by its values. Try finding **subjects** matching a given criterion.
+> Examples:
+> 	columnName = StrainName          dataValue = AVP-Cre
+> 	columnName = StrainName          dataValue = SD
+
+```matlab
+% Search for subjects
+columnNamesSubject = subjectSummary.Properties.VariableNames;
+columnName = 'StrainName';
+dataValue = 'AVP-Cre';
+rowInd = ndi.fun.table.identifyMatchingRows(subjectSummary,...
+    columnName{1},dataValue,'stringMatch','contains');
+filteredSubjects = subjectSummary(rowInd,:)
+```
+
+### View probe and epoch summary tables <a name="probes"></a>
+In the NDI framework, a **probe** is an instrument that makes a measurement of or produces a stimulus for a **subject**. Probes are part of a broader class of experiment items that we term **elements**. In these experiments, there are 3 probe types:
+1. stimulator
+2. patch-Vm
+3. patch-I
+Each subject is linked to a unique set of probes. The **stimulator** probe is connected to any information about stimuli that the subject received such as electrophysiological bath conditions or experimental approaches (e.g. optogenetic tetanus). The **patch-Vm** and **patch-I** are probes of type **mfdaq** (multifunction data acquisition system) which means that they contain data linked to an acquisition system that stored measurements (i.e. voltage and current) for a set of experimental **epochs**. Each **epoch** corresponds to one of the original `.mat` files.
+```matlab
+% View summary table of all probe metadata
+probeSummary = ndi.fun.probeDocTable(dataset)
+```
+| subject_id | probe_id | probe_name | probe_type | probe_reference | probeLocationName | probeLocationOntology | cellTypeName | cellTypeOntology |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf98cde_40ce5a2a60a82dd2 | bath_210401_BNSTIII_a | stimulator | [1] | | | | |
+| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf99bbe_c0cb88b37570afba | Vm_210401_BNSTIII_a | patch-Vm | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:00000170 |
+| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf9aa56_40ca24db9ac1470d | I_210401_BNSTIII_a | patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:00000170 |
