@@ -34,6 +34,9 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
         cloudDatasetId = ndi.cloud.ui.dialog.selectCloudDataset();
     end
     if ismissing(targetFolder)
+        if ismac || isunix % title for uigetdir not displayed on these oses
+            choice = questdlg('You will be prompted to select a download directory', ' ', 'OK', 'OK');
+        end
         targetFolder = uigetdir(pwd, 'Select a dataset target folder');
         if targetFolder == 0
             error('NDI:DownloadCloudDataset:UserCanceled', ...
