@@ -27,13 +27,17 @@ In order to view the dataset, you will need access to the NDI platform. Follow t
 
 ## Import the NDI dataset <a name="import"></a>
 Define the dataset path and id.
+```matlab
 % Choose the folder where the dataset is (or will be) stored
 % (e.g. /Users/myusername/Documents/MATLAB/Datasets)
 dataPath = [userpath filesep 'Datasets'];
 cloudDatasetId = '67f723d574f5f79c6062389d';
 datasetPath = fullfile(dataPath,cloudDatasetId);
-Download or load the NDI dataset 
+```
+
+## Download or load the NDI dataset <a name="dataset"></a>
 The first time you try to access the data, it needs to be downloaded from NDI-cloud. This may take a few minutes. Once you have the dataset downloaded, every other time you examine the data you can just load it.
+```matlab
 if isfolder(datasetPath)
     % Load if already downloaded
     dataset = ndi.dataset.dir(datasetPath);
@@ -42,6 +46,7 @@ else
     if ~isfolder(dataPath), mkdir(dataPath); end
     dataset = ndi.cloud.downloadDataset(cloudDatasetId,dataPath);
 end
+```
 
 ## Basics of Matlab
 Matlab is a language specifically designed for calculations, data visualization, and pattern recognition. It is less flexible in some areas than traditional programming languages, but it excels when working with matrices and **arrays**, which are data structures that contain multiple elements. It includes many built-in tools and additional libraries for a large variety of tasks.
