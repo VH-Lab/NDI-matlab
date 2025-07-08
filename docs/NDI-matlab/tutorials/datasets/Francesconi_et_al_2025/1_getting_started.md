@@ -180,3 +180,87 @@ rowInd = ndi.fun.table.identifyMatchingRows(combinedSummary,...
 filteredEpochs = combinedSummary(rowInd,:)
 ```
 
+## Plot electrophysiology data <a name="electrophysiology"></a>
+Each **subject** is associated with a set of experimental **epochs**. One **epoch** corresponds to one of the original ``.mat` files. Select a **subject** to view that subject's **epochs** and the associated stimulus conditions for each epoch. This may take a minute to load.
+
+*Type this into MATLAB:*
+```matlab
+% Select a subject
+subjectID = subjectSummary.subject_id;
+subjectNames = subjectSummary.subject_name;
+subjectName = 'sd_rat_AVPCre_230706_BNSTIII_SON@dabrowska-lab.rosalindfranklin.edu';
+subjectIndex = strcmpi(subjectNames,subjectName);
+epochIndex = ndi.fun.table.identifyMatchingRows(combinedSummary,'subject_id',...
+    subjectID{subjectIndex});
+
+% Check that the subject has epochs
+if ~any(epochIndex)
+    error(['This subject is part of the behavioral dataset. ' ...
+        'Please select a subject in the electrophysiology dataset.'])
+end
+
+% Get the patch-Vm probe
+patchVm = session.getprobes('subject_id',subjectID{subjectIndex},...
+    'type','patch-Vm');
+patchVm = patchVm{1};
+
+% Get the patch-I probe
+patchI = session.getprobes('subject_id',subjectID{subjectIndex},...
+    'type','patch-I');
+patchI = patchI{1};
+
+% View summary table of epochs for this subject
+epochConditions = combinedSummary(epochIndex,:)
+```
+
+Select an epoch to view the associated electrophysiology traces. This may take a minute to load.
+
+*Type this into MATLAB:*
+```matlab
+% Select an epoch
+epochNum = 3;
+
+% Read the patch-Vm timeseries
+[dataVm,time] = patchVm.readtimeseries(epochNum,-inf,inf);
+
+% Read the patch-I timeseries
+[dataI,~] = patchI.readtimeseries(epochNum,-inf,inf);
+
+% Find indices where traces start and end
+traceStarts = find(diff([1;isnan(dataI)]) == -1);
+traceEnds = find(diff([isnan(dataI);0]) == 1);
+
+% Get number of current steps and number of timepoints per step
+numSteps = numel(traceStarts);
+numTimepoints = max(traceEnds - traceStarts) + 1;
+
+% Reformat data into a matrix (time x steps)
+timeMatrix = time(1:numTimepoints);
+dataVmMatrix = nan(numTimepoints,numSteps);
+dataIMatrix = nan(numTimepoints,numSteps);
+for i = 1:numSteps
+    dataVmMatrix(:,i) = dataVm(traceStarts(i):traceEnds(i));
+    dataIMatrix(:,i) = dataI(traceStarts(i):traceEnds(i));
+end
+
+% Get current step values
+[~,rowInd] = max(abs(dataIMatrix));
+colInd = 1:size(dataIMatrix,2);
+ind = sub2ind(size(dataIMatrix),rowInd,colInd);
+currentSteps = dataIMatrix(ind);
+
+% Plot reformatted traces
+figure; hold on; ax = gca;
+colormap(ax, turbo); clim(ax, [min(currentSteps) max(currentSteps)]);
+colors = turbo(max(currentSteps) - min(currentSteps) + 1);
+for i = 1:size(dataVmMatrix, 2) % Iterate through each column of dataVmMatrix
+    colorInd = currentSteps(i) - min(currentSteps) + 1;
+    plot(ax,timeMatrix, dataVmMatrix(:, i), 'Color', colors(colorInd, :));
+end
+xlabel('Time (s)'); ylabel('Voltage (mV)')
+cb = colorbar(ax); cb.Label.String = 'Current (pA)';
+```
+
+*You will see a plot that looks like:*
+[Electrophysiology Traces](electrophysiology_traces.png)
+
