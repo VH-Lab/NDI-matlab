@@ -22038,17 +22038,130 @@ session = dataset.open_session(session_list{1});
 <pre><code class="language-matlab">% View summary table of all subject metadata
 subjectSummary = ndi.fun.subjectDocTable(dataset)
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| subject_id | subject_name | SpeciesName | SpeciesOntology | StrainName | StrainOntology | GeneticStrainTypeName | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 412693bb0b2a75c8_c0dc4139300a673e | <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | |
-| 412693bb0b2b7e0f_40d1f45f9e51dc8b | <code>sd_rat_OTRCre_220214_BNST@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | OTR-IRES-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | | |
-| 412693bb0b2c8c53_4099b07714e3a561 | <code>wi_rat_CRFCre_230213_BNST@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | <code>sd_rat_WT_210401_BNSTIII@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | SD | RRID:RGD_70508 | wildtype | male | PATO:0000384 | | |
-| 412693bb0b344f5e_c0d0f30bef37dab8 | <code>sd_rat_AVPCre_240425_BNSTI_PVN@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | paraventricular nucleus of hypothalamus | UBERON:0001930 |
-| 412693bb0b359d16_40d3e5ebc2d9a521 | <code>sd_rat_AVPCre_221202_BNSTIII_SCN@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | suprachiasmatic nucleus | UBERON:0002034 |
-| 412693bb0b367f65_c0c1ae36954547f5 | <code>sd_rat_AVPCre_221205_BNSTI_SON@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | supraoptic nucleus | UBERON:0001929 |
-| 412693bb0ebeaa0d_c09caf14c3d790a7 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | Rattus norvegicus | NCBITaxon:10116 | OTR-IRES-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | | |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">subject_id</th>
+<th style="text-align: left;">subject_name</th>
+<th style="text-align: left;">SpeciesName</th>
+<th style="text-align: left;">SpeciesOntology</th>
+<th style="text-align: left;">StrainName</th>
+<th style="text-align: left;">StrainOntology</th>
+<th style="text-align: left;">GeneticStrainTypeName</th>
+<th style="text-align: left;">BiologicalSexName</th>
+<th style="text-align: left;">BiologicalSexOntology</th>
+<th style="text-align: left;">OptogeneticTetanusStimulationTargetLocationName</th>
+<th style="text-align: left;">OptogeneticTetanusStimulationTargetLocationOntology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b2b7e0f_40d1f45f9e51dc8b</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220214_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">OTR-IRES-Cre, SD</td>
+<td style="text-align: left;">RRID:RGD_70508</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b2c8c53_4099b07714e3a561</td>
+<td style="text-align: left;"><code>wi_rat_CRFCre_230213_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b2cf772_c0d06cadbb168eb5</td>
+<td style="text-align: left;"><code>sd_rat_WT_210401_BNSTIII@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">SD</td>
+<td style="text-align: left;">RRID:RGD_70508</td>
+<td style="text-align: left;">wildtype</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b344f5e_c0d0f30bef37dab8</td>
+<td style="text-align: left;"><code>sd_rat_AVPCre_240425_BNSTI_PVN@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">AVP-Cre, SD</td>
+<td style="text-align: left;">RRID:RGD_70508</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;">paraventricular nucleus of hypothalamus</td>
+<td style="text-align: left;">UBERON:0001930</td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b359d16_40d3e5ebc2d9a521</td>
+<td style="text-align: left;"><code>sd_rat_AVPCre_221202_BNSTIII_SCN@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">AVP-Cre, SD</td>
+<td style="text-align: left;">RRID:RGD_70508</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;">suprachiasmatic nucleus</td>
+<td style="text-align: left;">UBERON:0002034</td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b367f65_c0c1ae36954547f5</td>
+<td style="text-align: left;"><code>sd_rat_AVPCre_221205_BNSTI_SON@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">AVP-Cre, SD</td>
+<td style="text-align: left;">RRID:RGD_70508</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;">supraoptic nucleus</td>
+<td style="text-align: left;">UBERON:0001929</td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0ebeaa0d_c09caf14c3d790a7</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">OTR-IRES-Cre, SD</td>
+<td style="text-align: left;">RRID:RGD_70508</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
 <h4 id="filter-subjects">Filter subjects <a name="filterSubjects"></a></h4>
 <p>We have created tools to filter a table by its values. Try finding <strong>subjects</strong> matching a given criterion.</p>
 <p>Examples:
@@ -22074,26 +22187,180 @@ Each subject is linked to a unique set of probes. The <strong>stimulator</strong
 <pre><code class="language-matlab">% View summary table of all probe metadata
 probeSummary = ndi.fun.probeDocTable(dataset)
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| subject_id | probe_id | probe_name | probe_type | probe_reference | probeLocationName | probeLocationOntology | cellTypeName | cellTypeOntology |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf98cde_40ce5a2a60a82dd2 | bath_210401_BNSTIII_a | stimulator | [1] | | | | |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf99bbe_c0cb88b37570afba | Vm_210401_BNSTIII_a | patch-Vm | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:00000170 |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf9aa56_40ca24db9ac1470d | I_210401_BNSTIII_a | patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:00000170 |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">subject_id</th>
+<th style="text-align: left;">probe_id</th>
+<th style="text-align: left;">probe_name</th>
+<th style="text-align: left;">probe_type</th>
+<th style="text-align: left;">probe_reference</th>
+<th style="text-align: left;">probeLocationName</th>
+<th style="text-align: left;">probeLocationOntology</th>
+<th style="text-align: left;">cellTypeName</th>
+<th style="text-align: left;">cellTypeOntology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">412693bb0b2cf772_c0d06cadbb168eb5</td>
+<td style="text-align: left;">412693bb0bf98cde_40ce5a2a60a82dd2</td>
+<td style="text-align: left;">bath_210401_BNSTIII_a</td>
+<td style="text-align: left;">stimulator</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b2cf772_c0d06cadbb168eb5</td>
+<td style="text-align: left;">412693bb0bf99bbe_c0cb88b37570afba</td>
+<td style="text-align: left;">Vm_210401_BNSTIII_a</td>
+<td style="text-align: left;">patch-Vm</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;">Type III BNST neuron</td>
+<td style="text-align: left;">EMPTY:00000170</td>
+</tr>
+<tr>
+<td style="text-align: left;">412693bb0b2cf772_c0d06cadbb168eb5</td>
+<td style="text-align: left;">412693bb0bf9aa56_40ca24db9ac1470d</td>
+<td style="text-align: left;">I_210401_BNSTIII_a</td>
+<td style="text-align: left;">patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;">Type III BNST neuron</td>
+<td style="text-align: left;">EMPTY:00000170</td>
+</tr>
+</tbody>
+</table>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% View summary table of all epoch metadata for each probe
 epochSummary = ndi.fun.epochDocTable(session) % this will take several minutes
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| epoch_number | epoch_id | probe_id | subject_id | local_t0 | local_t1 | global_t0 | global_t1 | mixtureName | mixtureOntology | approachName | approachOntology |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | epoch_412693bb00b3b7b2_4087375d5b7ef613 | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9805 | 18-Aug-2021 15:29:59 | 18-Aug-2021 15:31:16 | arginine-vasopressin | NCIm:C1098706 | | |
-| 2 | epoch_412693bb00b3b844_c0da15457eb12ac4 | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9388 | 18-Aug-2021 15:31:25 | 18-Aug-2021 15:32:42 | arginine-vasopressin | NCIm:C1098706 | | |
-| 3 | epoch_412693bb00b3b88e_c0d9cb8072143524 | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9419 | 18-Aug-2021 15:32:50 | 18-Aug-2021 15:34:07 | arginine-vasopressin | NCIm:C1098706 | | |
-| 4 | epoch_412693bb00b3b8cb_40d23dd40a9bc8c5 | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9453 | 18-Aug-2021 15:43:48 | 18-Aug-2021 15:45:05 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |
-| 5 | epoch_412693bb00b3b902_c0a16ccb923181df | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9333 | 18-Aug-2021 15:22:55 | 18-Aug-2021 15:24:12 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |
-| 6 | epoch_412693bb00b3b93f_c0d772aceb6a808d | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9298 | 18-Aug-2021 15:24:17 | 18-Aug-2021 15:25:34 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |
-| 7 | epoch_412693bb00b3b974_c0d54f2d1e92c305 | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9375 | 18-Aug-2021 15:25:43 | 18-Aug-2021 15:27:00 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">epoch_number</th>
+<th style="text-align: left;">epoch_id</th>
+<th style="text-align: left;">probe_id</th>
+<th style="text-align: left;">subject_id</th>
+<th style="text-align: left;">local_t0</th>
+<th style="text-align: left;">local_t1</th>
+<th style="text-align: left;">global_t0</th>
+<th style="text-align: left;">global_t1</th>
+<th style="text-align: left;">mixtureName</th>
+<th style="text-align: left;">mixtureOntology</th>
+<th style="text-align: left;">approachName</th>
+<th style="text-align: left;">approachOntology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">epoch_412693bb00b3b7b2_4087375d5b7ef613</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9805</td>
+<td style="text-align: left;">18-Aug-2021 15:29:59</td>
+<td style="text-align: left;">18-Aug-2021 15:31:16</td>
+<td style="text-align: left;">arginine-vasopressin</td>
+<td style="text-align: left;">NCIm:C1098706</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">epoch_412693bb00b3b844_c0da15457eb12ac4</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9388</td>
+<td style="text-align: left;">18-Aug-2021 15:31:25</td>
+<td style="text-align: left;">18-Aug-2021 15:32:42</td>
+<td style="text-align: left;">arginine-vasopressin</td>
+<td style="text-align: left;">NCIm:C1098706</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">epoch_412693bb00b3b88e_c0d9cb8072143524</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9419</td>
+<td style="text-align: left;">18-Aug-2021 15:32:50</td>
+<td style="text-align: left;">18-Aug-2021 15:34:07</td>
+<td style="text-align: left;">arginine-vasopressin</td>
+<td style="text-align: left;">NCIm:C1098706</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">epoch_412693bb00b3b8cb_40d23dd40a9bc8c5</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9453</td>
+<td style="text-align: left;">18-Aug-2021 15:43:48</td>
+<td style="text-align: left;">18-Aug-2021 15:45:05</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">epoch_412693bb00b3b902_c0a16ccb923181df</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9333</td>
+<td style="text-align: left;">18-Aug-2021 15:22:55</td>
+<td style="text-align: left;">18-Aug-2021 15:24:12</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">epoch_412693bb00b3b93f_c0d772aceb6a808d</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9298</td>
+<td style="text-align: left;">18-Aug-2021 15:24:17</td>
+<td style="text-align: left;">18-Aug-2021 15:25:34</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">epoch_412693bb00b3b974_c0d54f2d1e92c305</td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9375</td>
+<td style="text-align: left;">18-Aug-2021 15:25:43</td>
+<td style="text-align: left;">18-Aug-2021 15:27:00</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
 <h3 id="combine-metadata-tables">Combine metadata tables <a name="combine"></a></h3>
 <p>Let's combine all metadata so that there is one row per <strong>epoch</strong>.</p>
 <p><em>Type this into MATLAB:</em></p>
@@ -22103,16 +22370,261 @@ combinedSummary = ndi.fun.table.join({subjectSummary,probeSummary,epochSummary},
 combinedSummary = ndi.fun.table.moveColumnsLeft(combinedSummary,...
     {'subject_name','epoch_number'})
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| subject_name | epoch_number | epoch_id | subject_id | SpeciesName | SpeciesOntology | StrainName | StrainOntology | GeneticStrainTypeName | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology | probe_id | probe_name | probe_type | probe_reference | probeLocationName | probeLocationOntology | cellTypeName | cellTypeOntology | local_t0 | local_t1 | global_t0 | global_t1 | mixtureName | mixtureOntology | approachName | approachOntology |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 1 | epoch_412693bb00b3b7b2_4087375d5b7ef613 | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9805 | 18-Aug-2021 15:29:59 | 18-Aug-2021 15:31:16 | arginine-vasopressin | NCIm:C1098706 | | |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 2 | epoch_412693bb00b3b844_c0da15457eb12ac4 | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9388 | 18-Aug-2021 15:31:25 | 18-Aug-2021 15:32:42 | arginine-vasopressin | NCIm:C1098706 | | |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 3 | epoch_412693bb00b3b88e_c0d9cb8072143524 | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9419 | 18-Aug-2021 15:32:50 | 18-Aug-2021 15:34:07 | arginine-vasopressin | NCIm:C1098706 | | |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 4 | epoch_412693bb00b3b8cb_40d23dd40a9bc8c5 | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9453 | 18-Aug-2021 15:43:48 | 18-Aug-2021 15:45:05 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 5 | epoch_412693bb00b3b902_c0a16ccb923181df | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9333 | 18-Aug-2021 15:22:55 | 18-Aug-2021 15:24:12 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 6 | epoch_412693bb00b3b93f_c0d772aceb6a808d | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9298 | 18-Aug-2021 15:24:17 | 18-Aug-2021 15:25:34 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |
-| <code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code> | 7 | epoch_412693bb00b3b974_c0d54f2d1e92c305 | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9375 | 18-Aug-2021 15:25:43 | 18-Aug-2021 15:27:00 | sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm | NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186 | | |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">subject_name</th>
+<th style="text-align: left;">epoch_number</th>
+<th style="text-align: left;">epoch_id</th>
+<th style="text-align: left;">subject_id</th>
+<th style="text-align: left;">SpeciesName</th>
+<th style="text-align: left;">SpeciesOntology</th>
+<th style="text-align: left;">StrainName</th>
+<th style="text-align: left;">StrainOntology</th>
+<th style="text-align: left;">GeneticStrainTypeName</th>
+<th style="text-align: left;">BiologicalSexName</th>
+<th style="text-align: left;">BiologicalSexOntology</th>
+<th style="text-align: left;">OptogeneticTetanusStimulationTargetLocationName</th>
+<th style="text-align: left;">OptogeneticTetanusStimulationTargetLocationOntology</th>
+<th style="text-align: left;">probe_id</th>
+<th style="text-align: left;">probe_name</th>
+<th style="text-align: left;">probe_type</th>
+<th style="text-align: left;">probe_reference</th>
+<th style="text-align: left;">probeLocationName</th>
+<th style="text-align: left;">probeLocationOntology</th>
+<th style="text-align: left;">cellTypeName</th>
+<th style="text-align: left;">cellTypeOntology</th>
+<th style="text-align: left;">local_t0</th>
+<th style="text-align: left;">local_t1</th>
+<th style="text-align: left;">global_t0</th>
+<th style="text-align: left;">global_t1</th>
+<th style="text-align: left;">mixtureName</th>
+<th style="text-align: left;">mixtureOntology</th>
+<th style="text-align: left;">approachName</th>
+<th style="text-align: left;">approachOntology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">epoch_412693bb00b3b7b2_4087375d5b7ef613</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9805</td>
+<td style="text-align: left;">18-Aug-2021 15:29:59</td>
+<td style="text-align: left;">18-Aug-2021 15:31:16</td>
+<td style="text-align: left;">arginine-vasopressin</td>
+<td style="text-align: left;">NCIm:C1098706</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">epoch_412693bb00b3b844_c0da15457eb12ac4</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9388</td>
+<td style="text-align: left;">18-Aug-2021 15:31:25</td>
+<td style="text-align: left;">18-Aug-2021 15:32:42</td>
+<td style="text-align: left;">arginine-vasopressin</td>
+<td style="text-align: left;">NCIm:C1098706</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">epoch_412693bb00b3b88e_c0d9cb8072143524</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9419</td>
+<td style="text-align: left;">18-Aug-2021 15:32:50</td>
+<td style="text-align: left;">18-Aug-2021 15:34:07</td>
+<td style="text-align: left;">arginine-vasopressin</td>
+<td style="text-align: left;">NCIm:C1098706</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">epoch_412693bb00b3b8cb_40d23dd40a9bc8c5</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9453</td>
+<td style="text-align: left;">18-Aug-2021 15:43:48</td>
+<td style="text-align: left;">18-Aug-2021 15:45:05</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">epoch_412693bb00b3b902_c0a16ccb923181df</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9333</td>
+<td style="text-align: left;">18-Aug-2021 15:22:55</td>
+<td style="text-align: left;">18-Aug-2021 15:24:12</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">epoch_412693bb00b3b93f_c0d772aceb6a808d</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9298</td>
+<td style="text-align: left;">18-Aug-2021 15:24:17</td>
+<td style="text-align: left;">18-Aug-2021 15:25:34</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">epoch_412693bb00b3b974_c0d54f2d1e92c305</td>
+<td style="text-align: left;">412693bb0b2a75c8_c0dc4139300a673e</td>
+<td style="text-align: left;">Rattus norvegicus</td>
+<td style="text-align: left;">NCBITaxon:10116</td>
+<td style="text-align: left;">CRF-Cre, WI</td>
+<td style="text-align: left;">RRID:RGD_13508588</td>
+<td style="text-align: left;">wildtype, knockin</td>
+<td style="text-align: left;">male</td>
+<td style="text-align: left;">PATO:0000384</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963</td>
+<td style="text-align: left;">bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a</td>
+<td style="text-align: left;">stimulator,patch-Vm,patch-I</td>
+<td style="text-align: left;">[1]</td>
+<td style="text-align: left;">bed nucleus of stria terminalis (BNST)</td>
+<td style="text-align: left;">UBERON:0001880</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">76.9375</td>
+<td style="text-align: left;">18-Aug-2021 15:25:43</td>
+<td style="text-align: left;">18-Aug-2021 15:27:00</td>
+<td style="text-align: left;">sodium chloride,potassium chloride,sodium bicarbonate,sodium phosphate, monobasic, anhydrous,calcium chloride dihydrate,D-glucose,magnesium chloride hexahydrate,pH,carbogen,osm</td>
+<td style="text-align: left;">NCIm:C0037494,NCIm:C0032825,NCIm:C0074722,NCIm:C1165377,CHEBI:86158,NCIm:C0017725,NCIm:C0724622,NCIm:C4048290,NCIm:CL1445492,NCIm:C0439186</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
 <h4 id="filter-epochs">Filter epochs <a name="filterEpochs"></a></h4>
 <p>Try finding epochs matching a given criterion.
 Examples:
@@ -22206,8 +22718,8 @@ end
 xlabel('Time (s)'); ylabel('Voltage (mV)')
 cb = colorbar(ax); cb.Label.String = 'Current (pA)';
 </code></pre>
-<p><em>You will see a plot that looks like:</em>
-<img alt="Electrophysiology traces" src="../electrophysiology_traces.png" /></p>
+<p><em>You will see a plot that looks like:</em></p>
+<p><img alt="Electrophysiology traces" src="../electrophysiology_traces.png" /></p>
 <h2 id="plot-elevated-plus-maze-data">Plot Elevated Plus Maze data <a name="EPM"></a></h2>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Get Elevated Plus Maze documents/table
@@ -22225,14 +22737,331 @@ tableEPM = ndi.fun.table.moveColumnsLeft(tableEPM,{'SubjectLocalIdentifier',...
     'Treatment_CnoOrSalineAdministration','ExperimentalGroupCode',...
     'ElevatedPlusMaze_TestIdentifier','DataExclusionFlag'})
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| SubjectLocalIdentifier | Treatment_CnoOrSalineAdministration | ExperimentalGroupCode | ElevatedPlusMaze_TestIdentifier | DataExclusionFlag | ElevatedPlusMaze_OpenArmNorth_Entries | ElevatedPlusMaze_OpenArmSouth_Entries | ElevatedPlusMaze_OpenArmTotalEntries | ElevatedPlusMaze_OpenArmNorth_HeadEntries | ElevatedPlusMaze_OpenArmSouth_HeadEntries | ElevatedPlusMaze_OpenArmTotalHeadEntries | ElevatedPlusMaze_OpenArmNorth_Time | ElevatedPlusMaze_OpenArmSouth_Time | ElevatedPlusMaze_OpenArmTotalTime | ElevatedPlusMaze_OpenArmTotal_PercentTimeDuringTestDuration | ElevatedPlusMaze_OpenArmNorth_LatencyToFirstEntry | ElevatedPlusMaze_OpenArmSouth_LatencyToFirstEntry | ElevatedPlusMaze_OpenArmTotalLatencyToFirstEntry | ElevatedPlusMaze_OpenArmNorth_TimeMovingTowards | ElevatedPlusMaze_OpenArmSouth_TimeMovingTowards | ElevatedPlusMaze_OpenArmTotalTimeMovingTowards | ElevatedPlusMaze_OpenArmNorth_TimeFreezing | ElevatedPlusMaze_OpenArmSouth_TimeFreezing | ElevatedPlusMaze_OpenArmTotalTimeFreezing | ElevatedPlusMaze_ClosedArmWest_Entries | ElevatedPlusMaze_ClosedArmEast_Entries | ElevatedPlusMaze_ClosedArmTotalEntries | ElevatedPlusMaze_ClosedArmWest_HeadEntries | ElevatedPlusMaze_ClosedArmEast_HeadEntries | ElevatedPlusMaze_ClosedArmTotalHeadEntries | ElevatedPlusMaze_ClosedArmWest_Time | ElevatedPlusMaze_ClosedArmEast_Time | ElevatedPlusMaze_ClosedArmTotalTime | ElevatedPlusMaze_ClosedArmTotal_PercentTimeDuringTestDuration | ElevatedPlusMaze_ClosedArmWest_LatencyToFirstEntry | ElevatedPlusMaze_ClosedArmEast_LatencyToFirstEntry | ElevatedPlusMaze_ClosedArmTotalLatencyToFirstEntry | ElevatedPlusMaze_ClosedArmWest_TimeMovingTowards | ElevatedPlusMaze_ClosedArmEast_TimeMovingTowards | ElevatedPlusMaze_ClosedArmTotalTimeMovingTowards | ElevatedPlusMaze_ClosedArmWest_TimeFreezing | ElevatedPlusMaze_ClosedArmEast_TimeFreezing | ElevatedPlusMaze_ClosedArmTotalTimeFreezing | ElevatedPlusMaze_Center_Entries | ElevatedPlusMaze_Center_HeadEntries | ElevatedPlusMaze_Center_Time | ElevatedPlusMaze_Center_PercentTimeDuringTestDuration | ElevatedPlusMaze_Center_LatencyToFirstEntry | ElevatedPlusMaze_Center_TimeMovingTowards | ElevatedPlusMaze_Center_TimeFreezing | ElevatedPlusMaze_TestDuration |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | Saline | 1 | 18 | false | 4 | 5 | 9 | 13 | 12 | 25 | 46.3 | 59.9 | 106.2 | 35.4000 | 0 | 18.4000 | 18.4 | 101.8 | 90.4 | 192.2 | 2.3 | 7 | 9.3 | 7 | 11 | 18 | 9 | 14 | 23 | 52.6 | 73.4 | 126 | 42 | 49.5 | 39.3 | 88.8 | 99.4 | 94.1 | 193.5 | 0 | 9.3 | 9.3 | 26 | 46 | 67.9000 | 22.6333 | 14.4000 | 188.9000 | 1.5000 | 300 |
-| <code>sd_rat_OTRCre_220819_180@dabrowska-lab.rosalindfranklin.edu</code> | Saline | 1 | 19 | false | 3 | 3 | 6 | 11 | 12 | 23 | 52.3 | 65.3 | 117.6 | 39.2000 | 0 | 37.3000 | 37.3 | 94.8 | 96.1 | 190.9 | 0 | 13.3 | 13.3 | 4 | 5 | 9 | 8 | 9 | 17 | 62.6 | 39 | 101.6 | 33.8667 | 53.9 | 22.2 | 76.1 | 99.8 | 80.5 | 180.3 | 0 | 0 | 0 | 15 | 40 | 80.8000 | 26.9333 | 18.4000 | 221.7000 | 7.4000 | 300 |
-| <code>sd_rat_OTRCre_220819_181@dabrowska-lab.rosalindfranklin.edu</code> | CNO | 1 | 26 | false | 4 | 0 | 4 | 9 | 22 | 31 | 8.2 | 0 | 8.2 | 2.7333 | 46.9000 | | 46.9 | 80.3 | 89.4 | 169.7 | 1.3 | 0 | 1.3 | 10 | 15 | 25 | 7 | 19 | 26 | 73.6 | 124.5 | 198.1 | 66.0333 | 9.9 | 1.2 | 11.1 | 128.5 | 100.5 | 229 | 6.8 | 15.1 | 21.9 | 29 | 54 | 93.6000 | 31.2000 | 0 | 254.3000 | 6.6000 | 300 |
-| <code>sd_rat_OTRCre_220819_183@dabrowska-lab.rosalindfranklin.edu</code> | CNO | 1 | 13 | false | 6 | 4 | 10 | 8 | 13 | 21 | 37.2 | 67.9 | 105.1 | 35.0333 | 0 | 26.7000 | 26.7 | 95.6 | 71.9 | 167.5 | 0 | 7.3 | 7.3 | 4 | 8 | 12 | 11 | 9 | 20 | 59.4 | 68.4 | 127.8 | 42.6000 | 84.4 | 65.2 | 149.6 | 112 | 77.6 | 189.6 | 9 | 3.5 | 12.5 | 22 | 37 | 67.1000 | | 22.9000 | 199 | 10.3000 | 300 |
-| <code>sd_rat_OTRCre_220819_195@dabrowska-lab.rosalindfranklin.edu</code> | Saline | 1 | 22 | false | 4 | 9 | 13 | 7 | 30 | 37 | 34.5 | 111.2 | 145.7 | 48.5667 | 30.9000 | 45.7000 | 76.6 | 82.9 | 59.3 | 142.2 | 1.9 | 18.3 | 20.2 | 4 | 3 | 7 | 7 | 8 | 15 | 26.4 | 26.3 | 52.7 | 17.5667 | 15.3 | 1.6 | 16.9 | 23.1 | 68.7 | 91.8 | 0 | 0 | 0 | 21 | 46 | 101.6000 | 33.8667 | 0 | 169.1000 | 16.9000 | 300 |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">SubjectLocalIdentifier</th>
+<th style="text-align: left;">Treatment_CnoOrSalineAdministration</th>
+<th style="text-align: left;">ExperimentalGroupCode</th>
+<th style="text-align: left;">ElevatedPlusMaze_TestIdentifier</th>
+<th style="text-align: left;">DataExclusionFlag</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_Entries</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmSouth_Entries</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotalEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_HeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmSouth_HeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotalHeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_Time</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmSouth_Time</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotalTime</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotal_PercentTimeDuringTestDuration</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_LatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmSouth_LatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotalLatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_TimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmSouth_TimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotalTimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_TimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmSouth_TimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_OpenArmTotalTimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmWest_Entries</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmEast_Entries</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotalEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmWest_HeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmEast_HeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotalHeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmWest_Time</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmEast_Time</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotalTime</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotal_PercentTimeDuringTestDuration</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmWest_LatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmEast_LatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotalLatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmWest_TimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmEast_TimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotalTimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmWest_TimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmEast_TimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_ClosedArmTotalTimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_Entries</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_HeadEntries</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_Time</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_PercentTimeDuringTestDuration</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_LatencyToFirstEntry</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_TimeMovingTowards</th>
+<th style="text-align: left;">ElevatedPlusMaze_Center_TimeFreezing</th>
+<th style="text-align: left;">ElevatedPlusMaze_TestDuration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Saline</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;">false</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">46.3</td>
+<td style="text-align: left;">59.9</td>
+<td style="text-align: left;">106.2</td>
+<td style="text-align: left;">35.4000</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">18.4000</td>
+<td style="text-align: left;">18.4</td>
+<td style="text-align: left;">101.8</td>
+<td style="text-align: left;">90.4</td>
+<td style="text-align: left;">192.2</td>
+<td style="text-align: left;">2.3</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">9.3</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">14</td>
+<td style="text-align: left;">23</td>
+<td style="text-align: left;">52.6</td>
+<td style="text-align: left;">73.4</td>
+<td style="text-align: left;">126</td>
+<td style="text-align: left;">42</td>
+<td style="text-align: left;">49.5</td>
+<td style="text-align: left;">39.3</td>
+<td style="text-align: left;">88.8</td>
+<td style="text-align: left;">99.4</td>
+<td style="text-align: left;">94.1</td>
+<td style="text-align: left;">193.5</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">9.3</td>
+<td style="text-align: left;">9.3</td>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">46</td>
+<td style="text-align: left;">67.9000</td>
+<td style="text-align: left;">22.6333</td>
+<td style="text-align: left;">14.4000</td>
+<td style="text-align: left;">188.9000</td>
+<td style="text-align: left;">1.5000</td>
+<td style="text-align: left;">300</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_180@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Saline</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">false</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">23</td>
+<td style="text-align: left;">52.3</td>
+<td style="text-align: left;">65.3</td>
+<td style="text-align: left;">117.6</td>
+<td style="text-align: left;">39.2000</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">37.3000</td>
+<td style="text-align: left;">37.3</td>
+<td style="text-align: left;">94.8</td>
+<td style="text-align: left;">96.1</td>
+<td style="text-align: left;">190.9</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">13.3</td>
+<td style="text-align: left;">13.3</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">17</td>
+<td style="text-align: left;">62.6</td>
+<td style="text-align: left;">39</td>
+<td style="text-align: left;">101.6</td>
+<td style="text-align: left;">33.8667</td>
+<td style="text-align: left;">53.9</td>
+<td style="text-align: left;">22.2</td>
+<td style="text-align: left;">76.1</td>
+<td style="text-align: left;">99.8</td>
+<td style="text-align: left;">80.5</td>
+<td style="text-align: left;">180.3</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">40</td>
+<td style="text-align: left;">80.8000</td>
+<td style="text-align: left;">26.9333</td>
+<td style="text-align: left;">18.4000</td>
+<td style="text-align: left;">221.7000</td>
+<td style="text-align: left;">7.4000</td>
+<td style="text-align: left;">300</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_181@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">CNO</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">false</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">22</td>
+<td style="text-align: left;">31</td>
+<td style="text-align: left;">8.2</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">8.2</td>
+<td style="text-align: left;">2.7333</td>
+<td style="text-align: left;">46.9000</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">46.9</td>
+<td style="text-align: left;">80.3</td>
+<td style="text-align: left;">89.4</td>
+<td style="text-align: left;">169.7</td>
+<td style="text-align: left;">1.3</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">1.3</td>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">25</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">19</td>
+<td style="text-align: left;">26</td>
+<td style="text-align: left;">73.6</td>
+<td style="text-align: left;">124.5</td>
+<td style="text-align: left;">198.1</td>
+<td style="text-align: left;">66.0333</td>
+<td style="text-align: left;">9.9</td>
+<td style="text-align: left;">1.2</td>
+<td style="text-align: left;">11.1</td>
+<td style="text-align: left;">128.5</td>
+<td style="text-align: left;">100.5</td>
+<td style="text-align: left;">229</td>
+<td style="text-align: left;">6.8</td>
+<td style="text-align: left;">15.1</td>
+<td style="text-align: left;">21.9</td>
+<td style="text-align: left;">29</td>
+<td style="text-align: left;">54</td>
+<td style="text-align: left;">93.6000</td>
+<td style="text-align: left;">31.2000</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">254.3000</td>
+<td style="text-align: left;">6.6000</td>
+<td style="text-align: left;">300</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_183@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">CNO</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">false</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">10</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">37.2</td>
+<td style="text-align: left;">67.9</td>
+<td style="text-align: left;">105.1</td>
+<td style="text-align: left;">35.0333</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">26.7000</td>
+<td style="text-align: left;">26.7</td>
+<td style="text-align: left;">95.6</td>
+<td style="text-align: left;">71.9</td>
+<td style="text-align: left;">167.5</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">7.3</td>
+<td style="text-align: left;">7.3</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">12</td>
+<td style="text-align: left;">11</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">20</td>
+<td style="text-align: left;">59.4</td>
+<td style="text-align: left;">68.4</td>
+<td style="text-align: left;">127.8</td>
+<td style="text-align: left;">42.6000</td>
+<td style="text-align: left;">84.4</td>
+<td style="text-align: left;">65.2</td>
+<td style="text-align: left;">149.6</td>
+<td style="text-align: left;">112</td>
+<td style="text-align: left;">77.6</td>
+<td style="text-align: left;">189.6</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">3.5</td>
+<td style="text-align: left;">12.5</td>
+<td style="text-align: left;">22</td>
+<td style="text-align: left;">37</td>
+<td style="text-align: left;">67.1000</td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;">22.9000</td>
+<td style="text-align: left;">199</td>
+<td style="text-align: left;">10.3000</td>
+<td style="text-align: left;">300</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_195@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">Saline</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">22</td>
+<td style="text-align: left;">false</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">9</td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">30</td>
+<td style="text-align: left;">37</td>
+<td style="text-align: left;">34.5</td>
+<td style="text-align: left;">111.2</td>
+<td style="text-align: left;">145.7</td>
+<td style="text-align: left;">48.5667</td>
+<td style="text-align: left;">30.9000</td>
+<td style="text-align: left;">45.7000</td>
+<td style="text-align: left;">76.6</td>
+<td style="text-align: left;">82.9</td>
+<td style="text-align: left;">59.3</td>
+<td style="text-align: left;">142.2</td>
+<td style="text-align: left;">1.9</td>
+<td style="text-align: left;">18.3</td>
+<td style="text-align: left;">20.2</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">7</td>
+<td style="text-align: left;">8</td>
+<td style="text-align: left;">15</td>
+<td style="text-align: left;">26.4</td>
+<td style="text-align: left;">26.3</td>
+<td style="text-align: left;">52.7</td>
+<td style="text-align: left;">17.5667</td>
+<td style="text-align: left;">15.3</td>
+<td style="text-align: left;">1.6</td>
+<td style="text-align: left;">16.9</td>
+<td style="text-align: left;">23.1</td>
+<td style="text-align: left;">68.7</td>
+<td style="text-align: left;">91.8</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">46</td>
+<td style="text-align: left;">101.6000</td>
+<td style="text-align: left;">33.8667</td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;">169.1000</td>
+<td style="text-align: left;">16.9000</td>
+<td style="text-align: left;">300</td>
+</tr>
+</tbody>
+</table>
 <p>Select a variable to view it's definition and plot the data.</p>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Define grouping and plotting variables
@@ -22259,13 +23088,33 @@ termInfo = cell2table({id,name,definition,shortName}',...
     'RowNames',{'id','name','definition','shortName'},...
     'VariableNames',{'value'})
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| Property | Value |
-| :--- | :--- |
-| id | EMPTY:00000100 |
-| name | Elevated Plus Maze: open arm (north) - entries |
-| definition | In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup. Unit of measure: count |
-| shortName | ElevatedPlusMaze_OpenArmNorth_Entries |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Property</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">id</td>
+<td style="text-align: left;">EMPTY:00000100</td>
+</tr>
+<tr>
+<td style="text-align: left;">name</td>
+<td style="text-align: left;">Elevated Plus Maze: open arm (north) - entries</td>
+</tr>
+<tr>
+<td style="text-align: left;">definition</td>
+<td style="text-align: left;">In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup. Unit of measure: count</td>
+</tr>
+<tr>
+<td style="text-align: left;">shortName</td>
+<td style="text-align: left;">ElevatedPlusMaze_OpenArmNorth_Entries</td>
+</tr>
+</tbody>
+</table>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Plot data
 x = categorical(tableEPM{validRows,groupingVariable});
@@ -22273,8 +23122,8 @@ y = tableEPM{validRows,plottingVariable}; if iscell(y), y = cell2mat(y); end
 figure; violinplot(y,x,'GroupOrder',{'Saline','CNO'});
 ylabel(fullNames{termIndex})
 </code></pre>
-<p><em>You will see a plot that looks like:</em>
-<img alt="Elevated Plus Maze" src="../elevated_plus_maze.png" /></p>
+<p><em>You will see a plot that looks like:</em></p>
+<p><img alt="Elevated Plus Maze" src="../elevated_plus_maze.png" /></p>
 <h2 id="plot-fear-potentiated-startle-data">Plot Fear-Potentiated Startle data <a name="FPS"></a></h2>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Get Fear-Potentiated documents/table
@@ -22286,14 +23135,103 @@ tableFPS = ndi.fun.doc.ontologyTableRowDoc2Table(docsFPS);
 tableFPS = ndi.fun.table.moveColumnsLeft(tableFPS,{'Fear_potentiatedStartle_ExperimentalPhaseOrTestName',...
     'SubjectLocalIdentifier'})
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| Fear_potentiatedStartle_ExperimentalPhaseOrTestName | SubjectLocalIdentifier | ExperimentalTrialNumber | Fear_potentiatedStartle_TrialTypeIdentifier | Fear_potentiatedStartle_ApparatusChamberIdentifier | ExperimentalGroupCode | AcousticStartleResponse_NumberOfSamples | AcousticStartleResponse_SamplingRate | AcousticStartleResponse_StartleWindowOnsetAmplitude | AcousticStartleResponse_MaximumAmplitude | AcousticStartleResponse_TimeToMaximumAmplitude | AcousticStartleResponse_AverageAmplitude | ExperimentTrialExecutionTimestamp |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Pre-test 1 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | 1 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 18 | 64 | 5 | 8/19/2022 10:27:46 AM |
-| Pre-test 1 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | 2 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 27 | 45 | 6 | 8/19/2022 10:28:19 AM |
-| Pre-test 1 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | 3 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 21 | 47 | 4 | 8/19/2022 10:28:52 AM |
-| Pre-test 1 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | 4 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 4 | 21 | 104 | 6 | 8/19/2022 10:29:24 AM |
-| Pre-test 1 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | 5 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 62 | 66 | 2 | 13 | 8/19/2022 10:29:57 AM |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Fear_potentiatedStartle_ExperimentalPhaseOrTestName</th>
+<th style="text-align: left;">SubjectLocalIdentifier</th>
+<th style="text-align: left;">ExperimentalTrialNumber</th>
+<th style="text-align: left;">Fear_potentiatedStartle_TrialTypeIdentifier</th>
+<th style="text-align: left;">Fear_potentiatedStartle_ApparatusChamberIdentifier</th>
+<th style="text-align: left;">ExperimentalGroupCode</th>
+<th style="text-align: left;">AcousticStartleResponse_NumberOfSamples</th>
+<th style="text-align: left;">AcousticStartleResponse_SamplingRate</th>
+<th style="text-align: left;">AcousticStartleResponse_StartleWindowOnsetAmplitude</th>
+<th style="text-align: left;">AcousticStartleResponse_MaximumAmplitude</th>
+<th style="text-align: left;">AcousticStartleResponse_TimeToMaximumAmplitude</th>
+<th style="text-align: left;">AcousticStartleResponse_AverageAmplitude</th>
+<th style="text-align: left;">ExperimentTrialExecutionTimestamp</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Pre-test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">Startle 95 dB Trial</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">200</td>
+<td style="text-align: left;">1000</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">18</td>
+<td style="text-align: left;">64</td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">8/19/2022 10:27:46 AM</td>
+</tr>
+<tr>
+<td style="text-align: left;">Pre-test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">Startle 95 dB Trial</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">200</td>
+<td style="text-align: left;">1000</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">27</td>
+<td style="text-align: left;">45</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">8/19/2022 10:28:19 AM</td>
+</tr>
+<tr>
+<td style="text-align: left;">Pre-test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">Startle 95 dB Trial</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">200</td>
+<td style="text-align: left;">1000</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">47</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">8/19/2022 10:28:52 AM</td>
+</tr>
+<tr>
+<td style="text-align: left;">Pre-test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Startle 95 dB Trial</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">200</td>
+<td style="text-align: left;">1000</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">21</td>
+<td style="text-align: left;">104</td>
+<td style="text-align: left;">6</td>
+<td style="text-align: left;">8/19/2022 10:29:24 AM</td>
+</tr>
+<tr>
+<td style="text-align: left;">Pre-test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">5</td>
+<td style="text-align: left;">Startle 95 dB Trial</td>
+<td style="text-align: left;">1</td>
+<td style="text-align: left;">3</td>
+<td style="text-align: left;">200</td>
+<td style="text-align: left;">1000</td>
+<td style="text-align: left;">62</td>
+<td style="text-align: left;">66</td>
+<td style="text-align: left;">2</td>
+<td style="text-align: left;">13</td>
+<td style="text-align: left;">8/19/2022 10:29:57 AM</td>
+</tr>
+</tbody>
+</table>
 <p>We can reanalyze this data to get the values reported in the paper (e.g. % of cued and non-cued fear).</p>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Get list of all variables
@@ -22347,14 +23285,67 @@ varFPS = tableCueTest.Properties.VariableNames;
 % Display table
 tableCueTest
 </code></pre>
-<p><em>You will see a table that looks like:</em>
-| Fear_potentiatedStartle_ExperimentalPhaseOrTestName | SubjectLocalIdentifier | startleAmplitudeLightNoise | startleAmplitudeNoiseOnly | startleAmplitudeStartle | cuedFear | nonCuedFear |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Cue test 1 | <code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code> | 38.7 | 28.4 | 22.1 | 36.268 | 28.507 |
-| Cue test 1 | <code>sd_rat_OTRCre_220819_180@dabrowska-lab.rosalindfranklin.edu</code> | 91.5 | 46.1 | 22.5 | 98.482 | 104.89 |
-| Cue test 1 | <code>sd_rat_OTRCre_220819_181@dabrowska-lab.rosalindfranklin.edu</code> | 87 | 13.8 | 11.5 | 530.43 | 20 |
-| Cue test 1 | <code>sd_rat_OTRCre_220819_183@dabrowska-lab.rosalindfranklin.edu</code> | 104.5 | 85.9 | 26.8 | 21.653 | 220.52 |
-| Cue test 1 | <code>sd_rat_OTRCre_220819_195@dabrowska-lab.rosalindfranklin.edu</code> | 214.1 | 36.2 | 53.8 | 491.44 | -32.714 |</p>
+<p><em>You will see a table that looks like:</em></p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Fear_potentiatedStartle_ExperimentalPhaseOrTestName</th>
+<th style="text-align: left;">SubjectLocalIdentifier</th>
+<th style="text-align: left;">startleAmplitudeLightNoise</th>
+<th style="text-align: left;">startleAmplitudeNoiseOnly</th>
+<th style="text-align: left;">startleAmplitudeStartle</th>
+<th style="text-align: left;">cuedFear</th>
+<th style="text-align: left;">nonCuedFear</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Cue test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">38.7</td>
+<td style="text-align: left;">28.4</td>
+<td style="text-align: left;">22.1</td>
+<td style="text-align: left;">36.268</td>
+<td style="text-align: left;">28.507</td>
+</tr>
+<tr>
+<td style="text-align: left;">Cue test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_180@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">91.5</td>
+<td style="text-align: left;">46.1</td>
+<td style="text-align: left;">22.5</td>
+<td style="text-align: left;">98.482</td>
+<td style="text-align: left;">104.89</td>
+</tr>
+<tr>
+<td style="text-align: left;">Cue test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_181@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">87</td>
+<td style="text-align: left;">13.8</td>
+<td style="text-align: left;">11.5</td>
+<td style="text-align: left;">530.43</td>
+<td style="text-align: left;">20</td>
+</tr>
+<tr>
+<td style="text-align: left;">Cue test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_183@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">104.5</td>
+<td style="text-align: left;">85.9</td>
+<td style="text-align: left;">26.8</td>
+<td style="text-align: left;">21.653</td>
+<td style="text-align: left;">220.52</td>
+</tr>
+<tr>
+<td style="text-align: left;">Cue test 1</td>
+<td style="text-align: left;"><code>sd_rat_OTRCre_220819_195@dabrowska-lab.rosalindfranklin.edu</code></td>
+<td style="text-align: left;">214.1</td>
+<td style="text-align: left;">36.2</td>
+<td style="text-align: left;">53.8</td>
+<td style="text-align: left;">491.44</td>
+<td style="text-align: left;">-32.714</td>
+</tr>
+</tbody>
+</table>
 <p>Select an experimental phase and plotting variable to plot the data.</p>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Choose an experimental phase
@@ -22377,8 +23368,8 @@ y = tableCueTest{phaseRows,plottingVariable};
 figure; violinplot(y,x,'GroupOrder',{'Saline','CNO'});
 ylabel(plottingVariable)
 </code></pre>
-<p><em>You will see a plot that looks like:</em>
-<img alt="Fear-Potentiated Startle" src="../fear_potentiated_startle.png" /></p>
+<p><em>You will see a plot that looks like:</em></p>
+<p><img alt="Fear-Potentiated Startle" src="../fear_potentiated_startle.png" /></p>
 
 
 
