@@ -6,12 +6,20 @@
 	],
 	"treatment_drug": [
 		{
-			"name": "location",
-			"type": "structure",
+			"name": "location_ontologyName",
+			"type": "string",
 			"default_value": [],
 			"parameters": [],
 			"queryable": 1,
-			"documentation": "Location of the drug application (ontologyNode, name)"
+			"documentation": "Location of the drug application (ontologyNode, e.g., ONTOLOGY:NODE)"
+		},
+		{
+			"name": "location_name",
+			"type": "string",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Location of the drug application (ontology name)"
 		},
 		{
 			"name": "mixture_table",

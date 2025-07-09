@@ -1,0 +1,79 @@
+{
+	"aCSF": [
+		{
+			"ontologyName": "NCIm:C0037494",
+			"name": "sodium chloride",
+			"value": 0.150,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0032825",
+			"name": "potassium chloride",
+			"value": 0.003,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0006686",
+			"name": "calcium chloride",
+			"value": 0.002,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0024472",
+			"name": "magnesium chloride",
+			"value": 0.002,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0887237",
+			"name": "HEPES",
+			"value": 0.010,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0017725",
+			"name": "D-glucose",
+			"value": 0.011,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+
+		{
+			"ontologyName": "NCIm:C4048290",
+			"name": "pH",
+			"value": 7.4,
+			"ontologyUnit": "OM:Acidity",
+			"unitName": "pH"
+		},
+		{
+			"ontologyName": "NCIm:C0439186",
+			"name": "osm",
+			"value": 0.320,
+			"ontologyUnit": "NCIm:C0439186",
+			"unitName": "osm"
+		}
+	],
+	"ttx": [
+		{
+			"ontologyName": "NCIm:C0039705",
+			"name": "tetrodotoxin",
+			"value": 1,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"CNO": [
+		{
+			"ontologyName": "NCIm:C0212364",
+			"name": "clozapine N-oxide",
+			"value": 0.000010,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	]
+}
