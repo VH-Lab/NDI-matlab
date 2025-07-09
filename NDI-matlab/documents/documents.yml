@@ -83,3 +83,4 @@
         - vision:
           - oridir:
             - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
+      - treatment:

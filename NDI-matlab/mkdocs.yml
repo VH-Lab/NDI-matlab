@@ -41,6 +41,8 @@ nav:
         - 2.5 Searching NDI databases: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases.md'
       - 3 Tutorials for new coders or new Matlab users:
         - 3.1 Newbie version of your first electrophysiology experiment with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset.md'
+      - 4 Datasets
+        - Francesconi_et_al_2025: 'NDI-matlab/tutorials/datasets/Francesconi_et_al_2025/1_getting_started.md'
       - 7 Writing your own apps and calculators:
         - 7.2 Writing short calculations: 'NDI-matlab/tutorials/writing_own_app/2_ndi_calculators.md'
       - Planned:
@@ -135,6 +137,7 @@ nav:
         - vision:
           - oridir:
             - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
+      - treatment:
     - Code reference:
       - ndi_Init: 'NDI-matlab/reference/ndi_Init.m.md'
       - ndi_install: 'NDI-matlab/reference/ndi_install.m.md'
