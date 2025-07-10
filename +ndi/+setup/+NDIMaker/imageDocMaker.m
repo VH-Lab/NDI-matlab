@@ -5,11 +5,9 @@ classdef imageDocMaker < handle
     %   These documents link image data to specific ontology terms and can optionally
     %   establish a dependency on an 'ontologyTableRow' document, which provides
     %   broader data context.
-
     properties (Access = public)
         session % The NDI session object (e.g., ndi.session.dir or ndi.database.dir) where documents will be added.
     end
-
     methods
         function obj = imageDocMaker(session)
             %IMAGEDOCMAKER Constructor for this class.
@@ -32,7 +30,7 @@ classdef imageDocMaker < handle
             end
             obj.session = session;
         end % constructor imageDocMaker
-
+        
         function [doc, inDatabase] = createOntologyImageDoc(obj, image, ontologyNodes, options)
             %CREATEONTOLOGYIMAGEDOC Creates a single NDI 'ontologyImage' document.
             %   DOC = CREATEONTOLOGYIMAGEDOC(OBJ, IMAGE, ONTOLOGYNODES, OPTIONS)
@@ -78,14 +76,18 @@ classdef imageDocMaker < handle
                 options.ontologyTableRow_id {mustBeText} = ''
             end
 
-            % --- Input Validation & Preparation ---
-            % Create a canonical (sorted, comma-separated) string for querying and storage
-            nodes_canonical_string = join(sort(cellstr(ontologyNodes)), ',');
-            nodes_canonical_string = nodes_canonical_string{1};
-
+            % Check that ontologyNodes are in the correct format
+            ontologyNodes = cellstr(ontologyNodes);
+            for i = 1:numel(ontologyNodes)
+                [id,~,prefix] = ndi.ontology.lookup(ontologyNodes{i});
+                ontologyNodes{i} = [prefix,':',id];
+            end
+            ontologyNodes = join(sort(ontologyNodes), ',');
+            ontologyNodes = ontologyNodes{1};
+            
             % --- Search for Existing Document ---
             % Base query on the ontology nodes
-            query = ndi.query('ontologyImage.ontologyNodes', 'exact_string', nodes_canonical_string);
+            query = ndi.query('ontologyImage.ontologyNodes', 'exact_string', ontologyNodes);
             
             % If an ontologyTableRow_id is provided, add it to the query to find a unique document
             if ~isempty(options.ontologyTableRow_id)
@@ -96,7 +98,6 @@ classdef imageDocMaker < handle
             end
             
             doc_old = obj.session.database_search(query);
-
             % --- Handle Overwrite Logic ---
             if numel(doc_old) > 1
                 % If no ID was provided, this can happen if multiple docs share the same nodes
@@ -104,7 +105,6 @@ classdef imageDocMaker < handle
                 error('imageDocMaker:NonUniqueDocument',...
                     'The query returned multiple documents. Provide an ontologyTableRow_id to specify which document to use.');
             end
-
             inDatabase = false;
             if isscalar(doc_old)
                 if options.Overwrite
@@ -115,41 +115,116 @@ classdef imageDocMaker < handle
                     return;
                 end
             end
-
+            
             % --- Create New Document ---
-            doc = obj.session.newdocument('ontologyImage');
+            
+            % 1. Collect metadata into structs
+            ngrid_struct = ndi.fun.data.mat2ngrid(image);
+            ontologyImage_struct = struct('ontologyNodes', ontologyNodes);
 
-            % Prepare the 'ngrid' properties from the image data
-            img_info = whos('image');
-            ngrid_struct = struct(...
-                'data_size', img_info.bytes / numel(image), ...
-                'data_type', class(image), ...
-                'data_dim', size(image), ...
-                'coordinates', [] ...
-            );
+            % 2. Make the NDI document object, passing metadata structs as name-value pairs
+            doc = ndi.document('ontologyImage', ...
+                'ontologyImage', ontologyImage_struct, ...
+                'ngrid', ngrid_struct) + obj.session.newdocument();
+            
+            % 3. Set dependencies if any
+            if ~isempty(options.ontologyTableRow_id)
+                doc = doc.set_dependency_value('ontologyTableRow_id', options.ontologyTableRow_id);
+            end
 
-            % Prepare the 'ontologyImage' properties
-            ontologyImage_struct = struct('ontologyNodes', nodes_canonical_string);
-
-            % Write the image data to the associated ngrid file
+            % 4. Write the data to a binary file managed by the document
             filepath = doc.get_fullpath('ontologyImage.ngrid');
             try
-                fid = fopen(filepath, 'w');
-                fwrite(fid, image, class(image));
-                fclose(fid);
+                ndi.fun.data.writengrid(image, filepath, ngrid_struct.data_type);
             catch ME
                 error('imageDocMaker:FileWriteError', ...
                     'Could not write to file "%s". Error: %s', filepath, ME.message);
             end
 
-            % Add properties and optional dependency to the document
-            doc.document_properties.ngrid = ngrid_struct;
-            doc.document_properties.ontologyImage = ontologyImage_struct;
-
-            if ~isempty(options.ontologyTableRow_id)
-                doc = doc.set_dependency_value('ontologyTableRow_id', options.ontologyTableRow_id);
-            end
+            % 5. Add the file reference to the document
+            doc = doc.add_file('ontologyImage.ngrid', filepath);
             
         end % createOntologyImageDoc
+
+        function docs = array2imageDocs(obj, imageArray, ontologyNodes, options)
+            %ARRAY2IMAGEDOCS Converts each image in a cell array into an NDI 'ontologyImage' document.
+            %   DOCS = ARRAY2IMAGEDOCS(OBJ, IMAGEARRAY, ONTOLOGYNODES, OPTIONS)
+            %
+            %   This method iterates through each image in the input 'imageArray'.
+            %   For each image, it calls `obj.createOntologyImageDoc` to generate
+            %   an NDI document of type 'ontologyImage'. The resulting documents
+            %   are collected into a cell array and added to the database in a batch.
+            %
+            %   Inputs:
+            %       obj: An instance of the imageDocMaker class.
+            %       imageArray: A cell array of numeric matrices. Each matrix is an image.
+            %       ontologyNodes: A string or cellstr of ontology node ID(s) applied to ALL images.
+            %
+            %   Optional Name-Value Arguments:
+            %       Overwrite: Flag passed to `createOntologyImageDoc`. Controls whether
+            %                  existing documents should be overwritten. Default: false.
+            %       OntologyTableRow_ids: A cell array of 'ontologyTableRow' document IDs.
+            %                             The number of elements must match 'imageArray'. Each ID
+            %                             is passed to the corresponding call of `createOntologyImageDoc`.
+            %
+            %   Outputs:
+            %       docs: A cell array with the same number of elements as 'imageArray'.
+            %             Each cell contains the NDI document object (ndi.document)
+            %             created by `createOntologyImageDoc` for the corresponding image.
+            %
+            %   See also: imageDocMaker.createOntologyImageDoc, ndi.gui.component.ProgressBarWindow
+            arguments
+                obj
+                imageArray {mustBeA(imageArray, 'cell')}
+                ontologyNodes {mustBeText}
+                options.Overwrite (1,1) logical = false
+                options.OntologyTableRow_ids {mustBeA(options.OntologyTableRow_ids, 'cell')} = {}
+            end
+
+            % --- Input Validation ---
+            if ~isempty(options.OntologyTableRow_ids) && numel(imageArray) ~= numel(options.OntologyTableRow_ids)
+                error('imageDocMaker:InputSizeMismatch', ...
+                    'The number of images in imageArray (%d) must match the number of IDs in OntologyTableRow_ids (%d).', ...
+                    numel(imageArray), numel(options.OntologyTableRow_ids));
+            end
+            
+            % --- Processing ---
+            numImages = numel(imageArray);
+            docs = cell(numImages, 1);
+            inDatabase = false(numImages, 1);
+            
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Image Array', 'Creating Image Documents...', false);
+            progressBar = progressBar.addBar('Label', 'Creating Ontology Image Document(s)', 'Tag', 'ontologyImage');
+            
+            onePercent = ceil(numImages / 100);
+
+            for i = 1:numImages
+                % Determine the ontologyTableRow_id for the current image
+                current_id = '';
+                if ~isempty(options.OntologyTableRow_ids)
+                    current_id = options.OntologyTableRow_ids{i};
+                end
+
+                % Create the ontologyImage document for the current image
+                [docs{i}, inDatabase(i)] = obj.createOntologyImageDoc(imageArray{i}, ontologyNodes, ...
+                    'Overwrite', options.Overwrite, 'ontologyTableRow_id', current_id);
+
+                % Update progress bar periodically
+                if mod(i, onePercent) == 0 || onePercent == 1
+                    progressBar = progressBar.updateBar('ontologyImage', i / numImages);
+                end
+            end
+
+            % Add all newly created documents to the database at once for efficiency
+            newDocs = docs(~inDatabase);
+            if ~isempty(newDocs)
+                obj.session.database_add(newDocs);
+            end
+
+            % Complete progress bar
+            progressBar.updateBar('ontologyImage', 1);
+        end % array2imageDocs
+
     end % methods
 end % classdef imageDocMaker
