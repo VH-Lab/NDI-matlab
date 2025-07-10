@@ -9,7 +9,8 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     %   ndi.setup.conv.dabrowska.createSubjectInformation.
     %
     %   The function derives a unique 'subjectIdentifier' for each entry by combining the
-    %   first 13 characters of the 'filename' column and the 'strain' (e.g., '2024_09_27_01_SHR').
+    %   first 13 characters of the 'filename' column and the 'strain' and the 'subject' line
+    %   from Saya's spreadsheet:   (e.g., '2024_09_27_01_SHR').
     %
     %   Args:
     %       tableRow (table): A 1xN MATLAB table (single row). Must contain at least
@@ -59,6 +60,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     % --- Extract data from table row ---
     filename_val = get_val(tableRow.filename);
     strain_val = get_val(tableRow.strain);
+    subject_val = char(get_val(tableRow.subject));
     
     if ~ischar(filename_val) || numel(filename_val) < 13 || ~ischar(strain_val)
         warning('Invalid or missing data in filename or strain columns.');
@@ -66,7 +68,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     end
 
     % --- 1. Create subjectString ---
-    subjectString = [filename_val(1:13) '_' strain_val];
+    subjectString = [filename_val(1:13) '_' strain_val '_' subject_val];
 
     % --- 2. Create species object ---
     try

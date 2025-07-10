@@ -15,7 +15,7 @@ else
     S = ndi.setup.lab('sjbirrenlab','saya',sessionPath);
 end
 
-variableTable = readtable(fullfile(dataDir,"total_dataset.xlsx"));
+variableTable = readtable(fullfile(dataDir,"total_dataset_updated FINAL.xlsx"));
 
 for i=1:height(T),
  [par,fname,ext]=fileparts(variableTable.filename{i});
@@ -26,10 +26,12 @@ end;
 
 variableTable.sessionID = repmat({S.id()}, height(variableTable), 1)
 
+subM = ndi.setup.NDIMaker.subjectMaker();
+
 [subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(variableTable, @ndi.setup.conv.birren.createSubjectInformation);
 
 variableTable.SubjectString = allSubjectNamesFromTable;
-variableTable.Properties.RowNames = variableTable.filename;
+variableTable.Properties.RowNames = cellfun(@(x,y) cat(2,x,filesep,y), variableTable.folderPath, variableTable.filename, 'UniformOutput',false);
 
 
 %% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
@@ -41,40 +43,9 @@ type = {'stimulator';'patch-Vm'};
 deviceString = {'birren_abf:ai1';'birren_abf:ai1'};
 probeTable = table(name,reference,type,deviceString);
 
-% Create probePostfix
-indEpoch = ndi.fun.table.identifyValidRows(variableTable,'IsExpMatFile');
-recordingDates = datetime(variableTable.RecordingDate(indEpoch),...
-    'InputFormat','MMM dd yyyy');
-recordingDates = cellstr(char(recordingDates,'yyMMdd'));
-sliceLabel = variableTable.SliceLabel(indEpoch);
-sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
-variableTable.ProbePostfix = cell(height(variableTable),1);
-variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,celltype,opto,sl) ...
-    ['_',rd,'_BNST',celltype(6:end),opto,'_',sl],...
-    recordingDates,variableTable.CellType(indEpoch),...
-    variableTable.OptoPostfix(indEpoch),sliceLabel,'UniformOutput',false);
-
 % Create epoch probe maps
-ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
+ndi.setup.NDIMaker.epochProbeMapMaker(dataDir,variableTable,probeTable,...
     'Overwrite',options.Overwrite,...
-    'NonNaNVariableNames','IsExpMatFile',...
-    'ProbePostfix','ProbePostfix');
-
-
-%% Step 5: Treatments
-
- % glia
-
-cultureID = ndi.ontology.lookup('EMPTY:Culture from cell type');
-
-gliaCultureStruct = struct('ontologyName', cultureID,...
-    'name', 'Culture from cell type', ...
-    'numeric_value',[],...
-    'string_value','CL:0000516');
-
-neuronCultureStruct = struct('ontologyName', cultureID, ...
-    'name', 'Culture from cell type', ...
-    'numeric_value',[],...
-    'string_value','CL:0011103');
+    'NonNaNVariableNames','folderPath');
 
 
