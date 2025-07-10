@@ -2,7 +2,9 @@
 classdef imageDocMaker < handle
     %imageDocMaker Creates and manages NDI documents for image data linked to ontology terms.
     %   This class is responsible for generating NDI 'ontologyImage' documents.
-    %   These documents link image data to specific ontology terms.
+    %   These documents link image data to specific ontology terms and can optionally
+    %   establish a dependency on an 'ontologyTableRow' document, which provides
+    %   broader data context.
 
     properties (Access = public)
         session % The NDI session object (e.g., ndi.session.dir or ndi.database.dir) where documents will be added.
@@ -31,32 +33,28 @@ classdef imageDocMaker < handle
             obj.session = session;
         end % constructor imageDocMaker
 
-        function [doc, inDatabase] = createOntologyImageDoc(obj, ontologyTableRowDoc, ontologyNodes, imageData, options)
+        function [doc, inDatabase] = createOntologyImageDoc(obj, image, ontologyNodes, options)
             %CREATEONTOLOGYIMAGEDOC Creates a single NDI 'ontologyImage' document.
-            %   DOC = CREATEONTOLOGYIMAGEDOC(OBJ, ONTOLOGYTABLEROWDOC, ONTOLOGYNODES, IMAGEDATA, OPTIONS)
+            %   DOC = CREATEONTOLOGYIMAGEDOC(OBJ, IMAGE, ONTOLOGYNODES, OPTIONS)
             %
             %   This method constructs an NDI document for image data. The document
             %   is of type 'ontologyImage', which includes 'ngrid' properties to describe
             %   the image data dimensions and type. It also contains the specified
             %   ontology node identifiers.
             %
-            %   A critical feature of the 'ontologyImage' document is its dependency on
-            %   an 'ontologyTableRow' document. This links the image to a specific row
-            %   of tabular data, providing essential context.
-            %
             %   The image data itself is written to a binary '.ngrid' file, which is
             %   associated with the NDI document.
             %
             %   Inputs:
             %       obj: An instance of the imageDocMaker class.
-            %       ontologyTableRowDoc: The parent 'ndi.document' of type 'ontologyTableRow'
-            %                          that this image is associated with.
+            %       image: A numeric matrix representing the image data to be stored.
             %       ontologyNodes: A string or cellstr of ontology node ID(s) (e.g., "UBERON:3373")
-            %                      that describe the image content. These nodes must be present
-            %                      in the parent 'ontologyTableRowDoc'.
-            %       imageData: A numeric matrix representing the image data to be stored.
+            %                      that describe the image content.
             %
             %   Optional Name-Value Arguments:
+            %       ontologyTableRow_id: The document ID of a parent 'ontologyTableRow' document.
+            %                            If provided, a dependency will be created.
+            %                            If empty (default), no dependency is added.
             %       Overwrite: Controls behavior if a matching document is found.
             %                   - true: The existing document and its associated .ngrid file
             %                           are removed, and a new one is created.
@@ -74,39 +72,37 @@ classdef imageDocMaker < handle
             %
             arguments
                 obj
-                ontologyTableRowDoc {mustBeA(ontologyTableRowDoc, 'ndi.document')}
+                image {mustBeNumeric}
                 ontologyNodes {mustBeText}
-                imageData {mustBeNumeric}
                 options.Overwrite (1,1) logical = false
+                options.ontologyTableRow_id {mustBeText} = ''
             end
 
-            % --- Input Validation ---
-            if ~strcmp(ontologyTableRowDoc.document_properties.document_class.class_name, 'ontologyTableRow')
-                error('imageDocMaker:InvalidInput', 'Input document must be of type ontologyTableRow.');
-            end
-
-            % Ensure ontologyNodes is a cellstr and create a canonical representation
-            ontologyNodes = cellstr(ontologyNodes);
-            parentOntologyNodes = split(ontologyTableRowDoc.document_properties.ontologyTableRow.ontologyNodes, ',');
-            if ~all(ismember(ontologyNodes, parentOntologyNodes))
-                error('imageDocMaker:NodeNotFound', ...
-                'One or more provided ontologyNodes are not found in the parent ontologyTableRow document.');
-            end
-
+            % --- Input Validation & Preparation ---
             % Create a canonical (sorted, comma-separated) string for querying and storage
-            nodes_canonical_string = join(sort(ontologyNodes), ',');
+            nodes_canonical_string = join(sort(cellstr(ontologyNodes)), ',');
             nodes_canonical_string = nodes_canonical_string{1};
 
             % --- Search for Existing Document ---
-            query = ndi.query('depends_on.name', 'exact_string', 'ontologyTableRow_id') & ...
-                    ndi.query('depends_on.value', 'exact_string', ontologyTableRowDoc.id()) & ...
-                    ndi.query('ontologyImage.ontologyNodes', 'exact_string', nodes_canonical_string);
+            % Base query on the ontology nodes
+            query = ndi.query('ontologyImage.ontologyNodes', 'exact_string', nodes_canonical_string);
+            
+            % If an ontologyTableRow_id is provided, add it to the query to find a unique document
+            if ~isempty(options.ontologyTableRow_id)
+                query = query & ndi.query('depends_on.name', 'exact_string', 'ontologyTableRow_id') & ...
+                              ndi.query('depends_on.value', 'exact_string', options.ontologyTableRow_id);
+            else
+                warning('imageDocMaker:NoDepenencies','Each image should be linked to another document such as an ontologyTableRow.');
+            end
+            
             doc_old = obj.session.database_search(query);
 
             % --- Handle Overwrite Logic ---
             if numel(doc_old) > 1
+                % If no ID was provided, this can happen if multiple docs share the same nodes
+                % but have different dependencies (or none). The user must provide the ID to disambiguate.
                 error('imageDocMaker:NonUniqueDocument',...
-                    'The query for this image returned multiple documents; the database may be inconsistent.');
+                    'The query returned multiple documents. Provide an ontologyTableRow_id to specify which document to use.');
             end
 
             inDatabase = false;
@@ -121,16 +117,15 @@ classdef imageDocMaker < handle
             end
 
             % --- Create New Document ---
-            % Create the new document object to get its unique ID and path
             doc = obj.session.newdocument('ontologyImage');
 
-            % Prepare the 'ngrid' properties from the imageData
-            img_info = whos('imageData');
+            % Prepare the 'ngrid' properties from the image data
+            img_info = whos('image');
             ngrid_struct = struct(...
-                'data_size', img_info.bytes / numel(imageData), ...
-                'data_type', class(imageData), ...
-                'data_dim', size(imageData), ...
-                'coordinates', [] ... % Per schema, this exists but is not used here
+                'data_size', img_info.bytes / numel(image), ...
+                'data_type', class(image), ...
+                'data_dim', size(image), ...
+                'coordinates', [] ...
             );
 
             % Prepare the 'ontologyImage' properties
@@ -140,20 +135,21 @@ classdef imageDocMaker < handle
             filepath = doc.get_fullpath('ontologyImage.ngrid');
             try
                 fid = fopen(filepath, 'w');
-                fwrite(fid, imageData, class(imageData));
+                fwrite(fid, image, class(image));
                 fclose(fid);
             catch ME
                 error('imageDocMaker:FileWriteError', ...
                     'Could not write to file "%s". Error: %s', filepath, ME.message);
             end
 
-            % Add all properties and dependencies to the document
+            % Add properties and optional dependency to the document
             doc.document_properties.ngrid = ngrid_struct;
             doc.document_properties.ontologyImage = ontologyImage_struct;
-            doc = doc.set_dependency_value('ontologyTableRow_id', ontologyTableRowDoc.id());
+
+            if ~isempty(options.ontologyTableRow_id)
+                doc = doc.set_dependency_value('ontologyTableRow_id', options.ontologyTableRow_id);
+            end
             
-            % The calling function is responsible for adding the document to the database,
-            % typically in a batch operation.
         end % createOntologyImageDoc
     end % methods
 end % classdef imageDocMaker
