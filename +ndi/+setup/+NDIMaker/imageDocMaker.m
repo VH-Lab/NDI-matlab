@@ -70,13 +70,13 @@ classdef imageDocMaker < handle
             %
             arguments
                 obj
-                image {mustBeNumeric}
+                image {mustBeNumeric,mustBeMatrix}
                 ontologyNodes {mustBeText}
                 options.Overwrite (1,1) logical = false
                 options.ontologyTableRow_id {mustBeText} = ''
             end
 
-            % Check that ontologyNodes are in the correct format
+            % Ensure that ontologyNodes are in the correct format (comma-seperated)
             ontologyNodes = cellstr(ontologyNodes);
             for i = 1:numel(ontologyNodes)
                 [id,~,prefix] = ndi.ontology.lookup(ontologyNodes{i});
