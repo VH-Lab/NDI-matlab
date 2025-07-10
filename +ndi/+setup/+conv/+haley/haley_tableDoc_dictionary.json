@@ -42,7 +42,5 @@
   "numFrames": "EMPTY:C. elegans behavioral assay: video frames",
   "scale": "EMPTY:C. elegans behavioral assay: video spatial scale",
   "wormNum": "EMPTY:C. elegans assay: subject identifier",
-  "subject_id": "EMPTY:Subject document identifier",
-  "": "EMPTY:",
-  "": "EMPTY:",
+  "subject_id": "EMPTY:Subject document identifier"
 }
