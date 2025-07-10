@@ -48,16 +48,17 @@ tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 % We will have one ontologyTableRow document for each experiment, plate,
 % patch, video, and worm. Below, we define which info table variables will 
 % get  stored under which ontologyTableRow document type
-experimentVariables = {'expNum','growthBacteriaSpecies','growthBacteriaStrain',...
-    'OD600Real','CFU','growthOD600','growthTimeSeed','growthTimeColdRoom',...
-    'growthTimeRoomTemp','growthTimePicked'};
-plateVariables = {'experiment_id','plateNum','exclude','strainID','satiety',...
-    'condition','OD600Label','growthCondition','peptone',...
-    'bacteriaSpecies','bacteria','OD600','timeSeed','timeColdRoom','timeRoomTemp',...
-    'lawnVolume','lawnSpacing','temp','humidity'};
+experimentVariables = {'expNum','growthBacteriaStrain',...
+   'growthOD600','growthTimeSeed','growthTimeColdRoom',...
+    'growthTimeRoomTemp','growthTimePicked', 'OD600Real','CFU'};
+plateVariables = {'experiment_id','plateNum','exclude','strain','hoursFoodDeprived',...
+    'condition','OD600Label','growthCondition','peptoneFlag',...
+    'bacteriaStrain','OD600','timeSeed','timeColdRoom','timeRoomTemp',...
+    'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
     %'firstFrame_id','arenaMask_id','patchMask_id','closestPatch_id','closestOD600_id'};
 patchVariables = {'plate_id','lawnCenters','lawnRadii','lawnCircularity'};
-videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight','frameRate','numFrames'};
+videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
+    'frameRate','numFrames','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
 
 for i = 1:numel(infoFiles)
@@ -71,13 +72,13 @@ for i = 1:numel(infoFiles)
     % A. EXPERIMENT ontologyTableRow
 
     % Add missing variables
-    dataTable{:,'growthBacteriaSpecies'} = {'E. coli ontology'};
-    dataTable.growthBacteriaStrain = dataTable.bacteria;
+    dataTable{:,'growthBacteriaStrain'} = {'NCBITaxon:637912'};
 
     % Compile data table with 1 row for each unique experiment day
     % and condition
     experimentTable = ndi.fun.table.join({dataTable(:,experimentVariables)},...
         'UniqueVariables',{'expNum','growthOD600'});
+    experimentTable = movevars(experimentTable,'growthOD600','After','growthBacteriaStrain');
 
     % Create ontologyTableRow documents
     experimentDocs = tableDocMaker(experimentTable,{'expNum','growthOD600'},...
@@ -90,11 +91,20 @@ for i = 1:numel(infoFiles)
     % B. PLATE ontologyTableRow
 
     % Add missing variables
-    dataTable{:,'satiety'} = {'well-fed'};
+    dataTable{:,'hoursFoodDeprived'} = 0;
     indSatiety = ndi.fun.table.identifyMatchingRows(dataTable,'strainName',...
-        {'well-fed','food-deprived'});
-    dataTable(indSatiety,'satiety') = dataTable.strainName(indSatiety);
-    dataTable.bacteriaSpecies =  dataTable.growthBacteriaSpecies;
+        'food-deprived');
+    dataTable{indSatiety,'hoursFoodDeprived'} = 3;
+    dataTable.bacteriaStrain =  dataTable.growthBacteriaStrain;
+    indN2 = ndi.fun.table.identifyMatchingRows(dataTable,'strainID','N2');
+    dataTable{indN2,'strain'} = {'WBStrain:00000001'};
+    indMEC4 = ndi.fun.table.identifyMatchingRows(dataTable,'strainID','mec-4');
+    dataTable{indMEC4,'strain'} = {'WBStrain:00035037'};
+    indOSM6 = ndi.fun.table.identifyMatchingRows(dataTable,'strainID','osm-6');
+    dataTable{indOSM6,'strain'} = {'WBStrain:00030796'};
+    dataTable{:,'peptoneFlag'} = true;
+    indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
+    dataTable{indWithout,'peptoneFlag'} = false;
 
     % Compile data table with 1 row for each unique plate
     plateTable = ndi.fun.table.join({dataTable(:,plateVariables)},...
