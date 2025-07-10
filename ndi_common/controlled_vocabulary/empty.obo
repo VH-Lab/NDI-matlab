@@ -827,3 +827,4 @@ namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature." []
 is_a: EMPTY:20000000 ! Purpose
 property_value: codeName "purposeAssessingActivityWithTemperatureManipulation" xsd:string
+>>>>>>> main
