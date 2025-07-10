@@ -80,8 +80,9 @@ switch tableRow.dirName{1}
 end
 
 % Create subjectString
+expDate = char(tableRow.expTime,'yyMMdd');
 subjectString = join({strain.name{1},[expType,num2str(tableRow.wormNum,'%03.f')],...
-    assayType,tableRow.expDate{1}},'_');
+    assayType,expDate},'_');
 subjectString = [subjectString{1},'@chalasani-lab.salk.edu'];
 
 end % End function createSubjectInformation
