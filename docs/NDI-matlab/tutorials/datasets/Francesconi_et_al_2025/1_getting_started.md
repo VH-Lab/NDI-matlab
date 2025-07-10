@@ -73,6 +73,7 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 ```
 
 *You will see a table that looks like:*
+
 | subject_id | subject_name | SpeciesName | SpeciesOntology | StrainName | StrainOntology | GeneticStrainTypeName | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 412693bb0b2a75c8_c0dc4139300a673e | `wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | |
@@ -117,6 +118,7 @@ probeSummary = ndi.fun.probeDocTable(dataset)
 ```
 
 *You will see a table that looks like:*
+
 | subject_id | probe_id | probe_name | probe_type | probe_reference | probeLocationName | probeLocationOntology | cellTypeName | cellTypeOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf98cde_40ce5a2a60a82dd2 | bath_210401_BNSTIII_a | stimulator | [1] | | | | |
@@ -130,6 +132,7 @@ epochSummary = ndi.fun.epochDocTable(session) % this will take several minutes
 ```
 
 *You will see a table that looks like:*
+
 | epoch_number | epoch_id | probe_id | subject_id | local_t0 | local_t1 | global_t0 | global_t1 | mixtureName | mixtureOntology | approachName | approachOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | epoch_412693bb00b3b7b2_4087375d5b7ef613 | 412693bb0bf4b173_40d91734313482e2 | 412693bb0b2a75c8_c0dc4139300a673e | 0 | 76.9805 | 18-Aug-2021 15:29:59 | 18-Aug-2021 15:31:16 | arginine-vasopressin | NCIm:C1098706 | | |
@@ -153,6 +156,7 @@ combinedSummary = ndi.fun.table.moveColumnsLeft(combinedSummary,...
 ```
 
 *You will see a table that looks like:*
+
 | subject_name | epoch_number | epoch_id | subject_id | SpeciesName | SpeciesOntology | StrainName | StrainOntology | GeneticStrainTypeName | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology | probe_id | probe_name | probe_type | probe_reference | probeLocationName | probeLocationOntology | cellTypeName | cellTypeOntology | local_t0 | local_t1 | global_t0 | global_t1 | mixtureName | mixtureOntology | approachName | approachOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu` | 1 | epoch_412693bb00b3b7b2_4087375d5b7ef613 | 412693bb0b2a75c8_c0dc4139300a673e | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | | 412693bb0bf4b173_40d91734313482e2,412693bb0bf4df3a_c0d30c9167e204ef,412693bb0bf4f693_40c45799b1c5e963 | bath_210818_BNST_a,Vm_210818_BNST_a,I_210818_BNST_a | stimulator,patch-Vm,patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | | | 0 | 76.9805 | 18-Aug-2021 15:29:59 | 18-Aug-2021 15:31:16 | arginine-vasopressin | NCIm:C1098706 | | |
@@ -266,6 +270,7 @@ cb = colorbar(ax); cb.Label.String = 'Current (pA)';
 ```
 
 *You will see a plot that looks like:*
+
 ![Electrophysiology traces](electrophysiology_traces.png)
 
 ## Plot Elevated Plus Maze data <a name="EPM"></a>
@@ -289,6 +294,7 @@ tableEPM = ndi.fun.table.moveColumnsLeft(tableEPM,{'SubjectLocalIdentifier',...
 ```
 
 *You will see a table that looks like:*
+
 | SubjectLocalIdentifier | Treatment_CnoOrSalineAdministration | ExperimentalGroupCode | ElevatedPlusMaze_TestIdentifier | DataExclusionFlag | ElevatedPlusMaze_OpenArmNorth_Entries | ElevatedPlusMaze_OpenArmSouth_Entries | ElevatedPlusMaze_OpenArmTotalEntries | ElevatedPlusMaze_OpenArmNorth_HeadEntries | ElevatedPlusMaze_OpenArmSouth_HeadEntries | ElevatedPlusMaze_OpenArmTotalHeadEntries | ElevatedPlusMaze_OpenArmNorth_Time | ElevatedPlusMaze_OpenArmSouth_Time | ElevatedPlusMaze_OpenArmTotalTime | ElevatedPlusMaze_OpenArmTotal_PercentTimeDuringTestDuration | ElevatedPlusMaze_OpenArmNorth_LatencyToFirstEntry | ElevatedPlusMaze_OpenArmSouth_LatencyToFirstEntry | ElevatedPlusMaze_OpenArmTotalLatencyToFirstEntry | ElevatedPlusMaze_OpenArmNorth_TimeMovingTowards | ElevatedPlusMaze_OpenArmSouth_TimeMovingTowards | ElevatedPlusMaze_OpenArmTotalTimeMovingTowards | ElevatedPlusMaze_OpenArmNorth_TimeFreezing | ElevatedPlusMaze_OpenArmSouth_TimeFreezing | ElevatedPlusMaze_OpenArmTotalTimeFreezing | ElevatedPlusMaze_ClosedArmWest_Entries | ElevatedPlusMaze_ClosedArmEast_Entries | ElevatedPlusMaze_ClosedArmTotalEntries | ElevatedPlusMaze_ClosedArmWest_HeadEntries | ElevatedPlusMaze_ClosedArmEast_HeadEntries | ElevatedPlusMaze_ClosedArmTotalHeadEntries | ElevatedPlusMaze_ClosedArmWest_Time | ElevatedPlusMaze_ClosedArmEast_Time | ElevatedPlusMaze_ClosedArmTotalTime | ElevatedPlusMaze_ClosedArmTotal_PercentTimeDuringTestDuration | ElevatedPlusMaze_ClosedArmWest_LatencyToFirstEntry | ElevatedPlusMaze_ClosedArmEast_LatencyToFirstEntry | ElevatedPlusMaze_ClosedArmTotalLatencyToFirstEntry | ElevatedPlusMaze_ClosedArmWest_TimeMovingTowards | ElevatedPlusMaze_ClosedArmEast_TimeMovingTowards | ElevatedPlusMaze_ClosedArmTotalTimeMovingTowards | ElevatedPlusMaze_ClosedArmWest_TimeFreezing | ElevatedPlusMaze_ClosedArmEast_TimeFreezing | ElevatedPlusMaze_ClosedArmTotalTimeFreezing | ElevatedPlusMaze_Center_Entries | ElevatedPlusMaze_Center_HeadEntries | ElevatedPlusMaze_Center_Time | ElevatedPlusMaze_Center_PercentTimeDuringTestDuration | ElevatedPlusMaze_Center_LatencyToFirstEntry | ElevatedPlusMaze_Center_TimeMovingTowards | ElevatedPlusMaze_Center_TimeFreezing | ElevatedPlusMaze_TestDuration |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | Saline | 1 | 18 | false | 4 | 5 | 9 | 13 | 12 | 25 | 46.3 | 59.9 | 106.2 | 35.4000 | 0 | 18.4000 | 18.4 | 101.8 | 90.4 | 192.2 | 2.3 | 7 | 9.3 | 7 | 11 | 18 | 9 | 14 | 23 | 52.6 | 73.4 | 126 | 42 | 49.5 | 39.3 | 88.8 | 99.4 | 94.1 | 193.5 | 0 | 9.3 | 9.3 | 26 | 46 | 67.9000 | 22.6333 | 14.4000 | 188.9000 | 1.5000 | 300 |
@@ -327,6 +333,7 @@ termInfo = cell2table({id,name,definition,shortName}',...
 ```
 
 *You will see a table that looks like:*
+
 | Property | Value |
 | :--- | :--- |
 | id | EMPTY:00000100 |
@@ -344,6 +351,7 @@ ylabel(fullNames{termIndex})
 ```
 
 *You will see a plot that looks like:*
+
 ![Elevated Plus Maze](elevated_plus_maze.png)
 
 ## Plot Fear-Potentiated Startle data <a name="FPS"></a>
@@ -361,6 +369,7 @@ tableFPS = ndi.fun.table.moveColumnsLeft(tableFPS,{'Fear_potentiatedStartle_Expe
 ```
 
 *You will see a table that looks like:*
+
 | Fear_potentiatedStartle_ExperimentalPhaseOrTestName | SubjectLocalIdentifier | ExperimentalTrialNumber | Fear_potentiatedStartle_TrialTypeIdentifier | Fear_potentiatedStartle_ApparatusChamberIdentifier | ExperimentalGroupCode | AcousticStartleResponse_NumberOfSamples | AcousticStartleResponse_SamplingRate | AcousticStartleResponse_StartleWindowOnsetAmplitude | AcousticStartleResponse_MaximumAmplitude | AcousticStartleResponse_TimeToMaximumAmplitude | AcousticStartleResponse_AverageAmplitude | ExperimentTrialExecutionTimestamp |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Pre-test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 1 | Startle 95 dB Trial | 1 | 3 | 200 | 1000 | 2 | 18 | 64 | 5 | 8/19/2022 10:27:46 AM |
@@ -426,6 +435,7 @@ tableCueTest
 ```
 
 *You will see a table that looks like:*
+
 | Fear_potentiatedStartle_ExperimentalPhaseOrTestName | SubjectLocalIdentifier | startleAmplitudeLightNoise | startleAmplitudeNoiseOnly | startleAmplitudeStartle | cuedFear | nonCuedFear |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Cue test 1 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | 38.7 | 28.4 | 22.1 | 36.268 | 28.507 |
@@ -460,4 +470,5 @@ ylabel(plottingVariable)
 ```
 
 *You will see a plot that looks like:*
+
 ![Fear-Potentiated Startle](fear_potentiated_startle.png)
