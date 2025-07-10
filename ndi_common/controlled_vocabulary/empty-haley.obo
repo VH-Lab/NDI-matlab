@@ -259,6 +259,17 @@ name: C. elegans behavioral assay: video spatial scale
 def: "The spatial resolution of the C. elegans behavioral video measured in pixels per millimiter. This number can be computed via a calibration process involving measuring an object of known size in an image. Unit: pixels/mm."
 is_a: C. elegans behavior video properties
 
+---
+
+name: C. elegans assay: subject identifier
+def: "A unique numerical identifier assigned to an animal on a C. elegans assay plate."
+is_a: Identifier
+is_a: C. elegans assay conditions
+
+name: Subject document identifier
+def: "A unique alphanumeric identifier assigned to an NDI subject document."
+is_a: Identifier
+
 ------------------------------------------------------------------------------------
 
 properties and measurements can be of the:
