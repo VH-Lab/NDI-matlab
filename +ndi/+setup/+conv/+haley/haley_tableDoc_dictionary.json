@@ -40,6 +40,9 @@
   "pixelHeight": "EMPTY:C. elegans behavioral assay: video frame height",
   "frameRate": "EMPTY:C. elegans behavioral assay: video frame rate",
   "numFrames": "EMPTY:C. elegans behavioral assay: video frames",
-  "scale": "EMPTY: C. elegans behavioral assay: video spatial scale",
-  "": "EMPTY:"
+  "scale": "EMPTY:C. elegans behavioral assay: video spatial scale",
+  "wormNum": "EMPTY:C. elegans assay: subject identifier",
+  "subject_id": "EMPTY:Subject document identifier",
+  "": "EMPTY:",
+  "": "EMPTY:",
 }
