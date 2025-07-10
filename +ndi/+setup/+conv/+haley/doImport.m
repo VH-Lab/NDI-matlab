@@ -167,25 +167,30 @@ for i = 1:numel(infoFiles)
     % E. WORM subject and ontologyTableRow
 
     % Compile data table with 1 row for each unique worm
-    plate_id = cell(height(dataTable),1);
-    wormNum = cell(height(dataTable),1);
-    for j = 1:height(dataTable)
-        wormNum{j} = dataTable{j,'wormNum'}{1}';
-        numWorm = numel(wormNum{j});
-        plate_id{j} = repmat(dataTable{j,'plate_id'},numWorm,1);
+    [~,ind] = unique(dataTable.plateNum);
+    plate_id = cell(numel(ind),1);
+    wormNum = cell(numel(ind),1);
+    expDate = cell(numel(ind),1);
+    for j = 1:numel(ind)
+        wormNum{j} = dataTable{ind(j),'wormNum'}{1}';
+        numWorm = numel(wormNum{ind(j)});
+        plate_id{j} = repmat(dataTable{ind(j),'plate_id'},numWorm,1);
+        expDate{j} = repmat({char(dataTable{ind(j),'timeRecord'},'yyMMdd')},numWorm,1);
     end
     plate_id = vertcat(plate_id{:});
     wormNum = vertcat(wormNum{:});
-    wormTable = table(plate_id,wormNum);
+    expDate = vertcat(expDate{:});
+    wormTable = table(plate_id,wormNum,expDate);
 
-    % Create subject string
+    % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
-    dirName = split(fileList{i},filesep); dirName = dirName{end-1};
-    wormTable{:,'subjectName'} = arrayfun(@(wormNum) ...
-        [dirName,'_',num2str(wormNum,'%04.f')],wormTable.wormNum,...
-        'UniformOutput',false);
+    wormTable = ndi.fun.table.join({wormTable,...
+        plateTable(:,{'plate_id','strain','condition'})});
+    dirName = split(fileList{i},filesep);
+    wormTable{:,'dirName'} = dirName(end-1);
 
     % Create subject documents
+    
     [subjectInfo,wormTable.subjectID] = ...
         subjectMaker.getSubjectInfoFromTable(wormTable,...
         @ndi.setup.conv.haley.createSubjectInformation);
