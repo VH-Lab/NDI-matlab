@@ -71,6 +71,7 @@ for i = 1:numel(infoFiles)
     fields = fieldnames(dataTable);
     tableType = fields{1};
     dataTable = dataTable.(tableType);
+    dirName = split(infoFiles{i},filesep); dirName = dirName{end-1};
 
     % A. EXPERIMENT ontologyTableRow
 
@@ -84,12 +85,13 @@ for i = 1:numel(infoFiles)
     experimentTable = movevars(experimentTable,'growthOD600','After','growthBacteriaStrain');
 
     % Create ontologyTableRow documents
-    experimentDocs = tableDocMaker(experimentTable,{'expNum','growthOD600'},...
-        'Overwrite',options.Overwrite);
-    experimentTable.experiment_id = cellfun(@(d) d.id,experimentDocs);
-    % experimentTable{:,'experiment_id'} = (1:height(experimentTable))';
+    % info.(dirName).experimentDocs = tableDocMaker(experimentTable,{'expNum','growthOD600'},...
+    %     'Overwrite',options.Overwrite);
+    % experimentTable.experiment_id = cellfun(@(d) d.id,info.(dirName).experimentDocs);
+    experimentTable{:,'experiment_id'} = (1:height(experimentTable))';
     dataTable = ndi.fun.table.join({dataTable,...
         experimentTable(:,{'expNum','growthOD600','experiment_id'})});
+    info.(dirName).experimentTable = experimentTable;
 
     % B. PLATE ontologyTableRow
 
@@ -114,12 +116,13 @@ for i = 1:numel(infoFiles)
         'UniqueVariables',{'experiment_id','plateNum'});
 
     % Create ontologyTableRow documents
-    plateDocs = tableDocMaker(plateTable,{'expNum','growthOD600'},...
-        'Overwrite',options.Overwrite);
-    plateTable.plate_id = cellfun(@(d) d.id,plateDocs);
-    % plateTable{:,'plate_id'} = (1:height(plateTable))';
+    % info.(dirName).plateDocs = tableDocMaker(plateTable,{'expNum','growthOD600'},...
+    %     'Overwrite',options.Overwrite);
+    % plateTable.plate_id = cellfun(@(d) d.id,info.(dirName).plateDocs);
+    plateTable{:,'plate_id'} = (1:height(plateTable))';
     dataTable = ndi.fun.table.join({dataTable,...
         plateTable(:,{'plateNum','plate_id'})});
+    info.(dirName).plateTable = plateTable;
 
     % C. PATCH ontologyTableRow
 
@@ -150,8 +153,9 @@ for i = 1:numel(infoFiles)
         patchRadius,patchCircularity);
 
     % Create ontologyTableRow documents
-    patchDocs = tableDocMaker(patchTable,{'plate_id','patchNum'},...
-        'Overwrite',options.Overwrite);
+    % info.(dirName).patchDocs = tableDocMaker(patchTable,{'plate_id','patchNum'},...
+    %     'Overwrite',options.Overwrite);
+    info.(dirName).patchTable = patchTable;
 
     % D. VIDEO ontologyTableRow
 
@@ -164,8 +168,9 @@ for i = 1:numel(infoFiles)
         'UniqueVariables',{'plate_id','videoNum'});
 
     % Create ontologyTableRow documents
-    videoDocs = tableDocMaker(videoTable,{'plate_id','videoNum'},...
-        'Overwrite',options.Overwrite);
+    % info.(dirName).videoDocs = tableDocMaker(videoTable,{'plate_id','videoNum'},...
+    %     'Overwrite',options.Overwrite);
+    info.(dirName).videoTable = videoTable;
 
     % E. WORM subject and ontologyTableRow
 
@@ -173,24 +178,23 @@ for i = 1:numel(infoFiles)
     [~,ind] = unique(dataTable.plate_id);
     plate_id = cell(numel(ind),1);
     wormNum = cell(numel(ind),1);
-    expDate = cell(numel(ind),1);
+    expTime = cell(numel(ind),1);
     for j = 1:numel(ind)
         wormNum{j} = dataTable{ind(j),'wormNum'}{1}';
         numWorm = numel(wormNum{ind(j)});
         plate_id{j} = repmat(dataTable{ind(j),'plate_id'},numWorm,1);
-        expDate{j} = repmat({char(dataTable{ind(j),'timeRecord'},'yyMMdd')},numWorm,1);
+        expTime{j} = repmat(dataTable{ind(j),'timeRecord'},numWorm,1);
     end
     plate_id = vertcat(plate_id{:});
     wormNum = vertcat(wormNum{:});
-    expDate = vertcat(expDate{:});
-    wormTable = table(plate_id,wormNum,expDate);
+    expTime = vertcat(expTime{:});
+    wormTable = table(plate_id,wormNum,expTime);
 
     % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
     wormTable = ndi.fun.table.join({wormTable,...
         plateTable(:,{'plate_id','strain','condition'})});
-    dirName = split(fileList{i},filesep);
-    wormTable{:,'dirName'} = dirName(end-1);
+    wormTable{:,'dirName'} = {dirName};
 
     % Create subject documents
     [subjectInfo,wormTable.subjectName] = ...
@@ -198,33 +202,33 @@ for i = 1:numel(infoFiles)
         @ndi.setup.conv.haley.createSubjectInformation);
     subDocStruct = subjectMaker.makeSubjectDocuments(subjectInfo);
     subjectMaker.addSubjectsToSessions({session}, subDocStruct.documents);
-    wormTable.subject_id = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
-    % wormTable{:,'subject_id'} = (1:height(wormTable))';
+    info.(dirName).subjectDocs = subDocStruct.documents;
+    wormTable.subject_id = cellfun(@(d) d{1}.id,info.(dirName).subjectDocs,'UniformOutput',false);
 
     % Create ontologyTableRow documents
-    wormDocs = tableDocMaker(wormTable(:,wormVariables),{'subject_id'},...
-        'Overwrite',options.Overwrite);
+    % info.(dirName).wormDocs = tableDocMaker(wormTable(:,wormVariables),{'subject_id'},...
+    %     'Overwrite',options.Overwrite);
+    info.(dirName).wormTable = wormTable;
 
     % F. PLATE ontologyImage
-    %'firstFrame_id','arenaMask_id','patchMask_id','closestPatch_id','closestOD600_id'};
     [~,ind] = unique(dataTable.plate_id);
-    firstFrameDocs = imageDocMaker(dataTable.firstFrame(ind),...
+    info.(dirName).firstFrameDocs = imageDocMaker(dataTable.firstFrame(ind),...
         'EMPTY:C. elegans behavioral assay: first frame image',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
-    arenaMaskDocs = imageDocMaker(dataTable.arenaMask(ind),...
+    info.(dirName).arenaMaskDocs = imageDocMaker(dataTable.arenaMask(ind),...
         'EMPTY:C. elegans behavioral assay: arena mask',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
-    bacteriaMaskDocs = imageDocMaker(dataTable.lawnMask(ind),...
+    info.(dirName).bacteriaMaskDocs = imageDocMaker(dataTable.lawnMask(ind),...
         'EMPTY:C. elegans behavioral assay: bacteria mask',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
-    closestPatchDocs = imageDocMaker(dataTable.lawnClosest(ind),...
+    info.(dirName).closestPatchDocs = imageDocMaker(dataTable.lawnClosest(ind),...
         'EMPTY:C. elegans behavioral assay: closest patch identifier map',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
-    closestOD600Docs = imageDocMaker(dataTable.lawnClosestOD600(ind),...
+    info.(dirName).closestOD600Docs = imageDocMaker(dataTable.lawnClosestOD600(ind),...
         'EMPTY:C. elegans behavioral assay: closest patch OD600 map',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
@@ -239,9 +243,34 @@ for i = 1:numel(dataFiles)
     fields = fieldnames(dataTable);
     tableType = fields{1};
     dataTable = dataTable.(tableType);
+    dirName = split(dataFiles{i},filesep); dirName = dirName{end-1};
 
-    % A. EXPERIMENT ontologyTableRow
+    % Loop through each worm (subject)
+    wormNums = unique(dataTable.wormNum);
+    for j = 1:numel(wormNums)
 
+        % Get indices
+        indInfo = info.(dirName).wormTable.wormNum == wormNums(i);
+        indData = dataTable.wormNum == wormNums(i);
+
+        % A. ELEMENTS
+
+        % Create position element
+        subject_id = info.(dirName).wormTable.subject_id{indInfo};
+        position = ndi.element.timeseries(session,'position',1,'position',[],0,subject_id);
+
+        % Add epoch
+        time = dataTable.timeOffset(indData);
+        data = dataTable{indData,{'xPosition','yPosition'}};
+        t0_t1_local = prctile(dataTable.timeOffset(indData),[0 100]);
+        t0_t1_global = convertTo(info.(dirName).wormTable.expTime(indInfo) + ...
+            seconds(t0_t1_local),'datenum');
+        position.addepoch('position','dev_local_time,exp_global_time', ...
+            [t0_t1_local;t0_t1_global], time, data);
+        position.addepoch('position',ndi.time.clocktype('UTC'),t0_t1_local,time,data);
+        [d,t,timeref] = position.readtimeseries('position',-Inf,Inf);
+    end
+    
 end
 
 %% Step 6. ENCOUNTER DOCUMENTS.
