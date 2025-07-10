@@ -43,6 +43,9 @@ subjectMaker = ndi.setup.NDIMaker.subjectMaker();
 % Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
+% Create imageDocMaker
+imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
+
 %% Step 4. INFO DOCUMENTS.
 
 % We will have one ontologyTableRow document for each experiment, plate,
@@ -167,7 +170,7 @@ for i = 1:numel(infoFiles)
     % E. WORM subject and ontologyTableRow
 
     % Compile data table with 1 row for each unique worm
-    [~,ind] = unique(dataTable.plateNum);
+    [~,ind] = unique(dataTable.plate_id);
     plate_id = cell(numel(ind),1);
     wormNum = cell(numel(ind),1);
     expDate = cell(numel(ind),1);
@@ -204,7 +207,8 @@ for i = 1:numel(infoFiles)
 
     % F. PLATE ontologyImage
     %'firstFrame_id','arenaMask_id','patchMask_id','closestPatch_id','closestOD600_id'};
-    ngrid = mlt.mat2ngrid(spec,f,ts);
+    [~,ind] = unique(dataTable.plate_id);
+    firstFrameDocs = imageDocMaker(dataTable.firstFrame(ind),);
 end
 
 %% Step 5. DATA DOCUMENTS.
