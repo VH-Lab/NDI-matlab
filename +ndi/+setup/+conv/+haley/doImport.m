@@ -190,18 +190,21 @@ for i = 1:numel(infoFiles)
     wormTable{:,'dirName'} = dirName(end-1);
 
     % Create subject documents
-    
-    [subjectInfo,wormTable.subjectID] = ...
+    [subjectInfo,wormTable.subjectName] = ...
         subjectMaker.getSubjectInfoFromTable(wormTable,...
         @ndi.setup.conv.haley.createSubjectInformation);
     subDocStruct = subjectMaker.makeSubjectDocuments(subjectInfo);
     subjectMaker.addSubjectsToSessions({session}, subDocStruct.documents);
-    wormTable.subject_id = cellfun(@(d) d.id,subDocStruct.documents);
+    wormTable.subject_id = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
     % wormTable{:,'subject_id'} = (1:height(wormTable))';
 
     % Create ontologyTableRow documents
     wormDocs = tableDocMaker(wormTable(:,wormVariables),{'subject_id'},...
         'Overwrite',options.Overwrite);
+
+    % F. PLATE ontologyImage
+    %'firstFrame_id','arenaMask_id','patchMask_id','closestPatch_id','closestOD600_id'};
+    ngrid = mlt.mat2ngrid(spec,f,ts);
 end
 
 %% Step 5. DATA DOCUMENTS.
@@ -215,6 +218,7 @@ for i = 1:numel(dataFiles)
     dataTable = dataTable.(tableType);
 
     % A. EXPERIMENT ontologyTableRow
+
 end
 
 %% Step 6. ENCOUNTER DOCUMENTS.
