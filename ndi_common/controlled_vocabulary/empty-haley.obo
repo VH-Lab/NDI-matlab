@@ -274,7 +274,7 @@ is_a: Identifier
 
 ---
 
-name: C. elegans behavioral assay: behavior video first frame image
+name: C. elegans behavioral assay: first frame image
 def: "An image corresponding to the first frame of the C. elegans behavioral video recording."
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C85845
@@ -284,17 +284,17 @@ def: "A binary image (logical matrix) where pixels within the experimental arena
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C201530
 
-name: C. elegans behavioral assay: bacterial patch mask
+name: C. elegans behavioral assay: bacteria mask
 def: "A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions."
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C201530
 
-name: C. elegans behavioral assay: closest patch identifier image
+name: C. elegans behavioral assay: closest patch identifier map
 def: "An identifier (e.g., index, coordinates, or label) for the bacterial food patch that is currently closest to a C. elegans' position or a point of interest. This is dynamically determined during behavioral analysis. ????"
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C48179
 
-name: C. elegans behavioral assay: closest patch OD600 image
+name: C. elegans behavioral assay: closest patch OD600 map
 def: "The nominal OD600 or relative density label associated with the bacterial food patch currently identified as being closest to a C. elegans subject. This is particularly relevant in assays featuring patches of multiple densities. ????"
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C48179
