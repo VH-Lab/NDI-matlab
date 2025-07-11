@@ -1,5 +1,18 @@
 name: C. elegans assay properties
 def:
+is_a: EMPTY:00000001 ! empty
+
+name: Bacterial properties
+def:
+is_a: EMPTY:00000001 ! empty
+
+name: Video properties
+def:
+is_a: EMPTY:00000001 ! empty
+
+name: C. elegans behavioral assay measurement
+def:
+is_a: EMPTY:00000001 ! empty
 
 name: C. elegans behavioral assay properties
 def:
@@ -14,17 +27,12 @@ def:
 is_a: C. elegans behavioral assay properties
 is_a: Video properties
 
-name: Bacterial properties
-def:
-
-name: Video properties
-def:
-
 ----
 
 name: Experiment session identifier
 def: "A unique numerical identifier for a distinct experimental session."
 is_a: NCIT:C93399 ! Document Identifier
+is_a: EMPTY:00000001 ! empty
 
 ---
 
@@ -91,6 +99,7 @@ is_a: NCIT:C25364 ! Identifier
 name: Data exclusion flag
 def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to predefined quality control issues or experimental failure. True: exclude."
 is_a: NCIT:C43578 ! Flag
+EMPTY:00000001 ! empty
 
 name: Treatment: food restriction onset
 def: "Unit: datetime."
@@ -334,9 +343,7 @@ is_a: EMPTY:00000001 ! empty
 
 ---
 
-name: C. elegans behavior measurement
-def:
-is_a: C. elegans assay properties
+
 
 ------------------------------------------------------------------------------------
 
