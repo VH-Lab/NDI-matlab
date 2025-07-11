@@ -1,26 +1,21 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/neuron\/neuron_extracellular.json",
-		"validation":						"$NDISCHEMAPATH\/neuron\/neuron_extracellular_schema.json",
-		"class_name":						"neuron_extracellular",
-		"property_list_name":					"neuron_extracellular",
+		"definition":						"$NDIDOCUMENTPATH\/element\/position_metadata.json",
+		"validation":						"$NDISCHEMAPATH\/element\/position_metadata_schema.json",
+		"class_name":						"position_metadata",
+		"property_list_name":					"position_metadata",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
 	"depends_on": [
-		{  "name": "element_id", "value": "" },
-		{  "name": "spike_clusters_id", "value": "" }
+		{  "name": "element_id", "value": "" }
 	],
-	"neuron_extracellular": {
-		"number_of_samples_per_channel": [],
-		"number_of_channels": [],
-		"mean_waveform": [],
-		"waveform_sample_times": [],
-		"cluster_index": 0,
-		"quality_number": 0,
-		"quality_label": ""
+	"position_metadata": {
+		"ontologyNode": "",
+		"ontologyNumericValue": "",
+		"ontologyNodeStringValues": "",
+		"dimensions": ""
 	}
 }
