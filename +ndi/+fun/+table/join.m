@@ -69,7 +69,14 @@ uniqueVariables = cellstr(options.uniqueVariables); % Convert to cell array for 
 combinedTable = tables{1};
 if ~isscalar(tables)
     for k = 2:numel(tables)
-        combinedTable = innerjoin(combinedTable, tables{k});
+        % Call innerjoin and capture the index vector 'ileft'
+        [combinedTable, ileft] = innerjoin(combinedTable, tables{k});
+        
+        % Create a sorting index from 'ileft' to restore original order
+        [~, sort_idx] = sort(ileft);
+        
+        % Apply the sorting index to the result
+        combinedTable = combinedTable(sort_idx, :);
     end
 end
 
