@@ -46,7 +46,7 @@ name: C. elegans cultivation: bacterial OD600 (target) at seeding
 def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
 is_a: Bacterial properties
 is_a: C. elegans cultivation conditions
-is_a: SNOMED:118289000
+is_a: NCIT:C85776
 is_a: Measurement
 
 name: C. elegans cultivation: bacterial plate seeding timestamp
@@ -77,6 +77,7 @@ def: "The measured optical density at 600 nm (OD600) of the prepared bacterial s
 is_a: C. elegans assay conditions
 is_a: Bacterial properties
 is_a: Measurement
+is_a: NCIT:C85776
 
 name: C. elegans assay: bacterial colony forming units (CFU) measurement
 def: "The concentration of viable bacterial cells in the food source solution for C. elegans assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL."
@@ -104,6 +105,7 @@ name: C. elegans assay: food deprivation duration
 def: "Unit: hours."
 is_a: C. elegans assay conditions
 is_a: Duration
+is_a: Treatment
 
 name: C. elegans behavioral assay: bacterial distribution label
 def: "A string label of the layout of food patches (i.e., 'grid', 'single') for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]"
@@ -124,8 +126,9 @@ name: C. elegans behavioral assay: bacterial plate peptone inclusion flag
 def: "A boolean flag indicating whether peptone was included in the Nematode Growth Medium (NGM) agar for the assay plates. Peptone presence supports bacterial growth. True: peptone included."
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C43578
+is_a: Treatment
 
-name: 
+name: C. elegans behavioral assay: bacterial strain
 def: "The strain of bacteria used as the food source on the assay plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP). Reported as ontologyName:ontologyID (e.g. NCBITaxon:637912)."
 is_a: Bacterial properties
 is_a: C. elegans behavioral assay conditions
@@ -135,7 +138,7 @@ name: C. elegans behavioral assay: bacterial OD600 (target) at seeding
 def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans assay plates. Unit: dimensionless."
 is_a: Bacterial properties
 is_a: C. elegans behavioral assay conditions
-is_a: SNOMED:118289000
+is_a: NCIT:C85776
 is_a: Measurement
 
 name: C. elegans behavioral assay: bacterial plate seeding timestamp
@@ -298,6 +301,37 @@ name: C. elegans behavioral assay: closest patch OD600 map
 def: "The nominal OD600 or relative density label associated with the bacterial food patch currently identified as being closest to a C. elegans subject. This is particularly relevant in assays featuring patches of multiple densities. ????"
 is_a: C. elegans behavioral assay conditions
 is_a: NCIT:C48179
+
+---
+
+name: C. elegans assay: patch properties document identifier
+def:
+is_a: C. elegans assay conditions
+is_a: Identifier
+
+name: C. elegans head
+def:
+is_a: C. elegans body part
+
+name: C. elegans midpoint
+def:
+is_a: C. elegans body part
+
+name: C. elegans tail
+def:
+is_a: C. elegans body part
+
+
+name: C. elegans body part
+def:
+is_a: C. elegans
+is_a: NCIT:C32221
+
+---
+
+name: C. elegans behavior measurement
+def:
+is_a:
 
 ------------------------------------------------------------------------------------
 
