@@ -208,8 +208,8 @@ for i = 1:numel(infoFiles)
     wormTable.subject_id = cellfun(@(d) d{1}.id,info.(dirName).subjectDocs,'UniformOutput',false);
 
     % Create ontologyTableRow documents
-    % info.(dirName).wormDocs = tableDocMaker(wormTable(:,wormVariables),{'subject_id'},...
-    %     'Overwrite',options.Overwrite);
+    % info.(dirName).wormDocs = tableDocMaker(wormTable(:,wormVariables),...
+    %     {'subject_id'},'Overwrite',options.Overwrite);
     info.(dirName).wormTable = wormTable;
 
     % F. PLATE ontologyImage
@@ -282,9 +282,6 @@ for i = 1:numel(dataFiles)
         % [d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
 
         % Create position_metadata structure
-        % position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans body part
-        % position_metadata.ontologyNumericValue = [];
-        % position_metadata.ontologyStringValue = 'midpoint';
         position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans head, midpoint, or tail
         position_metadata.units = 'NCIT:C48367'; % pixels
         position_metadata.dimensions = 'NCIT:C44477,NCIT:C44478'; % X-coordinate, Y-coordinate
@@ -345,6 +342,9 @@ for i = 1:numel(fields)
     info.(fields).wormTable
 end
 
-ind = dataTable.id > 0;
+% Create ontologyTableRow documents
+indEncounter = dataTable.id > 0;
+encounterDocs = tableDocMaker(dataTable(indEncounter,encounterVariables),...
+    {'subject_id','id'},'Overwrite',options.Overwrite);
 
 end
