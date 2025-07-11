@@ -14,8 +14,7 @@
 	],
 	"position_metadata": {
 		"ontologyNode": "",
-		"ontologyNumericValue": "",
-		"ontologyNodeStringValues": "",
-		"dimensions": ""
+		"dimensions": "",
+		"units": ""
 	}
 }
