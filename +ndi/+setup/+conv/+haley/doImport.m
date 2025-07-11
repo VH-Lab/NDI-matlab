@@ -282,9 +282,10 @@ for i = 1:numel(dataFiles)
         % [d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
 
         % Create position_metadata structure
-        position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans body part
-        position_metadata.ontologyNumericValue = [];
-        position_metadata.ontologyStringValue = 'midpoint';
+        % position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans body part
+        % position_metadata.ontologyNumericValue = [];
+        % position_metadata.ontologyStringValue = 'midpoint';
+        position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans head, midpoint, or tail
         position_metadata.units = 'NCIT:C48367'; % pixels
         position_metadata.dimensions = 'NCIT:C44477,NCIT:C44478'; % X-coordinate, Y-coordinate
         
@@ -326,12 +327,24 @@ end
 
 %% Step 6. ENCOUNTER DOCUMENTS.
 
+encounterVariables = {'subject_id','id','timeEnter','timeExit','duration',....
+    'patch_id','lawnOD600','lawnGrowth',...
+    'velocityOn','velocityOnMin','decelerate',...
+    'borderAmplitude','borderAmplitudeGrowth',...
+    'exploitPosterior','sensePosterior','label'};
+
 % Load encounter table
 dataTable = load(fullfile(dataParentDir,encounterFiles{1}));
 fields = fieldnames(dataTable);
 tableType = fields{1};
 dataTable = dataTable.(tableType);
 
+% Add missing variables
+fields = fieldnames(info);
+for i = 1:numel(fields)
+    info.(fields).wormTable
+end
 
+ind = dataTable.id > 0;
 
 end
