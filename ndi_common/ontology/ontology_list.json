@@ -45,7 +45,8 @@
        "ontology_name": "RRID"
     },
     {"prefix": "PATO", "ontology_name": "PATO"},
-    { "prefix": "EMPTY", "ontology_name": "EMPTY" }
+    {"prefix": "EMPTY", "ontology_name": "EMPTY"},
+    {"prefix": "NCIT", "ontology_name": "NCIT"}
   ],
   "Ontologies": [
     {
@@ -103,6 +104,11 @@
       "homepage": null, 
       "api_url": null, 
       "description": "Experimental Measurements, Purposes, and Treatments ontologY (local OBO file)"
+    },
+    {
+      "name": "NCIT",
+      "homepage": "http://obofoundry.org/ontology/ncit.html",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/ncit"
     }
   ]
 }
