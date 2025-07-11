@@ -312,15 +312,17 @@ is_a: Identifier
 name: C. elegans head
 def:
 is_a: C. elegans body part
+is_a: UBERON:0000033
 
 name: C. elegans midpoint
 def:
 is_a: C. elegans body part
+is_a: UBERON:0002100
 
 name: C. elegans tail
 def:
 is_a: C. elegans body part
-
+is_a: UBERON:0002415
 
 name: C. elegans body part
 def:
