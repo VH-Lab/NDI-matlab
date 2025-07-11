@@ -155,6 +155,8 @@ for i = 1:numel(infoFiles)
     % Create ontologyTableRow documents
     % info.(dirName).patchDocs = tableDocMaker(patchTable,{'plate_id','patchNum'},...
     %     'Overwrite',options.Overwrite);
+    % patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs);
+    patchTable{:,'patch_id'} = (1:height(patchTable))';
     info.(dirName).patchTable = patchTable;
 
     % D. VIDEO ontologyTableRow
@@ -265,7 +267,7 @@ for i = 1:numel(dataFiles)
         time = dataTable.timeOffset(indData);
         position = dataTable{indData,{'xPosition','yPosition'}};
         distance = [dataTable{indData,'distanceLawnEdge'},...
-            ones(size(indData)),dataTable{indData,'nearestLawnID'}];
+            ones(sum(indData),1),dataTable{indData,'closestLawnID'}];
         t0_t1_local = prctile(dataTable.timeOffset(indData),[0 100]);
         t0_t1_global = convertTo(info.(dirName).wormTable.expTime(indWorm) + ...
             seconds(t0_t1_local),'datenum');
@@ -279,12 +281,18 @@ for i = 1:numel(dataFiles)
         % positionElement.addepoch('position',ndi.time.clocktype('UTC'),t0_t1_local,time,data);
         % [d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
 
-        % Create position_metadata doc
-        position_metadata.ontologyNode = 'EMPTY:C. elegans body part'
+        % Create position_metadata structure
+        position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans body part
         position_metadata.ontologyNumericValue = [];
         position_metadata.ontologyStringValue = 'midpoint';
-        position_metadata.dimensions
+        position_metadata.units = 'NCIT:C48367'; % pixels
+        position_metadata.dimensions = 'NCIT:C44477,NCIT:C44478'; % X-coordinate, Y-coordinate
         
+        % Create position_metadata document
+        positionMetadataDocs{j} = ndi.document('position_metadata',...
+            'position_metadata', position_metadata) + session.newdocument();
+        positionMetadataDocs{j} = positionMetadataDocs{j}.set_dependency_value(...
+            'element_id', positionElement.id);
 
         % B. DISTANCE elements and metadata
 
@@ -292,10 +300,38 @@ for i = 1:numel(dataFiles)
         distanceElement = ndi.element.timeseries(session,'distance',1,'distance',[],0,subject_id);
         distanceElement.addepoch('distance','dev_local_time,exp_global_time', ...
             [t0_t1_local;t0_t1_global], time, distance);
+
+        % Create distance_metadata structure
+        distance_metadata.ontologyNode_A = 'EMPTY:0000XX'; % subject document id
+        distance_metadata.integerIDs_A = 1;
+        distance_metadata.ontologyNumericValues_A = [];
+        distance_metadata.ontologyStringValues_A = subject_id;
+        distance_metadata.ontologyNode_B = 'EMPTY:0000XX'; % patch ontologyTableRow document id
+        distance_metadata.integerIDs_B = info.(dirName).patchTable.patchNum(indPatch)';
+        distance_metadata.ontologyNumericValues_B = [];
+        distance_metadata.ontologyStringValues_B = strjoin(info.(dirName).patchTable.patch_id(indPatch),',');
+        distance_metadata.units = 'NCIT:C48367'; % pixels
+
+        % Create distance_metadata document
+        distanceMetadataDocs{j} = ndi.document('distance_metadata',...
+            'distance_metadata', distance_metadata) + session.newdocument();
+        distanceMetadataDocs{j} = distanceMetadataDocs{j}.set_dependency_value(...
+            'element_id', distanceElement.id);
     end
-    
+
+    % Add documents to database
+    session.database_add(positionMetadataDocs);
+    session.database_add(distanceMetadataDocs);
 end
 
 %% Step 6. ENCOUNTER DOCUMENTS.
+
+% Load encounter table
+dataTable = load(fullfile(dataParentDir,encounterFiles{1}));
+fields = fieldnames(dataTable);
+tableType = fields{1};
+dataTable = dataTable.(tableType);
+
+
 
 end
