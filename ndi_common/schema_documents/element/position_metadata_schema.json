@@ -1,12 +1,11 @@
 {
-	"classname": "neuron_extracellular",
-	"superclasses":  [ "base", "app"],
+	"classname": "position_metadata",
+	"superclasses":  [ "base"],
 	"depends_on": [
-		{ "name": "element_id", "mustbenotempty": 1},
-		{ "name": "spike_clusters_id", "mustbenotempty": 0}
+		{ "name": "element_id", "mustbenotempty": 1}
 	],
 	"file": [ ],
-	"neuron_extracellular": [
+	"position_metadata": [
 		{
 			"name": "number_of_samples_per_channel",
 			"type": "integer",
@@ -25,43 +24,11 @@
 		},
 		{
 			"name": "mean_waveform",
-			"type": "matrix",
-			"default_value": 1,
-			"parameters": [NaN,NaN],
-			"queryable": 1,
-			"documentation": "The mean waveform (NumSamples x NumChannels)."
-		},
-		{
-			"name": "waveform_sample_times",
-			"type": "matrix",
-			"default_value": 1,
-			"parameters": [NaN,1],
-			"queryable": 1,
-			"documentation": "The sample times (relative to the spike) of the mean waveform."
-		},
-		{
-			"name": "cluster_index",
-			"type": "integer",
-			"default_value": 1,
-			"parameters": [-1,10000,1],
-			"queryable": 1,
-			"documentation": "The cluster id number for this spike waveform"
-		},
-		{
-			"name": "quality_number",
-			"type": "integer",
-			"default_value": 1,
-			"parameters": [-1,10000,1],
-			"queryable": 1,
-			"documentation": "The quality of the spike waveform"
-		},
-		{
-			"name": "quality_label",
 			"type": "string",
-			"default_value": "none",
+			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The quality label of the spike waveform"
+			"documentation": "The ontology node id(s) of the data variable (s) in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:00000090,UBERON:3373')."
 		}
 	]
 }
