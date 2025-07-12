@@ -46,7 +46,8 @@
     },
     {"prefix": "PATO", "ontology_name": "PATO"},
     {"prefix": "EMPTY", "ontology_name": "EMPTY"},
-    {"prefix": "NCIT", "ontology_name": "NCIT"}
+    {"prefix": "NCIT", "ontology_name": "NCIT"},
+    {"prefix": "WBStrain", "ontology_name": "WBStrain"}
   ],
   "Ontologies": [
     {
@@ -109,6 +110,11 @@
       "name": "NCIT",
       "homepage": "http://obofoundry.org/ontology/ncit.html",
       "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/ncit"
+    },
+    {
+      "name": "WBStrain",
+      "homepage": "https://wormbase.org",
+      "api_url": "https://wormbase.org/species/c_elegans/strain"
     }
   ]
 }
