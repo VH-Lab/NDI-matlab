@@ -170,7 +170,7 @@ is_a: C. elegans behavioral assay properties
 is_a: NCIT:C54086 ! Timestamp Data Type
 
 name: C. elegans behavioral assay: bacteria growth duration after seeding
-def: "The total duration for which the bacteria food patch(s) on the C. elegans assay plates were allowed to grow at room temperature starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: duration."
+def: "The total duration for which the bacteria food patch(s) on the C. elegans assay plates were allowed to grow at room temperature starting at the time seeded and ending at the beginning of the behavioral assay video recording. Unit: duration."
 is_a: Bacterial properties
 is_a: C. elegans behavioral assay properties
 is_a: NCIT:C25330 ! Duration
@@ -343,34 +343,21 @@ is_a: EMPTY:00000001 ! empty
 
 ---
 
+name: C. elegans behavioral assay: encounter identifier
+def: "A unique numerical identifier assigned to a specific patch encounter event for a given worm within a video. This distinguishes individual encounters for detailed analysis."
+is_a: C. elegans behavioral assay properties
+is_a: NCIT:C25364 ! Identifier
 
+name: C. elegans behavioral assay: encounter onset
+def: "The time, in seconds, corresponding to the frame at which the C. elegans worm enters a bacterial food patch. This is the precise start time of an encounter."
+is_a: NCIT:C68568 ! Timepoint
+is_a: C. elegans behavioral assay measurement
 
-------------------------------------------------------------------------------------
+name: C. elegans behavioral assay: encounter offset
+def: "The time, in seconds, corresponding to the frame at which the C. elegans worm exits a bacterial food patch. This is the precise end time of an encounter."
+is_a: NCIT:C68568 ! Timepoint
+is_a: C. elegans behavioral assay measurement
 
-properties and measurements can be of the:
-- agar plate (peptone)
-- patches (volume, diameter, spacing, radii, coordinates, distribution)
-- bacteria (strain, OD600, growth)
-- arena (size, coordinates, mask, angle)
-	- reference mark (position, angle)
-- behavior video (frame rate, spatial resolution, total frames)
-- c. elegans (age, strain)
-
-
-C. elegans assay properties
-- C. elegans cultivation properties
-	- C. elegans Cultivation: bacterial plate seeding timestamp
-- C. elegans behavioral assay properties
-
-Behavioral assay properties
-- C. elegans behavioral assay properties
-	- C. elegans behavior video properties
-
-Video properties
-- C. elegans behavior video properties
-
-Bacterial properties
-- C. elegans Cultivation: bacterial plate seeding timestamp
 
 ----
 
@@ -523,20 +510,11 @@ def: "A binary flag or state indicating that the C. elegans worm's tracked posit
 name: C. elegans Behavioral Assay: out of bounds
 def: "A binary flag or state indicating that the tracked C. elegans worm's position has exited the defined boundaries of the experimental arena or tracking region. This is often an exclusion criterion for data analysis."
 
-name: C. elegans Behavioral Assay: encounter ID
-def: "A unique numerical identifier assigned to a specific patch encounter event for a given worm within a video. This distinguishes individual encounters for detailed analysis."
-
 name: C. elegans Behavioral Assay: entry frame number
 def: "The frame number at which the C. elegans worm's midpoint is detected to enter a bacterial food patch. This marks the start of a patch encounter."
 
 name: C. elegans Behavioral Assay: exit frame number
 def: "The frame number at which the C. elegans worm's midpoint is detected to exit a bacterial food patch. This marks the end of a patch encounter."
-
-name: C. elegans Behavioral Assay: entry time
-def: "The time, in seconds, corresponding to the frame at which the C. elegans worm enters a bacterial food patch. This is the precise start time of an encounter."
-
-name: C. elegans Behavioral Assay: exit time
-def: "The time, in seconds, corresponding to the frame at which the C. elegans worm exits a bacterial food patch. This is the precise end time of an encounter."
 
 name: C. elegans Behavioral Assay: encounter duration
 def: "The total length of a patch encounter, calculated as the difference between `timeExit` and `timeEnter`. This metric is crucial for classifying encounters as 'short' (explore/sample) or 'long' (exploit). Unit: seconds or minutes."
