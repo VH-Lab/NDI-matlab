@@ -54,12 +54,12 @@ imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
 experimentVariables = {'expNum','growthBacteriaStrain',...
    'growthOD600','growthTimeSeed','growthTimeColdRoom',...
     'growthTimeRoomTemp','growthTimePicked', 'OD600Real','CFU'};
-plateVariables = {'experiment_id','plateNum','exclude','strain','hoursFoodDeprived',...
+plateVariables = {'experiment_id','plateNum','exclude','strain','starvedTime',...
     'condition','OD600Label','growthCondition','peptoneFlag',...
-    'bacteriaStrain','OD600','timeSeed','timeColdRoom','timeRoomTemp',...
+    'bacteriaStrain','timeSeed','timeColdRoom','timeRoomTemp',...
     'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
     %'firstFrame_id','arenaMask_id','patchMask_id','closestPatch_id','closestOD600_id'};
-patchVariables = {'plate_id','lawnCenters','lawnRadii','lawnCircularity'};
+patchVariables = {'plate_id','OD600','lawnCenters','lawnRadii','lawnCircularity'};
 videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
     'frameRate','numFrames','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
@@ -72,6 +72,9 @@ for i = 1:numel(infoFiles)
     tableType = fields{1};
     dataTable = dataTable.(tableType);
     dirName = split(infoFiles{i},filesep); dirName = dirName{end-1};
+
+    % Check for correct exclusion
+    dataTable.exclude = dataTable.exclude | ~ndi.fun.table.identifyValidRows(dataTable,'growthCondition');
 
     % A. EXPERIMENT ontologyTableRow
 
@@ -96,7 +99,6 @@ for i = 1:numel(infoFiles)
     % B. PLATE ontologyTableRow
 
     % Add missing variables
-    dataTable{:,'hoursFoodDeprived'} = 0;
     indSatiety = ndi.fun.table.identifyMatchingRows(dataTable,'strainName',...
         'food-deprived');
     dataTable{indSatiety,'hoursFoodDeprived'} = 3;
@@ -129,27 +131,47 @@ for i = 1:numel(infoFiles)
     % Compile data table with 1 row for each unique patch
     plate_id = cell(height(dataTable),1);
     patchNum = cell(height(dataTable),1);
+    patchOD600 = cell(height(dataTable),1);
     patchCenterX = cell(height(dataTable),1);
     patchCenterY = cell(height(dataTable),1);
     patchRadius = cell(height(dataTable),1);
     patchCircularity = cell(height(dataTable),1);
     for j = 1:height(dataTable)
         plateRow = dataTable(j,patchVariables);
-        patchCenterX{j} = plateRow.lawnCenters{1}(:,1);
-        patchCenterY{j} = plateRow.lawnCenters{1}(:,2);
-        patchRadius{j} = plateRow.lawnRadii{1};
-        patchCircularity{j} = plateRow.lawnCircularity{1};
+        if contains(dirName,'Matching')
+            patchOD600{j} = plateRow.OD600{1}';
+        elseif contains(dirName,'Mutants')
+            patchOD600{j} = repmat(plateRow.OD600{1}(1),numPatch,1);
+        else
+            patchOD600{j} = repmat(plateRow.OD600,numPatch,1);
+        end
+        try
+            patchCenterX{j} = plateRow.lawnCenters{1}(:,1);
+            patchCenterY{j} = plateRow.lawnCenters{1}(:,2);
+            patchRadius{j} = plateRow.lawnRadii{1};
+            patchCircularity{j} = plateRow.lawnCircularity{1};
+        catch
+            patchCenterX{j} = NaN(numPatch,1);
+            patchCenterY{j} = NaN(numPatch,1);
+            patchRadius{j} = NaN(numPatch,1);
+            patchCircularity{j} = NaN(numPatch,1);
+            dataTable.pixels{j} = [NaN,NaN];
+        end
         numPatch = numel(patchCenterX{j});
         plate_id{j} = repmat(plateRow.plate_id,numPatch,1);
         patchNum{j} = (1:numPatch)';
     end
     plate_id = vertcat(plate_id{:});
     patchNum = vertcat(patchNum{:});
+    patchOD600 = vertcat(patchOD600{:});
+    if contains(dirName,'Matching') || contains(dirName,'Mutants')
+        patchOD600(patchOD600 == 0) = [];
+    end
     patchCenterX = vertcat(patchCenterX{:});
     patchCenterY = vertcat(patchCenterY{:});
     patchRadius = vertcat(patchRadius{:});
     patchCircularity = vertcat(patchCircularity{:});
-    patchTable = table(plate_id,patchNum,patchCenterX,patchCenterY,...
+    patchTable = table(plate_id,patchNum,patchOD600,patchCenterX,patchCenterY,...
         patchRadius,patchCircularity);
 
     % Create ontologyTableRow documents
@@ -174,7 +196,7 @@ for i = 1:numel(infoFiles)
     %     'Overwrite',options.Overwrite);
     info.(dirName).videoTable = videoTable;
 
-    % E. WORM subject and ontologyTableRow
+    % E. WORM subject, ontologyTableRow, and treatment
 
     % Compile data table with 1 row for each unique worm
     [~,ind] = unique(dataTable.plate_id);
@@ -183,7 +205,7 @@ for i = 1:numel(infoFiles)
     expTime = cell(numel(ind),1);
     for j = 1:numel(ind)
         wormNum{j} = dataTable{ind(j),'wormNum'}{1}';
-        numWorm = numel(wormNum{ind(j)});
+        numWorm = numel(wormNum{j});
         plate_id{j} = repmat(dataTable{ind(j),'plate_id'},numWorm,1);
         expTime{j} = repmat(dataTable{ind(j),'timeRecord'},numWorm,1);
     end
@@ -211,6 +233,24 @@ for i = 1:numel(infoFiles)
     % info.(dirName).wormDocs = tableDocMaker(wormTable(:,wormVariables),...
     %     {'subject_id'},'Overwrite',options.Overwrite);
     info.(dirName).wormTable = wormTable;
+
+    % Create treatment documents
+    wormTable = ndi.fun.table.join({wormTable,...
+        dataTable(:,{'plate_id','strainName'})},...
+        'uniqueVariables',{'plate_id','strainName'});
+    ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
+    treatmentDocs = cell(numel(subDocStruct),1);
+    for j = 1:numel(ind)
+        [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset');
+        treatment = struct('ontologyName',ontologyID,...
+            'name','Treatment: food restriction onset',...
+            'numeric_value',[],...
+            'string_value',anatomy(optoLocation{:}));
+        treatmentDocs{i} = ndi.document('treatment',...
+            'treatment', treatment) + sessionArray{1}.newdocument();
+        treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
+            'subject_id', subject_id);
+    end
 
     % F. PLATE ontologyImage
     % [~,ind] = unique(dataTable.plate_id);
@@ -324,11 +364,11 @@ end
 
 %% Step 6. ENCOUNTER DOCUMENTS.
 
-encounterVariables = {'subject_id','id','timeEnter','timeExit','duration',....
-    'patch_id','lawnOD600','lawnGrowth',...
-    'velocityOn','velocityOnMin','decelerate',...
-    'borderAmplitude','borderAmplitudeGrowth',...
-    'exploitPosterior','sensePosterior','label'};
+encounterVariables = {'subject_id','encounterNum','patch_id',...
+    'timeEnter','timeExit',....
+    'decelerate','velocityOnMin','velocityBeforeEnter','velocityAfterEnter',...
+    'exploitPosterior','sensePosterior',...
+    'density','densityGrowth'};
 
 % Load encounter table
 dataTable = load(fullfile(dataParentDir,encounterFiles{1}));
@@ -336,11 +376,28 @@ fields = fieldnames(dataTable);
 tableType = fields{1};
 dataTable = dataTable.(tableType);
 
-% Add missing variables
+% Add density and densityGrowth
+[G,GID] = findgroups(dataTable(:,{'expName','lawnVolume',...
+    'growthCondition','OD600Label','strainName','strainID'}));
+borderAmp = splitapply(@(X) mean(X,'omitnan'),dataTable.borderAmplitude,G);
+borderAmp10 = borderAmp(strcmp(GID.expName,'foragingConcentration') & ...
+    strcmp(GID.OD600Label,'10.00') & GID.lawnVolume == 0.5);
+borderAmp0 = 1e-2; % assign 0 to 0.01
+dataTable.density = log10(max(10*dataTable.borderAmplitude./borderAmp10,borderAmp0));
+dataTable.densityGrowth = log10(10*dataTable.borderAmplitudeGrowth/borderAmp10);
+
+% Add subject_id and patch_id
 fields = fieldnames(info);
+wormTable = table();
+patchTable = table();
 for i = 1:numel(fields)
-    info.(fields).wormTable
+    wormTable = ndi.fun.table.vstack({wormTable,info.(fields{i}).wormTable});
+    patchTable = ndi.fun.table.vstack({patchTable,info.(fields{i}).patchTable});
 end
+dataTable = renamevars(dataTable,{'expName','id','lawnID'},{'dirName','encounterNum','patchNum'});
+dataTable = ndi.fun.table.join({dataTable,...
+    wormTable(:,{'wormNum','dirName','subject_id','plate_id'}),...
+    patchTable(:,{'patchNum','dirName','plate_id'})});
 
 % Create ontologyTableRow documents
 indEncounter = dataTable.id > 0;
