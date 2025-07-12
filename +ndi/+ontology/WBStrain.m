@@ -20,7 +20,6 @@ classdef WBStrain < ndi.ontology
             
             % --- Step 1: Resolve the input (name or ID) to a full WBStrain ID ---
             is_id_lookup = ~isempty(regexp(term_or_id_or_name, '^\d{8}$', 'once'));
-            api_id = ''; % This will be populated by either branch
             if is_id_lookup
                 % The input is a numeric ID. The case is simple.
                 api_id = [prefix term_or_id_or_name];
@@ -70,6 +69,11 @@ classdef WBStrain < ndi.ontology
                     name = overview.name.data.label;
                 else
                     error('ndi:ontology:WBStrain:APIParsingFailed', 'Could not extract name from API "label" field.');
+                end
+
+                % Check that name matches
+                if ~is_id_lookup & ~strcmpi(name,term_or_id_or_name)
+                    error('ndi:ontology:WBStrain:TermMismatch', 'Output term name does match input term name. Try using WBStrain ID instead');
                 end
                 
                 definition_parts = {};
