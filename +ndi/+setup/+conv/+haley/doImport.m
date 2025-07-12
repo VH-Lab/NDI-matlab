@@ -99,16 +99,13 @@ for i = 1:numel(infoFiles)
     % B. PLATE ontologyTableRow
 
     % Add missing variables
-    indSatiety = ndi.fun.table.identifyMatchingRows(dataTable,'strainName',...
-        'food-deprived');
-    dataTable{indSatiety,'hoursFoodDeprived'} = 3;
+    % indSatiety = ndi.fun.table.identifyMatchingRows(dataTable,'strainName',...
+    %     'food-deprived');
+    % dataTable{indSatiety,'hoursFoodDeprived'} = 3;
     dataTable.bacteriaStrain =  dataTable.growthBacteriaStrain;
-    indN2 = ndi.fun.table.identifyMatchingRows(dataTable,'strainID','N2');
-    dataTable{indN2,'strain'} = {'WBStrain:00000001'};
-    indMEC4 = ndi.fun.table.identifyMatchingRows(dataTable,'strainID','mec-4');
-    dataTable{indMEC4,'strain'} = {'WBStrain:00035037'};
-    indOSM6 = ndi.fun.table.identifyMatchingRows(dataTable,'strainID','osm-6');
-    dataTable{indOSM6,'strain'} = {'WBStrain:00030796'};
+    [strainNames,~,indStrain] = unique(dataTable.strainID);
+    strainIDs = cellfun(@(s) ndi.ontology.lookup(['WBStrain:',s]),strainNames,'UniformOutput',false);
+    dataTable.strain = strainIDs(indStrain);
     dataTable{:,'peptoneFlag'} = true;
     indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
     dataTable{indWithout,'peptoneFlag'} = false;
