@@ -15,20 +15,24 @@ else
     S = ndi.setup.lab('sjbirrenlab','saya',sessionPath);
 end
 
-variableTable = readtable(fullfile(dataDir,"total_dataset_updated FINAL.xlsx"));
+variableTable = readtable(fullfile(dataDir,"dataset_info.xlsx"));
 
-for i=1:height(T),
+for i=1:height(variableTable),
  [par,fname,ext]=fileparts(variableTable.filename{i});
  if isempty(ext),
     variableTable.filename{i} = [variableTable.filename{i} '.abf'];
- end;
-end;
+ end
+end
 
 variableTable.sessionID = repmat({S.id()}, height(variableTable), 1)
 
 subM = ndi.setup.NDIMaker.subjectMaker();
+si = ndi.setup.NDIMaker.SubjectInformationCreator.birren();
 
-[subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(variableTable, @ndi.setup.conv.birren.createSubjectInformation);
+[subjectInfo,allSubjectNamesFromTable] = subM.getSubjectInfoFromTable(variableTable, @si.create);
+subDocStruct = subM.makeSubjectDocuments(subjectInfo);
+subM.addSubjectsToSessions({S}, subDocStruct.documents);
+
 
 variableTable.SubjectString = allSubjectNamesFromTable;
 variableTable.Properties.RowNames = cellfun(@(x,y) cat(2,x,filesep,y), variableTable.folderPath, variableTable.filename, 'UniformOutput',false);
