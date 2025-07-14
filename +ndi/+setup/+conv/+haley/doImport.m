@@ -76,11 +76,10 @@ session.database_add(strainDoc);
 experimentVariables = {'expNum','growthBacteriaStrain',...
    'growthOD600','growthTimeSeed','growthTimeColdRoom',...
     'growthTimeRoomTemp','growthTimePicked', 'OD600Real','CFU'};
-plateVariables = {'experiment_id','plateNum','exclude','strain',...
+plateVariables = {'experiment_id','plateNum','exclude',...
     'condition','OD600Label','growthCondition','peptoneFlag',...
     'bacteriaStrain','timeSeed','timeColdRoom','timeRoomTemp',...
     'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
-patchVariables = {'plate_id','OD600','lawnCenters','lawnRadii','lawnCircularity'};
 videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
     'frameRate','numFrames','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
@@ -133,11 +132,10 @@ for i = 1:numel(infoFiles)
         'UniqueVariables',{'experiment_id','plateNum'});
 
     % Create ontologyTableRow documents
-    info.(dirName).plateDocs = tableDocMaker(plateTable,{'expNum','growthOD600'},...
-        'Overwrite',options.Overwrite);
-    plateTable.plate_id = cellfun(@(d) d.id,info.(dirName).plateDocs);
-    dataTable = ndi.fun.table.join({dataTable,...
-        plateTable(:,{'plateNum','plate_id'})});
+    info.(dirName).plateDocs = tableDocMaker.table2ontologyTableRowDocs(...
+        plateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
+    plateTable.plate_id = cellfun(@(d) d.id,info.(dirName).plateDocs,'UniformOutput',false);
+    dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'plateNum','plate_id'})});
     info.(dirName).plateTable = plateTable;
 
     % C. PATCH ontologyTableRow
@@ -189,9 +187,9 @@ for i = 1:numel(infoFiles)
         patchRadius,patchCircularity);
 
     % Create ontologyTableRow documents
-    info.(dirName).patchDocs = tableDocMaker(patchTable,{'plate_id','patchNum'},...
-        'Overwrite',options.Overwrite);
-    patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs);
+    info.(dirName).patchDocs = tableDocMaker.table2ontologyTableRowDocs(...
+        patchTable,{'plate_id','patchNum'},'Overwrite',options.Overwrite);
+    patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
     info.(dirName).patchTable = patchTable;
 
     % D. VIDEO ontologyTableRow
@@ -205,8 +203,8 @@ for i = 1:numel(infoFiles)
         'UniqueVariables',{'plate_id','videoNum'});
 
     % Create ontologyTableRow documents
-    info.(dirName).videoDocs = tableDocMaker(videoTable,{'plate_id','videoNum'},...
-        'Overwrite',options.Overwrite);
+    info.(dirName).videoDocs = tableDocMaker.table2ontologyTableRowDocs(...
+        videoTable,{'plate_id','videoNum'},'Overwrite',options.Overwrite);
     info.(dirName).videoTable = videoTable;
 
     % E. WORM subject, ontologyTableRow, and treatment
@@ -230,7 +228,8 @@ for i = 1:numel(infoFiles)
     % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
     wormTable = ndi.fun.table.join({wormTable,...
-        plateTable(:,{'plate_id','strain','condition'})});
+        plateTable(:,{'plate_id','condition'}),...
+        dataTable(:,{'plate_id','strainID'})});
     wormTable{:,'dirName'} = {dirName};
 
     % Create subject documents
@@ -243,28 +242,30 @@ for i = 1:numel(infoFiles)
     wormTable.subject_id = cellfun(@(d) d{1}.id,info.(dirName).subjectDocs,'UniformOutput',false);
 
     % Create ontologyTableRow documents
-    info.(dirName).wormDocs = tableDocMaker(wormTable(:,wormVariables),...
+    info.(dirName).wormDocs = tableDocMaker.table2ontologyTableRowDocs(wormTable(:,wormVariables),...
         {'subject_id'},'Overwrite',options.Overwrite);
     info.(dirName).wormTable = wormTable;
 
     % Create treatment documents
-    wormTable = ndi.fun.table.join({wormTable,...
-        dataTable(:,{'plate_id','strainName','starvedTime','timeRecord'})},...
-        'uniqueVariables',{'plate_id','strainName'});
     ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
-    treatmentDocs = cell(numel(subDocStruct),1);
-    for j = 1:numel(ind)
-        [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset time');
-        treatment = struct('ontologyName',ontologyID,...
-            'name',name,...
-            'numeric_value',[],...
-            'string_value',wormTable.starvedTime{j});
-        treatmentDocs{i} = ndi.document('treatment',...
-            'treatment', treatment) + sessionArray{1}.newdocument();
-        treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
-            'subject_id', subject_id);
+    if ~isempty(ind)
+        wormTable = ndi.fun.table.join({wormTable,...
+            dataTable(:,{'plate_id','strainName','starvedTime','timeRecord'})},...
+            'uniqueVariables',{'plate_id','strainName'});
+        treatmentDocs = cell(numel(subDocStruct),1);
+        for j = 1:numel(ind)
+            [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset time');
+            treatment = struct('ontologyName',ontologyID,...
+                'name',name,...
+                'numeric_value',[],...
+                'string_value',wormTable.starvedTime{j});
+            treatmentDocs{i} = ndi.document('treatment',...
+                'treatment', treatment) + sessionArray{1}.newdocument();
+            treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
+                'subject_id', subject_id);
+        end
+        session.database_add(treatmentDocs);
     end
-
 
     % F. PLATE ontologyImage
     [~,ind] = unique(dataTable.plate_id);
