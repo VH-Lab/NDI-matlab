@@ -16,7 +16,7 @@
   "growthCondition": "EMPTY:C. elegans behavioral assay: bacterial plate growth duration label",
   "peptoneFlag": "EMPTY:C. elegans behavioral assay: bacterial plate peptone inclusion flag",
   "bacteriaStrain": "EMPTY:C. elegans behavioral assay: bacterial strain document identifier",
-  "OD600": "EMPTY:C. elegans behavioral assay: bacterial OD600 (target) at seeding",
+  "patchOD600": "EMPTY:C. elegans behavioral assay: bacterial OD600 (target) at seeding",
   "timeSeed": "EMPTY:C. elegans behavioral assay: bacterial plate seeding timestamp",
   "timeColdRoom": "EMPTY:C. elegans behavioral assay: bacterial plate cold storage timestamp",
   "timeRoomTemp": "EMPTY:C. elegans behavioral assay: bacterial plate room temperature timestamp",
