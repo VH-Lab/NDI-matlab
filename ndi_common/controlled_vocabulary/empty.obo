@@ -873,13 +873,13 @@ property_value: codeName "cElegansCultivationBacterialPlateColdStorageTimestamp"
 
 [Term]
 id: EMPTY:00000187
-name: C. elegans cultivation: bacterial plate room temperature acclimation timestamp
+name: C. elegans cultivation: bacterial plate room temperature timestamp
 namespace: empty_ontology
 def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before picking worms onto them to avoid temperature affecting the animals. Unit: datetime." []
 is_a: EMPTY:00000087 ! Timestamp
 is_a: EMPTY:00000175 ! Bacterial parameter
 is_a: EMPTY:00000179 ! C. elegans cultivation parameter
-property_value: codeName "cElegansCultivationBacterialPlateRoomTemperatureAcclimationTimestamp" xsd:string
+property_value: codeName "cElegansCultivationBacterialPlateRoomTemperatureTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000188
@@ -1023,13 +1023,13 @@ property_value: codeName "cElegansBehavioralAssayBacterialPlateColdStorageTimest
 
 [Term]
 id: EMPTY:00000204
-name: C. elegans behavioral assay: bacterial plate room temperature acclimation timestamp
+name: C. elegans behavioral assay: bacterial plate room temperature timestamp
 namespace: empty_ontology
 def: "The date and time when C. elegans assay plates were moved from cold storage to room temperature to allow them to acclimate before before picking worms onto them to avoid temperature affecting the animals. Unit: datetime." []
 is_a: EMPTY:00000087 ! Timestamp
 is_a: EMPTY:00000175 ! Bacterial parameter
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPlateRoomTemperatureAcclimationTimestamp" xsd:string
+property_value: codeName "cElegansBehavioralAssayBacterialPlateRoomTemperatureTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000205
@@ -1397,7 +1397,7 @@ property_value: codeName "cElegansBehavioralAssayPosteriorProbabilityOfSensing" 
 
 [Term]
 id: EMPTY:00000263
-name: C. elegans behavioral assay: relative density of the encountered bacterial patch
+name: C. elegans behavioral assay: relative density of encountered bacteria
 namespace: empty_ontology
 def: "A normalized, quantitative measure of the bacterial density of a specific bacterial food patch that a C. elegans worm encounters during an assay. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
@@ -1405,7 +1405,7 @@ property_value: codeName "cElegansBehavioralAssayRelativeDensityOfTheEncountered
 
 [Term]
 id: EMPTY:00000264
-name: C. elegans behavioral assay: relative density of the cultivation bacterial patch
+name: C. elegans behavioral assay: relative density of cultivation bacteria
 namespace: empty_ontology
 def: "A normalized, quantitative measure of the bacterial density on the agar plates where C. elegans were cultivated prior to the behavioral assay. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
 is_a: EMPTY:00000179 ! C. elegans cultivation parameter
