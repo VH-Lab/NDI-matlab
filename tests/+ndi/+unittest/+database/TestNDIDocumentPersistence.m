@@ -18,10 +18,17 @@ classdef TestNDIDocumentPersistence < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function setupOnce(testCase)
-            testCase.testDir = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_unittest'];
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+            fixture = testCase.applyFixture(TemporaryFolderFixture);
+
+            testCase.testDir = fullfile(fixture.Folder, 'exp1_eg_unittest');
             if ~isfolder(testCase.testDir)
                 mkdir(testCase.testDir);
             end
+
+            % Capure mksqlite initialization message
+            C = evalc( "mksqlite('version sql')" ); %#ok<NASGU>
         end
     end
 
@@ -29,7 +36,6 @@ classdef TestNDIDocumentPersistence < matlab.unittest.TestCase
         % This runs before each test to ensure the database is clean.
         function setupTest(testCase)
             E = ndi.session.dir('exp1', testCase.testDir);
-            fprintf('Cleaning up database for next test...\n');
             
             % Clean up all possible document types created by these tests
             doc_types = {'syncrule','syncgraph','filenavigator','daqsystem','daqreader'};
@@ -47,7 +53,8 @@ classdef TestNDIDocumentPersistence < matlab.unittest.TestCase
             
             E = ndi.session.dir('exp1', testCase.testDir);
             
-            fprintf('Testing lifecycle for class: %s\n', className);
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                sprintf('Testing lifecycle for class: %s', className));
             
             % 1. Create the original object
             if strcmp(className, 'ndi.time.syncgraph')
@@ -87,8 +94,8 @@ classdef TestNDIDocumentPersistence < matlab.unittest.TestCase
             testCase.verifyNotEmpty(devlist, 'Could not find any VHLab DAQ system definitions to test.');
 
             for i=1:numel(devlist)
-                fprintf('Testing lifecycle for DAQ system: %s\n', devlist{i});
-                
+                testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                    sprintf('Testing lifecycle for DAQ system: %s', devlist{i}));
                 % 1. Add the DAQ system using the configuration helper
                 daqSystemConfig = ndi.setup.DaqSystemConfiguration.fromLabDevice('vhlab', devlist{i});
                 E_with_dev = daqSystemConfig.addToSession(E);
