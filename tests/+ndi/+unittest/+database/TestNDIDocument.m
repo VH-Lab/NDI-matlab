@@ -19,12 +19,18 @@ classdef TestNDIDocument < matlab.unittest.TestCase
     methods (TestClassSetup)
         % This method runs once before any tests are executed.
         function setupOnce(testCase)
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+            fixture = testCase.applyFixture(TemporaryFolderFixture);
+            
             % Define the test directory and create it if it doesn't exist.
-            testCase.testDir = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_unittest'];
+            testCase.testDir = fullfile(fixture.Folder, 'exp1_eg_unittest');
             if ~isfolder(testCase.testDir)
-                mkdir(testCase.testDir);
+                mkdir(testCase.testDir)
             end
-            testCase.binaryFile = [testCase.testDir filesep 'myfile.bin'];
+            testCase.binaryFile = fullfile(testCase.testDir, 'myfile.bin');
+                        
+            % Capure mksqlite initialization message
+            C = evalc( "mksqlite('version sql')" ); %#ok<NASGU>
         end
     end
 
@@ -78,7 +84,7 @@ classdef TestNDIDocument < matlab.unittest.TestCase
             E.database_add(doc);
             
             % 5. Verify searching for the document
-            fprintf('Verifying document searching...\n');
+            testCase.log(matlab.unittest.Verbosity.Verbose, 'Verifying document searching...');
 
             % 5a. Search by a specific field value
             doc_search1 = E.database_search(ndi.query('demoNDI.value', 'exact_number', 5, ''));
@@ -89,7 +95,7 @@ classdef TestNDIDocument < matlab.unittest.TestCase
             testCase.verifyNumElements(doc_search2, 1, 'Did not find exactly one document when searching by type.');
             
             % 6. Verify reading binary data from the document
-            fprintf('Verifying binary data reading...\n');
+            testCase.log(matlab.unittest.Verbosity.Verbose, 'Verifying binary data reading...');
             doc_to_read = doc_search2{1};
             
             binarydoc = E.database_openbinarydoc(doc_to_read, 'filename1.ext');
@@ -113,7 +119,6 @@ classdef TestNDIDocument < matlab.unittest.TestCase
             
             % If any are found, remove them
             if ~isempty(docs_to_remove)
-                fprintf('Cleaning up %d leftover demo documents...\n', numel(docs_to_remove));
                 E.database_rm(docs_to_remove);
             end
         end
