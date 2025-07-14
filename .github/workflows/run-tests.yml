@@ -44,12 +44,12 @@ jobs:
           cache: true
 
       - name: Install MatBox
-        uses: ehennestad/matbox/.github/actions/install-matbox@v0.9
+        uses: ehennestad/matbox-actions/install-matbox@v1
 
       - name: Check code and upload report
-        uses: ehennestad/matbox/.github/actions/check-code@v0.9
+        uses: ehennestad/matbox-actions/.github/workflows/check-code-workflow@v1
         with:
-          code_directory: '+ndi'
+          code_directory: 'src'
 
       - name: Run tests
         uses: matlab-actions/run-command@v2
@@ -59,8 +59,9 @@ jobs:
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
             ndi.cloud.authenticate("InteractionEnabled", "off")
-            addpath('.')
+            addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
+            addpath(genpath( "tools" ));
             testToolbox()
 
       - name: Restore MATLAB Path
@@ -73,7 +74,7 @@ jobs:
 
       - name: Commit SVG badges if updated
         if: always() && ( github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository )
-        uses: ehennestad/matbox/.github/actions/push-badges@v0.9
+        uses: ehennestad/matbox-actions/push-badges@v1
         with:
           pr-ref: ${{ github.event.pull_request.head.ref }}
           pr-repo: ${{ github.event.pull_request.head.repo.full_name }}

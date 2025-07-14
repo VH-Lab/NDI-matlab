@@ -35,7 +35,7 @@ jobs:
           cache: true
 
       - name: Install MatBox
-        uses: ehennestad/matbox/.github/actions/install-matbox@v0.9
+        uses: ehennestad/matbox-actions/install-matbox@v1
 
       - name: Run tests
         uses: matlab-actions/run-command@v2
@@ -47,8 +47,9 @@ jobs:
             setenv("GITHUB_TOKEN", "${{ github.token }}")
             setenv("CLOUD_API_ENVIRONMENT", "${{ matrix.environment }}")
             ndi.cloud.authenticate("InteractionEnabled", "off")
-            addpath('.')
+            addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
+            addpath(genpath( "tools" ));
             testCloudApi()
 
       - name: Restore MATLAB Path
