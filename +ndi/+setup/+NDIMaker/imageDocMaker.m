@@ -194,8 +194,9 @@ classdef imageDocMaker < handle
             inDatabase = false(numImages, 1);
             
             % Create progress bar
-            progressBar = ndi.gui.component.ProgressBarWindow('Import Image Array', 'Creating Image Documents...', false);
-            progressBar = progressBar.addBar('Label', 'Creating Ontology Image Document(s)', 'Tag', 'ontologyImage');
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label', 'Creating Ontology Image Document(s)',...
+                'Tag', 'ontologyImage');
             
             onePercent = ceil(numImages / 100);
 
