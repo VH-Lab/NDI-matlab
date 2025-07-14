@@ -1,43 +1,77 @@
-name: C. elegans assay parameter
-def:
+name: Parameter
+def: "A variable, characteristic, factor that helps define a particular system, experiment, or process. Parameters are often controlled or measured to understand their effect on the outcome."
 is_a: EMPTY:00000001 ! empty
+
+name: Identifier
+def: "One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing."
+is_a: EMPTY:00000001 ! empty
+is_a: NCIT:C25364 ! Identifier
+
+name: Universally unique identifier
+def: "A standardized number used to uniquely identify information in computer systems, ensuring that no two identifiers are the same across different systems or contexts."
+synonym: UUID
+is_a: Identifier
+is_a: NCIT:C54100 ! Universally Unique Identifier
+
+name: Enumerated identifier
+def: "An identifier assigned sequentially from a numbered list, typically as an integer (e.g., 1, 2, 3), to distinguish between individual items."
+is_a: Identifier
+
+name: Categorical identifier
+def: "An identifier that assigns an item to a specific, predefined category or class, often represented by a string or label."
+is_a: Identifier
+
+name: Flag
+def: "A binary variable, typically boolean (true/false), used to indicate the presence or absence of a specific condition, state, or attribute."
+is_a: Identifier
+is_a: NCIT:C43578 ! Flag
+
+name: NDI document identifier
+def: "A unique identifier assigned to a document within the Neuroscience Data Interface (NDI) framework, used to link experimental data to its corresponding metadata and parameters."
+is_a: Universally unique identifier
+is_a: NCIT:C93399 ! Document Identifier
+
+name: Timestamp
+def: "A sequence of characters or encoded information identifying when a certain event occurred, usually giving the date and time of day, sometimes to a small fraction of a second."
+is_a: EMPTY:00000085 ! Measurement
+is_a: NCIT:C54086 ! Timestamp Data Type
+
+name: C. elegans assay parameter
+def: "A specific parameter related to the experimental setup or conditions of an assay involving the nematode Caenorhabditis elegans."
+is_a: Parameter
 
 name: Bacterial parameter
-def:
-is_a: EMPTY:00000001 ! empty
+def: "A specific parameter describing the properties or conditions of bacteria in an experiment.""
+is_a: Parameter
 
 name: Video parameter
-def:
-is_a: EMPTY:00000001 ! empty
+def: "A specific parameter describing the technical specifications or settings of a video recording, such as frame rate, resolution, or duration."
+is_a: Parameter
 
 name: C. elegans behavioral assay measurement
-def:
-is_a: EMPTY:00000001 ! empty
+def: "A quantitative or qualitative value obtained from a C. elegans behavioral assay, used to describe an aspect of the animal's movement, position, or interaction with its environment."
+is_a: Measurement
 
 name: C. elegans behavioral assay parameter
-def:
+def: "A controlled or measured variable specifically related to the design and execution of a C. elegans behavioral assay."
 is_a: C. elegans assay parameter
 
 name: C. elegans cultivation parameter
-def:
+def: "A parameter related to the conditions under which C. elegans were grown and maintained before being used in an experiment, such as the food source or temperature."
 is_a: C. elegans assay parameter
 
 name: C. elegans behavior video parameter
-def:
+def: "A technical parameter specifically describing a video recording of a C. elegans behavioral experiment, including properties like spatial scale or frame rate."
 is_a: C. elegans behavioral assay parameter
 is_a: Video parameter
-
-----
 
 name: Experiment session identifier
 def: "A unique numerical identifier for a distinct experimental session."
 is_a: NCIT:C93399 ! Document Identifier
 is_a: EMPTY:00000001 ! empty
 
----
-
-name: C. elegans cultivation: bacterial strain
-def: "The strain of bacteria used as the food source on the cultivation plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP). Reported as ontologyName:ontologyID (e.g. NCBITaxon:637912)."
+name: C. elegans cultivation: bacterial strain document identifier
+def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used as the food source on the cultivation plates for C. elegans."
 is_a: Bacterial parameter
 is_a: C. elegans cultivation parameter
 
@@ -52,24 +86,24 @@ name: C. elegans cultivation: bacterial plate seeding timestamp
 def: "The date and time when a large bacterial food patch was seeded  onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment. Unit: datetime."
 is_a: Bacterial parameter
 is_a: C. elegans cultivation parameter
-is_a: NCIT:C54086 ! Timestamp Data Type
+is_a: Timestamp
 
 name: C. elegans cultivation: bacterial plate cold storage timestamp
 def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (at approximately 4 degrees Celsisus) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime."
 is_a: Bacterial parameter
 is_a: C. elegans cultivation parameter
-is_a: NCIT:C54086 ! Timestamp Data Type
+is_a: Timestamp
 
 name: C. elegans cultivation: bacterial plate room temperature acclimation timestamp
 def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before picking worms onto them to avoid temperature affecting the animals. Unit: datetime."
 is_a: Bacterial parameter
 is_a: C. elegans cultivation parameter
-is_a: NCIT:C54086 ! Timestamp Data Type
+is_a: Timestamp
 
 name: C. elegans cultivation: L4 timestamp
 def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment. Unit: datetime."
 is_a: C. elegans cultivation parameter
-is_a: NCIT:C54086 ! Timestamp Data Type
+is_a: Timestamp
 
 name: C. elegans assay: bacterial OD600 measurement
 def: "The measured optical density at 600 nm (OD600) of the prepared bacterial solution immediately before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless."
@@ -84,39 +118,28 @@ is_a: C. elegans assay parameter
 is_a: Bacterial parameter
 is_a: EMPTY:00000085 ! Measurement
 
----
-
 name: C. elegans assay: experiment parameter document identifier
-def:
+def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that contains the set of parameters and conditions for a specific C. elegans behavioral assay experiment."
 is_a: C. elegans assay parameter
-is_a: NCIT:C93399 ! Document Identifier
+is_a: NDI document identifier
 
 name: C. elegans assay: experiment plate identifier
 def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a C. elegans experimental trial or a set of trials was conducted."
 is_a: C. elegans assay parameter
-is_a: NCIT:C25364 ! Identifier
+is_a: Identifier
 
 name: Data exclusion flag
 def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to predefined quality control issues or experimental failure. True: exclude."
-is_a: NCIT:C43578 ! Flag
-EMPTY:00000001 ! empty
+is_a: Flag
 
-name: Treatment: food restriction onset
+name: Treatment: food restriction onset time
 def: "Unit: datetime."
-is_a: NCIT:C54086 ! Timestamp Data Type
+is_a: Timestamp
 is_a: EMPTY:10000000 ! Treatment
 
-name: Treatment: food restriction offset
+name: Treatment: food restriction offset time
 def: "Unit: datetime."
-is_a: NCIT:C54086 ! Timestamp Data Type
-is_a: EMPTY:10000000 ! Treatment
-
-name: Treatment: experienced food restriction
-def: ""
-is_a:EMPTY:10000000 ! Treatment
-
-name: Treatment: did not experience food restriction
-def: ""
+is_a: Timestamp
 is_a: EMPTY:10000000 ! Treatment
 
 name: C. elegans behavioral assay: bacterial distribution label
@@ -139,8 +162,8 @@ def: "A boolean flag indicating whether peptone was included in the Nematode Gro
 is_a: C. elegans behavioral assay parameter
 is_a: NCIT:C43578 ! Flag
 
-name: C. elegans behavioral assay: bacterial strain
-def: "The strain of bacteria used as the food source on the assay plates for C. elegans, typically a specific Escherichia coli strain (e.g., OP50, HB101, OP50-GFP). Reported as ontologyName:ontologyID (e.g. NCBITaxon:637912)."
+name: C. elegans behavioral assay: bacterial strain document identifier
+def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used as the food source on the assay plates for C. elegans."
 is_a: Bacterial parameter
 is_a: C. elegans behavioral assay parameter
 
@@ -202,8 +225,6 @@ def: "The ambient room humidity recorded during an experiment. Unit: percentage 
 is_a: EMPTY:00000085 ! Measurement
 is_a: NCIT:C88206 ! Humidity
 
----
-
 name: C. elegans behavioral assay: plate parameter document identifier
 def:
 is_a: C. elegans behavioral assay parameter
@@ -236,8 +257,6 @@ name: C. elegans behavioral assay: bacterial patch circularity
 def: "A quantitative measure assessing how closely the shape of an individual detected bacterial food patch in a C. elegans assay conforms to a perfect circle. 1 is a perfect circle. [Source: https://www.mathworks.com/help/images/ref/regionprops.html]"
 is_a: C. elegans behavioral assay parameter
 is_a: EMPTY:00000085 ! Measurement
-
----
 
 name: C. elegans behavioral assay: video identifier
 def: "A unique numerical identifier for a video recording of a C. elegans behavioral assay experiment."
@@ -274,8 +293,6 @@ name: C. elegans behavioral assay: video spatial scale
 def: "The spatial resolution of the C. elegans behavioral video measured in pixels per millimiter. This number can be computed via a calibration process involving measuring an object of known size in an image. Unit: pixels/mm."
 is_a: C. elegans behavior video parameter
 
----
-
 name: C. elegans assay: subject identifier
 def: "A unique numerical identifier assigned to an animal on a C. elegans assay plate."
 is_a: NCIT:C25364 ! Identifier
@@ -284,8 +301,6 @@ is_a: C. elegans assay parameter
 name: Subject document identifier
 def: "A unique alphanumeric identifier assigned to an NDI subject document."
 is_a: NCIT:C93399 ! Document Identifier
-
----
 
 name: C. elegans behavioral assay: first frame image
 def: "An image corresponding to the first frame of the C. elegans behavioral video recording."
@@ -314,285 +329,79 @@ is_a: C. elegans behavioral assay parameter
 is_a: NCIT:C48179 ! Image
 is_a: NCIT:C85776 ! Optical Density Measurement
 
----
-
 name: C. elegans assay: patch parameter document identifier
-def:
+def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that details the specific parameters of the bacterial food patches used in a C. elegans assay, including their location, size, and density."
 is_a: C. elegans assay parameter
-is_a: NCIT:C93399 ! Document Identifier
+is_a: NDI document identifier
 
 name: C. elegans head
-def:
+def: "The anterior-most part of the C. elegans body."
 is_a: C. elegans body part
 is_a: UBERON:0000033 ! head
 
 name: C. elegans midpoint
-def:
+def: "The center point of the C. elegans body."
 is_a: C. elegans body part
 is_a: UBERON:0002100 ! trunk
 
 name: C. elegans tail
-def:
+def: "The posterior-most part of the C. elegans body."
 is_a: C. elegans body part
 is_a: UBERON:0002415 ! tail
 
 name: C. elegans body part
-def:
+def: "A distinct anatomical region of the C. elegans worm, such as the head, midpoint, or tail, which can be tracked to quantify behavior."
 is_a: NCIT:C32221 ! Body Part
-is_a: EMPTY:00000001 ! empty
-
----
+is_a: Identifier
 
 name: C. elegans behavioral assay: encounter identifier
 def: "A unique numerical identifier assigned to a specific patch encounter event for a given worm within a video. This distinguishes individual encounters for detailed analysis."
 is_a: C. elegans behavioral assay parameter
-is_a: NCIT:C25364 ! Identifier
+is_a: Enumerated identifier
 
-name: C. elegans behavioral assay: encounter onset
+name: C. elegans behavioral assay: encounter onset time
 def: "The time, in seconds, corresponding to the frame at which the C. elegans worm enters a bacterial food patch. This is the precise start time of an encounter."
 is_a: NCIT:C68568 ! Timepoint
 is_a: C. elegans behavioral assay measurement
 
-name: C. elegans behavioral assay: encounter offset
+name: C. elegans behavioral assay: encounter offset time
 def: "The time, in seconds, corresponding to the frame at which the C. elegans worm exits a bacterial food patch. This is the precise end time of an encounter."
 is_a: NCIT:C68568 ! Timepoint
 is_a: C. elegans behavioral assay measurement
 
-
-----
-
-name: C. elegans: strain name
-def: "The commonly used name of the genetic strain of Caenorhabditis elegans used as the experimental subject (e.g., 'N2', 'mec-4', 'osm-6')."
-
-name: C. elegans: strain genotype
-def: "Specific genetic identifier or detailed genotype of the C. elegans strain used, which may include allele names and chromosomal locations (e.g., 'osm-6(p811) V', 'mec-4(u253) X')."
-
-name: C. elegans: age at assay
-def: "The developmental stage or age of the C. elegans subjects at the time of the behavioral assay, commonly specified (e.g., 'L4', '1-Day-Old Adult')."
-
-name: C. elegans: growth duration since L4
-def: "The total duration of C. elegans development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours. Unit: duration."
-
-name: C. elegans cultivation: bacteria growth duration after seeding
-def: "The total duration for which the bacterial food patch was allowed to grow on the C. elegans cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: duration."
-
-name: C. elegans Behavioral Assay: bacterial patch diameter (target)
-def: "The estimated diameter of the bacterial food patches created on the C. elegans assay plate. Unit: millimeters (mm)."
-
-name: C. elegans Behavioral Assay: behavior video filename
-def: "The filename of the digital video file containing the primary recording of C. elegans behavior during an assay."
-
-name: C. elegans Behavioral Assay: contrast video filename
-def: "The filename of the digital video file containing a recording of a piece of dark cardstock moving in between the light source and the assay plate. This produced an effect where diffraction of light through the patches provided enough contrast to visualize (and quantitatively locate) low density bacterial patches."
-
-name: C. elegans Behavioral Assay: WormLab coordinates filename
-def: "The filename of the output data file generated by the C. elegans tracking software WormLab (MBF Bioscience), which contains the tracked coordinates of one or more C. elegans subjects."
-
-name: C. elegans Behavioral Assay: camera identifier
-def: "A numerical identifier for the camera used to capture the video recording of the C. elegans behavioral assay. Consecutive recordings on the same camera are likely to share properties related to the camera's field-of-view and illumination conditions."
-
-name: C. elegans Behavioral Assay: arena center coordinates
-def: "The [X,Y] pixel coordinates representing the geometric center of the detected experimental arena mask in a C. elegans assay. Unit: pixels."
-
-name: C. elegans Behavioral Assay: arena offset vector
-def: "An [X,Y] vector representing the displacement of the C. elegans arena's center from a defined origin or reference point in the image, used for spatial alignment or correction. Unit: pixels."
-
-name: C. elegans Behavioral Assay:arena rotation angle
-def: "The angle of rotation of the detected C. elegans arena relative to a standard coordinate system. This is used to correct for any tilt in arena placement. Unit: degrees."
-
-name: C. elegans Behavioral Assay: arena shape label
-def: "A textual descriptor of the geometric shape of the experimental arena for C. elegans as determined by image analysis (e.g., 'circle', 'rectangle')."
-
-name: C. elegans Behavioral Assay: arena circularity
-def: "A quantitative measure assessing how closely the shape of the detected C. elegans arena mask conforms to a circle. 1 is a perfect circle."
-
-name: C. elegans Behavioral Assay: arena reference mark mask
-def: "A binary image mask identifying the location and extent of a physical reference mark within the C. elegans arena, used for consistent image registration and spatial alignment."
-
-name: C. elegans Behavioral Assay: arena reference mark center coordinates
-def: "The [X,Y] pixel coordinates of the geometric center of the detected reference mark mask in a C. elegans assay. Unit: pixels."
-
-name: C. elegans Behavioral Assay: arena reference mark distance
-def: "The Euclidean distance measured between the center of the arena and the center of the reference mark in a C. elegans assay."
-
-name: C. elegans Behavioral Assay: arena registration quality
-def: "Quantitative metric assessing the accuracy and success of aligning the detected bacterial patch locations with the corresponding frames of the C. elegans behavioral video recording. ????"
-
-name: C. elegans Behavioral Assay: bacterial patch total area
-def: "The sum of the areas of all detected bacterial food patches within the C. elegans assay arena. Unit: square millimeters."
-
-name: C. elegans Behavioral Assay: bacterial patch mean diameter
-def: "The mean diameter calculated from all individual bacterial food patches detected on the C. elegans assay plate. Unit: millimeters."
-
-name: C. elegans Behavioral Assay: bacterial patch diameter standard deviation
-def: "The standard deviation of the diameters of all individual bacterial food patches detected on the C. elegans assay plate, indicating the variability in patch size. Unit: millimeters."
-
-name: C. elegans Behavioral Assay: bacterial patch distribution center coordinates
-def: "The [X,Y] pixel coordinates representing the geometric center of the overall spatial distribution of multiple bacterial food patches in a C. elegans assay, particularly relevant for grid layouts. Unit: pixels."
-
-name: C. elegans Behavioral Assay: bacterial patch distribution standard deviation
-def: "A measure of the spatial spread or standard deviation of individual patch positions relative to the center of their overall distribution in a C. elegans assay. Unit: millimeters."
-
-name: C. elegans Behavioral Assay: bacterial patch mean spacing
-def: "The average center-to-center distance computed between adjacent bacterial food patches in a grid arrangement on a C. elegans assay plate, based on their detected locations. Unit: millimeters or pixels."
-
-name: C. elegans Behavioral Assay: bacterial patch spacing standard deviation
-def: "The standard deviation of the center-to-center distances between adjacent bacterial food patches in a grid on a C. elegans assay plate, indicating variability in patch spacing. Unit: millimeters."
-
-name: C. elegans Behavioral Assay: bacterial patch mask
-def: "A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions."
-
-name: C. elegans Behavioral Assay: bacterial patch detection method
-def: "A textual descriptor of the computational algorithm or manual procedure employed to identify and delineate the boundaries of bacterial food patches from the experimental images in a C. elegans assay."
-
-
-
-name: Frame number
-def: "The sequential numerical identifier for each individual image captured in a video recording of C. elegans behavior. These numbers are used to track the progression of the experiment over time."
-
-name: Time
-def: "The timestamp in seconds, measured from the beginning of the video recording, corresponding to each individual frame. This provides a temporal reference for analyzing behavioral data."
-
-name: Time offset
-def: "The total elapsed time from the beginning of the experiment, which can include initial delays before the behavioral recording officially begins (e.g., waiting for a droplet to evaporate before an animal is free to crawl). This accounts for the actual duration an animal has been in the experimental setup."
-
-name: C. elegans Behavioral Assay: x position
-def: "The X-coordinate, measured in pixels, of a tracked point on the C. elegans worm (typically the midpoint of the body) within the video frame. This horizontal position is part of the worm's spatial trajectory during the assay."
-
-name: C. elegans Behavioral Assay: y position
-def: "The Y-coordinate, measured in pixels, of a tracked point on the C. elegans worm (typically the midpoint of the body) within the video frame. This vertical position is part of the worm's spatial trajectory during the assay."
-
-name: C. elegans Behavioral Assay: body part
-def: "A descriptor indicating which specific anatomical point of the C. elegans worm is being tracked for positional and kinematic analysis. In the provided context, 'midpoint' is primarily used, but 'head' and 'tail' are also mentioned for higher resolution analyses to define patch encounters."
-
-name: C. elegans Behavioral Assay: no track
-def: "A binary flag that indicates whether the tracking software was unable to reliably identify and follow the specified body part of the C. elegans worm in a given video frame. This can occur due to reasons such as the animal encountering the arena border, colliding with other worms, or overlapping with debris on the agar surface."
-
-name: C. elegans Behavioral Assay: distance
-def: "The physical distance, derived from pixel coordinates and spatial calibration, that a tracked C. elegans worm has traveled between consecutive frames or during a specified interval. This is a fundamental metric for quantifying locomotion."
-
-name: C. elegans Behavioral Assay: velocity smooth
-def: "The instantaneous velocity of the C. elegans worm, calculated after applying a smoothing algorithm to its raw positional data. This helps to reduce noise and provide a more representative measure of the worm's speed at any given moment. Unit: µm/s."
-
-name: C. elegans Behavioral Assay: velocity euclidean
-def: "The instantaneous velocity of the C. elegans worm calculated as the Euclidean distance between its positions in successive frames, scaled by the frame rate and spatial resolution. This represents the direct speed of movement."
-
-name: C. elegans Behavioral Assay: path angle
-def: "The angular orientation of the C. elegans worm's movement vector at a given point in time, indicating the direction of its locomotion within the experimental arena."
-
-name: C. elegans Behavioral Assay: turn
-def: "A behavioral event indicating a significant change in the C. elegans worm's path angle or direction of movement. In the context of foraging, turning behavior can be indicative of exploration or changes in foraging strategy."
-
-name: C. elegans Behavioral Assay: distance to neighbor 1
-def: "The physical distance between the focal C. elegans worm and its nearest neighboring worm in experiments involving multiple animals. This metric is used to analyze social interactions or spacing."
-
-name: C. elegans Behavioral Assay: distance to neighbor 2
-def: "The physical distance between the focal C. elegans worm and its second closest neighboring worm. This provides additional context on the local density of other animals."
-
-name: C. elegans Behavioral Assay: distance to neighbor 3
-def: "The physical distance between the focal C. elegans worm and its third closest neighboring worm. This further characterizes the spatial relationship of the worm to others in a multi-animal assay."
-
-name: C. elegans Behavioral Assay: distance to lawn edge
-def: "The calculated distance, in millimeters, from the tracked point of the C. elegans worm (e.g., midpoint) to the nearest boundary of a bacterial food patch. A positive value indicates the worm is inside the patch, while a negative value indicates it is outside. This is a critical metric for identifying patch encounters and residence."
-
-name: C. elegans Behavioral Assay: distance to arena edge
-def: "The calculated distance of the worm's tracked position to the outer boundary of the experimental arena. This helps to identify when an animal is approaching or interacting with the confinement area."
-
-name: C. elegans Behavioral Assay: closest lawn ID
-def: "A numerical or categorical identifier assigned to the specific bacterial food patch that is geometrically closest to the C. elegans worm's current position within the arena. This helps in associating worm behavior with specific patches."
-
-name: C. elegans Behavioral Assay: closest OD600
-def: "The measured or nominal optical density at 600 nm (OD600) of the bacterial food patch identified as being closest to the C. elegans worm's current position. This links the worm's behavior to the immediate food quality it is encountering."
-
-name: C. elegans Behavioral Assay: near arena
-def: "A binary flag or state indicating that the C. elegans worm's tracked position is within a predefined close proximity to the boundary of the experimental arena. This can be used to identify behaviors influenced by confinement."
-
-name: C. elegans Behavioral Assay: out of bounds
-def: "A binary flag or state indicating that the tracked C. elegans worm's position has exited the defined boundaries of the experimental arena or tracking region. This is often an exclusion criterion for data analysis."
-
-name: C. elegans Behavioral Assay: entry frame number
-def: "The frame number at which the C. elegans worm's midpoint is detected to enter a bacterial food patch. This marks the start of a patch encounter."
-
-name: C. elegans Behavioral Assay: exit frame number
-def: "The frame number at which the C. elegans worm's midpoint is detected to exit a bacterial food patch. This marks the end of a patch encounter."
-
-name: C. elegans Behavioral Assay: encounter duration
-def: "The total length of a patch encounter, calculated as the difference between `timeExit` and `timeEnter`. This metric is crucial for classifying encounters as 'short' (explore/sample) or 'long' (exploit). Unit: seconds or minutes."
-
-name: C. elegans Behavioral Assay: lawn ID
-def: "A unique identifier for the specific bacterial food patch involved in the encounter. This allows for tracking interactions with individual patches."
-
-name: C. elegans Behavioral Assay: lawn OD600
-def: "The target or nominal optical density at 600 nm (OD600) of the bacterial food patch encountered by the C. elegans worm. This indicates the initial concentration of bacteria in that patch."
-
-name: C. elegans Behavioral Assay: bacterial lawn growth condition
-def: "A descriptive label detailing the specific conditions under which the bacterial lawn on the assay plate was grown, which influences its density and characteristics (e.g., '1 hour', '12 hours', '48 hours')."
-
-name: C. elegans Behavioral Assay: bacterial lawn growth duration
-def: "The total duration, typically in hours, for which the bacterial lawn was allowed to grow on the assay plate at room temperature after seeding and before experimental use or cold storage. This directly affects patch density."
-
-name: C. elegans Behavioral Assay: on-patch velocity (average)
-def: "The average velocity of the C. elegans worm while it is located *on* a bacterial food patch during an encounter. This is a key indicator for distinguishing different behavioral states like searching, sampling, or exploiting."
-
-name: C. elegans Behavioral Assay: on-patch velocity (minimum)
-def: "The minimum instantaneous velocity recorded for the C. elegans worm while it is located *on* a bacterial food patch during an encounter. This metric helps in classifying encounters as 'sensing' or 'non-responding' based on observed slowdown."
-
-name: C. elegans Behavioral Assay: maximum on-patch distance from edge
-def: "The maximum distance, in millimeters, that the worm's midpoint reached from the patch edge *while technically being on the patch* during an encounter. This helps refine the definition of an 'on-patch' event and exclude 'near miss' encounters. This refers to scenarios where the animal's head is on the patch but its midpoint is slightly further away."
-
-name: C. elegans Behavioral Assay: pre-entry velocity (peak)
-def: "The peak instantaneous velocity of the C. elegans worm observed immediately *before* its entry into a bacterial food patch. This is used in conjunction with `velocityAfterEnter` and `velocityOnMin` to calculate deceleration and characterize the sensing response."
-
-name: C. elegans Behavioral Assay: post-entry velocity
-def: "The instantaneous velocity of the C. elegans worm observed immediately *after* its entry into a bacterial food patch. This helps quantify the immediate change in speed upon encountering food."
-
-name: C. elegans Behavioral Assay: slowdown time
-def: "The specific time point, relative to patch entry, at which the C. elegans worm significantly decelerates upon encountering a bacterial food patch. This indicates a sensory response to the food presence."
-
-name: C. elegans Behavioral Assay: deceleration upon encounter
+name: C. elegans behavioral assay: deceleration upon encounter
 def: "The rate of change in the C. elegans worm's velocity, measured as the slope of the velocity curve during a defined time window surrounding its encounter with a bacterial patch. A negative value indicates a slowdown upon encounter. Unit: µm/s²."
+is_a: C. elegans behavioral assay measurement
 
-name: C. elegans Behavioral Assay: off-patch velocity (average)
-def: "The average velocity of the C. elegans worm while it is located *off* a bacterial food patch. This serves as a baseline for comparison with on-patch velocities and indicates searching behavior."
+name: C. elegans behavioral assay: minimum velocity during encounter
+def: "The minimum instantaneous velocity recorded for the C. elegans worm while it is located on a bacterial food patch during an encounter. Unit: µm/s."
+is_a: C. elegans behavioral assay measurement
+is_a: NCIT:C179817 ! Velocity
 
-name: C. elegans Behavioral Assay: maximum off-patch distance from edge
-def: "The maximum distance, in millimeters, that the worm's midpoint reached from the patch edge *while technically being off the patch* during an off-patch event. This is used to distinguish true leaving events from temporary excursions or specific postures where the midpoint briefly appears outside the patch."
+name: C. elegans behavioral assay: peak velocity before encounter onset
+def: "The peak instantaneous velocity of the C. elegans worm observed within 10 seconds before its entry into a bacterial food patch. Unit: µm/s."
+is_a: C. elegans behavioral assay measurement
+is_a: NCIT:C179817 ! Velocity
 
-name: C. elegans Behavioral Assay: entry censorship flag
-def: "A boolean flag indicating whether the beginning of a patch encounter was *not* fully observed or recorded (i.e., the animal was already on a patch when the recording started), leading to left-censored duration data."
+name: C. elegans behavioral assay: minimum velocity after encounter offset
+def: "The minimum instantaneous velocity of the C. elegans worm observed within 10 seconds after its entry into a bacterial food patch. Unit: µm/s."
+is_a: C. elegans behavioral assay measurement
+is_a: NCIT:C179817 ! Velocity
 
-name: C. elegans Behavioral Assay: exit censorship flag
-def: "A boolean flag indicating whether the end of a patch encounter was *not* fully observed or recorded (i.e., the animal was still on a patch when the recording ended), leading to right-censored duration data."
+name: C. elegans behavioral assay: posterior probability of exploitation
+def: "The posterior probability, derived from a Gaussian Mixture Model (GMM) classification, that a given patch encounter represents an 'exploitation' event (i.e., the worm has accepted the patch and is consuming bacteria). This value ranges from 0 to 1. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]"
+is_a: C. elegans behavioral assay measurement
+is_a: NCIT:C54154 ! Probability
 
-name: C. elegans Behavioral Assay: experiment type
-def: "A descriptive name for the overall experimental paradigm or type of foraging assay being conducted (e.g., 'foragingConcentration', 'foragingMini')."
+name: C. elegans behavioral assay: posterior probability of sensing
+def: "The posterior probability, derived from a semi-supervised Quadratic Discriminant Analysis (QDA), that a given patch encounter was 'sensed' by the C. elegans worm (i.e., the animal detected the presence of bacteria, typically indicated by a slowdown). This value ranges from 0 to 1. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]"
+is_a: C. elegans behavioral assay measurement
+is_a: NCIT:C54154 ! Probability
 
-name: C. elegans Behavioral Assay: peptone presence
-def: "Indicates whether peptone was included in the Nematode Growth Medium (NGM) agar for the assay plates. Peptone presence can affect bacterial growth on assay patches. Typically 'with' or 'without'."
+name: C. elegans behavioral assay: relative density of the encountered bacterial patch
+def: "A normalized, quantitative measure of the bacterial density of a specific bacterial food patch that a C. elegans worm encounters during an assay. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]"
+is_a: C. elegans behavioral assay parameter
 
-name: C. elegans Behavioral Assay: bacterial OD600 label
-def: "A string label used to categorize or identify the nominal OD600 condition of the food patches in a C. elegans experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions."
-
-name: C. elegans Behavioral Assay: bacterial lawn volume
-def: "The volume of bacterial solution pipetted to create each individual food patch on the C. elegans assay plate. Unit: microliters (µL)."
-
-name: C. elegans Behavioral Assay: worm cultivation growth duration
-def: "The total duration for which the bacterial lawn was allowed to grow on the C. elegans cultivation plates starting at the time seeded and ending when the worms were picked (i.e. placed on the plate). Unit: hours or days."
-
-name: C. elegans Behavioral Assay: worm age at assay (growth duration)
-def: "The total duration of C. elegans development from the L4 larval stage (at picking) to their age or developmental stage at the time of the assay. Unit: hours."
-
-name: C. elegans Behavioral Assay: bacterial patch fluorescent border amplitude
-def: "A quantitative measure of bacterial density at the edge of a food patch, derived from fluorescence imaging, defined as the difference in magnitude between the peak pixel intensity at the patch edge and the intensity at the border. This serves as an estimate of the perceived bacterial density."
-
-name: C. elegans Behavioral Assay: bacterial patch fluorescent border amplitude (growth adjusted)
-def: "The estimated bacterial patch fluorescent border amplitude value adjusted for the total time the bacterial patch was allowed to grow, normalizing for growth effects to provide a more consistent measure of initial or effective bacterial density."
-
-name: C. elegans Behavioral Assay: exploitation probability (posterior)
-def: "The posterior probability, derived from a Gaussian Mixture Model (GMM) classification, that a given patch encounter represents an 'exploitation' event (i.e., the worm has accepted the patch and is consuming bacteria). This value ranges from 0 to 1."
-
-name: C. elegans Behavioral Assay: sensing probability (posterior)
-def: "The posterior probability, derived from a semi-supervised Quadratic Discriminant Analysis (QDA), that a given patch encounter was 'sensed' by the C. elegans worm (i.e., the animal detected the presence of bacteria, typically indicated by a slowdown). This value ranges from 0 to 1."
-
-name: C. elegans Behavioral Assay: encounter behavioral label
-def: "A categorical classification of the behavioral state during a patch encounter, combining the 'explore/exploit' and 'sensing/non-responding' classifications. Possible labels include 'search' (non-responding on-patch behavior), 'sample' (sensing but rejecting the patch), and 'exploit' (sensing and accepting the patch)."
+name: C. elegans behavioral assay: relative density of the cultivation bacterial patch
+def: "A normalized, quantitative measure of the bacterial density on the agar plates where C. elegans were cultivated prior to the behavioral assay. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]""
+is_a: C. elegans cultivation parameter
