@@ -67,13 +67,18 @@ is_a: Video parameter
 
 name: Experiment session identifier
 def: "A unique numerical identifier for a distinct experimental session."
-is_a: NCIT:C93399 ! Document Identifier
-is_a: EMPTY:00000001 ! empty
+is_a: Enumerated identifier
 
 name: C. elegans cultivation: bacterial strain document identifier
 def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used as the food source on the cultivation plates for C. elegans."
 is_a: Bacterial parameter
 is_a: C. elegans cultivation parameter
+is_a: Document identifier
+
+name: Optical density measurement
+def: 
+is_a: NCIT:C85776 ! Optical Density Measurement
+is_a: EMPTY:00000085 ! Measurement
 
 name: C. elegans cultivation: bacterial OD600 (target) at seeding
 def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
