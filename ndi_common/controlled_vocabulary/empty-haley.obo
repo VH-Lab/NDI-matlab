@@ -84,8 +84,7 @@ name: C. elegans cultivation: bacterial OD600 (target) at seeding
 def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless."
 is_a: Bacterial parameter
 is_a: C. elegans cultivation parameter
-is_a: NCIT:C85776 ! Optical Density Measurement
-is_a: EMPTY:00000085 ! Measurement
+is_a: Optical Density Measurement
 
 name: C. elegans cultivation: bacterial plate seeding timestamp
 def: "The date and time when a large bacterial food patch was seeded  onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment. Unit: datetime."
