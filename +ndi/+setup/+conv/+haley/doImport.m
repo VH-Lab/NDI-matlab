@@ -46,6 +46,29 @@ tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 % Create imageDocMaker
 imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
 
+%%
+
+% Create openMINDS documents for bacteria
+
+% Species
+species = openminds.controlledterms.Species;
+species.name = 'Escherichia coli';
+species.preferredOntologyIdentifier = 'NCBITaxon:562';
+species.definition = 'Escherichia coli is a species of bacteria.';
+species.synonym = 'E. coli';
+
+% Strain
+strain = openminds.core.research.Strain;
+strain.name = 'Escherichia coli OP50';
+strain.species = species;
+strain.ontologyIdentifier = 'NCBITaxon:637912';
+strain.description = 'OP50 is a strain of E. coli.';
+strain.geneticStrainType = 'wild type';
+
+% Add documents to database
+strainDoc = ndi.database.fun.openMINDSobj2ndi_document(strain,session.id);
+session.database_add(strainDoc);
+
 %% Step 4. INFO DOCUMENTS.
 
 % We will have one ontologyTableRow document for each experiment, plate,
@@ -79,7 +102,7 @@ for i = 5:numel(infoFiles)
     % A. EXPERIMENT ontologyTableRow
 
     % Add missing variables
-    dataTable{:,'growthBacteriaStrain'} = {'NCBITaxon:637912'};
+    dataTable{:,'growthBacteriaStrain'} = {strainDoc{1}.id};
 
     % Compile data table with 1 row for each unique experiment day
     % and condition
@@ -99,7 +122,7 @@ for i = 5:numel(infoFiles)
     % B. PLATE ontologyTableRow
 
     % Add missing variables
-    dataTable.bacteriaStrain =  dataTable.growthBacteriaStrain;
+    dataTable.bacteriaStrain = dataTable.growthBacteriaStrain;
     [strainNames,~,indStrain] = unique(dataTable.strainID);
     strainIDs = cellfun(@(s) ndi.ontology.lookup(['WBStrain:',s]),strainNames,'UniformOutput',false);
     dataTable.strain = strainIDs(indStrain);
