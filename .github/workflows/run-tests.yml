@@ -47,9 +47,9 @@ jobs:
         uses: ehennestad/matbox-actions/install-matbox@v1
 
       - name: Check code and upload report
-        uses: ehennestad/matbox-actions/.github/workflows/check-code-workflow@v1
+        uses: ehennestad/matbox-actions/check-code@v1
         with:
-          code_directory: 'src'
+          source_directory: 'src'
 
       - name: Run tests
         uses: matlab-actions/run-command@v2
