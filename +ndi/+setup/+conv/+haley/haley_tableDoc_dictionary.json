@@ -4,7 +4,7 @@
   "growthOD600":  "EMPTY:C. elegans cultivation: bacterial OD600 (target) at seeding",
   "growthTimeSeed": "EMPTY:C. elegans cultivation: bacterial plate seeding timestamp",
   "growthTimeColdRoom": "EMPTY:C. elegans cultivation: bacterial plate cold storage timestamp",
-  "growthTimeRoomTemp": "EMPTY:C. elegans cultivation: bacterial plate room temperature acclimation timestamp",
+  "growthTimeRoomTemp": "EMPTY:C. elegans cultivation: bacterial plate room temperature timestamp",
   "growthTimePicked": "EMPTY:C. elegans cultivation: L4 timestamp",
   "OD600Real": "EMPTY:C. elegans assay: bacterial OD600 measurement",
   "CFU":  "EMPTY:C. elegans assay: bacterial colony forming units (CFU) measurement",
@@ -19,7 +19,7 @@
   "OD600": "EMPTY:C. elegans behavioral assay: bacterial OD600 (target) at seeding",
   "timeSeed": "EMPTY:C. elegans behavioral assay: bacterial plate seeding timestamp",
   "timeColdRoom": "EMPTY:C. elegans behavioral assay: bacterial plate cold storage timestamp",
-  "timeRoomTemp": "EMPTY:C. elegans behavioral assay: bacterial plate room temperature acclimation timestamp",
+  "timeRoomTemp": "EMPTY:C. elegans behavioral assay: bacterial plate room temperature timestamp",
   "lawnGrowth": "EMPTY:C. elegans behavioral assay: bacteria growth duration after seeding",
   "lawnVolume": "EMPTY:C. elegans behavioral assay: bacterial patch volume",
   "lawnSpacing": "EMPTY:C. elegans behavioral assay: bacterial patch spacing (target)",
@@ -51,6 +51,6 @@
   "velocityAfterEnter": "EMPTY:C. elegans behavioral assay: minimum velocity after encounter offset",
   "exploitPosterior": "EMPTY:C. elegans behavioral assay: posterior probability of exploitation",
   "sensePosterior": "EMPTY:C. elegans behavioral assay: posterior probability of sensing",
-  "density": "EMPTY:C. elegans behavioral assay: relative density of the encountered bacterial patch",
-  "densityGrowth": "EMPTY:C. elegans behavioral assay: relative density of the cultivation bacterial patch"
+  "density": "EMPTY:C. elegans behavioral assay: relative density of encountered bacteria",
+  "densityGrowth": "EMPTY:C. elegans behavioral assay: relative density of cultivation bacteria"
 }
