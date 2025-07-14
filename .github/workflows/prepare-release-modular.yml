@@ -65,6 +65,14 @@ jobs:
             addpath(genpath( "tools" ));
             testToolbox()
 
+      # Save the contents of the report directory from each release into an artifact.
+      - name: Save report directory
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-${{ matrix.MATLABVersion }}
+          path: docs/reports
+
   release:
     name: Package toolbox and create draft release
     needs: [test, validate_version]
