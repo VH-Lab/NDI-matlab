@@ -17,37 +17,24 @@ species.synonym = 'C. elegans';
 
 % --- Populate Strain openMINDS Object ---
 N2 = openminds.core.research.Strain;
-N2.name = 'N2';
+[id,name,~,definition] = ndi.ontology.lookup('WBStrain:N2');
+N2.name = name;
 N2.species = species;
-N2.ontologyIdentifier = 'WBStrain:00000001';
-N2.description = 'C. elegans var Bristol. Generation time is about 3 days. Brood size is about 350. Also CGC reference 257. Isolated from mushroom compost near Bristol, England by L.N. Staniland. Cultured by W.L. Nicholas, identified to genus by Gunther Osche and species by Victor Nigon; subsequently cultured by C.E. Dougherty. Given to Sydney Brenner ca. 1966. Subcultured by Don Riddle in 1973. Caenorhabditis elegans wild isolate. DR subclone of CB original (Tc1 pattern I).';
+N2.ontologyIdentifier = id;
+N2.description = definition;
 N2.geneticStrainType = 'wild type';
 
-switch tableRow.strain{1}
-    case 'WBStrain:00000001'
-        strain = N2;
-    case 'WBStrain:00030796'
-        strain = openminds.core.research.Strain;
-        strain.name = 'PR811';
-        strain.species = species;
-        strain.ontologyIdentifier = 'WBStrain:00030796';
-        strain.description = 'osm-6(p811) V. Fails to avoid high osmotic strength solutions of NaCl and fructose. Fails to stain amphids with FITC.';
-        strain.laboratoryCode = 'NW';
-        strain.geneticStrainType = 'mutant';
-        strain.backgroundStrain = N2;
-        strain.phenotype = 'Fails to avoid high osmotic strength solutions of NaCl and fructose. Fails to stain amphids with FITC.';
-        strain.synonym = 'osm-6(p811) V';
-    case 'WBStrain:00035037'
-        strain = openminds.core.research.Strain;
-        strain.name = 'TU253';
-        strain.species = species;
-        strain.ontologyIdentifier = 'WBStrain:00035037';
-        strain.description = 'mec-4(u253) X. Mechanosensory abnormal. Recessive.';
-        strain.laboratoryCode = 'UA';
-        strain.geneticStrainType = 'mutant';
-        strain.backgroundStrain = N2;
-        strain.phenotype = 'Mechanosensory abnormal.';
-        strain.synonym = 'mec-4(u253) X';
+if strcmp(tableRow.strain{1},'WBStrain:00000001')
+    strain = N2;
+else
+    strain = openminds.core.research.Strain;
+    [id,name,~,definition] = ndi.ontology.lookup(tableRow.strain{1});
+    strain.name = name;
+    strain.species = species;
+    strain.ontologyIdentifier = id;
+    strain.description = definition;
+    strain.geneticStrainType = 'transgenic';
+    strain.backgroundStrain = N2;
 end
 
 % --- Populate BiologicalSex openMINDS Object ---
