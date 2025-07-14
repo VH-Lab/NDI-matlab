@@ -54,7 +54,7 @@ imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
 experimentVariables = {'expNum','growthBacteriaStrain',...
    'growthOD600','growthTimeSeed','growthTimeColdRoom',...
     'growthTimeRoomTemp','growthTimePicked', 'OD600Real','CFU'};
-plateVariables = {'experiment_id','plateNum','exclude','strain','starvedTime',...
+plateVariables = {'experiment_id','plateNum','exclude','strain',...
     'condition','OD600Label','growthCondition','peptoneFlag',...
     'bacteriaStrain','timeSeed','timeColdRoom','timeRoomTemp',...
     'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
@@ -64,7 +64,7 @@ videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',
     'frameRate','numFrames','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
 
-for i = 1:numel(infoFiles)
+for i = 5:numel(infoFiles)
 
     % Load current table
     dataTable = load(fullfile(dataParentDir,infoFiles{i}));
@@ -99,9 +99,6 @@ for i = 1:numel(infoFiles)
     % B. PLATE ontologyTableRow
 
     % Add missing variables
-    % indSatiety = ndi.fun.table.identifyMatchingRows(dataTable,'strainName',...
-    %     'food-deprived');
-    % dataTable{indSatiety,'hoursFoodDeprived'} = 3;
     dataTable.bacteriaStrain =  dataTable.growthBacteriaStrain;
     [strainNames,~,indStrain] = unique(dataTable.strainID);
     strainIDs = cellfun(@(s) ndi.ontology.lookup(['WBStrain:',s]),strainNames,'UniformOutput',false);
@@ -135,13 +132,6 @@ for i = 1:numel(infoFiles)
     patchCircularity = cell(height(dataTable),1);
     for j = 1:height(dataTable)
         plateRow = dataTable(j,patchVariables);
-        if contains(dirName,'Matching')
-            patchOD600{j} = plateRow.OD600{1}';
-        elseif contains(dirName,'Mutants')
-            patchOD600{j} = repmat(plateRow.OD600{1}(1),numPatch,1);
-        else
-            patchOD600{j} = repmat(plateRow.OD600,numPatch,1);
-        end
         try
             patchCenterX{j} = plateRow.lawnCenters{1}(:,1);
             patchCenterY{j} = plateRow.lawnCenters{1}(:,2);
@@ -155,6 +145,13 @@ for i = 1:numel(infoFiles)
             dataTable.pixels{j} = [NaN,NaN];
         end
         numPatch = numel(patchCenterX{j});
+        if contains(dirName,'Matching')
+            patchOD600{j} = plateRow.OD600{1}';
+        elseif contains(dirName,'Mutants')
+            patchOD600{j} = repmat(plateRow.OD600{1}(1),numPatch,1);
+        else
+            patchOD600{j} = repmat(plateRow.OD600,numPatch,1);
+        end
         plate_id{j} = repmat(plateRow.plate_id,numPatch,1);
         patchNum{j} = (1:numPatch)';
     end
@@ -237,17 +234,17 @@ for i = 1:numel(infoFiles)
         'uniqueVariables',{'plate_id','strainName'});
     ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
     treatmentDocs = cell(numel(subDocStruct),1);
-    for j = 1:numel(ind)
-        [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset');
-        treatment = struct('ontologyName',ontologyID,...
-            'name','Treatment: food restriction onset',...
-            'numeric_value',[],...
-            'string_value',anatomy(optoLocation{:}));
-        treatmentDocs{i} = ndi.document('treatment',...
-            'treatment', treatment) + sessionArray{1}.newdocument();
-        treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
-            'subject_id', subject_id);
-    end
+    % for j = 1:numel(ind)
+    %     [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset');
+    %     treatment = struct('ontologyName',ontologyID,...
+    %         'name','Treatment: food restriction onset',...
+    %         'numeric_value',[],...
+    %         'string_value',anatomy(optoLocation{:}));
+    %     treatmentDocs{i} = ndi.document('treatment',...
+    %         'treatment', treatment) + sessionArray{1}.newdocument();
+    %     treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
+    %         'subject_id', subject_id);
+    % end
 
     % F. PLATE ontologyImage
     % [~,ind] = unique(dataTable.plate_id);
@@ -315,8 +312,8 @@ for i = 1:numel(dataFiles)
         positionElement = ndi.element.timeseries(session,'position',1,'position',[],0,subject_id);
         positionElement.addepoch('position','dev_local_time,exp_global_time', ...
             [t0_t1_local;t0_t1_global], time, position);
-        % positionElement.addepoch('position',ndi.time.clocktype('UTC'),t0_t1_local,time,data);
-        % [d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
+        % positionElement.addepoch('position',ndi.time.clocktype('UTC'),t0_t1_local,time,position);
+        [d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
 
         % Create position_metadata structure
         position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans head, midpoint, or tail
@@ -355,8 +352,8 @@ for i = 1:numel(dataFiles)
     end
 
     % Add documents to database
-    session.database_add(positionMetadataDocs);
-    session.database_add(distanceMetadataDocs);
+    % session.database_add(positionMetadataDocs);
+    % session.database_add(distanceMetadataDocs);
 end
 
 %% Step 6. ENCOUNTER DOCUMENTS.
