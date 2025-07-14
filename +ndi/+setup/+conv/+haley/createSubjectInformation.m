@@ -17,18 +17,17 @@ species.synonym = 'C. elegans';
 
 % --- Populate Strain openMINDS Object ---
 N2 = openminds.core.research.Strain;
-[id,name,~,definition] = ndi.ontology.lookup('WBStrain:N2');
-N2.name = name;
+N2.name = 'N2';
 N2.species = species;
-N2.ontologyIdentifier = id;
-N2.description = definition;
+N2.ontologyIdentifier = 'WBStrain:00000001';
+N2.description = 'Genotype: Caenorhabditis elegans wild isolate.';
 N2.geneticStrainType = 'wild type';
 
-if strcmp(tableRow.strain{1},'WBStrain:00000001')
+if strcmp(tableRow.strainID{1},'N2')
     strain = N2;
 else
     strain = openminds.core.research.Strain;
-    [id,name,~,definition] = ndi.ontology.lookup(tableRow.strain{1});
+    [id,name,~,definition] = ndi.ontology.lookup(['WBStrain:',tableRow.strainID{1}]);
     strain.name = name;
     strain.species = species;
     strain.ontologyIdentifier = id;
