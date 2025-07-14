@@ -34,6 +34,7 @@ sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
 
 % Get the session object
 session = sessionMaker.sessionIndices; session = session{1};
+session.cache.clear;
 
 %% Step 3. SUBJECTMAKER AND TABLEDOCMAKER.
 
@@ -46,9 +47,7 @@ tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 % Create imageDocMaker
 imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
 
-%%
-
-% Create openMINDS documents for bacteria
+%% Step 4. BACTERIA. Create openMINDS documents for bacteria
 
 % Species
 species = openminds.controlledterms.Species;
@@ -69,7 +68,7 @@ strain.geneticStrainType = 'wild type';
 strainDoc = ndi.database.fun.openMINDSobj2ndi_document(strain,session.id);
 session.database_add(strainDoc);
 
-%% Step 4. INFO DOCUMENTS.
+%% Step 5. INFO DOCUMENTS.
 
 % We will have one ontologyTableRow document for each experiment, plate,
 % patch, video, and worm. Below, we define which info table variables will 
@@ -298,7 +297,7 @@ for i = 5:numel(infoFiles)
     %     'Overwrite',options.Overwrite);
 end
 
-%% Step 5. DATA DOCUMENTS.
+%% Step 6. DATA DOCUMENTS.
 
 for i = 1:numel(dataFiles)
 
@@ -379,7 +378,7 @@ for i = 1:numel(dataFiles)
     % session.database_add(distanceMetadataDocs);
 end
 
-%% Step 6. ENCOUNTER DOCUMENTS.
+%% Step 7. ENCOUNTER DOCUMENTS.
 
 encounterVariables = {'subject_id','encounterNum','patch_id',...
     'timeEnter','timeExit',....
