@@ -1,0 +1,12 @@
+https://github.com/VH-lab/vhlab_vhtools
+https://github.com/VH-lab/vhlab-toolbox-matlab
+https://github.com/VH-lab/vhlab-library-matlab
+https://github.com/VH-lab/vhlab-thirdparty-matlab
+https://github.com/VH-Lab/vhlab-NewStim-matlab
+https://github.com/VH-lab/DID-matlab
+https://github.com/VH-lab/NDR-matlab
+https://github.com/ehennestad/Catalog
+https://github.com/a-ma72/mksqlite
+https://github.com/Waltham-Data-Science/NDI-compress-matlabp
+https://github.com/openMetadataInitiative/openMINDS_MATLAB
+https://github.com/bastibe/Violinplot-Matlab
