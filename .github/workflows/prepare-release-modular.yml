@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ needs.configure_test_matrix.outputs.matrix }}
+      matrix: ${{ fromJSON(needs.configure_test_matrix.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
