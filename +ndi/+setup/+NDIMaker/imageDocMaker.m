@@ -200,6 +200,11 @@ classdef imageDocMaker < handle
             onePercent = ceil(numImages / 100);
 
             for i = 1:numImages
+                % Skip if current cell is empty
+                if isempty(imageArray{i})
+                    continue
+                end
+
                 % Determine the ontologyTableRow_id for the current image
                 current_id = '';
                 if ~isempty(options.OntologyTableRow_ids)
@@ -217,7 +222,7 @@ classdef imageDocMaker < handle
             end
 
             % Add all newly created documents to the database at once for efficiency
-            newDocs = docs(~inDatabase);
+            newDocs = docs(~inDatabase & cellfun(@(d) ~isempty(d),docs));
             if ~isempty(newDocs)
                 obj.session.database_add(newDocs);
             end
