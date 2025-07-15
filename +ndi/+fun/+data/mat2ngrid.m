@@ -39,12 +39,17 @@ ngrid.data_size = props.bytes/numel(x);
 ngrid.data_type = class(x);
 ngrid.data_dim = size(x);
 
+% Handle logical
+if islogical(x)
+    ngrid.data_type = 'ubit1';
+end
+
 % Check if coordinates are included. If completely excluded, use indices.
 % If partially included, prompt user to fix.
 ngrid.coordinates = [];
 
 if nargin == 1
-    warning('MAT2NGRID:defaultCoords', 'Coordinates set to default indices.');
+    % warning('MAT2NGRID:defaultCoords', 'Coordinates set to default indices.');
     for i = 1:ndims(x)
         ngrid.coordinates = [ngrid.coordinates; (1:size(x, i))'];
     end
