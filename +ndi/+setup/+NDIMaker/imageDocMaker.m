@@ -70,7 +70,7 @@ classdef imageDocMaker < handle
             %
             arguments
                 obj
-                image {mustBeNumeric,mustBeMatrix}
+                image {mustBeMatrix}
                 ontologyNodes {mustBeText}
                 options.Overwrite (1,1) logical = false
                 options.ontologyTableRow_id {mustBeText} = ''
@@ -79,8 +79,7 @@ classdef imageDocMaker < handle
             % Ensure that ontologyNodes are in the correct format (comma-seperated)
             ontologyNodes = cellstr(ontologyNodes);
             for i = 1:numel(ontologyNodes)
-                [id,~,prefix] = ndi.ontology.lookup(ontologyNodes{i});
-                ontologyNodes{i} = [prefix,':',id];
+                ontologyNodes{i} = ndi.ontology.lookup(ontologyNodes{i});
             end
             ontologyNodes = join(sort(ontologyNodes), ',');
             ontologyNodes = ontologyNodes{1};
@@ -92,7 +91,7 @@ classdef imageDocMaker < handle
             % If an ontologyTableRow_id is provided, add it to the query to find a unique document
             if ~isempty(options.ontologyTableRow_id)
                 query = query & ndi.query('depends_on.name', 'exact_string', 'ontologyTableRow_id') & ...
-                              ndi.query('depends_on.value', 'exact_string', options.ontologyTableRow_id);
+                    ndi.query('depends_on.value', 'exact_string', options.ontologyTableRow_id);
             else
                 warning('imageDocMaker:NoDepenencies','Each image should be linked to another document such as an ontologyTableRow.');
             end
@@ -132,8 +131,8 @@ classdef imageDocMaker < handle
                 doc = doc.set_dependency_value('ontologyTableRow_id', options.ontologyTableRow_id);
             end
 
-            % 4. Write the data to a binary file managed by the document
-            filepath = doc.get_fullpath('ontologyImage.ngrid');
+            % 4. Write the data to a binary file
+            filepath = ndi.file.temp_name;
             try
                 ndi.fun.data.writengrid(image, filepath, ngrid_struct.data_type);
             catch ME
