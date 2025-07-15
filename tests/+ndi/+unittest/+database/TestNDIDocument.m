@@ -29,8 +29,7 @@ classdef TestNDIDocument < matlab.unittest.TestCase
             end
             testCase.binaryFile = fullfile(testCase.testDir, 'myfile.bin');
                         
-            % Capure mksqlite initialization message
-            C = evalc( "mksqlite('version sql')" ); %#ok<NASGU>
+            ndi.test.helper.initializeMksqliteNoOutput()
         end
     end
 

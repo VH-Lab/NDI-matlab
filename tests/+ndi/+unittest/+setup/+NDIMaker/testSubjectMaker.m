@@ -25,8 +25,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             % This is a placeholder; ideally, NDI is already on the path for tests.
             % addpath(genpath(fullfile(userpath, 'NDI-matlab'))); % Example
 
-            % Capure mksqlite initialization message
-            C = evalc( "mksqlite('version sql')" ); %#ok<NASGU>
+            ndi.test.helper.initializeMksqliteNoOutput()
         end
     end
 

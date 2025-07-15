@@ -27,8 +27,7 @@ classdef TestNDIDocumentPersistence < matlab.unittest.TestCase
                 mkdir(testCase.testDir);
             end
 
-            % Capure mksqlite initialization message
-            C = evalc( "mksqlite('version sql')" ); %#ok<NASGU>
+            ndi.test.helper.initializeMksqliteNoOutput()
         end
     end
 

@@ -8,6 +8,12 @@ classdef NDIFileNavigatorTest < matlab.unittest.TestCase
         Session
         FileNavigator
     end
+    
+    methods (TestClassSetup)
+        function initializeMksqliteNoOutput(~)
+            ndi.test.helper.initializeMksqliteNoOutput()
+        end
+    end
 
     methods (TestMethodSetup)
         function createTestSession(testCase)
