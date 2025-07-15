@@ -48,6 +48,9 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifySameHandle(app2, app1, 'Should return the same app object.');
         end
         function testConstructorOverwriteFalseCreatesNewIfDifferentApp(testCase)
+            import matlab.unittest.fixtures.SuppressedWarningsFixture
+            testCase.applyFixture(SuppressedWarningsFixture('ProgressBarWindow:ExistingFigureNotApp'))
+
             title = 'Overwrite Test False Different App';
             fig = uifigure('Name',title,'Tag','progressbar'); % A plain figure, not our app
             testCase.addTeardown(@delete, fig);
@@ -365,8 +368,10 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyEqual(state, 'Complete');
             
             % Test non-existent
-            testCase.verifyWarning(@() app.getState('TNonExistent'), 'ProgressBarWindow:InvalidBarTag');
-            stateNonExistent = app.getState('TNonExistent');
+            stateNonExistent = testCase.verifyWarning(...
+                @() app.getState('TNonExistent'), ...
+                'ProgressBarWindow:InvalidBarTag');
+
             testCase.verifyEmpty(stateNonExistent);
         end
         function testAutoCloseOnComplete(testCase)

@@ -24,6 +24,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             % Add a path to NDI if it's not already there - adjust as needed
             % This is a placeholder; ideally, NDI is already on the path for tests.
             % addpath(genpath(fullfile(userpath, 'NDI-matlab'))); % Example
+
+            % Capure mksqlite initialization message
+            C = evalc( "mksqlite('version sql')" ); %#ok<NASGU>
         end
     end
 
@@ -72,6 +75,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
         end
 
         function testGetSubjectInfo_NaNSubjectName(testCase)
+            import matlab.unittest.fixtures.SuppressedWarningsFixture
+            testCase.applyFixture(SuppressedWarningsFixture('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectIDReturned'))
+            
             dataTable = table(...
                 {NaN; ''; 'SubjectC'; 'SubjectD'}, ...
                 {'sess001'; 'sess002'; 'sess003'; 'sess004'}, ...
@@ -144,6 +150,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
         end
 
         function testGetSubjectInfo_AllInvalidRows(testCase)
+            import matlab.unittest.fixtures.SuppressedWarningsFixture
+            testCase.applyFixture(SuppressedWarningsFixture('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectIDReturned'))
+
             dataTable = table(...
                 {NaN; ''; 'ValidNameButInvalidSession'}, ...
                 {'sess001'; 'sess002'; ''}, ... 
@@ -197,9 +206,8 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             subjectInfo.tableRowIndex = [];
             subjectInfo.sessionID = {}; 
             
-            testCase.verifyWarning(@()testCase.Maker.makeSubjectDocuments(subjectInfo), ...
+            output = testCase.verifyWarning(@()testCase.Maker.makeSubjectDocuments(subjectInfo), ...
                 'ndi:setup:NDIMaker:subjectMaker:EmptySubjectInfo');
-            output = testCase.Maker.makeSubjectDocuments(subjectInfo);
             testCase.verifyTrue(isempty(output.subjectName));
             testCase.verifyTrue(isempty(output.documents));
         end
@@ -224,9 +232,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             subjectInfo.tableRowIndex = [1];
             subjectInfo.sessionID = {''}; 
             
-            testCase.verifyWarning(@() testCase.Maker.makeSubjectDocuments(subjectInfo), ...
-                                   'ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo');
-            output = testCase.Maker.makeSubjectDocuments(subjectInfo);
+            output = testCase.verifyWarning(...
+                @() testCase.Maker.makeSubjectDocuments(subjectInfo), ...
+                'ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo');
             testCase.verifyEqual(numel(output.documents), 1);
             testCase.verifyTrue(isempty(output.documents{1}), 'Diagnostic: Document cell should be empty for invalid sessionID in subjectInfo.');
         end
@@ -291,9 +299,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             
             sessionCellArray = {S_exists}; % Pass as cell array
 
-            testCase.verifyWarning(@()testCase.Maker.addSubjectsToSessions(sessionCellArray, documentsToAddSets), ...
+            added_status = testCase.verifyWarning(...
+                @()testCase.Maker.addSubjectsToSessions(sessionCellArray, documentsToAddSets), ...
                 'ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd');
-            added_status = testCase.Maker.addSubjectsToSessions(sessionCellArray, documentsToAddSets);
             testCase.verifyFalse(added_status(1), 'Diagnostic: Status should be false if target session not found.');
             
             docsInExisting = S_exists.database_search(ndi.query('','isa','subject'));
