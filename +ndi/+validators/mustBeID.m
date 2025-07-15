@@ -1,5 +1,3 @@
-% Filename: +ndi/+validator/mustBeID.m
-
 function mustBeID(inputArg)
 %MUSTBEID Validate input is a correctly formatted NDI ID string.
 %
