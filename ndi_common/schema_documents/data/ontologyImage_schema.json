@@ -2,7 +2,7 @@
 	"classname": "ontologyImage",
 	"superclasses":  [ "base" , "ngrid"],
 	"depends_on": [
-		{ "name": "ontologyTabelRow_id", "mustbenotempty": 0}
+		{ "name": "ontologyTableRow_id", "mustbenotempty": 0}
 	],
 	"file": [ 
 		{"name": "ontologyImage.ngrid", "mustbenotempty": 1}
