@@ -27,10 +27,10 @@ classdef TestVStack < matlab.unittest.TestCase
         end
 
         function testStackingMultipleTables(testCase)
-            T1 = table([1], {'A'}, 'VariableNames', {'ID', 'ValA'});
-            T2 = table([2], [100], 'VariableNames', {'ID', 'ValB'});
-            T3 = table([3], {'C'}, 'VariableNames', {'ID', 'ValA'});
-            T4 = table([4], [200], [true], 'VariableNames', {'ID', 'ValB', 'ValC'});
+            T1 = table(1, {'A'}, 'VariableNames', {'ID', 'ValA'});
+            T2 = table(2, 100, 'VariableNames', {'ID', 'ValB'});
+            T3 = table(3, {'C'}, 'VariableNames', {'ID', 'ValA'});
+            T4 = table(4, 200, true, 'VariableNames', {'ID', 'ValB', 'ValC'});
 
             actualT = ndi.fun.table.vstack({T1, T2, T3, T4});
             
@@ -187,7 +187,7 @@ classdef TestVStack < matlab.unittest.TestCase
         end
 
         function testInputValidationCellNotAllTables(testCase)
-            T1 = table([1]);
+            T1 = table(1);
             testCase.assertError(@() ndi.fun.table.vstack({T1, 'not a table'}), ...
                 'vstack:InvalidCellContent'); 
         end
