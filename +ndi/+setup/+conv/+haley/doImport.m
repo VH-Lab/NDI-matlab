@@ -80,6 +80,7 @@ plateVariables = {'experiment_id','plateNum','exclude',...
     'condition','OD600Label','growthCondition','peptoneFlag',...
     'bacteriaStrain','timeSeed','timeColdRoom','timeRoomTemp',...
     'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
+patchVariables = {'plate_id','OD600','lawnCenters','lawnRadii','lawnCircularity'};
 videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
     'frameRate','numFrames','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
@@ -229,7 +230,8 @@ for i = 1:numel(infoFiles)
     wormTable{:,'sessionID'} = {session.id};
     wormTable = ndi.fun.table.join({wormTable,...
         plateTable(:,{'plate_id','condition'}),...
-        dataTable(:,{'plate_id','strainID'})});
+        dataTable(:,{'plate_id','strain'})},...
+        'uniqueVariables',{'plate_id','wormNum'});
     wormTable{:,'dirName'} = {dirName};
 
     % Create subject documents
@@ -247,11 +249,11 @@ for i = 1:numel(infoFiles)
     info.(dirName).wormTable = wormTable;
 
     % Create treatment documents
-    ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
-    if ~isempty(ind)
+    if any(ismember(dataTable.Properties.VariableNames,'starvedTime'))
         wormTable = ndi.fun.table.join({wormTable,...
             dataTable(:,{'plate_id','strainName','starvedTime','timeRecord'})},...
-            'uniqueVariables',{'plate_id','strainName'});
+            'uniqueVariables',{'plate_id','wormNum'});
+        ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
         onsetDocs = cell(numel(subDocStruct),1);
         offsetDocs = cell(numel(subDocStruct),1);
         for j = 1:numel(ind)
