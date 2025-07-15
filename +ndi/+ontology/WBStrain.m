@@ -27,7 +27,8 @@ classdef WBStrain < ndi.ontology
                 % The input is a name. Scrape the search results page to find the ID.
                 search_name = urlencode(term_or_id_or_name);
                 search_url = ['https://wormbase.org/search/strain/' search_name '?inline=1'];
-                options = weboptions('Timeout', 15);
+                % search_url = ['https://wormbase.org/search/strain/get?class=strain;name=' search_name];
+                options = weboptions('Timeout', 30);
                 
                 try
                     html = webread(search_url, options);
