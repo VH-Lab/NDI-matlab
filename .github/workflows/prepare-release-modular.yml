@@ -25,6 +25,7 @@ jobs:
     with:
       tools_directory: tools
       needs_python: false
+      matlab_versions: '["R2024a"]'
 
   test:
     name: Run MATLAB tests (release matrix)
