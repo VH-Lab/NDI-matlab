@@ -249,35 +249,36 @@ for i = 1:numel(infoFiles)
     info.(dirName).wormTable = wormTable;
 
     % Create treatment documents
-    if any(ismember(dataTable.Properties.VariableNames,'starvedTime'))
+    if any(ismember(dataTable.Properties.VariableNames,'starvedTime')) && ...
+            any(dataTable.starvedDuration > 0)
         wormTable = ndi.fun.table.join({wormTable,...
             dataTable(:,{'plate_id','strainName','starvedTime','timeRecord'})},...
             'uniqueVariables',{'plate_id','wormNum'});
         ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
-        onsetDocs = cell(numel(subDocStruct),1);
-        offsetDocs = cell(numel(subDocStruct),1);
+        onsetDocs = cell(numel(ind),1);
+        offsetDocs = cell(numel(ind),1);
         for j = 1:numel(ind)
             % Food deprivation onset
             [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset time');
             treatment = struct('ontologyName',ontologyID,...
                 'name',name,...
                 'numeric_value',[],...
-                'string_value',wormTable.starvedTime{j});
-            onsetDocs{i} = ndi.document('treatment',...
+                'string_value',wormTable.starvedTime{ind(j)});
+            onsetDocs{j} = ndi.document('treatment',...
                 'treatment', treatment) + session.newdocument;
-            onsetDocs{i} = onsetDocs{i}.set_dependency_value(...
-                'subject_id', wormTable.subject_id{j});
+            onsetDocs{j} = onsetDocs{j}.set_dependency_value(...
+                'subject_id', wormTable.subject_id{ind(j)});
 
             % Food deprivation offset
             [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction offset time');
             treatment = struct('ontologyName',ontologyID,...
                 'name',name,...
                 'numeric_value',[],...
-                'string_value',wormTable.timeRecord{j});
-            offsetDocs{i} = ndi.document('treatment',...
+                'string_value',wormTable.timeRecord{ind(j)});
+            offsetDocs{j} = ndi.document('treatment',...
                 'treatment', treatment) + session.newdocument;
-            offsetDocs{i} = offsetDocs{i}.set_dependency_value(...
-                'subject_id', wormTable.subject_id{j});
+            offsetDocs{j} = offsetDocs{j}.set_dependency_value(...
+                'subject_id', wormTable.subject_id{ind(j)});
         end
         session.database_add(onsetDocs);
         session.database_add(offsetDocs);
@@ -314,6 +315,11 @@ end
 
 %% Step 6. DATA DOCUMENTS.
 
+% Create progress bar
+progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+progressBar = progressBar.addBar('Label', 'Creating Position and Distance Elements(s)',...
+    'Tag', 'positionElement');
+
 for i = 1:numel(dataFiles)
 
     % Load current table
@@ -323,16 +329,26 @@ for i = 1:numel(dataFiles)
     dataTable = dataTable.(tableType);
     dirName = split(dataFiles{i},filesep); dirName = dirName{end-1};
 
+    % Get ontology terms
+    [~,bodyPart] = fileparts(dataFiles{i});
+    bodyPart = ndi.ontology.lookup(['EMPTY:C. elegans ' bodyPart]);
+    subjectDocID = ndi.ontology.lookup('EMPTY:Subject document identifier');
+    patchDocID = ndi.ontology.lookup('EMPTY: C. elegans assay: patch parameter document identifier');
+
     % Loop through each worm (subject)
     wormNums = unique(dataTable.wormNum);
+    positionMetadataDocs = cell(size(wormNums));
+    distanceMetadataDocs = cell(size(wormNums));
     for j = 1:numel(wormNums)
 
         % Get indices
         indWorm = info.(dirName).wormTable.wormNum == wormNums(i);
         plate_id = info.(dirName).wormTable.plate_id(indWorm);
         subject_id = info.(dirName).wormTable.subject_id{indWorm};
-        indPatch = info.(dirName).patchTable.plate_id == plate_id;
+        indPatch = strcmp(info.(dirName).patchTable.plate_id,plate_id);
         indData = dataTable.wormNum == wormNums(i);
+        wormName = strsplit(info.(dirName).wormTable.subjectName{indWorm},'@');
+        wormName = wormName{1};
 
         % Get relevant data
         time = dataTable.timeOffset(indData);
@@ -346,36 +362,36 @@ for i = 1:numel(dataFiles)
         % A. POSITION elements and metadata
 
         % Create position element and add epoch
-        positionElement = ndi.element.timeseries(session,'position',1,'position',[],0,subject_id);
-        positionElement.addepoch('position','dev_local_time,exp_global_time', ...
+        positionElement = ndi.element.timeseries(session,...
+            ['position_',wormName],1,'position',[],0,subject_id);
+        positionElement.addepoch(['position_',wormName],'dev_local_time,exp_global_time', ...
             [t0_t1_local;t0_t1_global], time, position);
-        % positionElement.addepoch('position',ndi.time.clocktype('UTC'),t0_t1_local,time,position);
-        [d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
 
         % Create position_metadata structure
-        position_metadata.ontologyNode = 'EMPTY:0000XX'; % C. elegans head, midpoint, or tail
+        position_metadata.ontologyNode = bodyPart; % C. elegans head, midpoint, or tail
         position_metadata.units = 'NCIT:C48367'; % pixels
         position_metadata.dimensions = 'NCIT:C44477,NCIT:C44478'; % X-coordinate, Y-coordinate
         
         % Create position_metadata document
         positionMetadataDocs{j} = ndi.document('position_metadata',...
-            'position_metadata', position_metadata) + session.newdocument();
+            'position_metadata', position_metadata) + session.newdocument;
         positionMetadataDocs{j} = positionMetadataDocs{j}.set_dependency_value(...
             'element_id', positionElement.id);
 
         % B. DISTANCE elements and metadata
 
         % Create distance element and add epoch
-        distanceElement = ndi.element.timeseries(session,'distance',1,'distance',[],0,subject_id);
-        distanceElement.addepoch('distance','dev_local_time,exp_global_time', ...
+        distanceElement = ndi.element.timeseries(session,...
+            ['distance_',wormName],1,'distance',[],0,subject_id);
+        distanceElement.addepoch(['distance_',wormName],'dev_local_time,exp_global_time', ...
             [t0_t1_local;t0_t1_global], time, distance);
 
         % Create distance_metadata structure
-        distance_metadata.ontologyNode_A = 'EMPTY:0000XX'; % subject document id
+        distance_metadata.ontologyNode_A = subjectDocID; % subject document id
         distance_metadata.integerIDs_A = 1;
         distance_metadata.ontologyNumericValues_A = [];
         distance_metadata.ontologyStringValues_A = subject_id;
-        distance_metadata.ontologyNode_B = 'EMPTY:0000XX'; % patch ontologyTableRow document id
+        distance_metadata.ontologyNode_B = patchDocID; % patch ontologyTableRow document id
         distance_metadata.integerIDs_B = info.(dirName).patchTable.patchNum(indPatch)';
         distance_metadata.ontologyNumericValues_B = [];
         distance_metadata.ontologyStringValues_B = strjoin(info.(dirName).patchTable.patch_id(indPatch),',');
@@ -383,14 +399,19 @@ for i = 1:numel(dataFiles)
 
         % Create distance_metadata document
         distanceMetadataDocs{j} = ndi.document('distance_metadata',...
-            'distance_metadata', distance_metadata) + session.newdocument();
+            'distance_metadata', distance_metadata) + session.newdocument;
         distanceMetadataDocs{j} = distanceMetadataDocs{j}.set_dependency_value(...
             'element_id', distanceElement.id);
+
+        progressBar = progressBar.updateBar('positionElement', j / numel(wormNums));
     end
 
     % Add documents to database
-    % session.database_add(positionMetadataDocs);
-    % session.database_add(distanceMetadataDocs);
+    session.database_add(positionMetadataDocs);
+    session.database_add(distanceMetadataDocs);
+
+    % Complete progress bar
+    progressBar.updateBar('positionElement', 1);
 end
 
 %% Step 7. ENCOUNTER DOCUMENTS.
@@ -439,4 +460,6 @@ encounterDocs = tableDocMaker(dataTable(indEncounter,encounterVariables),...
 ngrid = info.(dirName).arenaMaskDocs{1}.document_properties.ngrid;
 a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyImage.ngrid');
 b = ndi.fun.data.readngrid(a,ngrid.data_dim,ngrid.data_type);
+
+[d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
 end
