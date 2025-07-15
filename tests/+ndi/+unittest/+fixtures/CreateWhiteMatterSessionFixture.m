@@ -40,7 +40,6 @@ classdef CreateWhiteMatterSessionFixture < matlab.unittest.fixtures.Fixture
             
             % Clear session from database
             fixture.Session.database_clear('yes');
-            disp(fixture.TeardownDescription)
         end
     end
 end

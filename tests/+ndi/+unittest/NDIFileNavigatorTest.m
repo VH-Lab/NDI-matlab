@@ -20,7 +20,8 @@ classdef NDIFileNavigatorTest < matlab.unittest.TestCase
             createFolderStructureWithFiles(3, 2, 'dummy', {'.ext'})
             createFolderStructureWithFiles(3, 2, 'myfile', {'.ext1', '.ext2'});
 
-            disp(['Working on directory ' testCase.MyDirectory '...']);
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                ['Working on directory ' testCase.MyDirectory '...']);
             testCase.Session = ndi.session.dir('mysession', pwd);
             testCase.FileNavigator = ndi.file.navigator(testCase.Session, {'myfile_#.ext1', 'myfile_#.ext2'});
         end
@@ -29,42 +30,39 @@ classdef NDIFileNavigatorTest < matlab.unittest.TestCase
     methods (Test)
         function testNumberOfEpochs(testCase)
             % Test to verify the number of epochs
-
             n = numepochs(testCase.FileNavigator);
             testCase.verifyGreaterThan(n, 0, 'Expected at least one epoch.');
-            disp(['Number of epochs are ' num2str(n) '.']);
         end
 
         function testEpochFiles(testCase)
             % Test to verify file paths for a specific epoch
-
             epochNum = 2;
             f = getepochfiles(testCase.FileNavigator, epochNum);
 
             testCase.assertNotEmpty(f, 'Expected non-empty file paths for epoch.');
-            disp(['File paths of epoch ' num2str(epochNum) ' are as follows:']);
-            disp(f);
         end
 
         function testFileNavigatorFields(testCase)
             % Test to verify the fields of the ndi.file.navigator object
 
-            disp('The ndi.file.navigator object fields:');
-            disp(testCase.FileNavigator);
+            testCase.log(matlab.unittest.Verbosity.Verbose, 'The ndi.file.navigator object fields:');
+            testCase.log(matlab.unittest.Verbosity.Verbose, evalc('testCase.FileNavigator') );
 
             testCase.assertNotEmpty(fields(testCase.FileNavigator), 'Expected non-empty object fields.');
         end
 
         function testEpochTableEntries(testCase)
             % Test to verify the epoch table entries
-
-            disp('The epoch table entries:');
             et = epochtable(testCase.FileNavigator);
-
             testCase.assertNotEmpty(et, 'Expected non-empty epoch table entries.');
+            
+            tableEntriesStr = repmat("", 1, numel(et));
             for i = 1:numel(et)
-                disp(et(i));
+                tableEntriesStr(i) = formattedDisplayText(et(i));
             end
+        
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                sprintf('The epoch table entries:\n%s', strjoin(tableEntriesStr, newline)))
         end
 
         function testFilesForSpecificEpoch(testCase)
@@ -74,11 +72,8 @@ classdef NDIFileNavigatorTest < matlab.unittest.TestCase
 
             if numel(et) >= 2
                 epochID = et(2).epoch_id;
-                disp(['File paths of epoch ' num2str(epochID) ' are as follows:']);
                 f = getepochfiles(testCase.FileNavigator, epochID);
-
                 testCase.assertNotEmpty(f, 'Expected non-empty file paths for the specific epoch.');
-                disp(f);
             else
                 testCase.fail('Test requires at least 2 epochs.');
             end
@@ -144,6 +139,4 @@ function createFolderStructureWithFiles(numSubdirs, numFiles, fileBaseName, file
             end
         end
     end
-
-    disp('Folder structure and files created successfully.');
 end

@@ -42,7 +42,7 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
 
             if shouldSucceed
                 % Test Case: Expected to Succeed
-                testCase.log(matlab.unittest.Verbosity.Terse, sprintf('Testing SUCCESS case: "%s"', lookupStr));
+                testCase.log(matlab.unittest.Verbosity.Detailed, sprintf('Testing SUCCESS case: "%s"', lookupStr));
 
                 % Verify it runs without error and capture outputs
                 try
@@ -70,7 +70,7 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
 
             else
                 % Test Case: Expected to Fail (throw an error)
-                testCase.log(matlab.unittest.Verbosity.Terse, sprintf('Testing FAILURE case: "%s"', lookupStr));
+                testCase.log(matlab.unittest.Verbosity.Detailed, sprintf('Testing FAILURE case: "%s"', lookupStr));
 
                 % Verify that calling the function throws any MException
                 testCase.verifyError(funcToTest, ?MException, ...

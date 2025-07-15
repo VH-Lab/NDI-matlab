@@ -49,15 +49,13 @@ classdef OneEpochTest < matlab.unittest.TestCase
             whiteMatterSession = testCase.applyFixture(CreateWhiteMatterSessionFixture);
             testCase.TempDir = whiteMatterSession.TempDir;
             testCase.Session = whiteMatterSession.Session;
-            disp(whiteMatterSession.SetupDescription)
             
             % Add subjects to NDI session
             import ndi.unittest.fixtures.CreateWhiteMatterSubjectsFixture
             whiteMatterSubjects = CreateWhiteMatterSubjectsFixture(testCase.Session,...
-                'NumSubjects',NumSubjects);
+                'NumSubjects', NumSubjects);
             testCase.applyFixture(whiteMatterSubjects);
             testCase.Session = whiteMatterSubjects.Session;
-            disp(whiteMatterSubjects.SetupDescription)
             
             % Ingest
             testCase.Session.ingest();
@@ -89,7 +87,7 @@ classdef OneEpochTest < matlab.unittest.TestCase
             testCase.addOneEpochElements(testCase);
 
             % Test output
-            disp('   Checking oneepoch for test data.')
+            testCase.log(matlab.unittest.Verbosity.Verbose, '   Checking oneepoch for test data.')
             testCase.testOneEpoch(testCase);
         end
 
@@ -107,7 +105,7 @@ classdef OneEpochTest < matlab.unittest.TestCase
             testCase.addOneEpochElements(testCase);
 
             % Test output
-            disp('   Checking oneepoch for additional data.')
+            testCase.log(matlab.unittest.Verbosity.Verbose, '   Checking oneepoch for additional data.')
             testCase.testOneEpoch(testCase);
         end
 
@@ -122,7 +120,7 @@ classdef OneEpochTest < matlab.unittest.TestCase
             testCase.addOneEpochElements(testCase);
 
             % Test output
-            disp('   Checking oneepoch run again.')
+            testCase.log(matlab.unittest.Verbosity.Verbose, '   Checking oneepoch run again.')
             testCase.testOneEpoch(testCase);
         end
     end
@@ -135,7 +133,6 @@ classdef OneEpochTest < matlab.unittest.TestCase
                 'NumEpochs',NumEpochs);
             testCase.applyFixture(whiteMatterEpochs);
             testCase.Probes = testCase.Session.getprobes();
-            disp(whiteMatterEpochs.SetupDescription)
         end
         
         function addOneEpochElements(testCase)

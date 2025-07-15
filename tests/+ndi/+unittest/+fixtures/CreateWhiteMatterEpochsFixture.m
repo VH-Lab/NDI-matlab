@@ -120,10 +120,14 @@ classdef CreateWhiteMatterEpochsFixture < matlab.unittest.fixtures.Fixture
         function teardown(fixture)
             % Remove files from temporary directory
             for e = 1:fixture.NumEpochs
-                delete(fixture.DataFileNames{e});
-                delete(fixture.ProbeFileNames{e});
+                if isfile(fixture.DataFileNames{e})
+                    delete(fixture.DataFileNames{e});
+                end
+                if isfile(fixture.ProbeFileNames{e})
+                    delete(fixture.ProbeFileNames{e});
+                end
             end
-            disp(fixture.TeardownDescription)
+            fixture.log(matlab.unittest.Verbosity.Verbose, fixture.TeardownDescription)
         end
 
     end
