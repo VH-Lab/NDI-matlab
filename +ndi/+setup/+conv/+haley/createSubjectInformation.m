@@ -23,11 +23,11 @@ N2.ontologyIdentifier = 'WBStrain:00000001';
 N2.description = 'Genotype: Caenorhabditis elegans wild isolate.';
 N2.geneticStrainType = 'wild type';
 
-if strcmp(tableRow.strainID{1},'N2')
+if strcmp(tableRow.strain{1},'WBStrain:00000001')
     strain = N2;
 else
     strain = openminds.core.research.Strain;
-    [id,name,~,definition] = ndi.ontology.lookup(['WBStrain:',tableRow.strainID{1}]);
+    [id,name,~,definition] = ndi.ontology.lookup(tableRow.strain{1});
     strain.name = name;
     strain.species = species;
     strain.ontologyIdentifier = id;
@@ -66,7 +66,7 @@ switch tableRow.dirName{1}
 end
 
 % Create subjectString
-expDate = char(tableRow.expTime,'yyMMdd');
+expDate = char(datetime(tableRow.expTime),'yyMMdd');
 subjectString = join({strain.name{1},[expType,num2str(tableRow.wormNum,'%03.f')],...
     assayType,expDate},'_');
 subjectString = [subjectString{1},'@chalasani-lab.salk.edu'];
