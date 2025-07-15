@@ -1,7 +1,7 @@
 {
 	"document_class": {
-		"definition":						"$NDICALCDOCUMENTPATH\/ontologyImage.json",
-		"validation":						"$NDICALCSCHEMAPATH\/ontologyImage_schema.json",
+		"definition":						"$NDIDOCUMENTPATH\/data\/ontologyImage.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ontologyImage_schema.json",
 		"class_name":						"ontologyImage",
 		"property_list_name":               "ontologyImage",
 		"class_version":					1,
