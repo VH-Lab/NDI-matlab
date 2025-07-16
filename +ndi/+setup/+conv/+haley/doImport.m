@@ -453,7 +453,8 @@ dataTable = ndi.fun.table.join({dataTable,...
 indEncounter = dataTable.id > 0;
 encounterDocs = tableDocMaker(dataTable(indEncounter,encounterVariables),...
     {'subject_id','id'},'Overwrite',options.Overwrite);
-%%
+
+%% Step 8. BACTERIA DOCUMENTS.
 
 ngrid = info.(dirName).arenaMaskDocs{1}.document_properties.ngrid;
 a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyImage.ngrid');
