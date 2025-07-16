@@ -317,10 +317,8 @@ end
 
 % Create progress bar
 progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
-progressBar = progressBar.addBar('Label', 'Creating Position and Distance Elements(s)',...
-    'Tag', 'positionElement');
 
-for i = 1:numel(dataFiles)
+for i = 2:numel(dataFiles)
 
     % Load current table
     dataTable = load(fullfile(dataParentDir,dataFiles{i}));
@@ -328,6 +326,8 @@ for i = 1:numel(dataFiles)
     tableType = fields{1};
     dataTable = dataTable.(tableType);
     dirName = split(dataFiles{i},filesep); dirName = dirName{end-1};
+    progressBar = progressBar.addBar('Label', ['Creating Position and Distance Element(s):' dirName],...
+        'Tag', 'positionElement');
 
     % Get ontology terms
     [~,bodyPart] = fileparts(dataFiles{i});
@@ -342,11 +342,11 @@ for i = 1:numel(dataFiles)
     for j = 1:numel(wormNums)
 
         % Get indices
-        indWorm = info.(dirName).wormTable.wormNum == wormNums(i);
+        indWorm = info.(dirName).wormTable.wormNum == wormNums(j);
         plate_id = info.(dirName).wormTable.plate_id(indWorm);
         subject_id = info.(dirName).wormTable.subject_id{indWorm};
         indPatch = strcmp(info.(dirName).patchTable.plate_id,plate_id);
-        indData = dataTable.wormNum == wormNums(i);
+        indData = dataTable.wormNum == wormNums(j);
         wormName = strsplit(info.(dirName).wormTable.subjectName{indWorm},'@');
         wormName = wormName{1};
 
@@ -356,7 +356,7 @@ for i = 1:numel(dataFiles)
         distance = [dataTable{indData,'distanceLawnEdge'},...
             ones(sum(indData),1),dataTable{indData,'closestLawnID'}];
         t0_t1_local = prctile(dataTable.timeOffset(indData),[0 100]);
-        t0_t1_global = convertTo(info.(dirName).wormTable.expTime(indWorm) + ...
+        t0_t1_global = convertTo(info.(dirName).wormTable.expTime{indWorm} + ...
             seconds(t0_t1_local),'datenum');
 
         % A. POSITION elements and metadata
@@ -409,9 +409,6 @@ for i = 1:numel(dataFiles)
     % Add documents to database
     session.database_add(positionMetadataDocs);
     session.database_add(distanceMetadataDocs);
-
-    % Complete progress bar
-    progressBar.updateBar('positionElement', 1);
 end
 
 %% Step 7. ENCOUNTER DOCUMENTS.
@@ -461,5 +458,5 @@ ngrid = info.(dirName).arenaMaskDocs{1}.document_properties.ngrid;
 a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyImage.ngrid');
 b = ndi.fun.data.readngrid(a,ngrid.data_dim,ngrid.data_type);
 
-[d,t,timeref] = positionElement.readtimeseries('position',-Inf,Inf);
+[d,t,timeref] = positionElement.readtimeseries(1,-Inf,Inf);
 end
