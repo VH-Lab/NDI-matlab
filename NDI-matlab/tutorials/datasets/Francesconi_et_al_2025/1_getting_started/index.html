@@ -22335,7 +22335,7 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 columnName = 'StrainName'; % select a column name from the subjectSummary table
 dataValue = 'AVP-Cre'; % select a value to search for
 rowInd = ndi.fun.table.identifyMatchingRows(subjectSummary,...
-    columnName{1},dataValue,'stringMatch','contains');
+    columnName,dataValue,'stringMatch','contains');
 filteredSubjects = subjectSummary(rowInd,:)
 </code></pre>
 <h3 id="view-probe-and-epoch-summary-tables">View probe and epoch summary tables <a name="probes"></a></h3>
@@ -22801,7 +22801,7 @@ columnName = 'approachName';
 dataValue = 'optogenetic';
 stringMatch = 'contains';
 rowInd = ndi.fun.table.identifyMatchingRows(combinedSummary,...
-    columnName{1},dataValue,'stringMatch',stringMatch{1});
+    columnName,dataValue,'stringMatch',stringMatch{1});
 filteredEpochs = combinedSummary(rowInd,:)
 </code></pre>
 <h2 id="plot-electrophysiology-data">Plot electrophysiology data <a name="electrophysiology"></a></h2>
