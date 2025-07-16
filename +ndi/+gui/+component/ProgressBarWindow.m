@@ -38,6 +38,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         ProgressBars struct % Array storing data and handles for each progress bar.
     end
 
+    properties (SetAccess=immutable, GetAccess=private)
+        Visible (1,1) matlab.lang.OnOffSwitchState = "on"
+    end
+
     methods
         function app = ProgressBarWindow(title,options)
             %ProgressBarWindow Constructor for the progress bar window.
@@ -75,7 +79,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 options.GrabMostRecent logical = true
                 options.IgnoreTitle logical = false
                 options.AutoDelete logical = true
+                options.Visible (1,1) matlab.lang.OnOffSwitchState = "on"
             end
+
+            app.Visible = options.Visible;
 
             % Find existing figure with that tag
             openFigs = findall(groot,'Type','figure','tag','progressbar');
@@ -108,7 +115,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                         % Check guidata is a ProgressBarWindow
                         if isa(appExisting, 'ndi.gui.component.ProgressBarWindow')
                             app = appExisting;
-                            figure(app.ProgressFigure); % Bring it to the front
+                            app.bringToFront()
                             return
                         else
                              warning('ProgressBarWindow:ExistingFigureNotApp', 'Existing figure with title "%s" is not a ProgressBarWindow instance. Creating new.', title);
@@ -132,7 +139,8 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 'NumberTitle', 'off',...
                 'Resize', 'off',...
                 'MenuBar', 'none',...
-                'Tag', 'progressbar');
+                'Tag', 'progressbar', ...
+                'Visible', app.Visible);
 
             % Initialze progress bar grid
             app.ProgressGrid = uigridlayout(app.ProgressFigure,...
@@ -179,7 +187,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             end
 
             % Bring figure to front
-            figure(app.ProgressFigure);
+            app.bringToFront()
 
             % Set tag (if empty)
             if isempty(options.Tag)
@@ -726,6 +734,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             if doDelete
                 close(app.ProgressFigure);
                 delete(app);
+            end
+        end
+    end
+
+    methods (Access = private)
+        function bringToFront(app)
+            if app.Visible
+                figure(app.ProgressFigure);
             end
         end
     end
