@@ -642,12 +642,16 @@
           - ndi.util.choosefileordir: 'NDI-matlab/reference/+ndi/+util/choosefileordir.m.md'
           - ndi.util.downsampleTimeseries: 'NDI-matlab/reference/+ndi/+util/downsampleTimeseries.m.md'
           - ndi.util.toolboxdir: 'NDI-matlab/reference/+ndi/+util/toolboxdir.m.md'
+          - ndi.util.unwrapTableCellContent: 'NDI-matlab/reference/+ndi/+util/unwrapTableCellContent.m.md'
           - openminds PACKAGE:
             - ndi.util.openminds.find_instance_name: 'NDI-matlab/reference/+ndi/+util/+openminds/find_instance_name.m.md'
             - ndi.util.openminds.find_techniques_names: 'NDI-matlab/reference/+ndi/+util/+openminds/find_techniques_names.m.md'
         - validators PACKAGE:
+          - ndi.validators.mustBeCellArrayOfNdiSessions: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfNdiSessions.m.md'
+          - ndi.validators.mustBeCellArrayOfNonEmptyCharacterArrays: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfNonEmptyCharacterArrays.m.md'
           - ndi.validators.mustBeEpochInput: 'NDI-matlab/reference/+ndi/+validators/mustBeEpochInput.m.md'
           - ndi.validators.mustBeID: 'NDI-matlab/reference/+ndi/+validators/mustBeID.m.md'
           - ndi.validators.mustBeNumericClass: 'NDI-matlab/reference/+ndi/+validators/mustBeNumericClass.m.md'
+          - ndi.validators.mustBeTextLike: 'NDI-matlab/reference/+ndi/+validators/mustBeTextLike.m.md'
           - ndi.validators.mustHaveRequiredColumns: 'NDI-matlab/reference/+ndi/+validators/mustHaveRequiredColumns.m.md'
           - ndi.validators.mustMatchRegex: 'NDI-matlab/reference/+ndi/+validators/mustMatchRegex.m.md'

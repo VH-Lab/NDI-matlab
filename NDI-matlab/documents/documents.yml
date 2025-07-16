@@ -79,8 +79,9 @@
         - stimulus_response_scalar_parameters : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters.md'
         - stimulus_response_scalar_parameters_basic : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters_basic.md'
         - stimulus_tuningcurve : 'NDI-matlab/documents/stimulus/stimulus_tuningcurve.md'
-        - virus_injection : 'NDI-matlab/documents/stimulus/virus_injection.md'
         - vision:
           - oridir:
             - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
       - treatment:
+        - treatment_drug : 'NDI-matlab/documents/treatment/treatment_drug.md'
+        - virus_injection : 'NDI-matlab/documents/treatment/virus_injection.md'

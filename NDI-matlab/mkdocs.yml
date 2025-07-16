@@ -41,8 +41,6 @@ nav:
         - 2.5 Searching NDI databases: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases.md'
       - 3 Tutorials for new coders or new Matlab users:
         - 3.1 Newbie version of your first electrophysiology experiment with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset.md'
-      - 4 Datasets
-        - Francesconi_et_al_2025: 'NDI-matlab/tutorials/datasets/Francesconi_et_al_2025/1_getting_started.md'
       - 7 Writing your own apps and calculators:
         - 7.2 Writing short calculations: 'NDI-matlab/tutorials/writing_own_app/2_ndi_calculators.md'
       - Planned:
@@ -133,11 +131,12 @@ nav:
         - stimulus_response_scalar_parameters : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters.md'
         - stimulus_response_scalar_parameters_basic : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters_basic.md'
         - stimulus_tuningcurve : 'NDI-matlab/documents/stimulus/stimulus_tuningcurve.md'
-        - virus_injection : 'NDI-matlab/documents/stimulus/virus_injection.md'
         - vision:
           - oridir:
             - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
       - treatment:
+        - treatment_drug : 'NDI-matlab/documents/treatment/treatment_drug.md'
+        - virus_injection : 'NDI-matlab/documents/treatment/virus_injection.md'
     - Code reference:
       - ndi_Init: 'NDI-matlab/reference/ndi_Init.m.md'
       - ndi_install: 'NDI-matlab/reference/ndi_install.m.md'
@@ -781,13 +780,17 @@ nav:
           - ndi.util.choosefileordir: 'NDI-matlab/reference/+ndi/+util/choosefileordir.m.md'
           - ndi.util.downsampleTimeseries: 'NDI-matlab/reference/+ndi/+util/downsampleTimeseries.m.md'
           - ndi.util.toolboxdir: 'NDI-matlab/reference/+ndi/+util/toolboxdir.m.md'
+          - ndi.util.unwrapTableCellContent: 'NDI-matlab/reference/+ndi/+util/unwrapTableCellContent.m.md'
           - openminds PACKAGE:
             - ndi.util.openminds.find_instance_name: 'NDI-matlab/reference/+ndi/+util/+openminds/find_instance_name.m.md'
             - ndi.util.openminds.find_techniques_names: 'NDI-matlab/reference/+ndi/+util/+openminds/find_techniques_names.m.md'
         - validators PACKAGE:
+          - ndi.validators.mustBeCellArrayOfNdiSessions: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfNdiSessions.m.md'
+          - ndi.validators.mustBeCellArrayOfNonEmptyCharacterArrays: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfNonEmptyCharacterArrays.m.md'
           - ndi.validators.mustBeEpochInput: 'NDI-matlab/reference/+ndi/+validators/mustBeEpochInput.m.md'
           - ndi.validators.mustBeID: 'NDI-matlab/reference/+ndi/+validators/mustBeID.m.md'
           - ndi.validators.mustBeNumericClass: 'NDI-matlab/reference/+ndi/+validators/mustBeNumericClass.m.md'
+          - ndi.validators.mustBeTextLike: 'NDI-matlab/reference/+ndi/+validators/mustBeTextLike.m.md'
           - ndi.validators.mustHaveRequiredColumns: 'NDI-matlab/reference/+ndi/+validators/mustHaveRequiredColumns.m.md'
           - ndi.validators.mustMatchRegex: 'NDI-matlab/reference/+ndi/+validators/mustMatchRegex.m.md'
     - FAQ: 'NDI-matlab/faq.md'
