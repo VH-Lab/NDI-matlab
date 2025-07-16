@@ -22325,11 +22325,25 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 </table>
 <h4 id="filter-subjects">Filter subjects <a name="filterSubjects"></a></h4>
 <p>We have created tools to filter a table by its values. Try finding <strong>subjects</strong> matching a given criterion.</p>
-<p>Examples:
-| columnName | dataValue |
-| :--- | :--- |
-| StrainName | AVP-Cre |
-| StrainName | SD |</p>
+<p>Examples:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">columnName</th>
+<th style="text-align: left;">dataValue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">StrainName</td>
+<td style="text-align: left;">AVP-Cre</td>
+</tr>
+<tr>
+<td style="text-align: left;">StrainName</td>
+<td style="text-align: left;">SD</td>
+</tr>
+</tbody>
+</table>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Search for subjects
 columnName = 'StrainName'; % select a column name from the subjectSummary table
