@@ -52,6 +52,7 @@ classdef subjectMaker < handle
             allBiologicalSex = cell(numRows, 1);
             allSessionIDs = cell(numRows, 1);
             allSessionIDs(:) = {''};
+            rawSessionIDs = dataTable.sessionID; % For a more robust NaN check
 
             for i = 1:numRows
                 currentRow = dataTable(i, :);
@@ -61,7 +62,8 @@ classdef subjectMaker < handle
                     allStrains{i} = strain_obj;
                     allSpecies{i} = species_obj;
                     allBiologicalSex{i} = sex_obj;
-                    allSessionIDs{i} = char(ndi.util.unwrapTableCellContent(currentRow.sessionID));
+                    % Use the raw value for the validity check later
+                    allSessionIDs{i} = char(ndi.util.unwrapTableCellContent(rawSessionIDs{i}));
                 catch ME
                     warning('ndi:setup:NDIMaker:subjectMaker:subjectInfoFunError',...
                         'Error executing subjectInfoCreator for table row %d: %s. Skipping.', i, ME.message);
@@ -71,18 +73,20 @@ classdef subjectMaker < handle
             
             allSubjectNamesFromTable = allSubjectNames;
 
+            % Corrected Validity Checks
             isValidName = cellfun(@(x) ischar(x) && ~isempty(x), allSubjectNames);
-            isValidSessionID = cellfun(@(x) ischar(x) && ~isempty(x), allSessionIDs);
-            finalValidIndices = find(isValidName & isValidSessionID);
+            % A more robust check for sessionID validity
+            isValidSessionID = cellfun(@(x) ischar(x) && ~isempty(x), allSessionIDs) & ~cellfun(@(x) isnumeric(x) && all(isnan(x(:))), rawSessionIDs);
 
+            finalValidIndices = find(isValidName & isValidSessionID);
+            
             if isempty(finalValidIndices)
                  subjectInfo = struct('subjectName',{{}},'strain',{{}},'species',{{}},...
                     'biologicalSex',{{}},'tableRowIndex',[],'sessionID',{{}});
-                return;
+                 return;
             end
 
             [uniqueNames, ia] = unique(allSubjectNames(finalValidIndices), 'stable');
-            
             subjectInfo = struct(...
                 'subjectName', {uniqueNames}, ...
                 'strain', {allStrains(finalValidIndices(ia))}, ...
@@ -102,6 +106,14 @@ classdef subjectMaker < handle
             end
 
             numSubjects = numel(subjectInfo.subjectName);
+
+            % Fix for testMakeSubjectDocs_NoSubjects
+            if numSubjects == 0
+                warning('ndi:setup:NDIMaker:subjectMaker:EmptySubjectInfo', 'Provided subjectInfo structure contains no subjects. Returning empty output.');
+                output = struct('subjectName', {{}}, 'documents', {{}});
+                return;
+            end
+
             output_subjectNames = cell(numSubjects, 1);
             output_documents = cell(numSubjects, 1);
 
@@ -110,7 +122,16 @@ classdef subjectMaker < handle
                 output_subjectNames{i} = sName;
                 all_docs_for_this_subject = {};
 
-                % ... (rest of implementation is unchanged) ...
+                current_session_id_for_doc = subjectInfo.sessionID{i};
+
+                % Fix for testMakeSubjectDocs_InvalidSessionIDEntryInSubjectInfo
+                if isempty(current_session_id_for_doc) || ~ischar(current_session_id_for_doc)
+                    warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo', ...
+                        'Invalid or empty sessionID for subject "%s". Skipping document creation for this subject.', sName);
+                    output_documents{i} = {}; % Assign empty cell for this subject
+                    continue; % Skip to next subject
+                end
+
                 main_subject_doc = [];
                 is_new_main_doc = true;
                 for k = 1:numel(options.existingSubjectDocs)
@@ -124,8 +145,6 @@ classdef subjectMaker < handle
                     end
                 end
                 
-                current_session_id_for_doc = subjectInfo.sessionID{i};
-                
                 if is_new_main_doc
                     main_subject_doc = ndi.document('subject', 'subject.local_identifier', sName, ...
                         'base.session_id', current_session_id_for_doc);
@@ -133,7 +152,6 @@ classdef subjectMaker < handle
                 end
                 
                 main_subject_doc_id = main_subject_doc.id();
-
                 if isfield(subjectInfo, 'species') && numel(subjectInfo.species) >= i && isa(subjectInfo.species{i}, 'openminds.controlledterms.Species')
                     species_docs = ndi.database.fun.openMINDSobj2ndi_document(subjectInfo.species{i}, current_session_id_for_doc, 'subject', main_subject_doc_id);
                     all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), species_docs(:));
@@ -160,24 +178,32 @@ classdef subjectMaker < handle
                 documentsToAddSets (1,:) cell
             end
             
-            % ... (implementation is unchanged) ...
             if isempty(documentsToAddSets), added_status = logical([]); return; end
             if isempty(sessionCellArray), added_status = false(1, numel(documentsToAddSets)); return; end
+            
             numDocSets = numel(documentsToAddSets);
             added_status = false(1, numDocSets);
             session_id_map = containers.Map('KeyType', 'char', 'ValueType', 'double');
             for k_sess = 1:numel(sessionCellArray)
                 session_id_map(sessionCellArray{k_sess}.id()) = k_sess;
             end
+
             for i = 1:numDocSets
                 current_doc_set = documentsToAddSets{i};
                 if isempty(current_doc_set) || ~iscell(current_doc_set) || ~isa(current_doc_set{1}, 'ndi.document'), continue; end
+                
                 target_session_id = current_doc_set{1}.document_properties.base.session_id;
+                
+                % Fix for testAddSubjectsToSessions_SessionNotFound
                 if isKey(session_id_map, target_session_id)
                     session_idx_in_array = session_id_map(target_session_id);
                     actual_session_object = sessionCellArray{session_idx_in_array};
                     actual_session_object.database_add(current_doc_set);
                     added_status(i) = true;
+                else
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', ...
+                        'Session with ID "%s" not found in the provided sessionCellArray. Cannot add documents.', target_session_id);
+                    % added_status(i) remains false
                 end
             end
         end
@@ -189,21 +215,32 @@ classdef subjectMaker < handle
                 sessionCellArray (1,:) cell {ndi.validators.mustBeCellArrayOfNdiSessions(sessionCellArray)}
                 localIdentifiersToDelete {ndi.validators.mustBeTextLike(localIdentifiersToDelete)}
             end
-            % ... (implementation is unchanged) ...
+            
             if isempty(localIdentifiersToDelete) || isempty(sessionCellArray), deletion_report = struct(); return; end
             if isstring(localIdentifiersToDelete), localIdentifiersToDelete = cellstr(localIdentifiersToDelete); end
+            
             localIdentifiersToDelete = localIdentifiersToDelete(:);
             numSessions = numel(sessionCellArray);
             deletion_report = repmat(struct('session_id', '', 'session_reference', '', 'docs_found_ids', {{}}, 'docs_deleted_ids', {{}}, 'errors', {{}}), numSessions, 1);
+
             for s = 1:numSessions
                 currentSession = sessionCellArray{s};
                 deletion_report(s).session_id = currentSession.id();
                 deletion_report(s).session_reference = currentSession.reference;
+                
                 type_query = ndi.query('','isa','subject');
-                id_queries = cellfun(@(id) ndi.query('subject.local_identifier', 'exact_string', id), localIdentifiersToDelete, 'UniformOutput', false);
-                combined_local_id_query = id_queries{1};
-                for q_idx = 2:numel(id_queries), combined_local_id_query = combined_local_id_query | id_queries{q_idx}; end
-                docs_found = currentSession.database_search(type_query & combined_local_id_query);
+                
+                if numel(localIdentifiersToDelete) > 0
+                    id_queries = cellfun(@(id) ndi.query('subject.local_identifier', 'exact_string', id), localIdentifiersToDelete, 'UniformOutput', false);
+                    combined_local_id_query = id_queries{1};
+                    for q_idx = 2:numel(id_queries)
+                        combined_local_id_query = combined_local_id_query | id_queries{q_idx};
+                    end
+                    docs_found = currentSession.database_search(type_query & combined_local_id_query);
+                else
+                    docs_found = {};
+                end
+                
                 if ~isempty(docs_found)
                     docs_found_ids = cellfun(@(d) d.id(), docs_found, 'UniformOutput', false);
                     deletion_report(s).docs_found_ids = docs_found_ids;
@@ -212,7 +249,6 @@ classdef subjectMaker < handle
                 end
             end
         end
-
     end % methods block
 
     methods (Static, Access = private)
