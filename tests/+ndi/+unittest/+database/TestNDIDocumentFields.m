@@ -10,7 +10,8 @@ classdef TestNDIDocumentFields < matlab.unittest.TestCase
         function testFieldDiscoveryAndValidation(testCase)
             % This test executes the field discovery logic and validates the output.
             
-            fprintf('Discovering all possible NDI document field names...\n');
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                'Discovering all possible NDI document field names...');
             
             % --- 1. Execute the field discovery logic from the function ---
             
@@ -45,8 +46,9 @@ classdef TestNDIDocumentFields < matlab.unittest.TestCase
             fn = unique(fn);
 
             % --- 2. Verify the results with assertions ---
-
-            fprintf('Found %d unique field names. Verifying...\n', numel(fn));
+            
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                sprintf('Found %d unique field names. Verifying...', numel(fn)));
 
             % 2a. Verify the list is not empty.
             testCase.verifyNotEmpty(fn, 'The field discovery process returned an empty list.');
