@@ -184,7 +184,7 @@ columnName = 'approachName';
 dataValue = 'optogenetic';
 stringMatch = 'contains';
 rowInd = ndi.fun.table.identifyMatchingRows(combinedSummary,...
-    columnName{1},dataValue,'stringMatch',stringMatch{1});
+    columnName,dataValue,'stringMatch',stringMatch{1});
 filteredEpochs = combinedSummary(rowInd,:)
 ```
 
