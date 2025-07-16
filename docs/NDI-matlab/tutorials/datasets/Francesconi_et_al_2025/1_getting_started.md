@@ -100,7 +100,7 @@ Examples:
 columnName = 'StrainName'; % select a column name from the subjectSummary table
 dataValue = 'AVP-Cre'; % select a value to search for
 rowInd = ndi.fun.table.identifyMatchingRows(subjectSummary,...
-    columnName{1},dataValue,'stringMatch','contains');
+    columnName,dataValue,'stringMatch','contains');
 filteredSubjects = subjectSummary(rowInd,:)
 ```
 
