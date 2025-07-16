@@ -1,0 +1,24 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/treatment\/treatment_drug.json",
+		"validation":						"$NDISCHEMAPATH\/treatment\/treatment_drug.json",
+		"class_name":						"treatment_drug",
+                "property_list_name":                                   "treatment_drug",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "subject_id", "value": "" }
+	],
+	"treatment_drug": {
+		"location_ontologyNode":				[],
+		"location_name":					[]
+		"mixture_table": 				[],
+		"administration_onset_time":                    [],
+		"administration_offset_time":                   [],
+		"administration_duration":			[]
+	}
+}
+
