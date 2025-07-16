@@ -26,15 +26,15 @@
 			"name": "ontologyNumericValues_A",
 			"type": "matrix",
 			"default_value": "",
-			"parameters": [1,NaN],
+			"parameters": [NaN,NaN],
 			"queryable": 1,
 			"documentation": "The unique data values for the first object/subject. These should be specified as a horizontal vector of numbers (e.g. [1 2 3 4]). The number of values must match the number of integer ids."
 		},
 		{
 			"name": "ontologyStringValues_A",
-			"type": "matrix",
+			"type": "string",
 			"default_value": "",
-			"parameters": [1,NaN],
+			"parameters": "",
 			"queryable": 1,
 			"documentation": "The unique data values for the first object/subject. These should be reported in a comma-seperated list (e.g 'subject1,subject2,subject3,subject4'). The number of values must match the number of integer ids."
 		},
@@ -58,15 +58,15 @@
 			"name": "ontologyNumericValues_B",
 			"type": "matrix",
 			"default_value": "",
-			"parameters": [1,NaN],
+			"parameters": [NaN,NaN],
 			"queryable": 1,
 			"documentation": "The unique data values for the second object/subject. These should be specified as a horizontal vector of numbers (e.g. [1 2 3 4]). The number of values must match the number of integer ids."
 		},
 		{
 			"name": "ontologyStringValues_B",
-			"type": "matrix",
+			"type": "string",
 			"default_value": "",
-			"parameters": [1,NaN],
+			"parameters": "",
 			"queryable": 1,
 			"documentation": "The unique data values for the second object/subject. These should be reported in a comma-seperated list (e.g 'subject1,subject2,subject3,subject4'). The number of values must match the number of integer ids."
 		},
