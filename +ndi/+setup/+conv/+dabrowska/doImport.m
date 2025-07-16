@@ -216,8 +216,8 @@ indApproach = find(opto_rows & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
 indPost = cellfun(@(bcs) contains(bcs,'Post'),variableTable.BathConditionString(indApproach));
 variableTable.ApproachName = cell(height(variableTable),1);
-variableTable.ApproachName(indApproach(indPre)) = {'Approach: Before optogenetic tetanus'};
-variableTable.ApproachName(indApproach(indPost)) = {'Approach: After optogenetic tetanus'};
+variableTable.ApproachName(indApproach(indPre)) = {'EMPTY:Approach: Before optogenetic tetanus'};
+variableTable.ApproachName(indApproach(indPost)) = {'EMPTY:Approach: After optogenetic tetanus'};
 
 % Get stimulus approach docs
 sd.table2approachDocs(variableTable,'ApproachName',...
