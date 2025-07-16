@@ -326,8 +326,8 @@ for i = 2:numel(dataFiles)
     tableType = fields{1};
     dataTable = dataTable.(tableType);
     dirName = split(dataFiles{i},filesep); dirName = dirName{end-1};
-    progressBar = progressBar.addBar('Label', ['Creating Position and Distance Element(s):' dirName],...
-        'Tag', 'positionElement');
+    progressBar = progressBar.addBar('Label', 'Creating Position and Distance Element(s)',...
+        'Tag', dirname);
 
     % Get ontology terms
     [~,bodyPart] = fileparts(dataFiles{i});
@@ -403,7 +403,7 @@ for i = 2:numel(dataFiles)
         distanceMetadataDocs{j} = distanceMetadataDocs{j}.set_dependency_value(...
             'element_id', distanceElement.id);
 
-        progressBar = progressBar.updateBar('positionElement', j / numel(wormNums));
+        progressBar = progressBar.updateBar(dirName, j / numel(wormNums));
     end
 
     % Add documents to database
