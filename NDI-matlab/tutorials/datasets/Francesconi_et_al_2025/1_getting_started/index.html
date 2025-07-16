@@ -22802,13 +22802,38 @@ combinedSummary = ndi.fun.table.moveColumnsLeft(combinedSummary,...
 </table>
 <h4 id="filter-epochs">Filter epochs <a name="filterEpochs"></a></h4>
 <p>Try finding epochs matching a given criterion.
-Examples:
-| columnName | dataValue | stringMatch |
-| :--- | :--- | :--- |
-| approachName | optogenetic | contains |
-| mixtureName | FE201874 | contains |
-| cellTypeName | Type I BNST neuron | identical |
-| global_t0 | Jun-2023 | contains |</p>
+Examples:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">columnName</th>
+<th style="text-align: left;">dataValue</th>
+<th style="text-align: left;">stringMatch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">approachName</td>
+<td style="text-align: left;">optogenetic</td>
+<td style="text-align: left;">contains</td>
+</tr>
+<tr>
+<td style="text-align: left;">mixtureName</td>
+<td style="text-align: left;">FE201874</td>
+<td style="text-align: left;">contains</td>
+</tr>
+<tr>
+<td style="text-align: left;">cellTypeName</td>
+<td style="text-align: left;">Type I BNST neuron</td>
+<td style="text-align: left;">identical</td>
+</tr>
+<tr>
+<td style="text-align: left;">global_t0</td>
+<td style="text-align: left;">Jun-2023</td>
+<td style="text-align: left;">contains</td>
+</tr>
+</tbody>
+</table>
 <p><em>Type this into MATLAB:</em></p>
 <pre><code class="language-matlab">% Search for epochs
 columnName = 'approachName';
