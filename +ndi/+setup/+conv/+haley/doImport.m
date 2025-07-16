@@ -328,7 +328,7 @@ for i = 2:numel(dataFiles)
     dataTable = dataTable.(tableType);
     dirName = split(dataFiles{i},filesep); dirName = dirName{end-1};
     progressBar = progressBar.addBar('Label', 'Creating Position and Distance Element(s)',...
-        'Tag', dirname);
+        'Tag', dirName);
 
     % Get ontology terms
     [~,bodyPart] = fileparts(dataFiles{i});
