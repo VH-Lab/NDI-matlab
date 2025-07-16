@@ -319,7 +319,7 @@ end
 % Create progress bar
 progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
 
-for i = 2:numel(dataFiles)
+for i = 5:numel(dataFiles)
 
     % Load current table
     dataTable = load(fullfile(dataParentDir,dataFiles{i}));
@@ -332,9 +332,9 @@ for i = 2:numel(dataFiles)
 
     % Get ontology terms
     [~,bodyPart] = fileparts(dataFiles{i});
-    bodyPart = ndi.ontology.lookup(['EMPTY:C. elegans ' bodyPart]);
+    bodyPartID = ndi.ontology.lookup(['EMPTY:C. elegans ' bodyPart]);
     subjectDocID = ndi.ontology.lookup('EMPTY:Subject document identifier');
-    patchDocID = ndi.ontology.lookup('EMPTY: C. elegans assay: patch parameter document identifier');
+    patchDocID = ndi.ontology.lookup('EMPTY:C. elegans assay: patch parameter document identifier');
 
     % Loop through each worm (subject)
     wormNums = unique(dataTable.wormNum);
@@ -364,12 +364,13 @@ for i = 2:numel(dataFiles)
 
         % Create position element and add epoch
         positionElement = ndi.element.timeseries(session,...
-            ['position_',wormName],1,'position',[],0,subject_id);
-        positionElement.addepoch(['position_',wormName],'dev_local_time,exp_global_time', ...
+            [wormName,'_',bodyPart,'_position'],1,'position',[],0,subject_id);
+        positionElement.addepoch([wormName,'_',bodyPart,'_position'],...
+            'dev_local_time,exp_global_time',...
             [t0_t1_local;t0_t1_global], time, position);
 
         % Create position_metadata structure
-        position_metadata.ontologyNode = bodyPart; % C. elegans head, midpoint, or tail
+        position_metadata.ontologyNode = bodyPartID; % C. elegans head, midpoint, or tail
         position_metadata.units = 'NCIT:C48367'; % pixels
         position_metadata.dimensions = 'NCIT:C44477,NCIT:C44478'; % X-coordinate, Y-coordinate
         
@@ -383,8 +384,9 @@ for i = 2:numel(dataFiles)
 
         % Create distance element and add epoch
         distanceElement = ndi.element.timeseries(session,...
-            ['distance_',wormName],1,'distance',[],0,subject_id);
-        distanceElement.addepoch(['distance_',wormName],'dev_local_time,exp_global_time', ...
+            [wormName,'_',bodyPart,'_distance'],1,'distance',[],0,subject_id);
+        distanceElement.addepoch([wormName,'_',bodyPart,'_distance'],...
+            'dev_local_time,exp_global_time',...
             [t0_t1_local;t0_t1_global], time, distance);
 
         % Create distance_metadata structure
