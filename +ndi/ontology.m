@@ -96,7 +96,7 @@ methods (Static)
         %     PREFIX       - The ontology prefix used in the lookup.
         %     DEFINITION   - A textual definition, if available.
         %     SYNONYMS     - A cell array of synonyms, if available.
-        %     SHORTNAME    - The short name for the term, if available.
+        %     SHORTNAME    - The short name for the term.
         %
         %   Examples:
         %       % Lookup neuron in Cell Ontology by ID
@@ -329,9 +329,9 @@ methods (Static)
         end
     end % function getPrefixOntologyMappings
 
-    function [id, name, definition, synonyms, shortName] = lookupOBOFile(oboFilePath, ontologyPrefix, term_to_lookup_fragment)
+    function [id, name, definition, synonyms] = lookupOBOFile(oboFilePath, ontologyPrefix, term_to_lookup_fragment)
         % LOOKUPOBOFILE - Looks up a term in a parsed OBO file.
-        %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = ndi.ontology.lookupOBOFile(...
+        %   [ID, NAME, DEFINITION, SYNONYMS] = ndi.ontology.lookupOBOFile(...
         %       OBOFILEPATH, ONTOLOGYPREFIX, TERM_TO_LOOKUP_FRAGMENT)
         %
         %   Parses an OBO file (if not already cached) and searches for a term.
@@ -348,8 +348,6 @@ methods (Static)
         %       DEFINITION - The term's definition.
         %       SYNONYMS   - A cell array of synonym strings (currently basic,
         %                    not parsing synonym types).
-        %       SHORTNAME  - The term's short name, typically derived from
-        %                    a 'property_value: codeName "..."' tag in the OBO file.
         %
         %   Throws:
         %       ndi:ontology:lookupOBOFile:FileNotFound
@@ -363,7 +361,7 @@ methods (Static)
             term_to_lookup_fragment (1,:) char % Can be empty if original lookup was just "PREFIX:"
         end
 
-        id = ''; name = ''; definition = ''; synonyms = {}; shortName = '';
+        id = ''; name = ''; definition = ''; synonyms = {};
 
         if isempty(term_to_lookup_fragment)
             error('ndi:ontology:lookupOBOFile:InvalidInput', ...
@@ -427,7 +425,6 @@ methods (Static)
                     name = term.name;
                     definition = term.definition;
                     synonyms = term.synonyms;
-                    shortName = term.shortName;
                     foundTerm = true;
                     break;
                 end
@@ -438,7 +435,6 @@ methods (Static)
                     name = term.name;
                     definition = term.definition;
                     synonyms = term.synonyms;
-                    shortName = term.shortName;
                     foundTerm = true;
                     break;
                 end
@@ -450,7 +446,6 @@ methods (Static)
                             name = term.name; % Return primary name even if found by synonym
                             definition = term.definition;
                             synonyms = term.synonyms;
-                            shortName = term.shortName;
                             foundTerm = true;
                             break; % break from synonym loop
                         end
@@ -528,7 +523,7 @@ methods (Static, Access = private)
         %   TERMS = ndi.ontology.parseOBOFile_(OBOFILEPATH)
         %
         %   This is a basic OBO parser, focusing on [Term] stanzas and
-        %   id, name, def, synonym, and shortName tags.
+        %   id, name, def, and synonym tags.
         %
         %   Input:
         %       oboFilePath - Full path to the .obo file.
@@ -539,7 +534,6 @@ methods (Static, Access = private)
         %               .name       (string)
         %               .definition (string)
         %               .synonyms   (cell array of strings)
-        %               .shortName  (string, from property_value codeName)
         %
         %   Note: This parser is not fully compliant with the OBO 1.2/1.4 spec
         %   but should handle common structures like the example provided.
@@ -548,8 +542,8 @@ methods (Static, Access = private)
         %   though OBO can have multi-line quoted strings.
         %   Synonym parsing is basic (extracts quoted string, ignores type).
 
-        terms = struct('id', {}, 'name', {}, 'definition', {}, 'synonyms', {}, 'shortName', {});
-        currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}}, 'shortName', '');
+        terms = struct('id', {}, 'name', {}, 'definition', {}, 'synonyms', {});
+        currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
         inTermStanza = false;
 
         try
@@ -565,7 +559,7 @@ methods (Static, Access = private)
 
         % Split file into lines, handling both \n and \r\n
         lines = strsplit(rawText, {'\n', '\r\n'}, 'CollapseDelimiters', false);
-        if iscell(lines) && numel(lines)==1 && isempty(lines{1}) % Handle empty file
+        if iscell(lines) && isscalar(lines) && isempty(lines{1}) % Handle empty file
             lines = {};
         end
 
@@ -582,7 +576,7 @@ methods (Static, Access = private)
                     terms(end+1) = currentTerm; % Save previous term
                 end
                 % Reset for new term
-                currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}}, 'shortName', '');
+                currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
                 inTermStanza = true;
                 continue;
             end
@@ -618,16 +612,6 @@ methods (Static, Access = private)
                         currentTerm.synonyms{end+1} = synMatches{1};
                     end
                     % More advanced parsing could extract synonym type, scope, xrefs.
-                elseif startsWith(line,'property_value:')
-                    % Expecting format: property_value: codeName "actualShortName" xsd:string
-                    % We only want to extract the shortName if the property is 'codeName'
-                    % and if currentTerm.shortName has not been filled yet (takes the first one)
-                    if isempty(currentTerm.shortName) % Only take the first codeName found per term
-                        propertyMatches = regexp(line, 'property_value:\s*codeName\s*"(.*?)"', 'tokens', 'once');
-                        if ~isempty(propertyMatches)
-                            currentTerm.shortName = propertyMatches{1};
-                        end
-                    end
                 end
                 % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
             end
