@@ -23,6 +23,7 @@ infoFiles = fileList(contains(fileList,'experimentInfo'));
 dataFiles = fileList(contains(fileList,'midpoint') | ...
     contains(fileList,'head') | contains(fileList,'tail'));
 encounterFiles = fileList(contains(fileList,'encounter'));
+bacteriaFiles = fileList(contains(fileList,'bacteria'));
 
 %% Step 2: SESSIONS. Build the session.
 
@@ -459,4 +460,5 @@ a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyIma
 b = ndi.fun.data.readngrid(a,ngrid.data_dim,ngrid.data_type);
 
 [d,t,timeref] = positionElement.readtimeseries(1,-Inf,Inf);
+
 end
