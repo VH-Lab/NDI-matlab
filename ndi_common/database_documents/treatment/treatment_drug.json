@@ -14,7 +14,7 @@
 	],
 	"treatment_drug": {
 		"location_ontologyNode":				[],
-		"location_name":					[]
+		"location_name":					[],
 		"mixture_table": 				[],
 		"administration_onset_time":                    [],
 		"administration_offset_time":                   [],
