@@ -39,6 +39,36 @@ if isfolder(badFolder)
     movefile(badFolder,replace(badFolder,'223','2023'))
 end
 
+badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/AVP_IV_Curves_Type I_BNST_neurons/Oct 5 2020/Pre ');
+if isfolder(badFolder)
+    disp(['Removing extra space chacter in known folder ' badFolder])
+    movefile(badFolder,replace(badFolder,'Pre ','Pre'));
+end
+
+badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type III_BNST_neurons/Jun 26 2023 c/Nelivaptan ');
+if isfolder(badFolder)
+    disp(['Removing extra space chacter in known folder ' badFolder])
+    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
+end
+
+badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type III_BNST_neurons/Jun 26 2023 c/Nelivaptan ');
+if isfolder(badFolder)
+    disp(['Removing extra space chacter in known folder ' badFolder])
+    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
+end
+
+badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type I_BNST_neurons/Aug 14 2023/Nelivaptan ');
+if isfolder(badFolder)
+    disp(['Removing extra space chacter in known folder ' badFolder])
+    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
+end
+
+badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type I_BNST_neurons/Aug 15 2023/Nelivaptan ');
+if isfolder(badFolder)
+    disp(['Removing extra space chacter in known folder ' badFolder])
+    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
+end
+
 [fileList] = vlt.file.manifest(dataPath);
 fileList = fullfile(dataParentDir,fileList);
 badFileInd = find(contains(fileList,'Copy of'));
