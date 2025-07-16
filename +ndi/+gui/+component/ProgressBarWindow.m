@@ -82,7 +82,6 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 options.Visible (1,1) matlab.lang.OnOffSwitchState = "on"
             end
 
-            app.Visible = options.Visible;
 
             % Find existing figure with that tag
             openFigs = findall(groot,'Type','figure','tag','progressbar');
@@ -124,6 +123,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                     end
                 end
             end
+
+            % Set visible state from input
+            app.Visible = options.Visible;
 
             % Add auto-delete tag
             app.AutoDelete = options.AutoDelete;
