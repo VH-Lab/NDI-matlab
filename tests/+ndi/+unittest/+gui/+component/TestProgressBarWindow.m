@@ -185,7 +185,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.verifyEqual(app.ProgressBars(1).Percent.Text, '100%');
             testCase.verifyEqual(app.ProgressBars(1).State, 'Complete', 'Status should be Complete.');
             testCase.verifyEqual(app.ProgressBars(1).Timer.Text, 'Complete', 'Timer text should be Complete.');
-            testCase.verifyEqual(app.ProgressBars(1).Button.Icon, 'success', 'Button icon should be success.');
+            testCase.verifyButtonIconIsSuccess(app.ProgressBars(1).Button)
         end
         function testUpdateBarNonExistent(testCase)
             app = ndi.gui.component.ProgressBarWindow('NonExistent Test', 'Visible', 'off');
@@ -335,7 +335,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             app.checkComplete(); % Call the method directly
             testCase.verifyEqual(app.ProgressBars(1).State, 'Complete');
             testCase.verifyEqual(app.ProgressBars(1).Timer.Text, 'Complete');
-            testCase.verifyEqual(app.ProgressBars(1).Button.Icon, 'success');
+            testCase.verifyButtonIconIsSuccess(app.ProgressBars(1).Button)
         end
         function testCheckTimeout(testCase)
             app = ndi.gui.component.ProgressBarWindow('Check Timeout Method', 'Visible', 'off');
@@ -352,7 +352,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             app.checkTimeout();
             
             testCase.verifyEqual(app.ProgressBars(1).State, 'Timeout');
-            testCase.verifyEqual(app.ProgressBars(1).Button.Icon, 'error');
+            testCase.verifyButtonIconIsError(app.ProgressBars(1).Button)
         end
         
         function testGetState(testCase)
@@ -558,6 +558,20 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             % 7. Verify window is closed
             testCase.verifyFalse(isvalid(figHandle), 'Figure should be auto-deleted after the final bar is removed.');
         end
-        
+    end
+
+    methods (Access = private)
+        function verifyButtonIconIsSuccess(testCase, buttonHandle)
+            % Backwards compatibility: Adding icons by name was introduced in MATLAB R2022b
+            if exist('isMATLABReleaseOlderThan', 'file') && ~isMATLABReleaseOlderThan('R2022b')
+                testCase.verifyEqual(buttonHandle.Icon, 'success', 'Button icon should be success.');
+            end
+        end
+        function verifyButtonIconIsError(testCase, buttonHandle)
+            % Backwards compatibility: Adding icons by name was introduced in MATLAB R2022b
+            if exist('isMATLABReleaseOlderThan', 'file') && ~isMATLABReleaseOlderThan('R2022b')
+                testCase.verifyEqual(buttonHandle.Icon, 'error', 'Button icon should be error.');
+            end
+        end
     end
 end
