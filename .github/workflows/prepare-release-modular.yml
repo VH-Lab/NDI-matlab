@@ -63,7 +63,7 @@ jobs:
             ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
-            testToolbox()
+            testToolbox(CreateBadge=false)
 
       # Save the contents of the report directory from each release into an artifact.
       - name: Save report directory

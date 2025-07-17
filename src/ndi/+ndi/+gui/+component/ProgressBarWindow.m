@@ -743,7 +743,16 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     methods (Access = private)
         function bringToFront(app)
             if app.Visible
-                figure(app.ProgressFigure);
+                try
+                    figure(app.ProgressFigure);
+                catch ME
+                    if strcmp(ME.identifier, 'MATLAB:UndefinedFunction') && ...
+                            startsWith(ME.message, "Undefined function 'bringToFront'")
+                        % Ignore. This error occurs on virtual runners (i.e github actions runner)
+                    else
+                        rethrow(ME)
+                    end
+                end
             end
         end
     end
