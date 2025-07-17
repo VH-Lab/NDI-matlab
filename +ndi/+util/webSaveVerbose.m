@@ -7,15 +7,16 @@ function savename = webSaveVerbose(filename, url, varargin)
 %   but adds detailed diagnostic output to help debug download issues.
 %   This function is compatible with both old and new versions of MATLAB.
 %
-%   It performs a 3-step process:
+%   It performs a 4-step process:
 %   1. Download & Header Capture: Uses webread to get the content. It tries
 %      to get response headers if the MATLAB version supports it.
-%   2. Save to File: Manually saves the downloaded content to the specified file.
-%   3. Verification: Compares file size against Content-Length if available.
+%   2. Hex Dump: Prints the first 1024 bytes of the content in hex format.
+%   3. Save to File: Manually saves the downloaded content to the specified file.
+%   4. Verification: Compares file size against Content-Length if available.
 %
 %   Example:
-%       url = 'https://www.mathworks.com/images/mathworks-logo.svg';
-%       filename = 'matlab_logo.svg';
+%       url = 'https://via.placeholder.com/150';
+%       filename = 'test_image.png';
 %       webSaveVerbose(filename, url);
 %
 %   See also websave, webread, weboptions.
@@ -71,8 +72,28 @@ else
     disp('Header diagnostics skipped (not supported on this MATLAB version).');
 end
 
+% --- 4. Hex Dump of First 1024 Bytes ---
+disp('--- Hex Dump of First 1024 Bytes ---');
+if ~isempty(content)
+    numBytesToPrint = min(1024, numel(content));
+    bytesToPrint = content(1:numBytesToPrint);
+    hexStr = dec2hex(bytesToPrint)';
+    fprintf('Showing %d of %d bytes:\n', numBytesToPrint, numel(content));
+    for i = 1:16:numBytesToPrint
+        endIndex = min(i + 15, numBytesToPrint);
+        % Address part
+        fprintf('%04x: ', i-1);
+        % Hex part
+        lineHex = hexStr(:, i:endIndex);
+        fprintf('%s ', lineHex);
+        fprintf('\n');
+    end
+else
+    disp('Content is empty, skipping hex dump.');
+end
 
-% --- 4. Manually save the content to a file ---
+
+% --- 5. Manually save the content to a file ---
 disp('--- Saving content to file ---');
 try
     % Open file for binary writing ('wb') to handle all content types safely
@@ -96,7 +117,7 @@ catch ME
 end
 
 
-% --- 5. Post-download Verification ---
+% --- 6. Post-download Verification ---
 disp('--- Verification ---');
 s = dir(savename);
 if isempty(s)
