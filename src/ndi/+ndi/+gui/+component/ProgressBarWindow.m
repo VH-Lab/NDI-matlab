@@ -541,7 +541,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                         app.ProgressBars(i).Progress < 1
                     
                     % Set icon to error and state to 'Timeout'
-                    set(app.ProgressBars(i).Button,'Icon','error');
+                    app.setErrorIconForButton(app.ProgressBars(i).Button)
                     app.ProgressBars(i).State = 'Timeout';
                     barNum(end+1) = i;
                 end
@@ -571,7 +571,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                     
                     % Set icon to success and state to 'Complete'
                     set(app.ProgressBars(i).Timer,'Text','Complete');
-                    set(app.ProgressBars(i).Button,'Icon','success');
+                    app.setSuccessIconForButton(app.ProgressBars(i).Button)
                     app.ProgressBars(i).State = 'Complete';
                     barNum(end+1) = i;
                 end
@@ -744,6 +744,24 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         function bringToFront(app)
             if app.Visible
                 figure(app.ProgressFigure);
+            end
+        end
+    end
+
+    methods (Static, Access = private)
+        function setErrorIconForButton(buttonHandle)
+            if exist('isMATLABReleaseOlderThan', 'file') && ~isMATLABReleaseOlderThan('R2022b')
+                set(buttonHandle,'Icon','error');
+            else
+                % Todo: need to add custom icon
+            end
+        end
+
+        function setSuccessIconForButton(buttonHandle)
+            if exist('isMATLABReleaseOlderThan', 'file') && ~isMATLABReleaseOlderThan('R2022b')
+                set(buttonHandle,'Icon','success');
+            else
+                % Todo: need to add custom icon
             end
         end
     end
