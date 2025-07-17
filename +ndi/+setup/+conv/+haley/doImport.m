@@ -44,29 +44,30 @@ subjectMaker = ndi.setup.NDIMaker.subjectMaker();
 
 % Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
+tableDocMaker_ecoli = ndi.setup.NDIMaker.tableDocMaker(sessions{2},labName);
 
 % Create imageDocMaker
 imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
 
 %% Step 4. BACTERIA. Create openMINDS documents for bacterial food
 
-% Species
+% E. coli
 species = openminds.controlledterms.Species;
 species.name = 'Escherichia coli';
 species.preferredOntologyIdentifier = 'NCBITaxon:562';
 species.definition = 'Escherichia coli is a species of bacteria.';
 species.synonym = 'E. coli';
 
-% Strain
-strain = openminds.core.research.Strain;
-strain.name = 'Escherichia coli OP50';
-strain.species = species;
-strain.ontologyIdentifier = 'NCBITaxon:637912';
-strain.description = 'OP50 is a strain of E. coli.';
-strain.geneticStrainType = 'wild type';
+% OP50
+OP50 = openminds.core.research.Strain;
+OP50.name = 'Escherichia coli OP50';
+OP50.species = species;
+OP50.ontologyIdentifier = 'NCBITaxon:637912';
+OP50.description = 'OP50 is a strain of E. coli.';
+OP50.geneticStrainType = 'wild type';
 
 % Add documents to database
-strainDoc = ndi.database.fun.openMINDSobj2ndi_document(strain,session.id);
+strainDoc = ndi.database.fun.openMINDSobj2ndi_document(OP50,session.id);
 session.database_add(strainDoc);
 
 %% Step 5. INFO DOCUMENTS.
@@ -83,7 +84,7 @@ plateVariables = {'experiment_id','plateNum','exclude',...
     'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
 patchVariables = {'plate_id','OD600','lawnCenters','lawnRadii','lawnCircularity'};
 videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
-    'frameRate','numFrames','scale'};
+    'frameRate','numFrames','bitDepth','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
 
 for i = 1:numel(infoFiles)
@@ -201,6 +202,7 @@ for i = 1:numel(infoFiles)
     % Add missing variables
     dataTable.pixelWidth = cellfun(@(p) p(1),dataTable.pixels);
     dataTable.pixelHeight = cellfun(@(p) p(2),dataTable.pixels);
+    dataTable.bitDepth = cellfun(@(ff) class(ff),dataTable.firstFrame,'UniformOutput',false);
 
     % Compile data table with 1 row for each unique video
     videoTable = ndi.fun.table.join({dataTable(:,videoVariables)},...
@@ -465,15 +467,73 @@ encounterDocs = tableDocMaker.table2ontologyTableRowDocs(...
 session = sessions{2};
 session.cache.clear;
 
-% Create tableDocMaker
-tableDocMaker2 = ndi.setup.NDIMaker.tableDocMaker(session,labName);
+% OP50-GFP
+OP50GFP = openminds.core.research.Strain;
+OP50GFP.name = 'OP50-GFP';
+OP50GFP.species = species;
+OP50GFP.ontologyIdentifier = 'WBStrain:00041972';
+OP50GFP.description = 'A strain of OP50 that contains a GFP plasmid (pFPV25.1) that is very fluorescent. Resistant to ampicillin.';
+OP50GFP.geneticStrainType = 'transgenic';
+OP50GFP.backgroundStrain = OP50;
 
+% Add OpenMinds documents to database
+strainDoc = ndi.database.fun.openMINDSobj2ndi_document(OP50GFP,session.id);
+session.database_add(strainDoc);
 
+% Get data from .mat
+dataTable = load(fullfile(dataParentDir,bacteriaFiles{1}),'lawnAnalysis');
+dataTable = dataTable.lawnAnalysis;
 
-% ngrid = info.(dirName).arenaMaskDocs{1}.document_properties.ngrid;
-% a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyImage.ngrid');
-% b = ndi.fun.data.readngrid(a,ngrid.data_dim,ngrid.data_type);
-% 
-% [d,t,timeref] = positionElement.readtimeseries(1,-Inf,Inf);
+% List the variables for each document type
+experimentVariables = {'expNum','bacteria','OD600Real','CFU'};
+plateVariables = {'experiment_id','plateNum','OD600','lawnVolume',...
+    'peptoneFlag','timePoured','timePouredColdRoom',...
+    'timeSeed','timeSeedColdRoom','timeRoomTemp'};
+imageVariables = {'plate_id','imageNum','acquisitionTime',...
+    'xPixels','yPixels','exposureTime','bitDepth','scale',...
+    'minValue','maxValue','meanValue'};
+patchVariables = {'image_id','patchNum',...
+    'xPeak','yPeak','xOuterEdge','yOuterEdge',...
+    'xHalfMaxOuter','xHalfMaxInner','yHalfMax','FWHM',...
+    'lawnRadius','circularity',...
+    'borderAmplitude','meanAmplitude','centerAmplitude','borderCenterRatio'};
+
+% A. EXPERIMENT ontologyTableRow
+
+% Add missing variables
+dataTable{:,'bacteria'} = {strainDoc{1}.id};
+
+% Compile data table with 1 row for each unique experiment day
+experimentTable = ndi.fun.table.join({dataTable(:,experimentVariables)},...
+    'UniqueVariables','expNum');
+
+% Create ontologyTableRow documents
+experimentDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
+    experimentTable,{'expNum'},'Overwrite',options.Overwrite);
+experimentTable.experiment_id = cellfun(@(d) d.id,experimentDocs,'UniformOutput',false);
+dataTable = ndi.fun.table.join({dataTable,experimentTable(:,{'expNum','experiment_id'})});
+
+% B. PLATE ontologyTableRow
+
+% Add missing variables
+dataTable{:,'peptoneFlag'} = true;
+indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
+dataTable{indWithout,'peptoneFlag'} = false;
+
+% Compile data table with 1 row for each unique plate
+plateTable = ndi.fun.table.join({dataTable(:,plateVariables)},...
+    'UniqueVariables',{'experiment_id','plateNum'});
+
+% Create ontologyTableRow documents
+plateDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
+    plateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
+plateTable.plate_id = cellfun(@(d) d.id,plateDocs,'UniformOutput',false);
+dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'experiment_id','plate_id'})});
+
+% C. Image ontologyTableRow documents
+
+% Compile data table with 1 row for each unique plate
+imageTable = ndi.fun.table.join({dataTable(:,imageVariables)},...
+    'UniqueVariables',{'plate_id','imageNum'});
 
 end
