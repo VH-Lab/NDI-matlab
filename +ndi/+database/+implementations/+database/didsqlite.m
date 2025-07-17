@@ -93,7 +93,7 @@ classdef  didsqlite < ndi.database
                     ndiFileUid = cloudPath{2};
     
                     [~, fileUrl, ~] = ndi.cloud.api.datasets.get_file_details(cloudDatasetId, ndiFileUid);
-                    websave(destPath, fileUrl);
+                    ndi.util.webSaveVerbose(destPath, fileUrl);
                 else
                     error('NDI:Didsqlite:UnsupportedFileLocationType', ...
                         ['The source path "%s" uses an unsupported file location type. ' ...
