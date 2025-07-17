@@ -528,12 +528,30 @@ plateTable = ndi.fun.table.join({dataTable(:,plateVariables)},...
 plateDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
     plateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
 plateTable.plate_id = cellfun(@(d) d.id,plateDocs,'UniformOutput',false);
-dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'experiment_id','plate_id'})});
+dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'experiment_id','plateNum','plate_id'})});
 
-% C. Image ontologyTableRow documents
+% C. IMAGE ontologyTableRow documents
 
-% Compile data table with 1 row for each unique plate
+% Compile data table with 1 row for each unique image
 imageTable = ndi.fun.table.join({dataTable(:,imageVariables)},...
     'UniqueVariables',{'plate_id','imageNum'});
 
+% Create ontologyTableRow documents
+imageDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
+    imageTable,{'plate_id','imageNum'},'Overwrite',options.Overwrite);
+imageTable.image_id = cellfun(@(d) d.id,imageDocs,'UniformOutput',false);
+dataTable = ndi.fun.table.join({dataTable,imageTable(:,{'plate_id','imageNum','image_id'})});
+
+% D. PATCH ontologyTableRow documents
+
+% Add missing variables
+dataTable.patchNum = (1:height(dataTable))';
+
+% Compile data table with 1 row for each unique patch per image
+patchTable = ndi.fun.table.join({dataTable(:,patchVariables)},...
+    'UniqueVariables',{'image_id','patchNum'});
+
+% Create ontologyTableRow documents
+patchDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
+    patchTable,{'image_id','patchNum'},'Overwrite',options.Overwrite);
 end
