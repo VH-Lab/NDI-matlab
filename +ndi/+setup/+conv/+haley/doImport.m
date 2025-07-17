@@ -28,7 +28,7 @@ bacteriaFiles = fileList(contains(fileList,'bacteria'));
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
-SessionRef = {'Haley_2025'};
+SessionRef = {'Haley_Celegans_2025'};
 SessionPath = {labName};
 sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
     table(SessionRef,SessionPath),'Overwrite',options.Overwrite);
@@ -167,7 +167,7 @@ for i = 1:numel(infoFiles)
         numPatch = numel(patchCenterX{j});
         if contains(dirName,'Matching')
             patchOD600{j} = plateRow.OD600{1}';
-        elseif contains(dirName,'Mutants')
+        elseif contains(dirName,'Mutants') || contains(dirName,'Sensory')
             patchOD600{j} = repmat(plateRow.OD600{1}(1),numPatch,1);
         else
             patchOD600{j} = repmat(plateRow.OD600,numPatch,1);
@@ -178,7 +178,8 @@ for i = 1:numel(infoFiles)
     plate_id = vertcat(plate_id{:});
     patchNum = vertcat(patchNum{:});
     patchOD600 = vertcat(patchOD600{:});
-    if contains(dirName,'Matching') || contains(dirName,'Mutants')
+    if contains(dirName,'Matching') || contains(dirName,'Mutants') || ...
+            contains(dirName,'Sensory')
         patchOD600(patchOD600 == 0) = [];
     end
     patchCenterX = vertcat(patchCenterX{:});
@@ -192,6 +193,7 @@ for i = 1:numel(infoFiles)
     info.(dirName).patchDocs = tableDocMaker.table2ontologyTableRowDocs(...
         patchTable,{'plate_id','patchNum'},'Overwrite',options.Overwrite);
     patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
+    patchTable{:,'dirName'} = {dirName};
     info.(dirName).patchTable = patchTable;
 
     % D. VIDEO ontologyTableRow
@@ -319,7 +321,7 @@ end
 % Create progress bar
 progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
 
-for i = 5:numel(dataFiles)
+for i = 1:numel(dataFiles)
 
     % Load current table
     dataTable = load(fullfile(dataParentDir,dataFiles{i}));
@@ -449,12 +451,13 @@ end
 dataTable = renamevars(dataTable,{'expName','id','lawnID'},{'dirName','encounterNum','patchNum'});
 dataTable = ndi.fun.table.join({dataTable,...
     wormTable(:,{'wormNum','dirName','subject_id','plate_id'}),...
-    patchTable(:,{'patchNum','dirName','plate_id'})});
+    patchTable(:,{'patchNum','dirName','plate_id','patch_id'})});
 
 % Create ontologyTableRow documents
-indEncounter = dataTable.id > 0;
-encounterDocs = tableDocMaker(dataTable(indEncounter,encounterVariables),...
-    {'subject_id','id'},'Overwrite',options.Overwrite);
+indEncounter = dataTable.encounterNum > 0;
+encounterDocs = tableDocMaker.table2ontologyTableRowDocs(...
+    dataTable(indEncounter,encounterVariables),...
+    {'subject_id','encounterNum'},'Overwrite',options.Overwrite);
 
 %% Step 8. BACTERIA DOCUMENTS.
 
