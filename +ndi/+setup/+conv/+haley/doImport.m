@@ -2,8 +2,8 @@ function [] = doImport(dataParentDir,options)
 
 % Input argument validation
 arguments
-    dataParentDir (1,:) char {mustBeFolder}
-    options.Overwrite (1,1) logical = false
+    dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath,'data')
+    options.Overwrite (1,1) logical = true
 end
 
 % Initialize progress bar
@@ -28,8 +28,8 @@ bacteriaFiles = fileList(contains(fileList,'bacteria'));
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
-SessionRef = {'Haley_Celegans_2025'};
-SessionPath = {labName};
+SessionRef = {'Haley_2025_Celegans';'Haley_2025_Ecoli'};
+SessionPath = {fullfile(labName,'celegans');fullfile(labName,'ecoli')};
 sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
     table(SessionRef,SessionPath),'Overwrite',options.Overwrite);
 
