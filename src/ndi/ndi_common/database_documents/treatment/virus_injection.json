@@ -1,7 +1,7 @@
 {
     "document_class": {
-		"definition":                       "$NDIDOCUMENTPATH\/virus_injection.json",
-		"validation":						"$NDISCHEMAPATH\/virus_injection_schema.json",
+		"definition":                       "$NDIDOCUMENTPATH\/treatment\/virus_injection.json",
+		"validation":						"$NDISCHEMAPATH\/treatment\/virus_injection_schema.json",
 		"class_name":                       "virus_injection",
 		"property_list_name":               "virus_injection",
 		"class_version":                    1,

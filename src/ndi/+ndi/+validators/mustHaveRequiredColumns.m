@@ -1,4 +1,3 @@
-% +ndi/+validation/mustHaveRequiredColumns.m
 function mustHaveRequiredColumns(t, requiredCols)
 %MUSTHAVEREQUIREDCOLUMNS Validates if a table contains specified columns.
 %
