@@ -33,7 +33,7 @@
   "patchRadius": "EMPTY:C. elegans behavioral assay: bacterial patch radius",
   "patchCircularity": "EMPTY:C. elegans behavioral assay: bacterial patch circularity",
   "videoNum": "EMPTY:C. elegans behavioral assay: video identifier",
-  "timeRecord": "EMPTY:C. elegans behavioral assay: video timestamp",
+  "timeRecord": "EMPTY:C. elegans behavioral assay: video acquisition timestamp",
   "pixelWidth": "EMPTY:C. elegans behavioral assay: video frame width",
   "pixelHeight": "EMPTY:C. elegans behavioral assay: video frame height",
   "frameRate": "EMPTY:C. elegans behavioral assay: video frame rate",
@@ -52,5 +52,6 @@
   "exploitPosterior": "EMPTY:C. elegans behavioral assay: posterior probability of exploitation",
   "sensePosterior": "EMPTY:C. elegans behavioral assay: posterior probability of sensing",
   "density": "EMPTY:C. elegans behavioral assay: relative density of encountered bacteria",
-  "densityGrowth": "EMPTY:C. elegans behavioral assay: relative density of cultivation bacteria"
+  "densityGrowth": "EMPTY:C. elegans behavioral assay: relative density of cultivation bacteria",
+  "bitDepth": "EMPTY:Image bit depth",
 }
