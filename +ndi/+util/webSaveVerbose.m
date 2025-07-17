@@ -5,18 +5,18 @@ function savename = webSaveVerbose(filename, url, varargin)
 %
 %   Acts as a drop-in replacement for MATLAB's built-in websave function,
 %   but adds detailed diagnostic output to help debug download issues.
-%   This function is compatible with both old and new versions of MATLAB.
+%   This function is compatible with all MATLAB versions and content types.
 %
 %   It performs a 4-step process:
-%   1. Download & Header Capture: Uses webread to get the content. It tries
-%      to get response headers if the MATLAB version supports it.
+%   1. Download & Header Capture: Uses webread, gracefully falling back to a
+%      content-only download if headers are not available for the content type.
 %   2. Hex Dump: Prints the first 1024 bytes of the content in hex format.
 %   3. Save to File: Manually saves the downloaded content to the specified file.
 %   4. Verification: Compares file size against Content-Length if available.
 %
 %   Example:
-%       url = 'https://via.placeholder.com/150';
-%       filename = 'test_image.png';
+%       url = 'https://www.ndi-cloud.com/about';
+%       filename = 'about.html';
 %       webSaveVerbose(filename, url);
 %
 %   See also websave, webread, weboptions.
@@ -26,38 +26,50 @@ fprintf('\n--- webSaveVerbose ---\n');
 fprintf('Requesting URL: %s\n', url);
 fprintf('Saving to file: %s\n', filename);
 
-% --- 2. Download content and headers using webread ---
+% --- 2. Proactively Check User-Agent ---
+disp('--- Client Info ---');
+% Create a weboptions object to inspect the default User-Agent string.
+% This allows us to see the User-Agent even if webread later fails
+% to return the full response object.
+options = weboptions;
+% If user passed in their own options, use them.
+if ~isempty(varargin) && isa(varargin{1}, 'matlab.net.http.HTTPOptions')
+    options = varargin{1};
+end
+fprintf('Client User-Agent: %s\n', options.UserAgent);
+
+
+% --- 3. Download content and headers using a robust try/catch block ---
 disp('--- Downloading content and headers (using webread) ---');
 response = []; % Initialize response as empty
+content = [];  % Initialize content as empty
+
 try
-    % TRY the modern, two-output syntax first.
-    [content, response] = webread(url, varargin{:});
-    disp('webread (modern syntax) completed.');
+    % Attempt to get both content and response headers. This works on modern
+    % MATLAB versions for specific content types (e.g., JSON).
+    [content, response] = webread(url, options);
+    disp('webread completed (with headers).');
 catch ME
-    % CATCH the error if it's the "Too many outputs" issue on older MATLAB.
+    % If the above fails with "Too many output arguments", it means this
+    % MATLAB version or content-type doesn't support the two-output syntax.
     if strcmp(ME.identifier, 'MATLAB:maxlhs') || contains(ME.message, 'Too many output arguments')
-        disp('Older MATLAB version detected. Falling back to single-output webread.');
-        disp('Header information will not be available.');
-        content = webread(url, varargin{:});
-        disp('webread (legacy syntax) completed.');
+        disp('Could not retrieve headers (unsupported for this content type or MATLAB version).');
+        disp('Falling back to content-only download.');
+        content = webread(url, options);
+        disp('webread completed (content-only).');
     else
-        % If it's a different error, rethrow it.
+        % If it's a different error (e.g., 404 Not Found), rethrow it.
         fprintf('\n--- DOWNLOAD FAILED during webread ---\n');
         rethrow(ME);
     end
 end
 
-% --- 3. Print Diagnostic Info (if available) ---
+% --- 4. Print Diagnostic Info (if available) ---
 disp('--- Response Headers ---');
 expectedSize = NaN; % Default to NaN if Content-Length is not available
 
 % Only try to print headers if the 'response' variable was populated
 if ~isempty(response)
-    % Print debugging info from the response, checking if fields exist first
-    if isprop(response, 'Request') && isprop(response.Request, 'UserAgent')
-        fprintf('Client User-Agent: %s\n', response.Request.UserAgent);
-    end
-
     if isprop(response, 'ContentType') && ~isempty(response.ContentType)
         fprintf('Server Reported Content-Type: %s\n', response.ContentType);
     end
@@ -69,14 +81,14 @@ if ~isempty(response)
         disp('Server did not report Content-Length.');
     end
 else
-    disp('Header diagnostics skipped (not supported on this MATLAB version).');
+    disp('Header diagnostics skipped.');
 end
 
-% --- 4. Hex Dump of First 1024 Bytes ---
+% --- 5. Hex Dump of First 1024 Bytes ---
 disp('--- Hex Dump of First 1024 Bytes ---');
 if ~isempty(content)
     numBytesToPrint = min(1024, numel(content));
-    bytesToPrint = content(1:numBytesToPrint);
+    bytesToPrint = uint8(content(1:numBytesToPrint)); % Ensure uint8 for dec2hex
     hexStr = dec2hex(bytesToPrint)';
     fprintf('Showing %d of %d bytes:\n', numBytesToPrint, numel(content));
     for i = 1:16:numBytesToPrint
@@ -93,7 +105,7 @@ else
 end
 
 
-% --- 5. Manually save the content to a file ---
+% --- 6. Manually save the content to a file ---
 disp('--- Saving content to file ---');
 try
     % Open file for binary writing ('wb') to handle all content types safely
@@ -117,7 +129,7 @@ catch ME
 end
 
 
-% --- 6. Post-download Verification ---
+% --- 7. Post-download Verification ---
 disp('--- Verification ---');
 s = dir(savename);
 if isempty(s)
