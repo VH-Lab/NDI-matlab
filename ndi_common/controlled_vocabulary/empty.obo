@@ -929,6 +929,14 @@ is_a: EMPTY:00000174 ! C. elegans assay parameter
 property_value: codeName "cElegansAssayExperimentPlateIdentifier" xsd:string
 
 [Term]
+id: EMPTY:00000193
+name: Image bit depth
+namespace: empty_ontology
+def: "A parameter that specifies the number of bits used to represent the color or grayscale intensity of each pixel in an image. Higher bit depth allows for a greater range of colors or shades." []
+is_a: EMPTY:00000176 ! Video parameter
+property_value: codeName "imageBitDepth" xsd:string
+
+[Term]
 id: EMPTY:00000194
 name: Treatment: food restriction onset time
 namespace: empty_ontology
@@ -1232,6 +1240,7 @@ namespace: empty_ontology
 def: "An image corresponding to the first frame of the C. elegans behavioral video recording." []
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C85845 ! Grayscale Image
+is_a: NCIT:C69244 ! Acquired Image
 property_value: codeName "cElegansBehavioralAssayFirstFrameImage" xsd:string
 
 [Term]
