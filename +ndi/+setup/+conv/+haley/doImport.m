@@ -34,7 +34,7 @@ sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
     table(SessionRef,SessionPath),'Overwrite',options.Overwrite);
 
 % Get the session object
-session = sessionMaker.sessionIndices; session = session{1};
+sessions = sessionMaker.sessionIndices; session = sessions{1};
 session.cache.clear;
 
 %% Step 3. SUBJECTMAKER AND TABLEDOCMAKER.
@@ -48,7 +48,7 @@ tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 % Create imageDocMaker
 imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
 
-%% Step 4. BACTERIA. Create openMINDS documents for bacteria
+%% Step 4. BACTERIA. Create openMINDS documents for bacterial food
 
 % Species
 species = openminds.controlledterms.Species;
@@ -461,10 +461,19 @@ encounterDocs = tableDocMaker.table2ontologyTableRowDocs(...
 
 %% Step 8. BACTERIA DOCUMENTS.
 
-ngrid = info.(dirName).arenaMaskDocs{1}.document_properties.ngrid;
-a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyImage.ngrid');
-b = ndi.fun.data.readngrid(a,ngrid.data_dim,ngrid.data_type);
+% Get the session object
+session = sessions{2};
+session.cache.clear;
 
-[d,t,timeref] = positionElement.readtimeseries(1,-Inf,Inf);
+% Create tableDocMaker
+tableDocMaker2 = ndi.setup.NDIMaker.tableDocMaker(session,labName);
+
+
+
+% ngrid = info.(dirName).arenaMaskDocs{1}.document_properties.ngrid;
+% a = session.database_openbinarydoc(info.(dirName).arenaMaskDocs{1}, 'ontologyImage.ngrid');
+% b = ndi.fun.data.readngrid(a,ngrid.data_dim,ngrid.data_type);
+% 
+% [d,t,timeref] = positionElement.readtimeseries(1,-Inf,Inf);
 
 end
