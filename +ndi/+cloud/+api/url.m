@@ -55,7 +55,7 @@ function url = url(endpointName, options)
         endpointMap("get_unpublished")                = "/datasets/unpublished?page={page}&pageSize={page_size}";
         endpointMap("get_raw_file_upload_url")        = "/datasets/{datasetId}/files/raw/{uid}";
         endpointMap("get_file_upload_url")            = "/datasets/{datasetId}/files/{uid}";
-        endpointMap("get_file_collection_upload_url") = "/datasets/{datasetId}/files/bulk";
+        endpointMap("get_file_collection_upload_url") = "/datasets/{organizationId}/{datasetId}/files/bulk";
         endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{uid}/detail";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
