@@ -1,0 +1,21 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/video_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/data\/video_parameters_schema.json",
+		"class_name":						"video_parameters",
+		"property_list_name":					"video_parameters",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/data\/image_parameters.json" }
+
+		]
+	},
+	"video_parameters" : {
+			"num_frames":			[],
+			"duration":			[],
+			"frame_rate":			[]
+
+	}
+}
+

@@ -1,0 +1,33 @@
+{
+	"classname": "video_parameters",
+	"superclasses":  [ "base" , "image_parameters" ],
+	"depends_on": [
+		{ "name": "video_id", "mustbenotempty": 0}
+	],
+	"video_parameters": [
+		{
+			"name": "num_frames",
+			"type": "integer",
+			"default_value": [1],
+			"parameters": [1,10000000,0],
+			"queryable": 1,
+			"documentation": "The total number of frames in the video."
+		},
+		{
+			"name": "duration",
+			"type": "double",
+			"default_value": [1],
+			"parameters": [1,10000000,0],
+			"queryable": 1,
+			"documentation": "The duration of the video in seconds."
+		},
+		{
+			"name": "frame_rate",
+			"type": "double",
+			"default_value": [1],
+			"parameters": [1,10000000,0],
+			"queryable": 1,
+			"documentation": "The number of video frames per second."
+		}
+	]
+}
