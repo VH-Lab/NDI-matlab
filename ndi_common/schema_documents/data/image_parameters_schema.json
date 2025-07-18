@@ -1,0 +1,73 @@
+{
+	"classname": "image_parameters",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "image_id", "mustbenotempty": 0}
+	],
+	"image_parameters": [
+		{
+			"name": "timestamp",
+			"type": "integer",
+			"default_value": [0],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The time that the image was acquired specified as a datenum (if global clock) or in seconds (if local clock)."
+		},
+		{
+			"name": "clocktype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The clock type of the timestamp. Use a global clock if available."
+		},
+		{
+			"name": "width",
+			"type": "integer",
+			"default_value": [1],
+			"parameters": [1,10000000,0],
+			"queryable": 1,
+			"documentation": "The width of the image in pixels."
+		},
+		{
+			"name": "height",
+			"type": "integer",
+			"default_value": [1],
+			"parameters": [1,10000000,0],
+			"queryable": 1,
+			"documentation": "The height of the image in pixels."
+		},
+		{
+			"name": "bitdepth",
+			"type": "integer",
+			"default_value": [1],
+			"parameters": [1,10000000,0],
+			"queryable": 1,
+			"documentation": "The number of bits per pixel (e.g 8, 16)."
+		},
+		{
+			"name": "colortype",
+			"type": "string",
+			"default_value": "grayscale",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The type of image (e.g. 'grayscale', 'RGB', 'CMYK', 'indexed')."
+		},
+		{
+			"name": "scale",
+			"type": "double",
+			"default_value": [1],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The spatial scale of the image in pixels per scale_unit."
+		},
+		{
+			"name": "scale_unit",
+			"type": "string",
+			"default_value": "mm",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of the image scale such as pixels per 'mm' or pixels per 'inch'."
+		}
+	]
+}
