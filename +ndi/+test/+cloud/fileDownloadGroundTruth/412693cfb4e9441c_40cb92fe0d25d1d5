@@ -1,0 +1,4 @@
+name	type	time_channel	sample_rate	offset	scale	number	group	dataclass
+ai1	analog_in	1	10000	0	1	1	1	ephys
+ao1	analog_out	1	10000	0	1	1	1	ephys
+t1	time	1	10000	0	1	1	1	time
