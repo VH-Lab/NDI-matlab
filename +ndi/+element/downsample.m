@@ -48,7 +48,7 @@ end
 
 % Get epoch_ids for all missing elements
 et = ndi_element_timeseries_obj_in.epochtable();
-[missing,missing_ids] = ndi.element.missingepochs(et,elem_out.epochtable);
+[missing,missing_ids,missing_epoch_numbers] = ndi.element.missingepochs(et,elem_out.epochtable);
 if ~missing
     disp(['All epochs of the element ' name_out ' | ' int2str(reference_out) ' have already been downsampled.'])
     return
@@ -63,8 +63,8 @@ for i = 1:numel(missing_ids)
         ['Working on new element ' name_out ' : ' int2str(reference_out) ...
         ', epoch ' int2str(epoch_i) ' of ' int2str(numel(et)) '.']);
 
-    % Read the time series data for the current epoch
-    [data, t] = ndi_element_timeseries_obj_in.readtimeseries(epoch_i,-inf,inf);
+    % Read the time series data for the current epoch by number
+    [data, t] = ndi_element_timeseries_obj_in.readtimeseriesepoch(epoch_i,-inf,inf);
 
     % Downsample the time series data
     t_down = downsample(t,LP);

@@ -1,7 +1,7 @@
-function [missing,epoch_ids] = missingepochs(element1,element2)
+function [missing,epoch_ids, epoch_numbers] = missingepochs(element1,element2)
 %MISSINGEPOCHS Determines if there are epochs in element1 that are not in element2.
 %
-%   [MISSING, EPOCH_IDS] = MISSINGEPOCHS(ELEMENT1, ELEMENT2) 
+%   [MISSING, EPOCH_IDS, EPOCH_NUMBERS] = MISSINGEPOCHS(ELEMENT1, ELEMENT2) 
 %   compares the epoch tables of two input elements and identifies any 
 %   epoch ids that are present in the first element but not in the second.
 %
@@ -18,6 +18,7 @@ function [missing,epoch_ids] = missingepochs(element1,element2)
 %                  are present in ELEMENT1's epoch table but are missing 
 %                  from ELEMENT2's epoch table.  If no epochs are missing,
 %                   EPOCH_IDS will be an empty cell array.
+%       EPOCH_NUMBERS - the epoch numbers of EPOCH_IDS in ELEMENT1's epoch table.
 %
 %   See also: NDI.ELEMENT.TIMESERIES, NDI.PROBE.TIMESERIES
 
@@ -44,7 +45,7 @@ else
     error('missingEpochs:invalidInput','Element 2 is not a valid input type. Must be an ndi element, probe, or epoch table.')
 end
 
-epoch_ids = setdiff({et1.epoch_id},{et2.epoch_id});
+[epoch_ids,epoch_numbers] = setdiff({et1.epoch_id},{et2.epoch_id});
 missing = ~isempty(epoch_ids);
 
 end
