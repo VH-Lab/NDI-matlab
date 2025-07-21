@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         # Some graphical (GUI) tests fail on R2023b and R2024a in GitHub runner
-        MATLAB_VERSION: ["R2021b", "R2022a", "R2022b", "R2023a", "R2024b"]
+        MATLABVersion: ["R2021b", "R2022a", "R2022b", "R2023a", "R2024b"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
