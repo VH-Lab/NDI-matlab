@@ -27,7 +27,7 @@ arguments
     total_size (1,1) {mustBeNumeric}
     dataset_id (1,:) char {mustBeTextScalar}
     options.Verbose (1,1) logical = true
-    options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = 25e6
+    options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = 50e6
     options.DebugLog (1,1) logical = true
 end
 % --- Initial Setup ---
