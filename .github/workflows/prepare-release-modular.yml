@@ -61,6 +61,8 @@ jobs:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            setenv("GITHUB_TOKEN", "${{ env.GITHUB_TOKEN }}")
+
             addpath(genpath( "src" ));
             ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath(genpath( "tests" ));
