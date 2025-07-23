@@ -1,7 +1,7 @@
 {
     "document_class": {
-		"definition": "$NDIDOCUMENTPATH\/data\/sortingOutputs.json",
-		"validation": "$NDISCHEMAPATH\/data\/sortingOutputs_schema.json",
+		"definition": "$NDIDOCUMENTPATH\/data\/sorting_outputs.json",
+		"validation": "$NDISCHEMAPATH\/data\/sorting_outputs_schema.json",
 		"class_name": "sorting_outputs",
         "property_list_name": "sorting_outputs",
         "class_version": 1,
