@@ -2,7 +2,6 @@
 	"classname": "imageStack_parameters",
 	"superclasses":  [ "base" ],
 	"depends_on": [
-		{ "name": "imageStack_id", "mustbenotempty": 0},
 		{ "name": "ontologyTableRow_id", "mustbenotempty": 0}
 	],
 	"imageStack_parameters": [
