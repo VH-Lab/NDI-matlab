@@ -1421,6 +1421,213 @@ is_a: EMPTY:00000179 ! C. elegans cultivation parameter
 property_value: codeName "cElegansBehavioralAssayRelativeDensityOfTheCultivationBacterialPatch" xsd:string
 
 [Term]
+id: EMPTY:00000265
+name: Bacterial fluorescence assay parameter
+namespace: empty_ontology
+def: "A parameter related to the setup, execution, or measurement of a bacterial fluorescence assay used to estimate the relative density of bacterial patches." []
+is_a: EMPTY:00000175 ! Bacterial parameter
+property_value: codeName "bacterialFluorescenceAssayParameter" xsd:string
+
+[Term]
+id: EMPTY:00000266
+name: Bacterial fluorescence assay: bacterial strain document identifier
+namespace: empty_ontology
+def: "Unique alphanumeric identifier that links to a document describing the strain of bacteria used in a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000017 ! NDI document identifier
+property_value: codeName "bacterialFluorescenceAssayBacterialStrainDocumentIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000267
+name: Bacterial fluorescence assay: bacterial OD600 measurement
+namespace: empty_ontology
+def: "The measured optical density at 600 nm (OD600) of the bacterial solution used to create patches for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000183 ! Optical density measurement
+property_value: codeName "bacterialFluorescenceAssayBacterialOD600Measurement" xsd:string
+
+[Term]
+id: EMPTY:00000268
+name: Bacterial fluorescence assay: bacterial colony forming units (CFU) measurement
+namespace: empty_ontology
+def: "The concentration of viable bacterial cells, quantified as Colony Forming Units per milliliter (CFU/mL), in the bacterial solution." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayBacterialColonyFormingUnitsCFUMeasurement" xsd:string
+
+[Term]
+id: EMPTY:00000269
+name: Bacterial fluorescence assay: bacterial patch volume
+namespace: empty_ontology
+def: "The volume of bacterial solution pipetted to create each food patch for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: NCIT:C25335 ! Volume
+property_value: codeName "bacterialFluorescenceAssayBacterialPatchVolume" xsd:string
+
+[Term]
+id: EMPTY:00000270
+name: Bacterial fluorescence assay: bacterial plate peptone inclusion flag
+namespace: empty_ontology
+def: "A boolean flag indicating whether peptone was included in the Nematode Growth Medium (NGM) agar for the plates used in a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000015 ! Flag
+property_value: codeName "bacterialFluorescenceAssayBacterialPlatePeptoneInclusionFlag" xsd:string
+
+[Term]
+id: EMPTY:00000271
+name: Bacterial fluorescence assay: agar plate pouring timestamp
+namespace: empty_ontology
+def: "The date and time when the NGM agar plates were poured for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000087 ! Timestamp
+property_value: codeName "bacterialFluorescenceAssayAgarPlatePouringTimestamp" xsd:string
+
+[Term]
+id: EMPTY:00000272
+name: Bacterial fluorescence assay: agar plate cold storage timestamp
+namespace: empty_ontology
+def: "The date and time when poured NGM agar plates were transferred to cold storage for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000087 ! Timestamp
+property_value: codeName "bacterialFluorescenceAssayAgarPlateColdStorageTimestamp" xsd:string
+
+[Term]
+id: EMPTY:00000273
+name: Bacterial fluorescence assay: bacterial plate seeding timestamp
+namespace: empty_ontology
+def: "The date and time when bacterial patches were pipetted onto NGM assay plates for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000087 ! Timestamp
+property_value: codeName "bacterialFluorescenceAssayBacterialPlateSeedingTimestamp" xsd:string
+
+[Term]
+id: EMPTY:00000274
+name: Bacterial fluorescence assay: bacterial plate cold storage timestamp
+namespace: empty_ontology
+def: "The date and time when seeded NGM plates were transferred to cold storage to arrest or slow bacterial growth for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000087 ! Timestamp
+property_value: codeName "bacterialFluorescenceAssayBacterialPlateColdStorageTimestamp" xsd:string
+
+[Term]
+id: EMPTY:00000275
+name: Bacterial fluorescence assay: bacterial plate room temperature timestamp
+namespace: empty_ontology
+def: "The date and time when seeded NGM plates were moved to room temperature to allow for bacterial growth for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000087 ! Timestamp
+property_value: codeName "bacterialFluorescenceAssayBacterialPlateRoomTemperatureTimestamp" xsd:string
+
+[Term]
+id: EMPTY:00000276
+name: Bacterial fluorescence assay: image identifier
+namespace: empty_ontology
+def: "A unique identifier for a specific fluorescence image of bacterial patches." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000011 ! Identifier
+property_value: codeName "bacterialFluorescenceAssayImageIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000277
+name: Bacterial fluorescence assay: bacterial patch identifier
+namespace: empty_ontology
+def: "A unique identifier assigned to a single bacterial patch within a fluorescence image." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000011 ! Identifier
+property_value: codeName "bacterialFluorescenceAssayBacterialPatchIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000278
+name: Bacterial fluorescence assay: bacterial patch radius
+namespace: empty_ontology
+def: "The radius of each labeled bacterial patch in an image, measured in pixels. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+is_a: NCIT:C63921 ! Radius
+property_value: codeName "bacterialFluorescenceAssayBacterialPatchRadius" xsd:string
+
+[Term]
+id: EMPTY:00000279
+name: Bacterial fluorescence assay: bacterial patch circularity
+namespace: empty_ontology
+def: "A quantitative measure of the circularity of each labeled bacterial patch in an image. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayBacterialPatchCircularity" xsd:string
+
+[Term]
+id: EMPTY:00000280
+name: Bacterial fluorescence assay: patch border peak pixel intensity
+namespace: empty_ontology
+def: "The maximum pixel intensity detected along the radial profile of a fluorescent bacterial patch, typically found at the patch edge where bacteria are actively proliferating. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayPatchBorderPeakPixelIntensity" xsd:string
+
+[Term]
+id: EMPTY:00000281
+name: Bacterial fluorescence assay: patch border edge pixel intensity
+namespace: empty_ontology
+def: "The pixel intensity measured at the detected border of a fluorescent bacterial patch. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayPatchBorderEdgePixelIntensity" xsd:string
+
+[Term]
+id: EMPTY:00000282
+name: Bacterial fluorescence assay: patch border amplitude
+namespace: empty_ontology
+def: "A measure of bacterial density defined as the difference between the peak pixel intensity and the border pixel intensity of a fluorescent patch. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayPatchBorderAmplitude" xsd:string
+
+[Term]
+id: EMPTY:00000283
+name: Bacterial fluorescence assay: patch mean amplitude
+namespace: empty_ontology
+def: "The average pixel intensity computed from the edge mask of a fluorescent bacterial patch applied to the normalized image. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayPatchMeanAmplitude" xsd:string
+
+[Term]
+id: EMPTY:00000284
+name: Bacterial fluorescence assay: patch center amplitude
+namespace: empty_ontology
+def: "The average pixel intensity of the middle 50% of a fluorescent bacterial patch. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayPatchCenterAmplitude" xsd:string
+
+[Term]
+id: EMPTY:00000285
+name: Bacterial fluorescence assay: patch border-to-center ratio
+namespace: empty_ontology
+def: "The ratio of the patch border amplitude to the patch center amplitude, used as a measure of bacterial distribution within the patch. [Source: analyzeLawnProfiles.m]" []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "bacterialFluorescenceAssayPatchBorderToCenterRatio" xsd:string
+
+[Term]
+id: EMPTY:00000286
+name: Bacterial fluorescence assay: experiment plate identifier
+namespace: empty_ontology
+def: "A unique identifier assigned to the physical plate on which a bacterial fluorescence assay was conducted." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000011 ! Identifier
+property_value: codeName "bacterialFluorescenceAssayExperimentPlateIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000287
+name: Bacterial fluorescence assay: bacterial OD600 (target) at seeding
+namespace: empty_ontology
+def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches for a bacterial fluorescence assay." []
+is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+is_a: EMPTY:00000183 ! Optical density measurement
+property_value: codeName "bacterialFluorescenceAssayBacterialOD600TargetAtSeeding" xsd:string
+
+[Term]
 id: EMPTY:30000000
 name: Approach
 namespace: empty_ontology
