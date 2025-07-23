@@ -1,0 +1,33 @@
+{
+    "document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/sortingOutputs.json",
+		"validation": "$NDISCHEMAPATH\/data\/sortingOutputs_schema.json",
+		"class_name": "sorting_outputs",
+        "property_list_name": "sorting_outputs",
+        "class_version": 1,
+        "superclasses": [
+            { "definition": "$NDIDOCUMENTPATH/base.json" }
+        ]
+    },
+    "depends_on": [],
+    "files": {
+        "file_list": [
+            "params.py",
+            "spike_times.npy",
+            "spike_clusters.npy",
+            "templates.npy",
+            "templates_ind.npy",
+            "channel_map.npy",
+            "channel_positions.npy",
+            "amplitudes.npy",
+            "whitening_mat_inv.npy",
+            "pc_features.npy",
+            "pc_feature_ind.npy",
+        ]
+    },
+    "sorting_outputs": {
+        "sorter_name": "",
+        "sample_rate": 30000,
+        "unit": "ms"
+    }
+}

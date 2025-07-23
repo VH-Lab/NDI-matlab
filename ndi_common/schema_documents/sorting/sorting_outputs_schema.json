@@ -1,0 +1,46 @@
+{
+    "classname": "sorting_outputs",
+    "superclasses": ["base"],
+    "depends_on": [],
+    "file": 
+    [
+        { "name": "params.py", "mustbenotempty": 1 },
+        { "name": "spike_times.npy", "mustbenotempty": 1 },
+        { "name": "spike_clusters.npy", "mustbenotempty": 1 },
+        { "name": "templates.npy", "mustbenotempty": 1 },
+        { "name": "templates_ind.npy", "mustbenotempty": 1 },
+        { "name": "channel_map.npy", "mustbenotempty": 1 },
+        { "name": "channel_positions.npy", "mustbenotempty": 1 },
+        { "name": "amplitudes.npy", "mustbenotempty": 1 },
+        { "name": "whitening_mat_inv.npy", "mustbenotempty": 0 },
+        { "name": "pc_features.npy", "mustbenotempty": 0 },
+        { "name": "pc_feature_ind.npy", "mustbenotempty": 0 }
+    ],
+    "sorting_outputs": 
+    [
+        {
+            "name": "sorter_name",
+            "type": "string",
+            "default_value": "",
+            "parameters": "",
+            "queryable": 1,
+            "documentation": "The name of the spike sorter used (e.g., kilosort2, herdingspikes)"
+        },
+        {
+            "name": "sample_rate",
+            "type": "integer",
+            "default_value": "",
+            "parameters": [1, 1e6, 0],
+            "queryable": 0,
+            "documentation": "Sampling rate of the recording in Hz"
+        },
+        {
+            "name": "unit",
+            "type": "string",
+            "default_value": "ms",
+            "parameters": "",
+            "queryable": 0,
+            "documentation": "Time unit used for spike_times (typically 'ms' or 's')"
+        },
+    ]
+}
