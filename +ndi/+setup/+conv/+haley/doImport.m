@@ -554,4 +554,10 @@ patchTable = ndi.fun.table.join({dataTable(:,patchVariables)},...
 % Create ontologyTableRow documents
 patchDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
     patchTable,{'image_id','patchNum'},'Overwrite',options.Overwrite);
+
+%%
+doc = info.foragingConcentration.firstFrameDocs{1};
+ngrid = doc.document_properties.ngrid;
+imageDoc = database_openbinarydoc(sessions{2},doc,'ontologyImage.ngrid');
+image = ndi.fun.data.readngrid(imageDoc,ngrid.data_dim,ngrid.data_type);
 end
