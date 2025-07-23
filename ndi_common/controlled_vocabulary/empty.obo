@@ -775,11 +775,10 @@ property_value: codeName "bacterialParameter" xsd:string
 
 [Term]
 id: EMPTY:00000176
-name: Video parameter
+name: C. elegans assay phase
 namespace: empty_ontology
-def: "A specific parameter describing the technical specifications or settings of a video recording, such as frame rate, resolution, or duration." []
-is_a: EMPTY:00000010 ! Parameter
-property_value: codeName "videoParameter" xsd:string
+def: "" []
+is_a: EMPTY:00000014 ! Categorial identifier
 
 [Term]
 id: EMPTY:00000177
@@ -806,15 +805,6 @@ is_a: EMPTY:00000174 ! C. elegans assay parameter
 property_value: codeName "cElegansCultivationParameter" xsd:string
 
 [Term]
-id: EMPTY:00000180
-name: C. elegans behavior video parameter
-namespace: empty_ontology
-def: "A technical parameter specifically describing a video recording of a C. elegans behavioral experiment, including properties like spatial scale or frame rate." []
-is_a: EMPTY:00000176 ! Video parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehaviorVideoParameter" xsd:string
-
-[Term]
 id: EMPTY:00000181
 name: Experiment session identifier
 namespace: empty_ontology
@@ -824,117 +814,89 @@ property_value: codeName "experimentSessionIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000182
-name: C. elegans cultivation: bacterial strain document identifier
+name: bacterial strain document identifier
 namespace: empty_ontology
-def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used as the food source on the cultivation plates for C. elegans." []
+def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used in an experiment." []
 is_a: EMPTY:00000017 ! NDI document identifier
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000179 ! C. elegans cultivation parameter
 property_value: codeName "cElegansCultivationBacterialStrainDocumentIdentifier" xsd:string
 
 [Term]
-id: EMPTY:00000183
-name: Optical density measurement
-namespace: empty_ontology
-def: "A measurement of the absorbance of light at a specific wavelength by a substance, used to determine its concentration." []
-is_a: EMPTY:00000085 ! Measurement
-is_a: NCIT:C85776 ! Optical Density Measurement
-property_value: codeName "opticalDensityMeasurement" xsd:string
-
-[Term]
 id: EMPTY:00000184
-name: C. elegans cultivation: bacterial OD600 (target) at seeding
+name: bacterial OD600 (target) at seeding
 namespace: empty_ontology
 def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans cultivation plates. Unit: dimensionless." []
 is_a: EMPTY:00000175 ! Bacterial parameter
 is_a: EMPTY:00000179 ! C. elegans cultivation parameter
-is_a: EMPTY:00000183 ! Optical density measurement
+is_a: NCIT:C85776 ! Optical Density Measurement
 property_value: codeName "cElegansCultivationBacterialOD600TargetAtSeeding" xsd:string
 
 [Term]
 id: EMPTY:00000185
-name: C. elegans cultivation: bacterial plate seeding timestamp
+name: bacterial plate seeding timestamp
 namespace: empty_ontology
-def: "The date and time when a large bacterial food patch was seeded onto the NGM agar plates used for the cultivation and growth of C. elegans prior to an experiment. Unit: datetime." []
+def: "The date and time when a liquid culture of bacteria was seeded (pipetted) onto an agar plate. Unit: datetime." []
 is_a: EMPTY:00000087 ! Timestamp
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000179 ! C. elegans cultivation parameter
-property_value: codeName "cElegansCultivationBacterialPlateSeedingTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000186
-name: C. elegans cultivation: bacterial plate cold storage timestamp
+name: bacterial plate cold storage timestamp
 namespace: empty_ontology
-def: "The date and time when NGM plates seeded for C. elegans cultivation were transferred to cold storage (at approximately 4 degrees Celsisus) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime." []
+def: "The date and time when an agar plate seeded with bacteria was transferred to cold storage (at approximately 4 degrees Celsius) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime." []
 is_a: EMPTY:00000087 ! Timestamp
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000179 ! C. elegans cultivation parameter
-property_value: codeName "cElegansCultivationBacterialPlateColdStorageTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000187
-name: C. elegans cultivation: bacterial plate room temperature timestamp
+name: bacterial plate room temperature timestamp
 namespace: empty_ontology
-def: "The date and time when C. elegans cultivation plates were moved from cold storage to room temperature to allow them to acclimate before picking worms onto them to avoid temperature affecting the animals. Unit: datetime." []
+def: "The date and time when an agar plate seeded with bacteria was moved from cold storage to room temperature to continue bacterial growth, if part of the protocol. Unit: datetime." []
 is_a: EMPTY:00000087 ! Timestamp
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000179 ! C. elegans cultivation parameter
-property_value: codeName "cElegansCultivationBacterialPlateRoomTemperatureTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000188
-name: C. elegans cultivation: L4 timestamp
+name: C. elegans developmental stage
 namespace: empty_ontology
-def: "The date and time when L4 larval stage C. elegans were picked from cultivation plates to be used in an experiment. Unit: datetime." []
+def: "The developmental stage (e.g. 'L4' or '1DOA') at the time in which C. elegans were picked to the agar plate. Unit: datetime." []
 is_a: EMPTY:00000087 ! Timestamp
-is_a: EMPTY:00000179 ! C. elegans cultivation parameter
-property_value: codeName "cElegansCultivationL4Timestamp" xsd:string
+is_a: EMPTY:00000179 ! C. elegans assay parameter
 
 [Term]
 id: EMPTY:00000189
-name: C. elegans assay: bacterial OD600 measurement
+name: bacterial OD600 measurement
 namespace: empty_ontology
-def: "The measured optical density at 600 nm (OD600) of the prepared bacterial solution immediately before it was pipetted to create food patches on C. elegans assay plates. This provides a precise measure of initial bacterial concentration. Unit: dimensionless." []
-is_a: EMPTY:00000174 ! C. elegans assay parameter
+def: "The measured optical density at 600 nm (OD600) of a reference liquid culture of bacteria. Unit: dimensionless." []
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000183 ! Optical density measurement
-property_value: codeName "cElegansAssayBacterialOD600Measurement" xsd:string
+is_a: NCIT:C85776 ! Optical Density Measurement
+is_a: EMPTY:00000085 ! Measurement
 
 [Term]
 id: EMPTY:00000190
-name: C. elegans assay: bacterial colony forming units (CFU) measurement
+name: bacterial colony forming units (CFU) measurement
 namespace: empty_ontology
-def: "The concentration of viable bacterial cells in the food source solution for C. elegans assays, quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the prepared bacterial stock. Unit: CFU/mL." []
+def: "The concentration of viable bacterial cells quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the reference liquid culture of bacteria. Unit: CFU/mL." []
 is_a: EMPTY:00000085 ! Measurement
-is_a: EMPTY:00000174 ! C. elegans assay parameter
 is_a: EMPTY:00000175 ! Bacterial parameter
-property_value: codeName "cElegansAssayBacterialColonyFormingUnitsCFUMeasurement" xsd:string
-
-[Term]
-id: EMPTY:00000191
-name: C. elegans assay: experiment parameter document identifier
-namespace: empty_ontology
-def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that contains the set of parameters and conditions for a specific C. elegans behavioral assay experiment." []
-is_a: EMPTY:00000017 ! NDI document identifier
-is_a: EMPTY:00000174 ! C. elegans assay parameter
-property_value: codeName "cElegansAssayExperimentParameterDocumentIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000192
-name: C. elegans assay: experiment plate identifier
+name: bacterial plate identifier
 namespace: empty_ontology
-def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which a C. elegans experimental trial or a set of trials was conducted." []
+def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which bacterial patch(s) were seeded." []
 is_a: EMPTY:00000011 ! Identifier
 is_a: EMPTY:00000174 ! C. elegans assay parameter
 property_value: codeName "cElegansAssayExperimentPlateIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000193
-name: Image bit depth
+name: C. elegans picked timestamp
 namespace: empty_ontology
-def: "A parameter that specifies the number of bits used to represent the color or grayscale intensity of each pixel in an image. Higher bit depth allows for a greater range of colors or shades." []
-is_a: EMPTY:00000176 ! Video parameter
-property_value: codeName "imageBitDepth" xsd:string
+def: "The date and time when C. elegans were picked to an agar plate. Unit: datetime." []
+is_a: EMPTY:00000087 ! Timestamp
+is_a: EMPTY:00000179 ! C. elegans assay parameter
+property_value: codeName "cElegansCultivationL4Timestamp" xsd:string
 
 [Term]
 id: EMPTY:00000194
@@ -956,127 +918,67 @@ property_value: codeName "treatmentFoodRestrictionOffsetTime" xsd:string
 
 [Term]
 id: EMPTY:00000196
-name: C. elegans behavioral assay: bacterial distribution label
+name: C. elegans behavioral assay label
 namespace: empty_ontology
-def: "A string label of the layout of food patches (i.e., 'grid', 'single') for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+def: "A string label referring to the layout of food patches (i.e., 'SingleDensityMultiPatch', 'MultiDensityMultiPatch','LargeSinglePatch','SmallSinglePatch') for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-is_a: NCIT:C25365 ! Description
-property_value: codeName "cElegansBehavioralAssayBacterialDistributionLabel" xsd:string
 
 [Term]
 id: EMPTY:00000197
-name: C. elegans behavioral assay: bacterial OD600 label
+name: bacterial OD600 label
 namespace: empty_ontology
-def: "A string label used to categorize or identify the nominal OD600 condition of the food patches in a C. elegans experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
+def: "A string label used to categorize or identify the nominal OD600 condition of bacterial patches in an experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
 is_a: NCIT:C25365 ! Description
 property_value: codeName "cElegansBehavioralAssayBacterialOD600Label" xsd:string
 
 [Term]
 id: EMPTY:00000198
-name: C. elegans behavioral assay: bacterial plate growth duration label
+name: bacterial plate growth duration label
 namespace: empty_ontology
-def: "A string label (e.g. '1','12','48') indicating the approximate duration of bacterial growth at room temperature (in hours) for C. elegans assay plates for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+def: "A string label (e.g. '1','12','48') indicating the approximate duration of bacterial growth at room temperature (in hours) for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C25365 ! Description
 property_value: codeName "cElegansBehavioralAssayBacterialPlateGrowthDurationLabel" xsd:string
 
 [Term]
 id: EMPTY:00000199
-name: C. elegans behavioral assay: bacterial plate peptone inclusion flag
+name: bacterial plate peptone inclusion flag
 namespace: empty_ontology
-def: "A boolean flag indicating whether peptone was included in the Nematode Growth Medium (NGM) agar for the assay plates. Peptone presence supports bacterial growth. True: peptone included." []
+def: "A boolean flag indicating whether peptone was included in the agar for the assay plates. Peptone presence supports bacterial growth. True: peptone included." []
 is_a: EMPTY:00000015 ! Flag
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPlatePeptoneInclusionFlag" xsd:string
-
-[Term]
-id: EMPTY:00000200
-name: C. elegans behavioral assay: bacterial strain document identifier
-namespace: empty_ontology
-def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used as the food source on the assay plates for C. elegans." []
-is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialStrainDocumentIdentifier" xsd:string
-
-[Term]
-id: EMPTY:00000201
-name: C. elegans behavioral assay: bacterial OD600 (target) at seeding
-namespace: empty_ontology
-def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches on C. elegans assay plates. Unit: dimensionless." []
-is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-is_a: EMPTY:00000183 ! Optical density measurement
-property_value: codeName "cElegansBehavioralAssayBacterialOD600TargetAtSeeding" xsd:string
-
-[Term]
-id: EMPTY:00000202
-name: C. elegans behavioral assay: bacterial plate seeding timestamp
-namespace: empty_ontology
-def: "The date and time when bacterial food patch(s) were pipetted onto the NGM assay plates for C. elegans behavioral assay experiments. Unit: datetime." []
-is_a: EMPTY:00000087 ! Timestamp
-is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPlateSeedingTimestamp" xsd:string
-
-[Term]
-id: EMPTY:00000203
-name: C. elegans behavioral assay: bacterial plate cold storage timestamp
-namespace: empty_ontology
-def: "The date and time when NGM plates seeded for C. elegans behavioral assays were transferred to cold storage (at approximately 4 degrees Celsisus) to arrest or slow bacterial growth before the experiment if part of the protocol. Unit: datetime." []
-is_a: EMPTY:00000087 ! Timestamp
-is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPlateColdStorageTimestamp" xsd:string
-
-[Term]
-id: EMPTY:00000204
-name: C. elegans behavioral assay: bacterial plate room temperature timestamp
-namespace: empty_ontology
-def: "The date and time when C. elegans assay plates were moved from cold storage to room temperature to allow them to acclimate before before picking worms onto them to avoid temperature affecting the animals. Unit: datetime." []
-is_a: EMPTY:00000087 ! Timestamp
-is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPlateRoomTemperatureTimestamp" xsd:string
+is_a: EMPTY:00000178 ! Bacterial parameter
 
 [Term]
 id: EMPTY:00000205
-name: C. elegans behavioral assay: bacteria growth duration after seeding
+name: bacteria growth duration after seeding
 namespace: empty_ontology
-def: "The total duration for which the bacteria food patch(s) on the C. elegans assay plates were allowed to grow at room temperature starting at the time seeded and ending at the beginning of the behavioral assay video recording. Unit: duration." []
+def: "The total duration for which bacterial patch(s) on agar plates were allowed to grow at room temperature starting at the time seeded and ending at the beginning of the assay. Unit: duration." []
 is_a: EMPTY:00000088 ! Duration
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacteriaGrowthDurationAfterSeeding" xsd:string
 
 [Term]
 id: EMPTY:00000206
-name: C. elegans behavioral assay: bacterial patch volume
+name: bacterial patch volume
 namespace: empty_ontology
-def: "The volume of bacterial solution pipetted to create each individual food patch on the C. elegans assay plate. Note: Volumes under 1 µL are approximate due to the difficulty of pipetting liquids at this scale. Unit: microliters (µL)." []
+def: "The volume of bacterial solution pipetted to create an individual patch on an agar plate. Note: Volumes under 1 µL are approximate due to the difficulty of pipetting liquids at this scale. Unit: microliters (µL)." []
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C25335 ! Volume
-property_value: codeName "cElegansBehavioralAssayBacterialPatchVolume" xsd:string
 
 [Term]
 id: EMPTY:00000207
-name: C. elegans behavioral assay: bacterial patch spacing (target)
+name: bacterial patch spacing (target)
 namespace: empty_ontology
-def: "The intended center-to-center distance between adjacent bacterial food patches when arranged in a grid on the C. elegans assay plate. Unit: millimeters (mm)." []
+def: "The intended center-to-center distance between adjacent bacterial food patches when arranged in a grid on an agar plate. Unit: millimeters (mm)." []
 is_a: EMPTY:00000175 ! Bacterial parameter
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C25167 ! Distance
-property_value: codeName "cElegansBehavioralAssayBacterialPatchSpacingTarget" xsd:string
 
 [Term]
 id: EMPTY:00000208
-name: C. elegans behavioral assay: arena diameter
+name: C. elegans behavioral assay: plate or arena diameter
 namespace: empty_ontology
-def: "The diameter of the experimental arena used to corral animals in a C. elegans behavioral assays. The arena can be used to compute the spatial scale of the video recording. For example, if the arena is known to be 30 mm in diameter and measures 300 pixels, the spatial scale must be 10 pixels per millimiter. Unit: millimeters (mm)." []
+def: "The diameter of the experimental plate or arena used to corral animals in a C. elegans behavioral assay. A typical 9 cm agar plate will by 90 mm. Unit: millimeters (mm)." []
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C25285 ! Diameter
-property_value: codeName "cElegansBehavioralAssayArenaDiameter" xsd:string
 
 [Term]
 id: EMPTY:00000209
@@ -1097,128 +999,50 @@ is_a: NCIT:C88206 ! Humidity
 property_value: codeName "ambientHumidity" xsd:string
 
 [Term]
-id: EMPTY:00000211
-name: C. elegans behavioral assay: plate parameter document identifier
-namespace: empty_ontology
-def: "A unique alphanumeric identifier assigned to an NDI document that details the specific parameters of the plate used in a C. elegans behavioral assay." []
-is_a: EMPTY:00000017 ! NDI document identifier
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayPlateParameterDocumentIdentifier" xsd:string
-
-[Term]
 id: EMPTY:00000212
-name: C. elegans behavioral assay: bacterial patch identifier
+name: bacterial patch identifier
 namespace: empty_ontology
-def: "A unique numerical identifier assigned to a bacterial patch on a C. elegans assay plate." []
+def: "A unique numerical identifier assigned to a bacterial patch on an agar plate." []
 is_a: EMPTY:00000011 ! Identifier
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPatchIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000213
-name: C. elegans behavioral assay: X coordinate of bacterial patch center
+name: bacterial patch center: X coordinate
 namespace: empty_ontology
-def: "The X pixel coordinate representing the geometric center of an individual detected bacterial food patch within the C. elegans assay arena. Unit: pixels." []
+def: "The X pixel coordinate representing the geometric center of an individual detected bacterial patch in an image or video. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C44477 ! X-Coordinate
 property_value: codeName "cElegansBehavioralAssayXCoordinateOfBacterialPatchCenter" xsd:string
 
 [Term]
 id: EMPTY:00000214
-name: C. elegans behavioral assay: Y coordinate of bacterial patch center
+name: bacterial patch center: Y coordinate
 namespace: empty_ontology
-def: "The Y pixel coordinate representing the geometric center of an individual detected bacterial food patch within the C. elegans assay arena. Unit: pixels." []
+def: "The Y pixel coordinate representing the geometric center of an individual detected bacterial patch in an image or video. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C44478 ! Y-Coordinate
 property_value: codeName "cElegansBehavioralAssayYCoordinateOfBacterialPatchCenter" xsd:string
 
 [Term]
 id: EMPTY:00000215
-name: C. elegans behavioral assay: bacterial patch radius
+name: bacterial patch radius
 namespace: empty_ontology
-def: "The radius of an individual detected bacterial food patch in a C. elegans assay, assuming patches are circular or near-circular. Unit: pixels." []
+def: "The radius of an individual detected bacterial patch on an agar plate, assuming patches are circular or near-circular. Unit: pixels." []
 is_a: EMPTY:00000085 ! Measurement
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C63921 ! Radius
 property_value: codeName "cElegansBehavioralAssayBacterialPatchRadius" xsd:string
 
 [Term]
 id: EMPTY:00000216
-name: C. elegans behavioral assay: bacterial patch circularity
+name: bacterial patch circularity
 namespace: empty_ontology
-def: "A quantitative measure assessing how closely the shape of an individual detected bacterial food patch in a C. elegans assay conforms to a perfect circle. 1 is a perfect circle. [Source: https://www.mathworks.com/help/images/ref/regionprops.html]" []
+def: "A quantitative measure assessing how closely the shape of an individual detected bacterial  patch conforms to a perfect circle. 1 is a perfect circle. [Source: https://www.mathworks.com/help/images/ref/regionprops.html]" []
 is_a: EMPTY:00000085 ! Measurement
-is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
-property_value: codeName "cElegansBehavioralAssayBacterialPatchCircularity" xsd:string
-
-[Term]
-id: EMPTY:00000217
-name: C. elegans behavioral assay: video identifier
-namespace: empty_ontology
-def: "A unique numerical identifier for a video recording of a C. elegans behavioral assay experiment." []
-is_a: EMPTY:00000011 ! Identifier
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-property_value: codeName "cElegansBehavioralAssayVideoIdentifier" xsd:string
-
-[Term]
-id: EMPTY:00000218
-name: C. elegans behavioral assay: video timestamp
-namespace: empty_ontology
-def: "The date and time when the video recording for a C. elegans behavioral assay experiment was started. Unit: datetime." []
-is_a: EMPTY:00000087 ! Timestamp
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-is_a: NCIT:C181736 ! Image Acquisition Date
-property_value: codeName "cElegansBehavioralAssayVideoTimestamp" xsd:string
-
-[Term]
-id: EMPTY:00000219
-name: C. elegans behavioral assay: video frames
-namespace: empty_ontology
-def: "The total number of individual frames contained within the C. elegans behavioral video recording. Unit: count." []
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-is_a: NCIT:C69267 ! Number of Frames
-property_value: codeName "cElegansBehavioralAssayVideoFrames" xsd:string
-
-[Term]
-id: EMPTY:00000220
-name: C. elegans behavioral assay: video frame rate
-namespace: empty_ontology
-def: "The temporal resolution (i.e. rate at which frames were captured) of the C. elegans behavioral video measured in frames per second (fps). Unit: frames per second (fps)." []
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-is_a: NCIT:C106524 ! Frames Per Second
-property_value: codeName "cElegansBehavioralAssayVideoFrameRate" xsd:string
-
-[Term]
-id: EMPTY:00000221
-name: C. elegans behavioral assay: video frame width
-namespace: empty_ontology
-def: "The width (total number of pixels across the horizontal dimension) of each frame in a C. elegans behavior video. Unit: pixels." []
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-is_a: NCIT:C106533 ! Image Acquisition Matrix Size
-property_value: codeName "cElegansBehavioralAssayVideoFrameWidth" xsd:string
-
-[Term]
-id: EMPTY:00000222
-name: C. elegans behavioral assay: video frame height
-namespace: empty_ontology
-def: "The height (total number of pixels across the vertical dimension) of each frame in a C. elegans behavior video. Unit: pixels." []
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-is_a: NCIT:C106533 ! Image Acquisition Matrix Size
-property_value: codeName "cElegansBehavioralAssayVideoFrameHeight" xsd:string
-
-[Term]
-id: EMPTY:00000223
-name: C. elegans behavioral assay: video spatial scale
-namespace: empty_ontology
-def: "The spatial resolution of the C. elegans behavioral video measured in pixels per millimiter. This number can be computed via a calibration process involving measuring an object of known size in an image. Unit: pixels/mm." []
-is_a: EMPTY:00000180 ! C. elegans behavior video parameter
-property_value: codeName "cElegansBehavioralAssayVideoSpatialScale" xsd:string
 
 [Term]
 id: EMPTY:00000224
-name: C. elegans assay: subject identifier
+name: C. elegans subject identifier
 namespace: empty_ontology
 def: "A unique numerical identifier assigned to an animal on a C. elegans assay plate." []
 is_a: EMPTY:00000011 ! Identifier
@@ -1278,15 +1102,6 @@ def: "An image or map where each pixel's value corresponds to the nominal OD600 
 is_a: EMPTY:00000178 ! C. elegans behavioral assay parameter
 is_a: NCIT:C48179 ! Image
 property_value: codeName "cElegansBehavioralAssayClosestPatchOD600Map" xsd:string
-
-[Term]
-id: EMPTY:00000231
-name: C. elegans assay: patch parameter document identifier
-namespace: empty_ontology
-def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that details the specific parameters of the bacterial food patches used in a C. elegans assay, including their location, size, and density." []
-is_a: EMPTY:00000017 ! NDI document identifier
-is_a: EMPTY:00000174 ! C. elegans assay parameter
-property_value: codeName "cElegansAssayPatchParameterDocumentIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000250
@@ -1429,94 +1244,22 @@ is_a: EMPTY:00000175 ! Bacterial parameter
 property_value: codeName "bacterialFluorescenceAssayParameter" xsd:string
 
 [Term]
-id: EMPTY:00000266
-name: Bacterial fluorescence assay: bacterial strain document identifier
-namespace: empty_ontology
-def: "Unique alphanumeric identifier that links to a document describing the strain of bacteria used in a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000017 ! NDI document identifier
-property_value: codeName "bacterialFluorescenceAssayBacterialStrainDocumentIdentifier" xsd:string
-
-[Term]
-id: EMPTY:00000267
-name: Bacterial fluorescence assay: bacterial OD600 measurement
-namespace: empty_ontology
-def: "The measured optical density at 600 nm (OD600) of the bacterial solution used to create patches for a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000183 ! Optical density measurement
-property_value: codeName "bacterialFluorescenceAssayBacterialOD600Measurement" xsd:string
-
-[Term]
-id: EMPTY:00000268
-name: Bacterial fluorescence assay: bacterial colony forming units (CFU) measurement
-namespace: empty_ontology
-def: "The concentration of viable bacterial cells, quantified as Colony Forming Units per milliliter (CFU/mL), in the bacterial solution." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "bacterialFluorescenceAssayBacterialColonyFormingUnitsCFUMeasurement" xsd:string
-
-[Term]
-id: EMPTY:00000269
-name: Bacterial fluorescence assay: bacterial patch volume
-namespace: empty_ontology
-def: "The volume of bacterial solution pipetted to create each food patch for a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: NCIT:C25335 ! Volume
-property_value: codeName "bacterialFluorescenceAssayBacterialPatchVolume" xsd:string
-
-[Term]
-id: EMPTY:00000270
-name: Bacterial fluorescence assay: bacterial plate peptone inclusion flag
-namespace: empty_ontology
-def: "A boolean flag indicating whether peptone was included in the Nematode Growth Medium (NGM) agar for the plates used in a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000015 ! Flag
-property_value: codeName "bacterialFluorescenceAssayBacterialPlatePeptoneInclusionFlag" xsd:string
-
-[Term]
 id: EMPTY:00000271
-name: Bacterial fluorescence assay: agar plate pouring timestamp
+name: agar plate pouring timestamp
 namespace: empty_ontology
-def: "The date and time when the NGM agar plates were poured for a bacterial fluorescence assay." []
+def: "The date and time when an agar plate was poured." []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
 is_a: EMPTY:00000087 ! Timestamp
 property_value: codeName "bacterialFluorescenceAssayAgarPlatePouringTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000272
-name: Bacterial fluorescence assay: agar plate cold storage timestamp
+name: agar plate cold storage timestamp
 namespace: empty_ontology
-def: "The date and time when poured NGM agar plates were transferred to cold storage for a bacterial fluorescence assay." []
+def: "The date and time when an agar plate was transferred to cold storage to retain moisture during long-term storage." []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
 is_a: EMPTY:00000087 ! Timestamp
 property_value: codeName "bacterialFluorescenceAssayAgarPlateColdStorageTimestamp" xsd:string
-
-[Term]
-id: EMPTY:00000273
-name: Bacterial fluorescence assay: bacterial plate seeding timestamp
-namespace: empty_ontology
-def: "The date and time when bacterial patches were pipetted onto NGM assay plates for a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000087 ! Timestamp
-property_value: codeName "bacterialFluorescenceAssayBacterialPlateSeedingTimestamp" xsd:string
-
-[Term]
-id: EMPTY:00000274
-name: Bacterial fluorescence assay: bacterial plate cold storage timestamp
-namespace: empty_ontology
-def: "The date and time when seeded NGM plates were transferred to cold storage to arrest or slow bacterial growth for a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000087 ! Timestamp
-property_value: codeName "bacterialFluorescenceAssayBacterialPlateColdStorageTimestamp" xsd:string
-
-[Term]
-id: EMPTY:00000275
-name: Bacterial fluorescence assay: bacterial plate room temperature timestamp
-namespace: empty_ontology
-def: "The date and time when seeded NGM plates were moved to room temperature to allow for bacterial growth for a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000087 ! Timestamp
-property_value: codeName "bacterialFluorescenceAssayBacterialPlateRoomTemperatureTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000276
@@ -1528,36 +1271,8 @@ is_a: EMPTY:00000011 ! Identifier
 property_value: codeName "bacterialFluorescenceAssayImageIdentifier" xsd:string
 
 [Term]
-id: EMPTY:00000277
-name: Bacterial fluorescence assay: bacterial patch identifier
-namespace: empty_ontology
-def: "A unique identifier assigned to a single bacterial patch within a fluorescence image." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000011 ! Identifier
-property_value: codeName "bacterialFluorescenceAssayBacterialPatchIdentifier" xsd:string
-
-[Term]
-id: EMPTY:00000278
-name: Bacterial fluorescence assay: bacterial patch radius
-namespace: empty_ontology
-def: "The radius of each labeled bacterial patch in an image, measured in pixels. [Source: analyzeLawnProfiles.m]" []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000085 ! Measurement
-is_a: NCIT:C63921 ! Radius
-property_value: codeName "bacterialFluorescenceAssayBacterialPatchRadius" xsd:string
-
-[Term]
-id: EMPTY:00000279
-name: Bacterial fluorescence assay: bacterial patch circularity
-namespace: empty_ontology
-def: "A quantitative measure of the circularity of each labeled bacterial patch in an image. [Source: analyzeLawnProfiles.m]" []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "bacterialFluorescenceAssayBacterialPatchCircularity" xsd:string
-
-[Term]
 id: EMPTY:00000280
-name: Bacterial fluorescence assay: patch border peak pixel intensity
+name: bacterial patch border peak fluorescence intensity
 namespace: empty_ontology
 def: "The maximum pixel intensity detected along the radial profile of a fluorescent bacterial patch, typically found at the patch edge where bacteria are actively proliferating. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
@@ -1566,7 +1281,7 @@ property_value: codeName "bacterialFluorescenceAssayPatchBorderPeakPixelIntensit
 
 [Term]
 id: EMPTY:00000281
-name: Bacterial fluorescence assay: patch border edge pixel intensity
+name: bacterial patch border edge fluorescence intensity
 namespace: empty_ontology
 def: "The pixel intensity measured at the detected border of a fluorescent bacterial patch. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
@@ -1575,7 +1290,7 @@ property_value: codeName "bacterialFluorescenceAssayPatchBorderEdgePixelIntensit
 
 [Term]
 id: EMPTY:00000282
-name: Bacterial fluorescence assay: patch border amplitude
+name: bacteria patch border fluorescence amplitude
 namespace: empty_ontology
 def: "A measure of bacterial density defined as the difference between the peak pixel intensity and the border pixel intensity of a fluorescent patch. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
@@ -1584,7 +1299,7 @@ property_value: codeName "bacterialFluorescenceAssayPatchBorderAmplitude" xsd:st
 
 [Term]
 id: EMPTY:00000283
-name: Bacterial fluorescence assay: patch mean amplitude
+name: bacterial patch mean fluorescence amplitude
 namespace: empty_ontology
 def: "The average pixel intensity computed from the edge mask of a fluorescent bacterial patch applied to the normalized image. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
@@ -1593,7 +1308,7 @@ property_value: codeName "bacterialFluorescenceAssayPatchMeanAmplitude" xsd:stri
 
 [Term]
 id: EMPTY:00000284
-name: Bacterial fluorescence assay: patch center amplitude
+name: bacterial patch center fluorescence amplitude
 namespace: empty_ontology
 def: "The average pixel intensity of the middle 50% of a fluorescent bacterial patch. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
@@ -1602,30 +1317,12 @@ property_value: codeName "bacterialFluorescenceAssayPatchCenterAmplitude" xsd:st
 
 [Term]
 id: EMPTY:00000285
-name: Bacterial fluorescence assay: patch border-to-center ratio
+name: bacterial patch border-to-center fluorescence ratio
 namespace: empty_ontology
 def: "The ratio of the patch border amplitude to the patch center amplitude, used as a measure of bacterial distribution within the patch. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
 is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "bacterialFluorescenceAssayPatchBorderToCenterRatio" xsd:string
-
-[Term]
-id: EMPTY:00000286
-name: Bacterial fluorescence assay: experiment plate identifier
-namespace: empty_ontology
-def: "A unique identifier assigned to the physical plate on which a bacterial fluorescence assay was conducted." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000011 ! Identifier
-property_value: codeName "bacterialFluorescenceAssayExperimentPlateIdentifier" xsd:string
-
-[Term]
-id: EMPTY:00000287
-name: Bacterial fluorescence assay: bacterial OD600 (target) at seeding
-namespace: empty_ontology
-def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating food patches for a bacterial fluorescence assay." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
-is_a: EMPTY:00000183 ! Optical density measurement
-property_value: codeName "bacterialFluorescenceAssayBacterialOD600TargetAtSeeding" xsd:string
 
 [Term]
 id: EMPTY:30000000
