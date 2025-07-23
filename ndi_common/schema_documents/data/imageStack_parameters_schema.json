@@ -2,7 +2,8 @@
 	"classname": "imageStack_parameters",
 	"superclasses":  [ "base" ],
 	"depends_on": [
-		{ "name": "imageStack_id", "mustbenotempty": 0}
+		{ "name": "imageStack_id", "mustbenotempty": 0},
+		{ "name": "ontologyTableRow_id", "mustbenotempty": 0}
 	],
 	"imageStack_parameters": [
 		{
@@ -19,7 +20,7 @@
 			"default_value": "height,width,channel,plane,time",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "This labels what values are associated with each dimension of the imageStack. Default is for an YXCZT stack."
+			"documentation": "The labels associated with each dimension of the imageStack as a comma-separated list. Default is for an YXCZT stack."
 		},
 		{
 			"name": "dimension_size",
@@ -43,7 +44,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The units of each dimension (e.g. [millimeter, millimeter, dimensionless, micrometer, second]) for YXCZT stack."
+			"documentation": "The units of each dimension as a comma-separated list (e.g. 'millimeter,millimeter,dimensionless,micrometer,second') for YXCZT stack."
 		},
 		{
 			"name": "data_type",
@@ -76,14 +77,6 @@
 			"parameters": "",
 			"queryable": 1,
 			"documentation": "The clock type of the timestamp. Use a global clock if available."
-		},
-		{
-			"name": "duration",
-			"type": "double",
-			"default_value": [],
-			"parameters": [0,10000000,1],
-			"queryable": 1,
-			"documentation": "The duration of the imageStack in seconds (if applicable)."
 		}
 	]
 }
