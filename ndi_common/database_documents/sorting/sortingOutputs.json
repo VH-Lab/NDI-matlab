@@ -1,9 +1,9 @@
 {
     "document_class": {
-		"definition": "$NDIDOCUMENTPATH\/data\/sorting_outputs.json",
-		"validation": "$NDISCHEMAPATH\/data\/sorting_outputs_schema.json",
-		"class_name": "sorting_outputs",
-        "property_list_name": "sorting_outputs",
+		"definition": "$NDIDOCUMENTPATH\/data\/sortingOutputs.json",
+		"validation": "$NDISCHEMAPATH\/data\/sortingOutputs_schema.json",
+		"class_name": "sortingOutputs",
+        "property_list_name": "sortingOutputs",
         "class_version": 1,
         "superclasses": [
             { "definition": "$NDIDOCUMENTPATH/base.json" }
@@ -25,7 +25,7 @@
             "pc_feature_ind.npy",
         ]
     },
-    "sorting_outputs": {
+    "sortingOutputs": {
         "sorter_name": "",
         "sample_rate": 30000,
         "unit": "ms"

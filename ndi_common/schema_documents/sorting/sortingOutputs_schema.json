@@ -1,5 +1,5 @@
 {
-    "classname": "sorting_outputs",
+    "classname": "sortingOutputs",
     "superclasses": ["base"],
     "depends_on": [],
     "file": 
@@ -16,7 +16,7 @@
         { "name": "pc_features.npy", "mustbenotempty": 0 },
         { "name": "pc_feature_ind.npy", "mustbenotempty": 0 }
     ],
-    "sorting_outputs": 
+    "sortingOutputs": 
     [
         {
             "name": "sorter_name",
