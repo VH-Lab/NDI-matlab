@@ -79,18 +79,16 @@ cultivationPlateVariables = {'expID',...
    'growthOD600Label',...
    'bacteriaStrain','growthTimeSeed','growthTimeColdRoom',...
    'growthTimeRoomTemp','growthAge','growthTimePicked','growthLawnGrowthDuration',...
-   'OD60010','OD600Real','CFU',...
+   'OD600Real','CFU',...
    'growthOD600'};
 behaviorPlateVariables = {'expID','assayPhase','plateID','assayType','exclude',...
     'OD600Label','growthConditionLabel','peptoneFlag',...
     'bacteriaStrain','timeSeed','timeColdRoom',...
     'timeRoomTemp','age','timePicked','lawnGrowthDuration',...
-    'OD60010','OD600Real','CFU',...
+    'OD600Real','CFU',...
     'arenaDiameter','lawnSpacing','temp','humidity'};
 patchVariables = {'plateID','OD600','lawnVolume','lawnCenters','lawnRadii','lawnCircularity'};
-videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
-    'frameRate','numFrames','bitDepth','scale'};
-wormVariables = {'plate_id','wormNum','subject_id'};
+wormVariables = {'plateID','wormID','subjectName','subject_id'};
 
 for i = 1:numel(infoFiles)
 
@@ -141,12 +139,11 @@ for i = 1:numel(infoFiles)
     % Add missing variables
     dataTable{:,'bacteriaStrain'} = {strainDoc{1}.id};
     dataTable{:,'expID'} = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),dataTable.expNum,'UniformOutput',false);
-    dataTable.plateID = arrayfun(@(x) num2str(x,'%.4i'),dataTable.plateNum,'UniformOutput',false);
+    dataTable.plateID = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),dataTable.plateNum,'UniformOutput',false);
     dataTable{:,'growthLawnGrowthDuration'} = hours(...
         (dataTable.growthTimeColdRoom - dataTable.growthTimeSeed) + ...
         (dataTable.growthTimePicked - dataTable.growthTimeRoomTemp));
     dataTable.growthOD600Label = arrayfun(@(x) num2str(x,'%.2f'),dataTable.growthOD600,'UniformOutput',false);
-    dataTable{:,'OD60010'} = 10;
     dataTable{:,'growthAge'} = {'L4'};
     [~,~,ind] = unique(dataTable.plateNum);
     dataTable.timePicked = dataTable.timeRecord(ind);
@@ -156,12 +153,13 @@ for i = 1:numel(infoFiles)
     cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
         'UniqueVariables',{'expID','growthOD600Label'});
     cultivationPlateTable{:,'assayPhase'} = {'cultivation'};
-    cultivationPlateTable.plateID = arrayfun(@(x) num2str(x,'%.4i'),1:height(cultivationPlateTable),'UniformOutput',false)';
+    cultivationPlateTable.plateID = arrayfun(@(x) num2str(x + expType*1000 + 900,'%.4i'),1:height(cultivationPlateTable),'UniformOutput',false)';
     cultivationPlateTable{:,'exclude'} = false;
     cultivationPlateTable{:,'growthConditionLabel'} = {'24'};
     cultivationPlateTable{:,'peptoneFlag'} = true;
     cultivationPlateTable{:,'arenaDiameter'} = 90;
     cultivationPlateTable{:,'lawnSpacing'} = 0;
+    cultivationPlateTable{:,'temp'} = 20;
     cultivationPlateTable{:,'patchID'} = {'0001'};
     cultivationPlateTable{:,'lawnVolume'} = 200;
     cultivationPlateTable = ndi.fun.table.moveColumnsLeft(cultivationPlateTable,...
@@ -171,11 +169,7 @@ for i = 1:numel(infoFiles)
 
     % Create ontologyTableRow documents
     info.(dirName).cultivationPlateDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        cultivationPlateTable,{'expID','plateID'},'Overwrite',options.Overwrite);
-    % cultivationPlateTable.experiment_id = cellfun(@(d) d.id,...
-    %     info.(dirName).experimentDocs,'UniformOutput',false);
-    % dataTable = ndi.fun.table.join({dataTable,...
-    %     cultivationPlateTable(:,{'expNum','growthOD600','experiment_id'})});
+        cultivationPlateTable,{'expID','assayPhase','plateID'},'Overwrite',options.Overwrite);
     info.(dirName).cultivationPlateTable = cultivationPlateTable;
 
     % B. BEHAVIORPLATE ontologyTableRow
@@ -195,16 +189,15 @@ for i = 1:numel(infoFiles)
         'UniqueVariables',{'expID','assayPhase','plateID'});
 
     % Create ontologyTableRow documents
-    info.(dirName).plateDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        behaviorPlateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
-    % behaviorPlateTable.plate_id = cellfun(@(d) d.id,info.(dirName).plateDocs,'UniformOutput',false);
-    % dataTable = ndi.fun.table.join({dataTable,behaviorPlateTable(:,{'plateNum','plate_id'})});
-    info.(dirName).plateTable = behaviorPlateTable;
+    info.(dirName).behaviorPlateDocs = tableDocMaker.table2ontologyTableRowDocs(...
+        behaviorPlateTable,{'expID','assayPhase','plateID'},'Overwrite',options.Overwrite);
+    behaviorPlateTable.plate_id = cellfun(@(d) d.id,info.(dirName).behaviorPlateDocs,'UniformOutput',false);
+    dataTable = ndi.fun.table.join({dataTable,behaviorPlateTable(:,{'plateID','plate_id'})});
+    info.(dirName).behaviorPlateTable = behaviorPlateTable;
 
     % C. PATCH ontologyTableRow
 
     % Compile data table with 1 row for each unique patch
-    % plate_id = cell(height(dataTable),1);
     plateID = cell(height(dataTable),1);
     patchNum = cell(height(dataTable),1);
     patchOD600 = cell(height(dataTable),1);
@@ -235,12 +228,10 @@ for i = 1:numel(infoFiles)
         else
             patchOD600{j} = repmat(plateRow.OD600,numPatch,1);
         end
-        % plate_id{j} = repmat(plateRow.plate_id,numPatch,1);
         plateID{j} = repmat(plateRow.plateID,numPatch,1);
         lawnVolume{j} = repmat(plateRow.lawnVolume,numPatch,1);
         patchNum{j} = (1:numPatch)';
     end
-    % plate_id = vertcat(plate_id{:});
     plateID = vertcat(plateID{:});
     patchNum = vertcat(patchNum{:});
     patchOD600 = vertcat(patchOD600{:});
@@ -253,60 +244,67 @@ for i = 1:numel(infoFiles)
     patchCenterY = vertcat(patchCenterY{:});
     patchRadius = vertcat(patchRadius{:});
     patchCircularity = vertcat(patchCircularity{:});
-    % patchTable = table(plate_id,patchNum,patchOD600,patchCenterX,patchCenterY,...
-    %     patchRadius,patchCircularity);
     patchID = arrayfun(@(x) num2str(x,'%.4i'),patchNum,'UniformOutput',false);
     patchTable = table(plateID,patchID,patchOD600,lawnVolume,patchCenterX,patchCenterY,...
         patchRadius,patchCircularity);
 
     % Create ontologyTableRow documents
     info.(dirName).patchDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        patchTable,{'plate_id','patchNum'},'Overwrite',options.Overwrite);
-    % patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
-    % patchTable{:,'dirName'} = {dirName};
+        patchTable,{'plateID','patchID'},'Overwrite',options.Overwrite);
+    patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
+    dataTable = ndi.fun.table.join({dataTable,patchTable(:,{'plateID','patchID','patch_id'})});
     info.(dirName).patchTable = patchTable;
 
-    % D. VIDEO ontologyTableRow
+    % D. VIDEO imageStack_parameters
 
-    % Add missing variables
-    dataTable.pixelWidth = cellfun(@(p) p(1),dataTable.pixels);
-    dataTable.pixelHeight = cellfun(@(p) p(2),dataTable.pixels);
-    dataTable.bitDepth = cellfun(@(ff) class(ff),dataTable.firstFrame,'UniformOutput',false);
-
-    % Compile data table with 1 row for each unique video
-    videoTable = ndi.fun.table.join({dataTable(:,videoVariables)},...
-        'UniqueVariables',{'plate_id','videoNum'});
-
-    % Create ontologyTableRow documents
-    info.(dirName).videoDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        videoTable,{'plate_id','videoNum'},'Overwrite',options.Overwrite);
-    info.(dirName).videoTable = videoTable;
+    % Create imageStack_parameters documents
+    videoDocs = cell(height(dataTable),1);
+    for p = 1:height(dataTable)
+        dataType = class(dataTable.firstFrame{p});
+        imageStack_parameters = struct('dimension_order','YXT',...
+            'dimension_labels','height,width,time',...
+            'dimension_size',[dataTable.pixels{p},dataTable.numFrames(p)],...
+            'dimension_scale',[dataTable.scale(p),dataTable.scale(p),1/dataTable.frameRate(p)],...
+            'dimension_scale_units','micrometer,micrometer,second',...
+            'data_type',dataType,...
+            'data_limits',[intmin(dataType) intmax(dataType)],...
+            'timestamp',convertTo(dataTable.timeRecord(p),'datenum'),...
+            'clocktype','exp_global_time');
+        videoDocs{p} = ndi.document('imageStack_parameters', ...
+            'imageStack_parameters', imageStack_parameters) + ...
+            session.newdocument();
+        videoDocs{p} = videoDocs{p}.set_dependency_value(...
+            'ontologyTableRow_id',dataTable.plate_id{p});
+    end
+    session.database_add(videoDocs);
+    info.(dirName).videoDocs = videoDocs;
 
     % E. WORM subject, ontologyTableRow, and treatment
 
     % Compile data table with 1 row for each unique worm
-    [~,ind] = unique(dataTable.plate_id);
-    plate_id = cell(numel(ind),1);
+    [~,ind] = unique(dataTable.plateID);
+    plateID = cell(numel(ind),1);
     wormNum = cell(numel(ind),1);
     expTime = cell(numel(ind),1);
     for j = 1:numel(ind)
         wormNum{j} = dataTable{ind(j),'wormNum'}{1}';
         numWorm = numel(wormNum{j});
-        plate_id{j} = repmat(dataTable{ind(j),'plate_id'},numWorm,1);
+        plateID{j} = repmat(dataTable{ind(j),'plateID'},numWorm,1);
         expTime{j} = repmat(dataTable{ind(j),'timeRecord'},numWorm,1);
     end
-    plate_id = vertcat(plate_id{:});
+    plateID = vertcat(plateID{:});
     wormNum = vertcat(wormNum{:});
+    wormID = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),wormNum,'UniformOutput',false);
     expTime = vertcat(expTime{:});
-    wormTable = table(plate_id,wormNum,expTime);
+    wormTable = table(plateID,wormID,expTime);
 
     % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
     wormTable = ndi.fun.table.join({wormTable,...
-        behaviorPlateTable(:,{'plate_id','condition'}),...
-        dataTable(:,{'plate_id','strain'})},...
-        'uniqueVariables',{'plate_id','wormNum'});
-    wormTable{:,'dirName'} = {dirName};
+        behaviorPlateTable(:,{'plateID','assayType'}),...
+        dataTable(:,{'plateID','strain'})},...
+        'uniqueVariables',{'plateID','wormID'});
+    wormTable{:,'expType'} = {num2str(expType)};
 
     % Create subject documents
     [subjectInfo,wormTable.subjectName] = ...
@@ -555,13 +553,13 @@ dataTable = dataTable.lawnAnalysis;
 
 % List the variables for each document type
 cultivationPlateVariables = {'expNum','bacteria','OD600Real','CFU'};
-behaviorPlateVariables = {'experiment_id','plateNum','OD600','lawnVolume',...
+behaviorPlateVariables = {'experiment_id','plateID','OD600','lawnVolume',...
     'peptoneFlag','timePoured','timePouredColdRoom',...
     'timeSeed','timeSeedColdRoom','timeRoomTemp'};
 imageVariables = {'plate_id','imageNum','acquisitionTime',...
     'xPixels','yPixels','exposureTime','bitDepth','scale',...
     'minValue','maxValue','meanValue'};
-patchVariables = {'image_id','patchNum_bacteria',...
+patchVariables = {'image_id','patchID',...
     'lawnRadius','circularity',...
     'yPeak','yOuterEdge',...
     'borderAmplitude','meanAmplitude','centerAmplitude','borderCenterRatio'};
@@ -571,7 +569,6 @@ patchVariables = {'image_id','patchNum_bacteria',...
 
 % Add missing variables
 dataTable{:,'bacteria'} = {strainDoc{1}.id};
-dataTable = renamevars(dataTable,{'OD600Real','CFU'},{'OD600Real_bacteria','CFU_bacteria'});
 
 % Compile data table with 1 row for each unique experiment day
 cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
@@ -589,11 +586,6 @@ dataTable = ndi.fun.table.join({dataTable,cultivationPlateTable(:,{'expNum','exp
 dataTable{:,'peptoneFlag'} = true;
 indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
 dataTable{indWithout,'peptoneFlag'} = false;
-dataTable = renamevars(dataTable,{'plateNum','OD600','lawnVolume',...
-    'peptoneFlag','timeSeed','timeColdRoom','timeRoomTemp'},...
-    {'plateNum_bacteria','OD600_bacteria','lawnVolume_bacteria',...
-    'peptoneFlag_bacteria','timeSeed_bacteria','timeColdRoom_bacteria',...
-    'timeRoomTemp_bacteria'});
 
 % Compile data table with 1 row for each unique plate
 behaviorPlateTable = ndi.fun.table.join({dataTable(:,behaviorPlateVariables)},...
