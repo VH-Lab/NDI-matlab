@@ -75,14 +75,19 @@ session.database_add(strainDoc);
 % We will have one ontologyTableRow document for each experiment, plate,
 % patch, video, and worm. Below, we define which info table variables will 
 % get  stored under which ontologyTableRow document type
-experimentVariables = {'expNum','growthBacteriaStrain',...
-   'growthOD600','growthTimeSeed','growthTimeColdRoom',...
-    'growthTimeRoomTemp','growthTimePicked', 'OD600Real','CFU'};
-plateVariables = {'experiment_id','plateNum','exclude',...
-    'condition','OD600Label','growthCondition','peptoneFlag',...
-    'bacteriaStrain','timeSeed','timeColdRoom','timeRoomTemp',...
-    'lawnGrowth','lawnVolume','lawnSpacing','arenaDiameter','temp','humidity'};
-patchVariables = {'plate_id','OD600','lawnCenters','lawnRadii','lawnCircularity'};
+cultivationPlateVariables = {'expID',...
+   'growthOD600Label',...
+   'bacteriaStrain','growthTimeSeed','growthTimeColdRoom',...
+   'growthTimeRoomTemp','growthAge','growthTimePicked','growthLawnGrowthDuration',...
+   'OD60010','OD600Real','CFU',...
+   'growthOD600'};
+behaviorPlateVariables = {'expID','assayPhase','plateID','assayType','exclude',...
+    'OD600Label','growthConditionLabel','peptoneFlag',...
+    'bacteriaStrain','timeSeed','timeColdRoom',...
+    'timeRoomTemp','age','timePicked','lawnGrowthDuration',...
+    'OD60010','OD600Real','CFU',...
+    'arenaDiameter','lawnSpacing','temp','humidity'};
+patchVariables = {'plateID','OD600','lawnVolume','lawnCenters','lawnRadii','lawnCircularity'};
 videoVariables = {'plate_id','videoNum','timeRecord','pixelWidth','pixelHeight',...
     'frameRate','numFrames','bitDepth','scale'};
 wormVariables = {'plate_id','wormNum','subject_id'};
@@ -96,57 +101,114 @@ for i = 1:numel(infoFiles)
     dataTable = dataTable.(tableType);
     dirName = split(infoFiles{i},filesep); dirName = dirName{end-1};
 
+    % Create unique experiment number
+    switch dirName
+        case 'foragingConcentration'
+            expType = 0;
+        case 'foragingMini'
+            expType = 1;
+        case 'foragingMatching'
+            expType = 2;
+        case 'foragingMutants'
+            expType = 3;
+        case 'foragingSensory'
+            expType = 4;
+    end
+
+    % Add assay type
+    for j = 1:height(dataTable)
+        if strcmp(dataTable.condition{j},'grid')
+            if strcmp(dirName,'foragingMatching')
+                dataTable.assayType{j} = {'MultiDensityMultiPatch'};
+            else
+                dataTable.assayType{j} = {'SingleDensityMultiPatch'};
+            end
+        elseif strcmp(dataTable.condition{j},'single')
+            if strcmp(dirName,'foragingMini')
+                dataTable.assayType{j} = {'SmallSinglePatch'};
+            else
+                dataTable.assayType{j} = {'LargeSinglePatch'};
+            end
+        end
+    end
+
     % Check for correct exclusion
     dataTable.exclude = dataTable.exclude | ...
         ~ndi.fun.table.identifyValidRows(dataTable,'growthCondition');
 
-    % A. EXPERIMENT ontologyTableRow
+    % A. CULTIVATIONPLATE ontologyTableRow
 
     % Add missing variables
-    dataTable{:,'growthBacteriaStrain'} = {strainDoc{1}.id};
+    dataTable{:,'bacteriaStrain'} = {strainDoc{1}.id};
+    dataTable{:,'expID'} = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),dataTable.expNum,'UniformOutput',false);
+    dataTable.plateID = arrayfun(@(x) num2str(x,'%.4i'),dataTable.plateNum,'UniformOutput',false);
+    dataTable{:,'growthLawnGrowthDuration'} = hours(...
+        (dataTable.growthTimeColdRoom - dataTable.growthTimeSeed) + ...
+        (dataTable.growthTimePicked - dataTable.growthTimeRoomTemp));
+    dataTable.growthOD600Label = arrayfun(@(x) num2str(x,'%.2f'),dataTable.growthOD600,'UniformOutput',false);
+    dataTable{:,'OD60010'} = 10;
+    dataTable{:,'growthAge'} = {'L4'};
+    [~,~,ind] = unique(dataTable.plateNum);
+    dataTable.timePicked = dataTable.timeRecord(ind);
+    dataTable.lawnGrowthDuration = hours(dataTable.lawnGrowth);
 
     % Compile data table with 1 row for each unique experiment day and condition
-    experimentTable = ndi.fun.table.join({dataTable(:,experimentVariables)},...
-        'UniqueVariables',{'expNum','growthOD600'});
-    experimentTable = movevars(experimentTable,'growthOD600','After','growthBacteriaStrain');
+    cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
+        'UniqueVariables',{'expID','growthOD600Label'});
+    cultivationPlateTable{:,'assayPhase'} = {'cultivation'};
+    cultivationPlateTable.plateID = arrayfun(@(x) num2str(x,'%.4i'),1:height(cultivationPlateTable),'UniformOutput',false)';
+    cultivationPlateTable{:,'exclude'} = false;
+    cultivationPlateTable{:,'growthConditionLabel'} = {'24'};
+    cultivationPlateTable{:,'peptoneFlag'} = true;
+    cultivationPlateTable{:,'arenaDiameter'} = 90;
+    cultivationPlateTable{:,'lawnSpacing'} = 0;
+    cultivationPlateTable{:,'patchID'} = {'0001'};
+    cultivationPlateTable{:,'lawnVolume'} = 200;
+    cultivationPlateTable = ndi.fun.table.moveColumnsLeft(cultivationPlateTable,...
+        {'expID','assayPhase','plateID','exclude','growthOD600Label',...
+        'growthConditionLabel','peptoneFlag','bacteriaStrain'});
+    cultivationPlateTable = movevars(cultivationPlateTable,'growthOD600','After','patchID');
 
     % Create ontologyTableRow documents
-    info.(dirName).experimentDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        experimentTable,{'expNum','growthOD600'},'Overwrite',options.Overwrite);
-    experimentTable.experiment_id = cellfun(@(d) d.id,...
-        info.(dirName).experimentDocs,'UniformOutput',false);
-    dataTable = ndi.fun.table.join({dataTable,...
-        experimentTable(:,{'expNum','growthOD600','experiment_id'})});
-    info.(dirName).experimentTable = experimentTable;
+    info.(dirName).cultivationPlateDocs = tableDocMaker.table2ontologyTableRowDocs(...
+        cultivationPlateTable,{'expID','plateID'},'Overwrite',options.Overwrite);
+    % cultivationPlateTable.experiment_id = cellfun(@(d) d.id,...
+    %     info.(dirName).experimentDocs,'UniformOutput',false);
+    % dataTable = ndi.fun.table.join({dataTable,...
+    %     cultivationPlateTable(:,{'expNum','growthOD600','experiment_id'})});
+    info.(dirName).cultivationPlateTable = cultivationPlateTable;
 
-    % B. PLATE ontologyTableRow
+    % B. BEHAVIORPLATE ontologyTableRow
 
     % Add missing variables
-    dataTable.bacteriaStrain = dataTable.growthBacteriaStrain;
+    dataTable{:,'assayPhase'} = {'behavior'};
+    dataTable{:,'peptoneFlag'} = true;
+    dataTable{:,'growthConditionLabel'} = arrayfun(@num2str,dataTable.growthCondition,'UniformOutput',false);
+    indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
+    dataTable{indWithout,'peptoneFlag'} = false;
     [strainNames,~,indStrain] = unique(dataTable.strainID);
     strainIDs = cellfun(@(s) ndi.ontology.lookup(['WBStrain:',s]),strainNames,'UniformOutput',false);
     dataTable.strain = strainIDs(indStrain);
-    dataTable{:,'peptoneFlag'} = true;
-    indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
-    dataTable{indWithout,'peptoneFlag'} = false;
 
     % Compile data table with 1 row for each unique plate
-    plateTable = ndi.fun.table.join({dataTable(:,plateVariables)},...
-        'UniqueVariables',{'experiment_id','plateNum'});
+    behaviorPlateTable = ndi.fun.table.join({dataTable(:,behaviorPlateVariables)},...
+        'UniqueVariables',{'expID','assayPhase','plateID'});
 
     % Create ontologyTableRow documents
     info.(dirName).plateDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        plateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
-    plateTable.plate_id = cellfun(@(d) d.id,info.(dirName).plateDocs,'UniformOutput',false);
-    dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'plateNum','plate_id'})});
-    info.(dirName).plateTable = plateTable;
+        behaviorPlateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
+    % behaviorPlateTable.plate_id = cellfun(@(d) d.id,info.(dirName).plateDocs,'UniformOutput',false);
+    % dataTable = ndi.fun.table.join({dataTable,behaviorPlateTable(:,{'plateNum','plate_id'})});
+    info.(dirName).plateTable = behaviorPlateTable;
 
     % C. PATCH ontologyTableRow
 
     % Compile data table with 1 row for each unique patch
-    plate_id = cell(height(dataTable),1);
+    % plate_id = cell(height(dataTable),1);
+    plateID = cell(height(dataTable),1);
     patchNum = cell(height(dataTable),1);
     patchOD600 = cell(height(dataTable),1);
+    lawnVolume = cell(height(dataTable),1);
     patchCenterX = cell(height(dataTable),1);
     patchCenterY = cell(height(dataTable),1);
     patchRadius = cell(height(dataTable),1);
@@ -173,28 +235,35 @@ for i = 1:numel(infoFiles)
         else
             patchOD600{j} = repmat(plateRow.OD600,numPatch,1);
         end
-        plate_id{j} = repmat(plateRow.plate_id,numPatch,1);
+        % plate_id{j} = repmat(plateRow.plate_id,numPatch,1);
+        plateID{j} = repmat(plateRow.plateID,numPatch,1);
+        lawnVolume{j} = repmat(plateRow.lawnVolume,numPatch,1);
         patchNum{j} = (1:numPatch)';
     end
-    plate_id = vertcat(plate_id{:});
+    % plate_id = vertcat(plate_id{:});
+    plateID = vertcat(plateID{:});
     patchNum = vertcat(patchNum{:});
     patchOD600 = vertcat(patchOD600{:});
     if contains(dirName,'Matching') || contains(dirName,'Mutants') || ...
             contains(dirName,'Sensory')
         patchOD600(patchOD600 == 0) = [];
     end
+    lawnVolume = vertcat(lawnVolume{:});
     patchCenterX = vertcat(patchCenterX{:});
     patchCenterY = vertcat(patchCenterY{:});
     patchRadius = vertcat(patchRadius{:});
     patchCircularity = vertcat(patchCircularity{:});
-    patchTable = table(plate_id,patchNum,patchOD600,patchCenterX,patchCenterY,...
+    % patchTable = table(plate_id,patchNum,patchOD600,patchCenterX,patchCenterY,...
+    %     patchRadius,patchCircularity);
+    patchID = arrayfun(@(x) num2str(x,'%.4i'),patchNum,'UniformOutput',false);
+    patchTable = table(plateID,patchID,patchOD600,lawnVolume,patchCenterX,patchCenterY,...
         patchRadius,patchCircularity);
 
     % Create ontologyTableRow documents
     info.(dirName).patchDocs = tableDocMaker.table2ontologyTableRowDocs(...
         patchTable,{'plate_id','patchNum'},'Overwrite',options.Overwrite);
-    patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
-    patchTable{:,'dirName'} = {dirName};
+    % patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
+    % patchTable{:,'dirName'} = {dirName};
     info.(dirName).patchTable = patchTable;
 
     % D. VIDEO ontologyTableRow
@@ -234,7 +303,7 @@ for i = 1:numel(infoFiles)
     % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
     wormTable = ndi.fun.table.join({wormTable,...
-        plateTable(:,{'plate_id','condition'}),...
+        behaviorPlateTable(:,{'plate_id','condition'}),...
         dataTable(:,{'plate_id','strain'})},...
         'uniqueVariables',{'plate_id','wormNum'});
     wormTable{:,'dirName'} = {dirName};
@@ -485,8 +554,8 @@ dataTable = load(fullfile(dataParentDir,bacteriaFiles{1}),'lawnAnalysis');
 dataTable = dataTable.lawnAnalysis;
 
 % List the variables for each document type
-experimentVariables = {'expNum','bacteria','OD600Real','CFU'};
-plateVariables = {'experiment_id','plateNum','OD600','lawnVolume',...
+cultivationPlateVariables = {'expNum','bacteria','OD600Real','CFU'};
+behaviorPlateVariables = {'experiment_id','plateNum','OD600','lawnVolume',...
     'peptoneFlag','timePoured','timePouredColdRoom',...
     'timeSeed','timeSeedColdRoom','timeRoomTemp'};
 imageVariables = {'plate_id','imageNum','acquisitionTime',...
@@ -504,14 +573,14 @@ patchVariables = {'image_id','patchNum',...
 dataTable{:,'bacteria'} = {strainDoc{1}.id};
 
 % Compile data table with 1 row for each unique experiment day
-experimentTable = ndi.fun.table.join({dataTable(:,experimentVariables)},...
+cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
     'UniqueVariables','expNum');
 
 % Create ontologyTableRow documents
 experimentDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
-    experimentTable,{'expNum'},'Overwrite',options.Overwrite);
-experimentTable.experiment_id = cellfun(@(d) d.id,experimentDocs,'UniformOutput',false);
-dataTable = ndi.fun.table.join({dataTable,experimentTable(:,{'expNum','experiment_id'})});
+    cultivationPlateTable,{'expNum'},'Overwrite',options.Overwrite);
+cultivationPlateTable.experiment_id = cellfun(@(d) d.id,experimentDocs,'UniformOutput',false);
+dataTable = ndi.fun.table.join({dataTable,cultivationPlateTable(:,{'expNum','experiment_id'})});
 
 % B. PLATE ontologyTableRow
 
@@ -521,14 +590,14 @@ indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
 dataTable{indWithout,'peptoneFlag'} = false;
 
 % Compile data table with 1 row for each unique plate
-plateTable = ndi.fun.table.join({dataTable(:,plateVariables)},...
+behaviorPlateTable = ndi.fun.table.join({dataTable(:,behaviorPlateVariables)},...
     'UniqueVariables',{'experiment_id','plateNum'});
 
 % Create ontologyTableRow documents
 plateDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
-    plateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
-plateTable.plate_id = cellfun(@(d) d.id,plateDocs,'UniformOutput',false);
-dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'experiment_id','plateNum','plate_id'})});
+    behaviorPlateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
+behaviorPlateTable.plate_id = cellfun(@(d) d.id,plateDocs,'UniformOutput',false);
+dataTable = ndi.fun.table.join({dataTable,behaviorPlateTable(:,{'experiment_id','plateNum','plate_id'})});
 
 % C. IMAGE ontologyTableRow documents
 
