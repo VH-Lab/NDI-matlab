@@ -9,6 +9,11 @@
 			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
+	"depends_on": [
+		{	"name":		"ontologyTableRow_id",
+			"value":	"" 
+		}
+	],
 	"imageStack_parameters" : {
 			"dimension_order":			"",
 			"dimension_labels":			"",
