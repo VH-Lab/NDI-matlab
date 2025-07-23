@@ -72,9 +72,9 @@ session.database_add(strainDoc);
 
 %% Step 5. INFO DOCUMENTS.
 
-% We will have one ontologyTableRow document for each experiment, plate,
-% patch, video, and worm. Below, we define which info table variables will 
-% get  stored under which ontologyTableRow document type
+% We will have one ontologyTableRow document for each cultivation plate, 
+% behavior plate, patch, and worm. Below, we define which info table 
+% variables will get stored under which ontologyTableRow document type
 cultivationPlateVariables = {'expID',...
    'growthOD600Label',...
    'bacteriaStrain','growthTimeSeed','growthTimeColdRoom',...
@@ -134,8 +134,6 @@ for i = 1:numel(infoFiles)
     dataTable.exclude = dataTable.exclude | ...
         ~ndi.fun.table.identifyValidRows(dataTable,'growthCondition');
 
-    % A. CULTIVATIONPLATE ontologyTableRow
-
     % Add missing variables
     dataTable{:,'bacteriaStrain'} = {strainDoc{1}.id};
     dataTable{:,'expID'} = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),dataTable.expNum,'UniformOutput',false);
@@ -149,9 +147,13 @@ for i = 1:numel(infoFiles)
     dataTable.timePicked = dataTable.timeRecord(ind);
     dataTable.lawnGrowthDuration = hours(dataTable.lawnGrowth);
 
+    % A. CULTIVATIONPLATE ontologyTableRow
+
     % Compile data table with 1 row for each unique experiment day and condition
     cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
         'UniqueVariables',{'expID','growthOD600Label'});
+
+    % Add missing variables
     cultivationPlateTable{:,'assayPhase'} = {'cultivation'};
     cultivationPlateTable.plateID = arrayfun(@(x) num2str(x + expType*1000 + 900,'%.4i'),1:height(cultivationPlateTable),'UniformOutput',false)';
     cultivationPlateTable{:,'exclude'} = false;
