@@ -42,33 +42,9 @@ biologicalSex.name = 'hermaphrodite';
 biologicalSex.preferredOntologyIdentifier = 'PATO:0001340';
 
 % --- Create subject string ---
-
-% Define experiment types
-switch tableRow.condition{1}
-    case 'grid'
-        assayType = 'SingleDensityMultiPatch';
-    case 'single'
-        assayType = 'LargeSinglePatch';
-end
-switch tableRow.dirName{1}
-    case 'foragingConcentration'
-        expType = '0';
-    case 'foragingMini'
-        assayType = 'SmallSinglePatch';
-        expType = '1';
-    case 'foragingMatching'
-        assayType = 'MultiDensityMultiPatch';
-        expType = '2';
-    case 'foragingMutants'
-        expType = '3';
-    case 'foragingSensory'
-        expType = '4';
-end
-
-% Create subjectString
 expDate = char(datetime(tableRow.expTime),'yyMMdd');
-subjectString = join({strain.name{1},[expType,num2str(tableRow.wormNum,'%03.f')],...
-    assayType,expDate},'_');
+subjectString = join({strain.name{1},tableRow.wormID{1},...
+    tableRow.assayType{1},expDate},'_');
 subjectString = [subjectString{1},'@chalasani-lab.salk.edu'];
 
 end % End function createSubjectInformation
