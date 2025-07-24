@@ -654,15 +654,19 @@ session.database_add(imageDocs);
 % D. PATCH ontologyTableRow documents
 
 % Add missing variables
-dataTable.patchNum_bacteria = (1:height(dataTable))';
+[imageNum,~,indImage] = unique(dataTable.imageNum);
+for i = 1:numel(imageNum)
+    ind = find(indImage == i);
+    dataTable{ind,'patchID'} = arrayfun(@(x) num2str(x,'%.4i'),(1:numel(ind))','UniformOutput',false);
+end
 
 % Compile data table with 1 row for each unique patch per image
 patchTable = ndi.fun.table.join({dataTable(:,patchVariables)},...
-    'UniqueVariables',{'image_id','patchNum'});
+    'UniqueVariables',{'imageID','patchID'});
 
 % Create ontologyTableRow documents
 patchDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
-    patchTable,{'image_id','patchNum'},'Overwrite',options.Overwrite);
+    patchTable,{'imageID','patchID'},'Overwrite',options.Overwrite);
 
 %%
 doc = info.foragingConcentration.firstFrameDocs{1};
