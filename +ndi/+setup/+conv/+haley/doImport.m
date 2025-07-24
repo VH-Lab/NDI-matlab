@@ -16,14 +16,22 @@ dataPath = fullfile(dataParentDir,labName);
 
 % Get .mat files
 fileList = vlt.file.manifest(dataPath);
-fileList(~contains(fileList,'.mat')) = [];
+matList = fileList(contains(fileList,'.mat'));
+
+% If overwriting, delete NDI docs
+if options.Overwrite
+    ndiList = fileList(endsWith(fileList,'.ndi'));
+    for i = 1:numel(ndiList)
+        rmdir(fullfile(dataParentDir,ndiList{i}),'s');
+    end
+end
 
 % Get files by type
-infoFiles = fileList(contains(fileList,'experimentInfo'));
-dataFiles = fileList(contains(fileList,'midpoint') | ...
-    contains(fileList,'head') | contains(fileList,'tail'));
-encounterFiles = fileList(contains(fileList,'encounter'));
-bacteriaFiles = fileList(contains(fileList,'bacteria'));
+infoFiles = matList(contains(matList,'experimentInfo'));
+dataFiles = matList(contains(matList,'midpoint') | ...
+    contains(matList,'head') | contains(matList,'tail'));
+encounterFiles = matList(contains(matList,'encounter'));
+bacteriaFiles = matList(contains(matList,'bacteria'));
 
 %% Step 2: SESSIONS. Build the session.
 
