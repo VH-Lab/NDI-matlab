@@ -26,16 +26,21 @@ classdef WBStrain < ndi.ontology
             else
                 % The input is a name. Scrape the search results page to find the ID.
                 search_name = urlencode(term_or_id_or_name);
-                search_url = ['https://wormbase.org/search/strain/' search_name '?inline=1'];
+                % search_url = ['https://wormbase.org/search/strain/' search_name '?inline=1'];
+                search_url = ['https://www.alliancegenome.org/api/search?category=model&q=' search_name '(Cel)'];
                 % search_url = ['https://wormbase.org/search/strain/get?class=strain;name=' search_name];
-                options = weboptions('Timeout', 30);
+                options = weboptions('Timeout', 30,'UserAgent',...
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',...
+                    'HeaderFields',{'Accept',...
+                    'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'; ...
+                    'Accept-Language', 'en-US,en;q=0.5'});
                 
                 try
                     html = webread(search_url, options);
                     
                     % This pattern finds a link to a strain page where the link text
                     % exactly matches the strain name we're looking for.
-                    id_match = regexp(html, '(WBStrain\d{8})', 'tokens', 'once');
+                    id_match = regexp(html.results.id, '(WBStrain\d{8})', 'tokens', 'once');
                     if ~isempty(id_match)
                         api_id = id_match{1};
                     else
