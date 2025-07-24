@@ -592,6 +592,7 @@ classdef syncgraph < ndi.ido
             t_out = [];
             timeref_out = [];
             msg = '';
+            et = NaN;
 
             % Step 0: check inputs
 
@@ -619,6 +620,31 @@ classdef syncgraph < ndi.ido
                 if isempty(in_epochid)
                     error(['Did not find parent epoch for timeref.']);
                 end
+            end
+
+            if (timeref_in.referent == referent_out)
+                % we do not need to consult the syncgraph, we know the epoch
+                if (timeref_in.clocktype==clocktype_out)
+                    t_out = t_in; 
+                    timeref_out = ndi.time.timereference(referent_out,clocktype_out,in_epochid,timeref_in.time);
+                else
+                    if isequaln(et,NaN)
+                        et = timeref_in.referent.epochtable();
+                    end;
+                    id_match = find(strcmp({et.epoch_id},in_epochid));
+                    if isempty(id_match)
+                        error('ndi.time.syncgraph error: unexpected missing epoch, thought this could not happen.');
+                    end
+                    j1 = find(et(id_match).epoch_clock==timeref_in.clocktype);
+                    j2 = find(et(id_match).epoch_clock==clocktype_out);
+                    if isempty(j2)
+                        error(['No clock type ' clocktype_out.type ' for requested referent.']);
+                    end
+                    corrected_t0t1 = et(id_match).t0_t1{j1} - timeref_in.time;
+                    t_out = vlt.math.rescale(t_in, corrected_t0t1, et(id_match).t0_t1{j2},'noclip');
+                    timeref_out = ndi.time.timereference(referent_out,clocktype_out,in_epochid,0);
+                end
+                return
             end
 
             ginfo = graphinfo(ndi_syncgraph_obj);

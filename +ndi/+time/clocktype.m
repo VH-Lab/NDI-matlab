@@ -146,7 +146,18 @@ classdef clocktype < matlab.mixin.Heterogeneous
             % Compares two NDI_CLOCKTYPE_objects and returns 1 if they refer to the
             % same clock type.
             %
-            b = strcmp(ndi_clocktype_obj_a.type,ndi_clocktype_obj_b.type);
+            if iscell(ndi_clocktype_obj_a)
+                types1 = cellfun(@(x) x.type, ndi_clocktype_obj_a,'UniformOutput',false);
+                if ~iscell(ndi_clocktype_obj_b) 
+                    b = strcmp(types1,ndi_clocktype_obj_b.type);
+                else
+                    types2 = cellfun(@(x) x.type, ndi_clocktype_obj_b,'UniformOutput',false);
+                    b = isequal(sort(types1),sort(types2));
+                end
+            else
+                b = strcmp(ndi_clocktype_obj_a.type,ndi_clocktype_obj_b.type);
+            end
+
         end % eq()
 
         function b = ne(ndi_clocktype_obj_a, ndi_cock_obj_b)
