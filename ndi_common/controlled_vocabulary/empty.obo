@@ -1303,7 +1303,7 @@ property_value: codeName "bacterialFluorescenceAssayPatchBorderEdgePixelIntensit
 
 [Term]
 id: EMPTY:00000282
-name: bacteria patch border fluorescence amplitude
+name: bacterial patch border fluorescence amplitude
 namespace: empty_ontology
 def: "A measure of bacterial density defined as the difference between the peak pixel intensity and the border pixel intensity of a fluorescent patch. [Source: analyzeLawnProfiles.m]" []
 is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
