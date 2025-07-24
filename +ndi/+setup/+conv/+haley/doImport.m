@@ -16,22 +16,22 @@ dataPath = fullfile(dataParentDir,labName);
 
 % Get .mat files
 fileList = vlt.file.manifest(dataPath);
-matList = fileList(contains(fileList,'.mat'));
+matFiles = fileList(contains(fileList,'.mat'));
 
 % If overwriting, delete NDI docs
 if options.Overwrite
-    ndiList = fileList(endsWith(fileList,'.ndi'));
-    for i = 1:numel(ndiList)
-        rmdir(fullfile(dataParentDir,ndiList{i}),'s');
+    ndiFiles = fileList(endsWith(fileList,'.ndi'));
+    for i = 1:numel(ndiFiles)
+        rmdir(fullfile(dataParentDir,ndiFiles{i}),'s');
     end
 end
 
 % Get files by type
-infoFiles = matList(contains(matList,'experimentInfo'));
-dataFiles = matList(contains(matList,'midpoint') | ...
-    contains(matList,'head') | contains(matList,'tail'));
-encounterFiles = matList(contains(matList,'encounter'));
-bacteriaFiles = matList(contains(matList,'bacteria'));
+infoFiles = matFiles(contains(matFiles,'experimentInfo'));
+dataFiles = matFiles(contains(matFiles,'midpoint') | ...
+    contains(matFiles,'head') | contains(matFiles,'tail'));
+encounterFiles = matFiles(contains(matFiles,'encounter'));
+bacteriaFiles = matFiles(contains(matFiles,'bacteria'));
 
 %% Step 2: SESSIONS. Build the session.
 
@@ -42,8 +42,12 @@ sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
     table(SessionRef,SessionPath),'Overwrite',options.Overwrite);
 
 % Get the session object
-sessions = sessionMaker.sessionIndices; session = sessions{1};
-session.cache.clear;
+sessions = sessionMaker.sessionIndices;
+if options.Overwrite
+    sessions{1}.cache.clear;
+    sessions{2}.cache.clear;
+end
+session = sessions{1};
 
 %% Step 3. SUBJECTMAKER AND TABLEDOCMAKER.
 
@@ -158,29 +162,29 @@ for i = 1:numel(infoFiles)
     % A. CULTIVATIONPLATE ontologyTableRow
 
     % Compile data table with 1 row for each unique experiment day and condition
-    cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
+    plateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
         'UniqueVariables',{'expID','growthOD600Label'});
 
     % Add missing variables
-    cultivationPlateTable{:,'assayPhase'} = {'cultivation'};
-    cultivationPlateTable.plateID = arrayfun(@(x) num2str(x + expType*1000 + 900,'%.4i'),1:height(cultivationPlateTable),'UniformOutput',false)';
-    cultivationPlateTable{:,'exclude'} = false;
-    cultivationPlateTable{:,'growthConditionLabel'} = {'24'};
-    cultivationPlateTable{:,'peptoneFlag'} = true;
-    cultivationPlateTable{:,'arenaDiameter'} = 90;
-    cultivationPlateTable{:,'lawnSpacing'} = 0;
-    cultivationPlateTable{:,'temp'} = 20;
-    cultivationPlateTable{:,'patchID'} = {'0001'};
-    cultivationPlateTable{:,'lawnVolume'} = 200;
-    cultivationPlateTable = ndi.fun.table.moveColumnsLeft(cultivationPlateTable,...
+    plateTable{:,'assayPhase'} = {'cultivation'};
+    plateTable.plateID = arrayfun(@(x) num2str(x + expType*1000 + 900,'%.4i'),1:height(plateTable),'UniformOutput',false)';
+    plateTable{:,'exclude'} = false;
+    plateTable{:,'growthConditionLabel'} = {'24'};
+    plateTable{:,'peptoneFlag'} = true;
+    plateTable{:,'arenaDiameter'} = 90;
+    plateTable{:,'lawnSpacing'} = 0;
+    plateTable{:,'temp'} = 20;
+    plateTable{:,'patchID'} = {'0001'};
+    plateTable{:,'lawnVolume'} = 200;
+    plateTable = ndi.fun.table.moveColumnsLeft(plateTable,...
         {'expID','assayPhase','plateID','exclude','growthOD600Label',...
         'growthConditionLabel','peptoneFlag','bacteriaStrain'});
-    cultivationPlateTable = movevars(cultivationPlateTable,'growthOD600','After','patchID');
+    plateTable = movevars(plateTable,'growthOD600','After','patchID');
 
     % Create ontologyTableRow documents
     info.(dirName).cultivationPlateDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        cultivationPlateTable,{'expID','assayPhase','plateID'},'Overwrite',options.Overwrite);
-    info.(dirName).cultivationPlateTable = cultivationPlateTable;
+        plateTable,{'expID','assayPhase','plateID'},'Overwrite',options.Overwrite);
+    info.(dirName).cultivationPlateTable = plateTable;
 
     % B. BEHAVIORPLATE ontologyTableRow
 
@@ -191,6 +195,11 @@ for i = 1:numel(infoFiles)
     indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
     dataTable{indWithout,'peptoneFlag'} = false;
     [strainNames,~,indStrain] = unique(dataTable.strainID);
+    if strcmp(dirName,'foragingMutants')
+        strainNames{strcmp(strainNames,'CB1112')} = '00004246'; % not available for lookup
+        strainNames{strcmp(strainNames,'CX6448')} = '00005280'; % not available for lookup
+        strainNames{strcmp(strainNames,'MT15434')} = '00027519'; % not available for lookup
+    end
     strainIDs = cellfun(@(s) ndi.ontology.lookup(['WBStrain:',s]),strainNames,'UniformOutput',false);
     dataTable.strain = strainIDs(indStrain);
 
@@ -270,22 +279,25 @@ for i = 1:numel(infoFiles)
     % Create imageStack_parameters documents
     videoDocs = cell(height(dataTable),1);
     for p = 1:height(dataTable)
-        dataType = class(dataTable.firstFrame{p});
-        imageStack_parameters = struct('dimension_order','YXT',...
-            'dimension_labels','height,width,time',...
-            'dimension_size',[dataTable.pixels{p},dataTable.numFrames(p)],...
-            'dimension_scale',[dataTable.scale(p),dataTable.scale(p),1/dataTable.frameRate(p)],...
-            'dimension_scale_units','micrometer,micrometer,second',...
-            'data_type',dataType,...
-            'data_limits',[intmin(dataType) intmax(dataType)],...
-            'timestamp',convertTo(dataTable.timeRecord(p),'datenum'),...
-            'clocktype','exp_global_time');
-        videoDocs{p} = ndi.document('imageStack_parameters', ...
-            'imageStack_parameters', imageStack_parameters) + ...
-            session.newdocument();
-        videoDocs{p} = videoDocs{p}.set_dependency_value(...
-            'ontologyTableRow_id',dataTable.plate_id{p});
+        if ~isempty(dataTable.firstFrame{p})
+            dataType = class(dataTable.firstFrame{p});
+            imageStack_parameters = struct('dimension_order','YXT',...
+                'dimension_labels','height,width,time',...
+                'dimension_size',[dataTable.pixels{p},dataTable.numFrames(p)],...
+                'dimension_scale',[dataTable.scale(p),dataTable.scale(p),1/dataTable.frameRate(p)],...
+                'dimension_scale_units','micrometer,micrometer,second',...
+                'data_type',dataType,...
+                'data_limits',[intmin(dataType) intmax(dataType)],...
+                'timestamp',convertTo(dataTable.timeRecord(p),'datenum'),...
+                'clocktype','exp_global_time');
+            videoDocs{p} = ndi.document('imageStack_parameters', ...
+                'imageStack_parameters', imageStack_parameters) + ...
+                session.newdocument();
+            videoDocs{p} = videoDocs{p}.set_dependency_value(...
+                'ontologyTableRow_id',dataTable.plate_id{p});
+        end
     end
+    videoDocs(cellfun(@isempty,videoDocs)) = [];
     session.database_add(videoDocs);
     info.(dirName).videoDocs = videoDocs;
 
@@ -306,7 +318,7 @@ for i = 1:numel(infoFiles)
     wormNum = vertcat(wormNum{:});
     wormID = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),wormNum,'UniformOutput',false);
     expTime = vertcat(expTime{:});
-    wormTable = table(plateID,wormID,expTime);
+    wormTable = table(plateID,wormNum,wormID,expTime);
 
     % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
@@ -334,8 +346,8 @@ for i = 1:numel(infoFiles)
     if any(ismember(dataTable.Properties.VariableNames,'starvedTime')) && ...
             any(dataTable.starvedDuration > 0)
         wormTable = ndi.fun.table.join({wormTable,...
-            dataTable(:,{'plate_id','strainName','starvedTime','timeRecord'})},...
-            'uniqueVariables',{'plate_id','wormNum'});
+            dataTable(:,{'plateID','strainName','starvedTime','timeRecord'})},...
+            'uniqueVariables',{'plateID','wormID'});
         ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
         onsetDocs = cell(numel(ind),1);
         offsetDocs = cell(numel(ind),1);
@@ -415,7 +427,7 @@ for i = 1:numel(dataFiles)
     [~,bodyPart] = fileparts(dataFiles{i});
     bodyPartID = ndi.ontology.lookup(['EMPTY:C. elegans ' bodyPart]);
     subjectDocID = ndi.ontology.lookup('EMPTY:Subject document identifier');
-    patchDocID = ndi.ontology.lookup('EMPTY:C. elegans assay: patch parameter document identifier');
+    patchDocID = ndi.ontology.lookup('EMPTY:bacterial patch document identifier');
 
     % Loop through each worm (subject)
     wormNums = unique(dataTable.wormNum);
@@ -425,9 +437,9 @@ for i = 1:numel(dataFiles)
 
         % Get indices
         indWorm = info.(dirName).wormTable.wormNum == wormNums(j);
-        plate_id = info.(dirName).wormTable.plate_id(indWorm);
+        plateID = info.(dirName).wormTable.plateID(indWorm);
         subject_id = info.(dirName).wormTable.subject_id{indWorm};
-        indPatch = strcmp(info.(dirName).patchTable.plate_id,plate_id);
+        indPatch = strcmp(info.(dirName).patchTable.plateID,plateID);
         indData = dataTable.wormNum == wormNums(j);
         wormName = strsplit(info.(dirName).wormTable.subjectName{indWorm},'@');
         wormName = wormName{1};
@@ -476,7 +488,7 @@ for i = 1:numel(dataFiles)
         distance_metadata.ontologyNumericValues_A = [];
         distance_metadata.ontologyStringValues_A = subject_id;
         distance_metadata.ontologyNode_B = patchDocID; % patch ontologyTableRow document id
-        distance_metadata.integerIDs_B = info.(dirName).patchTable.patchNum(indPatch)';
+        distance_metadata.integerIDs_B = cellfun(@str2num,info.(dirName).patchTable.patchID(indPatch))';
         distance_metadata.ontologyNumericValues_B = [];
         distance_metadata.ontologyStringValues_B = strjoin(info.(dirName).patchTable.patch_id(indPatch),',');
         distance_metadata.units = 'NCIT:C48367'; % pixels
@@ -524,13 +536,16 @@ fields = fieldnames(info);
 wormTable = table();
 patchTable = table();
 for i = 1:numel(fields)
+    info.(fields{i}).wormTable{:,'dirName'} = fields(i);
+    info.(fields{i}).patchTable{:,'dirName'} = fields(i);
     wormTable = ndi.fun.table.vstack({wormTable,info.(fields{i}).wormTable});
     patchTable = ndi.fun.table.vstack({patchTable,info.(fields{i}).patchTable});
 end
-dataTable = renamevars(dataTable,{'expName','id','lawnID'},{'dirName','encounterNum','patchNum'});
+dataTable = renamevars(dataTable,{'expName','id'},{'dirName','encounterNum'});
+dataTable.patchID = arrayfun(@(x) num2str(x,'%.4i'),dataTable.lawnID,'UniformOutput',false);
 dataTable = ndi.fun.table.join({dataTable,...
-    wormTable(:,{'wormNum','dirName','subject_id','plate_id'}),...
-    patchTable(:,{'patchNum','dirName','plate_id','patch_id'})});
+    wormTable(:,{'wormNum','wormID','dirName','subject_id','plateID'}),...
+    patchTable(:,{'patchID','dirName','plateID','patch_id'})});
 
 % Create ontologyTableRow documents
 indEncounter = dataTable.encounterNum > 0;
@@ -542,7 +557,6 @@ encounterDocs = tableDocMaker.table2ontologyTableRowDocs(...
 
 % Get the session object
 session = sessions{2};
-session.cache.clear;
 
 % OP50-GFP
 OP50GFP = openminds.core.research.Strain;
@@ -562,62 +576,80 @@ dataTable = load(fullfile(dataParentDir,bacteriaFiles{1}),'lawnAnalysis');
 dataTable = dataTable.lawnAnalysis;
 
 % List the variables for each document type
-cultivationPlateVariables = {'expNum','bacteria','OD600Real','CFU'};
-behaviorPlateVariables = {'experiment_id','plateID','OD600','lawnVolume',...
-    'peptoneFlag','timePoured','timePouredColdRoom',...
-    'timeSeed','timeSeedColdRoom','timeRoomTemp'};
-imageVariables = {'plate_id','imageNum','acquisitionTime',...
-    'xPixels','yPixels','exposureTime','bitDepth','scale',...
-    'minValue','maxValue','meanValue'};
-patchVariables = {'image_id','patchID',...
+plateVariables = {'expID','plateID',...
+    'OD600Label','peptoneFlag','timePoured','timePouredColdRoom',...
+    'bacteriaStrain','timeSeed','timeSeedColdRoom','timeRoomTemp',...
+    'OD600Real','CFU','OD600','lawnVolume'};
+imageVariables = {'plateID','imageID',...
+    'lawnGrowthDuration','exposureTime'};
+patchVariables = {'imageID','patchID',...
     'lawnRadius','circularity',...
     'yPeak','yOuterEdge',...
     'borderAmplitude','meanAmplitude','centerAmplitude','borderCenterRatio'};
 
-
-% A. EXPERIMENT ontologyTableRow
-
-% Add missing variables
-dataTable{:,'bacteria'} = {strainDoc{1}.id};
-
-% Compile data table with 1 row for each unique experiment day
-cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
-    'UniqueVariables','expNum');
-
-% Create ontologyTableRow documents
-experimentDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
-    cultivationPlateTable,{'expNum'},'Overwrite',options.Overwrite);
-cultivationPlateTable.experiment_id = cellfun(@(d) d.id,experimentDocs,'UniformOutput',false);
-dataTable = ndi.fun.table.join({dataTable,cultivationPlateTable(:,{'expNum','experiment_id'})});
-
-% B. PLATE ontologyTableRow
+% A. PLATE ontologyTableRow
 
 % Add missing variables
+dataTable{:,'expID'} = arrayfun(@(x) num2str(x,'%.4i'),dataTable.expNum,'UniformOutput',false);
+dataTable{:,'plateID'} = arrayfun(@(x) num2str(x,'%.4i'),dataTable.plateNum,'UniformOutput',false);
+dataTable.OD600Label = arrayfun(@(x) num2str(x,'%.2f'),dataTable.OD600,'UniformOutput',false);
 dataTable{:,'peptoneFlag'} = true;
 indWithout = ndi.fun.table.identifyMatchingRows(dataTable,'peptone','without');
 dataTable{indWithout,'peptoneFlag'} = false;
+dataTable{:,'bacteriaStrain'} = {strainDoc{1}.id};
 
 % Compile data table with 1 row for each unique plate
-behaviorPlateTable = ndi.fun.table.join({dataTable(:,behaviorPlateVariables)},...
-    'UniqueVariables',{'experiment_id','plateNum'});
+plateTable = ndi.fun.table.join({dataTable(:,plateVariables)},...
+    'UniqueVariables','plateID');
 
 % Create ontologyTableRow documents
 plateDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
-    behaviorPlateTable,{'experiment_id','plateNum'},'Overwrite',options.Overwrite);
-behaviorPlateTable.plate_id = cellfun(@(d) d.id,plateDocs,'UniformOutput',false);
-dataTable = ndi.fun.table.join({dataTable,behaviorPlateTable(:,{'experiment_id','plateNum','plate_id'})});
+    plateTable,{'plateID'},'Overwrite',options.Overwrite);
+plateTable.plate_id = cellfun(@(d) d.id,plateDocs,'UniformOutput',false);
+dataTable = ndi.fun.table.join({dataTable,plateTable(:,{'plateID','plate_id'})});
 
 % C. IMAGE ontologyTableRow documents
 
+% Add missing variables
+dataTable{:,'imageID'} = arrayfun(@(x) num2str(x,'%.4i'),dataTable.imageNum,'UniformOutput',false);
+dataTable.lawnGrowthDuration = hours(dataTable.growthTimeTotal);
+
 % Compile data table with 1 row for each unique image
 imageTable = ndi.fun.table.join({dataTable(:,imageVariables)},...
-    'UniqueVariables',{'plate_id','imageNum'});
+    'UniqueVariables',{'plateID','imageID'});
 
 % Create ontologyTableRow documents
 imageDocs = tableDocMaker_ecoli.table2ontologyTableRowDocs(...
-    imageTable,{'plate_id','imageNum'},'Overwrite',options.Overwrite);
+    imageTable,{'plateID','imageID'},'Overwrite',options.Overwrite);
 imageTable.image_id = cellfun(@(d) d.id,imageDocs,'UniformOutput',false);
-dataTable = ndi.fun.table.join({dataTable,imageTable(:,{'plate_id','imageNum','image_id'})});
+dataTable = ndi.fun.table.join({dataTable,imageTable(:,{'imageID','image_id'})});
+
+% B. IMAGE imageStack_parameters
+
+% Compile data table with 1 row for each unique image
+imageTable = ndi.fun.table.join({dataTable},...
+    'UniqueVariables',{'plateID','imageID'});
+
+% Create imageStack_parameters documents
+imageDocs = cell(height(imageTable),1);
+for p = 1:height(imageTable)
+    dataType = imageTable.bitDepth{p};
+    imageStack_parameters = struct('dimension_order','YX',...
+        'dimension_labels','height,width',...
+        'dimension_size',[imageTable.xPixels{p},imageTable.yPixels{p}],...
+        'dimension_scale',[imageTable.scale{p},imageTable.scale{p}],...
+        'dimension_scale_units','micrometer,micrometer',...
+        'data_type',dataType,...
+        'data_limits',[intmin(dataType) intmax(dataType)],...
+        'timestamp',convertTo(datetime(imageTable.acquisitionTime{p}),'datenum'),...
+        'clocktype','exp_global_time');
+    imageDocs{p} = ndi.document('imageStack_parameters', ...
+        'imageStack_parameters', imageStack_parameters) + ...
+        session.newdocument();
+    imageDocs{p} = imageDocs{p}.set_dependency_value(...
+        'ontologyTableRow_id',imageTable.image_id{p});
+end
+session.database_add(imageDocs);
 
 % D. PATCH ontologyTableRow documents
 
