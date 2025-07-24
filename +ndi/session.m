@@ -9,7 +9,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
         syncgraph         % An ndi.time.syncgraph object related to this session
         cache             % An ndi.cache object for the session's use
     end
-    properties (GetAccess=protected, SetAccess = protected, Transient)
+    properties (GetAccess={?session, ?ndi.dataset}, SetAccess = protected, Transient)
         database          % An ndi.database associated with this session
     end
     methods
@@ -319,7 +319,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % Matches are returned in a cell list NDI_DOCUMENT_OBJ.
             %
-            ndi_document_obj = ndi_session_obj.database.search(searchparameters);
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                searchparameters {mustBeA(searchparameters,{'ndi.query','did.query'})}
+            end
+            inSession = ndi.query('base.session_id','exact_string',ndi_session_obj.id());
+            ndi_document_obj = ndi_session_obj.database.search(searchparameters&inSession);
         end % database_search();
 
         function database_clear(ndi_session_obj, areyousure)
