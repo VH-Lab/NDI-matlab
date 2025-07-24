@@ -1104,6 +1104,15 @@ is_a: NCIT:C48179 ! Image
 property_value: codeName "cElegansBehavioralAssayClosestPatchOD600Map" xsd:string
 
 [Term]
+id: EMPTY:00000231
+name: bacterial patch document identifier
+namespace: empty_ontology
+def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that details the specific parameters of a bacterial food patch such as its location, size, and density." []
+is_a: EMPTY:00000017 ! NDI document identifier
+is_a: EMPTY:00000174 ! Bacterial parameter
+property_value: codeName "cElegansAssayPatchParameterDocumentIdentifier" xsd:string
+
+[Term]
 id: EMPTY:00000250
 name: C. elegans body part
 namespace: empty_ontology
@@ -1263,12 +1272,16 @@ property_value: codeName "bacterialFluorescenceAssayAgarPlateColdStorageTimestam
 
 [Term]
 id: EMPTY:00000276
-name: Bacterial fluorescence assay: image identifier
+name: microscopy image identifier
 namespace: empty_ontology
-def: "A unique identifier for a specific fluorescence image of bacterial patches." []
-is_a: EMPTY:00000265 ! Bacterial fluorescence assay parameter
+def: "A unique identifier for a microscopy image." []
 is_a: EMPTY:00000011 ! Identifier
-property_value: codeName "bacterialFluorescenceAssayImageIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000277
+name: microscopy image exposure time
+namespace: empty_ontology
+def: "The duration the microscope's camera or sensor is exposed to light. Unit: milliseconds." []
 
 [Term]
 id: EMPTY:00000280
