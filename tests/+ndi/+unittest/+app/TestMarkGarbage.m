@@ -19,14 +19,23 @@ classdef TestMarkGarbage < matlab.unittest.TestCase
     methods (TestClassSetup)
         % This method runs once before any tests are executed.
         function setupOnce(testCase)
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+            fixture = testCase.applyFixture(TemporaryFolderFixture);
+            
+            % Define the test directory and create it if it doesn't exist.
+            temp_session_path = fullfile(fixture.Folder, 'example_app_sessions', 'markgarbage_ex');
+            if ~isfolder(temp_session_path)
+                mkdir(temp_session_path)
+            end
+
             % Set up the session, device, app, and probe for all tests.
             
-            % 1. Define the path to the example data directory
+            % 1. Copy example files to the test directory
             example_path = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions' filesep 'markgarbage_ex'];
-            fprintf('Creating a new session object at path %s...\n', example_path);
+            copyfile(example_path, temp_session_path)
             
             % 2. Create the session object
-            testCase.testSession = ndi.session.dir('exp1_markgarbage_eg', example_path);
+            testCase.testSession = ndi.session.dir('exp1_markgarbage_eg', temp_session_path);
 
             % 3. Remove any old devices to ensure a clean start
             devs = testCase.testSession.daqsystem_load('name','(.*)');
@@ -53,7 +62,6 @@ classdef TestMarkGarbage < matlab.unittest.TestCase
         % This method runs once after all tests have been executed.
         function teardownOnce(testCase)
             % Clean up the session by removing the device to allow the test to be re-run.
-            fprintf('Cleaning up the example session...\n');
             devs = testCase.testSession.daqsystem_load('name', 'intan1');
             
             % Loop through the found devices. This pattern works whether 'devs' is a

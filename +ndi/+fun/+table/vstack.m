@@ -7,7 +7,7 @@ arguments
 end
 
     % Remove empty cells (if applicable) 
-    ind = cellfun(@(x) ~isempty(x), tablesCellArray);
+    ind = ~cellfun(@(x) isempty(x) & ~istable(x), tablesCellArray);
     tablesCellArray = tablesCellArray(ind);
 
     % Check that all remaining cells contain tables

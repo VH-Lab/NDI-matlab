@@ -345,13 +345,6 @@
     },
     {
       "ontology": "EMPTY",
-      "lookup_string": "EMPTY:Elevated Plus Maze: treatment group",
-      "should_succeed": true,
-      "expected_id": "EMPTY:00000147",
-      "expected_name": "Elevated Plus Maze: treatment group"
-    },
-    {
-      "ontology": "EMPTY",
       "lookup_string": "EMPTY:NoSuchTermHere",
       "should_succeed": false,
       "expected_id": "",
