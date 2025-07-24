@@ -207,6 +207,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                     warning('ProgressBarWindow:DuplicateTag',...
                         'BarID "%s" already used. Resetting progress bar.',options.Tag)
                     app.updateBar(options.Tag,0);
+                    app.ProgressBars(barNum).Clock(1:2) = {datetime('now')};
                     return
                 end
             end
