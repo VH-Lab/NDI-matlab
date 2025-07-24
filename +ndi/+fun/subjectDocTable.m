@@ -106,7 +106,7 @@ for i = 1:numel(subjectDocs)
 
                 % If this is the first time we've seen this element type, initialize its field
                 if ~isfield(treatment, dataType)
-                     treatment.(dataType).name = {};
+                    treatment.(dataType).name = {};
                     treatment.(dataType).ontology = {};
                     treatment.(dataType).value = {};
                     treatment.(dataType).numericValue = {};
