@@ -1,0 +1,23 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/ontologyImage.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ontologyImage_schema.json",
+		"class_name":						"ontologyImage",
+		"property_list_name":               "ontologyImage",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"},
+			{ "definition":                 "$NDIDOCUMENTPATH\/data\/ngrid.json"}
+		]
+	},
+	"depends_on": [
+		{	"name":		"ontologyTableRow_id",
+			"value":	"" 
+		}
+	],
+	"files": {
+		"file_list": [ "ontologyImage.ngrid" ]
+    },
+	"ontologyImage":  {
+		"ontologyNode":		""	}
+}

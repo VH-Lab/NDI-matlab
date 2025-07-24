@@ -95,33 +95,18 @@ for i = 1:numel(subjectDocs)
 
                 % Append the data to our temporary struct
                 openMINDs.(dataType).name{end+1} = docProp.openminds.fields.name;
-                openMINDs.(dataType).ontology{end+1} = docProp.openminds.fields.(ontologyField);     
-
-            % case 'element'
-            % 
-            %     % Extract the specific element type (e.g., 'mfdaq') from the full class name
-            %     dataType = regexp(docProp.element.ndi_element_class, '[^.]*$', 'match', 'once');
-            % 
-            %     % If this is the first time we've seen this element type, initialize its field
-            %     if ~isfield(element, dataType)
-            %         element.(dataType).name = {};
-            %         element.(dataType).type = {};
-            %     end
-            % 
-            %     % Append the element's name and type to our temporary struct
-            %     element.(dataType).name{end+1} = docProp.element.name;
-            %     element.(dataType).type{end+1} = docProp.element.type;
+                openMINDs.(dataType).ontology{end+1} = docProp.openminds.fields.(ontologyField);
 
             case 'treatment'
                 
                 % Get datatype and values
-                dataType = replace(docProp.treatment.name,' ','');
+                [~,~,~,~,~,dataType] = ndi.ontology.lookup(docProp.treatment.ontologyName);
                 numericValue = docProp.treatment.numeric_value;
                 stringValue = docProp.treatment.string_value;
 
                 % If this is the first time we've seen this element type, initialize its field
                 if ~isfield(treatment, dataType)
-                    treatment.(dataType).name = {};
+                     treatment.(dataType).name = {};
                     treatment.(dataType).ontology = {};
                     treatment.(dataType).value = {};
                     treatment.(dataType).numericValue = {};
@@ -167,20 +152,6 @@ for i = 1:numel(subjectDocs)
         subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
         subjectTable(i,[currentType,'Ontology']) = {strjoin(unique(ontologys,'stable'), ', ')};
     end
-
-    % Process the aggregated element data
-    % elementTypes = fieldnames(element);
-    % for k = 1:numel(elementTypes)
-    %     currentType = elementTypes{k};
-    % 
-    %     % Get unique, non-empty values
-    %     names = element.(currentType).name(~cellfun('isempty', element.(currentType).name));
-    %     types = element.(currentType).type(~cellfun('isempty', element.(currentType).type));
-    % 
-    %     % Create comma-separated strings and assign to the table.
-    %     subjectTable(i,[currentType,'Name']) = {strjoin(unique(names,'stable'), ', ')};
-    %     subjectTable(i,[currentType,'Type']) = {strjoin(unique(types,'stable'), ', ')};
-    % end
 
     % Process the aggregated treatment data
     treatmentTypes = fieldnames(treatment);

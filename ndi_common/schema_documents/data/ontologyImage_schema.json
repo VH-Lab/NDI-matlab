@@ -1,0 +1,21 @@
+{
+	"classname": "ontologyImage",
+	"superclasses":  [ "base" , "ngrid" ],
+	"depends_on": [
+		{ "name": "ontologyTableRow_id", "mustbenotempty": 0}
+	],
+	"file": [ 
+		{"name": "ontologyImage.ngrid", "mustbenotempty": 1}
+	],
+	"ontologyImage": [
+		{
+			"name": "ontologyNodes",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id(s) of the data variable (s) in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:00000090,UBERON:3373')."
+		}
+
+	]
+}

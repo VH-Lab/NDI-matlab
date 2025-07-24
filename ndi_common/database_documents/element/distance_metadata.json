@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/element\/distance_metadata.json",
+		"validation":						"$NDISCHEMAPATH\/element\/distance_metadata_schema.json",
+		"class_name":						"distance_metadata",
+		"property_list_name":					"distance_metadata",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{  "name": "element_id", "value": "" }
+	],
+	"distance_metadata": {
+		"ontologyNode_A": "",
+		"integerIDs_A": [],
+		"ontologyNumericValues_A": [],
+		"ontologyStringValues_A": "",
+		"ontologyNode_B": "",
+		"integerIDs_B": [],
+		"ontologyNumericValues_B": [],
+		"ontologyStringValues_B": "",
+		"units": ""
+	}
+}

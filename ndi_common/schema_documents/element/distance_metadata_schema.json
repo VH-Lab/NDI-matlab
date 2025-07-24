@@ -1,0 +1,82 @@
+{
+	"classname": "distance_metadata",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"distance_metadata": [
+		{
+			"name": "ontologyNode_A",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id corresponding to the first object/subject for which the second column of datapoints in the element of type 'distance' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'EMPTY:0000146' which defines a subject local id)."
+		},
+		{
+			"name": "integerIDs_A",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The unique integer identifiers corresponding which map to the data values for the first object/subject. These should be specified as a horizontal vector of integers (e.g. [1 2 3 4])."
+		},
+		{
+			"name": "ontologyNumericValues_A",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The unique data values for the first object/subject. These should be specified as a horizontal vector of numbers (e.g. [1 2 3 4]). The number of values must match the number of integer ids."
+		},
+		{
+			"name": "ontologyStringValues_A",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The unique data values for the first object/subject. These should be reported in a comma-seperated list (e.g 'subject1,subject2,subject3,subject4'). The number of values must match the number of integer ids."
+		},
+		{
+			"name": "ontologyNode_B",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id corresponding to the second object/subject for which the third column of datapoints in the element of type 'distance' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'EMPTY:0000146' which defines a subject local id)."
+		},
+		{
+			"name": "integerIDs_B",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The unique integer identifiers corresponding which map to the data values for the second object/subject. These should be specified as a horizontal vector of integers (e.g. [1 2 3 4])."
+		},
+		{
+			"name": "ontologyNumericValues_B",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The unique data values for the second object/subject. These should be specified as a horizontal vector of numbers (e.g. [1 2 3 4]). The number of values must match the number of integer ids."
+		},
+		{
+			"name": "ontologyStringValues_B",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The unique data values for the second object/subject. These should be reported in a comma-seperated list (e.g 'subject1,subject2,subject3,subject4'). The number of values must match the number of integer ids."
+		},
+		{
+			"name": "units",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id corresponding to the unit of values for the distances given in the first column of datapoints in the element of type 'distance'. The ontology term should be reported in the form of ontology:nodeID (e.g 'NCIT:C48367' which defines a pixel)."
+		}
+	]
+}
