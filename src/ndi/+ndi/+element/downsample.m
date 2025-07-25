@@ -66,6 +66,8 @@ for i = 1:numel(missing_ids)
     % Read the time series data for the current epoch
     [data, t] = ndi_element_timeseries_obj_in.readtimeseries(epoch_i,-inf,inf);
 
+    %disp(['After reading: number of opened files: ' int2str(numel(openedFiles)) '.']);
+
     % Downsample the time series data
     t_down = downsample(t,LP);
     data_down = decimate(data,LP,'fir');
@@ -86,5 +88,5 @@ for i = 1:numel(missing_ids)
     % Add the downsampled data to the new object
     elem_out.addepoch(ndi_element_timeseries_obj_in.epochid(epoch_i),...
         strjoin(ecs,','),t0_t1, t_down, data_down);
+    %disp(['After adding epoch ' int2str(i) ': number of opened files: ' int2str(numel(openedFiles)) '.']);    
 end
-D.cache.clear();
