@@ -1,33 +1,39 @@
-function dataTable = ontologyTableRowDoc2Table(tableRowDoc)
+function dataTable = ontologyTableRowDoc2Table(tableRowDoc,options)
 %ONTOLOGYTABLEROWDOC2TABLE Converts one or more ontologyTableRow documents to a single MATLAB table.
 %
 %   dataTable = ONTOLOGYTABLEROWDOC2TABLE(tableRowDoc)
+%   dataTable = ONTOLOGYTABLEROWDOC2TABLE(tableRowDoc,'SeparateByType',true)
 %
-%   Extracts tabular data from the nested structure of one or more NDI
-%   ontologyTableRow documents and concatenates them into a single MATLAB table.
-%   The function is designed to handle either a single document object or a
-%   cell array of multiple document objects.
+%   Extracts tabular data from one or more NDI ontologyTableRow documents and
+%   combines them. By default, all extracted tables are vertically stacked into a
+%   single MATLAB table.
 %
-%   For each document, it navigates to the path:
-%   'document_properties.ontologyTableRow.data'
-%   and uses `vlt.data.flattenstruct2table` to convert the data struct at
-%   that location into a table. All resulting tables are then stacked
-%   vertically.
+%   The function can also separate the output into different tables based on the
+%   type of data each document represents, as defined by its variable names.
 %
 %   Inputs:
 %     tableRowDoc - A single NDI document object or a 1xN cell array
 %        of NDI document objects. Each document must contain the
 %        ontology table row data structure.
 %
+%   Optional Name-Value Pair Arguments:
+%     SeparateByType (logical) - If set to true, the function groups the
+%        documents by their `variableNames` property. It then stacks each group
+%        into a separate table and returns a cell array of tables. If false
+%        (default), all data is stacked into a single table.
+%
 %   Outputs:
-%     dataTable (table) - A single MATLAB table containing the vertically
-%        stacked data from all processed input documents.
+%     dataTable (table or cell) - If `SeparateByType` is false, this is a single
+%        MATLAB table containing the vertically stacked data from all documents.
+%        If `SeparateByType` is true, this is a cell array of tables, where each
+%        cell contains stacked data from documents of a common type.
 %
 %   See also: vlt.data.flattenstruct2table, ndi.fun.table.vstack
 
 % Input argument validation
 arguments
     tableRowDoc (1,:) {mustBeA(tableRowDoc,{'cell','ndi.document'})}
+    options.SeparateByType logical = false;
 end
 
 % If a single document is passed, wrap it in a cell for uniform processing
@@ -37,14 +43,25 @@ end
 
 % Pre-allocate a cell array to hold the individual tables from each document
 tableRows = cell(size(tableRowDoc));
+variableNames = cell(size(tableRowDoc));
 
 % Loop through each document provided
 for i = 1:numel(tableRowDoc)
     % Extract the data struct, convert it to a table, and store it
     tableRows{i} = vlt.data.flattenstruct2table(tableRowDoc{i}.document_properties.ontologyTableRow.data);
+    variableNames{i} = tableRowDoc{i}.document_properties.ontologyTableRow.variableNames;
 end
 
-% Vertically stack all the individual tables into a single output table
-dataTable = ndi.fun.table.vstack(tableRows);
+if options.SeparateByType
+    % Vertically stack all the tables by common variables
+    [varNames,~,indGroup] = unique(variableNames);
+    dataTable = cell(numel(varNames),1);
+    for i = 1:numel(varNames)
+        dataTable{i} = ndi.fun.table.vstack(tableRows(indGroup == i));
+    end
+else
+    % Vertically stack all the individual tables into a single output table
+    dataTable = ndi.fun.table.vstack(tableRows);
+end
 
 end
