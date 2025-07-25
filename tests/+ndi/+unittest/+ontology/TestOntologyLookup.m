@@ -42,7 +42,7 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
 
             if shouldSucceed
                 % Test Case: Expected to Succeed
-                testCase.log(matlab.unittest.Verbosity.Terse, sprintf('Testing SUCCESS case: "%s"', lookupStr));
+                testCase.log(matlab.unittest.Verbosity.Detailed, sprintf('Testing SUCCESS case: "%s"', lookupStr));
 
                 % Verify it runs without error and capture outputs
                 try
@@ -70,7 +70,7 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
 
             else
                 % Test Case: Expected to Fail (throw an error)
-                testCase.log(matlab.unittest.Verbosity.Terse, sprintf('Testing FAILURE case: "%s"', lookupStr));
+                testCase.log(matlab.unittest.Verbosity.Detailed, sprintf('Testing FAILURE case: "%s"', lookupStr));
 
                 % Verify that calling the function throws any MException
                 testCase.verifyError(funcToTest, ?MException, ...
@@ -85,7 +85,8 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
         function testCasesCellArray = loadOntologyTestCases()
             % Construct the file path using NDI path constants
             try
-                filePath = fullfile(ndi.common.PathConstants.RootFolder,'tests','+ndi','+unittest','+ontology','ontology_lookup_tests.json');
+                currentDir = fileparts(mfilename('fullpath'));
+                filePath = fullfile(currentDir, 'ontology_lookup_tests.json');
             catch ME
                  error('TestOntologyLookup:PathConstantError', ...
                        'Could not access ndi.common.PathConstants.RootFolder. Ensure NDI paths are set up correctly. Original error: %s', ME.message);

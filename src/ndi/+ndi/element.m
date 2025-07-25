@@ -490,6 +490,19 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             end
         end % LOAD_ALL_ELEMENT_DOCS
 
+        function b = eq(ndi_element_obj1, ndi_element_obj2)
+            % EQ - are 2 ndi.probe objects equal?
+            %
+            % Returns 1 if the objects share an object class, session, and probe string.
+            %
+            b = 0;
+            if isa(ndi_element_obj2,'ndi.element')
+                b = ( ndi_element_obj1.session==ndi_element_obj2.session & ...
+                    strcmp(ndi_element_obj1.elementstring(), ndi_element_obj2.elementstring()) & ...
+                    strcmp(ndi_element_obj1.type, ndi_element_obj2.type) );
+            end
+        end % eq()
+
         %%% ndi.documentservice methods
 
         function ndi_document_obj = newdocument(ndi_element_obj)

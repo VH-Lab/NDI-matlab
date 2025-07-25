@@ -49,7 +49,7 @@ classdef CacheTest <  matlab.unittest.TestCase
                 else
                     priority = 0;
                 end
-                testCase.Cache.add(key, ['type' int2str(i)],rand(25,1),priority);
+                testCase.Cache.add(key, ['type' int2str(i)], rand(25,1), priority);
             end
         end
 
@@ -62,14 +62,18 @@ classdef CacheTest <  matlab.unittest.TestCase
 
         function testCacheEjection(testCase)
             key = testCase.TestKey;
-            disp(['About to add an element that will cause the cache to eject its lowest priority entry, which should be entry ''type 2'' ']);
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                ['About to add an element that will cause the cache to ', ...
+                'eject its lowest priority entry, which should be entry ''type 2'' ']);
 
-            testCase.Cache.add(key,['type6'],rand(25,1));
-
-            disp(['Types left in the cache:']);
+            testCase.Cache.add(key, 'type6', rand(25,1));
 
             cachedTypes = {testCase.Cache.table.type};
             testCase.assertFalse( any(strcmp(cachedTypes, 'type2')) )
+
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                sprintf('Types left in the cache: %s', strjoin(cachedTypes, ', ')));
+
         end
     end
 end

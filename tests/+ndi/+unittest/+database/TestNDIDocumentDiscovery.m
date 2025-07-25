@@ -12,7 +12,9 @@ classdef TestNDIDocumentDiscovery < matlab.unittest.TestCase
         function testDocumentDiscoveryAndValidation(testCase)
             % This test executes the file discovery logic and verifies the results.
             
-            fprintf('Searching for all NDI JSON document definition files...\n');
+
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                'Searching for all NDI JSON document definition files...');
             
             % --- 1. Execute the file discovery logic from the original function ---
             
@@ -42,8 +44,8 @@ classdef TestNDIDocumentDiscovery < matlab.unittest.TestCase
             end
 
             % --- 2. Verify the results with assertions ---
-            
-            fprintf('Found %d files. Verifying results...\n', numel(json_filenames));
+            testCase.log(matlab.unittest.Verbosity.Verbose, ...
+                sprintf('Found %d files. Verifying results...', numel(json_filenames)));
             
             % 2a. Verify that the discovery process actually found some files.
             testCase.verifyNotEmpty(json_filenames, ...

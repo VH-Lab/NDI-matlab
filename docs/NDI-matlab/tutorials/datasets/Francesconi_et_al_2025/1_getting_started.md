@@ -89,6 +89,7 @@ subjectSummary = ndi.fun.subjectDocTable(dataset)
 We have created tools to filter a table by its values. Try finding **subjects** matching a given criterion.
 
 Examples:
+
 | columnName | dataValue |
 | :--- | :--- |
 | StrainName | AVP-Cre |
@@ -100,7 +101,7 @@ Examples:
 columnName = 'StrainName'; % select a column name from the subjectSummary table
 dataValue = 'AVP-Cre'; % select a value to search for
 rowInd = ndi.fun.table.identifyMatchingRows(subjectSummary,...
-    columnName{1},dataValue,'stringMatch','contains');
+    columnName,dataValue,'stringMatch','contains');
 filteredSubjects = subjectSummary(rowInd,:)
 ```
 
@@ -170,6 +171,7 @@ combinedSummary = ndi.fun.table.moveColumnsLeft(combinedSummary,...
 #### Filter epochs <a name="filterEpochs"></a>
 Try finding epochs matching a given criterion.
 Examples:
+
 | columnName | dataValue | stringMatch |
 | :--- | :--- | :--- |
 | approachName | optogenetic | contains |
@@ -184,7 +186,7 @@ columnName = 'approachName';
 dataValue = 'optogenetic';
 stringMatch = 'contains';
 rowInd = ndi.fun.table.identifyMatchingRows(combinedSummary,...
-    columnName{1},dataValue,'stringMatch',stringMatch{1});
+    columnName,dataValue,'stringMatch',stringMatch);
 filteredEpochs = combinedSummary(rowInd,:)
 ```
 

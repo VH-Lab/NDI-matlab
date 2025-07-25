@@ -8,7 +8,8 @@
         "AuthorCompany": "",
         "Summary": "NDI (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses",
         "Description": "NDI (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses",
-        "MinimumMatlabRelease": "R2021a",
+        "ToolboxGettingStartedGuide": "src/ndi/GettingStarted.mlx",
+        "MinimumMatlabRelease": "R2021b",
         "MaximumMatlabRelease": ""
     }
 }
