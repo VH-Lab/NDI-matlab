@@ -7,7 +7,8 @@ arguments
 end
 
 % Initialize progress bar
-ndi.gui.component.ProgressBarWindow('Import Dataset');
+progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
+progressBar.setTimeout(hours(1));
 
 %% Step 1: FILES. Get data path and files.
 
@@ -101,6 +102,7 @@ behaviorPlateVariables = {'expID','assayPhase','plateID','assayType','exclude',.
     'arenaDiameter','lawnSpacing','temp','humidity'};
 patchVariables = {'plateID','OD600','lawnVolume','lawnCenters','lawnRadii','lawnCircularity'};
 wormVariables = {'plateID','wormID','subjectName','subject_id'};
+progressBar.addBar('Label', 'Importing info file(s)','Tag', 'infoFiles');
 
 for i = 1:numel(infoFiles)
 
@@ -117,10 +119,15 @@ for i = 1:numel(infoFiles)
             expType = 0;
         case 'foragingMini'
             expType = 1;
+            indError = find(dataTable.expNum == 24); % small error in .mat file
+            dataTable.growthTimeRoomTemp(indError) = dataTable.growthTimeRoomTemp(indError(end));
+            dataTable.growthLawnGrowth(indError) = dataTable.growthLawnGrowth(indError(end));
         case 'foragingMatching'
             expType = 2;
         case 'foragingMutants'
             expType = 3;
+            indError = 1;
+            dataTable.arenaDiameter(indError) = 30; % small error in .mat file
         case 'foragingSensory'
             expType = 4;
     end
@@ -142,6 +149,9 @@ for i = 1:numel(infoFiles)
         end
     end
 
+    % Convert CFU to CFU/mL of OD600 = 1 solution (standard)
+    dataTable.CFU =  2*10^6*dataTable.CFU;
+
     % Check for correct exclusion
     dataTable.exclude = dataTable.exclude | ...
         ~ndi.fun.table.identifyValidRows(dataTable,'growthCondition');
@@ -162,29 +172,30 @@ for i = 1:numel(infoFiles)
     % A. CULTIVATIONPLATE ontologyTableRow
 
     % Compile data table with 1 row for each unique experiment day and condition
-    plateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
-        'UniqueVariables',{'expID','growthOD600Label'});
+    cultivationPlateTable = ndi.fun.table.join({dataTable(:,cultivationPlateVariables)},...
+        'UniqueVariables',{'expID','growthOD600Label','growthTimePicked'});
+    cultivationPlateTable.growthTimePicked = cellstr(cultivationPlateTable.growthTimePicked);
 
     % Add missing variables
-    plateTable{:,'assayPhase'} = {'cultivation'};
-    plateTable.plateID = arrayfun(@(x) num2str(x + expType*1000 + 900,'%.4i'),1:height(plateTable),'UniformOutput',false)';
-    plateTable{:,'exclude'} = false;
-    plateTable{:,'growthConditionLabel'} = {'24'};
-    plateTable{:,'peptoneFlag'} = true;
-    plateTable{:,'arenaDiameter'} = 90;
-    plateTable{:,'lawnSpacing'} = 0;
-    plateTable{:,'temp'} = 20;
-    plateTable{:,'patchID'} = {'0001'};
-    plateTable{:,'lawnVolume'} = 200;
-    plateTable = ndi.fun.table.moveColumnsLeft(plateTable,...
+    cultivationPlateTable{:,'assayPhase'} = {'cultivation'};
+    cultivationPlateTable.plateID = arrayfun(@(x) num2str(x + expType*1000 + 900,'%.4i'),1:height(cultivationPlateTable),'UniformOutput',false)';
+    cultivationPlateTable{:,'exclude'} = false;
+    cultivationPlateTable{:,'growthConditionLabel'} = {'24'};
+    cultivationPlateTable{:,'peptoneFlag'} = true;
+    cultivationPlateTable{:,'arenaDiameter'} = 90;
+    cultivationPlateTable{:,'lawnSpacing'} = 0;
+    cultivationPlateTable{:,'temp'} = 20;
+    cultivationPlateTable{:,'patchID'} = {'0001'};
+    cultivationPlateTable{:,'lawnVolume'} = 200;
+    cultivationPlateTable = ndi.fun.table.moveColumnsLeft(cultivationPlateTable,...
         {'expID','assayPhase','plateID','exclude','growthOD600Label',...
         'growthConditionLabel','peptoneFlag','bacteriaStrain'});
-    plateTable = movevars(plateTable,'growthOD600','After','patchID');
+    cultivationPlateTable = movevars(cultivationPlateTable,'growthOD600','After','patchID');
 
     % Create ontologyTableRow documents
     info.(dirName).cultivationPlateDocs = tableDocMaker.table2ontologyTableRowDocs(...
-        plateTable,{'expID','assayPhase','plateID'},'Overwrite',options.Overwrite);
-    info.(dirName).cultivationPlateTable = plateTable;
+        cultivationPlateTable,{'expID','assayPhase','plateID'},'Overwrite',options.Overwrite);
+    info.(dirName).cultivationPlateTable = cultivationPlateTable;
 
     % B. BEHAVIORPLATE ontologyTableRow
 
@@ -204,7 +215,8 @@ for i = 1:numel(infoFiles)
     dataTable.strain = strainIDs(indStrain);
 
     % Compile data table with 1 row for each unique plate
-    behaviorPlateTable = ndi.fun.table.join({dataTable(:,behaviorPlateVariables)},...
+    ind = dataTable.videoNum == 1;
+    behaviorPlateTable = ndi.fun.table.join({dataTable(ind,behaviorPlateVariables)},...
         'UniqueVariables',{'expID','assayPhase','plateID'});
 
     % Create ontologyTableRow documents
@@ -405,12 +417,13 @@ for i = 1:numel(infoFiles)
         'EMPTY:C. elegans behavioral assay: closest patch OD600 map',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
+
+    progressBar.updateBar('infoFiles', i / numel(infoFiles));
 end
 
 %% Step 6. DATA DOCUMENTS.
 
-% Create progress bar
-progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+progressBar.addBar('Label', 'Importing data file(s)','Tag', 'dataFiles');
 
 for i = 1:numel(dataFiles)
 
@@ -420,7 +433,7 @@ for i = 1:numel(dataFiles)
     tableType = fields{1};
     dataTable = dataTable.(tableType);
     dirName = split(dataFiles{i},filesep); dirName = dirName{end-1};
-    progressBar = progressBar.addBar('Label', 'Creating Position and Distance Element(s)',...
+    progressBar.addBar('Label', 'Creating Position and Distance Element(s)',...
         'Tag', dirName);
 
     % Get ontology terms
@@ -436,7 +449,7 @@ for i = 1:numel(dataFiles)
     for j = 1:numel(wormNums)
 
         % Get indices
-        indWorm = info.(dirName).wormTable.wormNum == wormNums(j);
+        indWorm = ndi.fun.table.identifyMatchingRows(info.(dirName).wormTable,'wormNum',wormNums(j));
         plateID = info.(dirName).wormTable.plateID(indWorm);
         subject_id = info.(dirName).wormTable.subject_id{indWorm};
         indPatch = strcmp(info.(dirName).patchTable.plateID,plateID);
@@ -499,12 +512,14 @@ for i = 1:numel(dataFiles)
         distanceMetadataDocs{j} = distanceMetadataDocs{j}.set_dependency_value(...
             'element_id', distanceElement.id);
 
-        progressBar = progressBar.updateBar(dirName, j / numel(wormNums));
+        progressBar.updateBar(dirName, j / numel(wormNums));
     end
 
     % Add documents to database
     session.database_add(positionMetadataDocs);
     session.database_add(distanceMetadataDocs);
+
+    progressBar.updateBar('dataFiles', i / numel(dataFiles));
 end
 
 %% Step 7. ENCOUNTER DOCUMENTS.
@@ -668,4 +683,4 @@ patchTable = ndi.fun.table.join({dataTable(:,patchVariables)},...
 tableDocMaker_ecoli.table2ontologyTableRowDocs(...
     patchTable,{'imageID','patchID'},'Overwrite',options.Overwrite);
 
-end
+%end
