@@ -8,5 +8,5 @@ https://github.com/VH-lab/NDR-matlab
 https://github.com/ehennestad/Catalog
 https://github.com/a-ma72/mksqlite
 https://github.com/Waltham-Data-Science/NDI-compress-matlabp
-https://github.com/openMetadataInitiative/openMINDS_MATLAB
 https://github.com/bastibe/Violinplot-Matlab
+fex://134212-openminds-metadata-models-for-matlab
