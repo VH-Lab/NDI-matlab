@@ -85,7 +85,8 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
         function testCasesCellArray = loadOntologyTestCases()
             % Construct the file path using NDI path constants
             try
-                filePath = fullfile(ndi.common.PathConstants.RootFolder,'tests','+ndi','+unittest','+ontology','ontology_lookup_tests.json');
+                currentDir = fileparts(mfilename('fullpath'));
+                filePath = fullfile(currentDir, 'ontology_lookup_tests.json');
             catch ME
                  error('TestOntologyLookup:PathConstantError', ...
                        'Could not access ndi.common.PathConstants.RootFolder. Ensure NDI paths are set up correctly. Original error: %s', ME.message);

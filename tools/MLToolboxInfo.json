@@ -1,0 +1,15 @@
+{
+    "Namespace" : "ndi",
+    "ToolboxOptions": {
+        "Identifier": "95ee39df-f621-4d3f-8bf5-e87d44d6030a",
+        "ToolboxName": "NDI-matlab",
+        "AuthorName": "Steve Van Hooser",
+        "AuthorEmail": "steve@walthamdatascience.com",
+        "AuthorCompany": "",
+        "Summary": "NDI (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses",
+        "Description": "NDI (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses",
+        "ToolboxGettingStartedGuide": "src/ndi/GettingStarted.mlx",
+        "MinimumMatlabRelease": "R2021b",
+        "MaximumMatlabRelease": ""
+    }
+}
