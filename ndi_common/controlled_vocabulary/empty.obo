@@ -881,13 +881,21 @@ is_a: EMPTY:00000085 ! Measurement
 is_a: EMPTY:00000175 ! Bacterial parameter
 
 [Term]
-id: EMPTY:00000192
+id: EMPTY:00000191
 name: bacterial plate identifier
 namespace: empty_ontology
 def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which bacterial patch(s) were seeded." []
 is_a: EMPTY:00000011 ! Identifier
 is_a: EMPTY:00000174 ! C. elegans assay parameter
 property_value: codeName "cElegansAssayExperimentPlateIdentifier" xsd:string
+
+[Term]
+id: EMPTY:00000192
+name: bacterial plate document identifier
+namespace: empty_ontology
+def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that details the specific parameters of a bacterial plate such." []
+is_a: EMPTY:00000017 ! NDI document identifier
+is_a: EMPTY:00000174 ! Bacterial parameter
 
 [Term]
 id: EMPTY:00000193
