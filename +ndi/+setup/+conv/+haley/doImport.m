@@ -726,5 +726,3 @@ end
 
 % Compress dataset
 zip([datasetDir,'.zip'],datasetDir);
-
-end
