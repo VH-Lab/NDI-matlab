@@ -470,7 +470,7 @@ for i = 1:numel(dataFiles)
 
         % Get indices
         indWorm = ndi.fun.table.identifyMatchingRows(info.(dirName).wormTable,'wormNum',wormNums(j));
-        plate_id = info.(dirName).wormTable.plate_id(indWorm);
+        plate_id = info.(dirName).wormTable.plate_id{indWorm};
         indPlate = ndi.fun.table.identifyMatchingRows(info.(dirName).behaviorPlateTable,'plate_id',plate_id);
         plateID = info.(dirName).behaviorPlateTable.plateID{indPlate};
         subject_id = info.(dirName).wormTable.subject_id{indWorm};
@@ -586,13 +586,10 @@ dataTable.patchID = arrayfun(@(x) num2str(x,'%.4i'),dataTable.lawnID,'UniformOut
 dataTable = ndi.fun.table.join({dataTable,...
     wormTable(:,{'wormNum','wormID','dirName','subject_id','plate_id'}),...
     plateTable(:,{'plateID','dirName','plate_id'}),...
-    patchTable(:,{'plateID','dirName','patchID','patch_id'})},...
-    'uniqueVariables',{'subject_id','patch_id','encounterNum'});
+    patchTable(:,{'plateID','dirName','patchID','patch_id'})});
 
 % Create ontologyTableRow documents
-indEncounter = dataTable.encounterNum > 0;
-tableDocMaker.table2ontologyTableRowDocs(...
-    dataTable(indEncounter,encounterVariables),...
+tableDocMaker.table2ontologyTableRowDocs(dataTable(:,encounterVariables),...
     {'subject_id','encounterNum'},'Overwrite',options.Overwrite);
 
 %% Step 8. BACTERIA DOCUMENTS.
