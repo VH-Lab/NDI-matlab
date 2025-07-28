@@ -101,7 +101,7 @@ behaviorPlateVariables = {'expID','assayPhase','plateID','assayType','exclude',.
     'OD600Real','CFU',...
     'arenaDiameter','lawnSpacing','temp','humidity'};
 patchVariables = {'plateID','OD600','lawnVolume','lawnCenters','lawnRadii','lawnCircularity'};
-wormVariables = {'plateID','lastPlateID','wormID','subjectName','subject_id'};
+wormVariables = {'wormID','subjectName','subject_id'};
 progressBar.addBar('Label', 'Importing info file(s)','Tag', 'infoFiles');
 
 for i = 1:numel(infoFiles)
@@ -200,6 +200,10 @@ for i = 1:numel(infoFiles)
     for j = 1:height(cultivationPlateTable)
         dataTable{indPlate == j,'lastPlateID'} = cultivationPlateTable.plateID(j);
     end
+    cultivationPlateTable.lastPlate_id = cellfun(@(d) d.id,info.(dirName).cultivationPlateDocs,'UniformOutput',false);
+    cultivationPlateTable = renamevars(cultivationPlateTable,'plateID','lastPlateID');
+    dataTable = ndi.fun.table.join({dataTable,cultivationPlateTable(:,{'lastPlateID','lastPlate_id'})});
+    
     % B. BEHAVIORPLATE ontologyTableRow
 
     % Add missing variables
@@ -320,30 +324,30 @@ for i = 1:numel(infoFiles)
 
     % Compile data table with 1 row for each unique worm
     [~,ind] = unique(dataTable.plateID);
-    plateID = cell(numel(ind),1);
-    lastPlateID = cell(numel(ind),1);
+    plate_id = cell(numel(ind),1);
+    lastPlate_id = cell(numel(ind),1);
     wormNum = cell(numel(ind),1);
     expTime = cell(numel(ind),1);
     for j = 1:numel(ind)
         wormNum{j} = dataTable{ind(j),'wormNum'}{1}';
         numWorm = numel(wormNum{j});
-        plateID{j} = repmat(dataTable{ind(j),'plateID'},numWorm,1);
-        lastPlateID{j} = repmat(dataTable{ind(j),'lastPlateID'},numWorm,1);
+        plate_id{j} = repmat(dataTable{ind(j),'plate_id'},numWorm,1);
+        lastPlate_id{j} = repmat(dataTable{ind(j),'lastPlate_id'},numWorm,1);
         expTime{j} = repmat(dataTable{ind(j),'timeRecord'},numWorm,1);
     end
-    plateID = vertcat(plateID{:});
-    lastPlateID = vertcat(lastPlateID{:});
+    plate_id = vertcat(plate_id{:});
+    lastPlate_id = vertcat(lastPlate_id{:});
     wormNum = vertcat(wormNum{:});
     wormID = arrayfun(@(x) num2str(x + expType*1000,'%.4i'),wormNum,'UniformOutput',false);
     expTime = vertcat(expTime{:});
-    wormTable = table(plateID,lastPlateID,wormNum,wormID,expTime);
+    wormTable = table(plate_id,lastPlate_id,wormNum,wormID,expTime);
 
     % Add subject string info
     wormTable{:,'sessionID'} = {session.id};
     wormTable = ndi.fun.table.join({wormTable,...
-        behaviorPlateTable(:,{'plateID','assayType'}),...
-        dataTable(:,{'plateID','strain'})},...
-        'uniqueVariables',{'plateID','wormID'});
+        behaviorPlateTable(:,{'plate_id','assayType'}),...
+        dataTable(:,{'plate_id','strain'})},...
+        'uniqueVariables',{'plate_id','wormID'});
     wormTable{:,'expType'} = {num2str(expType)};
 
     % Create subject documents
@@ -364,8 +368,8 @@ for i = 1:numel(infoFiles)
     if any(ismember(dataTable.Properties.VariableNames,'starvedTime')) && ...
             any(dataTable.starvedDuration > 0)
         wormTable = ndi.fun.table.join({wormTable,...
-            dataTable(:,{'plateID','strainName','starvedTime','timeRecord'})},...
-            'uniqueVariables',{'plateID','wormID'});
+            dataTable(:,{'plate_id','strainName','starvedTime','timeRecord'})},...
+            'uniqueVariables',{'plate_id','wormID'});
         ind = find(ndi.fun.table.identifyMatchingRows(wormTable,'strainName','food-deprived'));
         onsetDocs = cell(numel(ind),1);
         offsetDocs = cell(numel(ind),1);
@@ -423,6 +427,15 @@ for i = 1:numel(infoFiles)
         'EMPTY:C. elegans behavioral assay: closest patch OD600 map',...
         'ontologyTableRow_id',dataTable.plate_id(ind),...
         'Overwrite',options.Overwrite);
+
+    % G. PLATE-SUBJECT ontologyTableRow
+    plateSubjectTable1 = wormTable(:,{'subject_id','plate_id'});
+    plateSubjectTable2 = renamevars(wormTable(:,{'subject_id','lastPlate_id'}),...
+        'lastPlate_id','plate_id');
+    plateSubjectTable = [plateSubjectTable1;plateSubjectTable2];
+    info.(dirName).plateSubjectDocs = tableDocMaker.table2ontologyTableRowDocs(plateSubjectTable,...
+        {'subject_id','plate_id'},'Overwrite',options.Overwrite);
+    info.(dirName).plateSubjectTable = plateSubjectTable;
 
     progressBar.updateBar('infoFiles', i / numel(infoFiles));
 end
@@ -689,4 +702,4 @@ patchTable = ndi.fun.table.join({dataTable(:,patchVariables)},...
 tableDocMaker_ecoli.table2ontologyTableRowDocs(...
     patchTable,{'imageID','patchID'},'Overwrite',options.Overwrite);
 
-%end
+end
