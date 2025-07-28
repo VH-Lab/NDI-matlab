@@ -283,9 +283,10 @@ for i = 1:numel(infoFiles)
     patchRadius = vertcat(patchRadius{:});
     patchCircularity = vertcat(patchCircularity{:});
     patchID = arrayfun(@(x) num2str(x,'%.4i'),patchNum,'UniformOutput',false);
-    patchTable = table(plateID,patchID,patchOD600,lawnVolume,patchCenterX,patchCenterY,...
-        patchRadius,patchCircularity);
-
+    patchTable = ndi.fun.table.join({table(plateID,patchID,patchOD600,...
+        lawnVolume,patchCenterX,patchCenterY,patchRadius,patchCircularity)},...
+        'uniqueVariables',{'plateID','patchID'});
+    
     % Create ontologyTableRow documents
     info.(dirName).patchDocs = tableDocMaker.table2ontologyTableRowDocs(...
         patchTable,{'plateID','patchID'},'Overwrite',options.Overwrite);
@@ -469,7 +470,9 @@ for i = 1:numel(dataFiles)
 
         % Get indices
         indWorm = ndi.fun.table.identifyMatchingRows(info.(dirName).wormTable,'wormNum',wormNums(j));
-        plateID = info.(dirName).wormTable.plateID(indWorm);
+        plate_id = info.(dirName).wormTable.plate_id(indWorm);
+        indPlate = ndi.fun.table.identifyMatchingRows(info.(dirName).behaviorPlateTable,'plate_id',plate_id);
+        plateID = info.(dirName).behaviorPlateTable.plateID{indPlate};
         subject_id = info.(dirName).wormTable.subject_id{indWorm};
         indPatch = strcmp(info.(dirName).patchTable.plateID,plateID);
         indData = dataTable.wormNum == wormNums(j);
@@ -568,18 +571,23 @@ dataTable.densityGrowth = log10(10*dataTable.borderAmplitudeGrowth/borderAmp10);
 % Add subject_id and patch_id
 fields = fieldnames(info);
 wormTable = table();
+plateTable = table();
 patchTable = table();
 for i = 1:numel(fields)
     info.(fields{i}).wormTable{:,'dirName'} = fields(i);
+    info.(fields{i}).behaviorPlateTable{:,'dirName'} = fields(i);
     info.(fields{i}).patchTable{:,'dirName'} = fields(i);
     wormTable = ndi.fun.table.vstack({wormTable,info.(fields{i}).wormTable});
+    plateTable = ndi.fun.table.vstack({plateTable,info.(fields{i}).behaviorPlateTable});
     patchTable = ndi.fun.table.vstack({patchTable,info.(fields{i}).patchTable});
 end
 dataTable = renamevars(dataTable,{'expName','id'},{'dirName','encounterNum'});
 dataTable.patchID = arrayfun(@(x) num2str(x,'%.4i'),dataTable.lawnID,'UniformOutput',false);
 dataTable = ndi.fun.table.join({dataTable,...
-    wormTable(:,{'wormNum','wormID','dirName','subject_id','plateID'}),...
-    patchTable(:,{'patchID','dirName','plateID','patch_id'})});
+    wormTable(:,{'wormNum','wormID','dirName','subject_id','plate_id'}),...
+    plateTable(:,{'plateID','dirName','plate_id'}),...
+    patchTable(:,{'plateID','dirName','patchID','patch_id'})},...
+    'uniqueVariables',{'subject_id','patch_id','encounterNum'});
 
 % Create ontologyTableRow documents
 indEncounter = dataTable.encounterNum > 0;
