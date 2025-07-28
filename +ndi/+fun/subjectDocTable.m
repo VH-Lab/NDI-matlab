@@ -19,8 +19,8 @@ function [subjectTable] = subjectDocTable(session)
 %   Outputs:
 %       subjectTable - A MATLAB table where each row is a subject and columns
 %       are dynamically generated based on the data found. Common columns include
-%       'documentID', 'localID', 'SpeciesName', 'SpeciesOntology', 'mfdaqName',
-%       'mfdaqType', etc.
+%       'SubjectDocumentIdentifier', 'SubjectLocalIdentifier', 
+%       'SpeciesName', 'SpeciesOntology', 'mfdaqName', 'mfdaqType', etc.
 %
 %   See also: ndi.session, ndi.query, table, struct2table
 
@@ -64,8 +64,8 @@ for i = 1:numel(subjectDocs)
     dependentDocsSubject = dependentDocs(dependentDocsInd);
     
     % Get subject's local and document id
-    subjectTable.subject_id(i) = {subjectDocs{i}.document_properties.base.id};
-    subjectTable.subject_name(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
+    subjectTable.SubjectDocumentIdentifier(i) = {subjectDocs{i}.document_properties.base.id};
+    subjectTable.SubjectLocalIdentifier(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
 
     % Initialize temporary structs to aggregate data for the current subject
     % element = struct();     % For 'element' document types
