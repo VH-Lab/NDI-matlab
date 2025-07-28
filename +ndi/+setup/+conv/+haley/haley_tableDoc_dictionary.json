@@ -2,6 +2,7 @@
   "expID": "EMPTY:experiment session identifier",
   "assayPhase": "EMPTY:C. elegans assay phase",
   "plateID": "EMPTY:bacterial plate identifier",
+  "plate_id": "EMPTY:bacterial plate document identifier",
   "exclude": "EMPTY:Data exclusion flag",
   "growthOD600Label": "EMPTY:bacterial OD600 label",
   "growthConditionLabel": "EMPTY:bacterial plate growth duration label",
