@@ -1,3 +1,4 @@
+function validInd = identifyValidRows(variableTable,checkVariables,invalidValues)
 %IDENTIFYVALIDROWS Identifies valid rows in a MATLAB table based on specified criteria.
 %
 %   validInd = IDENTIFYVALIDROWS(variableTable)
