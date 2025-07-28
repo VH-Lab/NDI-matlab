@@ -37,7 +37,7 @@ bacteriaFiles = matFiles(contains(matFiles,'bacteria'));
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
-SessionRef = {'Haley_2025_Celegans';'Haley_2025_Ecoli'};
+SessionRef = {'haley_2025_Celegans';'haley_2025_Ecoli'};
 SessionPath = {fullfile(labName,'celegans');fullfile(labName,'ecoli')};
 sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
     table(SessionRef,SessionPath),'Overwrite',options.Overwrite);
@@ -709,15 +709,20 @@ tableDocMaker_ecoli.table2ontologyTableRowDocs(...
 
 %% Step 9. Make dataset
 
-% Ingest sessions
-sessions{1}.ingest;
-sessions{2}.ingest;
-
-% Create dataset and add sessions
-datasetDir = fullfile(dataParentDir,'haley_2025');
+% Create dataset
+datasetDir = fullfile(dataPath,'haley_2025');
+if ~exist(datasetDir,'dir')
+    mkdir(datasetDir)
+end
 dataset = ndi.dataset.dir('haley_2025',datasetDir);
-dataset.add_ingested_session(sessions{1});
-dataset.add_ingested_session(sessions{2});
+
+% Ingest and add sessions
+for i = 1:numel(sessions)
+    sessionDatabaseDir = fullfile(sessions{i}.path,'.ndi');
+    copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
+    sessions{i}.ingest;
+    dataset.add_ingested_session(sessions{i});
+end
 
 % Compress dataset
 zip([datasetDir,'.zip'],datasetDir);
