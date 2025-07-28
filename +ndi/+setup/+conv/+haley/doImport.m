@@ -376,7 +376,7 @@ for i = 1:numel(infoFiles)
         offsetDocs = cell(numel(ind),1);
         for j = 1:numel(ind)
             % Food deprivation onset
-            [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction onset time');
+            [ontologyID,name] = ndi.ontology.lookup('EMPTY:treatment: food restriction onset time');
             treatment = struct('ontologyName',ontologyID,...
                 'name',name,...
                 'numeric_value',[],...
@@ -387,7 +387,7 @@ for i = 1:numel(infoFiles)
                 'subject_id', wormTable.subject_id{ind(j)});
 
             % Food deprivation offset
-            [ontologyID,name] = ndi.ontology.lookup('EMPTY:Treatment: food restriction offset time');
+            [ontologyID,name] = ndi.ontology.lookup('EMPTY:treatment: food restriction offset time');
             treatment = struct('ontologyName',ontologyID,...
                 'name',name,...
                 'numeric_value',[],...
@@ -459,7 +459,7 @@ for i = 1:numel(dataFiles)
     % Get ontology terms
     [~,bodyPart] = fileparts(dataFiles{i});
     bodyPartID = ndi.ontology.lookup(['EMPTY:C. elegans ' bodyPart]);
-    subjectDocID = ndi.ontology.lookup('EMPTY:Subject document identifier');
+    subjectDocID = ndi.ontology.lookup('EMPTY:subject document identifier');
     patchDocID = ndi.ontology.lookup('EMPTY:bacterial patch document identifier');
 
     % Loop through each worm (subject)
@@ -706,5 +706,20 @@ patchTable = ndi.fun.table.join({dataTable(:,patchVariables)},...
 % Create ontologyTableRow documents
 tableDocMaker_ecoli.table2ontologyTableRowDocs(...
     patchTable,{'imageID','patchID'},'Overwrite',options.Overwrite);
+
+%% Step 9. Make dataset
+
+% Ingest sessions
+sessions{1}.ingest;
+sessions{2}.ingest;
+
+% Create dataset and add sessions
+datasetDir = fullfile(dataParentDir,'haley_2025');
+dataset = ndi.dataset.dir('haley_2025',datasetDir);
+dataset.add_ingested_session(sessions{1});
+dataset.add_ingested_session(sessions{2});
+
+% Compress dataset
+zip([datasetDir,'.zip'],datasetDir);
 
 end
