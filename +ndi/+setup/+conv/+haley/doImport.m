@@ -712,7 +712,10 @@ tableDocMaker_ecoli.table2ontologyTableRowDocs(...
 % Create dataset
 datasetDir = fullfile(dataPath,'haley_2025');
 if ~exist(datasetDir,'dir')
-    mkdir(datasetDir)
+    mkdir(datasetDir);
+elseif options.Overwrite
+    rmdir(datasetDir,'s');
+    mkdir(datasetDir);
 end
 dataset = ndi.dataset.dir('haley_2025',datasetDir);
 
