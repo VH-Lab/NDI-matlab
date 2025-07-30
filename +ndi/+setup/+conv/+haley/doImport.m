@@ -495,7 +495,7 @@ for i = 1:numel(dataFiles)
             [wormName,'_',bodyPart,'_position'],1,'position',[],0,subject_id);
         positionElement.addepoch([wormName,'_',bodyPart,'_position'],...
             'dev_local_time,exp_global_time',...
-            [t0_t1_local;t0_t1_global], time, position);
+            [t0_t1_local;t0_t1_global]', time, position);
 
         % Create position_metadata structure
         position_metadata.ontologyNode = bodyPartID; % C. elegans head, midpoint, or tail
@@ -515,7 +515,7 @@ for i = 1:numel(dataFiles)
             [wormName,'_',bodyPart,'_distance'],1,'distance',[],0,subject_id);
         distanceElement.addepoch([wormName,'_',bodyPart,'_distance'],...
             'dev_local_time,exp_global_time',...
-            [t0_t1_local;t0_t1_global], time, distance);
+            [t0_t1_local;t0_t1_global]', time, distance);
 
         % Create distance_metadata structure
         distance_metadata.ontologyNode_A = subjectDocID; % subject document id
@@ -722,6 +722,9 @@ dataset = ndi.dataset.dir('haley_2025',datasetDir);
 % Ingest and add sessions
 for i = 1:numel(sessions)
     sessionDatabaseDir = fullfile(sessions{i}.path,'.ndi');
+    if options.Overwrite && exist([sessionDatabaseDir,'_'],'dir')
+        rmdir([sessionDatabaseDir,'_'],'s');
+    end
     copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
     sessions{i}.ingest;
     dataset.add_ingested_session(sessions{i});
