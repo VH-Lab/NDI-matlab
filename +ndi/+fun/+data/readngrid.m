@@ -44,7 +44,9 @@ function x = readngrid(fileName_or_fileObj, dataSize, dataType)
     validDataTypes = {'double', 'single', 'int8', 'uint8', 'int16', 'uint16', ...
                       'int32', 'uint32', 'int64', 'uint64', 'char', 'logical'};
 
-    if ~any(strcmp(dataType, validDataTypes))
+    if strcmp(dataType, 'ubit1')
+        % skip warning
+    elseif ~any(strcmp(dataType, validDataTypes))
         warning('READNGRID:unknownDataType',['Data type ''' dataType ...
             ''' is not a standard MATLAB data type. ' ...
             'fread may interpret it incorrectly. Proceed with caution.']);
