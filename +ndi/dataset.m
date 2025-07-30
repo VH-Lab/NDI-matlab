@@ -356,7 +356,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % Matches are returned in a cell list NDI_DOCUMENT_OBJ.
             %
             % See also: ndi.dataset/database_add(), ndi.dataset/database_rm()
-            ndi_document_obj = ndi_dataset_obj.session.database_search(searchparameters);
+            ndi_document_obj = ndi_dataset_obj.session.database.search(searchparameters);
             open_linked_sessions(ndi_dataset_obj);
             match = find([ndi_dataset_obj.session_info.is_linked]);
             for i=1:numel(match)
