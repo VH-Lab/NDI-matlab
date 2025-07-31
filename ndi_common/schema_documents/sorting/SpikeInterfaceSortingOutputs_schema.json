@@ -1,12 +1,12 @@
 {
-    "classname": "sortingOutputs",
+    "classname": "SpikeInterfaceSortingOutputs",
     "superclasses": ["base"],
     "depends_on": [],
     "file": 
     [
         { "name": "sorting.sioutputs.zip", "mustbenotempty": 1 }
     ],
-    "sortingOutputs": 
+    "SpikeInterfaceSortingOutputs": 
     [
         {
             "name": "sorter_name",
@@ -31,6 +31,6 @@
             "parameters": "",
             "queryable": 0,
             "documentation": "Time unit used for spike_times (typically 'ms' or 's')"
-        },
+        }
     ]
 }
