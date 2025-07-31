@@ -135,7 +135,9 @@ for i = 1:numel(typeDocs)
 
         % Append the data to the table row
         openMINDsRow.([dependentTypes{j},'Name']) = {docProp.openminds.fields.name};
-        openMINDsRow.([dependentTypes{j},'Ontology']) = {docProp.openminds.fields.(ontologyField)};
+        if ~isempty(docProp.openminds.fields.(ontologyField))
+            openMINDsRow.([dependentTypes{j},'Ontology']) = {docProp.openminds.fields.(ontologyField)};
+        end
     end
 
     % Add row to cell array
