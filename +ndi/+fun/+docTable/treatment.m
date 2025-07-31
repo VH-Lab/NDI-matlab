@@ -97,13 +97,13 @@ for i = 1:numel(treatmentDocs)
         treatmentRow.(dataType) = numericValue;
     end
     if ~isempty(stringOntology)
-        treatmentRow.([dataType,'Name']) = stringName;
-        treatmentRow.([dataType,'Ontology']) = stringOntology;
+        treatmentRow.([dataType,'Name']) = {stringName};
+        treatmentRow.([dataType,'Ontology']) = {stringOntology};
     elseif ~isempty(stringValue) & isempty(numericValue)
-        treatmentRow.(dataType) = stringValue;
+        treatmentRow.(dataType) = {stringValue};
     elseif ~isempty(stringValue) & ~isempty(numericValue)
-        treatmentRow.([dataType,'Number']) = numericValue;
-        treatmentRow.([dataType,'String']) = stringValue;
+        treatmentRow.([dataType,'Number']) = {numericValue};
+        treatmentRow.([dataType,'String']) = {stringValue};
     end
 
     % Add row to cell array
