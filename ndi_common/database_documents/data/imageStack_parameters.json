@@ -1,0 +1,28 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/imageStack_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/data\/imageStack_parameters_schema.json",
+		"class_name":						"imageStack_parameters",
+		"property_list_name":					"imageStack_parameters",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name":		"ontologyTableRow_id",
+			"value":	"" 
+		}
+	],
+	"imageStack_parameters" : {
+			"dimension_order":			"",
+			"dimension_labels":			"",
+			"dimension_size":			[],
+			"dimension_scale":				[],
+			"dimension_scale_units": 			[],
+			"data_type":			[],
+			"data_limits":			[],
+			"timestamp":			[],
+			"clocktype":			""
+	}
+}

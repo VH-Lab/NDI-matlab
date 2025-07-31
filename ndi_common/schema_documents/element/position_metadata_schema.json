@@ -1,0 +1,34 @@
+{
+	"classname": "position_metadata",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"position_metadata": [
+		{
+			"name": "ontologyNode",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id corresponding to the subset of the subject (e.g. body part) for which the element of type 'position' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'UBERON:0000033' which defines the head of an animal)."
+		},
+		{
+			"name": "dimensions",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id(s) corresponding to each column of datapoints in the element of type 'position'. The ontology terms should be reported in a comma-seperated list in the form of ontology:nodeID (e.g 'NCIT:C44477,NCIT:C44478' which defines to the X-coordinate and Y-coordinate). The number of terms must match the number of columns of data specified in the element of type 'position'."
+		},
+		{
+			"name": "units",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id corresponding to the unit of values for the data in the element of type 'position'. The ontology term should be reported in the form of ontology:nodeID (e.g 'NCIT:C48367' which defines a pixel)."
+		}
+	]
+}

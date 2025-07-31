@@ -69,7 +69,14 @@ uniqueVariables = cellstr(options.uniqueVariables); % Convert to cell array for 
 combinedTable = tables{1};
 if ~isscalar(tables)
     for k = 2:numel(tables)
-        combinedTable = innerjoin(combinedTable, tables{k});
+        % Call innerjoin and capture the index vector 'ileft'
+        [combinedTable, ileft] = innerjoin(combinedTable, tables{k});
+        
+        % Create a sorting index from 'ileft' to restore original order
+        [~, sort_idx] = sort(ileft);
+        
+        % Apply the sorting index to the result
+        combinedTable = combinedTable(sort_idx, :);
     end
 end
 
@@ -110,8 +117,21 @@ for i = 1:numel(otherVars)
         % Aggregate the data using the custom helper function
         aggregatedColumnValues{u_idx} = aggregateVarData(dataForGroup);
     end
+
+    % Check if all non-empty cells contain a scalar numeric value
+    nonEmptyIdx = ~cellfun('isempty', aggregatedColumnValues);
+    areAllNumeric = all(cellfun(@(x) isnumeric(x) && isscalar(x), aggregatedColumnValues(nonEmptyIdx)));
+    
     % Assign the aggregated column to the final table
-    uniqueTable.(currentOtherVarName) = aggregatedColumnValues;
+    if areAllNumeric
+        % All results are numbers. Convert the column back to a numeric array.
+        finalColumn = NaN(height(uniqueTable), 1); % Pre-fill with NaN
+        finalColumn(nonEmptyIdx) = cell2mat(aggregatedColumnValues(nonEmptyIdx));
+        uniqueTable.(currentOtherVarName) = finalColumn;
+    else
+        % Contains mixed types (strings, etc.). Keep as a cell array.
+        uniqueTable.(currentOtherVarName) = aggregatedColumnValues;
+    end
 end
 combinedTable = uniqueTable;
 

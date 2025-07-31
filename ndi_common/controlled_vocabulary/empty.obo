@@ -1,5 +1,5 @@
 format-version: 1.2
-date: 20:05:2025 09:06
+date: 2025-07-29 14:04
 saved-by: AI Assistant (Gemini)
 auto-generated-by: AI Assistant (Gemini)
 ontology: EMPTY
@@ -12,818 +12,1184 @@ remark: Approaches should begin with "Approach: ".
 remark: Treatments should begin with "Treatment: ".
 
 [Term]
+id: EMPTY:00000001
+name: empty
+namespace: empty_ontology
+def: "Experimental Measurements Purposes and Treatments ontologY" []
+
+[Term]
 id: EMPTY:00000085
-name: Measurement
+name: measurement
 namespace: empty_ontology
 def: "A quantitative or qualitative observation, recording, or assessment of a property, phenomenon, or system, obtained through standardized procedures, instruments, or methods. Measurements provide empirical data that can be used for scientific analysis, comparison, and interpretation, forming the foundation for hypothesis testing and knowledge advancement across disciplines." []
-property_value: codeName "measurement" xsd:string
 
 [Term]
 id: EMPTY:00000090
-name: Behavioral measurement
+name: behavioral measurement
 namespace: empty_ontology
 def: "A type of scientific measurement that quantifies an observable action, reaction, or pattern of conduct exhibited by an organism. Behavioral measurements are typically used in biological, psychological, and ethological studies to assess an organism's response to internal states, external stimuli, or experimental manipulations. These can range from simple reflexes to complex social interactions and are obtained through methods including direct observation, video tracking, or specialized automated apparatuses." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "behavioralMeasurement" xsd:string
 
 [Term]
 id: EMPTY:00000091
-name: Elevated Plus Maze measurement
+name: elevated plus maze measurement
 namespace: empty_ontology
 def: "A specific category of behavioral measurement obtained from the Elevated Plus Maze (EPM) apparatus, an assay widely used in neuroscience and pharmacology to study anxiety-like behavior and the effects of anxiolytic or anxiogenic compounds in laboratory animals, typically rodents. These measurements quantify various aspects of the animal's exploratory activity, spatial preference (e.g., for open vs. enclosed arms), and specific behaviors (e.g., entries, time spent in zones, freezing) within the maze, providing insights into its emotional state and response to perceived risk." []
-is_a: EMPTY:00000090 ! Behavioral measurement
-property_value: codeName "elevatedPlusMazeMeasurement" xsd:string
 
 [Term]
 id: EMPTY:00000092
-name: Acoustic Startle Response measurement
+name: acoustic startle response measurement
 namespace: empty_ontology
 def: "A type of behavioral measurement that quantifies the reflexive motor response (startle reflex) of an organism to a sudden, intense stimulus, typically acoustic. These measurements are often used to study sensory processing, sensorimotor gating (e.g., prepulse inhibition), and emotional modulation of reflexes (e.g., fear-potentiated startle)." []
-is_a: EMPTY:00000090 ! Behavioral measurement
-property_value: codeName "acousticStartleResponseMeasurement" xsd:string
 
 [Term]
 id: EMPTY:00000093
-name: Fear Conditioning measurement
+name: fear conditioning measurement
 namespace: empty_ontology
 def: "A type of behavioral measurement derived from fear conditioning paradigms, where an initially neutral conditioned stimulus (CS) is paired with an aversive unconditioned stimulus (US), leading to the CS eliciting conditioned fear responses. These measurements quantify aspects of fear acquisition, memory consolidation, recall, extinction, and the emotional state associated with conditioned fear, such as freezing, startle potentiation, or avoidance." []
-is_a: EMPTY:00000090 ! Behavioral measurement
-property_value: codeName "fearConditioningMeasurement" xsd:string
 
 [Term]
 id: EMPTY:00000094
-name: Acoustic Startle Response derived measurement
+name: acoustic startle response derived measurement
 namespace: empty_ontology
 def: "A type of behavioral measurement that is not a direct reading of a startle reflex, but is instead a value calculated, inferred, or derived from one or more primary Acoustic Startle Response (ASR) data points. Examples include percentage changes in ASR, ratios, or rates of change over time." []
-is_a: EMPTY:00000090 ! Behavioral measurement
-property_value: codeName "acousticStartleResponseDerivedMeasurement" xsd:string
 
 [Term]
 id: EMPTY:00000100
-name: Elevated Plus Maze: open arm (north) - entries
+name: elevated plus maze: open arm (north) - entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmNorthEntries" xsd:string
 
 [Term]
 id: EMPTY:00000101
-name: Elevated Plus Maze: open arm (south) - entries
+name: elevated plus maze: open arm (south) - entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (South)'. The 'Open Arm (South)' is one of the two open arms, distinguished by its assigned 'south' orientation or designation in the experimental setup. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmSouthEntries" xsd:string
 
 [Term]
 id: EMPTY:00000102
-name: Elevated Plus Maze: open arm total entries
+name: elevated plus maze: open arm total entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this represents the total number of times the animal's body (typically defined by its center point or a significant portion) fully enters the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). It is a common measure of exploration and anxiety. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalEntries" xsd:string
 
 [Term]
 id: EMPTY:00000103
-name: Elevated Plus Maze: open arm (north) - head entries
+name: elevated plus maze: open arm (north) - head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's head (specifically tracked by the software) enters the user-defined 'Open Arm (North)' zone, irrespective of full body entry. This can indicate risk assessment or tentative exploration of the arm designated as 'north'. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmNorthHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000104
-name: Elevated Plus Maze: open arm (south) - head entries
+name: elevated plus maze: open arm (south) - head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's head (specifically tracked by the software) enters the user-defined 'Open Arm (South)' zone, irrespective of full body entry, often reflecting cautious exploration of the open arm designated as 'south'. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmSouthHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000105
-name: Elevated Plus Maze: open arm total head entries
+name: elevated plus maze: open arm total head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the total number of times the animal's head (specifically tracked by the software) enters any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'), considered an indicator of risk-assessment behavior. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000106
-name: Elevated Plus Maze: open arm (north) - time
+name: elevated plus maze: open arm (north) - time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Open Arm (North)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmNorthTime" xsd:string
 
 [Term]
 id: EMPTY:00000107
-name: Elevated Plus Maze: open arm (south) - time
+name: elevated plus maze: open arm (south) - time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Open Arm (South)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmSouthTime" xsd:string
 
 [Term]
 id: EMPTY:00000108
-name: Elevated Plus Maze: open arm total time
+name: elevated plus maze: open arm total time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the cumulative total duration the animal's body spends within any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). Less time is generally indicative of higher anxiety. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalTime" xsd:string
 
 [Term]
 id: EMPTY:00000109
-name: Elevated Plus Maze: open arm total - percent time during test duration
+name: elevated plus maze: open arm total - percent time during test duration
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this represents the percentage of the total test duration that the animal spends in any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). Unit of measure: %" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalPercentTimeDuringTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000110
-name: Elevated Plus Maze: open arm (north) - latency to first entry
+name: elevated plus maze: open arm (north) - latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Open Arm (North)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmNorthLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000111
-name: Elevated Plus Maze: open arm (south) - latency to first entry
+name: elevated plus maze: open arm (south) - latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Open Arm (South)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmSouthLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000112
-name: Elevated Plus Maze: open arm total latency to first entry
+name: elevated plus maze: open arm total latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'). Longer latencies often suggest higher anxiety. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000113
-name: Elevated Plus Maze: open arm (north) - time moving towards
+name: elevated plus maze: open arm (north) - time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Open Arm (North)' zone, as detected by the tracking software. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmNorthTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000114
-name: Elevated Plus Maze: open arm (south) - time moving towards
+name: elevated plus maze: open arm (south) - time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Open Arm (South)' zone, as detected by the tracking software. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmSouthTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000115
-name: Elevated Plus Maze: open arm total time moving towards
+name: elevated plus maze: open arm total time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the cumulative duration the animal spends actively moving towards any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'), reflecting approach motivation. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000116
-name: Elevated Plus Maze: open arm (north) - time freezing
+name: elevated plus maze: open arm (north) - time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior (a state of immobility except for respiratory movements) while within the user-defined 'Open Arm (North)' zone. Freezing is a common fear response. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmNorthTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000117
-name: Elevated Plus Maze: open arm (south) - time freezing
+name: elevated plus maze: open arm (south) - time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Open Arm (South)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmSouthTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000118
-name: Elevated Plus Maze: open arm total time freezing
+name: elevated plus maze: open arm total time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the cumulative duration the animal exhibits freezing behavior while within any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'), indicating fear or anxiety. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeOpenArmTotalTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000119
-name: Elevated Plus Maze: closed arm (west) - entries
+name: elevated plus maze: closed arm (west) - entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Closed Arm (West)' zone, representing the enclosed arm designated as 'west'. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmWestEntries" xsd:string
 
 [Term]
 id: EMPTY:00000120
-name: Elevated Plus Maze: closed arm (east) - entries
+name: elevated plus maze: closed arm (east) - entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Closed Arm (East)' zone, representing the enclosed arm designated as 'east'. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmEastEntries" xsd:string
 
 [Term]
 id: EMPTY:00000121
-name: Elevated Plus Maze: closed arm total entries
+name: elevated plus maze: closed arm total entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the total number of times the animal's body fully enters any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). It is often used as an indicator of general locomotor activity. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalEntries" xsd:string
 
 [Term]
 id: EMPTY:00000122
-name: Elevated Plus Maze: closed arm (west) - head entries
+name: elevated plus maze: closed arm (west) - head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Closed Arm (West)' zone. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmWestHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000123
-name: Elevated Plus Maze: closed arm (east) - head entries
+name: elevated plus maze: closed arm (east) - head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Closed Arm (East)' zone. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmEastHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000124
-name: Elevated Plus Maze: closed arm total head entries
+name: elevated plus maze: closed arm total head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the total number of times the animal's head enters any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000125
-name: Elevated Plus Maze: closed arm (west) - time
+name: elevated plus maze: closed arm (west) - time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Closed Arm (West)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmWestTime" xsd:string
 
 [Term]
 id: EMPTY:00000126
-name: Elevated Plus Maze: closed arm (east) - time
+name: elevated plus maze: closed arm (east) - time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Closed Arm (East)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmEastTime" xsd:string
 
 [Term]
 id: EMPTY:00000127
-name: Elevated Plus Maze: closed arm total time
+name: elevated plus maze: closed arm total time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the cumulative total duration the animal's body spends within any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Animals typically spend more time in these 'safer' areas. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalTime" xsd:string
 
 [Term]
 id: EMPTY:00000128
-name: Elevated Plus Maze: closed arm total - percent time during test duration
+name: elevated plus maze: closed arm total - percent time during test duration
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this represents the percentage of the total test duration that the animal spends in any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Unit of measure: %" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalPercentTimeDuringTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000129
-name: Elevated Plus Maze: closed arm (west) - latency to first entry
+name: elevated plus maze: closed arm (west) - latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Closed Arm (West)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmWestLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000130
-name: Elevated Plus Maze: closed arm (east) - latency to first entry
+name: elevated plus maze: closed arm (east) - latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Closed Arm (East)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmEastLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000131
-name: Elevated Plus Maze: closed arm total latency to first entry
+name: elevated plus maze: closed arm total latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)'). Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000132
-name: Elevated Plus Maze: closed arm (west) - time moving towards
+name: elevated plus maze: closed arm (west) - time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Closed Arm (West)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmWestTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000133
-name: Elevated Plus Maze: closed arm (east) - time moving towards
+name: elevated plus maze: closed arm (east) - time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Closed Arm (East)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmEastTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000134
-name: Elevated Plus Maze: closed arm total time moving towards
+name: elevated plus maze: closed arm total time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the cumulative duration the animal spends actively moving towards any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)'). Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000135
-name: Elevated Plus Maze: closed arm (west) - time freezing
+name: elevated plus maze: closed arm (west) - time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Closed Arm (West)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmWestTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000136
-name: Elevated Plus Maze: closed arm (east) - time freezing
+name: elevated plus maze: closed arm (east) - time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Closed Arm (East)' zone. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmEastTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000137
-name: Elevated Plus Maze: closed arm total time freezing
+name: elevated plus maze: closed arm total time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the cumulative duration the animal exhibits freezing behavior while within any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)'). Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeClosedArmTotalTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000138
-name: Elevated Plus Maze: center - entries
+name: elevated plus maze: center - entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Center' zone of the maze, typically from one of the arms. The center zone is the area where all four arms meet. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterEntries" xsd:string
 
 [Term]
 id: EMPTY:00000139
-name: Elevated Plus Maze: center - head entries
+name: elevated plus maze: center - head entries
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Center' zone of the maze. Unit of measure: count" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterHeadEntries" xsd:string
 
 [Term]
 id: EMPTY:00000140
-name: Elevated Plus Maze: center - time
+name: elevated plus maze: center - time
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Center' zone. Time in the center can indicate decision-making or risk assessment. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterTime" xsd:string
 
 [Term]
 id: EMPTY:00000141
-name: Elevated Plus Maze: center - percent time during test duration
+name: elevated plus maze: center - percent time during test duration
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this represents the percentage of the total test duration that the animal spends in the user-defined 'Center' zone of the maze. Unit of measure: %" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterPercentTimeDuringTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000142
-name: Elevated Plus Maze: center - latency to first entry
+name: elevated plus maze: center - latency to first entry
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Center' zone. If the animal starts in the center, this value may be zero or not applicable. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterLatencyToFirstEntry" xsd:string
 
 [Term]
 id: EMPTY:00000143
-name: Elevated Plus Maze: center - time moving towards
+name: elevated plus maze: center - time moving towards
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Center' zone of the maze (e.g., from an arm). Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterTimeMovingTowards" xsd:string
 
 [Term]
 id: EMPTY:00000144
-name: Elevated Plus Maze: center - time freezing
+name: elevated plus maze: center - time freezing
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Center' zone of the maze. Freezing in this relatively exposed area can indicate high anxiety. Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeCenterTimeFreezing" xsd:string
 
 [Term]
 id: EMPTY:00000145
-name: Elevated Plus Maze: test identifier
+name: elevated plus maze: test identifier
 namespace: empty_ontology
 def: "For an Elevated Plus Maze experiment, this is a unique code or descriptive name assigned to identify a specific experimental session, trial, or a particular set of recorded data. It helps in organizing and referencing data from distinct observations." []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeTestIdentifier" xsd:string
 
 [Term]
 id: EMPTY:00000146
-name: Subject local identifier
+name: subject local identifier
 namespace: empty_ontology
 def: "For an experiment, this is a unique code or label assigned to an individual animal subject. This allows for tracking and associating behavioral data with specific animals, along with their characteristics like strain, sex, or age." []
-property_value: codeName "subjectLocalIdentifier" xsd:string
-
-[Term]
-id: EMPTY:00000147
-name: Treatment: CNO or saline administration
-namespace: empty_ontology
-def: "Specifies the pharmacological treatment assigned to a subject. This assignment dictates the experimental group, with possible values being 'CNO' for Clozapine-N-oxide administration (2 mg/kg, i.p.) or 'Saline' for vehicle control administration (i.p.). These treatments were administered 45 minutes before fear conditioning and before EPM testing." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentCNOSalineAdministration" xsd:string
 
 [Term]
 id: EMPTY:00000148
-name: Fear-Potentiated Startle: baseline acoustic startle response amplitude
+name: fear-potentiated startle: baseline acoustic startle response amplitude
 namespace: empty_ontology
-def: "In the Fear-Potentiated Startle paradigm, this is the amplitude of the acoustic startle response (ASR) measured in response to a startle-eliciting stimulus (e.g., 95-dB white noise burst) prior to any fear conditioning procedures, typically assessed during habituation or pre-conditioning phase. This measurement serves as a reference point for later comparisons with post-conditioning startle responses. Unit of measure: arbitrary units or standardized score." []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "fearPotentiatedStartleBaselineAcousticStartleResponseAmplitude" xsd:string
+def: "In the Fear-potentiated startle paradigm, this is the amplitude of the acoustic startle response (ASR) measured in response to a startle-eliciting stimulus (e.g., 95-dB white noise burst) prior to any fear conditioning procedures, typically assessed during habituation or pre-conditioning phase. This measurement serves as a reference point for later comparisons with post-conditioning startle responses. Unit of measure: arbitrary units or standardized score." []
 
 [Term]
 id: EMPTY:00000149
-name: Session Timeline
+name: session timeline
 namespace: empty_ontology
-def: "A relative experimental session timeline; major stimulation events are, by default, considered numerically from 1 to N" []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "sessionTimeline" xsd:string
+def: "A relative experimental session timeline; major stimulation events are, by default, considered numerically from 1 to N." []
 
 [Term]
 id: EMPTY:00000150
-name: Postnatal day
+name: postnatal day
 namespace: empty_ontology
-def: "Postnatal day' is a specific unit to measure the age of an organism that is born live (viviparous animals), starting with the day of birth (postnatal day 0). Often abbreviated in written documents with a capital P (as in P0, P10, etc).""" []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "postnatalDay" xsd:string
+def: "Postnatal day is a specific unit to measure the age of an organism that is born live (viviparous animals), starting with the day of birth (postnatal day 0). Often abbreviated in written documents with a capital P (as in P0, P10, etc)." []
 
 [Term]
 id: EMPTY:00000151
-name: Microelectrode voltage offset
+name: microelectrode voltage offset
 namespace: empty_ontology
 def: "A voltage offset measured at the end of a voltage record, in V" []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "microelectrodeVoltageOffset" xsd:string
-
-[Term]
-id: EMPTY:00000152
-name: Fear-Potentiated Startle: trial number
-namespace: empty_ontology
-def: "Sequential number identifying an individual trial within a specific Fear-Potentiated Startle (FPS) experimental session or phase (e.g., habituation, conditioning, recall test) for a subject. As described in the manuscript, experiments consist of multiple trials (e.g., 30 startle trials for habituation, 10 cue-shock pairings for conditioning)[cite: 1]. Unit of measure: count" []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "fpsTrialNumber" xsd:string
 
 [Term]
 id: EMPTY:00000153
-name: Fear-Potentiated Startle: trial type identifier
+name: fear-potentiated startle: trial type identifier
 namespace: empty_ontology
-def: "A descriptive string identifying the specific type or condition of a trial in a Fear-Potentiated Startle (FPS) experiment. Examples from the manuscript include 'pre-shock' (baseline startle), 'post-shock' (startle in conditioning context after shocks), 'noise-only' (startle to acoustic stimulus alone during recall tests), or 'light+noise' (startle to acoustic stimulus in presence of conditioned cue during recall tests)[cite: 1]. The raw data might contain labels like 'Startle 95 dB Trial'." []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "fpsTrialTypeIdentifier" xsd:string
+def: "A descriptive string identifying the specific type or condition of a trial in a Fear-Potentiated Startle (FPS) experiment. Examples from the manuscript include 'pre-shock' (baseline startle), 'post-shock' (startle in conditioning context after shocks), 'noise-only' (startle to acoustic stimulus alone during recall tests), or 'light+noise' (startle to acoustic stimulus in presence of conditioned cue during recall tests). The raw data might contain labels like 'Startle 95 dB Trial'." []
 
 [Term]
 id: EMPTY:00000154
-name: Fear-Potentiated Startle: apparatus chamber identifier
+name: fear-potentiated startle: apparatus chamber identifier
 namespace: empty_ontology
-def: "Identifier for the specific Plexiglas enclosure or sound-attenuating chamber within the Fear-Potentiated Startle (FPS) apparatus (e.g., San Diego Instruments SR-Lab) in which a subject was tested for a given trial[cite: 1]. Unit of measure: count or identifier string" []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "fpsApparatusChamberIdentifier" xsd:string
+def: "Identifier for the specific Plexiglas enclosure or sound-attenuating chamber within the Fear-Potentiated Startle (FPS) apparatus (e.g., San Diego Instruments SR-Lab) in which a subject was tested for a given trial. Unit of measure: count or identifier string" []
 
 [Term]
 id: EMPTY:00000155
-name: Experimental group code
+name: experimental group code
 namespace: empty_ontology
-def: "A numerical code that assigns a subject to a specific experimental group within the study design. For example, this could numerically represent treatment groups such as 'saline' or 'CNO' as described in the manuscript[cite: 1], or other study-specific groupings." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "experimentalGroupCode" xsd:string
+def: "A numerical code that assigns a subject to a specific experimental group within the study design. For example, this could numerically represent treatment groups such as 'saline' or 'CNO' as described in the manuscript, or other study-specific groupings." []
 
 [Term]
 id: EMPTY:00000156
-name: Acoustic Startle Response: number of samples
+name: acoustic startle response: number of samples
 namespace: empty_ontology
-def: "The total number of data points (samples) recorded and analyzed for a single acoustic startle response, typically within a defined time window following stimulus onset (e.g., a 200-ms window as mentioned in the manuscript [cite: 1]). Unit of measure: count" []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "asrNumberOfSamplesInWindow" xsd:string
+def: "The total number of data points (samples) recorded and analyzed for a single acoustic startle response, typically within a defined time window following stimulus onset (e.g., a 200-ms window as mentioned in the manuscript). Unit of measure: count" []
 
 [Term]
 id: EMPTY:00000157
-name: Acoustic Startle Response: sampling rate
+name: acoustic startle response: sampling rate
 namespace: empty_ontology
 def: "The rate at which the analog startle response signal was digitized during data acquisition. Unit of measure: Hertz (Hz)" []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "asrSamplingRate" xsd:string
 
 [Term]
 id: EMPTY:00000158
-name: Acoustic Startle Response: startle window onset amplitude
+name: acoustic startle response: startle window onset amplitude
 namespace: empty_ontology
-def: "The amplitude of the digitized acoustic startle response signal at the very beginning (onset) of the defined analysis window (e.g., a 200-ms window [cite: 1]) used to quantify the reflex. Unit of measure: millivolts (mV) or arbitrary units based on transducer calibration." []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "asrStartleWindowOnsetAttribute" xsd:string
+def: "The amplitude of the digitized acoustic startle response signal at the very beginning (onset) of the defined analysis window (e.g., a 200-ms window) used to quantify the reflex. Unit of measure: millivolts (mV) or arbitrary units based on transducer calibration." []
 
 [Term]
 id: EMPTY:00000159
-name: Acoustic Startle Response: maximum amplitude
+name: acoustic startle response: maximum amplitude
 namespace: empty_ontology
-def: "The peak amplitude of the acoustic startle response (e.g., 'jump amplitude' [cite: 1]) detected within the defined analysis window (e.g., 200-ms window [cite: 1]) for a given trial. Unit of measure: millivolts (mV) or arbitrary units." []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "asrMaximumAmplitude" xsd:string
+def: "The peak amplitude of the acoustic startle response (e.g., 'jump amplitude') detected within the defined analysis window (e.g., 200-ms window) for a given trial. Unit of measure: millivolts (mV) or arbitrary units." []
 
 [Term]
 id: EMPTY:00000160
-name: Acoustic Startle Response: time to maximum amplitude
+name: acoustic startle response: time to maximum amplitude
 namespace: empty_ontology
 def: "The latency from the onset of the startle-eliciting stimulus (or the beginning of the analysis window) to the occurrence of the maximum (peak) amplitude of the acoustic startle response. Unit of measure: milliseconds (ms)" []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "asrTimeToMaximumAmplitude" xsd:string
 
 [Term]
 id: EMPTY:00000161
-name: Acoustic Startle Response: average amplitude
+name: acoustic startle response: average amplitude
 namespace: empty_ontology
-def: "The average amplitude of the digitized acoustic startle response signal calculated across the entire duration of the defined analysis window (e.g., 200-ms window [cite: 1]). Unit of measure: millivolts (mV) or arbitrary units." []
-is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
-property_value: codeName "asrAverageAmplitudeInWindow" xsd:string
+def: "The average amplitude of the digitized acoustic startle response signal calculated across the entire duration of the defined analysis window (e.g., 200-ms window). Unit of measure: millivolts (mV) or arbitrary units." []
 
 [Term]
 id: EMPTY:00000162
-name: Experiment trial execution timestamp
+name: experiment trial execution timestamp
 namespace: empty_ontology
 def: "The specific date and time indicating when an individual experimental trial was conducted or its data recorded." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "experimentTrialExecutionTimestamp" xsd:string
 
 [Term]
 id: EMPTY:00000163
-name: Fear-Potentiated Startle: experimental phase or test name
+name: fear-potentiated startle: experimental phase or test name
 namespace: empty_ontology
-def: "A string identifier indicating the specific experimental phase, session, or test condition of the Fear-Potentiated Startle (FPS) paradigm to which the data belongs. Examples derived from the manuscript's protocol include 'chamber and startle habituation', 'baseline pre-shock test', 'fear conditioning', 'cued fear recall in context B', 'contextual fear recall in context A', or specific extinction test sessions[cite: 1]. This often corresponds to the name of the source data sheet (e.g., 'Pre-test 1', 'Cue test 3')." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "fpsExperimentalPhaseTestName" xsd:string
+def: "A string identifier indicating the specific experimental phase, session, or test condition of the Fear-Potentiated Startle (FPS) paradigm to which the data belongs. Examples include 'chamber and startle habituation', 'baseline pre-shock test', 'fear conditioning', 'cued fear recall in context B', 'contextual fear recall in context A', or specific extinction test sessions. [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
 
 [Term]
 id: EMPTY:00000164
-name: Elevated Plus Maze: test duration
+name: elevated plus maze: test duration
 namespace: empty_ontology
 def: "In the Elevated Plus Maze task, this is the time of the total test duration in seconds'). Unit of measure: seconds" []
-is_a: EMPTY:00000091 ! Elevated Plus Maze measurement
-property_value: codeName "elevatedPlusMazeTestDuration" xsd:string
 
 [Term]
 id: EMPTY:00000165
-name: Data exclusion flag
+name: data exclusion flag
 namespace: empty_ontology
-def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to due to predefined quality control issues or experimental failure." []
-is_a: EMPTY:00000085 ! Measurement
-property_value: codeName "dataExclusionFlag" xsd:string
-
-[Term]
-id: EMPTY:00000166
-name: Investigator-defined cell type
-def: "A cell type proposed by an investigator on the basis of electrophysiological or anatomical criteria." []
-is_a: EMPTY:00000001 ! empty
-property_value: codeName "investigatorDefinedCellType" xsd:string
-
-[Term]
-id: EMPTY:00000167
-name: Type I BNST neuron
-namespace: empty_ontology
-def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) that fires regularly, displays moderate spike frequency adaptation, and exhibits a voltage sag indicating the presence of the hyperpolarization-activated cation current (Ih). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
-is_a: EMPTY:00000166 ! Investigator-defined cell type
-property_value: codeName "BNSTNeuronTypeI" xsd:string
+def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to predefined quality control issues or experimental failure." []
 
 [Term]
 id: EMPTY:00000168
-name: Type III BNST neuron
+name: investigator-defined cell type
 namespace: empty_ontology
-def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) characterized by a high rheobase, absence of voltage sag under negative current steps, prominent inward rectification due to the activation of the inward rectifying K+ current (IKIR) at membrane potentials more negative than approximately -50 mV, and firing onset after a characteristic slow voltage ramp mediated by the K+ delayed current (ID). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
-is_a: EMPTY:00000166 ! Investigator-defined cell type
-property_value: codeName "BNSTNeuronTypeIII" xsd:string
+def: "A cell type proposed by an investigator on the basis of electrophysiological or anatomical criteria." []
 
 [Term]
 id: EMPTY:00000169
-name: Optogenetic Tetanus Stimulation Target Location
+name: type I BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) that fires regularly, displays moderate spike frequency adaptation, and exhibits a voltage sag indicating the presence of the hyperpolarization-activated cation current (Ih). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+
+[Term]
+id: EMPTY:00000170
+name: type III BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) characterized by a high rheobase, absence of voltage sag under negative current steps, prominent inward rectification due to the activation of the inward rectifying K+ current (IKIR) at membrane potentials more negative than approximately -50 mV, and firing onset after a characteristic slow voltage ramp mediated by the K+ delayed current (ID). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+
+[Term]
+id: EMPTY:00000171
+name: optogenetic tetanus stimulation target location
 namespace: empty_ontology
 def: "The specific anatomical region where tetanic light stimulation (TLS) is applied in optogenetic experiments to evoke neuronal activity. The value should be defined by the ONTOLOGY_NAME:ONTOLOGY_NODE (e.g. 'UBERON:0000123')." []
-property_value: codeName "optogeneticTetanusStimulationTargetLocation" xsd:string
 
 [Term]
-id: EMPTY:30000000
-name: Approach
+id: EMPTY:00000172
+name: experimental trial number
 namespace: empty_ontology
-def: "An approach to stimulation that is associated with an epoch of data but that is not already coded in stimulator metadata. This represents a specific methodology, technique, or procedural aspect applied during data collection that provides important context for interpreting the data." []
-property_value: codeName "approach" xsd:string
+def: "The index of an individual experimental trial within a set." []
 
 [Term]
-id: EMPTY:30000001
-name: Approach: Left eye view blocked
+id: EMPTY:00000173
+name: descriptor
 namespace: empty_ontology
-def: "Indicates that the view through the left eye was blocked during presentation of this stimulus" []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachLeftEyeViewBlocked" xsd:string
+def: "A term that describes, characterizes, or quantifies an aspect of an experimental entity, process, or system." []
 
 [Term]
-id: EMPTY:30000002
-name: Approach: Right eye view blocked
+id: EMPTY:00000174
+name: manipulation
 namespace: empty_ontology
-def: "Indicates that the view through the right eye was blocked during presentation of this stimulus" []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachRightEyeViewBlocked" xsd:string
+def: "An intentional action, intervention, or condition applied during an experiment to observe its effect on a subject or system." []
 
 [Term]
-id: EMPTY:30000003
-name: Approach: Command temperature constant
+id: EMPTY:00000175
+name: epoch-related manipulation
 namespace: empty_ontology
-def: "The temperature of an experimental object has been commanded to be a certain value" []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachCommandTemperatureConstant" xsd:string
+def: "A manipulation that is applied or relevant to a specific, defined segment of time (an epoch) within an experiment, often coinciding with data recording." []
 
 [Term]
-id: EMPTY:30000004
-name: Approach: Command temperature start
+id: EMPTY:00000176
+name: subject-related manipulation
 namespace: empty_ontology
-def: "The temperature of an experimental object has been commanded to be a certain value at the beginning of the recording epoch" []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachCommandTemperatureStart" xsd:string
+def: "A manipulation applied to an experimental subject that alters its overall state, which is not necessarily linked to a specific data collection epoch. This often includes long-term interventions like pharmacological treatments or surgical procedures." []
 
 [Term]
-id: EMPTY:30000005
-name: Approach: Command temperature end
+id: EMPTY:00000177
+name: parameter
 namespace: empty_ontology
-def: "The temperature of an experimental object has been commanded to be a certain value at the end of the recording epoch" []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachCommandTemperatureEnd" xsd:string
+def: "A variable, characteristic, or measurable factor that helps define a particular system, experiment, or process. Parameters are often controlled or measured to understand their effect on the outcome." []
 
 [Term]
-id: EMPTY:30000006
-name: Approach: Before optogenetic tetanus
+id: EMPTY:00000178
+name: identifier
 namespace: empty_ontology
-def: "The measurement is performed before an optogenetic tetanus stimulus." []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachBeforeOptogeneticTetanus" xsd:string
+def: "One or more characters used to identify, name, or characterize the nature, properties, or contents of a thing." []
 
 [Term]
-id: EMPTY:30000007
-name: Approach: After optogenetic tetanus
+id: EMPTY:00000179
+name: universally unique identifier
 namespace: empty_ontology
-def: "The measurement is performed after an optogenetic tetanus stimulus." []
-is_a: EMPTY:30000000 ! Approach
-property_value: codeName "approachAfterOptogeneticTetanus" xsd:string
+def: "A standardized number used to uniquely identify information in computer systems, ensuring that no two identifiers are the same across different systems or contexts." []
+synonym: "UUID" EXACT []
+
+[Term]
+id: EMPTY:00000180
+name: enumerated identifier
+namespace: empty_ontology
+def: "An identifier assigned sequentially from a numbered list, typically as an integer (e.g., 1, 2, 3), to distinguish between individual items." []
+
+[Term]
+id: EMPTY:00000181
+name: categorical identifier
+namespace: empty_ontology
+def: "An identifier that assigns an item to a specific, predefined category or Class, often represented by a string or label." []
+
+[Term]
+id: EMPTY:00000182
+name: flag
+namespace: empty_ontology
+def: "A binary variable, typically boolean (true/false), used to indicate the presence or absence of a specific condition, state, or attribute." []
+
+[Term]
+id: EMPTY:00000183
+name: ontology node
+namespace: empty_ontology
+def: "An identifier that specifies a term within a formal ontology, which should be represented as a combination of the ontology's name and the term's unique ID (e.g., ontologyName:ontologyID)." []
+
+[Term]
+id: EMPTY:00000184
+name: NDI document identifier
+namespace: empty_ontology
+def: "A unique identifier assigned to a document within the Neuroscience Data Interface (NDI) framework, used to link experimental data to its corresponding metadata and parameters." []
+
+[Term]
+id: EMPTY:00000185
+name: time-related measurement
+namespace: empty_ontology
+def: "A measurement that quantifies a property related to time, such as a specific moment, an interval, or a rate of occurrence." []
+
+[Term]
+id: EMPTY:00000186
+name: timestamp
+namespace: empty_ontology
+def: "A sequence of characters or encoded information identifying when a certain event occurred, usually giving the date and time of day, sometimes to a small fraction of a second." []
+
+[Term]
+id: EMPTY:00000187
+name: duration
+namespace: empty_ontology
+def: "A measurement of the total amount of time that an event or process continues from its start to its end." []
+
+[Term]
+id: EMPTY:00000188
+name: timepoint
+namespace: empty_ontology
+def: "A measurement representing a single, specific moment in time at which an event occurs or an observation is made. Typically reported in seconds." []
+
+[Term]
+id: EMPTY:00000189
+name: elevated plus maze parameter
+namespace: empty_ontology
+def: "A parameter that specifies the settings or technical details of an Elevated Plus Maze experiment." []
+
+[Term]
+id: EMPTY:00000190
+name: fear-potentiated startle parameter
+namespace: empty_ontology
+def: "A parameter that specifies the settings or technical details of a Fear-potentiated startle experiment." []
+
+[Term]
+id: EMPTY:00000191
+name: ambient temperature
+namespace: empty_ontology
+def: "The ambient room temperature recorded during an experiment. Unit: degrees Celsius." []
+
+[Term]
+id: EMPTY:00000192
+name: ambient humidity
+namespace: empty_ontology
+def: "The ambient room humidity recorded during an experiment. Unit: percentage (%)." []
+
+[Term]
+id: EMPTY:00000193
+name: subject document identifier
+namespace: empty_ontology
+def: "A unique alphanumeric identifier assigned to an NDI subject document." []
+
+[Term]
+id: EMPTY:00000194
+name: C. elegans assay parameter
+namespace: empty_ontology
+def: "A specific parameter related to the experimental setup or conditions of an assay involving the nematode Caenorhabditis elegans." []
+
+[Term]
+id: EMPTY:00000195
+name: bacterial parameter
+namespace: empty_ontology
+def: "A specific parameter describing the properties or conditions of bacteria in an experiment." []
+
+[Term]
+id: EMPTY:00000196
+name: C. elegans assay phase
+namespace: empty_ontology
+def: "A string identifier indicating the specific phase of a C. elegans experiment (e.g. 'cultivation' or 'behavior')." []
+
+[Term]
+id: EMPTY:00000197
+name: C. elegans behavioral assay measurement
+namespace: empty_ontology
+def: "A quantitative or qualitative value obtained from a C. elegans behavioral assay, used to describe an aspect of the animal's movement, position, or interaction with its environment." []
+
+[Term]
+id: EMPTY:00000198
+name: C. elegans behavioral assay parameter
+namespace: empty_ontology
+def: "A controlled or measured variable specifically related to the design and execution of a C. elegans behavioral assay." []
+
+[Term]
+id: EMPTY:00000199
+name: C. elegans cultivation parameter
+namespace: empty_ontology
+def: "A parameter related to the conditions under which C. elegans were grown and maintained before being used in an experiment, such as the food source or temperature." []
+
+[Term]
+id: EMPTY:00000200
+name: experiment session identifier
+namespace: empty_ontology
+def: "A unique numerical identifier for a distinct experimental session." []
+
+[Term]
+id: EMPTY:00000201
+name: bacterial strain document identifier
+namespace: empty_ontology
+def: "Unique alphanumeric identifier that links to an OpenMINDs document describing the strain of bacteria used in an experiment." []
+
+[Term]
+id: EMPTY:00000202
+name: bacterial OD600 (target) at seeding
+namespace: empty_ontology
+def: "The intended or nominal optical density at 600 nm (OD 600) to which the bacterial solution was diluted for creating bacterial patches on agar plates. Unit: dimensionless." []
+
+[Term]
+id: EMPTY:00000203
+name: bacterial plate seeding timestamp
+namespace: empty_ontology
+def: "The date and time when a liquid culture of bacteria was seeded (pipetted) onto an agar plate. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000204
+name: bacterial plate cold storage timestamp
+namespace: empty_ontology
+def: "The date and time when an agar plate seeded with bacteria was transferred to cold storage (at approximately 4 degrees Celsius) to arrest or slow bacterial growth, if part of the protocol. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000205
+name: bacterial plate room temperature timestamp
+namespace: empty_ontology
+def: "The date and time when an agar plate seeded with bacteria was moved from cold storage to room temperature (at approximately 25 degrees Celsius) to continue bacterial growth, if part of the protocol. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000206
+name: C. elegans developmental stage
+namespace: empty_ontology
+def: "The developmental stage (e.g. 'L4' or '1DOA') at the time in which C. elegans were picked to the agar plate. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000207
+name: bacterial OD600 measurement
+namespace: empty_ontology
+def: "The measured optical density at 600 nm (OD600) of a reference liquid culture of bacteria. Unit: dimensionless." []
+
+[Term]
+id: EMPTY:00000208
+name: bacterial colony forming units (CFU) measurement
+namespace: empty_ontology
+def: "The concentration of viable bacterial cells quantified as Colony Forming Units per milliliter (CFU/mL), estimated for the reference liquid culture of bacteria. Unit: CFU/mL." []
+
+[Term]
+id: EMPTY:00000209
+name: bacterial plate identifier
+namespace: empty_ontology
+def: "A unique numerical identifier assigned to the physical plate (e.g., NGM agar plate) on which bacterial patch(s) were seeded." []
+
+[Term]
+id: EMPTY:00000210
+name: bacterial plate document identifier
+namespace: empty_ontology
+def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that contains the set of parameters and conditions for a specific agar plate containing bacterial patch(s)." []
+
+[Term]
+id: EMPTY:00000211
+name: C. elegans picked timestamp
+namespace: empty_ontology
+def: "The date and time when C. elegans were picked to an agar plate. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000212
+name: C. elegans behavioral assay label
+namespace: empty_ontology
+def: "A string label referring to the layout of food patches (i.e., 'SingleDensityMultiPatch', 'MultiDensityMultiPatch','LargeSinglePatch','SmallSinglePatch') for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000213
+name: bacterial OD600 label
+namespace: empty_ontology
+def: "A string label used to categorize or identify the nominal OD600 condition of bacterial patches in an experiment (e.g., '1.0', '0.5', '10.0') corresponding to the relative density conditions for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000214
+name: bacterial plate growth duration label
+namespace: empty_ontology
+def: "A string label (e.g. '1','12','48') indicating the approximate duration of bacterial growth at room temperature (in hours) for experiments in Haley et al. (2025). [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000215
+name: bacterial plate peptone inclusion flag
+namespace: empty_ontology
+def: "A boolean flag indicating whether peptone was included in the agar assay plates. Peptone presence supports bacterial growth. True: peptone included." []
+
+[Term]
+id: EMPTY:00000216
+name: bacteria growth duration after seeding
+namespace: empty_ontology
+def: "The total duration for which bacterial patch(s) on agar plates were allowed to grow at room temperature starting at the time seeded and ending at the beginning of the assay. Unit: hours." []
+
+[Term]
+id: EMPTY:00000217
+name: bacterial patch volume
+namespace: empty_ontology
+def: "The volume of bacterial solution pipetted to create an individual patch on an agar plate. Note: Volumes under 1 µL are approximate due to the difficulty of pipetting liquids at this scale. Unit: microliters (µL)." []
+
+[Term]
+id: EMPTY:00000218
+name: bacterial patch spacing (target)
+namespace: empty_ontology
+def: "The intended center-to-center distance between adjacent bacterial food patches when arranged in a grid on an agar plate. Unit: millimeters (mm)." []
+
+[Term]
+id: EMPTY:00000219
+name: C. elegans behavioral assay: plate or arena diameter
+namespace: empty_ontology
+def: "The diameter of the experimental plate or arena used to corral animals in a C. elegans behavioral assay. A typical 9 cm agar plate will by 90 mm. Unit: millimeters (mm)." []
+
+[Term]
+id: EMPTY:00000220
+name: bacterial patch identifier
+namespace: empty_ontology
+def: "A unique numerical identifier assigned to a patch of bacteria growing on an agar assay plate." []
+
+[Term]
+id: EMPTY:00000221
+name: bacterial patch center: X coordinate
+namespace: empty_ontology
+def: "The X pixel coordinate representing the geometric center of an individual detected bacterial food patch within an assay arena. Unit: pixels." []
+
+[Term]
+id: EMPTY:00000222
+name: bacterial patch center: Y coordinate
+namespace: empty_ontology
+def: "The Y pixel coordinate representing the geometric center of an individual detected bacterial food patch within an assay arena. Unit: pixels." []
+
+[Term]
+id: EMPTY:00000223
+name: bacterial patch radius
+namespace: empty_ontology
+def: "The radius of an individual detected bacterial patch on an agar plate, assuming patches are circular or near-circular. Unit: pixels." []
+
+[Term]
+id: EMPTY:00000224
+name: bacterial patch circularity
+namespace: empty_ontology
+def: "A quantitative measure assessing how closely the shape of an individual detected bacterial patch conforms to a perfect circle. 1 is a perfect circle. [Source: https://www.mathworks.com/help/images/ref/regionprops.html]" []
+
+[Term]
+id: EMPTY:00000225
+name: subject identifier
+namespace: empty_ontology
+def: "A unique numerical identifier assigned to a subject in an experiment." []
+
+[Term]
+id: EMPTY:00000226
+name: C. elegans behavioral assay: first frame image
+namespace: empty_ontology
+def: "An image corresponding to the first frame of the C. elegans behavioral video recording." []
+
+[Term]
+id: EMPTY:00000227
+name: C. elegans behavioral assay: arena mask
+namespace: empty_ontology
+def: "A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked (true) and pixels outside are unmarked (false). This mask defines the region of interest for worm tracking and behavioral analysis." []
+
+[Term]
+id: EMPTY:00000228
+name: C. elegans behavioral assay: bacteria mask
+namespace: empty_ontology
+def: "A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions." []
+
+[Term]
+id: EMPTY:00000229
+name: C. elegans behavioral assay: closest patch identifier map
+namespace: empty_ontology
+def: "An image or map where each pixel's value is the identifier of the bacterial food patch closest to that pixel's location." []
+
+[Term]
+id: EMPTY:00000230
+name: C. elegans behavioral assay: closest patch OD600 map
+namespace: empty_ontology
+def: "An image or map where each pixel's value corresponds to the nominal OD600 or relative density of the bacterial food patch closest to that pixel's location." []
+
+[Term]
+id: EMPTY:00000231
+name: bacterial patch document identifier
+namespace: empty_ontology
+def: "A unique alphanumeric identifier assigned to an NDI ontologyTableRow document that details the specific parameters of a bacterial food patch such as its location, size, and density." []
+
+[Term]
+id: EMPTY:00000232
+name: C. elegans body part
+namespace: empty_ontology
+def: "A distinct anatomical region of the C. elegans worm, such as the head, midpoint, or tail, which can be tracked to quantify behavior." []
+
+[Term]
+id: EMPTY:00000233
+name: C. elegans head
+namespace: empty_ontology
+def: "The anterior-most part of the C. elegans body." []
+
+[Term]
+id: EMPTY:00000234
+name: C. elegans midpoint
+namespace: empty_ontology
+def: "The center point of the C. elegans body." []
+
+[Term]
+id: EMPTY:00000235
+name: C. elegans tail
+namespace: empty_ontology
+def: "The posterior-most part of the C. elegans body." []
+
+[Term]
+id: EMPTY:00000236
+name: C. elegans behavioral assay: encounter identifier
+namespace: empty_ontology
+def: "A unique numerical identifier assigned to a specific encounter event for a given animal. This distinguishes individual encounters for detailed analysis." []
+
+[Term]
+id: EMPTY:00000237
+name: C. elegans behavioral assay: encounter onset time
+namespace: empty_ontology
+def: "The time, in seconds, corresponding to the frame at which the C. elegans worm enters a bacterial food patch. This is the precise start time of an encounter." []
+
+[Term]
+id: EMPTY:00000238
+name: C. elegans behavioral assay: encounter offset time
+namespace: empty_ontology
+def: "The time, in seconds, corresponding to the frame at which the C. elegans worm exits a bacterial food patch. This is the precise end time of an encounter." []
+
+[Term]
+id: EMPTY:00000239
+name: C. elegans behavioral assay: deceleration upon encounter
+namespace: empty_ontology
+def: "The rate of change in the C. elegans worm's velocity, measured as the slope of the velocity curve during a defined time window surrounding its encounter with a bacterial patch. A negative value indicates a slowdown upon encounter. Unit: µm/s²." []
+
+[Term]
+id: EMPTY:00000240
+name: C. elegans behavioral assay: minimum velocity during encounter
+namespace: empty_ontology
+def: "The minimum instantaneous velocity recorded for the C. elegans worm while it is located on a bacterial food patch during an encounter. Unit: µm/s." []
+
+[Term]
+id: EMPTY:00000241
+name: C. elegans behavioral assay: peak velocity before encounter onset
+namespace: empty_ontology
+def: "The peak instantaneous velocity of the C. elegans worm observed within 10 seconds before its entry into a bacterial food patch. Unit: µm/s." []
+
+[Term]
+id: EMPTY:00000242
+name: C. elegans behavioral assay: minimum velocity after encounter offset
+namespace: empty_ontology
+def: "The minimum instantaneous velocity of the C. elegans worm observed within 10 seconds after its entry into a bacterial food patch. Unit: µm/s." []
+
+[Term]
+id: EMPTY:00000243
+name: C. elegans behavioral assay: posterior probability of exploitation
+namespace: empty_ontology
+def: "The posterior probability, derived from a Gaussian Mixture Model (GMM) Classification, that a given patch encounter represents an 'exploitation' event (i.e., the worm has accepted the patch and is consuming bacteria). This value ranges from 0 to 1. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000244
+name: C. elegans behavioral assay: posterior probability of sensing
+namespace: empty_ontology
+def: "The posterior probability, derived from a semi-supervised Quadratic Discriminant Analysis (QDA), that a given patch encounter was 'sensed' by the C. elegans worm (i.e., the animal detected the presence of bacteria, typically indicated by a slowdown). This value ranges from 0 to 1. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000245
+name: C. elegans behavioral assay: relative density of encountered bacteria
+namespace: empty_ontology
+def: "A normalized, quantitative measure of the bacterial density of a specific bacterial food patch that a C. elegans worm encounters during an assay. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000246
+name: C. elegans behavioral assay: relative density of cultivation bacteria
+namespace: empty_ontology
+def: "A normalized, quantitative measure of the bacterial density on the agar plates where C. elegans were cultivated prior to the behavioral assay. [Source: https://doi.org/10.7554/eLife.103191.2.sa4]" []
+
+[Term]
+id: EMPTY:00000247
+name: bacterial fluorescence assay measurement
+namespace: empty_ontology
+def: "A measurement in a bacterial fluorescence assay used to estimate the relative density of bacterial patches." []
+
+[Term]
+id: EMPTY:00000248
+name: agar plate pouring timestamp
+namespace: empty_ontology
+def: "The date and time when an agar plate was poured. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000249
+name: agar plate cold storage timestamp
+namespace: empty_ontology
+def: "The date and time when an agar plate was transferred to cold storage (at approximately 4 degrees Celsius) to retain moisture for long-term storage. Unit: datetime." []
+
+[Term]
+id: EMPTY:00000250
+name: microscopy image identifier
+namespace: empty_ontology
+def: "A unique numerical identifier for a microscopy image." []
+
+[Term]
+id: EMPTY:00000251
+name: microscopy image exposure time
+namespace: empty_ontology
+def: "The duration the microscope's camera or sensor is exposed to light. Unit: milliseconds." []
+
+[Term]
+id: EMPTY:00000252
+name: bacterial patch border peak fluorescence intensity
+namespace: empty_ontology
+def: "The maximum pixel intensity detected along the radial profile of a fluorescent bacterial patch, typically found at the patch edge where bacteria are actively proliferating. [Source: https://doi.org/10.7554/eLife.103191.3]" []
+
+[Term]
+id: EMPTY:00000253
+name: bacterial patch border edge fluorescence intensity
+namespace: empty_ontology
+def: "The pixel intensity measured at the detected border of a fluorescent bacterial patch. [Source: https://doi.org/10.7554/eLife.103191.3]" []
+
+[Term]
+id: EMPTY:00000254
+name: bacterial patch border fluorescence amplitude
+namespace: empty_ontology
+def: "A measure of bacterial density defined as the difference between the peak pixel intensity and the border pixel intensity of a fluorescent bacterial patch. [Source: https://doi.org/10.7554/eLife.103191.3]" []
+
+[Term]
+id: EMPTY:00000255
+name: bacterial patch mean fluorescence amplitude
+namespace: empty_ontology
+def: "The average pixel intensity computed across every pixel of a fluorescent bacterial patch. [Source: https://doi.org/10.7554/eLife.103191.3]" []
+
+[Term]
+id: EMPTY:00000256
+name: bacterial patch center fluorescence amplitude
+namespace: empty_ontology
+def: "The average pixel intensity of the middle 50% of a fluorescent bacterial patch. [Source: https://doi.org/10.7554/eLife.103191.3]" []
+
+[Term]
+id: EMPTY:00000257
+name: bacterial patch border-to-center fluorescence ratio
+namespace: empty_ontology
+def: "The ratio of the patch border amplitude to the patch center amplitude, used as a measure of bacterial distribution within the patch. [Source: https://doi.org/10.7554/eLife.103191.3]" []
+
+[Term]
+id: EMPTY:00000258
+name: bacterial measurement
+namespace: empty_ontology
+def: "A measurement of bacteria." []
+
+[Term]
+id: EMPTY:00000259
+name: amplitude
+namespace: empty_ontology
+def: "The amplitude of a periodic variable is a measure of its change in a single period (such as time or spatial period). The amplitude of a non-periodic signal is its magnitude compared with a reference value." []
 
 [Term]
 id: EMPTY:10000000
-name: Treatment
+name: treatment
 namespace: empty_ontology
 def: "A treatment applied to a subject that is not associated with any particular data epoch. Treatments can include pharmacological interventions, surgical procedures, environmental manipulations, or any other controlled alteration of a subject's state that is intended to produce a specific effect or response." []
-property_value: codeName "treatment" xsd:string
 
 [Term]
 id: EMPTY:10000001
-name: Treatment: Experienced cricket hunting
+name: treatment: experienced cricket hunting
 namespace: empty_ontology
 def: "Indicates that the animal has had experience with hunting for crickets in some capacity" []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentExperiencedCricketHunting" xsd:string
 
 [Term]
 id: EMPTY:10000002
-name: Treatment: Has not experienced cricket hunting
+name: treatment: has not experienced cricket hunting
 namespace: empty_ontology
 def: "Indicates that the animal has not had experience with hunting for crickets" []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentHasNotExperiencedCricketHunting" xsd:string
 
 [Term]
 id: EMPTY:10000003
-name: Treatment: Acclimation onset time
+name: treatment: acclimation onset time
 namespace: empty_ontology
 def: "The subject was acclimated to a temperature at a particular onset time." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentAcclimationOnsetTime" xsd:string
 
 [Term]
 id: EMPTY:10000004
-name: Treatment: Acclimation temperature
+name: treatment: acclimation temperature
 namespace: empty_ontology
 def: "The temperature (in degrees C) at which the subject was acclimated." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentAcclimationTemperature" xsd:string
 
 [Term]
 id: EMPTY:10000005
-name: Treatment: Non-survival experiment time
+name: treatment: non-survival experiment time
 namespace: empty_ontology
 def: "The subject was used in a non-survival experiment." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentNonSurvivalExperimentTime" xsd:string
 
 [Term]
 id: EMPTY:10000006
-name: Treatment: Left eye premature eye opening
+name: treatment: left eye premature eye opening
 namespace: empty_ontology
 def: "The subject's left eye was opened prematurely, before natural eye opening." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentLeftEyePrematureEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:10000007
-name: Treatment: Right eye premature eye opening
+name: treatment: right eye premature eye opening
 namespace: empty_ontology
 def: "The subject's right eye was opened prematurely, before natural eye opening." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentRightEyePrematureEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:10000008
-name: Treatment: Natural left eye opening
+name: treatment: natural left eye opening
 namespace: empty_ontology
 def: "The subject's left eye was allowed to open naturally." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentNaturalLeftEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:10000009
-name: Treatment: Natural right eye opening
+name: treatment: natural right eye opening
 namespace: empty_ontology
 def: "The subject's right eye was allowed to open naturally." []
-is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "treatmentNaturalRightEyeOpening" xsd:string
+
+[Term]
+id: EMPTY:10000010
+name: treatment: grating direction-of-motion visual stimulation
+namespace: empty_ontology
+def: "Training was provided for several hours with drifting sinusoidal gratings (provided in hours)" []
+
+[Term]
+id: EMPTY:10000011
+name: treatment: CNO or saline administration
+namespace: empty_ontology
+def: "Specifies the pharmacological treatment assigned to a subject. This assignment dictates the experimental group, with possible values being 'CNO' for Clozapine-N-oxide administration (2 mg/kg, i.p.) or 'Saline' for vehicle control administration (i.p.). These treatments were administered 45 minutes before fear conditioning and before EPM testing." []
+
+[Term]
+id: EMPTY:10000012
+name: treatment: date of birth
+namespace: empty_ontology
+def: "Specifies the date of birth in YYYY-MM-DD format" []
+
+[Term]
+id: EMPTY:10000013
+name: treatment: food restriction onset time
+namespace: empty_ontology
+def: "The date and time when a period of food restriction begins for a subject. Unit: datetime." []
+
+[Term]
+id: EMPTY:10000014
+name: treatment: food restriction offset time
+namespace: empty_ontology
+def: "The date and time when a period of food restriction ends for a subject. Unit: datetime." []
 
 [Term]
 id: EMPTY:20000000
-name: Purpose
+name: purpose
 namespace: empty_ontology
 def: "The purpose of a measurement, stimulus, or experiment. This describes the intended goal or objective of the scientific investigation or a specific component of it." []
-property_value: codeName "purpose" xsd:string
 
 [Term]
 id: EMPTY:20000001
-name: Purpose: Assessing spatial frequency tuning
+name: purpose: assessing spatial frequency tuning
 namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess spatial frequency tuning" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingSpatialFrequencyTuning" xsd:string
 
 [Term]
 id: EMPTY:20000002
-name: Purpose: Assessing temporal frequency tuning
+name: purpose: assessing temporal frequency tuning
 namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess temporal frequency tuning" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingTemporalFrequencyTuning" xsd:string
 
 [Term]
 id: EMPTY:20000003
-name: Purpose: Assessing direction of motion tuning
+name: purpose: assessing direction of motion tuning
 namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess direction of motion tuning" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingDirectionOfMotionTuning" xsd:string
 
 [Term]
 id: EMPTY:20000004
-name: Purpose: Assessing contrast tuning
+name: purpose: assessing contrast tuning
 namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess contrast tuning" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingContrastTuning" xsd:string
 
 [Term]
 id: EMPTY:20000005
-name: Purpose: Assessing ocular dominance or binocular matching
+name: purpose: assessing ocular dominance or binocular matching
 namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess ocular dominance or binocular matching" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingOcularDominanceOrBinocularMatching" xsd:string
 
 [Term]
 id: EMPTY:20000006
-name: Purpose: Assessing the pyloric rhythm
+name: purpose: assessing the pyloric rhythm
 namespace: empty_ontology
 def: "States that the purpose of the measurement is to observe the pyloric rhythm" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingThePyloricRhythm" xsd:string
 
 [Term]
 id: EMPTY:20000007
-name: Purpose: Assessing the gastric mill rhythm
+name: purpose: assessing the gastric mill rhythm
 namespace: empty_ontology
 def: "States that the purpose of the measurement is to observe the gastric mill rhythm" []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingTheGastricMillRhythm" xsd:string
 
 [Term]
 id: EMPTY:20000008
-name: Purpose: Assessing activity with temperature manipulation
+name: purpose: assessing activity with temperature manipulation
 namespace: empty_ontology
 def: "States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature." []
-is_a: EMPTY:20000000 ! Purpose
-property_value: codeName "purposeAssessingActivityWithTemperatureManipulation" xsd:string
+
+[Term]
+id: EMPTY:30000000
+name: approach
+namespace: empty_ontology
+def: "An approach to stimulation that is associated with an epoch of data but that is not already coded in stimulator metadata. This represents a specific methodology, technique, or procedural aspect applied during data collection that provides important context for interpreting the data." []
+
+[Term]
+id: EMPTY:30000001
+name: approach: left eye view blocked
+namespace: empty_ontology
+def: "Indicates that the view through the left eye was blocked during presentation of this stimulus" []
+
+[Term]
+id: EMPTY:30000002
+name: approach: right eye view blocked
+namespace: empty_ontology
+def: "Indicates that the view through the right eye was blocked during presentation of this stimulus" []
+
+[Term]
+id: EMPTY:30000003
+name: approach: command temperature constant
+namespace: empty_ontology
+def: "The temperature of an experimental object has been commanded to be a certain value" []
+
+[Term]
+id: EMPTY:30000004
+name: approach: command temperature start
+namespace: empty_ontology
+def: "The temperature of an experimental object has been commanded to be a certain value at the beginning of the recording epoch" []
+
+[Term]
+id: EMPTY:30000005
+name: approach: command temperature end
+namespace: empty_ontology
+def: "The temperature of an experimental object has been commanded to be a certain value at the end of the recording epoch" []
+
+[Term]
+id: EMPTY:30000006
+name: approach: before optogenetic tetanus
+namespace: empty_ontology
+def: "The measurement is performed before an optogenetic tetanus stimulus." []
+
+[Term]
+id: EMPTY:30000007
+name: approach: after optogenetic tetanus
+namespace: empty_ontology
+def: "The measurement is performed after an optogenetic tetanus stimulus." []
+
+[Term]
+id: EMPTY:30000008
+name: approach: before artificial visual stimulation
+namespace: empty_ontology
+def: "The measurement is performed before a long bout of artificial visual stimulation" []
+
+[Term]
+id: EMPTY:30000009
+name: approach: after artificial visual stimulation
+namespace: empty_ontology
+def: "The measurement is performed after a long bout of artificial visual stimulation" []
