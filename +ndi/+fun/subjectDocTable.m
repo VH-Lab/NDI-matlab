@@ -115,7 +115,7 @@ for i = 1:numel(subjectDocs)
             case 'treatment'
                 
                 % Get datatype and values
-                [~,~,~,~,~,dataType] = ndi.ontology.lookup(docProp.treatment.ontologyName);                
+                dataType = replace(docProp.treatment.name,' ','');
                 numericValue = docProp.treatment.numeric_value;
                 stringValue = docProp.treatment.string_value;
 
@@ -128,7 +128,6 @@ for i = 1:numel(subjectDocs)
                     treatment.(dataType).stringValue = {};
                 end
 
-                stringOntology = [];
                 % Check if string value is an ontology node
                 if contains(stringValue,':')
                     try
@@ -192,12 +191,6 @@ for i = 1:numel(subjectDocs)
         names = treatment.(currentType).name(~cellfun('isempty', treatment.(currentType).name));
         ontologys = treatment.(currentType).ontology(~cellfun('isempty', treatment.(currentType).ontology));
         values = treatment.(currentType).value(~cellfun('isempty', treatment.(currentType).value));
-        for j=1:numel(values)
-            if isnumeric(values{j})
-                values{j} = num2str(values{j});
-            end
-        end
-        values,
         numericValues = treatment.(currentType).numericValue(~cellfun('isempty', treatment.(currentType).numericValue));
         stringValues = treatment.(currentType).stringValue(~cellfun('isempty', treatment.(currentType).stringValue));
         
