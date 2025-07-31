@@ -34,18 +34,15 @@ function T_stacked = vstack(tablesCellArray)
 %
 %   SEE ALSO:
 %   vertcat, table, join, outerjoin
-
 arguments
     tablesCellArray (1,:) cell {mustBeNonempty}
 end
-
     % --- Initial Setup & Validation ---
     if ~all(cellfun(@(x) isa(x, 'table'), tablesCellArray))
         error('vstack:InvalidCellContent', 'All elements in the cell array must be tables.');
     end
     isNotEmpty = ~cellfun(@(x) isempty(x.Properties.VariableNames) && height(x)==0, tablesCellArray);
     tablesCellArray = tablesCellArray(isNotEmpty);
-
     if isempty(tablesCellArray)
         T_stacked = table();
         return;
@@ -54,37 +51,98 @@ end
         T_stacked = tablesCellArray{1};
         return;
     end
-
     numTables = numel(tablesCellArray);
 
-    % --- Phase 1: Discovery (Single Pass) ---
+    % --- Phase 1: Discovery (Best Prototype Selection) ---
+    % varInfoMap stores {prototype, numCols}
     varInfoMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
     
-    % Pre-allocate for performance, preventing array resizing in the loop
-    maxPossibleVars = sum(cellfun(@(t) width(t), tablesCellArray));
-    allVarNames = cell(1, maxPossibleVars);
-    varCount = 0;
+    allVarNamesOrdered = {}; % Maintains insertion order of variable names
 
     for k = 1:numTables
         T = tablesCellArray{k};
         vars = T.Properties.VariableNames;
         for i = 1:numel(vars)
             varName = vars{i};
-            if ~isKey(varInfoMap, varName)
-                varCount = varCount + 1;
-                allVarNames{varCount} = varName;
+            
+            if ~isKey(varInfoMap, varName) % Processes a variable name upon its first encounter
+                allVarNamesOrdered{end+1} = varName; % Adds to ordered list
+
+                % Finds the most informative example column for this variable across all tables.
+                % Prioritizes non-empty columns to get the most accurate prototype.
+                bestExampleCol = []; 
+                bestNumCols = 1;     % Assumes 1 column if no specific size information is found
+                declaredTypeForEmpty = ''; % Stores declared type if only empty schemas are found
+
+                foundNonEmpty = false;
                 
-                exampleCol = T.(varName);
-                prototype = get_fill_prototype(exampleCol);
-                numCols = size(exampleCol, 2);
-                if isempty(exampleCol) && numCols == 0, numCols = 1; end
-                varInfoMap(varName) = {prototype, numCols};
+                for j = 1:numTables % Iterates through all tables to find an optimal example
+                    T_candidate = tablesCellArray{j};
+                    if ismember(varName, T_candidate.Properties.VariableNames)
+                        candidateCol = T_candidate.(varName);
+                        
+                        if ~isempty(candidateCol) % Uses a non-empty example if available
+                            bestExampleCol = candidateCol;
+                            bestNumCols = size(candidateCol, 2);
+                            foundNonEmpty = true;
+                            break; 
+                        else % Processes an empty column
+                            % Captures the declared type from an empty table's schema for more accurate inference
+                            if isempty(declaredTypeForEmpty) && ~isempty(T_candidate.Properties.VariableTypes)
+                                idx_var = find(strcmp(varName, T_candidate.Properties.VariableNames), 1);
+                                if ~isempty(idx_var)
+                                    declaredTypeForEmpty = T_candidate.Properties.VariableTypes{idx_var};
+                                    % Preserves multi-column definition from schema if present
+                                    if size(candidateCol, 2) > 0
+                                        bestNumCols = size(candidateCol, 2);
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if ~foundNonEmpty % If all instances of this variable across all tables are empty
+                    % Creates an empty instance of the declared type if available, otherwise defaults to double.
+                    if ~isempty(declaredTypeForEmpty)
+                        try
+                            if strcmp(declaredTypeForEmpty, 'datetime')
+                                bestExampleCol = NaT([]);
+                            elseif strcmp(declaredTypeForEmpty, 'string')
+                                bestExampleCol = string([]);
+                            elseif strcmp(declaredTypeForEmpty, 'categorical')
+                                bestExampleCol = categorical([]);
+                            elseif strcmp(declaredTypeForEmpty, 'cell')
+                                bestExampleCol = {};
+                            else
+                                bestExampleCol = feval(declaredTypeForEmpty, []);
+                            end
+                             % Ensures column count is 1 for 0x0 empty arrays if no other size is implied
+                             if isempty(bestExampleCol) && size(bestExampleCol,2) == 0 && bestNumCols == 1
+                                % No change needed, bestNumCols is already 1
+                             end
+                        catch
+                            % Defaults to double if creating the declared empty type fails
+                            bestExampleCol = double([]);
+                            bestNumCols = 1;
+                        end
+                    else
+                        % Defaults to double if no declared type is found and all columns are empty
+                        bestExampleCol = double([]);
+                        bestNumCols = 1;
+                    end
+                end
+                
+                % Determines the prototype for filling using the selected example column.
+                prototype = get_fill_prototype(bestExampleCol);
+                
+                % Stores the determined prototype and inferred number of columns.
+                varInfoMap(varName) = {prototype, bestNumCols};
             end
         end
     end
     
-    allVarNames = allVarNames(1:varCount); % Trim excess pre-allocated cells
-    if isempty(allVarNames)
+    if isempty(allVarNamesOrdered)
         T_stacked = table();
         return;
     end
@@ -97,19 +155,25 @@ end
         
         if currentHeight == 0
             emptyAligned = table();
-            for i = 1:numel(allVarNames)
-                varName = allVarNames{i};
+            for i = 1:numel(allVarNamesOrdered)
+                varName = allVarNamesOrdered{i};
                 prototypeInfo = varInfoMap(varName);
                 prototype = prototypeInfo{1};
                 numCols = prototypeInfo{2};
+                
                 emptyCol = repmat(prototype, 0, numCols);
+                
+                if iscategorical(prototype)
+                    emptyCol(:) = missing; % Explicitly sets missing for categorical fills
+                end
+                
                 emptyAligned.(varName) = emptyCol;
             end
             processedTables{k} = emptyAligned;
             continue;
         end
         
-        missingVars = setdiff(allVarNames, T_current.Properties.VariableNames, 'stable');
+        missingVars = setdiff(allVarNamesOrdered, T_current.Properties.VariableNames, 'stable');
         
         for i = 1:numel(missingVars)
             varName = missingVars{i};
@@ -126,20 +190,19 @@ end
             T_current.(varName) = fillColumn;
         end
         
-        processedTables{k} = T_current(:, allVarNames);
+        processedTables{k} = T_current(:, allVarNamesOrdered);
     end
-
     T_stacked = vertcat(processedTables{:});
 end
 
+% --- Helper function to create a scalar prototype for filling missing data ---
 function prototype = get_fill_prototype(exampleCol)
-    % This function creates a scalar prototype for filling missing data
     if islogical(exampleCol)
-        prototype = NaN; % Promote logical to double to allow for NaN fill
+        prototype = NaN; % Promotes logical to double to allow for NaN fill
     elseif isfloat(exampleCol) % For floating-point types
         prototype = nan('like', exampleCol);
     elseif isinteger(exampleCol) % For integer types
-        prototype = NaN; % Promote integer to double to allow for NaN fill
+        prototype = NaN; % Promotes integer to double to allow for NaN fill
     elseif isdatetime(exampleCol)
         tz = exampleCol.TimeZone;
         prototype = NaT('TimeZone', tz);
@@ -148,19 +211,28 @@ function prototype = get_fill_prototype(exampleCol)
     elseif isstring(exampleCol)
         prototype = missing;
     elseif iscategorical(exampleCol)
-        prototype = exampleCol(1:0);
-        prototype(1,1) = missing;
+        prototype = exampleCol(1:0); % Creates an empty categorical array
+        % Preserves categories from the original exampleCol if possible
+        if isempty(categories(prototype)) && ~isempty(categories(exampleCol)) 
+            prototype = categorical(prototype, categories(exampleCol));
+        end
+        prototype(1,1) = missing; % Sets its single value to missing
     elseif ischar(exampleCol)
         prototype = ' ';
     elseif iscell(exampleCol)
-        prototype = {get_fill_prototype(exampleCol{1})};
+        % Handles empty cell array inputs to prevent errors
+        if ~isempty(exampleCol) 
+            prototype = {get_fill_prototype(exampleCol{1})}; % Recursively determines content prototype
+        else 
+            prototype = {[]}; % Defaults to an empty double array within a cell for empty cell arrays
+        end
     else % Custom Objects
         try
-            % Attempt to create an empty instance of the object class
+            % Attempts to create an empty instance of the object class
             prototype = feval(class(exampleCol));
         catch
-            % If object creation fails, fall back to empty
-            prototype = [];
+            % If object creation fails, falls back to an empty double array
+            prototype = []; 
         end
     end
 end
