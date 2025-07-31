@@ -116,7 +116,7 @@ function [ndiDocArray, openMindsObj] = makeSpeciesStrainSex(ndiSession, subjectI
                 ndiSession.database_add(ndiDocArray);
             end
         catch ME
-            warning('Failed to convert openMINDS objects to NDI documents or add them to the session. Error: %s', ME.message);
+            warning('makeSpeciesStrainSex:openMINDSobj2ndi_documentError','Failed to convert openMINDS objects to NDI documents or add them to the session. Error: %s', ME.message);
             % Clear outputs on failure
             ndiDocArray = {};
             openMindsObj = {};
