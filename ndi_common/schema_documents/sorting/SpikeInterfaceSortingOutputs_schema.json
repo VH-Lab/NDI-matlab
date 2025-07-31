@@ -1,0 +1,36 @@
+{
+    "classname": "SpikeInterfaceSortingOutputs",
+    "superclasses": ["base"],
+    "depends_on": [],
+    "file": 
+    [
+        { "name": "sorting.sioutputs.zip", "mustbenotempty": 1 }
+    ],
+    "SpikeInterfaceSortingOutputs": 
+    [
+        {
+            "name": "sorter_name",
+            "type": "string",
+            "default_value": "",
+            "parameters": "",
+            "queryable": 1,
+            "documentation": "The name of the spike sorter used (e.g., kilosort2, herdingspikes)"
+        },
+        {
+            "name": "sample_rate",
+            "type": "integer",
+            "default_value": "",
+            "parameters": [1, 1e6, 0],
+            "queryable": 0,
+            "documentation": "Sampling rate of the recording in Hz"
+        },
+        {
+            "name": "unit",
+            "type": "string",
+            "default_value": "ms",
+            "parameters": "",
+            "queryable": 0,
+            "documentation": "Time unit used for spike_times (typically 'ms' or 's')"
+        }
+    ]
+}
