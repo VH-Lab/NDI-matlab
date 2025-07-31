@@ -1,0 +1,23 @@
+{
+    "document_class": {
+		"definition": "$NDIDOCUMENTPATH\/sorting\/SpikeInterfaceSortingOutputs.json",
+		"validation": "$NDISCHEMAPATH\/sorting\/SpikeInterfaceSortingOutputs_schema.json",
+		"class_name": "SpikeInterfaceSortingOutputs",
+        "property_list_name": "SpikeInterfaceSortingOutputs",
+        "class_version": 1,
+        "superclasses": [
+            { "definition": "$NDIDOCUMENTPATH/base.json" }
+        ]
+    },
+    "depends_on": [],
+    "files": {
+        "file_list": [
+            "sorting.sioutputs.zip"
+        ]
+    },
+    "SpikeInterfaceSortingOutputs": {
+        "sorter_name": "",
+        "sample_rate": 30000,
+        "unit": "ms"
+    }
+}
