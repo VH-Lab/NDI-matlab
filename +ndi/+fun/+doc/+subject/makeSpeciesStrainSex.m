@@ -65,7 +65,7 @@ function [ndiDocArray, openMindsObj] = makeSpeciesStrainSex(ndiSession, subjectI
             speciesObj = sp; % Save for potential use by strain
             openMindsObj{end+1} = sp;
         catch ME
-            warning('Could not create openMINDS species object. Error: %s', ME.message);
+            warning('makeSpeciesStrainSex:openMINDsSpeciesError','Could not create openMINDS species object. Error: %s', ME.message);
         end
     end
 
@@ -79,7 +79,7 @@ function [ndiDocArray, openMindsObj] = makeSpeciesStrainSex(ndiSession, subjectI
                 st = openminds.core.research.Strain('name', name, 'species', speciesObj, 'ontologyIdentifier', ID);
                 openMindsObj{end+1} = st;
             catch ME
-                warning('Could not create openMINDS strain object. Error: %s', ME.message);
+                warning('makeSpeciesStrainSex:openMINDsStrainError','Could not create openMINDS strain object. Error: %s', ME.message);
             end
         end
     end
@@ -101,7 +101,7 @@ function [ndiDocArray, openMindsObj] = makeSpeciesStrainSex(ndiSession, subjectI
             end
             openMindsObj{end+1} = sex;
         catch ME
-            warning('Could not create openMINDS biologicalSex object. Error: %s', ME.message);
+            warning('makeSpeciesStrainSex:openMINDsBiologicalSexError','Could not create openMINDS biologicalSex object. Error: %s', ME.message);
         end
     end
 
