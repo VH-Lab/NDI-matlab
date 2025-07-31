@@ -1,7 +1,7 @@
-function [elementTable] = elementDocTable(session)
-%ELEMENTDOCTABLE Creates a summary table of element documents and their associated metadata.
+function [elementTable] = element(session)
+%ELEMENT Creates a summary table of element documents and their associated metadata.
 %
-%   elementTable = elementDocTable(SESSION)
+%   elementTable = element(SESSION)
 %
 %   This function retrieves all 'ndi_element' documents from a session using
 %   session.getelements(). It then dynamically discovers all metadata document
@@ -108,7 +108,7 @@ for i = 1:numel(elementDocs)
                 metadata.(dataType).name{end+1} = docProp.(dataType).name;
                 metadata.(dataType).ontology{end+1} = docProp.(dataType).ontology_name;
             catch ME
-                error('ELEMENTDOCTABLE:InvalidParameters',...
+                error('NDIFUNDOCTTABLEELEMENT:InvalidParameters',...
                     ['Current support only for documents of type "position_metadata", ' ...
                     '"distance_metadata", "openminds_element", and "probe_location".' ...
                     'Modifications may be needed for other document types.' ME])

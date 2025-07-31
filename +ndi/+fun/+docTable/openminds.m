@@ -85,7 +85,6 @@ allDocs_id = cellfun(@(d) d.id,allDocs,'UniformOutput',false);
 openmindsCell = cell(size(typeDocs))';
 dependencyIDs = cell(size(typeDocs))';
 totalDependencies = nan(size(typeDocs))';
-alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 for i = 1:numel(typeDocs)
 
@@ -112,16 +111,20 @@ for i = 1:numel(typeDocs)
 
     % Get dependent doc ids and types
     openminds_fields = fields(docProp.openminds.fields);
-    dependentDocs = {};
-    dependentTypes = {};
+    dependentDocs = cell(size(openminds_fields));
+    dependentTypes = cell(size(openminds_fields));
+    removeCells = false(size(openminds_fields));
     for j = 1:numel(openminds_fields)
         fieldName = openminds_fields{j};
         openminds_field = docProp.openminds.fields.(fieldName);
         if iscell(openminds_field) && contains(openminds_field,'ndi')
-            dependentDocs(end+1) = regexp(openminds_field, '[^/]*$', 'match', 'once');
-            dependentTypes{end+1} = [upper(fieldName(1)),fieldName(2:end)];
+            dependentDocs(j) = regexp(openminds_field, '[^/]*$', 'match', 'once');
+            dependentTypes{j} = [upper(fieldName(1)),fieldName(2:end)];
+        else
+            removeCells(j) = true;
         end
     end
+    dependentDocs(removeCells) = []; dependentTypes(removeCells) = [];
 
     for j = 1:numel(dependentDocs)
         
