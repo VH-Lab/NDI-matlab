@@ -68,7 +68,6 @@ for i = 1:numel(subjectDocs)
     subjectTable.SubjectLocalIdentifier(i) = {subjectDocs{i}.document_properties.subject.local_identifier};
 
     % Initialize temporary structs to aggregate data for the current subject
-    % element = struct();     % For 'element' document types
     openMINDs = struct();   % For 'openminds_subject' document type
     treatment = struct();   % For 'treatment' document type
 

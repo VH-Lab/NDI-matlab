@@ -153,7 +153,7 @@ function prototype = get_fill_prototype(exampleCol)
     elseif ischar(exampleCol)
         prototype = ' ';
     elseif iscell(exampleCol)
-        prototype = {[]};
+        prototype = {get_fill_prototype(exampleCol{1})};
     else % Custom Objects
         try
             prototype = feval(class(exampleCol));
