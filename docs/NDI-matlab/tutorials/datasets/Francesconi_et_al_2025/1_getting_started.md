@@ -75,7 +75,7 @@ subjectSummary = ndi.fun.docTable.subject(dataset)
 *You will see a table that looks like:*
 
 | SubjectDocumentIdentifier | SubjectLocalIdentifier | StrainName | StrainOntology | BackgroundStrainName | BackgroundStrainOntology | GeneticStrainTypeName | SpeciesName | SpeciesOntology | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 412693bb0b2a75c8_c0dc4139300a673e | `wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu` | CRF-Cre | | WI | RRID:RGD_13508588 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
 | 412693bb0b2b7e0f_40d1f45f9e51dc8b | `sd_rat_OTRCre_220214_BNST@dabrowska-lab.rosalindfranklin.edu` | OTR-IRES-Cre | | SD | RRID:RGD_70508 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
 | 412693bb0b2cf772_c0d06cadbb168eb5 | `sd_rat_WT_210401_BNSTIII@dabrowska-lab.rosalindfranklin.edu` | SD | RRID:RGD_70508 | | | wildtype | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
