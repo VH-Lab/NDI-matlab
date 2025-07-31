@@ -64,26 +64,25 @@ session = dataset.open_session(session_list{1});
 ## View subjects, probes and epochs <a name="metadata"></a>
 
 ### View subject summary table <a name="subjects"></a>
-Each individual animal is referred to as a **subject** and has a unique alphanumeric `subject_id` along with a `subject_name` which contains references to the animal's strain, species, genotype, experiment date, and cell type. Our database contains documents which store metadata about each subject including their species, strain, genetic strain type, and biological sex which are linked to well-defined ontologies such as [NCBI](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock), [RRID](https://rgd.mcw.edu/rgdweb/report/strain/main.html?id=13508588), [PATO](https://www.ebi.ac.uk/ols4/ontologies/pato/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FPATO_0000384), and [UBERON](https://www.ebi.ac.uk/ols4/ontologies/uberon/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001880). Additionally, metadata about any **treatments** that a **subject** received such as the location of optogenetic stimulation are stored. A summary table showing the metadata for each **subject**) can be viewed below.
+Each individual animal is referred to as a **subject** and has a unique alphanumeric `SubjectDocumentIdentifier` along with a `SubjectLocalIdentifier` which contains references to the animal's strain, species, genotype, experiment date, and cell type. Our database contains documents which store metadata about each subject including their species, strain, genetic strain type, and biological sex which are linked to well-defined ontologies such as [NCBI](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10116&lvl=3&lin=f&keep=1&srchmode=1&unlock), [RRID](https://rgd.mcw.edu/rgdweb/report/strain/main.html?id=13508588), [PATO](https://www.ebi.ac.uk/ols4/ontologies/pato/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FPATO_0000384), and [UBERON](https://www.ebi.ac.uk/ols4/ontologies/uberon/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001880). Additionally, metadata about any **treatments** that a **subject** received such as the location of optogenetic stimulation are stored. A summary table showing the metadata for each **subject**) can be viewed below.
 
 *Type this into MATLAB:*
 ```matlab
 % View summary table of all subject metadata
-subjectSummary = ndi.fun.subjectDocTable(dataset)
+subjectSummary = ndi.fun.docTable.subject(dataset)
 ```
 
 *You will see a table that looks like:*
 
-| subject_id | subject_name | SpeciesName | SpeciesOntology | StrainName | StrainOntology | GeneticStrainTypeName | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology |
+| SubjectDocumentIdentifier | SubjectLocalIdentifier | StrainName | StrainOntology | BackgroundStrainName | BackgroundStrainOntology | GeneticStrainTypeName | SpeciesName | SpeciesOntology | BiologicalSexName | BiologicalSexOntology | OptogeneticTetanusStimulationTargetLocationName | OptogeneticTetanusStimulationTargetLocationOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 412693bb0b2a75c8_c0dc4139300a673e | `wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | |
-| 412693bb0b2b7e0f_40d1f45f9e51dc8b | `sd_rat_OTRCre_220214_BNST@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | OTR-IRES-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | | |
-| 412693bb0b2c8c53_4099b07714e3a561 | `wi_rat_CRFCre_230213_BNST@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | CRF-Cre, WI | RRID:RGD_13508588 | wildtype, knockin | male | PATO:0000384 | | |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | `sd_rat_WT_210401_BNSTIII@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | SD | RRID:RGD_70508 | wildtype | male | PATO:0000384 | | |
-| 412693bb0b344f5e_c0d0f30bef37dab8 | `sd_rat_AVPCre_240425_BNSTI_PVN@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | paraventricular nucleus of hypothalamus | UBERON:0001930 |
-| 412693bb0b359d16_40d3e5ebc2d9a521 | `sd_rat_AVPCre_221202_BNSTIII_SCN@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | suprachiasmatic nucleus | UBERON:0002034 |
-| 412693bb0b367f65_c0c1ae36954547f5 | `sd_rat_AVPCre_221205_BNSTI_SON@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | AVP-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | supraoptic nucleus | UBERON:0001929 |
-| 412693bb0ebeaa0d_c09caf14c3d790a7 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | Rattus norvegicus | NCBITaxon:10116 | OTR-IRES-Cre, SD | RRID:RGD_70508 | wildtype, knockin | male | PATO:0000384 | | |
+| 412693bb0b2a75c8_c0dc4139300a673e | `wi_rat_CRFCre_210818_BNST@dabrowska-lab.rosalindfranklin.edu` | CRF-Cre | | WI | RRID:RGD_13508588 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
+| 412693bb0b2b7e0f_40d1f45f9e51dc8b | `sd_rat_OTRCre_220214_BNST@dabrowska-lab.rosalindfranklin.edu` | OTR-IRES-Cre | | SD | RRID:RGD_70508 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
+| 412693bb0b2cf772_c0d06cadbb168eb5 | `sd_rat_WT_210401_BNSTIII@dabrowska-lab.rosalindfranklin.edu` | SD | RRID:RGD_70508 | | | wildtype | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
+| 412693bb0b344f5e_c0d0f30bef37dab8 | `sd_rat_AVPCre_240425_BNSTI_PVN@dabrowska-lab.rosalindfranklin.edu` | AVP-Cre | | SD | RRID:RGD_70508 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | paraventricular nucleus of hypothalamus | UBERON:0001930 |
+| 412693bb0b359d16_40d3e5ebc2d9a521 | `sd_rat_AVPCre_221202_BNSTIII_SCN@dabrowska-lab.rosalindfranklin.edu` |  AVP-Cre| | SD | RRID:RGD_70508 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | suprachiasmatic nucleus | UBERON:0002034 |
+| 412693bb0b367f65_c0c1ae36954547f5 | `sd_rat_AVPCre_221205_BNSTI_SON@dabrowska-lab.rosalindfranklin.edu` | AVP-Cre | | SD | RRID:RGD_70508 | wildtype, knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | supraoptic nucleus | UBERON:0001929 |
+| 412693bb0ebeaa0d_c09caf14c3d790a7 | `sd_rat_OTRCre_220819_175@dabrowska-lab.rosalindfranklin.edu` | OTR-IRES-Cre | | SD | RRID:RGD_70508 | knockin | Rattus norvegicus | NCBITaxon:10116 | male | PATO:0000384 | | |
 
 #### Filter subjects <a name="filterSubjects"></a>
 We have created tools to filter a table by its values. Try finding **subjects** matching a given criterion.
