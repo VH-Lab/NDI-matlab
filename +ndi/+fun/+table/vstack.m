@@ -156,9 +156,11 @@ function prototype = get_fill_prototype(exampleCol)
         prototype = {get_fill_prototype(exampleCol{1})};
     else % Custom Objects
         try
+            % Attempt to create an empty instance of the object class
             prototype = feval(class(exampleCol));
         catch
-            prototype = {[]};
+            % If object creation fails, fall back to empty
+            prototype = [];
         end
     end
 end

@@ -19,7 +19,7 @@ classdef TestVStack < matlab.unittest.TestCase
             actualT = ndi.fun.table.vstack({T1, T2});
             
             expectedT = table([1;2;10;20], ...
-                              [{'A'};{'B'};{[]};{[]}], ...
+                              [{'A'};{'B'};{' '};{' '}], ...
                               [NaN;NaN;1;0], ... 
                               'VariableNames', {'NumCol', 'StrCol', 'LogCol'});
             
@@ -35,7 +35,7 @@ classdef TestVStack < matlab.unittest.TestCase
             actualT = ndi.fun.table.vstack({T1, T2, T3, T4});
             
             expectedID = [1;2;3;4];
-            expectedValA = [{'A'};{[]};{'C'};{[]}]; 
+            expectedValA = [{'A'};{' '};{'C'};{' '}]; 
             expectedValB = [NaN;100;NaN;200];    
             expectedValC = [NaN;NaN;NaN;1];      
 
@@ -67,7 +67,7 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifyEqual(actualT.Int(2), int8(2)); 
             testCase.verifyEqual(actualT.Log(2), false);  
             testCase.verifyTrue(ismissing(actualT.Str(2))); 
-            testCase.verifyTrue(isempty(actualT.CellStr{2})); 
+            testCase.verifyEqual(actualT.CellStr(2),{' '});
             testCase.verifyTrue(isnat(actualT.Date(2)));      
             testCase.verifyTrue(isnan(actualT.Dur(2)));     
             testCase.verifyTrue(isundefined(actualT.Cat(2)));
@@ -291,7 +291,8 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifySameHandle(actualT.HandleObjCellCol{2}, hObj2);
             testCase.verifySameHandle(actualT.HandleObjCellCol{3}, hObj3);
             
-            testCase.verifyTrue(iscell(actualT.HandleObjCellCol) && isempty(actualT.HandleObjCellCol{4}));
+            testCase.verifyTrue(iscell(actualT.HandleObjCellCol));
+            testCase.verifyClass(actualT.HandleObjCellCol{4},class(ndi.test.objects.HandleTestObject));
 
             testCase.verifyTrue(all(ismissing(actualT.DataCol([1 2 4]))), 'DataCol fill check');
             testCase.verifyEqual(actualT.DataCol(3), "data");
