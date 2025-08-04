@@ -2,11 +2,10 @@ function validInd = identifyValidRows(variableTable,checkVariables,invalidValues
 %IDENTIFYVALIDROWS Identifies valid rows in a MATLAB table based on specified criteria.
 %
 %   validInd = IDENTIFYVALIDROWS(variableTable)
-%   Checks no specific variables by default. All rows are considered valid unless
-%   checkVariables and invalidValues are provided. This usage returns all true.
+%   Checks no specific variables. All rows are considered valid.
 %
 %   validInd = IDENTIFYVALIDROWS(variableTable, checkVariables)
-%   Checks the variables specified in 'checkVariables' for NaN values.
+%   Checks the variables specified in 'checkVariables' for NaN values by default.
 %   Rows where any of the specified variables contain NaN are marked as invalid.
 %
 %   validInd = IDENTIFYVALIDROWS(variableTable, checkVariables, invalidValues)
@@ -19,31 +18,30 @@ function validInd = identifyValidRows(variableTable,checkVariables,invalidValues
 %       checkVariables: (Optional) Names of variables within 'variableTable' to be checked.
 %                      Can be a character vector, a string scalar, a string array,
 %                      or a cell array of character vectors/strings.
-%                      Default: {} (empty cell array). If empty, and 'invalidValues'
-%                      is also empty or not provided, all rows are marked valid.
+%                      - Default: {}. If empty, the function returns all 'true' and no
+%                        checks are performed, regardless of the 'invalidValues' input.
+%                      - If a variable name is not found in 'variableTable', a warning
+%                        is issued and that check is skipped.
 %
-%       invalidValues: (Optional) Specifies the values to be considered invalid for
+%       invalidValues: (Optional) Specifies values to be considered invalid for
 %                      the corresponding variables in 'checkVariables'.
-%                      - If not provided or empty (and 'checkVariables' is provided):
-%                        Defaults to checking for NaN in each 'checkVariables'.
-%                      - If a single scalar value (numeric, char, string, logical):
-%                        This value is treated as the invalid marker for ALL variables
-%                        listed in 'checkVariables'.
-%                      - If a cell array: Must contain the same number of elements as
-%                        'checkVariables'. Each cell 'invalidValues{j}' specifies the
-%                        invalid value for the variable 'checkVariables{j}'.
-%                        Elements can be numeric (including NaN), char, string, or logical.
+%                      - Default: {NaN}
+%                      - Can be a single value (e.g., a scalar, char, or string) to be
+%                        applied as the invalid criterion for all 'checkVariables'.
+%                      - Can be a cell array matching the size of 'checkVariables', where
+%                        each cell specifies the invalid value for the corresponding variable.
+%                      - To check for empty values, use [] in a cell (e.g., {[]}). This
+%                        identifies empty cells ('') in a cell array column. For
+%                        standard array columns (e.g., numeric), this check will not
+%                        mark any rows as invalid.
 %
 %   OUTPUT ARGUMENTS:
-%       validInd: A logical column vector with the same number of rows as
-%                 'variableTable'. 'true' indicates a valid row, 'false'
-%                 indicates an invalid row.
+%       validInd: A logical column vector where 'true' indicates a valid row.
 
-% Input argument validation
 arguments
     variableTable table
-    checkVariables {mustBeA(checkVariables,{'char','str','cell'})} = {}
-    invalidValues {mustBeA(invalidValues,{'char','str','cell','numeric'})} = {NaN}
+    checkVariables {mustBeA(checkVariables,{'char','string','cell'})} = {}
+    invalidValues {mustBeA(invalidValues,{'char','string','cell','numeric'})} = {NaN}
 end
 
 % Check for empty checkVariables
@@ -84,17 +82,39 @@ for i = 1:numel(checkVariables)
 
     % Get current variable
     currentVariable = variableTable.(checkVariables{i});
-
+    currentInvalidValue = invalidValues{i};
+    
+    % Determine which rows are invalid for the current variable
+    isInvalid = false(height(variableTable), 1);
+    
     % Check variable
-    if iscell(currentVariable) & isnan(invalidValues{i})
-        validInd = validInd & cellfun(@(x) ~any(isnan(x)),currentVariable);
-    elseif iscell(currentVariable)
-        validInd = validInd & cellfun(@(x) ~any(eq(x,invalidValues{i})),currentVariable);
-    elseif isnan(invalidValues{i})
-        validInd = validInd & ~isnan(currentVariable);
+    if isempty(currentInvalidValue)
+        if iscell(currentVariable)
+            isInvalid = cellfun(@isempty, currentVariable);
+        else
+            % A non-cell array cannot have empty [] elements, so none are invalid.
+            isInvalid(:) = false;
+        end
+    elseif isnumeric(currentInvalidValue) && isnan(currentInvalidValue)
+        % Handle NaN
+        if iscell(currentVariable)
+            isInvalid = cellfun(@(x) isnumeric(x) && any(isnan(x)), currentVariable);
+        else
+            isInvalid = isnan(currentVariable);
+        end
     else
-        validInd = validInd & ~eq(currentVariable,invalidValues{i});
+        % Handle all other values
+        if iscell(currentVariable)
+            % Use isequal for robust comparison of cell contents
+            isInvalid = cellfun(@(x) isequal(x, currentInvalidValue), currentVariable);
+        else
+            % Standard equality check for numeric/string/etc. arrays
+            isInvalid = (currentVariable == currentInvalidValue);
+        end
     end
+    
+    % Update the overall validity index
+    validInd = validInd & ~isInvalid;
 end
 
 end

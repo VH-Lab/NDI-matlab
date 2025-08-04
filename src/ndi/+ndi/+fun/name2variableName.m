@@ -10,13 +10,12 @@ function variableName = name2variableName(name)
 %   1. Converting the input to a cell array of char vectors for consistent processing.
 %   2. Replacing non-alphanumeric characters (except underscore) with spaces.
 %   3. Splitting the cleaned string into individual words.
-%   4. Capitalizing the first letter of each word and lowercasing the rest.
+%   4. Capitalizing the first letter of each word.
 %   5. Joining all words together without spaces.
-%   6. Converting the very first letter of the entire resulting string to lowercase.
-%   7. Ensuring the string starts with a letter if it doesn't already
+%   6. Ensuring the string starts with a letter if it doesn't already
 %      (by prepending 'x' if necessary).
-%   8. Final cleanup to remove any remaining invalid characters.
-%   9. Converting the output back to a char array if the original input was char.
+%   7. Final cleanup to remove any remaining invalid characters.
+%   8. Converting the output back to a char array if the original input was char.
 %
 %   Input:
 %     name - The raw input string (char, string, or cellstr) to be converted.
@@ -70,13 +69,14 @@ end
 
             % Check if the current word is not empty (e.g., from multiple spaces after cleaning)
             if ~isempty(currentWord)
-                % Capitalize the first letter and convert the rest to lowercase
+                % Capitalize the first letter
                 firstLetter = upper(currentWord(1));
-                if length(currentWord) > 1
-                    restOfWord = lower(currentWord(2:end));
-                else
-                    restOfWord = ''; % Word has only one letter
-                end
+                restOfWord = currentWord(2:end);
+                % if length(currentWord) > 1
+                %     restOfWord = lower(currentWord(2:end));
+                % else
+                %     restOfWord = ''; % Word has only one letter
+                % end
                 capitalizedWords{i} = [firstLetter, restOfWord]; % Concatenate char arrays
             else
                 capitalizedWords{i} = ''; % Keep empty char vector
