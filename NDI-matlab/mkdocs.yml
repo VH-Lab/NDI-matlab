@@ -42,7 +42,7 @@ nav:
       - 3 Tutorials for new coders or new Matlab users:
         - 3.1 Newbie version of your first electrophysiology experiment with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset.md'
       - 4 Datasets:
-        - Francesconi_et_al_2025: 'NDI-matlab/tutorials/datasets/Francesconi_et_al_2025'
+        - Francesconi_et_al_2025: 'NDI-matlab/tutorials/datasets/Francesconi_et_al_2025/1_getting_started.md'
       - 7 Writing your own apps and calculators:
         - 7.2 Writing short calculations: 'NDI-matlab/tutorials/writing_own_app/2_ndi_calculators.md'
       - Planned:
@@ -292,7 +292,10 @@ nav:
             - dialog PACKAGE:
               - ndi.cloud.ui.dialog.selectCloudDataset: 'NDI-matlab/reference/+ndi/+cloud/+ui/+dialog/selectCloudDataset.m.md'
           - upload PACKAGE:
+            - ndi.cloud.upload.analyzeZipLog: 'NDI-matlab/reference/+ndi/+cloud/+upload/analyzeZipLog.m.md'
+            - ndi.cloud.upload.inventoryRemoteFiles: 'NDI-matlab/reference/+ndi/+cloud/+upload/inventoryRemoteFiles.m.md'
             - ndi.cloud.upload.new_dataset: 'NDI-matlab/reference/+ndi/+cloud/+upload/new_dataset.m.md'
+            - ndi.cloud.upload.recreateZipFile: 'NDI-matlab/reference/+ndi/+cloud/+upload/recreateZipFile.m.md'
             - ndi.cloud.upload.scan_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/scan_for_upload.m.md'
             - ndi.cloud.upload.upload_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_document_collection.m.md'
             - ndi.cloud.upload.upload_to_NDI_cloud: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_to_NDI_cloud.m.md'
@@ -781,8 +784,12 @@ nav:
           - ndi.util.choosefile: 'NDI-matlab/reference/+ndi/+util/choosefile.m.md'
           - ndi.util.choosefileordir: 'NDI-matlab/reference/+ndi/+util/choosefileordir.m.md'
           - ndi.util.downsampleTimeseries: 'NDI-matlab/reference/+ndi/+util/downsampleTimeseries.m.md'
+          - ndi.util.hexDiff: 'NDI-matlab/reference/+ndi/+util/hexDiff.m.md'
+          - ndi.util.hexDump: 'NDI-matlab/reference/+ndi/+util/hexDump.m.md'
           - ndi.util.toolboxdir: 'NDI-matlab/reference/+ndi/+util/toolboxdir.m.md'
           - ndi.util.unwrapTableCellContent: 'NDI-matlab/reference/+ndi/+util/unwrapTableCellContent.m.md'
+          - ndi.util.webSaveCurl: 'NDI-matlab/reference/+ndi/+util/webSaveCurl.m.md'
+          - ndi.util.webSaveVerbose: 'NDI-matlab/reference/+ndi/+util/webSaveVerbose.m.md'
           - openminds PACKAGE:
             - ndi.util.openminds.find_instance_name: 'NDI-matlab/reference/+ndi/+util/+openminds/find_instance_name.m.md'
             - ndi.util.openminds.find_techniques_names: 'NDI-matlab/reference/+ndi/+util/+openminds/find_techniques_names.m.md'
