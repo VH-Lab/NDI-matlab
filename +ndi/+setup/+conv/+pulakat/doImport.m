@@ -109,6 +109,8 @@ subjectMaker = ndi.setup.NDIMaker.subjectMaker();
 
 %% Step . Process DIA report
 
+tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
+
 diaFileName = fileList{contains(fileList,'DIA')};
 
 % Read DIA report
@@ -119,9 +121,10 @@ for i = 1:numel(diaSheetNames)
         'Sheet',diaSheetNames{i});
 end
 
-%% Get subject IDs from last sheet
-subjectIDs = diaCell{5}.Properties.VariableNames;
-subjectIDs = subjectIDs(startsWith(subjectIDs,'x'))';
+% Get subject IDs from last sheet
+diaVars = diaCell{5}.Properties.VariableNames;
+commonVars = diaVars(~startsWith(diaVars,'x'))';
+subjectIDs = diaVars(startsWith(diaVars,'x'))';
 diaIDTable = table();
 for i = 1:numel(subjectIDs)
     idInfo = strsplit(subjectIDs{i},'_');
@@ -132,9 +135,31 @@ for i = 1:numel(subjectIDs)
     diaIDTable{i,'Variable'} = idInfo(end);
     diaIDTable{i,'DataLabelRaw'} = {[num2str(str2double(idInfo{5}),'%.4i'),...
         '-',num2str(str2double(idInfo{3}),'%.2i'),'-',num2str(str2double(idInfo{4}),'%.2i')]};
+    diaIDTable{i,'Prefix'} = join(idInfo(1:end-1),'_');
 end
 rawVariables = unique(diaIDTable.Variable);
 diaIDTable = ndi.fun.table.join({diaIDTable},'uniqueVariables','animalCount1');
+
+%% Get all (unfiltered) data from last sheet
+rawTableCommon = diaCell{5}(:,commonVars);
+
+% Loop through all subjects
+for i = 1:height(diaIDTable)
+
+    % Create table for this subject
+    theseVars = diaVars(contains(diaVars,diaIDTable.Prefix{i}));
+    rawTable = diaCell{5}(:,theseVars);
+    for j = 1:numel(theseVars)
+        varName = strsplit(theseVars{j},'_');
+        rawTable = renamevars(rawTable,theseVars{j},varName{end});
+    end
+    rawTable = [rawTableCommon,rawTable];
+
+    % Create table row documents
+    tableDocMaker.table2ontologyTableRowDocs(...
+        rawTable,{'SubjectDocumentID'},'Overwrite',options.Overwrite);
+    
+end
 
 %% Step . Process SVS files 
 
