@@ -1,10 +1,7 @@
 % Choose the folder where the dataset is (or will be) stored
 % (e.g. /Users/myusername/Documents/MATLAB/Datasets)
-% dataPath = '/Users/ishanadeb/ndiwork/dataset';
-% savePath = '/Users/ishanadeb/ndiwork/data_download';
-% dataPath = fullfile(userpath,'Datasets');
-dataPath = fullfile(userpath,'data','Dabrowska');
-savePath = fullfile(userpath,'Datasets','ishana_data');
+dataPath = '/Users/ishanadeb/ndiwork/dataset';
+savePath = '/Users/ishanadeb/ndiwork/data_download';
 
 % Get dataset
 cloudDatasetId = '67f723d574f5f79c6062389d';
@@ -77,11 +74,6 @@ for i = 1:numProbes
     subjectID = uniqueProbes.SubjectDocumentIdentifier{i};
     subjectName = uniqueProbes.SubjectLocalIdentifier{i};
     prefixSubjectName = extractBefore(subjectName, '@');
-
-    % REMOVE BEFORE SENDING!!!
-    query = ndi.query('subject.local_identifier','contains_string',subjectName);
-    subjectDoc = session.database_search(query);
-    subjectID = subjectDoc{1}.id;
 
     % Get probe names
     probeNames = strsplit(uniqueProbes.ProbeName{i},',');
