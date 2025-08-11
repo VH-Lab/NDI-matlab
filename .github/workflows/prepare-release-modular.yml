@@ -1,0 +1,98 @@
+name: Prepare toolbox release (modular)
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Matches tags like v1.2.3
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number in major.minor.patch format'
+        required: true
+        type: string
+
+jobs:
+  validate_version:
+    name: Validate version number
+    uses: ehennestad/matbox-actions/.github/workflows/validate-version-job.yml@v1
+    with:
+      version: ${{ inputs.version }}
+      ref_name: ${{ github.ref_name }}
+
+  configure_test_matrix:
+    name: Configure release test matrix
+    uses: ehennestad/matbox-actions/.github/workflows/create-matrix-job.yml@v1
+    with:
+      tools_directory: tools
+      needs_python: false
+
+  test:
+    name: Run MATLAB tests (release matrix)
+    needs: [validate_version, configure_test_matrix]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Some graphical (GUI) tests fail on R2023b and R2024a in GitHub runner
+        # One failing test on R2023a. Need to debug.
+        MATLABVersion: [R2021b, R2022a, R2022b, R2024b]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start virtual display server
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.MATLABVersion }}
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Run tests
+        uses: matlab-actions/run-command@v2
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          command: |
+            setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
+            setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+
+            addpath(genpath( "src" ));
+            ndi.cloud.authenticate("InteractionEnabled", "off")
+            addpath(genpath( "tests" ));
+            addpath(genpath( "tools" ));
+            testToolbox(CreateBadge=false)
+
+      # Save the contents of the report directory from each release into an artifact.
+      - name: Save report directory
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-${{ matrix.MATLABVersion }}
+          path: docs/reports
+
+  release:
+    name: Package toolbox and create draft release
+    needs: [test, validate_version]
+    uses: ehennestad/matbox-actions/.github/workflows/package-toolbox-job.yml@v1
+    with:
+      version_number: ${{ needs.validate_version.outputs.version_number }}
+      source_directory: src
+      tools_directory: tools
+    secrets:
+      DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+
+  verify_installation:
+    name: Verify toolbox installation
+    needs: [release, validate_version]
+    uses: ehennestad/matbox-actions/.github/workflows/verify-installation-job.yml@v1
+    with:
+      toolbox_name: ${{ needs.release.outputs.toolbox_name }}

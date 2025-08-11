@@ -9,6 +9,7 @@
 __pycache__
 docs/NDI-matlab/documents/
 site/
+releases/
 mkdocs.yml
 docs/NDI-matlab/reference/
 docs/reports/
