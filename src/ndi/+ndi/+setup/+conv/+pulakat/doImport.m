@@ -19,6 +19,12 @@ if options.Overwrite
     end
 end
 
+% Get file types
+subjectFiles = fileList(contains(fileList,'animal_mapping'));
+diaFiles = fileList(contains(fileList,'DIA'));
+svsFiles = fileList(endsWith(fileList,'.svs'));
+echoFolders = unique(fileparts(fileList(contains(fileList,'.bimg'))));
+
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
@@ -33,210 +39,117 @@ if options.Overwrite
     session.cache.clear;
 end
 
+% We're going to want to think of how to name a session and coordinate each
+% mapping file with it's relevant session?
+
 %% Step 3. SUBJECTS. Create subject documents
 
-% Get subject metadata file
-subjectFileName = fullfile(dataParentDir,fileList{contains(fileList,'animal_mapping')});
+subjectTable = table();
+for i = 1:numel(subjectFiles)
 
-% Read animal mapping
-subjectTable = readtable(subjectFileName);
-for i = 1:height(subjectTable)
-    treatment = strsplit(subjectTable.Treatment{i},' ');
-    subjectTable.Strain{i} = treatment{1};
-    subjectTable.ExperimentalGroup{i} = treatment{2};
+    % Get subject metadata
+    subjectFile = fullfile(dataParentDir,subjectFiles{i});
+    theseSubjects = readtable(subjectFile);
+
+    % Rename vars
+    theseSubjects = renamevars(theseSubjects,{'Animal_','Cage_'},{'Animal','Cage'});
+
+    % Remove rows missing values and warn user
+    theseSubjects.DataLabelRaw = cellstr(theseSubjects.DataLabelRaw);
+    missingDataLabelInd = ndi.fun.table.identifyMatchingRows(theseSubjects,'DataLabelRaw','NaT');
+    if any(missingDataLabelInd)
+        warning('%i subjects missing DataLabelRaw value. Skipping these subject(s).', ...
+            sum(missingDataLabelInd))
+        theseSubjects(missingDataLabelInd,:) = [];
+    end
+
+    % Add missing information
+    for j = 1:height(theseSubjects)
+        treatment = strsplit(theseSubjects.Treatment{j},' ');
+        theseSubjects.Strain{j} = treatment{1};
+        theseSubjects.ExperimentalGroup{j} = treatment{2};
+    end
+    theseSubjects{:,'sessionID'} = session.id;
+
+    % Vertically stack subjectTable
+    subjectTable = ndi.fun.table.vstack({subjectTable,theseSubjects});
 end
-subjectTable.DataLabelRaw = cellstr(subjectTable.DataLabelRaw);
-missingDataLabelInd = ndi.fun.table.identifyMatchingRows(subjectTable,'DataLabelRaw','NaT');
-subjectTable{missingDataLabelInd,'DataLabelRaw'} = {' '};
+subjectTable.Cage = cellfun(@(c) replace(c,' ',''),subjectTable.Cage,'UniformOutput',false);
+subjectTable.Cage = cellfun(@(c) replace(c,'/','-'),subjectTable.Cage,'UniformOutput',false);
 
 % Create subjectMaker
 subjectMaker = ndi.setup.NDIMaker.subjectMaker();
 
+% Create subject documents
+[subjectInfo,theseSubjects.SubjectName] = ...
+    subjectMaker.getSubjectInfoFromTable(theseSubjects,...
+    @ndi.setup.conv.pulakat.createSubjectInformation);
+subDocStruct = subjectMaker.makeSubjectDocuments(subjectInfo);
+subjectMaker.addSubjectsToSessions({session}, subDocStruct.documents);
+subjectTable.SubjectDocumentIdentifier = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
 
+%% Step 4. Process DIA reports
 
-%% Step . Process DIA report
+for i = 1:numel(diaFiles)
 
-tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
+    % Read DIA report
+    diaFile = diaFiles{i};
+    diaSheetNames = sheetnames(diaFile);
+    allDataSheetInd = contains(diaSheetNames,'All data');
+    diaAllData = readtable(diaFile,'Sheet',diaSheetNames{allDataSheetInd});
 
-diaFileName = fileList{contains(fileList,'DIA')};
-
-% Read DIA report
-diaSheetNames = sheetnames(diaFileName);
-diaCell = cell(size(diaSheetNames));
-for i = 1:numel(diaSheetNames)
-    diaCell{i} = readtable(diaFileName,...
-        'Sheet',diaSheetNames{i});
-end
-
-% Get subject IDs from last sheet
-diaVars = diaCell{5}.Properties.VariableNames;
-commonVars = diaVars(~startsWith(diaVars,'x'))';
-subjectIDs = diaVars(startsWith(diaVars,'x'))';
-diaIDTable = table();
-for i = 1:numel(subjectIDs)
-    idInfo = strsplit(subjectIDs{i},'_');
-    diaIDTable{i,'animalCount1'} = idInfo(2);
-    diaIDTable{i,'StudyGroup'} = idInfo(3);
-    diaIDTable{i,'animalCount2'} = idInfo(4);
-    diaIDTable{i,'Animal_'} = idInfo(5);
-    diaIDTable{i,'Variable'} = idInfo(end);
-    diaIDTable{i,'DataLabelRaw'} = {[num2str(str2double(idInfo{5}),'%.4i'),...
-        '-',num2str(str2double(idInfo{3}),'%.2i'),'-',num2str(str2double(idInfo{4}),'%.2i')]};
-    diaIDTable{i,'Prefix'} = join(idInfo(1:end-1),'_');
-end
-rawVariables = unique(diaIDTable.Variable);
-diaIDTable = ndi.fun.table.join({diaIDTable},'uniqueVariables','animalCount1');
-
-%% Get all (unfiltered) data from last sheet
-rawTableCommon = diaCell{5}(:,commonVars);
-
-% Loop through all subjects
-for i = 1:height(diaIDTable)
-
-    % Create table for this subject
-    theseVars = diaVars(contains(diaVars,diaIDTable.Prefix{i}));
-    rawTable = diaCell{5}(:,theseVars);
-    for j = 1:numel(theseVars)
-        varName = strsplit(theseVars{j},'_');
-        rawTable = renamevars(rawTable,theseVars{j},varName{end});
+    % Get subject IDs from last sheet
+    diaVars = diaAllData.Properties.VariableNames;
+    diaSubjectVars = diaVars(startsWith(diaVars,'x'))';
+    diaTable = table();
+    for j = 1:numel(diaSubjectVars)
+        idInfo = strsplit(diaSubjectVars{j},'_');
+        diaTable{j,'DataLabelRaw'} = {[num2str(str2double(idInfo{5}),'%.4i'),...
+            '-',num2str(str2double(idInfo{3}),'%.2i'),'-',num2str(str2double(idInfo{4}),'%.2i')]};
     end
-    rawTable = [rawTableCommon,rawTable];
+    diaTable = ndi.fun.table.join({diaTable},'uniqueVariables','DataLabelRaw');
+    diaTable{:,'diaFile'} = {diaFile};
 
-    % Create table row documents
-    tableDocMaker.table2ontologyTableRowDocs(...
-        rawTable,{'SubjectDocumentID'},'Overwrite',options.Overwrite);
-    
-end
+% How do we want to deal with matching each DIA report with the subjects?
+% Are we creating a copy of the DIA report for each subject? What kind of
+% document are we attaching it to? generic_file.json?
 
-%% Step . Process SVS files 
+%% Step 5. Process SVS files
 
-% Get .svs files
-svsFiles = fileList(endsWith(fileList,'.svs'));
-
-% Initialize documents
-imageCollectionDocs = cell(size(svsFiles));
-imageDocs = cell(numel(svsFiles),7);
-ontologyLabelDocs = cell(numel(svsFiles),8);
-
+% Get cage #s
+pattern = '\w+(?:-\w+)+';
+allIdentifiers = regexp(svsFiles, pattern, 'match');
+cageIdentifiers = cell(size(allIdentifiers));
+animalIdentifiers = cell(size(allIdentifiers));
+subjectIdentifiers = cell(size(allIdentifiers));
+svsIdentifiers = cell(size(allIdentifiers));
 for i = 1:numel(svsFiles)
-
-    % Get image file info
-    fileName = fullfile(dataParentDir,svsFiles{i});
-    fileInfo = imfinfo(fileName);
-
-    % Create image collection documents
-    [~,fileLabel,fileFormat] = fileparts(fileName);
-    imageCollection = struct(...
-        'label',fileLabel,...
-        'format',replace(fileFormat,'.',''));
-    imageCollectionDocs{i} = ndi.document('imageCollection',...
-        'imageCollection',imageCollection) + session.newdocument();
-    imageCollectionDocs{i} = imageCollectionDocs{i}.set_dependency_value(...
-        'subject_id',subject_id);
-
-    % Create ontology label document
-    ontologyLabel = struct('ontologyNode','UBERON:');
-    ontologyLabelDoc = ndi.document('ontologyLabel',...
-        'ontologyLabel',ontologyLabel) + session.newdocument();
-    ontologyLabelDocs{i,1} = ontologyLabelDoc.set_dependency_value(...
-        'labeledDoc_id',imageCollectionDocs{i}.id);
-
-    for j = 1:numel(fileInfo)
-
-        info = fileInfo(j);
-
-        % Get data class (without reading image)
-        if strcmp(info.ColorType,'truecolor')
-            dataType = ['uint',num2str(info.BitsPerSample(1))];
-        end
-
-        % Create image documents
-        imageStack_parameters = struct(...
-            'dimension_order','YXC',...
-            'dimension_labels','height,width,color',...
-            'dimension_size',[info.Height,info.Width,numel(info.BitsPerSample)],...
-            'dimension_scale',[NaN,NaN,NaN],...
-            'dimension_scale_units',strjoin([repmat({info.ResolutionUnit},1,2),{'RGB'}],','),...
-            'data_type',class(im),...
-            'data_limits',[info.MinSampleValue(1) info.MaxSampleValue(1)],...
-            'timestamp',convertTo(datetime(info.FileModDate),'datenum'),...
-            'clocktype','exp_global_time');
-        image = struct(...
-            'label',info.ImageDescription,...
-            'format',info.Format,...
-            'compression',info.Compression);
-        imageDocs{i,j} = ndi.document('imageDocs','image',image,...
-            'imageStack_parameters',imageStack_parameters) + session.newdocument();
-        imageDocs{i,j} = doc.add_file('imageFile', filepath);
-        imageDocs{i,j} = imageDocs{i,j}.set_dependency_value(...
-            'subject_id',subject_id,...
-            'imageCollection_id',imageCollectionDocs{i}.id);
-
-        % Add ontologyLabel
-        ontologyLabelDocs{i,j+1} = ontologyLabelDoc.set_dependency_value(...
-            'labeledDoc_id',imageDocs{i,j}.id);
+    for j = 1:numel(allIdentifiers{i})
+        lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
+        cageIdentifiers{i}{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
+        animalIdentifiers{i}{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
+        svsIdentifiers{i}{j} = svsFiles{i};
     end
 end
+svsTable = table([cageIdentifiers{:}]',[svsIdentifiers{:}]',...
+    'VariableNames',{'Cage','svsFile'});
 
-% Add documents to database
-session.database_add(imageCollectionDocs{:});
-session.database_add(imageDocs{:});
-session.database_add(ontologyLabelDocs{:});
+% Same as DIA report. Need to figure out how to best add these files and alert
+% user to subjects missing svs files and svs files missing subjects.
 
+%% Step 6. Process echo files
 
-%% ARCHIVED SUBJECT READER
+pattern = '(?<=/)\d+[A-Z]?';
+cageIdentifiers = regexp(echoFolders, pattern, 'match');
+echoTable = table([cageIdentifiers{:}]',echoFolders,...
+    'VariableNames',{'Cage','echoFolder'});
 
-subjectTable{:,'experimentType'} = {'protein'};
-subjectTable = renamevars(subjectTable,'DataLabelGroup','StudyGroup');
+% Compress each echo data folder
+% zip([echoFolder,'.zip'],echoFolderPath);
 
-% Read experimentSchedule
-experimentScheduleFileName = fullfile(dataParentDir,fileList{contains(fileList,'ExperimentSchedule')});
-experimentScheduleSheetNames = sheetnames(experimentScheduleFileName);
-experimentScheduleCell = cell(size(experimentScheduleSheetNames));
-for i = 1:numel(experimentScheduleSheetNames)
-    experimentScheduleCell{i} = readtable(experimentScheduleFileName,...
-        'Sheet',experimentScheduleSheetNames{i});
-end
+%%
 
-% Process study groups from first sheet of experimentSchedule
-group1 = unique(experimentScheduleCell{1}.x18Rats); group1(strcmp(group1,'')) = [];
-group2 = unique(experimentScheduleCell{1}.x32Rats); group2(strcmp(group2,'')) = [];
-group3 = unique(experimentScheduleCell{1}.x25Rats); group3(strcmp(group3,'')) = [];
-subjectGroups = table([group1;group2;group3],...
-    [ones(size(group1));2*ones(size(group2));3*ones(size(group3))],...
-    'VariableNames',{'Cage_','StudyGroup'});
-subjectGroups{:,'PairInCage'} = {''};
-subjectGroups{endsWith(subjectGroups.Cage_,'A','IgnoreCase',true),'PairInCage'} = {'A'};
-subjectGroups{endsWith(subjectGroups.Cage_,'B','IgnoreCase',true),'PairInCage'} = {'B'};
-subjectGroups.CageID = subjectGroups.Cage_; removeLetters = {' ','a','A','b','B'};
-for i = 1:numel(removeLetters)
-    subjectGroups.CageID = replace(subjectGroups.CageID,removeLetters{i},'');
-end
+summaryTable = ndi.fun.table.join({subjectTable,diaTable,svsTable,echoTable},...
+    'uniqueVariables',{'Animal','Cage'})
 
-% Process experiment timeline from first sheet of experimentSchedule
-% Looks like experimentSchedule sheet 2 has redundant info. Checking with
-% lab which version is correct
-experimentScheduleCell{1} = renamevars(experimentScheduleCell{1},'StudyGroup1Schedule','Date');
-group1 = renamevars(experimentScheduleCell{1}(:,{'Date','Var8','Var9'}),...
-    {'Var8','Var9'},{'Week','Action'}); group1{:,'StudyGroup'} = 1;
-group2 = renamevars(experimentScheduleCell{1}(:,{'Date','StudyGroup2Schedule','Var11'}),...
-    {'StudyGroup2Schedule','Var11'},{'Week','Action'}); group2{:,'StudyGroup'} = 2;
-group3 = renamevars(experimentScheduleCell{1}(:,{'Date','StudyGroup3Schedule','Var14'}),...
-    {'StudyGroup3Schedule','Var14'},{'Week','Action'}); group3{:,'StudyGroup'} = 3;
-experimentTimeline = ndi.fun.table.vstack({group1,group2,group3});
-indValid = ndi.fun.table.identifyValidRows(experimentTimeline,{'Date','Week'},{NaT,NaN});
-experimentTimeline = experimentTimeline(indValid,:);
-
-% Process subject info from third sheet of experimentSchedule
-subjectInfo = renamevars(experimentScheduleCell{3},{'ID_','Cage_'},...
-    {'Animal_','CageNum'});
-subjectInfo.CageID = arrayfun(@num2str,subjectInfo.CageNum,'UniformOutput',false);
-indValid = ndi.fun.table.identifyValidRows(subjectInfo,{'Animal_'});
-subjectInfo = subjectInfo(indValid,:);
-subjectInfo{:,'experimentType'} = {'echo'};
-
-% Combine subject tables
-subjectTable = ndi.fun.table.vstack({subjectTable,...
-    outerjoin(subjectGroups,subjectInfo,'MergeKeys',true)});
-subjectTable = ndi.fun.table.moveColumnsLeft(subjectTable,...
-    {'experimentType','StudyGroup','ExperimentalGroup'});
+% Note: there can be more than one svsFiles per subject
