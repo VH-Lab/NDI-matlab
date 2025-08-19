@@ -54,11 +54,9 @@ jobs:
 
       # Publish test results
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+        uses: mikepenz/action-junit-report@v4
         with:
-          files: "docs/reports/test-results.xml"
-          check_name: "Test Results (${{ matrix.environment }})"
+          report_paths: 'docs/reports/test-results.xml'
 
       - name: Restore MATLAB Path
         uses: matlab-actions/run-command@v2

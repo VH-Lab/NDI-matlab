@@ -228,7 +228,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 roundtripDocument = did.datastructures.jsonencodenan(roundtripDocument);
             end
             testCase.verifyEqual(roundtripDocument, originalDocument, ...
-                "Round-trip document (actual) does not match original document (expected)")
+                "Round-trip document (actual char) does not match original document (expected char)")
         end
     end
 end
