@@ -52,6 +52,14 @@ jobs:
             ndi.cloud.authenticate("InteractionEnabled", "off")
             testCloudApi()
 
+      # Publish test results
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: "docs/reports/test-results.xml"
+          check_name: "Test Results (${{ matrix.environment }})"
+
       - name: Restore MATLAB Path
         uses: matlab-actions/run-command@v2
         if: always()
