@@ -7,6 +7,10 @@ classdef DocumentsTest < matlab.unittest.TestCase
         DatasetName = 'NDI_TEMPORARY_TEST';
     end
 
+    properties (TestParameter)
+        DocumentValue = {[], nan, inf, -inf, 'hello world', 0, pi}
+    end
+
     properties
         DatasetID (1,1) string = missing % ID of dataset used for all tests
     end
@@ -27,26 +31,31 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 'Expected 0 documents for new dataset')
         end
 
-        function testCase = testAddDocument(testCase)
-            documentId = testCase.addDocumentToDataset();
+        function testCase = testAddDocument(testCase, DocumentValue)
+            documentId = testCase.addDocumentToDataset(DocumentValue);
             testCase.addTeardown(@() testCase.deleteDocumentFromDataset(documentId))
             testCase.verifyNumDocumentsEqual(1, "after creating 1 document")
+            %testCase.verifyDocumentsEqual
         end
 
-        function testCase = testGetDocument(testCase)
+        function testCase = testGetDocument(testCase, DocumentValue)
                 
-            documentId = testCase.addDocumentToDataset();
+            [documentId, originalDocument] = testCase.addDocumentToDataset(DocumentValue);
             testCase.addTeardown(@() testCase.deleteDocumentFromDataset(documentId))
             
-            [~, document] = ...
+            [~, roundTripDocument] = ...
                 ndi.cloud.api.documents.get_document(...
                     testCase.DatasetID, documentId);
             
-            testCase.verifyClass(document, 'struct', ...
+            testCase.verifyClass(roundTripDocument, 'struct', ...
                 "Expected to get a document as a structure")
             
-            testCase.verifyTrue(startsWith(document.name, "Test Document"), ...
+            testCase.verifyTrue(startsWith(roundTripDocument.name, "Test Document"), ...
                 "Expected document name to start with 'Test Document'")
+
+            % Remove cloud id before comparing documents:
+            roundTripDocument = rmfield(roundTripDocument, 'id');
+            testCase.verifyDocumentsEqual(roundTripDocument, originalDocument)
         end
         
         function testCase = testUpdateDocument(testCase)
@@ -107,13 +116,13 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.verifyNumDocumentsEqual(0, "post deletion")
         end
 
-        function testDocumentBulkUploadAndDownload(testCase)
+        function testDocumentBulkUploadAndDownload(testCase, DocumentValue)
             import matlab.unittest.fixtures.WorkingFolderFixture
             testCase.applyFixture(WorkingFolderFixture)
 
             % Create test documents
             numDocuments = 5;
-            testDocuments = createTestDocuments(numDocuments);
+            testDocuments = createTestDocuments(numDocuments, DocumentValue);
 
             % Upload documents
             ndi.cloud.upload.upload_document_collection(testCase.DatasetID, testDocuments)
@@ -139,9 +148,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 ndi.cloud.download.download_document_collection(testCase.DatasetID);
            
             for i = 1:numDocuments
-                testCase.verifyEqual(...
-                    testDocuments{i}, ...
-                    jsonencode(downloadedDocuments{i}.document_properties))
+                testCase.verifyDocumentsEqual(...
+                    downloadedDocuments{i}.document_properties, ... % Roundtrip
+                    testDocuments{i}) % Original
             end
 
             % Download subset of documents using bulk download
@@ -152,9 +161,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
            
             for i = 1:numel(docIdx)
-                testCase.verifyEqual(...
-                    testDocuments{docIdx(i)}, ...
-                    jsonencode(downloadedDocumentSubset{i}.document_properties))
+                testCase.verifyDocumentsEqual(...
+                    downloadedDocumentSubset{i}.document_properties, ... % Roundtrip
+                    testDocuments{docIdx(i)}) % Original
             end
 
             % Clean up (delete documents)
@@ -168,13 +177,28 @@ classdef DocumentsTest < matlab.unittest.TestCase
     end
 
     methods % Non-test methods
-        function documentId = addDocumentToDataset(testCase)
+        function [documentId, testDocument] = addDocumentToDataset(testCase, documentValue)
         % addDocumentToDataset - Create document and add it to the test dataset
-            testDocument = createTestDocuments(1);
+
+            arguments
+                testCase (1,1) matlab.unittest.TestCase
+                documentValue = [] % any
+            end
+
+            testDocument = createTestDocuments(1, documentValue);
             
             % Create a new document
-            document = ndi.cloud.api.documents.add_document(testCase.DatasetID, testDocument);
-            documentId = document.id;
+            try 
+                document = ndi.cloud.api.documents.add_document(testCase.DatasetID, testDocument);
+                documentId = document.id;
+            catch MECause
+                ME = MException('Trying to upload document:\n%s', jsonencode(testDocument));
+                ME = ME.addCause(ME);
+                throw(ME)
+            end
+            if nargout == 1
+                clear testDocument
+            end
         end
 
         function deleteDocumentFromDataset(testCase, documentId)
@@ -197,19 +221,29 @@ classdef DocumentsTest < matlab.unittest.TestCase
             % % [~, summary] = ndi.cloud.api.documents.list_dataset_documents(testCase.DatasetID);
             % % testCase.verifyEqual(numel(summary.documents), numDocuments, message)
         end
+
+        function verifyDocumentsEqual(testCase, roundtripDocument, originalDocument)
+            % Convert structure to jsonencoded text
+            if isstruct(roundtripDocument)
+                roundtripDocument = did.datastructures.jsonencodenan(roundtripDocument);
+            end
+            testCase.verifyEqual(roundtripDocument, originalDocument, ...
+                "Round-trip document (actual) does not match original document (expected)")
+        end
     end
 end
 
-function testDocuments = createTestDocuments(numDocuments)
+function testDocuments = createTestDocuments(numDocuments, documentValue)
     arguments
         numDocuments (1,1) uint32 = 1
+        documentValue = []% any
     end
     testDocuments = cell(1, numDocuments);
 
     for i = 1:numDocuments
         randomName = sprintf("Test Document %s", char(randi([65 90], 1, 5)) );
-        newTestDocument = struct("name", randomName);
-        testDocuments{i} = jsonencode(newTestDocument);
+        newTestDocument = struct("name", randomName, "value", documentValue);
+        testDocuments{i} = did.datastructures.jsonencodenan(newTestDocument);
     end
     if numDocuments == 1
         testDocuments = testDocuments{1};
