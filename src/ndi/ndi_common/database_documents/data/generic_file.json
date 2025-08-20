@@ -16,8 +16,8 @@
 		"file_list": [ "generic_file.ext" ]
     },
 	"generic_file":  {
-		"ontologyFileType":		"",
-		"originalFileName":		"",
+		"fileName":		"",
+		"fileFormatOntology":		"",
 		"fileExtension":		""
 	}
 }
