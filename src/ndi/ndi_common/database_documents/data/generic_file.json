@@ -17,7 +17,6 @@
     },
 	"generic_file":  {
 		"fileName":		"",
-		"fileFormatOntology":		"",
-		"fileExtension":		""
+		"fileFormatOntology":		""
 	}
 }
