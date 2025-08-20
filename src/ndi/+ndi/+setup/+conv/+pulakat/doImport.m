@@ -23,7 +23,10 @@ end
 subjectFiles = fileList(contains(fileList,'animal_mapping'));
 diaFiles = fileList(contains(fileList,'DIA'));
 svsFiles = fileList(endsWith(fileList,'.svs'));
-echoFolders = unique(fileparts(fileList(contains(fileList,'.bimg'))));
+echoFiles = fileList(contains(fileList,'.bimg'));
+[echoFolderNames,echoFileNames] = fileparts(echoFiles);
+echoSessions = unique(fullfile(echoFolderNames,echoFileNames));
+echoFolders = unique(echoFolderNames);
 
 %% Step 2: SESSIONS. Build the session.
 
@@ -90,6 +93,7 @@ subjectTable.SubjectDocumentIdentifier = cellfun(@(d) d{1}.id,subDocStruct.docum
 
 %% Step 4. Process DIA reports
 
+diaTable = table();
 for i = 1:numel(diaFiles)
 
     % Read DIA report
@@ -101,38 +105,90 @@ for i = 1:numel(diaFiles)
     % Get subject IDs from last sheet
     diaVars = diaAllData.Properties.VariableNames;
     diaSubjectVars = diaVars(startsWith(diaVars,'x'))';
-    diaTable = table();
+    thisDiaTable = table();
     for j = 1:numel(diaSubjectVars)
         idInfo = strsplit(diaSubjectVars{j},'_');
-        diaTable{j,'DataLabelRaw'} = {[num2str(str2double(idInfo{5}),'%.4i'),...
+        thisDiaTable{j,'DataLabelRaw'} = {[num2str(str2double(idInfo{5}),'%.4i'),...
             '-',num2str(str2double(idInfo{3}),'%.2i'),'-',num2str(str2double(idInfo{4}),'%.2i')]};
     end
-    diaTable = ndi.fun.table.join({diaTable},'uniqueVariables','DataLabelRaw');
-    diaTable{:,'diaFile'} = {diaFile};
+    thisDiaTable = ndi.fun.table.join({thisDiaTable},'uniqueVariables','DataLabelRaw');
+
+    % Add subject IDs
+    thisDiaTable = ndi.fun.table.join({subjectTable,thisDiaTable},...
+        'uniqueVariables',{'Animal','Cage'});
+
+    % Add subject_group to database
+    subject_group_doc = ndi.document('subject_group') + session.newdocument();
+    for j = 1:height(thisDiaTable)
+        subject_group_doc = subject_group_doc.add_dependency_value_n(...
+            'subject_id',thisDiaTable.SubjectDocumentIdentifier{j});
+    end
+    session.database_add(subject_group_doc);
+
+    % Add DIA file to database
+    generic_file = struct('fileName',diaFile,...
+        'fileFormatOntology','format:3620',...
+        'fileExtension','xlsx');
+    generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
+        session.newdocument();
+    generic_file_doc.add_file('generic_file.ext', diaFile);
+    generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
+    session.database_add(generic_file_doc);
+
+    % Combine data
+    thisDiaTable{:,'diaFile'} = {diaFile};
+    thisDiaTable{:,'diaFile_id'} = {generic_file_doc.id};
+    diaTable = [diaTable;thisDiaTable];
+end
 
 % How do we want to deal with matching each DIA report with the subjects?
-% Are we creating a copy of the DIA report for each subject? What kind of
-% document are we attaching it to? generic_file.json?
+% Are we creating a copy of the DIA report for each subject?
 
 %% Step 5. Process SVS files
 
 % Get cage #s
 pattern = '\w+(?:-\w+)+';
 allIdentifiers = regexp(svsFiles, pattern, 'match');
-cageIdentifiers = cell(size(allIdentifiers));
-animalIdentifiers = cell(size(allIdentifiers));
-subjectIdentifiers = cell(size(allIdentifiers));
-svsIdentifiers = cell(size(allIdentifiers));
+svsTable = table();
 for i = 1:numel(svsFiles)
+    cageIdentifiers = cell(size(allIdentifiers{i}));
+    animalIdentifiers = cell(size(allIdentifiers{i}));
+    svsIdentifiers = cell(size(allIdentifiers{i}));
     for j = 1:numel(allIdentifiers{i})
         lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
-        cageIdentifiers{i}{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
-        animalIdentifiers{i}{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
-        svsIdentifiers{i}{j} = svsFiles{i};
+        cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
+        animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
+        svsIdentifiers{j} = svsFiles{i};
     end
+    thisSvsTable = table(cageIdentifiers',svsIdentifiers',...
+        'VariableNames',{'Cage','svsFile'});
+    thisSvsTable = ndi.fun.table.join({subjectTable,thisSvsTable},...
+        'uniqueVariables',{'Animal','Cage'});
+
+    % Add subject_group to database
+    if height(thisSvsTable) > 1
+        subject_group_doc = ndi.document('subject_group') + session.newdocument();
+        for j = 1:numel(allIdentifiers{i})
+            subject_group_doc = subject_group_doc.add_dependency_value_n(...
+                'subject_id',thisSvsTable.SubjectDocumentIdentifier{j});
+        end
+        session.database_add(subject_group_doc);
+    else
+        subject_group = 1;
+    end
+
+    % Add SVS file to database
+    generic_file = struct('fileName',svsFiles{i},...
+        'fileFormatOntology','NCIT:C172214',...
+        'fileExtension','svs');
+    generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
+        session.newdocument();
+    generic_file_doc.add_file('generic_file.ext', svsFiles{i});
+    generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
+    session.database_add(generic_file_doc);
+
+    svsTable = [svsTable;thisSvsTable];
 end
-svsTable = table([cageIdentifiers{:}]',[svsIdentifiers{:}]',...
-    'VariableNames',{'Cage','svsFile'});
 
 % Same as DIA report. Need to figure out how to best add these files and alert
 % user to subjects missing svs files and svs files missing subjects.
@@ -143,13 +199,38 @@ pattern = '(?<=/)\d+[A-Z]?';
 cageIdentifiers = regexp(echoFolders, pattern, 'match');
 echoTable = table([cageIdentifiers{:}]',echoFolders,...
     'VariableNames',{'Cage','echoFolder'});
+echoTable = ndi.fun.table.join({subjectTable,echoTable},...
+        'uniqueVariables',{'Animal','Cage'});
 
-% Compress each echo data folder
-% zip([echoFolder,'.zip'],echoFolderPath);
+for i = 1:numel(echoSessions)
+   
+    % Get files in the echo session
+    echoFiles = fileList(contains(fileList,echoSessions{i}));
 
-%%
+    % Get matching subject
+    ind = ndi.fun.table.identifyMatchingRows(echoTable,'echoFolder',...
+        fileparts(echoSessions{i}));
+    if ~any(ind)
+        warning('no subject found matching the files: %s',echoSessions{i});
+        continue
+    end
+    subject_id = echoTable.SubjectDocumentIdentifier{ind};
+    
+    % Zip files in the echo session
+    zipFile = fullfile(dataParentDir,[echoSessions{i},'.zip']);
+    zip(zipFile, fullfile(dataParentDir,echoFiles));
 
-summaryTable = ndi.fun.table.join({subjectTable,diaTable,svsTable,echoTable},...
-    'uniqueVariables',{'Animal','Cage'})
+    % Add echo zip file to database
+    generic_file = struct('fileName',zipFile,...
+        'fileFormatOntology','format:3987',...
+        'fileExtension','zip');
+    generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
+        session.newdocument();
+    generic_file_doc.add_file('generic_file.ext', zipFile);
+    generic_file_doc.set_dependency_value('document_id', subject_id);
+    session.database_add(generic_file_doc);
+    delete(zipFile);
+end
 
-% Note: there can be more than one svsFiles per subject
+%% Retrieve files
+
