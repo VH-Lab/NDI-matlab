@@ -88,14 +88,12 @@ end
                             break; 
                         else % Processes an empty column
                             % Captures the declared type from an empty table's schema for more accurate inference
-                            if isempty(declaredTypeForEmpty) && ~isempty(T_candidate.Properties.VariableTypes)
-                                idx_var = find(strcmp(varName, T_candidate.Properties.VariableNames), 1);
-                                if ~isempty(idx_var)
-                                    declaredTypeForEmpty = T_candidate.Properties.VariableTypes{idx_var};
-                                    % Preserves multi-column definition from schema if present
-                                    if size(candidateCol, 2) > 0
-                                        bestNumCols = size(candidateCol, 2);
-                                    end
+                            if isempty(declaredTypeForEmpty)
+                                declaredTypeForEmpty = class(candidateCol);
+                                
+                                % Preserves multi-column definition from schema if present
+                                if size(candidateCol, 2) > 0
+                                    bestNumCols = size(candidateCol, 2);
                                 end
                             end
                         end
