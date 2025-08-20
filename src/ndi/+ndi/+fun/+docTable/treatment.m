@@ -127,6 +127,10 @@ docIDs(removeRows) = [];
 dependencyIDs(removeRows) = [];
 
 % Stack table
-treatmentTable = ndi.fun.table.vstack(treatmentCell);
+if ~isempty(treatmentCell)
+    treatmentTable = ndi.fun.table.vstack(treatmentCell);
+else
+    treatmentTable = table();
+end
 
 end
