@@ -127,12 +127,11 @@ for i = 1:numel(diaFiles)
 
     % Add DIA file to database
     generic_file = struct('fileName',diaFile,...
-        'fileFormatOntology','format:3620',...
-        'fileExtension','xlsx');
+        'fileFormatOntology','format:3620');
     generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    generic_file_doc.add_file('generic_file.ext', diaFile);
-    generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
+    generic_file_doc = generic_file_doc.add_file('generic_file.ext', diaFile);
+    generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
     session.database_add(generic_file_doc);
 
     % Combine data
@@ -179,12 +178,11 @@ for i = 1:numel(svsFiles)
 
     % Add SVS file to database
     generic_file = struct('fileName',svsFiles{i},...
-        'fileFormatOntology','NCIT:C172214',...
-        'fileExtension','svs');
+        'fileFormatOntology','NCIT:C172214');
     generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    generic_file_doc.add_file('generic_file.ext', svsFiles{i});
-    generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
+    generic_file_doc = generic_file_doc.add_file('generic_file.ext', svsFiles{i});
+    generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
     session.database_add(generic_file_doc);
 
     svsTable = [svsTable;thisSvsTable];
@@ -221,16 +219,37 @@ for i = 1:numel(echoSessions)
     zip(zipFile, fullfile(dataParentDir,echoFiles));
 
     % Add echo zip file to database
-    generic_file = struct('fileName',zipFile,...
-        'fileFormatOntology','format:3987',...
-        'fileExtension','zip');
+    generic_file = struct('fileName',[echoSessions{i},'.zip'],...
+        'fileFormatOntology','format:3987');
     generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    generic_file_doc.add_file('generic_file.ext', zipFile);
-    generic_file_doc.set_dependency_value('document_id', subject_id);
+    generic_file_doc = generic_file_doc.add_file('generic_file.ext', zipFile);
+    generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_id);
     session.database_add(generic_file_doc);
     delete(zipFile);
 end
 
 %% Retrieve files
 
+subjectSummary = ndi.fun.docTable.subject(session);
+
+ind = 1;
+
+subject_id = subjectSummary.SubjectDocumentIdentifier{ind};
+subjectName = subjectSummary.SubjectLocalIdentifier{ind}
+queryDependency = ndi.query('','depends_on','',subject_id);
+docs = session.database_search(queryDependency);
+docs_check = docs;
+while numel(docs_check) > 0
+    queryDependency = ndi.query('','depends_on','',docs_check{1}.id);
+    docs_new = session.database_search(queryDependency);
+    docs = [docs,docs_new];
+    docs_check = [docs_check,docs_new];
+    docs_check(1) = [];
+end
+docClass = cellfun(@doc_class,docs,'UniformOutput',false)';
+
+fileDocs = docs(strcmp(docClass,'generic_file'));
+fileDocNames = cellfun(@(d) d.document_properties.generic_file.fileName,fileDocs,'UniformOutput',false)'
+
+% Why are their additional svs files being returned?
