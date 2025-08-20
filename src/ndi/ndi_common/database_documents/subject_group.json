@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/subject_group.json",
+		"validation":						"$NDISCHEMAPATH\/subject_group_schema.json",
+		"class_name":						"subject_group",
+		"property_list_name":					"subject_group",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+    "depends_on": [
+		{	"name": "subject_id",
+			"value": ""
+		}
+	],
+	"subject_group": { }
+}

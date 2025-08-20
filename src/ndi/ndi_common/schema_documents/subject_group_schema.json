@@ -1,0 +1,10 @@
+{
+	"classname": "subject_group",
+	"superclasses":  [ "base"],
+	"depends_on": [ 
+		{ "name": "subject_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"subject_group": [ ]
+}
+
