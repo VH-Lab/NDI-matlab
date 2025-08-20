@@ -67,7 +67,9 @@ end
 % Add associated metadata
 subjectTable = outerjoin(subjectTable,strainTable,'MergeKeys',true);
 subjectTable = outerjoin(subjectTable,bioSexTable,'MergeKeys',true);
-subjectTable = outerjoin(subjectTable,treatmentTable,'MergeKeys',true);
+if ~isempty(treatmentTable)
+    subjectTable = outerjoin(subjectTable,treatmentTable,'MergeKeys',true);
+end
 
 % Remove any metadata not linked to a subject
 indValid = ndi.fun.table.identifyValidRows(subjectTable,'SubjectDocumentIdentifier',{''});
