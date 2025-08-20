@@ -9,10 +9,6 @@
 			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
 		]
         },
-    "depends_on": [
-		{	"name": "subject_id",
-			"value": ""
-		}
-	],
+    "depends_on": [ ],
 	"subject_group": { }
 }
