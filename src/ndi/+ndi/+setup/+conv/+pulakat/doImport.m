@@ -23,7 +23,8 @@ end
 subjectFiles = fileList(contains(fileList,'animal_mapping'));
 diaFiles = fileList(contains(fileList,'DIA'));
 svsFiles = fileList(endsWith(fileList,'.svs'));
-echoFiles = fileList(contains(fileList,'.bimg'));
+echoFiles = fileList(contains(fileList,'.bimg') | contains(fileList,'.pimg') | ...
+    contains(fileList,'.mxml') | contains(fileList,'.vxml'));
 [echoFolderNames,echoFileNames] = fileparts(echoFiles);
 echoSessions = unique(fullfile(echoFolderNames,echoFileNames));
 echoFolders = unique(echoFolderNames);
@@ -130,7 +131,8 @@ for i = 1:numel(diaFiles)
         'fileFormatOntology','format:3620');
     generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    generic_file_doc = generic_file_doc.add_file('generic_file.ext', diaFile);
+    generic_file_doc = generic_file_doc.add_file('generic_file.ext', ...
+        fullfile(dataParentDir,diaFile),'delete_original',0);
     generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
     session.database_add(generic_file_doc);
 
@@ -163,6 +165,10 @@ for i = 1:numel(svsFiles)
         'VariableNames',{'Cage','svsFile'});
     thisSvsTable = ndi.fun.table.join({subjectTable,thisSvsTable},...
         'uniqueVariables',{'Animal','Cage'});
+    if isempty(thisSvsTable)
+        warning('no subject found matching the files: %s',svsFiles{i});
+        continue
+    end
 
     % Add subject_group to database
     if height(thisSvsTable) > 1
@@ -172,8 +178,9 @@ for i = 1:numel(svsFiles)
                 'subject_id',thisSvsTable.SubjectDocumentIdentifier{j});
         end
         session.database_add(subject_group_doc);
+        subject_id = subject_group_doc.id;
     else
-        subject_group = 1;
+        subject_id = thisSvsTable.SubjectDocumentIdentifier{1};
     end
 
     % Add SVS file to database
@@ -181,8 +188,9 @@ for i = 1:numel(svsFiles)
         'fileFormatOntology','NCIT:C172214');
     generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    generic_file_doc = generic_file_doc.add_file('generic_file.ext', svsFiles{i});
-    generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
+    generic_file_doc = generic_file_doc.add_file('generic_file.ext', ...
+        fullfile(dataParentDir,svsFiles{i}),'delete_original',0);
+    generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_id);
     session.database_add(generic_file_doc);
 
     svsTable = [svsTable;thisSvsTable];
@@ -216,7 +224,9 @@ for i = 1:numel(echoSessions)
     
     % Zip files in the echo session
     zipFile = fullfile(dataParentDir,[echoSessions{i},'.zip']);
-    zip(zipFile, fullfile(dataParentDir,echoFiles));
+    if ~exist(zipFile,'file')
+        zip(zipFile, fullfile(dataParentDir,echoFiles));
+    end
 
     % Add echo zip file to database
     generic_file = struct('fileName',[echoSessions{i},'.zip'],...
@@ -226,23 +236,41 @@ for i = 1:numel(echoSessions)
     generic_file_doc = generic_file_doc.add_file('generic_file.ext', zipFile);
     generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_id);
     session.database_add(generic_file_doc);
-    delete(zipFile);
+end
+
+%% Ingestion
+
+datasetDir = fullfile(dataPath,'pulakat_2025');
+if ~exist(datasetDir,'dir')
+    mkdir(datasetDir);
+elseif options.Overwrite
+    rmdir(datasetDir,'s');
+    mkdir(datasetDir);
+end
+dataset = ndi.dataset.dir('pulakat_2025',datasetDir);
+
+% Ingest and add sessions
+sessions = {session};
+for i = 1:numel(sessions)
+    sessionDatabaseDir = fullfile(sessions{i}.path,'.ndi');
+    sessions{i}.ingest;
+    dataset.add_ingested_session(sessions{i});
 end
 
 %% Retrieve files
 
-subjectSummary = ndi.fun.docTable.subject(session);
+subjectSummary = ndi.fun.docTable.subject(dataset);
 
-ind = 1;
+ind = 3;
 
 subject_id = subjectSummary.SubjectDocumentIdentifier{ind};
 subjectName = subjectSummary.SubjectLocalIdentifier{ind}
 queryDependency = ndi.query('','depends_on','',subject_id);
-docs = session.database_search(queryDependency);
+docs = dataset.database_search(queryDependency);
 docs_check = docs;
 while numel(docs_check) > 0
     queryDependency = ndi.query('','depends_on','',docs_check{1}.id);
-    docs_new = session.database_search(queryDependency);
+    docs_new = dataset.database_search(queryDependency);
     docs = [docs,docs_new];
     docs_check = [docs_check,docs_new];
     docs_check(1) = [];
@@ -251,5 +279,3 @@ docClass = cellfun(@doc_class,docs,'UniformOutput',false)';
 
 fileDocs = docs(strcmp(docClass,'generic_file'));
 fileDocNames = cellfun(@(d) d.document_properties.generic_file.fileName,fileDocs,'UniformOutput',false)'
-
-% Why are their additional svs files being returned?
