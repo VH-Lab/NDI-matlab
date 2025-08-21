@@ -34,6 +34,9 @@ arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
 end
 
+% Suppress warning
+warning('off','MATLAB:table:RowsAddedExistingVars');
+
 % Get all subject documents in the session
 query = ndi.query('','isa','subject');
 subjectDocs = session.database_search(query);
