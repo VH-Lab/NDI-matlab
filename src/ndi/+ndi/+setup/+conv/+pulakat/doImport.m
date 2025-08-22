@@ -85,8 +85,8 @@ subjectTable.Cage = cellfun(@(c) replace(c,'/','-'),subjectTable.Cage,'UniformOu
 subjectMaker = ndi.setup.NDIMaker.subjectMaker();
 
 % Create subject documents
-[subjectInfo,theseSubjects.SubjectName] = ...
-    subjectMaker.getSubjectInfoFromTable(theseSubjects,...
+[subjectInfo,subjectTable.SubjectName] = ...
+    subjectMaker.getSubjectInfoFromTable(subjectTable,...
     @ndi.setup.conv.pulakat.createSubjectInformation);
 subDocStruct = subjectMaker.makeSubjectDocuments(subjectInfo);
 subjectMaker.addSubjectsToSessions({session}, subDocStruct.documents);
@@ -319,7 +319,7 @@ end
 
 subjectSummary = ndi.fun.docTable.subject(dataset);
 
-ind = 3;
+ind = 1;
 
 subject_id = subjectSummary.SubjectDocumentIdentifier{ind};
 subjectName = subjectSummary.SubjectLocalIdentifier{ind}
