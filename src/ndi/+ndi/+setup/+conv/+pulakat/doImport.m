@@ -21,13 +21,13 @@ end
 
 % Get file types
 subjectFiles = fileList(contains(fileList,'animal_mapping'));
+scheduleFiles =  fileList(contains(fileList,'schedule','IgnoreCase',true));
 diaFiles = fileList(contains(fileList,'DIA'));
 svsFiles = fileList(endsWith(fileList,'.svs'));
 echoFiles = fileList(contains(fileList,'.bimg') | contains(fileList,'.pimg') | ...
     contains(fileList,'.mxml') | contains(fileList,'.vxml'));
-[echoFolderNames,echoFileNames] = fileparts(echoFiles);
-echoSessions = unique(fullfile(echoFolderNames,echoFileNames));
-echoFolders = unique(echoFolderNames);
+echoSessions = unique(extractBefore(echoFiles,'.'));
+echoFolders = unique(fileparts(echoFiles));
 
 %% Step 2: SESSIONS. Build the session.
 
@@ -92,7 +92,65 @@ subDocStruct = subjectMaker.makeSubjectDocuments(subjectInfo);
 subjectMaker.addSubjectsToSessions({session}, subDocStruct.documents);
 subjectTable.SubjectDocumentIdentifier = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
 
-%% Step 4. Process DIA reports
+%% Step 4. Experiment Schedule
+
+scheduleTable = table();
+for i = 1:numel(scheduleFiles)
+    experimentSchedule = readtable(scheduleFiles{i},'Sheet',1);
+
+    % Process study groups from first sheet of experimentSchedule
+    group1 = unique(experimentSchedule.x18Rats); group1(strcmp(group1,'')) = [];
+    group2 = unique(experimentSchedule.x32Rats); group2(strcmp(group2,'')) = [];
+    group3 = unique(experimentSchedule.x25Rats); group3(strcmp(group3,'')) = [];
+    
+    thisScheduleTable = table([group1;group2;group3],'VariableNames',{'Cage'});
+    
+    % Add subject IDs
+    thisScheduleTable = ndi.fun.table.join({subjectTable,thisScheduleTable},...
+        'uniqueVariables',{'Animal','Cage'});
+
+    % Add subject_group to database
+    subject_group_doc = ndi.document('subject_group') + session.newdocument();
+    for j = 1:height(thisScheduleTable)
+        subject_group_doc = subject_group_doc.add_dependency_value_n(...
+            'subject_id',thisScheduleTable.SubjectDocumentIdentifier{j});
+    end
+    session.database_add(subject_group_doc);
+
+    % Add DIA file to database
+    generic_file = struct('fileName',scheduleFiles{i},...
+        'fileFormatOntology','format:3620');
+    generic_file_doc = ndi.document('generic_file','generic_file',generic_file) + ...
+        session.newdocument();
+    generic_file_doc = generic_file_doc.add_file('generic_file.ext', ...
+        fullfile(dataParentDir,scheduleFiles{i}),'delete_original',0);
+    generic_file_doc = generic_file_doc.set_dependency_value('document_id', subject_group_doc.id);
+    session.database_add(generic_file_doc);
+
+    % Combine data
+    thisScheduleTable{:,'scheduleFile'} = {scheduleFiles{i}};
+    thisScheduleTable{:,'scheduleFile_id'} = {generic_file_doc.id};
+    thisScheduleTable = [scheduleTable;thisScheduleTable];
+end
+
+%% Step 5. Treatments
+
+% [ontologyID,name] = ndi.ontology.lookup('EMPTY:treatment: food restriction onset time');
+% treatmentDocs = cell(height(subjectTable),1);
+% for i = 1:height(subjectTable)
+%     treatment = struct('ontologyName',ontologyID,...
+%         'name',name,...
+%         'numeric_value',[],...
+%         'string_value','?');
+%     treatmentDocs{i} = ndi.document('treatment',...
+%         'treatment', treatment) + session.newdocument;
+%     treatmentDocs{i} = treatmentDocs{j}.set_dependency_value(...
+%         'subject_id', subjectTable.subject_id{i});
+% end
+% 
+% session.database_add(treatmentDocs);
+
+%% Step 6. Process DIA reports
 
 diaTable = table();
 for i = 1:numel(diaFiles)
@@ -145,7 +203,7 @@ end
 % How do we want to deal with matching each DIA report with the subjects?
 % Are we creating a copy of the DIA report for each subject?
 
-%% Step 5. Process SVS files
+%% Step 7. Process SVS files
 
 % Get cage #s
 pattern = '\w+(?:-\w+)+';
@@ -199,7 +257,7 @@ end
 % Same as DIA report. Need to figure out how to best add these files and alert
 % user to subjects missing svs files and svs files missing subjects.
 
-%% Step 6. Process echo files
+%% Step 8. Process echo files
 
 pattern = '(?<=/)\d+[A-Z]?';
 cageIdentifiers = regexp(echoFolders, pattern, 'match');
@@ -278,4 +336,5 @@ end
 docClass = cellfun(@doc_class,docs,'UniformOutput',false)';
 
 fileDocs = docs(strcmp(docClass,'generic_file'));
-fileDocNames = cellfun(@(d) d.document_properties.generic_file.fileName,fileDocs,'UniformOutput',false)'
+fileDocNames = cellfun(@(d) d.document_properties.generic_file.fileName,...
+    fileDocs,'UniformOutput',false)'

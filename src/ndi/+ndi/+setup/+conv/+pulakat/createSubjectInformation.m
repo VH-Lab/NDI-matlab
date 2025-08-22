@@ -36,6 +36,6 @@ biologicalSex.name = 'male';
 biologicalSex.preferredOntologyIdentifier = 'PATO:0000384';
 
 % --- Create subject string ---
-subjectString = [tableRow.Cage,'_',tableRow.DataLabelRaw{1},'@pulakat-lab.tufts.edu'];
+subjectString = [tableRow.Cage{1},'_',tableRow.DataLabelRaw{1},'@pulakat-lab.tufts.edu'];
 
 end % End function createSubjectInformation
