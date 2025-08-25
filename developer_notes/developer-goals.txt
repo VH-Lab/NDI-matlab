@@ -1,0 +1,11 @@
+Needs to have a conceptually clear logical interface (analogies: probes, daqsystems, epochs, database)
+
+Needs to be independent of platform
+
+Desired to install in 1 step on any platform by a novice
+
+Needs to be easy to run on Mac, Linux, Windows
+
+Functionality should be separate from implementation (for example, database properties should not just be determined by the software that implements it; should be a layer so that we can have flexibility to switch underlying implementing software if open source winds change)
+
+

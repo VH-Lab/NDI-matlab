@@ -1,0 +1,120 @@
+Why does X need to be a handle?
+
+
+* ndi_base --
+	It doesn't. It is just a unique label. It can be an instance.
+
+Conclusion: NO
+
+* ndi_leaf --
+	ndi_leaf objects are just a ndi_base with a name. It can be an instance, does not need to update (and it won't if there are multiple copies).
+
+Conclusion: NO
+
+* ndi_dbleaf_branch --
+
+	These objects can be on disk or in memory. What if we have a huge one
+in memory? We don't want every instance to need to copy it.
+
+	BUT, if we had the element in memory, we could end up with multiple
+copies that might be bad. How could this happen, potentially? 
+	Suppose we get a subbranch.
+		If it is in memory, then we get a live handle. Changes propagate back to the parent. But, the user probably doesn't want to work 
+			in only memory under normal circumstances. 
+		Suppose it is not in memory. Then we get a live handle, but it may have copies. Changes do not propagate back without saving.
+
+		No guarantee that changes will be encoded in copies of handles in non-memory implementation, and there is the update method.
+
+Conclusion: NO
+
+
+* ndi_filenavigator --
+
+Need to refer back to the experiment as a handle, that's all, so not really
+
+Conclusion: NO
+
+* ndi_daqsystem
+
+Like ndi_filenavigator, it needs to refer back to the experiment as a handle. But, we don't want to have lots of copies of them (because its messy), and
+they are really tiny in memory. So no handle.
+
+Conclusion: NO
+
+* ndi_experiment --
+
+	I would say because it is the top of a tree of data; you need it to
+reference all of the other stuff; it maintains the relative-ness of all the
+other objects (because 'path' is passed down via the experiment)
+
+But why not pass down the path as data rather than a handle?
+	This forces a narrow view as to what "path" means; what if it becomes some other object down the road. Passing the handle allows other aspects of the experiment to influence the data structures.
+
+OK, but if we pass the experiment as a handle, shouldn't we ensure there aren't multiple copies of the experiment in memory?  
+	That seems noble. Might want a unique identifier beyond reference for the experiment.
+
+But what if I want to open 10000 experiments? 10000 handles?
+	Should be okay.
+
+Conclusion: YES, it should be a handle
+
+* ndi_variable
+
+It's an ndi_dbleaf_branch, so it should also be NO
+
+
+* ndi_syncgraph --
+
+One big question is whether or not it is too slow to copy the epochgraph from
+a cache on each traverse.  If the answer to that question were that it is too
+slow, then there is no point in having it as a standard object. I don't know.
+
+Another issue is that we don't want to rebuild the whole dang graph if a couple
+entries in the epochtable change.
+
+But we also need to be able to rebuild the whole graph, or rebuild the part
+related to a particular epochset.
+
+SO, I decided this would not be a handle but would be linked to the experiment, which is
+a handle. It uses the experiment cache to store computation.
+
+Another issue is, when do we check to see if the syncgraph needs to be updated?
+Do we do it on every conversion?   No, we make people call an update command to clear the
+cache.
+
+So, I decided to make people clear the cache.
+
+On the handle issue, should be a NO
+
+---------
+
+
+Does it work to have objects be data and simply refer to handles?
+
+No, one runs into two problems.
+
+Either the storage handles will be deleted, or they will always be referred to
+by the storage class, in which case it will be totally unclear when they should
+be deleted unless one makes some sort of counter.
+
+Counter counterexample (2nd example is counterexample):
+
+function 
+
+	a = newstoragehandle  % counter :1
+	b = a          
+
+	% b delete, counter: 0, deleted
+	% a delete, attempted deletion of handle that is already gone, no error
+
+end
+
+
+myobj.a = newstoragehandle; % counter: 1
+
+b = f(myobj)
+
+ % myobj is not a handle, so it will be destroyed upon exit from the function
+ % : counter 0, deleted
+ 
+
