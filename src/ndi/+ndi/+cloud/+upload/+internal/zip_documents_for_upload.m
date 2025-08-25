@@ -1,4 +1,4 @@
-function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, options)
+function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, cloudDatasetId, options)
     % ZIP_DOCUMENTS_FOR_UPLOAD - Serializes and zips a list of documents for upload.
     %
     % This function takes a cell array of ndi.document objects, converts them into a 
@@ -9,6 +9,7 @@ function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, opti
     % Arguments:
     %   documentList (1,:) cell - A cell array of ndi.document objects to be included
     %       in the zip file.
+    %   cloudDatasetId (1,:) char - A character array with the cloud dataset id
     %   options.TargetFolder (1,1) string {mustBeFolder} - An optional name-value
     %       argument specifying the folder where the zip file will be created. 
     %       Defaults to the system's temporary folder as defined by 
@@ -33,15 +34,17 @@ function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, opti
 
     arguments
         documentList (1,:) cell
+        cloudDatasetId (1,:) char
         options.TargetFolder (1,1) string {mustBeFolder} = ndi.common.PathConstants.TempFolder
     end
 
     % Convert documents to a JSON string
-    jsonStr = did.datastructures.jsonencodenan( documentList );
+    document_properties_array = cellfun(@(x) x.document_properties, documentList, 'UniformOutput', false);
+    jsonStr = did.datastructures.jsonencodenan( document_properties_array );
     idManifest = cellfun(@(x) x.id(),documentList,'UniformOutput',false);
     
     % Open the file for writing
-    jsonFilename = ndi.file.temp_name();
+    jsonFilename = [ndi.file.temp_name() '.json'];
     fid = fopen(jsonFilename, 'wt');
     % Write the JSON string to the file
     fprintf(fid, '%s', jsonStr);
@@ -51,7 +54,7 @@ function [zipFilePath, idManifest] = zip_documents_for_upload(documentList, opti
     % use randomized name in case multiple threads
     id = ndi.ido;
     zipFName = id.identifier;
-    zipFilePath = fullfile(options.TargetFolder, [zipFName '.zip']);
+    zipFilePath = fullfile(options.TargetFolder, [cloudDatasetId '.' zipFName '.zip']);
     zip(zipFilePath, jsonFilename);
 
     delete(jsonFilename);

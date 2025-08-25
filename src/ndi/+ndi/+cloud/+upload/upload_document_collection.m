@@ -110,7 +110,7 @@ function [b, report] = upload_document_collection(datasetId, documentList, optio
             try
                 % Create zip file for the current chunk
                 [zipFilePath, idManifest] = ...
-                    ndi.cloud.upload.internal.zip_documents_for_upload(chunkDocs);
+                    ndi.cloud.upload.internal.zip_documents_for_upload(chunkDocs, datasetId);
                 
                 % Get upload URL and perform upload
                 uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(datasetId);

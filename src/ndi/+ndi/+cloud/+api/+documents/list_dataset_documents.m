@@ -26,7 +26,7 @@ function [response, summary] = list_dataset_documents(dataset_id, options)
     auth_token = ndi.cloud.authenticate();
 
     % Build name-value pairs for the URL function
-    url_options = {'page', options.page, 'pageSize', options.pageSize};
+    url_options = {'page', options.page, 'page_size', options.pageSize};
 
     url = ndi.cloud.api.url('list_dataset_documents', 'dataset_id', dataset_id, url_options{:});
 
