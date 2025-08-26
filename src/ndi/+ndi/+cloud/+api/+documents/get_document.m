@@ -4,12 +4,12 @@ function [response, document] = get_document(dataset_id, document_id)
     % [RESPONSE,DOCUMENT] = ndi.cloud.api.documents.GET_DOCUMENT(DATASET_ID, DOCUMENT_ID)
     %
     % Inputs:
-    %   DATASET_ID - a string representing the dataset id
-    %   DOCUMENT_ID -  a string representing the document id
+    %   DATASET_ID - a string representing the cloud dataset id
+    %   DOCUMENT_ID -  a string representing the cloud document id
     %
     % Outputs:
-    %   RESPONSE - the updated dataset summary
-    %   DOCUMENT - A document object required by the user
+    %   RESPONSE - the http response
+    %   DOCUMENT - A struct containing the document data
     %
 
     auth_token = ndi.cloud.authenticate();
