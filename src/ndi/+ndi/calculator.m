@@ -519,7 +519,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %   This function accepts the following optional arguments as name-value pairs:
             %
             %   'command'           A character array specifying the GUI command to
-            %                       implement. Must be one of 'new' (default), 'edit', or 'close'.
+            %                       implement. Must be one of 'New' (default), 'Edit', or 'Close'.
             %
             %   'session'           An ndi.session object to associate with the GUI.
             %                       Defaults to an empty ndi.session object.
@@ -530,7 +530,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %   'filename'          The full path to the JSON file where the calculator's
             %                       information is stored. Defaults to ''.
             %
-            %   'type'              The classname of the calculator to create.
+            %   'calculatorClassname' The classname of the calculator to create.
             %                       Defaults to ''.
             %
             %   'window_params'     A structure with 'height' and 'width' fields that
@@ -543,13 +543,13 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             
             % Use an arguments block for robust name-value pair parsing
             arguments
-                % The GUI command, must be 'new', 'edit', or 'close'
+                % The GUI command, must be 'New', 'Edit', 'Close', etc.
                 options.command (1,:) char {mustBeMember(options.command, {'New','Edit','Close',...
                     'NewWindow','UpdateWindow','DocPopup', 'ParameterCodePopup',...
-                    'CommandPopup', 'LoadBt', 'SaveBt', 'CancelBt'})} = 'New'
+                    'CommandPopup', 'LoadButton', 'SaveButton', 'CancelButton'})} = 'New'
         
                 % The NDI session object, must be a scalar ndi.session
-                options.session (1,1) ndi.session = ndi.session.empty()
+                options.session ndi.session = ndi.session.empty()
         
                 % The user's name for the calculator instance
                 options.name (1,:) char = ''
@@ -558,7 +558,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 options.filename (1,:) char = ''
         
                 % The classname of the calculator
-                options.type (1,:) char = ''
+                options.calculatorClassname (1,:) char = ''
         
                 % Window parameters structure, must be a scalar struct
                 options.window_params (1,1) struct = struct('height', 600, 'width', 400)
@@ -567,82 +567,87 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
             end
 
-            options,
             command = options.command;
-            session = options.session;
+            fig = options.fig;
 
-            calc.filename = options.filename;
-            calc.name = options.name;
-            calc.type = options.type;
-
-            if ~isempty(type)
-                calc.parameter_code_default = ndi.calculator.parameter_default(calc.type);
-                calc.parameter_code = calc.parameter_code_default;
-                [calc.parameter_example_names,calc.parameter_example_code] = ndi.calculator.parameter_examples(calc.type);
+            % Enforce that 'fig' must be provided for all commands except 'New' and 'Edit'
+            if ~ismember(command, {'New','Edit'}) && isempty(fig)
+                error('The ''fig'' argument must be provided for the command ''%s''.', command);
             end
 
-            varlist_ud = {'calc','window_params','session'};
-            edit = false;
-
-            if strcmpi(command,'new')
+            if strcmp(command,'New')
                 % set up for new window
-                for i=1:numel(varlist_ud)
-                    eval(['ud.' varlist_ud{i} '=' varlist_ud{i} ';']);
+                calculatorInstance.JSONFilename = options.filename;
+                calculatorInstance.instanceName = options.name;
+                calculatorInstance.calculatorClassname = options.calculatorClassname;
+                
+                if ~isempty(options.calculatorClassname)
+                    calculatorInstance.parameter_code_default = ndi.calculator.parameter_default(calculatorInstance.calculatorClassname);
+                    calculatorInstance.parameter_code = calculatorInstance.parameter_code_default;
+                    [calculatorInstance.parameter_example_names, calculatorInstance.parameter_example_code] = ndi.calculator.parameter_examples(calculatorInstance.calculatorClassname);
                 end
+                
+                ud.calculatorInstance = calculatorInstance;
+                ud.window_params = options.window_params;
+                ud.session = options.session;
+
                 if isempty(fig)
                     fig = figure;
                 end
                 command = 'NewWindow';
                 % would check calc name and calc type and calc filename for validity here
-            elseif strcmpi(command,'edit')
-                % set up for editing
-                % read from file
-                edit = true;
-                ud = jsondecode(vlt.file.textfile2char(filename))
-                if ~exist('ud.calc','var')
-                    ud.calc.type = ud.ndi_pipeline_element.calculator;
-                    ud.calc.parameter_code_default = ndi.calculator.parameter_default(ud.calc.type);
-                    ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
-                    ud.calc.parameter_code_old = ud.ndi_pipeline_element.parameter_code;
-                    ud.calc.name = ud.ndi_pipeline_element.name;
-                    ud.calc.filename = filename;
-                    [ud.calc.parameter_example_names,ud.calc.parameter_example_code] = ndi.calculator.parameter_examples(ud.calc.type);
-                    ud.session = session;
+            elseif strcmp(command,'Edit')
+                % set up for editing from a file
+                ud.calculatorInstance = jsondecode(vlt.file.textfile2char(options.filename));
+                ud.calculatorInstance.JSONFilename = options.filename; % ensure this is set
+                
+                % For backward compatibility, check for old format
+                if isfield(ud.calculatorInstance,'ndi_pipeline_element')
+                    old_struct = ud.calculatorInstance.ndi_pipeline_element;
+                    ud.calculatorInstance.calculatorClassname = old_struct.calculator;
+                    ud.calculatorInstance.instanceName = old_struct.name;
+                    ud.calculatorInstance.parameter_code = old_struct.parameter_code;
+                    ud.calculatorInstance.default_options = old_struct.default_options;
+                    ud.calculatorInstance = rmfield(ud.calculatorInstance,'ndi_pipeline_element');
                 end
-                if ~exist('ud.window_params','var')
-                    ud.window_params.height = 600;
-                    ud.window_params.width = 400;
+
+                ud.calculatorInstance.parameter_code_default = ndi.calculator.parameter_default(ud.calculatorInstance.calculatorClassname);
+                [ud.calculatorInstance.parameter_example_names, ud.calculatorInstance.parameter_example_code] = ndi.calculator.parameter_examples(ud.calculatorInstance.calculatorClassname);
+                ud.session = options.session;
+                
+                if ~isfield(ud,'window_params')
+                    ud.window_params = options.window_params;
                 end
+
                 command = 'NewWindow';
                 if isempty(fig)
                     fig = figure;
                 end
+            else
+                ud = get(fig,'userdata');
             end
 
             if isempty(fig)
                 error(['Empty figure, do not know what to work on.']);
             end
-
+            
             disp(['Command is ' command '.']);
+
             switch (command)
                 case 'NewWindow'
                     set(fig,'tag','ndi.calculator.graphical_edit_calculator');
                     set(fig,'userdata',ud); % set initial userdata variables
-
                     % now build the window
                     uid = vlt.ui.basicuitools_defs;
-
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
-
-                    % Step 1: Establish window geometry
-
+                    
+                    % Step 1: Establish window geometry in pixels
                     top = ud.window_params.height;
                     right = ud.window_params.width;
                     row = 25;
                     title_height = 25;
                     title_width = 200;
                     edge = 5;
-
                     doc_width = right - 2*edge;
                     doc_height = 200;
                     menu_width = right - 2*edge - title_width;
@@ -653,174 +658,117 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     commands_popup_height = row;
                     button_width = 100;
                     button_height = row;
-                    button_center = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3) ];
-
+                    button_centers_px = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3) ];
+                    
                     % Step 2 now build it
-
                     set(fig,'position',[50 50 right top]);
                     set(fig,'NumberTitle','off');
-                    set(fig,'Name',['Editing ' ud.calc.name ' of type ' ud.calc.type ]);
-
+                    set(fig,'Name',['Editing ' ud.calculatorInstance.instanceName ' of type ' ud.calculatorInstance.calculatorClassname ]);
                     session_title = ['Empty session'];
-                    if isa(ud.session,'ndi.session')
-                        session_title = session.reference;
+                    if isa(ud.session,'ndi.session') && ~isempty(ud.session)
+                        session_title = ud.session.reference;
                     end
-
+                    
+                    % All UI positions are normalized so they resize with the window
                     x = edge;
                     y = top-row;
-                    uicontrol(uid.txt,'position',[x y title_width title_height],'string','Session:','tag','sessionTxt');
-                    uicontrol(uid.txt,'position',[x+title_width+edge y title_width menu_height],'string',session_title,'tag','sessionTitleTxt');
-
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Session:','tag','sessionTxt');
+                    uicontrol(uid.txt,'Units','normalized','position',[(x+title_width+edge)/right y/top title_width/right menu_height/top],'string',session_title,'tag','sessionTitleTxt');
+                    
                     % Documentation portion of window
-                    y = top - row;
-                    x = edge;
                     y = y-row;
-                    uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
-                    uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Documentation','tag','DocTitleTxt');
+                    uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
                         'string',{'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr,...
                         'value',1);
                     y = y - doc_height;
-                    uicontrol(uid.edit,'position',[x y doc_width doc_height],...
+                    uicontrol(uid.edit,'Units','normalized','position',[x/right y/top doc_width/right doc_height/top],...
                         'string','Please select one documentation type.',...
                         'tag','DocTxt','min',0,'max',2,'enable','inactive');
-                    set(findobj(fig,'tag','DocTxt'),'units','normalized');
+                    
                     y = y - row;
-
-                    uicontrol(uid.txt,'position',[x y title_width title_height],'string','Parameter code:','tag','ParameterCodeTitleTxt');
-                    uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
-                        'string',{'User parameter code', '---', 'default', '---',ud.calc.parameter_example_names{:}},...
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Parameter code:','tag','ParameterCodeTitleTxt');
+                    uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
+                        'string',{'User parameter code', '---', 'default', '---',ud.calculatorInstance.parameter_example_names{:}},...
                         'tag','ParameterCodePopup', 'callback',callbackstr,'userdata',1);
                     y = y - parameter_code_height;
-                    uicontrol(uid.edit,'position',[x y parameter_code_width parameter_code_height],...
-                        'string',ud.calc.parameter_code,'tag','ParameterCodeTxt','min',0,'max',2);
-                    set(findobj(fig,'tag','ParameterCodeTxt'),'units','normalized');
-                    y = y - row;
-                    y = y - row;
-
-                    uicontrol(uid.popup,'position',[x y commands_popup_width commands_popup_height],...
+                    uicontrol(uid.edit,'Units','normalized','position',[x/right y/top parameter_code_width/right parameter_code_height/top],...
+                        'string',ud.calculatorInstance.parameter_code,'tag','ParameterCodeTxt','min',0,'max',2);
+                    
+                    y = y - 2*row;
+                    uicontrol(uid.popup,'Units','normalized','position',[x/right y/top commands_popup_width/right commands_popup_height/top],...
                         'string',{'Commands:','---','Try searching for inputs','Show existing outputs',...
                         'Plot existing outputs','Run but don''t replace existing docs','Run and replace existing docs'},...
                         'tag','CommandPopup','callback',callbackstr);
-
-                    y = y - row;
-                    y = y - row;
-                    uicontrol(uid.button,'position',[button_center(1)-0.5*button_width y button_width button_height],...
-                        'string','Load','tag','LoadBt','callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center(2)-0.5*button_width y button_width button_height],...
-                        'string','Save','tag','SaveBt','callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
-                        'string','Cancel','tag','CancelBt','callback',callbackstr);
-                    if edit
-                        if isfield(ud,'paramstrs') && isfield(ud,'paramval') && isfield(ud,'paramtext')
-                            % load param
-                            paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                            set(paramPopupObj,'Value',ud.paramval);
-                            set(findobj(fig,'tag','ParameterCodeTxt'),'String',ud.paramtext);
-                        end
-                        if isfield(ud,'docstrs') && isfield(ud,'docval') && isfield(ud,'doctext')
-                            % load doc
-                            docPopupObj = findobj(fig,'tag','DocPopup');
-                            set(docPopupObj,'Value',ud.docval);
-                            set(findobj(fig,'tag','DocTxt'),'String',ud.doctext);
-                        end
-                    end
+                    
+                    y = y - 2*row;
+                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(1)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                        'string','Load','tag','LoadButton','callback',callbackstr);
+                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(2)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                        'string','Save','tag','SaveButton','callback',callbackstr);
+                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(3)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                        'string','Cancel','tag','CancelButton','callback',callbackstr);
+                    
                     ndi.calculator.graphical_edit_calculator('command','DocPopup','fig',fig);
-                case 'UpdateWindow'
+
                 case 'DocPopup'
                     % Step 1: search for the objects you need to work with
                     docPopupObj = findobj(fig,'tag','DocPopup');
-                    ud = get(fig,'userdata')
                     val = get(docPopupObj, 'value');
-                    str = get(docPopupObj, 'string');
-                    % disp(val);
-                    % disp(str);
                     docTextObj = findobj(fig,'tag','DocTxt');
                     % Step 2, take action
                     switch val
-                        case 1 % General documentation
-                            disp(['Popup is ' str{val} '.']);
-                            type = 'general';
-                            % set(docTextObj,'string','Some General Document');
-                        case 2 % searching for inputs
-                            disp(['Popup is ' str{val} '.']);
-                            type = 'searching for inputs';
-                            % set(docTextObj,'string','Some Input Document');
-                        case 3 % output documentation
-                            disp(['Popup is ' str{val} '.']);
-                            type = 'output';
-                            % set(docTextObj,'string','Some Output Document');
-                        otherwise
-                            disp(['Popup ' val ' is out of bound.']);
+                        case 1, doc_type = 'general';
+                        case 2, doc_type = 'searching for inputs';
+                        case 3, doc_type = 'output';
+                        otherwise, error(['Unknown doc popup value.']);
                     end
-
-                    mytext = ndi.calculator.docfiletext(ud.ndi_pipeline_element.calculator,type);
+                    mytext = ndi.calculator.docfiletext(ud.calculatorInstance.calculatorClassname, doc_type);
                     set(docTextObj,'string',mytext);
                 case 'ParameterCodePopup'
-                    ud = get(fig,'userdata');
                     % Step 1: search for the objects you need to work with
                     paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
                     val = get(paramPopupObj, 'value');
-                    str = get(paramPopupObj, 'string');
                     paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
                     lastval = get(paramPopupObj,'userdata');
-                    if lastval == 1 & val ~=1 % if we are switching away from user code, save it
-                        ud.calc.parameter_code = get(paramTextObj,'string');
+                    if lastval == 1 && val ~=1 % if we are switching away from user code, save it
+                        ud.calculatorInstance.parameter_code = get(paramTextObj,'string');
                         set(fig,'userdata',ud);
                     end
                     % Step 2, take action
                     if val==1 % this is the users's code
-                        set(paramTextObj,'string',ud.calc.parameter_code);
+                        set(paramTextObj,'string',ud.calculatorInstance.parameter_code);
                     elseif val==3
                         % view the default code
-                        set(paramTextObj,'string',ud.calc.parameter_code_default);
+                        set(paramTextObj,'string',ud.calculatorInstance.parameter_code_default);
                     elseif val>=5 % this is an example
-                        set(paramTextObj,'string',ud.calc.parameter_example_code{val-4});
+                        set(paramTextObj,'string',ud.calculatorInstance.parameter_example_code{val-4});
                     end
                     if ~any(val==[2 4]) % if it's not a spacer
                         set(paramPopupObj,'userdata',val); % store the last menu setting in userdata
                     end
                 case 'CommandPopup'
-                    % Step 1: search for the objects you need to work with
-                    ud = get(fig,'userdata');
                     cmdPopupObj = findobj(fig,'tag','CommandPopup');
                     val = get(cmdPopupObj, 'value');
-                    str = get(cmdPopupObj, 'string');
-                    docTextObj = findobj(fig,'tag','CommandTxt');
-                    % Step 2, take action
+                    if isempty(ud.session)
+                        error('No session is linked to the calculator editor.');
+                    end
+                    assignin('base','pipeline_session',ud.session);
+                    param_code = ud.calculatorInstance.parameter_code;
+                    evalin('base',param_code);
+                    
                     switch val
                         case 3 % Try searching for inputs
-                            disp(['Popup is ' str{val} '.']);
-                            set(docTextObj,'string','Try searching for inputs');
-                            if isempty(ud.session)
-                                error('No session is linked to the calculator editor.');
-                            end
-                            assignin('base','pipeline_session',ud.session);
-                            disp(['About to evaluate parameter code on the main workspace.']);
-                            param_code = ud.calc.parameter_code;
-                            evalin('base',param_code);
-                            disp(['About to search for inputs. Variable IP will have input combinations that were found.']);
-                            search_code = ['thecalc=' ud.calc.type '(pipeline_session); if ~exist(''parameters'',''var''), parameters=thecalc.default_search_for_input_parameters(); end; IP=thecalc.search_for_input_parameters(parameters);'];
+                            search_code = ['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session); if ~exist(''parameters'',''var''), parameters=thecalc.default_search_for_input_parameters(); end; IP=thecalc.search_for_input_parameters(parameters);'];
                             evalin('base',search_code);
                             disp(['Search done, variable IP now has input combinations found.']);
                         case 4 % Show existing outputs
-                            disp(['Popup is ' str{val} '.']);
-                            set(docTextObj,'string','Show existing outputs');
-                            if isempty(ud.session)
-                                error('No session is linked to the calculator editor.');
-                            end
-                            assignin('base','pipeline_session',ud.session);
-                            evalin('base','clear parameters;');
-                            disp(['About to evaluate parameter code on the main workspace.']);
-                            param_code = ud.calc.parameter_code;
-                            evalin('base',param_code);
-                            disp(['About to search for existing documents calculated with those input parameters.']);
-                            disp(['Variable ED will have input combinations that were found.']);
-                            search_code = ['thecalc=' ud.calc.type '(pipeline_session); ED=thecalc.search_for_calculator_docs(parameters);'];
+                            search_code = ['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session); ED=thecalc.search_for_calculator_docs(parameters);'];
                             evalin('base',search_code);
                             disp(['Search done, variable ED now has existing calculation documents found.']);
                             ED = evalin('base','ED');
                             if ~isempty(ED)
-                                if isfield(ud,'docViewer')
+                                if isfield(ud,'docViewer') && isvalid(ud.docViewer.fig)
                                     figure(ud.docViewer.fig); % bring to front
                                 else % we need to build it
                                     ud.docViewer = ndi.gui.docViewer();
@@ -829,172 +777,54 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                 ud.docViewer.addDoc(ED);
                             end
                         case 5 % Plot existing outputs
-                            disp(['Popup is ' str{val} '.']);
-                            set(docTextObj,'string','Plot existing outputs');
-
-                            if isempty(ud.session)
-                                error('No session is linked to the calculator editor.');
-                            end
-                            assignin('base','pipeline_session',ud.session);
-                            disp(['About to evaluate parameter code on the main workspace.']);
-                            param_code = ud.calc.parameter_code;
-                            evalin('base',param_code);
-                            disp(['About to search for existing documents calculated with those input parameters.']);
-                            disp(['Variable ED will have input combinations that were found.']);
-                            search_code = ['thecalc=' ud.calc.type '(pipeline_session); ED=thecalc.search_for_calculator_docs(parameters);'];
+                            search_code = ['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session); ED=thecalc.search_for_calculator_docs(parameters);'];
                             evalin('base',search_code);
                             disp(['Search done, variable ED now has existing calculation documents found.']);
                             disp(['Now will plot all of these ' int2str(evalin('base','numel(ED)')) ' documents.']);
                             evalin('base',['for i=1:numel(ED), figure; thecalc.plot(ED{i}); end;']);
                             disp(['Finished plotting.']);
                         case 6 % Run but don''t replace existing docs
-                            disp(['Popup is ' str{val} '.']);
-                            set(docTextObj,'string','Run but don''t replace existing docs');
-
-                            if isempty(ud.session)
-                                error('No session is linked to the calculator editor.');
-                            end
-                            assignin('base','pipeline_session',ud.session);
-                            disp(['About to evaluate parameter code on the main workspace.']);
-                            param_code = ud.calc.parameter_code;
-                            evalin('base',param_code);
-                            disp(['About to run without replacement of existing docs.']);
-                            run_code = ['thecalc=' ud.calc.type '(pipeline_session); RUNDOCS=thecalc.run(''NoAction'',parameters);'];
+                            run_code = ['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session); RUNDOCS=thecalc.run(''NoAction'',parameters);'];
                             evalin('base',run_code);
                             disp(['Run done, variable RUNDOCS now has calculation documents created.']);
-
                         case 7 % Run and replace existing docs
-                            disp(['Popup is ' str{val} '.']);
-                            set(docTextObj,'string','Run and replace existing docs');
-
-                            if isempty(ud.session)
-                                error('No session is linked to the calculator editor.');
-                            end
-                            assignin('base','pipeline_session',ud.session);
-                            disp(['About to evaluate parameter code on the main workspace.']);
-                            param_code = ud.calc.parameter_code;
-                            evalin('base',param_code);
-                            disp(['About to run with replacement of any existing docs.']);
-                            run_code = ['thecalc=' ud.calc.type '(pipeline_session); RUNDOCS=thecalc.run(''Replace'', parameters);'];
+                            run_code = ['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session); RUNDOCS=thecalc.run(''Replace'', parameters);'];
                             evalin('base',run_code);
                             disp(['Run done, variable RUNDOCS now has calculation documents created.']);
-
-                        otherwise
-                            disp(['Popup ' val ' is out of bounds.']);
                     end
-                case 'LoadBt'
-                    [file,path] = uigetfile('*.json');
-                    if isequal(file,0)
-                        disp('User selected Cancel');
-                    else
-                        disp(['User selected ', fullfile(path,file)]);
-                    end
-
-                    file = jsondecode(vlt.file.textfile2char([path filesep file]));
-                    ud = file;
-                    set(fig,'userdata',ud);
-
-                    docPopupObj = findobj(fig,'tag','DocPopup');
-                    str = get(docPopupObj, 'string');
-                    val = 1;
-                    for i = 1:size(str,1)
-                        if strcmp(file.docstr, string(str{i}))
-                            val = i;
-                            break;
-                        end
-                    end
-                    set(docPopupObj, 'Value', val);
-                    docTextObj = findobj(fig,'tag','DocTxt');
-                    set(docTextObj,'string',file.doctext);
-
-                    paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                    str = get(paramPopupObj, 'string');
-                    val = 1;
-                    for i = 1:size(str,1)
-                        if strcmp(file.paramstr, string(str{i}))
-                            val = i;
-                            break;
-                        end
-                    end
-                    set(paramPopupObj, 'Value', val);
-                    paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
-                    set(paramTextObj,'string',file.paramtext);
-                case 'SaveBt'
-                    fig = gcf;
-                    % not new window, get userdata
-                    ud = get(fig,'userdata');
+                case 'SaveButton'
                     % what will we save?
-                    % let's save the parameter code
-                    % shall we save "preferences" for running? Let's not right now
-                    % shall we save the view that the user had? let's not right now
-
-                    % save param
-                    % paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                    % paramval = get(paramPopupObj, 'value');
-                    % paramstrs = get(paramPopupObj, 'string');
-                    % paramstr = paramstrs{paramval};
-                    % paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
-
-                    % check filename
                     filepath = '';
                     filename = 'untitled';
                     ext = '.json';
-                    if exist('ud','var') && isfield(ud,'calc') && isfield(ud.calc, 'filename')
-                        [filepath,filename,ext] = fileparts(ud.calc.filename);
-                        filepath = strcat(filepath, filesep);
+                    if isfield(ud,'calculatorInstance') && isfield(ud.calculatorInstance, 'JSONFilename') && ~isempty(ud.calculatorInstance.JSONFilename)
+                        [filepath,filename,ext] = fileparts(ud.calculatorInstance.JSONFilename);
+                        filepath = [filepath filesep];
                     end
-
-                    % save doc
-                    docPopupObj = findobj(fig,'tag','DocPopup');
-                    docval = get(docPopupObj, 'value');
-                    docstrs = get(docPopupObj, 'string');
-                    docstr = docstrs{docval};
-                    doctext = get(findobj(fig,'tag','DocTxt'),'String');
-
-                    % save param
-                    paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                    paramval = get(paramPopupObj, 'value');
-                    paramstrs = get(paramPopupObj, 'string');
-                    paramstr = paramstrs{docval};
-                    paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
-
-                    if docval == 1
-                        msgbox('Please select documentation.')
-                    elseif paramval == 1
-                        msgbox('Please select parameter code')
-                    else
-                        defaultfilename = {[filename]};
-                        prompt = {'File name:'};
-                        dlgtitle = 'Save As';
-                        extension_list = {[ext]};
-                        dir = filepath;
-                        [success,filename,replaces] = ndi.util.choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list);
-                        json_filename = char(strcat(filepath, filesep, filename,'.json'));
-                        if success
-                            if replaces
-                                origin_file = fileread(json_filename);
-                                saveTo = jsondecode(origin_file);
-                            end
-                            saveTo.docval = docval;
-                            saveTo.docstr = docstr;
-                            saveTo.doctext = doctext;
-                            saveTo.docstrs = docstrs;
-                            saveTo.paramval = paramval;
-                            saveTo.paramstr = paramstr;
-                            saveTo.paramtext = paramtext;
-                            saveTo.paramstrs = paramstrs;
-                            fid = fopen(json_filename,'w');
-                            fprintf(fid,jsonencode(saveTo));
-                            fclose(fid);
-                        end
+                    
+                    [filename, filepath] = uiputfile('*.json', 'Save Calculator Instance As', fullfile(filepath, [filename ext]));
+                    
+                    if ~isequal(filename,0)
+                        json_filename = fullfile(filepath, filename);
+                        % Update the parameter code from the text box
+                        paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
+                        ud.calculatorInstance.parameter_code = get(paramTextObj,'String');
+                        
+                        % Remove temporary fields before saving
+                        instance_to_save = rmfield(ud.calculatorInstance, {'JSONFilename','parameter_code_default','parameter_example_names','parameter_example_code'});
+                        
+                        fid = fopen(json_filename,'w');
+                        fprintf(fid,jsonencode(instance_to_save));
+                        fclose(fid);
                     end
-                case 'CancelBt'
+                case 'CancelButton'
                     close(fig);
                 otherwise
                     disp(['Unknown command ' command '.']);
-
             end % switch(command)
         end % graphical_edit_calculation ()
+
+
 
         function text = docfiletext(calculator_type, doc_type)
             % ndi.calculator.docfiletext - return the text in the requested documentation file

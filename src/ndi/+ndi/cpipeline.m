@@ -9,6 +9,21 @@ classdef cpipeline
     methods
     end % methods
     methods (Static)
+        function p = defaultPath()
+            % DEFAULTPATH - return the default path for cpipeline JSON files
+            %
+            % P = NDI.CPIPELINE.DEFAULTPATH
+            %
+            % Returns the default path for NDI CPIPELINE files.
+            % This is typically [ndi.common.PathConstants.LogFolder '/../My Pipelines'].
+            % If this folder does not exist, it is created.
+            %
+            p = fullfile(ndi.common.PathConstants.LogFolder, '..', 'My Pipelines');
+            if ~isfolder(p)
+                mkdir(p);
+            end
+        end
+
         function edit(options)
             % EDIT - create and control a GUI to graphically edit a CPIPELINE
             %
@@ -20,10 +35,10 @@ classdef cpipeline
             %   This function accepts the following optional arguments as name-value pairs:
             %
             %   'command'           A character array specifying the GUI command.
-            %                       Default: 'New'.
+            %                       Default: 'new'.
             %
             %   'pipelinePath'      The full path to the directory containing the pipelines.
-            %                       This argument is required when command is 'new'.
+            %                       Default: ndi.cpipeline.defaultPath().
             %
             %   'session'           An ndi.session object.
             %                       Default: ndi.session.empty().
@@ -37,10 +52,10 @@ classdef cpipeline
             
             arguments
                 options.command (1,:) char {mustBeMember(options.command, ...
-                    {'New','NewWindow','UpdatePipelines','LoadPipelines','UpdateCalculatorList',...
-                    'PipelinePopup','NewPipelineBt','DltPipelineBt','NewCalcBt','DltCalcBt',...
-                    'EditBt','RunBt','PipelineContentList'})} = 'New'
-                options.pipelinePath (1,:) char = ''
+                    {'new','NewWindow','UpdatePipelines','LoadPipelines','UpdateCalculatorInstanceList',...
+                    'PipelinePopup','NewPipelineButton','DeletePipelineButton','NewCalculatorInstanceButton','DeleteCalculatorInstanceButton',...
+                    'EditButton','RunButton','PipelineContentList','DoEnableDisable'})} = 'new'
+                options.pipelinePath (1,:) char = ndi.cpipeline.defaultPath()
                 options.session ndi.session = ndi.session.empty();
                 options.window_params (1,1) struct = struct('height', 500, 'width', 400)
                 options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
@@ -48,10 +63,14 @@ classdef cpipeline
                 options.pipeline_name (1,:) char = ''
             end
 
-            fig = options.fig;
+            if isempty(options.fig)
+                fig = gcf;
+            else
+                fig = options.fig;
+            end
 
             if strcmpi(options.command,'new')
-                if isempty(fig)
+                if isempty(options.fig)
                     fig = figure;
                 end
                 command = 'NewWindow';
@@ -61,7 +80,7 @@ classdef cpipeline
                     if isfolder(options.pipelinePath)
                         ud.pipelinePath = options.pipelinePath;
                         ud.pipelineList = []; % initially empty
-                        ud.pipelineListChar = []; % initially empty
+                        ud.pipelineListChar = {}; % initially empty, MUST BE CELL
                         ud.session = options.session;
                         set(fig,'userdata',ud);
                     else
@@ -71,7 +90,6 @@ classdef cpipeline
                     error(['No pipelinePath provided.']);
                 end
             else
-                fig = gcf;
                 % not new window, get userdata
                 ud = get(fig,'userdata');
                 command = options.command;
@@ -114,21 +132,21 @@ classdef cpipeline
                         'string',{'Please select or create a pipeline.'},...
                         'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr);
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
-                        'string','->','tag','RunBt','callback',callbackstr,'Tooltipstring','Run pipeline calculations in order');
+                        'string','->','tag','RunButton','callback',callbackstr,'Tooltipstring','Run pipeline calculations in order');
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(2) button_width button_height],...
-                        'string','+','tag','NewPipelineBt','Tooltipstring','Create new pipeline',...
+                        'string','+','tag','NewPipelineButton','Tooltipstring','Create new pipeline',...
                         'callback',callbackstr);
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(3) button_width button_height],...
-                        'string','-','Tooltipstring','Delete Current Pipeline','tag','DltPipelineBt',...
+                        'string','-','Tooltipstring','Delete current pipeline','tag','DeletePipelineButton',...
                         'callback',callbackstr);
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(4) button_width button_height],...
-                        'string','+','Tooltipstring','Create New Calculator','tag','NewCalcBt',...
+                        'string','+','Tooltipstring','Create new Calculator instance','tag','NewCalculatorInstanceButton',...
                         'callback',callbackstr);
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(5) button_width button_height],...
-                        'string','-','Tooltipstring','Delete Current Calculator','tag','DltCalcBt','callback',callbackstr);
+                        'string','-','Tooltipstring','Delete current Calculator instance','tag','DeleteCalculatorInstanceButton','callback',callbackstr);
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(6) button_width button_height],...
-                        'string','Edit','tooltipstring','Edit selected calculator','tag','EditBt','callback',callbackstr);
-                    ndi.cpipeline.edit('command','LoadPipelines'); % load the pipelines from disk
+                        'string','Edit','tooltipstring','Edit selected Calculator instance','tag','EditButton','callback',callbackstr);
+                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig); % load the pipelines from disk
                 case 'UpdatePipelines' % invented command that is not a callback
                     ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
                     ud.pipelineListChar = ndi.cpipeline.pipelineListToChar(ud.pipelineList);
@@ -146,18 +164,20 @@ classdef cpipeline
                     set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',index);
                     pipelineContentObj = findobj(fig,'tag','PipelineContentList');
                     if index == 1
-                        set(pipelineContentObj, 'string', [], 'Value', 1);
+                        set(pipelineContentObj, 'string', {}, 'Value', 1);
                     else
-                        calcList = ndi.cpipeline.getCalcFromPipeline(ud.pipelineList, ud.pipelineListChar{index});
-                        calcListChar = ndi.cpipeline.calculationsToChar(calcList);
+                        calculatorInstanceList = ndi.cpipeline.getCalculatorInstancesFromPipeline(ud.pipelineList, ud.pipelineListChar{index});
+                        calculatorInstanceListChar = ndi.cpipeline.calculatorInstancesToChar(calculatorInstanceList);
                         pipelineContentObj = findobj(fig,'tag','PipelineContentList');
-                        set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
+                        set(pipelineContentObj, 'string', calculatorInstanceListChar, 'Value', min(numel(calculatorInstanceListChar),1));
                     end
-                case 'UpdateCalculatorList' % invented command that is not a callback
-                    calcList = ndi.cpipeline.getCalcFromPipeline(ud.pipelineList, options.pipeline_name);
-                    calcListChar = ndi.cpipeline.calculationsToChar(calcList);
+                    ndi.cpipeline.edit('command','DoEnableDisable','fig',fig);
+                case 'UpdateCalculatorInstanceList' % invented command that is not a callback
+                    calculatorInstanceList = ndi.cpipeline.getCalculatorInstancesFromPipeline(ud.pipelineList, options.pipeline_name);
+                    calculatorInstanceListChar = ndi.cpipeline.calculatorInstancesToChar(calculatorInstanceList);
                     pipelineContentObj = findobj(fig,'tag','PipelineContentList');
-                    set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
+                    set(pipelineContentObj, 'string', calculatorInstanceListChar, 'Value', min(numel(calculatorInstanceListChar),1));
+                    ndi.cpipeline.edit('command','DoEnableDisable','fig',fig);
                 case 'PipelinePopup'
                     % Step 1: search for the objects you need to work with
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
@@ -167,12 +187,13 @@ classdef cpipeline
                     if val == 1
                         msgbox('Please select or create a pipeline.');
                         pipelineContentObj = findobj(fig,'tag','PipelineContentList');
-                        set(pipelineContentObj, 'string', [], 'Value', 1);
-                        return
+                        set(pipelineContentObj, 'string', {}, 'Value', 1);
+                    else
+                        pipeline_name = str{val};
+                        ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','pipeline_name',pipeline_name,'fig',fig);
                     end
-                    pipeline_name = str{val};
-                    ndi.cpipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
-                case 'NewPipelineBt'
+                    ndi.cpipeline.edit('command','DoEnableDisable','fig',fig);
+                case 'NewPipelineButton'
                     % get dir
                     read_dir = [ud.pipelinePath filesep];
                     % create dialog box
@@ -188,9 +209,9 @@ classdef cpipeline
                         end
                         mkdir(read_dir,filename);
                         % update and load pipelines
-                        ndi.cpipeline.edit('command','LoadPipelines','selectedPipeline',filename);
+                        ndi.cpipeline.edit('command','LoadPipelines','selectedPipeline',filename,'fig',fig);
                     end
-                case 'DltPipelineBt'
+                case 'DeletePipelineButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -210,8 +231,8 @@ classdef cpipeline
                         rmdir([read_dir filesep filename], 's');
                     end
                     % update and load pipelines
-                    ndi.cpipeline.edit('command','LoadPipelines');
-                case 'NewCalcBt'
+                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
+                case 'NewCalculatorInstanceButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -228,28 +249,28 @@ classdef cpipeline
                     if (calcTypeVal == 0) % check selection
                         return
                     end
-                    calculator = calcTypeList{calcTypeStr};
+                    calculatorInstanceType = calcTypeList{calcTypeStr};
                     % ask for file name
                     read_dir = [ud.pipelinePath filesep pipeline_name filesep];
-                    prompt = {'Calculator name:'};
-                    dlgtitle = 'Create new calculator';
+                    prompt = {'Calculator instance name:'};
+                    dlgtitle = 'Create new Calculator instance';
                     defaultfilename = {['untitled']};
                     extension_list = {['.json']};
-                    [success,calcname,replaces] = ndi.util.choosefileordir(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
+                    [success,calculatorInstanceName,replaces] = ndi.util.choosefileordir(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
                     if success % if success, create and save newCalc
                         if replaces
-                            delete([read_dir filesep calcname '.json']);
+                            delete([read_dir filesep calculatorInstanceName '.json']);
                         end
-                        newCalc = ndi.cpipeline.setDefaultCalc(calculator, calcname);
-                        json_filename = char(strcat(read_dir,calcname,'.json'));
+                        newCalculatorInstance = ndi.cpipeline.setDefaultCalculatorInstance(calculatorInstanceType, calculatorInstanceName);
+                        json_filename = char(strcat(read_dir,calculatorInstanceName,'.json'));
                         fid = fopen(json_filename,'w');
-                        fprintf(fid,jsonencode(newCalc));
+                        fprintf(fid,jsonencode(newCalculatorInstance));
                         fclose(fid);
                         % update and load calculator
-                        ndi.cpipeline.edit('command','UpdatePipelines');
-                        ndi.cpipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
+                        ndi.cpipeline.edit('command','UpdatePipelines','fig',fig);
+                        ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','pipeline_name',pipeline_name,'fig',fig);
                     end
-                case 'DltCalcBt'
+                case 'DeleteCalculatorInstanceButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     pip_val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -258,22 +279,26 @@ classdef cpipeline
                         return;
                     end
                     pip_str = get(pipelinePopupObj, 'string');
-                    msgBox = sprintf('Do you want to delete this calculator?');
-                    title = 'Delete calculator';
+                    msgBox = sprintf('Do you want to delete this Calculator instance?');
+                    title = 'Delete Calculator instance';
                     b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
                     if strcmpi(b, 'Yes')
                         pipeline_name = pip_str{pip_val};
-                        piplineContentObj = findobj(fig,'tag','PipelineContentList');
-                        calc_val = get(piplineContentObj, 'value');
-                        calc_str = get(piplineContentObj, 'string');
-                        calc_name = calc_str{calc_val};
-                        filename = [ud.pipelinePath filesep pipeline_name filesep calc_name '.json'];
-                        delete(filename);
+                        pipelineContentObj = findobj(fig,'tag','PipelineContentList');
+                        calculatorInstance_val = get(pipelineContentObj, 'value');
+                        
+                        % Get the correct filename from the userdata structure
+                        selected_pipeline = ud.pipelineList(pip_val);
+                        filename_to_delete = selected_pipeline.calculatorInstances(calculatorInstance_val).JSONFilename;
+                        
+                        full_filename = fullfile(ud.pipelinePath, pipeline_name, filename_to_delete);
+                        delete(full_filename);
+                        
                         % update and load pipelines
-                        ndi.cpipeline.edit('command','UpdatePipelines');
-                        ndi.cpipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
+                        ndi.cpipeline.edit('command','UpdatePipelines','fig',fig);
+                        ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','pipeline_name',pipeline_name,'fig',fig);
                     end
-                case 'EditBt'
+                case 'EditButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     pip_val = get(pipelinePopupObj, 'value');
                     % check not the "---"
@@ -283,75 +308,105 @@ classdef cpipeline
                     end
                     pip_str = get(pipelinePopupObj, 'string');
                     pipeline_name = pip_str{pip_val};
-                    piplineContentObj = findobj(fig,'tag','PipelineContentList');
-                    calc_val = get(piplineContentObj, 'value');
-                    calc_str = get(piplineContentObj, 'string');
-                    calc_name = calc_str{calc_val};
-                    % replace illegal chars to underscore
-                    calc_name = regexprep(calc_name,'[^a-zA-Z0-9]','_');
-                    full_calc_name = [ud.pipelinePath filesep pipeline_name filesep calc_name '.json'];
-                    ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_calc_name,'session',ud.session);
-                case 'RunBt'
+                    pipelineContentObj = findobj(fig,'tag','PipelineContentList');
+                    calculatorInstance_val = get(pipelineContentObj, 'value');
+                    
+                    % Get the correct filename from the userdata structure
+                    selected_pipeline = ud.pipelineList(pip_val);
+                    filename_to_edit = selected_pipeline.calculatorInstances(calculatorInstance_val).JSONFilename;
+                    
+                    full_calculatorInstance_name = fullfile(ud.pipelinePath, pipeline_name, filename_to_edit);
+                    ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_calculatorInstance_name,'session',ud.session);
+                case 'RunButton'
                     disp([command 'is not implemented yet.']);
                 case 'PipelineContentList'
-                    disp([command 'is not supposed to do anything.'])
+                    ndi.cpipeline.edit('command','DoEnableDisable','fig',fig);
+                case 'DoEnableDisable'
+                    % Get handles
+                    pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                    pipelineContentObj = findobj(fig,'tag','PipelineContentList');
+                    runButton = findobj(fig,'tag','RunButton');
+                    deletePipelineButton = findobj(fig,'tag','DeletePipelineButton');
+                    deleteCalcButton = findobj(fig,'tag','DeleteCalculatorInstanceButton');
+                    editButton = findobj(fig,'tag','EditButton');
+
+                    % Get state
+                    pipeline_index = get(pipelinePopupObj,'Value');
+                    if isempty(pipeline_index) % handle case where popup list is empty
+                        pipeline_index = 1;
+                    end
+                    is_real_pipeline = pipeline_index > 1;
+
+                    calculator_indices = get(pipelineContentObj,'Value');
+                    calculator_strings = get(pipelineContentObj,'String');
+                    
+                    % For multi-select listbox, Value is [] if nothing is selected
+                    is_calculator_selected = ~isempty(calculator_indices);
+                    % Use numel because String can be '' (empty char) which is not empty
+                    has_calculators = numel(calculator_strings) > 0;
+
+                    % Set enable/disable states
+                    on_off = {'off','on'};
+                    set(deletePipelineButton, 'Enable', on_off{is_real_pipeline+1});
+                    set(runButton, 'Enable', on_off{(is_real_pipeline && has_calculators)+1});
+                    set(deleteCalcButton, 'Enable', on_off{(is_real_pipeline && is_calculator_selected)+1});
+                    set(editButton, 'Enable', on_off{(is_real_pipeline && is_calculator_selected)+1});
                 otherwise
                     disp(['Unknown command ' command '.']);
             end % switch(command)
         end % pipeline_edit()
-        function calcList = getCalcFromPipeline(pipelineList, pipeline_name)
+        function calculatorInstanceList = getCalculatorInstancesFromPipeline(pipelineList, pipeline_name)
             %
-            % ndi.cpipeline.getCalcFromPipeline - read a CALCLIST from PIPELINELIST
+            % ndi.cpipeline.getCalculatorInstancesFromPipeline - read a calculatorInstanceList from PIPELINELIST
             %
-            % CALCLIST = ndi.cpipeline.getCalcFromPipeline(PIPELINELIST, PIPELINE_NAME)
+            % CALCLIST = ndi.cpipeline.getCalculatorInstancesFromPipeline(PIPELINELIST, PIPELINE_NAME)
             %
             % Input:
             %   PIPELINELIST: a list of pipelines
             %   PIPELINE_NAME: a name string of a specific pipeline in this pipeline list
             % Output:
-            %   CALCLIST: a list of calculators
+            %   calculatorInstanceList: a list of calculators
             %
-            calcList = [];
+            calculatorInstanceList = [];
             for i = 1:length(pipelineList)
-                if strcmp(pipelineList{i}.pipeline_name, pipeline_name)
-                    calcList = pipelineList{i}.calculations;
+                if strcmp(pipelineList(i).pipeline_name, pipeline_name)
+                    calculatorInstanceList = pipelineList(i).calculatorInstances;
                 end
             end
-        end % getCalcFromPipeline
-        function calcListChar = calculationsToChar(calcList)
+        end % getCalculatorInstancesFromPipeline
+        function calculatorInstanceListChar = calculatorInstancesToChar(calculatorInstanceList)
             %
-            % ndi.cpipeline.calculationsToChar - read names of a CALCLIST as a list of strings
+            % ndi.cpipeline.calculatorInstancesToChar - read names of a calculatorInstanceList as a list of strings
             %
-            % CALCLISTCHAR = ndi.cpipeline.calculationsToChar(CALCLIST)
+            % CALCLISTCHAR = ndi.cpipeline.calculatorInstancesToChar(calculatorInstanceList)
             %
             % Input:
-            %   CALCLIST: a list of calculators
+            %   calculatorInstanceList: a list of calculators
             % Output:
-            %   CALCLISTCHAR: a list of strings, representing names of calculators in CALCLIST
+            %   calculatorInstanceListChar: a list of strings, representing names of calculators in calculatorInstanceList
             %
-            calcListChar = {};
-            for i = 1:length(calcList)
-                calcListChar{i} = [calcList{i}.ndi_pipeline_element.name ' (' calcList{i}.ndi_pipeline_element.filename ')'];
+            calculatorInstanceListChar = {};
+            for i = 1:numel(calculatorInstanceList)
+                calculatorInstanceListChar{i} = [calculatorInstanceList(i).instanceName ' (' calculatorInstanceList(i).JSONFilename ')'];
             end
-        end % calculationsToChar
-        function newCalc = setDefaultCalc(calculator, name)
+        end % calculatorInstancesToChar
+        function newCalculatorInstance = setDefaultCalculatorInstance(calculatorInstanceType, name)
             %
-            % ndi.cpipeline.setDefaultCalc - set default parameters for a new calculator
+            % ndi.cpipeline.setDefaultCalculatorInstance - set default parameters for a new calculator
             %
-            % NEWCALC = ndi.cpipeline.setDefaultCalc(CALCULATOR, NAME)
+            % NEWCALC = ndi.cpipeline.setDefaultCalculatorInstance(CALCULATOR, NAME)
             %
             % Input
-            %   CALCULATOR: a type of calculator (EXAMPLE: ndi.calc.stimulus.tuningcurve)
+            %   calculatorInstanceType: a type of calculator (EXAMPLE: ndi.calc.stimulus.tuningcurve)
             %   NAME: a name string of calculator
             % Output:
-            %   NEWCALC: a new calculator created by this function
+            %   newCalculatorInstance: a new calculator created by this function
             %
-            newCalc.ndi_pipeline_element.calculator = calculator;
-            newCalc.ndi_pipeline_element.name = name;
-            newCalc.ndi_pipeline_element.filename = [name '.json'];
-            newCalc.ndi_pipeline_element.parameter_code = '';
-            newCalc.ndi_pipeline_element.default_options = containers.Map("if_document_exists_do","NoAction");
-        end % setDefaultCalc
+            newCalculatorInstance.calculatorClassname = calculatorInstanceType;
+            newCalculatorInstance.instanceName = name;
+            newCalculatorInstance.parameter_code = '';
+            newCalculatorInstance.default_options = containers.Map("if_document_exists_do","NoAction");
+        end % setDefaultCalculatorInstance
         function pipelineList = getPipelines(read_dir)
             %
             % ndi.cpipeline.getPipelines - read a PIPELINE_LIST from directory READ_DIR
@@ -367,17 +422,30 @@ classdef cpipeline
             isub = [d(:).isdir];
             nameList = {d(isub).name}';
             nameList(ismember(nameList,{'.','..'})) = [];
-            pipelineList{1}.pipeline_name = '---';
-            pipelineList{1}.calculations = {};
-            for i = 2:(length(nameList)+1)
-                pipelineList{i}.pipeline_name = nameList{i-1};
-                pipelineList{i}.calculations = {};
-                D = dir([read_dir filesep char(pipelineList{i}.pipeline_name) filesep '*.json']);
-                for d_i = 1:numel(D)
-                    % D(d).name is the name of the nth calculator in the pipeline; you can use that to build your list of calculators
-                    json_text = vlt.file.textfile2char([read_dir filesep char(pipelineList{i}.pipeline_name) filesep D(d_i).name]);
-                    pipelineList{i}.calculations{d_i} = jsondecode(json_text);
-                    pipelineList{i}.calculations{d_i}.ndi_pipeline_element.filename = D(d_i).name;
+            pipelineList(1).pipeline_name = '---';
+            pipelineList(1).calculatorInstances = vlt.data.emptystruct('calculatorClassname','instanceName','JSONFilename','parameter_code','default_options');
+            for i = 1:numel(nameList)
+                pipelineList(i+1).pipeline_name = nameList{i};
+                D = dir([read_dir filesep nameList{i} filesep '*.json']);
+                if ~isempty(D)
+                    temp_cell = cell(1, numel(D));
+                    for d_i = 1:numel(D)
+                        json_text = vlt.file.textfile2char([read_dir filesep nameList{i} filesep D(d_i).name]);
+                        decoded_json = jsondecode(json_text);
+                        
+                        % Flatten the structure from the old format to the new format
+                        new_instance = struct();
+                        new_instance.calculatorClassname = decoded_json.ndi_pipeline_element.calculator;
+                        new_instance.instanceName = decoded_json.ndi_pipeline_element.name;
+                        new_instance.parameter_code = decoded_json.ndi_pipeline_element.parameter_code;
+                        new_instance.default_options = decoded_json.ndi_pipeline_element.default_options;
+                        new_instance.JSONFilename = D(d_i).name; % Add the filename
+
+                        temp_cell{d_i} = new_instance;
+                    end
+                    pipelineList(i+1).calculatorInstances = [temp_cell{:}];
+                else
+                    pipelineList(i+1).calculatorInstances = vlt.data.emptystruct('calculatorClassname','instanceName','JSONFilename','parameter_code','default_options');
                 end
             end
         end % getPipelines
@@ -392,10 +460,7 @@ classdef cpipeline
             % Output:
             %   PIPELINELISTCHAR: a list of strings, representing names of pipelines in PIPELINELIST
             %
-            pipelineListChar = [];
-            for i = 1:length(pipelineList)
-                pipelineListChar{i} = pipelineList{i}.pipeline_name;
-            end
+            pipelineListChar = {pipelineList.pipeline_name};
         end % pipelineListToChar
         % }
     end % static methods
