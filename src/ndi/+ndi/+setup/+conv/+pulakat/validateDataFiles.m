@@ -1,4 +1,4 @@
-function [] = validateDataFiles(subjectTable,dataFiles)
+function [dataTable] = validateDataFiles(subjectTable,dataFiles)
 
 % for every dataFile, what are the relevant subjects? dataSubjects
 % What subjects are missing from the subjectTable? 
@@ -41,6 +41,8 @@ for i = 1:numel(scheduleFiles)
     group3 = unique(experimentSchedule.x25Rats); group3(strcmp(group3,'')) = [];
     
     scheduleSubjects{i} = table([group1;group2;group3],'VariableNames',{'Cage'});
+    scheduleSubjects{i}{:,'fileName'} = scheduleFiles(i);
+    scheduleSubjects{i}{:,'fileType'} = {'schedule'};
     
     % Remove spaces from cage names (if applicable)
     scheduleSubjects{i}.Cage = cellfun(@(c) replace(c,' ',''),scheduleSubjects{i}.Cage,...
@@ -83,6 +85,8 @@ for i = 1:numel(diaFiles)
             '-',num2str(str2double(idInfo{3}),'%.2i'),'-',num2str(str2double(idInfo{4}),'%.2i')]};
     end
     diaSubjects{i} = unique(diaSubjects{i});
+    diaSubjects{i}{:,'fileName'} = diaFiles(i);
+    diaSubjects{i}{:,'fileType'} = {'DIA'};
 
     % Find subjects listed in the DIA report that are not in the subjectTable
     missingDIASubjects{i} = setdiff(diaSubjects{i}.Label,subjectTable.Label);
@@ -117,7 +121,8 @@ for i = 1:numel(svsFiles)
         svsIdentifiers{j} = svsFiles{i};
     end
     svsSubjects{i} = table(cageIdentifiers',svsIdentifiers',...
-        'VariableNames',{'Cage','svsFile'});
+        'VariableNames',{'Cage','fileName'});
+    svsSubjects{i}{:,'fileType'} = {'svs'};
 
     % Find subjects listed in the experiment schedule that are not in the subjectTable
     missingSVSSubjects{i} = setdiff(svsSubjects{i}.Cage,subjectTable.Cage);
@@ -140,7 +145,8 @@ end
 pattern = '(?<=/)\d+[A-Z]?';
 cageIdentifiers = regexp(echoFolders, pattern, 'match');
 echoSubjects = table([cageIdentifiers{:}]',echoFolders,...
-    'VariableNames',{'Cage','echoFolder'});
+    'VariableNames',{'Cage','fileName'});
+echoSubjects{:,'fileType'} = {'echo'};
 
 % Find subjects listed in the echo folders that are not in the subjectTable
 missingEchoSubjects = setdiff(echoSubjects.Cage,subjectTable.Cage);
@@ -159,5 +165,11 @@ end
 
 warning('validateDataFiles: The following files are of unknown type: %s',...
     strjoin(miscFiles,', '));
+
+scheduleTable = ndi.fun.table.join({subjectTable,ndi.fun.table.vstack(scheduleSubjects)});
+diaTable = ndi.fun.table.join({subjectTable,ndi.fun.table.vstack(diaSubjects)});
+svsTable = ndi.fun.table.join({subjectTable,ndi.fun.table.vstack(svsSubjects)});
+echoTable = ndi.fun.table.join({subjectTable,echoSubjects});
+dataTable = ndi.fun.table.vstack({scheduleTable,diaTable,svsTable,echoTable});
 
 end
