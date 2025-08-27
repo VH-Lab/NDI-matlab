@@ -1,5 +1,26 @@
 %% GUI Workflow
 
+% 1. Update nansen viewer to match cloud dataset
+% 2. Ask for all the parent directories where new data files are located or
+%       allow drag and drop.
+% 3. Validate data files.
+%       - If a file labeled animal_mapping is in the parent directories, 
+%           use that automatically and indicate that new subjects were
+%           detected.
+%       - If subjects are missing from the database, prompt user to add 
+%           those subjects now (choose spreadsheets(s)) or add manually. 
+%           If not added, skip those subjects and their associated files.
+%       - Show them what new subjects are being added to the database if
+%           they already exist, are there any discrepencies that need to be
+%           resolved
+%       - Show user what datafiles are being added, what their file type is
+%           and any files of unknown file type (but known subject).
+%       - If a data files are already in the database, ask user if they 
+%           want to skip or replace.
+% 4. Ingest data
+% 5. Sync data to cloud
+% 6. Update nansen viewer to match cloud dataset
+
 % Create subject table from files
 subjectFiles = {'/Users/jhaley/Documents/MATLAB/data/pulakat/animal_mapping_JH.csv'};
 subjectTable = ndi.setup.conv.pulakat.importSubjectFiles(subjectFiles);
