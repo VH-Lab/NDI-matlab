@@ -1,62 +1,71 @@
-% TODO
-% 1. Get a calculation type list
-% 2. Pipeline edit & run button (edit: ndi.calculator.graphical_edit_calculator, waiting for updates)
-
-classdef pipeline
-
+classdef cpipeline
     % A class for managing pipelines of ndi.calculator objects in NDI.
-    %
     %
     % To test and for a demo, use
     %
     %    ndi.test.pipeline.editpipeline()
-
     properties (SetAccess=protected,GetAccess=public)
-
     end % properties
-
     methods
-
     end % methods
-
     methods (Static)
-        function edit(varargin)
-            % ndi.pipeline.edit - create and control a GUI to graphically edit a PIPELINE EDITOR instance
+        function edit(options)
+            % EDIT - create and control a GUI to graphically edit a CPIPELINE
             %
-            % ndi.pipeline.edit (...)
+            %   EDIT(Name, Value, ...)
             %
-            % Creates and controls a graphical user interface for creating an instance of
-            % an pipeline.editor object.
+            %   Creates and controls a graphical user interface for creating an instance of
+            %   a cpipeline.editor object.
             %
-            % Usage by the user:
+            %   This function accepts the following optional arguments as name-value pairs:
             %
-            %   S = []; % use an empty session for now
-            %   ndi.pipeline.edit('command','new','pipelinePath',fullfile(userpath,'tools','NDI-matlab','+ndi','+test','+pipeline','test_pipeline'),'session',S);
+            %   'command'           A character array specifying the GUI command.
+            %                       Default: 'New'.
             %
+            %   'pipelinePath'      The full path to the directory containing the pipelines.
+            %                       This argument is required when command is 'new'.
             %
-            session = []; % start with a blank session
-            vlt.data.assign(varargin{:});
+            %   'session'           An ndi.session object.
+            %                       Default: ndi.session.empty().
+            %
+            %   'window_params'     A structure with 'height' and 'width' fields.
+            %                       Default: struct('height', 500, 'width', 400).
+            %
+            %   'fig'               A handle to an existing figure to use.
+            %                       Default: [].
+            %
+            
+            arguments
+                options.command (1,:) char {mustBeMember(options.command, ...
+                    {'New','NewWindow','UpdatePipelines','LoadPipelines','UpdateCalculatorList',...
+                    'PipelinePopup','NewPipelineBt','DltPipelineBt','NewCalcBt','DltCalcBt',...
+                    'EditBt','RunBt','PipelineContentList'})} = 'New'
+                options.pipelinePath (1,:) char = ''
+                options.session ndi.session = ndi.session.empty();
+                options.window_params (1,1) struct = struct('height', 500, 'width', 400)
+                options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
+                options.selectedPipeline (1,:) char = ''
+                options.pipeline_name (1,:) char = ''
+            end
 
-            window_params.height = 500;
-            window_params.width = 400;
-            fig = []; % figure to use
+            fig = options.fig;
 
-            if strcmpi(command,'new')
+            if strcmpi(options.command,'new')
                 if isempty(fig)
                     fig = figure;
                 end
                 command = 'NewWindow';
                 % new window, set userdata
-                if exist('pipelinePath','var')
+                if ~isempty(options.pipelinePath)
                     % is it a valid directory?
-                    if isfolder(pipelinePath)
-                        ud.pipelinePath = pipelinePath;
+                    if isfolder(options.pipelinePath)
+                        ud.pipelinePath = options.pipelinePath;
                         ud.pipelineList = []; % initially empty
                         ud.pipelineListChar = []; % initially empty
-                        ud.session = session;
+                        ud.session = options.session;
                         set(fig,'userdata',ud);
                     else
-                        error(['The provided pipeline path does not exist: ' pipelinePath '.']);
+                        error(['The provided pipeline path does not exist: ' options.pipelinePath '.']);
                     end
                 else
                     error(['No pipelinePath provided.']);
@@ -65,57 +74,45 @@ classdef pipeline
                 fig = gcf;
                 % not new window, get userdata
                 ud = get(fig,'userdata');
+                command = options.command;
             end
-
             if isempty(fig)
                 error(['Empty figure, do not know what to work on.']);
             end
-
             disp(['Command is ' command '.']);
-
             switch (command)
                 case 'NewWindow'
-                    set(fig,'tag','ndi.pipeline.edit');
-
+                    set(fig,'tag','ndi.cpipeline.edit');
                     uid = vlt.ui.basicuitools_defs;
-
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
-
                     % Step 1: Establish window geometry
-
-                    top = window_params.height;
-                    right = window_params.width;
+                    top = options.window_params.height;
+                    right = options.window_params.width;
                     row = 25;
                     title_height = 25;
                     title_width = 200;
                     edge = 5;
-
                     doc_width = (right - 2*edge)/3*2;
-                    doc_height = (window_params.height)/4*3;
+                    doc_height = (options.window_params.height)/4*3;
                     menu_width = right - 2*edge;
                     menu_height = title_height;
                     button_width = 120;
                     button_height = 25;
                     button_y = [400-2*row 400-4.5*row 400-6*row 400-8.5*row 400-10*row 400-11.5*row];
                     button_center = right-(right-doc_width)/2;
-
                     % Step 2 now build it
-
                     set(fig,'position',[50 50 right top]);
                     set(fig,'NumberTitle','off');
                     set(fig,'Name',['Editing ' ud.pipelinePath]);
-
                     % Pipeline selection portion of window
                     x = edge; y = top-row;
                     uicontrol(uid.txt,'position',[x y title_width title_height],'string','Select pipeline:','tag','PipelineTitleTxt');
                     uicontrol(uid.popup,'position',[x y-title_height menu_width menu_height],...
                         'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr);
                     y = y - doc_height;
-
                     uicontrol(uid.edit,'style','listbox','position',[x y-2*title_height doc_width doc_height],...
                         'string',{'Please select or create a pipeline.'},...
                         'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr);
-
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
                         'string','->','tag','RunBt','callback',callbackstr,'Tooltipstring','Run pipeline calculations in order');
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(2) button_width button_height],...
@@ -131,40 +128,36 @@ classdef pipeline
                         'string','-','Tooltipstring','Delete Current Calculator','tag','DltCalcBt','callback',callbackstr);
                     uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(6) button_width button_height],...
                         'string','Edit','tooltipstring','Edit selected calculator','tag','EditBt','callback',callbackstr);
-                    ndi.pipeline.edit('command','LoadPipelines'); % load the pipelines from disk
-
+                    ndi.cpipeline.edit('command','LoadPipelines'); % load the pipelines from disk
                 case 'UpdatePipelines' % invented command that is not a callback
-                    ud.pipelineList = ndi.pipeline.getPipelines(ud.pipelinePath);
-                    ud.pipelineListChar = ndi.pipeline.pipelineListToChar(ud.pipelineList);
+                    ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
+                    ud.pipelineListChar = ndi.cpipeline.pipelineListToChar(ud.pipelineList);
                     set(fig,'userdata',ud);
-
                 case 'LoadPipelines' % invented command that is not a callback
                     % called on startup or if the user ever changes the file path through some future mechanism
-                    ud.pipelineList = ndi.pipeline.getPipelines(ud.pipelinePath);
-                    ud.pipelineListChar = ndi.pipeline.pipelineListToChar(ud.pipelineList);
+                    ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
+                    ud.pipelineListChar = ndi.cpipeline.pipelineListToChar(ud.pipelineList);
                     set(fig,'userdata',ud);
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     index = 1;
-                    if exist('selectedPipeline','var')
-                        index = find(strcmp(selectedPipeline,ud.pipelineListChar));
+                    if ~isempty(options.selectedPipeline)
+                        index = find(strcmp(options.selectedPipeline,ud.pipelineListChar));
                     end
                     set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',index);
                     pipelineContentObj = findobj(fig,'tag','PipelineContentList');
                     if index == 1
                         set(pipelineContentObj, 'string', [], 'Value', 1);
                     else
-                        calcList = ndi.pipeline.getCalcFromPipeline(ud.pipelineList, ud.pipelineListChar{index});
-                        calcListChar = ndi.pipeline.calculationsToChar(calcList);
+                        calcList = ndi.cpipeline.getCalcFromPipeline(ud.pipelineList, ud.pipelineListChar{index});
+                        calcListChar = ndi.cpipeline.calculationsToChar(calcList);
                         pipelineContentObj = findobj(fig,'tag','PipelineContentList');
                         set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
                     end
-
                 case 'UpdateCalculatorList' % invented command that is not a callback
-                    calcList = ndi.pipeline.getCalcFromPipeline(ud.pipelineList, pipeline_name);
-                    calcListChar = ndi.pipeline.calculationsToChar(calcList);
+                    calcList = ndi.cpipeline.getCalcFromPipeline(ud.pipelineList, options.pipeline_name);
+                    calcListChar = ndi.cpipeline.calculationsToChar(calcList);
                     pipelineContentObj = findobj(fig,'tag','PipelineContentList');
                     set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
-
                 case 'PipelinePopup'
                     % Step 1: search for the objects you need to work with
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
@@ -178,8 +171,7 @@ classdef pipeline
                         return
                     end
                     pipeline_name = str{val};
-                    ndi.pipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
-
+                    ndi.cpipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
                 case 'NewPipelineBt'
                     % get dir
                     read_dir = [ud.pipelinePath filesep];
@@ -196,9 +188,8 @@ classdef pipeline
                         end
                         mkdir(read_dir,filename);
                         % update and load pipelines
-                        ndi.pipeline.edit('command','LoadPipelines','selectedPipeline',filename);
+                        ndi.cpipeline.edit('command','LoadPipelines','selectedPipeline',filename);
                     end
-
                 case 'DltPipelineBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
@@ -219,8 +210,7 @@ classdef pipeline
                         rmdir([read_dir filesep filename], 's');
                     end
                     % update and load pipelines
-                    ndi.pipeline.edit('command','LoadPipelines');
-
+                    ndi.cpipeline.edit('command','LoadPipelines');
                 case 'NewCalcBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
@@ -231,7 +221,6 @@ classdef pipeline
                     end
                     str = get(pipelinePopupObj, 'string');
                     pipeline_name = str{val};
-
                     % get calculator type
                     calcTypeList = {'ndi.calc.not_finished_yet','ndi.calc.need_calculator_types','ndi.calc.this_is_a_placeholder'};
                     [calcTypeStr,calcTypeVal] = listdlg('PromptString','Choose a calculator type:',...
@@ -240,7 +229,6 @@ classdef pipeline
                         return
                     end
                     calculator = calcTypeList{calcTypeStr};
-
                     % ask for file name
                     read_dir = [ud.pipelinePath filesep pipeline_name filesep];
                     prompt = {'Calculator name:'};
@@ -252,16 +240,15 @@ classdef pipeline
                         if replaces
                             delete([read_dir filesep calcname '.json']);
                         end
-                        newCalc = ndi.pipeline.setDefaultCalc(calculator, calcname);
+                        newCalc = ndi.cpipeline.setDefaultCalc(calculator, calcname);
                         json_filename = char(strcat(read_dir,calcname,'.json'));
                         fid = fopen(json_filename,'w');
                         fprintf(fid,jsonencode(newCalc));
                         fclose(fid);
                         % update and load calculator
-                        ndi.pipeline.edit('command','UpdatePipelines');
-                        ndi.pipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
+                        ndi.cpipeline.edit('command','UpdatePipelines');
+                        ndi.cpipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
                     end
-
                 case 'DltCalcBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     pip_val = get(pipelinePopupObj, 'value');
@@ -276,15 +263,15 @@ classdef pipeline
                     b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
                     if strcmpi(b, 'Yes')
                         pipeline_name = pip_str{pip_val};
-                        piplineContentObj = findobj(fig,'tag','PipelineContentList')
-                        calc_val = get(piplineContentObj, 'value')
-                        calc_str = get(piplineContentObj, 'string')
+                        piplineContentObj = findobj(fig,'tag','PipelineContentList');
+                        calc_val = get(piplineContentObj, 'value');
+                        calc_str = get(piplineContentObj, 'string');
                         calc_name = calc_str{calc_val};
                         filename = [ud.pipelinePath filesep pipeline_name filesep calc_name '.json'];
                         delete(filename);
                         % update and load pipelines
-                        ndi.pipeline.edit('command','UpdatePipelines');
-                        ndi.pipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
+                        ndi.cpipeline.edit('command','UpdatePipelines');
+                        ndi.cpipeline.edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
                     end
                 case 'EditBt'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
@@ -303,7 +290,7 @@ classdef pipeline
                     % replace illegal chars to underscore
                     calc_name = regexprep(calc_name,'[^a-zA-Z0-9]','_');
                     full_calc_name = [ud.pipelinePath filesep pipeline_name filesep calc_name '.json'];
-                    ndi.calculator.graphical_edit_calculator('command','EDIT','filename',full_calc_name,'session',ud.session);
+                    ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_calc_name,'session',ud.session);
                 case 'RunBt'
                     disp([command 'is not implemented yet.']);
                 case 'PipelineContentList'
@@ -311,14 +298,12 @@ classdef pipeline
                 otherwise
                     disp(['Unknown command ' command '.']);
             end % switch(command)
-
         end % pipeline_edit()
-
         function calcList = getCalcFromPipeline(pipelineList, pipeline_name)
             %
-            % ndi.pipeline.getCalcFromPipeline - read a CALCLIST from PIPELINELIST
+            % ndi.cpipeline.getCalcFromPipeline - read a CALCLIST from PIPELINELIST
             %
-            % CALCLIST = ndi.pipeline.getCalcFromPipeline(PIPELINELIST, PIPELINE_NAME)
+            % CALCLIST = ndi.cpipeline.getCalcFromPipeline(PIPELINELIST, PIPELINE_NAME)
             %
             % Input:
             %   PIPELINELIST: a list of pipelines
@@ -333,30 +318,27 @@ classdef pipeline
                 end
             end
         end % getCalcFromPipeline
-
         function calcListChar = calculationsToChar(calcList)
             %
-            % ndi.pipeline.calculationsToChar - read names of a CALCLIST as a list of strings
+            % ndi.cpipeline.calculationsToChar - read names of a CALCLIST as a list of strings
             %
-            % CALCLISTCHAR = ndi.pipeline.calculationsToChar(CALCLIST)
+            % CALCLISTCHAR = ndi.cpipeline.calculationsToChar(CALCLIST)
             %
             % Input:
             %   CALCLIST: a list of calculators
             % Output:
             %   CALCLISTCHAR: a list of strings, representing names of calculators in CALCLIST
             %
-
-            calcListChar = [];
+            calcListChar = {};
             for i = 1:length(calcList)
-                calcListChar{i} = calcList{i}.ndi_pipeline_element.name;
+                calcListChar{i} = [calcList{i}.ndi_pipeline_element.name ' (' calcList{i}.ndi_pipeline_element.filename ')'];
             end
         end % calculationsToChar
-
         function newCalc = setDefaultCalc(calculator, name)
             %
-            % ndi.pipeline.setDefaultCalc - set default parameters for a new calculator
+            % ndi.cpipeline.setDefaultCalc - set default parameters for a new calculator
             %
-            % NEWCALC = ndi.pipeline.setDefaultCalc(CALCULATOR, NAME)
+            % NEWCALC = ndi.cpipeline.setDefaultCalc(CALCULATOR, NAME)
             %
             % Input
             %   CALCULATOR: a type of calculator (EXAMPLE: ndi.calc.stimulus.tuningcurve)
@@ -366,16 +348,15 @@ classdef pipeline
             %
             newCalc.ndi_pipeline_element.calculator = calculator;
             newCalc.ndi_pipeline_element.name = name;
-            newCalc.ndi_pipeline_element.filename = name;
+            newCalc.ndi_pipeline_element.filename = [name '.json'];
             newCalc.ndi_pipeline_element.parameter_code = '';
             newCalc.ndi_pipeline_element.default_options = containers.Map("if_document_exists_do","NoAction");
         end % setDefaultCalc
-
         function pipelineList = getPipelines(read_dir)
             %
-            % ndi.pipeline.getPipelines - read a PIPELINE_LIST from directory READ_DIR
+            % ndi.cpipeline.getPipelines - read a PIPELINE_LIST from directory READ_DIR
             %
-            % PIPELINELIST = ndi.pipeline.getPipelines(READ_DIR)
+            % PIPELINELIST = ndi.cpipeline.getPipelines(READ_DIR)
             %
             % Input:
             %   READ_DIR: a directory where the pipelines are stored as a PIPELINE_LIST
@@ -392,18 +373,19 @@ classdef pipeline
                 pipelineList{i}.pipeline_name = nameList{i-1};
                 pipelineList{i}.calculations = {};
                 D = dir([read_dir filesep char(pipelineList{i}.pipeline_name) filesep '*.json']);
-                for d = 1:numel(D)
+                for d_i = 1:numel(D)
                     % D(d).name is the name of the nth calculator in the pipeline; you can use that to build your list of calculators
-                    pipelineList{i}.calculations{d} = jsondecode(vlt.file.textfile2char([read_dir filesep char(pipelineList{i}.pipeline_name) filesep D(d).name]));
+                    json_text = vlt.file.textfile2char([read_dir filesep char(pipelineList{i}.pipeline_name) filesep D(d_i).name]);
+                    pipelineList{i}.calculations{d_i} = jsondecode(json_text);
+                    pipelineList{i}.calculations{d_i}.ndi_pipeline_element.filename = D(d_i).name;
                 end
             end
         end % getPipelines
-
         function pipelineListChar = pipelineListToChar(pipelineList)
             %
-            % ndi.pipeline.pipelineListToChar - read names of a PIPELINELIST as a list of strings
+            % ndi.cpipeline.pipelineListToChar - read names of a PIPELINELIST as a list of strings
             %
-            % PIPELINELISTCHAR = ndi.pipeline.pipelineListToChar(PIPELINELIST)
+            % PIPELINELISTCHAR = ndi.cpipeline.pipelineListToChar(PIPELINELIST)
             %
             % Input:
             %   PIPELINELIST: a list of pipelines
@@ -415,8 +397,6 @@ classdef pipeline
                 pipelineListChar{i} = pipelineList{i}.pipeline_name;
             end
         end % pipelineListToChar
-
         % }
-
     end % static methods
 end % class

@@ -508,36 +508,73 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             param = rmfield(param,'varargin');
         end
 
-        function graphical_edit_calculator(varargin)
-            % GRAPHICAL_EDIT_CALCULATOR - create and control a GUI to graphically edit an NDI calculator instance
+        function graphical_edit_calculator(options)
+            % GRAPHICAL_EDIT_CALCULATOR - Create and control a GUI to graphically edit an NDI calculator instance
             %
-            % GRAPHICAL_EDIT_CALCULATOR(...)
+            %   FIG_OUT = GRAPHICAL_EDIT_CALCULATOR(Name, Value, ...)
             %
-            % Creates and controls a graphical user interface for creating an instance of
-            % an ndi.calculator object.
+            %   Creates and controls a graphical user interface for creating or editing
+            %   an instance of an ndi.calculator object.
             %
-            % Usage by the user:
+            %   This function accepts the following optional arguments as name-value pairs:
             %
-            %   GRAPHICAL_EDIT_CALCULATOR('command','NEW','type','ndi.calc.TYPE','filename',filename,'name',name)
-            %      or
-            %   GRAPHICAL_EDIT_CALCULATOR('command','EDIT','filename',filename)
+            %   'command'           A character array specifying the GUI command to
+            %                       implement. Must be one of 'new' (default), 'edit', or 'close'.
             %
+            %   'session'           An ndi.session object to associate with the GUI.
+            %                       Defaults to an empty ndi.session object.
             %
-            command = '';
-            window_params.height = 600;
-            window_params.width = 400;
-            session = [];
+            %   'name'              A character array for the user-defined name of this
+            %                       calculator instance. Defaults to ''.
+            %
+            %   'filename'          The full path to the JSON file where the calculator's
+            %                       information is stored. Defaults to ''.
+            %
+            %   'type'              The classname of the calculator to create.
+            %                       Defaults to ''.
+            %
+            %   'window_params'     A structure with 'height' and 'width' fields that
+            %                       specify the window dimensions in pixels.
+            %                       Defaults to struct('height', 600, 'width', 400).
+            %
+            %   'fig'               The handle of an existing figure to use or manage.
+            %                       If empty (default), a new figure is created.
+            %
+            
+            % Use an arguments block for robust name-value pair parsing
+            arguments
+                % The GUI command, must be 'new', 'edit', or 'close'
+                options.command (1,:) char {mustBeMember(options.command, {'New','Edit','Close',...
+                    'NewWindow','UpdateWindow','DocPopup', 'ParameterCodePopup',...
+                    'CommandPopup', 'LoadBt', 'SaveBt', 'CancelBt'})} = 'New'
+        
+                % The NDI session object, must be a scalar ndi.session
+                options.session (1,1) ndi.session = ndi.session.empty()
+        
+                % The user's name for the calculator instance
+                options.name (1,:) char = ''
+        
+                % The JSON file for storing calculator state
+                options.filename (1,:) char = ''
+        
+                % The classname of the calculator
+                options.type (1,:) char = ''
+        
+                % Window parameters structure, must be a scalar struct
+                options.window_params (1,1) struct = struct('height', 600, 'width', 400)
+        
+                % Optional figure handle. Can be a figure object or empty ([]).
+                options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
+            end
 
-            name = '';
-            filename = '';
-            type = '';
-            fig = []; % figure to use
+            options,
+            command = options.command;
+            session = options.session;
 
-            vlt.data.assign(varargin{:});
+            calc.filename = options.filename;
+            calc.name = options.name;
+            calc.type = options.type;
 
-            calc.name = name;
-            calc.filename = filename;
-            calc.type = type;
             if ~isempty(type)
                 calc.parameter_code_default = ndi.calculator.parameter_default(calc.type);
                 calc.parameter_code = calc.parameter_code_default;
