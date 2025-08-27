@@ -20,7 +20,9 @@ dataFiles = fileList(~indHiddenFiles & ~indDir);
 dataFiles = setdiff(dataFiles,subjectFiles);
 
 % Validate data files
-ndi.setup.conv.pulakat.validateDataFiles(subjectTable,dataFiles);
+dataTable = ndi.setup.conv.pulakat.validateDataFiles(subjectTable,dataFiles);
+
+% need more guidance on how we want to deal with missing files
 
 %% ARCHIVED
 
