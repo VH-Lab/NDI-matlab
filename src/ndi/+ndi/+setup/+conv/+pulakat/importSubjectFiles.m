@@ -25,7 +25,7 @@ for i = 1:numel(subjectFiles)
     subjectFile = subjectFiles{i};
     valid = ndi.setup.conv.pulakat.validateTableFile(subjectFile,requiredVariableNames);
     if ~valid
-        % error('importSubjectFiles: %s is not a valid subject file: %s.',subjectFile);
+        warning('importSubjectFiles: %s is not a valid subject file.',subjectFile); % Change to error
     end
 end
 
@@ -39,6 +39,7 @@ for i = 1:numel(subjectFiles)
     importOptions = setvartype(importOptions,requiredVariableNames,'char');
     importOptions.SelectedVariableNames = requiredVariableNames;
     subjectTables{i} = readtable(subjectFile,importOptions);
+    subjectTables{i}{:,'subjectFile'} = subjectFile;
 end
 
 % Stack subject tables
