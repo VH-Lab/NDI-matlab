@@ -44,7 +44,7 @@ end
 % Stack subject tables
 subjectTable = ndi.fun.table.vstack(subjectTables);
 
-% Remove spaces from Cage
+% Remove spaces from cage names (if applicable)
 subjectTable.Cage = cellfun(@(c) replace(c,' ',''),subjectTable.Cage,...
     'UniformOutput',false);
 
