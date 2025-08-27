@@ -1,3 +1,27 @@
+%% GUI Workflow
+
+% Create subject table from files
+subjectFiles = {'/Users/jhaley/Documents/MATLAB/data/pulakat/animal_mapping_JH.csv'};
+subjectTable = ndi.setup.conv.pulakat.importSubjectFiles(subjectFiles);
+
+% ADD SUBJECTS ALREADY IN DATABASE (indicate which are new)
+
+% Get files (probably want to have users specify paths)
+dataParentDir = fullfile(userpath,'data');
+options.Overwrite = true;
+labName = 'pulakat';
+dataPath = fullfile(dataParentDir,labName);
+fileList = fullfile(dataParentDir,vlt.file.manifest(dataPath));
+
+% Narrow file list to possible data files
+indHiddenFiles = contains(fileList,'/.');
+indDir = isfolder(fileList);
+dataFiles = fileList(~indHiddenFiles & ~indDir);
+dataFiles = setdiff(dataFiles,subjectFiles);
+
+% Validate data files
+ndi.setup.conv.pulakat.validateDataFiles(subjectTable,dataFiles);
+
 %% ARCHIVED
 
 theseSubjects{:,'experimentType'} = {'protein'};
