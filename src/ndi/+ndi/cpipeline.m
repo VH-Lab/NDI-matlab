@@ -63,14 +63,15 @@ classdef cpipeline
                 options.pipeline_name (1,:) char = ''
             end
 
-            if isempty(options.fig)
-                fig = gcf;
-            else
-                fig = options.fig;
+            fig = options.fig;
+
+            % Enforce that 'fig' must be provided for all commands except 'new'
+            if ~strcmpi(options.command,'new') && isempty(fig)
+                error('The ''fig'' argument must be provided for all commands except ''new''.');
             end
 
             if strcmpi(options.command,'new')
-                if isempty(options.fig)
+                if isempty(fig)
                     fig = figure;
                 end
                 command = 'NewWindow';
@@ -94,9 +95,7 @@ classdef cpipeline
                 ud = get(fig,'userdata');
                 command = options.command;
             end
-            if isempty(fig)
-                error(['Empty figure, do not know what to work on.']);
-            end
+
             disp(['Command is ' command '.']);
             switch (command)
                 case 'NewWindow'
@@ -242,34 +241,49 @@ classdef cpipeline
                     end
                     str = get(pipelinePopupObj, 'string');
                     pipeline_name = str{val};
-                    % get calculator type
-                    calcTypeList = {'ndi.calc.not_finished_yet','ndi.calc.need_calculator_types','ndi.calc.this_is_a_placeholder'};
-                    [calcTypeStr,calcTypeVal] = listdlg('PromptString','Choose a calculator type:',...
+                    
+                    % Dynamically find all calculator subclasses
+                    calcTypeList = ndi.calculator.find_calculator_subclasses();
+                    if isempty(calcTypeList)
+                        msgbox('No calculator types were found on the path.');
+                        return;
+                    end
+
+                    [calcTypeIndex, isSelectionMade] = listdlg('PromptString','Choose a calculator type:',...
                         'SelectionMode','single','ListString',calcTypeList);
-                    if (calcTypeVal == 0) % check selection
+                    if ~isSelectionMade % check selection
                         return
                     end
-                    calculatorInstanceType = calcTypeList{calcTypeStr};
-                    % ask for file name
-                    read_dir = [ud.pipelinePath filesep pipeline_name filesep];
-                    prompt = {'Calculator instance name:'};
-                    dlgtitle = 'Create new Calculator instance';
-                    defaultfilename = {['untitled']};
-                    extension_list = {['.json']};
-                    [success,calculatorInstanceName,replaces] = ndi.util.choosefileordir(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
-                    if success % if success, create and save newCalc
-                        if replaces
-                            delete([read_dir filesep calculatorInstanceName '.json']);
-                        end
-                        newCalculatorInstance = ndi.cpipeline.setDefaultCalculatorInstance(calculatorInstanceType, calculatorInstanceName);
-                        json_filename = char(strcat(read_dir,calculatorInstanceName,'.json'));
-                        fid = fopen(json_filename,'w');
-                        fprintf(fid,jsonencode(newCalculatorInstance));
-                        fclose(fid);
-                        % update and load calculator
-                        ndi.cpipeline.edit('command','UpdatePipelines','fig',fig);
-                        ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','pipeline_name',pipeline_name,'fig',fig);
+                    calculatorInstanceType = calcTypeList{calcTypeIndex};
+                    
+                    % ask for instance name
+                    answer = inputdlg('Enter a name for this calculator instance:', 'New Calculator Instance');
+                    if isempty(answer)
+                        return; % User cancelled
                     end
+                    calculatorInstanceName = answer{1};
+                    
+                    % create a valid filename
+                    base_filename = matlab.lang.makeValidName(calculatorInstanceName);
+                    json_filename = [base_filename '.json'];
+                    full_json_path = fullfile(ud.pipelinePath, pipeline_name, json_filename);
+
+                    if isfile(full_json_path)
+                        b = questdlg(['File ' json_filename ' already exists. Overwrite?'],'Overwrite file','Yes','No','No');
+                        if strcmp(b,'No')
+                            return;
+                        end
+                    end
+                    
+                    newCalculatorInstance = ndi.cpipeline.setDefaultCalculatorInstance(calculatorInstanceType, calculatorInstanceName);
+                    
+                    fid = fopen(full_json_path,'w');
+                    fprintf(fid,jsonencode(newCalculatorInstance));
+                    fclose(fid);
+                    
+                    % update and load calculator
+                    ndi.cpipeline.edit('command','UpdatePipelines','fig',fig);
+                    ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','pipeline_name',pipeline_name,'fig',fig);
                 case 'DeleteCalculatorInstanceButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     pip_val = get(pipelinePopupObj, 'value');
@@ -329,14 +343,12 @@ classdef cpipeline
                     deletePipelineButton = findobj(fig,'tag','DeletePipelineButton');
                     deleteCalcButton = findobj(fig,'tag','DeleteCalculatorInstanceButton');
                     editButton = findobj(fig,'tag','EditButton');
-
                     % Get state
                     pipeline_index = get(pipelinePopupObj,'Value');
                     if isempty(pipeline_index) % handle case where popup list is empty
                         pipeline_index = 1;
                     end
                     is_real_pipeline = pipeline_index > 1;
-
                     calculator_indices = get(pipelineContentObj,'Value');
                     calculator_strings = get(pipelineContentObj,'String');
                     
@@ -344,7 +356,6 @@ classdef cpipeline
                     is_calculator_selected = ~isempty(calculator_indices);
                     % Use numel because String can be '' (empty char) which is not empty
                     has_calculators = numel(calculator_strings) > 0;
-
                     % Set enable/disable states
                     on_off = {'off','on'};
                     set(deletePipelineButton, 'Enable', on_off{is_real_pipeline+1});
@@ -432,16 +443,8 @@ classdef cpipeline
                     for d_i = 1:numel(D)
                         json_text = vlt.file.textfile2char([read_dir filesep nameList{i} filesep D(d_i).name]);
                         decoded_json = jsondecode(json_text);
-                        
-                        % Flatten the structure from the old format to the new format
-                        new_instance = struct();
-                        new_instance.calculatorClassname = decoded_json.ndi_pipeline_element.calculator;
-                        new_instance.instanceName = decoded_json.ndi_pipeline_element.name;
-                        new_instance.parameter_code = decoded_json.ndi_pipeline_element.parameter_code;
-                        new_instance.default_options = decoded_json.ndi_pipeline_element.default_options;
-                        new_instance.JSONFilename = D(d_i).name; % Add the filename
-
-                        temp_cell{d_i} = new_instance;
+                        decoded_json.JSONFilename = D(d_i).name;
+                        temp_cell{d_i} = decoded_json;
                     end
                     pipelineList(i+1).calculatorInstances = [temp_cell{:}];
                 else

@@ -585,6 +585,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     calculatorInstance.parameter_code_default = ndi.calculator.parameter_default(calculatorInstance.calculatorClassname);
                     calculatorInstance.parameter_code = calculatorInstance.parameter_code_default;
                     [calculatorInstance.parameter_example_names, calculatorInstance.parameter_example_code] = ndi.calculator.parameter_examples(calculatorInstance.calculatorClassname);
+                else
+                    % Provide empty defaults if no classname is given
+                    calculatorInstance.parameter_code_default = '';
+                    calculatorInstance.parameter_code = '';
+                    calculatorInstance.parameter_example_names = {};
+                    calculatorInstance.parameter_example_code = {};
                 end
                 
                 ud.calculatorInstance = calculatorInstance;
@@ -595,22 +601,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     fig = figure;
                 end
                 command = 'NewWindow';
-                % would check calc name and calc type and calc filename for validity here
             elseif strcmp(command,'Edit')
                 % set up for editing from a file
                 ud.calculatorInstance = jsondecode(vlt.file.textfile2char(options.filename));
                 ud.calculatorInstance.JSONFilename = options.filename; % ensure this is set
                 
-                % For backward compatibility, check for old format
-                if isfield(ud.calculatorInstance,'ndi_pipeline_element')
-                    old_struct = ud.calculatorInstance.ndi_pipeline_element;
-                    ud.calculatorInstance.calculatorClassname = old_struct.calculator;
-                    ud.calculatorInstance.instanceName = old_struct.name;
-                    ud.calculatorInstance.parameter_code = old_struct.parameter_code;
-                    ud.calculatorInstance.default_options = old_struct.default_options;
-                    ud.calculatorInstance = rmfield(ud.calculatorInstance,'ndi_pipeline_element');
-                end
-
                 ud.calculatorInstance.parameter_code_default = ndi.calculator.parameter_default(ud.calculatorInstance.calculatorClassname);
                 [ud.calculatorInstance.parameter_example_names, ud.calculatorInstance.parameter_example_code] = ndi.calculator.parameter_examples(ud.calculatorInstance.calculatorClassname);
                 ud.session = options.session;
@@ -750,9 +745,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 case 'CommandPopup'
                     cmdPopupObj = findobj(fig,'tag','CommandPopup');
                     val = get(cmdPopupObj, 'value');
+                    
                     if isempty(ud.session)
-                        error('No session is linked to the calculator editor.');
+                        errordlg('No NDI session is linked to the calculator editor. Please link a session before running commands.', 'Session Error');
+                        return; % Stop execution
                     end
+
                     assignin('base','pipeline_session',ud.session);
                     param_code = ud.calculatorInstance.parameter_code;
                     evalin('base',param_code);
@@ -792,38 +790,53 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             evalin('base',run_code);
                             disp(['Run done, variable RUNDOCS now has calculation documents created.']);
                     end
-                case 'SaveButton'
-                    % what will we save?
-                    filepath = '';
-                    filename = 'untitled';
-                    ext = '.json';
-                    if isfield(ud,'calculatorInstance') && isfield(ud.calculatorInstance, 'JSONFilename') && ~isempty(ud.calculatorInstance.JSONFilename)
-                        [filepath,filename,ext] = fileparts(ud.calculatorInstance.JSONFilename);
-                        filepath = [filepath filesep];
-                    end
-                    
-                    [filename, filepath] = uiputfile('*.json', 'Save Calculator Instance As', fullfile(filepath, [filename ext]));
-                    
-                    if ~isequal(filename,0)
-                        json_filename = fullfile(filepath, filename);
-                        % Update the parameter code from the text box
+                case 'LoadButton'
+                    [file,path] = uigetfile('*.json','Load Calculator Instance from file');
+                    if ~isequal(file,0)
+                        loaded_instance = jsondecode(vlt.file.textfile2char(fullfile(path,file)));
+                        
+                        % Update only the relevant fields, keep the original filename
+                        ud.calculatorInstance.instanceName = loaded_instance.instanceName;
+                        ud.calculatorInstance.calculatorClassname = loaded_instance.calculatorClassname;
+                        ud.calculatorInstance.parameter_code = loaded_instance.parameter_code;
+                        ud.calculatorInstance.default_options = loaded_instance.default_options;
+                        
+                        % Refresh the GUI with the new data
+                        set(fig,'Name',['Editing ' ud.calculatorInstance.instanceName ' of type ' ud.calculatorInstance.calculatorClassname ]);
                         paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
-                        ud.calculatorInstance.parameter_code = get(paramTextObj,'String');
+                        set(paramTextObj,'String',ud.calculatorInstance.parameter_code);
                         
-                        % Remove temporary fields before saving
-                        instance_to_save = rmfield(ud.calculatorInstance, {'JSONFilename','parameter_code_default','parameter_example_names','parameter_example_code'});
-                        
-                        fid = fopen(json_filename,'w');
-                        fprintf(fid,jsonencode(instance_to_save));
-                        fclose(fid);
+                        set(fig,'userdata',ud);
+                        disp(['Loaded settings from ', fullfile(path,file)]);
+                    else
+                        disp('User selected Cancel');
                     end
+                case 'SaveButton'
+                    json_filename = ud.calculatorInstance.JSONFilename;
+                    if isempty(json_filename)
+                        msgbox('Cannot save, the JSON filename is not known. Use "Save As" from the pipeline editor.');
+                        return;
+                    end
+
+                    % Update the parameter code from the text box
+                    paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
+                    ud.calculatorInstance.parameter_code = get(paramTextObj,'String');
+                    
+                    % Remove temporary fields before saving
+                    instance_to_save = rmfield(ud.calculatorInstance, {'JSONFilename','parameter_code_default','parameter_example_names','parameter_example_code'});
+                    
+                    fid = fopen(json_filename,'w');
+                    fprintf(fid,jsonencode(instance_to_save));
+                    fclose(fid);
+                    
+                    msgbox(['Calculator instance saved to ' json_filename],'Save complete');
+
                 case 'CancelButton'
                     close(fig);
                 otherwise
                     disp(['Unknown command ' command '.']);
             end % switch(command)
         end % graphical_edit_calculation ()
-
 
 
         function text = docfiletext(calculator_type, doc_type)
@@ -866,6 +879,107 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
         end
 
+        function calc_list = find_calculator_subclasses(forceUpdate)
+        % FIND_CALCULATOR_SUBCLASSES - Recursively finds all subclasses of ndi.calculator.
+        %
+        %   CALC_LIST = ndi.calculator.find_calculator_subclasses(FORCEUPDATE)
+        %
+        %   Scans the entire MATLAB path for all '+ndi/+calc' packages to discover
+        %   all defined classes. It returns a cell array of strings containing the
+        %   full names of only those classes that are non-abstract subclasses of
+        %   'ndi.calculator'.
+        %
+        %   This function uses a persistent variable to cache the results for
+        %   performance. On subsequent calls, it will return the cached list
+        %   unless the optional FORCEUPDATE argument is set to true.
+        %
+        %   Inputs:
+        %     FORCEUPDATE (logical): A boolean flag. If true, the function will
+        %                            rescan the path and update the cached list.
+        %                            Defaults to false.
+        %
+                
+            arguments
+                forceUpdate (1,1) logical = false;
+            end
+    
+            persistent cached_calc_list;
+
+            if isempty(cached_calc_list) || forceUpdate
+                
+                calc_list = {};
+                
+                % 1. Manually search the entire MATLAB path for directories containing '+ndi/+calc'
+                all_paths = strsplit(path, pathsep);
+                calc_package_roots = {};
+                for i = 1:numel(all_paths)
+                    p = all_paths{i};
+                    potential_calc_path = fullfile(p, '+ndi', '+calc');
+                    if isfolder(potential_calc_path)
+                        calc_package_roots{end+1} = potential_calc_path;
+                    end
+                end
+                calc_package_roots = unique(calc_package_roots);
+    
+                if isempty(calc_package_roots)
+                    %warning('Could not find any ''+ndi/+calc'' directories on the MATLAB path.');
+                    cached_calc_list = {}; % Cache the empty result
+                    calc_list = cached_calc_list;
+                    return;
+                end
+                
+                % 2. Recursively search within each found path
+                for i = 1:numel(calc_package_roots)
+                    path_to_search = calc_package_roots{i};
+                    sub_classes = find_recursively(path_to_search, 'ndi.calc');
+                    calc_list = [calc_list, sub_classes];
+                end
+    
+                cached_calc_list = unique(calc_list); % Store the result in the cache
+            end
+    
+            % Return the cached list
+            calc_list = cached_calc_list(:);
+    
+            % --- Nested Helper Function for Recursion ---
+            function class_list = find_recursively(current_path, current_package_name)
+                
+                class_list = {};
+                dir_contents = dir(current_path);
+                base_meta = ?ndi.calculator;
+    
+                for item = dir_contents'
+                    % Skip '.', '..', and non-M files/non-packages
+                    if strcmp(item.name, '.') || strcmp(item.name, '..')
+                        continue;
+                    end
+                    
+                    full_item_path = fullfile(current_path, item.name);
+    
+                    if item.isdir && startsWith(item.name, '+') % It's a sub-package
+                        sub_package_name = item.name(2:end);
+                        full_subpackage_name = [current_package_name '.' sub_package_name];
+                        sub_classes = find_recursively(full_item_path, full_subpackage_name);
+                        class_list = [class_list, sub_classes];
+                    elseif endsWith(item.name, '.m') % It's an M-file
+                        [~, name_only] = fileparts(item.name);
+                        full_class_name = [current_package_name '.' name_only];
+                        try
+                            mc = meta.class.fromName(full_class_name);
+                            % Use '<' to check for subclass relationship
+                            % Also, exclude the abstract base class itself
+                            if mc < base_meta && ~mc.Abstract
+                                class_list{end+1} = mc.Name;
+                            end
+                        catch
+                            % Silently ignore files that are not valid classes
+                        end
+                    end
+                end
+            end % find_recursively
+        end % find_calculator_subclasses
+
+
         function [names, contents] = parameter_examples(calculator_type)
             % ndi.calculator.parameter_examples - return the parameter code examples for a given calculator_type
             %
@@ -886,9 +1000,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
             [parentdir, appname] = fileparts(w);
 
-            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples']
+            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
 
-            d = dir([dirname filesep '*.txt'])
+            d = dir([dirname filesep '*.txt']);
 
             contents = {};
             names = {};
