@@ -52,10 +52,8 @@ classdef TestVStack < matlab.unittest.TestCase
                 'VariableNames', {'Int', 'Log'}); 
             
             actualT = ndi.fun.table.vstack({T1, T2});
-
             testCase.verifyEqual(height(actualT), 2);
             testCase.verifyEqual(actualT.Properties.VariableNames{1}, 'Int'); 
-
             testCase.verifyEqual(actualT.Int(1), int8(1)); 
             testCase.verifyEqual(actualT.Log(1), true);   
             testCase.verifyEqual(actualT.Str(1), "S1");
@@ -68,7 +66,7 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifyEqual(actualT.Log(2), false);  
             testCase.verifyTrue(ismissing(actualT.Str(2))); 
             testCase.verifyEqual(actualT.CellStr(2),{' '});
-            testCase.verifyTrue(isnat(actualT.Date(2)));      
+            testCase.verifyTrue(isnan(actualT.Date(2).Year));       
             testCase.verifyTrue(isnan(actualT.Dur(2)));     
             testCase.verifyTrue(isundefined(actualT.Cat(2)));
             
@@ -161,7 +159,7 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifyTrue(all(ismember({'A', 'B', 'C'}, actualT_emptyRows.Properties.VariableNames)));
             testCase.verifyEqual(actualT_emptyRows.A, [1;2]);
             testCase.verifyEqual(actualT_emptyRows.B, ["X";"Y"]);
-            testCase.verifyTrue(all(isnat(actualT_emptyRows.C)));
+            testCase.verifyTrue(all(isnan(actualT_emptyRows.C.Year)));
 
             actualT_tableEmpty = ndi.fun.table.vstack({T2_data, T3_empty_table});
             testCase.verifyEqual(actualT_tableEmpty, T2_data); 
@@ -211,7 +209,7 @@ classdef TestVStack < matlab.unittest.TestCase
             expected_dt2_utc = datetime(2025,1,2, 'TimeZone','America/New_York');
             expected_dt2_utc.TimeZone = 'UTC'; 
             testCase.verifyEqual(actualT.DT(2), expected_dt2_utc);
-            testCase.verifyTrue(isnat(actualT.DT(3)));
+            testCase.verifyTrue(isnan(actualT.DT(3).Year));
         end
         
         function testLogicalFillStrict(testCase)
