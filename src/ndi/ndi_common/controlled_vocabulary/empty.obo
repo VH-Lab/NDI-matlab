@@ -1081,6 +1081,14 @@ namespace: empty_ontology
 def: "The date and time when a period of food restriction ends for a subject. Unit: datetime." []
 
 [Term]
+id: EMPTY:10000015
+name: treatment: culture from cell type
+namespace: empty_ontology
+def: "Indicates the experimental subject is a cell culture established from cells of a specific, known cell type. Cell type provided as ontology string." []
+is_a: EMPTY:10000000 ! treatment
+property_value: codeName "treatmentCultureFromCellType" xsd:string
+
+[Term]
 id: EMPTY:20000000
 name: purpose
 namespace: empty_ontology
