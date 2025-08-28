@@ -56,9 +56,9 @@
         },
         {
             "name": "dilution",
-            "type": "integer",
+            "type": "double",
             "default_value": 1.0,
-            "parameters": [0, 1],
+            "parameters": [0, 1,0,0],
             "queryable": 1,
             "documentation": "Dilution factor (real number between 0 and 1)"
         },
