@@ -1,0 +1,45 @@
+{
+	"classname": "imageStack",
+	"superclasses":  [ "base" , "imageStack_parameters" ],
+	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 0},
+		{ "name": "document_id", "mustbenotempty": 0}
+	],
+	"file": [ 
+		{"name": "imageStack", "mustbenotempty": 1}
+	],
+	"imageStack": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A text label associated with the image."
+		},
+		{
+			"name": "format",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The format of the imageFile (e.g. 'tiff', 'jpg', 'png')."
+		},
+		{
+			"name": "contentOntology",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id(s) describing the imageStack in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:00000090,UBERON:3373')."
+		},
+		{
+			"name": "formatOntology",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node describing the file format in the form of ontology:nodeID (e.g 'EMPTY:00000090')."
+		}
+	]
+}

@@ -1,7 +1,7 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/data\/image.json",
-		"validation":						"$NDISCHEMAPATH\/data\/image_schema.json",
+		"definition":						"$NDIDOCUMENTPATH\/data\/imageStack.json",
+		"validation":						"$NDISCHEMAPATH\/data\/imageStack_schema.json",
 		"class_name":						"image",
 		"property_list_name":               "image",
 		"class_version":					1,
@@ -12,14 +12,15 @@
 	},
 	"depends_on": [
 		{ "name": "subject_id", "value": "" },
-		{ "name": "imageCollection_id", "value": "" }
+		{ "name": "document_id", "value": "" }
 	],
 	"files": {
-		"file_list": [ "imageFile" ]
+		"file_list": [ "imageStack" ]
     },
-	"image":  {
+	"imageStack":  {
 		"label":		"",
 		"format":		"",
-		"compression":		""
+		"contentOntology":		"",
+		"formatOntology":		""
 	}
 }
