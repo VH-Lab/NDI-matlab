@@ -4,6 +4,13 @@ classdef subjectMaker < handle
 %   Provides methods to facilitate the extraction of unique subject
 %   information based on metadata in tables, and to manage NDI subject
 %   documents (e.g., creation, addition to sessions, deletion).
+%
+%   This class acts as an orchestrator for a common NDI setup workflow:
+%   1. Read a metadata table (e.g., from a spreadsheet).
+%   2. Use a lab-specific 'creator' object to interpret the table and extract subject details.
+%   3. Generate NDI documents for each unique subject and their related metadata (species, strain, etc.).
+%   4. Add these new documents to the appropriate NDI session database.
+%
 
     properties
         % No public properties are defined for this class.
@@ -15,29 +22,106 @@ classdef subjectMaker < handle
             %
             %   OBJ = NDI.SETUP.NDIMAKER.SUBJECTMAKER()
             %
-            %   Creates an ndi.setup.NDIMaker.subjectMaker object.
+            %   Creates an ndi.setup.NDIMaker.subjectMaker object. This constructor
+            %   currently takes no arguments and initializes an empty object, ready
+            %   to use its methods.
             %
         end
+
+        function [subjectInfo, allSubjectNamesFromTable] = addSubjectsFromTable(obj, session, dataTable, subjectInfoCreator)
+            %ADDSUBJECTSFROMTABLE Processes a table to create and add subjects to a session.
+            %
+            %   [SUBJECTINFO, ALLSUBJECTNAMESFROMTABLE] = ADDSUBJECTSFROMTABLE(OBJ, SESSION, DATATABLE, SUBJECTINFOCREATOR)
+            %
+            %   This method provides a high-level workflow that encapsulates the entire process of
+            %   importing subjects from a metadata table into an NDI session. It handles extracting
+            %   unique subject information, creating the corresponding NDI documents, and adding
+            %   those documents to the session's database.
+            %
+            %   Args:
+            %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
+            %       session (ndi.session.dir): The NDI session object where the subjects will be added.
+            %       dataTable (table): A MATLAB table containing metadata to define subjects.
+            %       subjectInfoCreator (ndi.setup.NDIMaker.SubjectInformationCreator): An object that
+            %           encapsulates the lab-specific rules for converting a table row to subject information.
+            %
+            %   Returns:
+            %       subjectInfo (struct): A structure array containing data for unique, valid subjects that were added.
+            %                         See the documentation for `getSubjectInfoFromTable` for a detailed description
+            %                         of the fields in this structure.
+            %       allSubjectNamesFromTable (cell array): A cell array with one entry per row of
+            %                         the input `dataTable`. Each entry is the subject name (char array)
+            %                         or NaN returned by `subjectInfoCreator` for that row.
+            %
+                
+                % The subjectMaker requires a sessionID column to map subjects to sessions
+                dataTable.sessionID(:) = {session.id()};
+
+                disp('Extracting unique subject information from the table...');
+                
+                % 1. Extract unique subject information using the creator
+                [subjectInfo, allSubjectNamesFromTable] = obj.getSubjectInfoFromTable(dataTable, subjectInfoCreator);
+
+                if isempty(subjectInfo.subjectName)
+                    disp('No valid subjects found to add.');
+                    return;
+                end
+
+                disp(['Found ' num2str(numel(subjectInfo.subjectName)) ' unique subjects to process.']);
+
+                % 2. Create NDI documents for the unique subjects
+                disp('Creating NDI documents for subjects...');
+                subDocStruct = obj.makeSubjectDocuments(subjectInfo);
+
+                % 3. Add the new subject documents to the session
+                disp('Adding new subject documents to the session database...');
+                obj.addSubjectsToSessions({session}, subDocStruct.documents);
+        end
+
 
         function [subjectInfo, allSubjectNamesFromTable] = getSubjectInfoFromTable(obj, dataTable, subjectInfoCreator)
             %GETSUBJECTINFOFROMTABLE Extracts unique subject information from a table using a creator object.
             %
             %   [SUBJECTINFO, ALLSUBJECTNAMESFROMTABLE] = GETSUBJECTINFOFROMTABLE(OBJ, DATATABLE, SUBJECTINFOCREATOR)
             %
-            %   This method processes each row of a `dataTable` using a provided
-            %   `subjectInfoCreator` object. It extracts unique and valid subject
-            %   information.
+            %   This is the core data extraction and transformation method. It processes each row of an input `dataTable` 
+            %   using a user-provided "creator" function handle. This creator function contains the lab-specific logic 
+            %   to interpret the columns of the table.
+            %
+            %   The method returns two main outputs:
+            %   1. `subjectInfo`: A clean, de-duplicated structure of all *valid* subjects found in the table. A subject
+            %      is considered valid if the creator function returns a non-empty name and the table row has a valid
+            %      session ID.
+            %   2. `allSubjectNamesFromTable`: A cell array that has a 1-to-1 mapping with the rows of the input `dataTable`.
+            %      It contains the raw output (the generated name or NaN) from the creator function for every row, which is
+            %      useful for later associating data back to the original table.
             %
             %   Args:
             %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
-            %       dataTable (table): A MATLAB table containing metadata to define subjects.
+            %       dataTable (table): A MATLAB table containing metadata to define subjects. It MUST contain a column
+            %                          named 'sessionID'.
             %       subjectInfoCreator (ndi.setup.NDIMaker.SubjectInformationCreator): An object that
-            %           inherits from the abstract creator class and implements the `create` method.
+            %           inherits from the abstract creator class and implements the `create` method. This object
+            %           encapsulates the lab-specific rules for converting a table row to subject information.
             %
             %   Returns:
-            %       subjectInfo (struct): A structure with detailed information for unique, valid subjects.
-            %       allSubjectNamesFromTable (cell): A cell array with the subject name (or NaN) for every
-            %                                        row in the input `dataTable`.
+            %       subjectInfo (struct): A structure array containing data for unique, valid subjects.
+            %                         It has the following fields, each being a cell array or vector
+            %                         aligned by subject:
+            %                         - subjectName (cell array): Unique subject identifiers (char arrays).
+            %                         - strain (cell array): Corresponding openminds.core.research.Strain objects (or NaN).
+            %                         - species (cell array): Corresponding openminds.controlledterms.Species objects (or NaN).
+            %                         - biologicalSex (cell array): Corresponding openminds.controlledterms.BiologicalSex data (or NaN).
+            %                         - tableRowIndex (numeric vector): The 1-based row index from the
+            %                           original `dataTable` where this unique subject's information
+            %                           was first successfully extracted.
+            %                         - sessionID (cell array): The session identifier (char array)
+            %                           associated with the row that generated the unique subject.
+            %                         If no subjects meet the validity criteria, an empty struct
+            %                         (with fields initialized as empty arrays) is returned.
+            %       allSubjectNamesFromTable (cell array): A cell array with one entry per row of
+            %                         the input `dataTable`. Each entry is the subject name (char array)
+            %                         or NaN returned by `subjectInfoCreator` for that row.
             %
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
@@ -99,6 +183,26 @@ classdef subjectMaker < handle
 
         function output = makeSubjectDocuments(obj, subjectInfo, options)
             %MAKESUBJECTDOCUMENTS Creates NDI subject documents from a subjectInfo structure.
+            %
+            %   OUTPUT = MAKESUBJECTDOCUMENTS(OBJ, SUBJECTINFO, 'existingSubjectDocs', DOCS)
+            %
+            %   This method converts the clean `subjectInfo` structure (from `getSubjectInfoFromTable`)
+            %   into a set of `ndi.document` objects ready to be added to a database.
+            %
+            %   Args:
+            %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
+            %       subjectInfo (struct): The structured data for unique subjects returned from `getSubjectInfoFromTable`.
+            %       options.existingSubjectDocs (cell): An optional cell array of `ndi.document` objects
+            %           that are already in the database. Providing this list is an optimization that
+            %           prevents the function from creating duplicate documents for subjects that already exist.
+            %
+            %   Returns:
+            %       output (struct): A structure containing the results.
+            %           - 'subjectName' (cell): The name of each subject processed.
+            %           - 'documents' (cell): A cell array where each element is another cell array containing
+            %             all documents created for the corresponding subject (e.g., the main 'subject' document,
+            %             plus 'openminds' documents for species, strain, etc.).
+            %
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
                 subjectInfo (1,1) struct {ndi.setup.NDIMaker.subjectMaker.mustBeValidSubjectInfoForDocCreation(subjectInfo)}
@@ -107,7 +211,6 @@ classdef subjectMaker < handle
 
             numSubjects = numel(subjectInfo.subjectName);
 
-            % Fix for testMakeSubjectDocs_NoSubjects
             if numSubjects == 0
                 warning('ndi:setup:NDIMaker:subjectMaker:EmptySubjectInfo', 'Provided subjectInfo structure contains no subjects. Returning empty output.');
                 output = struct('subjectName', {{}}, 'documents', {{}});
@@ -124,7 +227,6 @@ classdef subjectMaker < handle
 
                 current_session_id_for_doc = subjectInfo.sessionID{i};
 
-                % Fix for testMakeSubjectDocs_InvalidSessionIDEntryInSubjectInfo
                 if isempty(current_session_id_for_doc) || ~ischar(current_session_id_for_doc)
                     warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo', ...
                         'Invalid or empty sessionID for subject "%s". Skipping document creation for this subject.', sName);
@@ -172,6 +274,26 @@ classdef subjectMaker < handle
 
         function added_status = addSubjectsToSessions(obj, sessionCellArray, documentsToAddSets)
             %ADDSUBJECTSTOSESSIONS Adds sets of subject-related documents to their respective NDI sessions.
+            %
+            %   ADDED_STATUS = ADDSUBJECTSTOSESSIONS(OBJ, SESSIONCELLARRAY, DOCUMENTSTOADDSETS)
+            %
+            %   This is the final step in the workflow, writing the newly created documents to the NDI database.
+            %   It identifies the correct session for each set of documents by reading the `session_id` from the
+            %   first document in the set. It then finds the corresponding session object from `sessionCellArray`
+            %   and uses its `database_add` method.
+            %
+            %   Args:
+            %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
+            %       sessionCellArray (cell): A cell array of all NDI session objects (`ndi.session.dir`) 
+            %                                involved in the import.
+            %       documentsToAddSets (cell): The `.documents` field from the output of `makeSubjectDocuments`.
+            %                                  This is a cell array where each element is another cell array
+            %                                  containing all documents for a single subject.
+            %
+            %   Returns:
+            %       added_status (logical vector): A logical vector indicating the success (true) or failure (false)
+            %                                      for each set of documents.
+            %
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
                 sessionCellArray (1,:) cell {ndi.validators.mustBeCellArrayOfNdiSessions(sessionCellArray)}
@@ -194,7 +316,6 @@ classdef subjectMaker < handle
                 
                 target_session_id = current_doc_set{1}.document_properties.base.session_id;
                 
-                % Fix for testAddSubjectsToSessions_SessionNotFound
                 if isKey(session_id_map, target_session_id)
                     session_idx_in_array = session_id_map(target_session_id);
                     actual_session_object = sessionCellArray{session_idx_in_array};
@@ -203,13 +324,30 @@ classdef subjectMaker < handle
                 else
                     warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', ...
                         'Session with ID "%s" not found in the provided sessionCellArray. Cannot add documents.', target_session_id);
-                    % added_status(i) remains false
                 end
             end
         end
 
         function deletion_report = deleteSubjectDocs(obj, sessionCellArray, localIdentifiersToDelete)
             %DELETESUBJECTDOCS Deletes subject documents from sessions based on local identifiers.
+            %
+            %   DELETION_REPORT = DELETESUBJECTDOCS(OBJ, SESSIONCELLARRAY, LOCALIDENTIFIERSTODELETE)
+            %
+            %   A utility function for cleaning up or resetting subject data. It searches through
+            %   one or more sessions and removes any `subject` documents that match the provided
+            %   list of `local_identifier` strings.
+            %
+            %   Args:
+            %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this class.
+            %       sessionCellArray (cell): A cell array of `ndi.session.dir` objects to search.
+            %       localIdentifiersToDelete (cellstr/string): A list of subject `local_identifier` strings
+            %                                                  to target for deletion.
+            %
+            %   Returns:
+            %       deletion_report (struct): A structure that provides a log of which documents were
+            %                                 found and deleted in each session, which is useful for
+            %                                 verification.
+            %
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
                 sessionCellArray (1,:) cell {ndi.validators.mustBeCellArrayOfNdiSessions(sessionCellArray)}
@@ -252,6 +390,9 @@ classdef subjectMaker < handle
     end % methods block
 
     methods (Static, Access = private)
+        % These are internal helper functions for input validation, ensuring that the public methods
+        % receive correctly formatted data, which helps prevent runtime errors.
+        
         function mustBeValidSubjectInfoForDocCreation(subjectInfo)
             %MUSTBEVALIDSUBJECTINFOFORDOCREATION Validates structure of subjectInfo for document creation.
             if ~isstruct(subjectInfo)
@@ -266,7 +407,6 @@ classdef subjectMaker < handle
             if numel(subjectInfo.subjectName) ~= numel(subjectInfo.sessionID)
                 error('ndi:setup:NDIMaker:subjectMaker:SubjectSessionIDLengthMismatch', 'subjectInfo.subjectName and subjectInfo.sessionID must have the same number of elements.');
             end
-            % Use the new validator here
             ndi.validators.mustBeCellArrayOfNonEmptyCharacterArrays(subjectInfo.subjectName);
         end
     end % private static methods
