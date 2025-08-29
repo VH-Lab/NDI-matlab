@@ -2,7 +2,7 @@
 	"classname": "ontologyLabel",
 	"superclasses":  [ "base" ],
 	"depends_on": [
-		{ "name": "labeledDocument_id", "mustbenotempty": 1}
+		{ "name": "document_id", "mustbenotempty": 1}
 	],
 	"ontologyLabel": [
 		{
@@ -11,7 +11,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The ontology node id of the image specified as ontology:nodeID (e.g 'EMPTY:00000090' or 'UBERON:3373')."
+			"documentation": "The ontology node id specified as ontology:nodeID (e.g 'EMPTY:00000090' or 'UBERON:3373')."
 		}
 
 	]
