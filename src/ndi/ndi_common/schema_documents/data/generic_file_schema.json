@@ -1,0 +1,28 @@
+{
+	"classname": "generic_file",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "document_id", "mustbenotempty": 0}
+	],
+	"file": [ 
+		{"name": "generic_file.ext", "mustbenotempty": 1}
+	],
+	"generic_file": [
+		{
+			"name": "fileName",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The original file name (e.g 'labName/YYMMDD/subjectName/fileName.jpg')."
+		},
+		{
+			"name": "fileFormatOntology",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node describing the file format in the form of ontology:nodeID (e.g 'EMPTY:00000090')."
+		}
+	]
+}
