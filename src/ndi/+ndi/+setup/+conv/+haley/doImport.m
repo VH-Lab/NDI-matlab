@@ -297,7 +297,8 @@ for i = 1:numel(infoFiles)
     % D. VIDEO imageStack_parameters
 
     % Create imageStack_parameters documents
-    videoDocs = cell(height(dataTable),1);
+    videoTable = ?
+    videoDocs = cell(height(dataTable),1); % this is incorrect; datatable is now patch height...need VIDEO height
     for p = 1:height(dataTable)
         if ~isempty(dataTable.firstFrame{p})
             dataType = class(dataTable.firstFrame{p});
