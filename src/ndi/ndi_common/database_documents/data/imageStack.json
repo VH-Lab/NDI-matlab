@@ -1,0 +1,24 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/imageStack.json",
+		"validation":						"$NDISCHEMAPATH\/data\/imageStack_schema.json",
+		"class_name":						"image",
+		"property_list_name":               "image",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"},
+			{ "definition":                 "$NDIDOCUMENTPATH\/data\/imageStack_parameters.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "subject_id", "value": "" },
+		{ "name": "document_id", "value": "" }
+	],
+	"files": {
+		"file_list": [ "imageStack" ]
+    },
+	"imageStack":  {
+		"label":		"",
+		"formatOntology":		""
+	}
+}

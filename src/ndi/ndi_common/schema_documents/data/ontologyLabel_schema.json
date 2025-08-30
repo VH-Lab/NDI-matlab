@@ -1,0 +1,18 @@
+{
+	"classname": "ontologyLabel",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "document_id", "mustbenotempty": 1}
+	],
+	"ontologyLabel": [
+		{
+			"name": "ontologyNode",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id specified as ontology:nodeID (e.g 'EMPTY:00000090' or 'UBERON:3373')."
+		}
+
+	]
+}
