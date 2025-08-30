@@ -9,7 +9,7 @@
 	],
 	"generic_file": [
 		{
-			"name": "fileName",
+			"name": "filename",
 			"type": "string",
 			"default_value": "",
 			"parameters": "",
@@ -17,7 +17,7 @@
 			"documentation": "The original file name (e.g 'labName/YYMMDD/subjectName/fileName.jpg')."
 		},
 		{
-			"name": "fileFormatOntology",
+			"name": "formatOntology",
 			"type": "string",
 			"default_value": "",
 			"parameters": "",
