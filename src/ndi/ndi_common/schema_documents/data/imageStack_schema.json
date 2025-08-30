@@ -18,22 +18,6 @@
 			"documentation": "A text label associated with the image."
 		},
 		{
-			"name": "format",
-			"type": "string",
-			"default_value": "",
-			"parameters": "",
-			"queryable": 1,
-			"documentation": "The format of the imageFile (e.g. 'tiff', 'jpg', 'png')."
-		},
-		{
-			"name": "contentOntology",
-			"type": "string",
-			"default_value": "",
-			"parameters": "",
-			"queryable": 1,
-			"documentation": "The ontology node id(s) describing the imageStack in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:00000090,UBERON:3373')."
-		},
-		{
 			"name": "formatOntology",
 			"type": "string",
 			"default_value": "",

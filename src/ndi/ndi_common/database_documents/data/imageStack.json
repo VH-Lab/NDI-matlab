@@ -19,8 +19,6 @@
     },
 	"imageStack":  {
 		"label":		"",
-		"format":		"",
-		"contentOntology":		"",
 		"formatOntology":		""
 	}
 }
