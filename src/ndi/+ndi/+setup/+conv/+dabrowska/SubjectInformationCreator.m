@@ -1,5 +1,4 @@
-% file: +ndi/+setup/+NDIMaker/+SubjectInformationCreator/dabrowska.m
-classdef dabrowska < ndi.setup.NDIMaker.SubjectInformationCreator
+classdef SubjectInformationCreator < ndi.setup.NDIMaker.SubjectInformationCreator
 % DABROWSKA - Creates NDI subject information for the Dabrowska Lab.
 %
 % This class implements the 'create' method to generate subject identifiers

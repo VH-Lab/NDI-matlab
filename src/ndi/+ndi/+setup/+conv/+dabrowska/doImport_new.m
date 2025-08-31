@@ -1,18 +1,27 @@
- function sessionArray = doImport(dataParentDir,options)
-% Section A: Import electrophysiology dataset
-%   Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
-%   Step 2: SESSIONS. Now that we have the file manifest, build sessions.
-%   Step 3: SUBJECTS. Build subject documents.
-%   Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
-%   Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
-%   Step 6: CELL TYPES. Add openMinds celltypes and probe location documents.
-%   Step 7: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
+ function sessionArray = doImport_new(dataParentDir,options)
+% DOIMPORT_NEW - An updated version of doImport that uses the new subjectMaker routines.
 %
-% Section B: Import behavioral dataset
-%   Step 8: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
-%   Step 9: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
-%   Step 10: SUBJECTS. Build subject documents.
-%   Step 11: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+% Comments on changes:
+% This script replaces the manual creation of subject documents with the more robust
+% and reusable ndi.setup.NDIMaker.subjectMaker class.
+%
+% Key changes:
+% 1. A new class `ndi.setup.conv.dabrowska.SubjectInformationCreator` is now used. This class
+%    contains the specific logic for converting a row of the variable table into a subject
+%    identifier and associated openMINDS metadata objects (species, strain, etc.).
+% 2. The `ndi.setup.NDIMaker.subjectMaker` object is instantiated and its `addSubjectsFromTable`
+%    method is called. This single method handles:
+%      a. Identifying unique subjects from the table.
+%      b. Checking if these subjects already exist in the database to avoid duplicates.
+%      c. Creating NDI documents for new subjects and their associated metadata.
+%      d. Adding all new documents to the appropriate NDI session.
+% 3. The `SubjectString` column of the `variableTable` is now populated from the output of the
+%    `subjectMaker`, ensuring all downstream steps (like epochprobemap creation) are linked to
+%    the correct subject documents.
+%
+% This new approach makes the import process cleaner, less error-prone, and aligns with
+% the modern NDI framework for managing experimental metadata.
+%
 
 % Input argument validation
 arguments
@@ -43,30 +52,6 @@ badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/AVP_IV_Curves_
 if isfolder(badFolder)
     disp(['Removing extra space chacter in known folder ' badFolder])
     movefile(badFolder,replace(badFolder,'Pre ','Pre'));
-end
-
-badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type III_BNST_neurons/Jun 26 2023 c/Nelivaptan ');
-if isfolder(badFolder)
-    disp(['Removing extra space chacter in known folder ' badFolder])
-    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
-end
-
-badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type III_BNST_neurons/Jun 26 2023 c/Nelivaptan ');
-if isfolder(badFolder)
-    disp(['Removing extra space chacter in known folder ' badFolder])
-    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
-end
-
-badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type I_BNST_neurons/Aug 14 2023/Nelivaptan ');
-if isfolder(badFolder)
-    disp(['Removing extra space chacter in known folder ' badFolder])
-    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
-end
-
-badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/Nelivaptan_AVP_IV_Curves_Type I_BNST_neurons/Aug 15 2023/Nelivaptan ');
-if isfolder(badFolder)
-    disp(['Removing extra space chacter in known folder ' badFolder])
-    movefile(badFolder,replace(badFolder,'Nelivaptan ','Nelivaptan'));
 end
 
 [fileList] = vlt.file.manifest(dataPath);
@@ -137,7 +122,7 @@ variableTable{:,'SubjectPostfix'} = cellfun(@(celltype,opto) ...
     ['_BNST',celltype(6:end),opto,'@dabrowska-lab.rosalindfranklin.edu'],...
     variableTable.CellType,variableTable.OptoPostfix,'UniformOutput',false);
 
-%% Step 2: SESSIONS. Now that we have the file manifest, build sessions.
+%% Step 2: SESSIONS. Build the session.
 
 % Employ the sessionMaker
 mySessionPath = dataParentDir;
@@ -149,20 +134,21 @@ SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
 labName = 'dabrowskalab';
 SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 
-%% Step 3: SUBJECTS. Build subject documents.
+%% Step 3: SUBJECTS. Build subject documents using the new subjectMaker.
+% ------------------ CHANGE HIGHLIGHTED HERE ------------------
+% The old method of looping and creating subjects manually has been replaced.
 
-% query = ndi.query('','isa','subject');
-% subjects = sessionArray{1}.database_search(query);
-% sessionArray{1}.database_rm(subjects);
+% 1. Instantiate the subjectMaker and the lab-specific SubjectInformationCreator
 subM = ndi.setup.NDIMaker.subjectMaker();
-[subjectInfo_ephys,variableTable.SubjectString] = ...
-    subM.getSubjectInfoFromTable(variableTable,...
-    @ndi.setup.conv.dabrowska.createSubjectInformation);
-% We have no need to delete any previously made subjects because we remade all the sessions
-% but if we did we could use the subM.deleteSubjectDocs method
-% subM.deleteSubjectDocs(sessionArray,subjectInfo_ephys.subjectName);
-subDocStruct = subM.makeSubjectDocuments(subjectInfo_ephys);
-subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
+creator = ndi.setup.conv.dabrowska.SubjectInformationCreator();
+
+% 2. Call a single function to extract subject info, create documents, and add to the session.
+%    This also returns the subject string for each row of the variableTable, which is
+%    essential for linking other documents later.
+[subjectInfo_ephys, variableTable.SubjectString] = ...
+    subM.addSubjectsFromTable(sessionArray{1}, variableTable, creator);
+ 
+% ------------------ END OF CHANGE ------------------
 
 %% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
 
@@ -186,7 +172,7 @@ variableTable{indEpoch,'ProbePostfix'} = cellfun(@(rd,celltype,opto,sl) ...
     recordingDates,variableTable.CellType(indEpoch),...
     variableTable.OptoPostfix(indEpoch),sliceLabel,'UniformOutput',false);
 
-% Create epoch probe maps
+% Create epoch probe maps. This now uses the 'SubjectString' column populated by subjectMaker
 ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
     'Overwrite',options.Overwrite,...
     'NonNaNVariableNames','IsExpMatFile',...
@@ -238,13 +224,13 @@ probes = sessionArray{1}.database_search(query);
 subjectID_probes = cellfun(@(p) p.dependency_value('subject_id'),probes,'UniformOutput',false);
 
 % Intialize cell arrays to hold docs
-cellTypeDocs = cell(numel(subjects),1);
-probeLocationDocs = cell(numel(subjects),1);
+cellTypeDocs = cell(numel(probes),1);
+probeLocationDocs = cell(numel(probes),1);
 for i = 1:numel(probes)
 
     % Create openMinds cell type doc
     subjectInd = strcmpi(subjectID,subjectID_probes{i});
-    variableTableInd = strcmpi(variableTable.SubjectString,subjectLocalID{subjectInd});
+    variableTableInd = find(strcmpi(variableTable.SubjectString,subjectLocalID{subjectInd}),1);
     typeString = variableTable.CellType{variableTableInd};
     if contains(typeString,'Type') % skip if type not specified
         [ontologyID,name,~,description,~] = ndi.ontology.lookup(['EMPTY:',typeString,' BNST neuron']);
@@ -283,7 +269,7 @@ anatomy = containers.Map({'PVN','SCN','SON'},...
     {'UBERON:0001930','UBERON:0002034','UBERON:0001929'});
 
 % Intialize cell array to hold docs
-treatmentDocs = cell(numel(subDocStruct),1);
+treatmentDocs = cell(numel(subjectInd_opto),1);
 
 for i = 1:numel(subjectInd_opto)
 
@@ -291,8 +277,7 @@ for i = 1:numel(subjectInd_opto)
     subject_id = subjectID{subjectInd_opto(i)};
 
     % Get indices of variableTable matching that subject
-    variableTableInd = ndi.fun.table.identifyMatchingRows(variableTable,'SubjectString',...
-        subjectLocalID{subjectInd_opto(i)});
+    variableTableInd = find(ndi.fun.table.identifyMatchingRows(variableTable,'SubjectString', subjectLocalID{subjectInd_opto(i)}), 1);
 
     % Get optogenetic location
     optoLocation = unique(variableTable.ProbeLocationString(variableTableInd));
@@ -445,3 +430,5 @@ tdm.table2ontologyTableRowDocs(dataTable_EPM,{'SubjectString','Treatment'},...
 % Create FPS docs
 tdm.table2ontologyTableRowDocs(dataTable_FPS,...
     {'SubjectString','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
+
+end % doImport_new
