@@ -45,7 +45,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.verifyClass(document, 'struct', ...
                 "Expected to get a document as a structure")
             
-            testCase.verifyTrue(startsWith(document.name, "Test Document"), ...
+            testCase.verifyTrue(startsWith(document.base.name, "Test Document"), ...
                 "Expected document name to start with 'Test Document'")
         end
         
@@ -81,7 +81,8 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             % try getting the document that was deleted. If no error is thrown, then the document was not deleted
             try
-                [response, test_document] = ndi.cloud.api.documents.get_document(testCase.DatasetID, documentId);
+                %[response, test_document] = ndi.cloud.api.documents.get_document(testCase.DatasetID, documentId);
+                ndi.cloud.api.documents.get_document(testCase.DatasetID, documentId);
                 error('ndi.cloud.api.documents.get_document did not throw an error after delete_documents');
             catch
                 % do nothing, this is the expected behavior
@@ -110,67 +111,89 @@ classdef DocumentsTest < matlab.unittest.TestCase
         function testDocumentBulkUploadAndDownload(testCase)
             import matlab.unittest.fixtures.WorkingFolderFixture
             testCase.applyFixture(WorkingFolderFixture)
-
+[b, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID)
             % Create test documents
             numDocuments = 5;
-            testDocuments = createTestDocuments(numDocuments);
+            testDocuments = createTestNDIDocuments(numDocuments);
 
             % Upload documents
-            ndi.cloud.upload.upload_document_collection(testCase.DatasetID, testDocuments)
+            ndi.cloud.upload.upload_document_collection(testCase.DatasetID, testDocuments);
             
             % Check if documents are uploaded:
+            pause(5)
             isFinished = false;
-            timeOut = 10;
+            timeOut = 100;
             t1 = tic;
+            DocSummary.documents = [];
             while ~isFinished && toc(t1) < timeOut
-                [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
-                if numel(dataset.documents) == numDocuments
-                    isFinished = true;
+                %disp(['Looking for documents'])
+                [b, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID)
+                if b&&(numel(DocSummary.documents) == numDocuments)
+                    isFinished = true;                    
                 else
+                    disp('Pausing again')
                     pause(1)
                 end
             end
-
-            % Get IDs of uploaded documents
-            testCase.verifyEqual(numel(dataset.documents), numDocuments)
+            
+            % Count final uploaded documents
+            testCase.verifyEqual(numel(DocSummary.documents), numDocuments, ...
+                "All expected documents were not listed in the document summary for dataset " + ...
+                testCase.DatasetID + ".");
             
             % Download all documents using bulk download
             downloadedDocuments = ...
                 ndi.cloud.download.download_document_collection(testCase.DatasetID);
            
             for i = 1:numDocuments
+                docHere = ndi.document('base');
+                if numel(downloadedDocuments)>=i
+                    docHere = downloadedDocuments{i};
+                end
                 testCase.verifyEqual(...
                     testDocuments{i}, ...
-                    jsonencode(downloadedDocuments{i}.document_properties))
+                    docHere,...
+                    "Failed to find equality with uploaded test documents after downloading documents in dataset " + ...
+                    testCase.DatasetID + ".");
             end
 
-            % Download subset of documents using bulk download
-            docIdx = [1,3,5];
-            documentIds = dataset.documents;
-
-            downloadedDocumentSubset = ...
-                ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
-           
-            for i = 1:numel(docIdx)
-                testCase.verifyEqual(...
-                    testDocuments{docIdx(i)}, ...
-                    jsonencode(downloadedDocumentSubset{i}.document_properties))
+            if ~isempty(DocSummary.documents)
+                documentIds = {DocSummary.documents.id};
+                % Download subset of documents using bulk download
+                docIdx = [1,3,5];
+                [~, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID);
+    
+                downloadedDocumentSubset = ...
+                    ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
+               
+                for i = 1:numel(docIdx)
+                    testCase.verifyEqual(...
+                        downloadedDocumentSubset{i}, ...
+                        testDocuments{docIdx(i)}, ...
+                        "Failed to find equality with uploaded test documents after downloading a subset of documents in dataset %s", ...
+                        testCase.DatasetID);
+                end
             end
 
-            % Clean up (delete documents)
-            ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
+            if ~isempty(DocSummary.documents)
+                documentIds = {DocSummary.documents.id};
+                % Clean up (delete documents)
+                ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
+            end
+
+            pause(30);
 
             % Download all documents after using bulk delete
             downloadedDocuments = ...
                 ndi.cloud.download.download_document_collection(testCase.DatasetID);
-            testCase.verifyEmpty(downloadedDocuments)
+            testCase.verifyEmpty(downloadedDocuments,"There are still documents remaining in dataset " +testCase.DatasetID +" after bulk_delete request to remove them all (even after 30 second pause for processing).")
         end
     end
 
     methods % Non-test methods
         function documentId = addDocumentToDataset(testCase)
         % addDocumentToDataset - Create document and add it to the test dataset
-            testDocument = createTestDocuments(1);
+            testDocument = createTestJSONDocuments(1);
             
             % Create a new document
             document = ndi.cloud.api.documents.add_document(testCase.DatasetID, testDocument);
@@ -200,7 +223,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
     end
 end
 
-function testDocuments = createTestDocuments(numDocuments)
+function testDocuments = createTestJSONDocuments(numDocuments)
     arguments
         numDocuments (1,1) uint32 = 1
     end
@@ -208,13 +231,31 @@ function testDocuments = createTestDocuments(numDocuments)
 
     for i = 1:numDocuments
         randomName = sprintf("Test Document %s", char(randi([65 90], 1, 5)) );
-        newTestDocument = struct("name", randomName);
-        testDocuments{i} = jsonencode(newTestDocument);
+        newTestDocuments = ndi.document('base','base.name',randomName);
+        testDocuments{i} = jsonencode(newTestDocuments.document_properties);
     end
     if numDocuments == 1
         testDocuments = testDocuments{1};
     end
 end
+
+function testDocuments = createTestNDIDocuments(numDocuments)
+    arguments
+        numDocuments (1,1) uint32 = 1
+    end
+    testDocuments = cell(1, numDocuments);
+
+    for i = 1:numDocuments
+        randomName = sprintf("Test Document %s", char(randi([65 90], 1, 5)) );
+        newTestDocument = ndi.document('base','base.name',randomName);
+        testDocuments{i} = newTestDocument;
+    end
+    if numDocuments == 1
+        testDocuments = testDocuments{1};
+    end
+end
+
+
 
 function deleteDataset(datasetId)
     try

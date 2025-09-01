@@ -32,13 +32,19 @@ function [b, summary] = list_dataset_documents_all(cloudDatasetId, options)
 
     % Initialize outputs
     b = true;
-    summary = [];
+    summary = struct('documents',[]);
 
-    datasetInfo = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
+    datasetInfo = ndi.cloud.api.datasets.get_dataset(cloudDatasetId)
     % TODO: Replace this placeholder with the actual call to get the document count
-    numberOfDocuments = 201500; 
+    if isfield(datasetInfo,'documentCount')
+        numberOfDocuments = datasetInfo.documentCount;
+    elseif isfield(datasetInfo,'documents') % legacy
+        numberOfDocuments = numel(datasetInfo.documents);
+    else
+        error(['Unable to determine number of documents for dataset ' cloudDatasetId '.']);
+    end
     
-    numPages = ceil(numberOfDocuments / options.pageSize);
+    numPages = ceil(numberOfDocuments / options.pageSize); % induce error
 
     for p = 1:numPages
         page_succeeded = false;
