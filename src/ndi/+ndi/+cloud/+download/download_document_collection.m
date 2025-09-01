@@ -103,11 +103,13 @@ function documents = download_document_collection(datasetId, documentIds, option
         end
 
         % Unzip and process documents from the current chunk
-        unzippedFiles = unzip(tempZipFilepath);
+        unzippedFiles = unzip(tempZipFilepath,fileparts(tempZipFilepath));
         jsonFile = unzippedFiles{1};
         jsonFileCleanupObj = onCleanup(@() deleteIfExists(jsonFile));
 
-        documentStructs = jsondecode(fileread(jsonFile));
+        jsonString = fileread(jsonFile);
+        jsonRehydrated = ndi.util.rehydrateJSONNanNull(jsonString);
+        documentStructs = jsondecode(jsonRehydrated);
 
         if isempty(all_document_structs)
             all_document_structs = documentStructs;

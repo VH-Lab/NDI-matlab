@@ -8,9 +8,9 @@ function rehydratedJsonText = rehydrateJSONNanNull(jsonText, options)
 %   that support NaN, Infinity, and -Infinity (like MATLAB's jsondecode).
 %
 %   By default, it performs the following replacements:
-%     - '"S_NAN"'  ->  NaN
-%     - '"S_INF"'  ->  Infinity
-%     - '"S_NINF"' -> -Infinity
+%     - '"__NDI__NaN__"'  ->  NaN
+%     - '"__NDI__Infinity__"'  ->  Infinity
+%     - '"__NDI__-Infinity__"' -> -Infinity
 %
 %   This function is designed to find all instances of these strings,
 %   regardless of whether they are followed by a comma, newline, or other
@@ -23,21 +23,21 @@ function rehydratedJsonText = rehydrateJSONNanNull(jsonText, options)
 %   Name (string)      | Description
 %   -----------------------------------------------------------------------
 %   'nan_string'       | The string to be replaced with NaN.
-%                      |   (Default: '"S_NAN"')
+%                      |   (Default: '"__NDI__NaN__"')
 %   'inf_string'       | The string to be replaced with Infinity.
-%                      |   (Default: '"S_INF"')
+%                      |   (Default: '"__NDI__Infinity__"')
 %   'ninf_string'      | The string to be replaced with -Infinity.
-%                      |   (Default: '"S_NINF"')
+%                      |   (Default: '"__NDI__-Infinity__"')
 %
 %   Example:
-%     json_in = '{"value1":"S_NAN","value2":"S_INF","value3":"S_NINF"}';
+%     json_in = '{"value1":""__NDI__NaN__"","value2":"__NDI__Infinity__","value3":"__NDI__-Infinity__"}';
 %     json_out = ndi.util.rehydrateJSONNanNull(json_in);
 %     % json_out will be '{"value1":NaN,"value2":Infinity,"value3":-Infinity}'
 %     % now, jsondecode can properly interpret these values
 %     matlab_struct = jsondecode(json_out);
 %
 %   Example with custom search string:
-%     json_in = '{"val":"MY_CUSTOM_NAN", "val2": "S_INF"}';
+%     json_in = '{"val":"MY_CUSTOM_NAN", "val2": "__NDI__Infinity__"}';
 %     json_out = ndi.util.rehydrateJSONNanNull(json_in, nan_string='"MY_CUSTOM_NAN"');
 %     % json_out will be '{"val":NaN, "val2":Infinity}'
 %
@@ -45,9 +45,9 @@ function rehydratedJsonText = rehydrateJSONNanNull(jsonText, options)
 
     arguments
         jsonText (1,:) char
-        options.nan_string (1,:) char = '"S_NAN"'
-        options.inf_string (1,:) char = '"S_INF"'
-        options.ninf_string (1,:) char = '"S_NINF"'
+        options.nan_string (1,:) char = '"__NDI__NaN__"'
+        options.inf_string (1,:) char = '"__NDI__Infinity__"'
+        options.ninf_string (1,:) char = '"__NDI__-Infinity__"'
     end
 
     % Perform all replacements in a single pass for efficiency, which is

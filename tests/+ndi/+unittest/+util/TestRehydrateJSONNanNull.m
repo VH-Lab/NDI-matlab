@@ -9,7 +9,7 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
 
         function testDefaultReplacements(testCase)
             % Test basic, default replacements
-            json_in = '{"value1":"S_NAN","value2":"S_INF","value3":"S_NINF"}';
+            json_in = '{"value1":"__NDI__NaN__","value2":"__NDI__Infinity__","value3":"__NDI__-Infinity__"}';
             expected_out = '{"value1":NaN,"value2":Infinity,"value3":-Infinity}';
             
             actual_out = ndi.util.rehydrateJSONNanNull(json_in);
@@ -20,7 +20,7 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
 
         function testMultipleOccurrences(testCase)
             % Test multiple replacements in a single string
-            json_in = '["S_NAN", "S_INF", "S_NAN", "S_NINF"]';
+            json_in = '["__NDI__NaN__", "__NDI__Infinity__", "__NDI__NaN__", "__NDI__-Infinity__"]';
             expected_out = '[NaN, Infinity, NaN, -Infinity]';
 
             actual_out = ndi.util.rehydrateJSONNanNull(json_in);
@@ -31,7 +31,7 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
 
         function testContextVariations(testCase)
             % Test different contexts (end of line, followed by comma, etc.)
-            json_in = sprintf('{"a":"S_NAN",\n"b":"S_INF"}');
+            json_in = sprintf('{"a":"__NDI__NaN__",\n"b":"__NDI__Infinity__"}');
             expected_out = sprintf('{"a":NaN,\n"b":Infinity}');
 
             actual_out = ndi.util.rehydrateJSONNanNull(json_in);
@@ -42,13 +42,13 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
         
         function testCustomStrings(testCase)
             % Test the ability to specify custom search strings
-            json_in = '{"val1":"MY_NAN", "val2":"YOUR_INF", "val3":"THEIR_NINF"}';
+            json_in = '{"val1":"S_NAN", "val2":"S_INF", "val3":"S_NINF"}';
             expected_out = '{"val1":NaN, "val2":Infinity, "val3":-Infinity}';
             
             actual_out = ndi.util.rehydrateJSONNanNull(json_in, ...
-                'nan_string', '"MY_NAN"', ...
-                'inf_string', '"YOUR_INF"', ...
-                'ninf_string', '"THEIR_NINF"');
+                'nan_string', '"S_NAN"', ...
+                'inf_string', '"S_INF"', ...
+                'ninf_string', '"S_NINF"');
                 
             testCase.verifyEqual(actual_out, expected_out, ...
                 'Custom string replacements failed.');
@@ -56,7 +56,7 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
 
         function testPartialCustomStrings(testCase)
             % Test overriding only one of the custom strings
-            json_in = '{"val1":"MY_NAN", "val2":"S_INF"}';
+            json_in = '{"val1":"MY_NAN", "val2":"__NDI__Infinity__"}';
             expected_out = '{"val1":NaN, "val2":Infinity}';
 
             actual_out = ndi.util.rehydrateJSONNanNull(json_in, 'nan_string', '"MY_NAN"');
@@ -77,8 +77,8 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
 
         function testNoPartialMatches(testCase)
             % Test that substrings are not incorrectly matched
-            json_in = '{"a": "S_NAN_but_not_really", "b": "S_NAN"}';
-            expected_out = '{"a": "S_NAN_but_not_really", "b": NaN}';
+            json_in = '{"a": "__NDI__NaN___but_not_really", "b": "__NDI__NaN__"}';
+            expected_out = '{"a": "__NDI__NaN___but_not_really", "b": NaN}';
 
             actual_out = ndi.util.rehydrateJSONNanNull(json_in);
 
@@ -99,3 +99,4 @@ classdef TestRehydrateJSONNanNull < matlab.unittest.TestCase
 
     end
 end
+
