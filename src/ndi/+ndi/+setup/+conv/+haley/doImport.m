@@ -291,13 +291,11 @@ for i = 1:numel(infoFiles)
     info.(dirName).patchDocs = tableDocMaker.table2ontologyTableRowDocs(...
         patchTable,{'plateID','patchID'},'Overwrite',options.Overwrite);
     patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
-    dataTable = ndi.fun.table.join({dataTable,patchTable(:,{'plateID','patchID','patch_id'})});
     info.(dirName).patchTable = patchTable;
 
     % D. VIDEO imageStack_parameters
 
     % Create imageStack_parameters documents
-    videoTable = ?
     videoDocs = cell(height(dataTable),1); % this is incorrect; datatable is now patch height...need VIDEO height
     for p = 1:height(dataTable)
         if ~isempty(dataTable.firstFrame{p})
@@ -321,6 +319,7 @@ for i = 1:numel(infoFiles)
     videoDocs(cellfun(@isempty,videoDocs)) = [];
     session.database_add(videoDocs);
     info.(dirName).videoDocs = videoDocs;
+    dataTable = ndi.fun.table.join({dataTable,patchTable(:,{'plateID','patchID','patch_id'})});
 
     % E. WORM subject, ontologyTableRow, and treatment
 
