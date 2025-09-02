@@ -173,7 +173,7 @@ classdef FilesTest < matlab.unittest.TestCase
             % --- 2. ACT: Call the API endpoints to perform the upload ---
             
             % First, get the secure, one-time upload URL from the API
-            [response,upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(testCase.DatasetID);
+            [response,upload_url] = ndi.cloud.api.files.get_file_collection_upload_url(testCase.DatasetID);
             
             % Assert that the request for the URL was successful
             testCase.verifyNotEmpty(upload_url, "The upload URL returned by the API for dataset " + testCase.DatasetID + "was empty.");

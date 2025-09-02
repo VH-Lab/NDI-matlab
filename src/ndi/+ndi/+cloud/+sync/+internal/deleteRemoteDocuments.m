@@ -37,7 +37,7 @@ function deleteRemoteDocuments(cloudDatasetId, remoteApiIdsToDelete, syncOptions
         fprintf('[DryRun] Would delete remote documents with API IDs from cloud dataset %s:\n%s\n', ...
             cloudDatasetId, strjoin("  " + remoteApiIdsToDelete, newline) );
     else
-        ndi.cloud.api.datasets.bulk_delete_documents(cloudDatasetId, remoteApiIdsToDelete)
+        ndi.cloud.api.documents.bulk_delete_documents(cloudDatasetId, remoteApiIdsToDelete)
         if syncOptions.Verbose
             fprintf('Deleted documents.')
         end

@@ -66,7 +66,7 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
             if options.Verbose; fprintf('File %d already exists locally, skipping...\n', i); end
             continue;
         end
-        [~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(cloudDatasetId, file_uid);
+        [~, downloadURL, ~] = ndi.cloud.api.files.get_file_details(cloudDatasetId, file_uid);
 
         % Save the file
         try

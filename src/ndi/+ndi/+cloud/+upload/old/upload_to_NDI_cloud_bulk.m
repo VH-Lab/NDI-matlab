@@ -69,7 +69,7 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
     end
 
     zip(zip_filename, files_to_zip);
-    [response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
+    [response, upload_url] = ndi.cloud.api.files.get_file_collection_upload_url(dataset_id);
     [response] = ndi.cloud.api.files.put_files(upload_url, zip_filename);
     if exist(zip_filename, 'file')
         delete(zip_filename);

@@ -115,7 +115,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.verifyNumDocumentsEqual(numDocuments, "pre deletion")
             
             % Delete documents
-            ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
+            ndi.cloud.api.documents.bulk_delete_documents(testCase.DatasetID, documentIds);
 
             % Verify that document is uploaded
             testCase.verifyNumDocumentsEqual(0, "post deletion")
@@ -190,7 +190,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             if ~isempty(DocSummary.documents)
                 documentIds = {DocSummary.documents.id};
                 % Clean up (delete documents)
-                ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
+                ndi.cloud.api.documents.bulk_delete_documents(testCase.DatasetID, documentIds);
             end
 
             pause(30);
@@ -222,12 +222,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             message = message + " " + messageSuffix + ".";
 
             % Verify expected number of documents 
-            [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
-            if isfield(dataset,'documentCount')
-                docCount = dataset.documentCount;
-            else
-                docCount = numel(dataset.documents);
-            end
+            [docCount, ~] = ndi.cloud.api.documents.document_count(testCase.DatasetID);
             testCase.verifyEqual(docCount, numDocuments, message)
 
             % list_dataset_documents api endpoint will return deleted

@@ -1,20 +1,18 @@
-function [file_detail, downloadUrl, response] = get_file_details(dataset_id,uid)
-    % GET_FILE_DETAILS - Get the details, including the download url, for a individual file
+function [N, response] = document_count(dataset_id)
+    % DOCUMENT_COUNT - Use the API to count documents
     %
-    % [FILE_DETAIL, DOWNLOADURL, RESPONSE] = ndi.cloud.api.datasets.GET_FILE_DETAILS(DATASET_ID,UID)
+    % [N, RESPONSE] = ndi.cloud.api.datasets.DOCUMENT_COUNT(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
-    %   UID - a string representing the file uid
     %
     % Outputs:
-    %   FILE_DETAIL - the details of the file
-    %   DOWNLOADURL - the download url for the file
+    %   N - the document count
     %   RESPONSE - the response from the server
-    
+
     auth_token = ndi.cloud.authenticate();
 
-    url = ndi.cloud.api.url('get_file_details', 'dataset_id', dataset_id, 'file_uid', uid);
+    url = ndi.cloud.api.url('document_count', 'dataset_id', dataset_id);
 
     method = matlab.net.http.RequestMethod.GET;
 
@@ -27,8 +25,7 @@ function [file_detail, downloadUrl, response] = get_file_details(dataset_id,uid)
     
     if (response.StatusCode == 200)
         % Request succeeded
-        file_detail = response.Body.Data;
-        downloadUrl = file_detail.downloadUrl;
+        N = response.Body.Data.count;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
     end

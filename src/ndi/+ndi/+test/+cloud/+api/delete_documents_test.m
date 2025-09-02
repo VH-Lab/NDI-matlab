@@ -34,8 +34,8 @@ function delete_documents_test(dataset_id)
     % test bulk delete
     % try bulk_delete_documents to delete a document that does not exist
     try
-        response = ndi.cloud.api.datasets.bulk_delete_documents(dataset_id, test_document_id);
-        error('ndi.cloud.api.datasets.bulk_delete_documents did not throw an error after using a document that does not exist');
+        response = ndi.cloud.api.documents.bulk_delete_documents(dataset_id, test_document_id);
+        error('ndi.cloud.api.documents.bulk_delete_documents did not throw an error after using a document that does not exist');
     catch
         % do nothing, this is the expected behavior
     end
@@ -47,7 +47,7 @@ function delete_documents_test(dataset_id)
         [response, test_document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, test_document);
         document_ids{end+1} = test_document_id;
     end
-    response = ndi.cloud.api.datasets.bulk_delete_documents(dataset_id, document_ids);
+    response = ndi.cloud.api.documents.bulk_delete_documents(dataset_id, document_ids);
     [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if (number_of_documents ~= numel(dataset.documents))
         error('ndi.cloud.api.datasets.get_dataset returns the same number of documents after deleting a document');
