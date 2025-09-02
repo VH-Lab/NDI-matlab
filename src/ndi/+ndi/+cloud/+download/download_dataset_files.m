@@ -31,10 +31,17 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
 
     [datasetInfo, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
 
-    if ~isstruct(datasetInfo,"files") && ~ismissing(fileUuids)
-        error(['No files found in the dataset despite files requested.'])
+    if ~isstruct(datasetInfo) && ~all(ismissing(fileUuids))
+        error('No files found in the dataset despite files requested.');
+    elseif ~isstruct(datasetInfo)
+        % no dataset
+        return;
     end
-    if ~isstruct(datasetInfo,"files") % nothing to do
+   
+    if ~isstruct(datasetInfo.files) && ~all(ismissing(fileUuids))
+        error('No files found in the dataset despite files requested.');
+    end
+    if ~isstruct(datasetInfo.files) % nothing to do
         return;
     end
 
@@ -82,7 +89,7 @@ function files = filterFilesToDownload(files, fileUuids)
         [~, idx] = intersect(allFileUuids, fileUuids, "stable");
 
         files = files(idx);
-files, numel(fileUuids),
+
         assert(isequal(sort(string({files.uid})), sort(fileUuids)), ...
             'Expected filtered files list to match IDs for filtering.')
     end

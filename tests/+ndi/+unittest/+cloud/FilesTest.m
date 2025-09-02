@@ -185,7 +185,7 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyNotEmpty(upload_url, 'The upload URL returned by the API was empty.');
             
             % Create the zip archive to be uploaded
-            zipFileName = 'test_upload.zip';
+            zipFileName = testCase.DatasetID + "_test_upload.zip";
             filesToZip = fullfile(ndiFilesUpload, {docFileStruct.name});
             zip(zipFileName, filesToZip);
             testCase.verifyTrue(isfile(zipFileName), 'The zip archive was not created on disk.');
@@ -205,15 +205,25 @@ classdef FilesTest < matlab.unittest.TestCase
             % check one-at-a-time download, the only one we have right now
             pause(10); % give plenty of time for small upload to process
 
-            ndi.cloud.download.download_dataset_files(testCase.DatasetID,ndiFilesDownload,string({docFileStruct.uid}));
+            downloadGood = false;
 
-            for i=1:numFiles
-                downloadedFileName = fullfile(ndiFilesDownload,docFileStruct(i).uid);
-                testCase.verifyTrue(isfile(downloadedFileName),"No successful download of file with uid "+docFileStruct(i).uid);
-                if isfile(downloadedFileName)
-                    fid = fopen(downloadedFileName,'r','ieee-le')
-                    contentHere = fread(fid,inf,"uint8",'ieee-le');
-                    testCase.verifyEqual(contentHere,docFileStruct(i).content,"File " + docFileStruct(i).uid + " content does not match upload.");
+            try
+                ndi.cloud.download.download_dataset_files(testCase.DatasetID,ndiFilesDownload,string({docFileStruct.uid}));
+                downloadGood = true;
+            catch ME
+                mymsg = compose("DatasetID " + testCase.DatasetID + " had no files after bulk file upload. Technical detail: %s", ME.message);
+                testCase.verifyFail(mymsg);
+            end
+
+            if downloadGood
+                for i=1:numFiles
+                    downloadedFileName = fullfile(ndiFilesDownload,docFileStruct(i).uid);
+                    testCase.verifyTrue(isfile(downloadedFileName),"No successful download of file with uid "+docFileStruct(i).uid);
+                    if isfile(downloadedFileName)
+                        fid = fopen(downloadedFileName,'r','ieee-le')
+                        contentHere = fread(fid,inf,"uint8",'ieee-le');
+                        testCase.verifyEqual(contentHere,docFileStruct(i).content,"File " + docFileStruct(i).uid + " content does not match upload.");
+                    end
                 end
             end
         end
