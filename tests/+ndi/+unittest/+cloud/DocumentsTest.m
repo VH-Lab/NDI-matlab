@@ -11,19 +11,34 @@ classdef DocumentsTest < matlab.unittest.TestCase
         DatasetID (1,1) string = missing % ID of dataset used for all tests
     end
 
-    methods (TestClassSetup)
-        function createDataset(testCase)
+    methods (TestMethodSetup)
+        % This now runs BEFORE EACH test method, creating a fresh dataset every time.
+        function setupNewDataset(testCase)
             datasetInfo = struct("name", testCase.DatasetName);
-            [~, testCase.DatasetID] = ndi.cloud.api.datasets.create_dataset(datasetInfo); 
-            testCase.addTeardown(@() deleteDataset(testCase.DatasetID))
+            [~, testCase.DatasetID] = ndi.cloud.api.datasets.create_dataset(datasetInfo);
+        end
+    end
+
+    methods (TestMethodTeardown)
+        % This now runs AFTER EACH test method, deleting the dataset used by that test.
+        function deleteDatasetAfterTest(testCase)
+            % Check if DatasetID was set, in case setup failed
+            if ~ismissing(testCase.DatasetID)
+                deleteDataset(testCase.DatasetID);
+            end
         end
     end
 
     methods (Test)
         function verifyNoDocuments(testCase)
             [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
+            if isfield(dataset,'documentCount')
+                docCount = dataset.documentCount;
+            else
+                docCount = numel(dataset.documents);
+            end            
             testCase.verifyEqual(...
-                numel(dataset.documents), 0, ...
+                docCount, 0, ...
                 'Expected 0 documents for new dataset')
         end
 
@@ -33,8 +48,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.verifyNumDocumentsEqual(1, "after creating 1 document")
         end
 
-        function testCase = testGetDocument(testCase)
-                
+        function testCase = testGetDocument(testCase)                
             documentId = testCase.addDocumentToDataset();
             testCase.addTeardown(@() testCase.deleteDocumentFromDataset(documentId))
             
@@ -72,7 +86,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
         end
 
         function testCase = testDeleteDocument(testCase)
-            
             documentId = testCase.addDocumentToDataset();
 
             % Delete document
@@ -111,7 +124,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
         function testDocumentBulkUploadAndDownload(testCase)
             import matlab.unittest.fixtures.WorkingFolderFixture
             testCase.applyFixture(WorkingFolderFixture)
-[b, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID)
             % Create test documents
             numDocuments = 5;
             testDocuments = createTestNDIDocuments(numDocuments);
@@ -170,7 +182,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                     testCase.verifyEqual(...
                         downloadedDocumentSubset{i}, ...
                         testDocuments{docIdx(i)}, ...
-                        "Failed to find equality with uploaded test documents after downloading a subset of documents in dataset %s", ...
+                        "Failed to find equality with uploaded test documents after downloading a subset of documents in dataset "+ ...
                         testCase.DatasetID);
                 end
             end
@@ -211,7 +223,12 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             % Verify expected number of documents 
             [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
-            testCase.verifyEqual(numel(dataset.documents), numDocuments, message)
+            if isfield(dataset,'documentCount')
+                docCount = dataset.documentCount;
+            else
+                docCount = numel(dataset.documents);
+            end
+            testCase.verifyEqual(docCount, numDocuments, message)
 
             % list_dataset_documents api endpoint will return deleted
             % documents as well, so this is actually not a good way to

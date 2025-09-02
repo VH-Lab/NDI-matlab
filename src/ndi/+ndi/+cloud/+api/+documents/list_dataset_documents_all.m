@@ -34,7 +34,7 @@ function [b, summary] = list_dataset_documents_all(cloudDatasetId, options)
     b = true;
     summary = struct('documents',[]);
 
-    datasetInfo = ndi.cloud.api.datasets.get_dataset(cloudDatasetId)
+    datasetInfo = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
     % TODO: Replace this placeholder with the actual call to get the document count
     if isfield(datasetInfo,'documentCount')
         numberOfDocuments = datasetInfo.documentCount;

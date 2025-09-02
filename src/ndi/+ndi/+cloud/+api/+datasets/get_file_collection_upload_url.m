@@ -26,7 +26,7 @@ function [response, uploadUrl] = get_file_collection_upload_url(dataset_id)
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
 
-    if (response.StatusCode == 200)
+    if (response.StatusCode == 200 || response.StatusCode == 201)
         % Request succeeded
         uploadUrl = response.Body.Data.url;
     else

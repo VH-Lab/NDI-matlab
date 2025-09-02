@@ -133,7 +133,91 @@ classdef FilesTest < matlab.unittest.TestCase
             str = fileread('temp_test.txt');
             testCase.verifyEqual(str, testCase.TestFileContent)
         end
-        
+
+        function testFileCollectionUpload(testCase)
+            % 1. ARRANGE: Set up a realistic local file environment
+            
+            % Use a temporary folder for this test that is automatically cleaned up
+            import matlab.unittest.fixtures.WorkingFolderFixture
+            testCase.applyFixture(WorkingFolderFixture);
+
+            % Define how many files to create for the test
+            numFiles = 5;
+
+            ndiFilesDir = tempdir;
+            ndiFilesUpload = [ndiFilesDir filesep 'upload'];
+            ndiFilesDownload = [ndiFilesDir filesep 'download'];
+            if ~isfolder(ndiFilesUpload)
+                mkdir(ndiFilesUpload);
+            end
+            if ~isfolder(ndiFilesDownload)
+                mkdir(ndiFilesDownload);
+            end
+            
+            % Create a struct array to hold metadata about our test files
+            docFileStruct = struct('uid', '', 'name', '', 'content', '');
+            
+            % Create the physical files and populate the metadata struct
+            for i = 1:numFiles
+                % Generate a unique ID and a sequential name ('a', 'b', ...)
+                uid = getfield(ndi.ido(),'identifier'); 
+                fileName = sprintf(uid);
+                fullfilePath = fullfile(ndiFilesUpload, uid);
+
+                % Create data that spans all uint8 values and write it to the file
+                fileContent = uint8(0:255);
+                fid = fopen(fullfilePath, 'w');
+                fwrite(fid, fileContent, 'uint8','ieee-le');
+                fclose(fid);
+                
+                % Store the metadata
+                docFileStruct(i).uid = uid;
+                docFileStruct(i).name = fileName;
+                docFileStruct(i).content = fileContent;
+            end
+
+            % --- 2. ACT: Call the API endpoints to perform the upload ---
+            
+            % First, get the secure, one-time upload URL from the API
+            [upload_url] = ndi.cloud.api.documents.get_bulk_upload_url(testCase.DatasetID);
+            
+            % Assert that the request for the URL was successful
+            testCase.verifyNotEmpty(upload_url, 'The upload URL returned by the API was empty.');
+            
+            % Create the zip archive to be uploaded
+            zipFileName = 'test_upload.zip';
+            filesToZip = fullfile(ndiFilesUpload, {docFileStruct.name});
+            zip(zipFileName, filesToZip);
+            testCase.verifyTrue(isfile(zipFileName), 'The zip archive was not created on disk.');
+
+            % Second, use the URL to upload the zip file via a PUT request
+            [response] = ndi.cloud.api.files.put_files(upload_url, zipFileName);
+
+            % --- 3. ASSERT: Verify the upload request was accepted ---
+
+            % A 200 status code indicates the server received the file successfully
+            testCase.verifyEqual(double(response.StatusCode), 200, 'The PUT request to upload the zip file failed.');
+
+            % NOTE: This test confirms the UPLOAD was successful. A separate
+            % step is needed to verify the files were correctly PROCESSED and
+            % registered by the NDI cloud service after unpacking.
+
+            % check one-at-a-time download, the only one we have right now
+            pause(10); % give plenty of time for small upload to process
+
+            ndi.cloud.download.download_dataset_files(testCase.DatasetID,ndiFilesDownload,string({docFileStruct.uid}));
+
+            for i=1:numFiles
+                downloadedFileName = fullfile(ndiFilesDownload,docFileStruct(i).uid);
+                testCase.verifyTrue(isfile(downloadedFileName),"No successful download of file with uid "+docFileStruct(i).uid);
+                if isfile(downloadedFileName)
+                    fid = fopen(downloadedFileName,'r','ieee-le')
+                    contentHere = fread(fid,inf,"uint8",'ieee-le');
+                    testCase.verifyEqual(contentHere,docFileStruct(i).content,"File " + docFileStruct(i).uid + " content does not match upload.");
+                end
+            end
+        end
+
         function testRawFileEndToEnd(testCase)
             warning('testRawFileEndToEnd is disabled because the API endpoint does not work.')
             return
@@ -184,5 +268,104 @@ end
 function deleteFile(filePath)
     if exist(filePath, 'file')
         delete(filePath);
+    end
+end
+
+
+function [zipFilePath, fileContents] = createAndZipTempFiles(N, zipFileName)
+%CREATEANDZIPTEMPFILES Creates N temporary files, zips them, and cleans up.
+%
+%   [zipFilePath, fileContents] = CREATEANDZIPTEMPFILES(N, zipFileName)
+%   creates N temporary binary files in the current working directory. The
+%   files are named sequentially starting with 'a', 'b', ..., 'z', 'aa',
+%   'ab', etc. Each file is populated with 200 random uint8 values.
+%
+%   All generated files are then compressed into a single archive named
+%   zipFileName. After the archive is created, the original temporary
+%   files are deleted.
+%
+%   Inputs:
+%       N           - The number of temporary files to create. Must be a
+%                     positive integer.
+%       zipFileName - The name for the output zip archive. A ".zip"
+%                     extension will be added if not present.
+%
+%   Outputs:
+%       zipFilePath - The full, absolute path to the created zip archive.
+%       fileContents- A 1xN cell array where each cell contains the uint8
+%                     vector of random data written to the corresponding
+%                     temporary file. This is useful for later verification.
+%
+%   Example:
+%       % Create 30 files and zip them into 'myArchive.zip'
+%       [zipPath, contents] = createAndZipTempFiles(30, "myArchive.zip");
+%
+%       % Now you can use zipPath and contents in your test assertions.
+%
+
+    arguments
+        N (1,1) {mustBeInteger, mustBePositive}
+        zipFileName (1,1) string
+    end
+
+    % Ensure the zip file has the correct extension
+    if ~endsWith(zipFileName, ".zip", "IgnoreCase", true)
+        zipFileName = zipFileName + ".zip";
+    end
+
+    % Pre-allocate for performance
+    fileContents = cell(1, N);
+    tempFilePaths = strings(1, N);
+
+    % --- 1. Create temporary files with random data ---
+    for i = 1:N
+        % Generate the file name (a, b, ..., aa, ab, ...)
+        fileName = idx2alpha(i);
+        tempFilePaths(i) = fullfile(pwd, fileName);
+
+        % Generate random binary data
+        randomData = randi([0 255], 200, 1, 'uint8');
+        fileContents{i} = randomData;
+
+        % Write the data to the file
+        fileID = fopen(tempFilePaths(i), 'w');
+        if fileID == -1
+            error('Could not create temporary file: %s', tempFilePaths(i));
+        end
+        fwrite(fileID, randomData, 'uint8');
+        fclose(fileID);
+    end
+
+    % --- 2. Zip the files and clean up ---
+    try
+        zipFilePath = fullfile(pwd, zipFileName);
+        zip(zipFilePath, tempFilePaths);
+    catch ME
+        % Ensure cleanup happens even if zipping fails
+        for i = 1:N
+            if isfile(tempFilePaths(i))
+                delete(tempFilePaths(i));
+            end
+        end
+        rethrow(ME); % Rethrow the original error from zip()
+    end
+
+    % --- 3. Clean up the original temporary files ---
+    for i = 1:N
+        if isfile(tempFilePaths(i))
+            delete(tempFilePaths(i));
+        end
+    end
+end
+
+function name = idx2alpha(idx)
+% Converts a positive integer index to an alphabetic name sequence:
+% 1->'a', 26->'z', 27->'aa'.
+    alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    name = '';
+    while idx > 0
+        remainder = rem(idx-1, 26);
+        name = [alphabet(remainder + 1), name];
+        idx = floor((idx-1) / 26);
     end
 end

@@ -31,6 +31,13 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
 
     [datasetInfo, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
 
+    if ~isstruct(datasetInfo,"files") && ~ismissing(fileUuids)
+        error(['No files found in the dataset despite files requested.'])
+    end
+    if ~isstruct(datasetInfo,"files") % nothing to do
+        return;
+    end
+
     files = filterFilesToDownload(datasetInfo.files, fileUuids);
     
     numFiles = numel(files);
