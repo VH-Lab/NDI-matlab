@@ -16,8 +16,9 @@ function [response, uploadUrl] = get_file_upload_url(dataset_id, uid)
     %
 
     auth_token = ndi.cloud.authenticate();
+    [dsetinfo,r] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 
-    url = ndi.cloud.api.url('get_file_upload_url', 'dataset_id', dataset_id, 'file_uid', uid);
+    url = ndi.cloud.api.url('get_file_upload_url', 'dataset_id', dataset_id, 'organization_id', dsetinfo.organizationId, 'file_uid', uid);
 
     method = matlab.net.http.RequestMethod.GET;
 
@@ -28,7 +29,7 @@ function [response, uploadUrl] = get_file_upload_url(dataset_id, uid)
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
     
-    if (response.StatusCode == 200)
+    if (response.StatusCode == 200) || (response.StatusCode == 201)
         % Request succeeded
         uploadUrl = response.Body.Data.url;
     else

@@ -36,7 +36,7 @@ function [b, summary] = list_dataset_documents_all(cloudDatasetId, options)
 
     numberOfDocuments = ndi.cloud.api.documents.count_documents(cloudDatasetId);
         
-    numPages = ceil(numberOfDocuments / options.pageSize); % induce error
+    numPages = ceil(double(numberOfDocuments) / options.pageSize); % induce error
 
     for p = 1:numPages
         page_succeeded = false;
@@ -47,7 +47,7 @@ function [b, summary] = list_dataset_documents_all(cloudDatasetId, options)
                     'page', p, ...
                     'pageSize', options.pageSize);
                 
-                if isempty(summary)
+                if isempty(summary.documents)
                     summary = page_summary;
                 else
                     summary = struct('documents',cat(1,summary.documents,page_summary.documents));
@@ -55,6 +55,8 @@ function [b, summary] = list_dataset_documents_all(cloudDatasetId, options)
                 page_succeeded = true;
                 break; % Exit retry loop on success
             catch
+                disp(['need to retry reading'])
+                disp(lasterr)
                 % Let the retry loop continue on failure
             end
         end

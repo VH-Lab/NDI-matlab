@@ -16,29 +16,45 @@ classdef FilesTest < matlab.unittest.TestCase
     properties
         DatasetID (1,1) string = missing % ID of dataset used for all tests
         TestFilePath % Path to a temporary test file
+        FileUID (1,1) string = missing % Unique ID for the file in each test
     end
 
     methods (TestClassSetup)
+        % This block now contains setup that truly only needs to run ONCE
+        % for the entire test class. For this file, none is needed.
+    end
+
+    methods (TestMethodSetup)
+        % Methods in this block run BEFORE EACH test method.
+
         function createTestDataset(testCase)
-            % Create a dataset for testing
+            % Create a new dataset for each test to ensure isolation.
             datasetInfo = struct("name", testCase.DatasetName);
             [~, testCase.DatasetID] = ...
                 ndi.cloud.api.datasets.create_dataset(datasetInfo); 
+            
+            % The teardown is queued to run after the test method completes.
             testCase.addTeardown(@() deleteDataset(testCase.DatasetID));
         end
 
         function createTestFile(testCase)
-            % Create a temporary test file
+            % Create a new temporary file for each test.
             testCase.TestFilePath = fullfile(tempdir, testCase.TestFileName);
             fid = fopen(testCase.TestFilePath, 'w');
             fprintf(fid, '%s', testCase.TestFileContent);
             fclose(fid);
             
-            % Add teardown to clean up
+            % The teardown is queued to run after the test method completes.
             testCase.addTeardown(@() deleteFile(testCase.TestFilePath));
+        end
+        
+        function generateNewFileUID(testCase)
+            % Generate a fresh, unique file UID before each test method runs.
+            testCase.FileUID = testCase.generateFileUID();
         end
 
         function useTemporaryWorkingFolder(testCase)
+            % Apply a fresh working folder fixture for each test.
             import matlab.unittest.fixtures.WorkingFolderFixture
             testCase.applyFixture(WorkingFolderFixture)
         end
@@ -47,22 +63,8 @@ classdef FilesTest < matlab.unittest.TestCase
     methods (Test)
         function testGetFileUploadUrl(testCase)
             % Test getting an upload URL for a file
-            fileUID = testCase.generateFileUID();
-            
-            [response, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
-                testCase.DatasetID, fileUID);
-            
-            testCase.verifyNotEmpty(upload_url, 'Expected non-empty upload URL');
-            testCase.verifyTrue(ischar(upload_url) || isstring(upload_url), ...
-                'Expected upload URL to be a string');
-        end
-
-        function testGetRawFileUploadUrl(testCase)
-            % Test getting an upload URL for a raw file
-            fileUID = testCase.generateFileUID();
-            
-            [~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
-                testCase.DatasetID, fileUID);
+            [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
+                testCase.DatasetID, testCase.FileUID);
             
             testCase.verifyNotEmpty(upload_url, 'Expected non-empty upload URL');
             testCase.verifyTrue(ischar(upload_url) || isstring(upload_url), ...
@@ -71,32 +73,30 @@ classdef FilesTest < matlab.unittest.TestCase
 
         function testPutFiles(testCase)
             % Test uploading a file using a presigned URL
-            fileUID = testCase.generateFileUID();
-            
             % Get upload URL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
-                testCase.DatasetID, fileUID);
+                testCase.DatasetID, testCase.FileUID);
             
             % Upload file
             response = ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
+            
+            testCase.verifyEqual(double(response.StatusCode), 200, 'File upload PUT request failed.');
         end
 
         function testGetFileDetails(testCase)
             % Test getting file details after upload
-            fileUID = testCase.generateFileUID();
-            
             % Upload a file first
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
-                testCase.DatasetID, fileUID);
+                testCase.DatasetID, testCase.FileUID);
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
             
             pause(5) % Give server time to register file
-
+            
             % Get file details
-            [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(...
-                testCase.DatasetID, fileUID);
+            [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
+                testCase.DatasetID, testCase.FileUID);
             
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
             testCase.verifyNotEmpty(downloadUrl, 'Expected non-empty download URL');
@@ -107,21 +107,19 @@ classdef FilesTest < matlab.unittest.TestCase
 
         function testEndToEndFileUpload(testCase)
             % Test the complete file upload workflow
-            fileUID = testCase.generateFileUID();
-            
             % Step 1: Get upload URL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
-                testCase.DatasetID, fileUID);
+                testCase.DatasetID, testCase.FileUID);
             
             % Step 2: Upload file
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
             
-            pause(2)
+            pause(5)
             
             % Step 3: Get file details
             [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
-                testCase.DatasetID, fileUID);
+                testCase.DatasetID, testCase.FileUID);
             
             % Verify file details
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
@@ -130,20 +128,18 @@ classdef FilesTest < matlab.unittest.TestCase
             % Download the file and verify its contents
             websave('temp_test.txt', downloadUrl);
             testCase.addTeardown(@() delete('temp_test.txt'))
-            str = fileread('temp_test.txt');
+            str = filread('temp_test.txt');
             testCase.verifyEqual(str, testCase.TestFileContent)
         end
-
+        
         function testFileCollectionUpload(testCase)
             % 1. ARRANGE: Set up a realistic local file environment
             
             % Use a temporary folder for this test that is automatically cleaned up
             import matlab.unittest.fixtures.WorkingFolderFixture
             testCase.applyFixture(WorkingFolderFixture);
-
             % Define how many files to create for the test
             numFiles = 5;
-
             ndiFilesDir = tempdir;
             ndiFilesUpload = [ndiFilesDir filesep 'upload'];
             ndiFilesDownload = [ndiFilesDir filesep 'download'];
@@ -159,13 +155,12 @@ classdef FilesTest < matlab.unittest.TestCase
             
             % Create the physical files and populate the metadata struct
             for i = 1:numFiles
-                % Generate a unique ID and a sequential name ('a', 'b', ...)
                 uid = getfield(ndi.ido(),'identifier'); 
                 fileName = sprintf(uid);
                 fullfilePath = fullfile(ndiFilesUpload, uid);
-
                 % Create data that spans all uint8 values and write it to the file
-                fileContent = uint8(0:255);
+                fileContent = uint8(randperm(256)-1);
+                fileContent = fileContent(:);
                 fid = fopen(fullfilePath, 'w');
                 fwrite(fid, fileContent, 'uint8','ieee-le');
                 fclose(fid);
@@ -175,38 +170,32 @@ classdef FilesTest < matlab.unittest.TestCase
                 docFileStruct(i).name = fileName;
                 docFileStruct(i).content = fileContent;
             end
-
             % --- 2. ACT: Call the API endpoints to perform the upload ---
             
             % First, get the secure, one-time upload URL from the API
-            [upload_url] = ndi.cloud.api.documents.get_bulk_upload_url(testCase.DatasetID);
+            [response,upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(testCase.DatasetID);
             
             % Assert that the request for the URL was successful
-            testCase.verifyNotEmpty(upload_url, 'The upload URL returned by the API was empty.');
+            testCase.verifyNotEmpty(upload_url, "The upload URL returned by the API for dataset " + testCase.DatasetID + "was empty.");
             
             % Create the zip archive to be uploaded
-            zipFileName = testCase.DatasetID + "_test_upload.zip";
+            id = ndi.ido;
+            zipFName = id.identifier;
+            zipFileName = fullfile(ndiFilesUpload,testCase.DatasetID + "."+zipFName+".zip");
             filesToZip = fullfile(ndiFilesUpload, {docFileStruct.name});
             zip(zipFileName, filesToZip);
             testCase.verifyTrue(isfile(zipFileName), 'The zip archive was not created on disk.');
-
             % Second, use the URL to upload the zip file via a PUT request
             [response] = ndi.cloud.api.files.put_files(upload_url, zipFileName);
-
             % --- 3. ASSERT: Verify the upload request was accepted ---
-
             % A 200 status code indicates the server received the file successfully
             testCase.verifyEqual(double(response.StatusCode), 200, 'The PUT request to upload the zip file failed.');
-
             % NOTE: This test confirms the UPLOAD was successful. A separate
             % step is needed to verify the files were correctly PROCESSED and
             % registered by the NDI cloud service after unpacking.
-
             % check one-at-a-time download, the only one we have right now
             pause(10); % give plenty of time for small upload to process
-
             downloadGood = false;
-
             try
                 ndi.cloud.download.download_dataset_files(testCase.DatasetID,ndiFilesDownload,string({docFileStruct.uid}));
                 downloadGood = true;
@@ -214,14 +203,14 @@ classdef FilesTest < matlab.unittest.TestCase
                 mymsg = compose("DatasetID " + testCase.DatasetID + " had no files after bulk file upload. Technical detail: %s", ME.message);
                 testCase.verifyFail(mymsg);
             end
-
             if downloadGood
                 for i=1:numFiles
                     downloadedFileName = fullfile(ndiFilesDownload,docFileStruct(i).uid);
                     testCase.verifyTrue(isfile(downloadedFileName),"No successful download of file with uid "+docFileStruct(i).uid);
                     if isfile(downloadedFileName)
-                        fid = fopen(downloadedFileName,'r','ieee-le')
-                        contentHere = fread(fid,inf,"uint8",'ieee-le');
+                        fid = fopen(downloadedFileName,'r','ieee-le');
+                        contentHere = fread(fid,inf,"uint8=>uint8");
+                        fclose(fid);
                         testCase.verifyEqual(contentHere,docFileStruct(i).content,"File " + docFileStruct(i).uid + " content does not match upload.");
                     end
                 end
@@ -231,45 +220,42 @@ classdef FilesTest < matlab.unittest.TestCase
         function testRawFileEndToEnd(testCase)
             warning('testRawFileEndToEnd is disabled because the API endpoint does not work.')
             return
-
             % Test the complete raw file upload workflow
-            fileUID = testCase.generateFileUID();
             
             % Step 1: Get raw file upload URL
             [~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
-                testCase.DatasetID, fileUID);
+                testCase.DatasetID, testCase.FileUID);
             
             % Step 2: Upload file
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
             
             pause(5) % Todo: Use retry loop for getting download url
-
             % Step 3: Get file details
             [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
-                testCase.DatasetID, fileUID);
+                testCase.DatasetID, testCase.FileUID);
             
             % Verify file details
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
             testCase.verifyNotEmpty(downloadUrl, 'Expected non-empty download URL');
-
             % Download the file and verify its contents
             websave('temp_test.txt', downloadUrl)
             testCase.addTeardown(@() delete('temp_test.txt'))
-            str = fileread('temp_test.txt');
+            str = filread('temp_test.txt');
             testCase.verifyEqual(str, testCase.TestFileContent)
         end
     end
 
     methods % Helper methods
-        function fileUID = generateFileUID(testCase)
+        function fileUID = generateFileUID(~)
             % Generate a unique ID for a file
             randomChars = char(randi([65 90], 1, 8)); % Random 8 uppercase letters
-            timestamp = string(datetime('now', 'Format', 'yyyyMMdd_HHmmss'));
+            timestamp = string(datetime('now', 'Format', 'yyyyMMdd_HHmmss_SSS'));
             fileUID = sprintf('test_file_%s_%s', timestamp, randomChars);
         end
     end
 end
+
 
 function deleteDataset(datasetId)
     ndi.cloud.api.datasets.delete_dataset(datasetId);
@@ -280,8 +266,7 @@ function deleteFile(filePath)
         delete(filePath);
     end
 end
-
-
+% The helper functions createAndZipTempFiles and idx2alpha remain unchanged.
 function [zipFilePath, fileContents] = createAndZipTempFiles(N, zipFileName)
 %CREATEANDZIPTEMPFILES Creates N temporary files, zips them, and cleans up.
 %
@@ -312,31 +297,25 @@ function [zipFilePath, fileContents] = createAndZipTempFiles(N, zipFileName)
 %
 %       % Now you can use zipPath and contents in your test assertions.
 %
-
     arguments
         N (1,1) {mustBeInteger, mustBePositive}
         zipFileName (1,1) string
     end
-
     % Ensure the zip file has the correct extension
     if ~endsWith(zipFileName, ".zip", "IgnoreCase", true)
         zipFileName = zipFileName + ".zip";
     end
-
     % Pre-allocate for performance
     fileContents = cell(1, N);
     tempFilePaths = strings(1, N);
-
     % --- 1. Create temporary files with random data ---
     for i = 1:N
         % Generate the file name (a, b, ..., aa, ab, ...)
         fileName = idx2alpha(i);
         tempFilePaths(i) = fullfile(pwd, fileName);
-
         % Generate random binary data
         randomData = randi([0 255], 200, 1, 'uint8');
         fileContents{i} = randomData;
-
         % Write the data to the file
         fileID = fopen(tempFilePaths(i), 'w');
         if fileID == -1
@@ -345,7 +324,6 @@ function [zipFilePath, fileContents] = createAndZipTempFiles(N, zipFileName)
         fwrite(fileID, randomData, 'uint8');
         fclose(fileID);
     end
-
     % --- 2. Zip the files and clean up ---
     try
         zipFilePath = fullfile(pwd, zipFileName);
@@ -359,7 +337,6 @@ function [zipFilePath, fileContents] = createAndZipTempFiles(N, zipFileName)
         end
         rethrow(ME); % Rethrow the original error from zip()
     end
-
     % --- 3. Clean up the original temporary files ---
     for i = 1:N
         if isfile(tempFilePaths(i))
@@ -367,7 +344,6 @@ function [zipFilePath, fileContents] = createAndZipTempFiles(N, zipFileName)
         end
     end
 end
-
 function name = idx2alpha(idx)
 % Converts a positive integer index to an alphabetic name sequence:
 % 1->'a', 26->'z', 27->'aa'.

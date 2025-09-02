@@ -139,11 +139,11 @@ classdef DocumentsTest < matlab.unittest.TestCase
             DocSummary.documents = [];
             while ~isFinished && toc(t1) < timeOut
                 %disp(['Looking for documents'])
-                [b, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID)
+                [b, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID);
                 if b&&(numel(DocSummary.documents) == numDocuments)
                     isFinished = true;                    
                 else
-                    disp('Pausing again')
+                    %disp('Pausing again')
                     pause(1)
                 end
             end
