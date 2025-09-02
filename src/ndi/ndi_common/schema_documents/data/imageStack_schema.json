@@ -1,0 +1,29 @@
+{
+	"classname": "imageStack",
+	"superclasses":  [ "base" , "imageStack_parameters" ],
+	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 0},
+		{ "name": "document_id", "mustbenotempty": 0}
+	],
+	"file": [ 
+		{"name": "imageStack", "mustbenotempty": 1}
+	],
+	"imageStack": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A text label associated with the image."
+		},
+		{
+			"name": "formatOntology",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node describing the file format in the form of ontology:nodeID (e.g 'EMPTY:00000090')."
+		}
+	]
+}

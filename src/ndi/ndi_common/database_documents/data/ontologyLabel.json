@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/ontologyLabel.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ontologyLabel_schema.json",
+		"class_name":						"ontologyLabel",
+		"property_list_name":               "ontologyLabel",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "document_id", "value": "" }
+	],
+	"ontologyLabel":  {
+		"ontologyNode":		""
+	}
+}
