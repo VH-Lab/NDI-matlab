@@ -63,11 +63,11 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifyEqual(actualT.Cat(1), categorical("X"));
             
             testCase.verifyEqual(actualT.Int(2), int8(2)); 
-            testCase.verifyEqual(actualT.Log(2), false);  
+            testCase.verifyEqual(actualT.Log(2), false);
             testCase.verifyTrue(ismissing(actualT.Str(2))); 
             testCase.verifyEqual(actualT.CellStr(2),{' '});
-            testCase.verifyTrue(isnan(year(actualT.Date(2))));       
-            testCase.verifyTrue(isnan(actualT.Dur(2)));     
+            testCase.verifyTrue(isnat(actualT.Date(2)));
+            testCase.verifyTrue(isnan(actualT.Dur(2)));
             testCase.verifyTrue(isundefined(actualT.Cat(2)));
             
             testCase.verifyClass(actualT.Int, 'int8');    
@@ -159,7 +159,7 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifyTrue(all(ismember({'A', 'B', 'C'}, actualT_emptyRows.Properties.VariableNames)));
             testCase.verifyEqual(actualT_emptyRows.A, [1;2]);
             testCase.verifyEqual(actualT_emptyRows.B, ["X";"Y"]);
-            testCase.verifyTrue(all(isnan(year(actualT_emptyRows.C))));
+            testCase.verifyTrue(all(isnat(actualT_emptyRows.C)));
 
             actualT_tableEmpty = ndi.fun.table.vstack({T2_data, T3_empty_table});
             testCase.verifyEqual(actualT_tableEmpty, T2_data); 
@@ -209,7 +209,7 @@ classdef TestVStack < matlab.unittest.TestCase
             expected_dt2_utc = datetime(2025,1,2, 'TimeZone','America/New_York');
             expected_dt2_utc.TimeZone = 'UTC'; 
             testCase.verifyEqual(actualT.DT(2), expected_dt2_utc);
-            testCase.verifyTrue(isnan(year(actualT.DT(3))));
+            testCase.verifyTrue(isnat(actualT.DT(3)));
         end
         
         function testLogicalFillStrict(testCase)
