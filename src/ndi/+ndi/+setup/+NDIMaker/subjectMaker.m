@@ -28,7 +28,7 @@ classdef subjectMaker < handle
             %
         end
 
-        function [subjectInfo, allSubjectNamesFromTable] = addSubjectsFromTable(obj, session, dataTable, subjectInfoCreator)
+        function [subjectInfo, allSubjectNamesFromTable,subjectDocIDs] = addSubjectsFromTable(obj, session, dataTable, subjectInfoCreator)
             %ADDSUBJECTSFROMTABLE Processes a table to create and add subjects to a session.
             %
             %   [SUBJECTINFO, ALLSUBJECTNAMESFROMTABLE] = ADDSUBJECTSFROMTABLE(OBJ, SESSION, DATATABLE, SUBJECTINFOCREATOR)
@@ -52,7 +52,9 @@ classdef subjectMaker < handle
             %       allSubjectNamesFromTable (cell array): A cell array with one entry per row of
             %                         the input `dataTable`. Each entry is the subject name (char array)
             %                         or NaN returned by `subjectInfoCreator` for that row.
-            %
+            %       subjectDocIDs (cell array): A cell array with one entry per row of the input 
+            %                         `dataTable`. Each entry is thesubject document identifier 
+            %                         for that row.                    
                 
                 % The subjectMaker requires a sessionID column to map subjects to sessions
                 dataTable.sessionID(:) = {session.id()};
@@ -76,6 +78,9 @@ classdef subjectMaker < handle
                 % 3. Add the new subject documents to the session
                 disp('Adding new subject documents to the session database...');
                 obj.addSubjectsToSessions({session}, subDocStruct.documents);
+
+                % 4. Return subject document ids
+                subjectDocIDs = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
         end
 
 
