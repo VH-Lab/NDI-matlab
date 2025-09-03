@@ -145,7 +145,7 @@ creator = ndi.setup.conv.dabrowska.SubjectInformationCreator();
 % 2. Call a single function to extract subject info, create documents, and add to the session.
 %    This also returns the subject string for each row of the variableTable, which is
 %    essential for linking other documents later.
-[subjectInfo_ephys, variableTable.SubjectString] = ...
+[~, variableTable.SubjectString] = ...
     subM.addSubjectsFromTable(sessionArray{1}, variableTable, creator);
  
 % ------------------ END OF CHANGE ------------------
@@ -399,17 +399,14 @@ subjectTable_behavior{:,'IsOTRCre'} = {'OTRCre'};
 subjectTable_behavior{:,'IsCRFCre'} = NaN;
 subjectTable_behavior{:,'IsAVPCre'} = NaN;
 subjectTable_behavior{:,'sessionID'} = sessionArray{1}.identifier;
+subjectTable_behavior.sessionID = cellstr(subjectTable_behavior.sessionID);
 subjectTable_behavior{:,'RecordingDate'} = 'Aug 19 2022';
 subjectTable_behavior{:,'SubjectPostfix'} = arrayfun(@(si) ...
     ['_',num2str(si),'@dabrowska-lab.rosalindfranklin.edu'],...
     subjectTable_behavior.Animal,'UniformOutput',false);
-
 % Employ the subjectMaker
-[subjectInfo_behavior,subjectTable_behavior.SubjectString] = ...
-    subM.getSubjectInfoFromTable(subjectTable_behavior,...
-    @ndi.setup.conv.dabrowska.createSubjectInformation);
-subDocStruct = subM.makeSubjectDocuments(subjectInfo_behavior);
-subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
+[~, subjectTable_behavior.SubjectString] = ...
+    subM.addSubjectsFromTable(sessionArray{1}, subjectTable_behavior, creator);
 
 % Add subject strings to data tables
 dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectString'}),'Keys','Animal');

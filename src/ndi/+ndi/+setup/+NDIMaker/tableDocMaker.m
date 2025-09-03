@@ -1,339 +1,336 @@
-% file: +ndi/+setup/+NDIMaker/treatmentMaker.m
-classdef treatmentMaker < handle
-%TREATMENTMAKER A class for creating and managing NDI treatment documents.
-%   Provides methods to generate treatment information from tables, create
-%   NDI treatment documents, and manage them within NDI sessions.
+% Folder: +ndi/+setup/+NDIMaker/
+classdef tableDocMaker < handle
+    %tableDocMaker Creates and manages NDI documents linking table row data to ontology terms.
+    %   This class is responsible for generating NDI documents that associate
+    %   data from rows of a table with specific ontology terms. It uses a
+    %   mapping file (dictionary) to connect table variable names to ontology
+    %   term identifiers (including their prefix).
 
-    properties
-        % No public properties are defined for this class.
+    properties (Access = public)
+        session                         % The NDI session object (e.g., ndi.session.dir or ndi.database.dir) where documents will be added.
+        variableMapFilename (1,:) char  % Filename (including path) for the JSON dictionary file mapping table variable names to ontology term IDs (e.g., "PREFIX:TermNameOrID").
+        variableMapStruct struct        % Structure loaded from 'variableMapFilename'.
     end
 
     methods
-        function obj = treatmentMaker()
-            %TREATMENTMAKER - Construct an instance of the treatmentMaker class.
-            %
-            %   OBJ = NDI.SETUP.NDIMAKER.TREATMENTMAKER()
-            %
-            %   Creates a new treatmentMaker object.
-            %
-        end
-
-        function treatmentInfoTable = getTreatmentInfoFromTable(obj, dataTable, treatmentCreator)
-            %GETTREATMENTINFOFROMTABLE Generates a standardized treatment table from a data table.
-            %
-            %   TREATMENTINFOTABLE = GETTREATMENTINFOFROMTABLE(OBJ, DATATABLE, TREATMENTCREATOR)
-            %
-            %   This method uses a TreatmentCreator object to process a general data table
-            %   and produce a standardized table formatted for creating NDI treatment documents.
+        function obj = tableDocMaker(session, labName)
+            %TABLEDOCMAKER Constructor for this class.
+            %   Initializes the tableDocMaker by loading a variable-to-ontology
+            %   mapping dictionary file specific to the given labName and associating
+            %   it with the provided NDI session.
             %
             %   Inputs:
-            %       obj (ndi.setup.NDIMaker.treatmentMaker) - The instance of this class.
-            %       dataTable (table) - A MATLAB table with raw metadata.
-            %       treatmentCreator (ndi.setup.NDIMaker.TreatmentCreator) - An object that
-            %           implements the logic to convert the dataTable into the treatmentInfoTable.
+            %       session: An NDI session object (e.g., an instance of
+            %                ndi.session.dir or ndi.database.dir).
+            %       labName: A character vector specifying the name of the lab.
+            %                This is used to locate the ontology mapping dictionary file
+            %                (e.g., 'labName_tableDoc_dictionary.json')
+            %                in the 'NDI-MATLAB/+ndi/+setup/+conv/+labName' folder.
             %
             %   Outputs:
-            %       treatmentInfoTable (table) - A standardized table ready for document creation.
+            %       obj: An instance of the tableDocMaker class.
             %
-            arguments
-                obj (1,1) ndi.setup.NDIMaker.treatmentMaker
-                dataTable table
-                treatmentCreator (1,1) ndi.setup.NDIMaker.TreatmentCreator
-            end
-            treatmentInfoTable = treatmentCreator.create(dataTable);
-        end
+            %   Example:
+            %       session = ndi.session.dir('/path/to/my/session');
+            %       labName = 'myLab';
+            %       docMaker = ndi.setup.NDIMaker.tableDocMaker(session, labName);
 
-        function [docs_to_add, report] = makeTreatmentDocuments(obj, S, treatmentTable)
-            %MAKETREATMENTDOCUMENTS Creates NDI treatment documents from a table without adding them to the database.
+            arguments
+                session {mustBeA(session,{'ndi.session.dir','ndi.database.dir'})}
+                labName (1,:) char
+            end
+
+            obj.session = session;
+
+            % Construct the path to the lab-specific variable mapping dictionary file
+            labFolder = fullfile(ndi.common.PathConstants.RootFolder,...
+                '+ndi','+setup','+conv',['+',labName]);
+            
+            obj.variableMapFilename = fullfile(labFolder,[labName,'_tableDoc_dictionary.json']); % UPDATED FILENAME
+            if ~isfile(obj.variableMapFilename)
+                error('tableDocMaker:VariableMapFileNotFound',...
+                    'Variable map dictionary file not found: %s',...
+                    obj.variableMapFilename);
+            end
+            try
+                obj.variableMapStruct = jsondecode(fileread(obj.variableMapFilename));
+            catch ME
+                error('tableDocMaker:VariableMapFileInvalidJSON',...
+                    'Failed to decode JSON from variable map dictionary file: %s. Error: %s',...
+                    obj.variableMapFilename, ME.message);
+            end
+        end % constructor tableDocMaker
+
+        function [doc,inDatabase] = createOntologyTableRowDoc(obj, tableRow, identifyingVariables, options)
+            %CREATEONTOLOGYTABLEROWDOC Creates a single NDI 'ontologyTableRow' document for a row of table data.
+            %   DOC = CREATEONTOLOGYTABLEROWDOC(OBJ, TABLEROW, IDENTIFYINGVARIABLES, OPTIONS)
             %
-            %   [DOCS_TO_ADD, REPORT] = MAKETREATMENTDOCUMENTS(OBJ, S, TREATMENTTABLE)
+            %   This method constructs an NDI document that links the data fields
+            %   from a single table row to ontology terms. The mapping from the
+            %   table's variable names (column headers) to ontology term identifiers
+            %   (e.g., "PREFIX:TermNameOrID") is performed using the 'obj.variableMapStruct'
+            %   loaded during the tableDocMaker's construction. Full ontology term
+            %   details (ID, name, prefix, shortName/codeName) are retrieved using
+            %   ndi.ontology.lookup.
             %
-            %   This method iterates through a treatmentTable, creates the corresponding
-            %   NDI documents, and returns them in a cell array. It does not add them
-            %   to the session database.
+            %   The created NDI document is of type 'ontologyTableRow' and contains:
+            %     - 'names': A comma-separated string of full ontology term names.
+            %     - 'variableNames': A comma-separated string of full short/code names.
+            %     - 'ontologyNodes': A comma-separated string of full ontology IDs (e.g., "PREFIX:ID").
+            %     - 'data': A struct where field names are the 'variableNames' (shortName)
+            %               obtained from the ontology lookup, and values are the
+            %               corresponding data from the input 'tableRow'.
             %
             %   Inputs:
-            %       obj (ndi.setup.NDIMaker.treatmentMaker) - The instance of this class.
-            %       S (ndi.session) - The NDI session object, used to find subject documents.
-            %       treatmentTable (table) - A table of treatment information.
-            %
-            %   Outputs:
-            %       docs_to_add (cell) - A cell array of the new ndi.document objects.
-            %       report (struct) - A structure detailing which rows were processed successfully.
-            %
-            arguments
-                obj (1,1) ndi.setup.NDIMaker.treatmentMaker
-                S (1,1) ndi.session
-                treatmentTable table
-            end
-
-            [docs_to_add, report] = obj.process_treatment_table(S, treatmentTable);
-        end
-
-        function addTreatmentDocuments(obj, S, documentsToAdd)
-            %ADDTREATMENTDOCUMENTS Adds a cell array of treatment documents to a session.
-            %
-            %   ADDTREATMENTDOCUMENTS(OBJ, S, DOCUMENTSTOADD)
-            %
-            %   Adds the provided ndi.document objects to the session's database.
-            %
-            %   Inputs:
-            %       obj (ndi.setup.NDIMaker.treatmentMaker) - The instance of this class.
-            %       S (ndi.session) - The NDI session to add documents to.
-            %       documentsToAdd (cell) - A cell array of ndi.document objects.
-            %
-            arguments
-                obj (1,1) ndi.setup.NDIMaker.treatmentMaker
-                S (1,1) ndi.session
-                documentsToAdd (1,:) cell
-            end
-            if ~isempty(documentsToAdd)
-                S.database_add(documentsToAdd);
-            end
-        end
-
-        function [created_docs, report] = makeAndAddTreatmentDocuments(obj, S, treatmentTable, options)
-            %MAKEANDADDTREATMENTDOCUMENTS - Create and add NDI treatment documents from a table.
-            %
-            %   [CREATED_DOCS, REPORT] = MAKEANDADDTREATMENTDOCUMENTS(OBJ, S, TREATMENTTABLE, ...)
-            %
-            %   This method is a convenience function that both creates and adds documents
-            %   to the session in a single step.
-            %
-            %   Inputs:
-            %       obj (ndi.setup.NDIMaker.treatmentMaker) - The instance of this class.
-            %       S (ndi.session) - The NDI session object to which documents will be added.
-            %       treatmentTable (table) - A table of treatment information.
+            %       obj: An instance of the tableDocMaker class. It must have the
+            %                 'variableMapStruct' property initialized, mapping table variable
+            %                 names to ontology term identifiers, and a valid 'session' property.
+            %       tableRow: A 1xN MATLAB table representing a single row of data.
+            %                 The variable names (column headers) of this table are used
+            %                 for mapping to ontology terms.
+            %       identifyingVariables: A string, char array, or cellstr array of
+            %                 variable names present in 'tableRow'. These variables
+            %                 and their corresponding values in 'tableRow' are used
+            %                 to query for an existing 'ontologyTableRow' document.
+            %                 The combination of these variable values should
+            %                 form a unique identifier for the row's data context.
             %
             %   Optional Name-Value Arguments:
-            %       doAdd (logical) - If true (default), documents are added to the database.
+            %       Overwrite: Controls behavior if a document matching the 'identifyingVariables' is found:
+            %                   - true: The existing document is removed, and a new one is created.
+            %                   - false (default): The existing document is returned, and no
+            %                                           new document is created.
+            %       OldDocs: A cell array of existing documents in the database that match
+            %                the identifiying variables of the current document. Depending on the behavior
+            %                of Overwrite, the OldDocs will be returned or overwritten. Passing this argument
+            %                speeds up processing by reducing calls to the database.
             %
             %   Outputs:
-            %       created_docs (cell) - A cell array of the new ndi.document objects.
-            %       report (struct) - A structure detailing processing success and failures.
+            %       doc: The NDI document object (ndi.document) of type 'ontologyTableRow'.
+            %            This will be the newly created document or the existing document
+            %            if found and 'options.Overwrite' is false.
+            %       inDatabase: Flag reporting whether the document already
+            %            exists in the database and Overwrite is false.
             %
+            %   See also: ndi.ontology.lookup, ndi.document, ndi.query, tableDocMaker.table2ontologyTableRowDocs
+
             arguments
-                obj (1,1) ndi.setup.NDIMaker.treatmentMaker
-                S (1,1) ndi.session
-                treatmentTable table
-                options.doAdd (1,1) logical = true
+                obj
+                tableRow (1,:) table % Input is a single table row
+                identifyingVariables {mustBeText}
+                options.Overwrite (1,1) logical = false
+                options.OldDocs cell = {NaN}
             end
 
-            [created_docs, report] = obj.process_treatment_table(S, treatmentTable);
+            % Ensure identifyingVariables is a cell array
+            identifyingVariables = cellstr(identifyingVariables);
 
-            if options.doAdd && ~isempty(created_docs)
-                S.database_add(created_docs);
+            % Search for existing document(s)
+            if isempty(options.OldDocs)| isa(options.OldDocs{1},'ndi.document')
+                doc_old = options.OldDocs;
+            else
+                query = ndi.query('','isa','ontologyTableRow'); % Document type
+                for i = 1:numel(identifyingVariables)
+                    termName = obj.variableMapStruct.(identifyingVariables{i});
+                    [~,~,~,~,~,shortName] = ndi.ontology.lookup(termName);
+                    query = query & ndi.query(['ontologyTableRow.data.',shortName],...
+                        'exact_string',tableRow.(identifyingVariables{i}));
+                end
+                doc_old = obj.session.database_search(query);
             end
-        end
 
-        function deletion_report = deleteTreatmentDocs(obj, sessionCellArray, treatmentsToDelete)
-            %DELETETREATMENTDOCS Deletes treatment documents from sessions based on content.
+            % Remove duplicates from database
+            if numel(doc_old) > 1
+                for i = 2:length(doc_old)
+                    if isequaln(doc_old{1}.document_properties.ontologyTableRow.data,...
+                            doc_old{i}.document_properties.ontologyTableRow.data)
+                        obj.session.database_rm(doc_old{i});
+                    else
+                        error('tableDocMaker:createOntologyTableRowDoc:NonUniqueFile',...
+                            'The identifying variables %s do not return a unique document',...
+                            join(identifyingVariables,','))
+                    end
+                end
+            end
+
+            % Remove old document(s) if overwriting
+            inDatabase = false;
+            if isscalar(doc_old)
+                if options.Overwrite
+                    obj.session.database_rm(doc_old{1});
+                else
+                    doc = doc_old{1};
+                    inDatabase = true;
+                    return;
+                end
+            end
+
+            % Get variable (column) names from table
+            varNames = tableRow.Properties.VariableNames;
+
+            % Initialize ontologyTableRow field names
+            names = cell(numel(varNames),1); variableNames = cell(numel(varNames),1);
+            ontologyNodes = cell(numel(varNames),1); data = struct();
+            invalidInd = false(numel(varNames),1);
+            for i = 1:numel(varNames)
+
+                % Map variable name to ontology term given variableMapStruct
+                try
+                    termName = obj.variableMapStruct.(varNames{i});
+                catch ME
+                    if strcmpi(ME.identifier,'MATLAB:nonExistentField')
+                        warning(ME.identifier,'%s Skipping.',ME.message)
+                        invalidInd(i) = true;
+                        continue
+                    else
+                        rethrow(ME)
+                    end
+                end
+
+                % Lookup term from ontology
+                [ontologyNodes{i},names{i},~,~,~,variableNames{i}] = ndi.ontology.lookup(termName);
+
+                % Unpack data values from cell (if applicable)
+                value = tableRow.(varNames{i});
+                if iscell(value)
+                    if isscalar(value)
+                        value = value{1};
+                    else
+                        error('tableDocMaker:TableValueIsCellArray',...
+                            ['A table cell can only contain a single value, not a cell array. ' ...
+                            'Check that values of the variable: %s'],varNames{i});
+                    end
+                end
+
+                % Add values to field
+                data.(variableNames{i}) = value;
+            end
+
+            % Remove empty fields
+            names(invalidInd) = []; variableNames(invalidInd) = []; ontologyNodes(invalidInd) = [];
+
+            % Convert names, shortNames, and ids to comma-seperated char arrays
+            names = join(names,','); names = names{1};
+            variableNames = join(variableNames,','); variableNames = variableNames{1};
+            ontologyNodes = join(ontologyNodes,','); ontologyNodes = ontologyNodes{1};
+
+            % Compile ontologyTableRow struct
+            ontologyTableRow = struct('names',names,'variableNames',variableNames,...
+                'ontologyNodes',ontologyNodes,'data',data);
+
+            % Create ontologyTableRow doument
+            doc = ndi.document('ontologyTableRow','ontologyTableRow',ontologyTableRow) + ...
+                obj.session.newdocument();
+
+        end % createOntologyTableRowDoc
+
+        function docs = table2ontologyTableRowDocs(obj, dataTable, identifyingVariables, options)
+            %TABLE2ONTOLOGYTABLEROWDOCS Converts each row in a table into an NDI 'ontologyTableRow' document.
+            %   DOCS = TABLE2ONTOLOGYTABLEROWDOCS(OBJ, DATATABLE, IDENTIFYINGVARIABLES, OPTIONS)
             %
-            %   DELETION_REPORT = DELETETREATMENTDOCS(OBJ, SESSIONCELLARRAY, TREATMENTSTODELETE)
-            %
-            %   This method searches for and deletes treatment documents based on their
-            %   content, as specified in the `treatmentsToDelete` table.
+            %   This method iterates through each row of the input 'dataTable'.
+            %   For each row, it calls `obj.createOntologyTableRowDoc` to generate
+            %   an NDI document of type 'ontologyTableRow'. The resulting documents
+            %   are collected into a cell array.
             %
             %   Inputs:
-            %       obj (ndi.setup.NDIMaker.treatmentMaker) - The instance of this class.
-            %       sessionCellArray (cell) - A cell array of NDI session objects to search.
-            %       treatmentsToDelete (table) - A table specifying which treatments to delete.
-            %           It must contain 'subjectIdentifier' and 'treatmentType' columns.
-            %           Additional columns corresponding to document properties are needed
-            %           to uniquely identify the documents (e.g., 'treatment' for type 'treatment').
+            %       obj: An instance of the tableDocMaker class.
+            %       dataTable: A MATLAB table. Each row will be processed to create
+            %                  an 'ontologyTableRow' document.
+            %       identifyingVariables: A string, char array, or cellstr array of
+            %                  variable names present in 'dataTable'. This is
+            %                  passed directly to `createOntologyTableRowDoc`
+            %                  for each row to identify potentially existing documents.
+            %   Optional Name-Value Arguments:
+            %       Overwrite: Flag passed directly to `createOntologyTableRowDoc`.
+            %                  Controls whether existing documents matching the
+            %                  'identifyingVariables' for a given row should be
+            %                  overwritten. Default: false.
             %
             %   Outputs:
-            %       deletion_report (struct) - A report detailing which documents were found
-            %                                  and deleted in each session.
+            %       docs: A cell array with the same number of rows as 'dataTable'.
+            %             Each cell contains the NDI document object (ndi.document)
+            %             created by `createOntologyTableRowDoc` for the corresponding row.
             %
+            %   See also: tableDocMaker.createOntologyTableRowDoc, ndi.gui.component.ProgressBarWindow
+
             arguments
-                obj (1,1) ndi.setup.NDIMaker.treatmentMaker
-                sessionCellArray (1,:) cell {ndi.validators.mustBeCellArrayOfNdiSessions(sessionCellArray)}
-                treatmentsToDelete table
+                obj
+                dataTable table
+                identifyingVariables {mustBeText}
+                options.Overwrite (1,1) logical = false
             end
 
-            if isempty(treatmentsToDelete) || isempty(sessionCellArray)
-                deletion_report = struct();
-                return;
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Ontology Table Row Document(s)',...
+                'Tag','ontologyTableRow');
+
+            docs = cell(height(dataTable),1); % Initialize output cell array
+            inDatabase = false(height(dataTable),1);
+            onePercent = ceil(height(dataTable)/100);
+
+            % Get all existing old docs now (only once) for faster
+            query = ndi.query('','isa','ontologyTableRow');
+            old_docs = obj.session.database_search(query);
+
+            % Get only existing docs with matching fields
+            ind = true(size(old_docs));
+            shortNames = cell(size(identifyingVariables));
+            for j = 1:numel(identifyingVariables)
+                termName = obj.variableMapStruct.(identifyingVariables{j});
+                [~,~,~,~,~,shortNames{j}] = ndi.ontology.lookup(termName);
+                ind = ind & cellfun(@(d) isfield(d.document_properties.ontologyTableRow.data,shortNames{j}),old_docs);
             end
+            old_docs = old_docs(ind);
 
-            numSessions = numel(sessionCellArray);
-            deletion_report = repmat(struct('session_id', '', 'session_reference', '', 'docs_found_ids', {{}}, 'docs_deleted_ids', {{}}, 'errors', {{}}), numSessions, 1);
+            % Get identifying variable values from existing docs
+            variableData = cell(numel(old_docs),numel(shortNames));
+            for j = 1:numel(shortNames)
+                existingValues = cellfun(@(d) d.document_properties.ontologyTableRow.data.(shortNames{j}),...
+                    old_docs,'UniformOutput',false);
+                variableData(:,j) = existingValues;
+            end
+            variableTable = array2table(variableData,'VariableNames',shortNames);
+            
+            for i = 1:height(dataTable)
 
-            for s = 1:numSessions
-                currentSession = sessionCellArray{s};
-                deletion_report(s).session_id = currentSession.id();
-                deletion_report(s).session_reference = currentSession.reference;
-                
-                all_docs_to_delete = {};
+                % Search existing docs for match(s)
+                if ~isempty(old_docs)
+                    ind = true(height(variableTable),1);
+                    for j = 1:numel(identifyingVariables)
+                        if isnumeric(dataTable{i,identifyingVariables{j}})
+                            ind = ind & cell2mat(variableTable.(shortNames{j})) == ...
+                                dataTable{i,identifyingVariables{j}};
+                        else
+                            ind = ind & strcmpi(variableTable.(shortNames{j}),...
+                                dataTable{i,identifyingVariables{j}});
+                        end
 
-                subject_docs = currentSession.database_search(ndi.query('','isa','subject'));
-                subject_map = containers.Map('KeyType','char','ValueType','char');
-                for i=1:numel(subject_docs)
-                    subject_map(subject_docs{i}.document_properties.subject.local_identifier) = subject_docs{i}.id();
-                end
-
-                for i = 1:height(treatmentsToDelete)
-                    row = treatmentsToDelete(i,:);
-                    subject_id_str = char(row.subjectIdentifier);
-
-                    if ~isKey(subject_map, subject_id_str)
-                        warning('Subject with identifier "%s" not found in session %s. Skipping deletion for this entry.', subject_id_str, currentSession.reference);
-                        continue;
                     end
-                    subject_doc_id = subject_map(subject_id_str);
-
-                    treatmentType = char(row.treatmentType);
-                    q_base = ndi.query('','isa',treatmentType) & ndi.query('','depends_on','subject_id', subject_doc_id);
-                    
-                    q_content = ndi.query('','depends_on','ndi_document.id','exact_string','-'); % empty query
-
-                    switch lower(treatmentType)
-                        case 'treatment'
-                            if ismember('treatment', row.Properties.VariableNames)
-                                q_content = ndi.query('treatment.ontologyName','exact_string', char(row.treatment));
-                            end
-                        case 'treatment_drug'
-                            if ismember('location_ontologyNode', row.Properties.VariableNames)
-                                q_content = ndi.query('treatment_drug.location_ontologyNode','exact_string', char(row.location_ontologyNode));
-                            end
-                        case 'treatment_virus'
-                             if ismember('virus_OntologyName', row.Properties.VariableNames)
-                                q_content = ndi.query('treatment_virus.virus_OntologyName','exact_string', char(row.virus_OntologyName));
-                            end
-                    end
-                    
-                    docs_found = currentSession.database_search(q_base & q_content);
-                    all_docs_to_delete = cat(1, all_docs_to_delete, docs_found(:));
+                    OldDocs = old_docs(ind);
+                else
+                    OldDocs = {};
                 end
-                
-                if ~isempty(all_docs_to_delete)
-                    docs_found_ids = cellfun(@(d) d.id(), all_docs_to_delete, 'UniformOutput', false);
-                    deletion_report(s).docs_found_ids = docs_found_ids;
-                    currentSession.database_rm(docs_found_ids);
-                    deletion_report(s).docs_deleted_ids = docs_found_ids;
+
+                % Create ontologyTableRowDoc
+                [docs{i},inDatabase(i)] = createOntologyTableRowDoc(obj, dataTable(i,:), ...
+                    identifyingVariables,'Overwrite',options.Overwrite,...
+                    'OldDocs',OldDocs);
+
+                % Update progress bar
+                if mod(i,onePercent)==1 || onePercent == 1 % update every 1% so it doesn't slow down the process too much
+                    progressBar = progressBar.updateBar('ontologyTableRow',i/height(dataTable));
                 end
             end
-        end
 
-    end % public methods
+            % Add documents to the database all at once
+            obj.session.database_add(docs(~inDatabase));
 
-    methods (Access = private)
+            % Complete progress bar
+            progressBar.updateBar('ontologyTableRow',1);
 
-        function [created_docs, report] = process_treatment_table(obj, S, treatmentTable)
-            %PROCESS_TREATMENT_TABLE - Internal helper to create documents from a table.
-            
-            created_docs = {};
-            report.success = logical([]);
-            report.errors = {};
+        end % table2ontologyTableRowDocs
 
-            % Step 1: Validate the input table has the base required columns
-            base_req = {'treatmentType', 'treatment', 'stringValue', 'numericValue', 'subjectIdentifier', 'sessionPath'};
-            ndi.validators.mustHaveRequiredColumns(treatmentTable, base_req);
-
-            % Step 2: Efficiently map subject identifiers to NDI document IDs
-            subject_docs = S.database_search(ndi.query('','isa','subject'));
-            subject_map = containers.Map('KeyType','char','ValueType','char');
-            for i=1:numel(subject_docs)
-                subject_map(subject_docs{i}.document_properties.subject.local_identifier) = subject_docs{i}.id();
-            end
-
-            % Step 3: Iterate through the table and create documents
-            for i=1:height(treatmentTable)
-                row = treatmentTable(i,:);
-                try
-                    new_doc = obj.create_doc_from_row(S, row, subject_map);
-                    if ~isempty(new_doc)
-                        created_docs{end+1} = new_doc;
-                    end
-                    report.success(i) = true;
-                    report.errors{i} = '';
-                catch ME
-                    report.success(i) = false;
-                    report.errors{i} = ME.message;
-                    warning('Failed to create document for row %d: %s', i, ME.message);
-                end
-            end
-        end
-
-        function doc = create_doc_from_row(obj, S, tableRow, subject_map)
-            %CREATE_DOC_FROM_ROW - Private helper to create a single document from a table row.
-            
-            doc = [];
-            subject_id_str = char(tableRow.subjectIdentifier);
-
-            if ~isKey(subject_map, subject_id_str)
-                error('Subject with identifier "%s" not found in the session.', subject_id_str);
-            end
-            subject_doc_id = subject_map(subject_id_str);
-
-            treatmentType = char(tableRow.treatmentType);
-
-            switch lower(treatmentType)
-                case 'treatment'
-                    doc = obj.create_treatment_doc(S, tableRow, subject_doc_id);
-                case 'treatment_drug'
-                    doc = obj.create_treatment_drug_doc(S, tableRow, subject_doc_id);
-                case 'treatment_virus'
-                    doc = obj.create_treatment_virus_doc(S, tableRow, subject_doc_id);
-                otherwise
-                    error('Unknown treatmentType: "%s". Must be "treatment", "treatment_drug", or "treatment_virus".', treatmentType);
-            end
-        end
-
-        function doc = create_treatment_doc(~, S, tableRow, subject_doc_id)
-            % Creates a standard 'treatment' document
-            [id, name] = ndi.ontology.lookup(char(tableRow.treatment));
-            if isempty(id)
-                error('Could not find ontology entry for treatment: %s', char(tableRow.treatment));
-            end
-            
-            treatment_struct.ontologyName = id;
-            treatment_struct.name = name;
-            treatment_struct.stringValue = char(tableRow.stringValue);
-            treatment_struct.numeric_value = tableRow.numericValue;
-
-            doc = S.newdocument('treatment', 'treatment', treatment_struct);
-            doc = doc.set_dependency_value('subject_id', subject_doc_id);
-        end
-
-        function doc = create_treatment_drug_doc(~, S, tableRow, subject_doc_id)
-            % Creates a 'treatment_drug' document
-            req_cols = {'location_ontologyNode', 'location_name', 'mixture_table', ...
-                        'administration_onset_time', 'administration_offset_time', 'administration_duration'};
-            ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
-
-            drug_struct.location_ontologyNode = char(tableRow.location_ontologyNode);
-            drug_struct.location_name = char(tableRow.location_name);
-            drug_struct.mixture_table = char(tableRow.mixture_table);
-            drug_struct.administration_onset_time = char(tableRow.administration_onset_time);
-            drug_struct.administration_offset_time = char(tableRow.administration_offset_time);
-            drug_struct.administration_duration = tableRow.administration_duration;
-            
-            doc = S.newdocument('treatment_drug', 'treatment_drug', drug_struct);
-            doc = doc.set_dependency_value('subject_id', subject_doc_id);
-        end
-
-        function doc = create_treatment_virus_doc(~, S, tableRow, subject_doc_id)
-            % Creates a 'treatment_virus' document
-            req_cols = {'virus_OntologyName', 'virus_name', 'virusLocation_OntologyName', 'virusLocation_name', ...
-                        'virus_AdministrationDate', 'virus_AdministrationPND', 'dilution', ...
-                        'diluent_OntologyName', 'diluent_name'};
-            ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
-            
-            virus_struct.virus_OntologyName = char(tableRow.virus_OntologyName);
-            virus_struct.virus_name = char(tableRow.virus_name);
-            virus_struct.virusLocation_OntologyName = char(tableRow.virusLocation_OntologyName);
-            virus_struct.virusLocation_name = char(tableRow.virusLocation_name);
-            virus_struct.virus_AdministrationDate = char(tableRow.virus_AdministrationDate);
-            virus_struct.virus_AdministrationPND = tableRow.virus_AdministrationPND;
-            virus_struct.dilution = tableRow.dilution;
-            virus_struct.diluent_OntologyName = char(tableRow.diluent_OntologyName);
-            virus_struct.diluent_name = char(tableRow.diluent_name);
-
-            doc = S.newdocument('treatment_virus', 'treatment_virus', virus_struct);
-            doc = doc.set_dependency_value('subject_id', subject_doc_id);
-        end
-
-    end % private methods
-end % classdef
+    end % methods
+end % classdef tableDocMaker

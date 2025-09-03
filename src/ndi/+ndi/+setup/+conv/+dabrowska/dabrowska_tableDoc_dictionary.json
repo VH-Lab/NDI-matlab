@@ -1,6 +1,6 @@
 {
   "SubjectString": "EMPTY:Subject local identifier",
-  "Treatment": "EMPTY:Treatment:CNO or saline administration",
+  "Treatment": "EMPTY:Treatment: CNO or saline administration",
   "OpenArm_Wall__Entries": "EMPTY:Elevated Plus Maze: open arm (north) - entries",
   "OpenArm_OpenField__Entries": "EMPTY:Elevated Plus Maze: open arm (south) - entries",
   "OpenArmTotalEntries": "EMPTY:Elevated Plus Maze: open arm total entries",
