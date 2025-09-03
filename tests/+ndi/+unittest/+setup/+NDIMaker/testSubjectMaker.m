@@ -8,22 +8,22 @@ classdef testSubjectMaker < matlab.unittest.TestCase
         Maker % Instance of the class under test
         TestDir % Root directory for temporary test sessions
         MockSessionCounter % Counter to ensure unique temp directory names per test method
+        TestCreator % A simple subject creator for tests
     end
 
     methods (TestClassSetup)
         function createMakerAndTestDir(testCase)
-            % Create an instance of the subjectMaker class once for all tests.
+            % Create an instance of the subjectMaker class and a test creator once for all tests.
             testCase.Maker = ndi.setup.NDIMaker.subjectMaker();
+            testCase.TestCreator = ndi.unittest.setup.NDIMaker.SimpleTestCreator();
+            
             % Create a unique root directory for all temporary test directories
             testCase.TestDir = fullfile(tempdir, ['NDITest_' char(java.util.UUID.randomUUID().toString())]);
             if ~exist(testCase.TestDir, 'dir') % Ensure directory is created only if it doesn't exist
                 mkdir(testCase.TestDir);
             end
             % Initialize MockSessionCounter
-            testCase.MockSessionCounter = 0; 
-            % Add a path to NDI if it's not already there - adjust as needed
-            % This is a placeholder; ideally, NDI is already on the path for tests.
-            % addpath(genpath(fullfile(userpath, 'NDI-matlab'))); % Example
+            testCase.MockSessionCounter = 0;
 
             ndi.test.helper.initializeMksqliteNoOutput()
         end
@@ -52,10 +52,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
         function testGetSubjectInfo_BasicValid(testCase)
             dataTable = table(...
                 {'SubjectA'; 'SubjectB'; 'SubjectA'}, ... 
-                {'sess001'; 'sess002'; 'sess001'}, ...                 
+                {'sess001'; 'sess002'; 'sess001'}, ...           
                 'VariableNames', {'subjectName', 'sessionID'});
-            
-            [subjectInfo, allNames] = testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun);
+            [subjectInfo, allNames] = testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator);
 
             testCase.verifyEqual(numel(subjectInfo.subjectName), 2, 'Diagnostic: Incorrect number of unique subjects.');
             testCase.verifyTrue(ismember('SubjectA', subjectInfo.subjectName), 'Diagnostic: SubjectA missing.');
@@ -81,8 +80,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
                 {NaN; ''; 'SubjectC'; 'SubjectD'}, ...
                 {'sess001'; 'sess002'; 'sess003'; 'sess004'}, ...
                 'VariableNames', {'subjectName', 'sessionID'});
-            
-            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun);
+            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator);
             
             testCase.verifyEqual(numel(subjectInfo.subjectName), 2, 'Diagnostic: NaN/empty names should be ignored.');
             testCase.verifyTrue(ismember('SubjectC', subjectInfo.subjectName));
@@ -94,8 +92,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
                 {'SubE'; 'SubF'; 'SubG'; 'SubH'}, ...
                 {'sess005'; ''; 'sess007'; NaN}, ... 
                 'VariableNames', {'subjectName', 'sessionID'});
-            
-            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun);
+            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator);
 
             testCase.verifyEqual(numel(subjectInfo.subjectName), 2, 'Diagnostic: Rows with empty/NaN sessionID should be ignored.');
             testCase.verifyTrue(ismember('SubE', subjectInfo.subjectName));
@@ -109,18 +106,15 @@ classdef testSubjectMaker < matlab.unittest.TestCase
                 {'SubK'; 'SubL'; 'SubM'}, ...
                 {{'sess001'}; {''}; {{'sess003'}}}, ... 
                 'VariableNames', {'subjectName', 'sessionID'});
-            
-            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun);
+            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator);
             
             testCase.verifyEqual(numel(subjectInfo.subjectName), 2, 'Diagnostic: Incorrect handling of cell sessionID, wrong number of subjects found.');
             testCase.verifyTrue(ismember('SubK', subjectInfo.subjectName), 'Diagnostic: SubK missing with cell sessionID.');
             idxK = strcmp(subjectInfo.subjectName, 'SubK');
             testCase.verifyEqual(subjectInfo.sessionID{idxK}, 'sess001', 'Diagnostic: Incorrect sessionID for SubK.');
-            
             testCase.verifyTrue(ismember('SubM', subjectInfo.subjectName), 'Diagnostic: SubM missing with nested cell sessionID.');
             idxM = strcmp(subjectInfo.subjectName, 'SubM');
             testCase.verifyEqual(subjectInfo.sessionID{idxM}, 'sess003', 'Diagnostic: Incorrect sessionID for SubM.');
-
             testCase.verifyFalse(ismember('SubL', subjectInfo.subjectName), 'Diagnostic: SubL with empty cell sessionID should be excluded.');
         end
         
@@ -129,8 +123,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
                 {'ValidName1'; 'ValidName2'; 'ValidName3'}, ...
                 {''; 'valid_sess_id'; NaN}, ...
                 'VariableNames', {'subjectName', 'sessionID'});
-
-            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun);
+            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator);
 
             testCase.verifyEqual(numel(subjectInfo.subjectName), 1, 'Diagnostic: Only ValidName2 should be included.');
             testCase.verifyTrue(ismember('ValidName2', subjectInfo.subjectName));
@@ -138,12 +131,10 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             testCase.verifyEqual(subjectInfo.sessionID{idx}, 'valid_sess_id', 'Diagnostic: Incorrect sessionID for ValidName2.');
         end
 
-
         function testGetSubjectInfo_EmptyTable(testCase)
             dataTable = table('Size', [0, 2], 'VariableTypes', {'cell', 'cell'}, ...
                 'VariableNames', {'subjectName', 'sessionID'});
-            
-            testCase.verifyError(@()testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun), ...
+            testCase.verifyError(@()testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator), ...
                 'MATLAB:validators:mustBeNonempty', ...
                 'Diagnostic: Empty table should be caught by mustBeNonempty.');
         end
@@ -157,7 +148,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
                 {'sess001'; 'sess002'; ''}, ... 
                 'VariableNames', {'subjectName', 'sessionID'});
             
-            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, @ndi.unittest.setup.NDIMaker.testSubjectMaker.simpleSubjectInfoFun);
+            [subjectInfo, ~] = testCase.Maker.getSubjectInfoFromTable(dataTable, testCase.TestCreator);
             testCase.verifyTrue(isstruct(subjectInfo));
             testCase.verifyTrue(isempty(subjectInfo.subjectName), 'Diagnostic: subjectName (unique) should be empty if all rows are invalid.');
             testCase.verifyTrue(isempty(subjectInfo.sessionID), 'Diagnostic: sessionID (unique) should be empty if all rows are invalid.');
@@ -203,8 +194,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             subjectInfo.species = {};
             subjectInfo.biologicalSex = {};
             subjectInfo.tableRowIndex = [];
-            subjectInfo.sessionID = {}; 
-            
+            subjectInfo.sessionID = {};
             output = testCase.verifyWarning(@()testCase.Maker.makeSubjectDocuments(subjectInfo), ...
                 'ndi:setup:NDIMaker:subjectMaker:EmptySubjectInfo');
             testCase.verifyTrue(isempty(output.subjectName));
@@ -217,10 +207,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             subjectInfo.species = {NaN};
             subjectInfo.biologicalSex = {NaN};
             subjectInfo.tableRowIndex = [1];
-            subjectInfo.sessionID = {'s1'; 's2'}; 
-            
+            subjectInfo.sessionID = {'s1'; 's2'};
             testCase.verifyError(@()testCase.Maker.makeSubjectDocuments(subjectInfo), ...
-                'ndi:setup:NDIMaker:subjectMaker:SubjectSessionIDLengthMismatch'); 
+                'ndi:setup:NDIMaker:subjectMaker:SubjectSessionIDLengthMismatch');
         end
         
         function testMakeSubjectDocs_InvalidSessionIDEntryInSubjectInfo(testCase)
@@ -229,8 +218,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             subjectInfo.species = {NaN};
             subjectInfo.biologicalSex = {NaN};
             subjectInfo.tableRowIndex = [1];
-            subjectInfo.sessionID = {''}; 
-            
+            subjectInfo.sessionID = {''};
             output = testCase.verifyWarning(...
                 @() testCase.Maker.makeSubjectDocuments(subjectInfo), ...
                 'ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo');
@@ -246,7 +234,8 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             S1 = ndi.session.dir('TestAddRef1', sessionDir1); 
 
             sessionDir2 = fullfile(testCase.TestDir, ['SessionAddTest2_' num2str(testCase.MockSessionCounter)]);
-            if exist(sessionDir2, 'dir'), rmdir(sessionDir2,'s'); end
+            if exist(sessionDir2, 'dir'), rmdir(sessionDir2,'s');
+            end
             mkdir(sessionDir2);
             S2 = ndi.session.dir('TestAddRef2', sessionDir2); 
 
@@ -255,14 +244,13 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             subjectInfo.species = {NaN; NaN};
             subjectInfo.biologicalSex = {NaN; NaN};
             subjectInfo.tableRowIndex = [1;2];
-            subjectInfo.sessionID = {S1.id(); S2.id()}; 
-
+            subjectInfo.sessionID = {S1.id(); S2.id()};
             docOutput = testCase.Maker.makeSubjectDocuments(subjectInfo);
             documentsToAddSets = docOutput.documents; 
 
-            sessionCellArray = {S1, S2}; % Pass as cell array
+            sessionCellArray = {S1, S2};
+            % Pass as cell array
             added_status = testCase.Maker.addSubjectsToSessions(sessionCellArray, documentsToAddSets);
-            
             testCase.verifyTrue(all(added_status), 'Diagnostic: All document sets should have been added.');
 
             querySub1_S1 = ndi.query('subject.local_identifier', 'exact_string', 'TestSub1_S1') & ...
@@ -270,7 +258,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             docsSub1_in_S1 = S1.database_search(querySub1_S1);
             testCase.verifyNumElements(docsSub1_in_S1, 1, 'Diagnostic: TestSub1_S1 not found or found multiple times in S1.');
             
-            docsSub1_in_S2 = S2.database_search(querySub1_S1); 
+            docsSub1_in_S2 = S2.database_search(querySub1_S1);
             testCase.verifyEmpty(docsSub1_in_S2, 'Diagnostic: TestSub1_S1 should NOT be found in S2.');
 
             querySub2_S2 = ndi.query('subject.local_identifier', 'exact_string', 'TestSub2_S2') & ...
@@ -278,7 +266,7 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             docsSub2_in_S2 = S2.database_search(querySub2_S2);
             testCase.verifyNumElements(docsSub2_in_S2, 1, 'Diagnostic: TestSub2_S2 not found or found multiple times in S2.');
 
-            docsSub2_in_S1 = S1.database_search(querySub2_S2); 
+            docsSub2_in_S1 = S1.database_search(querySub2_S2);
             testCase.verifyEmpty(docsSub2_in_S1, 'Diagnostic: TestSub2_S2 should NOT be found in S1.');
             
             rmdir(sessionDir1, 's');
@@ -322,9 +310,9 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             doc3 = ndi.document('subject', 'base.session_id', S.id(), 'subject.local_identifier', 'ToDelete2');
             S.database_add({doc1, doc2, doc3});
 
-            sessionCellArray = {S}; % Pass as cell array
+            sessionCellArray = {S};
+            % Pass as cell array
             localIdentifiersToDelete = {'ToDelete1', 'ToDelete2'};
-            
             report = testCase.Maker.deleteSubjectDocs(sessionCellArray, localIdentifiersToDelete);
 
             testCase.verifyEqual(numel(report(1).docs_found_ids), 2, 'Diagnostic: Should find 2 documents to delete.');
@@ -345,47 +333,21 @@ classdef testSubjectMaker < matlab.unittest.TestCase
             doc1 = ndi.document('subject', 'base.session_id', S.id(), 'subject.local_identifier', 'KeepThisOne');
             S.database_add({doc1});
             
-            sessionCellArray = {S}; % Pass as cell array
+            sessionCellArray = {S};
+            % Pass as cell array
             localIdentifiersToDelete = {'IDThatDoesNotExist'};
-            
             report = testCase.Maker.deleteSubjectDocs(sessionCellArray, localIdentifiersToDelete);
             
             testCase.verifyEmpty(report(1).docs_found_ids, 'Diagnostic: No documents should be found for deletion.');
             testCase.verifyEmpty(report(1).docs_deleted_ids, 'Diagnostic: No documents should be reported as deleted.');
             remainingDocs = S.database_search(ndi.query('','isa','subject'));
             testCase.verifyNumElements(remainingDocs, 1, 'Diagnostic: Document count should be unchanged.');
-            
             rmdir(sessionDir, 's');
         end
 
     end % methods (Test)
 
     methods (Static)
-        function [subjectId, strain, species, biologicalSex] = simpleSubjectInfoFun(tableRow)
-            subjectId = NaN; 
-            strain = NaN;
-            species = NaN;
-            biologicalSex = NaN;
-
-            if ismember('subjectName', tableRow.Properties.VariableNames)
-                val = tableRow.subjectName;
-                if iscell(val) 
-                    if ~isempty(val)
-                        subjectId = val{1};
-                    end
-                else
-                    subjectId = val; 
-                end
-                
-                if isstring(subjectId) 
-                    subjectId = char(subjectId);
-                end
-                if isnumeric(subjectId) && all(isnan(subjectId(:))) 
-                    subjectId = NaN; 
-                end
-            end
-        end
-
         function mockObj = createMockOpenMINDS(type)
             switch lower(type)
                 case 'species'
@@ -393,12 +355,10 @@ classdef testSubjectMaker < matlab.unittest.TestCase
                 case 'strain'
                     mockObj = openminds.core.research.Strain('name',['Mock' type]);
                 case 'biologicalsex'
-                    mockObj = openminds.controlledterms.BiologicalSex('name',['Mock' type]); 
+                    mockObj = openminds.controlledterms.BiologicalSex('name',['Mock' type]);
                 otherwise
                     error('Mock type %s not recognized for openMINDS object creation.', type);
             end
         end
-        
     end % methods (Static)
-
 end % classdef testSubjectMaker

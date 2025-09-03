@@ -16,37 +16,31 @@ classdef ontology
 %
 %   Caching:
 %   --------
-%   For efficiency, this class caches the contents of the main ontology
-%   list JSON file ('ontology_list.json') in persistent memory after the
-%   first time it's accessed within a MATLAB session. The NDIC lookup
-%   function ('ndi.ontology.lookup_NDIC') separately caches its data file.
+%   For efficiency, this class uses a centralized, persistent cache within the main
+%   'lookup' method. After a term is looked up once, its results are stored,
+%   and subsequent lookups for the same term are served instantly from memory,
+%   avoiding redundant file parsing or web requests.
 %
-%   To force the system to re-read the ontology list JSON file and the
-%   NDIC ontology file from disk (e.g., if they have been updated),
+%   The OBO file parser also maintains a cache of fully parsed files to avoid
+%   re-reading them from disk within a session.
+%
+%   To force the system to re-read all cached data from disk,
 %   use the static clearCache method:
 %
 %       ndi.ontology.clearCache();
 %
-%   Alternatively, using MATLAB's 'clear classes' or 'clear functions'
-%   commands will also clear this persistent data, but will affect more
-%   than just this cache.
-%
-
 % Note: Uses persistent variables within static methods for caching.
-
 properties (Constant, Hidden)
     ONTOLOGY_FILENAME = 'ontology_list.json';
     ONTOLOGY_SUBFOLDER_JSON = 'ontology'; % Subfolder for JSON relative to CommonFolder
     ONTOLOGY_SUBFOLDER_NDIC = 'controlled_vocabulary'; % Subfolder for NDIC.txt
     NDIC_FILENAME = 'NDIC.txt';
 end
-
 methods
     function obj = ontology()
         % ONTOLOGY - Constructor for the base ontology class.
         % Does not require arguments. Intended primarily for subclassing.
     end
-
     function [id, name, definition, synonyms, shortName] = lookupTermOrID(obj, term_or_id_or_name)
         % LOOKUPTERMORID - Base implementation for looking up a term within a specific ontology instance.
         %
@@ -71,11 +65,8 @@ methods
         synonyms = {};
         shortName = '';
     end
-
 end % methods
-
 methods (Static)
-
     % --------------------------------------------------------------------
     % Main Static Lookup Function (Dispatcher)
     % --------------------------------------------------------------------
@@ -85,53 +76,49 @@ methods (Static)
         %   [ID, NAME, PREFIX, DEFINITION, SYNONYMS, SHORTNAME] = ndi.ontology.lookup(LOOKUPSTRING)
         %
         %   Looks up a term using a prefixed string (e.g., 'CL:0000000', 'OM:metre').
-        %   It identifies the ontology from the prefix using the mappings in
-        %   'ontology_list.json', instantiates the specific ndi.ontology.ONTOLOGYNAME
-        %   class (e.g., ndi.ontology.CL), and calls its lookupTermOrID instance method,
-        %   passing the remainder of the string (after the prefix).
+        %   This function uses a persistent cache to store results. Subsequent lookups
+        %   for the same string are returned instantly from memory.
         %
-        %   Outputs:
-        %     ID           - The canonical identifier for the term.
-        %     NAME         - The primary name or label for the term.
-        %     PREFIX       - The ontology prefix used in the lookup.
-        %     DEFINITION   - A textual definition, if available.
-        %     SYNONYMS     - A cell array of synonyms, if available.
-        %     SHORTNAME    - The short name for the term.
+        %   To clear the cache, call: ndi.ontology.lookup('clear');
         %
-        %   Examples:
-        %       % Lookup neuron in Cell Ontology by ID
-        %       [id, name, prefix] = ndi.ontology.lookup('CL:0000540');
-        %       % Expected: id='CL:0000540', name='neuron', prefix='CL'
-        %
-        %       % Lookup ethanol in ChEBI by ID
-        %       [id, name, prefix] = ndi.ontology.lookup('CHEBI:16236');
-        %       % Expected: id='CHEBI:16236', name='ethanol', prefix='CHEBI'
-        %
-        %       % Lookup Heart in NCI Metathesaurus by CUI
-        %       [id, name, prefix, def] = ndi.ontology.lookup('NCIm:C0018787');
-        %       % Expected: id='C0018787', name='Heart', prefix='NCIm', def contains definition
-        %
-        %       % Lookup Aspirin in PubChem by name
-        %       [id, name, prefix] = ndi.ontology.lookup('PubChem:Aspirin');
-        %       % Expected: id='2244', name='aspirin', prefix='PubChem'
-        %
-        %       % Lookup Homo sapiens using alternative taxonomy prefix
-        %       [id, name, prefix] = ndi.ontology.lookup('taxonomy:9606');
-        %       % Expected: id='9606', name='Homo sapiens', prefix='taxonomy'
-        %
-        %       % Example of a failed lookup (non-existent term)
-        %       try
-        %           ndi.ontology.lookup('CL:NoSuchTerm');
-        %       catch ME
-        %           disp(ME.identifier); % e.g., 'ndi:ontology:lookup_CL:NotFound' or similar
-        %           disp(ME.message);
-        %       end
-        %
-        %   See also: ndi.ontology.lookupTermOrID (instance method to be overridden)
+        persistent lookupCache lookupKeys cacheSize;
 
-        % Initialize outputs
+        % Handle cache clearing request
+        if nargin == 1 && ischar(lookupString) && strcmpi(lookupString, 'clear')
+            lookupCache = [];
+            lookupKeys = {};
+            id = ''; name = ''; prefix = ''; definition = ''; synonyms = {}; shortName = '';
+            return;
+        end
+        
+        % Initialize cache if it's the first run
+        if isempty(lookupCache)
+            lookupCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            lookupKeys = {};
+            cacheSize = 100; % Increased cache size for general lookups
+        end
+
+        % --- Check Cache First ---
+        if isKey(lookupCache, lookupString)
+            % Cache Hit
+            %fprintf('Ontology lookup cache hit for: %s\n', lookupString);
+            cachedResult = lookupCache(lookupString);
+            id = cachedResult.id;
+            name = cachedResult.name;
+            prefix = cachedResult.prefix;
+            definition = cachedResult.definition;
+            synonyms = cachedResult.synonyms;
+            shortName = cachedResult.shortName;
+            
+            % Update LRU order: move key to the end (most recently used)
+            key_idx = strcmp(lookupKeys, lookupString);
+            lookupKeys = [lookupKeys(~key_idx); lookupKeys(key_idx)]; % vertcat requires column vectors
+            return;
+        end
+
+        % --- Cache Miss: Proceed with full lookup ---
         id = ''; name = ''; prefix = ''; definition = ''; synonyms = {}; shortName = '';
-
+        
         % 1. Get Ontology Name and Remainder from Prefix
         try
             [ontologyName, remainder] = ndi.ontology.getOntologyNameFromPrefix(lookupString);
@@ -145,7 +132,7 @@ methods (Static)
              baseME = addCause(baseME, ME);
              throw(baseME);
         end
-
+        
         % 2. Extract Prefix (for output)
         colonPos = strfind(lookupString, ':');
         if isempty(colonPos)
@@ -155,20 +142,18 @@ methods (Static)
             prefix = strtrim(lookupString(1:colonPos(1)-1));
         end
 
-        % 3. Construct Specific Class Name
+        % 3. Construct Specific Class Name and Instantiate Object
         className = ['ndi.ontology.' ontologyName];
-
-        % 4. Instantiate Specific Ontology Object
         try
-            ontologyObj = feval(className); % Call constructor (must take 0 args)
+            ontologyObj = feval(className);
         catch ME_inst
              baseME = MException('ndi:ontology:lookup:InstantiationError', ...
                  'Failed to instantiate ontology class "%s". Check constructor.', className);
              baseME = addCause(baseME, ME_inst);
              throw(baseME);
         end
-
-        % 5. Call the Instance Method lookupTermOrID
+        
+        % 4. Call the Instance Method lookupTermOrID
         try
             [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
         catch ME_lookup
@@ -177,22 +162,47 @@ methods (Static)
             baseME = addCause(baseME, ME_lookup);
             throw(baseME);
         end
+        
+        % --- Sanitize the 'synonyms' output to prevent caching malformed data ---
+        if ~iscell(synonyms)
+            synonyms = {}; % Ensure it's always a cell
+        end
+        % Ensure it's a flat row vector cell array of non-empty strings
+        synonyms = synonyms(:)'; 
+        synonyms(cellfun('isempty', synonyms)) = []; % Remove any empty cells
+        if any(cellfun(@iscell, synonyms)) % Check for and flatten nested cells
+            synonyms = cat(2, synonyms{:});
+            synonyms(cellfun('isempty', synonyms)) = [];
+        end
 
-        % 6. Creat shortName (valid MATLAB variable name)
+        % 5. Create shortName and prepare result struct
         shortName = ndi.fun.name2variableName(name);
 
-        % 7. Return results
+        newResult.id = id;
+        newResult.name = name;
+        newResult.prefix = prefix;
+        newResult.definition = definition;
+        newResult.synonyms = synonyms;
+        newResult.shortName = shortName;
 
+        % Store in cache
+        lookupCache(lookupString) = newResult;
+        lookupKeys{end+1, 1} = lookupString; % Ensure it's a column vector
+        
+        % Enforce cache size limit
+        if numel(lookupKeys) > cacheSize
+            key_to_remove = lookupKeys{1};
+            remove(lookupCache, key_to_remove);
+            lookupKeys(1) = [];
+        end
+        
     end % function lookup
-
     % --------------------------------------------------------------------
-    % Static Helper Functions (Moved from namespace)
+    % Static Helper Functions
     % --------------------------------------------------------------------
-
     function [id, name, definition, synonyms] = performIriLookup(term_iri, ontology_name_ols, ontology_prefix)
         %PERFORMIRILOOKUP Fetches ontology term details from EBI OLS using its IRI.
-        %   Used by OLS-based lookup implementations (CL, OM, CHEBI, UBERON).
-        %   [...] = ndi.ontology.performIriLookup(...)
+        % No longer caches results directly; caching is handled by ndi.ontology.lookup.
         arguments
             term_iri (1,:) char {mustBeNonempty}
             ontology_name_ols (1,:) char {mustBeNonempty}
@@ -205,7 +215,7 @@ methods (Static)
         catch ME_encode
             error('ndi:ontology:performIriLookup:EncodingError', 'Failed to URL encode IRI "%s": %s', term_iri, ME_encode.message);
         end
-        ols_base_url = 'https://www.ebi.ac.uk/ols4/api/ontologies/'; % Use ols4
+        ols_base_url = 'https://www.ebi.ac.uk/ols4/api/ontologies/';
         url = [ols_base_url ontology_name_ols '/terms/' encoded_iri_twice];
         options = weboptions('ContentType', 'json', 'Timeout', 30, 'HeaderFields', {'Accept', 'application/json'});
         try
@@ -229,7 +239,6 @@ methods (Static)
             else, error('ndi:ontology:performIriLookup:APIError', 'OLS Term API request failed for IRI "%s", ontology "%s": %s', term_iri, ontology_name_ols, ME.message); end
         end
     end % function performIriLookup
-
     function [search_query, search_field, lookup_type_msg, original_input] = preprocessLookupInput(term_or_id_or_name, ontology_prefix)
         %PREPROCESSLOOKUPINPUT Processes input for ontology lookup functions.
         %   Handles standard prefix/ID/name logic and OM-specific heuristic.
@@ -253,7 +262,6 @@ methods (Static)
             else, search_query = processed_input; search_field = 'label'; lookup_type_msg = sprintf('name "%s"', original_input); end
         end
     end % function preprocessLookupInput
-
     function [id, name, definition, synonyms] = searchOLSAndPerformIRILookup(search_query, search_field, ontology_name_ols, ontology_prefix, lookup_type_msg)
         %SEARCHOLSANDPERFORMIRILOOKUP Searches OLS and looks up unique result by IRI.
         %   Handles specific logic for non-exact label searches (needed for OM).
@@ -291,8 +299,6 @@ methods (Static)
             catch ME, baseME = MException('ndi:ontology:searchOLSAndPerformIRILookup:PostSearchLookupFailed', 'IRI lookup failed following search for %s (IRI: %s).', lookup_type_msg, term_iri); baseME = addCause(baseME, ME); throw(baseME); end
         else, error('ndi:ontology:searchOLSAndPerformIRILookup:InternalError', 'Could not determine unique IRI after search for %s.', lookup_type_msg); end
     end % function searchOLSAndPerformIRILookup
-
-
     function [ontologyName, remainder] = getOntologyNameFromPrefix(ontologyString)
         % GETONTOLOGYNAMEFROMPREFIX - Extracts prefix, maps to ontology name (case-insensitive).
         %   [...] = ndi.ontology.getOntologyNameFromPrefix(...)
@@ -317,7 +323,6 @@ methods (Static)
          if ~foundMapping, error('GETONTOLOGYNAMEFROMPREFIX:PrefixNotFound', 'Prefix "%s" not found in ontology mappings file.', prefix); end
          remainder = char(remainder);
     end % function getOntologyNameFromPrefix
-
     % --- Static Getters for Cached JSON Data ---
     function mappings = getPrefixOntologyMappings()
         % GETPREFIXONTOLOGYMAPPINGS - Returns the prefix->ontology mappings from JSON cache.
@@ -328,61 +333,43 @@ methods (Static)
             error('ndi:ontology:ontology:MappingNotFound', 'Could not retrieve "prefix_ontology_mappings" from cached ontology data.');
         end
     end % function getPrefixOntologyMappings
+    function [id, name, definition, synonyms] = lookupOBOFile(varargin)
+        % LOOKUPOBOFILE - Looks up a term in a parsed OBO file with caching.
+        %   No longer caches individual term lookups; this is handled by ndi.ontology.lookup.
+        %   Still caches the parsed OBO file to avoid re-reading from disk.
+        %
+        persistent oboDataCache;
 
-    function [id, name, definition, synonyms] = lookupOBOFile(oboFilePath, ontologyPrefix, term_to_lookup_fragment)
-        % LOOKUPOBOFILE - Looks up a term in a parsed OBO file.
-        %   [ID, NAME, DEFINITION, SYNONYMS] = ndi.ontology.lookupOBOFile(...
-        %       OBOFILEPATH, ONTOLOGYPREFIX, TERM_TO_LOOKUP_FRAGMENT)
-        %
-        %   Parses an OBO file (if not already cached) and searches for a term.
-        %   TERM_TO_LOOKUP_FRAGMENT is the part of the term after the prefix
-        %   (e.g., '0000001' or 'some term name').
-        %
-        %   The function caches the parsed OBO data to speed up subsequent lookups
-        %   for the same file within a MATLAB session. Call ndi.ontology.clearCache()
-        %   or 'clear functions' to clear this cache.
-        %
-        %   Outputs:
-        %       ID         - The full term ID (e.g., 'EMPTY:0000001').
-        %       NAME       - The term's primary name.
-        %       DEFINITION - The term's definition.
-        %       SYNONYMS   - A cell array of synonym strings (currently basic,
-        %                    not parsing synonym types).
-        %
-        %   Throws:
-        %       ndi:ontology:lookupOBOFile:FileNotFound
-        %       ndi:ontology:lookupOBOFile:ParsingError
-        %       ndi:ontology:lookupOBOFile:InvalidInput
-        %       ndi:ontology:lookupOBOFile:TermNotFound
-
-        arguments
-            oboFilePath (1,:) char {mustBeNonempty}
-            ontologyPrefix (1,:) char {mustBeNonempty}
-            term_to_lookup_fragment (1,:) char % Can be empty if original lookup was just "PREFIX:"
+        % Handle cache clearing request
+        if nargin == 1 && ischar(varargin{1}) && strcmpi(varargin{1}, 'clear')
+            oboDataCache = [];
+            id = ''; name = ''; definition = ''; synonyms = {};
+            return;
         end
 
-        id = ''; name = ''; definition = ''; synonyms = {};
-
+        % --- Normal function execution ---
+        if nargin ~= 3
+            error('ndi:ontology:lookupOBOFile:InvalidInputCount', 'This function requires 3 input arguments for a lookup.');
+        end
+        oboFilePath = varargin{1};
+        ontologyPrefix = varargin{2};
+        term_to_lookup_fragment = varargin{3};
+        
         if isempty(term_to_lookup_fragment)
-            error('ndi:ontology:lookupOBOFile:InvalidInput', ...
-                'Term lookup fragment cannot be empty for OBO file search.');
+            error('ndi:ontology:lookupOBOFile:InvalidInput', 'Term lookup fragment cannot be empty.');
         end
-
-        persistent oboDataCache
+        
         if isempty(oboDataCache)
             oboDataCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
         end
-
+        
         if ~isfile(oboFilePath)
-            error('ndi:ontology:lookupOBOFile:FileNotFound', ...
-                'OBO file not found: %s', oboFilePath);
+            error('ndi:ontology:lookupOBOFile:FileNotFound', 'OBO file not found: %s', oboFilePath);
         end
-
-        % Use a canonical path for the cache key to handle relative paths etc.
+        
         [~, file_info] = fileattrib(oboFilePath);
         canonicalPath = file_info.Name;
-
-
+        
         if isKey(oboDataCache, canonicalPath)
             parsedTerms = oboDataCache(canonicalPath);
         else
@@ -392,80 +379,55 @@ methods (Static)
                 oboDataCache(canonicalPath) = parsedTerms;
                 fprintf('OBO file parsed and cached successfully. Found %d terms.\n', numel(parsedTerms));
             catch ME
-                % Clear the potentially partial cache entry if parsing failed
-                if isKey(oboDataCache, canonicalPath)
-                    remove(oboDataCache, canonicalPath);
-                end
-                baseME = MException('ndi:ontology:lookupOBOFile:ParsingError', ...
-                    'Failed to parse OBO file "%s".', oboFilePath);
-                baseME = addCause(baseME, ME);
-                throw(baseME);
+                if isKey(oboDataCache, canonicalPath), remove(oboDataCache, canonicalPath); end
+                rethrow(addCause(MException('ndi:ontology:lookupOBOFile:ParsingError', ...
+                    'Failed to parse OBO file "%s".', oboFilePath), ME));
             end
         end
-
+        
         if isempty(parsedTerms)
-            error('ndi:ontology:lookupOBOFile:ParsingError', ...
-                'OBO file "%s" parsed to an empty term list.', oboFilePath);
+            error('ndi:ontology:lookupOBOFile:ParsingError', 'OBO file "%s" parsed to an empty term list.', oboFilePath);
         end
-
+        
         foundTerm = false;
-
-        % Determine if lookup is by ID or by name
-        % OBO IDs are typically PREFIX:NUMERIC_ID
-        % We receive the numeric_id part or the name as term_to_lookup_fragment
         is_id_lookup = ~isempty(regexp(term_to_lookup_fragment, '^\d+$', 'once'));
         expected_full_id_if_numeric = [ontologyPrefix ':' term_to_lookup_fragment];
-
+        
         for i = 1:numel(parsedTerms)
             term = parsedTerms(i);
+            match_found = false;
             if is_id_lookup
-                % Case-sensitive ID match
                 if strcmp(term.id, expected_full_id_if_numeric)
-                    id = term.id;
-                    name = term.name;
-                    definition = term.definition;
-                    synonyms = term.synonyms;
-                    foundTerm = true;
-                    break;
+                    match_found = true;
                 end
             else % Name lookup
-                % Case-insensitive name match
                 if strcmpi(term.name, term_to_lookup_fragment)
-                    id = term.id;
-                    name = term.name;
-                    definition = term.definition;
-                    synonyms = term.synonyms;
-                    foundTerm = true;
-                    break;
-                end
-                % Also check synonyms for name lookup (case-insensitive)
-                if ~isempty(term.synonyms)
-                    for s_idx = 1:numel(term.synonyms)
-                        if strcmpi(term.synonyms{s_idx}, term_to_lookup_fragment)
-                            id = term.id;
-                            name = term.name; % Return primary name even if found by synonym
-                            definition = term.definition;
-                            synonyms = term.synonyms;
-                            foundTerm = true;
-                            break; % break from synonym loop
-                        end
-                    end
-                    if foundTerm, break; end % break from main term loop
+                    match_found = true;
+                elseif ~isempty(term.synonyms) && any(strcmpi(term.synonyms, term_to_lookup_fragment))
+                    match_found = true;
                 end
             end
+            
+            if match_found
+                id = term.id;
+                name = term.name;
+                definition = term.definition;
+                synonyms = term.synonyms;
+                foundTerm = true;
+                break;
+            end
         end
-
+        
         if ~foundTerm
             if is_id_lookup
                 error('ndi:ontology:lookupOBOFile:TermNotFound', ...
-                    'Term with ID fragment "%s" (expected full ID "%s") not found in OBO file: %s', ...
-                    term_to_lookup_fragment, expected_full_id_if_numeric, oboFilePath);
+                    'Term with ID fragment "%s" not found in OBO file: %s', term_to_lookup_fragment, oboFilePath);
             else
                 error('ndi:ontology:lookupOBOFile:TermNotFound', ...
-                    'Term with name "%s" not found in OBO file: %s', ...
-                    term_to_lookup_fragment, oboFilePath);
+                    'Term with name "%s" not found in OBO file: %s', term_to_lookup_fragment, oboFilePath);
             end
         end
+        
     end % function lookupOBOFile
     
     function ontologies = getOntologies()
@@ -477,25 +439,26 @@ methods (Static)
              error('ndi:ontology:ontology:OntologyListNotFound', 'Could not retrieve "Ontologies" list from cached ontology data.');
          end
     end % function getOntologies
-
     function clearCache()
-        % CLEARCACHE - Clears cached ontology list JSON data and NDIC data.
+        % CLEARCACHE - Clears all persistent caches in the ndi.ontology class.
         ndi.ontology.loadOntologyJSONData_(true); % Force reload of JSON cache
+        
         ndicFuncName = 'ndi.ontology.lookup_NDIC';
         ndicFuncPath = which(ndicFuncName);
         if ~isempty(ndicFuncPath), clear(ndicFuncName); fprintf('Cleared persistent data for %s.\n', ndicFuncName);
         else, fprintf('Function %s not found on path, skipping clear.\n', ndicFuncName); end
         fprintf('NDI ontology list JSON cache cleared.\n');
-        clear ndi.ontology.lookupOBOFile; % This clears persistent vars in lookupOBOFile
-        fprintf('Cleared OBO file cache.\n');
-
+        
+        % Clear the centralized lookup cache and the helper caches
+        ndi.ontology.lookup('clear');
+        fprintf('Cleared centralized ontology lookup cache.\n');
+        ndi.ontology.lookupOBOFile('clear');
+        fprintf('Cleared OBO file data cache.\n');
+        
     end % function clearCache
-
 end % methods (Static)
-
 methods (Static, Access = private)
     % --- Private Static Helpers ---
-
     function data = loadOntologyJSONData_(forceReload)
         % LOADONTOLOGYJSONDATA_ - Loads ontology list from JSON, uses persistent cache.
         persistent ontologyDataCache
@@ -511,13 +474,11 @@ methods (Static, Access = private)
         end
         data = ontologyDataCache;
     end % function loadOntologyJSONData_
-
     function likely_label = convertComponentToLabel_OMHeuristic(comp)
         % CONVERTCOMPONENTTOLABEL_OMHEURISTIC - OM-specific heuristic conversion.
         try spaced = regexprep(comp,'([a-z])([A-Z])','$1 $2'); likely_label = lower(strtrim(spaced));
         catch err, warning('ndi:ontology:preprocessLookupInput:ConversionHelperWarning', 'Error in OM heuristic for "%s": %s. Using lower(comp).', comp, err.message); likely_label = lower(comp); end
     end % function convertComponentToLabel_OMHeuristic
-
     function terms = parseOBOFile_(oboFilePath)
         % PARSEOBOFILE_ - Parses an OBO format file to extract term information.
         %   TERMS = ndi.ontology.parseOBOFile_(OBOFILEPATH)
@@ -541,11 +502,10 @@ methods (Static, Access = private)
         %   It assumes definitions and synonyms are single-line for simplicity here,
         %   though OBO can have multi-line quoted strings.
         %   Synonym parsing is basic (extracts quoted string, ignores type).
-
         terms = struct('id', {}, 'name', {}, 'definition', {}, 'synonyms', {});
-        currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
+        currentTerm = struct('id', '', 'name', '', 'definition', '');
+        currentTerm.synonyms = {};
         inTermStanza = false;
-
         try
             fid = fopen(oboFilePath, 'rt');
             if fid == -1
@@ -556,31 +516,26 @@ methods (Static, Access = private)
         catch ME
             error('ndi:ontology:parseOBOFile:FileReadError', 'Error reading OBO file "%s": %s', oboFilePath, ME.message);
         end
-
         % Split file into lines, handling both \n and \r\n
         lines = strsplit(rawText, {'\n', '\r\n'}, 'CollapseDelimiters', false);
         if iscell(lines) && isscalar(lines) && isempty(lines{1}) % Handle empty file
             lines = {};
         end
-
-
         for i = 1:numel(lines)
             line = strtrim(lines{i});
-
             if isempty(line) || startsWith(line, '!') % Skip empty lines and comments
                 continue;
             end
-
             if strcmp(line, '[Term]')
                 if inTermStanza && ~isempty(currentTerm.id) && ~isempty(currentTerm.name)
                     terms(end+1) = currentTerm; % Save previous term
                 end
                 % Reset for new term
-                currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
+                currentTerm = struct('id', '', 'name', '', 'definition', '');
+                currentTerm.synonyms = {};
                 inTermStanza = true;
                 continue;
             end
-
             if startsWith(line, '[Typedef]') || startsWith(line, '[Instance]')
                 if inTermStanza && ~isempty(currentTerm.id) && ~isempty(currentTerm.name)
                     terms(end+1) = currentTerm; % Save previous term
@@ -588,7 +543,6 @@ methods (Static, Access = private)
                 inTermStanza = false; % We are no longer in a [Term] stanza
                 continue; % Skip Typedef and Instance stanzas for this basic parser
             end
-
             if inTermStanza
                 if startsWith(line, 'id:')
                     currentTerm.id = strtrim(extractAfter(line, 'id:'));
@@ -616,19 +570,15 @@ methods (Static, Access = private)
                 % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
             end
         end
-
         % Add the last term if file doesn't end with a blank line or new stanza
         if inTermStanza && ~isempty(currentTerm.id) && ~isempty(currentTerm.name)
             terms(end+1) = currentTerm;
         end
-
         if isempty(terms) && ~isempty(lines) % Check if lines were processed but no terms found
             warning('ndi:ontology:parseOBOFile:NoTermsFound', ...
                 'No [Term] stanzas found or parsed in OBO file: %s. Check file format.', oboFilePath);
         end
     end % function parseOBOFile_
-
-
 end % methods (Static, Access = private)
-
 end % classdef ontology
+
