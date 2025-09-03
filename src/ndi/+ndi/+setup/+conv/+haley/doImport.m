@@ -58,6 +58,7 @@ session = sessions{1};
 
 % Create subjectMaker
 subjectMaker = ndi.setup.NDIMaker.subjectMaker();
+subjectCreator = ndi.setup.conv.haley.SubjectInformationCreator();
 
 % Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
@@ -328,13 +329,8 @@ for i = 1:numel(infoFiles)
     wormTable{:,'expType'} = {num2str(expType)};
 
     % Create subject documents
-    [subjectInfo,wormTable.subjectName] = ...
-        subjectMaker.getSubjectInfoFromTable(wormTable,...
-        @ndi.setup.conv.haley.createSubjectInformation);
-    subDocStruct = subjectMaker.makeSubjectDocuments(subjectInfo);
-    subjectMaker.addSubjectsToSessions({session}, subDocStruct.documents);
-    info.(dirName).subjectDocs = subDocStruct.documents;
-    wormTable.subject_id = cellfun(@(d) d{1}.id,info.(dirName).subjectDocs,'UniformOutput',false);
+    [~,wormTable.subjectName,wormTable.subject_id] = subjectMaker.addSubjectsFromTable( ...
+        session, wormTable, subjectCreator);
 
     % Create ontologyTableRow documents
     info.(dirName).wormDocs = tableDocMaker.table2ontologyTableRowDocs(wormTable(:,wormVariables),...
@@ -377,15 +373,14 @@ for i = 1:numel(infoFiles)
         session.database_add(offsetDocs);
     end
 
-    % E. VIDEO imageStack_parameters
+    % E. VIDEO imageStack
 
-    % Create imageStack_parameters documents
+    % Create imageStack documents
     videoDocs = cell(height(dataTable),1);
     videoLabels = cell(height(dataTable),1);
     for p = 1:height(dataTable)
         if ~isempty(dataTable.firstFrame{p})
-            imageStack = struct('label','video of C. elegans behavior',...
-                'formatOntology','NCIT:C190180');
+            % Define imageStack_parameters
             dataType = class(dataTable.firstFrame{p});
             imageStack_parameters = struct('dimension_order','YXT',...
                 'dimension_labels','height,width,time',...
@@ -396,10 +391,16 @@ for i = 1:numel(infoFiles)
                 'data_limits',[intmin(dataType) intmax(dataType)],...
                 'timestamp',convertTo(dataTable.timeRecord(p),'datenum'),...
                 'clocktype','exp_global_time');
+            
+            % Create imageStack document
+            imageStack = struct('label','video of C. elegans behavior',...
+                'formatOntology','NCIT:C190180');
             videoDocs{p} = ndi.document('imageStack', ...
                 'imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + ...
                 session.newdocument;
+
+            % Add dependencies
             videoDocs{p} = videoDocs{p}.set_dependency_value( ...
                 'document_id',dataTable.plate_id{p});
             videoDocs{p} = videoDocs{p}.set_dependency_value( ...
@@ -408,7 +409,7 @@ for i = 1:numel(infoFiles)
             ind = contains(mp4Files,videoFileName);
             videoFileName = fullfile(dataParentDir,mp4Files{ind});
             videoDocs{p} = videoDocs{p}.add_file('imageStack', videoFileName);
-            ontologyLabel = struct('ontologyNode','');
+            ontologyLabel = struct('ontologyNode','EMPTY:00000260');
             videoLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             videoLabels{p} = videoLabels{p}.set_dependency_value( ...
