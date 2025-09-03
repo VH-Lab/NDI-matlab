@@ -23,7 +23,6 @@ classdef cpipeline
                 mkdir(p);
             end
         end
-
         function edit(options)
             % EDIT - create and control a GUI to graphically edit a CPIPELINE
             %
@@ -62,14 +61,11 @@ classdef cpipeline
                 options.selectedPipeline (1,:) char = ''
                 options.pipeline_name (1,:) char = ''
             end
-
             fig = options.fig;
-
             % Enforce that 'fig' must be provided for all commands except 'new'
             if ~strcmpi(options.command,'new') && isempty(fig)
                 error('The ''fig'' argument must be provided for all commands except ''new''.');
             end
-
             if strcmpi(options.command,'new')
                 if isempty(fig)
                     fig = figure;
@@ -95,14 +91,14 @@ classdef cpipeline
                 ud = get(fig,'userdata');
                 command = options.command;
             end
-
             disp(['Command is ' command '.']);
             switch (command)
                 case 'NewWindow'
                     set(fig,'tag','ndi.cpipeline.edit');
                     uid = vlt.ui.basicuitools_defs;
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
-                    % Step 1: Establish window geometry
+
+                    % Step 1: Define initial window geometry in pixels
                     top = options.window_params.height;
                     right = options.window_params.width;
                     row = 25;
@@ -115,36 +111,71 @@ classdef cpipeline
                     menu_height = title_height;
                     button_width = 120;
                     button_height = 25;
-                    button_y = [400-2*row 400-4.5*row 400-6*row 400-8.5*row 400-10*row 400-11.5*row];
-                    button_center = right-(right-doc_width)/2;
-                    % Step 2 now build it
-                    set(fig,'position',[50 50 right top]);
-                    set(fig,'NumberTitle','off');
-                    set(fig,'Name',['Editing ' ud.pipelinePath]);
+                    % NOTE: The original code uses a hardcoded 400 for button vertical positioning.
+                    % This is preserved to maintain the original layout.
+                    button_y_coords = [400-2*row 400-4.5*row 400-6*row 400-8.5*row 400-10*row 400-11.5*row];
+                    button_center_x = right-(right-doc_width)/2;
+                    button_x = button_center_x - 0.5*button_width;
+
+                    % Step 2: Set up the figure
+                    set(fig,'position',[50 50 right top], ...
+                        'NumberTitle','off', ...
+                        'Name',['Editing ' ud.pipelinePath], ...
+                        'MenuBar','none', ...
+                        'ToolBar','none');
+
+                    % Step 3: Calculate pixel positions for all UI controls
+                    % These positions are based on the initial window size.
+                    pos_titleTxt_pix = [edge, top-row, title_width, title_height];
+                    pos_popup_pix = [edge, top-row-title_height, menu_width, menu_height];
+                    pos_list_pix = [edge, (top-row-doc_height)-2*title_height, doc_width, doc_height];
+                    
+                    pos_runButton_pix = [button_x, button_y_coords(1), button_width, button_height];
+                    pos_newPipeButton_pix = [button_x, button_y_coords(2), button_width, button_height];
+                    pos_delPipeButton_pix = [button_x, button_y_coords(3), button_width, button_height];
+                    pos_newCalcButton_pix = [button_x, button_y_coords(4), button_width, button_height];
+                    pos_delCalcButton_pix = [button_x, button_y_coords(5), button_width, button_height];
+                    pos_editButton_pix = [button_x, button_y_coords(6), button_width, button_height];
+
+                    % Step 4: Convert pixel positions to normalized units
+                    % This allows the controls to resize and move with the window.
+                    norm_factors = [right top right top];
+                    pos_titleTxt_norm = pos_titleTxt_pix ./ norm_factors;
+                    pos_popup_norm = pos_popup_pix ./ norm_factors;
+                    pos_list_norm = pos_list_pix ./ norm_factors;
+                    pos_runButton_norm = pos_runButton_pix ./ norm_factors;
+                    pos_newPipeButton_norm = pos_newPipeButton_pix ./ norm_factors;
+                    pos_delPipeButton_norm = pos_delPipeButton_pix ./ norm_factors;
+                    pos_newCalcButton_norm = pos_newCalcButton_pix ./ norm_factors;
+                    pos_delCalcButton_norm = pos_delCalcButton_pix ./ norm_factors;
+                    pos_editButton_norm = pos_editButton_pix ./ norm_factors;
+
+                    % Step 5: Build the UI controls using normalized positions
                     % Pipeline selection portion of window
-                    x = edge; y = top-row;
-                    uicontrol(uid.txt,'position',[x y title_width title_height],'string','Select pipeline:','tag','PipelineTitleTxt');
-                    uicontrol(uid.popup,'position',[x y-title_height menu_width menu_height],...
+                    uicontrol(uid.txt,'Units','normalized','position',pos_titleTxt_norm,'string','Select pipeline:','tag','PipelineTitleTxt');
+                    uicontrol(uid.popup,'Units','normalized','position',pos_popup_norm,...
                         'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr);
-                    y = y - doc_height;
-                    uicontrol(uid.edit,'style','listbox','position',[x y-2*title_height doc_width doc_height],...
+                    uicontrol(uid.edit,'style','listbox','Units','normalized','position',pos_list_norm,...
                         'string',{'Please select or create a pipeline.'},...
                         'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
+                    
+                    % Buttons
+                    uicontrol(uid.button,'Units','normalized','position',pos_runButton_norm,...
                         'string','->','tag','RunButton','callback',callbackstr,'Tooltipstring','Run pipeline calculations in order');
-                    uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(2) button_width button_height],...
+                    uicontrol(uid.button,'Units','normalized','position',pos_newPipeButton_norm,...
                         'string','+','tag','NewPipelineButton','Tooltipstring','Create new pipeline',...
                         'callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(3) button_width button_height],...
+                    uicontrol(uid.button,'Units','normalized','position',pos_delPipeButton_norm,...
                         'string','-','Tooltipstring','Delete current pipeline','tag','DeletePipelineButton',...
                         'callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(4) button_width button_height],...
+                    uicontrol(uid.button,'Units','normalized','position',pos_newCalcButton_norm,...
                         'string','+','Tooltipstring','Create new Calculator instance','tag','NewCalculatorInstanceButton',...
                         'callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(5) button_width button_height],...
+                    uicontrol(uid.button,'Units','normalized','position',pos_delCalcButton_norm,...
                         'string','-','Tooltipstring','Delete current Calculator instance','tag','DeleteCalculatorInstanceButton','callback',callbackstr);
-                    uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(6) button_width button_height],...
+                    uicontrol(uid.button,'Units','normalized','position',pos_editButton_norm,...
                         'string','Edit','tooltipstring','Edit selected Calculator instance','tag','EditButton','callback',callbackstr);
+                    
                     ndi.cpipeline.edit('command','LoadPipelines','fig',fig); % load the pipelines from disk
                 case 'UpdatePipelines' % invented command that is not a callback
                     ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
@@ -248,7 +279,6 @@ classdef cpipeline
                         msgbox('No calculator types were found on the path.');
                         return;
                     end
-
                     [calcTypeIndex, isSelectionMade] = listdlg('PromptString','Choose a calculator type:',...
                         'SelectionMode','single','ListString',calcTypeList);
                     if ~isSelectionMade % check selection
@@ -267,7 +297,6 @@ classdef cpipeline
                     base_filename = matlab.lang.makeValidName(calculatorInstanceName);
                     json_filename = [base_filename '.json'];
                     full_json_path = fullfile(ud.pipelinePath, pipeline_name, json_filename);
-
                     if isfile(full_json_path)
                         b = questdlg(['File ' json_filename ' already exists. Overwrite?'],'Overwrite file','Yes','No','No');
                         if strcmp(b,'No')
@@ -332,7 +361,7 @@ classdef cpipeline
                     full_calculatorInstance_name = fullfile(ud.pipelinePath, pipeline_name, filename_to_edit);
                     ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_calculatorInstance_name,'session',ud.session);
                 case 'RunButton'
-                    disp([command 'is not implemented yet.']);
+                    disp([command ' is not implemented yet.']);
                 case 'PipelineContentList'
                     ndi.cpipeline.edit('command','DoEnableDisable','fig',fig);
                 case 'DoEnableDisable'
