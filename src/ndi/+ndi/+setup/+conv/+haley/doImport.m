@@ -332,6 +332,22 @@ for i = 1:numel(infoFiles)
     [~,wormTable.subjectName,wormTable.subject_id] = subjectMaker.addSubjectsFromTable( ...
         session, wormTable, subjectCreator);
 
+    % Create subject_group documents
+    for j = 1:height(behaviorPlateTable)
+        ind = find(strcmp(wormTable.plate_id,behaviorPlateTable.plate_id{j}));
+        if isscalar(ind)
+            behaviorPlateTable.subjectGroup_id{j} = wormTable.subject_id{ind};
+        else
+            subject_group_doc = ndi.document('subject_group') + session.newdocument();
+            for k = 1:numel(ind)
+                subject_group_doc = subject_group_doc.add_dependency_value_n(...
+                    'subject_id',wormTable.subject_id{ind(k)});
+            end
+            session.database_add(subject_group_doc);
+            behaviorPlateTable.subjectGroup_id{j} = subject_group_doc.id;
+        end
+    end
+
     % Create ontologyTableRow documents
     info.(dirName).wormDocs = tableDocMaker.table2ontologyTableRowDocs(wormTable(:,wormVariables),...
         {'subject_id'},'Overwrite',options.Overwrite);
@@ -378,8 +394,17 @@ for i = 1:numel(infoFiles)
     % Create imageStack documents
     videoDocs = cell(height(dataTable),1);
     videoLabels = cell(height(dataTable),1);
+    firstFrameDocs = cell(height(dataTable),1);
+    firstFrameLabels = cell(height(dataTable),1);
+    arenaMaskDocs = cell(height(dataTable),1);
+    arenaMaskLabels = cell(height(dataTable),1);
+    bacteriaMaskDocs = cell(height(dataTable),1);
+    bacteriaMaskLabels = cell(height(dataTable),1);
+    closestPatchDocs = cell(height(dataTable),1);
+    closestPatchLabels = cell(height(dataTable),1);
     for p = 1:height(dataTable)
         if ~isempty(dataTable.firstFrame{p})
+            
             % Define imageStack_parameters
             dataType = class(dataTable.firstFrame{p});
             imageStack_parameters = struct('dimension_order','YXT',...
@@ -393,7 +418,8 @@ for i = 1:numel(infoFiles)
                 'clocktype','exp_global_time');
             
             % Create imageStack document
-            imageStack = struct('label','video of C. elegans behavior',...
+            imageStack = struct('label',...
+                'A video recording capturing the behavior of C. elegans during an experimental assay.',...
                 'formatOntology','NCIT:C190180');
             videoDocs{p} = ndi.document('imageStack', ...
                 'imageStack',imageStack,...
@@ -401,56 +427,119 @@ for i = 1:numel(infoFiles)
                 session.newdocument;
 
             % Add dependencies
+            ind = strcmp(behaviorPlateTable.plate_id,dataTable.plate_id{p});
+            subjectGroup_id = behaviorPlateTable.subjectGroup_id{ind};
             videoDocs{p} = videoDocs{p}.set_dependency_value( ...
                 'document_id',dataTable.plate_id{p});
             videoDocs{p} = videoDocs{p}.set_dependency_value( ...
-                'subject_id',dataTable.subject_id{p});
+                'subject_id',subjectGroup_id);
+
+            % Add file
             [~,videoFileName] = fileparts(dataTable.videoFileName{p});
             ind = contains(mp4Files,videoFileName);
             videoFileName = fullfile(dataParentDir,mp4Files{ind});
-            videoDocs{p} = videoDocs{p}.add_file('imageStack', videoFileName);
+            videoDocs{p} = videoDocs{p}.add_file('imageStack',videoFileName,'delete_original',0);
+
+            % Add ontologyLabel
             ontologyLabel = struct('ontologyNode','EMPTY:00000260');
             videoLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             videoLabels{p} = videoLabels{p}.set_dependency_value( ...
                 'document_id',videoDocs{p}.id);
+
+            % First frame imageStack
+            imageStack_parameters.dimension_order = 'YX';
+            imageStack_parameters.dimension_labels = 'height,width';
+            imageStack_parameters.dimension_size = dataTable.pixels{p};
+            imageStack_parameters.dimension_scale = [dataTable.scale(p), dataTable.scale(p)];
+            imageStack_parameters.dimension_scale_units = 'micrometer,micrometer';
+            imageStack.label = 'An image corresponding to the first frame of the C. elegans behavioral video recording.';
+            imageStack.formatOntology = 'NCIT:C85437';
+            firstFrameDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
+                'imageStack_parameters', imageStack_parameters) + session.newdocument;
+            firstFrameDocs{p} = firstFrameDocs{p}.set_dependency_value( ...
+                'document_id',dataTable.plate_id{p});
+            firstFrameDocs{p} = firstFrameDocs{p}.set_dependency_value( ...
+                'subject_id',subjectGroup_id);
+            imageFileName = ndi.file.temp_name;
+            imwrite(dataTable.firstFrame{p},imageFileName,'png');
+            firstFrameDocs{p} = firstFrameDocs{p}.add_file('imageStack',imageFileName);
+            ontologyLabel = struct('ontologyNode','EMPTY:00000226');
+            firstFrameLabels{p} = ndi.document('ontologyLabel', ...
+                'ontologyLabel',ontologyLabel) + session.newdocument;
+            firstFrameLabels{p} = firstFrameLabels{p}.set_dependency_value( ...
+                'document_id',firstFrameDocs{p}.id);
+
+            % Arena mask imageStack
+            dataType = class(dataTable.arenaMask{p});
+            imageStack_parameters.data_type = dataType;
+            imageStack_parameters.data_limits = [intmin(dataType) intmax(dataType)];
+            imageStack.label = 'A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked (true) and pixels outside are unmarked (false). This mask defines the region of interest for worm tracking and behavioral analysis.';
+            arenaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
+                'imageStack_parameters', imageStack_parameters) + session.newdocument;
+            arenaMaskDocs{p} = arenaMaskDocs{p}.set_dependency_value( ...
+                'document_id',dataTable.plate_id{p});
+            arenaMaskDocs{p} = arenaMaskDocs{p}.set_dependency_value( ...
+                'subject_id',subjectGroup_id);
+            imageFileName = ndi.file.temp_name;
+            imwrite(dataTable.arenaMask{p},imageFileName,'png');
+            arenaMaskDocs{p} = arenaMaskDocs{p}.add_file('imageStack',imageFileName);
+            ontologyLabel = struct('ontologyNode','EMPTY:00000227');
+            arenaMaskLabels{p} = ndi.document('ontologyLabel', ...
+                'ontologyLabel',ontologyLabel) + session.newdocument;
+            arenaMaskLabels{p} = arenaMaskLabels{p}.set_dependency_value( ...
+                'document_id',arenaMaskDocs{p}.id);
+
+            % Bacteria mask imageStack
+            imageStack.label = 'A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions.';
+            bacteriaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
+                'imageStack_parameters', imageStack_parameters) + session.newdocument;
+            bacteriaMaskDocs{p} = bacteriaMaskDocs{p}.set_dependency_value( ...
+                'document_id',dataTable.plate_id{p});
+            bacteriaMaskDocs{p} = bacteriaMaskDocs{p}.set_dependency_value( ...
+                'subject_id',subjectGroup_id);
+            imageFileName = ndi.file.temp_name;
+            imwrite(dataTable.lawnMask{p},imageFileName,'png');
+            bacteriaMaskDocs{p} = bacteriaMaskDocs{p}.add_file('imageStack',imageFileName);
+            ontologyLabel = struct('ontologyNode','EMPTY:00000228');
+            bacteriaMaskLabels{p} = ndi.document('ontologyLabel', ...
+                'ontologyLabel',ontologyLabel) + session.newdocument;
+            bacteriaMaskLabels{p} = bacteriaMaskLabels{p}.set_dependency_value( ...
+                'document_id',bacteriaMaskDocs{p}.id);
+
+            % Closest patch imageStack
+            dataType = 'uint8';
+            imageStack_parameters.data_type = dataType;
+            imageStack_parameters.data_limits = [intmin(dataType) intmax(dataType)];
+            imageStack.label = "An image or map where each pixel's value is the identifier of the bacterial food patch closest to that pixel's location.";
+            closestPatchDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
+                'imageStack_parameters', imageStack_parameters) + session.newdocument;
+            closestPatchDocs{p} = closestPatchDocs{p}.set_dependency_value( ...
+                'document_id',dataTable.plate_id{p});
+            closestPatchDocs{p} = closestPatchDocs{p}.set_dependency_value( ...
+                'subject_id',subjectGroup_id);
+            imageFileName = ndi.file.temp_name;
+            imwrite(uint8(dataTable.lawnClosest{p}),imageFileName,'png');
+            closestPatchDocs{p} = closestPatchDocs{p}.add_file('imageStack',imageFileName);
+            ontologyLabel = struct('ontologyNode','EMPTY:00000229');
+            closestPatchLabels{p} = ndi.document('ontologyLabel', ...
+                'ontologyLabel',ontologyLabel) + session.newdocument;
+            closestPatchLabels{p} = closestPatchLabels{p}.set_dependency_value( ...
+                'document_id',closestPatchDocs{p}.id);
         end
     end
-    videoDocs(cellfun(@isempty,videoDocs)) = [];
-    session.database_add(videoDocs);
-    session.database_add(videoLabels);
+    session.database_add(videoDocs); session.database_add(videoLabels);
+    session.database_add(firstFrameDocs); session.database_add(firstFrameLabels);
+    session.database_add(arenaMaskDocs); session.database_add(arenaMaskLabels);
+    session.database_add(bacteriaMaskDocs); session.database_add(bacteriaMaskLabels);
+    session.database_add(closestPatchDocs); session.database_add(closestPatchLabels);
     info.(dirName).videoDocs = videoDocs;
-    dataTable = ndi.fun.table.join({dataTable,patchTable(:,{'plateID','patchID','patch_id'})});
+    info.(dirName).firstFrameDocs = firstFrameDocs;
+    info.(dirName).arenaMaskDocs = arenaMaskDocs;
+    info.(dirName).bacteriaMaskDocs = bacteriaMaskDocs;
+    info.(dirName).closestPatchDocs = closestPatchDocs;
 
-    % F. PLATE ontologyImage
-    [~,ind] = unique(dataTable.plate_id);
-    info.(dirName).firstFrameDocs = imageDocMaker.array2imageDocs(...
-        dataTable.firstFrame(ind),...
-        'EMPTY:C. elegans behavioral assay: first frame image',...
-        'ontologyTableRow_id',dataTable.plate_id(ind),...
-        'Overwrite',options.Overwrite);
-    info.(dirName).arenaMaskDocs = imageDocMaker.array2imageDocs(...
-        dataTable.arenaMask(ind),...
-        'EMPTY:C. elegans behavioral assay: arena mask',...
-        'ontologyTableRow_id',dataTable.plate_id(ind),...
-        'Overwrite',options.Overwrite);
-    info.(dirName).bacteriaMaskDocs = imageDocMaker.array2imageDocs(...
-        dataTable.lawnMask(ind),...
-        'EMPTY:C. elegans behavioral assay: bacteria mask',...
-        'ontologyTableRow_id',dataTable.plate_id(ind),...
-        'Overwrite',options.Overwrite);
-    info.(dirName).closestPatchDocs = imageDocMaker.array2imageDocs(...
-        dataTable.lawnClosest(ind),...
-        'EMPTY:C. elegans behavioral assay: closest patch identifier map',...
-        'ontologyTableRow_id',dataTable.plate_id(ind),...
-        'Overwrite',options.Overwrite);
-    info.(dirName).closestOD600Docs = imageDocMaker.array2imageDocs(...
-        dataTable.lawnClosestOD600(ind),...
-        'EMPTY:C. elegans behavioral assay: closest patch OD600 map',...
-        'ontologyTableRow_id',dataTable.plate_id(ind),...
-        'Overwrite',options.Overwrite);
-
-    % G. PLATE-SUBJECT ontologyTableRow
+    % F. PLATE-SUBJECT ontologyTableRow
     plateSubjectTable1 = wormTable(:,{'subject_id','plate_id'});
     plateSubjectTable2 = renamevars(wormTable(:,{'subject_id','lastPlate_id'}),...
         'lastPlate_id','plate_id');
@@ -714,7 +803,7 @@ for p = 1:height(imageTable)
         'document_id',imageTable.image_id{p});
     ind = contains(imageFiles,imageTable.imageID{p});
     imageFileName = fullfile(dataParentDir,imageFiles{ind});
-    imageDocs{p} = imageDocs{p}.add_file('imageStack',imageFileName);
+    imageDocs{p} = imageDocs{p}.add_file('imageStack',imageFileName,'delete_original',0);
     ontologyLabel = struct('ontologyNode','');
     imageLabels{p} = ndi.document('ontologyLabel', ...
         'ontologyLabel',ontologyLabel) + session.newdocument;
