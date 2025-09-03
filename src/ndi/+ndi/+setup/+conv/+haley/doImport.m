@@ -15,9 +15,8 @@ progressBar.setTimeout(hours(1));
 labName = 'haley';
 dataPath = fullfile(dataParentDir,labName);
 
-% Get .mat files
+% Get files
 fileList = vlt.file.manifest(dataPath);
-matFiles = fileList(contains(fileList,'.mat'));
 
 % If overwriting, delete NDI docs
 if options.Overwrite
@@ -28,11 +27,16 @@ if options.Overwrite
 end
 
 % Get files by type
+matFiles = fileList(endsWith(fileList,'.mat'));
+mp4Files = fileList(endsWith(fileList,'.mp4'));
+tiffFiles = fileList(endsWith(fileList,'.tiff'));
 infoFiles = matFiles(contains(matFiles,'experimentInfo'));
 dataFiles = matFiles(contains(matFiles,'midpoint') | ...
     contains(matFiles,'head') | contains(matFiles,'tail'));
 encounterFiles = matFiles(contains(matFiles,'encounter'));
 bacteriaFiles = matFiles(contains(matFiles,'bacteria'));
+imageFiles = tiffFiles(contains(tiffFiles,'images'));
+maskFiles = tiffFiles(contains(tiffFiles,'labeled'));
 
 %% Step 2: SESSIONS. Build the session.
 
@@ -293,35 +297,7 @@ for i = 1:numel(infoFiles)
     patchTable.patch_id = cellfun(@(d) d.id,info.(dirName).patchDocs,'UniformOutput',false);
     info.(dirName).patchTable = patchTable;
 
-    % D. VIDEO imageStack_parameters
-
-    % Create imageStack_parameters documents
-    videoDocs = cell(height(dataTable),1); % this is incorrect; datatable is now patch height...need VIDEO height
-    for p = 1:height(dataTable)
-        if ~isempty(dataTable.firstFrame{p})
-            dataType = class(dataTable.firstFrame{p});
-            imageStack_parameters = struct('dimension_order','YXT',...
-                'dimension_labels','height,width,time',...
-                'dimension_size',[dataTable.pixels{p},dataTable.numFrames(p)],...
-                'dimension_scale',[dataTable.scale(p),dataTable.scale(p),1/dataTable.frameRate(p)],...
-                'dimension_scale_units','micrometer,micrometer,second',...
-                'data_type',dataType,...
-                'data_limits',[intmin(dataType) intmax(dataType)],...
-                'timestamp',convertTo(dataTable.timeRecord(p),'datenum'),...
-                'clocktype','exp_global_time');
-            videoDocs{p} = ndi.document('imageStack_parameters', ...
-                'imageStack_parameters', imageStack_parameters) + ...
-                session.newdocument();
-            videoDocs{p} = videoDocs{p}.set_dependency_value(...
-                'ontologyTableRow_id',dataTable.plate_id{p});
-        end
-    end
-    videoDocs(cellfun(@isempty,videoDocs)) = [];
-    session.database_add(videoDocs);
-    info.(dirName).videoDocs = videoDocs;
-    dataTable = ndi.fun.table.join({dataTable,patchTable(:,{'plateID','patchID','patch_id'})});
-
-    % E. WORM subject, ontologyTableRow, and treatment
+    % D. WORM subject, ontologyTableRow, and treatment
 
     % Compile data table with 1 row for each unique worm
     [~,ind] = unique(dataTable.plateID);
@@ -400,6 +376,50 @@ for i = 1:numel(infoFiles)
         session.database_add(onsetDocs);
         session.database_add(offsetDocs);
     end
+
+    % E. VIDEO imageStack_parameters
+
+    % Create imageStack_parameters documents
+    videoDocs = cell(height(dataTable),1);
+    videoLabels = cell(height(dataTable),1);
+    for p = 1:height(dataTable)
+        if ~isempty(dataTable.firstFrame{p})
+            imageStack = struct('label','video of C. elegans behavior',...
+                'formatOntology','NCIT:C190180');
+            dataType = class(dataTable.firstFrame{p});
+            imageStack_parameters = struct('dimension_order','YXT',...
+                'dimension_labels','height,width,time',...
+                'dimension_size',[dataTable.pixels{p},dataTable.numFrames(p)],...
+                'dimension_scale',[dataTable.scale(p),dataTable.scale(p),1/dataTable.frameRate(p)],...
+                'dimension_scale_units','micrometer,micrometer,second',...
+                'data_type',dataType,...
+                'data_limits',[intmin(dataType) intmax(dataType)],...
+                'timestamp',convertTo(dataTable.timeRecord(p),'datenum'),...
+                'clocktype','exp_global_time');
+            videoDocs{p} = ndi.document('imageStack', ...
+                'imageStack',imageStack,...
+                'imageStack_parameters', imageStack_parameters) + ...
+                session.newdocument;
+            videoDocs{p} = videoDocs{p}.set_dependency_value( ...
+                'document_id',dataTable.plate_id{p});
+            videoDocs{p} = videoDocs{p}.set_dependency_value( ...
+                'subject_id',dataTable.subject_id{p});
+            [~,videoFileName] = fileparts(dataTable.videoFileName{p});
+            ind = contains(mp4Files,videoFileName);
+            videoFileName = fullfile(dataParentDir,mp4Files{ind});
+            videoDocs{p} = videoDocs{p}.add_file('imageStack', videoFileName);
+            ontologyLabel = struct('ontologyNode','');
+            videoLabels{p} = ndi.document('ontologyLabel', ...
+                'ontologyLabel',ontologyLabel) + session.newdocument;
+            videoLabels{p} = videoLabels{p}.set_dependency_value( ...
+                'document_id',videoDocs{p}.id);
+        end
+    end
+    videoDocs(cellfun(@isempty,videoDocs)) = [];
+    session.database_add(videoDocs);
+    session.database_add(videoLabels);
+    info.(dirName).videoDocs = videoDocs;
+    dataTable = ndi.fun.table.join({dataTable,patchTable(:,{'plateID','patchID','patch_id'})});
 
     % F. PLATE ontologyImage
     [~,ind] = unique(dataTable.plate_id);
@@ -669,10 +689,13 @@ dataTable = ndi.fun.table.join({dataTable,imageTable(:,{'imageID','image_id'})})
 imageTable = ndi.fun.table.join({dataTable},...
     'UniqueVariables',{'plateID','imageID'});
 
-% Create imageStack_parameters documents
+% Create imageStack documents
 imageDocs = cell(height(imageTable),1);
+imageLabels = cell(height(imageTable),1);
 for p = 1:height(imageTable)
     dataType = imageTable.bitDepth{p};
+    imageStack = struct('label','normalized fluorescence image of OP50-GFP',...
+        'formatOntology','NCIT:C70631');
     imageStack_parameters = struct('dimension_order','YX',...
         'dimension_labels','height,width',...
         'dimension_size',[imageTable.xPixels(p),imageTable.yPixels(p)],...
@@ -682,13 +705,25 @@ for p = 1:height(imageTable)
         'data_limits',[intmin(dataType) intmax(dataType)],...
         'timestamp',convertTo(datetime(imageTable.acquisitionTime{p}),'datenum'),...
         'clocktype','exp_global_time');
-    imageDocs{p} = ndi.document('imageStack_parameters', ...
+    imageDocs{p} = ndi.document('imageStack', ...
+        'imageStack', imageStack, ...
         'imageStack_parameters', imageStack_parameters) + ...
-        session.newdocument();
+        session.newdocument;
     imageDocs{p} = imageDocs{p}.set_dependency_value(...
-        'ontologyTableRow_id',imageTable.image_id{p});
+        'document_id',imageTable.image_id{p});
+    ind = contains(imageFiles,imageTable.imageID{p});
+    imageFileName = fullfile(dataParentDir,imageFiles{ind});
+    imageDocs{p} = imageDocs{p}.add_file('imageStack',imageFileName);
+    ontologyLabel = struct('ontologyNode','');
+    imageLabels{p} = ndi.document('ontologyLabel', ...
+        'ontologyLabel',ontologyLabel) + session.newdocument;
+    imageLabels{p} = imageLabels{p}.set_dependency_value( ...
+        'document_id',imageDocs{p}.id);
 end
 session.database_add(imageDocs);
+session.database_add(imageLabels);
+
+% Add mask documents, add ontologyLabel to empty
 
 % D. PATCH ontologyTableRow documents
 
