@@ -193,7 +193,7 @@ classdef cpipeline
                     end
                     set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',index);
                     pipelineContentObj = findobj(fig,'tag','PipelineContentList');
-                    if index == 1
+                    if isempty(ud.pipelineListChar) || index == 1
                         set(pipelineContentObj, 'string', {}, 'Value', 1);
                     else
                         calculatorInstanceList = ndi.cpipeline.getCalculatorInstancesFromPipeline(ud.pipelineList, ud.pipelineListChar{index});
@@ -214,7 +214,7 @@ classdef cpipeline
                     val = get(pipelinePopupObj, 'value');
                     str = get(pipelinePopupObj, 'string');
                     % Step 2, check not the "---" one and display
-                    if val == 1
+                    if isempty(str) || val == 1
                         msgbox('Please select or create a pipeline.');
                         pipelineContentObj = findobj(fig,'tag','PipelineContentList');
                         set(pipelineContentObj, 'string', {}, 'Value', 1);
@@ -444,7 +444,7 @@ classdef cpipeline
             %
             newCalculatorInstance.calculatorClassname = calculatorInstanceType;
             newCalculatorInstance.instanceName = name;
-            newCalculatorInstance.parameter_code = '';
+            % REMOVED: parameter_code is no longer part of the default instance
             newCalculatorInstance.default_options = containers.Map("if_document_exists_do","NoAction");
         end % setDefaultCalculatorInstance
         function pipelineList = getPipelines(read_dir)
@@ -462,22 +462,51 @@ classdef cpipeline
             isub = [d(:).isdir];
             nameList = {d(isub).name}';
             nameList(ismember(nameList,{'.','..'})) = [];
+            
+            % Create a standard empty struct for calculator instances
+            field_names = {'calculatorClassname','instanceName','JSONFilename','default_options'};
+            empty_vals = cell(size(field_names));
+            empty_calc_struct = cell2struct(empty_vals, field_names, 2);
+            
             pipelineList(1).pipeline_name = '---';
-            pipelineList(1).calculatorInstances = vlt.data.emptystruct('calculatorClassname','instanceName','JSONFilename','parameter_code','default_options');
+            pipelineList(1).calculatorInstances = empty_calc_struct;
+
             for i = 1:numel(nameList)
                 pipelineList(i+1).pipeline_name = nameList{i};
-                D = dir([read_dir filesep nameList{i} filesep '*.json']);
+                D = dir(fullfile(read_dir, nameList{i}, '*.json'));
                 if ~isempty(D)
-                    temp_cell = cell(1, numel(D));
+                    temp_cell = {}; % Grow cell array safely
                     for d_i = 1:numel(D)
-                        json_text = vlt.file.textfile2char([read_dir filesep nameList{i} filesep D(d_i).name]);
-                        decoded_json = jsondecode(json_text);
-                        decoded_json.JSONFilename = D(d_i).name;
-                        temp_cell{d_i} = decoded_json;
+                        full_json_path = fullfile(read_dir, nameList{i}, D(d_i).name);
+                        json_text = fileread(full_json_path);
+                        
+                        decoded_json = [];
+                        try
+                            if ~isempty(strtrim(json_text))
+                                decoded_json = jsondecode(json_text);
+                            else
+                                % File is empty or whitespace only, don't even try to decode
+                                warning('JSON file is empty and will be skipped: %s', full_json_path);
+                            end
+                        catch ME
+                            % BUG FIX: Provide a cleaner warning and print technical details separately
+                            warning('Could not decode JSON file, it may be corrupt and will be skipped: %s', full_json_path);
+                            disp('For debugging, the full error report is below:');
+                            disp(ME.getReport());
+                        end
+                        
+                        if ~isempty(decoded_json)
+                            decoded_json.JSONFilename = D(d_i).name;
+                            temp_cell{end+1} = decoded_json;
+                        end
                     end
-                    pipelineList(i+1).calculatorInstances = [temp_cell{:}];
+                    if ~isempty(temp_cell)
+                        pipelineList(i+1).calculatorInstances = [temp_cell{:}];
+                    else
+                        pipelineList(i+1).calculatorInstances = empty_calc_struct;
+                    end
                 else
-                    pipelineList(i+1).calculatorInstances = vlt.data.emptystruct('calculatorClassname','instanceName','JSONFilename','parameter_code','default_options');
+                    pipelineList(i+1).calculatorInstances = empty_calc_struct;
                 end
             end
         end % getPipelines
