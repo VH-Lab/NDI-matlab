@@ -64,9 +64,6 @@ subjectCreator = ndi.setup.conv.haley.SubjectInformationCreator();
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 tableDocMaker_ecoli = ndi.setup.NDIMaker.tableDocMaker(sessions{2},labName);
 
-% Create imageDocMaker
-imageDocMaker = ndi.setup.NDIMaker.imageDocMaker(session);
-
 %% Step 4. BACTERIA. Create openMINDS documents for bacterial food
 
 % E. coli
@@ -772,6 +769,8 @@ imageTable = ndi.fun.table.join({dataTable},...
 % Create imageStack documents
 imageDocs = cell(height(imageTable),1);
 imageLabels = cell(height(imageTable),1);
+maskDocs = cell(height(imageTable),1);
+maskLabels = cell(height(imageTable),1);
 for p = 1:height(imageTable)
     dataType = imageTable.bitDepth{p};
     imageStack = struct('label','normalized fluorescence image of OP50-GFP',...
