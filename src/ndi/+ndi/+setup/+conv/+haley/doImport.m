@@ -415,9 +415,8 @@ for i = 1:numel(infoFiles)
                 'clocktype','exp_global_time');
             
             % Create imageStack document
-            [~,ontologyNode,ontologyLabel] = ndi.ontology.lookup('EMPTY:00000226');
-            imageStack = struct('label',ontologyLabel,...
-                'A video recording capturing the behavior of C. elegans during an experimental assay.',...
+            [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:00000226');
+            imageStack = struct('label',ontologyDef,...
                 'formatOntology','NCIT:C190180');
             videoDocs{p} = ndi.document('imageStack', ...
                 'imageStack',imageStack,...
@@ -442,7 +441,7 @@ for i = 1:numel(infoFiles)
             videoDocs{p} = videoDocs{p}.add_file('imageStack',videoFileName,'delete_original',0);
 
             % Add ontologyLabel
-            ontologyLabel = struct('ontologyNode',ontologyNode);
+            ontologyLabel = struct('ontologyNode',ontologyID);
             videoLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             videoLabels{p} = videoLabels{p}.set_dependency_value( ...
@@ -457,7 +456,7 @@ for i = 1:numel(infoFiles)
             dataType = class(dataTable.arenaMask{p});
             imageStack_parameters.data_type = dataType;
             imageStack_parameters.data_limits = [0 1];
-            imageStack.label = 'A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked (true) and pixels outside are unmarked (false). This mask defines the region of interest for worm tracking and behavioral analysis.';
+            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000227');
             imageStack.formatOntology = 'NCIT:C85437';
             arenaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
@@ -468,14 +467,13 @@ for i = 1:numel(infoFiles)
             imageFileName = ndi.file.temp_name;
             imwrite(dataTable.arenaMask{p},imageFileName,'png');
             arenaMaskDocs{p} = arenaMaskDocs{p}.add_file('imageStack',imageFileName);
-            ontologyLabel = struct('ontologyNode','EMPTY:00000227');
             arenaMaskLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             arenaMaskLabels{p} = arenaMaskLabels{p}.set_dependency_value( ...
                 'document_id',arenaMaskDocs{p}.id);
 
             % Bacteria mask imageStack
-            imageStack.label = 'A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions.';
+            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000228');
             bacteriaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
             bacteriaMaskDocs{p} = bacteriaMaskDocs{p}.set_dependency_value( ...
@@ -485,7 +483,6 @@ for i = 1:numel(infoFiles)
             imageFileName = ndi.file.temp_name;
             imwrite(dataTable.lawnMask{p},imageFileName,'png');
             bacteriaMaskDocs{p} = bacteriaMaskDocs{p}.add_file('imageStack',imageFileName);
-            ontologyLabel = struct('ontologyNode','EMPTY:00000228');
             bacteriaMaskLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             bacteriaMaskLabels{p} = bacteriaMaskLabels{p}.set_dependency_value( ...
@@ -495,7 +492,7 @@ for i = 1:numel(infoFiles)
             dataType = 'uint8';
             imageStack_parameters.data_type = dataType;
             imageStack_parameters.data_limits = [intmin(dataType) intmax(dataType)];
-            imageStack.label = 'An image or map where each pixels value is the identifier of the bacterial food patch closest to that pixels location.';
+            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000229');
             closestPatchDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
             closestPatchDocs{p} = closestPatchDocs{p}.set_dependency_value( ...
@@ -505,7 +502,6 @@ for i = 1:numel(infoFiles)
             imageFileName = ndi.file.temp_name;
             imwrite(uint8(dataTable.lawnClosest{p}),imageFileName,'png');
             closestPatchDocs{p} = closestPatchDocs{p}.add_file('imageStack',imageFileName);
-            ontologyLabel = struct('ontologyNode','EMPTY:00000229');
             closestPatchLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             closestPatchLabels{p} = closestPatchLabels{p}.set_dependency_value( ...
@@ -778,7 +774,8 @@ closestDocs = cell(height(imageTable),1);
 closestLabels = cell(height(imageTable),1);
 for p = 1:height(imageTable)
     dataType = imageTable.bitDepth{p};
-    imageStack = struct('label','normalized fluorescence image of OP50-GFP',...
+    [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:00000230');
+    imageStack = struct('label',ontologyDef,...
         'formatOntology','NCIT:C70631');
     imageStack_parameters = struct('dimension_order','YX',...
         'dimension_labels','height,width',...
@@ -798,16 +795,48 @@ for p = 1:height(imageTable)
     ind = contains(imageFiles,imageTable.imageID{p});
     imageFileName = fullfile(dataParentDir,imageFiles{ind});
     imageDocs{p} = imageDocs{p}.add_file('imageStack',imageFileName,'delete_original',0);
-    ontologyLabel = struct('ontologyNode','');
+    ontologyLabel = struct('ontologyNode',ontologyID);
     imageLabels{p} = ndi.document('ontologyLabel', ...
         'ontologyLabel',ontologyLabel) + session.newdocument;
     imageLabels{p} = imageLabels{p}.set_dependency_value( ...
         'document_id',imageDocs{p}.id);
-end
-session.database_add(imageDocs);
-session.database_add(imageLabels);
 
-% Add mask documents, add ontologyLabel to empty
+    % Bacteria mask imageStack
+    ind = contains(maskFiles,imageTable.imageID{p});
+    maskFileName = fullfile(dataParentDir,maskFiles{ind});
+    imageStack_parameters.data_type = 'logical';
+    imageStack_parameters.data_limits = [0 1];
+    [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000228');
+    imageStack.formatOntology = 'NCIT:C85437';
+    maskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
+        'imageStack_parameters', imageStack_parameters) + session.newdocument;
+    maskDocs{p} = maskDocs{p}.set_dependency_value( ...
+        'document_id',imageTable.image_id{p});
+    maskDocs{p} = maskDocs{p}.add_file('imageStack',maskFileName,'delete_original',0);
+    maskLabels{p} = ndi.document('ontologyLabel', ...
+        'ontologyLabel',ontologyLabel) + session.newdocument;
+    maskLabels{p} = maskLabels{p}.set_dependency_value( ...
+        'document_id',maskDocs{p}.id);
+
+    % Closest patch imageStack
+    ind = contains(closestFiles,imageTable.imageID{p});
+    closestFileName = fullfile(dataParentDir,closestFiles{ind});
+    imageStack_parameters.data_type = 'uint8';
+    imageStack_parameters.data_limits = [intmin('uint8') intmax('uint8')];
+    [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000229');
+    closestDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
+        'imageStack_parameters', imageStack_parameters) + session.newdocument;
+    closestDocs{p} = closestDocs{p}.set_dependency_value( ...
+        'document_id',imageTable.image_id{p});
+    closestDocs{p} = closestDocs{p}.add_file('imageStack',closestFileName,'delete_original',0);
+    closestLabels{p} = ndi.document('ontologyLabel', ...
+        'ontologyLabel',ontologyLabel) + session.newdocument;
+    closestLabels{p} = closestLabels{p}.set_dependency_value( ...
+        'document_id',closestDocs{p}.id);
+end
+session.database_add(imageDocs); session.database_add(imageLabels);
+session.database_add(maskDocs); session.database_add(maskLabels);
+session.database_add(closestDocs); session.database_add(closestLabels);
 
 % D. PATCH ontologyTableRow documents
 
