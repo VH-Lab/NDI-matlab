@@ -379,8 +379,8 @@ classdef stimulusDocMaker < handle
             for a = 1:numel(approachStrings)
 
                 % Get approach id and description
-                item = ndi.database.fun.ndicloud_ontology_lookup('Name',approachStrings{a});
-                if isempty(item)
+                [ontologyNode,ontologyLabel,NameOfOntology,OntologyDescription] = ndi.ontology.lookup(approachStrings{a});
+                if isempty(ontologyNode)
                     error('STIMULUSDOCMAKER:InvalidApproachString',...
                         '%s is not a valid approach name.',approachStrings{a})
                 end
@@ -405,9 +405,9 @@ classdef stimulusDocMaker < handle
 
                 % Create stimulus approach document
                 new_approach = openminds.controlledterms.StimulationApproach(...
-                    'name',item.Name,...
-                    'preferredOntologyIdentifier',['NDIC:' sprintf('%0.8d',item.Identifier)],...
-                    'description',item.Description);
+                    'name',ontologyLabel,...
+                    'preferredOntologyIdentifier',ontologyNode,...
+                    'description',OntologyDescription);
                 current_doc = ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
                     obj.session.id,'stimulus',stimulator_id,'epochid.epochid', epoch_id);
 
