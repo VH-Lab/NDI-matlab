@@ -788,9 +788,9 @@ def: "A unique numerical identifier assigned to a subject in an experiment." []
 
 [Term]
 id: EMPTY:00000226
-name: C. elegans behavioral assay: first frame image
+name: C. elegans behavioral assay: video recording
 namespace: empty_ontology
-def: "An image corresponding to the first frame of the C. elegans behavioral video recording." []
+def: "A video recording capturing the behavior of C. elegans during an experimental assay." []
 
 [Term]
 id: EMPTY:00000227
@@ -809,12 +809,6 @@ id: EMPTY:00000229
 name: C. elegans behavioral assay: closest patch identifier map
 namespace: empty_ontology
 def: "An image or map where each pixel's value is the identifier of the bacterial food patch closest to that pixel's location." []
-
-[Term]
-id: EMPTY:00000230
-name: C. elegans behavioral assay: closest patch OD600 map
-namespace: empty_ontology
-def: "An image or map where each pixel's value corresponds to the nominal OD600 or relative density of the bacterial food patch closest to that pixel's location." []
 
 [Term]
 id: EMPTY:00000231
@@ -989,11 +983,6 @@ id: EMPTY:00000259
 name: amplitude
 namespace: empty_ontology
 def: "The amplitude of a periodic variable is a measure of its change in a single period (such as time or spatial period). The amplitude of a non-periodic signal is its magnitude compared with a reference value." []
-
-[Term]
-id: EMPTY:00000260
-name: C. elegans behavioral assay: video recording
-def: "A video recording capturing the behavior of C. elegans during an experimental assay." []
 
 [Term]
 id: EMPTY:10000000
