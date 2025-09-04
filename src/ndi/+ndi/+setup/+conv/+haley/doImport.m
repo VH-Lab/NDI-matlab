@@ -30,13 +30,15 @@ end
 matFiles = fileList(endsWith(fileList,'.mat'));
 mp4Files = fileList(endsWith(fileList,'.mp4'));
 tiffFiles = fileList(endsWith(fileList,'.tiff'));
+pngFiles = fileList(endsWith(fileList,'.png'));
 infoFiles = matFiles(contains(matFiles,'experimentInfo'));
 dataFiles = matFiles(contains(matFiles,'midpoint') | ...
     contains(matFiles,'head') | contains(matFiles,'tail'));
 encounterFiles = matFiles(contains(matFiles,'encounter'));
 bacteriaFiles = matFiles(contains(matFiles,'bacteria'));
 imageFiles = tiffFiles(contains(tiffFiles,'images'));
-maskFiles = tiffFiles(contains(tiffFiles,'labeled'));
+maskFiles = pngFiles(contains(pngFiles,'mask'));
+closestFiles = pngFiles(contains(pngFiles,'closest'));
 
 %% Step 2: SESSIONS. Build the session.
 
@@ -413,7 +415,8 @@ for i = 1:numel(infoFiles)
                 'clocktype','exp_global_time');
             
             % Create imageStack document
-            imageStack = struct('label',...
+            [~,ontologyNode,ontologyLabel] = ndi.ontology.lookup('EMPTY:00000226');
+            imageStack = struct('label',ontologyLabel,...
                 'A video recording capturing the behavior of C. elegans during an experimental assay.',...
                 'formatOntology','NCIT:C190180');
             videoDocs{p} = ndi.document('imageStack', ...
@@ -439,7 +442,7 @@ for i = 1:numel(infoFiles)
             videoDocs{p} = videoDocs{p}.add_file('imageStack',videoFileName,'delete_original',0);
 
             % Add ontologyLabel
-            ontologyLabel = struct('ontologyNode','EMPTY:00000226');
+            ontologyLabel = struct('ontologyNode',ontologyNode);
             videoLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             videoLabels{p} = videoLabels{p}.set_dependency_value( ...
@@ -771,6 +774,8 @@ imageDocs = cell(height(imageTable),1);
 imageLabels = cell(height(imageTable),1);
 maskDocs = cell(height(imageTable),1);
 maskLabels = cell(height(imageTable),1);
+closestDocs = cell(height(imageTable),1);
+closestLabels = cell(height(imageTable),1);
 for p = 1:height(imageTable)
     dataType = imageTable.bitDepth{p};
     imageStack = struct('label','normalized fluorescence image of OP50-GFP',...
