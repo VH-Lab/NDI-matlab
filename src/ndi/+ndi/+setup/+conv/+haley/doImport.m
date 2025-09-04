@@ -394,8 +394,6 @@ for i = 1:numel(infoFiles)
     % Create imageStack documents
     videoDocs = cell(height(dataTable),1);
     videoLabels = cell(height(dataTable),1);
-    firstFrameDocs = cell(height(dataTable),1);
-    firstFrameLabels = cell(height(dataTable),1);
     arenaMaskDocs = cell(height(dataTable),1);
     arenaMaskLabels = cell(height(dataTable),1);
     bacteriaMaskDocs = cell(height(dataTable),1);
@@ -437,44 +435,30 @@ for i = 1:numel(infoFiles)
             % Add file
             [~,videoFileName] = fileparts(dataTable.videoFileName{p});
             ind = contains(mp4Files,videoFileName);
+            if ~any(ind)
+                error('no video file found');
+            end
             videoFileName = fullfile(dataParentDir,mp4Files{ind});
             videoDocs{p} = videoDocs{p}.add_file('imageStack',videoFileName,'delete_original',0);
 
             % Add ontologyLabel
-            ontologyLabel = struct('ontologyNode','EMPTY:00000260');
+            ontologyLabel = struct('ontologyNode','EMPTY:00000226');
             videoLabels{p} = ndi.document('ontologyLabel', ...
                 'ontologyLabel',ontologyLabel) + session.newdocument;
             videoLabels{p} = videoLabels{p}.set_dependency_value( ...
                 'document_id',videoDocs{p}.id);
 
-            % First frame imageStack
+            % Arena mask imageStack
             imageStack_parameters.dimension_order = 'YX';
             imageStack_parameters.dimension_labels = 'height,width';
             imageStack_parameters.dimension_size = dataTable.pixels{p};
             imageStack_parameters.dimension_scale = [dataTable.scale(p), dataTable.scale(p)];
             imageStack_parameters.dimension_scale_units = 'micrometer,micrometer';
-            imageStack.label = 'An image corresponding to the first frame of the C. elegans behavioral video recording.';
-            imageStack.formatOntology = 'NCIT:C85437';
-            firstFrameDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
-                'imageStack_parameters', imageStack_parameters) + session.newdocument;
-            firstFrameDocs{p} = firstFrameDocs{p}.set_dependency_value( ...
-                'document_id',dataTable.plate_id{p});
-            firstFrameDocs{p} = firstFrameDocs{p}.set_dependency_value( ...
-                'subject_id',subjectGroup_id);
-            imageFileName = ndi.file.temp_name;
-            imwrite(dataTable.firstFrame{p},imageFileName,'png');
-            firstFrameDocs{p} = firstFrameDocs{p}.add_file('imageStack',imageFileName);
-            ontologyLabel = struct('ontologyNode','EMPTY:00000226');
-            firstFrameLabels{p} = ndi.document('ontologyLabel', ...
-                'ontologyLabel',ontologyLabel) + session.newdocument;
-            firstFrameLabels{p} = firstFrameLabels{p}.set_dependency_value( ...
-                'document_id',firstFrameDocs{p}.id);
-
-            % Arena mask imageStack
             dataType = class(dataTable.arenaMask{p});
             imageStack_parameters.data_type = dataType;
-            imageStack_parameters.data_limits = [intmin(dataType) intmax(dataType)];
+            imageStack_parameters.data_limits = [0 1];
             imageStack.label = 'A binary image (logical matrix) where pixels within the experimental arena for C. elegans are marked (true) and pixels outside are unmarked (false). This mask defines the region of interest for worm tracking and behavioral analysis.';
+            imageStack.formatOntology = 'NCIT:C85437';
             arenaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
             arenaMaskDocs{p} = arenaMaskDocs{p}.set_dependency_value( ...
@@ -511,7 +495,7 @@ for i = 1:numel(infoFiles)
             dataType = 'uint8';
             imageStack_parameters.data_type = dataType;
             imageStack_parameters.data_limits = [intmin(dataType) intmax(dataType)];
-            imageStack.label = "An image or map where each pixel's value is the identifier of the bacterial food patch closest to that pixel's location.";
+            imageStack.label = 'An image or map where each pixels value is the identifier of the bacterial food patch closest to that pixels location.';
             closestPatchDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
             closestPatchDocs{p} = closestPatchDocs{p}.set_dependency_value( ...
@@ -528,13 +512,19 @@ for i = 1:numel(infoFiles)
                 'document_id',closestPatchDocs{p}.id);
         end
     end
+    videoDocs(cellfun(@isempty,videoDocs)) = [];
+    videoLabels(cellfun(@isempty,videoLabels)) = [];
+    arenaMaskDocs(cellfun(@isempty,arenaMaskDocs)) = [];
+    arenaMaskLabels(cellfun(@isempty,arenaMaskLabels)) = [];
+    bacteriaMaskDocs(cellfun(@isempty,bacteriaMaskDocs)) = [];
+    bacteriaMaskLabels(cellfun(@isempty,bacteriaMaskLabels)) = [];
+    closestPatchDocs(cellfun(@isempty,closestPatchDocs)) = [];
+    closestPatchLabels(cellfun(@isempty,closestPatchLabels)) = [];
     session.database_add(videoDocs); session.database_add(videoLabels);
-    session.database_add(firstFrameDocs); session.database_add(firstFrameLabels);
     session.database_add(arenaMaskDocs); session.database_add(arenaMaskLabels);
     session.database_add(bacteriaMaskDocs); session.database_add(bacteriaMaskLabels);
     session.database_add(closestPatchDocs); session.database_add(closestPatchLabels);
     info.(dirName).videoDocs = videoDocs;
-    info.(dirName).firstFrameDocs = firstFrameDocs;
     info.(dirName).arenaMaskDocs = arenaMaskDocs;
     info.(dirName).bacteriaMaskDocs = bacteriaMaskDocs;
     info.(dirName).closestPatchDocs = closestPatchDocs;
