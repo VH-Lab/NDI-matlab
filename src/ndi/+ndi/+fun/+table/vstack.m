@@ -105,7 +105,7 @@ end
                     if ~isempty(declaredTypeForEmpty)
                         try
                             if strcmp(declaredTypeForEmpty, 'datetime')
-                                bestExampleCol = NaT([]);
+                                bestExampleCol = NaT(0); % Use 0 instead of [] for compatibility with MATLAB <= R2021b
                             elseif strcmp(declaredTypeForEmpty, 'string')
                                 bestExampleCol = string([]);
                             elseif strcmp(declaredTypeForEmpty, 'categorical')
