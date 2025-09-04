@@ -541,18 +541,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 calculatorInstance.instanceName = options.name;
                 calculatorInstance.calculatorClassname = options.calculatorClassname;
                 
-                if ~isempty(options.calculatorClassname)
-                    [calculatorInstance.parameter_example_names, calculatorInstance.parameter_example_code] = ndi.calculator.parameter_examples(calculatorInstance.calculatorClassname);
-                else
-                    % Provide empty defaults if no classname is given
-                    calculatorInstance.parameter_example_names = {};
-                    calculatorInstance.parameter_example_code = {};
-                end
+                % Note: the 'parameter_code' field is no longer part of the instance JSON
                 
                 ud.calculatorInstance = calculatorInstance;
                 ud.window_params = options.window_params;
                 ud.linked_object = options.session; 
-                ud.active_parameter_file = ''; % Indicates we are editing a new template
+                ud.active_parameter_name = ''; % Indicates we are editing a new template
                 if isempty(fig)
                     fig = figure;
                 end
@@ -562,9 +556,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 ud.calculatorInstance = jsondecode(fileread(options.filename));
                 ud.calculatorInstance.JSONFilename = options.filename; % ensure this is set
                 
-                [ud.calculatorInstance.parameter_example_names, ud.calculatorInstance.parameter_example_code] = ndi.calculator.parameter_examples(ud.calculatorInstance.calculatorClassname);
                 ud.linked_object = options.session; 
-                ud.active_parameter_file = ''; % Start with template, even when editing
+                ud.active_parameter_name = ''; % Start with template, even when editing
                 
                 if ~isfield(ud,'window_params')
                     ud.window_params = options.window_params;
@@ -589,7 +582,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     uid = vlt.ui.basicuitools_defs;
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
                     
-                    % Step 1: Establish window geometry in pixels
+                    % Step 1: Define colors and geometry
+                    fig_bg_color = [0.8 0.8 0.8];
+                    box_bg_color = [0.9 0.9 0.9];
+                    edit_bg_color = [1 1 1];
                     top = ud.window_params.height;
                     right = ud.window_params.width;
                     row = 25;
@@ -610,6 +606,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     
                     % Step 2 now build it
                     set(fig,'position',[50 50 right top],...
+                        'Color', fig_bg_color, ...
                         'NumberTitle','off',...
                         'Name',['Editing ' ud.calculatorInstance.instanceName ' of type ' ud.calculatorInstance.calculatorClassname ],...
                         'MenuBar','none',...
@@ -620,44 +617,52 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     y = top-row;
 
                     % Object Type Selection
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Link object type:');
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Link object type:', ...
+                        'BackgroundColor',fig_bg_color,'FontWeight','bold');
                     uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
-                        'string',{'ndi.session', 'ndi.dataset', 'Workspace variable'},'tag','ObjectTypePopup','callback',callbackstr);
+                        'string',{'ndi.session', 'ndi.dataset', 'Workspace variable'},'tag','ObjectTypePopup','callback',callbackstr,...
+                        'BackgroundColor',edit_bg_color);
 
                     % Object Variable Selection
                     y = y - row;
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','NDI Data:');
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','NDI Data:', ...
+                        'BackgroundColor',fig_bg_color,'FontWeight','bold');
                     uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
-                        'string',{'None'},'tag','ObjectVariablePopup','callback',callbackstr);
+                        'string',{'None'},'tag','ObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
                     
                     y = y-row;
                     
                     % Documentation portion of window
                     y = y-row;
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Documentation','tag','DocTitleTxt');
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Documentation', ...
+                        'tag','DocTitleTxt','BackgroundColor',fig_bg_color,'FontWeight','bold');
                     uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
                         'string',{'General','Calculator Input Options','Output document'},'tag','DocPopup','callback',callbackstr,...
-                        'value',1);
+                        'value',1,'BackgroundColor',edit_bg_color);
                     y = y - doc_height;
                     uicontrol(uid.edit,'Units','normalized','position',[x/right y/top doc_width/right doc_height/top],...
                         'string','Please select one documentation type.',...
-                        'tag','DocTxt','min',0,'max',2,'enable','inactive');
+                        'tag','DocTxt','min',0,'max',2,'enable','inactive','BackgroundColor',box_bg_color);
                     
                     y = y - row;
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Parameter code:','tag','ParameterCodeTitleTxt');
+                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Parameter code:', ...
+                        'tag','ParameterCodeTitleTxt','BackgroundColor',fig_bg_color,'FontWeight','bold');
+                    
+                    % Load initial parameter instances
+                    [param_names,~] = ndi.calculator.readParameterCode(ud.calculatorInstance.calculatorClassname);
                     uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
-                        'string',{'Template', 'Default', '---', ud.calculatorInstance.parameter_example_names{:}},...
-                        'tag','ParameterCodePopup', 'callback',callbackstr,'value',1);
+                        'string',{'Template', 'Default', '---', param_names{:}},...
+                        'tag','ParameterCodePopup', 'callback',callbackstr,'value',1,'BackgroundColor',edit_bg_color);
                     y = y - parameter_code_height;
                     uicontrol(uid.edit,'Units','normalized','position',[x/right y/top parameter_code_width/right parameter_code_height/top],...
                         'string',ndi.calculator.user_parameter_template(ud.calculatorInstance.calculatorClassname),...
-                        'tag','ParameterCodeTxt','min',0,'max',2);
+                        'tag','ParameterCodeTxt','min',0,'max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left');
                     
                     y = y - 2*row;
                     uicontrol(uid.popup,'Units','normalized','position',[x/right y/top commands_popup_width/right commands_popup_height/top],...
                         'string',{'Commands:','---','Try searching for inputs','Show existing outputs',...
                         'Plot existing outputs','Run but don''t replace existing docs','Run and replace existing docs'},...
-                        'tag','CommandPopup','callback',callbackstr);
+                        'tag','CommandPopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
                     
                     y = y - 2*row;
                     uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(1)-0.5*button_width)/right y/top button_width/right button_height/top],...
@@ -751,23 +756,21 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
                     val = get(paramPopupObj, 'value');
                     paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
+                    
+                    [names, contents] = ndi.calculator.readParameterCode(ud.calculatorInstance.calculatorClassname);
 
                     switch val
                         case 1 % Template
                             set(paramTextObj,'string',ndi.calculator.user_parameter_template(ud.calculatorInstance.calculatorClassname));
-                            ud.active_parameter_file = '';
+                            ud.active_parameter_name = '';
                         case 2 % Default
                             set(paramTextObj,'string',ndi.calculator.parameter_default(ud.calculatorInstance.calculatorClassname));
-                            ud.active_parameter_file = 'default';
+                            ud.active_parameter_name = 'default';
                         case {4,5,6,7,8,9,10,11,12,13,14,15} % saved instances
                             example_index = val - 3;
-                            if example_index <= numel(ud.calculatorInstance.parameter_example_code)
-                                set(paramTextObj,'string',ud.calculatorInstance.parameter_example_code{example_index});
-                                % Store the full path of the loaded file
-                                w = which(ud.calculatorInstance.calculatorClassname);
-                                [parentdir, appname] = fileparts(w);
-                                example_dir = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
-                                ud.active_parameter_file = fullfile(example_dir, ud.calculatorInstance.parameter_example_names{example_index});
+                            if example_index <= numel(contents)
+                                set(paramTextObj,'string',contents{example_index});
+                                ud.active_parameter_name = names{example_index};
                             end
                     end
                     set(fig,'userdata',ud);
@@ -781,7 +784,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     end
                     assignin('base','pipeline_session',ud.linked_object);
                     
-                    % BUG FIX: Convert cell to char for multi-line code before evaluation
                     paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
                     code_from_box = get(paramTextObj,'string');
                     if iscell(code_from_box)
@@ -827,7 +829,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             disp(['Run done, variable RUNDOCS now has calculation documents created.']);
                     end
                 case 'SaveButton'
-                    if isempty(ud.active_parameter_file) || ~ismember(class(ud.active_parameter_file), {'char','string'}) || ismember(ud.active_parameter_file, {'default'})
+                    if isempty(ud.active_parameter_name) || strcmp(ud.active_parameter_name, 'default')
                         msgbox('This is a template or default code. Please use "Save As..." to create a parameter instance file before saving.', 'Save Error');
                         return;
                     end
@@ -840,14 +842,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         code_to_save = code_from_box;
                     end
                     
-                    % Overwrite the active parameter file
-                    fid = fopen(ud.active_parameter_file,'w');
-                    if fid == -1, error(['Could not open file ' ud.active_parameter_file ' for writing.']); end
-                    fprintf(fid, '%s', code_to_save);
-                    fclose(fid);
+                    % Use the new centralized save function
+                    ndi.calculator.addParameterCode(ud.calculatorInstance.calculatorClassname, ...
+                        ud.active_parameter_name, code_to_save);
                     
-                    [~,fname,fext] = fileparts(ud.active_parameter_file);
-                    msgbox(['Changes to ''' fname fext ''' have been saved.'],'Save Complete');
+                    msgbox(['Changes to ''' ud.active_parameter_name ''' have been saved.'],'Save Complete');
                 case 'SaveAsButton'
                     paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
                     code_from_box = get(paramTextObj,'String');
@@ -860,32 +859,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     answer = inputdlg('Enter a name for this parameter instance (e.g., my_params):', 'Save Parameter Instance As');
                     if isempty(answer) || isempty(answer{1}), return; end; % User cancelled
                     
-                    example_name = [answer{1} '.txt'];
+                    instance_name = answer{1};
                     
-                    w = which(ud.calculatorInstance.calculatorClassname);
-                    [parentdir, appname] = fileparts(w);
-                    example_dir = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
-                    if ~isfolder(example_dir), mkdir(example_dir); end;
+                    ndi.calculator.addParameterCode(ud.calculatorInstance.calculatorClassname, instance_name, code_to_save);
                     
-                    full_example_path = fullfile(example_dir, example_name);
-                    
-                    if isfile(full_example_path)
-                        b = questdlg('An instance with this name already exists. Overwrite?', 'Overwrite?', 'Yes', 'No', 'No');
-                        if strcmp(b,'No'), return; end;
-                    end
-                    
-                    fid = fopen(full_example_path, 'w');
-                    if fid == -1, error(['Could not open file ' full_example_path ' for writing.']); end
-                    fprintf(fid, '%s', code_to_save);
-                    fclose(fid);
-                    
-                    ud.active_parameter_file = full_example_path;
+                    ud.active_parameter_name = instance_name;
                     set(fig, 'userdata', ud);
                     
                     ndi.calculator.graphical_edit_calculator('command','RefreshParameterPopup','fig',fig);
-                    msgbox(['New parameter instance saved as ' example_name], 'Save Complete');
+                    msgbox(['New parameter instance ''' instance_name ''' saved.'], 'Save Complete');
                 case 'DeleteParameterInstanceButton'
-                    [names, ~] = ndi.calculator.parameter_examples(ud.calculatorInstance.calculatorClassname);
+                    [names, ~] = ndi.calculator.readParameterCode(ud.calculatorInstance.calculatorClassname);
                     if isempty(names)
                         msgbox('There are no saved parameter instances to delete.', 'No Instances Found');
                         return;
@@ -895,49 +879,39 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         'SelectionMode','single','ListString',names);
                         
                     if isSelectionMade
-                        filename_to_delete = names{selectedIndex};
+                        name_to_delete = names{selectedIndex};
                         
-                        b = questdlg(['Are you sure you want to permanently delete ''' filename_to_delete '''?'], ...
+                        b = questdlg(['Are you sure you want to permanently delete ''' name_to_delete '''?'], ...
                             'Confirm Delete', 'Yes', 'No', 'No');
                         
                         if strcmp(b,'Yes')
-                            w = which(ud.calculatorInstance.calculatorClassname);
-                            [parentdir, appname] = fileparts(w);
-                            example_dir = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
-                            full_path_to_delete = fullfile(example_dir, filename_to_delete);
-                            
-                            if isfile(full_path_to_delete)
-                                delete(full_path_to_delete);
-                                msgbox(['''' filename_to_delete ''' was deleted.'], 'Delete Successful');
-                                % if the deleted file was the active one, reset view to template
-                                if strcmp(ud.active_parameter_file, full_path_to_delete)
-                                    paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
-                                    set(paramTextObj,'string',ndi.calculator.user_parameter_template(ud.calculatorInstance.calculatorClassname));
-                                    ud.active_parameter_file = '';
-                                    set(fig,'userdata',ud);
-                                end
-                                ndi.calculator.graphical_edit_calculator('command','RefreshParameterPopup','fig',fig);
-                            else
-                                errordlg(['Could not find the file to delete: ' full_path_to_delete], 'File Not Found');
+                            ndi.calculator.deleteParameterCode(ud.calculatorInstance.calculatorClassname, name_to_delete);
+                            msgbox(['''' name_to_delete ''' was deleted.'], 'Delete Successful');
+
+                            % if the deleted file was the active one, reset view to template
+                            if strcmp(ud.active_parameter_name, name_to_delete)
+                                paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
+                                set(paramTextObj,'string',ndi.calculator.user_parameter_template(ud.calculatorInstance.calculatorClassname));
+                                ud.active_parameter_name = '';
+                                set(fig,'userdata',ud);
                             end
+                            ndi.calculator.graphical_edit_calculator('command','RefreshParameterPopup','fig',fig);
                         end
                     end
                 case 'RefreshParameterPopup'
-                    [new_names, new_code] = ndi.calculator.parameter_examples(ud.calculatorInstance.calculatorClassname);
+                    [new_names, ~] = ndi.calculator.readParameterCode(ud.calculatorInstance.calculatorClassname);
                     ud.calculatorInstance.parameter_example_names = new_names;
-                    ud.calculatorInstance.parameter_example_code = new_code;
                     set(fig,'userdata',ud);
                     paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
                     new_string = {'Template', 'Default', '---', new_names{:}};
                     
-                    % try to find the active file in the new list and set the popup value
+                    % try to find the active parameter name in the new list and set the popup value
                     current_val = 1; % Default to template
-                    if ~isempty(ud.active_parameter_file)
-                        if strcmp(ud.active_parameter_file,'default')
+                    if ~isempty(ud.active_parameter_name)
+                        if strcmp(ud.active_parameter_name,'default')
                             current_val = 2;
                         else
-                            [~,fname,fext] = fileparts(ud.active_parameter_file);
-                            found_it = find(strcmp([fname fext], new_names));
+                            found_it = find(strcmp(ud.active_parameter_name, new_names));
                             if ~isempty(found_it)
                                 current_val = found_it(1) + 3; % +3 due to template, default, ---
                             end
@@ -1088,37 +1062,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 end
             end % find_recursively
         end % find_calculator_subclasses
-        function [names, contents] = parameter_examples(calculator_type)
-            % ndi.calculator.parameter_examples - return the parameter code examples for a given calculator_type
-            %
-            % [NAMES, CONTENTS] = ndi.calculator.parameter_examples(CALCULATOR_TYPE)
-            %
-            % Return the example NAMES and parameter example code CONTENTS for a given CALCULATOR_TYPE.
-            %
-            % NAMES is a cell array of strings with the code example names. CONTENTS is a cell array of strings with
-            % the contents of the code examples.
-            %
-            % Example:
-            %   [names,contents] = ndi.calculator.parameter_examples('ndi.calc.stimulus.tuningcurve');
-            %
-            w = which(calculator_type);
-            if isempty(w)
-                error(['No known calculator on the path called ' calculator_type '.']);
-            end
-            [parentdir, appname] = fileparts(w);
-            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
-            d = dir([dirname filesep '*.txt']);
-            contents = {};
-            names = {};
-            for i=1:numel(d)
-                names{end+1} = d(i).name;
-                contents{end+1} = fileread(fullfile(dirname, d(i).name));
-            end
-        end
         function [contents] = parameter_default(calculator_type)
             % ndi.calculator.parameter_default - return the default parameter code for a given calculator_type
             %
-            % [CONTENTS] = ndi.calculator.parameter_examples(CALCULATOR_TYPE)
+            % [CONTENTS] = ndi.calculator.parameter_default(CALCULATOR_TYPE)
             %
             % Return the default parameter code CONTENTS for a given CALCULATOR_TYPE. CONTENTS is a
             % character string.
@@ -1139,8 +1086,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 contents = sprintf([...
                     '%% Default parameters for %s\r\n' ...
                     '%% This code is auto-generated because a specific default file was not found.\r\n\r\n' ...
-                    'thecalc = %s();\r\n' ...
+                    'thecalc = %s(pipeline_session);\r\n' ...
                     'parameters = thecalc.default_search_for_input_parameters();\r\n' ...
+                    '%% Default input set by calculator\r\n' ...
                     'parameters.query.query = ndi.query(''stimulus_tuningcurve.independent_variable_label'',''contains_string'',''Direction(BG=0.5)'','''');\r\n'], ...
                     calculator_type, calculator_type);
             end
@@ -1156,15 +1104,130 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 contents = sprintf([...
                     '%% User parameters for %s\r\n' ...
                     '%% Edit the following lines to generate a user-defined parameter file for this calculator instance.\r\n\r\n' ...
-                    'thecalc = %s();\r\n' ...
+                    'thecalc = %s(pipeline_session);\r\n' ...
                     'parameters = thecalc.default_search_for_input_parameters();\r\n' ...
-                    'parameters.query.query = ndi.query(''stimulus_tuningcurve.independent_variable_label'',''contains_string'',''Direction(BG=0.5)'','''');\r\n\r\n' ...
+                    'parameters.query.query = ndi.query(''stimulus_tuningcurve.independent_variable_label'',''contains_string'',''Direction(BG=0.5)'','''');\r\n' ...
+                    '%% Option to change Background from 0.5 to 0\r\n\r\n' ...
                     '%% You can add more specific constraints below.\r\n' ...
                     '%% For example, to restrict the search to a specific recording element:\r\n' ...
                     '%%\r\n' ...
                     '%% element_id = ''some_element_id_string''; %% replace with a real ID\r\n' ...
-                    '%% parameters.query(end+1) = ndi.query('',''depends_on'',''element_id'',element_id);\r\n'],...
+                    '%% parameters.query(end+1) = ndi.query('''',''depends_on'',''element_id'',element_id);\r\n'],...
                     calculator_type, calculator_type);
+        end
+        function path = get_user_parameters_path()
+            % GET_USER_PARAMETERS_PATH - returns the full path to the user_parameters.json file
+            path = fullfile(ndi.cpipeline.defaultPath(), 'user_parameters.json');
+        end
+        function [names, contents] = readParameterCode(calculator_classname)
+            % READPARAMETERCODE - Read all parameter instances for a class from the central JSON file
+            names = {};
+            contents = {};
+            json_path = ndi.calculator.get_user_parameters_path();
+            if ~isfile(json_path), return; end
+            
+            json_text = fileread(json_path);
+            if isempty(strtrim(json_text)), return; end
+            
+            all_params = jsondecode(json_text);
+            class_field = matlab.lang.makeValidName(calculator_classname);
+            
+            if isfield(all_params, class_field)
+                class_entries = all_params.(class_field);
+                % BUG FIX: Handle case where jsondecode creates an empty double []
+                if isempty(class_entries) && ~isstruct(class_entries), return; end
+                % Handle backward compatibility: convert from cell to struct array if needed
+                if iscell(class_entries), class_entries = [class_entries{:}]; end
+                
+                for i=1:numel(class_entries)
+                    names{end+1} = class_entries(i).parameterCodeName;
+                    contents{end+1} = class_entries(i).parameterCodeText;
+                end
+            end
+        end
+        function addParameterCode(calculator_classname, name, text)
+            % ADDPARAMETERCODE - Add or update a parameter instance in the central JSON file
+            json_path = ndi.calculator.get_user_parameters_path();
+            all_params = struct();
+            if isfile(json_path)
+                json_text = fileread(json_path);
+                if ~isempty(strtrim(json_text))
+                    all_params = jsondecode(json_text);
+                end
+            end
+
+            class_field = matlab.lang.makeValidName(calculator_classname);
+            
+            if ~isfield(all_params, class_field)
+                % Initialize as empty struct array with correct fields
+                all_params.(class_field) = struct('parameterCodeName',{}, 'parameterCodeText',{});
+            end
+            
+            class_entries = all_params.(class_field);
+
+            % BUG FIX: jsondecode turns empty arrays '[]' into 0x0 doubles.
+            if isempty(class_entries) && ~isstruct(class_entries)
+                class_entries = struct('parameterCodeName',{}, 'parameterCodeText',{});
+            end
+            % Handle backward compatibility: convert from cell to struct array if needed
+            if iscell(class_entries), class_entries = [class_entries{:}]; end
+
+            new_entry = struct('parameterCodeName', name, 'parameterCodeText', text);
+            
+            % Check if it exists to overwrite, otherwise append
+            found_index = -1;
+            for i=1:numel(class_entries)
+                if strcmp(class_entries(i).parameterCodeName, name)
+                    found_index = i;
+                    break;
+                end
+            end
+            
+            if found_index > 0
+                class_entries(found_index) = new_entry;
+            else
+                class_entries(end+1) = new_entry;
+            end
+            all_params.(class_field) = class_entries;
+            
+            json_text_out = jsonencode(all_params, 'PrettyPrint', true);
+            fid = fopen(json_path, 'w');
+            if fid == -1, error('Could not open %s for writing.', json_path); end
+            fprintf(fid, '%s', json_text_out);
+            fclose(fid);
+        end
+        function deleteParameterCode(calculator_classname, name)
+            % DELETEPARAMETERCODE - Delete a parameter instance from the central JSON file
+            json_path = ndi.calculator.get_user_parameters_path();
+            if ~isfile(json_path), return; end
+            
+            json_text = fileread(json_path);
+            if isempty(strtrim(json_text)), return; end
+            all_params = jsondecode(json_text);
+
+            class_field = matlab.lang.makeValidName(calculator_classname);
+
+            if isfield(all_params, class_field)
+                class_entries = all_params.(class_field);
+                % BUG FIX: Handle case where jsondecode creates an empty double []
+                if isempty(class_entries) && ~isstruct(class_entries), return; end
+                % Handle backward compatibility
+                if iscell(class_entries), class_entries = [class_entries{:}]; end
+                
+                indices_to_keep = [];
+                for i=1:numel(class_entries)
+                    if ~strcmp(class_entries(i).parameterCodeName, name)
+                        indices_to_keep(end+1) = i;
+                    end
+                end
+                all_params.(class_field) = class_entries(indices_to_keep);
+            end
+
+            json_text_out = jsonencode(all_params, 'PrettyPrint', true);
+            fid = fopen(json_path, 'w');
+            if fid == -1, error('Could not open %s for writing.', json_path); end
+            fprintf(fid, '%s', json_text_out);
+            fclose(fid);
         end
     end % Static methods
 end % calculator class
