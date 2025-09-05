@@ -216,34 +216,6 @@ classdef FilesTest < matlab.unittest.TestCase
                 end
             end
         end
-
-        function testRawFileEndToEnd(testCase)
-            warning('testRawFileEndToEnd is disabled because the API endpoint does not work.')
-            return
-            % Test the complete raw file upload workflow
-            
-            % Step 1: Get raw file upload URL
-            [~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
-                testCase.DatasetID, testCase.FileUID);
-            
-            % Step 2: Upload file
-            ndi.cloud.api.files.put_files(...
-                upload_url, testCase.TestFilePath);
-            
-            pause(5) % Todo: Use retry loop for getting download url
-            % Step 3: Get file details
-            [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
-                testCase.DatasetID, testCase.FileUID);
-            
-            % Verify file details
-            testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
-            testCase.verifyNotEmpty(downloadUrl, 'Expected non-empty download URL');
-            % Download the file and verify its contents
-            websave('temp_test.txt', downloadUrl)
-            testCase.addTeardown(@() delete('temp_test.txt'))
-            str = filread('temp_test.txt');
-            testCase.verifyEqual(str, testCase.TestFileContent)
-        end
     end
 
     methods % Helper methods

@@ -12,7 +12,18 @@ function response = put_files(presigned_url, file_path)
 
     method = matlab.net.http.RequestMethod.PUT;
     provider = matlab.net.http.io.FileProvider(file_path);
-    req = matlab.net.http.RequestMessage(method, [], provider);
+
+    contentTypeHeader = ...
+    [matlab.net.http.HeaderField('Content-Type', ''), ...
+        matlab.net.http.HeaderField('Expect',''), ...
+        matlab.net.http.HeaderField('Content-Disposition', ''), ...
+        matlab.net.http.HeaderField('Accept-Encoding', '') ...
+        matlab.net.http.HeaderField('Accept','*/*')
+        ];
+
+    %options = matlab.net.http.HTTPOptions('UseProxy', false);
+
+    req = matlab.net.http.RequestMessage(method, contentTypeHeader, provider);
     [response, ~, ~] = req.send(presigned_url);
     if (response.StatusCode == 200)
         % Request succeeded
