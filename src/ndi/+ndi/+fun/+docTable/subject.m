@@ -55,8 +55,8 @@ subjectTable = table(doc_ids(:), local_ids(:), 'VariableNames', {'SubjectDocumen
 % --- Step 2: Perform a single, broad query for all openminds metadata ---
 
 % This is expensive, but we only do it once.
-q_all_openminds = ndi.query('','isa','openminds');
-allOpenMindsDocs = session.database_search(q_all_openminds);
+query = ndi.query('','isa','openminds');
+allOpenMindsDocs = session.database_search(query);
 
 % --- Step 3: Process the pre-fetched documents and join them ---
 
