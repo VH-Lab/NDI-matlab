@@ -36,22 +36,31 @@ arguments
     options.errorIfEmpty (1,1) logical = false;
     options.depends_on_docs (1,:) cell = {};
 end
+
 % Check depends_on class
 options.depends_on = cellstr(options.depends_on);
-if ~isscalar(options.depends_on), error('depends_on must be a single string.'); else options.depends_on = options.depends_on{1}; end
+if ~isscalar(options.depends_on)
+    error('depends_on must be a single string.');
+else 
+    options.depends_on = options.depends_on{1};
+end
+
 % --- Get documents: either via a targeted query or a broad one ---
 q_treat = ndi.query('','isa','treatment');
 q_drug = ndi.query('','isa','treatment_drug');
 q_virus = ndi.query('','isa','virus_injection');
 q_type = q_treat | q_drug | q_virus;
 if ~isempty(options.depends_on_docs)
+
     % Build a composite query using a loop of ORs with the 'depends_on' operator
     if ~isempty(options.depends_on_docs)
+
         % First, extract the document IDs, which is what the query operator needs
         depends_on_ids = cellfun(@(d) d.id, options.depends_on_docs, 'UniformOutput', false);
 
         % Start with the first document ID
         q_dependency = ndi.query('','depends_on', options.depends_on, depends_on_ids{1});
+        
         % Loop through the rest of the IDs and append them with an OR
         for i = 2:numel(depends_on_ids)
             q_dependency = q_dependency | ndi.query('','depends_on', options.depends_on, depends_on_ids{i});
@@ -69,11 +78,13 @@ if isempty(query) % Handle case where no query could be formed
 else
     treatmentDocs = session.database_search(query);
 end
+
 % Handle case where no documents are found
 if isempty(treatmentDocs)
     if options.errorIfEmpty, error('No treatment documents were found.'); end
     treatmentTable = table(); docIDs = {}; dependencyIDs = {}; return;
 end
+
 % --- Step 1: Create a cell array of tables, one for each document ---
 treatmentCell = cell(numel(treatmentDocs), 1);
 dependencyIDs_all = cell(numel(treatmentDocs), 1);
@@ -83,7 +94,11 @@ for i = 1:numel(treatmentDocs)
     doc = treatmentDocs{i};
     docProp = doc.document_properties;
     
-    try, dependencyIDs_all{i} = doc.dependency_value(options.depends_on); catch, dependencyIDs_all{i} = ''; end
+    try 
+        dependencyIDs_all{i} = doc.dependency_value(options.depends_on);
+    catch
+        dependencyIDs_all{i} = '';
+    end
     
     if doc.doc_isa('treatment_drug')
         fields = docProp.treatment_drug;
@@ -124,6 +139,7 @@ for i = 1:numel(treatmentDocs)
     end
     treatmentCell{i} = treatmentRow;
 end
+
 % --- Step 2: Aggregate treatments by unique dependency ID ---
 [dependencyIDs, ~, ic] = unique(dependencyIDs_all);
 aggregatedCell = cell(numel(dependencyIDs), 1);
@@ -172,6 +188,7 @@ for i = 1:numel(dependencyIDs)
     end
     aggregatedCell{i} = mergedRow;
 end
+
 % --- Step 3: Stack the aggregated rows into the final table ---
 if isempty(aggregatedCell)
     treatmentTable = table();
