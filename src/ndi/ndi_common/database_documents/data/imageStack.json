@@ -2,8 +2,8 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/data\/imageStack.json",
 		"validation":						"$NDISCHEMAPATH\/data\/imageStack_schema.json",
-		"class_name":						"image",
-		"property_list_name":               "image",
+		"class_name":						"imageStack",
+		"property_list_name":               "imageStack",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"},

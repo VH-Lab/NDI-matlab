@@ -33,10 +33,12 @@ function [subjectTable] = subject(session)
 %   See also: ndi.session, ndi.query, table, outerjoin, 
 %   ndi.fun.docTable.openminds, ndi.fun.docTable.treatment, 
 %   ndi.fun.table.identifyValidRows
+
 % Input argument validation
 arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
 end
+
 % --- Step 1: Get all subject documents ---
 query = ndi.query('','isa','subject');
 subjectDocs = session.database_search(query);
@@ -51,31 +53,38 @@ local_ids = cellfun(@(d) d.document_properties.subject.local_identifier, subject
 subjectTable = table(doc_ids(:), local_ids(:), 'VariableNames', {'SubjectDocumentIdentifier', 'SubjectLocalIdentifier'});
 
 % --- Step 2: Perform a single, broad query for all openminds metadata ---
+
 % This is expensive, but we only do it once.
-q_all_openminds = ndi.query('','isa','openminds');
-allOpenMindsDocs = session.database_search(q_all_openminds);
+query = ndi.query('','isa','openminds');
+allOpenMindsDocs = session.database_search(query);
 
 % --- Step 3: Process the pre-fetched documents and join them ---
+
 % Get Strain/Species table
-[strainTable,~,strainSubjects] = ndi.fun.docTable.openminds(session,'Strain',...
-    'depends_on','subject_id', 'depends_on_docs', subjectDocs, 'allOpenMindsDocs', allOpenMindsDocs);
+[strainTable,~,strainSubjects] = ndi.fun.docTable.openminds(session,'Strain', ...
+    'depends_on','subject_id','depends_on_docs',subjectDocs, ...
+    'allOpenMindsDocs',allOpenMindsDocs);
 if isempty(strainTable)
-    [strainTable,~,strainSubjects] = ndi.fun.docTable.openminds(session,'Species',...
-    'depends_on','subject_id', 'depends_on_docs', subjectDocs, 'allOpenMindsDocs', allOpenMindsDocs);
+    [strainTable,~,strainSubjects] = ndi.fun.docTable.openminds(session,'Species', ...
+        'depends_on','subject_id','depends_on_docs',subjectDocs, ...
+        'allOpenMindsDocs',allOpenMindsDocs);
 end
 if ~isempty(strainTable)
     strainTable.SubjectDocumentIdentifier = strainSubjects;
     subjectTable = outerjoin(subjectTable,strainTable,'MergeKeys',true);
 end
+
 % Get Biological Sex table
 [bioSexTable,~,bioSexSubjects] = ndi.fun.docTable.openminds(session,'BiologicalSex',...
-    'depends_on','subject_id', 'depends_on_docs', subjectDocs, 'allOpenMindsDocs', allOpenMindsDocs);
+    'depends_on','subject_id','depends_on_docs',subjectDocs, ...
+    'allOpenMindsDocs',allOpenMindsDocs);
 if ~isempty(bioSexTable)
     bioSexTable.SubjectDocumentIdentifier = bioSexSubjects;
     subjectTable = outerjoin(subjectTable,bioSexTable,'MergeKeys',true);
 end
-% Get treatment document table
-[treatmentTable,~,treatmentSubjects] = ndi.fun.docTable.treatment(session,'depends_on_docs', subjectDocs);
+
+% Get Treatment table
+[treatmentTable,~,treatmentSubjects] = ndi.fun.docTable.treatment(session,'depends_on_docs',subjectDocs);
 if ~isempty(treatmentTable)
     treatmentTable.SubjectDocumentIdentifier = treatmentSubjects;
     subjectTable = outerjoin(subjectTable,treatmentTable,'MergeKeys',true);

@@ -36,10 +36,18 @@ arguments
 end
 % Check type class
 type = cellstr(type); 
-if ~isscalar(type), error('Type must be a single string.'); else type = type{1}; end
+if ~isscalar(type)
+    error('Type must be a single string.');
+else
+    type = type{1};
+end
 % Check depends_on class
 options.depends_on = cellstr(options.depends_on);
-if ~isscalar(options.depends_on), error('depends_on must be a single string.'); else options.depends_on = options.depends_on{1}; end
+if ~isscalar(options.depends_on)
+    error('depends_on must be a single string.');
+else
+    options.depends_on = options.depends_on{1};
+end
 
 % --- Get documents ---
 if ~isempty(options.depends_on_docs) && ~isempty(options.allOpenMindsDocs) && ~isempty(options.depends_on)
@@ -97,7 +105,11 @@ for i = 1:numel(typeDocs)
     openMINDsRow = table();
     docProp = typeDocs{i}.document_properties;
     totalDependencies(i) = numel(docProp.depends_on);
-    try, dependencyIDs{i} = typeDocs{i}.dependency_value(options.depends_on); catch, dependencyIDs{i} = ''; end
+    try
+        dependencyIDs{i} = typeDocs{i}.dependency_value(options.depends_on);
+    catch
+        dependencyIDs{i} = '';
+    end
     fieldNames = fields(docProp.openminds.fields);
     ontologyField = fieldNames{contains(fieldNames,'ontology','IgnoreCase',true)};
     openMINDsRow.([type,'Name']) = {docProp.openminds.fields.name};
@@ -112,12 +124,16 @@ for i = 1:numel(typeDocs)
         if iscell(openminds_field) && contains(openminds_field,'ndi')
             dependentDocs(j) = regexp(openminds_field, '[^/]*$', 'match', 'once');
             dependentTypes{j} = [upper(fieldName(1)),fieldName(2:end)];
-        else, removeCells(j) = true; end
+        else
+            removeCells(j) = true;
+        end
     end
     dependentDocs(removeCells) = []; dependentTypes(removeCells) = [];
     for j = 1:numel(dependentDocs)
         dependentDoc_idx = strcmp(allDocs_id,dependentDocs{j});
-        if ~any(dependentDoc_idx), continue; end; % Skip if not found
+        if ~any(dependentDoc_idx)
+            continue;
+        end % Skip if not found
         dependentDoc = allDocs{dependentDoc_idx};
         docProp_dep = dependentDoc.document_properties;
         fieldNames_dep = fields(docProp_dep.openminds.fields);
@@ -129,23 +145,28 @@ for i = 1:numel(typeDocs)
     end
     openmindsCell{i} = openMINDsRow;
 end
+
 % Check for encompassing openminds document
 [~,~,indDepend] = unique(dependencyIDs);
 removeRows = false(size(dependencyIDs));
 for i = 1:max(indDepend)
     ind = find(indDepend == i);
-    if isempty(ind), continue; end;
+    if isempty(ind)
+        continue;
+    end
     [~,indMax] = max(totalDependencies(ind));
     removeRows(setdiff(ind,ind(indMax))) = true;
 end
 openmindsCell(removeRows) = [];
 docIDs(removeRows) = [];
 dependencyIDs(removeRows) = [];
+
 % Handle case where all rows were filtered out
 if isempty(openmindsCell)
     if options.errorIfEmpty, error('No valid documents remained after filtering.'); end
     openmindsTable = table(); docIDs = {}; dependencyIDs = {}; return;
 end
+
 % Stack table
 openmindsTable = ndi.fun.table.vstack(openmindsCell);
 end
