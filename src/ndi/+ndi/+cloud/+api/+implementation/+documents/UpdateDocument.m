@@ -1,31 +1,30 @@
 classdef UpdateDocument < ndi.cloud.api.call
-%UPDATEDOCUMENT Implementation class for updating a document.
+%UPDATEDOCUMENT Implementation class for updating an existing document.
 
     properties
-        documentInfoStruct
+        jsonDocument    % The new document data as a JSON string
     end
 
     methods
         function this = UpdateDocument(args)
             %UPDATEDOCUMENT Creates a new UpdateDocument API call object.
             %
-            %   THIS = ndi.cloud.api.implementation.documents.UpdateDocument(...
-            %       'cloudDatasetID', ID, 'cloudDocumentID', DOC_ID, 'documentInfoStruct', S)
+            %   THIS = ndi.cloud.api.implementation.documents.UpdateDocument('cloudDatasetID', ID, 'cloudDocumentID', DOC_ID, 'jsonDocument', JSON)
             %
             %   Inputs:
-            %       'cloudDatasetID'      - The ID of the dataset.
-            %       'cloudDocumentID'     - The cloud API ID of the document to update.
-            %       'documentInfoStruct'  - A struct with the updated document data.
+            %       'cloudDatasetID'  - The ID of the dataset.
+            %       'cloudDocumentID' - The cloud API ID of the document to update.
+            %       'jsonDocument'    - A string containing the full JSON data for the updated document.
             %
             arguments
                 args.cloudDatasetID (1,1) string
                 args.cloudDocumentID (1,1) string
-                args.documentInfoStruct (1,1) struct
+                args.jsonDocument (1,1) string
             end
             
             this.cloudDatasetID = args.cloudDatasetID;
             this.cloudDocumentID = args.cloudDocumentID;
-            this.documentInfoStruct = args.documentInfoStruct;
+            this.jsonDocument = args.jsonDocument;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -34,50 +33,57 @@ classdef UpdateDocument < ndi.cloud.api.call
             % Initialize outputs
             b = false;
             answer = [];
-            
-            % Create a temporary file to hold the document JSON
-            tempFilePath = [tempname '.json'];
-            cleanupObj = onCleanup(@() delete(tempFilePath));
-            
+            apiResponse = [];
+
             try
-                jsonString = did.datastructures.jsonencodenan(this.documentInfoStruct);
-                fid = fopen(tempFilePath, 'w');
-                fprintf(fid, '%s', jsonString);
-                fclose(fid);
-            catch ME
-                error('Failed to create temporary JSON file for document update: %s', ME.message);
-            end
+                token = ndi.cloud.authenticate();
+                apiURL = ndi.cloud.api.url('update_document', ...
+                    'dataset_id', this.cloudDatasetID, ...
+                    'document_id', this.cloudDocumentID);
 
-            token = ndi.cloud.authenticate();
-            
-            apiURL = ndi.cloud.api.url('update_document', ...
-                'dataset_id', this.cloudDatasetID, ...
-                'document_id', this.cloudDocumentID);
+                % Save JSON to a temporary file to ensure correct transmission
+                [tempFilePath, cleanupObj] = saveDocumentToTemporaryFile(this.jsonDocument);
+                
+                method = matlab.net.http.RequestMethod.POST;
+                body = matlab.net.http.io.FileProvider(tempFilePath);
 
-            method = matlab.net.http.RequestMethod.POST;
-            
-            provider = matlab.net.http.io.FileProvider(tempFilePath);
+                headers = [
+                    matlab.net.http.HeaderField('accept','application/json'), ...
+                    matlab.net.http.field.ContentTypeField('application/json'), ...
+                    matlab.net.http.HeaderField('Authorization', ['Bearer ' token])
+                ];
 
-            acceptField = matlab.net.http.HeaderField('accept','application/json');
-            contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
-            authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' token]);
-            headers = [acceptField contentTypeField authorizationField];
+                request = matlab.net.http.RequestMessage(method, headers, body);
+                apiResponse = request.send(apiURL);
 
-            request = matlab.net.http.RequestMessage(method, headers, provider);
-            
-            apiResponse = send(request, apiURL);
-            
-            if (apiResponse.StatusCode == 200)
-                b = true;
                 answer = apiResponse.Body.Data;
-            else
-                if isprop(apiResponse.Body, 'Data')
-                    answer = apiResponse.Body.Data;
+
+                if apiResponse.StatusCode == matlab.net.http.StatusCode.OK
+                    b = true;
+                    % Robustness check: if response is a char, decode it
+                    if ischar(answer)
+                        answer = jsondecode(answer);
+                    end
                 else
-                    answer = apiResponse.Body;
+                    b = false;
                 end
+
+            catch ME
+                b = false;
+                answer = ME.message;
+                apiResponse = ME;
             end
         end
     end
 end
+
+function [file_path, file_cleanup_obj] = saveDocumentToTemporaryFile(document)
+    % Helper function to save a string to a temporary file and ensure cleanup.
+    file_path = [tempname, '.json'];
+    fid = fopen(file_path, 'w');
+    fprintf(fid, '%s', document);
+    fclose(fid);
+    file_cleanup_obj = onCleanup(@() delete(file_path));
+end
+
 

@@ -1,14 +1,20 @@
 classdef ListDatasetDocumentsAll < ndi.cloud.api.call
-%LISTDATASETDOCUMENTSALL Implementation class for listing ALL dataset documents.
+%LISTDATASETDOCUMENTSALL Implementation class for retrieving all documents in a dataset.
+    properties
+        retries (1,1) double = 10
+    end
 
     methods
         function this = ListDatasetDocumentsAll(args)
-            %LISTDATASETDOCUMENTSALL Creates a new ListDatasetDocumentsAll call.
+            %LISTDATASETDOCUMENTSALL Creates a new ListDatasetDocumentsAll API call object.
+            %
+            %   THIS = ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll('cloudDatasetID', ID, ...)
             %
             %   Inputs:
-            %       'cloudDatasetID' - The ID of the dataset.
-            %       'pageSize'       - (Optional) Results per page. Default 1000.
-            %       'retries'        - (Optional) Retries per page. Default 10.
+            %       'cloudDatasetID' - The ID of the dataset to query.
+            %   Optional Name-Value Inputs:
+            %       'pageSize'   - The number of results per page (default 1000).
+            %       'retries'    - The number of times to retry a failed page read (default 10).
             %
             arguments
                 args.cloudDatasetID (1,1) string
@@ -18,62 +24,58 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
             
             this.cloudDatasetID = args.cloudDatasetID;
             this.pageSize = args.pageSize;
-            this.endpointName = 'list_dataset_documents_all'; % Just for potential logging
+            this.retries = args.retries;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
-            %EXECUTE Performs the paginated API calls to list all documents.
-            
+            %EXECUTE Performs the API call to list all documents.
+            %
+            %   [B, ANSWER, APIRESPONSE, APIURL] = EXECUTE(THIS)
+            %
+            %   Outputs:
+            %       b            - True if all pages were read successfully, false otherwise.
+            %       answer       - A struct with a 'documents' field containing all summaries, or an error struct.
+            %       apiResponse  - An array of matlab.net.http.ResponseMessage objects from all page calls.
+            %       apiURL       - An array of URLs that were called.
+            %
             % Initialize outputs
-            b = true; % Assume success until a page fails
+            b = true;
             answer = struct('documents',[]);
-            apiResponse = []; % Will be the last successful response
-            apiURL = [];      % Will be the last successful URL
+            apiResponse = matlab.net.http.ResponseMessage.empty;
+            apiURL = matlab.net.URI.empty;
 
-            % 1. Get total number of documents to calculate pages
-            [count_b, N] = ndi.cloud.api.documents.countDocuments(this.cloudDatasetID);
-            if ~count_b
+            [b_count, numDocs, ~, ~] = ndi.cloud.api.documents.documentCount(this.cloudDatasetID);
+
+            if ~b_count
                 b = false;
-                answer = 'Failed to retrieve document count.';
+                answer = 'Could not determine document count.';
                 return;
             end
-            
-            if N == 0
-                return; % Success, but no documents to fetch
-            end
+        
+            numPages = ceil(double(numDocs) / this.pageSize);
 
-            numPages = ceil(double(N) / this.pageSize);
-
-            % 2. Loop through all pages
             for p = 1:numPages
                 page_succeeded = false;
                 for attempt = 1:this.retries
+                    [b_page, ans_page, resp_page, url_page] = ndi.cloud.api.documents.listDatasetDocuments(...
+                        this.cloudDatasetID, 'page', p, 'pageSize', this.pageSize);
                     
-                    % Call the single-page lister
-                    [page_b, page_summary, page_response, page_url] = ...
-                        ndi.cloud.api.documents.listDatasetDocuments(...
-                            this.cloudDatasetID, ...
-                            'page', p, ...
-                            'pageSize', this.pageSize);
-                    
-                    if page_b
-                        % On success, append results and update response/URL
+                    apiURL(end+1) = url_page;
+                    apiResponse(end+1) = resp_page;
+
+                    if b_page
                         if isempty(answer.documents)
-                            answer = page_summary;
+                            answer = ans_page;
                         else
-                            answer.documents = cat(1, answer.documents, page_summary.documents);
+                            answer.documents = cat(1, answer.documents, ans_page.documents);
                         end
-                        apiResponse = page_response;
-                        apiURL = page_url;
                         page_succeeded = true;
-                        break; % Exit retry loop
+                        break; % Exit retry loop on success
                     end
-                    % If it failed, the retry loop will continue
                 end
 
                 if ~page_succeeded
                     b = false; % Mark overall operation as failed
-                    answer = sprintf('Failed to retrieve page %d for dataset %s after %d retries.', p, this.cloudDatasetID, this.retries);
                     break; % Exit the main page loop
                 end
             end
