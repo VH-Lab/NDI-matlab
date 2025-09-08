@@ -113,5 +113,6 @@ elseif any(ismember(videoFormats,fmt))
         delete(linkedFile);
     end
 else
-    error('readImageStack:UnsupportedFormat', 'The format "%s" is not a recognized image or video format.', fmt);
+    error('readImageStack:UnsupportedFormat', ...
+        'The format "%s" is not a recognized image or video format.', fmt);
 end
