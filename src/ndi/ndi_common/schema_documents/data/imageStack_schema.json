@@ -1,20 +1,21 @@
 {
-	"classname": "generic_file",
-	"superclasses":  [ "base" ],
+	"classname": "imageStack",
+	"superclasses":  [ "base" , "imageStack_parameters" ],
 	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 0},
 		{ "name": "document_id", "mustbenotempty": 0}
 	],
 	"file": [ 
-		{"name": "generic_file.ext", "mustbenotempty": 1}
+		{"name": "imageStack", "mustbenotempty": 1}
 	],
-	"generic_file": [
+	"imageStack": [
 		{
-			"name": "filename",
+			"name": "label",
 			"type": "string",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The original file name (e.g 'labName/YYMMDD/subjectName/fileName.jpg')."
+			"documentation": "A text label associated with the image."
 		},
 		{
 			"name": "formatOntology",

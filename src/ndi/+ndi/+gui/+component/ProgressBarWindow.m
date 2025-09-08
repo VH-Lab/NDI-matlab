@@ -311,6 +311,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % Get bar number
             [barNum,status] = app.getBarNum(barID);
 
+            % if bar already gone
+            if isempty(barNum)
+                warning("ProgressBarWindow:NoBarsExist", "Could not find barID " + barID)
+                return;
+            end
+
             % If bar does not yet exist, throw warning
             if ~isempty(status.identifier)
                 warning(status.identifier,status.message)
@@ -604,12 +610,15 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % Initialize
             barNum = [];
             status = struct('identifier', '', 'message', '');
-            
-            % Handle empty progress bars
-            if isempty(app.ProgressBars)
-                status.identifier = 'ProgressBarWindow:NoBarsExist';
-                status.message = 'No progress bars have been added yet.';
-                return;
+            try           
+                % Handle empty progress bars
+                if isempty(app.ProgressBars)
+                    status.identifier = 'ProgressBarWindow:NoBarsExist';
+                    status.message = 'No progress bars have been added yet.';
+                    return;
+                end
+            catch
+                return
             end
 
             if isnumeric(barID) % barID is a numeric index

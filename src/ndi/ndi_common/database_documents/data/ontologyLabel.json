@@ -10,7 +10,7 @@
 		]
 	},
 	"depends_on": [
-		{ "name": "labeledDocument_id", "value": "" }
+		{ "name": "document_id", "value": "" }
 	],
 	"ontologyLabel":  {
 		"ontologyNode":		""

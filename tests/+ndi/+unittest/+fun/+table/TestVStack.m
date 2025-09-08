@@ -52,10 +52,8 @@ classdef TestVStack < matlab.unittest.TestCase
                 'VariableNames', {'Int', 'Log'}); 
             
             actualT = ndi.fun.table.vstack({T1, T2});
-
             testCase.verifyEqual(height(actualT), 2);
             testCase.verifyEqual(actualT.Properties.VariableNames{1}, 'Int'); 
-
             testCase.verifyEqual(actualT.Int(1), int8(1)); 
             testCase.verifyEqual(actualT.Log(1), true);   
             testCase.verifyEqual(actualT.Str(1), "S1");
@@ -65,11 +63,11 @@ classdef TestVStack < matlab.unittest.TestCase
             testCase.verifyEqual(actualT.Cat(1), categorical("X"));
             
             testCase.verifyEqual(actualT.Int(2), int8(2)); 
-            testCase.verifyEqual(actualT.Log(2), false);  
+            testCase.verifyEqual(actualT.Log(2), false);
             testCase.verifyTrue(ismissing(actualT.Str(2))); 
             testCase.verifyEqual(actualT.CellStr(2),{' '});
-            testCase.verifyTrue(isnat(actualT.Date(2)));      
-            testCase.verifyTrue(isnan(actualT.Dur(2)));     
+            testCase.verifyTrue(isnat(actualT.Date(2)));
+            testCase.verifyTrue(isnan(actualT.Dur(2)));
             testCase.verifyTrue(isundefined(actualT.Cat(2)));
             
             testCase.verifyClass(actualT.Int, 'int8');    
