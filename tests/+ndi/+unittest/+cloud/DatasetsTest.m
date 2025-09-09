@@ -46,8 +46,6 @@ classdef DatasetsTest < matlab.unittest.TestCase
                 testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
             end
             testCase.DatasetID = cloudDatasetID;
-            % The teardown is queued to run after the test method completes.
-            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
         end
     end
 
@@ -74,25 +72,9 @@ classdef DatasetsTest < matlab.unittest.TestCase
             testCase.Narrative = "Begin DatasetsTest: testCreateDeleteDataset";
             narrative = testCase.Narrative;
             
-            % --- 1. Create a new dataset ---
-            
-            % Generate a unique name for the dataset to prevent collisions.
-            uniqueName = [testCase.DatasetNamePrefix char(java.util.UUID.randomUUID().toString())];
-            datasetInfoStruct = struct('name', uniqueName);
-            
-            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.createDataset with name: " + uniqueName;
-            [b_create, answer_create, apiResponse_create, apiURL_create] = ndi.cloud.api.datasets.createDataset(datasetInfoStruct);
-            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_create);
-            
-            narrative(end+1) = "Testing: Verifying the API call was successful (APICallSuccessFlag should be true).";
-            create_message = ndi.unittest.cloud.APIMessage(narrative, b_create, answer_create, apiResponse_create, apiURL_create);
-            testCase.verifyTrue(b_create, create_message);
-            
-            cloudDatasetID = answer_create;
-            % Add a teardown action to ensure this dataset is deleted even if subsequent assertions fail.
-            testCase.addTeardown(@() ndi.cloud.api.datasets.deleteDataset(cloudDatasetID));
-            
-            narrative(end+1) = "Dataset created successfully with ID: " + cloudDatasetID;
+            % --- 1. Use the dataset created in the TestMethodSetup ---
+            cloudDatasetID = testCase.DatasetID;
+            narrative(end+1) = "SETUP: Using temporary dataset with ID: " + cloudDatasetID;
             
             % --- 2. Delete the created dataset ---
             
@@ -109,6 +91,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
         end
 
         function testGetBranches(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
             % This test verifies that we can retrieve the branches for a newly created dataset.
             testCase.Narrative = "Begin DatasetsTest: testGetBranches";
             narrative = testCase.Narrative;
@@ -137,6 +120,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
         end
 
         function testListDatasets(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
             % This test verifies that we can list all datasets and find a newly created one.
             testCase.Narrative = "Begin DatasetsTest: testListDatasets";
             narrative = testCase.Narrative;
@@ -174,6 +158,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
         end
 
         function testGetPublished(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
             % This test verifies that we can successfully call the getPublished endpoint.
             testCase.Narrative = "Begin DatasetsTest: testGetPublished";
             narrative = testCase.Narrative;
@@ -197,6 +182,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
         end
 
         function testGetUnpublished(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
             % This test verifies that we can successfully call the getUnpublished endpoint.
             testCase.Narrative = "Begin DatasetsTest: testGetUnpublished";
             narrative = testCase.Narrative;
@@ -217,11 +203,10 @@ classdef DatasetsTest < matlab.unittest.TestCase
             
             narrative(end+1) = "getUnpublished test completed successfully.";
             testCase.Narrative = narrative;
-
-            pause(10); % let the API catch up
         end
 
         function testUpdateDataset(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
             % This test verifies that a dataset's metadata can be updated.
             testCase.Narrative = "Begin DatasetsTest: testUpdateDataset";
             narrative = testCase.Narrative;
@@ -260,6 +245,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
         end
 
         function testPublicationLifecycle(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
             % This test verifies the full dataset publication workflow: submit -> publish -> unpublish.
             testCase.Narrative = "Begin DatasetsTest: testPublicationLifecycle";
             narrative = testCase.Narrative;
@@ -277,6 +263,15 @@ classdef DatasetsTest < matlab.unittest.TestCase
             submit_message = ndi.unittest.cloud.APIMessage(narrative, b_submit, answer_submit, apiResponse_submit, apiURL_submit);
             testCase.verifyTrue(b_submit, submit_message);
             narrative(end+1) = "Dataset submitted successfully.";
+
+            % --- 2.5 Verify submission status ---
+            narrative(end+1) = "Preparing to get dataset info to verify submission status.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify submission status.");
+            narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
+            narrative(end+1) = "Dataset 'isSubmitted' flag is correctly true.";
             
             % --- 3. Publish the dataset ---
             narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.publishDataset.";
@@ -287,6 +282,15 @@ classdef DatasetsTest < matlab.unittest.TestCase
             publish_message = ndi.unittest.cloud.APIMessage(narrative, b_publish, answer_publish, apiResponse_publish, apiURL_publish);
             testCase.verifyTrue(b_publish, publish_message);
             narrative(end+1) = "Dataset published successfully.";
+
+            % --- 3.5 Verify publication status ---
+            narrative(end+1) = "Preparing to get dataset info to verify publication status.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify publication status.");
+            narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyTrue(answer_get.isPublished, msg_get_content);
+            narrative(end+1) = "Dataset 'isPublished' flag is correctly true.";
             
             % --- 4. Unpublish the dataset ---
             narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.unpublishDataset.";
@@ -297,6 +301,15 @@ classdef DatasetsTest < matlab.unittest.TestCase
             unpublish_message = ndi.unittest.cloud.APIMessage(narrative, b_unpublish, answer_unpublish, apiResponse_unpublish, apiURL_unpublish);
             testCase.verifyTrue(b_unpublish, unpublish_message);
             narrative(end+1) = "Dataset unpublished successfully.";
+
+            % --- 4.5 Verify un-publication status ---
+            narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyFalse(answer_get.isPublished, msg_get_content);
+            narrative(end+1) = "Dataset 'isPublished' flag is correctly false.";
             
             narrative(end+1) = "Publication lifecycle test completed successfully.";
             testCase.Narrative = narrative;

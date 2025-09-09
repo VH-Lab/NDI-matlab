@@ -9,12 +9,10 @@ classdef DocumentsTest < matlab.unittest.TestCase
         % A unique prefix for test datasets to easily identify them.
         DatasetNamePrefix = 'NDI_UNITTEST_DATASET_';
     end
-
     properties
         DatasetID (1,1) string = missing % ID of dataset used for all tests
         Narrative (1,:) string % Stores the narrative for each test
     end
-
     methods (TestClassSetup)
         function checkCredentials(testCase)
             % This fatal assertion runs once before any tests in this class.
@@ -29,7 +27,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
         end
     end
-
     methods (TestMethodSetup)
         % This now runs BEFORE EACH test method, creating a fresh dataset every time.
         function setupNewDataset(testCase)
@@ -50,7 +47,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
         end
     end
-
     methods (Access = private)
         % This is now a private helper method, not a teardown method.
         function deleteDatasetAfterTest(testCase)
@@ -66,7 +62,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
             end
         end
     end
-
     methods (Test)
         function testVerifyNoDocuments(testCase)
             testCase.Narrative = "Begin testVerifyNoDocuments";
@@ -180,7 +175,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Updated document content is correct.";
             testCase.Narrative = narrative; % Save back to property for teardown
         end
-
         function testMultipleSerialDocumentOperations(testCase)
             testCase.Narrative = "Begin testMultipleSerialDocumentOperations";
             narrative = testCase.Narrative;
@@ -227,7 +221,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Testing: Verifying the total number of documents returned by 'list all' is correct.";
             testCase.verifyNumElements(ans_list_all.documents, numDocs, msg_list_all);
             narrative(end+1) = "'List all' returned the correct total number of documents.";
-
             % Step 8.5: Verify content of each document individually by linking summary to full doc
             narrative(end+1) = "Preparing to verify the content of each uploaded document individually.";
             for i=1:numel(ans_list_all.documents)
@@ -303,6 +296,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             % Step 2: Perform bulk upload
             narrative(end+1) = "Preparing to perform bulk document upload.";
             b_upload = false;
+            report_upload = struct(); % Initialize report_upload
             try
                 [b_upload, report_upload] = ndi.cloud.upload.upload_document_collection(testCase.DatasetID, docs_to_upload);
                 narrative(end+1) = "Bulk upload API call completed.";
@@ -378,13 +372,10 @@ classdef DocumentsTest < matlab.unittest.TestCase
             for i=1:numel(downloaded_docs_bulk)
                 retrieved_doc = downloaded_docs_bulk{i};
                 retrieved_name = retrieved_doc.document_properties.base.name;
-
                 narrative(end+1) = "  Verifying content of downloaded document with name: " + retrieved_name;
-
                 % Check if we expected a document with this name
                 msg_unexpected_name = "Downloaded a document with an unexpected name: " + retrieved_name;
                 testCase.verifyTrue(isKey(original_docs_map, retrieved_name), msg_unexpected_name);
-
                 if isKey(original_docs_map, retrieved_name)
                     original_doc = original_docs_map(retrieved_name);
                     
@@ -395,6 +386,214 @@ classdef DocumentsTest < matlab.unittest.TestCase
             end
             
             narrative(end+1) = "Bulk-downloaded documents have correct content.";
+            
+            testCase.Narrative = narrative;
+        end
+        function testAddGetDeleteDocumentNaNInfLifecycle(testCase)
+            testCase.Narrative = "Begin testAddGetDeleteDocumentNaNInfLifecycle";
+            narrative = testCase.Narrative;
+            
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+            
+            % Step 1: Create a MATLAB struct with NaN and Inf and add it as a document
+            document_properties.base.name = 'My Test Document';
+            document_properties.values = [ 1; 2; 3];
+            document_properties.valuesNaN = [ NaN; NaN; NaN];
+            document_properties.valuesInf = [Inf; -Inf; Inf];
+            json_doc = jsonencodenan(document_properties);
+            
+            narrative(end+1) = "Preparing to add a new document with NaN and Inf values.";
+            [b_add, ans_add, resp_add, url_add] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_add);
+            narrative(end+1) = "Testing: Verifying the add document API call was successful (APICallSuccessFlag should be true).";
+            msg_add = ndi.unittest.cloud.APIMessage(narrative, b_add, ans_add, resp_add, url_add);
+            testCase.verifyTrue(b_add, msg_add);
+            narrative(end+1) = "Document added successfully. Cloud Document ID: " + ans_add.id;
+            cloudDocumentID = ans_add.id;
+            % Step 2: Verify count is 1
+            narrative(end+1) = "Preparing to confirm document count is 1 after adding a document.";
+            [b_count, ans_count, resp_count, url_count] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_count);
+            narrative(end+1) = "Testing: Verifying the document count is 1.";
+            msg_count = ndi.unittest.cloud.APIMessage(narrative, b_count, ans_count, resp_count, url_count);
+            testCase.verifyEqual(ans_count, 1, msg_count);
+            narrative(end+1) = "Document count is correctly 1.";
+            
+            % Step 3: Get the document back and verify content, especially NaN and Inf
+            narrative(end+1) = "Preparing to get the document back from the cloud.";
+            [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloudDocumentID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_get);
+            narrative(end+1) = "Testing: Verifying the get document API call was successful (APICallSuccessFlag should be true).";
+            msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyTrue(b_get, msg_get);
+            
+            narrative(end+1) = "Testing: Verifying the 'base.name' field of the retrieved document.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyEqual(ans_get.base.name, 'My Test Document', msg_get_content);
+            narrative(end+1) = "  'base.name' is correct.";
+            narrative(end+1) = "Testing: Verifying the 'values' field of the retrieved document.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyEqual(ans_get.values, [1; 2; 3], msg_get_content);
+            narrative(end+1) = "  'values' is correct.";
+            narrative(end+1) = "Testing: Verifying the 'valuesNaN' field of the retrieved document.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyEqual(ans_get.valuesNaN, [NaN; NaN; NaN], msg_get_content);
+            narrative(end+1) = "  'valuesNaN' is correct.";
+            narrative(end+1) = "Testing: Verifying the 'valuesInf' field of the retrieved document.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyEqual(ans_get.valuesInf, [Inf; -Inf; Inf], msg_get_content);
+            narrative(end+1) = "  'valuesInf' is correct.";
+            narrative(end+1) = "Retrieved document content with NaN/Inf is correct.";
+            
+            % Step 4: Delete the document
+            narrative(end+1) = "Preparing to delete the document.";
+            [b_del, ans_del, resp_del, url_del] = ndi.cloud.api.documents.deleteDocument(testCase.DatasetID, cloudDocumentID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_del);
+            narrative(end+1) = "Testing: Verifying the delete document API call was successful (APICallSuccessFlag should be true).";
+            msg_del = ndi.unittest.cloud.APIMessage(narrative, b_del, ans_del, resp_del, url_del);
+            testCase.verifyTrue(b_del, msg_del);
+            narrative(end+1) = "Document deleted successfully.";
+            
+            % Step 5: Verify count is 0
+            narrative(end+1) = "Preparing to confirm document count is 0 after deleting a document.";
+            [b_count_final, ans_count_final, resp_count_final, url_count_final] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_count_final);
+            narrative(end+1) = "Testing: Verifying the document count is 0.";
+            msg_count_final = ndi.unittest.cloud.APIMessage(narrative, b_count_final, ans_count_final, resp_count_final, url_count_final);
+            testCase.verifyEqual(ans_count_final, 0, msg_count_final);
+            narrative(end+1) = "Document count is correctly 0.";
+            testCase.Narrative = narrative; % Save back to property for teardown
+        end
+        function testBulkUploadAndDownloadNaNInf(testCase)
+            testCase.Narrative = "Begin testBulkUploadAndDownloadNaNInf";
+            narrative = testCase.Narrative;
+            
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+            numDocs = 5;
+            
+            % Step 1: Create local document objects with NaN and Inf
+            narrative(end+1) = "Preparing to create " + numDocs + " local ndi.document objects with NaN/Inf for bulk upload.";
+            docs_to_upload = cell(1, numDocs);
+            for i = 1:numDocs
+                doc_properties.base.name = char("bulk_nan_doc_" + i);
+                doc_properties.base.id = did.ido.unique_id;
+                doc_properties.valuesNaN = [NaN; i];
+                doc_properties.valuesInf = [-Inf; Inf];
+                docs_to_upload{i} = ndi.document(doc_properties);
+            end
+            narrative(end+1) = "Local documents with NaN/Inf created.";
+            
+            % Step 2: Perform bulk upload
+            narrative(end+1) = "Preparing to perform bulk document upload with NaN/Inf data.";
+            b_upload = false;
+            report_upload = struct(); % Initialize report_upload
+            try
+                [b_upload, report_upload] = ndi.cloud.upload.upload_document_collection(testCase.DatasetID, docs_to_upload);
+                narrative(end+1) = "Bulk upload API call completed.";
+            catch ME
+                narrative(end+1) = "Bulk upload API call failed with an error: " + ME.message;
+            end
+            
+            msg_upload = "Bulk upload verification failed. Report: " + jsonencode(report_upload);
+            testCase.verifyTrue(b_upload, msg_upload);
+            narrative(end+1) = "Bulk upload successful.";
+            
+            pause(5); % pause to allow server to process
+            
+            % Step 3: Verify count is correct
+            narrative(end+1) = "Preparing to verify document count after bulk upload.";
+            [b_count, ans_count, resp_count, url_count] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
+            msg_count = ndi.unittest.cloud.APIMessage(narrative, b_count, ans_count, resp_count, url_count);
+            testCase.fatalAssertTrue(b_count, "Failed to get document count after bulk upload. " + msg_count);
+            testCase.verifyEqual(ans_count, numDocs, msg_count);
+            narrative(end+1) = "Document count is correctly " + numDocs + ".";
+            
+            % Step 4: List all document summaries
+            narrative(end+1) = "Preparing to list all document summaries to get their cloud IDs.";
+            [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
+            testCase.fatalAssertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
+            cloudDocIDs = {ans_list_all.documents.id};
+            narrative(end+1) = "Successfully listed " + numel(cloudDocIDs) + " document summaries.";
+            
+            % Step 5: Verify content of each document individually
+            narrative(end+1) = "Preparing to verify the content of each uploaded NaN/Inf document individually.";
+            for i=1:numel(ans_list_all.documents)
+                summary_doc = ans_list_all.documents(i);
+                cloud_id_from_summary = summary_doc.id;
+                name_from_summary = summary_doc.name;
+                
+                narrative(end+1) = "  Fetching full document for summary: ID=" + cloud_id_from_summary + ", Name=" + name_from_summary;
+                [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloud_id_from_summary);
+                
+                msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+                testCase.fatalAssertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
+                
+                narrative(end+1) = "  Testing: Verifying content of full NaN/Inf document matches expected values.";
+                msg_content_match = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+                
+                % Find original doc to compare against
+                original_doc = docs_to_upload{strcmp(string(name_from_summary), cellfun(@(x) x.document_properties.base.name, docs_to_upload, 'UniformOutput',false))};
+                
+                narrative(end+1) = "    Testing: Verifying the 'valuesNaN' field.";
+                testCase.verifyEqual(ans_get.valuesNaN, original_doc.document_properties.valuesNaN, msg_content_match);
+                narrative(end+1) = "      'valuesNaN' is correct.";
+                narrative(end+1) = "    Testing: Verifying the 'valuesInf' field.";
+                testCase.verifyEqual(ans_get.valuesInf, original_doc.document_properties.valuesInf, msg_content_match);
+                narrative(end+1) = "      'valuesInf' is correct.";
+            end
+            narrative(end+1) = "Successfully verified content of all individual NaN/Inf documents.";
+            
+            % Step 6: Perform bulk download
+            narrative(end+1) = "Preparing to perform bulk document download of NaN/Inf documents.";
+            downloaded_docs_bulk = {};
+            b_download = false;
+            try
+                downloaded_docs_bulk = ndi.cloud.download.download_document_collection(testCase.DatasetID, string(cloudDocIDs));
+                b_download = true;
+                narrative(end+1) = "Bulk download API call completed.";
+            catch ME
+                narrative(end+1) = "Bulk download API call failed with an error: " + ME.message;
+            end
+            testCase.verifyTrue(b_download, "Bulk download function threw an error.");
+            
+            % Step 7: Verify content of bulk-downloaded documents one-by-one
+            narrative(end+1) = "Preparing to verify content of bulk-downloaded NaN/Inf documents one-by-one.";
+            
+            original_docs_map = containers.Map();
+            for i=1:numel(docs_to_upload)
+                original_docs_map(docs_to_upload{i}.document_properties.base.name) = docs_to_upload{i};
+            end
+            
+            testCase.verifyNumElements(downloaded_docs_bulk, numDocs, "Bulk download returned an incorrect number of documents.");
+            
+            for i=1:numel(downloaded_docs_bulk)
+                retrieved_doc = downloaded_docs_bulk{i};
+                retrieved_name = retrieved_doc.document_properties.base.name;
+                narrative(end+1) = "  Verifying content of downloaded document with name: " + retrieved_name;
+                
+                msg_unexpected_name = "Downloaded a document with an unexpected name: " + retrieved_name;
+                testCase.verifyTrue(isKey(original_docs_map, retrieved_name), msg_unexpected_name);
+                if isKey(original_docs_map, retrieved_name)
+                    original_doc = original_docs_map(retrieved_name);
+                    
+                    msg_content_mismatch = "Content of bulk-downloaded NaN/Inf document '" + retrieved_name + "' does not match the original.";
+                    narrative(end+1) = "    Testing: Verifying 'base.id' matches.";
+                    testCase.verifyEqual(retrieved_doc.document_properties.base.id, original_doc.document_properties.base.id, msg_content_mismatch);
+                    narrative(end+1) = "      'base.id' is correct.";
+                    narrative(end+1) = "    Testing: Verifying 'base.name' matches.";
+                    testCase.verifyEqual(retrieved_doc.document_properties.base.name, original_doc.document_properties.base.name, msg_content_mismatch);
+                    narrative(end+1) = "      'base.name' is correct.";
+                    narrative(end+1) = "    Testing: Verifying 'valuesNaN' matches.";
+                    testCase.verifyEqual(retrieved_doc.document_properties.valuesNaN, original_doc.document_properties.valuesNaN, msg_content_mismatch);
+                    narrative(end+1) = "      'valuesNaN' is correct.";
+                    narrative(end+1) = "    Testing: Verifying 'valuesInf' matches.";
+                    testCase.verifyEqual(retrieved_doc.document_properties.valuesInf, original_doc.document_properties.valuesInf, msg_content_mismatch);
+                    narrative(end+1) = "      'valuesInf' is correct.";
+                end
+            end
+            
+            narrative(end+1) = "Bulk-downloaded NaN/Inf documents have correct content.";
             
             testCase.Narrative = narrative;
         end
