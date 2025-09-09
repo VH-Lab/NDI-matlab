@@ -1,70 +1,78 @@
 classdef PutFiles
-%PUTFILES Implementation class for uploading a file to a pre-signed URL.
-%   This is a utility class and does not inherit from ndi.cloud.api.call
-%   because the URL is provided directly, not constructed via the endpoint map.
+%PUTFILES A utility class for uploading a file to a pre-signed URL.
+%   This class handles the low-level HTTP PUT request required to upload
+%   a file's contents to a URL. It supports using both MATLAB's native
+%   HTTP client and the system's `curl` command-line tool.
 
     properties
-        preSignedURL
-        filePath
+        preSignedURL (1,1) string
+        filePath (1,1) string
+        useCurl (1,1) logical
     end
 
     methods
         function this = PutFiles(args)
-            %PUTFILES Creates a new PutFiles object.
-            %
-            %   Inputs:
-            %       'preSignedURL' - The pre-signed URL to upload the file to.
-            %       'filePath'     - The local path to the file to upload.
-            %
+            %PUTFILES Construct a new PutFiles object.
             arguments
                 args.preSignedURL (1,1) string
                 args.filePath (1,1) string {mustBeFile}
+                args.useCurl (1,1) logical = false
             end
-            
             this.preSignedURL = args.preSignedURL;
             this.filePath = args.filePath;
+            this.useCurl = args.useCurl;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
-            %EXECUTE Performs the PUT request to upload the file.
+            %EXECUTE Performs the file upload using the selected method.
             
-            % Initialize outputs
+            if this.useCurl
+                % --- Method 1: Use curl system command ---
+                [b, answer, apiResponse, apiURL] = this.executeWithCurl();
+            else
+                % --- Method 2: Use native MATLAB HTTP client ---
+                [b, answer, apiResponse, apiURL] = this.executeWithMATLAB();
+            end
+        end
+
+        function [b, answer, apiResponse, apiURL] = executeWithMATLAB(this)
+            % Implementation using MATLAB's native http library
             b = false;
             answer = [];
-            apiURL = this.preSignedURL; % The URL is the one provided
-
+            apiResponse = [];
+            apiURL = matlab.net.URI(this.preSignedURL);
+            method = matlab.net.http.RequestMethod.PUT;
+            provider = matlab.net.http.io.FileProvider(this.filePath);
+            contentTypeField = matlab.net.http.HeaderField('Content-Type', 'application/octet-stream');
+            request = matlab.net.http.RequestMessage(method, contentTypeField, provider);
+            
             try
-                method = matlab.net.http.RequestMethod.PUT;
-                provider = matlab.net.http.io.FileProvider(this.filePath);
-
-                % The server expects minimal headers for a pre-signed PUT
-                headers = [matlab.net.http.HeaderField('Content-Type', ''), ...
-                           matlab.net.http.HeaderField('Expect',''), ...
-                           matlab.net.http.HeaderField('Content-Disposition', ''), ...
-                           matlab.net.http.HeaderField('Accept-Encoding', ''), ...
-                           matlab.net.http.HeaderField('Accept','*/*')];
-                
-                request = matlab.net.http.RequestMessage(method, headers, provider);
-                
-                apiResponse = request.send(this.preSignedURL);
-                
+                apiResponse = send(request, apiURL);
                 if (apiResponse.StatusCode == 200)
                     b = true;
-                    answer = 'File uploaded successfully.';
-                else
-                    if isprop(apiResponse.Body, 'Data')
-                        answer = apiResponse.Body.Data;
-                    else
-                        answer = apiResponse.Body;
-                    end
                 end
+                answer = apiResponse.Body.Data;
             catch ME
-                b = false;
+                apiResponse = ME;
                 answer = ME.message;
-                apiResponse = [];
             end
+        end
+
+        function [b, answer, apiResponse, apiURL] = executeWithCurl(this)
+            % Implementation using a system call to curl
+            b = false;
+            apiURL = this.preSignedURL; % Return the URL as a string
+            
+            command = sprintf('curl -X PUT --upload-file "%s" "%s"', this.filePath, this.preSignedURL);
+            
+            [status, result] = system(command);
+            
+            b = (status == 0);
+            answer = result;
+            
+            % Create a simple struct for the response to be used by APIMessage
+            apiResponse = struct('StatusCode', 'N/A (cURL)', 'StatusLine', "Exit Status: " + status);
         end
     end
 end
-
 

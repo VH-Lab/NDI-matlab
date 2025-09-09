@@ -8,54 +8,43 @@ classdef AuthTest < matlab.unittest.TestCase
     
     methods (Test)
         function testLoginLogout(testCase)
-            % Initialize a narrative to track test steps for clear reporting
-            narrative = strings(0,1);
-            narrative(end+1) = "Begin AuthTest: testLoginLogout";
-
-            import matlab.unittest.fixtures.SuppressedWarningsFixture
-            testCase.applyFixture(SuppressedWarningsFixture('MATLAB:http:BodyExpectedFor'))
-        
-            % --- 1. Check for local configuration ---
-            narrative(end+1) = "Checking for local credentials in environment variables.";
+            narrative = "Begin AuthTest: testLoginLogout";
+            
+            % Step 1: Check local configuration
+            narrative(end+1) = "Checking for local NDI credentials in environment variables.";
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-
-            % Use a fatal assertion to stop the test immediately if credentials are not set.
-            % The error message clearly indicates a local setup issue.
-            testCase.fatalAssertNotEmpty(username, ...
-                'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set. This is not an API problem.');
-            testCase.fatalAssertNotEmpty(password, ...
-                'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
+            
+            local_config_message = "Local NDI configuration error: NDI_CLOUD_USERNAME and NDI_CLOUD_PASSWORD environment variables must be set.";
+            testCase.verifyTrue(~(isempty(username) || isempty(password)), local_config_message);
             
             narrative(end+1) = "Local credentials found.";
-
-            % --- 2. Test Login ---
+            
+            % Step 2: Test Login
             narrative(end+1) = "Preparing to call ndi.cloud.api.auth.login.";
             [b_login, answer_login, apiResponse_login, apiURL_login] = ndi.cloud.api.auth.login(username, password);
             narrative(end+1) = "Attempted to call API with URL " + string(apiURL_login);
-            narrative(end+1) = "Testing: Verifying the API call was successful (APICallSuccessFlag should be true).";
             
-            % Generate a detailed message for the verification step
-            login_message = ndi.unittest.cloud.APIMessage(b_login, answer_login, apiResponse_login, apiURL_login, narrative);
+            narrative(end+1) = "Testing: Verifying the login API call was successful (APICallSuccessFlag should be true).";
+            login_message = ndi.unittest.cloud.APIMessage(narrative, b_login, answer_login, apiResponse_login, apiURL_login);
             testCase.verifyTrue(b_login, login_message);
             
-            narrative(end+1) = "Login successful. Token and Organization ID received.";
-
-            % --- 3. Test Logout ---
+            narrative(end+1) = "Login call successful. Verifying token and organization ID.";
+            testCase.verifyClass(answer_login.token, 'char', login_message);
+            testCase.verifyClass(answer_login.user.organizations.id, 'char', login_message);
+            narrative(end+1) = "Token and organization ID are of the correct class.";
+            
+            % Step 3: Test Logout
             narrative(end+1) = "Preparing to call ndi.cloud.api.auth.logout.";
             [b_logout, answer_logout, apiResponse_logout, apiURL_logout] = ndi.cloud.api.auth.logout();
             narrative(end+1) = "Attempted to call API with URL " + string(apiURL_logout);
-            narrative(end+1) = "Testing: Verifying the API call was successful (APICallSuccessFlag should be true).";
-
-            % Generate a detailed message for the logout verification
-            logout_message = ndi.unittest.cloud.APIMessage(b_logout, answer_logout, apiResponse_logout, apiURL_logout, narrative);
+            
+            narrative(end+1) = "Testing: Verifying the logout API call was successful (APICallSuccessFlag should be true).";
+            logout_message = ndi.unittest.cloud.APIMessage(narrative, b_logout, answer_logout, apiResponse_logout, apiURL_logout);
             testCase.verifyTrue(b_logout, logout_message);
-
-            narrative(end+1) = "Logout successful.";
+            narrative(end+1) = "Logout call successful.";
         end        
     end
 end
-
-
 
 
