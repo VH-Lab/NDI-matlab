@@ -46,10 +46,10 @@ jobs:
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
             setenv("GITHUB_TOKEN", "${{ github.token }}")
             setenv("CLOUD_API_ENVIRONMENT", "${{ matrix.environment }}")
-            ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
+            ndi.cloud.authenticate("InteractionEnabled", "off")
             testCloudApi()
 
       - name: Restore MATLAB Path
