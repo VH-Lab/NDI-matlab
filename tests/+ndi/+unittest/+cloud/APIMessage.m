@@ -22,8 +22,13 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
     % Create a clean, serializable struct for the response details
     responseDetails = struct();
     if isa(apiResponse, 'matlab.net.http.ResponseMessage')
-        responseDetails.StatusCode = char(apiResponse.StatusCode);
-        responseDetails.StatusLine = apiResponse.StatusLine;
+        if isempty(apiResponse)
+            responseDetails.StatusCode = "NONE - empty";
+            responseDetails.StatusLine = "NONE - empty";
+        else
+            responseDetails.StatusCode = char(apiResponse.StatusCode);
+            responseDetails.StatusLine = apiResponse.StatusLine;
+        end
     else
         responseDetails.ResponseObject = 'Not a standard HTTP ResponseMessage';
     end
