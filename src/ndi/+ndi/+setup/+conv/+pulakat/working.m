@@ -25,8 +25,6 @@
 subjectFiles = {'/Users/jhaley/Documents/MATLAB/data/pulakat/animal_mapping_JH.csv'};
 subjectTable = ndi.setup.conv.pulakat.importSubjectFiles(subjectFiles);
 
-% ADD SUBJECTS ALREADY IN DATABASE (indicate which are new)
-
 % Get files (probably want to have users specify paths)
 dataParentDir = fullfile(userpath,'data');
 options.Overwrite = true;
