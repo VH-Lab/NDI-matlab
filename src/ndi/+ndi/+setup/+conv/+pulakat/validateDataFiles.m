@@ -1,23 +1,80 @@
-function [dataTable] = validateDataFiles(subjectTable,dataFiles)
+function [dataTable] = validateDataFiles(dataFiles)
+%VALIDATEDATAFILES Processes data files to extract subject identifiers and metadata.
+%
+%   dataTable = VALIDATEDATAFILES() opens a user interface dialog to allow
+%   the user to select multiple data files. It then processes these files
+%   to extract subject, cage, and animal identifiers based on file type
+%   and naming conventions.
+%
+%   dataTable = VALIDATEDATAFILES(dataFiles) processes the specified list
+%   of files provided in the 'dataFiles' argument.
+%
+%   Description:
+%   This function serves as a centralized validator and information
+%   extractor for a variety of experimental data files. It categorizes
+%   input files into known types (schedule, DIA, SVS, echo) and unknown
+%   types, then applies specific parsing logic to each category to extract
+%   relevant identifiers. All extracted information is compiled into a
+%   single, tidy output table.
+%
+%   Input Arguments:
+%   dataFiles   - (Optional) A string array or cell array of character
+%                 vectors, where each element is a full path to a data file.
+%                 If this argument is empty or not provided, a file selection
+%                 dialog will be displayed.
+%
+%   Output Arguments:
+%   dataTable   - A MATLAB table containing the collated information from
+%                 all processed files. The table typically includes columns
+%                 such as 'Cage', 'Animal', 'Label', 'fileName', and
+%                 'fileType', though not all columns will be populated for
+%                 every file type.
+%
+%   File Processing Logic:
+%   -   **Schedule Files**: Identifies Excel files with 'schedule' in the
+%       name. It reads the first sheet and extracts cage names from
+%       predefined columns ('x18Rats', 'x32Rats', 'x25Rats').
+%
+%   -   **DIA Files**: Identifies Excel files with 'DIA' in the name. It
+%       reads the sheet named 'All data' and parses subject labels from
+%       the column headers (variable names).
+%
+%   -   **SVS Files**: Identifies files with the '.svs' extension. It uses
+%       the regular expression '\d+[A-Z]?-\d+' to extract cage and animal
+%       identifiers directly from the filenames.
+%
+%   -   **Echo Files**: Identifies a group of files ('.bimg', '.pimg', etc.)
+%       related to echocardiography. It extracts a unique cage identifier
+%       from their parent folder names using the regex '(?<=/)\d+[A-Z]?'.
+%
+%   -   **Miscellaneous Files**: Any files not matching the criteria above are
+%       processed as 'unknown'. The function attempts to extract cage and
+%       animal identifiers from their filenames using the same regex as for
+%       SVS files.
+%
+%   Example:
+%       % Allow user to select files via dialog
+%       fileInfoTable = validateDataFiles();
+%
+%       % Process a predefined list of files
+%       myFiles = ["C:\data\exp_schedule.xlsx"; "C:\data\images\138B-174.svs"];
+%       fileInfoTable = validateDataFiles(myFiles);
 
-% for every dataFile, what are the relevant subjects? dataSubjects
-% What subjects are missing from the subjectTable? 
+% Input argument validation
+arguments
+    dataFiles = '';
+end
 
-% % Input argument validation
-% arguments
-%     dataFiles = '';
-% end
-
-% % If no data files specified, retrieve them
-% if isempty(dataFiles)
-%     [names,paths] = uigetfile('*.*',...
-%         'Select data files','',...
-%         'MultiSelect','on');
-%     if eq(names,0)
-%         error('validateDataFiles: No file(s) selected.');
-%     end
-%     dataFiles = fullfile(paths,names);
-% end
+% If no data files specified, retrieve them
+if isempty(dataFiles)
+    [names,paths] = uigetfile('*.*',...
+        'Select data files','',...
+        'MultiSelect','on');
+    if eq(names,0)
+        error('validateDataFiles: No file(s) selected.');
+    end
+    dataFiles = fullfile(paths,names);
+end
 
 % Get known file types
 scheduleFiles =  dataFiles(contains(dataFiles,'schedule','IgnoreCase',true));
@@ -31,7 +88,6 @@ miscFiles = dataFiles(~indKnownFiles); % how to handle these?
 
 % Process experiment schedule files
 scheduleSubjects = cell(size(scheduleFiles));
-missingScheduleSubjects = cell(size(scheduleFiles));
 for i = 1:numel(scheduleFiles)
     experimentSchedule = readtable(scheduleFiles{i},'Sheet',1);
 
@@ -47,27 +103,12 @@ for i = 1:numel(scheduleFiles)
     % Remove spaces from cage names (if applicable)
     scheduleSubjects{i}.Cage = cellfun(@(c) replace(c,' ',''),scheduleSubjects{i}.Cage,...
         'UniformOutput',false);
-
-    % Find subjects listed in the experiment schedule that are not in the subjectTable
-    missingScheduleSubjects{i} = setdiff(scheduleSubjects{i}.Cage,subjectTable.Cage);
-    if ~isempty(missingScheduleSubjects{i})
-        warning(['validateDataFiles: Subjects with the following cage #s are listed in the file %s, ' ...
-            'but have not yet been added to the dataset: %s.'],...
-            scheduleFiles{i},strjoin(missingScheduleSubjects{i},', '))
-    end
 end
-allScheduleSubjects = ndi.fun.table.vstack(scheduleSubjects);
-allScheduleSubjects = unique(allScheduleSubjects,'stable');
-missingSubjectSchedules = setdiff(subjectTable.Cage,allScheduleSubjects.Cage);
-if ~isempty(missingSubjectSchedules)
-    warning(['validateDataFiles: Subjects with the following cage #s do not, ' ...
-        'have an associated experiment schedule: %s.'],...
-        strjoin(missingSubjectSchedules,', '))
-end
+scheduleTable = ndi.fun.table.vstack(scheduleSubjects);
+scheduleTable = unique(scheduleTable,'stable');
 
 % Process DIA reports
 diaSubjects = cell(size(diaFiles));
-missingDIASubjects = cell(size(diaFiles));
 for i = 1:numel(diaFiles)
     
     % Read DIA report
@@ -87,29 +128,14 @@ for i = 1:numel(diaFiles)
     diaSubjects{i} = unique(diaSubjects{i});
     diaSubjects{i}{:,'fileName'} = diaFiles(i);
     diaSubjects{i}{:,'fileType'} = {'DIA'};
-
-    % Find subjects listed in the DIA report that are not in the subjectTable
-    missingDIASubjects{i} = setdiff(diaSubjects{i}.Label,subjectTable.Label);
-    if ~isempty(missingDIASubjects{i})
-        warning(['validateDataFiles: Subjects with the following labels are listed in the file %s, ' ...
-            'but have not yet been added to the dataset: %s.'],...
-            diaFiles{i},strjoin(missingDIASubjects{i},', '))
-    end
 end
-allDIASubjects = ndi.fun.table.vstack(diaSubjects);
-allDIASubjects = unique(allDIASubjects,'stable');
-missingSubjectDIA = setdiff(subjectTable.Label,allDIASubjects.Label);
-if ~isempty(missingSubjectDIA)
-    warning(['validateDataFiles: Subjects with the following labels do not, ' ...
-        'have an associated DIA report: %s.'],...
-        strjoin(missingSubjectDIA,', '))
-end
+diaTable = ndi.fun.table.vstack(diaSubjects);
+diaTable = unique(diaTable,'stable');
 
 % Process SVS files
-pattern = '\w+(?:-\w+)+';
+pattern = '\d+[A-Z]?-\d+';
 allIdentifiers = regexp(svsFiles, pattern, 'match');
 svsSubjects = cell(size(svsFiles));
-missingSVSSubjects = cell(size(svsFiles));
 for i = 1:numel(svsFiles)
     cageIdentifiers = cell(size(allIdentifiers{i}));
     animalIdentifiers = cell(size(allIdentifiers{i}));
@@ -123,23 +149,9 @@ for i = 1:numel(svsFiles)
     svsSubjects{i} = table(cageIdentifiers',svsIdentifiers',...
         'VariableNames',{'Cage','fileName'});
     svsSubjects{i}{:,'fileType'} = {'svs'};
-
-    % Find subjects listed in the experiment schedule that are not in the subjectTable
-    missingSVSSubjects{i} = setdiff(svsSubjects{i}.Cage,subjectTable.Cage);
-    if ~isempty(missingSVSSubjects{i})
-        warning(['validateDataFiles: Subjects with the following cage #s are in the filename %s, ' ...
-            'but have not yet been added to the dataset: %s.'],...
-            svsFiles{i},strjoin(missingSVSSubjects{i},', '))
-    end
 end
-allSVSSubjects = ndi.fun.table.vstack(svsSubjects);
-allSVSSubjects = unique(allSVSSubjects,'stable');
-missingSubjectSVS = setdiff(subjectTable.Cage,allSVSSubjects.Cage);
-if ~isempty(missingSubjectSVS)
-    warning(['validateDataFiles: Subjects with the following labels do not, ' ...
-        'have any associated svs files: %s.'],...
-        strjoin(missingSubjectSVS,', '))
-end
+svsTable = ndi.fun.table.vstack(svsSubjects);
+svsTable = unique(svsTable,'stable');
 
 % Process echo folders
 pattern = '(?<=/)\d+[A-Z]?';
@@ -147,29 +159,32 @@ cageIdentifiers = regexp(echoFolders, pattern, 'match');
 echoSubjects = table([cageIdentifiers{:}]',echoFolders,...
     'VariableNames',{'Cage','fileName'});
 echoSubjects{:,'fileType'} = {'echo'};
+echoTable = unique(echoSubjects,'stable');
 
-% Find subjects listed in the echo folders that are not in the subjectTable
-missingEchoSubjects = setdiff(echoSubjects.Cage,subjectTable.Cage);
-if ~isempty(missingEchoSubjects)
-    warning(['validateDataFiles: Subjects with the following cage #s are in echo directory names, ' ...
-        'but have not yet been added to the dataset: %s.'],...
-        strjoin(missingEchoSubjects,', '))
+% Process files of unknown type
+pattern = '\d+[A-Z]?-\d+';
+allIdentifiers = regexp(miscFiles, pattern, 'match');
+miscSubjects = cell(size(miscFiles));
+for i = 1:numel(miscFiles)
+    cageIdentifiers = cell(size(allIdentifiers{i}));
+    animalIdentifiers = cell(size(allIdentifiers{i}));
+    miscIdentifiers = cell(size(allIdentifiers{i}));
+    for j = 1:numel(allIdentifiers{i})
+
+        lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
+        cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
+        animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
+        miscIdentifiers{j} = miscFiles{i};
+    end
+    miscSubjects{i} = table(cageIdentifiers',animalIdentifiers',miscIdentifiers',...
+        'VariableNames',{'Cage','Animal','fileName'});
+    miscSubjects{i}{:,'fileType'} = {'unknown'};
 end
-allEchoSubjects = unique(echoSubjects,'stable');
-missingSubjectEcho = setdiff(subjectTable.Cage,allEchoSubjects.Cage);
-if ~isempty(missingSubjectEcho)
-    warning(['validateDataFiles: Subjects with the following labels do not, ' ...
-        'have any associated echo files: %s.'],...
-        strjoin(missingSubjectEcho,', '))
-end
+miscTable = ndi.fun.table.vstack(miscSubjects);
+miscTable = unique(miscTable,'stable');
 
-warning('validateDataFiles: The following files are of unknown type: %s',...
-    strjoin(miscFiles,', '));
-
-scheduleTable = ndi.fun.table.join({subjectTable,ndi.fun.table.vstack(scheduleSubjects)});
-diaTable = ndi.fun.table.join({subjectTable,ndi.fun.table.vstack(diaSubjects)});
-svsTable = ndi.fun.table.join({subjectTable,ndi.fun.table.vstack(svsSubjects)});
-echoTable = ndi.fun.table.join({subjectTable,echoSubjects});
-dataTable = ndi.fun.table.vstack({scheduleTable,diaTable,svsTable,echoTable});
+% Collate all data
+dataTable = ndi.fun.table.vstack({scheduleTable,diaTable, ...
+    svsTable,echoTable,miscTable});
 
 end
