@@ -90,110 +90,138 @@ indKnownFiles = contains(dataFiles,[scheduleFiles;diaFiles;svsFiles;echoFolders]
 miscFiles = dataFiles(~indKnownFiles); % how to handle these?
 
 % Process experiment schedule files
-scheduleSubjects = cell(size(scheduleFiles));
-for i = 1:numel(scheduleFiles)
-    experimentSchedule = readtable(scheduleFiles{i},'Sheet',1);
+if ~isempty(scheduleFiles)
+    scheduleSubjects = cell(size(scheduleFiles));
+    for i = 1:numel(scheduleFiles)
+        experimentSchedule = readtable(scheduleFiles{i},'Sheet',1);
 
-    % Process study groups from first sheet of experimentSchedule
-    group1 = unique(experimentSchedule.x18Rats); group1(strcmp(group1,'')) = [];
-    group2 = unique(experimentSchedule.x32Rats); group2(strcmp(group2,'')) = [];
-    group3 = unique(experimentSchedule.x25Rats); group3(strcmp(group3,'')) = [];
-    
-    scheduleSubjects{i} = table([group1;group2;group3],'VariableNames',{'Cage'});
-    scheduleSubjects{i}{:,'fileName'} = scheduleFiles(i);
-    scheduleSubjects{i}{:,'fileType'} = {'schedule'};
-    
-    % Remove spaces from cage names (if applicable)
-    scheduleSubjects{i}.Cage = cellfun(@(c) replace(c,' ',''),scheduleSubjects{i}.Cage,...
-        'UniformOutput',false);
+        % Process study groups from first sheet of experimentSchedule
+        group1 = unique(experimentSchedule.x18Rats); group1(strcmp(group1,'')) = [];
+        group2 = unique(experimentSchedule.x32Rats); group2(strcmp(group2,'')) = [];
+        group3 = unique(experimentSchedule.x25Rats); group3(strcmp(group3,'')) = [];
+
+        scheduleSubjects{i} = table([group1;group2;group3],'VariableNames',{'Cage'});
+        scheduleSubjects{i}{:,'fileName'} = scheduleFiles(i);
+        scheduleSubjects{i}{:,'fileType'} = {'schedule'};
+
+        % Remove spaces from cage names (if applicable)
+        scheduleSubjects{i}.Cage = cellfun(@(c) replace(c,' ',''),scheduleSubjects{i}.Cage,...
+            'UniformOutput',false);
+    end
+    scheduleTable = ndi.fun.table.vstack(scheduleSubjects);
+    scheduleTable = unique(scheduleTable,'stable');
+else
+    scheduleTable = table();
 end
-scheduleTable = ndi.fun.table.vstack(scheduleSubjects);
-scheduleTable = unique(scheduleTable,'stable');
 
 % Process DIA reports
-diaSubjects = cell(size(diaFiles));
-for i = 1:numel(diaFiles)
-    
-    % Read DIA report
-    diaSheetNames = sheetnames(diaFiles{i});
-    allDataSheetInd = contains(diaSheetNames,'All data');
-    diaAllData = readtable(diaFiles{i},'Sheet',diaSheetNames{allDataSheetInd});
+if ~isempty(diaFiles)
+    diaSubjects = cell(size(diaFiles));
+    for i = 1:numel(diaFiles)
 
-    % Get subject IDs from last sheet
-    diaVars = diaAllData.Properties.VariableNames;
-    diaSubjectVars = diaVars(startsWith(diaVars,'x'))';
-    pattern = 'x_\d+_(\d+)_([a-zA-Z]+|\d+)_(\d+)_(\d+)?';
-    diaSubjects{i} = table();
-    for j = 1:numel(diaSubjectVars)
-        tokens = regexp(diaSubjectVars{j}, pattern, 'tokens', 'once');
-        if ~isempty(tokens{4})
-            diaSubjects{i}{j,'Label'} = {sprintf('%s-%02d-%02d', ...
-                tokens{3}, str2double(tokens{1}), str2double(tokens{2}))};
-        else
-            diaSubjects{i}{j,'Label'} = {sprintf('%s-%02d', ...
-                tokens{2}, str2double(tokens{1}))};
+        % Read DIA report
+        diaSheetNames = sheetnames(diaFiles{i});
+        allDataSheetInd = contains(diaSheetNames,'All data');
+        diaAllData = readtable(diaFiles{i},'Sheet',diaSheetNames{allDataSheetInd});
+
+        % Get subject IDs from last sheet
+        diaVars = diaAllData.Properties.VariableNames;
+        diaSubjectVars = diaVars(startsWith(diaVars,'x'))';
+        pattern = 'x_\d+_(\d+)_([a-zA-Z]+|\d+)_(\d+)_(\d+)?';
+        diaSubjects{i} = table();
+        for j = 1:numel(diaSubjectVars)
+            tokens = regexp(diaSubjectVars{j}, pattern, 'tokens', 'once');
+            if ~isempty(tokens{4})
+                diaSubjects{i}{j,'Label'} = {sprintf('%s-%02d-%02d', ...
+                    tokens{3}, str2double(tokens{1}), str2double(tokens{2}))};
+            else
+                diaSubjects{i}{j,'Label'} = {sprintf('%s-%02d', ...
+                    tokens{2}, str2double(tokens{1}))};
+            end
         end
+        diaSubjects{i} = unique(diaSubjects{i},'stable');
+        diaSubjects{i}{:,'fileName'} = diaFiles(i);
+        diaSubjects{i}{:,'fileType'} = {'DIA'};
     end
-    diaSubjects{i} = unique(diaSubjects{i},'stable');
-    diaSubjects{i}{:,'fileName'} = diaFiles(i);
-    diaSubjects{i}{:,'fileType'} = {'DIA'};
+    diaTable = ndi.fun.table.vstack(diaSubjects);
+    diaTable = unique(diaTable,'stable');
+else
+    diaTable = table();
 end
-diaTable = ndi.fun.table.vstack(diaSubjects);
-diaTable = unique(diaTable,'stable');
 
 % Process SVS files
-pattern = '\d+[A-Z]?-\d+';
-allIdentifiers = regexp(svsFiles, pattern, 'match');
-svsSubjects = cell(size(svsFiles));
-for i = 1:numel(svsFiles)
-    cageIdentifiers = cell(size(allIdentifiers{i}));
-    animalIdentifiers = cell(size(allIdentifiers{i}));
-    svsIdentifiers = cell(size(allIdentifiers{i}));
-    for j = 1:numel(allIdentifiers{i})
-        lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
-        cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
-        animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
-        svsIdentifiers{j} = svsFiles{i};
+if ~isempty(svsFiles)
+    pattern = '\d+[A-Z]?-\d+';
+    allIdentifiers = regexp(svsFiles, pattern, 'match');
+    svsSubjects = cell(size(svsFiles));
+    for i = 1:numel(svsFiles)
+        cageIdentifiers = cell(size(allIdentifiers{i}));
+        animalIdentifiers = cell(size(allIdentifiers{i}));
+        svsIdentifiers = cell(size(allIdentifiers{i}));
+        for j = 1:numel(allIdentifiers{i})
+            lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
+            cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
+            animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
+            svsIdentifiers{j} = svsFiles{i};
+        end
+        svsSubjects{i} = table(cageIdentifiers',svsIdentifiers',...
+            'VariableNames',{'Cage','fileName'});
+        svsSubjects{i}{:,'fileType'} = {'svs'};
     end
-    svsSubjects{i} = table(cageIdentifiers',svsIdentifiers',...
-        'VariableNames',{'Cage','fileName'});
-    svsSubjects{i}{:,'fileType'} = {'svs'};
+    svsTable = ndi.fun.table.vstack(svsSubjects);
+    svsTable = unique(svsTable,'stable');
+else
+    svsTable = table();
 end
-svsTable = ndi.fun.table.vstack(svsSubjects);
-svsTable = unique(svsTable,'stable');
 
 % Process echo folders
-pattern = '(?<=/)\d+[A-Z]?';
-cageIdentifiers = regexp(echoFolders, pattern, 'match');
-echoSubjects = table([cageIdentifiers{:}]',echoFolders,...
-    'VariableNames',{'Cage','fileName'});
-echoSubjects{:,'fileType'} = {'echo'};
-echoTable = unique(echoSubjects,'stable');
+if ~isempty(echoFolders)
+    pattern = '(?<=/)\d+[A-Z]?';
+    cageIdentifiers = regexp(echoFolders, pattern, 'match');
+    echoSubjects = table([cageIdentifiers{:}]',echoFolders,...
+        'VariableNames',{'Cage','fileName'});
+    echoSubjects{:,'fileType'} = {'echo'};
+    echoTable = unique(echoSubjects,'stable');
+else
+    echoTable = table();
+end
 
 % Process files of unknown type
-pattern = '\d+[A-Z]?-\d+';
-allIdentifiers = regexp(miscFiles, pattern, 'match');
-miscSubjects = cell(size(miscFiles));
-for i = 1:numel(miscFiles)
-    cageIdentifiers = cell(size(allIdentifiers{i}));
-    animalIdentifiers = cell(size(allIdentifiers{i}));
-    miscIdentifiers = cell(size(allIdentifiers{i}));
-    for j = 1:numel(allIdentifiers{i})
-        lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
-        cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
-        animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
-        miscIdentifiers{j} = miscFiles{i};
+if ~isempty(miscFiles)
+    pattern = '\d+[A-Z]?-\d+';
+    allIdentifiers = regexp(miscFiles, pattern, 'match');
+    miscSubjects = cell(size(miscFiles));
+    for i = 1:numel(miscFiles)
+        cageIdentifiers = cell(size(allIdentifiers{i}));
+        animalIdentifiers = cell(size(allIdentifiers{i}));
+        miscIdentifiers = cell(size(allIdentifiers{i}));
+        for j = 1:numel(allIdentifiers{i})
+            lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
+            cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
+            animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
+            miscIdentifiers{j} = miscFiles{i};
+        end
+        miscSubjects{i} = table(cageIdentifiers',animalIdentifiers',miscIdentifiers',...
+            'VariableNames',{'Cage','Animal','fileName'});
+        miscSubjects{i}{:,'fileType'} = {'unknown'};
     end
-    miscSubjects{i} = table(cageIdentifiers',animalIdentifiers',miscIdentifiers',...
-        'VariableNames',{'Cage','Animal','fileName'});
-    miscSubjects{i}{:,'fileType'} = {'unknown'};
+    miscTable = ndi.fun.table.vstack(miscSubjects);
+    miscTable = unique(miscTable,'stable');
+else
+    miscTable = table();
 end
-miscTable = ndi.fun.table.vstack(miscSubjects);
-miscTable = unique(miscTable,'stable');
 
 % Collate all data
 dataTable = ndi.fun.table.vstack({scheduleTable,diaTable, ...
     svsTable,echoTable,miscTable});
-dataTable = ndi.fun.table.moveColumnsLeft(dataTable,{'Cage','Animal','Label'});
+
+% Check required variables
+requiredVariableNames = {'Animal','Cage','Label'};
+for i = 1:numel(requiredVariableNames)
+    if ~ismember(requiredVariableNames{i},dataTable.Properties.VariableNames)
+        dataTable{:,requiredVariableNames{i}} = {''};
+    end
+end
+dataTable = ndi.fun.table.moveColumnsLeft(dataTable,requiredVariableNames);
 
 end
