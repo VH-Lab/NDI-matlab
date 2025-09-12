@@ -1,12 +1,12 @@
-function [dataTable] = validateDataFiles(dataFiles)
-%VALIDATEDATAFILES Processes data files to extract subject identifiers and metadata.
+function [dataTable] = importDataFiles(dataFiles)
+%IMPORTDATAFILES Processes data files to extract subject identifiers and metadata.
 %
-%   dataTable = VALIDATEDATAFILES() opens a user interface dialog to allow
+%   dataTable = IMPORTDATAFILES() opens a user interface dialog to allow
 %   the user to select multiple data files. It then processes these files
 %   to extract subject, cage, and animal identifiers based on file type
 %   and naming conventions.
 %
-%   dataTable = VALIDATEDATAFILES(dataFiles) processes the specified list
+%   dataTable = IMPORTDATAFILES(dataFiles) processes the specified list
 %   of files provided in the 'dataFiles' argument.
 %
 %   Description:
@@ -54,11 +54,11 @@ function [dataTable] = validateDataFiles(dataFiles)
 %
 %   Example:
 %       % Allow user to select files via dialog
-%       fileInfoTable = validateDataFiles();
+%       fileInfoTable = importDataFiles();
 %
 %       % Process a predefined list of files
 %       myFiles = ["C:\data\exp_schedule.xlsx"; "C:\data\images\138B-174.svs"];
-%       fileInfoTable = validateDataFiles(myFiles);
+%       fileInfoTable = importDataFiles(myFiles);
 
 % Input argument validation
 arguments
@@ -71,10 +71,13 @@ if isempty(dataFiles)
         'Select data files','',...
         'MultiSelect','on');
     if eq(names,0)
-        error('validateDataFiles: No file(s) selected.');
+        error('importDataFiles: No file(s) selected.');
     end
     dataFiles = fullfile(paths,names);
 end
+
+% Suppress table variable naming warning
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
 
 % Get known file types
 scheduleFiles =  dataFiles(contains(dataFiles,'schedule','IgnoreCase',true));
@@ -119,13 +122,19 @@ for i = 1:numel(diaFiles)
     % Get subject IDs from last sheet
     diaVars = diaAllData.Properties.VariableNames;
     diaSubjectVars = diaVars(startsWith(diaVars,'x'))';
+    pattern = 'x_\d+_(\d+)_([a-zA-Z]+|\d+)_(\d+)_(\d+)?';
     diaSubjects{i} = table();
     for j = 1:numel(diaSubjectVars)
-        idInfo = strsplit(diaSubjectVars{j},'_');
-        diaSubjects{i}{j,'Label'} = {[num2str(str2double(idInfo{5}),'%.3i'),...
-            '-',num2str(str2double(idInfo{3}),'%.2i'),'-',num2str(str2double(idInfo{4}),'%.2i')]};
+        tokens = regexp(diaSubjectVars{j}, pattern, 'tokens', 'once');
+        if ~isempty(tokens{4})
+            diaSubjects{i}{j,'Label'} = {sprintf('%s-%02d-%02d', ...
+                tokens{3}, str2double(tokens{1}), str2double(tokens{2}))};
+        else
+            diaSubjects{i}{j,'Label'} = {sprintf('%s-%02d', ...
+                tokens{2}, str2double(tokens{1}))};
+        end
     end
-    diaSubjects{i} = unique(diaSubjects{i});
+    diaSubjects{i} = unique(diaSubjects{i},'stable');
     diaSubjects{i}{:,'fileName'} = diaFiles(i);
     diaSubjects{i}{:,'fileType'} = {'DIA'};
 end
@@ -170,7 +179,6 @@ for i = 1:numel(miscFiles)
     animalIdentifiers = cell(size(allIdentifiers{i}));
     miscIdentifiers = cell(size(allIdentifiers{i}));
     for j = 1:numel(allIdentifiers{i})
-
         lastHyphenIndex = find(allIdentifiers{i}{j} == '-', 1, 'last');
         cageIdentifiers{j} = allIdentifiers{i}{j}(1:lastHyphenIndex-1);
         animalIdentifiers{j} = allIdentifiers{i}{j}(lastHyphenIndex+1:end);
@@ -186,5 +194,6 @@ miscTable = unique(miscTable,'stable');
 % Collate all data
 dataTable = ndi.fun.table.vstack({scheduleTable,diaTable, ...
     svsTable,echoTable,miscTable});
+dataTable = ndi.fun.table.moveColumnsLeft(dataTable,{'Cage','Animal','Label'});
 
 end
