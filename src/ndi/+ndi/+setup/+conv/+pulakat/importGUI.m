@@ -44,7 +44,7 @@ indSubjectFiles = contains(fileList,'animal_mapping');
 dataFiles = fileList(~indHiddenFiles & ~indDir & ~indSubjectFiles);
 
 % Validate data files
-dataTable = ndi.setup.conv.pulakat.validateDataFiles(dataFiles);
+dataTable = ndi.setup.conv.pulakat.importDataFiles(dataFiles);
 
 %% Create subject table from files
 subjectFiles = {'/Users/jhaley/Documents/MATLAB/data/pulakat/animal_mapping_2.csv'};
