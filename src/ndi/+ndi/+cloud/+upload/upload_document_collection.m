@@ -113,7 +113,9 @@ function [b, report] = upload_document_collection(datasetId, documentList, optio
                     ndi.cloud.upload.internal.zip_documents_for_upload(chunkDocs, datasetId);
                 
                 % Get upload URL and perform upload
+                % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_bulk_upload_url with ndi.cloud.api.documents.getBulkUploadURL
                 uploadUrl = ndi.cloud.api.documents.getBulkUploadURL(datasetId);
+                % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
                 ndi.cloud.api.files.putFiles(uploadUrl, zipFilePath);
                 
                 % If we reached here, the upload was successful

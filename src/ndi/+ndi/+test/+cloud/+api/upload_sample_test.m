@@ -26,6 +26,7 @@ function dataset_id = upload_sample_test()
     metadata_json = ndi.database.metadata_ds_core.metadata_to_json(datasetInformation);
     %% test posting a dataset
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset with ndi.cloud.api.datasets.createDataset
         [response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
     catch
         error(['ndi.cloud.api.datasets.create_dataset() failed to create a new dataset' response]);
@@ -36,6 +37,7 @@ function dataset_id = upload_sample_test()
 
     %% test getting the dataset
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     catch
         error(['ndi.cloud.api.datasets.get_dataset() failed to retrieve the dataset' response]);
@@ -60,12 +62,14 @@ function dataset_id = upload_sample_test()
     %% test updating the dataset
     update_dataset.doi = "https://doi.org://10.1000/123456789";
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.update_dataset with ndi.cloud.api.datasets.updateDataset
         response = ndi.cloud.api.datasets.update_dataset(dataset_id, update_dataset);
     catch
         error(['ndi.cloud.api.datasets.update_dataset() failed to update the dataset' response]);
     end
     
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     catch
         error(['ndi.cloud.api.datasets.get_dataset() failed to retrieve the dataset after updating the metadata' response]);
@@ -77,6 +81,7 @@ function dataset_id = upload_sample_test()
 
     %% test list_dataset_documents
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.list_dataset_documents with ndi.cloud.api.documents.listDatasetDocuments
         [response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
     catch
         error(['ndi.cloud.api.documents.list_dataset_documents() failed to retrieve the documents summary' response]);
@@ -91,6 +96,7 @@ function dataset_id = upload_sample_test()
     %% test list_datasets
     if 0
         try
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.list_datasets with ndi.cloud.api.datasets.listDatasets
             [response, datasets] = ndi.cloud.api.datasets.list_datasets();
         catch
             error(['ndi.cloud.api.datasets.list_datasets() failed to retrieve the datasets' response]);
@@ -110,30 +116,35 @@ function dataset_id = upload_sample_test()
 
     %% test invalid inputs
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, response] = ndi.cloud.api.datasets.get_dataset(1);
         error('ndi.cloud.api.datasets.get_dataset did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset with ndi.cloud.api.datasets.createDataset
         response = ndi.cloud.api.datasets.create_dataset(1);
         error('ndi.cloud.api.datasets.create_dataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.list_dataset_documents with ndi.cloud.api.documents.listDatasetDocuments
         [response, summary] = ndi.cloud.api.documents.list_dataset_documents(1);
         error('ndi.cloud.api.documents.list_dataset_documents did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.list_datasets with ndi.cloud.api.datasets.listDatasets
         [response, datasets] = ndi.cloud.api.datasets.list_datasets(1);
         error('ndi.cloud.api.datasets.list_datasets did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.update_dataset with ndi.cloud.api.datasets.updateDataset
         response = ndi.cloud.api.datasets.update_dataset(1, update_dataset);
         error('ndi.cloud.api.datasets.update_dataset did not throw an error after using an invalid input');
     catch

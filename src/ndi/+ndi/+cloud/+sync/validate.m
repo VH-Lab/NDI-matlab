@@ -139,6 +139,7 @@ function [comparison_report, local_comparison_structs, remote_comparison_structs
                 
                 if options.Verbose, fprintf('Comparing document %d/%d: %s\n', i, numel(comparison_report.common_ids), ndi_id); end
                 
+                % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
                 [~, remote_doc_struct] = ndi.cloud.api.documents.get_document(cloudDatasetId, api_id);
                 local_doc = common_local_docs{i};
                 

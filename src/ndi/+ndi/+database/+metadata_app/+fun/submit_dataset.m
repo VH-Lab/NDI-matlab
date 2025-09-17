@@ -20,5 +20,6 @@ function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datase
     S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
     [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);
     [b, ~] = ndi.cloud.upload.upload_to_NDI_cloud(S, dataset_id);
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
     [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 end

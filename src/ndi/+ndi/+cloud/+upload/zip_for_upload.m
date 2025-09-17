@@ -184,9 +184,11 @@ function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id
         end
         
         if options.Verbose, disp('Getting upload URL for zipped batch...'); end
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_collection_upload_url with ndi.cloud.api.files.getFileCollectionUploadURL
         [~, upload_url] = ndi.cloud.api.files.get_file_collection_upload_url(dataset_id);
         
         if options.Verbose, disp('Uploading zip archive...'); end
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
         ndi.cloud.api.files.put_files(upload_url, zip_file);
         
     catch e

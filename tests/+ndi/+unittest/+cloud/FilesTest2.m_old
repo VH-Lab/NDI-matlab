@@ -30,6 +30,7 @@ classdef FilesTest < matlab.unittest.TestCase
         function createTestDataset(testCase)
             % Create a new dataset for each test to ensure isolation.
             datasetInfo = struct("name", testCase.DatasetName);
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset with ndi.cloud.api.datasets.createDataset
             [~, testCase.DatasetID] = ...
                 ndi.cloud.api.datasets.create_dataset(datasetInfo);
             
@@ -63,6 +64,7 @@ classdef FilesTest < matlab.unittest.TestCase
     methods (Test)
         function testGetFileUploadUrl(testCase)
             % Test getting an upload URL for a file
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
             
@@ -74,10 +76,12 @@ classdef FilesTest < matlab.unittest.TestCase
         function testPutFiles(testCase)
             % Test uploading a file using a presigned URL
             % Get upload URL
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
             
             % Upload file
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             response = ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
             
@@ -87,14 +91,17 @@ classdef FilesTest < matlab.unittest.TestCase
         function testGetFileDetails(testCase)
             % Test getting file details after upload
             % Upload a file first
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
             
             pause(5) % Give server time to register file
             
             % Get file details
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
             [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, testCase.FileUID);
             
@@ -108,16 +115,19 @@ classdef FilesTest < matlab.unittest.TestCase
         function testEndToEndFileUpload(testCase)
             % Test the complete file upload workflow
             % Step 1: Get upload URL
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
             
             % Step 2: Upload file
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
             
             pause(5)
             
             % Step 3: Get file details
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
             [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, testCase.FileUID);
             
@@ -173,6 +183,7 @@ classdef FilesTest < matlab.unittest.TestCase
             % --- 2. ACT: Call the API endpoints to perform the upload ---
             
             % First, get the secure, one-time upload URL from the API
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_collection_upload_url with ndi.cloud.api.files.getFileCollectionUploadURL
             [response,upload_url] = ndi.cloud.api.files.get_file_collection_upload_url(testCase.DatasetID);
             
             % Assert that the request for the URL was successful
@@ -186,6 +197,7 @@ classdef FilesTest < matlab.unittest.TestCase
             zip(zipFileName, filesToZip);
             testCase.verifyTrue(isfile(zipFileName), 'The zip archive was not created on disk.');
             % Second, use the URL to upload the zip file via a PUT request
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             [response] = ndi.cloud.api.files.put_files(upload_url, zipFileName);
             % --- 3. ASSERT: Verify the upload request was accepted ---
             % A 200 status code indicates the server received the file successfully
@@ -230,6 +242,7 @@ end
 
 
 function deleteDataset(datasetId)
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.delete_dataset with ndi.cloud.api.datasets.deleteDataset
     ndi.cloud.api.datasets.delete_dataset(datasetId);
 end
 

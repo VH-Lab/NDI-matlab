@@ -3,7 +3,7 @@ function newDocStruct = set_file_info(docStruct,mode,filepath)
     %
     % NEWDOCSTRUCT = SET_FILE_INFO(DOCSTRUCT, MODE, FILEPATH)
     %
-    % Given a document structure downloaded from ndi.cloud.api.documents.get_document,
+    % Given a document structure downloaded from ndi.cloud.api.documents.get_document, % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
     % set the 'delete_original' and 'ingest' fields as appropriate to the mode.
     %
     % The MODE can be 'local' or 'hybrid'. If MODE is 'local', then

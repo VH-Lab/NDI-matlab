@@ -34,42 +34,49 @@ function add_document_test(dataset_id)
         error(['ndi.cloud.upload.upload_to_NDI_cloud() failed to upload the dataset' msg]);
     end
 
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
     [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 
     %% test post_document_update
     test_document_update(dataset_id)
 
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.add_document_as_file with ndi.cloud.api.documents.addDocumentAsFile
         [response, document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, 'test');
         error('ndi.cloud.api.documents.add_document did not throw an error after using a non-struct document');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
         [response, document_id] = ndi.cloud.api.documents.get_document(1, 1);
         error('ndi.cloud.api.documents.get_document did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.update_document with ndi.cloud.api.documents.updateDocument
         response = ndi.cloud.api.documents.update_document('test', dataset_id, 1, 'test');
         error('ndi.cloud.api.documents.update_document did not throw an error after using an invalid document id');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
         response = ndi.cloud.api.files.get_file_upload_url(1, 1);
         error('ndi.cloud.api.files.get_file_upload_url did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
         response = ndi.cloud.api.files.put_files('test', 'test');
         error('ndi.cloud.api.files.put_files did not throw an error after using an invalid url');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
         response = ndi.cloud.api.files.get_file_details(1, 1);
         error('ndi.cloud.api.files.get_file_details did not throw an error after using an invalid dataset id');
     catch
@@ -94,13 +101,16 @@ function test_add_document(d, dataset_id)
             continue;
         end
         document = did.datastructures.jsonencodenan(d{i}.document_properties);
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.add_document_as_file with ndi.cloud.api.documents.addDocumentAsFile
         [~, document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
         [~, upload_document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
         
         if ~isfield(upload_document, 'id')
             error('ndi.cloud.api.documents.get_document does not return a document struct');
         end
 
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, ~] = ndi.cloud.api.datasets.get_dataset(dataset_id);
         if numel(dataset.documents) ~= 1
             error('ndi.cloud.api.datasets.get_dataset does not return the correct number of documents');
@@ -132,10 +142,13 @@ function test_post_files(S, d, dataset_id)
                     j = j + 1;
                     if ~isempty(file_obj)
                         [~,uid,~] = fileparts(file_obj.fullpathfilename);
+                        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
                         [response, upload_url] = ndi.cloud.api.files.get_file_upload_url(dataset_id, uid);
+                        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
                         response = ndi.cloud.api.files.put_files(upload_url, file_obj.fullpathfilename);
                         S.database_closebinarydoc(file_obj);
 
+                        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
                         [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
                         return;
                     end
@@ -146,13 +159,17 @@ function test_post_files(S, d, dataset_id)
 end
 
 function test_document_update(dataset_id)
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.list_dataset_documents with ndi.cloud.api.documents.listDatasetDocuments
     [response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
     document_id = summary.documents(1).id;
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
     [response, document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
     document.is_test = 1;
     document = jsonencode(document);
     [fid,fname] = ndi.file.temp_fid();
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.update_document with ndi.cloud.api.documents.updateDocument
     response = ndi.cloud.api.documents.update_document(fname, dataset_id, document_id, document);
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
     [response, upload_document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
     if ~isfield(upload_document, 'is_test') || ~upload_document.is_test
         error('ndi.cloud.api.documents.update_document does not correctly update the document');
@@ -163,7 +180,9 @@ function test_document_update(dataset_id)
     document = rmfield(document, 'is_test');
     document = jsonencode(document);
     [fid,fname] = ndi.file.temp_fid();
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.update_document with ndi.cloud.api.documents.updateDocument
     response = ndi.cloud.api.documents.update_document(fname, dataset_id, document_id, document);
+    % TODO: Update. Deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
     [response, upload_document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
     if isfield(upload_document, 'is_test')
         error('ndi.cloud.api.documents.update_document does not correctly update the document');

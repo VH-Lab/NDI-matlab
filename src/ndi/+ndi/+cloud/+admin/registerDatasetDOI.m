@@ -28,6 +28,7 @@ function registerDatasetDOI(cloudDatasetID, options)
     end
 
     if ~ismissing(cloudDatasetID)
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetID);
     else
         dataset = [];

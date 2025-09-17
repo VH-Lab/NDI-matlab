@@ -8,14 +8,18 @@ function dataset_branch_test()
     %   datasets/get_branches
 
     example_dataset.name = "test branch dataset";
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset with ndi.cloud.api.datasets.createDataset
     [response, dataset_id] = ndi.cloud.api.datasets.create_dataset(example_dataset);
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset_branch with ndi.cloud.api.datasets.createDatasetBranch
     response = ndi.cloud.api.datasets.create_dataset_branch(dataset_id, 'new test branch');
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_branches with ndi.cloud.api.datasets.getBranches
     [response, branches] = ndi.cloud.api.datasets.get_branches(dataset_id);
     if (numel(branches) ~= 1)
         error('ndi.cloud.api.dataset.get_branches did not return the correct number of branches');
     end
 
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset_branch with ndi.cloud.api.datasets.createDatasetBranch
         response = ndi.cloud.api.datasets.create_dataset_branch(dataset_id, 1);
         error('ndi.cloud.api.dataset.create_dataset_branch did not throw an error after using a non-string branch name');
     catch
@@ -23,6 +27,7 @@ function dataset_branch_test()
     end
 
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset_branch with ndi.cloud.api.datasets.createDatasetBranch
         response = ndi.cloud.api.datasets.create_dataset_branch(1, 'new test branch');
         error('ndi.cloud.api.dataset.create_dataset_branch did not throw an error after using an invalid dataset id');
     catch
@@ -30,6 +35,7 @@ function dataset_branch_test()
     end
 
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_branches with ndi.cloud.api.datasets.getBranches
         [response, branches] = ndi.cloud.api.datasets.get_branches(1);
         error('ndi.cloud.api.dataset.get_branches did not throw an error after using an invalid dataset id');
     catch
@@ -38,25 +44,31 @@ function dataset_branch_test()
 
     %% test delete dataset branch
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.delete_dataset with ndi.cloud.api.datasets.deleteDataset
         [dataset, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
         error('ndi.cloud.api.dataset.delete_dataset did not throw an error while deleting a dataset with branches');
     catch
         % do nothing, this is the expected behavior
     end
     branched_dataset_id = branches(1).datasetId;
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.delete_dataset with ndi.cloud.api.datasets.deleteDataset
     response = ndi.cloud.api.datasets.delete_dataset(branched_dataset_id);
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_branches with ndi.cloud.api.datasets.getBranches
     [response, branches] = ndi.cloud.api.datasets.get_branches(dataset_id);
     if (numel(branches) ~= 0)
         error('ndi.cloud.api.dataset.get_branches did not return the correct number of branches after deleting a branch');
     end
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.delete_dataset with ndi.cloud.api.datasets.deleteDataset
     response = ndi.cloud.api.datasets.delete_dataset(dataset_id);
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
         error('ndi.cloud.api.dataset.get_dataset did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
         [dataset, response] = ndi.cloud.api.datasets.get_dataset(branched_dataset_id);
         error('ndi.cloud.api.dataset.get_dataset did not throw an error after using an invalid dataset id');
     catch
