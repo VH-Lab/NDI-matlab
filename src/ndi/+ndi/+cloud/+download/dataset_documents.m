@@ -53,7 +53,11 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
             continue;
         end
 
-        [response, docStruct] = ndi.cloud.api.documents.get_document(dataset.x_id, document_id);
+        [success, docStruct] = ndi.cloud.api.documents.getDocument(dataset.x_id, document_id);
+        if ~success
+            warning(['Failed to get document: ' docStruct.message]);
+            continue;
+        end
         
         if verbose, disp(['Saving document ' int2str(i) '...']); end
 

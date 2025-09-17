@@ -48,7 +48,8 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
             if verbose
                 disp(['Uploading ' int2str(cur_doc_idx) ' of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
             end
-            [response_doc] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
+            [success, ~] = ndi.cloud.api.documents.addDocumentAsFile(dataset_id, document);
+            if ~success, warning('Failed to add document'); end
             doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded = 1;
             cur_doc_idx = cur_doc_idx + 1;
         end
@@ -69,8 +70,9 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
     end
 
     zip(zip_filename, files_to_zip);
-    [response, upload_url] = ndi.cloud.api.files.get_file_collection_upload_url(dataset_id);
-    [response] = ndi.cloud.api.files.put_files(upload_url, zip_filename);
+    [success, upload_url] = ndi.cloud.api.files.getFileCollectionUploadURL(dataset_id);
+    if ~success, error('Failed to get upload URL'); end
+    [~] = ndi.cloud.api.files.putFiles(upload_url, zip_filename);
     if exist(zip_filename, 'file')
         delete(zip_filename);
     end

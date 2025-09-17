@@ -23,12 +23,12 @@ function [b,msg] = upload_download(D,metadatafile)
 
     tic;
 
-    try
-        [response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
-    catch
-        msg = 'ndi.cloud.api.datasets.create_dataset() failed to create a new dataset';
+    [success, answer] = ndi.cloud.api.datasets.createDataset(metadata_json);
+    if ~success
+        msg = ['ndi.cloud.api.datasets.createDataset() failed to create a new dataset: ' answer.message];
         return;
     end
+    dataset_id = answer.dataset_id;
 
     [b_upload, msg_upload] = ndi.cloud.upload.upload_to_NDI_cloud(D, dataset_id);
 

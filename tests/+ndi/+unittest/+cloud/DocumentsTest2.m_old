@@ -15,7 +15,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
         % This now runs BEFORE EACH test method, creating a fresh dataset every time.
         function setupNewDataset(testCase)
             datasetInfo = struct("name", testCase.DatasetName);
-            [~, testCase.DatasetID] = ndi.cloud.api.datasets.create_dataset(datasetInfo);
+            [success, answer] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            if ~success, error("Failed to create dataset"); end
+            testCase.DatasetID = answer.dataset_id;
         end
     end
 
@@ -31,7 +33,8 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
     methods (Test)
         function verifyNoDocuments(testCase)
-            [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
+            [success, dataset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
+            if ~success, error("Failed to get dataset"); end
             if isfield(dataset,'documentCount')
                 docCount = dataset.documentCount;
             else
@@ -53,7 +56,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.addTeardown(@() testCase.deleteDocumentFromDataset(documentId))
             
             [~, document] = ...
-                ndi.cloud.api.documents.get_document(...
+                ndi.cloud.api.documents.getDocument(...
                     testCase.DatasetID, documentId);
             
             testCase.verifyClass(document, 'struct', ...
@@ -68,7 +71,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             documentId = testCase.addDocumentToDataset();
             testCase.addTeardown(@() testCase.deleteDocumentFromDataset(documentId))
 
-            [~, document] = ndi.cloud.api.documents.get_document(...
+            [~, document] = ndi.cloud.api.documents.getDocument(...
                     testCase.DatasetID, documentId);
             
             newName = 'Updated document name';
@@ -76,11 +79,11 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             updatedDocumentJson = jsonencode(document);
 
-            ndi.cloud.api.documents.update_document(...
+            ndi.cloud.api.documents.updateDocument(...
                 'temp', testCase.DatasetID, documentId, updatedDocumentJson);
             
             [~, updatedDocumentCloud] = ...
-                ndi.cloud.api.documents.get_document(testCase.DatasetID, documentId);
+                ndi.cloud.api.documents.getDocument(testCase.DatasetID, documentId);
     
             testCase.verifyEqual(updatedDocumentCloud.name, newName);
         end
@@ -89,14 +92,14 @@ classdef DocumentsTest < matlab.unittest.TestCase
             documentId = testCase.addDocumentToDataset();
 
             % Delete document
-            ndi.cloud.api.documents.delete_document(testCase.DatasetID, documentId);   
+            ndi.cloud.api.documents.deleteDocument(testCase.DatasetID, documentId);
             testCase.verifyNumDocumentsEqual(0, "post deletion")
 
             % try getting the document that was deleted. If no error is thrown, then the document was not deleted
             try
-                %[response, test_document] = ndi.cloud.api.documents.get_document(testCase.DatasetID, documentId);
-                ndi.cloud.api.documents.get_document(testCase.DatasetID, documentId);
-                error('ndi.cloud.api.documents.get_document did not throw an error after delete_documents');
+                %[response, test_document] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, documentId);
+                ndi.cloud.api.documents.getDocument(testCase.DatasetID, documentId);
+                error('ndi.cloud.api.documents.getDocument did not throw an error after delete_documents');
             catch
                 % do nothing, this is the expected behavior
             end
@@ -115,7 +118,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testCase.verifyNumDocumentsEqual(numDocuments, "pre deletion")
             
             % Delete documents
-            ndi.cloud.api.documents.bulk_delete_documents(testCase.DatasetID, documentIds);
+            ndi.cloud.api.documents.bulkDeleteDocuments(testCase.DatasetID, documentIds);
 
             % Verify that document is uploaded
             testCase.verifyNumDocumentsEqual(0, "post deletion")
@@ -139,7 +142,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             DocSummary.documents = [];
             while ~isFinished && toc(t1) < timeOut
                 %disp(['Looking for documents'])
-                [b, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID);
+                [b, DocSummary] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
                 if b&&(numel(DocSummary.documents) == numDocuments)
                     isFinished = true;                    
                 else
@@ -173,7 +176,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 documentIds = {DocSummary.documents.id};
                 % Download subset of documents using bulk download
                 docIdx = [1,3,5];
-                [~, DocSummary] = ndi.cloud.api.documents.list_dataset_documents_all(testCase.DatasetID);
+                [~, DocSummary] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
     
                 downloadedDocumentSubset = ...
                     ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
@@ -190,7 +193,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             if ~isempty(DocSummary.documents)
                 documentIds = {DocSummary.documents.id};
                 % Clean up (delete documents)
-                ndi.cloud.api.documents.bulk_delete_documents(testCase.DatasetID, documentIds);
+                ndi.cloud.api.documents.bulkDeleteDocuments(testCase.DatasetID, documentIds);
             end
 
             pause(30);
@@ -208,12 +211,12 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testDocument = createTestJSONDocuments(1);
             
             % Create a new document
-            document = ndi.cloud.api.documents.add_document(testCase.DatasetID, testDocument);
+            [~, document] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, testDocument);
             documentId = document.id;
         end
 
         function deleteDocumentFromDataset(testCase, documentId)
-            ndi.cloud.api.documents.delete_document(testCase.DatasetID, documentId);
+            ndi.cloud.api.documents.deleteDocument(testCase.DatasetID, documentId);
         end
         
         function verifyNumDocumentsEqual(testCase, numDocuments, messageSuffix)
@@ -222,7 +225,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             message = message + " " + messageSuffix + ".";
 
             % Verify expected number of documents 
-            [docCount, ~] = ndi.cloud.api.documents.document_count(testCase.DatasetID);
+            [docCount, ~] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
             testCase.verifyEqual(docCount, numDocuments, message)
 
             % list_dataset_documents api endpoint will return deleted
@@ -271,12 +274,12 @@ end
 
 function deleteDataset(datasetId)
     try
-        ndi.cloud.api.datasets.delete_dataset(datasetId);
+        ndi.cloud.api.datasets.deleteDataset(datasetId);
     catch
         % Expecting fail
         for i = 1:numel(5)
             try % This should fail
-                [~, ~] = ndi.cloud.api.datasets.get_dataset(datasetId);                    
+                [~, ~] = ndi.cloud.api.datasets.getDataset(datasetId);
             catch
                 return % We want previous command to fail
             end

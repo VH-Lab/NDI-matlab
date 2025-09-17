@@ -194,7 +194,10 @@ q_stim_and_stim_decoder_docs = S.database_search(q_stim_decoder & q_stim);
 filename = 'special_char.json';
 str_doc = fileread(filename);
 bug_document = jsondecode(str_doc);
-[response] = ndi.cloud.api.documents.add_document(dataset_id, bug_document);
+[success, response] = ndi.cloud.api.documents.addDocument(dataset_id, bug_document);
+if ~success
+    error(['Failed to add document: ' response.message]);
+end
 
 %%
 

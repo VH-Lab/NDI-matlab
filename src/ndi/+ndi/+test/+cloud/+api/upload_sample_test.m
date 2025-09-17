@@ -26,19 +26,22 @@ function dataset_id = upload_sample_test()
     metadata_json = ndi.database.metadata_ds_core.metadata_to_json(datasetInformation);
     %% test posting a dataset
     try
-        [response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
-    catch
-        error(['ndi.cloud.api.datasets.create_dataset() failed to create a new dataset' response]);
+        [success, answer] = ndi.cloud.api.datasets.createDataset(metadata_json);
+        if ~success, error(answer.message); end
+        dataset_id = answer.dataset_id;
+    catch ME
+        error(['ndi.cloud.api.datasets.createDataset() failed to create a new dataset: ' ME.message]);
     end
     if ~ischar(dataset_id) || length(dataset_id) ~= 24
-        error('ndi.cloud.api.datasets.create_dataset() failed to return a valid dataset_id');
+        error('ndi.cloud.api.datasets.createDataset() failed to return a valid dataset_id');
     end
 
     %% test getting the dataset
     try
-        [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
-    catch
-        error(['ndi.cloud.api.datasets.get_dataset() failed to retrieve the dataset' response]);
+        [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
+        if ~success, error(dataset.message); end
+    catch ME
+        error(['ndi.cloud.api.datasets.getDataset() failed to retrieve the dataset: ' ME.message]);
     end
 
     if ~isfield(dataset, 'x_id')
@@ -60,26 +63,29 @@ function dataset_id = upload_sample_test()
     %% test updating the dataset
     update_dataset.doi = "https://doi.org://10.1000/123456789";
     try
-        response = ndi.cloud.api.datasets.update_dataset(dataset_id, update_dataset);
-    catch
-        error(['ndi.cloud.api.datasets.update_dataset() failed to update the dataset' response]);
+        [success, ~] = ndi.cloud.api.datasets.updateDataset(dataset_id, update_dataset);
+        if ~success, error("update failed"); end
+    catch ME
+        error(['ndi.cloud.api.datasets.updateDataset() failed to update the dataset: ' ME.message]);
     end
     
     try
-        [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
-    catch
-        error(['ndi.cloud.api.datasets.get_dataset() failed to retrieve the dataset after updating the metadata' response]);
+        [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
+        if ~success, error(dataset.message); end
+    catch ME
+        error(['ndi.cloud.api.datasets.getDataset() failed to retrieve the dataset after updating the metadata: ' ME.message]);
     end
 
     if ~isfield(dataset, 'doi')
-        error('ndi.cloud.api.datasets.update_dataset failed to update the dataset');
+        error('ndi.cloud.api.datasets.updateDataset failed to update the dataset');
     end
 
     %% test list_dataset_documents
     try
-        [response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
-    catch
-        error(['ndi.cloud.api.documents.list_dataset_documents() failed to retrieve the documents summary' response]);
+        [success, summary] = ndi.cloud.api.documents.listDatasetDocuments(dataset_id);
+        if ~success, error(summary.message); end
+    catch ME
+        error(['ndi.cloud.api.documents.listDatasetDocuments() failed to retrieve the documents summary: ' ME.message]);
     end
     if ~isfield(summary, 'documents')
         error('Does not return a documents summary struct');
@@ -91,9 +97,10 @@ function dataset_id = upload_sample_test()
     %% test list_datasets
     if 0
         try
-            [response, datasets] = ndi.cloud.api.datasets.list_datasets();
-        catch
-            error(['ndi.cloud.api.datasets.list_datasets() failed to retrieve the datasets' response]);
+            [success, datasets] = ndi.cloud.api.datasets.listDatasets();
+            if ~success, error(datasets.message); end
+        catch ME
+            error(['ndi.cloud.api.datasets.listDatasets() failed to retrieve the datasets: ' ME.message]);
         end
 
         match = 0;
@@ -110,32 +117,32 @@ function dataset_id = upload_sample_test()
 
     %% test invalid inputs
     try
-        [dataset, response] = ndi.cloud.api.datasets.get_dataset(1);
-        error('ndi.cloud.api.datasets.get_dataset did not throw an error after using an invalid dataset id');
+        [~,~] = ndi.cloud.api.datasets.getDataset(1);
+        error('ndi.cloud.api.datasets.getDataset did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.datasets.create_dataset(1);
-        error('ndi.cloud.api.datasets.create_dataset did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.createDataset(1);
+        error('ndi.cloud.api.datasets.createDataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        [response, summary] = ndi.cloud.api.documents.list_dataset_documents(1);
-        error('ndi.cloud.api.documents.list_dataset_documents did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.documents.listDatasetDocuments(1);
+        error('ndi.cloud.api.documents.listDatasetDocuments did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        [response, datasets] = ndi.cloud.api.datasets.list_datasets(1);
-        error('ndi.cloud.api.datasets.list_datasets did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.listDatasets(1);
+        error('ndi.cloud.api.datasets.listDatasets did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.datasets.update_dataset(1, update_dataset);
-        error('ndi.cloud.api.datasets.update_dataset did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.updateDataset(1, update_dataset);
+        error('ndi.cloud.api.datasets.updateDataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end

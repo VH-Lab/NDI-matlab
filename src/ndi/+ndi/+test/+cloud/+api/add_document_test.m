@@ -34,44 +34,45 @@ function add_document_test(dataset_id)
         error(['ndi.cloud.upload.upload_to_NDI_cloud() failed to upload the dataset' msg]);
     end
 
-    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+    [success, ~] = ndi.cloud.api.datasets.getDataset(dataset_id);
+    if ~success, error('Failed to get dataset'); end
 
     %% test post_document_update
     test_document_update(dataset_id)
 
     try
-        [response, document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, 'test');
-        error('ndi.cloud.api.documents.add_document did not throw an error after using a non-struct document');
+        [~,~] = ndi.cloud.api.documents.addDocumentAsFile(dataset_id, 'test');
+        error('ndi.cloud.api.documents.addDocument did not throw an error after using a non-struct document');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        [response, document_id] = ndi.cloud.api.documents.get_document(1, 1);
-        error('ndi.cloud.api.documents.get_document did not throw an error after using an invalid dataset id');
+        [~,~] = ndi.cloud.api.documents.getDocument(1, 1);
+        error('ndi.cloud.api.documents.getDocument did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.documents.update_document('test', dataset_id, 1, 'test');
-        error('ndi.cloud.api.documents.update_document did not throw an error after using an invalid document id');
+        [~] = ndi.cloud.api.documents.updateDocument('test', dataset_id, 1, 'test');
+        error('ndi.cloud.api.documents.updateDocument did not throw an error after using an invalid document id');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.files.get_file_upload_url(1, 1);
-        error('ndi.cloud.api.files.get_file_upload_url did not throw an error after using an invalid dataset id');
+        [~,~] = ndi.cloud.api.files.getFileUploadURL(1, 1);
+        error('ndi.cloud.api.files.getFileUploadURL did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.files.put_files('test', 'test');
-        error('ndi.cloud.api.files.put_files did not throw an error after using an invalid url');
+        [~] = ndi.cloud.api.files.putFiles('test', 'test');
+        error('ndi.cloud.api.files.putFiles did not throw an error after using an invalid url');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.files.get_file_details(1, 1);
-        error('ndi.cloud.api.files.get_file_details did not throw an error after using an invalid dataset id');
+        [~,~,~] = ndi.cloud.api.files.getFileDetails(1, 1);
+        error('ndi.cloud.api.files.getFileDetails did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
@@ -94,16 +95,17 @@ function test_add_document(d, dataset_id)
             continue;
         end
         document = did.datastructures.jsonencodenan(d{i}.document_properties);
-        [~, document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
-        [~, upload_document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
+        [~, document_id] = ndi.cloud.api.documents.addDocumentAsFile(dataset_id, document);
+        [~, upload_document] = ndi.cloud.api.documents.getDocument(dataset_id, document_id);
         
         if ~isfield(upload_document, 'id')
-            error('ndi.cloud.api.documents.get_document does not return a document struct');
+            error('ndi.cloud.api.documents.getDocument does not return a document struct');
         end
 
-        [dataset, ~] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+        [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
+        if ~success, error('Failed to get dataset'); end
         if numel(dataset.documents) ~= 1
-            error('ndi.cloud.api.datasets.get_dataset does not return the correct number of documents');
+            error('ndi.cloud.api.datasets.getDataset does not return the correct number of documents');
         end
         break;
     end
@@ -132,11 +134,11 @@ function test_post_files(S, d, dataset_id)
                     j = j + 1;
                     if ~isempty(file_obj)
                         [~,uid,~] = fileparts(file_obj.fullpathfilename);
-                        [response, upload_url] = ndi.cloud.api.files.get_file_upload_url(dataset_id, uid);
-                        response = ndi.cloud.api.files.put_files(upload_url, file_obj.fullpathfilename);
+                        [~, upload_url] = ndi.cloud.api.files.getFileUploadURL(dataset_id, uid);
+                        [~] = ndi.cloud.api.files.putFiles(upload_url, file_obj.fullpathfilename);
                         S.database_closebinarydoc(file_obj);
 
-                        [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
+                        [~, ~, ~] = ndi.cloud.api.files.getFileDetails(dataset_id,uid);
                         return;
                     end
                 end
@@ -146,16 +148,16 @@ function test_post_files(S, d, dataset_id)
 end
 
 function test_document_update(dataset_id)
-    [response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
+    [~, summary] = ndi.cloud.api.documents.listDatasetDocuments(dataset_id);
     document_id = summary.documents(1).id;
-    [response, document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
+    [~, document] = ndi.cloud.api.documents.getDocument(dataset_id, document_id);
     document.is_test = 1;
     document = jsonencode(document);
     [fid,fname] = ndi.file.temp_fid();
-    response = ndi.cloud.api.documents.update_document(fname, dataset_id, document_id, document);
-    [response, upload_document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
+    [~] = ndi.cloud.api.documents.updateDocument(fname, dataset_id, document_id, document);
+    [~, upload_document] = ndi.cloud.api.documents.getDocument(dataset_id, document_id);
     if ~isfield(upload_document, 'is_test') || ~upload_document.is_test
-        error('ndi.cloud.api.documents.update_document does not correctly update the document');
+        error('ndi.cloud.api.documents.updateDocument does not correctly update the document');
     end
     % change back to original
     % remove is_test field
@@ -163,9 +165,9 @@ function test_document_update(dataset_id)
     document = rmfield(document, 'is_test');
     document = jsonencode(document);
     [fid,fname] = ndi.file.temp_fid();
-    response = ndi.cloud.api.documents.update_document(fname, dataset_id, document_id, document);
-    [response, upload_document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
+    [~] = ndi.cloud.api.documents.updateDocument(fname, dataset_id, document_id, document);
+    [~, upload_document] = ndi.cloud.api.documents.getDocument(dataset_id, document_id);
     if isfield(upload_document, 'is_test')
-        error('ndi.cloud.api.documents.update_document does not correctly update the document');
+        error('ndi.cloud.api.documents.updateDocument does not correctly update the document');
     end
 end

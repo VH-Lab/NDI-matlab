@@ -12,11 +12,13 @@ function submit_publish_dataset(dataset_id)
     %    datasets/get_unpublished
 
     %% test submit
-    % response = ndi.cloud.api.datasets.submit_dataset(dataset_id);
+    % [~,~] = ndi.cloud.api.datasets.submitDataset(dataset_id);
 
     %% test publish
-    response = ndi.cloud.api.datasets.publish_dataset(dataset_id);
-    [response, datasets_info] = ndi.cloud.api.datasets.get_published(1, 1);
+    [success, ~] = ndi.cloud.api.datasets.publishDataset(dataset_id);
+    if ~success, error("Failed to publish"); end
+    [success, datasets_info] = ndi.cloud.api.datasets.getPublished(1, 1);
+    if ~success, error("Failed to get published"); end
     total_number_published = datasets_info.totalNumber;
     found = 0;
     for i = 1:numel(datasets_info.datasets)
@@ -29,8 +31,10 @@ function submit_publish_dataset(dataset_id)
         error('Dataset id does not exist in the published datasets');
     end
     %% test unpublish
-    response = ndi.cloud.api.datasets.unpublish_dataset(dataset_id);
-    [response, datasets_info] = ndi.cloud.api.datasets.get_published(1, total_number_published);
+    [success, ~] = ndi.cloud.api.datasets.unpublishDataset(dataset_id);
+    if ~success, error("Failed to unpublish"); end
+    [success, datasets_info] = ndi.cloud.api.datasets.getPublished(1, total_number_published);
+    if ~success, error("Failed to get published"); end
     found = 0;
     for i = 1:numel(datasets_info.datasets)
         if strcmp(datasets_info.datasets{1}.id, dataset_id)
@@ -42,35 +46,36 @@ function submit_publish_dataset(dataset_id)
         error('Dataset id still exists in the published datasets');
     end
 
-    response = ndi.cloud.api.datasets.delete_dataset(dataset_id);
+    [success, ~] = ndi.cloud.api.datasets.deleteDataset(dataset_id);
+    if ~success, error("Failed to delete"); end
 
     try
-        response = ndi.cloud.api.datasets.submit_dataset(dataset_id);
-        error('ndi.cloud.api.datasets.get_unpublished did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.submitDataset(dataset_id);
+        error('ndi.cloud.api.datasets.getUnpublished did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.datasets.publish_dataset(1);
-        error('ndi.cloud.api.datasets.publish_dataset did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.publishDataset(1);
+        error('ndi.cloud.api.datasets.publishDataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        response = ndi.cloud.api.datasets.unpublish_dataset(1);
-        error('ndi.cloud.api.datasets.unpublish_dataset did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.unpublishDataset(1);
+        error('ndi.cloud.api.datasets.unpublishDataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        [response, datasets_info] = ndi.cloud.api.datasets.get_unpublished('1', '1');
-        error('ndi.cloud.api.datasets.get_unpublished did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.getUnpublished('1', '1');
+        error('ndi.cloud.api.datasets.getUnpublished did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        [response, datasets_info] = ndi.cloud.api.datasets.get_published('1', '1');
-        error('ndi.cloud.api.datasets.get_published did not throw an error after using an invalid input');
+        [~,~] = ndi.cloud.api.datasets.getPublished('1', '1');
+        error('ndi.cloud.api.datasets.getPublished did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end

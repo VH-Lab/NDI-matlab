@@ -13,6 +13,12 @@ function [b, msg, dataset_id] = test_upload(S,test_name)
 
     [auth_token, organization_id] = ndi.cloud.uilogin();
     d = struct('name',test_name);
-    [response, dataset_id] = ndi.cloud.api.datasets.create_dataset(d);
+    [b, answer] = ndi.cloud.api.datasets.createDataset(d);
+    if ~b
+        msg = ['Failed to create dataset: ' answer.message];
+        dataset_id = '';
+        return;
+    end
+    dataset_id = answer.dataset_id;
     [b, msg] = ndi.cloud.upload.upload_to_NDI_cloud(S, dataset_id);
 end
