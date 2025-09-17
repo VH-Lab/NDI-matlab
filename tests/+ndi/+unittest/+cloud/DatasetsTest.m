@@ -311,6 +311,26 @@ classdef DatasetsTest < matlab.unittest.TestCase
             testCase.verifyFalse(answer_get.isPublished, msg_get_content);
             narrative(end+1) = "Dataset 'isPublished' flag is correctly false.";
             
+            % --- 5. Set isSubmitted to false ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.updateDataset to set isSubmitted to false.";
+            updateStruct = struct('isSubmitted', false);
+            [b_update, answer_update, apiResponse_update, apiURL_update] = ndi.cloud.api.datasets.updateDataset(cloudDatasetID, updateStruct);
+            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_update);
+
+            narrative(end+1) = "Testing: Verifying the update API call was successful (APICallSuccessFlag should be true).";
+            update_message = ndi.unittest.cloud.APIMessage(narrative, b_update, answer_update, apiResponse_update, apiURL_update);
+            testCase.verifyTrue(b_update, update_message);
+            narrative(end+1) = "Dataset 'isSubmitted' flag set to false successfully.";
+
+            % --- 5.5 Verify isSubmitted status ---
+            narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+            narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
+            narrative(end+1) = "Dataset 'isSubmitted' flag is correctly false.";
+
             narrative(end+1) = "Publication lifecycle test completed successfully.";
             testCase.Narrative = narrative;
         end
