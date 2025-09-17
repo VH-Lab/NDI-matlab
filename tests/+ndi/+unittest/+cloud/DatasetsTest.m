@@ -267,7 +267,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 2.5 Verify submission status ---
             narrative(end+1) = "Preparing to get dataset info to verify submission status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify submission status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify submission status.");
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
@@ -286,7 +286,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 3.5 Verify publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify publication status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status.");
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyTrue(answer_get.isPublished, msg_get_content);
@@ -305,7 +305,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 4.5 Verify un-publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status.");
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyFalse(answer_get.isPublished, msg_get_content);
@@ -325,7 +325,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 5.5 Verify isSubmitted status ---
             narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
@@ -358,7 +358,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 2.5 Verify submission status ---
             narrative(end+1) = "Preparing to get dataset info to verify submission status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify submission status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify submission status.");
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
@@ -378,7 +378,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 5.5 Verify isSubmitted status ---
             narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
@@ -411,7 +411,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 3.5 Verify publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify publication status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status.");
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyTrue(answer_get.isPublished, msg_get_content);
@@ -430,7 +430,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 4.5 Verify un-publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status.");
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyFalse(answer_get.isPublished, msg_get_content);
