@@ -8,11 +8,13 @@ classdef FilesTest < matlab.unittest.TestCase
     properties (Constant)
         DatasetNamePrefix = 'NDI_UNITTEST_FILES_';
         TestFileContent = 'This is a test file for NDI Cloud API testing.';
+        runFileFieldTest = false;
     end
 
     properties
         DatasetID (1,1) string = missing % ID of dataset used for all tests
         Narrative (1,:) string % Stores the narrative for each test
+        KeepDataset (1,1) logical = false % Flag to prevent teardown from deleting dataset
     end
 
     methods (TestClassSetup)
@@ -30,6 +32,7 @@ classdef FilesTest < matlab.unittest.TestCase
     methods (TestMethodSetup)
         % This now runs BEFORE EACH test method, creating a fresh dataset.
         function setupNewDataset(testCase)
+            testCase.KeepDataset = false; % Ensure flag is reset for each test
             import matlab.unittest.fixtures.SuppressedWarningsFixture
             testCase.applyFixture(SuppressedWarningsFixture('MATLAB:structRefFromNonStruct'));
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
@@ -50,6 +53,12 @@ classdef FilesTest < matlab.unittest.TestCase
     methods (Access = private)
         % Private helper for teardown, called by addTeardown.
         function deleteDatasetAfterTest(testCase)
+            if testCase.KeepDataset
+                narrative = testCase.Narrative;
+                narrative(end+1) = "TEARDOWN SKIPPED: Preserving dataset for inspection.";
+                testCase.Narrative = narrative;
+                return;
+            end
             if ~ismissing(testCase.DatasetID)
                 narrative = testCase.Narrative; % Make a local copy
                 narrative(end+1) = "TEARDOWN: Deleting temporary dataset ID: " + testCase.DatasetID;
@@ -63,18 +72,18 @@ classdef FilesTest < matlab.unittest.TestCase
     end
 
     methods (Test)
-        function testSingleFileUploadAndDownload(testCase)
-            testCase.Narrative = "Begin testSingleFileUploadAndDownload";
+        function testSingleFileUploadAndDownloadUseCurl(testCase)
+            testCase.Narrative = "Begin testSingleFileUploadAndDownloadUseCurl";
             narrative = testCase.Narrative;
 
             % Step 1: Create a local test file with a UID as its name
             narrative(end+1) = "SETUP: Creating a local temporary file for upload.";
             import matlab.unittest.fixtures.TemporaryFolderFixture;
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
-            
+
             fileUID = string(did.ido.unique_id());
             localFilePath = fullfile(tempFolder.Folder, fileUID); % Filename is the UID
-            
+
             try
                 fid = fopen(localFilePath, 'w');
                 fprintf(fid, '%s', testCase.TestFileContent);
@@ -84,7 +93,7 @@ classdef FilesTest < matlab.unittest.TestCase
                 testCase.verifyFail("Failed to create local test file: " + ME.message);
                 return; % Stop the test if file creation fails
             end
-            
+
             % Step 2: Get a pre-signed upload URL
             narrative(end+1) = "Preparing to get a pre-signed URL for single file upload.";
             [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
@@ -96,16 +105,16 @@ classdef FilesTest < matlab.unittest.TestCase
             if isempty(ans_url), return; end
             uploadURL = ans_url;
             narrative(end+1) = "Successfully obtained upload URL.";
-            
+
             % Step 3: Upload the file using the URL
-            narrative(end+1) = "Preparing to upload the file using the pre-signed URL.";
+            narrative(end+1) = "Preparing to upload the file using the pre-signed URL (useCurl is true).";
             [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath, "useCurl",true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_put);
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
             if ~b_put, return; end
             narrative(end+1) = "File uploaded successfully.";
-            
+
             pause(10); % Give server time to process the file
 
             % Step 3.5: Verify the file appears in the dataset's file list
@@ -128,7 +137,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
-            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID)
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             narrative(end+1) = "Attempted to call API with URL " + string(url_details);
             msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
             testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
@@ -136,7 +145,302 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
-            
+
+            % Step 5: Download the file and verify its content
+            narrative(end+1) = "Preparing to download the file to verify its content.";
+            downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
+            try
+                websave(downloadedFilePath, downloadURL);
+                narrative(end+1) = "File downloaded successfully.";
+            catch ME
+                testCase.verifyFail("Failed to download file using websave: " + ME.message);
+                return;
+            end
+            retrievedContent = fileread(downloadedFilePath);
+            narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
+            testCase.verifyEqual(retrievedContent, testCase.TestFileContent, "Content of downloaded file does not match original content.");
+            narrative(end+1) = "File content verified successfully.";
+            testCase.Narrative = narrative;
+        end
+
+        function testSingleFileUploadAndDownloadUseMatlabNotCurl(testCase)
+            testCase.Narrative = "Begin testSingleFileUploadAndDownloadUseMatlabNotCurl";
+            narrative = testCase.Narrative;
+
+            % Step 1: Create a local test file with a UID as its name
+            narrative(end+1) = "SETUP: Creating a local temporary file for upload.";
+            import matlab.unittest.fixtures.TemporaryFolderFixture;
+            tempFolder = testCase.applyFixture(TemporaryFolderFixture);
+
+            fileUID = string(did.ido.unique_id());
+            localFilePath = fullfile(tempFolder.Folder, fileUID); % Filename is the UID
+
+            try
+                fid = fopen(localFilePath, 'w');
+                fprintf(fid, '%s', testCase.TestFileContent);
+                fclose(fid);
+                narrative(end+1) = "Local file created successfully with name (UID): " + fileUID;
+            catch ME
+                testCase.verifyFail("Failed to create local test file: " + ME.message);
+                return; % Stop the test if file creation fails
+            end
+
+            % Step 2: Get a pre-signed upload URL
+            narrative(end+1) = "Preparing to get a pre-signed URL for single file upload.";
+            [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_url);
+            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
+            testCase.verifyTrue(b_url, "Failed to get file upload URL. " + msg_url);
+            if ~b_url, return; end
+            testCase.verifyNotEmpty(ans_url, "Upload URL was empty. " + msg_url);
+            if isempty(ans_url), return; end
+            uploadURL = ans_url;
+            narrative(end+1) = "Successfully obtained upload URL.";
+
+            % Step 3: Upload the file using the URL
+            narrative(end+1) = "Preparing to upload the file using the pre-signed URL (useCurl is false).";
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_put);
+            msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
+            testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
+            if ~b_put, return; end
+            narrative(end+1) = "File uploaded successfully.";
+
+            pause(10); % Give server time to process the file
+
+            % Step 3.5: Verify the file appears in the dataset's file list
+            narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
+            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
+            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
+            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
+            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
+            if ~b_get_dset, return; end
+            cloudDatasetInfo = ans_get_dset;
+            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
+            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
+            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
+            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
+            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
+            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            narrative(end+1) = "File successfully appeared in the dataset's file list.";
+
+            % Step 4: Get file details to verify upload and get download URL
+            narrative(end+1) = "Preparing to get file details to verify upload.";
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_details);
+            msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
+            testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
+            if ~b_details, return; end
+            testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
+            downloadURL = ans_details.downloadUrl;
+            narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
+
+            % Step 5: Download the file and verify its content
+            narrative(end+1) = "Preparing to download the file to verify its content.";
+            downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
+            try
+                websave(downloadedFilePath, downloadURL);
+                narrative(end+1) = "File downloaded successfully.";
+            catch ME
+                testCase.verifyFail("Failed to download file using websave: " + ME.message);
+                return;
+            end
+            retrievedContent = fileread(downloadedFilePath);
+            narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
+            testCase.verifyEqual(retrievedContent, testCase.TestFileContent, "Content of downloaded file does not match original content.");
+            narrative(end+1) = "File content verified successfully.";
+            testCase.Narrative = narrative;
+        end
+
+        function testSingleFileUploadAndDownloadUseCurlStop(testCase)
+            testCase.Narrative = "Begin testSingleFileUploadAndDownloadUseCurlStop";
+            narrative = testCase.Narrative;
+
+            % Step 1: Create a local test file with a UID as its name
+            narrative(end+1) = "SETUP: Creating a local temporary file for upload.";
+            import matlab.unittest.fixtures.TemporaryFolderFixture;
+            tempFolder = testCase.applyFixture(TemporaryFolderFixture);
+
+            fileUID = string(did.ido.unique_id());
+            localFilePath = fullfile(tempFolder.Folder, fileUID); % Filename is the UID
+
+            try
+                fid = fopen(localFilePath, 'w');
+                fprintf(fid, '%s', testCase.TestFileContent);
+                fclose(fid);
+                narrative(end+1) = "Local file created successfully with name (UID): " + fileUID;
+            catch ME
+                testCase.verifyFail("Failed to create local test file: " + ME.message);
+                return; % Stop the test if file creation fails
+            end
+
+            % Step 2: Get a pre-signed upload URL
+            narrative(end+1) = "Preparing to get a pre-signed URL for single file upload.";
+            [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_url);
+            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
+            testCase.verifyTrue(b_url, "Failed to get file upload URL. " + msg_url);
+            if ~b_url, return; end
+            testCase.verifyNotEmpty(ans_url, "Upload URL was empty. " + msg_url);
+            if isempty(ans_url), return; end
+            uploadURL = ans_url;
+            narrative(end+1) = "Successfully obtained upload URL.";
+
+            % Step 3: Upload the file using the URL
+            narrative(end+1) = "Preparing to upload the file using the pre-signed URL (useCurl is true).";
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath, "useCurl",true);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_put);
+            msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
+            testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
+            if ~b_put, return; end
+            narrative(end+1) = "File uploaded successfully.";
+
+            pause(10); % Give server time to process the file
+
+            % Step 3.5: Verify the file appears in the dataset's file list
+            narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
+            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
+            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
+            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
+            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
+            if ~b_get_dset, return; end
+            cloudDatasetInfo = ans_get_dset;
+            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
+            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
+            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
+            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
+            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
+            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            narrative(end+1) = "File successfully appeared in the dataset's file list.";
+
+            % Step 4: Get file details to verify upload and get download URL
+            narrative(end+1) = "Preparing to get file details to verify upload.";
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_details);
+            msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
+            testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
+            if ~b_details
+                narrative(end+1) = "FAILURE: Stopping test to preserve dataset for inspection.";
+                testCase.Narrative = narrative;
+                testCase.KeepDataset = true;
+                testCase.assertFail('Stopping test to inspect dataset state after file detail failure.');
+                return;
+            end
+            testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
+            downloadURL = ans_details.downloadUrl;
+            narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
+
+            % Step 5: Download the file and verify its content
+            narrative(end+1) = "Preparing to download the file to verify its content.";
+            downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
+            try
+                websave(downloadedFilePath, downloadURL);
+                narrative(end+1) = "File downloaded successfully.";
+            catch ME
+                testCase.verifyFail("Failed to download file using websave: " + ME.message);
+                return;
+            end
+            retrievedContent = fileread(downloadedFilePath);
+            narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
+            testCase.verifyEqual(retrievedContent, testCase.TestFileContent, "Content of downloaded file does not match original content.");
+            narrative(end+1) = "File content verified successfully.";
+            testCase.Narrative = narrative;
+        end
+
+        function testSingleFileUploadAndDownloadUseCurlFileFieldTest(testCase)
+            if ~testCase.runFileFieldTest
+                return;
+            end
+            testCase.Narrative = "Begin testSingleFileUploadAndDownloadUseCurlFileFieldTest";
+            narrative = testCase.Narrative;
+
+            % Step 1: Create a local test file with a UID as its name
+            narrative(end+1) = "SETUP: Creating a local temporary file for upload.";
+            import matlab.unittest.fixtures.TemporaryFolderFixture;
+            tempFolder = testCase.applyFixture(TemporaryFolderFixture);
+
+            fileUID = string(did.ido.unique_id());
+            localFilePath = fullfile(tempFolder.Folder, fileUID); % Filename is the UID
+
+            try
+                fid = fopen(localFilePath, 'w');
+                fprintf(fid, '%s', testCase.TestFileContent);
+                fclose(fid);
+                narrative(end+1) = "Local file created successfully with name (UID): " + fileUID;
+            catch ME
+                testCase.verifyFail("Failed to create local test file: " + ME.message);
+                return; % Stop the test if file creation fails
+            end
+
+            % Step 2: Get a pre-signed upload URL
+            narrative(end+1) = "Preparing to get a pre-signed URL for single file upload.";
+            [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_url);
+            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
+            testCase.verifyTrue(b_url, "Failed to get file upload URL. " + msg_url);
+            if ~b_url, return; end
+            testCase.verifyNotEmpty(ans_url, "Upload URL was empty. " + msg_url);
+            if isempty(ans_url), return; end
+            uploadURL = ans_url;
+            narrative(end+1) = "Successfully obtained upload URL.";
+
+            % Step 2.5: Verify the file does not yet appear in the dataset's file list
+            narrative(end+1) = "Preparing to check dataset file list to ensure it is empty.";
+            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
+            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
+            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
+            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
+            if ~b_get_dset, return; end
+            cloudDatasetInfo = ans_get_dset;
+            narrative(end+1) = "Testing: Verifying that the dataset's file list is empty.";
+            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && isempty(cloudDatasetInfo.files), "Dataset info should have an empty 'files' field before upload. " + msg_get_dset);
+            narrative(end+1) = "File list is correctly empty before upload.";
+
+            % Step 3: Upload the file using the URL
+            narrative(end+1) = "Preparing to upload the file using the pre-signed URL (useCurl is true).";
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath, "useCurl",true);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_put);
+            msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
+            testCase.verifyTrue(b_put, "File upload (PUT request) failed. " + msg_put);
+            if ~b_put, return; end
+            narrative(end+1) = "File uploaded successfully.";
+
+            pause(10); % Give server time to process the file
+
+            % Step 3.5: Verify the file appears in the dataset's file list
+            narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
+            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
+            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
+            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
+            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
+            if ~b_get_dset, return; end
+            cloudDatasetInfo = ans_get_dset;
+            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
+            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
+            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
+            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
+            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
+            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            narrative(end+1) = "File successfully appeared in the dataset's file list.";
+
+            % Step 4: Get file details to verify upload and get download URL
+            narrative(end+1) = "Preparing to get file details to verify upload.";
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_details);
+            msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
+            testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
+            if ~b_details, return; end
+            testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
+            downloadURL = ans_details.downloadUrl;
+            narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
+
             % Step 5: Download the file and verify its content
             narrative(end+1) = "Preparing to download the file to verify its content.";
             downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
@@ -244,4 +548,3 @@ classdef FilesTest < matlab.unittest.TestCase
         end
     end
 end
-
