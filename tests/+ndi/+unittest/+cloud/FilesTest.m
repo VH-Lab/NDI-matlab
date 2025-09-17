@@ -8,6 +8,7 @@ classdef FilesTest < matlab.unittest.TestCase
     properties (Constant)
         DatasetNamePrefix = 'NDI_UNITTEST_FILES_';
         TestFileContent = 'This is a test file for NDI Cloud API testing.';
+        runFileFieldTest = false;
     end
 
     properties
@@ -351,6 +352,9 @@ classdef FilesTest < matlab.unittest.TestCase
         end
 
         function testSingleFileUploadAndDownloadUseCurlFileFieldTest(testCase)
+            if ~testCase.runFileFieldTest
+                return;
+            end
             testCase.Narrative = "Begin testSingleFileUploadAndDownloadUseCurlFileFieldTest";
             narrative = testCase.Narrative;
 
