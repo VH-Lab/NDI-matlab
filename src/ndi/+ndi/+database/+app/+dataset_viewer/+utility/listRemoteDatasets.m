@@ -7,10 +7,7 @@ function datasets = listRemoteDatasets()
 
     token = ndi.cloud.uilogin();
 
-    [success, dataset] = ndi.cloud.api.datasets.getPublished(1, 10);
-    if ~success
-        error(['Failed to get published datasets: ' dataset.message]);
-    end
+    [response, dataset] = ndi.cloud.api.datasets.get_published(1, 10);
 
     numDatasets = numel(dataset);
 

@@ -42,7 +42,7 @@ function add_document_test(dataset_id)
 
     try
         [~,~] = ndi.cloud.api.documents.addDocumentAsFile(dataset_id, 'test');
-        error('ndi.cloud.api.documents.addDocument did not throw an error after using a non-struct document');
+        error('ndi.cloud.api.documents.addDocumentAsFile did not throw an error after using a non-struct document');
     catch
         % do nothing, this is the expected behavior
     end

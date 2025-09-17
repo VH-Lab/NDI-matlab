@@ -9,26 +9,24 @@ function delete_documents_test(dataset_id)
     %   documents/list_dataset_documents
     %
 
-    [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
-    if ~success, error('Failed to get dataset'); end
+    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     number_of_documents = numel(dataset.documents);
     test_document = struct("name", "test document");
     test_document = jsonencode(test_document);
-    [~, test_document_id] = ndi.cloud.api.documents.addDocumentAsFile(dataset_id, test_document);
-    [~] = ndi.cloud.api.documents.deleteDocument(dataset_id, test_document_id);
-    [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
-    if ~success, error('Failed to get dataset'); end
+    [response, test_document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, test_document);
+    response = ndi.cloud.api.documents.delete_document(dataset_id, test_document_id);
+    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if (number_of_documents ~= numel(dataset.documents))
-        error('ndi.cloud.api.datasets.getDataset returns the same number of documents after deleting a document');
+        error('ndi.cloud.api.datasets.get_dataset returns the same number of documents after deleting a document');
     end
-    [~, summary] = ndi.cloud.api.documents.listDatasetDocuments(dataset_id);
+    [response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
     if (number_of_documents ~= numel(summary.documents))
-        error('ndi.cloud.api.documents.listDatasetDocuments returns the same number of documents after deleting a document');
+        error('ndi.cloud.api.documents.list_dataset_documents returns the same number of documents after deleting a document');
     end
     % try getting the document that was deleted. If no error is thrown, then the document was not deleted
     try
-        [~, ~] = ndi.cloud.api.documents.getDocument(dataset_id, test_document_id);
-        error('ndi.cloud.api.documents.getDocument did not throw an error after delete_document');
+        [response, test_document] = ndi.cloud.api.documents.get_document(dataset_id, test_document_id);
+        error('ndi.cloud.api.documents.get_document did not throw an error after delete_document');
     catch
         % do nothing, this is the expected behavior
     end
@@ -36,8 +34,8 @@ function delete_documents_test(dataset_id)
     % test bulk delete
     % try bulk_delete_documents to delete a document that does not exist
     try
-        [~] = ndi.cloud.api.documents.bulkDeleteDocuments(dataset_id, test_document_id);
-        error('ndi.cloud.api.documents.bulkDeleteDocuments did not throw an error after using a document that does not exist');
+        response = ndi.cloud.api.documents.bulk_delete_documents(dataset_id, test_document_id);
+        error('ndi.cloud.api.documents.bulk_delete_documents did not throw an error after using a document that does not exist');
     catch
         % do nothing, this is the expected behavior
     end
@@ -46,28 +44,27 @@ function delete_documents_test(dataset_id)
     for i = 1:10
         test_document = struct("name", "test document");
         test_document = jsonencode(test_document);
-        [~, test_document_id] = ndi.cloud.api.documents.addDocumentAsFile(dataset_id, test_document);
+        [response, test_document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, test_document);
         document_ids{end+1} = test_document_id;
     end
-    [~] = ndi.cloud.api.documents.bulkDeleteDocuments(dataset_id, document_ids);
-    [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
-    if ~success, error('Failed to get dataset'); end
+    response = ndi.cloud.api.documents.bulk_delete_documents(dataset_id, document_ids);
+    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if (number_of_documents ~= numel(dataset.documents))
-        error('ndi.cloud.api.datasets.getDataset returns the same number of documents after deleting a document');
+        error('ndi.cloud.api.datasets.get_dataset returns the same number of documents after deleting a document');
     end
 
     % try getting the document that was deleted. If no error is thrown, then the document was not deleted
     % try delete_document to delete a document that does not exist
     for i = 1:numel(document_ids)
         try
-            [~, ~] = ndi.cloud.api.documents.getDocument(dataset_id, document_ids(i));
-            error('ndi.cloud.api.documents.getDocument did not throw an error after using bulk_delete_documents');
+            [response, test_document] = ndi.cloud.api.documents.get_document(dataset_id, document_ids(i));
+            error('ndi.cloud.api.documents.get_document did not throw an error after using bulk_delete_documents');
         catch
             % do nothing, this is the expected behavior
         end
         try
-            [~] = ndi.cloud.api.documents.deleteDocument(dataset_id, document_ids(i));
-            error('ndi.cloud.api.documents.deleteDocument did not throw an error after using bulk_delete_documents');
+            response = ndi.cloud.api.documents.delete_document(dataset_id, document_ids(i));
+            error('ndi.cloud.api.documents.delete_document did not throw an error after using bulk_delete_documents');
         catch
             % do nothing, this is the expected behavior
         end

@@ -24,11 +24,7 @@ function cloudDatasetId = uploadDataset(ndiDataset, syncOptions)
     cloud_dataset_info = ndi.cloud.utility.create_cloud_metadata_struct(metadata_struct);
 
     %   Step 1c: Create new NDI Cloud Dataset
-    [success, answer] = ndi.cloud.api.datasets.createDataset(cloud_dataset_info);
-    if ~success
-        error(['Failed to create dataset: ' answer.message]);
-    end
-    cloudDatasetId = answer.dataset_id;
+    [~, cloudDatasetId] = ndi.cloud.api.datasets.create_dataset(cloud_dataset_info);
 
     % Add document with remote dataset id to dataset before uploading.
     remoteDatasetDoc = ndi.cloud.internal.create_remote_dataset_doc(cloudDatasetId, ndiDataset);

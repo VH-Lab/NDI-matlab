@@ -29,10 +29,7 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
         options.AbortOnError (1,1) logical = true
     end
 
-    [success, datasetInfo] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
-    if ~success
-        error(['Failed to get dataset: ' datasetInfo.message]);
-    end
+    [datasetInfo, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
 
     if ~isstruct(datasetInfo) && ~all(ismissing(fileUuids))
         error('No files found in the dataset despite files requested.');
@@ -69,7 +66,7 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
             if options.Verbose; fprintf('File %d already exists locally, skipping...\n', i); end
             continue;
         end
-        [~, downloadURL, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, file_uid);
+        [~, downloadURL, ~] = ndi.cloud.api.files.get_file_details(cloudDatasetId, file_uid);
 
         % Save the file
         try

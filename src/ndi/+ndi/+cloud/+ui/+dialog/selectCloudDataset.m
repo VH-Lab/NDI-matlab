@@ -15,12 +15,10 @@ function cloudDatasetId = selectCloudDataset(access)
     end
 
     if access == "public"
-        [success, datasetInfo] = ndi.cloud.api.datasets.getPublished();
-        if ~success, error("Failed to get published datasets"); end
+        [~, datasetInfo] = ndi.cloud.api.datasets.get_published();
         datasetInfo = datasetInfo.datasets;
     else % private
-        [success, datasetInfo] = ndi.cloud.api.datasets.listDatasets();
-        if ~success, error("Failed to list datasets"); end
+        [~, datasetInfo] = ndi.cloud.api.datasets.list_datasets();
     end
         
     datasetNames = cellfun(@(ds) ds.name, datasetInfo, 'UniformOutput', false);
