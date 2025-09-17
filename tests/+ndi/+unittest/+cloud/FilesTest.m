@@ -140,7 +140,13 @@ classdef FilesTest < matlab.unittest.TestCase
             narrative(end+1) = "Attempted to call API with URL " + string(url_details);
             msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
             testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
-            if ~b_details, return; end
+            if ~b_details
+                narrative(end+1) = "FAILURE: Stopping test to preserve dataset for inspection.";
+                testCase.Narrative = narrative;
+                testCase.KeepDataset = true;
+                testCase.fatalAssertFail('Stopping test to inspect dataset state after file detail failure.');
+                return;
+            end
             testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
@@ -170,10 +176,10 @@ classdef FilesTest < matlab.unittest.TestCase
             narrative(end+1) = "SETUP: Creating a local temporary file for upload.";
             import matlab.unittest.fixtures.TemporaryFolderFixture;
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
-            
+
             fileUID = string(did.ido.unique_id());
             localFilePath = fullfile(tempFolder.Folder, fileUID); % Filename is the UID
-            
+
             try
                 fid = fopen(localFilePath, 'w');
                 fprintf(fid, '%s', testCase.TestFileContent);
@@ -183,7 +189,7 @@ classdef FilesTest < matlab.unittest.TestCase
                 testCase.verifyFail("Failed to create local test file: " + ME.message);
                 return; % Stop the test if file creation fails
             end
-            
+
             % Step 2: Get a pre-signed upload URL
             narrative(end+1) = "Preparing to get a pre-signed URL for single file upload.";
             [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
@@ -195,7 +201,7 @@ classdef FilesTest < matlab.unittest.TestCase
             if isempty(ans_url), return; end
             uploadURL = ans_url;
             narrative(end+1) = "Successfully obtained upload URL.";
-            
+
             % Step 3: Upload the file using the URL
             narrative(end+1) = "Preparing to upload the file using the pre-signed URL (useCurl is false).";
             [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath);
