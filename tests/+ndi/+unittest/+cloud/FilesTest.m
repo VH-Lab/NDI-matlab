@@ -136,17 +136,11 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
-            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID)
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             narrative(end+1) = "Attempted to call API with URL " + string(url_details);
             msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
             testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
-            if ~b_details
-                narrative(end+1) = "FAILURE: Stopping test to preserve dataset for inspection.";
-                testCase.Narrative = narrative;
-                testCase.KeepDataset = true;
-                testCase.fatalAssertFail('Stopping test to inspect dataset state after file detail failure.');
-                return;
-            end
+            if ~b_details, return; end
             testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
@@ -233,7 +227,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
-            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID)
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             narrative(end+1) = "Attempted to call API with URL " + string(url_details);
             msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
             testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
@@ -324,11 +318,17 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
-            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID)
+            [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             narrative(end+1) = "Attempted to call API with URL " + string(url_details);
             msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
             testCase.verifyTrue(b_details, "Failed to get file details. " + msg_details);
-            if ~b_details, return; end
+            if ~b_details
+                narrative(end+1) = "FAILURE: Stopping test to preserve dataset for inspection.";
+                testCase.Narrative = narrative;
+                testCase.KeepDataset = true;
+                testCase.assertFail('Stopping test to inspect dataset state after file detail failure.');
+                return;
+            end
             testCase.verifyEqual(ans_details.uid, char(fileUID), "Returned file details have incorrect UID. " + msg_details);
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
