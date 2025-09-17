@@ -82,7 +82,7 @@ function [b, report] = upload_document_collection(datasetId, documentList, optio
             try
                 % For serial upload, encode just the document properties
                 docProperties = documentList{i}.document_properties;
-                ndi.cloud.api.documents.add_document(datasetId, jsonencodenan(docProperties));
+                [~,~] = ndi.cloud.api.documents.addDocument(datasetId, jsonencodenan(docProperties));
                 report.status{i} = 'success';
             catch
                 report.status{i} = 'failure';
@@ -113,8 +113,8 @@ function [b, report] = upload_document_collection(datasetId, documentList, optio
                     ndi.cloud.upload.internal.zip_documents_for_upload(chunkDocs, datasetId);
                 
                 % Get upload URL and perform upload
-                uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(datasetId);
-                ndi.cloud.api.files.put_files(uploadUrl, zipFilePath);
+                uploadUrl = ndi.cloud.api.documents.getBulkUploadURL(datasetId);
+                ndi.cloud.api.files.putFiles(uploadUrl, zipFilePath);
                 
                 % If we reached here, the upload was successful
                 report.manifest{end+1} = idManifest;

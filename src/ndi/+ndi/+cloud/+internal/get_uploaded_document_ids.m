@@ -3,7 +3,7 @@ function uploaded_document_ids = get_uploaded_document_ids(dataset_id)
 %
 %   Use api endpoint to get ids for all remote (cloud) documents
 
-    [success, result] = ndi.cloud.api.documents.listDatasetDocumentsAll(dataset_id);
+    [success, result] = ndi.cloud.api.documents.listDatasetDocuments(dataset_id);
     if ~success
         error(['Failed to list dataset documents: ' result.message]);
     end
