@@ -267,7 +267,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 2.5 Verify submission status ---
             narrative(end+1) = "Preparing to get dataset info to verify submission status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify submission status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify submission status.");
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
@@ -286,7 +286,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 3.5 Verify publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify publication status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status.");
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyTrue(answer_get.isPublished, msg_get_content);
@@ -305,13 +305,138 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 4.5 Verify un-publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.fatalAssertTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status.");
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
             testCase.verifyFalse(answer_get.isPublished, msg_get_content);
             narrative(end+1) = "Dataset 'isPublished' flag is correctly false.";
             
+            % --- 5. Set isSubmitted to false ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.updateDataset to set isSubmitted to false.";
+            updateStruct = struct('isSubmitted', false);
+            [b_update, answer_update, apiResponse_update, apiURL_update] = ndi.cloud.api.datasets.updateDataset(cloudDatasetID, updateStruct);
+            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_update);
+
+            narrative(end+1) = "Testing: Verifying the update API call was successful (APICallSuccessFlag should be true).";
+            update_message = ndi.unittest.cloud.APIMessage(narrative, b_update, answer_update, apiResponse_update, apiURL_update);
+            testCase.verifyTrue(b_update, update_message);
+            narrative(end+1) = "Dataset 'isSubmitted' flag set to false successfully.";
+
+            % --- 5.5 Verify isSubmitted status ---
+            narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+            narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
+            narrative(end+1) = "Dataset 'isSubmitted' flag is correctly false.";
+
             narrative(end+1) = "Publication lifecycle test completed successfully.";
+            testCase.Narrative = narrative;
+        end
+
+        function testPublicationLifecycleSubmitOnly(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
+            % This test verifies the dataset submission workflow.
+            testCase.Narrative = "Begin DatasetsTest: testPublicationLifecycleSubmitOnly";
+            narrative = testCase.Narrative;
+
+            % --- 1. Use the dataset created in the TestMethodSetup ---
+            cloudDatasetID = testCase.DatasetID;
+            narrative(end+1) = "SETUP: Using temporary dataset with ID: " + cloudDatasetID;
+
+            % --- 2. Submit the dataset ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.submitDataset.";
+            [b_submit, answer_submit, apiResponse_submit, apiURL_submit] = ndi.cloud.api.datasets.submitDataset(cloudDatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_submit);
+
+            narrative(end+1) = "Testing: Verifying the submit API call was successful (APICallSuccessFlag should be true).";
+            submit_message = ndi.unittest.cloud.APIMessage(narrative, b_submit, answer_submit, apiResponse_submit, apiURL_submit);
+            testCase.verifyTrue(b_submit, submit_message);
+            narrative(end+1) = "Dataset submitted successfully.";
+
+            % --- 2.5 Verify submission status ---
+            narrative(end+1) = "Preparing to get dataset info to verify submission status.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify submission status.");
+            narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
+            narrative(end+1) = "Dataset 'isSubmitted' flag is correctly true.";
+
+            % --- 5. Set isSubmitted to false ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.updateDataset to set isSubmitted to false.";
+            updateStruct = struct('isSubmitted', false);
+            [b_update, answer_update, apiResponse_update, apiURL_update] = ndi.cloud.api.datasets.updateDataset(cloudDatasetID, updateStruct);
+            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_update);
+
+            narrative(end+1) = "Testing: Verifying the update API call was successful (APICallSuccessFlag should be true).";
+            update_message = ndi.unittest.cloud.APIMessage(narrative, b_update, answer_update, apiResponse_update, apiURL_update);
+            testCase.verifyTrue(b_update, update_message);
+            narrative(end+1) = "Dataset 'isSubmitted' flag set to false successfully.";
+
+            % --- 5.5 Verify isSubmitted status ---
+            narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+            narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
+            narrative(end+1) = "Dataset 'isSubmitted' flag is correctly false.";
+
+            narrative(end+1) = "Submit-only lifecycle test completed successfully.";
+            testCase.Narrative = narrative;
+        end
+
+        function testPublicationLifecyclePubOnly(testCase)
+            testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
+            % This test verifies the dataset publication workflow without submission.
+            testCase.Narrative = "Begin DatasetsTest: testPublicationLifecyclePubOnly";
+            narrative = testCase.Narrative;
+
+            % --- 1. Use the dataset created in the TestMethodSetup ---
+            cloudDatasetID = testCase.DatasetID;
+            narrative(end+1) = "SETUP: Using temporary dataset with ID: " + cloudDatasetID;
+
+            % --- 3. Publish the dataset ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.publishDataset.";
+            [b_publish, answer_publish, apiResponse_publish, apiURL_publish] = ndi.cloud.api.datasets.publishDataset(cloudDatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_publish);
+
+            narrative(end+1) = "Testing: Verifying the publish API call was successful (APICallSuccessFlag should be true).";
+            publish_message = ndi.unittest.cloud.APIMessage(narrative, b_publish, answer_publish, apiResponse_publish, apiURL_publish);
+            testCase.verifyTrue(b_publish, publish_message);
+            narrative(end+1) = "Dataset published successfully.";
+
+            % --- 3.5 Verify publication status ---
+            narrative(end+1) = "Preparing to get dataset info to verify publication status.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status.");
+            narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyTrue(answer_get.isPublished, msg_get_content);
+            narrative(end+1) = "Dataset 'isPublished' flag is correctly true.";
+
+            % --- 4. Unpublish the dataset ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.unpublishDataset.";
+            [b_unpublish, answer_unpublish, apiResponse_unpublish, apiURL_unpublish] = ndi.cloud.api.datasets.unpublishDataset(cloudDatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(apiURL_unpublish);
+
+            narrative(end+1) = "Testing: Verifying the unpublish API call was successful (APICallSuccessFlag should be true).";
+            unpublish_message = ndi.unittest.cloud.APIMessage(narrative, b_unpublish, answer_unpublish, apiResponse_unpublish, apiURL_unpublish);
+            testCase.verifyTrue(b_unpublish, unpublish_message);
+            narrative(end+1) = "Dataset unpublished successfully.";
+
+            % --- 4.5 Verify un-publication status ---
+            narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.verifyFalse(answer_get.isPublished, msg_get_content);
+            narrative(end+1) = "Dataset 'isPublished' flag is correctly false.";
+
+            narrative(end+1) = "Publish-only lifecycle test completed successfully.";
             testCase.Narrative = narrative;
         end
     end
