@@ -407,7 +407,8 @@ classdef DocumentsTest < matlab.unittest.TestCase
             [b_add, ans_add, resp_add, url_add] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
             narrative(end+1) = "Attempted to call API with URL " + string(url_add);
             narrative(end+1) = "Testing: Verifying the add document API call was successful (APICallSuccessFlag should be true).";
-            testCase.verifyTrue(b_download, "Bulk download function threw an error.");
+            msg_add = ndi.unittest.cloud.APIMessage(narrative, b_add, ans_add, resp_add, url_add);
+            testCase.verifyTrue(b_add, msg_add);
             narrative(end+1) = "Document added successfully. Cloud Document ID: " + ans_add.id;
             cloudDocumentID = ans_add.id;
             % Step 2: Verify count is 1
