@@ -318,13 +318,14 @@ exportTable = cell2table(variableTable.Properties.RowNames,'VariableNames',{'fil
 exportTable{:,{'subjectName','cellID'}} = {''};
 
 for i = 1:numel(fileName)
-    probeMapFileName = [filePath{i},filesep,fileName{i},'.epochprobemap.txt'];
+    probeMapFileName = fullfile(userpath,'data',filePath{i},[fileName{i},'.epochprobemap.txt']);
     try
         probeMap = readtable(probeMapFileName, 'Delimiter', '\t', 'PreserveVariableNames', true);
         exportTable.subjectName(i) = probeMap.subjectstring(1);
         exportTable.cellID(i) = {probeMap.name{1}(end)};
     end
 end
+exportTable.cellType = variableTable.CellType;
 
 [~,~,cellNum] = unique(exportTable(:,{'subjectName','cellID'}),'rows','stable');
 cellNum = cellNum - 1; cellNum(cellNum == 0) = NaN;
@@ -335,13 +336,13 @@ exportTable.subjectNum = subjectNum;
 exportTable = movevars(exportTable,'filePath','After','cellNum');
 exportTable = movevars(exportTable,{'subjectNum','cellNum'},'Before','subjectName');
 
-exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250702.xls');
+exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250912.xls');
 writetable(exportTable,exportPath);
 
 %% Responding to Joanna 8/25/2025
 
 % Get export table
-exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250702.xls');
+exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250912.xls');
 exportTable = readtable(exportPath);
 exportTable = renamevars(exportTable,'subjectName','SubjectLocalIdentifier');
 
@@ -358,7 +359,7 @@ indVm = ndi.fun.table.identifyMatchingRows(probeSummary,'ProbeType','Vm','string
 combinedSummary = ndi.fun.table.join({subjectSummary,probeSummary(indVm,:),exportTable},...
     'uniqueVariables',{'ProbeDocumentIdentifier','filePath'});
 
-%% Get cell type indices
+% Get cell type indices
 cellTypes = unique(combinedSummary.CellTypeName);
 indCellTypes = false(height(combinedSummary),numel(cellTypes));
 for i = 1:numel(cellTypes)
@@ -390,3 +391,72 @@ for i = 1:numel(cellTypes)
     end
 end
 cellCompound = ndi.fun.table.vstack(reshape(cellCompound',[],1));
+
+%% Responding to Joanna 9/12/2025
+
+exportTable = cell2table(variableTable.Properties.RowNames,'VariableNames',{'filePath'});
+[filePaths,fileNames,fileExts] = fileparts(exportTable.filePath);
+exportTable{:,{'subjectName','cellID'}} = {''};
+
+for i = 1:numel(fileNames)
+    if strcmp(fileExts{i},'.mat')
+        fileName = fullfile(userpath,'data',filePaths{i},fileNames{i});
+        probeMap = readtable([fileName,'.epochprobemap.txt'], 'Delimiter', '\t', 'PreserveVariableNames', true);
+        exportTable.subjectName(i) = probeMap.subjectstring(1);
+        exportTable.cellID(i) = {probeMap.name{1}(end)};
+        matObj = matfile([fileName,'.mat']);
+        exportTable.inputSteps(i) = size(matObj,'inputData',2);
+        exportTable.outputSteps(i) = size(matObj,'outputData',2);
+    end
+end
+exportTable.cellType = variableTable.CellType;
+
+%% Get compound indices
+
+[~,~,cellNum] = unique(exportTable(:,{'subjectName','cellID'}),'rows','stable');
+cellNum = cellNum - 1; cellNum(cellNum == 0) = NaN;
+exportTable.cellNum = cellNum;
+[~,~,subjectNum] = unique(exportTable(:,{'subjectName'}),'rows','stable');
+subjectNum = subjectNum - 1; subjectNum(subjectNum == 0) = NaN;
+exportTable.subjectNum = subjectNum;
+
+cellTypes = unique(exportTable.cellType);
+indCellTypes = false(height(exportTable),numel(cellTypes));
+for i = 1:numel(cellTypes)
+    indCellTypes(:,i) = ndi.fun.table.identifyMatchingRows(exportTable,'cellType',cellTypes{i},'stringMatch','identical');
+end
+
+compounds = {'/AVP_IV','OTA_AVP','SR49059','Nelivap','(d(CH2)5[Tyr(Me)2]AVP)','OTR','/OT_','TGOT','FE201874','d[Cha4]-AVP','PVN','SON','SCN','CRF'};
+indCompounds = false(height(exportTable),numel(compounds));
+for i = 1:numel(compounds)
+    indCompounds(:,i) = ndi.fun.table.identifyMatchingRows(exportTable,'filePath',compounds{i},'stringMatch','contains');
+end
+
+cellCompound = cell(numel(cellTypes),numel(compounds));
+for i = 1:numel(cellTypes)
+    for j = 1:numel(compounds)
+        ind = indCellTypes(:,i) & indCompounds(:,j);
+        numCells = numel(unique(exportTable.cellNum(ind)));
+        numRats = numel(unique(exportTable.subjectNum(ind)));
+        % strain = strjoin(unique([exportTable.BackgroundStrainName(ind);...
+        %     exportTable.StrainName(ind)]),',');
+        cellCompound{i,j} = cell2table([cellTypes(i),compounds(j),...
+            {numRats},{numCells}], ...
+            'VariableNames',{'CellType','CompoundType','Rats','Cells'});
+    end
+end
+cellCompound = ndi.fun.table.vstack(reshape(cellCompound',[],1));
+cellCompound(strcmp(cellCompound.CellType,'') | cellCompound.Rats == 0,:) = [];
+
+exportTable = movevars(exportTable,{'inputSteps','outputSteps','filePath'},'After','cellType');
+exportTable = movevars(exportTable,{'subjectNum','cellNum'},'Before','subjectName');
+
+exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250912.xls');
+writetable(exportTable,exportPath);
+
+exportPath = fullfile(userpath,'data','Dabrowska','subjectSummary_250912.xls');
+writetable(cellCompound,exportPath);
+
+ind = exportTable.inputSteps ~= exportTable.outputSteps;
+exportPath = fullfile(userpath,'data','Dabrowska','dataMismatch_250912.xls');
+writetable(exportTable(ind,:),exportPath);
