@@ -53,7 +53,7 @@ function documents = download_document_collection(datasetId, documentIds, option
     end
 
     % If user requests all documents, fetch the full list of IDs first.
-    if isempty(documentIds) || (numel(documentIds)==1 && documentIds == "")
+    if isempty(documentIds) || (isscalar(documentIds) && documentIds == "")
         disp('No document IDs provided; fetching all document IDs from the server...');
         id_map = ndi.cloud.sync.internal.listRemoteDocumentIds(datasetId);
         documentIds = id_map.apiId;
@@ -80,7 +80,7 @@ function documents = download_document_collection(datasetId, documentIds, option
         chunk_doc_ids = documentChunks{c};
         fprintf('  Processing chunk %d of %d (%d documents)...\n', c, numChunks, numel(chunk_doc_ids));
 
-        [success, downloadUrl] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, chunk_doc_ids);
+        [success, downloadUrl] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
         if ~success
             error(['Failed to get bulk download URL: ' downloadUrl.message]);
         end
