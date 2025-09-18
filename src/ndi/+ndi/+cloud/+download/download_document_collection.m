@@ -43,7 +43,7 @@ function documents = download_document_collection(datasetId, documentIds, option
 %    my_ids = ["id_abc", "id_def", ...];
 %    docs = ndi.cloud.download.download_document_collection("dataset456", my_ids, ChunkSize=5000);
 %
-% See also: ndi.cloud.api.documents.get_bulk_download_url, ndi.cloud.api.documents.list_dataset_documents_all % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_bulk_download_url with ndi.cloud.api.documents.getBulkDownloadURL, and ndi.cloud.api.documents.list_dataset_documents_all with ndi.cloud.api.documents.listDatasetDocumentsAll
+% See also: ndi.cloud.api.documents.getBulkDownloadURL, ndi.cloud.api.documents.listDatasetDocumentsAll
 
     arguments
         datasetId (1,1) string
@@ -53,7 +53,7 @@ function documents = download_document_collection(datasetId, documentIds, option
     end
 
     % If user requests all documents, fetch the full list of IDs first.
-    if isempty(documentIds) || (isscalar(documentIds) && documentIds == "")
+    if isempty(documentIds) || (numel(documentIds)==1 && documentIds == "")
         disp('No document IDs provided; fetching all document IDs from the server...');
         id_map = ndi.cloud.sync.internal.listRemoteDocumentIds(datasetId);
         documentIds = id_map.apiId;
@@ -80,10 +80,9 @@ function documents = download_document_collection(datasetId, documentIds, option
         chunk_doc_ids = documentChunks{c};
         fprintf('  Processing chunk %d of %d (%d documents)...\n', c, numChunks, numel(chunk_doc_ids));
 
-        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_bulk_download_url with ndi.cloud.api.documents.getBulkDownloadURL
-        [b_success,downloadUrl] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
-        if ~b_success
-            error('Failed at getBulkDownloadURL')
+        [success, downloadUrl] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, chunk_doc_ids);
+        if ~success
+            error(['Failed to get bulk download URL: ' downloadUrl.message]);
         end
         tempZipFilepath = [tempname, '.zip'];
         zipfileCleanupObj = onCleanup(@() deleteIfExists(tempZipFilepath));

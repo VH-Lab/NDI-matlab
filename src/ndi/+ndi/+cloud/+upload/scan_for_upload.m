@@ -85,11 +85,11 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
     clear db_cleanup_obj
 
     if (~new)
-        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.list_dataset_documents with ndi.cloud.api.documents.listDatasetDocuments
-        [doc_resp, doc_summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
+        [success, doc_summary] = ndi.cloud.api.documents.listDatasetDocumentsAll(dataset_id);
+        if ~success, error(['Failed to list documents: ' doc_summary.message]); end
 
-        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
-        [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+        [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
+        if ~success, error(['Failed to get dataset: ' dataset.message]); end
         already_uploaded_docs = {};
         if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end % prior version
         % if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;

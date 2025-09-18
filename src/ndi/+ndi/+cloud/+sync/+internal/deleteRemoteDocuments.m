@@ -37,8 +37,10 @@ function deleteRemoteDocuments(cloudDatasetId, remoteApiIdsToDelete, syncOptions
         fprintf('[DryRun] Would delete remote documents with API IDs from cloud dataset %s:\n%s\n', ...
             cloudDatasetId, strjoin("  " + remoteApiIdsToDelete, newline) );
     else
-        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.bulk_delete_documents with ndi.cloud.api.documents.bulkDeleteDocuments
-        ndi.cloud.api.documents.bulk_delete_documents(cloudDatasetId, remoteApiIdsToDelete)
+        [success, ~] = ndi.cloud.api.documents.bulkDeleteDocuments(cloudDatasetId, remoteApiIdsToDelete);
+        if ~success
+            warning('Failed to bulk delete documents');
+        end
         if syncOptions.Verbose
             fprintf('Deleted documents.')
         end

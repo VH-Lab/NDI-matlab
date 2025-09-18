@@ -4,7 +4,7 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
     % [B, MSG] = ndi.cloud.download.dataset_documents(DATASET, JSONPATH, ...])
     %
     % Inputs:
-    %   DATASET     - The dataset structure returned from ndi.cloud.api.datasets.get_dataset % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
+    %   DATASET     - The dataset structure returned from ndi.cloud.api.datasets.get_dataset
     %   MODE        - 'local' to download all files locally,
     %                 'hybrid' to leave binary files in cloud    
     %   JSONPATH    - location to save documents
@@ -53,8 +53,11 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
             continue;
         end
 
-        % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.get_document with ndi.cloud.api.documents.getDocument
-        [response, docStruct] = ndi.cloud.api.documents.get_document(dataset.x_id, document_id);
+        [success, docStruct] = ndi.cloud.api.documents.getDocument(dataset.x_id, document_id);
+        if ~success
+            warning(['Failed to get document: ' docStruct.message]);
+            continue;
+        end
         
         if verbose, disp(['Saving document ' int2str(i) '...']); end
 

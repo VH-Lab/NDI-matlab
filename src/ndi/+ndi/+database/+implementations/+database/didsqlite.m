@@ -92,8 +92,11 @@ classdef  didsqlite < ndi.database
                     cloudDatasetId = cloudPath{1};
                     ndiFileUid = cloudPath{2};
     
-                    % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
-                    [~, fileUrl, ~] = ndi.cloud.api.files.get_file_details(cloudDatasetId, ndiFileUid);
+                    [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, ndiFileUid);
+                    if ~success
+                        error(['Failed to get file details: ' answer.message]);
+                    end
+                    fileUrl = answer.downloadUrl;
                     websave(destPath, fileUrl);
                 else
                     error('NDI:Didsqlite:UnsupportedFileLocationType', ...
