@@ -4,7 +4,7 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
     % [B, MSG] = ndi.cloud.download.dataset_documents(DATASET, JSONPATH, ...])
     %
     % Inputs:
-    %   DATASET     - The dataset structure returned from ndi.cloud.api.datasets.get_dataset
+    %   DATASET     - The dataset structure returned from ndi.cloud.api.datasets.getDataset
     %   MODE        - 'local' to download all files locally,
     %                 'hybrid' to leave binary files in cloud    
     %   JSONPATH    - location to save documents

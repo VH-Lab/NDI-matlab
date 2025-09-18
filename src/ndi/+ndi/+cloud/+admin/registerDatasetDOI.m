@@ -28,7 +28,10 @@ function registerDatasetDOI(cloudDatasetID, options)
     end
 
     if ~ismissing(cloudDatasetID)
-        [dataset, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetID);
+        [success, dataset] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+        if ~success
+            error(['Failed to get dataset: ' dataset.message]);
+        end
     else
         dataset = [];
     end
