@@ -139,7 +139,12 @@ function [comparison_report, local_comparison_structs, remote_comparison_structs
                 
                 if options.Verbose, fprintf('Comparing document %d/%d: %s\n', i, numel(comparison_report.common_ids), ndi_id); end
                 
-                [~, remote_doc_struct] = ndi.cloud.api.documents.get_document(cloudDatasetId, api_id);
+                [success, remote_doc_struct] = ndi.cloud.api.documents.getDocument(cloudDatasetId, api_id);
+                if ~success
+                    mismatched_ids_list{end+1} = ndi_id;
+                    mismatch_details_list{end+1} = struct('ndiId',ndi_id,'apiId',api_id,'reason','Failed to retrieve remote document.');
+                    continue;
+                end
                 local_doc = common_local_docs{i};
                 
                 % Prepare for comparison

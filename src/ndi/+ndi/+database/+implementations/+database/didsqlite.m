@@ -92,7 +92,11 @@ classdef  didsqlite < ndi.database
                     cloudDatasetId = cloudPath{1};
                     ndiFileUid = cloudPath{2};
     
-                    [~, fileUrl, ~] = ndi.cloud.api.files.get_file_details(cloudDatasetId, ndiFileUid);
+                    [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, ndiFileUid);
+                    if ~success
+                        error(['Failed to get file details: ' answer.message]);
+                    end
+                    fileUrl = answer.downloadUrl;
                     websave(destPath, fileUrl);
                 else
                     error('NDI:Didsqlite:UnsupportedFileLocationType', ...

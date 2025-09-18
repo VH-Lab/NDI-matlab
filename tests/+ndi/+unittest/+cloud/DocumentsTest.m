@@ -188,7 +188,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 doc_to_add = ndi.document('base', 'base.name', "doc " + i);
                 json_doc = jsonencodenan(doc_to_add.document_properties);
                 [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
-                testCase.fatalAssertTrue(b_add, "Failed to add document #" + i + " in bulk test.");
+                testCase.fatalAssertTrue(b_add, "Failed to add document #" + i + " in serial test.");
                 cloudDocIDs(i) = ans_add.id;
             end
             narrative(end+1) = "Successfully added " + numDocs + " documents.";
@@ -355,7 +355,8 @@ classdef DocumentsTest < matlab.unittest.TestCase
             catch ME
                 narrative(end+1) = "Bulk download API call failed with an error: " + ME.message;
             end
-            testCase.verifyTrue(b_download, "Bulk download function threw an error.");
+            msg_blkdownload = ndi.unittest.cloud.APIMessage(narrative, b_download, "", "", "");
+            testCase.verifyTrue(b_download, msg_blkdownload);
             
             % Step 7: Verify content of bulk-downloaded documents one-by-one
             narrative(end+1) = "Preparing to verify content of bulk-downloaded documents one-by-one.";
