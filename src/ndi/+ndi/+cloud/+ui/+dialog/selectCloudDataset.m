@@ -15,9 +15,11 @@ function cloudDatasetId = selectCloudDataset(access)
     end
 
     if access == "public"
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_published with ndi.cloud.api.datasets.getPublished
         [~, datasetInfo] = ndi.cloud.api.datasets.get_published();
         datasetInfo = datasetInfo.datasets;
     else % private
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.list_datasets with ndi.cloud.api.datasets.listDatasets
         [~, datasetInfo] = ndi.cloud.api.datasets.list_datasets();
     end
         

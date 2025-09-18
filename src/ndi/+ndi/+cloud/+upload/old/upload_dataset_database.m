@@ -90,6 +90,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
         end
         json_document = did.datastructures.jsonencodenan(documents_for_upload{i}.document_properties);
         try
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.documents.add_document with ndi.cloud.api.documents.addDocument
             [result] = ndi.cloud.api.documents.add_document(cloud_dataset_id, json_document);
         catch ME
             warning(ME.identifier, '%s', ME.message)
@@ -137,6 +138,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
 
     for i = 1:num_files
         uid = file_manifest(i).uid;
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
         % upload_url = ndi.cloud.api.files.get_file_upload_url(cloud_dataset_id, uid);
         % uploadFile(file_manifest(i).file_path, upload_url, 'DisplayMode', 'None')
 
@@ -146,7 +148,9 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
 
         try
             % fprintf('File size: %d KB. ', round(file_manifest(i).bytes/1024) )
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(cloud_dataset_id, uid, auth_token);
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             response = ndi.cloud.api.files.put_files(upload_url, file_manifest(i).file_path, auth_token);
         catch ME
             warning(ME.identifier, '%s', ME.message)

@@ -35,6 +35,7 @@ function [status, dataset] = update_cloud_metadata(datasetid, S)
     end
     dataset_update.contributors = author_struct;
 
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.update_dataset with ndi.cloud.api.datasets.updateDataset
     dataset = ndi.cloud.api.datasets.update_dataset(datasetid,dataset_update);
     status = 0; % If previous statement did not fail, status is 0
 end

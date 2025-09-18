@@ -194,6 +194,7 @@ q_stim_and_stim_decoder_docs = S.database_search(q_stim_decoder & q_stim);
 filename = 'special_char.json';
 str_doc = fileread(filename);
 bug_document = jsondecode(str_doc);
+% TODO: Update deprecated function call. Replace ndi.cloud.api.documents.add_document with ndi.cloud.api.documents.addDocument
 [response] = ndi.cloud.api.documents.add_document(dataset_id, bug_document);
 
 %%

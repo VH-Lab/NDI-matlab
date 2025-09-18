@@ -30,9 +30,10 @@ classdef FilesTest < matlab.unittest.TestCase
         function createTestDataset(testCase)
             % Create a new dataset for each test to ensure isolation.
             datasetInfo = struct("name", testCase.DatasetName);
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset with ndi.cloud.api.datasets.createDataset
             [~, testCase.DatasetID] = ...
                 ndi.cloud.api.datasets.create_dataset(datasetInfo);
-            
+
             % The teardown is queued to run after the test method completes.
             testCase.addTeardown(@() deleteDataset(testCase.DatasetID));
         end
@@ -43,11 +44,11 @@ classdef FilesTest < matlab.unittest.TestCase
             fid = fopen(testCase.TestFilePath, 'w');
             fprintf(fid, '%s', testCase.TestFileContent);
             fclose(fid);
-            
+
             % The teardown is queued to run after the test method completes.
             testCase.addTeardown(@() deleteFile(testCase.TestFilePath));
         end
-        
+
         function generateNewFileUID(testCase)
             % Generate a fresh, unique file UID before each test method runs.
             testCase.FileUID = testCase.generateFileUID();
@@ -63,9 +64,10 @@ classdef FilesTest < matlab.unittest.TestCase
     methods (Test)
         function testGetFileUploadUrl(testCase)
             % Test getting an upload URL for a file
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
-            
+
             testCase.verifyNotEmpty(upload_url, 'Expected non-empty upload URL');
             testCase.verifyTrue(ischar(upload_url) || isstring(upload_url), ...
                 'Expected upload URL to be a string');
@@ -74,30 +76,35 @@ classdef FilesTest < matlab.unittest.TestCase
         function testPutFiles(testCase)
             % Test uploading a file using a presigned URL
             % Get upload URL
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
-            
+
             % Upload file
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             response = ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            
+
             testCase.verifyEqual(double(response.StatusCode), 200, 'File upload PUT request failed.');
         end
 
         function testGetFileDetails(testCase)
             % Test getting file details after upload
             % Upload a file first
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            
+
             pause(5) % Give server time to register file
-            
+
             % Get file details
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
             [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, testCase.FileUID);
-            
+
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
             testCase.verifyNotEmpty(downloadUrl, 'Expected non-empty download URL');
             testCase.verifyClass(file_detail, 'struct', 'Expected file details to be a struct');
@@ -108,33 +115,36 @@ classdef FilesTest < matlab.unittest.TestCase
         function testEndToEndFileUpload(testCase)
             % Test the complete file upload workflow
             % Step 1: Get upload URL
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_upload_url with ndi.cloud.api.files.getFileUploadURL
             [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, testCase.FileUID);
-            
+
             % Step 2: Upload file
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            
+
             pause(5)
-            
+
             % Step 3: Get file details
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
             [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, testCase.FileUID);
-            
+
             % Verify file details
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
             testCase.verifyNotEmpty(downloadUrl, 'Expected non-empty download URL');
-            
+
             % Download the file and verify its contents
             websave('temp_test.txt', downloadUrl);
             testCase.addTeardown(@() delete('temp_test.txt'))
             str = filread('temp_test.txt');
             testCase.verifyEqual(str, testCase.TestFileContent)
         end
-        
+
         function testFileCollectionUpload(testCase)
             % 1. ARRANGE: Set up a realistic local file environment
-            
+
             % Use a temporary folder for this test that is automatically cleaned up
             import matlab.unittest.fixtures.WorkingFolderFixture
             testCase.applyFixture(WorkingFolderFixture);
@@ -149,13 +159,13 @@ classdef FilesTest < matlab.unittest.TestCase
             if ~isfolder(ndiFilesDownload)
                 mkdir(ndiFilesDownload);
             end
-            
+
             % Create a struct array to hold metadata about our test files
             docFileStruct = struct('uid', '', 'name', '', 'content', '');
-            
+
             % Create the physical files and populate the metadata struct
             for i = 1:numFiles
-                uid = getfield(ndi.ido(),'identifier'); 
+                uid = getfield(ndi.ido(),'identifier');
                 fileName = sprintf(uid);
                 fullfilePath = fullfile(ndiFilesUpload, uid);
                 % Create data that spans all uint8 values and write it to the file
@@ -164,20 +174,21 @@ classdef FilesTest < matlab.unittest.TestCase
                 fid = fopen(fullfilePath, 'w');
                 fwrite(fid, fileContent, 'uint8','ieee-le');
                 fclose(fid);
-                
+
                 % Store the metadata
                 docFileStruct(i).uid = uid;
                 docFileStruct(i).name = fileName;
                 docFileStruct(i).content = fileContent;
             end
             % --- 2. ACT: Call the API endpoints to perform the upload ---
-            
+
             % First, get the secure, one-time upload URL from the API
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_collection_upload_url with ndi.cloud.api.files.getFileCollectionUploadURL
             [response,upload_url] = ndi.cloud.api.files.get_file_collection_upload_url(testCase.DatasetID);
-            
+
             % Assert that the request for the URL was successful
             testCase.verifyNotEmpty(upload_url, "The upload URL returned by the API for dataset " + testCase.DatasetID + "was empty.");
-            
+
             % Create the zip archive to be uploaded
             id = ndi.ido;
             zipFName = id.identifier;
@@ -186,6 +197,7 @@ classdef FilesTest < matlab.unittest.TestCase
             zip(zipFileName, filesToZip);
             testCase.verifyTrue(isfile(zipFileName), 'The zip archive was not created on disk.');
             % Second, use the URL to upload the zip file via a PUT request
+            % TODO: Update deprecated function call. Replace ndi.cloud.api.files.put_files with ndi.cloud.api.files.putFiles
             [response] = ndi.cloud.api.files.put_files(upload_url, zipFileName);
             % --- 3. ASSERT: Verify the upload request was accepted ---
             % A 200 status code indicates the server received the file successfully
@@ -230,6 +242,7 @@ end
 
 
 function deleteDataset(datasetId)
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.delete_dataset with ndi.cloud.api.datasets.deleteDataset
     ndi.cloud.api.datasets.delete_dataset(datasetId);
 end
 

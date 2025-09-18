@@ -92,6 +92,7 @@ classdef  didsqlite < ndi.database
                     cloudDatasetId = cloudPath{1};
                     ndiFileUid = cloudPath{2};
     
+                    % TODO: Update deprecated function call. Replace ndi.cloud.api.files.get_file_details with ndi.cloud.api.files.getFileDetails
                     [~, fileUrl, ~] = ndi.cloud.api.files.get_file_details(cloudDatasetId, ndiFileUid);
                     websave(destPath, fileUrl);
                 else

@@ -24,6 +24,7 @@ function [b,msg] = upload_download(D,metadatafile)
     tic;
 
     try
+        % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.create_dataset with ndi.cloud.api.datasets.createDataset
         [response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
     catch
         msg = 'ndi.cloud.api.datasets.create_dataset() failed to create a new dataset';

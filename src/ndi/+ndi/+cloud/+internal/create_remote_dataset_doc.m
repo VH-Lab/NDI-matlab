@@ -19,6 +19,7 @@ function remoteDatasetDoc = create_remote_dataset_doc(cloudDatasetId, ndiDataset
         ndiDataset (1,1) ndi.dataset
     end
 
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_dataset with ndi.cloud.api.datasets.getDataset
     [remoteDataset, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
     remoteDatasetDoc = ndi.document('dataset_remote', ...
             'base.session_id', ndiDataset.id, ...

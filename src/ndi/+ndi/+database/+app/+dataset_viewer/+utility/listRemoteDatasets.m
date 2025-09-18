@@ -7,6 +7,7 @@ function datasets = listRemoteDatasets()
 
     token = ndi.cloud.uilogin();
 
+    % TODO: Update deprecated function call. Replace ndi.cloud.api.datasets.get_published with ndi.cloud.api.datasets.getPublished
     [response, dataset] = ndi.cloud.api.datasets.get_published(1, 10);
 
     numDatasets = numel(dataset);
