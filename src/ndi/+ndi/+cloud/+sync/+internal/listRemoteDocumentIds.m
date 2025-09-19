@@ -33,7 +33,7 @@ function [id_map] = listRemoteDocumentIds(cloudDatasetId, options)
 
     try
         % Delegate the fetching and pagination logic to the dedicated function
-        [b,all_documents] = ndi.cloud.api.documents.list_dataset_documents_all(cloudDatasetId);
+        [~,all_documents] = ndi.cloud.api.documents.listDatasetDocumentsAll(cloudDatasetId);
         all_documents = all_documents.documents;
 
         if isempty(all_documents)
