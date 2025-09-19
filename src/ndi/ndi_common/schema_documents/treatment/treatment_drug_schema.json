@@ -48,8 +48,8 @@
 		{
 		    "name": "administration_duration",
 		    "type": "double",
-		    "default_value": [0,1000000,1,1],
-		    "parameters": "",
+		    "default_value": 0,
+		    "parameters": [0,1000000,1,1],
 		    "queryable": 1,
 		    "documentation": "Duration of drug administration duration in days"
 		}

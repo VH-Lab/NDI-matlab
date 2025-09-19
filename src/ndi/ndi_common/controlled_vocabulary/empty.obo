@@ -788,9 +788,9 @@ def: "A unique numerical identifier assigned to a subject in an experiment." []
 
 [Term]
 id: EMPTY:00000226
-name: C. elegans behavioral assay: first frame image
+name: C. elegans behavioral assay: video recording
 namespace: empty_ontology
-def: "An image corresponding to the first frame of the C. elegans behavioral video recording." []
+def: "A video recording capturing the behavior of C. elegans during an experimental assay." []
 
 [Term]
 id: EMPTY:00000227
@@ -800,21 +800,21 @@ def: "A binary image (logical matrix) where pixels within the experimental arena
 
 [Term]
 id: EMPTY:00000228
-name: C. elegans behavioral assay: bacteria mask
+name: bacterial patch mask
 namespace: empty_ontology
-def: "A binary image mask representing the union of all individually detected bacterial food patch areas on the C. elegans assay plate. This mask defines all food-containing regions." []
+def: "A binary image mask (logical matrix) representing the union of all individually detected bacterial patch areas on an assay plate. This mask defines all food-containing regions." []
 
 [Term]
 id: EMPTY:00000229
-name: C. elegans behavioral assay: closest patch identifier map
+name: bacterial patch closest identifier map
 namespace: empty_ontology
-def: "An image or map where each pixel's value is the identifier of the bacterial food patch closest to that pixel's location." []
+def: "An image or map where each pixel's value is the identifier of the bacterial patch closest to that pixel's location." []
 
 [Term]
 id: EMPTY:00000230
-name: C. elegans behavioral assay: closest patch OD600 map
+name: bacterial patch fluorescence image (normalized)
 namespace: empty_ontology
-def: "An image or map where each pixel's value corresponds to the nominal OD600 or relative density of the bacterial food patch closest to that pixel's location." []
+def: "An image of fluorescently labeled bacterial patches that has been processed to correct for uneven illumination. This is achieved by dividing the raw fluorescence image by a corresponding, smoothed background image (typically of an empty agar plate), thereby removing illumination-dependent spatial variance in the signal intensity. Unit: dimensionless." []
 
 [Term]
 id: EMPTY:00000231
@@ -1079,6 +1079,14 @@ id: EMPTY:10000014
 name: treatment: food restriction offset time
 namespace: empty_ontology
 def: "The date and time when a period of food restriction ends for a subject. Unit: datetime." []
+
+[Term]
+id: EMPTY:10000015
+name: treatment: culture from cell type
+namespace: empty_ontology
+def: "Indicates the experimental subject is a cell culture established from cells of a specific, known cell type. Cell type provided as ontology string." []
+is_a: EMPTY:10000000 ! treatment
+property_value: codeName "treatmentCultureFromCellType" xsd:string
 
 [Term]
 id: EMPTY:20000000
