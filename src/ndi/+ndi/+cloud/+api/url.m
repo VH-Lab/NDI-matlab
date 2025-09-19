@@ -53,22 +53,22 @@ function url = url(endpointName, options)
         endpointMap("create_dataset")                 = "/organizations/{organizationId}/datasets";
         endpointMap("get_published")                  = "/datasets/published?page={page}&pageSize={page_size}";
         endpointMap("get_unpublished")                = "/datasets/unpublished?page={page}&pageSize={page_size}";
-        endpointMap("get_raw_file_upload_url")        = "/datasets/{datasetId}/files/raw/{uid}";
-        endpointMap("get_file_upload_url")            = "/datasets/{datasetId}/files/{uid}";
-        endpointMap("get_file_collection_upload_url") = "/datasets/{datasetId}/files/bulk";
-        endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{uid}/detail";
+        endpointMap("get_file_upload_url")            = "/datasets/{organizationId}/{datasetId}/files/{file_uid}";
+        endpointMap("get_file_collection_upload_url") = "/datasets/{organizationId}/{datasetId}/files/bulk";
+        endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{file_uid}/detail";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
         endpointMap("submit_dataset")                 = "/datasets/{datasetId}/submit";
         endpointMap("publish_dataset")                = "/datasets/{datasetId}/publish";
         endpointMap("unpublish_dataset")              = "/datasets/{datasetId}/unpublish";
+        endpointMap("document_count")                 = "/datasets/{datasetId}/document-count";
         endpointMap("get_document")                   = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("update_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("delete_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("bulk_delete_documents")          = "/datasets/{datasetId}/documents/bulk-delete";
         endpointMap("bulk_upload_documents")          = "/datasets/{datasetId}/documents/bulk-upload";
         endpointMap("bulk_download_documents")        = "/datasets/{datasetId}/documents/bulk-download";
-        endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents";
+        endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents?page={page}&pageSize={page_size}";
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";
     end

@@ -1,6 +1,0 @@
-
-
-For each api function, we would like to test:
-
-a) that it completes a correct call successfully
-b) that it returns the appropriate error under some conditions

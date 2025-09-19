@@ -35,6 +35,9 @@ function [status, dataset] = update_cloud_metadata(datasetid, S)
     end
     dataset_update.contributors = author_struct;
 
-    dataset = ndi.cloud.api.datasets.update_dataset(datasetid,dataset_update);
+    [success, dataset] = ndi.cloud.api.datasets.updateDataset(datasetid,dataset_update);
+    if ~success
+        error(['Failed to update dataset: ' dataset.message]);
+    end
     status = 0; % If previous statement did not fail, status is 0
 end

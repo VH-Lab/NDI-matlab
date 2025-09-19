@@ -29,7 +29,24 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
         options.AbortOnError (1,1) logical = true
     end
 
-    [datasetInfo, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
+    [success, datasetInfo] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
+    if ~success
+        error(['Failed to get dataset: ' datasetInfo.message]);
+    end
+
+    if ~isstruct(datasetInfo) && ~all(ismissing(fileUuids))
+        error('No files found in the dataset despite files requested.');
+    elseif ~isstruct(datasetInfo)
+        % no dataset
+        return;
+    end
+   
+    if ~isstruct(datasetInfo.files) && ~all(ismissing(fileUuids))
+        error('No files found in the dataset despite files requested.');
+    end
+    if ~isstruct(datasetInfo.files) % nothing to do
+        return;
+    end
 
     files = filterFilesToDownload(datasetInfo.files, fileUuids);
     
@@ -52,7 +69,12 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
             if options.Verbose; fprintf('File %d already exists locally, skipping...\n', i); end
             continue;
         end
-        [~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(cloudDatasetId, file_uid);
+        [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, file_uid);
+        if ~success
+            warning(['Failed to get file details: ' answer.message]);
+            continue;
+        end
+        downloadURL = answer.downloadUrl;
 
         % Save the file
         try
@@ -75,7 +97,7 @@ function files = filterFilesToDownload(files, fileUuids)
         [~, idx] = intersect(allFileUuids, fileUuids, "stable");
 
         files = files(idx);
-files, numel(fileUuids),
+
         assert(isequal(sort(string({files.uid})), sort(fileUuids)), ...
             'Expected filtered files list to match IDs for filtering.')
     end

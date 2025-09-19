@@ -8,7 +8,7 @@ function testCloudApi(varargin)
     suite = TestSuite.fromPackage('ndi.unittest.cloud', ...
         'IncludingSubpackages', true);
 
-    runner = TestRunner.withTextOutput('OutputDetail', 'Terse');
+    runner = TestRunner.withTextOutput('OutputDetail', 'Detailed');
     results = runner.run(suite);
     display(results)
     results.assertSuccess()

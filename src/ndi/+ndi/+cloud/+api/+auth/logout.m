@@ -1,41 +1,32 @@
-function response = logout()
-    % LOGOUT - logs a user out and invalidates their token
-    %
-    % RESPONSE = ndi.cloud.api.auth.LOGOUT()
-    %
-    % Inputs:
-    %
-    % Outputs:
-    %   RESPONSE - the response summary
-    %
+function [b, answer, apiResponse, apiURL] = logout()
+%LOGOUT Logs out the current user and invalidates their token.
+%
+%   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.auth.logout()
+%
+%   Invalidates the authentication token for the currently logged-in user.
+%
+%   Inputs:
+%       None.
+%
+%   Outputs:
+%       b            - True if the call succeeded, false otherwise.
+%       answer       - A success message or an error struct on failure.
+%       apiResponse  - The full matlab.net.http.ResponseMessage object.
+%       apiURL       - The URL that was called.
+%
+%   Example:
+%       [success] = ndi.cloud.api.auth.logout();
+%
+%   See also: ndi.cloud.api.implementation.auth.Logout
 
-    auth_token = ndi.cloud.authenticate();
-
-    method = matlab.net.http.RequestMethod.POST;
-
-    json = '';
-    body = matlab.net.http.MessageBody(json);
-
-    h1 = matlab.net.http.HeaderField('accept','application/json');
-    h2 = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
-    headers = [h1 h2];
-
-    req = matlab.net.http.RequestMessage(method, headers, body);
-    
-    originalWarnState = warning('off', 'MATLAB:http:BodyExpectedFor');
-    warningResetObj = onCleanup(@() warning(originalWarnState));
-
-    url = ndi.cloud.api.url('logout');
-
-    response = req.send(url);
-    
-    if (response.StatusCode == 200)
-        % Request succeeded
-    else
-        error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
+    arguments
     end
 
-    if ~nargout
-        clear response
-    end
+    % 1. Create an instance of the implementation class.
+    api_call = ndi.cloud.api.implementation.auth.Logout();
+    
+    % 2. Call the execute method and return its outputs directly.
+    [b, answer, apiResponse, apiURL] = api_call.execute();
+    
 end
+
