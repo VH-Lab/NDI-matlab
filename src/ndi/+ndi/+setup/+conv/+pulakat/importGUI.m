@@ -200,3 +200,7 @@ subjectTable{indNew,'Ingested'} = false;
 
 subjectTable = ndi.setup.conv.pulakat.importSubjects(subjectTable);
 dataTable = ndi.setup.conv.pulakat.importData(dataTable);
+
+% Ingest into database and add to the cloud
+
+%% 7. Update nansen to match cloud
