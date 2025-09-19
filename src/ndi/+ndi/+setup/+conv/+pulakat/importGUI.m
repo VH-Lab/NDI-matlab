@@ -21,6 +21,16 @@
 % 5. Sync data to cloud
 % 6. Update nansen viewer to match cloud dataset
 
+%% 0. Get directories
+
+% Get directory (probably want to allow users to specify multiple paths)
+dataParentDir = fullfile(userpath,'data');
+labName = 'pulakat';
+dataPath = fullfile(dataParentDir,labName);
+%dataPath = uigetdir([],'Select directory of files to ingest.');
+
+% project = ndi.internal.project.pulakat(dataPath);
+
 %% 1. Load ingested data from Nansen (skipping for now)
 
 % Create subject table from files
@@ -35,14 +45,16 @@ dataTable_nansen{:,'Ingested'} = true;
 
 %% 2. Query for new files
 
-% Get directory (probably want to allow users to specify multiple paths)
-dataParentDir = fullfile(userpath,'data');
-labName = 'pulakat';
-dataPath = fullfile(dataParentDir,labName);
-%dataPath = uigetdir([],'Select directory of files to ingest.');
-
-% Get list of files
+% Get list of files corresponding to one session
 [fileList,indDir] = vlt.file.manifest(dataPath,'ReturnFullPath',1);
+
+% Create session (how to properly handle this)?
+sessionName = 'Session1';
+sessionTable = cell2table({sessionName,labName},'VariableNames',...
+    {'SessionRef','SessionPath'});
+sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
+    sessionTable,'Overwrite',true);
+sessions = sessionMaker.sessionIndices;
 
 % Narrow file list to possible subject and data files
 indHiddenFiles = contains(fileList,'/.');
@@ -77,7 +89,7 @@ dataTable_matching.indSubject = [indSubjects{numSubjects == 1}]';
 dataTable_missing = dataTable(numSubjects == 0,:);
 dataTable_multiple = dataTable(numSubjects > 1,:);
 
-%% Prompt user for missing subject mapping
+%% 5. Prompt user for missing subject mapping
 
 % Query user for new files
 subjectTable_new = ndi.setup.conv.pulakat.importSubjectFiles();
@@ -92,63 +104,7 @@ subjectTable{indNew,'Ingested'} = false;
 
 % need more guidance on how we want to deal with missing files
 
-%%
-% missingScheduleSubjects = cell(size(scheduleFiles));
-% % Find subjects listed in the experiment schedule that are not in the subjectTable
-%     missingScheduleSubjects{i} = setdiff(scheduleSubjects{i}.Cage,subjectTable.Cage);
-%     if ~isempty(missingScheduleSubjects{i})
-%         warning(['validateDataFiles: Subjects with the following cage #s are listed in the file %s, ' ...
-%             'but have not yet been added to the dataset: %s.'],...
-%             scheduleFiles{i},strjoin(missingScheduleSubjects{i},', '))
-%     end
-%     missingSubjectSchedules = setdiff(subjectTable.Cage,allScheduleSubjects.Cage);
-% if ~isempty(missingSubjectSchedules)
-%     warning(['validateDataFiles: Subjects with the following cage #s do not, ' ...
-%         'have an associated experiment schedule: %s.'],...
-%         strjoin(missingSubjectSchedules,', '))
-% end
-% 
-% missingDIASubjects = cell(size(diaFiles));
-%     % Find subjects listed in the DIA report that are not in the subjectTable
-%     missingDIASubjects{i} = setdiff(diaSubjects{i}.Label,subjectTable.Label);
-%     if ~isempty(missingDIASubjects{i})
-%         warning(['validateDataFiles: Subjects with the following labels are listed in the file %s, ' ...
-%             'but have not yet been added to the dataset: %s.'],...
-%             diaFiles{i},strjoin(missingDIASubjects{i},', '))
-%     end
-%     missingSubjectDIA = setdiff(subjectTable.Label,allDIASubjects.Label);
-% if ~isempty(missingSubjectDIA)
-%     warning(['validateDataFiles: Subjects with the following labels do not, ' ...
-%         'have an associated DIA report: %s.'],...
-%         strjoin(missingSubjectDIA,', '))
-% end
-% 
-% missingSVSSubjects = cell(size(svsFiles));
-% 
-%     % Find subjects listed in the experiment schedule that are not in the subjectTable
-%     missingSVSSubjects{i} = setdiff(svsSubjects{i}.Cage,subjectTable.Cage);
-%     if ~isempty(missingSVSSubjects{i})
-%         warning(['validateDataFiles: Subjects with the following cage #s are in the filename %s, ' ...
-%             'but have not yet been added to the dataset: %s.'],...
-%             svsFiles{i},strjoin(missingSVSSubjects{i},', '))
-%     end
-%     missingSubjectSVS = setdiff(subjectTable.Cage,allSVSSubjects.Cage);
-% if ~isempty(missingSubjectSVS)
-%     warning(['validateDataFiles: Subjects with the following labels do not, ' ...
-%         'have any associated svs files: %s.'],...
-%         strjoin(missingSubjectSVS,', '))
-% end
-% 
-% % Find subjects listed in the echo folders that are not in the subjectTable
-% missingEchoSubjects = setdiff(echoSubjects.Cage,subjectTable.Cage);
-% if ~isempty(missingEchoSubjects)
-%     warning(['validateDataFiles: Subjects with the following cage #s are in echo directory names, ' ...
-%         'but have not yet been added to the dataset: %s.'],...
-%         strjoin(missingEchoSubjects,', '))
-% end
-% missingSubjectEcho = setdiff(subjectTable.Cage,allEchoSubjects.Cage);
-% if ~isempty(missingSubjectEcho)
-%     warning(['validateDataFiles: Subjects with the following labels do not, ' ...
-%         'have any associated echo files: %s.'],...
-%         strjoin(missingSubjectEcho,', '))
-% end
+%% 6. Ingest new subjects and data
+
+subjectTable = ndi.setup.conv.pulakat.importSubjects(subjectTable);
+dataTable = ndi.setup.conv.pulakat.importData(dataTable);
