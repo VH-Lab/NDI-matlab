@@ -38,6 +38,7 @@ dataPath = fullfile(userpath,'Datasets');
 if ~isfolder(dataPath)
     mkdir(dataPath);
 end
+addpath(dataPath);
 
 % Define the dataset id and its local path
 cloudDatasetId = 'pulakat_2025'; % TODO: update once cloud tools work and dataset is online
@@ -53,49 +54,78 @@ else
     dataset = ndi.cloud.downloadDataset(cloudDatasetId,dataPath);
 end
 
-%% Generate subject and datatables from dataset
+%% 2. Generate subject and datatables from dataset
 
-subjectTable = ndi.fun.docTable.subject(dataset);
-dataTable
+sessionTable_cloud = table();
+[sessionTable_cloud.SessionName,sessionTable_cloud.SessionDocumentIdentifier] = dataset.session_list;
+subjectTable_cloud = ndi.fun.docTable.subject(dataset);
+% dataTable_cloud = 1;
 
 %% 3. Launch Nansen to view dataset
 
 % First time setup (for Jess only)
 % project = ndi.internal.project.pulakat(datasetPath,nansenProjectPath,projectName);
 
-% Update or download nansen project (for methods)
-nansenProjectPath = fullfile(datasetPath,'nansen-pulakat');
-if ~isfolder(nansenProjectPath)
+% A. Update or download nansen project (for methods)
+nansenRepoPath = fullfile(datasetPath,'nansen-pulakat');
+if ~isfolder(nansenRepoPath)
     % Clone project repo from github
     repoURL = 'https://github.com/Waltham-Data-Science/nansen-pulakat';
-    repo = gitclone(repoURL,nansenProjectPath);
+    repo = gitclone(repoURL,nansenRepoPath);
 else
     % Pull changes to project from github
-    repo = gitrepo(nansenProjectPath);
+    repo = gitrepo(nansenRepoPath);
     pull(repo);
 end
 
+% B. Load pulakat project from nansen project manager
+projectName = 'pulakat';
+projectPath = fullfile(nansenRepoPath,projectName);
+projectManager = nansen.ProjectManager(); 
 
-    % Create nansen project if not already on user's machine
-    % Clone github project instead so that it has all the methods functions
-    % we created
-    
-    pm = nansen.ProjectManager();
-    projectName = pm.importProject(nansenProjectPath);
-    project = pm.getProjectObject(projectName);
+% Import the project from the repo if that hasn't already been done
+if ~projectManager.containsProject(projectName)
+    projectManager.importProject(projectPath);
+end
 
-    
+% Open project
+project = projectManager.getProjectObject(projectName);
 
-    % Create nansen tables
-    subjectMetaTable = nansen.metadata.MetaTable(subjectTable, "MetaTableClass", "Subject", "ItemClassName", "struct", "MetaTableIdVarname", "SubjectLocalIdentifier");
-    project.addMetaTable(subjectMetaTable)
-    dataMetaTable = nansen.metadata.MetaTable(dataTable, "MetaTableClass", "Data", "ItemClassName", "struct", "MetaTableIdVarname", "FileName");
-    project.addMetaTable(dataMetaTable)
+% C. Check if subject and data tables are already loaded
+metaTableCatalog = project.MetaTableCatalog;
+% If metaTable catalog already exists, load metaTable names
+if ~isempty(metaTableCatalog.quickload)
+    metaTableNames = metaTableCatalog.Table.MetaTableName;
 else
-    pm = nansen.ProjectManager();
-    project = pm.getProjectObject(projectName);
+    metaTableNames = {};
+end
+if ismember('subject',metaTableNames)
+    % If subject metatable already exists, fetch
+    subjectMetaTable = project.MetaTableCatalog.getMetaTable('nansen.metadata.type.Subject');
+else
+    % If subject metatable does not yet exist, create
+    subjectMetaTable = nansen.metadata.MetaTable(subjectTable_cloud, ...
+        'MetaTableClass', 'nansen.metadata.type.Subject', ...
+        'ItemClassName', 'struct', ...
+        'MetaTableIdVarname', 'SubjectLocalIdentifier');
+    project.addMetaTable(subjectMetaTable);
+end
+% if ismember('Data',metaTableNames)
+%     % If subject metatable already exists, fetch
+%     dataMetaTable = project.MetaTableCatalog.getMetaTable('Data');
+% else
+%     % If subject metatable does not yet exist, create
+%     dataMetaTable = nansen.metadata.MetaTable(dataTable_cloud, ...
+%         'MetaTableClass', 'Data', ...
+%         'ItemClassName', 'struct', ...
+%         'MetaTableIdVarname', 'fileName');
+%     project.addMetaTable(dataMetaTable);
+% end
 
-    subjectMetaTable = project.MetaTableCatalog.getMetaTable('Subject');
+% Launch nansen
+nansen
+
+%%
     % Identify new rows
     subjectTable_existing = subjectMetaTable.entries;
     subjectTable_new = ...
@@ -105,10 +135,9 @@ else
     % How to deal with rows that were deleted from the dataset?
     subjectMetaTable.removeEntries(deletedSubjectNames);
     subjectMetaTable.save;
-end
 
-% Launch nansen
-nansen
+
+
 
 % User can pick methods to run
 
