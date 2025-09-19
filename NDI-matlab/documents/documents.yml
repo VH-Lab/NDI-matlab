@@ -13,6 +13,7 @@
       - projectvar : 'NDI-matlab/documents/projectvar.md'
       - session : 'NDI-matlab/documents/session.md'
       - subject : 'NDI-matlab/documents/subject.md'
+      - subject_group : 'NDI-matlab/documents/subject_group.md'
       - subjectmeasurement : 'NDI-matlab/documents/subjectmeasurement.md'
       - treatment : 'NDI-matlab/documents/treatment.md'
       - apps:
@@ -47,9 +48,12 @@
       - data:
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
+        - generic_file : 'NDI-matlab/documents/data/generic_file.md'
+        - imageStack : 'NDI-matlab/documents/data/imageStack.md'
         - imageStack_parameters : 'NDI-matlab/documents/data/imageStack_parameters.md'
         - ngrid : 'NDI-matlab/documents/data/ngrid.md'
         - ontologyImage : 'NDI-matlab/documents/data/ontologyImage.md'
+        - ontologyLabel : 'NDI-matlab/documents/data/ontologyLabel.md'
         - ontologyTableRow : 'NDI-matlab/documents/data/ontologyTableRow.md'
       - element:
         - distance_metadata : 'NDI-matlab/documents/element/distance_metadata.md'
