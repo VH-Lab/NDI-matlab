@@ -54,11 +54,19 @@ else
     dataset = ndi.cloud.downloadDataset(cloudDatasetId,dataPath);
 end
 
-%% 2. Generate subject and datatables from dataset
+%% 2. Generate tables from dataset
 
+% Create session table
 sessionTable_cloud = table();
 [sessionTable_cloud.SessionName,sessionTable_cloud.SessionDocumentIdentifier] = dataset.session_list;
+
+% Create subject table and add session name
 subjectTable_cloud = ndi.fun.docTable.subject(dataset);
+subjectTable_cloud = innerjoin(subjectTable_cloud,sessionTable_cloud);
+subjectTable_cloud = renamevars(subjectTable_cloud, ...
+    'SubjectLocalIdentifier','SubjectName'); % rename variable for better UX
+
+% Create data table
 % dataTable_cloud = 1;
 
 %% 3. Launch Nansen to view dataset
@@ -91,13 +99,24 @@ end
 % Open project
 project = projectManager.getProjectObject(projectName);
 
-% C. Check if subject and data tables are already loaded
+% C. Check if tables are already loaded
 metaTableCatalog = project.MetaTableCatalog;
 % If metaTable catalog already exists, load metaTable names
 if ~isempty(metaTableCatalog.quickload)
     metaTableNames = metaTableCatalog.Table.MetaTableName;
 else
     metaTableNames = {};
+end
+if ismember('Session',metaTableNames)
+    % If subject metatable already exists, fetch
+    sessionMetaTable = project.MetaTableCatalog.getMetaTable('Session');
+else
+    % If subject metatable does not yet exist, create
+    sessionMetaTable = nansen.metadata.MetaTable(sessionTable_cloud, ...
+        'MetaTableClass', 'Session', ...
+        'ItemClassName', 'struct', ...
+        'MetaTableIdVarname', 'SessionDocumentIdentifier');
+    project.addMetaTable(sessionMetaTable);
 end
 if ismember('subject',metaTableNames)
     % If subject metatable already exists, fetch
@@ -107,7 +126,7 @@ else
     subjectMetaTable = nansen.metadata.MetaTable(subjectTable_cloud, ...
         'MetaTableClass', 'nansen.metadata.type.Subject', ...
         'ItemClassName', 'struct', ...
-        'MetaTableIdVarname', 'SubjectLocalIdentifier');
+        'MetaTableIdVarname', 'SubjectDocumentIdentifier');
     project.addMetaTable(subjectMetaTable);
 end
 % if ismember('Data',metaTableNames)
