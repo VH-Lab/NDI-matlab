@@ -1,0 +1,26 @@
+{
+	"classname": "imageCollection",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 0}
+	],
+	"imageCollection": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A text label associated with the image collection."
+		},
+		{
+			"name": "format",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The format of the imageCollection (e.g. 'tiff', 'svs', 'czi')."
+		}
+
+	]
+}
