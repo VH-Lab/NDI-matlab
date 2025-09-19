@@ -123,6 +123,7 @@ end
                             % Defaults to double if creating the declared empty type fails
                             bestExampleCol = double([]);
                             bestNumCols = 1;
+                            warning('vstack:UnknownDataType','Data type could not be detected. Filling empty cells with [].')
                         end
                     else
                         % Defaults to double if no declared type is found and all columns are empty
