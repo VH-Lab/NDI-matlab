@@ -28,9 +28,8 @@ classdef GetBulkUploadURL < ndi.cloud.api.call
             
             apiURL = ndi.cloud.api.url('bulk_upload_documents', 'dataset_id', this.cloudDatasetID);
 
-            % Per the original implementation, this is a POST with an empty body
             method = matlab.net.http.RequestMethod.POST;
-            body = matlab.net.http.MessageBody('');
+            body = matlab.net.http.MessageBody('{}');
             
             acceptField = matlab.net.http.HeaderField('accept','application/json');
             authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' token]);
