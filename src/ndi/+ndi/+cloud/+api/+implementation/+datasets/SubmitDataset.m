@@ -49,6 +49,10 @@ classdef SubmitDataset < ndi.cloud.api.call
 
             request = matlab.net.http.RequestMessage(method, headers, body);
             
+            % Suppress MATLAB warning for POST with empty body
+            originalWarnState = warning('off', 'MATLAB:http:BodyExpectedFor');
+            warningResetObj = onCleanup(@() warning(originalWarnState));
+
             apiResponse = send(request, apiURL);
             
             if (apiResponse.StatusCode == 200)

@@ -28,7 +28,6 @@ classdef GetBulkUploadURL < ndi.cloud.api.call
             
             apiURL = ndi.cloud.api.url('bulk_upload_documents', 'dataset_id', this.cloudDatasetID);
 
-            % Per the original implementation, this is a POST with an empty body
             method = matlab.net.http.RequestMethod.POST;
             body = matlab.net.http.MessageBody('');
             
@@ -38,6 +37,10 @@ classdef GetBulkUploadURL < ndi.cloud.api.call
 
             request = matlab.net.http.RequestMessage(method, headers, body);
             
+            % Suppress MATLAB warning for POST with empty body
+            originalWarnState = warning('off', 'MATLAB:http:BodyExpectedFor');
+            warningResetObj = onCleanup(@() warning(originalWarnState));
+
             apiResponse = send(request, apiURL);
             
             if (apiResponse.StatusCode == 200 || apiResponse.StatusCode == 201)
