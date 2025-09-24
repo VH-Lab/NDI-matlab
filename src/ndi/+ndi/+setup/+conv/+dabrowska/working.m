@@ -407,6 +407,8 @@ for i = 1:numel(fileNames)
         matObj = matfile([fileName,'.mat']);
         exportTable.inputSteps(i) = size(matObj,'inputData',2);
         exportTable.outputSteps(i) = size(matObj,'outputData',2);
+        exportTable.minCurrent(i) = min(matObj.outputData,[],'all');
+        exportTable.maxCurrent(i) = max(matObj.outputData,[],'all');
     end
 end
 exportTable.cellType = variableTable.CellType;
@@ -448,7 +450,7 @@ end
 cellCompound = ndi.fun.table.vstack(reshape(cellCompound',[],1));
 cellCompound(strcmp(cellCompound.CellType,'') | cellCompound.Rats == 0,:) = [];
 
-exportTable = movevars(exportTable,{'inputSteps','outputSteps','filePath'},'After','cellType');
+exportTable = movevars(exportTable,{'inputSteps','outputSteps','minCurrent','maxCurrent','filePath'},'After','cellType');
 exportTable = movevars(exportTable,{'subjectNum','cellNum'},'Before','subjectName');
 
 exportPath = fullfile(userpath,'data','Dabrowska','subjectTable_250912.xls');
@@ -458,5 +460,5 @@ exportPath = fullfile(userpath,'data','Dabrowska','subjectSummary_250912.xls');
 writetable(cellCompound,exportPath);
 
 ind = exportTable.inputSteps ~= exportTable.outputSteps;
-exportPath = fullfile(userpath,'data','Dabrowska','dataMismatch_250912.xls');
+exportPath = fullfile(userpath,'data','Dabrowska','dataMismatch_250924.xls');
 writetable(exportTable(ind,:),exportPath);
