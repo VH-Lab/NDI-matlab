@@ -46,19 +46,19 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 direct = logical(varargin{6});
                 if ~isempty(element_underlying_element)
                     if ~isa(element_underlying_element,'ndi.element')
-                        error(['Underlying element must be an ndi.element.']);
+                        error('Underlying element must be an ndi.element.');
                     end
                 end
                 if ~isempty(element_underlying_element)
                     subject_id = element_underlying_element.subject_id;
                     if numel(varargin)==7
-                        warning(['Ignoring input subject_id because underlying element is given.']);
+                        warning('Ignoring input subject_id because underlying element is given.');
                     end
                 elseif numel(varargin)>=7 & ~isempty(varargin{7})
                     subject_id = varargin{7};
                     [b,subject_id] = ndi.subject.does_subjectstring_match_session_document(element_session,subject_id,1);
                     if ~b
-                        error(['Subject does not correspond to a valid document_id entry in the database.']);
+                        error('Subject does not correspond to a valid document_id entry in the database.');
                     end
                 end
                 if numel(varargin)>=8
@@ -69,7 +69,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             elseif numel(varargin)==2
                 element_session = varargin{1};
                 if ~isa(element_session,'ndi.session')
-                    error(['When 2 input arguments are given, 1st input must be an ndi.session.']);
+                    error('When 2 input arguments are given, 1st input must be an ndi.session.');
                 end
                 needs_newdocument_call = 0;
                 element_doc = [];
@@ -77,7 +77,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     % might be id
                     element_search = element_session.database_search(ndi.query('base.id','exact_string',varargin{2},''));
                     if numel(element_search)~=1
-                        error(['When 2 input arguments are given, 2nd input argument must be an ndi.document or document ID.']);
+                        error('When 2 input arguments are given, 2nd input argument must be an ndi.document or document ID.');
                     else
                         element_doc = element_search{1};
                     end
@@ -85,7 +85,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     element_doc = varargin{2};
                 end
                 if ~isfield(element_doc.document_properties, 'element')
-                    error(['This document does not have parameters ''element''.']);
+                    error('This document does not have parameters ''element''.');
                 end
                 % now we have the document and can start reading
                 ndi_element_class = element_doc.document_properties.element.ndi_element_class;
