@@ -48,7 +48,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 
         s_here.openminds_type = char(openmindsObj{i}.X_TYPE);
         s_here.matlab_type = class(openmindsObj{i});
-        s_here.openminds_id = openmindsObj{i}.id;
+        s_here.openminds_id = char(openmindsObj{i}.id);
         newid = ndi.ido();
         s_here.ndi_id = newid.id();
         s_here.fields = [];
@@ -94,11 +94,11 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
                         f_here = f(k);
                     end
                     s = ndi.database.fun.openMINDSobj2struct({f_here},cachekey);
-                    child_index = find(strcmp(f_here.id,{s.openminds_id}));
+                    child_index = find(strcmp(char(f_here.id),{s.openminds_id}));
                     if isempty(child_index)
                         % stop this nonsense
                         ndi_cache.remove(cachekey,cachetype);
-                        error(['A child was not built successfully.']);
+                        error('A child was not built successfully.');
                     end
                     fields_here{k} = ['ndi://' s(child_index).ndi_id];
                 end
