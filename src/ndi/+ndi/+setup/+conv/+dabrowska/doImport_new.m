@@ -18,7 +18,7 @@ dataPath = fullfile(dataParentDir,'Dabrowska');
 % If overwriting, delete NDI docs
 fileList = vlt.file.manifest(dataPath);
 if options.Overwrite
-    ndiFiles = fileList(endsWith(fileList,'.ndi'));
+    ndiFiles = fileList(endsWith(fileList,'.ndi') | contains(fileList,'.epoch'));
     for i = 1:numel(ndiFiles)
         fileName = fullfile(dataParentDir,ndiFiles{i});
         if isfolder(fileName)
@@ -97,15 +97,13 @@ variableTable(opto_rows,:) = variableTable_opto(opto_rows,common_vars);
 
 % Fix cell type string
 cellTypeInd = ndi.fun.table.identifyValidRows(variableTable,'CellType');
-variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'_',' '),...
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'_',''),...
+    variableTable.CellType(cellTypeInd),'UniformOutput',false);
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,' ',''),...
+    variableTable.CellType(cellTypeInd),'UniformOutput',false);
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'Type','Type '),...
     variableTable.CellType(cellTypeInd),'UniformOutput',false);
 variableTable.CellType(~cellTypeInd) = {''};
-
-% Add cell type where missing
-missingTypeInd = ~cellTypeInd & contains(variableTable.Properties.RowNames,'Transgenic') & ...
-    (contains(variableTable.Properties.RowNames,'OTR') | ...
-    contains(variableTable.Properties.RowNames,'CRF'));
-variableTable.CellType(missingTypeInd) = {'Type III'}; % confirmed by Joanna
 
 % Create opto postfix
 variableTable.OptoPostfix(:) = {''};
@@ -451,4 +449,4 @@ end
 % Compress dataset
 zip([datasetDir,'.zip'],datasetDir);
 
-%end % doImport_new
+% end % doImport_new
