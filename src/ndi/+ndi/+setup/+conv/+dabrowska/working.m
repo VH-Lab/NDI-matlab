@@ -404,11 +404,12 @@ for i = 1:numel(fileNames)
         probeMap = readtable([fileName,'.epochprobemap.txt'], 'Delimiter', '\t', 'PreserveVariableNames', true);
         exportTable.subjectName(i) = probeMap.subjectstring(1);
         exportTable.cellID(i) = {probeMap.name{1}(end)};
-        matObj = matfile([fileName,'.mat']);
-        exportTable.inputSteps(i) = size(matObj,'inputData',2);
-        exportTable.outputSteps(i) = size(matObj,'outputData',2);
-        exportTable.minCurrent(i) = min(matObj.outputData,[],'all');
-        exportTable.maxCurrent(i) = max(matObj.outputData,[],'all');
+        load([fileName,'.mat']);
+        exportTable.inputSteps(i) = size(inputData,2);
+        exportTable.outputSteps(i) = size(outputData,2);
+        exportTable.minCurrent(i) = min(outputData,[],'all');
+        exportTable.maxCurrent(i) = max(outputData,[],'all');
+        exportTable.triggerSteps(i) = numel(Pars.triggerTime);
     end
 end
 exportTable.cellType = variableTable.CellType;
