@@ -71,7 +71,7 @@ function [b, report] = upload_document_collection(datasetId, documentList, optio
     app.addBar('Label','Uploading documents','tag',uuid,'Auto',true);
 
     % --- Main Logic ---
-    if strcmpi(ndiCloudUploadNoZipEnvironment,'true')
+    if strcmpi(char(ndiCloudUploadNoZipEnvironment),'true')
         % SERIAL UPLOAD
         report.uploadType = 'serial';
         report.manifest = cell(1, numel(documentList));
