@@ -65,25 +65,19 @@ function b = ndi_install(directory, dependencies)
 
     % If a numeric
     if isnumeric(dependencies),
-        switch (dependencies),
-            case 1,
-                dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
-            case 2,
-                dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/refs/heads/master/vhtools_standard_distribution.json';
-            case 3,
-                dependencies_filepath = fullfile(ndi.util.toolboxdir, 'ndi-matlab-dependencies.json');
-        end;
-
-        if dependencies == 1 || dependencies == 2
+        if dependencies == 2,
+            dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/refs/heads/master/vhtools_standard_distribution.json';
             t = webread(dependencies_filepath);
-        elseif dependencies == 3
-            t = fileread(dependencies_filepath);
-        else
-            error('Dependencies must be 1, 2 or 3')
-        end
-
-        j = jsondecode(t);
-        dependencies = j.dependency;
+            j = jsondecode(t);
+            dependencies = j.dependency;
+        elseif dependencies == 1 || dependencies == 3,
+            dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/requirements.txt';
+            t = webread(dependencies_filepath);
+            dependencies = splitlines(t);
+            dependencies = dependencies(~cellfun('isempty',dependencies));
+        else,
+            error('Dependencies must be 1, 2 or 3');
+        end;
     end;
 
     % are we updating at least NDI?
