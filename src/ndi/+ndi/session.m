@@ -646,7 +646,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             probes = ndi.probe.fun.probestruct2probe(probestruct, ndi_session_obj);
             probes = cat(1,probes(:),existing_probe_objects(:));
 
-            if numel(varargin)==1
+            if isscalar(varargin)
                 include = [];
                 for i=1:numel(probes)
                     includehere = isa(probes{i},varargin{1});
