@@ -58,13 +58,13 @@ vhlab now. You'll see that these directories have a few more files. It's not nec
 To import data from our lab, we created 4 Matlab files:
 
 - `+ndi/+setup/vhlab.m` - A function that builds an ndi.session object with daq systems that read from our lab's major devices.
-- `+ndi/+setup/+daq/+metadata/epochprobemap_daqsystem_vhlab.m` - A class that examines our lab's metadata files that describe the mapping between probes and data acquisition systems and returns an epochprobemap that NDI can interpret. Overrides the default [ndi.epoch.epochprobemap_daqsystem.m](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/+ndi/%2Bepoch/epochprobemap_daqsystem.m/) class that reads the `probemap.txt` text files we saw in [Tutorial 2.1](../1_example_dataset/). 
+- `+ndi/+setup/+daq/+metadata/epochprobemap_daqsystem_vhlab.m` - A class that examines our lab's metadata files that describe the mapping between probes and data acquisition systems and returns an epochprobemap that NDI can interpret. Overrides the default [ndi.epoch.epochprobemap_daqsystem.m](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/+ndi/%2Bepoch/epochprobemap_daqsystem.m/) class that reads the `probemap.txt` text files we saw in [Tutorial 2.1](1_example_dataset.md). 
 - `+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m` - A class that reads stimulus event data from our custom acquisition files.
 - `+ndi/+daq/+metadatareader/NewStimStims.m` - A class that imports stimulus metadata from our lab's open source [NewStim](https://github.com/VH-Lab/vhlab-NewStim-matlab) package. (We put it in NDI proper because it is an open source program, not intended solely for our lab.)
 
 ### 2.2.3 Creating a `setup` file.
 
-The setup file accomplishes, in an automated fashion, exactly what we did in [Tutorial 2.1](../1_example_dataset/): it 
+The setup file accomplishes, in an automated fashion, exactly what we did in [Tutorial 2.1](1_example_dataset.md): it 
 opens an [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/+ndi/session.m/) with a particular reference name and directory path, and adds the daq systems that are necessary
 to read the probe data. It normally lives in `+ndi/+setup/LABORINVESTIGATORNAME.m`. We include the code here:
 
@@ -235,7 +235,7 @@ self-explanitory for someone with a coding background to read and mimic this fil
 
 ### 2.2.6 Creating a custom epochprobemap class
 
-In [Tutorial 2.1](../1_example_dataset/), we saw that each epoch of data had an associated epochprobemap that contained the 
+In [Tutorial 2.1](1_example_dataset.md), we saw that each epoch of data had an associated epochprobemap that contained the 
 following fields of information:
 
 | name | reference | type | devicestring | subjectstring |
@@ -268,7 +268,7 @@ We will not reproduce the code here but refer the reader to the [link for the so
 
 ### 2.2.7 Putting it all together
 
-Now that we have these pieces together, we can read our example data that we call `ts_exper2`. We will pull up the same plots that we pulled up in [Tutorial 2.1](../1_example_dataset/).
+Now that we have these pieces together, we can read our example data that we call `ts_exper2`. We will pull up the same plots that we pulled up in [Tutorial 2.1](1_example_dataset.md).
 
 #### Code block 2.2.7.1 Type this into Matlab
 

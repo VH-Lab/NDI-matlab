@@ -7,11 +7,11 @@
 *.asv
 *.m~
 __pycache__
-docs/NDI-matlab/documents/
+src/ndi/docs/NDI-matlab/documents/
 site/
 releases/
 mkdocs.yml
-docs/NDI-matlab/reference/
-docs/reports/
-docs/NDI-matlab/mkdocs-references.yml
-docs/documentation_structure.mat
+src/ndi/docs/NDI-matlab/reference/
+src/ndi/docs/reports/
+src/ndi/docs/NDI-matlab/mkdocs-references.yml
+src/ndi/docs/documentation_structure.mat

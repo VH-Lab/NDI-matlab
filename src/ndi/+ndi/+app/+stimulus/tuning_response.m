@@ -404,7 +404,10 @@ classdef tuning_response < ndi.app
                 'control_individual_responses_real','control_individual_responses_imaginary',...
                 'response_units');
 
-            tuning_curve(1).independent_variable_label = independent_label;
+            if ~iscell(independent_label)
+                independent_label = {independent_label};
+            end
+            tuning_curve(1).independent_variable_label = {strjoin(independent_label,',')};
             tuning_curve.independent_variable_value = zeros(0,numel(independent_label));
 
             % Step 5: determine the conditions we have here, that will be averaged over
