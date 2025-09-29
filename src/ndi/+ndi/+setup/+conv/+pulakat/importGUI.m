@@ -30,7 +30,27 @@
 % 5. Sync data to cloud
 % 6. Update nansen viewer to match cloud dataset
 
+%%
 
+% Startup
+pulakat.startup
+
+% Get session for session methods
+sessionObj = sessionTable(1,:);
+session = dataset.open_session(sessionObj.SessionDocumentIdentifier{1});
+dataPath = fullfile(userpath,'data','pulakat');
+
+% Test pulakat.import.subjects
+pulakat.import.subjects(session,dataPath);
+
+% Test pulakat.import.data
+pulakat.import.data(session,dataPath);
+
+%%
+% Import methods:
+%   - Add new session
+%   - Add subject(s) to session
+%   - Add data file(s) to session
 
 %%
 % sessionMetaTable = project.MetaTableCatalog.getMetaTable('Session');
