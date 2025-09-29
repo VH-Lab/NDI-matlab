@@ -991,6 +991,13 @@ namespace: empty_ontology
 def: "The amplitude of a periodic variable is a measure of its change in a single period (such as time or spatial period). The amplitude of a non-periodic signal is its magnitude compared with a reference value." []
 
 [Term]
+id: EMPTY:00000260
+name: data-independent acquisition (DIA)
+namespace: empty_ontology
+def: "" []
+
+
+[Term]
 id: EMPTY:10000000
 name: treatment
 namespace: empty_ontology
