@@ -41,10 +41,10 @@ session = dataset.open_session(sessionObj.SessionDocumentIdentifier{1});
 dataPath = fullfile(userpath,'data','pulakat');
 
 % Test pulakat.import.subjects
-pulakat.import.subjects(session,dataPath);
+pulakat.import.subjects(session,fullfile(userpath,'data','pulakat'));
 
 % Test pulakat.import.data
-pulakat.import.data(session,dataPath);
+pulakat.import.data(session,fullfile(userpath,'data','pulakat'));
 
 %%
 % Import methods:

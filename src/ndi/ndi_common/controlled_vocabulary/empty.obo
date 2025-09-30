@@ -1027,6 +1027,24 @@ namespace: empty_ontology
 def: "" []
 
 [Term]
+id: EMPTY:00000265
+name: slide scanner image acquisition
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000266
+name: experiment metadata file
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000267
+name: echocardiogram acquisition
+namespace: empty_ontology
+def: "" []
+
+[Term]
 id: EMPTY:10000000
 name: treatment
 namespace: empty_ontology
