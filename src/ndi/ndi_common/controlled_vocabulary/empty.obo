@@ -1002,6 +1002,29 @@ name: data-independent acquisition (DIA)
 namespace: empty_ontology
 def: "" []
 
+[Term]
+id: EMPTY:00000261
+name: subject enumerated identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000262
+name: subject cage identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000263
+name: subject text identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000264
+name: subject text identifier
+namespace: empty_ontology
+def: "" []
 
 [Term]
 id: EMPTY:10000000
