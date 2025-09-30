@@ -5,5 +5,5 @@
   "SubjectCageIdentifier": "EMPTY:subject cage identifier",
   "SubjectTextIdentifier": "EMPTY:subject text identifier",
   "Treatment": "EMPTY:treatment",
-  "ElectronicFilename": "NCIT:C171191"
+  "ElectronicFileName": "NCIT:C171191"
 }
