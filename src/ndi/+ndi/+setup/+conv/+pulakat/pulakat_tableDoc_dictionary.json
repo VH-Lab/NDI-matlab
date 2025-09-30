@@ -1,0 +1,9 @@
+{
+  "SubjectLocalIdentifier": "EMPTY:subject local identifier",
+  "SubjectDocumentIdentifier": "EMPTY:subject document identifier",
+  "SubjectEnumeratedIdentifier": "EMPTY:subject enumerated identifier",
+  "SubjectCageIdentifier": "EMPTY:subject cage identifier",
+  "SubjectTextIdentifier": "EMPTY:subject text identifier",
+  "Treatment": "EMPTY:treatment",
+  "ElectronicFilename": "NCIT:C171191"
+}
