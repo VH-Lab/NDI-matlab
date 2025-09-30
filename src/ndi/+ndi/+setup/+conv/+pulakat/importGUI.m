@@ -42,7 +42,6 @@ dataPath = fullfile(userpath,'data','pulakat');
 
 % Test pulakat.import.subjects
 pulakat.import.subjects(session,dataPath);
-dataset.add_linked_session(session);
 
 % Test pulakat.import.data
 pulakat.import.data(session,dataPath);
