@@ -508,7 +508,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 options.command (1,:) char {mustBeMember(options.command, {'New','Edit','Close',...
                     'NewWindow','UpdateWindow','DocPopup', 'ParameterCodePopup',...
                     'CommandPopup', 'SaveButton', 'CancelButton', 'SaveAsButton',...
-                    'ObjectTypePopup', 'ObjectVariablePopup', ...
                     'DeleteParameterInstanceButton', 'RefreshParameterPopup'})} = 'New'
         
                 % The NDI session object, must be a scalar ndi.session
@@ -582,27 +581,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     uid = vlt.ui.basicuitools_defs;
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
                     
-                    % Step 1: Define colors and geometry
+                    % Step 1: Define colors and normalized geometry
                     fig_bg_color = [0.8 0.8 0.8];
                     box_bg_color = [0.9 0.9 0.9];
                     edit_bg_color = [1 1 1];
                     top = ud.window_params.height;
                     right = ud.window_params.width;
-                    row = 25;
-                    title_height = 25;
-                    title_width = 120; 
-                    edge = 5;
-                    doc_width = right - 2*edge;
-                    doc_height = 200;
-                    menu_width = right - 2*edge - title_width;
-                    menu_height = title_height;
-                    parameter_code_width = doc_width;
-                    parameter_code_height = 150;
-                    commands_popup_width = doc_width;
-                    commands_popup_height = row;
-                    button_width = 80; 
-                    button_height = row;
-                    button_centers_px = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 4) ];
+                    
+                    edge_n = 10/right;
+                    row_h_n = 25/top;
+                    gap_v_n = 15/top;
+                    button_area_h_n = 5*row_h_n;
                     
                     % Step 2 now build it
                     set(fig,'position',[50 50 right top],...
@@ -610,148 +599,93 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         'NumberTitle','off',...
                         'Name',['Editing ' ud.calculatorInstance.instanceName ' of type ' ud.calculatorInstance.calculatorClassname ],...
                         'MenuBar','none',...
-                        'ToolBar','none');
+                        'ToolBar','none',...
+                        'Units','normalized');
                     
-                    % All UI positions are normalized so they resize with the window
-                    x = edge;
-                    y = top-row;
-
-                    % Object Type Selection
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Link object type:', ...
-                        'BackgroundColor',fig_bg_color,'FontWeight','bold');
-                    uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
-                        'string',{'ndi.session', 'ndi.dataset', 'Workspace variable'},'tag','ObjectTypePopup','callback',callbackstr,...
-                        'BackgroundColor',edit_bg_color);
-
-                    % Object Variable Selection
-                    y = y - row;
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','NDI Data:', ...
-                        'BackgroundColor',fig_bg_color,'FontWeight','bold');
-                    uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
-                        'string',{'None'},'tag','ObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+                    % Step 3: Create UI elements using a top-down normalized layout
+                    y_cursor = 1 - edge_n;
                     
-                    y = y-row;
+                    % Define main content area height (space between top and bottom buttons)
+                    main_area_h = y_cursor - button_area_h_n - edge_n;
                     
-                    % Documentation portion of window
-                    y = y-row;
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Documentation', ...
-                        'tag','DocTitleTxt','BackgroundColor',fig_bg_color,'FontWeight','bold');
-                    uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
+                    % Allocate heights proportionally
+                    doc_section_h = main_area_h * 0.25;
+                    param_section_h = main_area_h * 0.75;
+                    
+                    % --- Documentation Section ---
+                    y_cursor = y_cursor - row_h_n;
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Documentation', ...
+                        'tag','DocTitleTxt','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],...
                         'string',{'General','Calculator Input Options','Output document'},'tag','DocPopup','callback',callbackstr,...
                         'value',1,'BackgroundColor',edit_bg_color);
-                    y = y - doc_height;
-                    uicontrol(uid.edit,'Units','normalized','position',[x/right y/top doc_width/right doc_height/top],...
+                    y_cursor = y_cursor - (doc_section_h - row_h_n);
+                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n doc_section_h-row_h_n],...
                         'string','Please select one documentation type.',...
-                        'tag','DocTxt','min',0,'max',2,'enable','inactive','BackgroundColor',box_bg_color);
-                    
-                    y = y - row;
-                    uicontrol(uid.txt,'Units','normalized','position',[x/right y/top title_width/right title_height/top],'string','Parameter code:', ...
-                        'tag','ParameterCodeTitleTxt','BackgroundColor',fig_bg_color,'FontWeight','bold');
-                    
-                    % Load initial parameter instances
+                        'tag','DocTxt','min',0,'max',2,'enable','inactive','BackgroundColor',box_bg_color,'HorizontalAlignment','left');
+                        
+                    % --- Parameter Code Section ---
+                    y_cursor = y_cursor - gap_v_n - row_h_n;
+                     uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Parameter code:', ...
+                        'tag','ParameterCodeTitleTxt','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
                     [param_names,~] = ndi.calculator.readParameterCode(ud.calculatorInstance.calculatorClassname);
-                    uicontrol(uid.popup,'Units','normalized','position',[(x+title_width+edge)/right y/top menu_width/right menu_height/top],...
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],...
                         'string',{'Template', 'Default', '---', param_names{:}},...
                         'tag','ParameterCodePopup', 'callback',callbackstr,'value',1,'BackgroundColor',edit_bg_color);
-                    y = y - parameter_code_height;
-                    uicontrol(uid.edit,'Units','normalized','position',[x/right y/top parameter_code_width/right parameter_code_height/top],...
+                    y_cursor = y_cursor - (param_section_h - row_h_n);
+                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n param_section_h-row_h_n],...
                         'string',ndi.calculator.user_parameter_template(ud.calculatorInstance.calculatorClassname),...
                         'tag','ParameterCodeTxt','min',0,'max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left');
                     
-                    y = y - 2*row;
-                    uicontrol(uid.popup,'Units','normalized','position',[x/right y/top commands_popup_width/right commands_popup_height/top],...
+                    % --- Bottom Controls ---
+                    y_cursor = y_cursor - gap_v_n - row_h_n;
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n row_h_n],...
                         'string',{'Commands:','---','Try searching for inputs','Show existing outputs',...
                         'Plot existing outputs','Run but don''t replace existing docs','Run and replace existing docs'},...
                         'tag','CommandPopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
                     
-                    y = y - 2*row;
-                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(1)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                    y_cursor = y_cursor - gap_v_n - row_h_n;
+                    button_w_n = 0.2;
+                    button_centers_n = linspace(edge_n+button_w_n/2, 1-edge_n-button_w_n/2, 4);
+                    
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(1)-button_w_n/2 y_cursor button_w_n row_h_n],...
                         'string','Save','tag','SaveButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(2)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(2)-button_w_n/2 y_cursor button_w_n row_h_n],...
                         'string','Save As...','tag','SaveAsButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(3)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(3)-button_w_n/2 y_cursor button_w_n row_h_n],...
                         'string','Delete...','tag','DeleteParameterInstanceButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[(button_centers_px(4)-0.5*button_width)/right y/top button_width/right button_height/top],...
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(4)-button_w_n/2 y_cursor button_w_n row_h_n],...
                         'string','Cancel','tag','CancelButton','callback',callbackstr);
                     
-                    ndi.calculator.graphical_edit_calculator('command','ObjectTypePopup','fig',fig); % initial population
                     ndi.calculator.graphical_edit_calculator('command','DocPopup','fig',fig);
-                case 'ObjectTypePopup'
-                    popup_type_obj = findobj(fig,'tag','ObjectTypePopup');
-                    type_val = get(popup_type_obj,'value');
-                    type_str_list = get(popup_type_obj,'string');
-                    selected_type = type_str_list{type_val};
-
-                    % Scan workspace for variables of the selected type
-                    vars = evalin('base', 'whos');
-                    var_names = {};
-                    for i = 1:length(vars)
-                        is_match = strcmp(vars(i).class, selected_type);
-                        if strcmp(selected_type, 'Workspace variable') && ~strcmp(vars(i).class,'matlab.ui.Figure')
-                            is_match = true;
-                        end
-                        if is_match
-                            var_names{end+1} = vars(i).name;
-                        end
-                    end
-                    popup_strings = {'None', var_names{:}};
-                    popup_userdata = {[], var_names{:}}; % Store var names, [] for None
-
-                    % Update the variable popup
-                    popup_var_obj = findobj(fig, 'tag','ObjectVariablePopup');
-                    set(popup_var_obj, 'string', popup_strings, 'userdata', popup_userdata);
-
-                    % Set the value based on the currently linked object
-                    initial_value = 1; % Default to 'None'
-                    if ~isempty(ud.linked_object) && (strcmp(class(ud.linked_object), selected_type) || strcmp(selected_type,'Workspace variable'))
-                        for i=1:numel(var_names)
-                            workspace_obj = evalin('base', var_names{i});
-                            if isequal(ud.linked_object, workspace_obj)
-                                initial_value = i + 1; % +1 for 'None'
-                                break;
-                            end
-                        end
-                    end
-                    set(popup_var_obj, 'value', initial_value);
-                    
-                    % If selection is now 'None', clear the linked object from userdata
-                    if initial_value == 1 && ~isempty(ud.linked_object)
-                        ud.linked_object = [];
-                        set(fig,'userdata',ud);
-                    end
-
-                case 'ObjectVariablePopup'
-                    % Get handles and values
-                    popup_obj = findobj(fig, 'tag', 'ObjectVariablePopup');
-                    val = get(popup_obj, 'value');
-                    var_names_list = get(popup_obj, 'userdata');
-                    
-                    selected_var_name = var_names_list{val};
-                    
-                    % Update the linked object in userdata
-                    if isempty(selected_var_name)
-                        ud.linked_object = [];
-                        disp('Calculator object link cleared.');
-                    else
-                        ud.linked_object = evalin('base', selected_var_name);
-                        disp(['Calculator linked to workspace variable ''' selected_var_name '''.']);
-                    end
-                    set(fig, 'userdata', ud);
-
                 case 'DocPopup'
-                    % Step 1: search for the objects you need to work with
-                    docPopupObj = findobj(fig,'tag','DocPopup');
-                    val = get(docPopupObj, 'value');
-                    docTextObj = findobj(fig,'tag','DocTxt');
-                    % Step 2, take action
-                    switch val
-                        case 1, doc_type = 'general';
-                        case 2, doc_type = 'searching for inputs';
-                        case 3, doc_type = 'output';
-                        otherwise, error(['Unknown doc popup value.']);
+                    try
+                        docPopupObj = findobj(fig,'tag','DocPopup');
+                        val = get(docPopupObj, 'value');
+                        docTextObj = findobj(fig,'tag','DocTxt');
+                        
+                        if isempty(docTextObj) || ~isvalid(docTextObj)
+                            error('Could not find the documentation text box handle (tag=''DocTxt'').');
+                        end
+
+                        switch val
+                            case 1, doc_type = 'general';
+                            case 2, doc_type = 'searching for inputs';
+                            case 3, doc_type = 'output';
+                            otherwise, error('Unknown doc popup value.');
+                        end
+
+                        mytext = ndi.calculator.docfiletext(ud.calculatorInstance.calculatorClassname, doc_type);
+
+                        if isempty(mytext)
+                            mytext = {'Documentation file was found but is empty.'};
+                        end
+                        
+                        set(docTextObj,'string',mytext);
+                    catch ME
+                        errordlg(['An error occurred while loading documentation: ' ME.message], 'Documentation Error');
+                        rethrow(ME); % Also show error in command window for debugging
                     end
-                    mytext = ndi.calculator.docfiletext(ud.calculatorInstance.calculatorClassname, doc_type);
-                    set(docTextObj,'string',mytext);
                 case 'ParameterCodePopup'
                     paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
                     val = get(paramPopupObj, 'value');
@@ -888,7 +822,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             ndi.calculator.deleteParameterCode(ud.calculatorInstance.calculatorClassname, name_to_delete);
                             msgbox(['''' name_to_delete ''' was deleted.'], 'Delete Successful');
 
-                            % if the deleted file was the active one, reset view to template
                             if strcmp(ud.active_parameter_name, name_to_delete)
                                 paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
                                 set(paramTextObj,'string',ndi.calculator.user_parameter_template(ud.calculatorInstance.calculatorClassname));
@@ -900,8 +833,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     end
                 case 'RefreshParameterPopup'
                     [new_names, ~] = ndi.calculator.readParameterCode(ud.calculatorInstance.calculatorClassname);
-                    ud.calculatorInstance.parameter_example_names = new_names;
-                    set(fig,'userdata',ud);
+                    
                     paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
                     new_string = {'Template', 'Default', '---', new_names{:}};
                     
@@ -953,13 +885,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
             [parentdir, appname] = fileparts(w);
             filename = [parentdir filesep 'docs' filesep appname '.docs.' doctype '.txt'];
-            if isfile(filename)
-                % BUG FIX: Replace vlt function with standard MATLAB code
-                fid = fopen(filename, 'rt');
-                if fid == -1, error('Cannot open file %s.', filename); end
-                text = textscan(fid, '%s', 'Delimiter', '\n', 'WhiteSpace', '');
-                fclose(fid);
-                text = text{1};
+            paramfile_present = isfile(filename);
+            if paramfile_present
+                % Reverted to original working version as requested
+                text = vlt.file.text2cellstr(filename);
             else
                 error(['No such file ' filename '.']);
             end

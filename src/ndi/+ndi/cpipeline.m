@@ -53,7 +53,8 @@ classdef cpipeline
                 options.command (1,:) char {mustBeMember(options.command, ...
                     {'new','NewWindow','UpdatePipelines','LoadPipelines','UpdateCalculatorInstanceList',...
                     'PipelinePopup','NewPipelineButton','DeletePipelineButton','NewCalculatorInstanceButton','DeleteCalculatorInstanceButton',...
-                    'EditButton','RunButton','PipelineContentList','DoEnableDisable'})} = 'new'
+                    'EditButton','RunButton','PipelineContentList','DoEnableDisable',...
+                    'PipelineObjectTypePopup','PipelineObjectVariablePopup'})} = 'new'
                 options.pipelinePath (1,:) char = ndi.cpipeline.defaultPath()
                 options.session ndi.session = ndi.session.empty();
                 options.window_params (1,1) struct = struct('height', 500, 'width', 400)
@@ -78,7 +79,7 @@ classdef cpipeline
                         ud.pipelinePath = options.pipelinePath;
                         ud.pipelineList = []; % initially empty
                         ud.pipelineListChar = {}; % initially empty, MUST BE CELL
-                        ud.session = options.session;
+                        ud.linked_object = options.session;
                         set(fig,'userdata',ud);
                     else
                         error(['The provided pipeline path does not exist: ' options.pipelinePath '.']);
@@ -98,85 +99,163 @@ classdef cpipeline
                     uid = vlt.ui.basicuitools_defs;
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
 
-                    % Step 1: Define initial window geometry in pixels
+                    % Step 1: Define colors and normalized geometry
+                    fig_bg_color = [0.8 0.8 0.8];
+                    edit_bg_color = [1 1 1];
                     top = options.window_params.height;
                     right = options.window_params.width;
-                    row = 25;
-                    title_height = 25;
-                    title_width = 200;
-                    edge = 5;
-                    doc_width = (right - 2*edge)/3*2;
-                    doc_height = (options.window_params.height)/4*3;
-                    menu_width = right - 2*edge;
-                    menu_height = title_height;
-                    button_width = 120;
-                    button_height = 25;
-                    % NOTE: The original code uses a hardcoded 400 for button vertical positioning.
-                    % This is preserved to maintain the original layout.
-                    button_y_coords = [400-2*row 400-4.5*row 400-6*row 400-8.5*row 400-10*row 400-11.5*row];
-                    button_center_x = right-(right-doc_width)/2;
-                    button_x = button_center_x - 0.5*button_width;
-
+                    
+                    edge_h_n = 10/right;
+                    edge_v_n = 10/top;
+                    row_h_n = 25/top;
+                    gap_v_n = 15/top;
+                    gap_h_n = 5/right;
+                    
                     % Step 2: Set up the figure
                     set(fig,'position',[50 50 right top], ...
+                        'Color', fig_bg_color, ...
                         'NumberTitle','off', ...
                         'Name',['Editing ' ud.pipelinePath], ...
                         'MenuBar','none', ...
-                        'ToolBar','none');
+                        'ToolBar','none',...
+                        'Units','normalized',...
+                        'Resize','on');
 
-                    % Step 3: Calculate pixel positions for all UI controls
-                    % These positions are based on the initial window size.
-                    pos_titleTxt_pix = [edge, top-row, title_width, title_height];
-                    pos_popup_pix = [edge, top-row-title_height, menu_width, menu_height];
-                    pos_list_pix = [edge, (top-row-doc_height)-2*title_height, doc_width, doc_height];
+                    % Step 3: Create UI elements using a top-down normalized layout
+                    y_cursor = 1 - edge_v_n;
                     
-                    pos_runButton_pix = [button_x, button_y_coords(1), button_width, button_height];
-                    pos_newPipeButton_pix = [button_x, button_y_coords(2), button_width, button_height];
-                    pos_delPipeButton_pix = [button_x, button_y_coords(3), button_width, button_height];
-                    pos_newCalcButton_pix = [button_x, button_y_coords(4), button_width, button_height];
-                    pos_delCalcButton_pix = [button_x, button_y_coords(5), button_width, button_height];
-                    pos_editButton_pix = [button_x, button_y_coords(6), button_width, button_height];
+                    % Pipeline selection
+                    y_cursor = y_cursor - row_h_n;
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],'string','Select pipeline:',...
+                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    y_cursor = y_cursor - row_h_n;
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],...
+                        'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+                    
+                    % Object Linking (Stacked)
+                    y_cursor = y_cursor - gap_v_n - row_h_n;
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],'string','Link object type:',...
+                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    y_cursor = y_cursor - row_h_n;
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],...
+                        'string',{'ndi.session', 'ndi.dataset', 'Workspace variable'},'tag','PipelineObjectTypePopup','callback',callbackstr,...
+                        'BackgroundColor',edit_bg_color);
 
-                    % Step 4: Convert pixel positions to normalized units
-                    % This allows the controls to resize and move with the window.
-                    norm_factors = [right top right top];
-                    pos_titleTxt_norm = pos_titleTxt_pix ./ norm_factors;
-                    pos_popup_norm = pos_popup_pix ./ norm_factors;
-                    pos_list_norm = pos_list_pix ./ norm_factors;
-                    pos_runButton_norm = pos_runButton_pix ./ norm_factors;
-                    pos_newPipeButton_norm = pos_newPipeButton_pix ./ norm_factors;
-                    pos_delPipeButton_norm = pos_delPipeButton_pix ./ norm_factors;
-                    pos_newCalcButton_norm = pos_newCalcButton_pix ./ norm_factors;
-                    pos_delCalcButton_norm = pos_delCalcButton_pix ./ norm_factors;
-                    pos_editButton_norm = pos_editButton_pix ./ norm_factors;
+                    y_cursor = y_cursor - gap_v_n/2 - row_h_n;
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],'string','NDI Data:',...
+                         'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    y_cursor = y_cursor - row_h_n;
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],...
+                        'string',{'None'},'tag','PipelineObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+                    
+                    % Main Area (Listbox on left, Buttons on right)
+                    y_cursor = y_cursor - gap_v_n;
+                    main_area_top = y_cursor;
+                    main_area_bottom = edge_v_n;
+                    main_area_height = main_area_top - main_area_bottom;
 
-                    % Step 5: Build the UI controls using normalized positions
-                    % Pipeline selection portion of window
-                    uicontrol(uid.txt,'Units','normalized','position',pos_titleTxt_norm,'string','Select pipeline:','tag','PipelineTitleTxt');
-                    uicontrol(uid.popup,'Units','normalized','position',pos_popup_norm,...
-                        'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr);
-                    uicontrol(uid.edit,'style','listbox','Units','normalized','position',pos_list_norm,...
+                    % Listbox title and box
+                    list_w_n = (2/3)*(1 - 2*edge_h_n) - gap_h_n;
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n main_area_top-row_h_n list_w_n row_h_n],'string','Calculator Instances',...
+                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    uicontrol(uid.edit,'style','listbox','Units','normalized','position',[edge_h_n main_area_bottom list_w_n main_area_height-row_h_n],...
                         'string',{'Please select or create a pipeline.'},...
-                        'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr);
+                        'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr,'BackgroundColor',edit_bg_color);
+
+                    % Button Panel with Titles
+                    btn_panel_left_n = edge_h_n + list_w_n + gap_h_n;
+                    btn_panel_w_n = 1 - btn_panel_left_n - edge_h_n;
+                    btn_w_n = 0.8 * btn_panel_w_n; % 80% of panel width
+                    btn_x_n = btn_panel_left_n + (btn_panel_w_n - btn_w_n)/2;
                     
-                    % Buttons
-                    uicontrol(uid.button,'Units','normalized','position',pos_runButton_norm,...
-                        'string','->','tag','RunButton','callback',callbackstr,'Tooltipstring','Run pipeline calculations in order');
-                    uicontrol(uid.button,'Units','normalized','position',pos_newPipeButton_norm,...
-                        'string','+','tag','NewPipelineButton','Tooltipstring','Create new pipeline',...
-                        'callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',pos_delPipeButton_norm,...
-                        'string','-','Tooltipstring','Delete current pipeline','tag','DeletePipelineButton',...
-                        'callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',pos_newCalcButton_norm,...
-                        'string','+','Tooltipstring','Create new Calculator instance','tag','NewCalculatorInstanceButton',...
-                        'callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',pos_delCalcButton_norm,...
-                        'string','-','Tooltipstring','Delete current Calculator instance','tag','DeleteCalculatorInstanceButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',pos_editButton_norm,...
-                        'string','Edit','tooltipstring','Edit selected Calculator instance','tag','EditButton','callback',callbackstr);
+                    btn_h_n = 25/top;
+                    label_h_n = 15/top;
                     
-                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig); % load the pipelines from disk
+                    y_btn_panel_top = main_area_top;
+                    
+                    btn_titles = {'Run Pipeline','New Pipeline','Delete Pipeline','New Calculator','Delete Calculator','Edit Calculator'};
+                    btn_tags = {'RunButton','NewPipelineButton','DeletePipelineButton','NewCalculatorInstanceButton','DeleteCalculatorInstanceButton','EditButton'};
+                    btn_strings = {'->','+','-','+','-','Edit'};
+                    
+                    y_btn_cursor = y_btn_panel_top;
+                    small_gap = 5/top;
+                    large_gap = 15/top;
+
+                    % Manually stack buttons with titles and specific gaps
+                    slot_h = btn_h_n + label_h_n;
+                    y_btn_cursor = y_btn_cursor - slot_h;
+                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{1},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                    uicontrol(uid.button,'Units','normalized','string',btn_strings{1},'tag',btn_tags{1},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+
+                    y_btn_cursor = y_btn_cursor - large_gap - slot_h;
+                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{2},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                    uicontrol(uid.button,'Units','normalized','string',btn_strings{2},'tag',btn_tags{2},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+                    y_btn_cursor = y_btn_cursor - small_gap - slot_h;
+                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{3},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                    uicontrol(uid.button,'Units','normalized','string',btn_strings{3},'tag',btn_tags{3},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+
+                    y_btn_cursor = y_btn_cursor - large_gap - slot_h;
+                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{4},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                    uicontrol(uid.button,'Units','normalized','string',btn_strings{4},'tag',btn_tags{4},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+                    y_btn_cursor = y_btn_cursor - small_gap - slot_h;
+                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{5},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                    uicontrol(uid.button,'Units','normalized','string',btn_strings{5},'tag',btn_tags{5},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+                    y_btn_cursor = y_btn_cursor - small_gap - slot_h;
+                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{6},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                    uicontrol(uid.button,'Units','normalized','string',btn_strings{6},'tag',btn_tags{6},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+                    
+                    ndi.cpipeline.edit('command','PipelineObjectTypePopup','fig',fig);
+                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
+                case 'PipelineObjectTypePopup'
+                    popup_type_obj = findobj(fig,'tag','PipelineObjectTypePopup');
+                    type_val = get(popup_type_obj,'value');
+                    type_str_list = get(popup_type_obj,'string');
+                    selected_type = type_str_list{type_val};
+
+                    vars = evalin('base', 'whos');
+                    var_names = {};
+                    for i = 1:length(vars)
+                        is_match = strcmp(vars(i).class, selected_type);
+                        if strcmp(selected_type, 'Workspace variable') && ~strcmp(vars(i).class,'matlab.ui.Figure')
+                            is_match = true;
+                        end
+                        if is_match, var_names{end+1} = vars(i).name; end
+                    end
+                    popup_strings = {'None', var_names{:}};
+                    
+                    popup_var_obj = findobj(fig, 'tag','PipelineObjectVariablePopup');
+                    set(popup_var_obj, 'string', popup_strings, 'userdata', {[], var_names{:}});
+
+                    initial_value = 1; % Default to 'None'
+                    if ~isempty(ud.linked_object) && (strcmp(class(ud.linked_object), selected_type) || strcmp(selected_type,'Workspace variable'))
+                        for i=1:numel(var_names)
+                            workspace_obj = evalin('base', var_names{i});
+                            if isequal(ud.linked_object, workspace_obj)
+                                initial_value = i + 1;
+                                break;
+                            end
+                        end
+                    end
+                    set(popup_var_obj, 'value', initial_value);
+                    
+                    if initial_value == 1 && ~isempty(ud.linked_object)
+                        ud.linked_object = [];
+                        set(fig,'userdata',ud);
+                    end
+                case 'PipelineObjectVariablePopup'
+                    popup_obj = findobj(fig, 'tag', 'PipelineObjectVariablePopup');
+                    val = get(popup_obj, 'value');
+                    var_names_list = get(popup_obj, 'userdata');
+                    selected_var_name = var_names_list{val};
+                    
+                    if isempty(selected_var_name)
+                        ud.linked_object = [];
+                        disp('Pipeline object link cleared.');
+                    else
+                        ud.linked_object = evalin('base', selected_var_name);
+                        disp(['Pipeline linked to workspace variable ''' selected_var_name '''.']);
+                    end
+                    set(fig, 'userdata', ud);
                 case 'UpdatePipelines' % invented command that is not a callback
                     ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
                     ud.pipelineListChar = ndi.cpipeline.pipelineListToChar(ud.pipelineList);
@@ -359,7 +438,7 @@ classdef cpipeline
                     filename_to_edit = selected_pipeline.calculatorInstances(calculatorInstance_val).JSONFilename;
                     
                     full_calculatorInstance_name = fullfile(ud.pipelinePath, pipeline_name, filename_to_edit);
-                    ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_calculatorInstance_name,'session',ud.session);
+                    ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_calculatorInstance_name,'session',ud.linked_object);
                 case 'RunButton'
                     disp([command ' is not implemented yet.']);
                 case 'PipelineContentList'
@@ -444,7 +523,7 @@ classdef cpipeline
             %
             newCalculatorInstance.calculatorClassname = calculatorInstanceType;
             newCalculatorInstance.instanceName = name;
-            % REMOVED: parameter_code is no longer part of the default instance
+            % Note: parameter_code is no longer part of the default instance
             newCalculatorInstance.default_options = containers.Map("if_document_exists_do","NoAction");
         end % setDefaultCalculatorInstance
         function pipelineList = getPipelines(read_dir)
@@ -489,7 +568,6 @@ classdef cpipeline
                                 warning('JSON file is empty and will be skipped: %s', full_json_path);
                             end
                         catch ME
-                            % BUG FIX: Provide a cleaner warning and print technical details separately
                             warning('Could not decode JSON file, it may be corrupt and will be skipped: %s', full_json_path);
                             disp('For debugging, the full error report is below:');
                             disp(ME.getReport());
