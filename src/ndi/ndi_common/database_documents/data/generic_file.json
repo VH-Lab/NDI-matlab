@@ -17,6 +17,9 @@
     },
 	"generic_file":  {
 		"filename":		"",
-		"formatOntology":		""
+		"formatOntology":		"",
+		"dateCreated":		"",
+		"dateUpdated":		"",
+		"checksum":		""
 	}
 }

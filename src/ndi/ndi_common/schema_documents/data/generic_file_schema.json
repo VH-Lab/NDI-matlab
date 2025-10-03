@@ -14,7 +14,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The original file name (e.g 'labName/YYMMDD/subjectName/fileName.jpg')."
+			"documentation": "The original full file path and name (e.g '/Users/labName/Documents/YYMMDD/subjectName/fileName.jpg')."
 		},
 		{
 			"name": "formatOntology",
@@ -23,6 +23,30 @@
 			"parameters": "",
 			"queryable": 1,
 			"documentation": "The ontology node describing the file format in the form of ontology:nodeID (e.g 'EMPTY:00000090')."
+		},
+		{
+			"name": "dateCreated",
+			"type": "double",
+			"default_value": [0],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The time that the file was created specified as a datenum."
+		},
+		{
+			"name": "dateUpdated",
+			"type": "double",
+			"default_value": [0],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The time that the file was last updated specified as a datenum."
+		},
+		{
+			"name": "checksum",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The MD5 checksum of the file."
 		}
 	]
 }

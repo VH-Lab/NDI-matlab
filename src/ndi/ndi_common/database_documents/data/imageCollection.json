@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/imageCollection.json",
+		"validation":						"$NDISCHEMAPATH\/data\/imageCollection_schema.json",
+		"class_name":						"imageCollection",
+		"property_list_name":               "imageCollection",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "subject_id", "value": "" }
+	],
+	"imageCollection":  {
+		"label":		"",
+		"format":		""
+	}
+}
