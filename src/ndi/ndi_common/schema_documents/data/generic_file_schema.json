@@ -14,7 +14,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The original file name (e.g 'labName/YYMMDD/subjectName/fileName.jpg')."
+			"documentation": "The original full file path and name (e.g '/Users/labName/Documents/YYMMDD/subjectName/fileName.jpg')."
 		},
 		{
 			"name": "formatOntology",
