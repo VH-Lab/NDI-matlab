@@ -65,6 +65,16 @@ cellTypeDocs = session.database_search(queryCellType);
 probeID_cellType = cellfun(@(ctd) dependency_value(ctd,'element_id'),...
     cellTypeDocs,'UniformOutput',false);
 
+% Preallocate probeTable
+numProbes = numel(probeDocs);
+probeTableVars = {'SubjectDocumentIdentifier', 'ProbeDocumentIdentifier', ...
+    'ProbeName', 'ProbeType','ProbeReference', 'ProbeLocationName', ...
+    'ProbeLocationOntology', 'CellTypeName', 'CellTypeOntology'};
+numVars = numel(probeTableVars);
+probeTable = table('Size', [numProbes numVars], ...
+    'VariableTypes', repmat({'cellstr'},1,numVars), ...
+    'VariableNames', probeTableVars);
+
 % Loop through each stimulator
 for i = 1:numel(probeDocs)
 

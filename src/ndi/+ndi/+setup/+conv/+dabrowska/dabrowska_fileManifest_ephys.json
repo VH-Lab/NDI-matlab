@@ -68,7 +68,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "((?i)Type[ _](III|II|I))",
+    "StringFormat": "((?i)Type(?:[ _])?(III|II|I))",
     "FunctionName": ""
   },
   {
@@ -92,7 +92,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "((?i)CRF_BNST_neurons)",
+    "StringFormat": "((?i)CRF_BNST)",
     "FunctionName": ""
   },
   {
@@ -100,7 +100,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "((?i)OTR_BNST_neurons)",
+    "StringFormat": "((?i)OTR_BNST)",
     "FunctionName": ""
   },
   {
@@ -108,7 +108,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "((?i)AVPCre_BNST_neurons)",
+    "StringFormat": "((?i)AVPCre_BNST)",
     "FunctionName": ""
   },
   {
