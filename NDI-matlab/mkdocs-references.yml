@@ -107,6 +107,18 @@
             - ndi.cloud.download.download_dataset_files: 'NDI-matlab/reference/+ndi/+cloud/+download/download_dataset_files.m.md'
             - ndi.cloud.download.download_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+download/download_document_collection.m.md'
             - ndi.cloud.download.jsons2documents: 'NDI-matlab/reference/+ndi/+cloud/+download/jsons2documents.m.md'
+            - internal PACKAGE:
+              - ndi.cloud.download.internal.set_file_info: 'NDI-matlab/reference/+ndi/+cloud/+download/+internal/set_file_info.m.md'
+              - ndi.cloud.download.internal.structs_to_ndi_documents: 'NDI-matlab/reference/+ndi/+cloud/+download/+internal/structs_to_ndi_documents.m.md'
+          - internal PACKAGE:
+            - ndi.cloud.internal.create_remote_dataset_doc: 'NDI-matlab/reference/+ndi/+cloud/+internal/create_remote_dataset_doc.m.md'
+            - ndi.cloud.internal.decode_jwt: 'NDI-matlab/reference/+ndi/+cloud/+internal/decode_jwt.m.md'
+            - ndi.cloud.internal.getCloudDatasetIdForLocalDataset: 'NDI-matlab/reference/+ndi/+cloud/+internal/getCloudDatasetIdForLocalDataset.m.md'
+            - ndi.cloud.internal.get_active_token: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_active_token.m.md'
+            - ndi.cloud.internal.get_token_expiration: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_token_expiration.m.md'
+            - ndi.cloud.internal.get_uploaded_document_ids: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_uploaded_document_ids.m.md'
+            - ndi.cloud.internal.get_uploaded_file_ids: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_uploaded_file_ids.m.md'
+            - ndi.cloud.internal.get_weboptions_with_auth_header: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_weboptions_with_auth_header.m.md'
           - sync PACKAGE:
             - ndi.cloud.sync.SyncOptions: 'NDI-matlab/reference/+ndi/+cloud/+sync/SyncOptions.m.md'
             - ndi.cloud.sync.downloadNew: 'NDI-matlab/reference/+ndi/+cloud/+sync/downloadNew.m.md'
@@ -116,6 +128,23 @@
             - ndi.cloud.sync.uploadNew: 'NDI-matlab/reference/+ndi/+cloud/+sync/uploadNew.m.md'
             - enum PACKAGE:
               - ndi.cloud.sync.enum.SyncMode: 'NDI-matlab/reference/+ndi/+cloud/+sync/+enum/SyncMode.m.md'
+            - internal PACKAGE:
+              - ndi.cloud.sync.internal.Constants: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/Constants.m.md'
+              - ndi.cloud.sync.internal.deleteLocalDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/deleteLocalDocuments.m.md'
+              - ndi.cloud.sync.internal.deleteRemoteDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/deleteRemoteDocuments.m.md'
+              - ndi.cloud.sync.internal.downloadNdiDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/downloadNdiDocuments.m.md'
+              - ndi.cloud.sync.internal.getFileUidsFromDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/getFileUidsFromDocuments.m.md'
+              - ndi.cloud.sync.internal.listLocalDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/listLocalDocuments.m.md'
+              - ndi.cloud.sync.internal.listRemoteDocumentIds: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/listRemoteDocumentIds.m.md'
+              - ndi.cloud.sync.internal.updateFileInfoForLocalFiles: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/updateFileInfoForLocalFiles.m.md'
+              - ndi.cloud.sync.internal.updateFileInfoForRemoteFiles: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/updateFileInfoForRemoteFiles.m.md'
+              - ndi.cloud.sync.internal.upload_files_for_dataset_documents: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/upload_files_for_dataset_documents.m.md'
+              - index PACKAGE:
+                - ndi.cloud.sync.internal.index.createSyncIndexStruct: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/createSyncIndexStruct.m.md'
+                - ndi.cloud.sync.internal.index.getIndexFilepath: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/getIndexFilepath.m.md'
+                - ndi.cloud.sync.internal.index.readSyncIndex: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/readSyncIndex.m.md'
+                - ndi.cloud.sync.internal.index.updateSyncIndex: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/updateSyncIndex.m.md'
+                - ndi.cloud.sync.internal.index.writeSyncIndex: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/writeSyncIndex.m.md'
           - ui PACKAGE:
             - dialog PACKAGE:
               - ndi.cloud.ui.dialog.selectCloudDataset: 'NDI-matlab/reference/+ndi/+cloud/+ui/+dialog/selectCloudDataset.m.md'
@@ -125,6 +154,8 @@
             - ndi.cloud.upload.upload_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_document_collection.m.md'
             - ndi.cloud.upload.upload_to_NDI_cloud: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_to_NDI_cloud.m.md'
             - ndi.cloud.upload.zip_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/zip_for_upload.m.md'
+            - internal PACKAGE:
+              - ndi.cloud.upload.internal.zip_documents_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/+internal/zip_documents_for_upload.m.md'
             - for_deletion FOLDER:
               - ndi.cloud.upload/for_deletion.update_cloud_metadata: 'NDI-matlab/reference/+ndi/+cloud/+upload/for_deletion/update_cloud_metadata.m.md'
               - ndi.cloud.upload/for_deletion.update_cloud_metadata_struct: 'NDI-matlab/reference/+ndi/+cloud/+upload/for_deletion/update_cloud_metadata_struct.m.md'
@@ -221,6 +252,8 @@
               - ndi.database.implementations.fun.expell_plan: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/expell_plan.m.md'
               - ndi.database.implementations.fun.ingest: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/ingest.m.md'
               - ndi.database.implementations.fun.ingest_plan: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/ingest_plan.m.md'
+          - internal PACKAGE:
+            - ndi.database.internal.list_binary_files: 'NDI-matlab/reference/+ndi/+database/+internal/list_binary_files.m.md'
           - metadata PACKAGE:
             - ndi.database.metadata.table2treatment: 'NDI-matlab/reference/+ndi/+database/+metadata/table2treatment.m.md'
           - metadata_app PACKAGE:
@@ -373,6 +406,7 @@
             - subject PACKAGE:
               - ndi.fun.doc.subject.makeSpeciesStrainSex: 'NDI-matlab/reference/+ndi/+fun/+doc/+subject/makeSpeciesStrainSex.m.md'
           - docTable PACKAGE:
+            - ndi.fun.docTable.docCellArray2Table: 'NDI-matlab/reference/+ndi/+fun/+docTable/docCellArray2Table.m.md'
             - ndi.fun.docTable.element: 'NDI-matlab/reference/+ndi/+fun/+docTable/element.m.md'
             - ndi.fun.docTable.epoch: 'NDI-matlab/reference/+ndi/+fun/+docTable/epoch.m.md'
             - ndi.fun.docTable.openminds: 'NDI-matlab/reference/+ndi/+fun/+docTable/openminds.m.md'
@@ -407,6 +441,12 @@
             - ndi.gui.component.ProgressBarWindow: 'NDI-matlab/reference/+ndi/+gui/+component/ProgressBarWindow.m.md'
             - abstract PACKAGE:
               - ndi.gui.component.abstract.ProgressMonitor: 'NDI-matlab/reference/+ndi/+gui/+component/+abstract/ProgressMonitor.m.md'
+            - internal PACKAGE:
+              - ndi.gui.component.internal.AsynchProgressTracker: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/AsynchProgressTracker.m.md'
+              - ndi.gui.component.internal.ProgressTracker: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/ProgressTracker.m.md'
+              - event PACKAGE:
+                - ndi.gui.component.internal.event.MessageUpdatedEventData: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/+event/MessageUpdatedEventData.m.md'
+                - ndi.gui.component.internal.event.ProgressUpdatedEventData: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/+event/ProgressUpdatedEventData.m.md'
           - utility PACKAGE:
             - ndi.gui.utility.centerFigure: 'NDI-matlab/reference/+ndi/+gui/+utility/centerFigure.m.md'
         - mock PACKAGE:
@@ -655,3 +695,5 @@
           - ndi.validators.mustBeTextLike: 'NDI-matlab/reference/+ndi/+validators/mustBeTextLike.m.md'
           - ndi.validators.mustHaveRequiredColumns: 'NDI-matlab/reference/+ndi/+validators/mustHaveRequiredColumns.m.md'
           - ndi.validators.mustMatchRegex: 'NDI-matlab/reference/+ndi/+validators/mustMatchRegex.m.md'
+      - private FOLDER:
+        - addRequiredAdditionalSoftwareToPath: 'NDI-matlab/reference/private/addRequiredAdditionalSoftwareToPath.m.md'
