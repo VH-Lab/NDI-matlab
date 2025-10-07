@@ -13,6 +13,7 @@ function ndi_neuron_obj = spikesForProbe(ndi_session_obj, ndi_probe_obj, name, r
 % 'spiketimes'              | A vector of spike times (in the NDI_PROBE_OBJ's clock time)
 %
 % This function creates the new element and adds the spike data for each epoch provided.
+% All available clock types from the underlying probe's epochs are preserved.
 %
 % Example:
 %   S = getmysession(); % returns my session
@@ -45,12 +46,13 @@ for i=1:numel(spikedata)
 
 	et_here = et(epoch_entry_num);
 
-	% we will use the first clock type available
-	clock_here = et_here.epoch_clock{1};
-	t0_t1 = et_here.t0_t1{1};
+	% get all clock types and t0_t1 values
+	epoch_clocks = et_here.epoch_clock;
+	ecs = cellfun(@(c) c.type, epoch_clocks, 'UniformOutput', false);
+	t0_t1 = vertcat(et_here.t0_t1{:});
 
 	% the data is just the spike times
 	data = spiketimes_here(:); % ensure it is a column vector
 
-	ndi_neuron_obj.addepoch(epoch_here, clock_here, t0_t1, spiketimes_here, data);
+	ndi_neuron_obj.addepoch(epoch_here, strjoin(ecs,','), t0_t1, spiketimes_here, data);
 end
