@@ -8,7 +8,6 @@
     "#_time.dat",
     "#_info.rhd",
     "#_digitalin.dat",
-    "#_analogin.dat",
     "#_amplifier.dat",
     "epochprobemap.txt"
   ],
