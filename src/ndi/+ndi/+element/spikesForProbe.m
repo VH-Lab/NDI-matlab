@@ -9,7 +9,8 @@ function ndi_neuron_obj = spikesForProbe(ndi_session_obj, ndi_probe_obj, name, r
 % as the unit_id for the neuron.
 %
 % SPIKEDATA is a structure array with fields:
-% 'epochid'                 | The epoch id (string)
+% 'epochid'                 | The epoch id (string). These epoch IDs MUST correspond to epochs
+%                           | present in the NDI_PROBE_OBJ.
 % 'spiketimes'              | A vector of spike times (in the NDI_PROBE_OBJ's clock time)
 %
 % This function creates the new element and adds the spike data for each epoch provided.
@@ -18,9 +19,11 @@ function ndi_neuron_obj = spikesForProbe(ndi_session_obj, ndi_probe_obj, name, r
 % Example:
 %   S = getmysession(); % returns my session
 %   myprobe = ndi.probe(S, 'myprobe', 1, 'n-trode');
-%   spikedata(1).epochid = 'exp1_run1';
+%   et = myprobe.epochtable();
+%   if numel(et)<2, error([''Not enough epochs in probe to run example.'']); end;
+%   spikedata(1).epochid = et(1).epoch_id;
 %   spikedata(1).spiketimes = [ 0.01 0.02 0.03 ];
-%   spikedata(2).epochid = 'exp1_run2';
+%   spikedata(2).epochid = et(2).epoch_id;
 %   spikedata(2).spiketimes = [ 1.01 1.02 1.03 ];
 %   myneuron = ndi.element.spikesForProbe(S, myprobe, 'unit1', 1, spikedata);
 %
