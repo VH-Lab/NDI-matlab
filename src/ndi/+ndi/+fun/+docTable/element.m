@@ -82,11 +82,11 @@ for i = 1:numel(elementDocs)
     
     % Get element and subject id
     element = elementDocs{i};
-    data.subject_id{i} = element.subject_id;
-    data.element_id{i} = element.id;
-    data.element_name{i} = element.name;
-    data.element_type{i} = element.type;
-    data.element_reference{i} = element.reference;
+    data.subject_id{i} = element.dependency_value('subject_id');
+    data.element_id{i} = element.id();
+    data.element_name{i} = element.document_properties.element.name;
+    data.element_type{i} = element.document_properties.element.type;
+    data.element_reference{i} = element.document_properties.element.reference;
     
     % Initialize temporary struct to aggregate data for the current element
     metadata = struct();   % For metadata documents
