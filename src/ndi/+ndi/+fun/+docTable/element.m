@@ -40,7 +40,7 @@ arguments
 end
 
 % Get all element documents in the session
-elementDocs = session.getelements;
+elementDocs = session.database_search(ndi.query('','isa','element'));
 
 % Find all associated metadata document types
 document_path = ndi.common.PathConstants.DocumentFolder;
