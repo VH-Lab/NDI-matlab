@@ -3,7 +3,7 @@ function ndi_neuron_obj = spikesForProbe(ndi_session_obj, ndi_probe_obj, name, r
 %
 % NDI_NEURON_OBJ = ndi.element.spikesForProbe(NDI_SESSION_OBJ, NDI_PROBE_OBJ, NAME, REFERENCE, SPIKEDATA)
 %
-% Creates a new NDI_NEURON_OBJ, which is an NDI_ELEMENT of type 'neuron.spikes'.
+% Creates a new NDI_NEURON_OBJ, which is an NDI_ELEMENT of type 'spikes'.
 %
 % The element is given the name NAME and reference number REFERENCE. The reference number is used
 % as the unit_id for the neuron.
@@ -30,7 +30,7 @@ function ndi_neuron_obj = spikesForProbe(ndi_session_obj, ndi_probe_obj, name, r
 
 subject_id = []; % take subject from the probe
 dependencies = struct('name',{'channel','unit_id'},'value',{0,reference});
-ndi_neuron_obj = ndi.neuron(ndi_session_obj, name, reference, 'neuron.spikes', ndi_probe_obj, 0, subject_id, dependencies);
+ndi_neuron_obj = ndi.neuron(ndi_session_obj, name, reference, 'spikes', ndi_probe_obj, 0, subject_id, dependencies);
 
 et = ndi_probe_obj.epochtable();
 
