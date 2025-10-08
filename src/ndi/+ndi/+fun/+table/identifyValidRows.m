@@ -41,7 +41,7 @@ function validInd = identifyValidRows(variableTable,checkVariables,invalidValues
 arguments
     variableTable table
     checkVariables {mustBeA(checkVariables,{'char','string','cell'})} = {}
-    invalidValues {mustBeA(invalidValues,{'char','string','cell','numeric'})} = {NaN}
+    invalidValues {mustBeA(invalidValues,{'char','string','cell','numeric','datetime'})} = {NaN}
 end
 
 % Check for empty checkVariables
@@ -101,6 +101,13 @@ for i = 1:numel(checkVariables)
             isInvalid = cellfun(@(x) isnumeric(x) && any(isnan(x)), currentVariable);
         else
             isInvalid = isnan(currentVariable);
+        end
+    elseif isdatetime(currentInvalidValue) && isnat(currentInvalidValue)
+        % Handle NaT
+        if iscell(currentVariable)
+            isInvalid = cellfun(@(x) isdatetime(x) && any(isnat(x)), currentVariable);
+        else
+            isInvalid = isnat(currentVariable);
         end
     else
         % Handle all other values

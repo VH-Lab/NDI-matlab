@@ -25,10 +25,11 @@ function [subjectTable] = subject(session)
 %
 %   Outputs:
 %       subjectTable - A MATLAB table where each row corresponds to a subject.
-%                      Common columns include 'SubjectDocumentIdentifier',
-%                      'SubjectLocalIdentifier', 'StrainName', 'SpeciesName',
-%                      'BiologicalSexOntology', and various fields from 'treatment'
-%                      documents, depending on the available data.
+%                      Common columns include 'SessionDocumentIdentifier',
+%                      'SubjectDocumentIdentifier', 'SubjectLocalIdentifier', 
+%                      'StrainName', 'SpeciesName', 'BiologicalSexOntology', 
+%                      and various fields from 'treatment' documents, 
+%                      depending on the available data.
 %
 %   See also: ndi.session, ndi.query, table, outerjoin, 
 %   ndi.fun.docTable.openminds, ndi.fun.docTable.treatment, 
@@ -50,7 +51,8 @@ end
 % Initialize table with core subject information efficiently
 doc_ids = cellfun(@(d) d.document_properties.base.id, subjectDocs, 'UniformOutput', false);
 local_ids = cellfun(@(d) d.document_properties.subject.local_identifier, subjectDocs, 'UniformOutput', false);
-subjectTable = table(doc_ids(:), local_ids(:), 'VariableNames', {'SubjectDocumentIdentifier', 'SubjectLocalIdentifier'});
+session_ids = cellfun(@(d) d.document_properties.base.session_id, subjectDocs, 'UniformOutput', false);
+subjectTable = table(session_ids(:), doc_ids(:), local_ids(:), 'VariableNames', {'SessionDocumentIdentifier', 'SubjectDocumentIdentifier', 'SubjectLocalIdentifier'});
 
 % --- Step 2: Perform a single, broad query for all openminds metadata ---
 
