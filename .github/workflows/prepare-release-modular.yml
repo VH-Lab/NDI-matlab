@@ -85,7 +85,7 @@ jobs:
     uses: ehennestad/matbox-actions/.github/workflows/package-toolbox-job.yml@v1
     with:
       version_number: ${{ needs.validate_version.outputs.version_number }}
-      source_directory: src
+      source_directory: src/ndi
       tools_directory: tools
     secrets:
       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
