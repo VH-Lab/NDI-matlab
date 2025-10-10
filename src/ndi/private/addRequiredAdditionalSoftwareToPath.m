@@ -11,7 +11,7 @@ end
 function result = findInstallationLocationLivescript()
 % findInstallationLocationLivescript - Find livescript with installation
 % locations for toolbox' Additional Required Software
-    parentFolder = fileparts( fileparts( fileparts( mfilename("fullpath") ) ) ); % Two folder levels up
+    parentFolder = fileparts( fileparts( mfilename("fullpath") ) ); % Two levels up
 
     L = dir( fullfile(parentFolder, '**', 'getInstallationLocation.mlx') );
     
