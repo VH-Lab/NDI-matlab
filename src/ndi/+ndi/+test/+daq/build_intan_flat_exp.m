@@ -40,13 +40,14 @@ function build_intan_flat_exp(dirname)
     for i=1:numel(dev)
         E.daqsystem_rm(dev{i});
     end
+    E.cache.clear();
 
     disp(['Now adding our acquisition daqsystem (intan):']);
 
     % Step 1: Prepare the data tree; we will just look for .rhd
     %         files in any organization within the directory
 
-    dt = ndi.file.navigator(E, {'#.rhd', '#.epochprobemap.ndi'},'ndi.epoch.epochprobemap_daqsystem','(.*)epochprobemap.txt');  % look for .rhd files
+    dt = ndi.file.navigator(E, {'#.rhd', '#.epochprobemap.ndi'},'ndi.epoch.epochprobemap_daqsystem',{'(.*)epochprobemap.ndi'});  % look for .rhd files
 
     % Step 2: create the device object and add it to the session:
 
