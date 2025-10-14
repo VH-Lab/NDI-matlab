@@ -1,0 +1,2 @@
+src/ndi/+ndi/version.m export-subst
+src/ndi/+ndi/app.m export-subst

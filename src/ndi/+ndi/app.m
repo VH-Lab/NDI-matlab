@@ -60,7 +60,12 @@ classdef app < ndi.documentservice
                 classfilename = classfilename{1}; % take the first one if there are multiple
             end
             [parentdir,filename] = fileparts(classfilename);
-            [v,url] = vlt.git.git_repo_version(parentdir);
+            try,
+                [v,url] = vlt.git.git_repo_version(parentdir);
+            catch,
+                v = '$Format:%H$';
+                url = 'https://github.com/VH-Lab/NDI-matlab';
+            end;
 
         end % version_url()
 
