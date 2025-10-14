@@ -25,8 +25,10 @@ function [b, successes, failures] = test_ndi_document_jsons(generate_error)
     json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.DocumentFolder,{'.*\.json\>'});
 
     for i=1:numel(ndi.common.PathConstants.CalcDoc)
-        more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i},{'.*\.json\>'});
-        json_docs = cat(1,json_docs,more_json_docs);
+        if isfolder(ndi.common.PathConstants.CalcDoc{i})
+            more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i},{'.*\.json\>'});
+            json_docs = cat(1,json_docs,more_json_docs);
+        end
     end
 
     for i=1:numel(json_docs)
