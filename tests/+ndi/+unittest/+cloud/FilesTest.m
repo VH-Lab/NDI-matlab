@@ -135,17 +135,14 @@ classdef FilesTest < matlab.unittest.TestCase
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
             % Step 5: Download the file and verify its content
-            narrative(end+1) = "Preparing to download the file to verify its content.";
+            narrative(end+1) = "Preparing to download the file to verify its content (useCurl is true).";
             downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
-            try
-                websave(downloadedFilePath, downloadURL);
-                narrative(end+1) = "File downloaded successfully.";
-            catch ME
-                narrative(end+1) = "FAILURE: Could not download file using the provided URL.";
-                msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadURL);
-                testCase.verifyFail("Failed to download file using websave. " + msg_fail);
-                return;
-            end
+            [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
+            narrative(end+1) = "Attempted to download file from URL " + string(url_get);
+            msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyTrue(b_get, "File download failed. " + msg_get);
+            if ~b_get, return; end
+            narrative(end+1) = "File downloaded successfully.";
             retrievedContent = fileread(downloadedFilePath);
             narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
             match = strcmp(retrievedContent, testCase.TestFileContent);
@@ -225,17 +222,14 @@ classdef FilesTest < matlab.unittest.TestCase
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
             % Step 5: Download the file and verify its content
-            narrative(end+1) = "Preparing to download the file to verify its content.";
+            narrative(end+1) = "Preparing to download the file to verify its content (useCurl is false).";
             downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
-            try
-                websave(downloadedFilePath, downloadURL);
-                narrative(end+1) = "File downloaded successfully.";
-            catch ME
-                narrative(end+1) = "FAILURE: Could not download file using the provided URL.";
-                msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadURL);
-                testCase.verifyFail("Failed to download file using websave. " + msg_fail);
-                return;
-            end
+            [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath);
+            narrative(end+1) = "Attempted to download file from URL " + string(url_get);
+            msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyTrue(b_get, "File download failed. " + msg_get);
+            if ~b_get, return; end
+            narrative(end+1) = "File downloaded successfully.";
             retrievedContent = fileread(downloadedFilePath);
             narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
             match = strcmp(retrievedContent, testCase.TestFileContent);
@@ -321,17 +315,14 @@ classdef FilesTest < matlab.unittest.TestCase
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
             % Step 5: Download the file and verify its content
-            narrative(end+1) = "Preparing to download the file to verify its content.";
+            narrative(end+1) = "Preparing to download the file to verify its content (useCurl is true).";
             downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
-            try
-                websave(downloadedFilePath, downloadURL);
-                narrative(end+1) = "File downloaded successfully.";
-            catch ME
-                narrative(end+1) = "FAILURE: Could not download file using the provided URL.";
-                msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadURL);
-                testCase.verifyFail("Failed to download file using websave. " + msg_fail);
-                return;
-            end
+            [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
+            narrative(end+1) = "Attempted to download file from URL " + string(url_get);
+            msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyTrue(b_get, "File download failed. " + msg_get);
+            if ~b_get, return; end
+            narrative(end+1) = "File downloaded successfully.";
             retrievedContent = fileread(downloadedFilePath);
             narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
             match = strcmp(retrievedContent, testCase.TestFileContent);
@@ -426,17 +417,14 @@ classdef FilesTest < matlab.unittest.TestCase
             downloadURL = ans_details.downloadUrl;
             narrative(end+1) = "Successfully retrieved file details. Download URL obtained.";
             % Step 5: Download the file and verify its content
-            narrative(end+1) = "Preparing to download the file to verify its content.";
+            narrative(end+1) = "Preparing to download the file to verify its content (useCurl is true).";
             downloadedFilePath = fullfile(tempFolder.Folder, 'downloaded_file.txt');
-            try
-                websave(downloadedFilePath, downloadURL);
-                narrative(end+1) = "File downloaded successfully.";
-            catch ME
-                narrative(end+1) = "FAILURE: Could not download file using the provided URL.";
-                msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadURL);
-                testCase.verifyFail("Failed to download file using websave. " + msg_fail);
-                return;
-            end
+            [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
+            narrative(end+1) = "Attempted to download file from URL " + string(url_get);
+            msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+            testCase.verifyTrue(b_get, "File download failed. " + msg_get);
+            if ~b_get, return; end
+            narrative(end+1) = "File downloaded successfully.";
             retrievedContent = fileread(downloadedFilePath);
             narrative(end+1) = "Testing: Verifying content of downloaded file matches original.";
             match = strcmp(retrievedContent, testCase.TestFileContent);
@@ -525,14 +513,11 @@ classdef FilesTest < matlab.unittest.TestCase
                 
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
-                try
-                    websave(downloadedFilePath, downloadURL);
-                catch ME
-                    narrative(end+1) = "FAILURE: Could not download file " + fileUID + ".";
-                    msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadURL);
-                    testCase.verifyFail("Failed to download file. " + msg_fail);
-                    continue; % Continue to next file
-                end
+
+                [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath);
+                msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+                testCase.verifyTrue(b_get, "File download failed for " + fileUID + ". " + msg_get);
+                if ~b_get, continue; end
                 
                 retrievedContent = fileread(downloadedFilePath);
                 expectedContent = char(fileContents{i});
