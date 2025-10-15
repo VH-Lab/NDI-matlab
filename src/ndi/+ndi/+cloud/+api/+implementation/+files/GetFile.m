@@ -43,7 +43,8 @@ classdef GetFile < ndi.cloud.api.call
             apiURL = this.downloadURL;
 
             try
-                websave(this.downloadedFile, this.downloadURL);
+                options = weboptions('ContentType', 'binary', 'Timeout', 60);
+                websave(this.downloadedFile, this.downloadURL, options);
                 b = true;
                 answer = ['File downloaded successfully to ' this.downloadedFile];
             catch ME

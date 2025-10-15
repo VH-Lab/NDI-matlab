@@ -11,6 +11,7 @@ classdef FilesTest < matlab.unittest.TestCase
         runFileFieldTest = false;
     end
     properties
+        RunTestSingleFileUploadAndDownloadUseMatlabNotCurl (1,1) logical = false
         DatasetID (1,1) string = missing % ID of dataset used for all tests
         Narrative (1,:) string % Stores the narrative for each test
         KeepDataset (1,1) logical = false % Flag to prevent teardown from deleting dataset
@@ -155,6 +156,9 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.Narrative = narrative;
         end
         function testSingleFileUploadAndDownloadUseMatlabNotCurl(testCase)
+            if ~testCase.RunTestSingleFileUploadAndDownloadUseMatlabNotCurl
+                return;
+            end
             testCase.Narrative = "Begin testSingleFileUploadAndDownloadUseMatlabNotCurl";
             narrative = testCase.Narrative;
             % Step 1: Create a local test file with a UID as its name
