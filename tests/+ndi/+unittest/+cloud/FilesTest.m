@@ -514,20 +514,38 @@ classdef FilesTest < matlab.unittest.TestCase
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
 
-                [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath);
+                [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
                 msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
                 testCase.verifyTrue(b_get, "File download failed for " + fileUID + ". " + msg_get);
                 if ~b_get, continue; end
+
+                % Read file as binary and compare byte arrays to avoid encoding issues
+                try
+                    fid = fopen(downloadedFilePath, 'r');
+                    retrievedContent = fread(fid, inf, '*uint8')'; % Read as uint8 and transpose
+                    fclose(fid);
+                catch ME
+                    narrative(end+1) = "FAILURE: Could not read downloaded file " + fileUID + ".";
+                    msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadedFilePath);
+                    testCase.verifyFail("Failed to read downloaded file for verification. " + msg_fail);
+                    continue;
+                end
+
+                expectedContent = fileContents{i};
                 
-                retrievedContent = fileread(downloadedFilePath);
-                expectedContent = char(fileContents{i});
-                match = strcmp(retrievedContent, expectedContent);
-                % NOTE: fileread returns char, so we cast original bytes to char for comparison
+                % Use isequal for byte-to-byte comparison, which verifyEqual will do
+                match = isequal(retrievedContent, expectedContent);
+
+                % For display in case of error, show truncated byte arrays
+                expected_str = mat2str(expectedContent, 30);
+                retrieved_str = mat2str(retrievedContent, 30);
+
                 msg_content = ndi.unittest.cloud.APIMessage(narrative, match, ...
-                    struct('FileUID', fileUID, 'Expected_char_cast', expectedContent, 'Retrieved', retrievedContent), ...
+                    struct('FileUID', fileUID, 'Expected_bytes', expected_str, 'Retrieved_bytes', retrieved_str), ...
                     resp_details, url_details);
+
                 testCase.verifyEqual(retrievedContent, expectedContent, ...
-                    "Content mismatch for file " + fileUID + ". " + msg_content);
+                    "Binary content mismatch for file " + fileUID + ". " + msg_content);
             end
             narrative(end+1) = "All bulk-uploaded files have been individually verified.";
             
