@@ -6,18 +6,8 @@ This is a tutorial to view the electrophysiology and behavioral data which relat
 
 > Francesconi W, Olivera-Pasilio V, Berton F, Olson SL, Chudoba R, Monroy LM, Krabichler Q, Grinvech V, Dabrowska J (2025). Dataset: vasopressin and oxytocin excite BNST neurons via oxytocin receptors, which reduce anxious arousal. *NDI Cloud*. DOI: [10.63884/ndic.2025.jyxfer8m](https://doi.org/10.63884/ndic.2025.jyxfer8m).
 
-<a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>***Click here***</a> to download this tutorial in MATLAB.
-
-<a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download style="background-color: #008CBA; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;">
-  Download Tutorial
-</a>
-
 <a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>
-  <img src="https://img.shields.io/badge/Download-My_File.zip-brightgreen" alt="Download Tutorial">
-</a>
-
-<a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>
-  <button>Download Tutorial</button>
+  <img src="https://img.shields.io/badge/Download-MATLAB_Live_Tutorial-2596be" alt="Download Tutorial">
 </a>
 
 ## Table of Contents
