@@ -40,10 +40,7 @@ arguments
 end
 
 % Get all element documents in the session
-elementDocs = session.getelements;
-
-% Initialize table
-elementTable = table();
+elementDocs = session.database_search(ndi.query('','isa','element'));
 
 % Find all associated metadata document types
 document_path = ndi.common.PathConstants.DocumentFolder;
@@ -66,16 +63,30 @@ end
 elementID_metadata = cellfun(@(d) dependency_value(d,'element_id'),...
     metadataDocs,'UniformOutput',false);
 
+% Initialize a struct to hold all data
+numElements = numel(elementDocs);
+if numElements == 0
+    elementTable = table();
+    return;
+end
+
+% Pre-allocate base fields
+data.subject_id = cell(numElements, 1);
+data.element_id = cell(numElements, 1);
+data.element_name = cell(numElements, 1);
+data.element_type = cell(numElements, 1);
+data.element_reference = cell(numElements, 1);
+
 %% Loop through each element
 for i = 1:numel(elementDocs)
     
     % Get element and subject id
     element = elementDocs{i};
-    elementTable.subject_id{i} = element.subject_id;
-    elementTable.element_id{i} = element.id;
-    elementTable.element_name{i} = element.name;
-    elementTable.element_type{i} = element.type;
-    elementTable.element_reference{i} = element.reference;
+    data.subject_id{i} = element.dependency_value('subject_id');
+    data.element_id{i} = element.id();
+    data.element_name{i} = element.document_properties.element.name;
+    data.element_type{i} = element.document_properties.element.type;
+    data.element_reference{i} = element.document_properties.element.reference;
     
     % Initialize temporary struct to aggregate data for the current element
     metadata = struct();   % For metadata documents
@@ -134,11 +145,19 @@ for i = 1:numel(elementDocs)
             variableName = replace(variableName,'_',' ');
             variableName = ndi.fun.name2variableName([variableName,' ',currentValue]);
 
-            % Create comma-separated strings and assign to the table.
-            elementTable(i,variableName) = {strjoin(unique(values,'stable'), ', ')};
+            % If the field doesn't exist in our data struct, initialize it
+            if ~isfield(data, variableName)
+                data.(variableName) = cell(numElements, 1);
+            end
+
+            % Create comma-separated strings and assign to the data struct
+            data.(variableName){i} = strjoin(unique(values,'stable'), ', ');
         end
     end
 end
+
+% Convert the struct to a table
+elementTable = struct2table(data);
 
 % Remove empty columns
 indEmpty = cellfun(@(t) isempty(t),elementTable.Variables);

@@ -6,8 +6,7 @@ function test_ndi_filenavigator
     %
     %
 
-    mydirectory = [userpath filesep 'tools' filesep 'vhlab-toolbox-matlab' ...
-        filesep 'file' filesep 'test_dirs' filesep 'findfilegroupstest3'];
+    mydirectory = fullfile(vlt.toolboxdir, 'file', 'test_dirs', 'findfilegroupstest3');
 
     disp(['Working on directory ' mydirectory '...'])
 

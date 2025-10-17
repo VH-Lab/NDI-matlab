@@ -16,6 +16,17 @@ function build_intan_flat_exp(dirname)
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
     end
 
+    probemap_filename = fullfile(dirname, 'Intan_160317_125049_short.epochprobemap.ndi');
+    if ~exist(probemap_filename,'file'),
+        fid = fopen(probemap_filename, 'wt');
+        if fid<0,
+            error(['Could not open ' probemap_filename ' for writing.']);
+        end;
+        fprintf(fid,'name\treference\ttype\tdevicestring\tsubjectstring\n');
+        fprintf(fid,'ctx\t1\tn-trode\tintan1:ai1\tanteater27@nosuchlab.org\n');
+        fclose(fid);
+    end;
+
     disp(['creating a new session object...']);
     E = ndi.session.dir('exp1',dirname);
 
@@ -29,13 +40,14 @@ function build_intan_flat_exp(dirname)
     for i=1:numel(dev)
         E.daqsystem_rm(dev{i});
     end
+    E.cache.clear();
 
     disp(['Now adding our acquisition daqsystem (intan):']);
 
     % Step 1: Prepare the data tree; we will just look for .rhd
     %         files in any organization within the directory
 
-    dt = ndi.file.navigator(E, '.*\.rhd\>');  % look for .rhd files
+    dt = ndi.file.navigator(E, {'#.rhd', '#.epochprobemap.ndi'},'ndi.epoch.epochprobemap_daqsystem',{'(.*)epochprobemap.ndi'});  % look for .rhd files
 
     % Step 2: create the device object and add it to the session:
 
