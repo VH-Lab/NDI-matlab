@@ -6,7 +6,7 @@ This is a tutorial to view the electrophysiology and behavioral data which relat
 
 > Francesconi W, Olivera-Pasilio V, Berton F, Olson SL, Chudoba R, Monroy LM, Krabichler Q, Grinvech V, Dabrowska J (2025). Dataset: vasopressin and oxytocin excite BNST neurons via oxytocin receptors, which reduce anxious arousal. *NDI Cloud*. DOI: [10.63884/ndic.2025.jyxfer8m](https://doi.org/10.63884/ndic.2025.jyxfer8m).
 
-<a href="./src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>Click here to download this tutorial in MATLAB</a>
+<a href="/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>Click here to download this tutorial in MATLAB</a>
 
 ## Table of Contents
 1. [Download NDI](#NDI)
