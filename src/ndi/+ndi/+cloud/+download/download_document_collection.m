@@ -1,77 +1,136 @@
 function documents = download_document_collection(datasetId, documentIds, options)
-% DOWNLOAD_DOCUMENT_COLLECTION - Download a collection of documents using bulk download
+% DOWNLOAD_DOCUMENT_COLLECTION - Download documents using bulk download with chunking.
 %
-%   documents = ndi.cloud.download.download_document_collection(datasetId) 
-%    downloads a collection of documents from a specified dataset using a bulk
-%    download mechanism. It retrieves a bulk download URL via the 
-%    ndi.cloud.api.documents.get_bulk_download_url API call, downloads the 
-%    corresponding ZIP file, and then extracts and decodes the JSON content
-%    into a MATLAB struct.
+%   documents = ndi.cloud.download.download_document_collection(datasetId, documentIds, options)
+%   downloads a collection of documents from a specified dataset.
+%
+%   To improve performance and avoid server errors with large requests, this
+%   function automatically splits the list of document IDs into smaller chunks
+%   (default size: 2000) and performs a separate download for each chunk.
 %
 % INPUTS:
 %    datasetId    - (1,1) string
-%                   Unique identifier for the dataset from which documents are 
+%                   Unique identifier for the dataset from which documents are
 %                   to be downloaded.
 %
 %    documentIds  - (1,:) string, optional
-%                   Array of document identifiers to download. Default is an empty string (""),
-%                   which indicates that all documents in the dataset will be downloaded.
+%                   Array of **cloud API document identifiers** to download.
+%                   Default is an empty string (""), which triggers a download of
+%                   ALL documents in the dataset.
+%
+%                   **Performance Note:** If you intend to download all documents
+%                   and already have the list of document IDs (e.g., from a
+%                   previous call), it is more efficient to pass that list
+%                   directly to avoid an extra API call to fetch the list again.
 %
 %    options.Timeout - (1,1) double, optional
-%                   Optional name-value argument. Default is 10 (seconds)
+%                   The timeout in seconds for the websave download operation.
+%                   Default is 20.
+%
+%    options.ChunkSize - (1,1) double, optional
+%                   The maximum number of document IDs to request in a single
+%                   bulk download operation. Default is 2000.
 %
 % OUTPUTS:
 %    documents    - Cell
-%                   A cell array of ndi.document objects.
+%                   A cell array of the resulting ndi.document objects.
 %
 % EXAMPLE:
-%    % Download all documents from a dataset:
+%    % Download all documents from a dataset (will fetch ID list first)
 %    docs = ndi.cloud.download.download_document_collection("dataset123");
 %
-%    % Download specific documents with a custom timeout:
-%    docs = ndi.cloud.download.download_document_collection("dataset123", ["doc1", "doc2"]);
+%    % Download a specific list of documents with a larger chunk size
+%    my_ids = ["id_abc", "id_def", ...];
+%    docs = ndi.cloud.download.download_document_collection("dataset456", my_ids, ChunkSize=5000);
 %
-% See also: ndi.cloud.api.documents.get_bulk_download_url
+% See also: ndi.cloud.api.documents.getBulkDownloadURL, ndi.cloud.api.documents.listDatasetDocumentsAll
 
     arguments
         datasetId (1,1) string
         documentIds (1,:) string = "" % Default: Will download all documents
-        options.Timeout = 10
+        options.Timeout = 20 % Default timeout increased to 20 seconds
+        options.ChunkSize = 2000 % Default chunk size
     end
-    
-    downloadUrl = ndi.cloud.api.documents.get_bulk_download_url(datasetId, documentIds);
 
-    tempZipFilepath = [tempname, '.zip'];
-    zipfileCleanupObj = onCleanup(@() deleteIfExists(tempZipFilepath));
-
-    isFinished = false;
-    t1 = tic;
-    % The download URL is not immediately available. Retry downloading the 
-    % file until successful or the timeout is reached.
-    while ~isFinished && toc(t1) < options.Timeout
-        try
-            websave(tempZipFilepath, downloadUrl);
-            isFinished = true;
-        catch ME
-            pause(1)
+    % If user requests all documents, fetch the full list of IDs first.
+    if isempty(documentIds) || (isscalar(documentIds) && documentIds == "")
+        disp('No document IDs provided; fetching all document IDs from the server...');
+        id_map = ndi.cloud.sync.internal.listRemoteDocumentIds(datasetId);
+        documentIds = id_map.apiId;
+        if isempty(documentIds)
+            documents = {}; % Return empty if dataset has no documents
+            return;
         end
     end
 
-    if ~isFinished
-        error('NDI:Cloud:DocumentDownloadFailed', ...
-            ['Download failed with message:\n %s\n. If you see this ', ...
-            'message repeatedly, try using a larger Timeout value.'], ...
-            ME.message)
+    % Split the documentIds into chunks for processing
+    numDocs = numel(documentIds);
+    numChunks = ceil(numDocs / options.ChunkSize);
+    documentChunks = cell(1, numChunks);
+    for i = 1:numChunks
+        startIndex = (i-1) * options.ChunkSize + 1;
+        endIndex = min(i * options.ChunkSize, numDocs);
+        documentChunks{i} = documentIds(startIndex:endIndex);
     end
-    
-    % Unzip documents and return as cell array of ndi document objects
-    unzippedFiles = unzip(tempZipFilepath);
-    jsonFile = unzippedFiles{1};
-    jsonFileCleanupObj = onCleanup(@() deleteIfExists(jsonFile));
 
-    documentStructs = jsondecode(fileread(jsonFile));
+    all_document_structs = [];
+    fprintf('Beginning download of %d documents in %d chunk(s).\n', numDocs, numChunks);
 
-    documents = ndi.cloud.download.internal.structs_to_ndi_documents(documentStructs);
+    for c = 1:numel(documentChunks)
+        chunk_doc_ids = documentChunks{c};
+        fprintf('  Processing chunk %d of %d (%d documents)...\n', c, numChunks, numel(chunk_doc_ids));
+
+        [success, downloadUrl] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
+        if ~success
+            error(['Failed to get bulk download URL: ' downloadUrl.message]);
+        end
+        tempZipFilepath = [tempname, '.zip'];
+        zipfileCleanupObj = onCleanup(@() deleteIfExists(tempZipFilepath));
+
+        isFinished = false;
+        t1 = tic;
+        % The download URL may not be immediately ready. Retry until timeout.
+        while ~isFinished && toc(t1) < options.Timeout
+            try
+                websave(tempZipFilepath, downloadUrl);
+                isFinished = true;
+            catch ME
+                pause(1) % Wait a second before retrying
+            end
+        end
+
+        if ~isFinished
+            error('NDI:Cloud:DocumentDownloadFailed', ...
+                ['Download failed for chunk %d with message:\n %s\n. If this persists, ', ...
+                'consider increasing the Timeout value.'], c, ME.message);
+        end
+
+        % Unzip and process documents from the current chunk
+        unzippedFiles = unzip(tempZipFilepath,fileparts(tempZipFilepath));
+        jsonFile = unzippedFiles{1};
+        jsonFileCleanupObj = onCleanup(@() deleteIfExists(jsonFile));
+
+        jsonString = fileread(jsonFile);
+        jsonRehydrated = ndi.util.rehydrateJSONNanNull(jsonString);
+        documentStructs = jsondecode(jsonRehydrated);
+
+        if isempty(all_document_structs)
+            all_document_structs = documentStructs;
+        else
+            % Use a temporary variable to handle both struct array and cell array cases
+            tempStructs = all_document_structs;
+            if isstruct(tempStructs), tempStructs = num2cell(tempStructs); end
+            if isstruct(documentStructs), documentStructs = num2cell(documentStructs); end
+            all_document_structs = [tempStructs; documentStructs];
+        end
+
+        % Clean up temporary files for this chunk
+        clear zipfileCleanupObj jsonFileCleanupObj;
+    end
+
+    fprintf('Download complete. Converting %d structs to NDI documents...\n', numel(all_document_structs));
+    documents = ndi.cloud.download.internal.structs_to_ndi_documents(all_document_structs);
+    fprintf('Processing complete.\n');
 end
 
 function deleteIfExists(filePath)
