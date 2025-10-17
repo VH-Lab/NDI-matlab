@@ -1,10 +1,13 @@
-function probeLocations = location(S, e)
-% PROBELOCATION - Return probe location documents for an NDI element
+function [probeLocations, probeObj] = location(S, e)
+% PROBELOCATION - Return probe location documents and probe object for an NDI element
 %
-% PROBELOCATIONS = NDI.FUN.PROBE.LOCATION(S, E)
+% [PROBELOCATIONS, PROBEOBJ] = NDI.FUN.PROBE.LOCATION(S, E)
 %
 % Given an NDI element E, find the NDI.PROBE object that is associated with it,
 % and return all 'probeLocation' documents that are associated with that probe.
+%
+% This function also returns the NDI.PROBE object itself as a second output
+% argument PROBEOBJ.
 %
 % E can be one of the following:
 %   a) An NDI.ELEMENT object (or a subclass like NDI.PROBE)
@@ -58,8 +61,9 @@ while ~isa(current_element, 'ndi.probe')
     current_element = ndi.database.fun.ndi_document2ndi_object(S, underlying_element_doc{1});
 end
 
-% Step 3: we have the probe, get its identifier
-probeIdentifier = current_element.id();
+% Step 3: we have the probe, assign output
+probeObj = current_element;
+probeIdentifier = probeObj.id();
 
 % Step 4: query for the locations
 q = ndi.query('','depends_on','probe_id',probeIdentifier) & ndi.query('','isa','probeLocation');
