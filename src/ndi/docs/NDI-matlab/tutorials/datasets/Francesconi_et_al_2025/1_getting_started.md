@@ -8,6 +8,10 @@ This is a tutorial to view the electrophysiology and behavioral data which relat
 
 <a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>***Click here***</a> to download this tutorial in MATLAB.
 
+<a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download style="background-color: #008CBA; border: none; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; cursor: pointer; border-radius: 8px;">
+  Download Tutorial
+</a>
+
 ## Table of Contents
 1. [Download NDI](#NDI)
 2. [Import the NDI dataset](#import)
