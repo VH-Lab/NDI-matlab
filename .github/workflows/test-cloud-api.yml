@@ -52,6 +52,12 @@ jobs:
             ndi.cloud.authenticate("InteractionEnabled", "off")
             testCloudApi()
 
+      # Publish test results
+      - name: Publish test results
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: 'docs/reports/test-results.xml'
+
       - name: Restore MATLAB Path
         uses: matlab-actions/run-command@v2
         if: always()

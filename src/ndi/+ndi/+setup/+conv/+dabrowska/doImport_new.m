@@ -1,41 +1,45 @@
  function sessionArray = doImport_new(dataParentDir,options)
 % DOIMPORT_NEW - An updated version of doImport that uses the new subjectMaker routines.
-%
-% Comments on changes:
-% This script replaces the manual creation of subject documents with the more robust
-% and reusable ndi.setup.NDIMaker.subjectMaker class.
-%
-% Key changes:
-% 1. A new class `ndi.setup.conv.dabrowska.SubjectInformationCreator` is now used. This class
-%    contains the specific logic for converting a row of the variable table into a subject
-%    identifier and associated openMINDS metadata objects (species, strain, etc.).
-% 2. The `ndi.setup.NDIMaker.subjectMaker` object is instantiated and its `addSubjectsFromTable`
-%    method is called. This single method handles:
-%      a. Identifying unique subjects from the table.
-%      b. Checking if these subjects already exist in the database to avoid duplicates.
-%      c. Creating NDI documents for new subjects and their associated metadata.
-%      d. Adding all new documents to the appropriate NDI session.
-% 3. The `SubjectString` column of the `variableTable` is now populated from the output of the
-%    `subjectMaker`, ensuring all downstream steps (like epochprobemap creation) are linked to
-%    the correct subject documents.
-%
-% This new approach makes the import process cleaner, less error-prone, and aligns with
-% the modern NDI framework for managing experimental metadata.
-%
 
 % Input argument validation
 arguments
-    dataParentDir (1,:) char {mustBeFolder}
-    options.Overwrite (1,1) logical = false
+    dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath,'data');
+    options.Overwrite (1,1) logical = true;
 end
 
-%% Create progress bar
+% Create progress bar
 ndi.gui.component.ProgressBarWindow('Import Dataset');
 
 % Get data path
 dataPath = fullfile(dataParentDir,'Dabrowska');
 
+%% Step 1: FILES. Get data path and files.
+
+% If overwriting, delete NDI docs
+fileList = vlt.file.manifest(dataPath);
+if options.Overwrite
+    ndiFiles = fileList(endsWith(fileList,'.ndi') | contains(fileList,'.epoch'));
+    for i = 1:numel(ndiFiles)
+        fileName = fullfile(dataParentDir,ndiFiles{i});
+        if isfolder(fileName)
+            rmdir(fileName,'s');
+        else
+            delete(fileName);
+        end
+    end
+end
+
 % Deal with bad paths
+fileList = fullfile(dataParentDir,fileList);
+badFileInd = find(contains(fileList,'Copy of'));
+if ~isempty(badFileInd)
+    fprintf('Removing "Copy of" from %i known files.\n',numel(badFileInd))
+    for i = 1:numel(badFileInd)
+        badFile = fileList{badFileInd(i)};
+        movefile(badFile,replace(badFile,'Copy of ',''));
+    end
+end
+
 badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
 if isfolder(badFolder)
     disp(['Removing extra space chacter in known folder ' badFolder])
@@ -54,18 +58,7 @@ if isfolder(badFolder)
     movefile(badFolder,replace(badFolder,'Pre ','Pre'));
 end
 
-[fileList] = vlt.file.manifest(dataPath);
-fileList = fullfile(dataParentDir,fileList);
-badFileInd = find(contains(fileList,'Copy of'));
-if ~isempty(badFileInd)
-    fprintf('Removing "Copy of" from %i known files.\n',numel(badFileInd))
-    for i = 1:numel(badFileInd)
-        badFile = fileList{badFileInd(i)};
-        movefile(badFile,replace(badFile,'Copy of ',''));
-    end
-end
-
-%% Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
+%% Step 2: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file.
 
 [dirList,isDir] = vlt.file.manifest(dataPath);
 fileList = dirList(~isDir);
@@ -93,6 +86,7 @@ for i = 1:numel(OTAInd)
         variableTable_opto.BathConditionString(OTAInd(i)) = join({bcs,'OTA'},' + ');
     end
 end
+variableTable_opto.BathConditionString(indEpoch) = replace(variableTable_opto.BathConditionString(indEpoch),'Post 10 Hz 20 s','Post');
 
 % Combine variable tables with common rows
 opto_rows = contains(variableTable_ephys.Properties.RowNames,'Optogenetics');
@@ -103,7 +97,11 @@ variableTable(opto_rows,:) = variableTable_opto(opto_rows,common_vars);
 
 % Fix cell type string
 cellTypeInd = ndi.fun.table.identifyValidRows(variableTable,'CellType');
-variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'_',' '),...
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'_',''),...
+    variableTable.CellType(cellTypeInd),'UniformOutput',false);
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,' ',''),...
+    variableTable.CellType(cellTypeInd),'UniformOutput',false);
+variableTable.CellType(cellTypeInd) = cellfun(@(s) replace(s,'Type','Type '),...
     variableTable.CellType(cellTypeInd),'UniformOutput',false);
 variableTable.CellType(~cellTypeInd) = {''};
 
@@ -122,7 +120,7 @@ variableTable{:,'SubjectPostfix'} = cellfun(@(celltype,opto) ...
     ['_BNST',celltype(6:end),opto,'@dabrowska-lab.rosalindfranklin.edu'],...
     variableTable.CellType,variableTable.OptoPostfix,'UniformOutput',false);
 
-%% Step 2: SESSIONS. Build the session.
+%% Step 3: SESSIONS. Build the session.
 
 % Employ the sessionMaker
 mySessionPath = dataParentDir;
@@ -134,9 +132,7 @@ SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
 labName = 'dabrowskalab';
 SM.addDaqSystem(labName,'Overwrite',options.Overwrite)
 
-%% Step 3: SUBJECTS. Build subject documents using the new subjectMaker.
-% ------------------ CHANGE HIGHLIGHTED HERE ------------------
-% The old method of looping and creating subjects manually has been replaced.
+%% Step 4: SUBJECTS. Build subject documents using the new subjectMaker.
 
 % 1. Instantiate the subjectMaker and the lab-specific SubjectInformationCreator
 subM = ndi.setup.NDIMaker.subjectMaker();
@@ -147,10 +143,8 @@ creator = ndi.setup.conv.dabrowska.SubjectInformationCreator();
 %    essential for linking other documents later.
 [~, variableTable.SubjectString] = ...
     subM.addSubjectsFromTable(sessionArray{1}, variableTable, creator);
- 
-% ------------------ END OF CHANGE ------------------
 
-%% Step 4: EPOCHPROBEMAPS. Build epochprobemaps.
+%% Step 5: EPOCHPROBEMAPS. Build epochprobemaps.
 
 % Create probeTable
 name = {'bath';'Vm';'I'};
@@ -178,7 +172,7 @@ ndi.setup.NDIMaker.epochProbeMapMaker(dataParentDir,variableTable,probeTable,...
     'NonNaNVariableNames','IsExpMatFile',...
     'ProbePostfix','ProbePostfix');
 
-%% Step 5: STIMULUS DOCS. Build the stimulus bath and approach documents.
+%% Step 6: STIMULUS DOCS. Build the stimulus bath and approach documents.
 
 sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
     'GetProbes',true);
@@ -210,7 +204,7 @@ sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',options.Overwrite);
 
-%% Step 6: CELL TYPES. Add openMinds celltypes and probe location documents.
+%% Step 7: CELL TYPES. Add openMinds celltypes and probe location documents.
 
 % Get subjects
 query = ndi.query('','isa','subject');
@@ -258,7 +252,7 @@ cellTypeDocs(strcmpi(cellTypeDocs,'remove')) = [];
 sessionArray{1}.database_add(cellTypeDocs);
 sessionArray{1}.database_add(probeLocationDocs);
 
-%% Step 7: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
+%% Step 8: VIRUSES AND TREATMENTS. Add virus injection and optogenetic location treatment documents.
 
 % Indices of optogenetic subjects
 subjectLocalID_opto = unique(variableTable.SubjectString(opto_rows));
@@ -297,7 +291,7 @@ end
 % Add documents to database
 sessionArray{1}.database_add(treatmentDocs);
 
-%% Step 8: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
+%% Step 9: EPM DATA TABLE. Build data table for Elevated Plus Maze data.
 
 % Get combined EPM data table
 filename_EPM = 'EPM_OTR-cre+_Saline vs CNO_DREADDs-Gi_2 Groups_final-5.23.25.xlsx';
@@ -348,7 +342,7 @@ dataTable_EPM.Experiment_ID(dataTable_EPM.Animal >= 300) = 2;
 dataTable_EPM.Exclude(:) = false;
 dataTable_EPM.Exclude(dataTable_EPM.Animal == 239 | dataTable_EPM.Animal == 258) = true;
 
-%% Step 9: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
+%% Step 10: FPS DATA TABLE. Build data table for Fear-Potentiated Startle data.
 
 % Get combined FPS data table
 filename_FPS = 'FPS_OTR-Cre+_Saline vs CNO_DREADDs-Gi_Experiment 1-final.xlsx';
@@ -386,7 +380,7 @@ dataTable_FPS.Group_ID = cellfun(@(s) str2double(s(6)),dataTable_FPS.Session_ID)
 dataTable_FPS(:,{'Trial_List_Block','Chamber_ID','Session_ID','Param',...
     'TimeStampPT'}) = [];
 
-%% Step 10: SUBJECTS. Build subject documents.
+%% Step 11: SUBJECTS. Build subject documents.
 
 % Create subject table
 subjectTable_behavior = dataTable_EPM(:,'Animal');
@@ -413,7 +407,7 @@ dataTable_EPM = join(dataTable_EPM,subjectTable_behavior(:,{'Animal','SubjectStr
 dataTable_FPS = join(dataTable_FPS,subjectTable_behavior(:,{'Animal','SubjectString'}),...
     'LeftKeys','Subject_ID','RightKeys','Animal');
 
-%% Step 11: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
+%% Step 12: ONTOLOGYTABLEROW. Build ontologyTableRow documents.
 
 % Check dictionary/ontology for new variables
 
@@ -428,4 +422,31 @@ tdm.table2ontologyTableRowDocs(dataTable_EPM,{'SubjectString','Treatment'},...
 tdm.table2ontologyTableRowDocs(dataTable_FPS,...
     {'SubjectString','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
 
-end % doImport_new
+%% Step 13. Make dataset
+
+% Create dataset
+datasetName = 'dabrowska_2025';
+datasetDir = fullfile(dataPath,datasetName);
+if ~exist(datasetDir,'dir')
+    mkdir(datasetDir);
+elseif options.Overwrite
+    rmdir(datasetDir,'s');
+    mkdir(datasetDir);
+end
+dataset = ndi.dataset.dir(datasetName,datasetDir);
+
+% Ingest and add sessions
+for i = 1:numel(sessionArray)
+    sessionDatabaseDir = fullfile(sessionArray{i}.path,'.ndi');
+    if options.Overwrite && exist([sessionDatabaseDir,'_'],'dir')
+        rmdir([sessionDatabaseDir,'_'],'s');
+    end
+    copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
+    sessionArray{i}.ingest;
+    dataset.add_ingested_session(sessionArray{i});
+end
+
+% Compress dataset
+zip([datasetDir,'.zip'],datasetDir);
+
+% end % doImport_new

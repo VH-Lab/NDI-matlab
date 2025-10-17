@@ -639,7 +639,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             end
 
             fullpathfilenames = all_epochs(epoch_number);
-            if numel(epoch_number)==1
+            if isscalar(epoch_number)
                 fullpathfilenames = fullpathfilenames{1};
             end
             ndi_filenavigator_obj.cached_epochfilenames(epoch_number) = fullpathfilenames;

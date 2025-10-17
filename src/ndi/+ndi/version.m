@@ -14,4 +14,9 @@ function [v, url] = version
 
     [parentdir,file,ext] = fileparts(filename);
 
-    [v,url] = vlt.git.git_repo_version(parentdir);
+    try,
+        [v,url] = vlt.git.git_repo_version(parentdir);
+    catch,
+        v = '$Format:%H$';
+        url = 'https://github.com/VH-Lab/NDI-matlab';
+    end;

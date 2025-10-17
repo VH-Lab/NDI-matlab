@@ -438,6 +438,12 @@ namespace: empty_ontology
 def: "A boolean flag indicating whether the data from a specific subject or experimental replicate should be excluded from subsequent analysis due to predefined quality control issues or experimental failure." []
 
 [Term]
+id: EMPTY:00000167
+name: type II BNST neuron
+namespace: empty_ontology
+def: "A type of neuron located in the dorsolateral bed nucleus of the stria terminalis (BNSTDL) that produces post-inhibitory spikes in response to preceding negative current steps, which is related to the action of the low-threshold Ca2+ current. These neurons also display strong voltage sags under hyperpolarizing current pulses, indicating a high level of the hyperpolarization-activated cation current (Ih). [Source: https://doi.org/10.1016/j.celrep.2025.115768]" []
+
+[Term]
 id: EMPTY:00000168
 name: investigator-defined cell type
 namespace: empty_ontology
@@ -989,6 +995,54 @@ id: EMPTY:00000259
 name: amplitude
 namespace: empty_ontology
 def: "The amplitude of a periodic variable is a measure of its change in a single period (such as time or spatial period). The amplitude of a non-periodic signal is its magnitude compared with a reference value." []
+
+[Term]
+id: EMPTY:00000260
+name: data-independent acquisition (DIA)
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000261
+name: subject enumerated identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000262
+name: subject cage identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000263
+name: subject text identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000264
+name: subject text identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000265
+name: slide scanner image acquisition
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000266
+name: experiment metadata file
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000267
+name: echocardiogram acquisition
+namespace: empty_ontology
+def: "" []
 
 [Term]
 id: EMPTY:10000000

@@ -12,6 +12,7 @@ function result = findInstallationLocationLivescript()
 % findInstallationLocationLivescript - Find livescript with installation
 % locations for toolbox' Additional Required Software
     parentFolder = fileparts( fileparts( mfilename("fullpath") ) ); % Two levels up
+
     L = dir( fullfile(parentFolder, '**', 'getInstallationLocation.mlx') );
     
     if isempty(L)
@@ -26,6 +27,7 @@ function installationLocations = getInstallationLocations(livescriptFile) %#ok<S
 % the livescript and return the value as a cell array N x 2 (name, pathStr)
     editorObj = matlab.desktop.editor.openDocument( livescriptFile );
     codeText = editorObj.Text;
+    editorObj.close()
     codeText = strsplit(codeText, newline);
     codeText = codeText(2:end-2);
     codeText = strjoin(codeText, newline);
