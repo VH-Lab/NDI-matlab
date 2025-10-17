@@ -1,6 +1,6 @@
 # Francesconi et al (2025) Tutorial: Getting Started
 
-<a href="https://github.com/VH-Lab/NDI-matlab/raw/e7cfcf2b804e13dfdc6e11e3027e2c0bc991cb00/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>Click here</a> to download this tutorial in MATLAB.
+<a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>Click here</a> to download this tutorial in MATLAB.
 
 This is a tutorial to view the electrophysiology and behavioral data which relates to:
 
