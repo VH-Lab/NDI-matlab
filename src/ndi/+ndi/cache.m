@@ -32,7 +32,7 @@ classdef cache < handle
             % See also: vlt.data.namevaluepair
             arguments
                 options.maxMemory (1,1) double = 10e9;
-                options.replacement_rule (1,:) char {mustBeMember(lower(options.replacement_rule),{'fifo','lifo','error'})} = 'fifo';
+                options.replacement_rule (1,:) char = 'fifo';
             end
 
             ndi_cache_obj.table = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
@@ -57,7 +57,11 @@ classdef cache < handle
             % 'error'         | Don't discard anything, just produce an error saying cache is full
             arguments
                 ndi_cache_obj (1,1) ndi.cache
-                rule (1,:) char {mustBeMember(lower(rule),{'fifo','lifo','error'})}
+                rule (1,:) char
+            end
+            therules = {'fifo','lifo','error'};
+            if ~any(strcmpi(rule,therules))
+                error(['Unknown replacement rule requested: ' rule '. Must be one of ' vlt.string.cellstr2str(therules) '.']);
             end
             ndi_cache_obj.replacement_rule = lower(rule);
         end % set_replacement_rule
