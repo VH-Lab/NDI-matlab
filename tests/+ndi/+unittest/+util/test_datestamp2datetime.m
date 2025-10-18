@@ -53,7 +53,7 @@ classdef test_datestamp2datetime < matlab.unittest.TestCase
             % implicitly converted to a char, bypassing this validation.
             nonCharInput = struct('field', 'value');
 
-            testCase.verifyError(@() ndi.util.datestamp2datetime(nonCharInput), 'MATLAB:validation:mustBeA');
+            testCase.verifyError(@() ndi.util.datestamp2datetime(nonCharInput), 'MATLAB:validation:UnableToConvert');
         end
 
     end
