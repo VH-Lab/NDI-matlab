@@ -14,7 +14,7 @@ classdef cache < handle
 
     methods
 
-        function ndi_cache_obj = cache(varargin)
+        function ndi_cache_obj = cache(options)
             % CACHE - create a new NDI cache handle
             %
             % NDI_CACHE_OBJ = NDI.CACHE(...)
@@ -30,23 +30,14 @@ classdef cache < handle
             % Note that the cache is not 'secure', any function can query the data added.
             %
             % See also: vlt.data.namevaluepair
-
-            maxMemory = 10e9; % 10 GB
-            replacement_rule = 'fifo';
-
-            vlt.data.assign(varargin{:});
-
-            if nargin==0
-                ndi_cache_obj.maxMemory = maxMemory;
-                ndi_cache_obj.replacement_rule = replacement_rule;
-                ndi_cache_obj.table = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
-                return;
+            arguments
+                options.maxMemory (1,1) double = 10e9;
+                options.replacement_rule (1,:) char = 'fifo';
             end
 
-            ndi_cache_obj = ndi.cache();
-
-            ndi_cache_obj.maxMemory = maxMemory;
-            ndi_cache_obj = set_replacement_rule(ndi_cache_obj,replacement_rule);
+            ndi_cache_obj.table = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
+            ndi_cache_obj.maxMemory = options.maxMemory;
+            ndi_cache_obj = set_replacement_rule(ndi_cache_obj,options.replacement_rule);
 
         end % ndi_cache creator
 
@@ -64,13 +55,15 @@ classdef cache < handle
             % 'fifo'          | First in, first out; discard oldest entries first.
             % 'lifo'          | Last in, first out; discard newest entries first.
             % 'error'         | Don't discard anything, just produce an error saying cache is full
-
-            therules = {'fifo','lifo','error'};
-            if any(strcmpi(rule,therules))
-                ndi_cache_obj.replacement_rule = lower(rule);
-            else
-                error(['Unknown replacement rule requested: ' rule '.']);
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+                rule (1,:) char
             end
+            therules = {'fifo','lifo','error'};
+            if ~any(strcmpi(rule,therules))
+                error(['Unknown replacement rule requested: ' rule '. Must be one of ' vlt.string.cellstr2str(therules) '.']);
+            end
+            ndi_cache_obj.replacement_rule = lower(rule);
         end % set_replacement_rule
 
         function ndi_cache_obj = add(ndi_cache_obj, key, type, data, priority)
@@ -82,8 +75,12 @@ classdef cache < handle
             % If desired, a PRIORITY can be added; items with greatest PRIORITY will be
             % deleted last.
             %
-            if nargin < 5
-                priority = 0;
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+                key (1,:) char
+                type (1,:) char
+                data
+                priority (1,1) double = 0
             end
 
             % before we reorganize anything, make sure it will fit
@@ -92,16 +89,6 @@ classdef cache < handle
                 error(['This variable is too large to fit in the cache; cache''s maxMemory exceeded.']);
             end
 
-            total_memory = ndi_cache_obj.bytes() + s.bytes;
-            if total_memory > ndi_cache_obj.maxMemory % it doesn't fit
-                if strcmpi(ndi_cache_obj.replacement_rule,'error')
-                    error(['Cache is too full too accommodate the new data; error was requested rather than replacement.']);
-                end
-                freespaceneeded = total_memory - ndi_cache_obj.maxMemory;
-                ndi_cache_obj.freebytes(freespaceneeded);
-            end
-
-            % now there's room
             newentry = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
             newentry(1).key = key;
             newentry(1).type = type;
@@ -110,10 +97,24 @@ classdef cache < handle
             newentry(1).bytes = s.bytes;
             newentry(1).data = data;
 
-            ndi_cache_obj.table(end+1) = newentry;
+            total_memory = ndi_cache_obj.bytes() + s.bytes;
+            if total_memory > ndi_cache_obj.maxMemory % it doesn't fit
+                if strcmpi(ndi_cache_obj.replacement_rule,'error')
+                    error(['Cache is too full too accommodate the new data; error was requested rather than replacement.']);
+                end
+                freespaceneeded = total_memory - ndi_cache_obj.maxMemory;
+                [inds_to_remove, is_new_item_safe_to_add] = ndi_cache_obj.evaluateItemsForRemoval(freespaceneeded, newentry);
+                if is_new_item_safe_to_add,
+                    ndi_cache_obj.remove(inds_to_remove,[]);
+                    ndi_cache_obj.table(end+1) = newentry;
+                end;
+            else
+                % now there's room
+                ndi_cache_obj.table(end+1) = newentry;
+            end
         end % add
 
-        function ndi_cache_obj = remove(ndi_cache_obj, index_or_key, type, varargin)
+        function ndi_cache_obj = remove(ndi_cache_obj, index_or_key, type, options)
             % REMOVE - remove data from an NDI.CACHE
             %
             % NDI_CACHE_OBJ = REMOVE(NDI_CACHE_OBJ, KEY, TYPE, ...)
@@ -129,23 +130,28 @@ classdef cache < handle
             % This function can be modified by name/value pairs:
             % Parameter (default)         | Description
             % ----------------------------------------------------------------
-            % leavehandle (0)             | If the 'data' field of a cache entry is a handle,
+            % leavehandle (false)         | If the 'data' field of a cache entry is a handle,
             %                             |   leave it in memory.
             %
-            % See also: vlt.data.namevaluepair
-
-            leavehandle = 0;
-            vlt.data.assign(varargin{:});
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+                index_or_key
+                type (1,:) char = ''
+                options.leavehandle (1,1) logical = false
+            end
 
             if isnumeric(index_or_key)
                 index = index_or_key;
             else
                 key = index_or_key;
+                if isempty(type)
+                    error('The "type" must be provided when removing by key.');
+                end
                 index = find ( strcmp(key,{ndi_cache_obj.table.key}) & strcmp(type,{ndi_cache_obj.table.type}) );
             end
 
             % delete handles if needed
-            if ~leavehandle
+            if ~options.leavehandle
                 for i=1:numel(index)
                     if ishandle(ndi_cache_obj.table(index(i)).data)
                         delete(ndi_cache_obj.table(index(i)).data);
@@ -164,33 +170,56 @@ classdef cache < handle
             % Clears all entries from the NDI.CACHE object NDI_CACHE_OBJ.
             % Also clears all memoized caches (CLEARALLMEMOIZEDCACHES).
             %
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+            end
             ndi_cache_obj = ndi_cache_obj.remove(1:numel(ndi_cache_obj.table),[]);
             clearAllMemoizedCaches;
             clear memoize;
         end % clear
 
-        function ndi_cache_obj = freebytes(ndi_cache_obj, freebytes)
-            % FREEBYTES - remove the lowest priority entries from the cache to free a certain amount of memory
+        function [inds_to_remove, is_new_item_safe_to_add] = evaluateItemsForRemoval(ndi_cache_obj, freebytes, newitem)
+            % EVALUATEITEMSFORREMOVAL - decide which items to remove from the cache to free memory
             %
-            % NDI_CACHE_OBJ = FREEBYTES(NDI_CACHE_OBJ, FREEBYTES)
+            % [INDS_TO_REMOVE, IS_NEW_ITEM_SAFE_TO_ADD] = EVALUATEITEMSFORREMOVAL(NDI_CACHE_OBJ, FREEBYTES, [NEWITEM])
             %
-            % Remove entries to free at least FREEBYTES memory. Entries will be removed, first by PRIORITY and then by
+            % Decide which entries to remove to free at least FREEBYTES memory. Entries will be removed, first by PRIORITY and then by
             % the replacement_rule parameter.
             %
-            % See also: NDI.CACHE/ADD, NDI.CACHE/SET_REPLACEMENT_RULE
+            % If NEWITEM is provided (a structure with fields 'priority','timestamp','bytes'), it is as if that item
+            % is already in the cache for the purposes of deciding what to remove.
             %
-            stats = [ [ndi_cache_obj.table.priority]' [ndi_cache_obj.table.timestamp]' [ndi_cache_obj.table.bytes]' ];
+            % See also: ndi.cache/add, ndi.cache/set_replacement_rule
+            %
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+                freebytes (1,1) double {mustBePositive}
+                newitem (1,1) struct = vlt.data.emptystruct('priority','timestamp','bytes','data','key','type')
+            end
+
+            if nargin > 2,
+                table_plus_new = cat(2,ndi_cache_obj.table,newitem);
+            else,
+                table_plus_new = ndi_cache_obj.table;
+            end;
+
+            stats = [ [table_plus_new.priority]' [table_plus_new.timestamp]' (1:numel(table_plus_new))' [table_plus_new.bytes]' ];
             thesign = 1;
             if strcmpi(ndi_cache_obj.replacement_rule,'lifo')
                 thesign = -1;
             end
-            [y,i] = sortrows(stats,[1 thesign*2]);
-            cumulative_memory_saved = cumsum([ndi_cache_obj.table(i).bytes]);
+            [y,i] = sortrows(stats,[1 thesign*2 thesign*3]);
+            cumulative_memory_saved = cumsum([table_plus_new(i).bytes]);
             spot = find(cumulative_memory_saved>=freebytes,1,'first');
             if isempty(spot)
                 error(['did not expect to be here.']);
-            end
-            ndi_cache_obj.remove(i(1:spot),[]);
+            end;
+            inds_to_remove_all = i(1:spot);
+
+            is_new_item_safe_to_add = ~any(inds_to_remove_all==numel(table_plus_new));
+
+            % we can only remove items that are actually in the cache
+            inds_to_remove = inds_to_remove_all(find(inds_to_remove_all<=numel(ndi_cache_obj.table)));
         end
 
         function tableentry = lookup(ndi_cache_obj, key, type)
@@ -209,7 +238,11 @@ classdef cache < handle
             % priority          | The priority of maintaining the data (higher is better)
             % bytes             | The size of the data in this entry (bytes)
             % data              | The data stored
-
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+                key (1,:) char
+                type (1,:) char
+            end
             index = find ( strcmp(key,{ndi_cache_obj.table.key}) & strcmp(type,{ndi_cache_obj.table.type}) );
             tableentry = ndi_cache_obj.table(index);
         end % tableentry
@@ -222,6 +255,9 @@ classdef cache < handle
             % Return the current memory that is occupied by the table of NDI_CACHE_OBJ.
             %
             %
+            arguments
+                ndi_cache_obj (1,1) ndi.cache
+            end
             b = 0;
             if numel(ndi_cache_obj.table) > 0
                 b = sum([ndi_cache_obj.table.bytes]);
