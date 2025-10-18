@@ -48,7 +48,10 @@ classdef test_datestamp2datetime < matlab.unittest.TestCase
 
         % Test that a non-char input raises an error
         function testNonCharInput(testCase)
-            nonCharInput = 12345;
+            % Use a struct, which is unambiguously not a char array, to test
+            % the arguments block validation. A numeric input like 12345 gets
+            % implicitly converted to a char, bypassing this validation.
+            nonCharInput = struct('field', 'value');
 
             testCase.verifyError(@() ndi.util.datestamp2datetime(nonCharInput), 'MATLAB:validation:mustBeA');
         end
