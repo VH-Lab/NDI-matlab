@@ -77,11 +77,11 @@ classdef CacheTest < matlab.unittest.TestCase
         function testPriorityEviction(testCase)
             % Test that high priority items are preserved
             c = ndi.cache(maxMemory=800000, replacement_rule='fifo');
-            c.add('low_priority_old', 'type', rand(1,50000), 'priority', 0); % 400KB
+            c.add('low_priority_old', 'type', rand(1,50000), 0); % 400KB
             pause(0.01);
-            c.add('high_priority', 'type', rand(1,50000), 'priority', 10); % 400KB
+            c.add('high_priority', 'type', rand(1,50000), 10); % 400KB
             pause(0.01);
-            c.add('low_priority_new', 'type', rand(1,50000), 'priority', 0); % 400KB
+            c.add('low_priority_new', 'type', rand(1,50000), 0); % 400KB
 
             % low_priority_old should be gone, high_priority should be preserved
             testCase.verifyEmpty(c.lookup('low_priority_old','type'));
@@ -105,13 +105,13 @@ classdef CacheTest < matlab.unittest.TestCase
             % Test LIFO eviction with multiple small items
             c = ndi.cache(maxMemory=1e6, replacement_rule='lifo');
             for i=1:10
-                c.add(['small' num2str(i)], 'type', rand(1,10000), 'priority', i); % 80KB each
+                c.add(['small' num2str(i)], 'type', rand(1,10000), i); % 80KB each
                 pause(0.01);
             end
             % Cache is now at 800KB
 
             % Add a large item that will be rejected because it has the lowest priority
-            c.add('large_item', 'type', rand(1,50000), 'priority', 0); % 400KB
+            c.add('large_item', 'type', rand(1,50000), 0); % 400KB
 
             % The cache should be unchanged because the new item was not safe to add
             for i=1:10
@@ -141,5 +141,29 @@ classdef CacheTest < matlab.unittest.TestCase
             delete(fig_handle2);
         end
 
+        function testOriginalCacheLogic(testCase)
+            cache = ndi.cache('maxMemory',1024,'replacement_rule','fifo'); % 1K
+            testCase.assertClass(cache, 'ndi.cache');
+
+            key = 'mykey';
+
+            for i = 1:5
+                if i == 1
+                    priority = 1;
+                else
+                    priority = 0;
+                end
+                cache.add(key, ['type' int2str(i)], rand(25,1), priority);
+            end
+
+            for i=1:5
+                t = cache.lookup(key,['type' int2str(i)]);
+                testCase.verifyNotEmpty(t);
+            end
+
+            cache.add(key, 'type6', rand(25,1));
+            cachedTypes = {cache.table.type};
+            testCase.assertFalse( any(strcmp(cachedTypes, 'type2')) );
+        end
     end
 end
