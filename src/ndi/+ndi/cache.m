@@ -66,10 +66,10 @@ classdef cache < handle
             ndi_cache_obj.replacement_rule = lower(rule);
         end % set_replacement_rule
 
-        function ndi_cache_obj = add(ndi_cache_obj, key, type, data, options)
+        function ndi_cache_obj = add(ndi_cache_obj, key, type, data, priority)
             % ADD - add data to an NDI.CACHE
             %
-            % NDI_CACHE_OBJ = ADD(NDI_CACHE_OBJ, KEY, TYPE, DATA, 'priority', PRIORITY)
+            % NDI_CACHE_OBJ = ADD(NDI_CACHE_OBJ, KEY, TYPE, DATA, [PRIORITY])
             %
             % Adds DATA to the NDI_CACHE_OBJ that is referenced by a KEY and TYPE.
             % If desired, a PRIORITY can be added; items with greatest PRIORITY will be
@@ -80,7 +80,7 @@ classdef cache < handle
                 key (1,:) char
                 type (1,:) char
                 data
-                options.priority (1,1) double = 0
+                priority (1,1) double = 0
             end
 
             % before we reorganize anything, make sure it will fit
@@ -93,7 +93,7 @@ classdef cache < handle
             newentry(1).key = key;
             newentry(1).type = type;
             newentry(1).timestamp = now; % serial date number
-            newentry(1).priority = options.priority;
+            newentry(1).priority = priority;
             newentry(1).bytes = s.bytes;
             newentry(1).data = data;
 
