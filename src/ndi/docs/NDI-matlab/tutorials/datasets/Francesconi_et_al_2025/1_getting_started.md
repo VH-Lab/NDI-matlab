@@ -6,6 +6,10 @@ This is a tutorial to view the electrophysiology and behavioral data which relat
 
 > Francesconi W, Olivera-Pasilio V, Berton F, Olson SL, Chudoba R, Monroy LM, Krabichler Q, Grinvech V, Dabrowska J (2025). Dataset: vasopressin and oxytocin excite BNST neurons via oxytocin receptors, which reduce anxious arousal. *NDI Cloud*. DOI: [10.63884/ndic.2025.jyxfer8m](https://doi.org/10.63884/ndic.2025.jyxfer8m).
 
+<a href="https://github.com/VH-Lab/NDI-matlab/raw/refs/heads/main/src/ndi/+ndi/+setup/+conv/+dabrowska/tutorial_gettingstarted.mlx" download>
+  <img src="https://img.shields.io/badge/Download-MATLAB_Live_Tutorial-2596be" alt="Download Tutorial">
+</a>
+
 ## Table of Contents
 1. [Download NDI](#NDI)
 2. [Import the NDI dataset](#import)
@@ -181,7 +185,7 @@ Examples:
 *Type this into MATLAB:*
 ```matlab
 % Search for epochs
-columnName = 'approachName';
+columnName = 'ApproachName';
 dataValue = 'optogenetic';
 stringMatch = 'contains';
 rowInd = ndi.fun.table.identifyMatchingRows(combinedSummary,...
