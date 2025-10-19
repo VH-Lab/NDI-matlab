@@ -23,8 +23,9 @@ function upload_files_for_dataset_documents(cloudDatasetId, ndiDataset, dataset_
             app.addBar('Label','Uploading document-associated binary files','tag',uuid,'Auto',true);
             for i=1:numel(file_manifest)
                 if file_manifest(i).is_uploaded==false
-                    [~,uploadURL]=ndi.cloud.api.files.get_file_upload_url(cloudDatasetId,file_manifest(i).uid);
-                    ndi.cloud.api.files.put_files(uploadURL,file_manifest(i).file_path);
+                    [success,uploadURL]=ndi.cloud.api.files.getFileUploadURL(cloudDatasetId,file_manifest(i).uid);
+                    if ~success, warning('Failed to get upload URL'); continue; end
+                    [~] = ndi.cloud.api.files.putFiles(uploadURL,file_manifest(i).file_path);
                 end
                 app.updateBar(uuid,i/numel(file_manifest));
             end
