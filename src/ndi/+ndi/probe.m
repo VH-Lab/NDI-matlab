@@ -247,4 +247,79 @@ classdef probe < ndi.element & ndi.documentservice
             end
         end % eq()
     end % methods
+
+    methods (Static)
+        function et = buildmultipleepochtables(probeCellArray)
+            % BUILDMULTIPLEEPOCHTABLES - build epoch tables for multiple ndi.probe objects
+            %
+            % ET = BUILDMULTIPLEEPOCHTABLES(PROBECELLARRAY)
+            %
+            % ET is a cell array of structures, where each structure is an epoch table for the
+            % corresponding ndi.probe object in the input cell array PROBECELLARRAY.
+            %
+            % This function is more efficient than calling BUILDEPOCHTABLE for each probe individually
+            % because it minimizes redundant operations.
+            %
+            arguments
+                probeCellArray (1,:) cell {ndi.validators.mustBeCellArrayOfClass(probeCellArray, 'ndi.probe')}
+            end
+
+            numProbes = numel(probeCellArray);
+            et = cell(1, numProbes);
+
+            if numProbes == 0
+                return;
+            end
+
+            for i=1:numProbes
+                et{i} = struct('epoch_number',{},'epoch_id',{},'epoch_session_id',{},'epochprobemap',{},'epoch_clock',{},'t0_t1',{},'underlying_epochs',{});
+            end
+
+            mySession = probeCellArray{1}.session;
+            for i=2:numProbes
+                if ~eq(probeCellArray{i}.session, mySession)
+                    error('All probes must belong to the same session.');
+                end
+            end
+
+            D = mySession.daqsystem_load('name','(.*)');
+            if ~iscell(D), D = {D}; end
+
+            d_et = {};
+            for d=1:numel(D)
+                d_et{d} = epochtable(D{d});
+                for n=1:numel(d_et{d})
+                    for p=1:numProbes
+                        ndi_probe_obj = probeCellArray{p};
+                        underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock','t0_t1');
+                        underlying_epochs(1).underlying = D{d};
+                        match_probe_and_device = [];
+                        H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
+                        for h=1:numel(H)
+                            daqst = ndi.daq.daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
+                            if strcmpi(D{d}.name,daqst.devicename)
+                                match_probe_and_device(end+1) = H(h);
+                            end
+                        end
+                        if ~isempty(match_probe_and_device)
+                            underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
+                            underlying_epochs.epoch_session_id = d_et{d}(n).epoch_session_id;
+                            underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);
+                            underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
+                            underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
+                            et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+                            et_(1).epoch_number = 1+numel(et{p});
+                            et_(1).epoch_id = d_et{d}(n).epoch_id;
+                            et_(1).epoch_session_id = d_et{d}(n).epoch_session_id;
+                            et_(1).epochprobemap = [];
+                            et_(1).epoch_clock = d_et{d}(n).epoch_clock;
+                            et_(1).t0_t1 = d_et{d}(n).t0_t1;
+                            et_(1).underlying_epochs = underlying_epochs;
+                            et{p}(end+1) = et_;
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
