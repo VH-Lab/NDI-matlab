@@ -49,6 +49,8 @@
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
         - generic_file : 'NDI-matlab/documents/data/generic_file.md'
+        - image : 'NDI-matlab/documents/data/image.md'
+        - imageCollection : 'NDI-matlab/documents/data/imageCollection.md'
         - imageStack : 'NDI-matlab/documents/data/imageStack.md'
         - imageStack_parameters : 'NDI-matlab/documents/data/imageStack_parameters.md'
         - ngrid : 'NDI-matlab/documents/data/ngrid.md'

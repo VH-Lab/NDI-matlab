@@ -1,3 +1,4 @@
+      - Contents: 'NDI-matlab/reference/Contents.m.md'
       - ndi_toolbox_setup: 'NDI-matlab/reference/ndi_toolbox_setup.m.md'
       - ndi PACKAGE:
         - ndi.app: 'NDI-matlab/reference/+ndi/app.m.md'
@@ -37,10 +38,12 @@
             - ndi.calc.stimulus.tuningcurve: 'NDI-matlab/reference/+ndi/+calc/+stimulus/tuningcurve.m.md'
         - cloud PACKAGE:
           - ndi.cloud.authenticate: 'NDI-matlab/reference/+ndi/+cloud/authenticate.m.md'
+          - ndi.cloud.authenticateOriginal: 'NDI-matlab/reference/+ndi/+cloud/authenticateOriginal.m.md'
           - ndi.cloud.downloadDataset: 'NDI-matlab/reference/+ndi/+cloud/downloadDataset.m.md'
           - ndi.cloud.syncDataset: 'NDI-matlab/reference/+ndi/+cloud/syncDataset.m.md'
           - ndi.cloud.uilogin: 'NDI-matlab/reference/+ndi/+cloud/uilogin.m.md'
           - ndi.cloud.uploadDataset: 'NDI-matlab/reference/+ndi/+cloud/uploadDataset.m.md'
+          - ndi.cloud.uploadSingleFile: 'NDI-matlab/reference/+ndi/+cloud/uploadSingleFile.m.md'
           - admin PACKAGE:
             - ndi.cloud.admin.checkSubmission: 'NDI-matlab/reference/+ndi/+cloud/+admin/checkSubmission.m.md'
             - ndi.cloud.admin.createNewDOI: 'NDI-matlab/reference/+ndi/+cloud/+admin/createNewDOI.m.md'
@@ -58,67 +61,101 @@
                 - ndi.cloud.admin.crossref.conversion.convertLicense: 'NDI-matlab/reference/+ndi/+cloud/+admin/+crossref/+conversion/convertLicense.m.md'
                 - ndi.cloud.admin.crossref.conversion.convertRelatedPublications: 'NDI-matlab/reference/+ndi/+cloud/+admin/+crossref/+conversion/convertRelatedPublications.m.md'
           - api PACKAGE:
+            - ndi.cloud.api.call: 'NDI-matlab/reference/+ndi/+cloud/+api/call.m.md'
             - ndi.cloud.api.url: 'NDI-matlab/reference/+ndi/+cloud/+api/url.m.md'
             - auth PACKAGE:
-              - ndi.cloud.api.auth.change_password: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/change_password.m.md'
+              - ndi.cloud.api.auth.changePassword: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/changePassword.m.md'
               - ndi.cloud.api.auth.login: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/login.m.md'
+              - ndi.cloud.api.auth.loginOriginal: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/loginOriginal.m.md'
               - ndi.cloud.api.auth.logout: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/logout.m.md'
-              - ndi.cloud.api.auth.resend_confirmation: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/resend_confirmation.m.md'
-              - ndi.cloud.api.auth.reset_password: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/reset_password.m.md'
-              - ndi.cloud.api.auth.verify_user: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/verify_user.m.md'
+              - ndi.cloud.api.auth.logoutOriginal: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/logoutOriginal.m.md'
+              - ndi.cloud.api.auth.resendConfirmation: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/resendConfirmation.m.md'
+              - ndi.cloud.api.auth.resetPassword: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/resetPassword.m.md'
+              - ndi.cloud.api.auth.verifyUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/verifyUser.m.md'
             - datasets PACKAGE:
-              - ndi.cloud.api.datasets.bulk_delete_documents: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/bulk_delete_documents.m.md'
-              - ndi.cloud.api.datasets.create_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/create_dataset.m.md'
-              - ndi.cloud.api.datasets.create_dataset_branch: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/create_dataset_branch.m.md'
-              - ndi.cloud.api.datasets.delete_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/delete_dataset.m.md'
-              - ndi.cloud.api.datasets.get_branches: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_branches.m.md'
-              - ndi.cloud.api.datasets.get_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_dataset.m.md'
-              - ndi.cloud.api.datasets.get_file_collection_upload_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_file_collection_upload_url.m.md'
-              - ndi.cloud.api.datasets.get_file_details: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_file_details.m.md'
-              - ndi.cloud.api.datasets.get_file_upload_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_file_upload_url.m.md'
-              - ndi.cloud.api.datasets.get_published: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_published.m.md'
-              - ndi.cloud.api.datasets.get_raw_file_upload_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_raw_file_upload_url.m.md'
-              - ndi.cloud.api.datasets.get_unpublished: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/get_unpublished.m.md'
-              - ndi.cloud.api.datasets.list_datasets: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/list_datasets.m.md'
-              - ndi.cloud.api.datasets.publish_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/publish_dataset.m.md'
-              - ndi.cloud.api.datasets.submit_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/submit_dataset.m.md'
-              - ndi.cloud.api.datasets.unpublish_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/unpublish_dataset.m.md'
-              - ndi.cloud.api.datasets.update_dataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/update_dataset.m.md'
+              - ndi.cloud.api.datasets.createDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/createDataset.m.md'
+              - ndi.cloud.api.datasets.createDatasetBranch: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/createDatasetBranch.m.md'
+              - ndi.cloud.api.datasets.deleteDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/deleteDataset.m.md'
+              - ndi.cloud.api.datasets.getBranches: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/getBranches.m.md'
+              - ndi.cloud.api.datasets.getDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/getDataset.m.md'
+              - ndi.cloud.api.datasets.getPublished: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/getPublished.m.md'
+              - ndi.cloud.api.datasets.getUnpublished: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/getUnpublished.m.md'
+              - ndi.cloud.api.datasets.listDatasets: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/listDatasets.m.md'
+              - ndi.cloud.api.datasets.publishDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/publishDataset.m.md'
+              - ndi.cloud.api.datasets.submitDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/submitDataset.m.md'
+              - ndi.cloud.api.datasets.unpublishDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/unpublishDataset.m.md'
+              - ndi.cloud.api.datasets.updateDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/updateDataset.m.md'
             - documents PACKAGE:
-              - ndi.cloud.api.documents.add_document: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/add_document.m.md'
-              - ndi.cloud.api.documents.add_document_as_file: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/add_document_as_file.m.md'
-              - ndi.cloud.api.documents.delete_document: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/delete_document.m.md'
-              - ndi.cloud.api.documents.get_bulk_download_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/get_bulk_download_url.m.md'
-              - ndi.cloud.api.documents.get_bulk_upload_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/get_bulk_upload_url.m.md'
-              - ndi.cloud.api.documents.get_document: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/get_document.m.md'
-              - ndi.cloud.api.documents.list_dataset_documents: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/list_dataset_documents.m.md'
-              - ndi.cloud.api.documents.update_document: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/update_document.m.md'
+              - ndi.cloud.api.documents.addDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/addDocument.m.md'
+              - ndi.cloud.api.documents.addDocumentAsFile: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/addDocumentAsFile.m.md'
+              - ndi.cloud.api.documents.bulkDeleteDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/bulkDeleteDocuments.m.md'
+              - ndi.cloud.api.documents.countDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/countDocuments.m.md'
+              - ndi.cloud.api.documents.deleteDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/deleteDocument.m.md'
+              - ndi.cloud.api.documents.documentCount: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/documentCount.m.md'
+              - ndi.cloud.api.documents.getBulkDownloadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/getBulkDownloadURL.m.md'
+              - ndi.cloud.api.documents.getBulkUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/getBulkUploadURL.m.md'
+              - ndi.cloud.api.documents.getDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/getDocument.m.md'
+              - ndi.cloud.api.documents.listDatasetDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/listDatasetDocuments.m.md'
+              - ndi.cloud.api.documents.listDatasetDocumentsAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/listDatasetDocumentsAll.m.md'
+              - ndi.cloud.api.documents.updateDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/updateDocument.m.md'
             - files PACKAGE:
-              - ndi.cloud.api.files.get_file_details: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/get_file_details.m.md'
-              - ndi.cloud.api.files.get_file_upload_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/get_file_upload_url.m.md'
-              - ndi.cloud.api.files.get_raw_file_upload_url: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/get_raw_file_upload_url.m.md'
-              - ndi.cloud.api.files.put_files: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/put_files.m.md'
+              - ndi.cloud.api.files.getFile: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFile.m.md'
+              - ndi.cloud.api.files.getFileCollectionUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFileCollectionUploadURL.m.md'
+              - ndi.cloud.api.files.getFileDetails: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFileDetails.m.md'
+              - ndi.cloud.api.files.getFileUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFileUploadURL.m.md'
+              - ndi.cloud.api.files.putFiles: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/putFiles.m.md'
+            - implementation PACKAGE:
+              - auth PACKAGE:
+                - ndi.cloud.api.implementation.auth.ChangePassword: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/ChangePassword.m.md'
+                - ndi.cloud.api.implementation.auth.Login: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/Login.m.md'
+                - ndi.cloud.api.implementation.auth.Logout: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/Logout.m.md'
+                - ndi.cloud.api.implementation.auth.ResendConfirmation: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/ResendConfirmation.m.md'
+                - ndi.cloud.api.implementation.auth.ResetPassword: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/ResetPassword.m.md'
+                - ndi.cloud.api.implementation.auth.VerifyUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/VerifyUser.m.md'
+              - datasets PACKAGE:
+                - ndi.cloud.api.implementation.datasets.CreateDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/CreateDataset.m.md'
+                - ndi.cloud.api.implementation.datasets.CreateDatasetBranch: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/CreateDatasetBranch.m.md'
+                - ndi.cloud.api.implementation.datasets.DeleteDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/DeleteDataset.m.md'
+                - ndi.cloud.api.implementation.datasets.GetBranches: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/GetBranches.m.md'
+                - ndi.cloud.api.implementation.datasets.GetDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/GetDataset.m.md'
+                - ndi.cloud.api.implementation.datasets.GetPublished: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/GetPublished.m.md'
+                - ndi.cloud.api.implementation.datasets.GetUnpublished: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/GetUnpublished.m.md'
+                - ndi.cloud.api.implementation.datasets.ListDatasets: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/ListDatasets.m.md'
+                - ndi.cloud.api.implementation.datasets.PublishDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/PublishDataset.m.md'
+                - ndi.cloud.api.implementation.datasets.SubmitDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/SubmitDataset.m.md'
+                - ndi.cloud.api.implementation.datasets.UnpublishDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/UnpublishDataset.m.md'
+                - ndi.cloud.api.implementation.datasets.UpdateDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/UpdateDataset.m.md'
+              - documents PACKAGE:
+                - ndi.cloud.api.implementation.documents.AddDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/AddDocument.m.md'
+                - ndi.cloud.api.implementation.documents.AddDocumentAsFile: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/AddDocumentAsFile.m.md'
+                - ndi.cloud.api.implementation.documents.BulkDeleteDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/BulkDeleteDocuments.m.md'
+                - ndi.cloud.api.implementation.documents.CountDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/CountDocuments.m.md'
+                - ndi.cloud.api.implementation.documents.DeleteDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/DeleteDocument.m.md'
+                - ndi.cloud.api.implementation.documents.DocumentCount: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/DocumentCount.m.md'
+                - ndi.cloud.api.implementation.documents.GetBulkDownloadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/GetBulkDownloadURL.m.md'
+                - ndi.cloud.api.implementation.documents.GetBulkUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/GetBulkUploadURL.m.md'
+                - ndi.cloud.api.implementation.documents.GetDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/GetDocument.m.md'
+                - ndi.cloud.api.implementation.documents.ListDatasetDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/ListDatasetDocuments.m.md'
+                - ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/ListDatasetDocumentsAll.m.md'
+                - ndi.cloud.api.implementation.documents.UpdateDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/UpdateDocument.m.md'
+              - files PACKAGE:
+                - ndi.cloud.api.implementation.files.GetFile: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFile.m.md'
+                - ndi.cloud.api.implementation.files.GetFileCollectionUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFileCollectionUploadURL.m.md'
+                - ndi.cloud.api.implementation.files.GetFileDetails: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFileDetails.m.md'
+                - ndi.cloud.api.implementation.files.GetFileUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFileUploadURL.m.md'
+                - ndi.cloud.api.implementation.files.PutFiles: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/PutFiles.m.md'
+              - users PACKAGE:
+                - ndi.cloud.api.implementation.users.CreateUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+users/CreateUser.m.md'
+                - ndi.cloud.api.implementation.users.GetUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+users/GetUser.m.md'
             - users PACKAGE:
-              - ndi.cloud.api.users.create_user: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/create_user.m.md'
-              - ndi.cloud.api.users.get_user: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/get_user.m.md'
+              - ndi.cloud.api.users.GetUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/GetUser.m.md'
+              - ndi.cloud.api.users.createUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/createUser.m.md'
           - download PACKAGE:
             - ndi.cloud.download.dataset: 'NDI-matlab/reference/+ndi/+cloud/+download/dataset.m.md'
             - ndi.cloud.download.dataset_documents: 'NDI-matlab/reference/+ndi/+cloud/+download/dataset_documents.m.md'
             - ndi.cloud.download.download_dataset_files: 'NDI-matlab/reference/+ndi/+cloud/+download/download_dataset_files.m.md'
             - ndi.cloud.download.download_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+download/download_document_collection.m.md'
             - ndi.cloud.download.jsons2documents: 'NDI-matlab/reference/+ndi/+cloud/+download/jsons2documents.m.md'
-            - internal PACKAGE:
-              - ndi.cloud.download.internal.set_file_info: 'NDI-matlab/reference/+ndi/+cloud/+download/+internal/set_file_info.m.md'
-              - ndi.cloud.download.internal.structs_to_ndi_documents: 'NDI-matlab/reference/+ndi/+cloud/+download/+internal/structs_to_ndi_documents.m.md'
-          - internal PACKAGE:
-            - ndi.cloud.internal.create_remote_dataset_doc: 'NDI-matlab/reference/+ndi/+cloud/+internal/create_remote_dataset_doc.m.md'
-            - ndi.cloud.internal.decode_jwt: 'NDI-matlab/reference/+ndi/+cloud/+internal/decode_jwt.m.md'
-            - ndi.cloud.internal.getCloudDatasetIdForLocalDataset: 'NDI-matlab/reference/+ndi/+cloud/+internal/getCloudDatasetIdForLocalDataset.m.md'
-            - ndi.cloud.internal.get_active_token: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_active_token.m.md'
-            - ndi.cloud.internal.get_token_expiration: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_token_expiration.m.md'
-            - ndi.cloud.internal.get_uploaded_document_ids: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_uploaded_document_ids.m.md'
-            - ndi.cloud.internal.get_uploaded_file_ids: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_uploaded_file_ids.m.md'
-            - ndi.cloud.internal.get_weboptions_with_auth_header: 'NDI-matlab/reference/+ndi/+cloud/+internal/get_weboptions_with_auth_header.m.md'
           - sync PACKAGE:
             - ndi.cloud.sync.SyncOptions: 'NDI-matlab/reference/+ndi/+cloud/+sync/SyncOptions.m.md'
             - ndi.cloud.sync.downloadNew: 'NDI-matlab/reference/+ndi/+cloud/+sync/downloadNew.m.md'
@@ -126,25 +163,9 @@
             - ndi.cloud.sync.mirrorToRemote: 'NDI-matlab/reference/+ndi/+cloud/+sync/mirrorToRemote.m.md'
             - ndi.cloud.sync.twoWaySync: 'NDI-matlab/reference/+ndi/+cloud/+sync/twoWaySync.m.md'
             - ndi.cloud.sync.uploadNew: 'NDI-matlab/reference/+ndi/+cloud/+sync/uploadNew.m.md'
+            - ndi.cloud.sync.validate: 'NDI-matlab/reference/+ndi/+cloud/+sync/validate.m.md'
             - enum PACKAGE:
               - ndi.cloud.sync.enum.SyncMode: 'NDI-matlab/reference/+ndi/+cloud/+sync/+enum/SyncMode.m.md'
-            - internal PACKAGE:
-              - ndi.cloud.sync.internal.Constants: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/Constants.m.md'
-              - ndi.cloud.sync.internal.deleteLocalDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/deleteLocalDocuments.m.md'
-              - ndi.cloud.sync.internal.deleteRemoteDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/deleteRemoteDocuments.m.md'
-              - ndi.cloud.sync.internal.downloadNdiDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/downloadNdiDocuments.m.md'
-              - ndi.cloud.sync.internal.getFileUidsFromDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/getFileUidsFromDocuments.m.md'
-              - ndi.cloud.sync.internal.listLocalDocuments: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/listLocalDocuments.m.md'
-              - ndi.cloud.sync.internal.listRemoteDocumentIds: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/listRemoteDocumentIds.m.md'
-              - ndi.cloud.sync.internal.updateFileInfoForLocalFiles: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/updateFileInfoForLocalFiles.m.md'
-              - ndi.cloud.sync.internal.updateFileInfoForRemoteFiles: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/updateFileInfoForRemoteFiles.m.md'
-              - ndi.cloud.sync.internal.upload_files_for_dataset_documents: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/upload_files_for_dataset_documents.m.md'
-              - index PACKAGE:
-                - ndi.cloud.sync.internal.index.createSyncIndexStruct: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/createSyncIndexStruct.m.md'
-                - ndi.cloud.sync.internal.index.getIndexFilepath: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/getIndexFilepath.m.md'
-                - ndi.cloud.sync.internal.index.readSyncIndex: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/readSyncIndex.m.md'
-                - ndi.cloud.sync.internal.index.updateSyncIndex: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/updateSyncIndex.m.md'
-                - ndi.cloud.sync.internal.index.writeSyncIndex: 'NDI-matlab/reference/+ndi/+cloud/+sync/+internal/+index/writeSyncIndex.m.md'
           - ui PACKAGE:
             - dialog PACKAGE:
               - ndi.cloud.ui.dialog.selectCloudDataset: 'NDI-matlab/reference/+ndi/+cloud/+ui/+dialog/selectCloudDataset.m.md'
@@ -154,16 +175,9 @@
             - ndi.cloud.upload.upload_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_document_collection.m.md'
             - ndi.cloud.upload.upload_to_NDI_cloud: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_to_NDI_cloud.m.md'
             - ndi.cloud.upload.zip_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/zip_for_upload.m.md'
-            - internal PACKAGE:
-              - ndi.cloud.upload.internal.zip_documents_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/+internal/zip_documents_for_upload.m.md'
             - for_deletion FOLDER:
               - ndi.cloud.upload/for_deletion.update_cloud_metadata: 'NDI-matlab/reference/+ndi/+cloud/+upload/for_deletion/update_cloud_metadata.m.md'
               - ndi.cloud.upload/for_deletion.update_cloud_metadata_struct: 'NDI-matlab/reference/+ndi/+cloud/+upload/for_deletion/update_cloud_metadata_struct.m.md'
-            - old FOLDER:
-              - ndi.cloud.upload/old.test_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/old/test_upload.m.md'
-              - ndi.cloud.upload/old.test_upload_old: 'NDI-matlab/reference/+ndi/+cloud/+upload/old/test_upload_old.m.md'
-              - ndi.cloud.upload/old.upload_dataset_database: 'NDI-matlab/reference/+ndi/+cloud/+upload/old/upload_dataset_database.m.md'
-              - ndi.cloud.upload/old.upload_to_NDI_cloud_bulk: 'NDI-matlab/reference/+ndi/+cloud/+upload/old/upload_to_NDI_cloud_bulk.m.md'
           - utility PACKAGE:
             - ndi.cloud.utility.create_cloud_metadata_struct: 'NDI-matlab/reference/+ndi/+cloud/+utility/create_cloud_metadata_struct.m.md'
             - ndi.cloud.utility.mustBeValidMetadata: 'NDI-matlab/reference/+ndi/+cloud/+utility/mustBeValidMetadata.m.md'
@@ -252,8 +266,6 @@
               - ndi.database.implementations.fun.expell_plan: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/expell_plan.m.md'
               - ndi.database.implementations.fun.ingest: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/ingest.m.md'
               - ndi.database.implementations.fun.ingest_plan: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/ingest_plan.m.md'
-          - internal PACKAGE:
-            - ndi.database.internal.list_binary_files: 'NDI-matlab/reference/+ndi/+database/+internal/list_binary_files.m.md'
           - metadata PACKAGE:
             - ndi.database.metadata.table2treatment: 'NDI-matlab/reference/+ndi/+database/+metadata/table2treatment.m.md'
           - metadata_app PACKAGE:
@@ -339,6 +351,7 @@
           - ndi.element.missingepochs: 'NDI-matlab/reference/+ndi/+element/missingepochs.m.md'
           - ndi.element.oneepoch: 'NDI-matlab/reference/+ndi/+element/oneepoch.m.md'
           - ndi.element.oneepoch_bkup: 'NDI-matlab/reference/+ndi/+element/oneepoch_bkup.m.md'
+          - ndi.element.spikesForProbe: 'NDI-matlab/reference/+ndi/+element/spikesForProbe.m.md'
           - ndi.element.timeseries: 'NDI-matlab/reference/+ndi/+element/timeseries.m.md'
         - epoch PACKAGE:
           - ndi.epoch.epochprobemap: 'NDI-matlab/reference/+ndi/+epoch/epochprobemap.m.md'
@@ -416,6 +429,10 @@
           - epoch PACKAGE:
             - ndi.fun.epoch.epochid2element: 'NDI-matlab/reference/+ndi/+fun/+epoch/epochid2element.m.md'
             - ndi.fun.epoch.filename2epochid: 'NDI-matlab/reference/+ndi/+fun/+epoch/filename2epochid.m.md'
+          - file PACKAGE:
+            - ndi.fun.file.MD5: 'NDI-matlab/reference/+ndi/+fun/+file/MD5.m.md'
+            - ndi.fun.file.dateCreated: 'NDI-matlab/reference/+ndi/+fun/+file/dateCreated.m.md'
+            - ndi.fun.file.dateUpdated: 'NDI-matlab/reference/+ndi/+fun/+file/dateUpdated.m.md'
           - plot PACKAGE:
             - ndi.fun.plot.multichan: 'NDI-matlab/reference/+ndi/+fun/+plot/multichan.m.md'
           - stimulus PACKAGE:
@@ -441,12 +458,6 @@
             - ndi.gui.component.ProgressBarWindow: 'NDI-matlab/reference/+ndi/+gui/+component/ProgressBarWindow.m.md'
             - abstract PACKAGE:
               - ndi.gui.component.abstract.ProgressMonitor: 'NDI-matlab/reference/+ndi/+gui/+component/+abstract/ProgressMonitor.m.md'
-            - internal PACKAGE:
-              - ndi.gui.component.internal.AsynchProgressTracker: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/AsynchProgressTracker.m.md'
-              - ndi.gui.component.internal.ProgressTracker: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/ProgressTracker.m.md'
-              - event PACKAGE:
-                - ndi.gui.component.internal.event.MessageUpdatedEventData: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/+event/MessageUpdatedEventData.m.md'
-                - ndi.gui.component.internal.event.ProgressUpdatedEventData: 'NDI-matlab/reference/+ndi/+gui/+component/+internal/+event/ProgressUpdatedEventData.m.md'
           - utility PACKAGE:
             - ndi.gui.utility.centerFigure: 'NDI-matlab/reference/+ndi/+gui/+utility/centerFigure.m.md'
         - mock PACKAGE:
@@ -592,16 +603,6 @@
           - app PACKAGE:
             - ndi.test.app.markgarbage: 'NDI-matlab/reference/+ndi/+test/+app/markgarbage.m.md'
             - ndi.test.app.spikeextractor: 'NDI-matlab/reference/+ndi/+test/+app/spikeextractor.m.md'
-          - cloud PACKAGE:
-            - ndi.test.cloud.openminds_to_metadata: 'NDI-matlab/reference/+ndi/+test/+cloud/openminds_to_metadata.m.md'
-            - ndi.test.cloud.upload_download: 'NDI-matlab/reference/+ndi/+test/+cloud/upload_download.m.md'
-            - api PACKAGE:
-              - ndi.test.cloud.api.add_document_test: 'NDI-matlab/reference/+ndi/+test/+cloud/+api/add_document_test.m.md'
-              - ndi.test.cloud.api.dataset_branch_test: 'NDI-matlab/reference/+ndi/+test/+cloud/+api/dataset_branch_test.m.md'
-              - ndi.test.cloud.api.delete_documents_test: 'NDI-matlab/reference/+ndi/+test/+cloud/+api/delete_documents_test.m.md'
-              - ndi.test.cloud.api.pipeline: 'NDI-matlab/reference/+ndi/+test/+cloud/+api/pipeline.m.md'
-              - ndi.test.cloud.api.submit_publish_dataset: 'NDI-matlab/reference/+ndi/+test/+cloud/+api/submit_publish_dataset.m.md'
-              - ndi.test.cloud.api.upload_sample_test: 'NDI-matlab/reference/+ndi/+test/+cloud/+api/upload_sample_test.m.md'
           - daq PACKAGE:
             - ndi.test.daq.blackrock: 'NDI-matlab/reference/+ndi/+test/+daq/blackrock.m.md'
             - ndi.test.daq.build_intan_flat_exp: 'NDI-matlab/reference/+ndi/+test/+daq/build_intan_flat_exp.m.md'
@@ -678,9 +679,11 @@
         - util PACKAGE:
           - ndi.util.choosefile: 'NDI-matlab/reference/+ndi/+util/choosefile.m.md'
           - ndi.util.choosefileordir: 'NDI-matlab/reference/+ndi/+util/choosefileordir.m.md'
+          - ndi.util.datestamp2datetime: 'NDI-matlab/reference/+ndi/+util/datestamp2datetime.m.md'
           - ndi.util.downsampleTimeseries: 'NDI-matlab/reference/+ndi/+util/downsampleTimeseries.m.md'
           - ndi.util.hexDiff: 'NDI-matlab/reference/+ndi/+util/hexDiff.m.md'
           - ndi.util.hexDump: 'NDI-matlab/reference/+ndi/+util/hexDump.m.md'
+          - ndi.util.rehydrateJSONNanNull: 'NDI-matlab/reference/+ndi/+util/rehydrateJSONNanNull.m.md'
           - ndi.util.toolboxdir: 'NDI-matlab/reference/+ndi/+util/toolboxdir.m.md'
           - ndi.util.unwrapTableCellContent: 'NDI-matlab/reference/+ndi/+util/unwrapTableCellContent.m.md'
           - openminds PACKAGE:
@@ -695,5 +698,3 @@
           - ndi.validators.mustBeTextLike: 'NDI-matlab/reference/+ndi/+validators/mustBeTextLike.m.md'
           - ndi.validators.mustHaveRequiredColumns: 'NDI-matlab/reference/+ndi/+validators/mustHaveRequiredColumns.m.md'
           - ndi.validators.mustMatchRegex: 'NDI-matlab/reference/+ndi/+validators/mustMatchRegex.m.md'
-      - private FOLDER:
-        - addRequiredAdditionalSoftwareToPath: 'NDI-matlab/reference/private/addRequiredAdditionalSoftwareToPath.m.md'
