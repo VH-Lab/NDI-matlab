@@ -258,7 +258,7 @@ classdef probe < ndi.element & ndi.documentservice
             % corresponding ndi.probe object in the input cell array PROBECELLARRAY.
             %
             % This function is more efficient than calling BUILDEPOCHTABLE for each probe individually
-            % because it minimizes redundant operations.
+            % because it minimizes redundant operations by using an index and checking the session cache.
             %
             arguments
                 probeCellArray (1,:) cell {ndi.validators.mustBeCellArrayOfClass(probeCellArray, 'ndi.probe')}
@@ -266,18 +266,39 @@ classdef probe < ndi.element & ndi.documentservice
 
             numProbes = numel(probeCellArray);
             et = cell(1, numProbes);
+            if numProbes == 0, return; end
 
-            if numProbes == 0
-                return;
+            % Step 1: Check cache and prepare index for probes that need building
+            needs_build_idx = [];
+            probes_to_build_map = containers.Map('KeyType','char','ValueType','any');
+
+            for p = 1:numProbes
+                probe = probeCellArray{p};
+                [cached_et, ~] = cached_epochtable(probe);
+                if ~isempty(cached_et) || isstruct(cached_et)
+                    et{p} = cached_et;
+                else
+                    needs_build_idx(end+1) = p;
+                    mapKey = [probe.name ' | ' int2str(probe.reference) ' | ' lower(probe.type)];
+                    if probes_to_build_map.isKey(mapKey)
+                        probes_to_build_map(mapKey) = [probes_to_build_map(mapKey) p];
+                    else
+                        probes_to_build_map(mapKey) = p;
+                    end
+                end
             end
 
-            for i=1:numProbes
-                et{i} = struct('epoch_number',{},'epoch_id',{},'epoch_session_id',{},'epochprobemap',{},'epoch_clock',{},'t0_t1',{},'underlying_epochs',{});
+            if isempty(needs_build_idx), return; end % all were cached
+
+            for i=1:numel(needs_build_idx)
+                p = needs_build_idx(i);
+                et{p} = struct('epoch_number',{},'epoch_id',{},'epoch_session_id',{},'epochprobemap',{},'epoch_clock',{},'t0_t1',{},'underlying_epochs',{});
             end
 
-            mySession = probeCellArray{1}.session;
-            for i=2:numProbes
-                if ~eq(probeCellArray{i}.session, mySession)
+            % Step 2: Build epoch tables for the remaining probes efficiently
+            mySession = probeCellArray{needs_build_idx(1)}.session;
+            for i=2:numel(needs_build_idx)
+                if ~eq(probeCellArray{needs_build_idx(i)}.session, mySession)
                     error('All probes must belong to the same session.');
                 end
             end
@@ -285,39 +306,60 @@ classdef probe < ndi.element & ndi.documentservice
             D = mySession.daqsystem_load('name','(.*)');
             if ~iscell(D), D = {D}; end
 
-            d_et = {};
             for d=1:numel(D)
-                d_et{d} = epochtable(D{d});
-                for n=1:numel(d_et{d})
-                    for p=1:numProbes
-                        ndi_probe_obj = probeCellArray{p};
-                        underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock','t0_t1');
-                        underlying_epochs(1).underlying = D{d};
-                        match_probe_and_device = [];
-                        H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
-                        for h=1:numel(H)
-                            daqst = ndi.daq.daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
-                            if strcmpi(D{d}.name,daqst.devicename)
-                                match_probe_and_device(end+1) = H(h);
+                d_et = epochtable(D{d});
+                for n=1:numel(d_et)
+                    matches_for_epoch = containers.Map('KeyType','double','ValueType','any');
+                    for h=1:numel(d_et(n).epochprobemap)
+                        epm_entry = d_et(n).epochprobemap(h);
+                        mapKey = [epm_entry.name ' | ' int2str(epm_entry.reference) ' | ' lower(epm_entry.type)];
+                        if probes_to_build_map.isKey(mapKey)
+                            probe_indices = probes_to_build_map(mapKey);
+                            daqst = ndi.daq.daqsystemstring(epm_entry.devicestring);
+                            if ~strcmpi(D{d}.name,daqst.devicename), continue; end
+                            for k=1:numel(probe_indices)
+                                p = probe_indices(k);
+                                if ~matches_for_epoch.isKey(p), matches_for_epoch(p) = []; end
+                                matches_for_epoch(p) = [matches_for_epoch(p) h];
                             end
                         end
-                        if ~isempty(match_probe_and_device)
-                            underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
-                            underlying_epochs.epoch_session_id = d_et{d}(n).epoch_session_id;
-                            underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);
-                            underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
-                            underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
-                            et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
-                            et_(1).epoch_number = 1+numel(et{p});
-                            et_(1).epoch_id = d_et{d}(n).epoch_id;
-                            et_(1).epoch_session_id = d_et{d}(n).epoch_session_id;
-                            et_(1).epochprobemap = [];
-                            et_(1).epoch_clock = d_et{d}(n).epoch_clock;
-                            et_(1).t0_t1 = d_et{d}(n).t0_t1;
-                            et_(1).underlying_epochs = underlying_epochs;
-                            et{p}(end+1) = et_;
-                        end
                     end
+
+                    matched_probes = matches_for_epoch.keys();
+                    for i=1:numel(matched_probes)
+                        p = matched_probes{i};
+                        matching_epm_indices = matches_for_epoch(p);
+
+                        underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+                        underlying_epochs(1).underlying = D{d};
+                        underlying_epochs.epoch_id = d_et(n).epoch_id;
+                        underlying_epochs.epoch_session_id = d_et(n).epoch_session_id;
+                        underlying_epochs.epochprobemap = d_et(n).epochprobemap(matching_epm_indices);
+                        underlying_epochs.epoch_clock = d_et(n).epoch_clock;
+                        underlying_epochs.t0_t1 = d_et(n).t0_t1;
+
+                        et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+                        et_(1).epoch_number = 1+numel(et{p});
+                        et_(1).epoch_id = d_et(n).epoch_id;
+                        et_(1).epoch_session_id = d_et(n).epoch_session_id;
+                        et_(1).epochprobemap = [];
+                        et_(1).epoch_clock = d_et(n).epoch_clock;
+                        et_(1).t0_t1 = d_et(n).t0_t1;
+                        et_(1).underlying_epochs = underlying_epochs;
+                        et{p}(end+1) = et_;
+                    end
+                end
+            end
+
+            % Step 3: Cache the newly built epoch tables
+            for i=1:numel(needs_build_idx)
+                p = needs_build_idx(i);
+                probe = probeCellArray{p};
+                [cache, key] = getcache(probe);
+                if ~isempty(cache)
+                    hashvalue = vlt.data.hashmatlabvariable(et{p});
+                    priority = 1; % use higher than normal priority
+                    cache.add(key, 'epochtable-hash', struct('epochtable', et{p}, 'hashvalue', hashvalue), priority);
                 end
             end
         end
