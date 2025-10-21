@@ -29,44 +29,36 @@ function [probeLocations, probeObj] = location(S, e)
 
 % Step 1: get the element object if it's an identifier
 if ischar(e)
-	element_doc = S.database_search(ndi.query('ndi_document.id','exact_string',e,''));
+	element_doc = S.database_search(ndi.query('base.id','exact_string',e,''));
 	if isempty(element_doc)
 		error(['Could not find an element with id ' e '.']);
 	end
-	e = ndi.database.fun.ndi_document2ndi_object(S, element_doc{1});
+	e = ndi.database.fun.ndi_document2ndi_object(element_doc{1},S);
 end
 
 % Step 2: traverse down to the probe
 current_element = e;
+
 while ~isa(current_element, 'ndi.probe')
-    % Find the link document that shows what the current element depends on.
-    link_doc_q = ndi.query('','depends_on','element_id', current_element.id()) & ndi.query('','isa','ndi.document.underlying_element');
-    link_doc = S.database_search(link_doc_q);
-
-	if isempty(link_doc)
-		% we are at the bottom and haven't found a probe
-		error(['Could not find an ndi.probe object that is associated with element ' e.id() '.']);
+    current_element = e.underlying_element;
+    if isempty(current_element)
+        break;
     end
-
-    % Get the ID of the actual underlying element from the link document's properties.
-    underlying_element_id = link_doc{1}.document_properties.underlying_element.underlying_element_id;
-
-    % Now, get the document for the underlying element itself.
-    underlying_element_doc = S.database_search(ndi.query('ndi_document.id', 'exact_string', underlying_element_id, ''));
-    if isempty(underlying_element_doc)
-        error(['Database integrity error: Could not find the underlying element with id ' underlying_element_id]);
-    end
-
-    % Convert the document to an object for the next loop iteration.
-    current_element = ndi.database.fun.ndi_document2ndi_object(S, underlying_element_doc{1});
 end
 
 % Step 3: we have the probe, assign output
 probeObj = current_element;
+
+probeLocations = {};
+
+if isempty(probeObj)
+    return;
+end
+
 probeIdentifier = probeObj.id();
 
 % Step 4: query for the locations
-q = ndi.query('','depends_on','probe_id',probeIdentifier) & ndi.query('','isa','probeLocation');
+q = ndi.query('','depends_on','probe_id',probeIdentifier) & ndi.query('','isa','probe_location');
 probeLocations = S.database_search(q);
 
 end % location()
