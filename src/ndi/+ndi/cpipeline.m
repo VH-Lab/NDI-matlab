@@ -54,7 +54,7 @@ classdef cpipeline
                     {'new','NewWindow','UpdatePipelines','LoadPipelines','UpdateCalculatorInstanceList',...
                     'PipelinePopup','NewPipelineButton','DeletePipelineButton','NewCalculatorInstanceButton','DeleteCalculatorInstanceButton',...
                     'EditButton','RunButton','PipelineContentList','DoEnableDisable',...
-                    'PipelineObjectTypePopup','PipelineObjectVariablePopup'})} = 'new'
+                    'RefreshObjectVariablePopup','PipelineObjectVariablePopup'})} = 'new'
                 options.pipelinePath (1,:) char = ndi.cpipeline.defaultPath()
                 options.session ndi.session = ndi.session.empty();
                 options.window_params (1,1) struct = struct('height', 500, 'width', 400)
@@ -132,21 +132,16 @@ classdef cpipeline
                     uicontrol(uid.popup,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],...
                         'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
                     
-                    % Object Linking (Stacked)
+                    % Object Linking (Single line)
                     y_cursor = y_cursor - gap_v_n - row_h_n;
-                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],'string','Link object type:',...
-                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
-                    y_cursor = y_cursor - row_h_n;
-                    uicontrol(uid.popup,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],...
-                        'string',{'ndi.session', 'ndi.dataset', 'Workspace variable'},'tag','PipelineObjectTypePopup','callback',callbackstr,...
-                        'BackgroundColor',edit_bg_color);
-
-                    y_cursor = y_cursor - gap_v_n/2 - row_h_n;
-                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],'string','NDI Data:',...
+                    label_w_n = 75/right;
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_h_n y_cursor label_w_n row_h_n],'string','NDI Data:',...
                          'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
-                    y_cursor = y_cursor - row_h_n;
-                    uicontrol(uid.popup,'Units','normalized','position',[edge_h_n y_cursor 1-2*edge_h_n row_h_n],...
+                    popup_left = edge_h_n + label_w_n + gap_h_n;
+                    popup_width = 1 - popup_left - edge_h_n;
+                    uicontrol(uid.popup,'Units','normalized','position',[popup_left y_cursor popup_width row_h_n],...
                         'string',{'None'},'tag','PipelineObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+
                     
                     % Main Area (Listbox on left, Buttons on right)
                     y_cursor = y_cursor - gap_v_n;
@@ -170,6 +165,7 @@ classdef cpipeline
                     
                     btn_h_n = 25/top;
                     label_h_n = 15/top;
+                    slot_h_n = btn_h_n + label_h_n + (15/top);
                     
                     y_btn_panel_top = main_area_top;
                     
@@ -177,49 +173,26 @@ classdef cpipeline
                     btn_tags = {'RunButton','NewPipelineButton','DeletePipelineButton','NewCalculatorInstanceButton','DeleteCalculatorInstanceButton','EditButton'};
                     btn_strings = {'->','+','-','+','-','Edit'};
                     
-                    y_btn_cursor = y_btn_panel_top;
-                    small_gap = 5/top;
-                    large_gap = 15/top;
-
-                    % Manually stack buttons with titles and specific gaps
-                    slot_h = btn_h_n + label_h_n;
-                    y_btn_cursor = y_btn_cursor - slot_h;
-                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{1},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
-                    uicontrol(uid.button,'Units','normalized','string',btn_strings{1},'tag',btn_tags{1},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
-
-                    y_btn_cursor = y_btn_cursor - large_gap - slot_h;
-                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{2},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
-                    uicontrol(uid.button,'Units','normalized','string',btn_strings{2},'tag',btn_tags{2},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
-                    y_btn_cursor = y_btn_cursor - small_gap - slot_h;
-                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{3},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
-                    uicontrol(uid.button,'Units','normalized','string',btn_strings{3},'tag',btn_tags{3},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
-
-                    y_btn_cursor = y_btn_cursor - large_gap - slot_h;
-                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{4},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
-                    uicontrol(uid.button,'Units','normalized','string',btn_strings{4},'tag',btn_tags{4},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
-                    y_btn_cursor = y_btn_cursor - small_gap - slot_h;
-                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{5},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
-                    uicontrol(uid.button,'Units','normalized','string',btn_strings{5},'tag',btn_tags{5},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
-                    y_btn_cursor = y_btn_cursor - small_gap - slot_h;
-                    uicontrol(uid.txt,'Units','normalized','string',btn_titles{6},'position',[btn_x_n y_btn_cursor+btn_h_n btn_w_n label_h_n],'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
-                    uicontrol(uid.button,'Units','normalized','string',btn_strings{6},'tag',btn_tags{6},'position',[btn_x_n y_btn_cursor btn_w_n btn_h_n],'callback',callbackstr);
+                    y_btn_cursor_local = y_btn_panel_top;
                     
-                    ndi.cpipeline.edit('command','PipelineObjectTypePopup','fig',fig);
-                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
-                case 'PipelineObjectTypePopup'
-                    popup_type_obj = findobj(fig,'tag','PipelineObjectTypePopup');
-                    type_val = get(popup_type_obj,'value');
-                    type_str_list = get(popup_type_obj,'string');
-                    selected_type = type_str_list{type_val};
-
+                    for i=1:6
+                        y_btn_cursor_local = y_btn_cursor_local - slot_h_n;
+                        label_bottom_n = y_btn_cursor_local + btn_h_n;
+                        uicontrol(uid.txt,'Units','normalized','position',[btn_x_n label_bottom_n btn_w_n label_h_n],...
+                            'string',btn_titles{i}, 'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','center');
+                        uicontrol(uid.button,'Units','normalized','position',[btn_x_n y_btn_cursor_local btn_w_n btn_h_n],...
+                            'string',btn_strings{i},'tag',btn_tags{i},'callback',callbackstr);
+                    end
+                    
+                    ndi.cpipeline.edit('command','RefreshObjectVariablePopup','fig',fig); % initial population
+                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig); % load the pipelines from disk
+                case 'RefreshObjectVariablePopup'
                     vars = evalin('base', 'whos');
                     var_names = {};
                     for i = 1:length(vars)
-                        is_match = strcmp(vars(i).class, selected_type);
-                        if strcmp(selected_type, 'Workspace variable') && ~strcmp(vars(i).class,'matlab.ui.Figure')
-                            is_match = true;
+                        if ismember(vars(i).class, {'ndi.session','ndi.dataset'})
+                            var_names{end+1} = vars(i).name;
                         end
-                        if is_match, var_names{end+1} = vars(i).name; end
                     end
                     popup_strings = {'None', var_names{:}};
                     
@@ -227,7 +200,7 @@ classdef cpipeline
                     set(popup_var_obj, 'string', popup_strings, 'userdata', {[], var_names{:}});
 
                     initial_value = 1; % Default to 'None'
-                    if ~isempty(ud.linked_object) && (strcmp(class(ud.linked_object), selected_type) || strcmp(selected_type,'Workspace variable'))
+                    if ~isempty(ud.linked_object)
                         for i=1:numel(var_names)
                             workspace_obj = evalin('base', var_names{i});
                             if isequal(ud.linked_object, workspace_obj)
