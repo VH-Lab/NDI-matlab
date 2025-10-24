@@ -98,13 +98,14 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             import matlab.unittest.fixtures.TemporaryFolderFixture;
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             fileUIDs = strings(1, numFiles);
+            originalFileContents = cell(1, numFiles);
             for i = 1:numFiles
                 fileUIDs(i) = string(did.ido.unique_id());
                 localFilePath = fullfile(tempFolder.Folder, fileUIDs(i));
-                fileContent = "This is test file #" + i;
+                originalFileContents{i} = "This is test file #" + i;
 
                 fid = fopen(localFilePath, 'w');
-                fprintf(fid, '%s', fileContent);
+                fprintf(fid, '%s', originalFileContents{i});
                 fclose(fid);
 
                 [b_url, uploadURL, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUIDs(i));
@@ -132,11 +133,40 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
             testCase.verifyNumElements(ans_docs.documents, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
 
-            narrative(end+1) = "VERIFICATION: Checking published files.";
-            [b_dset, ans_dset, resp_dset, url_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            msg_dset = ndi.unittest.cloud.APIMessage(narrative, b_dset, ans_dset, resp_dset, url_dset);
-            testCase.verifyTrue(b_dset, "Failed to get dataset info. " + msg_dset);
-            testCase.verifyNumElements(ans_dset.files, numFiles, "Incorrect number of files found in published dataset. " + msg_dset);
+            narrative(end+1) = "VERIFICATION: Verifying content of each published document.";
+            retrievedDocNames = string([]);
+            if isfield(ans_docs, 'documents') && ~isempty(ans_docs.documents)
+                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs.documents);
+            end
+
+            for i = 1:numDocs
+                expectedDocName = "serial_doc_" + i;
+                narrative(end+1) = "  Verifying that document '" + expectedDocName + "' exists in the published list.";
+                msg_doc_find = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
+                testCase.verifyTrue(any(strcmp(retrievedDocNames, expectedDocName)), "Document '" + expectedDocName + "' was not found. " + msg_doc_find);
+            end
+            narrative(end+1) = "All document names verified successfully.";
+
+            narrative(end+1) = "VERIFICATION: Verifying content of each published file.";
+            for i = 1:numFiles
+                fileUID = fileUIDs(i);
+                expectedContent = originalFileContents{i};
+                narrative(end+1) = "  Verifying file with UID: " + fileUID;
+                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
+                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
+                downloadURL = ans_details.downloadUrl;
+                downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
+                [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
+                msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+                testCase.verifyTrue(b_get, "File download failed for " + fileUID + ". " + msg_get);
+                if ~b_get, continue; end
+                retrievedContent = fileread(downloadedFilePath);
+                narrative(end+1) = "  Testing: Verifying content of downloaded file matches original.";
+                msg_content = ndi.unittest.cloud.APIMessage(narrative, true, struct('Expected', expectedContent, 'Retrieved', retrievedContent), resp_details, url_details);
+                testCase.verifyEqual(retrievedContent, char(expectedContent), "Content of downloaded file " + fileUID + " does not match original. " + msg_content);
+            end
+            narrative(end+1) = "All file contents verified successfully.";
 
             % Step 4: Unpublish the dataset
             narrative(end+1) = "ACTION: Unpublishing the dataset.";
@@ -172,13 +202,14 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             localFilePaths = strings(1, numFiles);
             fileUIDs = strings(1, numFiles);
+            originalFileContents = cell(1, numFiles);
 
             for i = 1:numFiles
                 fileUIDs(i) = string(did.ido.unique_id());
                 localFilePaths(i) = fullfile(tempFolder.Folder, fileUIDs(i));
-                fileContent = "This is bulk test file #" + i;
+                originalFileContents{i} = "This is bulk test file #" + i;
                 fid = fopen(localFilePaths(i), 'w');
-                fprintf(fid, '%s', fileContent);
+                fprintf(fid, '%s', originalFileContents{i});
                 fclose(fid);
             end
 
@@ -210,11 +241,40 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
             testCase.verifyNumElements(ans_docs.documents, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
 
-            narrative(end+1) = "VERIFICATION: Checking published files.";
-            [b_dset, ans_dset, resp_dset, url_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            msg_dset = ndi.unittest.cloud.APIMessage(narrative, b_dset, ans_dset, resp_dset, url_dset);
-            testCase.verifyTrue(b_dset, "Failed to get dataset info. " + msg_dset);
-            testCase.verifyNumElements(ans_dset.files, numFiles, "Incorrect number of files found in published dataset. " + msg_dset);
+            narrative(end+1) = "VERIFICATION: Verifying content of each published document.";
+            retrievedDocNames = string([]);
+            if isfield(ans_docs, 'documents') && ~isempty(ans_docs.documents)
+                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs.documents);
+            end
+
+            for i = 1:numDocs
+                expectedDocName = "bulk_doc_" + i;
+                narrative(end+1) = "  Verifying that document '" + expectedDocName + "' exists in the published list.";
+                msg_doc_find = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
+                testCase.verifyTrue(any(strcmp(retrievedDocNames, expectedDocName)), "Document '" + expectedDocName + "' was not found. " + msg_doc_find);
+            end
+            narrative(end+1) = "All document names verified successfully.";
+
+            narrative(end+1) = "VERIFICATION: Verifying content of each published file.";
+            for i = 1:numFiles
+                fileUID = fileUIDs(i);
+                expectedContent = originalFileContents{i};
+                narrative(end+1) = "  Verifying file with UID: " + fileUID;
+                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
+                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
+                downloadURL = ans_details.downloadUrl;
+                downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
+                [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
+                msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
+                testCase.verifyTrue(b_get, "File download failed for " + fileUID + ". " + msg_get);
+                if ~b_get, continue; end
+                retrievedContent = fileread(downloadedFilePath);
+                narrative(end+1) = "  Testing: Verifying content of downloaded file matches original.";
+                msg_content = ndi.unittest.cloud.APIMessage(narrative, true, struct('Expected', expectedContent, 'Retrieved', retrievedContent), resp_details, url_details);
+                testCase.verifyEqual(retrievedContent, char(expectedContent), "Content of downloaded file " + fileUID + " does not match original. " + msg_content);
+            end
+            narrative(end+1) = "All file contents verified successfully.";
 
             % Step 4: Unpublish the dataset
             narrative(end+1) = "ACTION: Unpublishing the dataset.";
