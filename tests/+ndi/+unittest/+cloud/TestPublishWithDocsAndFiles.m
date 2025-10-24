@@ -118,6 +118,9 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             end
             narrative(end+1) = "All files uploaded successfully.";
 
+            narrative(end+1) = "Pausing for 20 seconds to allow for processing before pre-publish verification...";
+            pause(20);
+
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
             [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
@@ -261,6 +264,9 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 testCase.fatalAssertTrue(b_put, "Failed to upload file #" + i + ". " + msg_put);
             end
             narrative(end+1) = "All files uploaded successfully.";
+
+            narrative(end+1) = "Pausing for 20 seconds to allow for processing before pre-publish verification...";
+            pause(20);
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
@@ -410,6 +416,9 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.fatalAssertTrue(b_put, "Bulk file upload (PUT request) failed. " + msg_put);
             narrative(end+1) = "All files uploaded successfully in bulk.";
+
+            narrative(end+1) = "Pausing for 20 seconds to allow for processing before pre-publish verification...";
+            pause(20);
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
