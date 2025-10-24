@@ -145,7 +145,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
                 [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
-                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
+                testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_pre_" + fileUID);
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
@@ -195,7 +195,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
                 [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
-                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
+                testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
@@ -289,7 +289,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
                 [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
-                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
+                testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_pre_" + fileUID);
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
@@ -339,7 +339,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
                 [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
-                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
+                testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
@@ -438,7 +438,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
                 [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
-                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
+                testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_pre_" + fileUID);
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
@@ -488,7 +488,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
                 [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
-                testCase.fatalAssertTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
+                testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
                 downloadURL = ans_details.downloadUrl;
                 downloadedFilePath = fullfile(tempFolder.Folder, "downloaded_" + fileUID);
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.files.getFile(downloadURL, downloadedFilePath, "useCurl", true);
