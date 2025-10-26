@@ -561,10 +561,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 % set up for editing
                 % read from file
                 edit = true;
+                filename,
                 ud = jsondecode(vlt.file.textfile2char(filename))
                 if ~exist('ud.calc','var')
                     ud.calc.type = ud.ndi_pipeline_element.calculator;
-                    ud.calc.parameter_code_default = ndi.calculator.parameter_default(ud.calc.type);
+                    ud.calc.parameter_code_default = ''; %ndi.calculator.parameter_default(ud.calc.type);
                     ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
                     ud.calc.parameter_code_old = ud.ndi_pipeline_element.parameter_code;
                     ud.calc.name = ud.ndi_pipeline_element.name;

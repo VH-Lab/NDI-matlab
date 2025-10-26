@@ -63,6 +63,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     if ~isfolder(datasetFolder)
         mkdir(datasetFolder)
     end
+
     ndiDataset = ndi.dataset.dir([], datasetFolder, ndiDocuments);
     if syncOptions.Verbose
         disp('Created dataset.')

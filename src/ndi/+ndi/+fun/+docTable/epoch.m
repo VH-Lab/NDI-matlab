@@ -48,6 +48,7 @@ end
 
 % Find all probes
 probes = session.getprobes;
+ndi.probe.buildmultipleepochtables(probes); % build epoch tables en mass
 
 % Initialize table
 probeArray = cell(numel(probes),1);
