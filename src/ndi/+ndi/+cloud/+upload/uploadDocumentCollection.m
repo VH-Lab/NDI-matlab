@@ -1,7 +1,7 @@
-function [b, report] = upload_document_collection(datasetId, documentList, options)
+function [b, report] = uploadDocumentCollection(datasetId, documentList, options)
 % UPLOAD_DOCUMENT_COLLECTION - Upload a collection of documents using bulk or serial upload.
 %
-%   [b, report] = ndi.cloud.upload.upload_document_collection(datasetId, documentList, options)
+%   [b, report] = ndi.cloud.upload.uploadDocumentCollection(datasetId, documentList, options)
 %   performs an upload of documents to a specified dataset. The method (batch vs. serial)
 %   and batch size can be controlled.
 %
@@ -43,7 +43,7 @@ function [b, report] = upload_document_collection(datasetId, documentList, optio
 % EXAMPLE:
 %   % Upload a collection of documents in chunks of 100
 %   docs = {doc_obj1, doc_obj2, ..., doc_obj250};
-%   [success, uploadReport] = ndi.cloud.upload.upload_document_collection("dataset123", docs, maxDocumentChunk=100);
+%   [success, uploadReport] = ndi.cloud.upload.uploadDocumentCollection("dataset123", docs, maxDocumentChunk=100);
 %
 % See also:
 %   ndi.cloud.api.documents.get_bulk_upload_url

@@ -1,8 +1,8 @@
-function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options)
+function downloadDatasetFiles(cloudDatasetId, targetFolder, fileUuids, options)
 % DOWNLOAD_DATASET_FILES - Downloads dataset files from a cloud dataset.
 %
 % Syntax:
-%   ndi.cloud.download.download_dataset_files(CLOUDDATASETID, TARGETFOLDER, [FILEUUIDS], [OPTIONS])
+%   ndi.cloud.download.downloadDatasetFiles(CLOUDDATASETID, TARGETFOLDER, [FILEUUIDS], [OPTIONS])
 %   Downloads specified files or all files from a cloud dataset to the target
 %   folder.
 %

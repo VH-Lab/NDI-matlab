@@ -235,7 +235,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             for i = 1:numDocs
                 docs_to_upload{i} = ndi.document('base', 'base.name', "mixed_doc_" + i);
             end
-            [b_upload_docs, report_upload] = ndi.cloud.upload.upload_document_collection(testCase.DatasetID, docs_to_upload);
+            [b_upload_docs, report_upload] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
             msg_upload_docs = "Bulk document upload verification failed. Report: " + jsonencode(report_upload);
             testCase.fatalAssertTrue(b_upload_docs, msg_upload_docs);
             narrative(end+1) = "All documents uploaded successfully in bulk.";
@@ -382,7 +382,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             for i = 1:numDocs
                 docs_to_upload{i} = ndi.document('base', 'base.name', "bulk_doc_" + i);
             end
-            [b_upload_docs, report_upload] = ndi.cloud.upload.upload_document_collection(testCase.DatasetID, docs_to_upload);
+            [b_upload_docs, report_upload] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
             msg_upload_docs = "Bulk document upload verification failed. Report: " + jsonencode(report_upload);
             testCase.fatalAssertTrue(b_upload_docs, msg_upload_docs);
             narrative(end+1) = "All documents uploaded successfully in bulk.";

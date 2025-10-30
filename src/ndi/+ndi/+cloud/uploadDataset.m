@@ -31,16 +31,16 @@ function cloudDatasetId = uploadDataset(ndiDataset, syncOptions)
     cloudDatasetId = answer.dataset_id;
 
     % Add document with remote dataset id to dataset before uploading.
-    remoteDatasetDoc = ndi.cloud.internal.create_remote_dataset_doc(cloudDatasetId, ndiDataset);
+    remoteDatasetDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudDatasetId, ndiDataset);
     ndiDataset.database_add(remoteDatasetDoc)
 
     % Step 2: Upload documents
     if syncOptions.Verbose, disp('Uploading dataset documents...'); end
     dataset_documents = ndiDataset.database_search( ndi.query('','isa','base') );
-    ndi.cloud.upload.upload_document_collection(cloudDatasetId, dataset_documents)
+    ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, dataset_documents)
 
     % Step 3: Upload files
-    ndi.cloud.sync.internal.upload_files_for_dataset_documents( ...
+    ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
         cloudDatasetId, ndiDataset, dataset_documents, ...
         "Verbose", syncOptions.Verbose, ...
         "FileUploadStrategy", syncOptions.FileUploadStrategy)

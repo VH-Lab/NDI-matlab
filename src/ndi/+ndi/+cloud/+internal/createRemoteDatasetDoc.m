@@ -1,8 +1,8 @@
-function remoteDatasetDoc = create_remote_dataset_doc(cloudDatasetId, ndiDataset)
-% create_remote_dataset_doc - Create NDI document with remote dataset details.
+function remoteDatasetDoc = createRemoteDatasetDoc(cloudDatasetId, ndiDataset)
+% createRemoteDatasetDoc - Create NDI document with remote dataset details.
 % 
 % Syntax:
-%   remoteDatasetDoc = create_remote_dataset_doc(cloudDatasetId) 
+%   remoteDatasetDoc = createRemoteDatasetDoc(cloudDatasetId)
 %   This function retrieves a remote dataset from the cloud and creates 
 %   a "dataset remote" NDI document for that dataset.
 % 

@@ -1,5 +1,5 @@
-function upload_files_for_dataset_documents(cloudDatasetId, ndiDataset, dataset_documents, options)
-% upload_files_for_dataset_documents - Upload a set of files belonging to a set of dataset documents
+function uploadFilesForDatasetDocuments(cloudDatasetId, ndiDataset, dataset_documents, options)
+% uploadFilesForDatasetDocuments - Upload a set of files belonging to a set of dataset documents
     arguments
         cloudDatasetId (1,1) string
         ndiDataset (1,1) ndi.dataset

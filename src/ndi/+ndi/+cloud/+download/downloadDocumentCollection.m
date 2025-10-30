@@ -1,7 +1,7 @@
-function documents = download_document_collection(datasetId, documentIds, options)
+function documents = downloadDocumentCollection(datasetId, documentIds, options)
 % DOWNLOAD_DOCUMENT_COLLECTION - Download documents using bulk download with chunking.
 %
-%   documents = ndi.cloud.download.download_document_collection(datasetId, documentIds, options)
+%   documents = ndi.cloud.download.downloadDocumentCollection(datasetId, documentIds, options)
 %   downloads a collection of documents from a specified dataset.
 %
 %   To improve performance and avoid server errors with large requests, this
@@ -37,11 +37,11 @@ function documents = download_document_collection(datasetId, documentIds, option
 %
 % EXAMPLE:
 %    % Download all documents from a dataset (will fetch ID list first)
-%    docs = ndi.cloud.download.download_document_collection("dataset123");
+%    docs = ndi.cloud.download.downloadDocumentCollection("dataset123");
 %
 %    % Download a specific list of documents with a larger chunk size
 %    my_ids = ["id_abc", "id_def", ...];
-%    docs = ndi.cloud.download.download_document_collection("dataset456", my_ids, ChunkSize=5000);
+%    docs = ndi.cloud.download.downloadDocumentCollection("dataset456", my_ids, ChunkSize=5000);
 %
 % See also: ndi.cloud.api.documents.getBulkDownloadURL, ndi.cloud.api.documents.listDatasetDocumentsAll
 
@@ -129,7 +129,7 @@ function documents = download_document_collection(datasetId, documentIds, option
     end
 
     fprintf('Download complete. Converting %d structs to NDI documents...\n', numel(all_document_structs));
-    documents = ndi.cloud.download.internal.structs_to_ndi_documents(all_document_structs);
+    documents = ndi.cloud.download.internal.structsToNdiDocuments(all_document_structs);
     fprintf('Processing complete.\n');
 end
 
