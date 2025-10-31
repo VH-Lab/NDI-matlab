@@ -30,6 +30,6 @@ function uploadFilesForDatasetDocuments(cloudDatasetId, ndiDataset, dataset_docu
                 app.updateBar(uuid,i/numel(file_manifest));
             end
         case "batch"
-            [~, ~] = ndi.cloud.upload.zip_for_upload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
+            [~, ~] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
     end
 end

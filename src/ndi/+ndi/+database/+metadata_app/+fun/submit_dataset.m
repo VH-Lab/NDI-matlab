@@ -18,8 +18,8 @@ function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datase
 
     documentList = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, session_id);
     S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
-    [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);
-    [b, ~] = ndi.cloud.upload.upload_to_NDI_cloud(S, dataset_id);
+    [~, ~,dataset_id] = ndi.cloud.utility.createCloudMetadataStruct(datasetInformation);
+    [b, ~] = ndi.cloud.upload.uploadToNDICloud(S, dataset_id);
     [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
     if ~success
         error(['Failed to get dataset: ' dataset.message]);

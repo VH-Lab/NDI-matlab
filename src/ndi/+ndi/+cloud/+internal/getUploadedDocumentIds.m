@@ -1,5 +1,5 @@
-function uploaded_document_ids = get_uploaded_document_ids(dataset_id)
-% get_uploaded_document_ids - Get cell array of uploaded document ids.
+function uploaded_document_ids = getUploadedDocumentIds(dataset_id)
+% GETUPLOADEDDOCUMENTIDS - Get cell array of uploaded document ids.
 %
 %   Use api endpoint to get ids for all remote (cloud) documents
 

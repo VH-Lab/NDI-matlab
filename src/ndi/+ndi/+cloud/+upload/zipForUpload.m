@@ -1,7 +1,7 @@
-function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id, options)
-% ZIP_FOR_UPLOAD - Create and upload zip files in batches to the NDI cloud.
+function [b, msg] = zipForUpload(D, doc_file_struct, total_size, dataset_id, options)
+% ZIPFORUPLOAD - Create and upload zip files in batches to the NDI cloud.
 %
-%   [B, MSG] = ndi.cloud.upload.zip_for_upload(D, DOC_FILE_STRUCT, TOTAL_SIZE, DATASET_ID, 'Verbose', true, 'DebugLog', true)
+%   [B, MSG] = ndi.cloud.upload.zipForUpload(D, DOC_FILE_STRUCT, TOTAL_SIZE, DATASET_ID, 'Verbose', true, 'DebugLog', true)
 %
 % Inputs:
 %  D - The ndi.database object.

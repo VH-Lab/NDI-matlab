@@ -7,7 +7,7 @@ function cloudDatasetId = uploadDataset(ndiDataset, syncOptions)
     % NDI Cloud is returned.
     %
     % Example:
-    %   ndi.cloud.upload.new_dataset(ndiDataset)
+    %   ndi.cloud.upload.newDataset(ndiDataset)
     %
 
     arguments
@@ -21,7 +21,7 @@ function cloudDatasetId = uploadDataset(ndiDataset, syncOptions)
     metadata_struct = ndi.database.metadata_ds_core.ndidataset2metadataeditorstruct(ndiDataset);
 
     %   Step 1b: Convert metadata structure to NDI Cloud Dataset info 
-    cloud_dataset_info = ndi.cloud.utility.create_cloud_metadata_struct(metadata_struct);
+    cloud_dataset_info = ndi.cloud.utility.createCloudMetadataStruct(metadata_struct);
 
     %   Step 1c: Create new NDI Cloud Dataset
     [success, answer] = ndi.cloud.api.datasets.createDataset(cloud_dataset_info);

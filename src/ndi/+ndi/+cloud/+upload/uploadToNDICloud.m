@@ -1,7 +1,7 @@
-function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
-    % UPLOAD_TO_NDI_CLOUD - upload an NDI database to NDI Cloud
+function [b, msg] = uploadToNDICloud(S, dataset_id, varargin)
+    % UPLOADTONDICLOUD - upload an NDI database to NDI Cloud
     %
-    % [B,MSG] = ndi.cloud.upload.upload_to_NDI_cloud(S, DATASET_ID, VARARGIN)
+    % [B,MSG] = ndi.cloud.upload.uploadToNDICloud(S, DATASET_ID, VARARGIN)
     %
     % Inputs:
     %  S - an ndi.session object
@@ -22,7 +22,7 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
     if verbose, disp(['Working on documents...']); end
 
     if verbose, disp(['Getting list of previously uploaded documents...']); end
-    [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.upload.scan_for_upload(S, d, 0, dataset_id);
+    [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.upload.scanForUpload(S, d, 0, dataset_id);
     % count the number of documents to be upload by checking the is_upload flag in doc_json_struct
     docs_left = sum(~[doc_json_struct.is_uploaded]);
     files_left = sum(~[doc_file_struct.is_uploaded]);
@@ -55,5 +55,5 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
     end
     delete(h_document);
 
-    [b, msg] = ndi.cloud.upload.zip_for_upload(S, doc_file_struct, total_size, dataset_id);
+    [b, msg] = ndi.cloud.upload.zipForUpload(S, doc_file_struct, total_size, dataset_id);
 end
