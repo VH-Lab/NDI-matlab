@@ -50,6 +50,9 @@ classdef ListDatasetDocuments < ndi.cloud.api.call
             if (apiResponse.StatusCode == 200)
                 b = true;
                 answer = apiResponse.Body.Data;
+                if isfield(answer, 'documents') && isempty(answer.documents) && ~iscell(answer.documents)
+                    answer.documents = {};
+                end
             else
                 if isprop(apiResponse.Body, 'Data')
                     answer = apiResponse.Body.Data;
