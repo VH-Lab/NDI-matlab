@@ -53,10 +53,31 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         datasetId (1,1) string
         documentList (1,:) cell
         options.maxDocumentChunk (1,1) double = Inf
+        options.onlyUploadMissing (1,1) logical = true
     end
     assert(~isempty(documentList), 'List of documents was empty.')
 
     % --- Pre-processing Step ---
+    if options.onlyUploadMissing
+        [success, remoteDocs] = ndi.cloud.api.documents.listDatasetDocumentsAll(datasetId);
+        if ~success
+            error('Could not list remote documents to determine which to upload.');
+        end
+        remoteDocIds = string(cellfun(@(x) x.id, remoteDocs.documents, 'UniformOutput', false));
+        localDocIds = string(cellfun(@(x) x.id(), documentList, 'UniformOutput', false));
+
+        [~, keepIndexes] = setdiff(localDocIds, remoteDocIds);
+        documentList = documentList(keepIndexes);
+    end
+
+    if isempty(documentList)
+        b = true;
+        report.uploadType = 'none';
+        report.manifest = {};
+        report.status = {};
+        return;
+    end
+
     % Extract document IDs for the report manifest
     docIds = cellfun(@(x) x.id(), documentList, 'UniformOutput', false);
 
