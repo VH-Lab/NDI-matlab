@@ -36,7 +36,7 @@ function [comparison_report, local_comparison_structs, remote_comparison_structs
 %           property structures for each mismatched document, ready for inspection.
 %
 %   See also:
-%       ndi.cloud.syncDataset, ndi.cloud.download.download_document_collection
+%       ndi.cloud.syncDataset, ndi.cloud.download.downloadDocumentCollection
     arguments
         ndiDataset (1,1) ndi.dataset
         options.Mode (1,1) string {mustBeMember(options.Mode, ["bulk", "serial"])} = "bulk"
@@ -97,7 +97,7 @@ function [comparison_report, local_comparison_structs, remote_comparison_structs
             
             % Download all common remote documents at once
             if options.Verbose, fprintf('Downloading %d remote documents for comparison...\n', numel(common_remote_api_ids)); end
-            remote_docs_downloaded = ndi.cloud.download.download_document_collection(cloudDatasetId, common_remote_api_ids);
+            remote_docs_downloaded = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, common_remote_api_ids);
             
             % Create a map for easy lookup
             remote_docs_map = containers.Map();

@@ -52,7 +52,7 @@ function [token, organizationID] = authenticate(options)
     end
 
     if nargout >= 1
-        token = ndi.cloud.internal.get_active_token();
+        token = ndi.cloud.internal.getActiveToken();
     end
     if nargout >= 2
         organizationID = getenv("NDI_CLOUD_ORGANIZATION_ID");
@@ -61,11 +61,11 @@ end
 
 
 function result = isAuthenticated(username)
-    token = ndi.cloud.internal.get_active_token();
+    token = ndi.cloud.internal.getActiveToken();
     result = ~isempty(token);
 
     if ~ismissing(username)
-        decodedToken = ndi.cloud.internal.decode_jwt(token);
+        decodedToken = ndi.cloud.internal.decodeJwt(token);
         if ~strcmp(decodedToken.email, username)
             result = false;
         end

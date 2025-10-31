@@ -84,14 +84,14 @@ function uploadNew(ndiDataset, syncOptions)
             if syncOptions.Verbose
                 fprintf('Uploading %d documents...\n', numel(ndiIdsToUpload));
             end
-            ndi.cloud.upload.upload_document_collection(cloudDatasetId, documentsToUpload)
+            ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, documentsToUpload)
 
             % Upload associated files if SyncFiles is true
             if syncOptions.SyncFiles
                 if syncOptions.Verbose
                     fprintf('SyncFiles is true. Uploading associated data files...\n');
                 end
-                ndi.cloud.sync.internal.upload_files_for_dataset_documents( ...
+                ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
                     cloudDatasetId, ...
                     ndiDataset, ...
                     documentsToUpload, ...

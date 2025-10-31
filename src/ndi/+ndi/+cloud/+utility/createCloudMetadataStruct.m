@@ -1,4 +1,4 @@
-function result = create_cloud_metadata_struct(metadata_struct)
+function result = createCloudMetadataStruct(metadata_struct)
     % CREATE_CLOUD_METADATA_STRUCT - upload metadata to the NDI Cloud
     %
     % [STATUS, DATASET] = ndi.cloud.upload.CREATE_CLOUD_METADATA_STRUCT(S)

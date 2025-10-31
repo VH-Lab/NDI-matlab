@@ -78,7 +78,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     % Add document with the cloud dataset ID to the local dataset
     doc = ndiDataset.database_search( ndi.query('','isa','dataset_remote') );
     if isempty(doc)
-        remoteDatasetDoc = ndi.cloud.internal.create_remote_dataset_doc(cloudDatasetId, ndiDataset);
+        remoteDatasetDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudDatasetId, ndiDataset);
         ndiDataset.database_add(remoteDatasetDoc);
     end
 end

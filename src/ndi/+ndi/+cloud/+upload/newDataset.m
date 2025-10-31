@@ -1,13 +1,13 @@
-function datasetId = new_dataset(D)
-    % NEW_DATASET - upload a new dataset to NDI cloud
+function datasetId = newDataset(D)
+    % NEWDATASET - upload a new dataset to NDI cloud
     %
-    % DATASETID = NEW_DATASET(D)
+    % DATASETID = ndi.cloud.upload.NEWDATASET(D)
     %
     % Upload an ndi.dataset object to NDI Cloud. The DATASETID on
     % NDI Cloud is returned.
     %
     % Example:
-    %   ndi.cloud.upload.new_dataset(D)
+    %   ndi.cloud.upload.newDataset(D)
     %
 
     arguments
@@ -20,8 +20,8 @@ function datasetId = new_dataset(D)
     metadata_structure = ndi.database.metadata_ds_core.ndidataset2metadataeditorstruct(D);
 
     %   Step 1b: Create the dataset record on NDI cloud
-    [status,response,datasetId] = ndi.cloud.upload.create_cloud_metadata_struct(metadata_structure);
+    [status,response,datasetId] = ndi.cloud.utility.createCloudMetadataStruct(metadata_structure);
 
     % Step 2: upload
 
-    [b,msg] = ndi.cloud.upload.upload_to_NDI_cloud(D,datasetId);
+    [b,msg] = ndi.cloud.upload.uploadToNDICloud(D,datasetId);

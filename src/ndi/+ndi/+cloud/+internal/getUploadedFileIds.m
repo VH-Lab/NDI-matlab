@@ -1,5 +1,5 @@
-function file_ids = get_uploaded_file_ids(dataset_id)
-    % get_uploaded_file_ids - Get cell array of uploaded file ids.
+function file_ids = getUploadedFileIds(dataset_id)
+    % GETUPLOADEDFILEIDS - Get cell array of uploaded file ids.
 
     try
         % [~, result, ~] = ndi.cloud.datasets.get_dataset(dataset_id, auth_token);

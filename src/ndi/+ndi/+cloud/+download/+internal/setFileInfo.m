@@ -1,7 +1,7 @@
-function newDocStruct = set_file_info(docStruct,mode,filepath)
-    % SET_FILE_INFO - set file info parameters for different modes
+function newDocStruct = setFileInfo(docStruct,mode,filepath)
+    % SETFILEINFO - set file info parameters for different modes
     %
-    % NEWDOCSTRUCT = SET_FILE_INFO(DOCSTRUCT, MODE, FILEPATH)
+    % NEWDOCSTRUCT = SETFILEINFO(DOCSTRUCT, MODE, FILEPATH)
     %
     % Given a document structure downloaded from ndi.cloud.api.documents.get_document,
     % set the 'delete_original' and 'ingest' fields as appropriate to the mode.

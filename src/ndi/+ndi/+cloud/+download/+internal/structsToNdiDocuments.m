@@ -1,5 +1,5 @@
-function ndi_documents = structs_to_ndi_documents(ndi_document_structs)
-% STRUCTS_TO_NDI_DOCUMENTS - Convert downloaded ndi document structures to ndi documents
+function ndi_documents = structsToNdiDocuments(ndi_document_structs)
+% STRUCTSTONDIDOCUMENTS - Convert downloaded ndi document structures to ndi documents
 %
 %   Utility function for creating a set of ndi.documents from a set of structures
 

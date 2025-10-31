@@ -298,7 +298,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             b_upload = false;
             report_upload = struct(); % Initialize report_upload
             try
-                [b_upload, report_upload] = ndi.cloud.upload.upload_document_collection(testCase.DatasetID, docs_to_upload);
+                [b_upload, report_upload] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
                 narrative(end+1) = "Bulk upload API call completed.";
             catch ME
                 narrative(end+1) = "Bulk upload API call failed with an error: " + ME.message;
@@ -349,7 +349,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             downloaded_docs_bulk = {};
             b_download = false;
             try
-                downloaded_docs_bulk = ndi.cloud.download.download_document_collection(testCase.DatasetID, string(cloudDocIDs));
+                downloaded_docs_bulk = ndi.cloud.download.downloadDocumentCollection(testCase.DatasetID, string(cloudDocIDs));
                 b_download = true;
                 narrative(end+1) = "Bulk download API call completed.";
             catch ME
@@ -489,7 +489,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             b_upload = false;
             report_upload = struct(); % Initialize report_upload
             try
-                [b_upload, report_upload] = ndi.cloud.upload.upload_document_collection(testCase.DatasetID, docs_to_upload);
+                [b_upload, report_upload] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
                 narrative(end+1) = "Bulk upload API call completed.";
             catch ME
                 narrative(end+1) = "Bulk upload API call failed with an error: " + ME.message;
@@ -550,7 +550,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             downloaded_docs_bulk = {};
             b_download = false;
             try
-                downloaded_docs_bulk = ndi.cloud.download.download_document_collection(testCase.DatasetID, string(cloudDocIDs));
+                downloaded_docs_bulk = ndi.cloud.download.downloadDocumentCollection(testCase.DatasetID, string(cloudDocIDs));
                 b_download = true;
                 narrative(end+1) = "Bulk download API call completed.";
             catch ME

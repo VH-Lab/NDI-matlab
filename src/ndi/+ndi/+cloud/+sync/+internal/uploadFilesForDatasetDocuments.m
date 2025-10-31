@@ -1,5 +1,5 @@
-function upload_files_for_dataset_documents(cloudDatasetId, ndiDataset, dataset_documents, options)
-% upload_files_for_dataset_documents - Upload a set of files belonging to a set of dataset documents
+function uploadFilesForDatasetDocuments(cloudDatasetId, ndiDataset, dataset_documents, options)
+% uploadFilesForDatasetDocuments - Upload a set of files belonging to a set of dataset documents
     arguments
         cloudDatasetId (1,1) string
         ndiDataset (1,1) ndi.dataset
@@ -30,6 +30,6 @@ function upload_files_for_dataset_documents(cloudDatasetId, ndiDataset, dataset_
                 app.updateBar(uuid,i/numel(file_manifest));
             end
         case "batch"
-            [~, ~] = ndi.cloud.upload.zip_for_upload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
+            [~, ~] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
     end
 end

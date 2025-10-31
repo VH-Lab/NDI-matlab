@@ -102,7 +102,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
     end
 
     % use helper function for documents
-    [b_,msg_,] = ndi.cloud.download.dataset_documents(dataset, mode, jsonpath, filepath, 'verbose', verbose);
+    [b_,msg_,] = ndi.cloud.download.datasetDocuments(dataset, mode, jsonpath, filepath, 'verbose', verbose);
 
     ndiDocuments = ndi.cloud.download.jsons2documents(jsonpath);
 

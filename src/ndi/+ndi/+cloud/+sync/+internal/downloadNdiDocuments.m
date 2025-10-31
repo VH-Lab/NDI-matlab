@@ -20,9 +20,9 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
 %       downloadedNdiDocuments (cell): A cell array of the ndi.document objects
 %           that were downloaded and added to the dataset.
 %
-%   See also: ndi.cloud.download.download_document_collection,
+%   See also: ndi.cloud.download.downloadDocumentCollection,
 %             ndi.cloud.sync.internal.getFileUidsFromDocuments,
-%             ndi.cloud.download.download_dataset_files,
+%             ndi.cloud.download.downloadDatasetFiles,
 %             ndi.cloud.sync.internal.updateFileInfoForRemoteFiles,
 %             ndi.cloud.sync.internal.updateFileInfoForLocalFiles
 
@@ -52,7 +52,7 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
 
     % 1. Download documents
     % This function should return a cell array of ndi.document objects
-    newNdiDocuments = ndi.cloud.download.download_document_collection(cloudDatasetId, cloudDocumentIds);
+    newNdiDocuments = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, cloudDocumentIds);
 
     if isempty(newNdiDocuments)
         warning('No documents were retrieved from the cloud for the given IDs.\n');
@@ -89,7 +89,7 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
             end
             
             % This function should download files to the filesTargetFolder
-            ndi.cloud.download.download_dataset_files(...
+            ndi.cloud.download.downloadDatasetFiles(...
                 cloudDatasetId, ...
                 filesTargetFolder, ...
                 fileUidsToDownload, ...
