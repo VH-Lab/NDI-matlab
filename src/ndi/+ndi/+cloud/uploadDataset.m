@@ -9,6 +9,10 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     % This function uploads all documents and associated data files for a given
     % NDIDATASET to the NDI cloud.
     %
+    % Inputs:
+    %   ndiDataset - The ndi.dataset object to be uploaded.
+    %   syncOptions - An ndi.cloud.sync.SyncOptions object for additional configuration.
+    %
     % By default, this function will not re-upload a dataset if it already exists
     % on the remote server. See the 'uploadAsNew' option to override this behavior.
     %
@@ -17,8 +21,8 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     % message if SUCCESS is false.
     %
     % It can be configured with the following NAME/VALUE pairs:
-    % | Name                         | Description                               |
-    % |------------------------------|-------------------------------------------|
+    % | Name                         | Description                                                              |
+    % |------------------------------|--------------------------------------------------------------------------|
     % | 'uploadAsNew'                | (logical) If true, any existing remote dataset will be deleted and a new |
     % |                              | one will be created. Default is false. If a remote dataset exists and    |
     % |                              | this is false, the function will return an error.                        |
@@ -27,9 +31,6 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     % |                              | 'remoteDatasetName'.                                                     |
     % | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This |
     % |                              | is *required* if 'skipMetadataEditorMetadata' is true.                   |
-    %
-    % This function also accepts an ndi.cloud.sync.SyncOptions object for additional
-    % configuration.
     %
     % See also: ndi.cloud.sync.SyncOptions, ndi.cloud.downloadDataset
     %
