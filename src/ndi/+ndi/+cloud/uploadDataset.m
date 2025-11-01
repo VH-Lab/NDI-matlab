@@ -1,13 +1,32 @@
 function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOptions, options)
     % UPLOADDATASET - upload a dataset to NDI cloud
     %
-    % [SUCCESS, DATASETID, MESSAGE] = ndi.cloud.UPLOADDATASET(ndiDataset)
+    % [SUCCESS, DATASETID, MESSAGE] = ndi.cloud.UPLOADDATASET(ndiDataset, SYNCOPTIONS, ...
+    %    NAME/VALUE PAIRS)
     %
-    % Upload an ndi.dataset object to NDI Cloud. The DATASETID on
-    % NDI Cloud is returned.
+    % Upload an ndi.dataset object to NDI Cloud.
     %
-    % Example:
-    %   ndi.cloud.upload.newDataset(ndiDataset)
+    % This function uploads all documents and associated data files for a given
+    % NDIDATASET to the NDI cloud.
+    %
+    % By default, this function will not re-upload a dataset if it already exists
+    % on the remote server. See the 'uploadAsNew' option to override this behavior.
+    %
+    % The function returns a boolean SUCCESS flag, the CLOUDDATASETID of the
+    % created remote dataset, and a MESSAGE string that will contain an error
+    % message if SUCCESS is false.
+    %
+    % It can be configured with the following NAME/VALUE pairs:
+    % | Name                         | Description                               |
+    % |------------------------------|-------------------------------------------|
+    % | 'uploadAsNew'                | (logical) If true, any existing remote dataset will be deleted and a new one will be created. Default is false. If a remote dataset exists and this is false, the function will return an error. |
+    % | 'skipMetadataEditorMetadata' | (logical) If true, the function will skip generating metadata from the dataset. Default is false. If you use this option, you must also provide 'remoteDatasetName'. |
+    % | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This is *required* if 'skipMetadataEditorMetadata' is true. |
+    %
+    % This function also accepts an ndi.cloud.sync.SyncOptions object for additional
+    % configuration.
+    %
+    % See also: ndi.cloud.sync.SyncOptions, ndi.cloud.downloadDataset
     %
 
     arguments
