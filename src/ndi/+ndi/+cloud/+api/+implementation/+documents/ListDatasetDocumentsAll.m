@@ -79,6 +79,9 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
                     break; % Exit the main page loop
                 end
             end
+            if isfield(answer, 'documents') && isempty(answer.documents) && ~iscell(answer.documents)
+                answer.documents = {};
+            end
         end
     end
 end
