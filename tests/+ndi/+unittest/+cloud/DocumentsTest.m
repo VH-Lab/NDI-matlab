@@ -304,7 +304,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 narrative(end+1) = "Bulk upload API call failed with an error: " + ME.message;
             end
             
-            msg_upload = "Bulk upload verification failed. Report: " + jsonencode(report_upload);
+            msg_upload = ndi.unittest.cloud.APIMessage(narrative, b_upload, report_upload, [], []);
             testCase.verifyTrue(b_upload, msg_upload);
             narrative(end+1) = "Bulk upload successful.";
             
