@@ -19,9 +19,14 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     % It can be configured with the following NAME/VALUE pairs:
     % | Name                         | Description                               |
     % |------------------------------|-------------------------------------------|
-    % | 'uploadAsNew'                | (logical) If true, any existing remote dataset will be deleted and a new one will be created. Default is false. If a remote dataset exists and this is false, the function will return an error. |
-    % | 'skipMetadataEditorMetadata' | (logical) If true, the function will skip generating metadata from the dataset. Default is false. If you use this option, you must also provide 'remoteDatasetName'. |
-    % | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This is *required* if 'skipMetadataEditorMetadata' is true. |
+    % | 'uploadAsNew'                | (logical) If true, any existing remote dataset will be deleted and a new |
+    % |                              | one will be created. Default is false. If a remote dataset exists and    |
+    % |                              | this is false, the function will return an error.                        |
+    % | 'skipMetadataEditorMetadata' | (logical) If true, the function will skip generating metadata from the   |
+    % |                              | dataset. Default is false. If you use this option, you must also provide |
+    % |                              | 'remoteDatasetName'.                                                     |
+    % | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This |
+    % |                              | is *required* if 'skipMetadataEditorMetadata' is true.                   |
     %
     % This function also accepts an ndi.cloud.sync.SyncOptions object for additional
     % configuration.
