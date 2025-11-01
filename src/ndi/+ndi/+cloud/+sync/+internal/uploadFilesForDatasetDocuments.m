@@ -1,5 +1,30 @@
 function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndiDataset, dataset_documents, options)
-% uploadFilesForDatasetDocuments - Upload a set of files belonging to a set of dataset documents
+% UPLOADFILESFORDATASETDOCUMENTS - Upload a set of files belonging to a set of dataset documents
+%
+% [SUCCESS, MESSAGE] = UPLOADFILESFORDATASETDOCUMENTS(CLOUD_DATASET_ID, NDIDATASET, ...
+%    DATASET_DOCUMENTS, NAME/VALUE PAIRS)
+%
+% Uploads a set of files that are associated with a given list of NDI_DOCUMENTS.
+%
+% This function takes a list of NDI_DOCUMENTS, finds all the associated binary data files
+% that are stored in the NDIDATASET, and uploads them to the remote dataset identified
+% by CLOUD_DATASET_ID.
+%
+% It can be configured with the following NAME/VALUE pairs:
+% | Name                  | Description                               |
+% |-----------------------|-------------------------------------------|
+% | 'Verbose'             | (logical) Display verbose output (default true) |
+% | 'FileUploadStrategy'  | ('serial' or 'batch') Upload strategy (default 'batch') |
+% | 'onlyMissing'         | (logical) Only upload missing files (default true) |
+%
+% Outputs:
+% | Name                  | Description                               |
+% |-----------------------|-------------------------------------------|
+% | SUCCESS               | (logical) True if all files were uploaded successfully. |
+% | MESSAGE               | (char) An error message if SUCCESS is false. |
+%
+% See also: ndi.cloud.uploadDataset
+%
     arguments
         cloudDatasetId (1,1) string
         ndiDataset (1,1) ndi.dataset
@@ -7,7 +32,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         options.Verbose (1,1) logical = true
         options.FileUploadStrategy (1,1) string ...
             {mustBeMember(options.FileUploadStrategy, ["serial", "batch"])} = "batch"
-        options.updateMissing (1,1) logical = true
+        options.onlyMissing (1,1) logical = true
     end
 
     success = true;
@@ -18,7 +43,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         ndiDataset, dataset_documents, options.Verbose);
     [file_manifest(:).is_uploaded] = deal(false);
 
-    if options.updateMissing
+    if options.onlyMissing
         [b, answer] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
         if b && isfield(answer, 'files')
             remote_files = containers.Map();
