@@ -1,26 +1,49 @@
 function remoteDatasetDoc = createRemoteDatasetDoc(cloudDatasetId, ndiDataset, options)
-% createRemoteDatasetDoc - Create NDI document with remote dataset details.
-% 
-% Syntax:
-%   remoteDatasetDoc = createRemoteDatasetDoc(cloudDatasetId, ndiDataset)
-%   remoteDatasetDoc = createRemoteDatasetDoc(cloudDatasetId, ndiDataset, 'replaceExisting', true)
+% CREATEREMOTEDATASETDOC - Create NDI document with remote dataset details.
 %
-%   This function retrieves a remote dataset from the cloud and creates 
-%   a "dataset remote" NDI document for that dataset.
-% 
-% Input Arguments:
-%   cloudDatasetId - The unique identifier for the cloud dataset to be 
-%                    retrieved.
-%   ndiDataset - The NDI dataset object.
-%   options.replaceExisting - A boolean that if true, will replace an
-%                       existing remote dataset document.
-% 
-% Output Arguments:
-%   remoteDatasetDoc - A document object containing the remote dataset 
-%                      ID and organization ID.
+% REMOTEDATASETDOC = CREATEREMOTEDATASETDOC(CLOUDDATASETID, NDIDATASET, ...
+%   'replaceExisting', REPLACEEXISTING)
+%
+% Creates a 'dataset_remote' NDI document, which links a local NDI dataset
+% to a remote cloud dataset.
+%
+% This function first checks if a 'dataset_remote' document already exists
+% for the given local dataset. If one is found, it will be replaced if
+% 'replaceExisting' is true; otherwise, the function will error.
+%
+% After ensuring no existing document is present (or removing it), the
+% function fetches the metadata for the specified cloud dataset from the
+% remote server. It then uses this information to create a new
+% 'dataset_remote' document in memory. This new document contains the cloud
+% dataset ID and the organization ID.
+%
+% NOTE: This function only creates the document in memory. The calling
+% function is responsible for adding it to the database if desired.
+%
+% Inputs:
+%   cloudDatasetId (string) - The unique identifier for the cloud dataset.
+%   ndiDataset (ndi.dataset) - The local NDI dataset object to be associated
+%     with the cloud dataset.
+%
+% Name-Value Pairs:
+%   replaceExisting (logical) - If true, any existing 'dataset_remote'
+%     document for the local dataset will be removed before creating the
+%     new one. Defaults to false.
+%
+% Outputs:
+%   remoteDatasetDoc (ndi.document) - A new 'dataset_remote' document object
+%     containing the remote dataset ID and organization ID.
+%
+% Example:
+%   % Assume my_dataset is a valid ndi.dataset object and a cloud dataset
+%   % with ID 'd-12345' exists.
+%   newDoc = ndi.cloud.internal.createRemoteDatasetDoc('d-12345', my_dataset);
+%   my_dataset.database_add(newDoc); % Add the document to the database
+%
+% See also: ndi.cloud.internal.getCloudDatasetIdForLocalDataset
     
     arguments
-        cloudDatasetId
+        cloudDatasetId (1,:) char
         ndiDataset (1,1) ndi.dataset
         options.replaceExisting (1,1) logical = false
     end
