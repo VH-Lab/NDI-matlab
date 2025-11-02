@@ -34,7 +34,7 @@ classdef GetUnpublished < ndi.cloud.api.call
             
             % Initialize outputs
             b = false;
-            answer = [];
+            answer = {};
             
             token = ndi.cloud.authenticate();
             
@@ -52,9 +52,11 @@ classdef GetUnpublished < ndi.cloud.api.call
             
             if (apiResponse.StatusCode == 200)
                 b = true;
-                answer = apiResponse.Body.Data;
+                if ~isempty(apiResponse.Body.Data)
+                    answer = apiResponse.Body.Data;
+                end
             else
-                answer = apiResponse.Body.Data;
+                answer = {};
             end
         end
     end
