@@ -56,7 +56,7 @@ if options.verbose
     disp(['Done.']);
 end
 
-if isempty(allDocs)
+if isempty(allDocs.documents)
     return;
 end
 
@@ -64,22 +64,28 @@ end
 docMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
 
 % Identify originals and duplicates
-for i = 1:numel(allDocs)
-    currentDoc = allDocs(i);
-    ndiId = currentDoc.ndiId;
+for i = 1:numel(allDocs.documents)
+    currentDoc = allDocs.documents(i);
 
-    if ~isKey(docMap, ndiId)
-        % First time seeing this NDI ID, so it's the current original
-        docMap(ndiId) = currentDoc;
+    % Use ndiId as the primary key if it exists, otherwise fall back to name
+    if isfield(currentDoc, 'ndiId') && ~isempty(currentDoc.ndiId)
+        doc_group_key = currentDoc.ndiId;
+    else
+        doc_group_key = currentDoc.name;
+    end
+
+    if ~isKey(docMap, doc_group_key)
+        % First time seeing this key, so it's the current original
+        docMap(doc_group_key) = currentDoc;
     else
         % We have a potential duplicate, decide which is the original
-        existingDoc = docMap(ndiId);
+        existingDoc = docMap(doc_group_key);
 
         % The one with the alphabetically earlier cloud document ID is the original
         if strcmp(currentDoc.id, existingDoc.id) < 0
             % The new one is the original, the old one is a duplicate
             duplicateDocs(end+1) = existingDoc;
-            docMap(ndiId) = currentDoc;
+            docMap(doc_group_key) = currentDoc;
         else
             % The old one is the original, the new one is a duplicate
             duplicateDocs(end+1) = currentDoc;
