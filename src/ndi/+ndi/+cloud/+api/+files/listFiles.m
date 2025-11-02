@@ -1,4 +1,4 @@
-function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
+function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId)
 % LISTFILES Lists all files associated with a given dataset
 %
 %   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.listFiles(CLOUDDATASETID)
