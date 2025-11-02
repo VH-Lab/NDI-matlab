@@ -57,7 +57,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             if ~ismissing(testCase.DatasetID)
                 narrative = testCase.Narrative; % Make a local copy
                 narrative(end+1) = "TEARDOWN: Deleting temporary dataset ID: " + testCase.DatasetID;
-                [b, ans_del, resp_del, url_del] = ndi.cloud.api.admin.deleteDataset(testCase.DatasetID);
+                [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID);
                 if ~b
                     msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_del, resp_del, url_del);
                     % Use assert instead of verify in teardown to ensure it's noted
@@ -94,7 +94,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
 
             % Step 3: Perform second bulk upload to create duplicates
             narrative(end+1) = "Preparing to perform the second bulk document upload to create duplicates.";
-            [b_upload2, report_upload2] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload, 'onlyMissing', false);
+            [b_upload2, report_upload2] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload, 'onlyUploadMissing', false);
             msg_upload2 = ndi.unittest.cloud.APIMessage(narrative, b_upload2, report_upload2, [], []);
             testCase.fatalAssertTrue(b_upload2, "Second bulk upload failed. " + msg_upload2);
             narrative(end+1) = "Second bulk upload successful.";
