@@ -91,7 +91,7 @@ function [doc_json_struct, doc_file_struct, total_size] = scanForUpload(S, d, ne
         [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
         if ~success, error(['Failed to get dataset: ' dataset.message]); end
         already_uploaded_docs = {};
-        if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end % prior version
+        if numel(doc_summary) > 0, already_uploaded_docs = {doc_summary.ndiId}; end % prior version
         % if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
         % [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs); % prior version
         [ids_left, document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);

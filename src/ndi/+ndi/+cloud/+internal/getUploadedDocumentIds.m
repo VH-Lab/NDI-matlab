@@ -40,8 +40,8 @@ function uploaded_document_ids = getUploadedDocumentIds(dataset_id)
         error(['Failed to list dataset documents: ' result.message]);
     end
 
-    if ~isempty(result.documents)
-        uploaded_document_ids = {result.documents.ndiId};
+    if ~isempty(result)
+        uploaded_document_ids = {result.ndiId};
     else
         uploaded_document_ids = {};
     end

@@ -61,9 +61,9 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
     if options.onlyUploadMissing
         [success, remoteDocs] = ndi.cloud.api.documents.listDatasetDocumentsAll(datasetId);
         if ~success
-            error('Could not list remote documents to determine which to upload.');
+            error(['Could not list remote documents to determine which to upload: ' remoteDocs.message]);
         end
-        remoteDocIds = string(cellfun(@(x) x.id, remoteDocs.documents, 'UniformOutput', false));
+        remoteDocIds = string({remoteDocs.id});
         localDocIds = string(cellfun(@(x) x.id(), documentList, 'UniformOutput', false));
 
         [~, keepIndexes] = setdiff(localDocIds, remoteDocIds);

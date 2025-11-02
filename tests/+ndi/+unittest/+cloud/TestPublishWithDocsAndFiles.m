@@ -126,12 +126,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_docs_pre = ndi.unittest.cloud.APIMessage(narrative, b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre);
             testCase.verifyTrue(b_docs_pre, "Failed to list documents of dataset before publishing. " + msg_docs_pre);
-            testCase.verifyNumElements(ans_docs_pre.documents, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
+            testCase.verifyNumElements(ans_docs_pre, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
 
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Verifying content of each document.";
             retrievedDocNames_pre = string([]);
-            if isfield(ans_docs_pre, 'documents') && ~isempty(ans_docs_pre.documents)
-                retrievedDocNames_pre = arrayfun(@(x) string(x.name), ans_docs_pre.documents);
+            if ~isempty(ans_docs_pre)
+                retrievedDocNames_pre = arrayfun(@(x) string(x.name), ans_docs_pre);
             end
             for i = 1:numDocs
                 expectedDocName = "serial_doc_" + i;
@@ -175,12 +175,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_docs = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
-            testCase.verifyNumElements(ans_docs.documents, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
+            testCase.verifyNumElements(ans_docs, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
 
             narrative(end+1) = "VERIFICATION: Verifying content of each published document.";
             retrievedDocNames = string([]);
-            if isfield(ans_docs, 'documents') && ~isempty(ans_docs.documents)
-                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs.documents);
+            if ~isempty(ans_docs)
+                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs);
             end
 
             for i = 1:numDocs
@@ -273,12 +273,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_docs_pre = ndi.unittest.cloud.APIMessage(narrative, b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre);
             testCase.verifyTrue(b_docs_pre, "Failed to list documents of dataset before publishing. " + msg_docs_pre);
-            testCase.verifyNumElements(ans_docs_pre.documents, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
+            testCase.verifyNumElements(ans_docs_pre, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
 
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Verifying content of each document.";
             retrievedDocNames_pre = string([]);
-            if isfield(ans_docs_pre, 'documents') && ~isempty(ans_docs_pre.documents)
-                retrievedDocNames_pre = arrayfun(@(x) string(x.name), ans_docs_pre.documents);
+            if ~isempty(ans_docs_pre)
+                retrievedDocNames_pre = arrayfun(@(x) string(x.name), ans_docs_pre);
             end
             for i = 1:numDocs
                 expectedDocName = "mixed_doc_" + i;
@@ -322,12 +322,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_docs = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
-            testCase.verifyNumElements(ans_docs.documents, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
+            testCase.verifyNumElements(ans_docs, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
 
             narrative(end+1) = "VERIFICATION: Verifying content of each published document.";
             retrievedDocNames = string([]);
-            if isfield(ans_docs, 'documents') && ~isempty(ans_docs.documents)
-                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs.documents);
+            if ~isempty(ans_docs)
+                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs);
             end
 
             for i = 1:numDocs
@@ -425,12 +425,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_docs_pre = ndi.unittest.cloud.APIMessage(narrative, b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre);
             testCase.verifyTrue(b_docs_pre, "Failed to list documents of dataset before publishing. " + msg_docs_pre);
-            testCase.verifyNumElements(ans_docs_pre.documents, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
+            testCase.verifyNumElements(ans_docs_pre, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
 
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Verifying content of each document.";
             retrievedDocNames_pre = string([]);
-            if isfield(ans_docs_pre, 'documents') && ~isempty(ans_docs_pre.documents)
-                retrievedDocNames_pre = arrayfun(@(x) string(x.name), ans_docs_pre.documents);
+            if ~isempty(ans_docs_pre)
+                retrievedDocNames_pre = arrayfun(@(x) string(x.name), ans_docs_pre);
             end
             for i = 1:numDocs
                 expectedDocName = "bulk_doc_" + i;
@@ -474,12 +474,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_docs = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
-            testCase.verifyNumElements(ans_docs.documents, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
+            testCase.verifyNumElements(ans_docs, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
 
             narrative(end+1) = "VERIFICATION: Verifying content of each published document.";
             retrievedDocNames = string([]);
-            if isfield(ans_docs, 'documents') && ~isempty(ans_docs.documents)
-                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs.documents);
+            if ~isempty(ans_docs)
+                retrievedDocNames = arrayfun(@(x) string(x.name), ans_docs);
             end
 
             for i = 1:numDocs
