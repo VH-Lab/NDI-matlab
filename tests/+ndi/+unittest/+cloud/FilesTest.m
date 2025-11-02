@@ -110,20 +110,17 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
-            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
-            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
-            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
-            if ~b_get_dset, return; end
-            cloudDatasetInfo = ans_get_dset;
-            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
-            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
-            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
-            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
-            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
+            if ~b_list, return; end
+            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains 1 file.";
+            testCase.verifyNumElements(file_list, 1, "Dataset file list does not contain exactly one file. " + msg_list);
+            if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
-            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -200,20 +197,17 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
-            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
-            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
-            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
-            if ~b_get_dset, return; end
-            cloudDatasetInfo = ans_get_dset;
-            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
-            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
-            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
-            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
-            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
+            if ~b_list, return; end
+            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains 1 file.";
+            testCase.verifyNumElements(file_list, 1, "Dataset file list does not contain exactly one file. " + msg_list);
+            if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
-            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -287,20 +281,17 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
-            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
-            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
-            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
-            if ~b_get_dset, return; end
-            cloudDatasetInfo = ans_get_dset;
-            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
-            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
-            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
-            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
-            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
+            if ~b_list, return; end
+            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains 1 file.";
+            testCase.verifyNumElements(file_list, 1, "Dataset file list does not contain exactly one file. " + msg_list);
+            if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
-            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -374,15 +365,14 @@ classdef FilesTest < matlab.unittest.TestCase
             narrative(end+1) = "Successfully obtained upload URL.";
             % Step 2.5: Verify the file does not yet appear in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list to ensure it is empty.";
-            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
-            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
-            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
-            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
-            if ~b_get_dset, return; end
-            cloudDatasetInfo = ans_get_dset;
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
+            if ~b_list, return; end
             narrative(end+1) = "Testing: Verifying that the dataset's file list is empty.";
-            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && isempty(cloudDatasetInfo.files), "Dataset info should have an empty 'files' field before upload. " + msg_get_dset);
+            testCase.verifyEmpty(file_list, "Dataset file list should be empty before upload. " + msg_list);
             narrative(end+1) = "File list is correctly empty before upload.";
             % Step 3: Upload the file using the URL
             narrative(end+1) = "Preparing to upload the file using the pre-signed URL (useCurl is true).";
@@ -395,20 +385,17 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_get_dset, ans_get_dset, resp_get_dset, url_get_dset] = ndi.cloud.api.datasets.getDataset(testCase.DatasetID);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_get_dset);
-            msg_get_dset = ndi.unittest.cloud.APIMessage(narrative, b_get_dset, ans_get_dset, resp_get_dset, url_get_dset);
-            narrative(end+1) = "Testing: Verifying that getDataset call was successful.";
-            testCase.verifyTrue(b_get_dset, "Failed to get dataset info to check file list. " + msg_get_dset);
-            if ~b_get_dset, return; end
-            cloudDatasetInfo = ans_get_dset;
-            narrative(end+1) = "Testing: Verifying that the dataset's file list is not empty and contains 1 file.";
-            testCase.verifyTrue(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files), "Dataset info does not contain a 'files' field or it is empty. " + msg_get_dset);
-            if ~(isfield(cloudDatasetInfo, 'files') && ~isempty(cloudDatasetInfo.files)), return; end
-            testCase.verifyNumElements(cloudDatasetInfo.files, 1, "Dataset file list does not contain exactly one file. " + msg_get_dset);
-            if numel(cloudDatasetInfo.files) ~= 1, return; end
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
+            if ~b_list, return; end
+            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains 1 file.";
+            testCase.verifyNumElements(file_list, 1, "Dataset file list does not contain exactly one file. " + msg_list);
+            if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
-            testCase.verifyEqual(cloudDatasetInfo.files(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_get_dset);
+            testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
