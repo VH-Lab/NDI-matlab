@@ -24,6 +24,9 @@ function [duplicateDocs, originalDocs] = duplicateDocuments(cloudDatasetId, opti
 % | 'maximumDeleteBatchSize' | The maximum number of documents to delete in  |
 % |                          | a single bulk operation.                      |
 % |                          | (Default: 100)                                |
+% | 'verbose'                | A boolean value (true/false) indicating       |
+% |                          | whether to display status messages.           |
+% |                          | (Default: false)                              |
 %
 % Outputs:
 %   DUPLICATEDOCS - A struct array of the documents that were identified as
@@ -39,14 +42,19 @@ arguments
     cloudDatasetId (1,:) char {mustBeText}
     options.deleteDuplicates (1,1) logical = true
     options.maximumDeleteBatchSize (1,1) {mustBeInteger, mustBePositive} = 100
+    options.verbose (1,1) logical = false
 end
 
 duplicateDocs = struct('id', {});
 originalDocs = struct('id', {});
 
-disp(['Searching for all documents...']);
+if options.verbose
+    disp(['Searching for all documents...']);
+end
 [~, allDocs] = ndi.cloud.api.documents.listDatasetDocumentsAll(cloudDatasetId);
-disp(['Done.']);
+if options.verbose
+    disp(['Done.']);
+end
 
 if isempty(allDocs)
     return;
@@ -84,7 +92,9 @@ originalDocs = values(docMap)';
 
 % Delete duplicates if requested
 if options.deleteDuplicates && ~isempty(duplicateDocs)
-    disp(['Found ' int2str(numel(duplicateDocs)) ' duplicates to delete.']);
+    if options.verbose
+        disp(['Found ' int2str(numel(duplicateDocs)) ' duplicates to delete.']);
+    end
 
     docIdsToDelete = {duplicateDocs.id};
 
@@ -96,17 +106,27 @@ if options.deleteDuplicates && ~isempty(duplicateDocs)
 
         batchIds = docIdsToDelete(startIndex:endIndex);
 
-        disp(['Deleting batch ' int2str(i) ' of ' int2str(numBatches) '...']);
+        if options.verbose
+            disp(['Deleting batch ' int2str(i) ' of ' int2str(numBatches) '...']);
+        end
         ndi.cloud.api.documents.bulkDeleteDocuments(cloudDatasetId, batchIds);
-        disp(['Batch ' int2str(i) ' deleted.']);
+        if options.verbose
+            disp(['Batch ' int2str(i) ' deleted.']);
+        end
     end
 
-    disp('All duplicate documents deleted.');
+    if options.verbose
+        disp('All duplicate documents deleted.');
+    end
 else
     if isempty(duplicateDocs)
-        disp('No duplicate documents found.');
+        if options.verbose
+            disp('No duplicate documents found.');
+        end
     else
-        disp(['Found ' int2str(numel(duplicateDocs)) ' duplicates, but deletion was not requested.']);
+        if options.verbose
+            disp(['Found ' int2str(numel(duplicateDocs)) ' duplicates, but deletion was not requested.']);
+        end
     end
 end
 
