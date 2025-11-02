@@ -66,7 +66,7 @@ docMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
 % Identify originals and duplicates
 for i = 1:numel(allDocs)
     currentDoc = allDocs(i);
-    ndiId = currentDoc.document_properties.ndi_document.id;
+    ndiId = currentDoc.ndiId;
 
     if ~isKey(docMap, ndiId)
         % First time seeing this NDI ID, so it's the current original
@@ -75,8 +75,8 @@ for i = 1:numel(allDocs)
         % We have a potential duplicate, decide which is the original
         existingDoc = docMap(ndiId);
 
-        % The one with the alphabetically earlier cloud_dataset_id is the original
-        if strcmp(currentDoc.document_properties.cloud_dataset_id, existingDoc.document_properties.cloud_dataset_id) < 0
+        % The one with the alphabetically earlier cloud document ID is the original
+        if strcmp(currentDoc.id, existingDoc.id) < 0
             % The new one is the original, the old one is a duplicate
             duplicateDocs(end+1) = existingDoc;
             docMap(ndiId) = currentDoc;
