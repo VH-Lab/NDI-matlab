@@ -24,7 +24,13 @@ function [b, answer, apiResponse, apiURL] = listDatasetDocumentsAll(cloudDataset
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
-%       answer       - A struct containing the complete document list on success, or an error message on failure.
+%       answer       - A struct containing the document list on success, or an
+%                      error struct on failure. The 'documents' field of the
+%                      answer is a struct array with the following fields:
+%                          id        - The document's ID on the cloud system.
+%                          ndiId     - The NDI document ID.
+%                          name      - The 'base.name' field, if it exists.
+%                          className - The NDI document's class name.
 %       apiResponse  - The full matlab.net.http.ResponseMessage object from the LAST successful page call.
 %       apiURL       - The URL that was called for the LAST successful page.
 %

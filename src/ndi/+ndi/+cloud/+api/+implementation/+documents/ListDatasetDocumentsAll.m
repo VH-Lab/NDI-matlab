@@ -65,7 +65,7 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
             %
             % Initialize outputs
             b = true;
-            answer = struct('documents',[]);
+            answer = struct('documents', struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {}));
             apiResponse = matlab.net.http.ResponseMessage.empty;
             apiURL = matlab.net.URI.empty;
 
@@ -113,9 +113,6 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
                 end
             end
 
-            if isfield(answer, 'documents') && isempty(answer.documents) && ~iscell(answer.documents)
-                answer.documents = {};
-            end
         end
     end
 

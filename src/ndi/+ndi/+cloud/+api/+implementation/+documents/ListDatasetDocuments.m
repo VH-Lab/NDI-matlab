@@ -50,9 +50,32 @@ classdef ListDatasetDocuments < ndi.cloud.api.call
             if (apiResponse.StatusCode == 200)
                 b = true;
                 answer = apiResponse.Body.Data;
-                if isfield(answer, 'documents') && isempty(answer.documents) && ~iscell(answer.documents)
-                    answer.documents = {};
+
+                % Standardize the output format
+                new_documents = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
+
+                if isfield(answer, 'documents') && ~isempty(answer.documents)
+                    for i = 1:numel(answer.documents)
+                        doc = answer.documents(i);
+
+                        entry.id = doc.id;
+                        entry.ndiId = doc.ndiDocument.id;
+                        entry.className = doc.ndiDocument.document_class.class_name;
+
+                        % Safely access the nested 'name' field
+                        if isfield(doc.ndiDocument, 'document_properties') && ...
+                           isfield(doc.ndiDocument.document_properties, 'base') && ...
+                           isfield(doc.ndiDocument.document_properties.base, 'name')
+                            entry.name = doc.ndiDocument.document_properties.base.name;
+                        else
+                            entry.name = '';
+                        end
+
+                        new_documents(end+1) = entry;
+                    end
                 end
+
+                answer.documents = new_documents;
             else
                 if isprop(apiResponse.Body, 'Data')
                     answer = apiResponse.Body.Data;
