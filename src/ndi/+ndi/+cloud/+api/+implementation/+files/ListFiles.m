@@ -71,7 +71,8 @@ classdef ListFiles < ndi.cloud.api.call
             if fileMap.Count == 0
                 answer = empty_answer;
             else
-                answer = [fileMap.values{:}]';
+                vals = values(fileMap);
+                answer = [vals{:}]';
             end
         end
     end
