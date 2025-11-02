@@ -542,5 +542,61 @@ classdef FilesTest < matlab.unittest.TestCase
             
             testCase.Narrative = narrative;
         end
+
+        function testListFilesWithOptions(testCase)
+            testCase.Narrative = "Begin testListFilesWithOptions";
+            narrative = testCase.Narrative;
+
+            % Step 1: Create and upload a file
+            narrative(end+1) = "SETUP: Creating and uploading a file.";
+            import matlab.unittest.fixtures.TemporaryFolderFixture;
+            tempFolder = testCase.applyFixture(TemporaryFolderFixture);
+            fileUID = string(did.ido.unique_id());
+            localFilePath = fullfile(tempFolder.Folder, fileUID);
+            try
+                fid = fopen(localFilePath, 'w');
+                fprintf(fid, '%s', testCase.TestFileContent);
+                fclose(fid);
+            catch ME
+                testCase.verifyFail("Failed to create local test file. " + ME.message);
+                return;
+            end
+
+            [b_url, ans_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUID);
+            testCase.verifyTrue(b_url, "Failed to get upload URL.");
+            if ~b_url, return; end
+
+            [b_put] = ndi.cloud.api.files.putFiles(ans_url, localFilePath, "useCurl", true);
+            testCase.verifyTrue(b_put, "Failed to upload file.");
+            if ~b_put, return; end
+
+            narrative(end+1) = "File uploaded successfully.";
+
+            pause(10); % Give server time to process
+
+            % Step 2: Call listFiles with checkForUpdates enabled
+            narrative(end+1) = "Calling listFiles with checkForUpdates=true.";
+            [b_list_true, file_list_true, resp_list_true, url_list_true] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+                'checkForUpdates', true, 'waitForUpdates', 1, 'maximumNumberUpdateReads', 2);
+
+            msg_list_true = ndi.unittest.cloud.APIMessage(narrative, b_list_true, file_list_true, resp_list_true, url_list_true);
+            testCase.verifyTrue(b_list_true, "listFiles with updates enabled failed. " + msg_list_true);
+            testCase.verifyNumElements(file_list_true, 1, "Expected to find 1 file with update check enabled. " + msg_list_true);
+            testCase.verifyEqual(file_list_true(1).uid, char(fileUID), "Incorrect UID with update check enabled. " + msg_list_true);
+            narrative(end+1) = "Successfully listed 1 file with update check enabled.";
+
+            % Step 3: Call listFiles with checkForUpdates disabled
+            narrative(end+1) = "Calling listFiles with checkForUpdates=false.";
+            [b_list_false, file_list_false, resp_list_false, url_list_false] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+                'checkForUpdates', false);
+
+            msg_list_false = ndi.unittest.cloud.APIMessage(narrative, b_list_false, file_list_false, resp_list_false, url_list_false);
+            testCase.verifyTrue(b_list_false, "listFiles with updates disabled failed. " + msg_list_false);
+            testCase.verifyNumElements(file_list_false, 1, "Expected to find 1 file with update check disabled. " + msg_list_false);
+            testCase.verifyEqual(file_list_false(1).uid, char(fileUID), "Incorrect UID with update check disabled. " + msg_list_false);
+            narrative(end+1) = "Successfully listed 1 file with update check disabled.";
+
+            testCase.Narrative = narrative;
+        end
     end
 end
