@@ -54,15 +54,15 @@ if options.verbose
     disp(['Done.']);
 end
 
-if isempty(allDocsStruct.documents)
+if isempty(allDocsStruct)
     return;
 end
 
 % --- Struct Normalization ---
 % Get all unique field names from all document summaries
 allFields = {};
-for i = 1:numel(allDocsStruct.documents)
-    allFields = union(allFields, fieldnames(allDocsStruct.documents(i)));
+for i = 1:numel(allDocsStruct)
+    allFields = union(allFields, fieldnames(allDocsStruct(i)));
 end
 
 % Create a template struct with all fields initialized to empty
@@ -72,9 +72,9 @@ for i = 1:numel(allFields)
 end
 
 % Create a normalized array of structs
-allDocs = repmat(templateStruct, numel(allDocsStruct.documents), 1);
-for i = 1:numel(allDocsStruct.documents)
-    currentDoc = allDocsStruct.documents(i);
+allDocs = repmat(templateStruct, numel(allDocsStruct), 1);
+for i = 1:numel(allDocsStruct)
+    currentDoc = allDocsStruct(i);
     fields = fieldnames(currentDoc);
     for j = 1:numel(fields)
         allDocs(i).(fields{j}) = currentDoc.(fields{j});

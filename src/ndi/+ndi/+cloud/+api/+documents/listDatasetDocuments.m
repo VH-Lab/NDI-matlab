@@ -13,9 +13,8 @@ function [b, answer, apiResponse, apiURL] = listDatasetDocuments(cloudDatasetID,
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
-%       answer       - A struct containing the document list on success, or an
-%                      error struct on failure. The 'documents' field of the
-%                      answer is a struct array with the following fields:
+%       answer       - A struct array of document summaries on success, or an
+%                      error struct on failure, with the following fields:
 %                          id        - The document's ID on the cloud system.
 %                          ndiId     - The NDI document ID.
 %                          name      - The 'base.name' field, if it exists.

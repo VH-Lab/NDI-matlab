@@ -59,13 +59,13 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
             %
             %   Outputs:
             %       b            - True if all pages were read successfully, false otherwise.
-            %       answer       - A struct with a 'documents' field containing all summaries, or an error struct.
+            %       answer       - A struct array of document summaries on success, or an error struct.
             %       apiResponse  - An array of matlab.net.http.ResponseMessage objects from all page calls.
             %       apiURL       - An array of URLs that were called.
             %
             % Initialize outputs
             b = true;
-            answer = struct('documents', struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {}));
+            answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
             apiResponse = matlab.net.http.ResponseMessage.empty;
             apiURL = matlab.net.URI.empty;
 
@@ -132,20 +132,20 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
                 apiResponse(end+1) = resp_page;
 
                 if b_page
-                    if isempty(answer.documents)
+                    if isempty(answer)
                         answer = ans_page;
                     else
-                        new_docs = ans_page.documents;
+                        new_docs = ans_page;
                         if ~isempty(new_docs)
                             if deduplicate
-                                existing_ids = string({answer.documents.id});
+                                existing_ids = string({answer.id});
                                 new_ids = string({new_docs.id});
                                 [~, new_indices] = setdiff(new_ids, existing_ids);
                                 if ~isempty(new_indices)
-                                    answer.documents = cat(1, answer.documents, new_docs(new_indices));
+                                    answer = cat(1, answer, new_docs(new_indices));
                                 end
                             else
-                                answer.documents = cat(1, answer.documents, new_docs);
+                                answer = cat(1, answer, new_docs);
                             end
                         end
                     end
