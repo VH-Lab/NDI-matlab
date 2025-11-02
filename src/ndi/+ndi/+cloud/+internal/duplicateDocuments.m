@@ -4,14 +4,12 @@ function [duplicateDocs, originalDocs] = duplicateDocuments(cloudDatasetId, opti
 % [DUPLICATEDOCS, ORIGINALDOCS] = ndi.cloud.internal.duplicateDocuments(CLOUDDATASETID, ...)
 %
 % This function identifies duplicate documents within a specified NDI cloud dataset.
-% Duplicates are defined as documents that share the same 'ndi.document.id' but may have
-% different cloud-specific '_id' values. This situation can arise, for example,
-% when a dataset is copied or merged on the cloud.
+% Duplicates are defined as documents that share the same 'ndi.document.id' (or 'name'
+% as a fallback) but may have different cloud-specific '_id' values.
 %
 % The function determines which document to keep as the 'original' and which to
-% mark as a 'duplicate' based on the alphabetical order of their 'cloud_dataset_id'.
-% The document with the alphabetically earliest 'cloud_dataset_id' is considered
-% the original, and all others with the same 'ndi.document.id' are duplicates.
+% mark as a 'duplicate' based on the alphabetical order of their unique cloud document
+% ID ('id'). The one with the alphabetically earliest 'id' is kept.
 %
 % By default, this function will delete the identified duplicate documents from the
 % cloud dataset. This behavior can be controlled using a name-value pair.
@@ -45,29 +43,54 @@ arguments
     options.verbose (1,1) logical = false
 end
 
-duplicateDocs = struct('id', {});
-originalDocs = struct('id', {});
+duplicateDocs = struct([]);
+originalDocs = struct([]);
 
 if options.verbose
     disp(['Searching for all documents...']);
 end
-[~, allDocs] = ndi.cloud.api.documents.listDatasetDocumentsAll(cloudDatasetId);
+[~, allDocsStruct] = ndi.cloud.api.documents.listDatasetDocumentsAll(cloudDatasetId);
 if options.verbose
     disp(['Done.']);
 end
 
-if isempty(allDocs.documents)
+if isempty(allDocsStruct.documents)
     return;
 end
 
-% Use a map to track documents by their NDI ID
+% --- Struct Normalization ---
+% Get all unique field names from all document summaries
+allFields = {};
+for i = 1:numel(allDocsStruct.documents)
+    allFields = union(allFields, fieldnames(allDocsStruct.documents(i)));
+end
+
+% Create a template struct with all fields initialized to empty
+templateStruct = struct();
+for i = 1:numel(allFields)
+    templateStruct.(allFields{i}) = [];
+end
+
+% Create a normalized array of structs
+allDocs = repmat(templateStruct, numel(allDocsStruct.documents), 1);
+for i = 1:numel(allDocsStruct.documents)
+    currentDoc = allDocsStruct.documents(i);
+    fields = fieldnames(currentDoc);
+    for j = 1:numel(fields)
+        allDocs(i).(fields{j}) = currentDoc.(fields{j});
+    end
+end
+% --- End Normalization ---
+
+% Now that we have a homogeneous struct array, initialize the outputs
+duplicateDocs = allDocs([]);
+
 docMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
 
 % Identify originals and duplicates
-for i = 1:numel(allDocs.documents)
-    currentDoc = allDocs.documents(i);
+for i = 1:numel(allDocs)
+    currentDoc = allDocs(i);
 
-    % Use ndiId as the primary key if it exists, otherwise fall back to name
     if isfield(currentDoc, 'ndiId') && ~isempty(currentDoc.ndiId)
         doc_group_key = currentDoc.ndiId;
     else
@@ -75,28 +98,25 @@ for i = 1:numel(allDocs.documents)
     end
 
     if ~isKey(docMap, doc_group_key)
-        % First time seeing this key, so it's the current original
         docMap(doc_group_key) = currentDoc;
     else
-        % We have a potential duplicate, decide which is the original
         existingDoc = docMap(doc_group_key);
-
-        % The one with the alphabetically earlier cloud document ID is the original
         if strcmp(currentDoc.id, existingDoc.id) < 0
-            % The new one is the original, the old one is a duplicate
             duplicateDocs(end+1) = existingDoc;
             docMap(doc_group_key) = currentDoc;
         else
-            % The old one is the original, the new one is a duplicate
             duplicateDocs(end+1) = currentDoc;
         end
     end
 end
 
-% The originals are the final values left in the map
-originalDocs = values(docMap)';
+originalDocsCell = values(docMap);
+if ~isempty(originalDocsCell)
+    originalDocs = [originalDocsCell{:}]';
+else
+    originalDocs = allDocs([]);
+end
 
-% Delete duplicates if requested
 if options.deleteDuplicates && ~isempty(duplicateDocs)
     if options.verbose
         disp(['Found ' int2str(numel(duplicateDocs)) ' duplicates to delete.']);
