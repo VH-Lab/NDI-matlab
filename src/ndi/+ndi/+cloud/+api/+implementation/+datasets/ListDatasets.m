@@ -33,7 +33,7 @@ classdef ListDatasets < ndi.cloud.api.call
             
             % Initialize outputs
             b = false;
-            answer = [];
+            answer = {};
 
             [token, org_id_env] = ndi.cloud.authenticate();
             
@@ -56,9 +56,11 @@ classdef ListDatasets < ndi.cloud.api.call
             
             if (apiResponse.StatusCode == 200)
                 b = true;
-                answer = apiResponse.Body.Data.datasets;
+                if isfield(apiResponse.Body.Data, 'datasets') && ~isempty(apiResponse.Body.Data.datasets)
+                    answer = apiResponse.Body.Data.datasets;
+                end
             else
-                answer = apiResponse.Body.Data;
+                answer = {};
             end
         end
     end
