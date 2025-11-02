@@ -3,6 +3,9 @@ classdef ListFiles < ndi.cloud.api.call
 
     properties
         cloudDatasetId (1,1) string
+        checkForUpdates (1,1) logical = true
+        waitForUpdates (1,1) {mustBeNumeric} = 10
+        maximumNumberUpdateReads (1,1) {mustBeNumeric} = 100
     end
 
     methods
@@ -10,8 +13,14 @@ classdef ListFiles < ndi.cloud.api.call
             %LISTFILES Construct a new ListFiles object.
             arguments
                 args.cloudDatasetId (1,1) string
+                args.checkForUpdates (1,1) logical = true
+                args.waitForUpdates (1,1) {mustBeNumeric} = 10
+                args.maximumNumberUpdateReads (1,1) {mustBeNumeric} = 100
             end
             this.cloudDatasetId = args.cloudDatasetId;
+            this.checkForUpdates = args.checkForUpdates;
+            this.waitForUpdates = args.waitForUpdates;
+            this.maximumNumberUpdateReads = args.maximumNumberUpdateReads;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -21,33 +30,48 @@ classdef ListFiles < ndi.cloud.api.call
             empty_answer = struct('uid', {}, 'isRaw', {}, 'uploaded', {}, ...
                                   'sourceDatasetId', {}, 'size', {});
 
-            % Call the getDataset function
-            [b, dsetInfo, apiResponse, apiURL] = ndi.cloud.api.datasets.getDataset(this.cloudDatasetId);
+            fileMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            updateReads = 0;
 
-            if ~b
-                % If the API call failed, return the error answer
-                answer = dsetInfo;
-                return;
+            while updateReads < this.maximumNumberUpdateReads
+                initialFileCount = fileMap.Count;
+
+                % Call the getDataset function
+                [b, dsetInfo, apiResponse, apiURL] = ndi.cloud.api.datasets.getDataset(this.cloudDatasetId);
+
+                if ~b
+                    % If the API call failed, return the error answer
+                    answer = dsetInfo;
+                    return;
+                end
+
+                % Check if the 'files' field exists and is not empty
+                if ~isempty(dsetInfo) && isfield(dsetInfo, 'files') && ~isempty(dsetInfo.files)
+                    for i = 1:numel(dsetInfo.files)
+                        file = dsetInfo.files(i);
+                        if ~isKey(fileMap, file.uid)
+                            fileMap(file.uid) = struct(...
+                                'uid', file.uid, ...
+                                'isRaw', file.isRaw, ...
+                                'uploaded', file.uploaded, ...
+                                'sourceDatasetId', file.sourceDatasetId, ...
+                                'size', file.size);
+                        end
+                    end
+                end
+
+                if ~this.checkForUpdates || fileMap.Count == initialFileCount
+                    break;
+                end
+
+                pause(this.waitForUpdates);
+                updateReads = updateReads + 1;
             end
 
-            % Check if the 'files' field exists and is not empty
-            if isempty(dsetInfo) || ~isfield(dsetInfo, 'files') || isempty(dsetInfo.files)
+            if fileMap.Count == 0
                 answer = empty_answer;
-                return;
-            end
-
-            % If we have files, process them into the desired format
-            numFiles = numel(dsetInfo.files);
-            answer(numFiles) = struct('uid', [], 'isRaw', [], 'uploaded', [], ...
-                                      'sourceDatasetId', [], 'size', []);
-
-            for i = 1:numFiles
-                file = dsetInfo.files(i);
-                answer(i).uid = file.uid;
-                answer(i).isRaw = file.isRaw;
-                answer(i).uploaded = file.uploaded;
-                answer(i).sourceDatasetId = file.sourceDatasetId;
-                answer(i).size = file.size;
+            else
+                answer = [fileMap.values{:}]';
             end
         end
     end
