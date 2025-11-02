@@ -55,23 +55,31 @@ classdef ListDatasetDocuments < ndi.cloud.api.call
                 answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
 
                 if isfield(raw_answer, 'documents') && ~isempty(raw_answer.documents)
-                    for i = 1:numel(raw_answer.documents)
-                        doc = raw_answer.documents(i);
+                    docs_from_api = raw_answer.documents;
+                    for i = 1:numel(docs_from_api)
+                        doc_in = docs_from_api(i);
 
-                        entry.id = doc.id;
-                        entry.ndiId = doc.ndiDocument.id;
-                        entry.className = doc.ndiDocument.document_class.class_name;
+                        doc_out.id = doc_in.id; % id is guaranteed to be there
 
-                        % Safely access the nested 'name' field
-                        if isfield(doc.ndiDocument, 'document_properties') && ...
-                           isfield(doc.ndiDocument.document_properties, 'base') && ...
-                           isfield(doc.ndiDocument.document_properties.base, 'name')
-                            entry.name = doc.ndiDocument.document_properties.base.name;
+                        if isfield(doc_in, 'ndiId') && ~isempty(doc_in.ndiId)
+                            doc_out.ndiId = doc_in.ndiId;
                         else
-                            entry.name = '';
+                            doc_out.ndiId = '';
                         end
 
-                        answer(end+1) = entry;
+                        if isfield(doc_in, 'name') && ~isempty(doc_in.name)
+                            doc_out.name = doc_in.name;
+                        else
+                            doc_out.name = '';
+                        end
+
+                        if isfield(doc_in, 'className') && ~isempty(doc_in.className)
+                            doc_out.className = doc_in.className;
+                        else
+                            doc_out.className = '';
+                        end
+
+                        answer(end+1) = doc_out;
                     end
                 end
             else

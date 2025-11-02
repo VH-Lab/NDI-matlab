@@ -209,7 +209,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, ans_list, resp_list, url_list);
             testCase.verifyTrue(b_list, msg_list);
             narrative(end+1) = "Testing: Verifying the number of documents on the first page is correct.";
-            testCase.verifyNumElements(ans_list.documents, pageSize, msg_list);
+            testCase.verifyNumElements(ans_list, pageSize, msg_list);
             narrative(end+1) = "Paginated list returned correct number of documents for the page size.";
             % Step 8: Test listDatasetDocumentsAll
             narrative(end+1) = "Preparing to test 'list all' documents functionality.";
@@ -219,12 +219,12 @@ classdef DocumentsTest < matlab.unittest.TestCase
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
             testCase.verifyTrue(b_list_all, msg_list_all);
             narrative(end+1) = "Testing: Verifying the total number of documents returned by 'list all' is correct.";
-            testCase.verifyNumElements(ans_list_all.documents, numDocs, msg_list_all);
+            testCase.verifyNumElements(ans_list_all, numDocs, msg_list_all);
             narrative(end+1) = "'List all' returned the correct total number of documents.";
             % Step 8.5: Verify content of each document individually by linking summary to full doc
             narrative(end+1) = "Preparing to verify the content of each uploaded document individually.";
-            for i=1:numel(ans_list_all.documents)
-                summary_doc = ans_list_all.documents(i);
+            for i=1:numel(ans_list_all)
+                summary_doc = ans_list_all(i);
                 cloud_id_from_summary = summary_doc.id;
                 name_from_summary = summary_doc.name;
                 
@@ -257,7 +257,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             msg_list_final = ndi.unittest.cloud.APIMessage(narrative, b_list_final, ans_list_final, resp_list_final, url_list_final);
             testCase.verifyTrue(b_list_final, msg_list_final);
             narrative(end+1) = "Testing: Verifying the paginated document list is empty.";
-            testCase.verifyTrue(isempty(ans_list_final.documents), msg_list_final);
+            testCase.verifyTrue(isempty(ans_list_final), msg_list_final);
             narrative(end+1) = "Paginated document list is correctly empty.";
             narrative(end+1) = "Preparing to confirm 'list all' document list is empty after deletion.";
             [b_list_all_final, ans_list_all_final, resp_list_all_final, url_list_all_final] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
@@ -266,7 +266,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             msg_list_all_final = ndi.unittest.cloud.APIMessage(narrative, b_list_all_final, ans_list_all_final, resp_list_all_final, url_list_all_final);
             testCase.verifyTrue(b_list_all_final, msg_list_all_final);
             narrative(end+1) = "Testing: Verifying the 'list all' document list is empty.";
-            testCase.verifyTrue(isempty(ans_list_all_final.documents), msg_list_all_final);
+            testCase.verifyTrue(isempty(ans_list_all_final), msg_list_all_final);
             narrative(end+1) = "'List all' document list is correctly empty.";
             % Step 11: Confirm document count is zero
             narrative(end+1) = "Preparing to confirm document count is zero after deletion.";
@@ -291,10 +291,10 @@ classdef DocumentsTest < matlab.unittest.TestCase
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, ans_list, resp_list, url_list);
             testCase.fatalAssertTrue(b_list, "API call to listDatasetDocuments failed. " + msg_list);
 
-            narrative(end+1) = "Testing: Verifying that the 'documents' field is a struct.";
-            testCase.verifyTrue(isstruct(ans_list.documents), "ans_list.documents is not a struct. " + msg_list);
-            narrative(end+1) = "Testing: Verifying that the 'documents' field is empty.";
-            testCase.verifyTrue(isempty(ans_list.documents), "ans_list.documents is not empty. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the answer is a struct.";
+            testCase.verifyTrue(isstruct(ans_list), "ans_list is not a struct. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the answer is empty.";
+            testCase.verifyTrue(isempty(ans_list), "ans_list is not empty. " + msg_list);
 
             % 2. listDatasetDocumentsAll
             narrative(end+1) = "Preparing to call listDatasetDocumentsAll on an empty dataset.";
@@ -302,10 +302,10 @@ classdef DocumentsTest < matlab.unittest.TestCase
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
             testCase.fatalAssertTrue(b_list_all, "API call to listDatasetDocumentsAll failed. " + msg_list_all);
 
-            narrative(end+1) = "Testing: Verifying that the 'documents' field is a struct.";
-            testCase.verifyTrue(isstruct(ans_list_all.documents), "ans_list_all.documents is not a struct. " + msg_list_all);
-            narrative(end+1) = "Testing: Verifying that the 'documents' field is empty.";
-            testCase.verifyTrue(isempty(ans_list_all.documents), "ans_list_all.documents is not empty. " + msg_list_all);
+            narrative(end+1) = "Testing: Verifying that the answer is a struct.";
+            testCase.verifyTrue(isstruct(ans_list_all), "ans_list_all is not a struct. " + msg_list_all);
+            narrative(end+1) = "Testing: Verifying that the answer is empty.";
+            testCase.verifyTrue(isempty(ans_list_all), "ans_list_all is not empty. " + msg_list_all);
 
             testCase.Narrative = narrative;
         end
@@ -355,13 +355,13 @@ classdef DocumentsTest < matlab.unittest.TestCase
             [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
             testCase.fatalAssertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
-            cloudDocIDs = {ans_list_all.documents.id};
+            cloudDocIDs = {ans_list_all.id};
             narrative(end+1) = "Successfully listed " + numel(cloudDocIDs) + " document summaries.";
             
             % Step 5: Verify content of each document individually
             narrative(end+1) = "Preparing to verify the content of each uploaded document individually.";
-            for i=1:numel(ans_list_all.documents)
-                summary_doc = ans_list_all.documents(i);
+            for i=1:numel(ans_list_all)
+                summary_doc = ans_list_all(i);
                 cloud_id_from_summary = summary_doc.id;
                 name_from_summary = summary_doc.name;
                 
@@ -547,13 +547,13 @@ classdef DocumentsTest < matlab.unittest.TestCase
             [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
             testCase.fatalAssertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
-            cloudDocIDs = {ans_list_all.documents.id};
+            cloudDocIDs = {ans_list_all.id};
             narrative(end+1) = "Successfully listed " + numel(cloudDocIDs) + " document summaries.";
             
             % Step 5: Verify content of each document individually
             narrative(end+1) = "Preparing to verify the content of each uploaded NaN/Inf document individually.";
-            for i=1:numel(ans_list_all.documents)
-                summary_doc = ans_list_all.documents(i);
+            for i=1:numel(ans_list_all)
+                summary_doc = ans_list_all(i);
                 cloud_id_from_summary = summary_doc.id;
                 name_from_summary = summary_doc.name;
                 
