@@ -278,6 +278,39 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Final document count is correctly 0.";
             testCase.Narrative = narrative; % Save back to property for teardown
         end
+
+
+        function testListDocumentsEmptyStruct(testCase)
+            testCase.Narrative = "Begin testListDocumentsEmptyStruct";
+            narrative = testCase.Narrative;
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+
+            % 1. listDatasetDocuments
+            narrative(end+1) = "Preparing to call listDatasetDocuments on an empty dataset.";
+            [b_list, ans_list, resp_list, url_list] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, ans_list, resp_list, url_list);
+            testCase.fatalAssertTrue(b_list, "API call to listDatasetDocuments failed. " + msg_list);
+
+            narrative(end+1) = "Testing: Verifying that the 'documents' field is a struct.";
+            testCase.verifyTrue(isstruct(ans_list.documents), "ans_list.documents is not a struct. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the 'documents' field is empty.";
+            testCase.verifyTrue(isempty(ans_list.documents), "ans_list.documents is not empty. " + msg_list);
+
+            % 2. listDatasetDocumentsAll
+            narrative(end+1) = "Preparing to call listDatasetDocumentsAll on an empty dataset.";
+            [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
+            testCase.fatalAssertTrue(b_list_all, "API call to listDatasetDocumentsAll failed. " + msg_list_all);
+
+            narrative(end+1) = "Testing: Verifying that the 'documents' field is a struct.";
+            testCase.verifyTrue(isstruct(ans_list_all.documents), "ans_list_all.documents is not a struct. " + msg_list_all);
+            narrative(end+1) = "Testing: Verifying that the 'documents' field is empty.";
+            testCase.verifyTrue(isempty(ans_list_all.documents), "ans_list_all.documents is not empty. " + msg_list_all);
+
+            testCase.Narrative = narrative;
+        end
+
+
         function testBulkUploadAndDownload(testCase)
             testCase.Narrative = "Begin testBulkUploadAndDownload";
             narrative = testCase.Narrative;
