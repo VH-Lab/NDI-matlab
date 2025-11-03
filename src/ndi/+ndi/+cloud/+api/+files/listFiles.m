@@ -9,7 +9,7 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
 %       cloudDatasetId      - The unique identifier for the cloud dataset.
 %       options             - A struct with the following optional fields:
 %           checkForUpdates - If true, the function will check for new files that
-%                             were added while it was running. Default is true.
+%                             were added while it was running. Default is false.
 %           waitForUpdates  - The time in seconds to wait before re-checking for
 %                             updates. Default is 10.
 %           maximumNumberUpdateReads - The maximum number of times to re-poll for
@@ -41,7 +41,7 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
 %
     arguments
         cloudDatasetId (1,1) string
-        options.checkForUpdates (1,1) logical = true
+        options.checkForUpdates (1,1) logical = false
         options.waitForUpdates (1,1) {mustBeNumeric} = 10
         options.maximumNumberUpdateReads (1,1) {mustBeNumeric} = 100
     end

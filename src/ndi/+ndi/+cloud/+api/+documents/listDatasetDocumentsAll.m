@@ -14,7 +14,7 @@ function [b, answer, apiResponse, apiURL] = listDatasetDocumentsAll(cloudDataset
 %       checkForUpdates - (Optional) If true, the function will check for new
 %                         documents that were added while it was running and
 %                         will attempt to retrieve them before returning.
-%                         Default is true.
+%                         Default is false.
 %       waitForUpdates  - (Optional) The time in seconds to wait before
 %                         re-checking the document count for updates.
 %                         Default is 5.
@@ -41,7 +41,7 @@ function [b, answer, apiResponse, apiURL] = listDatasetDocumentsAll(cloudDataset
     arguments
         cloudDatasetID (1,1) string
         args.pageSize (1,1) double = 1000
-        args.checkForUpdates (1,1) logical = true
+        args.checkForUpdates (1,1) logical = false
         args.waitForUpdates (1,1) double = 5
         args.maximumNumberUpdateReads (1,1) double = 100
     end

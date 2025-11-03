@@ -10,6 +10,10 @@ function [b, answer, apiResponse, apiURL] = listDatasetDocuments(cloudDatasetID,
 %   Name-Value Inputs:
 %       page            - (Optional) The page number of results. Default is 1.
 %       pageSize        - (Optional) The number of results per page. Default is 1000.
+%       checkForUpdates - (Optional) If true, the function will check for new
+%                         documents that were added while it was running and
+%                         will attempt to retrieve them before returning.
+%                         Default is false.
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
@@ -35,13 +39,15 @@ function [b, answer, apiResponse, apiURL] = listDatasetDocuments(cloudDatasetID,
         cloudDatasetID (1,1) string
         args.page (1,1) double = 1
         args.pageSize (1,1) double = 1000
+        args.checkForUpdates (1,1) logical = false
     end
 
     % 1. Create an instance of the implementation class.
     api_call = ndi.cloud.api.implementation.documents.ListDatasetDocuments(...
         'cloudDatasetID', cloudDatasetID, ...
         'page', args.page, ...
-        'pageSize', args.pageSize);
+        'pageSize', args.pageSize, ...
+        'checkForUpdates', args.checkForUpdates);
     
     % 2. Call the execute method and return its outputs directly.
     [b, answer, apiResponse, apiURL] = api_call.execute();
