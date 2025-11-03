@@ -33,7 +33,7 @@ classdef testGetHexDiff < matlab.unittest.TestCase
 
             [are_identical, diff_output] = ndi.util.getHexDiff(file1, file2);
             testCase.verifyTrue(are_identical);
-            testCase.verifyTrue(contains(diff_output, 'Files are identical'));
+            testCase.verifyTrue(contains(diff_output, 'Arrays are identical'));
         end
 
         function testDifferentFiles(testCase)

@@ -27,6 +27,7 @@ function [report] = diff(D1,D2)
     arguments
         D1 (1,1) ndi.dataset
         D2 (1,1) ndi.dataset
+        options.verbose (1,1) logical = true
     end
 
     report = struct(...
@@ -34,7 +35,8 @@ function [report] = diff(D1,D2)
         'documentsInBOnly', {{}}, ...
         'mismatchedDocuments', struct('id',{{}}, 'mismatch',{{}}), ...
         'mismatchedFiles', struct('uid',{{}}, 'document_id',{{}}, 'diff',{{}}), ...
-        'fileListDifferences', struct('id',{{}},'filesInAOnly',{{}},'filesInBOnly',{{}}) ...
+        'fileListDifferences', struct('id',{{}},'filesInAOnly',{{}},'filesInBOnly',{{}}), ...
+        'errors', struct('document_id',{{}}, 'file_uid',{{}}, 'message',{{}}) ...
     );
 
     d1_docs = D1.database_search(ndi.query('base.id','regexp','(.*)'));
@@ -58,9 +60,15 @@ function [report] = diff(D1,D2)
 
     common_ids = intersect(d1_ids, d2_ids);
 
+    if options.verbose
+        fprintf('Found %d documents in the first dataset and %d documents in the second.\n', numel(d1_ids), numel(d2_ids));
+        fprintf('Comparing %d common documents...\n', numel(common_ids));
+    end
+
     mismatched_docs_list = {};
     mismatched_files_list = {};
     file_list_diffs_list = {};
+    errors_list = {};
 
     for i=1:numel(common_ids)
         doc_id = common_ids{i};
@@ -96,13 +104,27 @@ function [report] = diff(D1,D2)
         common_files = intersect(f1, f2);
 
         for f=1:numel(common_files)
-            file_obj1 = D1.database_openbinarydoc(doc1, common_files{f});
-            cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
-            data1 = D1.database_readbinarydoc(file_obj1);
+            if options.verbose && mod(f, 100) == 0
+                fprintf('...examined %d files in document %s...\n', f, doc_id);
+            end
 
-            file_obj2 = D2.database_openbinarydoc(doc2, common_files{f});
-            cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
-            data2 = D2.database_readbinarydoc(file_obj2);
+            try
+                file_obj1 = D1.database_openbinarydoc(doc1, common_files{f});
+                cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
+                data1 = D1.database_readbinarydoc(file_obj1);
+            catch e
+                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', common_files{f}, 'message', ['Error opening file in dataset 1: ' e.message]);
+                continue;
+            end
+
+            try
+                file_obj2 = D2.database_openbinarydoc(doc2, common_files{f});
+                cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
+                data2 = D2.database_readbinarydoc(file_obj2);
+            catch e
+                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', common_files{f}, 'message', ['Error opening file in dataset 2: ' e.message]);
+                continue;
+            end
 
             [are_identical, diff_output] = ndi.util.getHexDiffFromBytes(data1, data2);
 
@@ -118,14 +140,38 @@ function [report] = diff(D1,D2)
 
     if ~isempty(mismatched_docs_list)
         report.mismatchedDocuments = cat(1, mismatched_docs_list{:});
+        if options.verbose
+            for i=1:numel(mismatched_docs_list)
+                fprintf('Document %s has a mismatch: %s\n', mismatched_docs_list{i}.id, mismatched_docs_list{i}.mismatch);
+            end
+        end
+    end
+
+    if ~isempty(errors_list)
+        report.errors = cat(1, errors_list{:});
+        if options.verbose
+            for i=1:numel(errors_list)
+                fprintf('Error examining file %s in document %s: %s\n', errors_list{i}.file_uid, errors_list{i}.document_id, errors_list{i}.message);
+            end
+        end
     end
 
     if ~isempty(mismatched_files_list)
         report.mismatchedFiles = cat(1, mismatched_files_list{:});
+        if options.verbose
+            for i=1:numel(mismatched_files_list)
+                fprintf('File %s in document %s has a mismatch.\n', mismatched_files_list{i}.uid, mismatched_files_list{i}.document_id);
+            end
+        end
     end
 
     if ~isempty(file_list_diffs_list)
         report.fileListDifferences = cat(1, file_list_diffs_list{:});
+        if options.verbose
+            for i=1:numel(file_list_diffs_list)
+                fprintf('File lists for document %s are different.\n', file_list_diffs_list{i}.id);
+            end
+        end
     end
 
 end
