@@ -65,10 +65,10 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
             error(['Could not list remote documents to determine which to upload: ' remoteDocs.message]);
         end
         num_remote_docs = numel(remoteDocs);
-        remoteDocIds = string({remoteDocs.id});
-        localDocIds = string(cellfun(@(x) x.id(), documentList, 'UniformOutput', false));
+        remoteDocNdiIds = string({remoteDocs.ndiId});
+        localDocNdiIds = string(cellfun(@(x) x.document_properties.ndiId, documentList, 'UniformOutput', false));
 
-        [~, keepIndexes] = setdiff(localDocIds, remoteDocIds);
+        [~, keepIndexes] = setdiff(localDocNdiIds, remoteDocNdiIds);
         documentList = documentList(keepIndexes);
 
         fprintf('Total documents: %d. %d already in cloud. %d remain to be transmitted.\n', ...
