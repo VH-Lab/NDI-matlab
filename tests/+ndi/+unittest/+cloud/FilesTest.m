@@ -110,7 +110,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -197,7 +197,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -281,7 +281,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -365,7 +365,7 @@ classdef FilesTest < matlab.unittest.TestCase
             narrative(end+1) = "Successfully obtained upload URL.";
             % Step 2.5: Verify the file does not yet appear in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list to ensure it is empty.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -385,7 +385,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";

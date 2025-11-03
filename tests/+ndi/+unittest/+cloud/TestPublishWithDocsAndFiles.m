@@ -123,7 +123,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
-            [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_docs_pre = ndi.unittest.cloud.APIMessage(narrative, b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre);
             testCase.verifyTrue(b_docs_pre, "Failed to list documents of dataset before publishing. " + msg_docs_pre);
             testCase.verifyNumElements(ans_docs_pre, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
@@ -172,7 +172,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             pause(30);
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
-            [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_docs = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
             testCase.verifyNumElements(ans_docs, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
@@ -270,7 +270,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
-            [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_docs_pre = ndi.unittest.cloud.APIMessage(narrative, b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre);
             testCase.verifyTrue(b_docs_pre, "Failed to list documents of dataset before publishing. " + msg_docs_pre);
             testCase.verifyNumElements(ans_docs_pre, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
@@ -319,7 +319,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             pause(30);
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
-            [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_docs = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
             testCase.verifyNumElements(ans_docs, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
@@ -422,7 +422,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
 
             % Step 2.5: Pre-Publish Verification
             narrative(end+1) = "VERIFICATION (PRE-PUBLISH): Checking documents before publishing.";
-            [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            [b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_docs_pre = ndi.unittest.cloud.APIMessage(narrative, b_docs_pre, ans_docs_pre, resp_docs_pre, url_docs_pre);
             testCase.verifyTrue(b_docs_pre, "Failed to list documents of dataset before publishing. " + msg_docs_pre);
             testCase.verifyNumElements(ans_docs_pre, numDocs, "Incorrect number of documents found before publishing. " + msg_docs_pre);
@@ -471,7 +471,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             pause(30);
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
-            [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID);
+            [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_docs = ndi.unittest.cloud.APIMessage(narrative, b_docs, ans_docs, resp_docs, url_docs);
             testCase.verifyTrue(b_docs, "Failed to list documents of published dataset. " + msg_docs);
             testCase.verifyNumElements(ans_docs, numDocs, "Incorrect number of documents found in published dataset. " + msg_docs);
