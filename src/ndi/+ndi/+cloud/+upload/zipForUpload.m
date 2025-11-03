@@ -102,7 +102,13 @@ for i = 1:numel(files_to_process)
     if ~isempty(files_for_current_batch) && (current_batch_size + file_bytes > size_limit)
         [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options);
         files_uploaded_count = files_uploaded_count + uploaded_count;
-        if ~success, b = 0; msg = batch_msg; return; end
+        if ~success
+            b = 0;
+            files_not_uploaded = files_left - files_uploaded_count;
+            msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
+                batch_msg, files_uploaded_count, files_not_uploaded);
+            return;
+        end
         files_for_current_batch = {};
         current_batch_size = 0;
     end
@@ -117,7 +123,13 @@ end % for
 if ~isempty(files_for_current_batch)
     [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options);
     files_uploaded_count = files_uploaded_count + uploaded_count;
-    if ~success, b = 0; msg = batch_msg; return; end
+    if ~success
+        b = 0;
+        files_not_uploaded = files_left - files_uploaded_count;
+        msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
+            batch_msg, files_uploaded_count, files_not_uploaded);
+        return;
+    end
 end
 
 % --- Final Logging ---
