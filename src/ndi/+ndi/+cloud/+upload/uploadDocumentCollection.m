@@ -66,7 +66,7 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         end
         num_remote_docs = numel(remoteDocs);
         remoteDocNdiIds = string({remoteDocs.ndiId});
-        localDocNdiIds = string(cellfun(@(x) x.document_properties.ndiId, documentList, 'UniformOutput', false));
+        localDocNdiIds = string(cellfun(@(x) x.document_properties.base.id, documentList, 'UniformOutput', false));
 
         [~, keepIndexes] = setdiff(localDocNdiIds, remoteDocNdiIds);
         documentList = documentList(keepIndexes);
