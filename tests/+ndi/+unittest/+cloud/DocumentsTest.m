@@ -203,7 +203,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             % Step 7: Test listDatasetDocuments (paginated)
             narrative(end+1) = "Preparing to test paginated document listing.";
             pageSize = 3;
-            [b_list, ans_list, resp_list, url_list] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID, 'pageSize', pageSize, 'checkForUpdates', true);
+            [b_list, ans_list, resp_list, url_list] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID, 'pageSize', pageSize);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             narrative(end+1) = "Testing: Verifying the paginated list API call was successful (APICallSuccessFlag should be true).";
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, ans_list, resp_list, url_list);
@@ -251,7 +251,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             
             % Step 10: Confirm document lists are empty
             narrative(end+1) = "Preparing to confirm paginated document list is empty after deletion.";
-            [b_list_final, ans_list_final, resp_list_final, url_list_final] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list_final, ans_list_final, resp_list_final, url_list_final] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list_final);
             narrative(end+1) = "Testing: Verifying the paginated list API call was successful (APICallSuccessFlag should be true).";
             msg_list_final = ndi.unittest.cloud.APIMessage(narrative, b_list_final, ans_list_final, resp_list_final, url_list_final);
@@ -287,7 +287,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             % 1. listDatasetDocuments
             narrative(end+1) = "Preparing to call listDatasetDocuments on an empty dataset.";
-            [b_list, ans_list, resp_list, url_list] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, ans_list, resp_list, url_list] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, ans_list, resp_list, url_list);
             testCase.fatalAssertTrue(b_list, "API call to listDatasetDocuments failed. " + msg_list);
 
