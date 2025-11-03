@@ -29,6 +29,7 @@ arguments
     options.Verbose (1,1) logical = true
     options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = 50e6
     options.DebugLog (1,1) logical = true
+    options.numberRetries (1,1) {mustBeNumeric, mustBeInteger, mustBeNonnegative} = 3
 end
 % --- Initial Setup ---
 msg = '';
@@ -100,7 +101,7 @@ for i = 1:numel(files_to_process)
     
     % --- Batching Logic ---
     if ~isempty(files_for_current_batch) && (current_batch_size + file_bytes > size_limit)
-        [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options);
+        [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options.numberRetries, options);
         files_uploaded_count = files_uploaded_count + uploaded_count;
         if ~success
             b = 0;
@@ -121,7 +122,7 @@ end % for
 
 % --- Final Upload: Upload any remaining files ---
 if ~isempty(files_for_current_batch)
-    [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options);
+    [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options.numberRetries, options);
     files_uploaded_count = files_uploaded_count + uploaded_count;
     if ~success
         b = 0;
@@ -163,7 +164,7 @@ end
 end
 
 % --- Helper Function for Zipped Batches ---
-function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id, options)
+function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id, numberRetries, options)
     success = 1;
     msg = '';
     file_count = numel(files_to_zip);
@@ -196,11 +197,43 @@ function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id
         end
         
         if options.Verbose, disp('Getting upload URL for zipped batch...'); end
-        [success, upload_url] = ndi.cloud.api.files.getFileCollectionUploadURL(dataset_id);
-        if ~success, error('Failed to get upload URL'); end
+
+        upload_url = '';
+        for r=1:numberRetries
+            [success, upload_url_or_err] = ndi.cloud.api.files.getFileCollectionUploadURL(dataset_id);
+            if success
+                upload_url = upload_url_or_err;
+                break;
+            else
+                if options.Verbose
+                    fprintf('Attempt %d of %d to get upload URL failed. Retrying in 5s...\n', r, numberRetries);
+                end
+                pause(5);
+            end
+        end
+
+        if ~success
+            msg = sprintf('Failed to get upload URL after %d attempts: %s', numberRetries, upload_url_or_err.message);
+            error(msg);
+        end
         
         if options.Verbose, disp('Uploading zip archive...'); end
-        [~] = ndi.cloud.api.files.putFiles(upload_url, zip_file);
+        for r=1:numberRetries
+            [success, err] = ndi.cloud.api.files.putFiles(upload_url, zip_file);
+            if success
+                break;
+            else
+                if options.Verbose
+                    fprintf('Attempt %d of %d to upload file failed. Retrying in 5s...\n', r, numberRetries);
+                end
+                pause(5);
+            end
+        end
+
+        if ~success
+            msg = sprintf('Failed to upload file after %d attempts: %s', numberRetries, err.message);
+            error(msg);
+        end
         
     catch e
         success = 0;
