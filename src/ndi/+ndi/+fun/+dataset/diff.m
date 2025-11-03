@@ -74,6 +74,9 @@ function [report] = diff(D1,D2, options)
     errors_list = {};
 
     for i=1:numel(common_ids)
+        if options.verbose && mod(i, 500) == 0
+            fprintf('...examined %d documents...\n', i);
+        end
         doc_id = common_ids{i};
         doc1 = d1_map(doc_id);
         doc2 = d2_map(doc_id);
@@ -107,10 +110,6 @@ function [report] = diff(D1,D2, options)
         common_files = intersect(f1, f2);
 
         for f=1:numel(common_files)
-            if options.verbose && mod(f, 100) == 0
-                fprintf('...examined %d files in document %s...\n', f, doc_id);
-            end
-
             try
                 file_obj1 = D1.database_openbinarydoc(doc1, common_files{f});
                 cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
