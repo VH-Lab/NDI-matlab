@@ -44,7 +44,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
     [file_manifest(:).is_uploaded] = deal(false);
 
     if options.onlyMissing
-        [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId);
+        [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId, "checkForUpdates", true);
         if b
             remote_files = containers.Map();
             for i=1:numel(file_list)
