@@ -73,6 +73,10 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         end
     end
 
+    if options.Verbose
+        fprintf('%d files still need to be uploaded.\n', numel(file_manifest));
+    end
+
     if isempty(file_manifest)
         message = 'All files are already on the remote.';
         return;
