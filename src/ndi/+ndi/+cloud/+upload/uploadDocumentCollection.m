@@ -59,15 +59,20 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
 
     % --- Pre-processing Step ---
     if options.onlyUploadMissing
+        total_local_docs = numel(documentList);
         [success, remoteDocs] = ndi.cloud.api.documents.listDatasetDocumentsAll(datasetId);
         if ~success
             error(['Could not list remote documents to determine which to upload: ' remoteDocs.message]);
         end
+        num_remote_docs = numel(remoteDocs);
         remoteDocIds = string({remoteDocs.id});
         localDocIds = string(cellfun(@(x) x.id(), documentList, 'UniformOutput', false));
 
         [~, keepIndexes] = setdiff(localDocIds, remoteDocIds);
         documentList = documentList(keepIndexes);
+
+        fprintf('Total documents: %d. %d already in cloud. %d remain to be transmitted.\n', ...
+            total_local_docs, num_remote_docs, numel(documentList));
     end
 
     if isempty(documentList)
