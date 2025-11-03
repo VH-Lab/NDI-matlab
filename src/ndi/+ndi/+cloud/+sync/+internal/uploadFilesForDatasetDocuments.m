@@ -43,18 +43,26 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         ndiDataset, dataset_documents, options.Verbose);
     [file_manifest(:).is_uploaded] = deal(false);
 
+    if options.Verbose
+        fprintf('%d files in the manifest.\n', numel(file_manifest));
+    end
+
     if options.onlyMissing
-        [b, answer] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
-        if b && isfield(answer, 'files')
+        [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId, "checkForUpdates", true);
+        if b
             remote_files = containers.Map();
-            for i=1:numel(answer.files)
-                remote_files(answer.files(i).uid) = 1;
+            for i=1:numel(file_list)
+                remote_files(file_list(i).uid) = 1;
             end
 
             files_to_upload = struct('uid',{},'bytes',{},'file_path',{},'is_uploaded',{});
             for i=1:numel(file_manifest)
                 if ~isKey(remote_files, file_manifest(i).uid)
-                    files_to_upload(end+1) = file_manifest(i);
+                    new_struct.uid = file_manifest(i).uid;
+                    new_struct.bytes = file_manifest(i).bytes;
+                    new_struct.file_path = file_manifest(i).file_path;
+                    new_struct.is_uploaded = file_manifest(i).is_uploaded;
+                    files_to_upload(end+1) = new_struct;
                 end
             end
             file_manifest = files_to_upload;
@@ -63,6 +71,10 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             message = 'Could not retrieve remote dataset file list.';
             return;
         end
+    end
+
+    if options.Verbose
+        fprintf('%d files still need to be uploaded.\n', numel(file_manifest));
     end
 
     if isempty(file_manifest)

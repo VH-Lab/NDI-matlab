@@ -39,7 +39,7 @@ function [duplicateDocs, originalDocs] = duplicateDocuments(cloudDatasetId, opti
 arguments
     cloudDatasetId (1,:) char {mustBeText}
     options.deleteDuplicates (1,1) logical = true
-    options.maximumDeleteBatchSize (1,1) {mustBeInteger, mustBePositive} = 100
+    options.maximumDeleteBatchSize (1,1) {mustBeInteger, mustBePositive} = 1000
     options.verbose (1,1) logical = false
 end
 
