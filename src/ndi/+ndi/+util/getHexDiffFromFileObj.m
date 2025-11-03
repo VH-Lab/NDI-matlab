@@ -1,10 +1,10 @@
-function [are_identical, diff_output] = getHexDiffFromBytes(data1, data2, options)
-%GETHEXDIFFFROMBYTES Compares two uint8 arrays and returns a string with the lines where they differ.
-%   [ARE_IDENTICAL, DIFF_OUTPUT] = getHexDiffFromBytes(DATA1, DATA2) compares two uint8 arrays
+function [are_identical, diff_output] = getHexDiffFromFileObj(f1, f2, options)
+%GETHEXDIFFFROMFILEOBJ Compares two file objects and returns a string with the lines where they differ.
+%   [ARE_IDENTICAL, DIFF_OUTPUT] = getHexDiffFromFileObj(F1, F2) compares two file objects
 %   and returns a boolean indicating if they are identical, and a side-by-side hexadecimal view of any
 %   16-byte chunks that are not identical.
 %
-%   [ARE_IDENTICAL, DIFF_OUTPUT] = getHexDiffFromBytes(___, Name, Value) specifies additional options using
+%   [ARE_IDENTICAL, DIFF_OUTPUT] = getHexDiffFromFileObj(___, Name, Value) specifies additional options using
 %   name-value pairs.
 %
 %   Optional Name-Value Arguments:
@@ -12,54 +12,31 @@ function [are_identical, diff_output] = getHexDiffFromBytes(data1, data2, option
 %                 offset at which to start the comparison. Defaults to 0.
 %   'StopByte'  - A non-negative integer specifying the zero-based byte
 %                 offset at which to end the comparison. Defaults to the
-%                 end of the longer array.
+%                 end of the longer file.
 %
-%   Example:
-%       data1 = uint8([1 2 3 4]);
-%       data2 = uint8([1 2 5 4]);
-%       [identical, diff_str] = getHexDiffFromBytes(data1, data2);
-
 arguments
-    data1 (1,:) uint8
-    data2 (1,:) uint8
+    f1
+    f2
     options.StartByte (1,1) {mustBeNumeric, mustBeNonnegative, mustBeInteger} = 0
     options.StopByte (1,1) {mustBeNumeric, mustBeNonnegative} = Inf
 end
 
     output_lines = {};
 
-    arraySize1 = numel(data1);
-    arraySize2 = numel(data2);
-    maxSize = max(arraySize1, arraySize2);
+    fseek(f1, 0, 'bof');
+    fseek(f2, 0, 'bof');
 
-    startByte = options.StartByte;
-    stopByte = options.StopByte;
-
-    if isinf(stopByte)
-        stopByte = maxSize - 1;
-    end
-    if stopByte < 0
-        stopByte = -1;
-    end
-
-    if startByte >= maxSize && maxSize > 0
-        error('getHexDiff:InvalidRange', 'StartByte (%d) is beyond the end of both arrays.', startByte);
-    end
-    if startByte > stopByte
-        error('getHexDiff:InvalidRange', 'StartByte (%d) cannot be greater than StopByte (%d).', startByte, stopByte);
-    end
-
-    output_lines{end+1} = sprintf('Comparing byte array 1 (%d bytes) with byte array 2 (%d bytes)', arraySize1, arraySize2);
+    output_lines{end+1} = 'Comparing file objects...';
     output_lines{end+1} = 'Displaying only differing 16-byte lines...';
     output_lines{end+1} = repmat('-', 1, 140);
 
     bytesPerLine = 16;
     differencesFound = false;
+    offset = 0;
 
-    for offset = startByte:bytesPerLine:(stopByte)
-        chunkEnd = offset + bytesPerLine - 1;
-        chunk1 = getChunk(data1, offset, chunkEnd);
-        chunk2 = getChunk(data2, offset, chunkEnd);
+    while ~feof(f1) || ~feof(f2)
+        chunk1 = fread(f1, bytesPerLine, '*uint8');
+        chunk2 = fread(f2, bytesPerLine, '*uint8');
 
         if numel(chunk1) ~= numel(chunk2) || any(chunk1 ~= chunk2)
             if ~differencesFound
@@ -68,12 +45,13 @@ end
             end
             output_lines{end+1} = printDiffLine(offset, chunk1, chunk2);
         end
+        offset = offset + bytesPerLine;
     end
 
     are_identical = ~differencesFound;
 
     if ~differencesFound
-        output_lines{end+1} = 'Arrays are identical in the specified range.';
+        output_lines{end+1} = 'File objects are identical in the specified range.';
     end
     output_lines{end+1} = repmat('-', 1, 140);
 
@@ -81,17 +59,6 @@ end
 end
 
 % --- Helper Functions ---
-function chunk = getChunk(data, startOffset, stopOffset)
-    startIdx = startOffset + 1;
-    stopIdx = stopOffset + 1;
-    if startIdx > numel(data)
-        chunk = [];
-        return;
-    end
-    chunkEnd = min(stopIdx, numel(data));
-    chunk = data(startIdx:chunkEnd);
-end
-
 function header_str = printHeader()
     header1 = ' Offset(h)  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  |ASCII           |';
     header2 = '  |  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  |ASCII           |';

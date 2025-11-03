@@ -114,7 +114,6 @@ function [report] = diff(D1,D2, options)
             try
                 file_obj1 = D1.database_openbinarydoc(doc1, common_files{f});
                 cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
-                data1 = D1.database_readbinarydoc(file_obj1);
             catch e
                 errors_list{end+1} = struct('document_id', doc_id, 'file_uid', common_files{f}, 'message', ['Error opening file in dataset 1: ' e.message]);
                 continue;
@@ -123,13 +122,12 @@ function [report] = diff(D1,D2, options)
             try
                 file_obj2 = D2.database_openbinarydoc(doc2, common_files{f});
                 cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
-                data2 = D2.database_readbinarydoc(file_obj2);
             catch e
                 errors_list{end+1} = struct('document_id', doc_id, 'file_uid', common_files{f}, 'message', ['Error opening file in dataset 2: ' e.message]);
                 continue;
             end
 
-            [are_identical, diff_output] = ndi.util.getHexDiffFromBytes(data1, data2);
+            [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
 
             if ~are_identical
                 mismatched_files_list{end+1} = struct('uid', common_files{f}, 'document_id', doc_id, 'diff', diff_output);
