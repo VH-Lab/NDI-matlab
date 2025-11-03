@@ -46,17 +46,16 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     end
 
     success = false;
-    cloudDatasetId = '';
     message = '';
 
     [cloudDatasetId, remote_doc] = ndi.cloud.internal.getCloudDatasetIdForLocalDataset(ndiDataset);
 
-    if ~isempty(cloudDatasetId) & options.uploadAsNew,
+    if ~isempty(cloudDatasetId) & options.uploadAsNew
         ndiDataset.database_rm(remote_doc);
         cloudDatasetId = '';
     end
 
-    if isempty(cloudDatasetId),
+    if isempty(cloudDatasetId)
         % Step 1: Create the dataset record on NDI Cloud and insert the metadata
         if options.skipMetadataEditorMetadata
             if isempty(options.remoteDatasetName)
@@ -78,7 +77,7 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
             message = ['Failed to create dataset: ' answer.message];
             return;
         end
-        cloudDatasetId = answer.dataset_id;
+        cloudDatasetId = answer;
 
         % Add document with remote dataset id to dataset before uploading.
         remoteDatasetDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudDatasetId, ndiDataset);
