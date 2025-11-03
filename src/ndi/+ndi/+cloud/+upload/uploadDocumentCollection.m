@@ -83,6 +83,8 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         return;
     end
 
+    disp('Uploading dataset documents...');
+
     % Extract document IDs for the report manifest
     docIds = cellfun(@(x) x.id(), documentList, 'UniformOutput', false);
 
