@@ -43,6 +43,10 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
         ndiDataset, dataset_documents, options.Verbose);
     [file_manifest(:).is_uploaded] = deal(false);
 
+    if options.Verbose
+        fprintf('%d files in the manifest.\n', numel(file_manifest));
+    end
+
     if options.onlyMissing
         [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId, "checkForUpdates", true);
         if b
