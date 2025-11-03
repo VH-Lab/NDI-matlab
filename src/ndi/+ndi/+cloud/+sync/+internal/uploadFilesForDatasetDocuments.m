@@ -54,7 +54,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             files_to_upload = struct('uid',{},'bytes',{},'file_path',{},'is_uploaded',{});
             for i=1:numel(file_manifest)
                 if ~isKey(remote_files, file_manifest(i).uid)
-                    files_to_upload(end+1) = file_manifest(i);
+                    new_struct.uid = file_manifest(i).uid;
+                    new_struct.bytes = file_manifest(i).bytes;
+                    new_struct.file_path = file_manifest(i).file_path;
+                    new_struct.is_uploaded = file_manifest(i).is_uploaded;
+                    files_to_upload(end+1) = new_struct;
                 end
             end
             file_manifest = files_to_upload;
