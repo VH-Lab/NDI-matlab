@@ -40,8 +40,8 @@ classdef ListFiles < ndi.cloud.api.call
                 [b, dsetInfo, apiResponse, apiURL] = ndi.cloud.api.datasets.getDataset(this.cloudDatasetId);
 
                 if ~b
-                    % If the API call failed, return the error answer
-                    answer = dsetInfo;
+                    % If the API call failed, return an empty answer and the error response
+                    answer = empty_answer;
                     return;
                 end
 
