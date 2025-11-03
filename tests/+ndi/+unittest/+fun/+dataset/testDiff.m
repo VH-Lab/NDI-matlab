@@ -31,7 +31,7 @@ classdef testDiff < matlab.unittest.TestCase
             testCase.session1.database_add(ndi.document(doc_data));
             testCase.session2.database_add(ndi.document(doc_data));
 
-            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2);
+            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
 
             testCase.verifyEmpty(report.documentsInAOnly);
             testCase.verifyEmpty(report.documentsInBOnly);
@@ -46,7 +46,7 @@ classdef testDiff < matlab.unittest.TestCase
             doc_data = struct('name', 'test_doc', 'value', 1);
             testCase.session1.database_add(ndi.document(doc_data));
 
-            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2);
+            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
 
             testCase.verifySize(report.documentsInAOnly, [1 1]);
             testCase.verifyEmpty(report.documentsInBOnly);
@@ -63,7 +63,7 @@ classdef testDiff < matlab.unittest.TestCase
             testCase.session1.database_add(ndi.document(doc_data1));
             testCase.session2.database_add(ndi.document(doc_data2));
 
-            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2);
+            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
 
             testCase.verifyEmpty(report.documentsInAOnly);
             testCase.verifyEmpty(report.documentsInBOnly);
@@ -86,7 +86,7 @@ classdef testDiff < matlab.unittest.TestCase
             doc2.add_binary_file('world', 'file2.txt');
             doc2.add_binary_file('hello', 'file1.txt');
 
-            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2);
+            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
 
             testCase.verifyEmpty(report.documentsInAOnly);
             testCase.verifyEmpty(report.documentsInBOnly);
@@ -107,7 +107,7 @@ classdef testDiff < matlab.unittest.TestCase
             doc1.add_binary_file('world', 'file2.txt');
             doc2.add_binary_file('hello', 'file1.txt');
 
-            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2);
+            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
 
             testCase.verifyEmpty(report.documentsInAOnly);
             testCase.verifyEmpty(report.documentsInBOnly);
@@ -135,13 +135,20 @@ classdef testDiff < matlab.unittest.TestCase
             doc1.add_binary_file(file1_content, 'file.txt');
             doc2.add_binary_file(file2_content, 'file.txt');
 
-            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2);
+            report = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
 
             testCase.verifyEmpty(report.documentsInAOnly);
             testCase.verifyEmpty(report.documentsInBOnly);
             testCase.verifyEmpty(report.mismatchedDocuments);
             testCase.verifySize(report.mismatchedFiles, [1 1]);
             testCase.verifyEmpty(report.fileListDifferences);
+        end
+
+        function testVerboseOption(testCase)
+            % Test that the verbose option prints output
+
+            console_output = evalc("ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', true)");
+            testCase.verifyNotEmpty(console_output);
         end
     end
 end
