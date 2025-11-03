@@ -44,11 +44,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
     [file_manifest(:).is_uploaded] = deal(false);
 
     if options.onlyMissing
-        [b, answer] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
-        if b && isfield(answer, 'files')
+        [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId);
+        if b
             remote_files = containers.Map();
-            for i=1:numel(answer.files)
-                remote_files(answer.files(i).uid) = 1;
+            for i=1:numel(file_list)
+                remote_files(file_list(i).uid) = 1;
             end
 
             files_to_upload = struct('uid',{},'bytes',{},'file_path',{},'is_uploaded',{});
