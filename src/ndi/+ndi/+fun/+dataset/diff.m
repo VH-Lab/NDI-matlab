@@ -26,11 +26,15 @@ function [report] = diff(D1,D2, options)
 %
 %   This function also takes name/value pairs that modify its behavior.
 %   'verbose'               - Print progress to the command line (default true)
+%   'recheckFileReport'     - A previous report from this function. If provided,
+%                             only the files listed in the 'mismatchedFiles'
+%                             field of the report will be re-checked.
 
     arguments
         D1 (1,1) ndi.dataset
         D2 (1,1) ndi.dataset
         options.verbose (1,1) logical = true
+        options.recheckFileReport = []
     end
 
     report = struct(...
@@ -41,6 +45,58 @@ function [report] = diff(D1,D2, options)
         'fileListDifferences', struct('id',{},'filesInAOnly',{},'filesInBOnly',{}), ...
         'errors', struct('document_id',{}, 'file_uid',{}, 'message',{}) ...
     );
+
+    if ~isempty(options.recheckFileReport)
+        if options.verbose
+            fprintf('Re-checking %d files from the provided report...\n', numel(options.recheckFileReport.mismatchedFiles));
+        end
+
+        mismatched_files_list = {};
+        errors_list = {};
+
+        for i=1:numel(options.recheckFileReport.mismatchedFiles)
+            mismatch_entry = options.recheckFileReport.mismatchedFiles(i);
+            doc_id = mismatch_entry.document_id;
+            file_uid = mismatch_entry.uid;
+
+            doc1 = D1.database_search(ndi.query('ndi_document.id', 'exact_string', doc_id, ''));
+            doc2 = D2.database_search(ndi.query('ndi_document.id', 'exact_string', doc_id, ''));
+
+            if isempty(doc1) || isempty(doc2)
+                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', file_uid, 'message', 'Could not find document in one or both datasets.');
+                continue;
+            end
+
+            doc1 = doc1{1};
+            doc2 = doc2{1};
+
+            try
+                file_obj1 = D1.database_openbinarydoc(doc1, file_uid);
+                cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
+            catch e
+                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', file_uid, 'message', ['Error opening file in dataset 1: ' e.message]);
+                continue;
+            end
+
+            try
+                file_obj2 = D2.database_openbinarydoc(doc2, file_uid);
+                cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
+            catch e
+                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', file_uid, 'message', ['Error opening file in dataset 2: ' e.message]);
+                continue;
+            end
+
+            [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
+
+            if ~are_identical
+                mismatched_files_list{end+1} = struct('uid', file_uid, 'document_id', doc_id, 'diff', diff_output);
+            end
+        end
+
+        report.mismatchedFiles = cat(1, mismatched_files_list{:});
+        report.errors = cat(1, errors_list{:});
+        return;
+    end
 
     d1_docs = D1.database_search(ndi.query('base.id','regexp','(.*)'));
     d2_docs = D2.database_search(ndi.query('base.id','regexp','(.*)'));

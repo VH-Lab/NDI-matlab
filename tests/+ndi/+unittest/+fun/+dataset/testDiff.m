@@ -150,5 +150,33 @@ classdef testDiff < matlab.unittest.TestCase
             console_output = evalc("ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', true)");
             testCase.verifyNotEmpty(console_output);
         end
+
+        function testRecheckFileReport(testCase)
+            % Test the recheckFileReport option
+
+            doc_data = struct('name', 'test_doc', 'value', 1);
+            doc1 = ndi.document(doc_data);
+            doc2 = ndi.document(doc_data);
+
+            testCase.session1.database_add(doc1);
+            testCase.session2.database_add(doc2);
+
+            % Add different file content to each
+            file1_content = 'hello';
+            file2_content = 'goodbye';
+
+            doc1.add_binary_file(file1_content, 'file.txt');
+            doc2.add_binary_file(file2_content, 'file.txt');
+
+            report1 = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false);
+            testCase.verifySize(report1.mismatchedFiles, [1 1]);
+
+            % Now, fix the file
+            doc2.delete_binary_file('file.txt');
+            doc2.add_binary_file(file1_content, 'file.txt');
+
+            report2 = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false, 'recheckFileReport', report1);
+            testCase.verifyEmpty(report2.mismatchedFiles);
+        end
     end
 end
