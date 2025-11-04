@@ -439,10 +439,10 @@ classdef document
             uid = ndi_document_obj.document_properties.base.session_id;
         end % session_id()
         
-        function [b, msg, fI_index] = is_in_file_list(ndi_document_obj, name)
+        function [b, msg, fI_index, fuid] = is_in_file_list(ndi_document_obj, name)
             % IS_IN_FILE_LIST - is a file name in a ndi.document's file list?
             %
-            % [B, MSG, FI_INDEX] = IS_IN_FILE_LIST(NDI_DOCUMENT_OBJ, NAME)
+            % [B, MSG, FI_INDEX, FUID] = IS_IN_FILE_LIST(NDI_DOCUMENT_OBJ, NAME)
             %
             % Is the file NAME a valid named binary file for the ndi.document
             % NDI_DOCUMENT_OBJ? If so, B is 1; else, B is 0.
@@ -462,6 +462,7 @@ classdef document
             b = 1;
             msg = '';
             fI_index = [];
+            fuid = '';
 
             % Step 1: does this did.document have 'files' at all?
 
@@ -502,6 +503,9 @@ classdef document
 
             if isfield(ndi_document_obj.document_properties.files,'file_info')
                 fI_index = find(strcmpi(name,{ndi_document_obj.document_properties.files.file_info.name}));
+                if ~isempty(fI_index)
+                    fuid = ndi_document_obj.document_properties.files.file_info(fI_index).uid;
+                end
             end
         end % is_in_file_list()
 

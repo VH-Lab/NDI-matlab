@@ -41,72 +41,90 @@ function [report] = diff(D1,D2, options)
         'documentsInAOnly', {{}}, ...
         'documentsInBOnly', {{}}, ...
         'mismatchedDocuments', struct('id',{}, 'mismatch',{}), ...
-        'mismatchedFiles', struct('uid',{}, 'document_id',{}, 'diff',{}), ...
-        'fileListDifferences', struct('id',{},'filesInAOnly',{},'filesInBOnly',{}), ...
-        'errors', struct('document_id',{}, 'uid',{}, 'message',{}) ...
+        'fileDifferences', struct('documentA_uid',{}, 'documentB_uid',{}, ...
+            'documentA_fuid',{}, 'documentA_fname',{}, 'documentB_fuid',{}, 'documentB_fname',{}, ...
+            'documentA_size',{}, 'documentB_size',{}, 'documentA_errormsg',{}, 'documentB_errormsg',{}, ...
+            'documentDiff',{}) ...
     );
 
     if ~isempty(options.recheckFileReport)
-        files_to_recheck = {};
-        if isfield(options.recheckFileReport, 'mismatchedFiles')
-            for i=1:numel(options.recheckFileReport.mismatchedFiles)
-                files_to_recheck{end+1} = options.recheckFileReport.mismatchedFiles(i);
-            end
-        end
-        if isfield(options.recheckFileReport, 'errors')
-            for i=1:numel(options.recheckFileReport.errors)
-                files_to_recheck{end+1} = options.recheckFileReport.errors(i);
-            end
-        end
-
         if options.verbose
-            fprintf('Re-checking %d files from the provided report...\n', numel(files_to_recheck));
+            fprintf('Re-checking %d file differences from the provided report...\n', numel(options.recheckFileReport.fileDifferences));
         end
 
-        mismatched_files_list = {};
-        errors_list = {};
+        file_differences_list = {};
 
-        for i=1:numel(files_to_recheck)
-            entry = files_to_recheck{i};
-            doc_id = entry.document_id;
-            file_uid = entry.uid;
+        for i=1:numel(options.recheckFileReport.fileDifferences)
+            entry = options.recheckFileReport.fileDifferences(i);
 
-            doc1 = D1.database_search(ndi.query('ndi_document.id', 'exact_string', doc_id, ''));
-            doc2 = D2.database_search(ndi.query('ndi_document.id', 'exact_string', doc_id, ''));
+            doc1 = D1.database_search(ndi.query('ndi_document.id', 'exact_string', entry.documentA_uid, ''));
+            doc2 = D2.database_search(ndi.query('ndi_document.id', 'exact_string', entry.documentB_uid, ''));
 
-            if isempty(doc1) || isempty(doc2)
-                errors_list{end+1} = struct('document_id', doc_id, 'uid', file_uid, 'message', 'Could not find document in one or both datasets.');
-                continue;
-            end
+            % THIS IS A SIMPLIFIED RECHECK, ASSUMES DOCS EXIST AND FUIDS ARE CORRECT
 
-            doc1 = doc1{1};
-            doc2 = doc2{1};
+            [~,~,~,fuid1] = doc1{1}.is_in_file_list(entry.documentA_fname);
+            [~,~,~,fuid2] = doc2{1}.is_in_file_list(entry.documentB_fname);
 
-            try
-                file_obj1 = D1.database_openbinarydoc(doc1, file_uid);
-                cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
-            catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'uid', file_uid, 'message', ['Error opening file in dataset 1: ' e.message]);
-                continue;
-            end
+            file_diff_entry = struct(...
+                'documentA_uid', entry.documentA_uid, 'documentB_uid', entry.documentB_uid, ...
+                'documentA_fuid', fuid1, 'documentA_fname', entry.documentA_fname, ...
+                'documentB_fuid', fuid2, 'documentB_fname', entry.documentB_fname, ...
+                'documentA_size', NaN, 'documentB_size', NaN, ...
+                'documentA_errormsg', '', 'documentB_errormsg', '', ...
+                'documentDiff', '');
+
+            file_obj1 = [];
+            file_obj2 = [];
 
             try
-                file_obj2 = D2.database_openbinarydoc(doc2, file_uid);
-                cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
+                file_obj1 = D1.database_openbinarydoc(doc1{1}, entry.documentA_fname);
+                fseek(file_obj1.fid, 0, 'eof');
+                file_diff_entry.documentA_size = ftell(file_obj1.fid);
             catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'uid', file_uid, 'message', ['Error opening file in dataset 2: ' e.message]);
-                continue;
+                file_diff_entry.documentA_errormsg = e.message;
             end
 
-            [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
+            try
+                file_obj2 = D2.database_openbinarydoc(doc2{1}, entry.documentB_fname);
+                fseek(file_obj2.fid, 0, 'eof');
+                file_diff_entry.documentB_size = ftell(file_obj2.fid);
+            catch e
+                file_diff_entry.documentB_errormsg = e.message;
+            end
 
-            if ~are_identical
-                mismatched_files_list{end+1} = struct('uid', file_uid, 'document_id', doc_id, 'diff', diff_output);
+            if ~isempty(file_obj1) && ~isempty(file_obj2)
+                [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
+                if ~are_identical
+                    file_diff_entry.documentDiff = diff_output;
+                end
+            end
+
+            if ~isempty(file_diff_entry.documentA_errormsg) || ~isempty(file_diff_entry.documentB_errormsg) || ~isempty(file_diff_entry.documentDiff)
+                file_differences_list{end+1} = file_diff_entry;
+                if options.verbose
+                    if ~isempty(file_diff_entry.documentA_errormsg)
+                        fprintf('File %s in document %s has an error: %s\n', fname, doc1.id(), file_diff_entry.documentA_errormsg);
+                    end
+                    if ~isempty(file_diff_entry.documentB_errormsg)
+                        fprintf('File %s in document %s has an error: %s\n', fname, doc2.id(), file_diff_entry.documentB_errormsg);
+                    end
+                    if ~isempty(file_diff_entry.documentDiff)
+                        fprintf('File %s in document %s has a mismatch.\n', fname, doc1.id());
+                    end
+                end
+            end
+
+            if ~isempty(file_obj1)
+                D1.database_closebinarydoc(file_obj1);
+            end
+            if ~isempty(file_obj2)
+                D2.database_closebinarydoc(file_obj2);
             end
         end
 
-        report.mismatchedFiles = cat(1, mismatched_files_list{:});
-        report.errors = cat(1, errors_list{:});
+        if ~isempty(file_differences_list)
+            report.fileDifferences = cat(1, file_differences_list{:});
+        end
         return;
     end
 
@@ -115,12 +133,12 @@ function [report] = diff(D1,D2, options)
 
     d1_map = containers.Map();
     for i=1:numel(d1_docs)
-        d1_map(d1_docs{i}.document_properties.base.id) = d1_docs{i};
+        d1_map(d1_docs{i}.id()) = d1_docs{i};
     end
 
     d2_map = containers.Map();
     for i=1:numel(d2_docs)
-        d2_map(d2_docs{i}.document_properties.base.id) = d2_docs{i};
+        d2_map(d2_docs{i}.id()) = d2_docs{i};
     end
 
     d1_ids = d1_map.keys();
@@ -137,9 +155,7 @@ function [report] = diff(D1,D2, options)
     end
 
     mismatched_docs_list = {};
-    mismatched_files_list = {};
-    file_list_diffs_list = {};
-    errors_list = {};
+    file_differences_list = {};
 
     for i=1:numel(common_ids)
         if options.verbose && mod(i, 500) == 0
@@ -164,82 +180,81 @@ function [report] = diff(D1,D2, options)
         if ~isequaln(props1, props2)
             mismatches{end+1} = 'Document properties do not match.';
         end
-
-        f1 = doc1.current_file_list();
-        f2 = doc2.current_file_list();
-
-        files_in_A_only = setdiff(f1, f2);
-        files_in_B_only = setdiff(f2, f1);
-
-        if ~isempty(files_in_A_only) || ~isempty(files_in_B_only)
-            file_list_diffs_list{end+1} = struct('id', doc_id, 'filesInAOnly', {files_in_A_only}, 'filesInBOnly', {files_in_B_only});
-        end
-
-        common_files = intersect(f1, f2);
-
-        for f=1:numel(common_files)
-            try
-                file_obj1 = D1.database_openbinarydoc(doc1, common_files{f});
-                cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
-            catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'uid', common_files{f}, 'message', ['Error opening file in dataset 1: ' e.message]);
-                continue;
-            end
-
-            try
-                file_obj2 = D2.database_openbinarydoc(doc2, common_files{f});
-                cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
-            catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'uid', common_files{f}, 'message', ['Error opening file in dataset 2: ' e.message]);
-                continue;
-            end
-
-            [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
-
-            if ~are_identical
-                mismatched_files_list{end+1} = struct('uid', common_files{f}, 'document_id', doc_id, 'diff', diff_output);
-            end
-        end
-
         if ~isempty(mismatches)
             mismatched_docs_list{end+1} = struct('id', doc_id, 'mismatch', strjoin(mismatches, ' '));
+        end
+
+        fnames1 = doc1.current_file_list();
+        fnames2 = doc2.current_file_list();
+
+        all_fnames = union(fnames1, fnames2);
+
+        for f=1:numel(all_fnames)
+            fname = all_fnames{f};
+
+            [~, ~, ~, fuid1] = doc1.is_in_file_list(fname);
+            [~, ~, ~, fuid2] = doc2.is_in_file_list(fname);
+
+            file_diff_entry = struct(...
+                'documentA_uid', doc1.id(), 'documentB_uid', doc2.id(), ...
+                'documentA_fuid', fuid1, 'documentA_fname', fname, ...
+                'documentB_fuid', fuid2, 'documentB_fname', fname, ...
+                'documentA_size', NaN, 'documentB_size', NaN, ...
+                'documentA_errormsg', '', 'documentB_errormsg', '', ...
+                'documentDiff', '');
+
+            file_obj1 = [];
+            file_obj2 = [];
+
+            if isempty(fuid1)
+                file_diff_entry.documentA_errormsg = 'not present';
+            else
+                try
+                    file_obj1 = D1.database_openbinarydoc(doc1, fname);
+                    fseek(file_obj1.fid, 0, 'eof');
+                    file_diff_entry.documentA_size = ftell(file_obj1.fid);
+                catch e
+                    file_diff_entry.documentA_errormsg = e.message;
+                end
+            end
+
+            if isempty(fuid2)
+                file_diff_entry.documentB_errormsg = 'not present';
+            else
+                try
+                    file_obj2 = D2.database_openbinarydoc(doc2, fname);
+                    fseek(file_obj2.fid, 0, 'eof');
+                    file_diff_entry.documentB_size = ftell(file_obj2.fid);
+                catch e
+                    file_diff_entry.documentB_errormsg = e.message;
+                end
+            end
+
+            if ~isempty(file_obj1) && ~isempty(file_obj2)
+                [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
+                if ~are_identical
+                    file_diff_entry.documentDiff = diff_output;
+                end
+            end
+
+            if ~isempty(file_diff_entry.documentA_errormsg) || ~isempty(file_diff_entry.documentB_errormsg) || ~isempty(file_diff_entry.documentDiff)
+                file_differences_list{end+1} = file_diff_entry;
+            end
+
+            if ~isempty(file_obj1)
+                D1.database_closebinarydoc(file_obj1);
+            end
+            if ~isempty(file_obj2)
+                D2.database_closebinarydoc(file_obj2);
+            end
         end
     end
 
     if ~isempty(mismatched_docs_list)
         report.mismatchedDocuments = cat(1, mismatched_docs_list{:});
-        if options.verbose
-            for i=1:numel(mismatched_docs_list)
-                fprintf('Document %s has a mismatch: %s\n', mismatched_docs_list{i}.id, mismatched_docs_list{i}.mismatch);
-            end
-        end
     end
-
-    if ~isempty(errors_list)
-        report.errors = cat(1, errors_list{:});
-        if options.verbose
-            for i=1:numel(errors_list)
-                fprintf('Error examining file %s in document %s: %s\n', errors_list{i}.uid, errors_list{i}.document_id, errors_list{i}.message);
-            end
-        end
-    end
-
-    if ~isempty(mismatched_files_list)
-        report.mismatchedFiles = cat(1, mismatched_files_list{:});
-        if options.verbose
-            for i=1:numel(mismatched_files_list)
-                fprintf('File %s in document %s has a mismatch.\n', mismatched_files_list{i}.uid, mismatched_files_list{i}.document_id);
-            end
-        end
-    end
-
-    if ~isempty(file_list_diffs_list)
-        report.fileListDifferences = cat(1, file_list_diffs_list{:});
-        if options.verbose
-            for i=1:numel(file_list_diffs_list)
-                fprintf('File lists for document %s are different.\n', file_list_diffs_list{i}.id);
-            end
-        end
+    if ~isempty(file_differences_list)
+        report.fileDifferences = cat(1, file_differences_list{:});
     end
 
 end
