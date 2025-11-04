@@ -37,7 +37,7 @@ function [are_identical, diff_output] = getHexDiffFromFileObj(file_obj1, file_ob
 
         if ~isequal(data1, data2)
             are_identical = false;
-            diff_output = ndi.util.hexDiff(data1, data2);
+            diff_output = evalc('ndi.util.hexDiff(data1, data2)');
             return;
         end
     end
@@ -49,10 +49,10 @@ function [are_identical, diff_output] = getHexDiffFromFileObj(file_obj1, file_ob
         % Optionally, provide a diff of the remaining content of the longer file
         if ~feof(file_obj1.fid)
             data1 = fread(file_obj1.fid, options.chunkSize, '*uint8'); % Read one more chunk
-            diff_output = [diff_output char(10) 'Hexdiff of remaining content in first file:' char(10) ndi.util.hexDiff(data1, uint8([]))];
+            diff_output = [diff_output char(10) 'Hexdiff of remaining content in first file:' char(10) evalc('ndi.util.hexDiff(data1, uint8([]))')];
         else % file 2 is longer
             data2 = fread(file_obj2.fid, options.chunkSize, '*uint8'); % Read one more chunk
-            diff_output = [diff_output char(10) 'Hexdiff of remaining content in second file:' char(10) ndi.util.hexDiff(uint8([]), data2)];
+            diff_output = [diff_output char(10) 'Hexdiff of remaining content in second file:' char(10) evalc('ndi.util.hexDiff(uint8([]), data2)')];
         end
     end
 
