@@ -23,8 +23,24 @@ end
 
     output_lines = {};
 
-    fseek(f1, 0, 'bof');
-    fseek(f2, 0, 'bof');
+    fseek(f1.fid, 0, 'eof');
+    fileSize1 = ftell(f1.fid);
+    fseek(f2.fid, 0, 'eof');
+    fileSize2 = ftell(f2.fid);
+    maxSize = max(fileSize1, fileSize2);
+
+    startByte = options.StartByte;
+    stopByte = options.StopByte;
+
+    if isinf(stopByte)
+        stopByte = maxSize - 1;
+    end
+    if stopByte < 0
+        stopByte = -1;
+    end
+
+    fseek(f1.fid, startByte, 'bof');
+    fseek(f2.fid, startByte, 'bof');
 
     output_lines{end+1} = 'Comparing file objects...';
     output_lines{end+1} = 'Displaying only differing 16-byte lines...';
@@ -32,11 +48,11 @@ end
 
     bytesPerLine = 16;
     differencesFound = false;
-    offset = 0;
+    offset = startByte;
 
-    while ~feof(f1) || ~feof(f2)
-        chunk1 = fread(f1, bytesPerLine, '*uint8');
-        chunk2 = fread(f2, bytesPerLine, '*uint8');
+    while offset <= stopByte && (~feof(f1.fid) || ~feof(f2.fid))
+        chunk1 = fread(f1.fid, bytesPerLine, '*uint8');
+        chunk2 = fread(f2.fid, bytesPerLine, '*uint8');
 
         if numel(chunk1) ~= numel(chunk2) || any(chunk1 ~= chunk2)
             if ~differencesFound

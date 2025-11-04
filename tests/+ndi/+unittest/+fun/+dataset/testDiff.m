@@ -178,5 +178,35 @@ classdef testDiff < matlab.unittest.TestCase
             report2 = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false, 'recheckFileReport', report1);
             testCase.verifyEmpty(report2.mismatchedFiles);
         end
+
+        function testRecheckFileReportWithError(testCase)
+            % Test the recheckFileReport option with an error
+
+            doc_data = struct('name', 'test_doc', 'value', 1);
+            doc1 = ndi.document(doc_data);
+            doc2 = ndi.document(doc_data);
+
+            testCase.session1.database_add(doc1);
+            testCase.session2.database_add(doc2);
+
+            file1_content = 'hello';
+            doc1.add_binary_file(file1_content, 'file.txt');
+            doc2.add_binary_file(file1_content, 'file.txt');
+
+            % Create a fake error report
+            report1 = struct(...
+                'documentsInAOnly', {{}}, ...
+                'documentsInBOnly', {{}}, ...
+                'mismatchedDocuments', struct('id',{}, 'mismatch',{}), ...
+                'mismatchedFiles', struct('uid',{}, 'document_id',{}, 'diff',{}), ...
+                'fileListDifferences', struct('id',{},'filesInAOnly',{},'filesInBOnly',{}), ...
+                'errors', struct('document_id',{doc1.id()}, 'uid',{'file.txt'}, 'message',{'Simulated error'}) ...
+            );
+
+            report2 = ndi.fun.dataset.diff(testCase.session1, testCase.session2, 'verbose', false, 'recheckFileReport', report1);
+
+            testCase.verifyEmpty(report2.errors);
+            testCase.verifyEmpty(report2.mismatchedFiles);
+        end
     end
 end

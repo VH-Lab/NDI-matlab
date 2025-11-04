@@ -43,27 +43,39 @@ function [report] = diff(D1,D2, options)
         'mismatchedDocuments', struct('id',{}, 'mismatch',{}), ...
         'mismatchedFiles', struct('uid',{}, 'document_id',{}, 'diff',{}), ...
         'fileListDifferences', struct('id',{},'filesInAOnly',{},'filesInBOnly',{}), ...
-        'errors', struct('document_id',{}, 'file_uid',{}, 'message',{}) ...
+        'errors', struct('document_id',{}, 'uid',{}, 'message',{}) ...
     );
 
     if ~isempty(options.recheckFileReport)
+        files_to_recheck = {};
+        if isfield(options.recheckFileReport, 'mismatchedFiles')
+            for i=1:numel(options.recheckFileReport.mismatchedFiles)
+                files_to_recheck{end+1} = options.recheckFileReport.mismatchedFiles(i);
+            end
+        end
+        if isfield(options.recheckFileReport, 'errors')
+            for i=1:numel(options.recheckFileReport.errors)
+                files_to_recheck{end+1} = options.recheckFileReport.errors(i);
+            end
+        end
+
         if options.verbose
-            fprintf('Re-checking %d files from the provided report...\n', numel(options.recheckFileReport.mismatchedFiles));
+            fprintf('Re-checking %d files from the provided report...\n', numel(files_to_recheck));
         end
 
         mismatched_files_list = {};
         errors_list = {};
 
-        for i=1:numel(options.recheckFileReport.mismatchedFiles)
-            mismatch_entry = options.recheckFileReport.mismatchedFiles(i);
-            doc_id = mismatch_entry.document_id;
-            file_uid = mismatch_entry.uid;
+        for i=1:numel(files_to_recheck)
+            entry = files_to_recheck{i};
+            doc_id = entry.document_id;
+            file_uid = entry.uid;
 
             doc1 = D1.database_search(ndi.query('ndi_document.id', 'exact_string', doc_id, ''));
             doc2 = D2.database_search(ndi.query('ndi_document.id', 'exact_string', doc_id, ''));
 
             if isempty(doc1) || isempty(doc2)
-                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', file_uid, 'message', 'Could not find document in one or both datasets.');
+                errors_list{end+1} = struct('document_id', doc_id, 'uid', file_uid, 'message', 'Could not find document in one or both datasets.');
                 continue;
             end
 
@@ -74,7 +86,7 @@ function [report] = diff(D1,D2, options)
                 file_obj1 = D1.database_openbinarydoc(doc1, file_uid);
                 cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
             catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', file_uid, 'message', ['Error opening file in dataset 1: ' e.message]);
+                errors_list{end+1} = struct('document_id', doc_id, 'uid', file_uid, 'message', ['Error opening file in dataset 1: ' e.message]);
                 continue;
             end
 
@@ -82,7 +94,7 @@ function [report] = diff(D1,D2, options)
                 file_obj2 = D2.database_openbinarydoc(doc2, file_uid);
                 cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
             catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', file_uid, 'message', ['Error opening file in dataset 2: ' e.message]);
+                errors_list{end+1} = struct('document_id', doc_id, 'uid', file_uid, 'message', ['Error opening file in dataset 2: ' e.message]);
                 continue;
             end
 
@@ -170,7 +182,7 @@ function [report] = diff(D1,D2, options)
                 file_obj1 = D1.database_openbinarydoc(doc1, common_files{f});
                 cleanup1 = onCleanup(@() D1.database_closebinarydoc(file_obj1));
             catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', common_files{f}, 'message', ['Error opening file in dataset 1: ' e.message]);
+                errors_list{end+1} = struct('document_id', doc_id, 'uid', common_files{f}, 'message', ['Error opening file in dataset 1: ' e.message]);
                 continue;
             end
 
@@ -178,7 +190,7 @@ function [report] = diff(D1,D2, options)
                 file_obj2 = D2.database_openbinarydoc(doc2, common_files{f});
                 cleanup2 = onCleanup(@() D2.database_closebinarydoc(file_obj2));
             catch e
-                errors_list{end+1} = struct('document_id', doc_id, 'file_uid', common_files{f}, 'message', ['Error opening file in dataset 2: ' e.message]);
+                errors_list{end+1} = struct('document_id', doc_id, 'uid', common_files{f}, 'message', ['Error opening file in dataset 2: ' e.message]);
                 continue;
             end
 
@@ -207,7 +219,7 @@ function [report] = diff(D1,D2, options)
         report.errors = cat(1, errors_list{:});
         if options.verbose
             for i=1:numel(errors_list)
-                fprintf('Error examining file %s in document %s: %s\n', errors_list{i}.file_uid, errors_list{i}.document_id, errors_list{i}.message);
+                fprintf('Error examining file %s in document %s: %s\n', errors_list{i}.uid, errors_list{i}.document_id, errors_list{i}.message);
             end
         end
     end
