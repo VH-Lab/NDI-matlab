@@ -504,10 +504,22 @@ classdef document
             if isfield(ndi_document_obj.document_properties.files,'file_info')
                 fI_index = find(strcmpi(name,{ndi_document_obj.document_properties.files.file_info.name}));
                 if ~isempty(fI_index)
-                    fuid = ndi_document_obj.document_properties.files.file_info(fI_index).uid;
+                    fuid = ndi_document_obj.document_properties.files.file_info(fI_index).locations(1).uid;
                 end
             end
         end % is_in_file_list()
+
+        function fuid = get_fuid(ndi_document_obj, filename)
+            % GET_FUID - return the file UID for a given filename
+            %
+            % FUID = GET_FUID(NDI_DOCUMENT_OBJ, FILENAME)
+            %
+            % Given a FILENAME, this function returns the file UID (FUID)
+            % associated with that file in the NDI_DOCUMENT_OBJ.
+            % If the file is not found, an empty string is returned.
+            %
+            [~, ~, ~, fuid] = ndi_document_obj.is_in_file_list(filename);
+        end % get_fuid()
 
         function fl = current_file_list(ndi_document_obj)
             % CURRENT_FILE_LIST - return the list of files that have been associated with an ndi.document
