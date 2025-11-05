@@ -23,16 +23,42 @@ function [are_identical, diff_output] = getHexDiffFromFileObj(file_obj1, file_ob
 
     are_identical = true;
     diff_output = '';
-    offset = 0;
 
-    % Rewind files to the beginning for a full comparison
+    % Rewind files to the beginning
     fseek(file_obj1.fid, 0, 'bof');
     fseek(file_obj2.fid, 0, 'bof');
 
-    cleanupObj1 = onCleanup(@() fseek(file_obj1.fid, 0, 'bof')); % rewind after we are done
-    cleanupObj2 = onCleanup(@() fseek(file_obj2.fid, 0, 'bof')); % rewind after we are done
+    cleanupObj1 = onCleanup(@() fseek(file_obj1.fid, 0, 'bof')); % ensure rewind after we are done
+    cleanupObj2 = onCleanup(@() fseek(file_obj2.fid, 0, 'bof')); % ensure rewind after we are done
 
-    while ~feof(file_obj1.fid) && ~feof(file_obj2.fid)
+    % --- 1. First, check the file sizes ---
+    fseek(file_obj1.fid, 0, 'eof');
+    size1 = ftell(file_obj1.fid);
+    fseek(file_obj2.fid, 0, 'eof');
+    size2 = ftell(file_obj2.fid);
+
+    % Rewind again for reading
+    fseek(file_obj1.fid, 0, 'bof');
+    fseek(file_obj2.fid, 0, 'bof');
+
+    if size1 ~= size2
+        are_identical = false;
+        diff_output = sprintf('Files have different sizes (%d bytes vs %d bytes).', size1, size2);
+
+        % Also provide a hex diff of the beginning of the files for context
+        data1 = fread(file_obj1.fid, options.chunkSize, '*uint8');
+        data2 = fread(file_obj2.fid, options.chunkSize, '*uint8');
+
+        % Only add the hexdiff if the content actually differs in the first chunk
+        if ~isequal(data1, data2)
+            diff_output = [diff_output char(10) 'Hexdiff of the start of the files:' char(10) ndi.util.hexDiffBytes(data1, data2)];
+        end
+        return;
+    end
+
+    % --- 2. If sizes are identical, compare content chunk by chunk ---
+    offset = 0;
+    while ~feof(file_obj1.fid)
         data1 = fread(file_obj1.fid, options.chunkSize, '*uint8');
         data2 = fread(file_obj2.fid, options.chunkSize, '*uint8');
 
@@ -41,21 +67,6 @@ function [are_identical, diff_output] = getHexDiffFromFileObj(file_obj1, file_ob
             diff_output = ndi.util.hexDiffBytes(data1, data2, 'StartOffset', offset);
             return;
         end
-        offset = offset + options.chunkSize;
+        offset = offset + numel(data1); % Use actual bytes read for offset
     end
-
-    % After the loop, check if one file has more data than the other
-    if feof(file_obj1.fid) ~= feof(file_obj2.fid)
-        are_identical = false;
-        diff_output = 'Files have different sizes. Comparison stopped at end of shorter file.';
-        % Optionally, provide a diff of the remaining content of the longer file
-        if ~feof(file_obj1.fid)
-            data1 = fread(file_obj1.fid, options.chunkSize, '*uint8'); % Read one more chunk
-            diff_output = [diff_output char(10) 'Hexdiff of remaining content in first file:' char(10) ndi.util.hexDiffBytes(data1, uint8([]), 'StartOffset', offset)];
-        else % file 2 is longer
-            data2 = fread(file_obj2.fid, options.chunkSize, '*uint8'); % Read one more chunk
-            diff_output = [diff_output char(10) 'Hexdiff of remaining content in second file:' char(10) ndi.util.hexDiffBytes(uint8([]), data2, 'StartOffset', offset)];
-        end
-    end
-
 end
