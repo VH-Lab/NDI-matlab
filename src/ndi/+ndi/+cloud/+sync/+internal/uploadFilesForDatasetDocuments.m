@@ -48,27 +48,9 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
     end
 
     if options.onlyMissing
-        [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId, "checkForUpdates", true);
-        if b
-            remote_files = containers.Map();
-            for i=1:numel(file_list)
-                remote_files(file_list(i).uid) = 1;
-            end
-
-            files_to_upload = struct('uid',{},'bytes',{},'file_path',{},'is_uploaded',{});
-            for i=1:numel(file_manifest)
-                if ~isKey(remote_files, file_manifest(i).uid)
-                    new_struct.uid = file_manifest(i).uid;
-                    new_struct.bytes = file_manifest(i).bytes;
-                    new_struct.file_path = file_manifest(i).file_path;
-                    new_struct.is_uploaded = file_manifest(i).is_uploaded;
-                    files_to_upload(end+1) = new_struct;
-                end
-            end
-            file_manifest = files_to_upload;
-        else
+        [file_manifest, message] = ndi.cloud.sync.internal.filesNotYetUploaded(file_manifest, cloudDatasetId);
+        if ~isempty(message)
             success = false;
-            message = 'Could not retrieve remote dataset file list.';
             return;
         end
     end
@@ -91,19 +73,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             app.addBar('Label','Uploading document-associated binary files','tag',uuid,'Auto',true);
             for i=1:numel(file_manifest)
                 if file_manifest(i).is_uploaded==false
-                    [url_success,uploadURL]=ndi.cloud.api.files.getFileUploadURL(cloudDatasetId,file_manifest(i).uid);
-                    if ~url_success
-                        warning('Failed to get upload URL');
+                    [upload_success, upload_message] = ndi.cloud.uploadSingleFile(cloudDatasetId, ...
+                        file_manifest(i).uid, file_manifest(i).file_path);
+                    if ~upload_success
                         if success
-                           message = ['Failed to get upload URL for ' file_manifest(i).uid];
-                        end
-                        success = false;
-                        continue;
-                    end
-                    [put_success] = ndi.cloud.api.files.putFiles(uploadURL,file_manifest(i).file_path);
-                    if ~put_success
-                        if success
-                            message = ['Failed to upload file ' file_manifest(i).uid];
+                            message = ['Failed to upload file ' file_manifest(i).uid ': ' upload_message];
                         end
                         success = false;
                     end

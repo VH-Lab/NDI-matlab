@@ -168,7 +168,9 @@ function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id
     success = 1;
     msg = '';
     file_count = numel(files_to_zip);
-    zip_file = [tempname, '.zip'];
+    tempFile = tempname;
+    [parentDir,zip_file_unique_part] = fileparts(tempFile);
+    zip_file = fullfile(parentDir,[dataset_id '.' zip_file_unique_part '.zip']);
     
     try
         if options.Verbose

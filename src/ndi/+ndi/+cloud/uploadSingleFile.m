@@ -23,6 +23,7 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         cloudFileUID (1,1) string
         filePath (1,1) string {mustBeFile}
         options.useBulkUpload (1,1) logical = false
+        options.useCurl (1,1) logical = true
     end
 
     errormsg = '';
@@ -62,7 +63,7 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         end
 
         % Upload the file
-        [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, filePath);
+        [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, filePath, 'useCurl', options.useCurl);
 
         if ~b_put
             b = false;
