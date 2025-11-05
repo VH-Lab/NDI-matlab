@@ -73,19 +73,11 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             app.addBar('Label','Uploading document-associated binary files','tag',uuid,'Auto',true);
             for i=1:numel(file_manifest)
                 if file_manifest(i).is_uploaded==false
-                    [url_success,uploadURL]=ndi.cloud.api.files.getFileUploadURL(cloudDatasetId,file_manifest(i).uid);
-                    if ~url_success
-                        warning('Failed to get upload URL');
+                    [upload_success, upload_message] = ndi.cloud.uploadSingleFile(cloudDatasetId, ...
+                        file_manifest(i).uid, file_manifest(i).file_path);
+                    if ~upload_success
                         if success
-                           message = ['Failed to get upload URL for ' file_manifest(i).uid];
-                        end
-                        success = false;
-                        continue;
-                    end
-                    [put_success] = ndi.cloud.api.files.putFiles(uploadURL,file_manifest(i).file_path, 'useCurl', true);
-                    if ~put_success
-                        if success
-                            message = ['Failed to upload file ' file_manifest(i).uid];
+                            message = ['Failed to upload file ' file_manifest(i).uid ': ' upload_message];
                         end
                         success = false;
                     end
