@@ -34,8 +34,8 @@ classdef diffTest < matlab.unittest.TestCase
             testCase.D2 = ndi.dataset.dir('dref2', testCase.tempDir2);
 
             % Link sessions to datasets
-            testCase.D1.add_linked_session(testCase.S1.path, 'session_object', testCase.S1);
-            testCase.D2.add_linked_session(testCase.S2.path, 'session_object', testCase.S2);
+            testCase.D1.add_linked_session(testCase.S1);
+            testCase.D2.add_linked_session(testCase.S2);
         end
     end
 
