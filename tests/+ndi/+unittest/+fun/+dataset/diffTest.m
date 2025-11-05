@@ -26,12 +26,12 @@ classdef diffTest < matlab.unittest.TestCase
             mkdir(sessionDir2);
 
             % Create NDI sessions
-            testCase.S1 = ndi.session.dir(sessionDir1);
-            testCase.S2 = ndi.session.dir(sessionDir2);
+            testCase.S1 = ndi.session.dir('ref1', sessionDir1);
+            testCase.S2 = ndi.session.dir('ref2', sessionDir2);
 
             % Create NDI datasets
-            testCase.D1 = ndi.dataset.dir(testCase.tempDir1);
-            testCase.D2 = ndi.dataset.dir(testCase.tempDir2);
+            testCase.D1 = ndi.dataset.dir('dref1', testCase.tempDir1);
+            testCase.D2 = ndi.dataset.dir('dref2', testCase.tempDir2);
 
             % Link sessions to datasets
             testCase.D1.add_linked_session(testCase.S1.get_path(), 'session_object', testCase.S1);
