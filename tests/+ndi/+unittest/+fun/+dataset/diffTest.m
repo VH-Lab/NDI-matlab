@@ -2,74 +2,195 @@ classdef diffTest < matlab.unittest.TestCase
     % DIFFTEST - Test for ndi.fun.dataset.diff
     %
 
-    properties
-        tempDir1
-        tempDir2
-        S1
-        S2
-        D1
-        D2
-    end
-
-    methods (TestMethodSetup)
-        function setupTest(testCase)
-            % Create two temporary directories for the datasets and sessions
-            testCase.tempDir1 = tempname;
-            testCase.tempDir2 = tempname;
-
-            mkdir(testCase.tempDir1);
-            mkdir(testCase.tempDir2);
-
-            sessionDir1 = fullfile(testCase.tempDir1, 'session1');
-            mkdir(sessionDir1);
-            sessionDir2 = fullfile(testCase.tempDir2, 'session2');
-            mkdir(sessionDir2);
-
-            % Create NDI sessions
-            testCase.S1 = ndi.session.dir('ref1', sessionDir1);
-            testCase.S2 = ndi.session.dir('ref2', sessionDir2);
-
-            % Create NDI datasets
-            testCase.D1 = ndi.dataset.dir('dref1', testCase.tempDir1);
-            testCase.D2 = ndi.dataset.dir('dref2', testCase.tempDir2);
-
-            % Link sessions to datasets
-            testCase.D1.add_linked_session(testCase.S1);
-            testCase.D2.add_linked_session(testCase.S2);
-        end
-    end
-
-    methods (TestMethodTeardown)
-        function teardownTest(testCase)
-            % Clean up the temporary directories
-            if exist(testCase.tempDir1, 'dir')
-                rmdir(testCase.tempDir1, 's');
-            end
-            if exist(testCase.tempDir2, 'dir')
-                rmdir(testCase.tempDir2, 's');
-            end
-        end
-    end
-
     methods (Test)
         function testIdenticalDatasets(testCase)
-            % Test comparison of two identical datasets
+            % Create temporary directories
+            tempDir1 = tempname;
+            mkdir(tempDir1);
+            cleanup1 = onCleanup(@() rmdir(tempDir1, 's'));
+
+            tempDir2 = tempname;
+            mkdir(tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+
+            % Setup identical sessions and datasets
+            S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
+            D1 = ndi.dataset.dir('dref1', tempDir1);
+            D1.add_linked_session(S1);
+
+            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
+            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D2.add_linked_session(S2);
+
+            % Add identical documents
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+
+            S1.database_add(doc1);
+            S2.database_add(doc2);
+
+            % Call the diff function
+            report = ndi.fun.dataset.diff(D1, D2);
+
+            % Verify the report is empty
+            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
+            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
+            testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
 
         function testDocumentsInAOnly(testCase)
-            % Test for documents that exist only in the first dataset
+            % Create temporary directories
+            tempDir1 = tempname;
+            mkdir(tempDir1);
+            cleanup1 = onCleanup(@() rmdir(tempDir1, 's'));
+
+            tempDir2 = tempname;
+            mkdir(tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+
+            % Setup sessions and datasets
+            S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
+            D1 = ndi.dataset.dir('dref1', tempDir1);
+            D1.add_linked_session(S1);
+
+            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
+            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D2.add_linked_session(S2);
+
+            % Add a document only to the first dataset
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
+            added_doc = S1.database_add(doc1);
+
+            % Call the diff function
+            report = ndi.fun.dataset.diff(D1, D2);
+
+            % Verify the report
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only.');
+            testCase.verifyEqual(report.documentsInAOnly{1}, added_doc.id(), 'The document ID in A is incorrect.');
+            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
+            testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
 
         function testDocumentsInBOnly(testCase)
-            % Test for documents that exist only in the second dataset
+            % Create temporary directories
+            tempDir1 = tempname;
+            mkdir(tempDir1);
+            cleanup1 = onCleanup(@() rmdir(tempDir1, 's'));
+
+            tempDir2 = tempname;
+            mkdir(tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+
+            % Setup sessions and datasets
+            S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
+            D1 = ndi.dataset.dir('dref1', tempDir1);
+            D1.add_linked_session(S1);
+
+            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
+            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D2.add_linked_session(S2);
+
+            % Add a document only to the second dataset
+            doc2 = S2.newdocument('demoNDI', 'base.name', 'doc in B only', 'demoNDI.value', 1);
+            added_doc = S2.database_add(doc2);
+
+            % Call the diff function
+            report = ndi.fun.dataset.diff(D1, D2);
+
+            % Verify the report
+            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only.');
+            testCase.verifyEqual(report.documentsInBOnly{1}, added_doc.id(), 'The document ID in B is incorrect.');
+            testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
+            testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
 
         function testMismatchedDocuments(testCase)
-            % Test for documents with property differences
+            % Create temporary directories
+            tempDir1 = tempname;
+            mkdir(tempDir1);
+            cleanup1 = onCleanup(@() rmdir(tempDir1, 's'));
+
+            tempDir2 = tempname;
+            mkdir(tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+
+            % Setup sessions and datasets
+            S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
+            D1 = ndi.dataset.dir('dref1', tempDir1);
+            D1.add_linked_session(S1);
+
+            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
+            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D2.add_linked_session(S2);
+
+            % Add documents with same ID but different properties
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            added_doc = S1.database_add(doc1);
+
+            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 2); % Different value
+            S2.database_add(doc2);
+
+            % Call the diff function
+            report = ndi.fun.dataset.diff(D1, D2);
+
+            % Verify the report
+            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
+            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEqual(numel(report.mismatchedDocuments), 1, 'Should be one mismatched document.');
+            testCase.verifyEqual(report.mismatchedDocuments(1).id, added_doc.id(), 'The mismatched document ID is incorrect.');
+            testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
 
         function testMismatchedFiles(testCase)
-            % Test for files with content differences
+            % Create temporary directories
+            tempDir1 = tempname;
+            mkdir(tempDir1);
+            cleanup1 = onCleanup(@() rmdir(tempDir1, 's'));
+
+            tempDir2 = tempname;
+            mkdir(tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+
+            % Setup sessions and datasets
+            S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
+            D1 = ndi.dataset.dir('dref1', tempDir1);
+            D1.add_linked_session(S1);
+
+            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
+            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D2.add_linked_session(S2);
+
+            % Add documents with files that have different content
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc');
+            file1_path = fullfile(tempDir1, 'file1.bin');
+            fid1 = fopen(file1_path, 'w');
+            fwrite(fid1, 'content1', 'char');
+            fclose(fid1);
+            doc1 = doc1.add_file('my_file', file1_path);
+            added_doc1 = S1.database_add(doc1);
+
+            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc');
+            file2_path = fullfile(tempDir2, 'file2.bin');
+            fid2 = fopen(file2_path, 'w');
+            fwrite(fid2, 'content2', 'char');
+            fclose(fid2);
+            doc2 = doc2.add_file('my_file', file2_path);
+            added_doc2 = S2.database_add(doc2);
+
+            % Call the diff function
+            report = ndi.fun.dataset.diff(D1, D2);
+
+            % Verify the report
+            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
+            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
+            testCase.verifyEqual(numel(report.fileDifferences), 1, 'Should be one file difference.');
+            testCase.verifyEqual(report.fileDifferences(1).documentA_uid, added_doc1.id(), 'The document A UID is incorrect.');
+            testCase.verifyEqual(report.fileDifferences(1).documentB_uid, added_doc2.id(), 'The document B UID is incorrect.');
+            testCase.verifyNotEmpty(report.fileDifferences(1).documentDiff, 'The document diff should not be empty.');
         end
 
         function testFileListDifferences(testCase)
