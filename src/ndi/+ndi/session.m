@@ -376,19 +376,37 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
         end % validate_documents()
 
-        function ndi_binarydoc_obj = database_openbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
+        function ndi_binarydoc_obj = database_openbinarydoc(ndi_session_obj, ndi_document_or_id, filename, options)
             % DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
             %
-            % NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+            % NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME, ...)
             %
             %  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
             %  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
             %  The document is opened for reading only. Document binary streams may not be edited once the
             %  document is added to the database.
             %
-            %  Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC.
+            %  Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC unless 'autoClose' is used.
             %
-            ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
+            %  This function takes name/value pairs that modify its behavior.
+            %  Parameter (default)     | Description
+            %  ------------------------------------------------------------------
+            %  autoClose (false)       | Automatically close the file when the returned object goes out of scope.
+            %
+                arguments
+                    ndi_session_obj (1,1) ndi.session
+                    ndi_document_or_id
+                    filename (1,:) char
+                    options.autoClose (1,1) logical = false
+                end
+
+                ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
+                if options.autoClose
+                    if ~isprop(ndi_binarydoc_obj, 'cleanupObj')
+                        addprop(ndi_binarydoc_obj,'cleanupObj');
+                    end
+                    ndi_binarydoc_obj.cleanupObj = onCleanup(@() ndi_session_obj.database_closebinarydoc(ndi_binarydoc_obj));
+                end
         end % database_openbinarydoc
 
         function [tf, file_path] = database_existbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
