@@ -77,7 +77,8 @@ function [report] = diff(D1,D2, options)
             file_obj2 = [];
 
             try
-                file_obj1 = D1.database_openbinarydoc(doc1{1}, entry.documentA_fname);
+                S1 = D1.open_session(doc1{1}.session_id());
+                file_obj1 = S1.database_openbinarydoc(doc1{1}, entry.documentA_fname);
                 fseek(file_obj1.fid, 0, 'eof');
                 file_diff_entry.documentA_size = ftell(file_obj1.fid);
             catch e
@@ -85,7 +86,8 @@ function [report] = diff(D1,D2, options)
             end
 
             try
-                file_obj2 = D2.database_openbinarydoc(doc2{1}, entry.documentB_fname);
+                S2 = D2.open_session(doc2{1}.session_id());
+                file_obj2 = S2.database_openbinarydoc(doc2{1}, entry.documentB_fname);
                 fseek(file_obj2.fid, 0, 'eof');
                 file_diff_entry.documentB_size = ftell(file_obj2.fid);
             catch e
@@ -115,10 +117,10 @@ function [report] = diff(D1,D2, options)
             end
 
             if ~isempty(file_obj1)
-                D1.database_closebinarydoc(file_obj1);
+                S1.database_closebinarydoc(file_obj1);
             end
             if ~isempty(file_obj2)
-                D2.database_closebinarydoc(file_obj2);
+                S2.database_closebinarydoc(file_obj2);
             end
         end
 
@@ -149,6 +151,15 @@ function [report] = diff(D1,D2, options)
 
     common_ids = intersect(d1_ids, d2_ids);
 
+    % Sort common_ids by session_id
+    session_ids = cell(numel(common_ids), 1);
+    for i=1:numel(common_ids)
+        doc = d1_map(common_ids{i});
+        session_ids{i} = doc.session_id();
+    end
+    [~, sort_order] = sort(session_ids);
+    common_ids = common_ids(sort_order);
+
     if options.verbose
         fprintf('Found %d documents in the first dataset and %d documents in the second.\n', numel(d1_ids), numel(d2_ids));
         fprintf('Comparing %d common documents...\n', numel(common_ids));
@@ -157,6 +168,10 @@ function [report] = diff(D1,D2, options)
     mismatched_docs_list = {};
     file_differences_list = {};
 
+    current_S1 = [];
+    current_S2 = [];
+    current_session_id = '';
+
     for i=1:numel(common_ids)
         if options.verbose && mod(i, 500) == 0
             fprintf('...examined %d documents...\n', i);
@@ -164,6 +179,12 @@ function [report] = diff(D1,D2, options)
         doc_id = common_ids{i};
         doc1 = d1_map(doc_id);
         doc2 = d2_map(doc_id);
+
+        if ~strcmp(doc1.session_id(), current_session_id)
+            current_session_id = doc1.session_id();
+            current_S1 = D1.open_session(current_session_id);
+            current_S2 = D2.open_session(current_session_id);
+        end
 
         mismatches = {};
 
@@ -210,7 +231,7 @@ function [report] = diff(D1,D2, options)
                 file_diff_entry.documentA_errormsg = 'not present';
             else
                 try
-                    file_obj1 = D1.database_openbinarydoc(doc1, fname);
+                    file_obj1 = current_S1.database_openbinarydoc(doc1, fname);
                     fseek(file_obj1.fid, 0, 'eof');
                     file_diff_entry.documentA_size = ftell(file_obj1.fid);
                 catch e
@@ -222,7 +243,7 @@ function [report] = diff(D1,D2, options)
                 file_diff_entry.documentB_errormsg = 'not present';
             else
                 try
-                    file_obj2 = D2.database_openbinarydoc(doc2, fname);
+                    file_obj2 = current_S2.database_openbinarydoc(doc2, fname);
                     fseek(file_obj2.fid, 0, 'eof');
                     file_diff_entry.documentB_size = ftell(file_obj2.fid);
                 catch e
@@ -242,10 +263,10 @@ function [report] = diff(D1,D2, options)
             end
 
             if ~isempty(file_obj1)
-                D1.database_closebinarydoc(file_obj1);
+                current_S1.database_closebinarydoc(file_obj1);
             end
             if ~isempty(file_obj2)
-                D2.database_closebinarydoc(file_obj2);
+                current_S2.database_closebinarydoc(file_obj2);
             end
         end
     end
