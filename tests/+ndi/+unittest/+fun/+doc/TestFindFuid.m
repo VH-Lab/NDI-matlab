@@ -24,7 +24,7 @@ classdef TestFindFuid < matlab.unittest.TestCase
             testCase.D.add_linked_session(testCase.S);
 
             % Create a test document with a file
-            test_doc_ndi = ndi.document('demoNDI');
+            test_doc_ndi = ndi.document('demoNDI', 'demoNDI.value', 5);
 
             % Create a dummy file
             testCase.test_filename = 'dummy.txt';

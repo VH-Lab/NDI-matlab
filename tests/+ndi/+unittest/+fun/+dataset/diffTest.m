@@ -36,9 +36,9 @@ classdef diffTest < matlab.unittest.TestCase
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
 
-            % Verify the report is empty
-            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
-            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            % Verify the report is empty - accounting for the session document
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session doc).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session doc).');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
@@ -73,9 +73,9 @@ classdef diffTest < matlab.unittest.TestCase
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only.');
-            testCase.verifyEqual(report.documentsInAOnly{1}, added_doc.id(), 'The document ID in A is incorrect.');
-            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 2, 'Should be two documents in A only.');
+            testCase.verifyTrue(any(strcmp(added_doc.id(), report.documentsInAOnly)), 'The added document was not found in A only.');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session doc).');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
@@ -110,9 +110,9 @@ classdef diffTest < matlab.unittest.TestCase
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only.');
-            testCase.verifyEqual(report.documentsInBOnly{1}, added_doc.id(), 'The document ID in B is incorrect.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session doc).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 2, 'Should be two documents in B only.');
+            testCase.verifyTrue(any(strcmp(added_doc.id(), report.documentsInBOnly)), 'The added document was not found in B only.');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
@@ -151,8 +151,8 @@ classdef diffTest < matlab.unittest.TestCase
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
-            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session doc).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session doc).');
             testCase.verifyEqual(numel(report.mismatchedDocuments), 1, 'Should be one mismatched document.');
             testCase.verifyEqual(report.mismatchedDocuments(1).id, added_doc.id(), 'The mismatched document ID is incorrect.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
@@ -180,7 +180,7 @@ classdef diffTest < matlab.unittest.TestCase
             D2.add_linked_session(S2);
 
             % Add documents with files that have different content
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc');
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             file1_path = fullfile(tempDir1, 'file1.bin');
             fid1 = fopen(file1_path, 'w');
             fwrite(fid1, 'content1', 'char');
@@ -189,7 +189,7 @@ classdef diffTest < matlab.unittest.TestCase
             doc1 = doc1 + S1.newdocument();
             added_doc1 = S1.database_add(doc1);
 
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc');
+            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             file2_path = fullfile(tempDir2, 'file2.bin');
             fid2 = fopen(file2_path, 'w');
             fwrite(fid2, 'content2', 'char');
@@ -202,8 +202,8 @@ classdef diffTest < matlab.unittest.TestCase
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEmpty(report.documentsInAOnly, 'Documents in A should be empty.');
-            testCase.verifyEmpty(report.documentsInBOnly, 'Documents in B should be empty.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session doc).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session doc).');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEqual(numel(report.fileDifferences), 1, 'Should be one file difference.');
             testCase.verifyEqual(report.fileDifferences(1).documentA_uid, added_doc1.id(), 'The document A UID is incorrect.');
