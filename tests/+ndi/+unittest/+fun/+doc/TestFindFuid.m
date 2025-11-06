@@ -35,6 +35,9 @@ classdef TestFindFuid < matlab.unittest.TestCase
 
             test_doc_ndi = test_doc_ndi.add_file('filename1.ext', dummy_filepath, 'ingest', 1, 'delete_original', 0);
 
+            % Combine with session document to get correct session_id
+            test_doc_ndi = test_doc_ndi + testCase.S.newdocument();
+
             % Store the known FUID and add the doc to the database
             testCase.known_fuid = test_doc_ndi.document_properties.files.file_info(1).locations(1).uid;
             testCase.test_doc = testCase.S.database_add(test_doc_ndi);

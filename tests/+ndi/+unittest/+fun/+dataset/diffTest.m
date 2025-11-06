@@ -26,9 +26,11 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Add identical documents
             doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
-
+            doc1 = doc1 + S1.newdocument();
             S1.database_add(doc1);
+
+            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc2 = doc2 + S2.newdocument();
             S2.database_add(doc2);
 
             % Call the diff function
@@ -64,6 +66,7 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Add a document only to the first dataset
             doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
+            doc1 = doc1 + S1.newdocument();
             added_doc = S1.database_add(doc1);
 
             % Call the diff function
@@ -100,6 +103,7 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Add a document only to the second dataset
             doc2 = S2.newdocument('demoNDI', 'base.name', 'doc in B only', 'demoNDI.value', 1);
+            doc2 = doc2 + S2.newdocument();
             added_doc = S2.database_add(doc2);
 
             % Call the diff function
@@ -136,9 +140,11 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Add documents with same ID but different properties
             doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = doc1 + S1.newdocument();
             added_doc = S1.database_add(doc1);
 
             doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 2); % Different value
+            doc2 = doc2 + S2.newdocument();
             S2.database_add(doc2);
 
             % Call the diff function
@@ -180,6 +186,7 @@ classdef diffTest < matlab.unittest.TestCase
             fwrite(fid1, 'content1', 'char');
             fclose(fid1);
             doc1 = doc1.add_file('filename1.ext', file1_path);
+            doc1 = doc1 + S1.newdocument();
             added_doc1 = S1.database_add(doc1);
 
             doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc');
@@ -188,6 +195,7 @@ classdef diffTest < matlab.unittest.TestCase
             fwrite(fid2, 'content2', 'char');
             fclose(fid2);
             doc2 = doc2.add_file('filename1.ext', file2_path);
+            doc2 = doc2 + S2.newdocument();
             added_doc2 = S2.database_add(doc2);
 
             % Call the diff function
