@@ -380,13 +380,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %  This function takes name/value pairs that modify its behavior.
             %  Parameter (default)     | Description
             %  ------------------------------------------------------------------
-            %  autoClose (false)       | Automatically close the file when the returned object goes out of scope.
+            %  autoClose (true)       | Automatically close the file when the returned object goes out of scope.
             %
                 arguments
                     ndi_dataset_obj
                     ndi_document_or_id
                     filename
-                    options.autoClose (1,1) logical = false
+                    options.autoClose (1,1) logical = true
                 end
             ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
         end % database_openbinarydoc
