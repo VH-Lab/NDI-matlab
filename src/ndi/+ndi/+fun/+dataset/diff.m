@@ -170,7 +170,8 @@ function [report] = diff(D1,D2, options)
 
     current_S1 = [];
     current_S2 = [];
-    current_session_id = '';
+    current_session_id_1 = '';
+    current_session_id_2 = '';
 
     for i=1:numel(common_ids)
         if options.verbose && mod(i, 500) == 0
@@ -180,10 +181,13 @@ function [report] = diff(D1,D2, options)
         doc1 = d1_map(doc_id);
         doc2 = d2_map(doc_id);
 
-        if ~strcmp(doc1.session_id(), current_session_id)
-            current_session_id = doc1.session_id();
-            current_S1 = D1.open_session(current_session_id);
-            current_S2 = D2.open_session(current_session_id);
+        if ~strcmp(doc1.session_id(), current_session_id_1)
+            current_session_id_1 = doc1.session_id();
+            current_S1 = D1.open_session(current_session_id_1);
+        end
+        if ~strcmp(doc2.session_id(), current_session_id_2)
+            current_session_id_2 = doc2.session_id();
+            current_S2 = D2.open_session(current_session_id_2);
         end
 
         mismatches = {};
