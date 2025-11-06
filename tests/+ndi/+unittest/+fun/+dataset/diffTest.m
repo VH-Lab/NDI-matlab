@@ -143,8 +143,12 @@ classdef diffTest < matlab.unittest.TestCase
             doc1 = doc1 + S1.newdocument();
             S1.database_add(doc1);
 
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 2); % Different value
-            doc2 = doc2 + S2.newdocument();
+            doc2_structure = doc1.document_properties;
+            doc2_structure.demoNDI.value = 2;
+            doc2_structure.base.session_id = S2.id();
+
+            doc2 = ndi.document(doc2_structure);
+
             S2.database_add(doc2);
 
             D1.add_linked_session(S1);
@@ -194,13 +198,18 @@ classdef diffTest < matlab.unittest.TestCase
             doc1 = doc1 + S1.newdocument();
             S1.database_add(doc1);
 
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc2_structure = doc1.document_properties;
+            doc2_structure.demoNDI.value = 2;
+            doc2_structure.base.session_id = S2.id();
+
+            doc2 = ndi.document(doc2_structure);
+            doc2 = doc2.reset_file_info();
+
             file2_path = fullfile(tempDir2, 'file2.bin');
             fid2 = fopen(file2_path, 'w');
             fwrite(fid2, 'content2', 'char');
             fclose(fid2);
             doc2 = doc2.add_file('filename1.ext', file2_path);
-            doc2 = doc2 + S2.newdocument();
             S2.database_add(doc2);
 
             D1.add_linked_session(S1);
@@ -208,10 +217,11 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
+            report.fileDifferences
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 2, 'Should be two documents in A only (one is the session doc).');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 2, 'Should be two documents in B only (one is the session doc).');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (session doc).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (session doc).');
             testCase.verifyEqual(numel(report.fileDifferences), 1, 'Should be one file difference.');
             testCase.verifyEqual(report.fileDifferences(1).documentA_uid, doc1.id(), 'The document A UID is incorrect.');
             testCase.verifyEqual(report.fileDifferences(1).documentB_uid, doc2.id(), 'The document B UID is incorrect.');
