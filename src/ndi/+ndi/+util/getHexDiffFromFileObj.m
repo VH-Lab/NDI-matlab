@@ -3,7 +3,7 @@ function [are_identical, diff_output] = getHexDiffFromFileObj(file_obj1, file_ob
 %
 %   [ARE_IDENTICAL, DIFF_OUTPUT] = ndi.util.getHexDiffFromFileObj(FILE_OBJ1, FILE_OBJ2, ...)
 %
-%   Compares two file objects (structs with a field 'fid' which is a file identifier)
+%   Compares two did.file.fileobj file objects (structs with a field 'fid' which is a file identifier)
 %   in a memory-efficient manner by reading them in chunks.
 %
 %   Outputs:
@@ -16,8 +16,8 @@ function [are_identical, diff_output] = getHexDiffFromFileObj(file_obj1, file_ob
 %   'chunkSize' (default 1048576)  - The size of chunks (in bytes) to read from the files for comparison.
 %
     arguments
-        file_obj1 (1,1) struct
-        file_obj2 (1,1) struct
+        file_obj1 (1,1) did.file.fileobj
+        file_obj2 (1,1) did.file.fileobj
         options.chunkSize (1,1) {mustBeInteger, mustBePositive} = 1024*1024 % 1MB default
     end
 

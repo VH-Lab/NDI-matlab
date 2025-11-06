@@ -42,13 +42,11 @@ classdef getHexDiffFromFileObjTest < matlab.unittest.TestCase
             fclose(fid2);
 
             % 2. Open files and get file objects
-            fid1_read = fopen(file1_path, 'r');
-            file_obj1.fid = fid1_read;
-            cleanup1 = onCleanup(@() fclose(fid1_read));
+            file_obj1 = did.file.fileobj(file1_path, 'r');
+            cleanup1 = onCleanup(@() file_obj1.close());
 
-            fid2_read = fopen(file2_path, 'r');
-            file_obj2.fid = fid2_read;
-            cleanup2 = onCleanup(@() fclose(fid2_read));
+            file_obj2 = did.file.fileobj(file2_path, 'r');
+            cleanup2 = onCleanup(@() file_obj2.close());
 
             % 3. Call the function
             [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
@@ -76,13 +74,11 @@ classdef getHexDiffFromFileObjTest < matlab.unittest.TestCase
             fwrite(fid2, content2, 'uint8');
             fclose(fid2);
 
-            fid1_read = fopen(file1_path, 'r');
-            file_obj1.fid = fid1_read;
-            cleanup1 = onCleanup(@() fclose(fid1_read));
+            file_obj1 = did.file.fileobj(file1_path, 'r');
+            cleanup1 = onCleanup(@() file_obj1.close());
 
-            fid2_read = fopen(file2_path, 'r');
-            file_obj2.fid = fid2_read;
-            cleanup2 = onCleanup(@() fclose(fid2_read));
+            file_obj2 = did.file.fileobj(file2_path, 'r');
+            cleanup2 = onCleanup(@() file_obj2.close());
 
             [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
 
@@ -107,13 +103,11 @@ classdef getHexDiffFromFileObjTest < matlab.unittest.TestCase
             fwrite(fid2, content2, 'uint8');
             fclose(fid2);
 
-            fid1_read = fopen(file1_path, 'r');
-            file_obj1.fid = fid1_read;
-            cleanup1 = onCleanup(@() fclose(fid1_read));
+            file_obj1 = did.file.fileobj(file1_path, 'r');
+            cleanup1 = onCleanup(@() file_obj1.close());
 
-            fid2_read = fopen(file2_path, 'r');
-            file_obj2.fid = fid2_read;
-            cleanup2 = onCleanup(@() fclose(fid2_read));
+            file_obj2 = did.file.fileobj(file2_path, 'r');
+            cleanup2 = onCleanup(@() file_obj2.close());
 
             [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
 
@@ -139,13 +133,11 @@ classdef getHexDiffFromFileObjTest < matlab.unittest.TestCase
             fwrite(fid2, content2, 'uint8');
             fclose(fid2);
 
-            fid1_read = fopen(file1_path, 'r');
-            file_obj1.fid = fid1_read;
-            cleanup1 = onCleanup(@() fclose(fid1_read));
+            file_obj1 = did.file.fileobj(file1_path, 'r');
+            cleanup1 = onCleanup(@() file_obj1.close());
 
-            fid2_read = fopen(file2_path, 'r');
-            file_obj2.fid = fid2_read;
-            cleanup2 = onCleanup(@() fclose(fid2_read));
+            file_obj2 = did.file.fileobj(file2_path, 'r');
+            cleanup2 = onCleanup(@() file_obj2.close());
 
             [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
 
@@ -163,13 +155,11 @@ classdef getHexDiffFromFileObjTest < matlab.unittest.TestCase
             fclose(fopen(file1_path, 'w'));
             fclose(fopen(file2_path, 'w'));
 
-            fid1_read = fopen(file1_path, 'r');
-            file_obj1.fid = fid1_read;
-            cleanup1 = onCleanup(@() fclose(fid1_read));
+            file_obj1 = did.file.fileobj(file1_path, 'r');
+            cleanup1 = onCleanup(@() file_obj1.close());
 
-            fid2_read = fopen(file2_path, 'r');
-            file_obj2.fid = fid2_read;
-            cleanup2 = onCleanup(@() fclose(fid2_read));
+            file_obj2 = did.file.fileobj(file2_path, 'r');
+            cleanup2 = onCleanup(@() file_obj2.close());
 
             [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
 
