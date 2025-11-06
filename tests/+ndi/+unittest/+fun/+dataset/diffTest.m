@@ -156,10 +156,6 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
-            report.mismatchedDocuments
-
-            doc1.document_properties.base
-            doc2.document_properties.base
 
             % Verify the report
             testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session document).');
@@ -217,7 +213,6 @@ classdef diffTest < matlab.unittest.TestCase
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
-            report.fileDifferences
 
             % Verify the report
             testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (session doc).');
