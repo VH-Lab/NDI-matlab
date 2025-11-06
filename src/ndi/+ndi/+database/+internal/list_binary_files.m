@@ -32,7 +32,7 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
 
     for i = 1:num_documents
 
-        if verbose && (mod(i, 10)==0 || i == num_documents)
+        if verbose && (mod(i, 1000)==0 || i == num_documents)
             fprintf('Working on document %d of %d\n', i, num_documents)
         end
 
