@@ -25,12 +25,11 @@ classdef diffTest < matlab.unittest.TestCase
             D2.add_linked_session(S2);
 
             % Add identical documents
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
-            doc1 = doc1 + S1.newdocument();
+            doc1_base = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = doc1_base + S1.newdocument();
             S1.database_add(doc1);
 
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
-            doc2 = doc2 + S2.newdocument();
+            doc2 = doc1_base + S2.newdocument();
             S2.database_add(doc2);
 
             % Call the diff function
