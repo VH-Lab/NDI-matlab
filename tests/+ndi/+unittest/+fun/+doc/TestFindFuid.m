@@ -33,7 +33,7 @@ classdef TestFindFuid < matlab.unittest.TestCase
             fprintf(fid, 'some data');
             fclose(fid);
 
-            test_doc_ndi = test_doc_ndi.add_file('text_file', dummy_filepath, 'ingest', 1, 'delete_original', 0);
+            test_doc_ndi = test_doc_ndi.add_file('filename1.ext', dummy_filepath, 'ingest', 1, 'delete_original', 0);
 
             % Store the known FUID and add the doc to the database
             testCase.known_fuid = test_doc_ndi.document_properties.files.file_info(1).locations(1).uid;
@@ -57,7 +57,7 @@ classdef TestFindFuid < matlab.unittest.TestCase
 
             testCase.verifyNotEmpty(found_doc, 'Should have found a document.');
             testCase.verifyEqual(found_doc.id(), testCase.test_doc.id(), 'The found document ID does not match the expected ID.');
-            testCase.verifyEqual(found_filename, 'text_file', 'The found filename does not match the expected filename.');
+            testCase.verifyEqual(found_filename, 'filename1.ext', 'The found filename does not match the expected filename.');
         end
 
         function testFindFuid_NotFound(testCase)
@@ -77,7 +77,7 @@ classdef TestFindFuid < matlab.unittest.TestCase
 
             testCase.verifyNotEmpty(found_doc, 'Should have found a document in the session.');
             testCase.verifyEqual(found_doc.id(), testCase.test_doc.id(), 'The found document ID does not match the expected ID.');
-            testCase.verifyEqual(found_filename, 'text_file', 'The found filename does not match the expected filename.');
+            testCase.verifyEqual(found_filename, 'filename1.ext', 'The found filename does not match the expected filename.');
         end
     end
 end

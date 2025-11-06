@@ -169,7 +169,7 @@ classdef diffTest < matlab.unittest.TestCase
             fid1 = fopen(file1_path, 'w');
             fwrite(fid1, 'content1', 'char');
             fclose(fid1);
-            doc1 = doc1.add_file('my_file', file1_path);
+            doc1 = doc1.add_file('filename1.ext', file1_path);
             added_doc1 = S1.database_add(doc1);
 
             doc2 = S2.newdocument('demoNDI', 'base.name', 'test doc');
@@ -177,7 +177,7 @@ classdef diffTest < matlab.unittest.TestCase
             fid2 = fopen(file2_path, 'w');
             fwrite(fid2, 'content2', 'char');
             fclose(fid2);
-            doc2 = doc2.add_file('my_file', file2_path);
+            doc2 = doc2.add_file('filename1.ext', file2_path);
             added_doc2 = S2.database_add(doc2);
 
             % Call the diff function
