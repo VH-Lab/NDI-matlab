@@ -162,8 +162,8 @@ classdef diffTest < matlab.unittest.TestCase
             doc2.document_properties.base
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 2, 'Should be two documents in A only.');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 2, 'Should be two documents in B only.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session document).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session document).');
             testCase.verifyEqual(numel(report.mismatchedDocuments), 1, 'Should be one mismatched document.');
             testCase.verifyEqual(report.mismatchedDocuments(1).id, doc1.id(), 'The mismatched document ID is incorrect.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
