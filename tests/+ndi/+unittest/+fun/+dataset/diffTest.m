@@ -14,10 +14,12 @@ classdef diffTest < matlab.unittest.TestCase
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
             % Setup identical sessions and datasets
+            mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
             D1.add_linked_session(S1);
 
+            mkdir(fullfile(tempDir2, 'session'));
             S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
             D2 = ndi.dataset.dir('dref2', tempDir2);
             D2.add_linked_session(S2);
@@ -50,10 +52,12 @@ classdef diffTest < matlab.unittest.TestCase
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
             % Setup sessions and datasets
+            mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
             D1.add_linked_session(S1);
 
+            mkdir(fullfile(tempDir2, 'session'));
             S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
             D2 = ndi.dataset.dir('dref2', tempDir2);
             D2.add_linked_session(S2);
@@ -84,10 +88,12 @@ classdef diffTest < matlab.unittest.TestCase
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
             % Setup sessions and datasets
+            mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
             D1.add_linked_session(S1);
 
+            mkdir(fullfile(tempDir2, 'session'));
             S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
             D2 = ndi.dataset.dir('dref2', tempDir2);
             D2.add_linked_session(S2);
@@ -118,10 +124,12 @@ classdef diffTest < matlab.unittest.TestCase
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
             % Setup sessions and datasets
+            mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
             D1.add_linked_session(S1);
 
+            mkdir(fullfile(tempDir2, 'session'));
             S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
             D2 = ndi.dataset.dir('dref2', tempDir2);
             D2.add_linked_session(S2);
@@ -155,10 +163,12 @@ classdef diffTest < matlab.unittest.TestCase
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
             % Setup sessions and datasets
+            mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
             D1.add_linked_session(S1);
 
+            mkdir(fullfile(tempDir2, 'session'));
             S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
             D2 = ndi.dataset.dir('dref2', tempDir2);
             D2.add_linked_session(S2);
