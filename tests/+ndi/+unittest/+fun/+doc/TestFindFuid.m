@@ -40,7 +40,8 @@ classdef TestFindFuid < matlab.unittest.TestCase
 
             % Store the known FUID and add the doc to the database
             testCase.known_fuid = test_doc_ndi.document_properties.files.file_info(1).locations(1).uid;
-            testCase.test_doc = testCase.S.database_add(test_doc_ndi);
+            testCase.S.database_add(test_doc_ndi);
+            testCase.test_doc = test_doc_ndi;
         end
     end
 
