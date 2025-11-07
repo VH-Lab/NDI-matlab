@@ -55,7 +55,7 @@ classdef PublishDataset < ndi.cloud.api.call
 
             apiResponse = send(request, apiURL);
             
-            if (apiResponse.StatusCode == 200)
+            if (apiResponse.StatusCode == 200 || apiResponse.StatusCode == 202)
                 b = true;
                 answer = apiResponse.Body.Data;
             else
