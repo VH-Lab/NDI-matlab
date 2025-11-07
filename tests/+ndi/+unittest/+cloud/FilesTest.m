@@ -121,6 +121,8 @@ classdef FilesTest < matlab.unittest.TestCase
             if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
             testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the file is marked as 'uploaded'.";
+            testCase.verifyTrue(file_list(1).uploaded, "The file in the dataset's file list is not marked as 'uploaded'. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -208,6 +210,8 @@ classdef FilesTest < matlab.unittest.TestCase
             if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
             testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the file is marked as 'uploaded'.";
+            testCase.verifyTrue(file_list(1).uploaded, "The file in the dataset's file list is not marked as 'uploaded'. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -292,6 +296,8 @@ classdef FilesTest < matlab.unittest.TestCase
             if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
             testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the file is marked as 'uploaded'.";
+            testCase.verifyTrue(file_list(1).uploaded, "The file in the dataset's file list is not marked as 'uploaded'. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -396,6 +402,8 @@ classdef FilesTest < matlab.unittest.TestCase
             if numel(file_list) ~= 1, return; end
             narrative(end+1) = "Testing: Verifying that the UID in the file list matches the uploaded file's UID.";
             testCase.verifyEqual(file_list(1).uid, char(fileUID), "The UID in the dataset's file list does not match the uploaded UID. " + msg_list);
+            narrative(end+1) = "Testing: Verifying that the file is marked as 'uploaded'.";
+            testCase.verifyTrue(file_list(1).uploaded, "The file in the dataset's file list is not marked as 'uploaded'. " + msg_list);
             narrative(end+1) = "File successfully appeared in the dataset's file list.";
             % Step 4: Get file details to verify upload and get download URL
             narrative(end+1) = "Preparing to get file details to verify upload.";
@@ -491,6 +499,33 @@ classdef FilesTest < matlab.unittest.TestCase
             
             pause(10); % Give server time to process the zip file
             
+            % Step 3.5: Verify the file appears in the dataset's file list
+            narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
+            if ~b_list, return; end
+            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains " + numFiles + " files.";
+            testCase.verifyNumElements(file_list, numFiles, "Dataset file list does not contain exactly " + numFiles + " files. " + msg_list);
+            if numel(file_list) ~= numFiles, return; end
+
+            % Create a map for quick UID lookup
+            fileListMap = containers.Map({file_list.uid}, 1:numel(file_list));
+
+            for i = 1:numFiles
+                fileUID = char(fileUIDs(i));
+                narrative(end+1) = "Testing: Verifying that UID " + fileUID + " is in the file list.";
+                testCase.verifyTrue(isKey(fileListMap, fileUID), "UID " + fileUID + " not found in the dataset's file list. " + msg_list);
+                if isKey(fileListMap, fileUID)
+                    idx = fileListMap(fileUID);
+                    narrative(end+1) = "Testing: Verifying that file " + fileUID + " is marked as 'uploaded'.";
+                    testCase.verifyTrue(file_list(idx).uploaded, "File " + fileUID + " is not marked as 'uploaded'. " + msg_list);
+                end
+            end
+            narrative(end+1) = "All uploaded files appeared in the dataset's file list and are marked as uploaded.";
+
             % Step 4: Verify each file individually
             narrative(end+1) = "Preparing to verify each uploaded file individually.";
             for i=1:numFiles
@@ -583,6 +618,7 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_list_true, "listFiles with updates enabled failed. " + msg_list_true);
             testCase.verifyNumElements(file_list_true, 1, "Expected to find 1 file with update check enabled. " + msg_list_true);
             testCase.verifyEqual(file_list_true(1).uid, char(fileUID), "Incorrect UID with update check enabled. " + msg_list_true);
+            testCase.verifyTrue(file_list_true(1).uploaded, "File not marked as uploaded with update check enabled. " + msg_list_true);
             narrative(end+1) = "Successfully listed 1 file with update check enabled.";
 
             % Step 3: Call listFiles with checkForUpdates disabled
@@ -594,6 +630,7 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_list_false, "listFiles with updates disabled failed. " + msg_list_false);
             testCase.verifyNumElements(file_list_false, 1, "Expected to find 1 file with update check disabled. " + msg_list_false);
             testCase.verifyEqual(file_list_false(1).uid, char(fileUID), "Incorrect UID with update check disabled. " + msg_list_false);
+            testCase.verifyTrue(file_list_false(1).uploaded, "File not marked as uploaded with update check disabled. " + msg_list_false);
             narrative(end+1) = "Successfully listed 1 file with update check disabled.";
 
             testCase.Narrative = narrative;
