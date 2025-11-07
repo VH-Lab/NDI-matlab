@@ -402,10 +402,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
                 ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
                 if options.autoClose
-                    if ~isprop(ndi_binarydoc_obj, 'cleanupObj')
-                        addprop(ndi_binarydoc_obj,'cleanupObj');
+                    if ~isprop(ndi_binarydoc_obj, 'cleanupListener')
+                        addprop(ndi_binarydoc_obj,'cleanupListener');
                     end
-                    ndi_binarydoc_obj.cleanupObj = onCleanup(@() ndi_session_obj.database_closebinarydoc(ndi_binarydoc_obj));
+                    ndi_binarydoc_obj.cleanupListener = addlistener(ndi_binarydoc_obj,'ObjectBeingDestroyed',@(src,event)ndi_session_obj.database_closebinarydoc(src));
                 end
         end % database_openbinarydoc
 
