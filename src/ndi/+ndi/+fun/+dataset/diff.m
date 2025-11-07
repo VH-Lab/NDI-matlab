@@ -204,11 +204,19 @@ function [report] = diff(D1,D2, options)
 
         if ~strcmp(doc1.session_id(), current_session_id_1)
             current_session_id_1 = doc1.session_id();
-            current_S1 = D1.open_session(current_session_id_1);
+            if strcmp(current_session_id_1, D1.id())
+                current_S1 = [];
+            else
+                current_S1 = D1.open_session(current_session_id_1);
+            end
         end
         if ~strcmp(doc2.session_id(), current_session_id_2)
             current_session_id_2 = doc2.session_id();
-            current_S2 = D2.open_session(current_session_id_2);
+            if strcmp(current_session_id_2, D2.id())
+                current_S2 = [];
+            else
+                current_S2 = D2.open_session(current_session_id_2);
+            end
         end
 
         mismatches = {};
