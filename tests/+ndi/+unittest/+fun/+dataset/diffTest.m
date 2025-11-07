@@ -230,5 +230,49 @@ classdef diffTest < matlab.unittest.TestCase
         function testFileAccessErrors(testCase)
             % Test for errors when accessing files
         end
+
+        function testSessionIdIsDatasetId(testCase)
+            % Create a temporary directory for the dataset
+            tempDir = tempname;
+            mkdir(tempDir);
+            cleanup = onCleanup(@() rmdir(tempDir, 's'));
+
+            % Create a dataset
+            D = ndi.dataset.dir('dref', tempDir);
+
+            % Create a document with the dataset's ID as the session_id
+            doc = D.newdocument('demoNDI', 'base.name', 'test doc', 'base.session_id', D.id(), 'demoNDI.value', 1);
+
+            % Add a file to the document
+            file_path = fullfile(tempDir, 'testfile.bin');
+            fid = fopen(file_path, 'w');
+            fwrite(fid, 'test content', 'char');
+            fclose(fid);
+            doc = doc.add_file('testfile.bin', file_path);
+
+            D.database_add(doc);
+
+            % Create a second identical dataset
+            tempDir2 = tempname;
+            mkdir(tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+            D2 = ndi.dataset.dir('dref2', tempDir2);
+            doc2_structure = doc.document_properties;
+            doc2_structure.base.session_id = D2.id();
+            doc2 = ndi.document(doc2_structure);
+            doc2 = doc2.reset_file_info();
+            file2_path = fullfile(tempDir2, 'testfile2.bin');
+            fid2 = fopen(file2_path, 'w');
+            fwrite(fid2, 'test content', 'char');
+            fclose(fid2);
+            doc2 = doc2.add_file('testfile.bin', file2_path);
+            D2.database_add(doc2);
+
+            % Call the diff function
+            report = ndi.fun.dataset.diff(D, D2);
+
+            % Verify that there are no file differences
+            testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty for identical datasets.');
+        end
     end
 end

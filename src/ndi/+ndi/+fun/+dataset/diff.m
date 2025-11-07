@@ -75,10 +75,19 @@ function [report] = diff(D1,D2, options)
 
             file_obj1 = [];
             file_obj2 = [];
+            S1_to_use = [];
+            S2_to_use = [];
+
+            is_dataset_session1 = strcmp(doc1{1}.session_id(), D1.id());
+            is_dataset_session2 = strcmp(doc2{1}.session_id(), D2.id());
 
             try
-                S1 = D1.open_session(doc1{1}.session_id());
-                file_obj1 = S1.database_openbinarydoc(doc1{1}, entry.documentA_fname);
+                if is_dataset_session1
+                    file_obj1 = D1.database_openbinarydoc(doc1{1}, entry.documentA_fname);
+                else
+                    S1_to_use = D1.open_session(doc1{1}.session_id());
+                    file_obj1 = S1_to_use.database_openbinarydoc(doc1{1}, entry.documentA_fname);
+                end
                 fseek(file_obj1.fid, 0, 'eof');
                 file_diff_entry.documentA_size = ftell(file_obj1.fid);
             catch e
@@ -86,8 +95,12 @@ function [report] = diff(D1,D2, options)
             end
 
             try
-                S2 = D2.open_session(doc2{1}.session_id());
-                file_obj2 = S2.database_openbinarydoc(doc2{1}, entry.documentB_fname);
+                if is_dataset_session2
+                    file_obj2 = D2.database_openbinarydoc(doc2{1}, entry.documentB_fname);
+                else
+                    S2_to_use = D2.open_session(doc2{1}.session_id());
+                    file_obj2 = S2_to_use.database_openbinarydoc(doc2{1}, entry.documentB_fname);
+                end
                 fseek(file_obj2.fid, 0, 'eof');
                 file_diff_entry.documentB_size = ftell(file_obj2.fid);
             catch e
@@ -105,22 +118,30 @@ function [report] = diff(D1,D2, options)
                 file_differences_list{end+1} = file_diff_entry;
                 if options.verbose
                     if ~isempty(file_diff_entry.documentA_errormsg)
-                        fprintf('File %s in document %s has an error: %s\n', fname, doc1.id(), file_diff_entry.documentA_errormsg);
+                        fprintf('File %s in document %s has an error: %s\n', entry.documentA_fname, doc1{1}.id(), file_diff_entry.documentA_errormsg);
                     end
                     if ~isempty(file_diff_entry.documentB_errormsg)
-                        fprintf('File %s in document %s has an error: %s\n', fname, doc2.id(), file_diff_entry.documentB_errormsg);
+                        fprintf('File %s in document %s has an error: %s\n', entry.documentB_fname, doc2{1}.id(), file_diff_entry.documentB_errormsg);
                     end
                     if ~isempty(file_diff_entry.documentDiff)
-                        fprintf('File %s in document %s has a mismatch.\n', fname, doc1.id());
+                        fprintf('File %s in document %s has a mismatch.\n', entry.documentA_fname, doc1{1}.id());
                     end
                 end
             end
 
             if ~isempty(file_obj1)
-                S1.database_closebinarydoc(file_obj1);
+                if is_dataset_session1
+                    D1.database_closebinarydoc(file_obj1);
+                elseif ~isempty(S1_to_use)
+                    S1_to_use.database_closebinarydoc(file_obj1);
+                end
             end
             if ~isempty(file_obj2)
-                S2.database_closebinarydoc(file_obj2);
+                if is_dataset_session2
+                    D2.database_closebinarydoc(file_obj2);
+                elseif ~isempty(S2_to_use)
+                    S2_to_use.database_closebinarydoc(file_obj2);
+                end
             end
         end
 
@@ -235,7 +256,11 @@ function [report] = diff(D1,D2, options)
                 file_diff_entry.documentA_errormsg = 'not present';
             else
                 try
-                    file_obj1 = current_S1.database_openbinarydoc(doc1, fname);
+                    if strcmp(doc1.session_id(), D1.id())
+                        file_obj1 = D1.database_openbinarydoc(doc1, fname);
+                    else
+                        file_obj1 = current_S1.database_openbinarydoc(doc1, fname);
+                    end
                     fseek(file_obj1.fid, 0, 'eof');
                     file_diff_entry.documentA_size = ftell(file_obj1.fid);
                 catch e
@@ -247,7 +272,11 @@ function [report] = diff(D1,D2, options)
                 file_diff_entry.documentB_errormsg = 'not present';
             else
                 try
-                    file_obj2 = current_S2.database_openbinarydoc(doc2, fname);
+                    if strcmp(doc2.session_id(), D2.id())
+                        file_obj2 = D2.database_openbinarydoc(doc2, fname);
+                    else
+                        file_obj2 = current_S2.database_openbinarydoc(doc2, fname);
+                    end
                     fseek(file_obj2.fid, 0, 'eof');
                     file_diff_entry.documentB_size = ftell(file_obj2.fid);
                 catch e
@@ -267,10 +296,18 @@ function [report] = diff(D1,D2, options)
             end
 
             if ~isempty(file_obj1)
-                current_S1.database_closebinarydoc(file_obj1);
+                if strcmp(doc1.session_id(), D1.id())
+                    D1.database_closebinarydoc(file_obj1);
+                else
+                    current_S1.database_closebinarydoc(file_obj1);
+                end
             end
             if ~isempty(file_obj2)
-                current_S2.database_closebinarydoc(file_obj2);
+                if strcmp(doc2.session_id(), D2.id())
+                    D2.database_closebinarydoc(file_obj2);
+                else
+                    current_S2.database_closebinarydoc(file_obj2);
+                end
             end
         end
     end
