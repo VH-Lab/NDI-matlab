@@ -241,16 +241,18 @@ classdef diffTest < matlab.unittest.TestCase
             D = ndi.dataset.dir('dref', tempDir);
 
             % Create a document with the dataset's ID as the session_id
-            doc = D.newdocument('demoNDI', 'base.name', 'test doc', 'base.session_id', D.id(), 'demoNDI.value', 1);
+            doc = ndi.document('demoNDI', 'base.name', 'test doc', 'base.session_id', D.id(), 'demoNDI.value', 1);
 
             % Add a file to the document
             file_path = fullfile(tempDir, 'testfile.bin');
             fid = fopen(file_path, 'w');
             fwrite(fid, 'test content', 'char');
             fclose(fid);
-            doc = doc.add_file('testfile.bin', file_path);
+            doc = doc.add_file('filename1.ext', file_path);
 
             D.database_add(doc);
+
+            docs1 = D.database_search(ndi.query('','isa','base'));
 
             % Create a second identical dataset
             tempDir2 = tempname;
@@ -265,8 +267,10 @@ classdef diffTest < matlab.unittest.TestCase
             fid2 = fopen(file2_path, 'w');
             fwrite(fid2, 'test content', 'char');
             fclose(fid2);
-            doc2 = doc2.add_file('testfile.bin', file2_path);
+            doc2 = doc2.add_file('filename1.ext', file2_path);
             D2.database_add(doc2);
+
+            docs1 = D.database_search(ndi.query('','isa','base'));
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D, D2);
