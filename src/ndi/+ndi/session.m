@@ -405,7 +405,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
                 if options.autoClose
                     listener = addlistener(ndi_binarydoc_obj, 'ObjectBeingDestroyed', @(src,event) ndi_session_obj.autoclose_listener_callback(src, event));
-                    ndi_session_obj.autoclose_listeners(ndi_binarydoc_obj.fid) = listener;
+                    ndi_session_obj.autoclose_listeners(mat2str(ndi_binarydoc_obj.fid)) = listener;
                 end
         end % database_openbinarydoc
 
@@ -429,7 +429,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Close an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be closed in the
             % database, which is why it is necessary to call this function through the session object.
             %
-            fid_key = ndi_binarydoc_obj.fid;
+            fid_key = mat2str(ndi_binarydoc_obj.fid);
             ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);
             if ndi_session_obj.autoclose_listeners.isKey(fid_key)
                 delete(ndi_session_obj.autoclose_listeners(fid_key));
