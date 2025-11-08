@@ -11,6 +11,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     end
     properties (GetAccess={?session, ?ndi.dataset}, SetAccess = protected, Transient)
         database          % An ndi.database associated with this session
+        autoclose_listeners % A map of listeners for auto-closing binary documents
     end
     methods
 
@@ -34,6 +35,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.identifier = ndiido.id();
             ndi_session_obj.syncgraph = ndi.time.syncgraph(ndi_session_obj);
             ndi_session_obj.cache = ndi.cache();
+            ndi_session_obj.autoclose_listeners = containers.Map('KeyType','char','ValueType','any');
         end
 
         function identifier = id(ndi_session_obj)
@@ -402,10 +404,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
                 ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
                 if options.autoClose
-                    if ~isprop(ndi_binarydoc_obj, 'cleanupListener')
-                        addprop(ndi_binarydoc_obj,'cleanupListener');
-                    end
-                    ndi_binarydoc_obj.cleanupListener = addlistener(ndi_binarydoc_obj,'ObjectBeingDestroyed',@(src,event)ndi_session_obj.database_closebinarydoc(src));
+                    listener = addlistener(ndi_binarydoc_obj, 'ObjectBeingDestroyed', @(src,event) ndi_session_obj.autoclose_listener_callback(src, event));
+                    ndi_session_obj.autoclose_listeners(ndi_binarydoc_obj.fid) = listener;
                 end
         end % database_openbinarydoc
 
@@ -429,7 +429,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Close an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be closed in the
             % database, which is why it is necessary to call this function through the session object.
             %
+            fid_key = ndi_binarydoc_obj.fid;
             ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);
+            if ndi_session_obj.autoclose_listeners.isKey(fid_key)
+                delete(ndi_session_obj.autoclose_listeners(fid_key));
+                ndi_session_obj.autoclose_listeners.remove(fid_key);
+            end
         end % closebinarydoc
 
         function ndi_session_obj = syncgraph_addrule(ndi_session_obj, rule)
@@ -809,6 +814,15 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
             end
         end % update_syncgraph_in_db()
+
+        function autoclose_listener_callback(ndi_session_obj, src, event)
+            % AUTOCLOSE_LISTENER_CALLBACK - a callback function for auto-closing binary documents
+            %
+            % This function is called when a binary document object is destroyed.
+            % It ensures that the binary document is closed and the listener is removed.
+            %
+            ndi_session_obj.database_closebinarydoc(src);
+        end % autoclose_listener_callback()
 
     end % methods (Protected)
 
