@@ -404,8 +404,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
                 ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
                 if options.autoClose
+                    if ~isa(ndi_session_obj.autoclose_listeners, 'containers.Map')
+                        ndi_session_obj.autoclose_listeners = ...
+                            containers.Map('KeyType', 'char', 'ValueType', 'any');
+                    end
                     listener = addlistener(ndi_binarydoc_obj, 'ObjectBeingDestroyed', @(src,event) ndi_session_obj.autoclose_listener_callback(src, event));
-                    ndi_session_obj.autoclose_listeners(mat2str(ndi_binarydoc_obj.fid)) = listener;
+                    ndi_session_obj.autoclose_listeners(ndi_binarydoc_obj.fullpathfilename) = listener;
                 end
         end % database_openbinarydoc
 
@@ -429,7 +433,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Close an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be closed in the
             % database, which is why it is necessary to call this function through the session object.
             %
-            fid_key = mat2str(ndi_binarydoc_obj.fid);
+            if ~isa(ndi_session_obj.autoclose_listeners, 'containers.Map')
+                ndi_session_obj.autoclose_listeners = ...
+                    containers.Map('KeyType', 'char', 'ValueType', 'any');
+            end
+            fid_key = ndi_binarydoc_obj.fullpathfilename;
             ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);
             if ndi_session_obj.autoclose_listeners.isKey(fid_key)
                 delete(ndi_session_obj.autoclose_listeners(fid_key));
