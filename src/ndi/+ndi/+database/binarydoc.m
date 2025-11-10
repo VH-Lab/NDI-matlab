@@ -1,7 +1,6 @@
 classdef binarydoc < handle
     % NDI_BINARYDOC - a binary file class that handles reading/writing
     properties (SetAccess=protected, GetAccess=public)
-        autoCloseListener
     end  % protected, accessible
 
     methods (Abstract)
