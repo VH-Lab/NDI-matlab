@@ -11,7 +11,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     end
     properties (GetAccess={?session, ?ndi.dataset}, SetAccess = protected, Transient)
         database          % An ndi.database associated with this session
-        autoclose_listeners % A map of listeners for auto-closing binary documents
     end
     methods
 
@@ -35,7 +34,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.identifier = ndiido.id();
             ndi_session_obj.syncgraph = ndi.time.syncgraph(ndi_session_obj);
             ndi_session_obj.cache = ndi.cache();
-            ndi_session_obj.autoclose_listeners = containers.Map('KeyType','char','ValueType','any');
         end
 
         function identifier = id(ndi_session_obj)
@@ -404,8 +402,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
                 ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
                 if options.autoClose
-                    listener = addlistener(ndi_binarydoc_obj, 'ObjectBeingDestroyed', @(src,event) ndi_session_obj.autoclose_listener_callback(src, event));
-                    ndi_session_obj.autoclose_listeners(ndi_binarydoc_obj.fullpathfilename) = listener;
+                    ndi_binarydoc_obj.autoCloseListener = addlistener(ndi_binarydoc_obj, ...
+                        'ObjectBeingDestroyed', @(src,event) ndi_session_obj.autoclose_listener_callback(src, event));
                 end
         end % database_openbinarydoc
 
@@ -429,12 +427,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Close an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be closed in the
             % database, which is why it is necessary to call this function through the session object.
             %
-            fid_key = ndi_binarydoc_obj.fullpathfilename;
-            ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);
-            if ndi_session_obj.autoclose_listeners.isKey(fid_key)
-                delete(ndi_session_obj.autoclose_listeners(fid_key));
-                ndi_session_obj.autoclose_listeners.remove(fid_key);
+            if ~isempty(ndi_binarydoc_obj.autoCloseListener)
+                delete(ndi_binarydoc_obj.autoCloseListener);
+                ndi_binarydoc_obj.autoCloseListener = [];
             end
+            ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);
         end % closebinarydoc
 
         function ndi_session_obj = syncgraph_addrule(ndi_session_obj, rule)
