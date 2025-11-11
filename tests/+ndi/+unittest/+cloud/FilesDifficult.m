@@ -75,8 +75,7 @@ classdef FilesDifficult < matlab.unittest.TestCase
 
             % Step 1: Locate the difficult file
             narrative(end+1) = "SETUP: Locating the difficult binary file for upload.";
-            vlt.globals;
-            localFilePath = fullfile(vlt_path,'src','ndi','ndi_common','example_binaries','4126945b0315ec90_c0d16626cae2dacf');
+            localFilePath = fullfile(ndi.toolboxdir,'ndi_common','example_binaries','4126945b0315ec90_c0d16626cae2dacf');
             fileUID = '4126945b0315ec90_c0d16626cae2dacf';
 
             try
