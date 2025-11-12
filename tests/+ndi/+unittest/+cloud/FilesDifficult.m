@@ -53,13 +53,13 @@ classdef FilesDifficult < matlab.unittest.TestCase
         function deleteDatasetAfterTest(testCase)
             if testCase.KeepDataset
                 narrative = testCase.Narrative;
-                narrative(end+1) = "TEARDOWN SKIPPED: Preserving dataset for inspection.";
+                narrative(end+1) = "TEARDOWN SKIPPED: Preserving dataset for inspection." + " at " + string(datetime('now','TimeZone','UTC'));
                 testCase.Narrative = narrative;
                 return;
             end
             if ~ismissing(testCase.DatasetID)
                 narrative = testCase.Narrative; % Make a local copy
-                narrative(end+1) = "TEARDOWN: Deleting temporary dataset ID: " + testCase.DatasetID;
+                narrative(end+1) = "TEARDOWN: Deleting temporary dataset ID: " + testCase.DatasetID + " at " + string(datetime('now','TimeZone','UTC'));
                 [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID);
                 if ~b
                     msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_del, resp_del, url_del);
@@ -70,11 +70,11 @@ classdef FilesDifficult < matlab.unittest.TestCase
     end
     methods (Test)
         function testBulkUploadAndDownloadDifficultFile(testCase)
-            testCase.Narrative = "Begin testBulkUploadAndDownloadDifficultFile";
+            testCase.Narrative = "Begin testBulkUploadAndDownloadDifficultFile" + " at " + string(datetime('now','TimeZone','UTC'));
             narrative = testCase.Narrative;
 
             % Step 1: Locate the difficult file
-            narrative(end+1) = "SETUP: Locating the difficult binary file for upload.";
+            narrative(end+1) = "SETUP: Locating the difficult binary file for upload." + " at " + string(datetime('now','TimeZone','UTC'));
             localFilePath = fullfile(ndi.toolboxdir,'ndi_common','example_binaries','4126945b0315ec90_c0d16626cae2dacf');
             fileUID = '4126945b0315ec90_c0d16626cae2dacf';
 
@@ -83,26 +83,26 @@ classdef FilesDifficult < matlab.unittest.TestCase
                 originalContent = fread(fid, inf, '*uint8')'; % Read as uint8 and transpose
                 fclose(fid);
             catch ME
-                narrative(end+1) = "FAILURE: Could not read local difficult file during test setup.";
+                narrative(end+1) = "FAILURE: Could not read local difficult file during test setup." + " at " + string(datetime('now','TimeZone','UTC'));
                 msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], 'local_operation:fopen');
                 testCase.verifyFail("Failed to read local test file. " + msg_fail);
                 return;
             end
 
-            narrative(end+1) = "Local difficult file located and read successfully.";
+            narrative(end+1) = "Local difficult file located and read successfully." + " at " + string(datetime('now','TimeZone','UTC'));
 
             % Step 2: Get bulk upload URL
-            narrative(end+1) = "Preparing to get a pre-signed URL for bulk file upload.";
+            narrative(end+1) = "Preparing to get a pre-signed URL for bulk file upload." + " at " + string(datetime('now','TimeZone','UTC'));
             [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileCollectionUploadURL(testCase.DatasetID);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_url);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_url) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
             testCase.verifyTrue(b_url, "Failed to get bulk file upload URL. " + msg_url);
             if ~b_url, return; end
             uploadURL = ans_url;
-            narrative(end+1) = "Successfully obtained bulk upload URL.";
+            narrative(end+1) = "Successfully obtained bulk upload URL." + " at " + string(datetime('now','TimeZone','UTC'));
 
             % Step 3: Zip and upload the file with the correct naming convention
-            narrative(end+1) = "Preparing to zip and upload the files.";
+            narrative(end+1) = "Preparing to zip and upload the files." + " at " + string(datetime('now','TimeZone','UTC'));
             import matlab.unittest.fixtures.TemporaryFolderFixture;
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             uniqueString = string(did.ido.unique_id());
@@ -111,42 +111,43 @@ classdef FilesDifficult < matlab.unittest.TestCase
             try
                 zip(zipFilePath, localFilePath);
             catch ME
-                narrative(end+1) = "FAILURE: Could not create zip archive for bulk upload.";
+                narrative(end+1) = "FAILURE: Could not create zip archive for bulk upload." + " at " + string(datetime('now','TimeZone','UTC'));
                 msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], 'local_operation:zip');
                 testCase.verifyFail("Failed to create zip archive. " + msg_fail);
                 return;
             end
 
             [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath);
-            narrative(end+1) = "Attempted to upload zip file to " + string(url_put);
+            narrative(end+1) = "Attempted to upload zip file to " + string(url_put) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.verifyTrue(b_put, "Bulk file upload (PUT request) failed. " + msg_put);
             if ~b_put, return; end
-            narrative(end+1) = "Bulk upload successful.";
+            narrative(end+1) = "Bulk upload successful." + " at " + string(datetime('now','TimeZone','UTC'));
 
+            narrative(end+1) = "Pausing for 20 seconds to allow for server-side processing." + " at " + string(datetime('now','TimeZone','UTC'));
             pause(20); % Give server time to process the zip file
 
             % Step 3.5: Verify the file appears in the dataset's file list
-            narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
+            narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file." + " at " + string(datetime('now','TimeZone','UTC'));
             [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
-            narrative(end+1) = "Attempted to call API with URL " + string(url_list);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_list) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
-            narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
+            narrative(end+1) = "Testing: Verifying that listFiles call was successful." + " at " + string(datetime('now','TimeZone','UTC'));
             testCase.verifyTrue(b_list, "Failed to list files to check file list. " + msg_list);
             if ~b_list, return; end
-            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains 1 file.";
+            narrative(end+1) = "Testing: Verifying that the file list is not empty and contains 1 file." + " at " + string(datetime('now','TimeZone','UTC'));
             testCase.verifyNumElements(file_list, 1, "Dataset file list does not contain exactly 1 file. " + msg_list);
             if numel(file_list) ~= 1, return; end
 
-            narrative(end+1) = "Testing: Verifying that UID " + fileUID + " is in the file list.";
+            narrative(end+1) = "Testing: Verifying that UID " + fileUID + " is in the file list." + " at " + string(datetime('now','TimeZone','UTC'));
             testCase.verifyEqual(file_list(1).uid, fileUID, "UID " + fileUID + " not found in the dataset's file list. " + msg_list);
-            narrative(end+1) = "Testing: Verifying that file " + fileUID + " is marked as 'uploaded'.";
+            narrative(end+1) = "Testing: Verifying that file " + fileUID + " is marked as 'uploaded'." + " at " + string(datetime('now','TimeZone','UTC'));
             testCase.verifyTrue(file_list(1).uploaded, "File " + fileUID + " is not marked as 'uploaded'. " + msg_list);
 
-            narrative(end+1) = "All uploaded files appeared in the dataset's file list and are marked as uploaded.";
+            narrative(end+1) = "All uploaded files appeared in the dataset's file list and are marked as uploaded." + " at " + string(datetime('now','TimeZone','UTC'));
 
             % Step 4: Verify each file individually
-            narrative(end+1) = "Preparing to verify the uploaded file.";
+            narrative(end+1) = "Preparing to verify the uploaded file." + " at " + string(datetime('now','TimeZone','UTC'));
 
             [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
@@ -167,7 +168,7 @@ classdef FilesDifficult < matlab.unittest.TestCase
                 retrievedContent = fread(fid, inf, '*uint8')'; % Read as uint8 and transpose
                 fclose(fid);
             catch ME
-                narrative(end+1) = "FAILURE: Could not read downloaded file " + fileUID + ".";
+                narrative(end+1) = "FAILURE: Could not read downloaded file " + fileUID + "." + " at " + string(datetime('now','TimeZone','UTC'));
                 msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], downloadedFilePath);
                 testCase.verifyFail("Failed to read downloaded file for verification. " + msg_fail);
                 return;
@@ -186,7 +187,7 @@ classdef FilesDifficult < matlab.unittest.TestCase
 
             testCase.verifyEqual(retrievedContent, originalContent, ...
                 "Binary content mismatch for file " + fileUID + ". " + msg_content);
-            narrative(end+1) = "Difficult file has been verified.";
+            narrative(end+1) = "Difficult file has been verified." + " at " + string(datetime('now','TimeZone','UTC'));
 
             testCase.Narrative = narrative;
         end
