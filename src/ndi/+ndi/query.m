@@ -117,5 +117,39 @@ classdef query < did.query
             ndi_query_obj@did.query(inputs{:});
         end % query() constructor
     end % methods
+
+    methods (Static)
+        function q = all()
+            % ALL - return a query that matches all documents
+            %
+            % Q = NDI.QUERY.ALL()
+            %
+            % Returns a query that will match all documents.
+            % The query is NDI.QUERY('','isa','base').
+            %
+            % Example:
+            %   q_all = ndi.query.all();
+            %
+                q = ndi.query('','isa','base');
+        end % all()
+
+        function q = none()
+            % NONE - return a query that matches no documents
+            %
+            % Q = NDI.QUERY.NONE()
+            %
+            % Returns a query that will match no documents.
+            % This is sometimes useful as a first element for an array of OR
+            % queries, or for test situations where one wants to match no documents.
+            %
+            % The query is NDI.QUERY('','isa','ladskjfldksjfkds').
+            %
+            % Example:
+            %   q_none = ndi.query.none();
+            %
+                q = ndi.query('','isa','ladskjfldksjfkds');
+        end % none()
+    end % methods (Static)
+
 end % classdef
 
