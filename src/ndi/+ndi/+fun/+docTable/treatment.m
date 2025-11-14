@@ -98,7 +98,7 @@ for i = 1:numel(treatmentDocs)
         stringOntology = [];
         stringName = [];
         stringDate = [];
-        if isStringDatetime(stringValue)
+        if ~isempty(stringValue) && isStringDatetime(stringValue)
             stringDate = datetime(stringValue);
         elseif contains(stringValue,':')
             [stringOntology,stringName] = ndi.ontology.lookup(stringValue);
