@@ -365,10 +365,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % database_search();
 
-        function ndi_binarydoc_obj = database_openbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
+        function ndi_binarydoc_obj = database_openbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename, options)
             % DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
             %
-            % NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_DATASET_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+            % NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_DATASET_OBJ, NDI_DOCUMENT_OR_ID, FILENAME, ...)
             %
             %  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
             %  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
@@ -377,7 +377,18 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             %  Note that this NDI_BINARYDOC_OBJ must be closed with ndi.dataset/CLOSEBINARYDOC.
             %
-            ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename);
+            %  This function takes name/value pairs that modify its behavior.
+            %  Parameter (default)     | Description
+            %  ------------------------------------------------------------------
+            %  autoClose (true)       | Automatically close the file when the returned object goes out of scope.
+            %
+                arguments
+                    ndi_dataset_obj
+                    ndi_document_or_id
+                    filename
+                    options.autoClose (1,1) logical = true
+                end
+            ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
         end % database_openbinarydoc
 
         function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)

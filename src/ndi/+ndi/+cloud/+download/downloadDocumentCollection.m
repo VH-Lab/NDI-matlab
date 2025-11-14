@@ -80,9 +80,9 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
         chunk_doc_ids = documentChunks{c};
         fprintf('  Processing chunk %d of %d (%d documents)...\n', c, numChunks, numel(chunk_doc_ids));
 
-        [success, downloadUrl] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
+        [success, downloadUrl, api_reply] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
         if ~success
-            error(['Failed to get bulk download URL: ' downloadUrl.message]);
+            error(['Failed to get bulk download URL: ' api_reply.message]);
         end
         tempZipFilepath = [tempname, '.zip'];
         zipfileCleanupObj = onCleanup(@() deleteIfExists(tempZipFilepath));
