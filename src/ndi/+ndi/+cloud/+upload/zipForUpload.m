@@ -70,66 +70,84 @@ end
 h = waitbar(0, 'Preparing to upload files...');
 cleanupObj = onCleanup(@() delete(h(ishandle(h))));
 size_limit = options.SizeLimit;
-current_batch_size = 0;
-files_for_current_batch = {};
+file_processed = false(1, numel(files_to_process)); % Track processed files
 
-% --- Main Loop: Iterate through files and create batches ---
-for i = 1:numel(files_to_process)
-    
-    current_file = files_to_process(i);
-    file_path = fullfile(base_dir, current_file.uid);
-    file_bytes = current_file.bytes;
-    
-    % --- Update Progress based on file count ---
-    processed_bytes = processed_bytes + file_bytes;
-    try
-        progress = i / files_left;
-        message = sprintf('Processing file %d of %d...', i, files_left);
-        waitbar(progress, h, message);
-    catch
-        b = 0; msg = 'Upload cancelled by user.'; return;
-    end
-    
-    % --- Logic Check: Ensure file exists on disk ---
-    if ~isfile(file_path)
-        if options.Verbose
-            warning('File %s (UID: %s) not found on disk. Skipping.', current_file.name, current_file.uid);
+% --- Main Loop: Continue until all files are processed ---
+while ~all(file_processed)
+    current_batch_size = 0;
+    files_for_current_batch = {};
+    indices_for_current_batch = [];
+
+    % --- Inner Loop: Find files that fit into the current batch ---
+    for i = 1:numel(files_to_process)
+        if ~file_processed(i)
+            current_file = files_to_process(i);
+            file_path = fullfile(base_dir, current_file.uid);
+            file_bytes = current_file.bytes;
+
+            % --- Logic Check: Ensure file exists on disk ---
+            if ~isfile(file_path)
+                if options.Verbose
+                    warning('File %s (UID: %s) not found on disk. Skipping.', current_file.name, current_file.uid);
+                end
+                skipped_files{end+1} = current_file;
+                file_processed(i) = true; % Mark as processed to skip
+                continue;
+            end
+
+            % --- Batching Logic ---
+            if (current_batch_size + file_bytes <= size_limit)
+                files_for_current_batch{end+1} = file_path;
+                current_batch_size = current_batch_size + file_bytes;
+                indices_for_current_batch(end+1) = i;
+            end
         end
-        skipped_files{end+1} = current_file;
-        continue;
     end
-    
-    % --- Batching Logic ---
-    if ~isempty(files_for_current_batch) && (current_batch_size + file_bytes > size_limit)
+
+    % --- Upload the batch if it contains any files ---
+    if ~isempty(files_for_current_batch)
         [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options.numberRetries, options);
         files_uploaded_count = files_uploaded_count + uploaded_count;
-        if ~success
+
+        if success
+            file_processed(indices_for_current_batch) = true; % Mark files as processed
+        else
             b = 0;
-            files_not_uploaded = files_left - files_uploaded_count;
+            files_not_uploaded = files_left - sum(file_processed);
             msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
                 batch_msg, files_uploaded_count, files_not_uploaded);
             return;
         end
-        files_for_current_batch = {};
-        current_batch_size = 0;
-    end
-    
-    % Add the current file to the new/current batch
-    files_for_current_batch{end+1} = file_path;
-    current_batch_size = current_batch_size + file_bytes;
-    
-end % for
+    else
+        % No files could be added to a batch, break to avoid infinite loop
+        % This might happen if a single file is larger than the size limit
+        unprocessed_files = files_to_process(~file_processed);
+        for k = 1:numel(unprocessed_files)
+            if unprocessed_files(k).bytes > size_limit
+                warning('File %s (UID: %s) is larger than the size limit and cannot be uploaded.', unprocessed_files(k).name, unprocessed_files(k).uid);
+                skipped_files{end+1} = unprocessed_files(k);
 
-% --- Final Upload: Upload any remaining files ---
-if ~isempty(files_for_current_batch)
-    [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options.numberRetries, options);
-    files_uploaded_count = files_uploaded_count + uploaded_count;
-    if ~success
-        b = 0;
-        files_not_uploaded = files_left - files_uploaded_count;
-        msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
-            batch_msg, files_uploaded_count, files_not_uploaded);
-        return;
+                % find the original index to mark it as processed
+                original_index = find(arrayfun(@(x) strcmp(x.uid, unprocessed_files(k).uid), files_to_process));
+                file_processed(original_index) = true;
+            end
+        end
+
+        % If there are still unprocessed files, it's an unexpected state
+        if ~all(file_processed)
+            msg = 'An unexpected error occurred: unable to process remaining files.';
+            b = 0;
+            return;
+        end
+    end
+
+    % --- Update Progress Bar ---
+    try
+        progress = sum(file_processed) / files_left;
+        message = sprintf('Processed %d of %d files...', sum(file_processed), files_left);
+        waitbar(progress, h, message);
+    catch
+        b = 0; msg = 'Upload cancelled by user.'; return;
     end
 end
 
