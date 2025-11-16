@@ -93,9 +93,13 @@
 - [x] DAQ System core (ndi.daq.system) - 335 lines
 - [x] DAQ Reader base (ndi.daq.reader) - 272 lines
 - [x] Multifunction DAQ Reader (ndi.daq.reader.mfdaq) - 478 lines
-- [ ] DAQ Readers specific (blackrock, intan, spikegadgets) - **TODO when file I/O ready**
-- [ ] Metadata readers - **TODO**
-**Estimated**: 10-12 hours total, ~5 hours completed
+- [x] Metadata Reader (ndi.daq.metadatareader) - 310 lines
+  - Tab-separated-value file reading
+  - Regex-based file matching
+  - Ingested document support
+  - Stimulus parameter extraction
+- [ ] DAQ Readers specific (blackrock, intan, spikegadgets) - **TODO Phase 3C**
+**Estimated**: 10-12 hours total, ~7 hours completed
 
 ### Phase 4: Element + Probe System (Week 2) - ✅ COMPLETE
 - [x] Complete Element class (569 lines) - Full implementation beyond stub
