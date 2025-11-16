@@ -881,21 +881,60 @@ class SessionDir(Session):
     Stores session data in a file system directory.
     """
 
-    def __init__(self, path: str, reference: str):
+    def __init__(self, path: str, reference: str, session_id: Optional[str] = None):
         """
         Create or open a directory-based session.
 
         Args:
             path: Directory path for the session
             reference: Session reference name
+            session_id: Optional specific session ID (for reopening sessions)
         """
         super().__init__(reference)
 
         self.path = Path(path)
         self.path.mkdir(parents=True, exist_ok=True)
 
+        # Create .ndi directory for metadata
+        ndi_path = self.path / '.ndi'
+        ndi_path.mkdir(exist_ok=True)
+
+        should_try_to_read_from_database = True
+
+        # Handle session ID
+        if session_id is not None:
+            # Explicit session_id provided (undocumented 3rd argument)
+            self.identifier = session_id
+            self.reference = reference
+            should_try_to_read_from_database = False
+        else:
+            # Try to read from unique_reference.txt file
+            unique_ref_file = ndi_path / 'unique_reference.txt'
+            if unique_ref_file.exists():
+                self.identifier = unique_ref_file.read_text().strip()
+            else:
+                # Make a provisional new ID (might be overridden from database)
+                from .ido import IDO
+                self.identifier = IDO().id()
+
         # Initialize database
         self.database = DirectoryDatabase(str(self.path), reference)
+
+        # Try to read session info from database
+        if should_try_to_read_from_database:
+            session_docs = self.database.search(Query('', 'isa', 'session'))
+            if session_docs:
+                # Use the oldest session document
+                oldest_doc = min(
+                    session_docs,
+                    key=lambda d: d.document_properties.get('base', {}).get('datestamp', '')
+                )
+                self.identifier = oldest_doc.document_properties.get('base', {}).get('session_id', self.identifier)
+                self.reference = oldest_doc.document_properties.get('session', {}).get('reference', self.reference)
+
+        # Save the session ID to file
+        unique_ref_file = ndi_path / 'unique_reference.txt'
+        unique_ref_file.write_text(self.identifier)
 
     def getpath(self) -> str:
         """
