@@ -19,6 +19,9 @@ from .cache import Cache
 from .query import Query
 from .subject import Subject
 
+# Import DAQ system (subpackage with nested imports)
+from . import daq
+
 # Make key classes available at package level
 __all__ = [
     "IDO",
@@ -37,5 +40,6 @@ __all__ = [
     "Cache",
     "Query",
     "Subject",
+    "daq",
     "__version__",
 ]

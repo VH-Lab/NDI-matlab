@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 2 (Time + Epoch) complete, Phase 3 (DAQ) next
-**Completion**: ~22% of full implementation
+**Status**: Phase 3 (DAQ Core) complete, file readers pending
+**Completion**: ~28% of full implementation
 
 ---
 
@@ -89,11 +89,14 @@
 
 ## ⏳ Remaining Work
 
-### Phase 3: DAQ System (Week 1)
-- [ ] DAQ System core
-- [ ] DAQ Readers (mfdaq, cedar, blackrock, intan, spikegadgets)
-- [ ] Metadata readers
-**Estimated**: 10-12 hours
+### Phase 3: DAQ System (Week 1) - ✅ CORE COMPLETE
+- [x] DAQ System core (ndi.daq.system) - 335 lines
+- [x] DAQ Reader base (ndi.daq.reader) - 272 lines
+- [x] Multifunction DAQ Reader (ndi.daq.reader.mfdaq) - 478 lines
+- [ ] DAQ Readers specific (blackrock, intan, spikegadgets) - **TODO when file I/O ready**
+- [ ] Metadata readers - **TODO**
+- [ ] File navigator system - **TODO**
+**Estimated**: 10-12 hours total, ~5 hours completed
 
 ### Phase 4: Probe System (Week 2)
 - [ ] Complete Probe class
