@@ -5,7 +5,7 @@ This package provides general utility functions including logging,
 timestamp generation, channel name parsing, and toolbox checking.
 """
 
-from .name2variablename import name2variablename
+from .name2variablename import name2variableName as name2variablename
 from .timestamp import timestamp, timestamp_matlab_format
 from .console import console
 from .errlog import errlog

@@ -286,27 +286,31 @@ class Session(DocumentService):
         MATLAB equivalent: ndi.session.daqsystem_rm()
 
         Args:
-            dev: DAQ system object to remove
+            dev: DAQ system object or name string to remove
 
         Returns:
             Session: Self for chaining
 
         Raises:
-            TypeError: If dev is not a DAQ system
+            TypeError: If dev is not a DAQ system or string
             ValueError: If DAQ system not found
 
         See Also:
             daqsystem_add, daqsystem_clear
         """
-        # Check if it's a DAQ system (duck typing)
-        if not hasattr(dev, 'name'):
-            raise TypeError("dev must be a ndi.daq.system object")
+        # Accept either DAQ system object or string name
+        if isinstance(dev, str):
+            dev_name = dev
+        elif hasattr(dev, 'name'):
+            dev_name = dev.name
+        else:
+            raise TypeError("dev must be a ndi.daq.system object or string name")
 
         # Load the DAQ system by name
-        daqsys = self.daqsystem_load(name=dev.name)
+        daqsys = self.daqsystem_load(name=dev_name)
 
         if daqsys is None:
-            raise ValueError(f"No DAQ system named '{dev.name}' found")
+            raise ValueError(f"No DAQ system named '{dev_name}' found")
 
         # Make list if not already
         if not isinstance(daqsys, list):
@@ -350,34 +354,28 @@ class Session(DocumentService):
         See Also:
             daqsystem_rm, daqsystem_add
         """
-        # Load all DAQ systems (using regex to match any name)
-        dev = self.daqsystem_load(name='(.*)')
+        # Search for all daqsystem documents
+        query = Query('', 'isa', 'daqsystem', '')
+        docs = self.database_search(query)
 
-        if dev is None:
+        if not docs:
             return self  # No devices to remove
 
-        # Make sure it's a list
-        if not isinstance(dev, list):
-            dev = [dev]
+        # Remove all found documents
+        for doc in docs:
+            # Remove dependencies first
+            depends_on = doc.document_properties.get('depends_on', {})
+            if isinstance(depends_on, list):
+                for dep in depends_on:
+                    if isinstance(dep, dict) and 'value' in dep:
+                        dep_docs = self.database_search(
+                            Query('base.id', 'exact_string', dep['value'])
+                        )
+                        if dep_docs:
+                            self.database_rm(dep_docs)
 
-        # Remove each device
-        for d in dev:
-            # We need to reconstruct a minimal object with name attribute
-            # since daqsystem_rm expects an object with .name
-            class DeviceStub:
-                def __init__(self, name):
-                    self.name = name
-
-            # Extract name from document
-            if hasattr(d, 'document_properties'):
-                name = d.document_properties.get('base.name', '')
-            elif hasattr(d, 'name'):
-                name = d.name
-            else:
-                continue
-
-            stub = DeviceStub(name)
-            self.daqsystem_rm(stub)
+            # Remove the main document
+            self.database_rm(doc)
 
         return self
 
@@ -686,7 +684,7 @@ class Session(DocumentService):
                 return (
                     False,
                     f"Document {doc.id()} has session_id {doc_session_id} "
-                    f"which doesn't match {session_id}"
+                    f"which does not match {session_id}"
                 )
 
         return (True, '')
@@ -780,7 +778,7 @@ class Session(DocumentService):
             return (False, f'Error ingesting syncgraph: {str(e)}')
 
         # Get all DAQ systems
-        daqs = self.daqsystem_load('name', '(.*)')  # Load all
+        daqs = self.daqsystem_load(name='(.*)')  # Load all
         if not isinstance(daqs, list):
             daqs = [daqs] if daqs else []
 
@@ -837,7 +835,7 @@ class Session(DocumentService):
             ...     session.ingest()
         """
         # Get all DAQ systems
-        daqs = self.daqsystem_load('name', '(.*)')  # Load all
+        daqs = self.daqsystem_load(name='(.*)')  # Load all
         if not isinstance(daqs, list):
             daqs = [daqs] if daqs else []
 

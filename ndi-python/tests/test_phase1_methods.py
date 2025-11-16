@@ -381,51 +381,63 @@ class TestPhase1DocumentMethods:
         """Test add_dependency_value_n()."""
         doc = Document('base', **{'base.name': 'test'})
 
-        # Add first dependency
-        doc.add_dependency_value_n('element_id', 'id123')
+        # Add first dependency (error_if_not_found=False allows creating dependencies)
+        doc.add_dependency_value_n('element_id', 'id123', error_if_not_found=False)
 
         # Should be numbered _1
-        assert doc.document_properties['depends_on']['element_id_1'] == 'id123'
+        # depends_on is a list of {name, value} dicts
+        deps = doc.document_properties['depends_on']
+        assert any(d['name'] == 'element_id_1' and d['value'] == 'id123' for d in deps)
 
         # Add another
-        doc.add_dependency_value_n('element_id', 'id456')
+        doc.add_dependency_value_n('element_id', 'id456', error_if_not_found=False)
 
         # Should be numbered _2
-        assert doc.document_properties['depends_on']['element_id_2'] == 'id456'
+        deps = doc.document_properties['depends_on']
+        assert any(d['name'] == 'element_id_2' and d['value'] == 'id456' for d in deps)
 
     def test_dependency_value_n(self):
         """Test dependency_value_n()."""
         doc = Document('base', **{'base.name': 'test'})
 
-        # Add dependency
-        doc.add_dependency_value_n('element_id', 'id123')
+        # Add dependency (error_if_not_found=False allows creating)
+        doc.add_dependency_value_n('element_id', 'id123', error_if_not_found=False)
 
-        # Retrieve it
-        value = doc.dependency_value_n('element_id', 1)
+        # Retrieve it - returns a list of all values with that base name
+        values = doc.dependency_value_n('element_id', error_if_not_found=False)
 
-        assert value == 'id123'
+        assert isinstance(values, list)
+        assert len(values) == 1
+        assert values[0] == 'id123'
 
     def test_dependency_value_n_missing(self):
         """Test dependency_value_n() with missing dependency."""
         doc = Document('base', **{'base.name': 'test'})
 
-        value = doc.dependency_value_n('element_id', 1)
+        # Should return empty list when not found and error_if_not_found=False
+        values = doc.dependency_value_n('element_id', error_if_not_found=False)
 
-        assert value is None
+        assert isinstance(values, list)
+        assert len(values) == 0
 
     def test_remove_dependency_value_n(self):
         """Test remove_dependency_value_n()."""
         doc = Document('base', **{'base.name': 'test'})
 
-        # Add dependencies
-        doc.add_dependency_value_n('element_id', 'id123')
-        doc.add_dependency_value_n('element_id', 'id456')
+        # Add dependencies (error_if_not_found=False allows creating)
+        doc.add_dependency_value_n('element_id', 'id123', error_if_not_found=False)
+        doc.add_dependency_value_n('element_id', 'id456', error_if_not_found=False)
 
-        # Remove first one
-        doc.remove_dependency_value_n('element_id', 1)
+        # Should have 2 dependencies
+        values = doc.dependency_value_n('element_id', error_if_not_found=False)
+        assert len(values) == 2
 
-        # Should not have _1 anymore
-        assert doc.dependency_value_n('element_id', 1) is None
+        # Remove first one (value parameter not used, can be empty string)
+        doc.remove_dependency_value_n('element_id', '', 1, error_if_not_found=False)
+
+        # Should only have 1 dependency now
+        values = doc.dependency_value_n('element_id', error_if_not_found=False)
+        assert len(values) == 1
 
     def test_setproperties(self):
         """Test setproperties() batch update."""
@@ -449,9 +461,10 @@ class TestPhase1DocumentMethods:
         ]
 
         # Find by ID
-        found = Document.find_doc_by_id(docs, docs[1].id())
+        found, idx = Document.find_doc_by_id(docs, docs[1].id())
 
         assert found is not None
+        assert idx == 1
         assert found.id() == docs[1].id()
 
     def test_find_doc_by_id_not_found(self):
@@ -460,9 +473,10 @@ class TestPhase1DocumentMethods:
             Document('base', **{'base.name': 'test1'}),
         ]
 
-        found = Document.find_doc_by_id(docs, 'nonexistent')
+        found, idx = Document.find_doc_by_id(docs, 'nonexistent')
 
         assert found is None
+        assert idx is None
 
     def test_find_newest(self):
         """Test find_newest() static method."""
@@ -476,10 +490,12 @@ class TestPhase1DocumentMethods:
 
         docs = [doc1, doc2, doc3]
 
-        newest = Document.find_newest(docs)
+        newest, idx, timestamps = Document.find_newest(docs)
 
         assert newest is not None
+        assert idx == 2  # Index of last document
         assert newest.id() == doc3.id()  # Last created should be newest
+        assert len(timestamps) == 3  # Should have timestamp for each doc
 
 
 if __name__ == '__main__':
