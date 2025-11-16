@@ -1,0 +1,120 @@
+{
+  "prefix_ontology_mappings": [
+    {
+      "prefix": "NCBIT",
+      "ontology_name": "NCBITaxon"
+    },
+    {
+      "prefix": "NCBITaxon",
+      "ontology_name": "NCBITaxon"
+    },
+    {
+      "prefix": "taxonomy",
+      "ontology_name": "NCBITaxon"
+    },
+    {
+      "prefix": "NDIC",
+      "ontology_name": "NDIC"
+    },
+    {
+      "prefix": "Uberon",
+      "ontology_name": "Uberon"
+    },
+    {
+      "prefix": "NCIm",
+      "ontology_name": "NCIm"
+    },
+    {
+      "prefix": "PubChem",
+      "ontology_name": "PubChem"
+    },
+    {
+      "prefix": "Chebi",
+      "ontology_name": "CHEBI"
+    },
+    {
+      "prefix": "OM",
+      "ontology_name": "OM"
+    },
+    {
+      "prefix": "CL",
+      "ontology_name": "CL"
+    },
+    {
+       "prefix": "RRID",
+       "ontology_name": "RRID"
+    },
+    {"prefix": "PATO", "ontology_name": "PATO"},
+    {"prefix": "EMPTY", "ontology_name": "EMPTY"},
+    {"prefix": "NCIT", "ontology_name": "NCIT"},
+    {"prefix": "WBStrain", "ontology_name": "WBStrain"}
+  ],
+  "Ontologies": [
+    {
+      "name": "NCBITaxon",
+      "homepage": "https://www.ncbi.nlm.nih.gov/taxonomy",
+      "api_url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
+    },
+    {
+      "name": "NDIC",
+      "homepage": null,
+      "api_url": null
+    },
+    {
+      "name": "Uberon",
+      "homepage": "http://obofoundry.org/ontology/uberon.html",
+      "api_url": "https://www.ebi.ac.uk/ols/api/ontologies/uberon"
+    },
+    {
+      "name": "NCIm",
+      "homepage": "https://ncim.nci.nih.gov/ncimbrowser/",
+      "api_url": "https://api-evs.nci.nih.gov/evs-rest-api/"
+    },
+    {
+      "name": "PubChem",
+      "homepage": "https://pubchem.ncbi.nlm.nih.gov/",
+      "api_url": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/"
+    },
+    {
+      "name": "CHEBI",
+      "homepage": "https://www.ebi.ac.uk/chebi/",
+      "api_url": "https://www.ebi.ac.uk/ols/api/ontologies/chebi"
+    },
+    {
+      "name": "OM",
+      "homepage": "http://obofoundry.org/ontology/om.html",
+      "api_url": "https://www.ebi.ac.uk/ols/api/ontologies/om"
+    },
+    {
+      "name": "CL",
+      "homepage": "http://obofoundry.org/ontology/cl.html",
+      "api_url": "https://www.ebi.ac.uk/ols/api/ontologies/cl"
+    },
+    {
+     "name": "RRID",
+     "homepage": "https://scicrunch.org/resources",
+     "api_url": "https://scicrunch.org/api/1/resolver/"
+    },
+    {
+      "name": "PATO",
+      "homepage": "http://obofoundry.org/ontology/pato.html",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/pato"
+    },
+    {
+      "name": "EMPTY",
+      "homepage": null, 
+      "api_url": null, 
+      "description": "Experimental Measurements, Purposes, and Treatments ontologY (local OBO file)"
+    },
+    {
+      "name": "NCIT",
+      "homepage": "http://obofoundry.org/ontology/ncit.html",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/ncit"
+    },
+    {
+      "name": "WBStrain",
+      "homepage": "https://wormbase.org",
+      "api_url": "https://wormbase.org/species/c_elegans/strain"
+    }
+  ]
+}

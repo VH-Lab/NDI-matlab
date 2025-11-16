@@ -127,15 +127,40 @@ class Document:
         """
         Check if document is of a given class (including superclasses).
 
+        Supports both exact matching and hierarchical class name matching.
+        For example, if doc_class is 'ndi.element.probe', it will match:
+        - 'ndi.element.probe' (exact match)
+        - 'element.probe' (suffix match)
+        - 'probe' (leaf class name match)
+
         Args:
             document_class: Class name to check
 
         Returns:
             bool: True if document is of that class
         """
-        if self.doc_class() == document_class:
+        current_class = self.doc_class()
+
+        # Exact match
+        if current_class == document_class:
             return True
-        return document_class in self.doc_superclass()
+
+        # Check superclasses
+        if document_class in self.doc_superclass():
+            return True
+
+        # Hierarchical matching: check if class_name ends with document_class
+        # This allows matching 'probe' against 'ndi.element.probe'
+        if '.' in current_class:
+            # Split on dots and check if document_class matches any suffix
+            parts = current_class.split('.')
+            # Check all suffixes: 'probe', 'element.probe', 'ndi.element.probe'
+            for i in range(len(parts)):
+                suffix = '.'.join(parts[i:])
+                if suffix == document_class:
+                    return True
+
+        return False
 
     def dependency(self) -> Tuple[List[str], List[Dict]]:
         """

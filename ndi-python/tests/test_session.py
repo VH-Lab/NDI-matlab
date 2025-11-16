@@ -82,13 +82,24 @@ class TestSession:
 
     def test_session_equality(self, temp_session_dir):
         """Test session equality."""
+        import tempfile
+        import os
+
+        # Two sessions with the same path are equal (same ID from file)
         session1 = SessionDir(temp_session_dir, 'session1')
         session2 = SessionDir(temp_session_dir, 'session2')
+        assert session1 == session2  # Same path = same ID = equal
 
-        # Different sessions
-        assert session1 != session2
+        # Two sessions with different paths are not equal
+        temp_dir2 = tempfile.mkdtemp()
+        try:
+            session3 = SessionDir(temp_dir2, 'session3')
+            assert session1 != session3  # Different paths = different IDs = not equal
+        finally:
+            import shutil
+            shutil.rmtree(temp_dir2, ignore_errors=True)
 
-        # Same session
+        # Same session object
         assert session1 == session1
 
     def test_multiple_documents(self, temp_session_dir):

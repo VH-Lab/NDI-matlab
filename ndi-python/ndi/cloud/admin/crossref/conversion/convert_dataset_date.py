@@ -79,14 +79,14 @@ def convert_dataset_date(cloud_dataset: Dict[str, Any]) -> Dict[str, Any]:
         'publication_date': publication_date,
         'creation_date': {
             'year': str(created_ymd[0]),
-            'month': str(created_ymd[1]),
-            'day': str(created_ymd[2]),
+            'month': f'{created_ymd[1]:02d}',
+            'day': f'{created_ymd[2]:02d}',
             'media_type': 'online'
         },
         'update_date': {
             'year': str(updated_ymd[0]),
-            'month': str(updated_ymd[1]),
-            'day': str(updated_ymd[2]),
+            'month': f'{updated_ymd[1]:02d}',
+            'day': f'{updated_ymd[2]:02d}',
             'media_type': 'online'
         }
     }

@@ -316,7 +316,7 @@ class TestCreateCloudMetadataStruct:
 
             # Should have issued a warning about placeholder DOI
             assert len(w) >= 1
-            assert 'placeholder DOI' in str(w[0].message).lower()
+            assert 'placeholder doi' in str(w[0].message).lower()
 
         assert 'doi' in result
 
