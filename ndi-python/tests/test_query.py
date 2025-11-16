@@ -88,6 +88,63 @@ class TestQuery:
         q2 = Query('', 'isa', 'probe')
         assert q2.matches(doc) is False
 
+    def test_all_query(self):
+        """Test query that matches all documents."""
+        # all_query should match documents of type 'base'
+        # In MATLAB, this would match all documents since all inherit from base
+        q = Query('', 'isa', 'base', '')
+
+        # Should match 'base' documents
+        doc_base = Document('base')
+        assert q.matches(doc_base) is True
+
+        # Note: In the Python implementation, we need explicit superclass handling
+        # which would be added in full document schema implementation
+
+    def test_none_query(self):
+        """Test query that matches no documents."""
+        # none_query uses a non-existent document type
+        q = Query('', 'isa', 'nonexistentdocumenttype12345', '')
+
+        doc_base = Document('base')
+        assert q.matches(doc_base) is False
+
+        doc_element = Document('element')
+        assert q.matches(doc_element) is False
+
+    def test_greater_than(self):
+        """Test greater than comparison."""
+        doc = Document('base')
+        doc.document_properties['value'] = {'count': 10}
+
+        q = Query('value.count', 'greater_than', 5)
+        assert q.matches(doc) is True
+
+        q2 = Query('value.count', 'greater_than', 15)
+        assert q2.matches(doc) is False
+
+    def test_less_than(self):
+        """Test less than comparison."""
+        doc = Document('base')
+        doc.document_properties['value'] = {'count': 10}
+
+        q = Query('value.count', 'less_than', 15)
+        assert q.matches(doc) is True
+
+        q2 = Query('value.count', 'less_than', 5)
+        assert q2.matches(doc) is False
+
+    def test_regexp_match(self):
+        """Test regular expression matching."""
+        doc = Document('base')
+        doc.document_properties['base']['name'] = 'test_probe_001'
+
+        q = Query('base.name', 'regexp', r'probe_\d+')
+        assert q.matches(doc) is True
+
+        q2 = Query('base.name', 'regexp', r'electrode_\d+')
+        assert q2.matches(doc) is False
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
