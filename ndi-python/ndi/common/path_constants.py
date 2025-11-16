@@ -76,21 +76,33 @@ class PathConstants:
         os.makedirs(vocab_folder, exist_ok=True)
         return vocab_folder
 
-    # Class properties for backward compatibility
+    # Backward compatibility methods (MATLAB-style names)
     @classmethod
-    @property
-    def NDIRoot(cls) -> str:
-        """NDI root directory (MATLAB-style name)."""
-        return cls.get_ndi_root()
+    def common_folder(cls) -> str:
+        """
+        Get the common resources folder (backward compatibility).
 
-    @classmethod
-    @property
-    def CommonFolder(cls) -> str:
-        """Common folder directory (MATLAB-style name)."""
+        Returns:
+            str: Path to common folder with shared resources
+        """
         return cls.get_common_folder()
 
     @classmethod
-    @property
-    def UserFolder(cls) -> str:
-        """User folder directory (MATLAB-style name)."""
+    def user_folder(cls) -> str:
+        """
+        Get the user data folder (backward compatibility).
+
+        Returns:
+            str: Path to user-specific NDI data folder
+        """
         return cls.get_user_folder()
+
+    @classmethod
+    def ndi_root(cls) -> str:
+        """
+        Get the NDI installation root directory (backward compatibility).
+
+        Returns:
+            str: Path to NDI root directory
+        """
+        return cls.get_ndi_root()
