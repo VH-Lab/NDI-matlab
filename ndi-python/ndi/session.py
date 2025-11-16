@@ -286,27 +286,31 @@ class Session(DocumentService):
         MATLAB equivalent: ndi.session.daqsystem_rm()
 
         Args:
-            dev: DAQ system object to remove
+            dev: DAQ system object or name string to remove
 
         Returns:
             Session: Self for chaining
 
         Raises:
-            TypeError: If dev is not a DAQ system
+            TypeError: If dev is not a DAQ system or string
             ValueError: If DAQ system not found
 
         See Also:
             daqsystem_add, daqsystem_clear
         """
-        # Check if it's a DAQ system (duck typing)
-        if not hasattr(dev, 'name'):
-            raise TypeError("dev must be a ndi.daq.system object")
+        # Accept either DAQ system object or string name
+        if isinstance(dev, str):
+            dev_name = dev
+        elif hasattr(dev, 'name'):
+            dev_name = dev.name
+        else:
+            raise TypeError("dev must be a ndi.daq.system object or string name")
 
         # Load the DAQ system by name
-        daqsys = self.daqsystem_load(name=dev.name)
+        daqsys = self.daqsystem_load(name=dev_name)
 
         if daqsys is None:
-            raise ValueError(f"No DAQ system named '{dev.name}' found")
+            raise ValueError(f"No DAQ system named '{dev_name}' found")
 
         # Make list if not already
         if not isinstance(daqsys, list):
@@ -350,34 +354,28 @@ class Session(DocumentService):
         See Also:
             daqsystem_rm, daqsystem_add
         """
-        # Load all DAQ systems (using regex to match any name)
-        dev = self.daqsystem_load(name='(.*)')
+        # Search for all daqsystem documents
+        query = Query('', 'isa', 'daqsystem', '')
+        docs = self.database_search(query)
 
-        if dev is None:
+        if not docs:
             return self  # No devices to remove
 
-        # Make sure it's a list
-        if not isinstance(dev, list):
-            dev = [dev]
+        # Remove all found documents
+        for doc in docs:
+            # Remove dependencies first
+            depends_on = doc.document_properties.get('depends_on', {})
+            if isinstance(depends_on, list):
+                for dep in depends_on:
+                    if isinstance(dep, dict) and 'value' in dep:
+                        dep_docs = self.database_search(
+                            Query('base.id', 'exact_string', dep['value'])
+                        )
+                        if dep_docs:
+                            self.database_rm(dep_docs)
 
-        # Remove each device
-        for d in dev:
-            # We need to reconstruct a minimal object with name attribute
-            # since daqsystem_rm expects an object with .name
-            class DeviceStub:
-                def __init__(self, name):
-                    self.name = name
-
-            # Extract name from document
-            if hasattr(d, 'document_properties'):
-                name = d.document_properties.get('base.name', '')
-            elif hasattr(d, 'name'):
-                name = d.name
-            else:
-                continue
-
-            stub = DeviceStub(name)
-            self.daqsystem_rm(stub)
+            # Remove the main document
+            self.database_rm(doc)
 
         return self
 
@@ -509,12 +507,16 @@ class Session(DocumentService):
 
     def get_ingested_docs(self) -> List[Document]:
         """
-        Get all documents marked as ingested.
+        Get all documents related to ingested data.
 
         MATLAB equivalent: ndi.session.get_ingested_docs()
 
+        Return all documents related to ingested data. Be careful; if the
+        raw data is not available on the path, then the ingested data is
+        the only record of it.
+
         Returns:
-            List[Document]: Documents marked as ingested
+            List[Document]: All ingested data documents
 
         Example:
             >>> ingested = session.get_ingested_docs()
@@ -523,9 +525,15 @@ class Session(DocumentService):
         See Also:
             ingest, is_fully_ingested
         """
-        # Search for ingestion marker documents
-        query = Query('', 'isa', 'daqreader_epochdata_ingested', '')
-        return self.database_search(query)
+        # Search for all ingested data types (as in MATLAB)
+        q_i1 = Query('', 'isa', 'daqreader_mfdaq_epochdata_ingested', '')
+        q_i2 = Query('', 'isa', 'daqmetadatareader_epochdata_ingested', '')
+        q_i3 = Query('', 'isa', 'epochfiles_ingested', '')
+        q_i4 = Query('', 'isa', 'syncrule_mapping', '')
+
+        # Combine with OR
+        combined_query = q_i1 | q_i2 | q_i3 | q_i4
+        return self.database_search(combined_query)
 
     def findexpobj(
         self,
@@ -676,10 +684,174 @@ class Session(DocumentService):
                 return (
                     False,
                     f"Document {doc.id()} has session_id {doc_session_id} "
-                    f"which doesn't match {session_id}"
+                    f"which does not match {session_id}"
                 )
 
         return (True, '')
+
+    def validate_documents(
+        self,
+        document: Union[Document, List[Document]]
+    ) -> tuple[bool, str]:
+        """
+        Validate whether documents belong to this session.
+
+        MATLAB equivalent: ndi.session.validate_documents()
+
+        Checks that all provided documents have session_id matching this
+        session's ID. Empty session_ids (all zeros) are also acceptable.
+
+        Args:
+            document: Document or list of documents to validate
+
+        Returns:
+            tuple: (is_valid: bool, error_message: str)
+                   If is_valid is True, error_message is empty
+
+        Example:
+            >>> valid, msg = session.validate_documents(doc)
+            >>> if not valid:
+            ...     print(f'Validation error: {msg}')
+        """
+        # Make list if needed
+        if not isinstance(document, list):
+            document = [document]
+
+        # Check each document
+        for i, doc in enumerate(document):
+            # Must be a Document object
+            if not isinstance(doc, Document):
+                return (
+                    False,
+                    f'All entries must be Document objects (entry {i} is not)'
+                )
+
+            # Check session ID
+            doc_session_id = doc.session_id()
+            if not doc_session_id:
+                continue  # None is OK
+
+            # Must match this session or be empty
+            if doc_session_id != self.id() and doc_session_id != Session.empty_id():
+                return (
+                    False,
+                    f'Document {i} has session_id {doc_session_id} '
+                    f'which does not match session id {self.id()}'
+                )
+
+        return (True, '')
+
+    def ingest(self) -> tuple[bool, str]:
+        """
+        Ingest raw data and synchronization information into the database.
+
+        MATLAB equivalent: ndi.session.ingest()
+
+        Ingests all raw data and synchronization information from:
+        1. The synchronization graph (syncgraph)
+        2. All registered DAQ systems
+
+        This creates ingested data documents that preserve the data
+        even if the original raw files are removed.
+
+        Returns:
+            tuple: (success: bool, error_message: str)
+                   If success is True, error_message is empty
+
+        Raises:
+            RuntimeError: If syncgraph is not initialized
+
+        Example:
+            >>> success, msg = session.ingest()
+            >>> if not success:
+            ...     print(f'Ingestion failed: {msg}')
+        """
+        error_msg = ''
+
+        # Ingest syncgraph first
+        if self.syncgraph is None:
+            return (False, 'Syncgraph is not initialized')
+
+        try:
+            syncgraph_docs = self.syncgraph.ingest()
+        except Exception as e:
+            return (False, f'Error ingesting syncgraph: {str(e)}')
+
+        # Get all DAQ systems
+        daqs = self.daqsystem_load(name='(.*)')  # Load all
+        if not isinstance(daqs, list):
+            daqs = [daqs] if daqs else []
+
+        # Ingest each DAQ system
+        daq_docs = []
+        success = True
+        for daq in daqs:
+            try:
+                daq_success, daq_doc_list = daq.ingest()
+                daq_docs.append(daq_doc_list)
+                if not daq_success:
+                    success = False
+                    error_msg = f'Error in DAQ system {daq.name}'
+                    break
+            except Exception as e:
+                success = False
+                error_msg = f'Error ingesting DAQ {daq.name}: {str(e)}'
+                break
+
+        # If ingestion failed, remove any added documents
+        if not success:
+            for doc_list in daq_docs:
+                if doc_list:
+                    try:
+                        self.database_rm(doc_list)
+                    except:
+                        pass  # Best effort cleanup
+            return (False, error_msg)
+
+        # Success - add syncgraph documents
+        if syncgraph_docs:
+            self.database_add(syncgraph_docs)
+
+        return (True, '')
+
+    def is_fully_ingested(self) -> bool:
+        """
+        Check if the session is fully ingested.
+
+        MATLAB equivalent: ndi.session.is_fully_ingested()
+
+        Returns True if all DAQ systems in the session have been fully
+        ingested (no remaining file navigators to process). Returns False
+        if there are still elements on disk that need to be ingested.
+
+        This method does not perform any ingestion itself - it only checks
+        the status.
+
+        Returns:
+            bool: True if fully ingested, False otherwise
+
+        Example:
+            >>> if not session.is_fully_ingested():
+            ...     session.ingest()
+        """
+        # Get all DAQ systems
+        daqs = self.daqsystem_load(name='(.*)')  # Load all
+        if not isinstance(daqs, list):
+            daqs = [daqs] if daqs else []
+
+        # Check each DAQ system
+        for daq in daqs:
+            try:
+                # Check if filenavigator has anything to ingest
+                if hasattr(daq, 'filenavigator') and daq.filenavigator:
+                    docs_out = daq.filenavigator.ingest()
+                    if docs_out:  # If any documents, not fully ingested
+                        return False
+            except Exception:
+                # If we can't check, assume not fully ingested
+                return False
+
+        return True
 
     def __eq__(self, other) -> bool:
         """Check equality based on session ID."""

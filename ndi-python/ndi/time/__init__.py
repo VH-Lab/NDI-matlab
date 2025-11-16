@@ -9,6 +9,9 @@ from .syncgraph import SyncGraph
 from .timeseries import TimeSeries
 from .timereference import TimeReference
 
+# Time conversion utilities
+from .fun import samples2times, times2samples
+
 __all__ = [
     'ClockType',
     'TimeMapping',
@@ -19,4 +22,6 @@ __all__ = [
     'CommonTriggersSyncRule',
     'TimeSeries',
     'TimeReference',
+    'samples2times',
+    'times2samples',
 ]

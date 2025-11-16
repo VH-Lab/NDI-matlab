@@ -237,6 +237,7 @@ from .intan import Intan
 from .blackrock import Blackrock
 from .cedspike2 import CEDSpike2
 from .spikegadgets import SpikeGadgets
+from .ndr import NDR
 
 __all__ = [
     'MFDAQReader',
@@ -244,4 +245,5 @@ __all__ = [
     'Blackrock',
     'CEDSpike2',
     'SpikeGadgets',
+    'NDR',
 ]
