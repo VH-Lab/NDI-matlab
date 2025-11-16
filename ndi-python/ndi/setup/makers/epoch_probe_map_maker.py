@@ -58,7 +58,8 @@ class EpochProbeMapMaker:
                  probe_table: pd.DataFrame,
                  overwrite: bool = False,
                  non_nan_variable_names: Optional[List[str]] = None,
-                 probe_postfix: Union[str, List[str], None] = None):
+                 probe_postfix: Union[str, List[str], None] = None,
+                 show_progress: bool = True):
         """
         Initialize EpochProbeMapMaker and create epoch probe map files.
 
@@ -81,11 +82,13 @@ class EpochProbeMapMaker:
                           - String: Applied to all probes
                           - List[str]: One per probe or per epoch
                           Default: None.
+            show_progress: Whether to display progress. Default: True.
 
         Raises:
             ValueError: If required columns are missing or path doesn't exist.
         """
         from ...util.table import identify_valid_rows
+        from ...gui import ProgressTracker, ConsoleProgressMonitor
 
         # Validate inputs
         if not os.path.isdir(path):
@@ -126,6 +129,14 @@ class EpochProbeMapMaker:
             epoch_ids = [variable_table.index[i] for i in valid_indices]
 
         logging.info(f"Creating epoch probe map files for {len(epoch_ids)} epoch(s)...")
+
+        # Setup progress monitoring
+        progress_tracker = None
+        progress_monitor = None
+        if show_progress and len(epoch_ids) > 0:
+            progress_tracker = ProgressTracker()
+            progress_monitor = ConsoleProgressMonitor("Creating Epoch Probe Map(s)", tracker=progress_tracker)
+            progress_tracker.start()
 
         # Process each valid epoch
         for idx, epoch_idx in enumerate(valid_indices):
@@ -201,6 +212,17 @@ class EpochProbeMapMaker:
 
             except Exception as e:
                 logging.error(f"Failed to write epoch probe map file '{probe_filename}': {e}")
+
+            # Update progress
+            if progress_tracker:
+                progress_tracker.update_progress(
+                    (idx + 1) / len(epoch_ids),
+                    f"Epoch {idx+1}/{len(epoch_ids)}: {epoch_id}"
+                )
+
+        # Mark progress complete
+        if progress_tracker:
+            progress_tracker.mark_complete()
 
         logging.info(f"Completed epoch probe map creation for {len(epoch_ids)} epoch(s)")
 

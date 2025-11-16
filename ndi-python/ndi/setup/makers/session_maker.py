@@ -57,7 +57,8 @@ class SessionMaker:
                  path: str,
                  variable_table: pd.DataFrame,
                  overwrite: bool = False,
-                 non_nan_variable_names: Optional[List[str]] = None):
+                 non_nan_variable_names: Optional[List[str]] = None,
+                 show_progress: bool = True):
         """
         Initialize SessionMaker and create/load sessions.
 
@@ -71,11 +72,13 @@ class SessionMaker:
                       Default: False.
             non_nan_variable_names: Column names in variable_table whose values must not
                                    be NaN for a valid session to be created. Default: None.
+            show_progress: Whether to display progress. Default: True.
 
         Raises:
             ValueError: If path doesn't exist or variable_table lacks required columns.
         """
         from ...util.table import identify_valid_rows
+        from ...gui import ProgressTracker, ConsoleProgressMonitor
 
         # Validate inputs
         if not os.path.isdir(path):
@@ -130,6 +133,14 @@ class SessionMaker:
         # Create or load NDI session objects
         logging.info(f"Creating/loading {len(session_refs)} session(s)...")
 
+        # Setup progress monitoring
+        progress_tracker = None
+        progress_monitor = None
+        if show_progress and len(session_refs) > 0:
+            progress_tracker = ProgressTracker()
+            progress_monitor = ConsoleProgressMonitor("Creating Session(s)", tracker=progress_tracker)
+            progress_tracker.start()
+
         for i, session_ref in enumerate(session_refs):
             # Get the full path for the current session
             session_path = os.path.join(
@@ -166,8 +177,19 @@ class SessionMaker:
                 'daqreader': []
             })
 
+            # Update progress
+            if progress_tracker:
+                progress_tracker.update_progress(
+                    (i + 1) / len(session_refs),
+                    f"Session {i+1}/{len(session_refs)}: {session_ref}"
+                )
+
             # Close any open database connections (if applicable)
             # Note: In Python, this is handled by context managers/garbage collection
+
+        # Mark progress complete
+        if progress_tracker:
+            progress_tracker.mark_complete()
 
     def add_daq_system(self,
                       session_index: int,
