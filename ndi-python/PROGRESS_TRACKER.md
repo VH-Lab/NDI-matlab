@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 4 (Element + Probe) complete, file navigator pending
-**Completion**: ~35% of full implementation
+**Status**: Phase 6 (File Navigator) complete
+**Completion**: ~40% of full implementation
 
 ---
 
@@ -95,12 +95,22 @@
 - [x] Multifunction DAQ Reader (ndi.daq.reader.mfdaq) - 478 lines
 - [ ] DAQ Readers specific (blackrock, intan, spikegadgets) - **TODO when file I/O ready**
 - [ ] Metadata readers - **TODO**
-- [ ] File navigator system - **TODO**
 **Estimated**: 10-12 hours total, ~5 hours completed
 
 ### Phase 4: Element + Probe System (Week 2) - ✅ COMPLETE
 - [x] Complete Element class (569 lines) - Full implementation beyond stub
 - [x] Complete Probe class (370 lines) - Inherits from Element
+
+### Phase 6: File Navigator System (Week 2) - ✅ COMPLETE
+- [x] Navigator class (934 lines) - Full implementation with:
+  - Dual initialization (from params or document)
+  - File matching with regex and wildcard '#' patterns
+  - Epoch grouping from disk files
+  - Integration with ingested database epochs
+  - Epoch ID management (read/write from hidden files)
+  - Epoch probe map loading
+  - Cache integration
+  - Document service methods
 - [ ] Probe type map - **TODO when probe types defined**
 - [ ] Probe utilities - **TODO**
 - [ ] Test: ProbeTest.m - **Requires DAQ system loading**
