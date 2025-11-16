@@ -18,12 +18,15 @@ from .epoch import Epoch, EpochSet, EpochProbeMap, findepochnode, epochrange
 from .cache import Cache
 from .query import Query
 from .subject import Subject
+from .app import App
+from .calculator import Calculator
 
 # Import subpackages
 from . import daq
 from . import ontology
 from . import validators
 from . import util
+from . import calc
 
 # Make key classes available at package level
 __all__ = [
@@ -43,9 +46,12 @@ __all__ = [
     "Cache",
     "Query",
     "Subject",
+    "App",
+    "Calculator",
     "daq",
     "ontology",
     "validators",
     "util",
+    "calc",
     "__version__",
 ]

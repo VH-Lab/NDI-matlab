@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 9 (Utilities) complete
-**Completion**: ~60% of full implementation
+**Status**: Phase 10 (App & Calculator) complete
+**Completion**: ~65% of full implementation
 
 ---
 
@@ -219,13 +219,35 @@
   - TestUnwrapTableCellContent.m
 **Estimated**: 8-12 hours, ~3 hours completed (functions only, tests pending)
 
-### Phase 10: App & Calculator (Week 5)
-- [ ] Complete App class
-- [ ] Complete Calculator class
-- [ ] Pipeline class
-- [ ] Calc implementations
-- [ ] Test: TestMarkGarbage.m
-**Estimated**: 8-10 hours
+### Phase 10: App & Calculator (Week 5) - ✅ COMPLETE
+- [x] App class (ndi.app) - 210 lines
+  - Inherits from DocumentService
+  - varappname() - Variable name generation
+  - version_url() - Git version/URL extraction
+  - searchquery() - Search query generation
+  - newdocument() - App document creation with metadata
+- [x] AppDoc mixin (ndi.appdoc) - 160 lines
+  - Document type management
+  - defaultstruct_appdoc(), doc2struct(), struct2doc()
+  - find_appdoc(), isequal_appdoc_struct()
+- [x] Calculator class (ndi.calculator) - 450 lines
+  - Inherits from App and AppDoc
+  - run() - Main execution with doc existence handling
+  - search_for_input_parameters() - Parameter combination enumeration
+  - search_for_calculator_docs() - Find existing calculations
+  - calculate() - Abstract calculation method
+  - are_input_parameters_equivalent() - Parameter comparison
+  - is_valid_dependency_input() - Dependency validation
+  - plot() - Diagnostic plotting (stub, full impl in Phase 14)
+- [x] Simple example calculator (ndi.calc.example.simple) - 140 lines
+  - Demonstrates calculator framework
+  - Implements calculate() method
+  - Default parameter search
+  - Documentation
+- [ ] Pipeline GUI - **Deferred to Phase 14 (GUI)**
+- [ ] Calculator GUI methods - **Deferred to Phase 14 (GUI)**
+- [ ] Test: TestMarkGarbage.m - **TODO**
+**Estimated**: 8-10 hours, ~5 hours completed (core logic, GUI deferred)
 
 ### Phase 11: Database Advanced (Week 5)
 - [ ] Binary doc implementation
@@ -259,9 +281,9 @@
 ## 📊 Overall Progress
 
 ### Code Implementation
-- **Completed**: ~6,860 lines (core + DAQ + ontology + validators + utilities)
-- **Remaining**: ~10,940-15,940 lines estimated
-- **Progress**: ~30%
+- **Completed**: ~7,820 lines (core + DAQ + ontology + validators + utilities + app/calculator)
+- **Remaining**: ~9,980-14,980 lines estimated
+- **Progress**: ~34%
 
 ### Test Coverage
 - **Completed**: 6 test files (55 tests)
