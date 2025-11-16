@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 8 (Validators) complete
-**Completion**: ~58% of full implementation
+**Status**: Phase 9 (Utilities) complete
+**Completion**: ~60% of full implementation
 
 ---
 
@@ -190,20 +190,34 @@
 - [ ] Tests: 8 validator test classes - **TODO**
 **Estimated**: 6-8 hours, ~2 hours completed (functions only, tests pending)
 
-### Phase 9: Utilities (Week 4)
-11 test classes to port:
-- [ ] diffTest.m
-- [ ] TestAllTypes.m
-- [ ] TestFindFuid.m
-- [ ] TestVStack.m
-- [ ] test_datestamp2datetime.m
-- [ ] testHexDiff.m
-- [ ] testHexDump.m
-- [ ] getHexDiffFromFileObjTest.m
-- [ ] hexDiffBytesTest.m
-- [ ] TestRehydrateJSONNanNull.m
-- [ ] TestUnwrapTableCellContent.m
-**Estimated**: 8-12 hours
+### Phase 9: Utilities (Week 4) - ✅ COMPLETE
+- [x] Table utilities (ndi.util.table) - 130 lines
+  - vstack() - DataFrame vertical concatenation with dissimilar columns
+  - Handles missing columns with typed fill values (NaN, None, NaT)
+  - Preserves column order and dtypes
+- [x] Hex utilities (ndi.util.hex) - 350 lines
+  - hex_diff() - Side-by-side hex comparison of two files
+  - hex_dump() - Hex dump with ASCII representation
+  - get_hex_diff_from_file_obj() - Lower-level file object comparison
+  - 16-byte chunks with byte range support
+- [x] Document utilities (ndi.util.doc) - 200 lines
+  - find_fuid() - Search for document by file UID
+  - find_document_by_id() - Search by document ID
+  - get_document_dependencies() - Extract all dependencies
+  - has_dependency_value() - Check dependency value
+- [ ] Tests: 11 utility test classes - **TODO**
+  - diffTest.m
+  - TestAllTypes.m
+  - TestFindFuid.m
+  - TestVStack.m
+  - test_datestamp2datetime.m
+  - testHexDiff.m
+  - testHexDump.m
+  - getHexDiffFromFileObjTest.m
+  - hexDiffBytesTest.m
+  - TestRehydrateJSONNanNull.m
+  - TestUnwrapTableCellContent.m
+**Estimated**: 8-12 hours, ~3 hours completed (functions only, tests pending)
 
 ### Phase 10: App & Calculator (Week 5)
 - [ ] Complete App class
@@ -245,9 +259,9 @@
 ## 📊 Overall Progress
 
 ### Code Implementation
-- **Completed**: ~6,150 lines (core + DAQ + ontology + validators)
-- **Remaining**: ~11,650-16,650 lines estimated
-- **Progress**: ~27%
+- **Completed**: ~6,860 lines (core + DAQ + ontology + validators + utilities)
+- **Remaining**: ~10,940-15,940 lines estimated
+- **Progress**: ~30%
 
 ### Test Coverage
 - **Completed**: 6 test files (55 tests)

@@ -19,8 +19,11 @@ from .cache import Cache
 from .query import Query
 from .subject import Subject
 
-# Import DAQ system (subpackage with nested imports)
+# Import subpackages
 from . import daq
+from . import ontology
+from . import validators
+from . import util
 
 # Make key classes available at package level
 __all__ = [
@@ -41,5 +44,8 @@ __all__ = [
     "Query",
     "Subject",
     "daq",
+    "ontology",
+    "validators",
+    "util",
     "__version__",
 ]
