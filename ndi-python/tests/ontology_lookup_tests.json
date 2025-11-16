@@ -1,0 +1,369 @@
+{
+  "ontology_lookup_tests": [
+    {
+      "ontology": "NCBITaxon",
+      "lookup_string": "taxonomy:9606",
+      "should_succeed": true,
+      "expected_id": "9606",
+      "expected_name": "Homo sapiens"
+    },
+    {
+      "ontology": "CL",
+      "lookup_string": "CL:0000000",
+      "should_succeed": true,
+      "expected_id": "CL:0000000",
+      "expected_name": "cell"
+    },
+    {
+      "ontology": "CL",
+      "lookup_string": "CL:cell",
+      "should_succeed": true,
+      "expected_id": "CL:0000000",
+      "expected_name": "cell"
+    },
+    {
+      "ontology": "CL",
+      "lookup_string": "CL:NoSuchItem",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "CL",
+      "lookup_string": "CL:0000540",
+      "should_succeed": true,
+      "expected_id": "CL:0000540",
+      "expected_name": "neuron"
+    },
+    {
+      "ontology": "NCBITaxon",
+      "lookup_string": "NCBITaxon:9606",
+      "should_succeed": true,
+      "expected_id": "9606",
+      "expected_name": "Homo sapiens"
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:MolarVolumeUnit",
+      "should_succeed": true,
+      "expected_id": "OM:MolarVolumeUnit",
+      "expected_name": "molar volume unit"
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:Acidity",
+      "should_succeed": true,
+      "expected_id": "OM:Acidity",
+      "expected_name": "acidity"
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:Period",
+      "should_succeed": true,
+      "expected_id": "OM:Period",
+      "expected_name": "period"
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:NoSuchUnit",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:182",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "275",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:acidity",
+      "should_succeed": true,
+      "expected_id": "OM:Acidity",
+      "expected_name": "acidity"
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:molar volume unit",
+      "should_succeed": true,
+      "expected_id": "OM:MolarVolumeUnit",
+      "expected_name": "molar volume unit"
+    },
+    {
+      "ontology": "CHEBI",
+      "lookup_string": "CHEBI:15377",
+      "should_succeed": true,
+      "expected_id": "CHEBI:15377",
+      "expected_name": "water"
+    },
+    {
+      "ontology": "CHEBI",
+      "lookup_string": "CHEBI:water",
+      "should_succeed": true,
+      "expected_id": "CHEBI:15377",
+      "expected_name": "water"
+    },
+    {
+      "ontology": "CHEBI",
+      "lookup_string": "CHEBI:NoSuchItem",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "CHEBI",
+      "lookup_string": "CHEBI:16236",
+      "should_succeed": true,
+      "expected_id": "CHEBI:16236",
+      "expected_name": "ethanol"
+    },
+    {
+      "ontology": "UBERON",
+      "lookup_string": "UBERON:0000948",
+      "should_succeed": true,
+      "expected_id": "UBERON:0000948",
+      "expected_name": "heart"
+    },
+    {
+      "ontology": "UBERON",
+      "lookup_string": "UBERON:heart",
+      "should_succeed": true,
+      "expected_id": "UBERON:0000948",
+      "expected_name": "heart"
+    },
+    {
+      "ontology": "UBERON",
+      "lookup_string": "UBERON:NoSuchItem",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "UBERON",
+      "lookup_string": "UBERON:0002107",
+      "should_succeed": true,
+      "expected_id": "UBERON:0002107",
+      "expected_name": "liver"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:0000384",
+      "should_succeed": true,
+      "expected_id": "PATO:0000384",
+      "expected_name": "male"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:male",
+      "should_succeed": true,
+      "expected_id": "PATO:0000384",
+      "expected_name": "male"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:0000383",
+      "should_succeed": true,
+      "expected_id": "PATO:0000383",
+      "expected_name": "female"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:female",
+      "should_succeed": true,
+      "expected_id": "PATO:0000383",
+      "expected_name": "female"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:nosuchthing",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:9999999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "NCBITaxon",
+      "lookup_string": "NCBITaxon:Homo sapiens",
+      "should_succeed": true,
+      "expected_id": "9606",
+      "expected_name": "Homo sapiens"
+    },
+    {
+      "ontology": "NCBITaxon",
+      "lookup_string": "NCBITaxon:999999999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "NCIm",
+      "lookup_string": "NCIm:C0018787",
+      "should_succeed": true,
+      "expected_id": "C0018787",
+      "expected_name": "Heart"
+    },
+    {
+      "ontology": "NCIm",
+      "lookup_string": "NCIm:Infectious Disorder",
+      "should_succeed": true,
+      "expected_id": "C0009450",
+      "expected_name": "Infectious Disorder"
+    },
+    {
+      "ontology": "NCIm",
+      "lookup_string": "NCIm:C9999999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "NCIm",
+      "lookup_string": "NCIm:C0009450",
+      "should_succeed": true,
+      "expected_id": "C0009450",
+      "expected_name": "Infectious Disorder"
+    },
+    {
+      "ontology": "PubChem",
+      "lookup_string": "PubChem:2244",
+      "should_succeed": true,
+      "expected_id": "2244",
+      "expected_name": "aspirin"
+    },
+    {
+      "ontology": "PubChem",
+      "lookup_string": "PubChem:Aspirin",
+      "should_succeed": true,
+      "expected_id": "2244",
+      "expected_name": "aspirin"
+    },
+    {
+      "ontology": "PubChem",
+      "lookup_string": "PubChem:NoSuchCompound",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "PubChem",
+      "lookup_string": "PubChem:cid 2244",
+      "should_succeed": true,
+      "expected_id": "2244",
+      "expected_name": "aspirin"
+    },
+    {
+      "ontology": "NCBITaxon",
+      "lookup_string": "taxonomy:9606",
+      "should_succeed": true,
+      "expected_id": "9606",
+      "expected_name": "Homo sapiens"
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:8",
+      "should_succeed": true,
+      "expected_id": "8",
+      "expected_name": "Experienced cricket hunting"
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:postnatal day",
+      "should_succeed": true,
+      "expected_id": "11",
+      "expected_name": "Postnatal day"
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:9999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:No such purpose here",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "RRID",
+      "lookup_string": "RRID:SCR_006472",
+      "should_succeed": true,
+      "expected_id": "RRID:SCR_006472",
+      "expected_name": "NCBI"
+    },
+    {
+      "ontology": "RRID",
+      "lookup_string": "RRID:RGD_70508",
+      "should_succeed": true,
+      "expected_id": "RRID:RGD_70508",
+      "expected_name": "SD"
+    },
+    {
+      "ontology": "RRID",
+      "lookup_string": "RRID:NoSuchRID_000",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:00000090",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000090",
+      "expected_name": "Behavioral measurement"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:Behavioral measurement",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000090",
+      "expected_name": "Behavioral measurement"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:00000100",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000100",
+      "expected_name": "Elevated Plus Maze: open arm (north) - entries"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:NoSuchTermHere",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:99999999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:0000000",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    }
+  ]
+}
+
