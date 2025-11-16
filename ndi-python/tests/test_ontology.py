@@ -56,7 +56,7 @@ def test_ontology_lookup(test_case):
     if should_succeed:
         # Test case expected to succeed
         try:
-            result_id, result_name, _, _, _ = Ontology.lookup(lookup_str)
+            result_id, result_name, _, _, _, _ = Ontology.lookup(lookup_str)
 
             # Verify ID matches
             assert result_id == expected_id, \
@@ -85,7 +85,7 @@ def test_ontology_lookup_basic():
     ontology lookup system is working without running all test cases.
     """
     # Test a simple lookup that should work
-    result_id, result_name, _, _, _ = Ontology.lookup('CL:0000000')
+    result_id, result_name, _, _, _, _ = Ontology.lookup('CL:0000000')
     assert result_id == 'CL:0000000', 'Expected cell type ontology ID'
     assert result_name.lower() == 'cell', f'Expected "cell", got "{result_name}"'
 

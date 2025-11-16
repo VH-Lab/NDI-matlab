@@ -5,7 +5,7 @@ This package provides general utility functions including logging,
 timestamp generation, channel name parsing, and toolbox checking.
 """
 
-from .name2variablename import name2variableName as name2variablename
+from .name2variablename import name2variableName
 from .timestamp import timestamp, timestamp_matlab_format
 from .console import console
 from .errlog import errlog
@@ -23,7 +23,11 @@ from .convertoldnsd2ndi import convertoldnsd2ndi
 from .run_platform_checks import run_platform_checks, get_platform_info
 from .assertAddonOnPath import assertAddonOnPath, check_addon_available, get_installed_packages
 
+# Backward compatibility alias
+name2variablename = name2variableName
+
 __all__ = [
+    'name2variableName',
     'name2variablename',
     'timestamp',
     'timestamp_matlab_format',

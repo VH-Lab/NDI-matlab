@@ -35,6 +35,10 @@ class MockSession:
         """Open a binary document."""
         return self.database.openbinarydoc(doc_id, filename)
 
+    def searchquery(self):
+        """Return query that matches all documents in this session."""
+        return Query('base.session_id', 'exact_string', self.id(), '')
+
 
 class TestExtractDocsFiles:
     """Test suite for extract_docs_files function."""
@@ -51,7 +55,7 @@ class TestExtractDocsFiles:
             doc.document_properties['base'] = {
                 'id': doc.id(),
                 'name': f'probe_{i}',
-                'session_id': 'test_session'
+                'session_id': session.id()  # Use session's ID
             }
             db.add(doc)
 
@@ -104,7 +108,7 @@ class TestNDICloudMetadata:
             doc.document_properties['base'] = {
                 'id': doc.id(),
                 'name': f'probe_{i}',
-                'session_id': 'test_session',
+                'session_id': session.id(),  # Use session's ID
                 'datestamp': f'2024-01-{i+1:02d}'
             }
             doc.document_properties['document_class'] = {

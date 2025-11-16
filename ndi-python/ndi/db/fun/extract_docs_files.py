@@ -70,7 +70,12 @@ def extract_docs_files(session_or_dataset: Any,
         Path(target_path).mkdir(parents=True, exist_ok=True)
 
     # Search for all documents
-    q_all = Query('', 'isa', 'base', '')
+    # Use searchquery() method which returns query matching all documents in this session/dataset
+    if hasattr(session_or_dataset, 'searchquery'):
+        q_all = session_or_dataset.searchquery()
+    else:
+        # Fallback to ISA base query
+        q_all = Query('', 'isa', 'base', '')
     docs = session_or_dataset.database_search(q_all)
 
     files_created = []

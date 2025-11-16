@@ -195,8 +195,8 @@ class TestCopydocfile2temp:
 
         # Mock binary file
         mock_file = Mock()
-        mock_file.read = Mock(return_value=b'test data')
-        session.database_openbinarydoc = Mock(return_value=mock_file)
+        mock_file.read.return_value = b'test data'
+        session.database_openbinarydoc.return_value = mock_file
 
         # Test
         temp_file, temp_base = copydocfile2temp(doc, session, 'test.dat', '.dat')

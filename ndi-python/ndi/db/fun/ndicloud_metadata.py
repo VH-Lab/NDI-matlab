@@ -66,7 +66,12 @@ def ndicloud_metadata(session_or_dataset: Any,
         metadata['session_info']['reference'] = session_or_dataset.reference
 
     # Search for all documents
-    q_all = Query('', 'isa', 'base', '')
+    # Use searchquery() method which returns query matching all documents in this session/dataset
+    if hasattr(session_or_dataset, 'searchquery'):
+        q_all = session_or_dataset.searchquery()
+    else:
+        # Fallback to ISA base query
+        q_all = Query('', 'isa', 'base', '')
     docs = session_or_dataset.database_search(q_all)
 
     # Process each document
