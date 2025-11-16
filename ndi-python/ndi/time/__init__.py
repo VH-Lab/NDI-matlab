@@ -6,6 +6,8 @@ from .clocktype import ClockType
 from .timemapping import TimeMapping
 from .syncrule import SyncRule, FileMatchSyncRule, FileFindSyncRule, CommonTriggersSyncRule
 from .syncgraph import SyncGraph
+from .timeseries import TimeSeries
+from .timereference import TimeReference
 
 __all__ = [
     'ClockType',
@@ -15,4 +17,6 @@ __all__ = [
     'FileMatchSyncRule',
     'FileFindSyncRule',
     'CommonTriggersSyncRule',
+    'TimeSeries',
+    'TimeReference',
 ]
