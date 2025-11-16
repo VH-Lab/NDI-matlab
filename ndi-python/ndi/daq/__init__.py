@@ -9,7 +9,8 @@ from .reader import Reader
 from .metadatareader import MetadataReader
 
 # Import specific hardware readers
-from .reader.mfdaq import (
+from .readers.mfdaq import (
+    MFDAQReader,
     Intan,
     Blackrock,
     CEDSpike2,
@@ -20,6 +21,7 @@ __all__ = [
     'System',
     'Reader',
     'MetadataReader',
+    'MFDAQReader',
     'Intan',
     'Blackrock',
     'CEDSpike2',
