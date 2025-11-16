@@ -14,7 +14,7 @@ from .database import Database, DirectoryDatabase
 from .session import Session, SessionDir
 from .element import Element
 from .probe import Probe
-from .epoch import Epoch, EpochSet
+from .epoch import Epoch, EpochSet, EpochProbeMap, findepochnode, epochrange
 from .cache import Cache
 from .query import Query
 from .subject import Subject
@@ -31,6 +31,9 @@ __all__ = [
     "Probe",
     "Epoch",
     "EpochSet",
+    "EpochProbeMap",
+    "findepochnode",
+    "epochrange",
     "Cache",
     "Query",
     "Subject",

@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 2 in progress
-**Completion**: ~15% of full implementation
+**Status**: Phase 2 (Time + Epoch) complete, Phase 3 (DAQ) next
+**Completion**: ~22% of full implementation
 
 ---
 
@@ -34,7 +34,7 @@
 
 ## 🔄 In Progress (Phase 2 - Week 1)
 
-### Time System (Started 2025-11-16)
+### Time System (Started 2025-11-16) - ✅ COMPLETE
 - [x] ClockType class (complete)
   - All 9 clock types implemented
   - Epoch graph edge calculation
@@ -44,20 +44,46 @@
   - Polynomial mapping (linear default)
   - Forward and inverse mapping
   - Validation
-- [ ] SyncRule class (NEXT)
-- [ ] SyncGraph class (NEXT)
-- [ ] Time utility functions
+- [x] SyncRule class (complete)
+  - Base abstract class
+  - 3 implementations: FileMatch, FileFind, CommonTriggers
+  - Parameter validation
+  - Apply method for epoch node matching
+- [x] SyncGraph class (complete)
+  - Session integration
+  - Rule management (add/remove)
+  - Graph building (placeholder for DAQ integration)
+  - Cache management
+  - Time conversion (placeholder for full implementation)
 
-**Estimated completion**: 2 more hours
+**Status**: Complete! (Note: full time conversion requires DAQ system)
 
-### Epoch System (Not Started)
-- [ ] Complete Epoch class (beyond stub)
-- [ ] EpochSet class (full implementation)
-- [ ] EpochProbeMap class
-- [ ] EpochRange class
-- [ ] FindEpochNode function
+### Epoch System (Started 2025-11-16) - ✅ COMPLETE
+- [x] Complete Epoch class (beyond stub)
+  - Full dataclass with all fields
+  - epoch_number, epoch_id, epoch_session_id
+  - epochprobemap support
+  - epoch_clock (ClockType list) and t0_t1 pairs
+  - underlying_epochs and underlying_files
+- [x] EpochSet class (full implementation)
+  - epochtable() with caching
+  - buildepochtable() abstract method
+  - numepochs(), getepocharray()
+  - epochnodes() for syncgraph integration
+  - reset_epochtable() and cache management
+- [x] EpochProbeMap class
+  - Base class with serialize/decode
+  - Ready for subclass implementations
+- [x] epochrange() function
+  - Range queries by epoch number or ID
+  - ClockType-specific time extraction
+  - Full error handling
+- [x] findepochnode() function
+  - Flexible epoch node searching
+  - Partial match support
+  - Multiple search criteria (objectname, epoch_id, clock, time_value)
 
-**Estimated completion**: 4-6 hours after Time system
+**Status**: Complete! (Ready for DAQ system integration)
 
 ---
 
