@@ -12,6 +12,7 @@ from .ido import IDO
 from .document import Document
 from .database import Database, DirectoryDatabase
 from .session import Session, SessionDir
+from .dataset import Dataset
 from .element import Element
 from .probe import Probe
 from .epoch import Epoch, EpochSet, EpochProbeMap, findepochnode, epochrange
@@ -23,6 +24,7 @@ from .calculator import Calculator
 
 # Import subpackages
 from . import daq
+from . import dataset
 from . import ontology
 from . import validators
 from . import util
@@ -40,6 +42,7 @@ __all__ = [
     "DirectoryDatabase",
     "Session",
     "SessionDir",
+    "Dataset",
     "Element",
     "Probe",
     "Epoch",
@@ -53,6 +56,7 @@ __all__ = [
     "App",
     "Calculator",
     "daq",
+    "dataset",
     "ontology",
     "validators",
     "util",
