@@ -27,6 +27,7 @@ from . import ontology
 from . import validators
 from . import util
 from . import calc
+from . import db
 
 # Make key classes available at package level
 __all__ = [
@@ -53,5 +54,6 @@ __all__ = [
     "validators",
     "util",
     "calc",
+    "db",
     "__version__",
 ]
