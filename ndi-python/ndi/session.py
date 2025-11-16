@@ -279,6 +279,408 @@ class Session(DocumentService):
         element_docs = self.database_search(query)
         return element_docs
 
+    def daqsystem_rm(self, dev) -> 'Session':
+        """
+        Remove a DAQ system from the session.
+
+        MATLAB equivalent: ndi.session.daqsystem_rm()
+
+        Args:
+            dev: DAQ system object to remove
+
+        Returns:
+            Session: Self for chaining
+
+        Raises:
+            TypeError: If dev is not a DAQ system
+            ValueError: If DAQ system not found
+
+        See Also:
+            daqsystem_add, daqsystem_clear
+        """
+        # Check if it's a DAQ system (duck typing)
+        if not hasattr(dev, 'name'):
+            raise TypeError("dev must be a ndi.daq.system object")
+
+        # Load the DAQ system by name
+        daqsys = self.daqsystem_load(name=dev.name)
+
+        if daqsys is None:
+            raise ValueError(f"No DAQ system named '{dev.name}' found")
+
+        # Make list if not already
+        if not isinstance(daqsys, list):
+            daqsys = [daqsys]
+
+        # Remove each matching DAQ system
+        for sys_doc in daqsys:
+            # Find the document
+            docs = self.database_search(
+                Query('base.id', 'exact_string', sys_doc.id())
+            )
+
+            for doc in docs:
+                # Remove dependencies first
+                depends_on = doc.document_properties.get('depends_on', {})
+                if isinstance(depends_on, list):
+                    for dep in depends_on:
+                        if isinstance(dep, dict) and 'value' in dep:
+                            dep_docs = self.database_search(
+                                Query('base.id', 'exact_string', dep['value'])
+                            )
+                            self.database_rm(dep_docs)
+
+                # Remove the main document
+                self.database_rm(doc)
+
+        return self
+
+    def daqsystem_clear(self) -> 'Session':
+        """
+        Remove all DAQ systems from the session.
+
+        MATLAB equivalent: ndi.session.daqsystem_clear()
+
+        Permanently removes all ndi.daq.system objects from the session.
+        Be sure you mean it!
+
+        Returns:
+            Session: Self for chaining
+
+        See Also:
+            daqsystem_rm, daqsystem_add
+        """
+        # Load all DAQ systems (using regex to match any name)
+        dev = self.daqsystem_load(name='(.*)')
+
+        if dev is None:
+            return self  # No devices to remove
+
+        # Make sure it's a list
+        if not isinstance(dev, list):
+            dev = [dev]
+
+        # Remove each device
+        for d in dev:
+            # We need to reconstruct a minimal object with name attribute
+            # since daqsystem_rm expects an object with .name
+            class DeviceStub:
+                def __init__(self, name):
+                    self.name = name
+
+            # Extract name from document
+            if hasattr(d, 'document_properties'):
+                name = d.document_properties.get('base.name', '')
+            elif hasattr(d, 'name'):
+                name = d.name
+            else:
+                continue
+
+            stub = DeviceStub(name)
+            self.daqsystem_rm(stub)
+
+        return self
+
+    def database_existbinarydoc(
+        self,
+        document_or_id: Union[str, Document],
+        filename: str
+    ) -> tuple[bool, str]:
+        """
+        Check if a binary file exists for a document.
+
+        MATLAB equivalent: ndi.session.database_existbinarydoc()
+
+        Args:
+            document_or_id: Document object or document ID
+            filename: Binary filename to check
+
+        Returns:
+            tuple: (exists: bool, file_path: str)
+                   If exists is False, file_path is empty string
+
+        Example:
+            >>> exists, path = session.database_existbinarydoc(doc, 'data.bin')
+            >>> if exists:
+            ...     print(f'Binary file at: {path}')
+        """
+        # Get document ID
+        if isinstance(document_or_id, str):
+            doc_id = document_or_id
+        else:
+            doc_id = document_or_id.id()
+
+        # Check if binary file exists
+        if hasattr(self.database, 'get_binary_path'):
+            file_path = self.database.get_binary_path(doc_id, filename)
+        else:
+            # Construct path manually for DirectoryDatabase
+            import os
+            db_path = getattr(self.database, 'path', '.')
+            file_path = os.path.join(db_path, 'binarydocs', doc_id, filename)
+
+        import os
+        exists = os.path.isfile(file_path)
+
+        return (exists, file_path if exists else '')
+
+    def syncgraph_addrule(self, rule) -> 'Session':
+        """
+        Add a synchronization rule to the syncgraph.
+
+        MATLAB equivalent: ndi.session.syncgraph_addrule()
+
+        Args:
+            rule: ndi.time.syncrule object
+
+        Returns:
+            Session: Self for chaining
+
+        Example:
+            >>> from ndi.time.syncrule import SyncRule
+            >>> rule = SyncRule(...)
+            >>> session.syncgraph_addrule(rule)
+
+        See Also:
+            syncgraph_rmrule
+        """
+        # Initialize syncgraph if needed
+        if self.syncgraph is None:
+            try:
+                from .time.syncgraph import SyncGraph
+                self.syncgraph = SyncGraph(self)
+            except ImportError:
+                # If syncgraph not available, create a simple container
+                class SimpleSyncGraph:
+                    def __init__(self, session):
+                        self.session = session
+                        self.rules = []
+
+                    def add_rule(self, rule):
+                        self.rules.append(rule)
+
+                    def remove_rule(self, index):
+                        if 0 <= index < len(self.rules):
+                            del self.rules[index]
+
+                self.syncgraph = SimpleSyncGraph(self)
+
+        # Add the rule
+        if hasattr(self.syncgraph, 'add_rule'):
+            self.syncgraph.add_rule(rule)
+        elif hasattr(self.syncgraph, 'rules'):
+            self.syncgraph.rules.append(rule)
+        else:
+            raise RuntimeError("syncgraph does not support adding rules")
+
+        return self
+
+    def syncgraph_rmrule(self, index: int) -> 'Session':
+        """
+        Remove a synchronization rule from the syncgraph.
+
+        MATLAB equivalent: ndi.session.syncgraph_rmrule()
+
+        Args:
+            index: Index of rule to remove (0-indexed in Python, 1-indexed in MATLAB)
+
+        Returns:
+            Session: Self for chaining
+
+        Example:
+            >>> session.syncgraph_rmrule(0)  # Remove first rule
+
+        See Also:
+            syncgraph_addrule
+        """
+        if self.syncgraph is None:
+            return self  # Nothing to remove
+
+        # Remove the rule
+        if hasattr(self.syncgraph, 'remove_rule'):
+            self.syncgraph.remove_rule(index)
+        elif hasattr(self.syncgraph, 'rules'):
+            if 0 <= index < len(self.syncgraph.rules):
+                del self.syncgraph.rules[index]
+        else:
+            raise RuntimeError("syncgraph does not support removing rules")
+
+        return self
+
+    def get_ingested_docs(self) -> List[Document]:
+        """
+        Get all documents marked as ingested.
+
+        MATLAB equivalent: ndi.session.get_ingested_docs()
+
+        Returns:
+            List[Document]: Documents marked as ingested
+
+        Example:
+            >>> ingested = session.get_ingested_docs()
+            >>> print(f'Found {len(ingested)} ingested documents')
+
+        See Also:
+            ingest, is_fully_ingested
+        """
+        # Search for ingestion marker documents
+        query = Query('', 'isa', 'daqreader_epochdata_ingested', '')
+        return self.database_search(query)
+
+    def findexpobj(
+        self,
+        obj_name: str,
+        obj_classname: Optional[str] = None
+    ) -> Optional[object]:
+        """
+        Find an experiment object by name and optionally class.
+
+        MATLAB equivalent: ndi.session.findexpobj()
+
+        Searches for objects (probes, elements, DAQ systems) by name
+        and optionally by class name.
+
+        Args:
+            obj_name: Name of the object to find
+            obj_classname: Optional class name filter
+
+        Returns:
+            Found object or None if not found
+
+        Example:
+            >>> probe = session.findexpobj('electrode1', 'probe')
+            >>> element = session.findexpobj('neuron1')
+        """
+        # Build search query
+        query = Query('base.name', 'exact_string', obj_name)
+
+        if obj_classname:
+            # Add class filter
+            class_query = Query('', 'isa', obj_classname, '')
+            query = query & class_query
+
+        # Search
+        results = self.database_search(query)
+
+        if not results:
+            return None
+
+        # Return first match
+        return results[0]
+
+    def creator_args(self) -> dict:
+        """
+        Return constructor arguments for recreating this session.
+
+        MATLAB equivalent: ndi.session.creator_args()
+
+        Returns:
+            dict: Dictionary of constructor arguments
+
+        Example:
+            >>> args = session.creator_args()
+            >>> new_session = SessionDir(**args)
+        """
+        return {
+            'reference': self.reference,
+        }
+
+    @staticmethod
+    def docinput2docs(
+        session: 'Session',
+        doc_input: Union[Document, List[Document], str, List[str]]
+    ) -> List[Document]:
+        """
+        Convert various document input formats to list of Documents.
+
+        MATLAB equivalent: ndi.session.docinput2docs()
+
+        Converts document inputs (IDs, documents, lists) to a standardized
+        list of Document objects.
+
+        Args:
+            session: Session object for database access
+            doc_input: Document(s), ID(s), or mixed list
+
+        Returns:
+            List[Document]: List of document objects
+
+        Example:
+            >>> docs = Session.docinput2docs(session, ['id1', 'id2'])
+            >>> docs = Session.docinput2docs(session, doc_obj)
+        """
+        # Handle None
+        if doc_input is None:
+            return []
+
+        # Handle single document
+        if isinstance(doc_input, Document):
+            return [doc_input]
+
+        # Handle single ID string
+        if isinstance(doc_input, str):
+            doc = session.database.read(doc_input)
+            return [doc] if doc else []
+
+        # Handle list
+        if isinstance(doc_input, list):
+            docs = []
+            for item in doc_input:
+                if isinstance(item, Document):
+                    docs.append(item)
+                elif isinstance(item, str):
+                    doc = session.database.read(item)
+                    if doc:
+                        docs.append(doc)
+            return docs
+
+        # Unknown type
+        return []
+
+    @staticmethod
+    def all_docs_in_session(
+        docs: Union[Document, List[Document]],
+        session_id: str
+    ) -> tuple[bool, str]:
+        """
+        Validate that all documents belong to a session.
+
+        MATLAB equivalent: ndi.session.all_docs_in_session()
+
+        Checks that all provided documents have the specified session ID.
+
+        Args:
+            docs: Document or list of documents
+            session_id: Expected session ID
+
+        Returns:
+            tuple: (all_match: bool, error_message: str)
+                   If all_match is True, error_message is empty
+
+        Example:
+            >>> valid, msg = Session.all_docs_in_session(docs, session.id())
+            >>> if not valid:
+            ...     print(f'Validation failed: {msg}')
+        """
+        # Make list if needed
+        if not isinstance(docs, list):
+            docs = [docs]
+
+        # Check each document
+        for doc in docs:
+            if not isinstance(doc, Document):
+                continue
+
+            doc_session_id = doc.session_id()
+            if doc_session_id and doc_session_id != session_id:
+                return (
+                    False,
+                    f"Document {doc.id()} has session_id {doc_session_id} "
+                    f"which doesn't match {session_id}"
+                )
+
+        return (True, '')
+
     def __eq__(self, other) -> bool:
         """Check equality based on session ID."""
         if not isinstance(other, Session):
