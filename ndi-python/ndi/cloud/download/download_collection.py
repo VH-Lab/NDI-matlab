@@ -11,8 +11,8 @@ import zipfile
 import json
 import time
 import urllib.request
-from ....document import Document
-from ..api import datasets, documents as docs_api
+from ndi.document import Document
+from ndi.cloud.api import datasets, documents as docs_api
 from .internal.structs_to_ndi_documents import structs_to_ndi_documents
 
 
@@ -143,7 +143,7 @@ def download_document_collection(
                     json_string = f.read()
 
                 # Rehydrate JSON (handle NaN/null values)
-                from ....util.json_utils import rehydrate_json_nan_null
+                from ndi.util.json_utils import rehydrate_json_nan_null
                 json_rehydrated = rehydrate_json_nan_null(json_string)
                 document_structs = json.loads(json_rehydrated)
 

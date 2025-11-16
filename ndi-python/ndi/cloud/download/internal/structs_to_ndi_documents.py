@@ -5,7 +5,7 @@ Ported from MATLAB: ndi.cloud.download.internal.structsToNdiDocuments
 """
 
 from typing import List, Dict, Any, Union
-from ....document import Document
+from ndi.document import Document
 
 
 def structs_to_ndi_documents(document_structs: Union[List[Dict[str, Any]], Dict[str, Any]]) -> List[Document]:

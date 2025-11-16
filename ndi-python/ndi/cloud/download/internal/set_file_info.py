@@ -5,7 +5,7 @@ Ported from MATLAB: ndi.cloud.download.internal.setFileInfo
 """
 
 from typing import List, Dict, Any
-from ....document import Document
+from ndi.document import Document
 
 
 def set_file_info(documents: List[Document], file_info: Dict[str, Any]) -> List[Document]:
