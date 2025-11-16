@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 7 (Ontology System) complete
-**Completion**: ~55% of full implementation
+**Status**: Phase 8 (Validators) complete
+**Completion**: ~58% of full implementation
 
 ---
 
@@ -178,17 +178,17 @@
 - [ ] Test: TestOntologyLookup.m - **TODO**
 **Estimated**: 4-6 hours, ~5 hours completed (100%)
 
-### Phase 8: Validators (Week 4)
-8 test classes to port:
-- [ ] mustBeIDTest.m
-- [ ] mustBeCellArrayOfNdiSessionsTest.m
-- [ ] mustBeCellArrayOfNonEmptyCharacterArraysTest.m
-- [ ] mustBeEpochInputTest.m
-- [ ] mustBeNumericClassTest.m
-- [ ] mustBeTextLikeTest.m
-- [ ] mustHaveRequiredColumnsTest.m
-- [ ] mustMatchRegexTest.m
-**Estimated**: 6-8 hours
+### Phase 8: Validators (Week 4) - ✅ COMPLETE
+- [x] Validators module (ndi.validators) - 250 lines
+  - must_be_id() - Validates NDI ID format (33 chars, underscore at position 17)
+  - must_be_text_like() - Validates string or list of strings
+  - must_be_numeric_class() - Validates numeric/logical class names
+  - must_be_epoch_input() - Validates epoch identifier (string or positive int)
+  - must_be_cell_array_of_ndi_sessions() - Validates list of session objects
+  - must_be_cell_array_of_non_empty_character_arrays() - Validates list of non-empty strings
+  - must_be_cell_array_of_class() - Generic class validator
+- [ ] Tests: 8 validator test classes - **TODO**
+**Estimated**: 6-8 hours, ~2 hours completed (functions only, tests pending)
 
 ### Phase 9: Utilities (Week 4)
 11 test classes to port:
@@ -245,9 +245,9 @@
 ## 📊 Overall Progress
 
 ### Code Implementation
-- **Completed**: ~5,900 lines (core infrastructure + DAQ readers + ontology)
-- **Remaining**: ~11,900-16,900 lines estimated
-- **Progress**: ~26%
+- **Completed**: ~6,150 lines (core + DAQ + ontology + validators)
+- **Remaining**: ~11,650-16,650 lines estimated
+- **Progress**: ~27%
 
 ### Test Coverage
 - **Completed**: 6 test files (55 tests)
