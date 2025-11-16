@@ -16,6 +16,13 @@ from .check_toolboxes import check_toolboxes, assert_toolbox_installed
 from .pseudorandomint import pseudorandomint
 from .channelname2prefixnumber import channelname2prefixnumber, prefixnumber2channelname
 
+# Specialized utilities (may have limited functionality - see individual modules)
+from .plot_extracellular_spikeshapes import plot_extracellular_spikeshapes
+from .stimulustemporalfrequency import stimulustemporalfrequency
+from .convertoldnsd2ndi import convertoldnsd2ndi
+from .run_platform_checks import run_platform_checks, get_platform_info
+from .assertAddonOnPath import assertAddonOnPath, check_addon_available, get_installed_packages
+
 __all__ = [
     'name2variablename',
     'timestamp',
@@ -30,4 +37,13 @@ __all__ = [
     'pseudorandomint',
     'channelname2prefixnumber',
     'prefixnumber2channelname',
+    # Specialized utilities
+    'plot_extracellular_spikeshapes',
+    'stimulustemporalfrequency',
+    'convertoldnsd2ndi',
+    'run_platform_checks',
+    'get_platform_info',
+    'assertAddonOnPath',
+    'check_addon_available',
+    'get_installed_packages',
 ]

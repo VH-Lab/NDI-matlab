@@ -15,7 +15,8 @@ from .readers.mfdaq import (
     Intan,
     Blackrock,
     CEDSpike2,
-    SpikeGadgets
+    SpikeGadgets,
+    NDR
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     'Blackrock',
     'CEDSpike2',
     'SpikeGadgets',
+    'NDR',
 ]
