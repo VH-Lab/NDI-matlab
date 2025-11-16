@@ -7,9 +7,9 @@ import json
 import shutil
 from typing import List, Optional, Union
 from pathlib import Path
-from .document import Document
-from .query import Query
-from .ido import IDO
+from ..document import Document
+from ..query import Query
+from ..ido import IDO
 
 
 class Database:
