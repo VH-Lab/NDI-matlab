@@ -11,6 +11,7 @@ import os
 import json
 from typing import List, Dict, Any, Tuple, Optional
 from pathlib import Path
+from .internal import zip_documents_for_upload
 
 
 def upload_document_collection(
@@ -75,9 +76,6 @@ def upload_document_collection(
     MATLAB Source Reference:
         ndi/+ndi/+cloud/+upload/uploadDocumentCollection.m
     """
-    # Import here to avoid circular dependencies
-    from .internal import zip_documents_for_upload
-
     assert document_list, 'List of documents was empty.'
 
     # --- Pre-processing Step: Filter out already-uploaded documents ---

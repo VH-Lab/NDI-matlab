@@ -122,9 +122,8 @@ class TestUploadDocumentCollection:
         dataset_id = "test_dataset"
         documents = [Mock(document_properties={'base': {'id': 'doc1'}})]
 
-        # Patch to simulate all documents already on remote
-        with patch('ndi.cloud.upload.upload_collection.only_upload_missing', True):
-            # Manually test the case where document_list becomes empty
+        # Test the case where document_list becomes empty (should raise assertion error)
+        with pytest.raises(AssertionError, match='List of documents was empty'):
             success, report = upload_document_collection(
                 dataset_id,
                 [],  # Empty after filtering

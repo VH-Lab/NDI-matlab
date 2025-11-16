@@ -189,13 +189,14 @@ class TestCopydocfile2temp:
 
     def test_copydocfile2temp_basic(self):
         """Test basic file copy to temp."""
+        import io
+
         # Create mock objects
         doc = Mock()
         session = Mock()
 
-        # Mock binary file
-        mock_file = Mock()
-        mock_file.read.return_value = b'test data'
+        # Use a real BytesIO object instead of a Mock to avoid mock.read() issues
+        mock_file = io.BytesIO(b'test data')
         session.database_openbinarydoc.return_value = mock_file
 
         # Test
