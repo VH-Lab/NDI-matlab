@@ -29,6 +29,7 @@ from . import util
 from . import calc
 from . import db
 from . import setup
+from . import cloud
 
 # Make key classes available at package level
 __all__ = [
@@ -57,5 +58,6 @@ __all__ = [
     "calc",
     "db",
     "setup",
+    "cloud",
     "__version__",
 ]
