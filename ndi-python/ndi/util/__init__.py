@@ -13,10 +13,14 @@ from .doc import (
     get_document_dependencies,
     has_dependency_value
 )
+from .json_utils import rehydrate_json_nan_null
+from .table_utils import unwrap_table_cell_content
+from .datetime_utils import datestamp2datetime, datetime2datestamp
 
 __all__ = [
     # Table utilities
     'vstack',
+    'unwrap_table_cell_content',
 
     # Hex utilities
     'hex_diff',
@@ -28,4 +32,11 @@ __all__ = [
     'find_document_by_id',
     'get_document_dependencies',
     'has_dependency_value',
+
+    # JSON utilities
+    'rehydrate_json_nan_null',
+
+    # Datetime utilities
+    'datestamp2datetime',
+    'datetime2datestamp',
 ]
