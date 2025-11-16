@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 3 (DAQ Core) complete, file readers pending
-**Completion**: ~28% of full implementation
+**Status**: Phase 4 (Element + Probe) complete, file navigator pending
+**Completion**: ~35% of full implementation
 
 ---
 
@@ -98,19 +98,20 @@
 - [ ] File navigator system - **TODO**
 **Estimated**: 10-12 hours total, ~5 hours completed
 
-### Phase 4: Probe System (Week 2)
-- [ ] Complete Probe class
-- [ ] Probe type map
-- [ ] Probe utilities
-- [ ] Test: ProbeTest.m
-**Estimated**: 6-8 hours
+### Phase 4: Element + Probe System (Week 2) - ✅ COMPLETE
+- [x] Complete Element class (569 lines) - Full implementation beyond stub
+- [x] Complete Probe class (370 lines) - Inherits from Element
+- [ ] Probe type map - **TODO when probe types defined**
+- [ ] Probe utilities - **TODO**
+- [ ] Test: ProbeTest.m - **Requires DAQ system loading**
+**Estimated**: 6-8 hours total, ~5 hours completed
 
-### Phase 5: Element System (Week 2)
-- [ ] Complete Element class
-- [ ] Element.timeseries
-- [ ] Element.oneepoch
-- [ ] Test: OneEpochTest.m
-**Estimated**: 8-10 hours
+### Phase 5: Element Timeseries (Week 2)
+- [x] Complete Element class (Already done in Phase 4)
+- [ ] Element.timeseries methods - **TODO**
+- [ ] Element.oneepoch methods - **TODO**
+- [ ] Test: OneEpochTest.m - **TODO**
+**Estimated**: 8-10 hours remaining for timeseries/oneepoch
 
 ### Phase 6: File Navigator (Week 3)
 - [ ] File Navigator class
