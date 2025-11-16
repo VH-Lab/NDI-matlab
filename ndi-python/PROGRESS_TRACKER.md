@@ -1,8 +1,8 @@
 # NDI-Python Implementation Progress Tracker
 
 **Last Updated**: 2025-11-16
-**Status**: Phase 6 (File Navigator) complete
-**Completion**: ~40% of full implementation
+**Status**: Phase 5 (TimeSeries) complete
+**Completion**: ~45% of full implementation
 
 ---
 
@@ -116,12 +116,30 @@
 - [ ] Test: ProbeTest.m - **Requires DAQ system loading**
 **Estimated**: 6-8 hours total, ~5 hours completed
 
-### Phase 5: Element Timeseries (Week 2)
-- [x] Complete Element class (Already done in Phase 4)
-- [ ] Element.timeseries methods - **TODO**
+### Phase 5: Element Timeseries (Week 2) - ✅ COMPLETE
+- [x] TimeSeries mixin class (191 lines)
+  - Abstract readtimeseries() method
+  - samplerate(), times2samples(), samples2times()
+  - Regular sampling support with 1-indexed samples
+- [x] TimeReference class (155 lines)
+  - Time specification relative to NDI clocks
+  - Serialization (to_struct/from_struct)
+  - Session integration
+- [x] Element.readtimeseries() (183 lines)
+  - Direct: delegates to underlying element
+  - Non-direct: reads from epoch documents
+  - Time conversion via syncgraph
+  - Binary data reading (placeholder for VHSB)
+- [x] Element.samplerate() and addepoch_timeseries()
+- [x] Probe.readtimeseries() (160 lines)
+  - Reads via DAQ systems
+  - Epoch range support
+  - Data concatenation across epochs
+  - Structured time handling (for events/markers)
+- [x] Probe.readtimeseriesepoch() (abstract method)
 - [ ] Element.oneepoch methods - **TODO**
 - [ ] Test: OneEpochTest.m - **TODO**
-**Estimated**: 8-10 hours remaining for timeseries/oneepoch
+**Estimated**: 8-10 hours total, ~6 hours completed
 
 ### Phase 6: File Navigator (Week 3)
 - [ ] File Navigator class

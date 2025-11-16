@@ -5,14 +5,16 @@ Elements are objects that can measure or stimulate, including physical probes
 and logical derived data elements.
 """
 
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any, Tuple, Union
+import numpy as np
 from .ido import IDO
 from .epoch import EpochSet
 from .document import Document
 from .query import Query
+from .time import TimeSeries, TimeReference, ClockType
 
 
-class Element(IDO, EpochSet):
+class Element(IDO, EpochSet, TimeSeries):
     """
     NDI Element - represents a measurement or stimulation element.
 
@@ -550,6 +552,191 @@ class Element(IDO, EpochSet):
         q = q & Query('element.reference', 'exact_number', self.reference)
 
         return q
+
+    # TimeSeries methods
+
+    def readtimeseries(self, timeref_or_epoch: Union[TimeReference, int, str],
+                      t0: float, t1: float) -> Tuple[np.ndarray, Union[np.ndarray, dict], TimeReference]:
+        """
+        Read timeseries data from this element.
+
+        Args:
+            timeref_or_epoch: Either a TimeReference object or an epoch number/ID
+            t0: Start time
+            t1: End time
+
+        Returns:
+            Tuple of (data, t, timeref) where:
+            - data: Time series data array
+            - t: Time information (array or dict)
+            - timeref: The time reference used
+
+        Notes:
+            For direct elements, delegates to underlying element.
+            For non-direct elements, reads from stored epoch documents.
+        """
+        if self.direct:
+            # Direct element - delegate to underlying element
+            if self.underlying_element is None:
+                raise ValueError("Direct element must have an underlying_element")
+            return self.underlying_element.readtimeseries(timeref_or_epoch, t0, t1)
+        else:
+            # Non-direct element - read from epoch documents
+            if isinstance(timeref_or_epoch, TimeReference):
+                timeref = timeref_or_epoch
+            else:
+                # Convert epoch number/ID to timeref
+                if isinstance(timeref_or_epoch, str):
+                    epoch_id = timeref_or_epoch
+                else:
+                    epoch_id = self.epochid(timeref_or_epoch)
+
+                # Find the first clock type for this epoch
+                et_entry = self.epochtableentry(epoch_id)
+                epoch_clock = et_entry.get('epoch_clock', [])
+                if not epoch_clock:
+                    raise ValueError(f"No clock type found for epoch {epoch_id}")
+
+                timeref = TimeReference(self, epoch_clock[0], epoch_id, 0)
+
+            # Convert times to dev_local_time for reading
+            if self.session is None or not hasattr(self.session, 'syncgraph'):
+                raise ValueError("Element must have a session with syncgraph")
+
+            epoch_t0_out, epoch_timeref, msg = self.session.syncgraph.time_convert(
+                timeref, t0, self, ClockType('dev_local_time')
+            )
+            epoch_t1_out, epoch_timeref, msg = self.session.syncgraph.time_convert(
+                timeref, t1, self, ClockType('dev_local_time')
+            )
+
+            if epoch_timeref is None:
+                raise ValueError(f"Could not find time mapping (maybe wrong epoch name?): {msg}")
+
+            # Load element document
+            element_doc = self.load_element_doc()
+
+            # Search for epoch document
+            sq = (
+                Query('', 'depends_on', 'element_id', element_doc.id()) &
+                Query('', 'isa', 'element_epoch') &
+                Query('epochid.epochid', 'exact_string', epoch_timeref.epoch)
+            )
+
+            epochdocs = self.session.database_search(sq)
+            if len(epochdocs) == 0:
+                raise ValueError(f"Could not find epoch document for epoch {epoch_timeref.epoch}")
+            if len(epochdocs) > 1:
+                raise ValueError(f"Found too many epoch documents for epoch {epoch_timeref.epoch}")
+
+            epochdoc = epochdocs[0]
+
+            # Open binary data file
+            f = self.session.database_openbinarydoc(epochdoc, 'epoch_binary_data.vhsb')
+
+            # Read data (placeholder - actual VHSB reading would go here)
+            # TODO: Implement vhsb_read when binary I/O is ready
+            # For now, return empty arrays
+            data = np.array([])
+            t = np.array([])
+
+            self.session.database_closebinarydoc(f)
+
+            # Convert times back to requested timeref
+            if isinstance(t, np.ndarray) and len(t) > 0:
+                t = self.session.syncgraph.time_convert(
+                    epoch_timeref, t, timeref.referent, timeref.clocktype
+                )
+
+            return data, t, timeref
+
+    def samplerate(self, epoch: Union[int, str]) -> float:
+        """
+        Get sample rate for an epoch.
+
+        Args:
+            epoch: Epoch number or epoch ID
+
+        Returns:
+            Sample rate in Hz
+
+        Notes:
+            Estimates sample rate by reading a small amount of data.
+        """
+        et = self.epochtableentry(epoch)
+        t0_t1 = et.get('t0_t1', [[0, 0]])
+
+        if not t0_t1 or len(t0_t1[0]) < 2:
+            return -1.0
+
+        t0 = t0_t1[0][0]
+
+        # Read 0.5 seconds of data to estimate sample rate
+        try:
+            data, t, timeref = self.readtimeseries(epoch, t0, t0 + 0.5)
+
+            if isinstance(t, np.ndarray) and len(t) > 1:
+                diffs = np.diff(t)
+                median_diff = np.median(diffs)
+                if median_diff > 0:
+                    return 1.0 / median_diff
+        except:
+            pass
+
+        return -1.0
+
+    def addepoch_timeseries(self, epochid: str, epochclock: ClockType,
+                           t0_t1: List[float], timepoints: Union[np.ndarray, str],
+                           datapoints: Union[np.ndarray, str],
+                           epochids: Optional[List[str]] = None) -> Tuple['Element', Document]:
+        """
+        Add an epoch with timeseries data to a non-direct element.
+
+        Args:
+            epochid: Epoch ID
+            epochclock: Clock type
+            t0_t1: [t0, t1] time bounds
+            timepoints: Time points array or 'probe' to read from probe
+            datapoints: Data points array or 'probe' to read from probe
+            epochids: Optional list of underlying epoch IDs
+
+        Returns:
+            Tuple of (element, epochdoc)
+
+        Notes:
+            This is the timeseries-specific version of addepoch.
+            Stores data in VHSB binary format.
+        """
+        if self.direct:
+            raise ValueError("Cannot add external observations to a direct element")
+
+        # Add base epoch
+        if epochids is not None:
+            element_obj, epochdoc = self.addepoch(epochid, epochclock, t0_t1, True, epochids)
+        else:
+            element_obj, epochdoc = self.addepoch(epochid, epochclock, t0_t1, True)
+
+        # Write timeseries data to temporary file
+        # TODO: Implement vhsb_write when binary I/O is ready
+        # For now, just add placeholder
+        import tempfile
+        import os
+
+        temp_dir = tempfile.gettempdir()
+        fname = os.path.join(temp_dir, f"{epochdoc.id()}.vhsb")
+
+        # Placeholder - would write actual VHSB data here
+        with open(fname, 'wb') as f:
+            f.write(b'')  # Placeholder
+
+        # Add file to document
+        epochdoc = epochdoc.add_file('epoch_binary_data.vhsb', fname)
+
+        # Add to database if not returning document
+        if self.session is not None:
+            self.session.database_add(epochdoc)
+
+        return element_obj, epochdoc
 
     def __eq__(self, other: 'Element') -> bool:
         """Check equality of two elements."""

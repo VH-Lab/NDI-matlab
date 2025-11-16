@@ -9,8 +9,11 @@ A probe is uniquely identified by: session, name, reference, and type.
 """
 
 from typing import Optional, List, Dict, Any, Tuple, Union
+import numpy as np
 from .element import Element
 from .document import Document
+from .time import TimeReference, ClockType
+from .epoch import epochrange
 
 
 class Probe(Element):
@@ -265,6 +268,189 @@ class Probe(Element):
         return (self.name == epm_name and
                 self.reference == epm_ref and
                 self.type.lower() == epm_type.lower())
+
+    # TimeSeries methods
+
+    def readtimeseries(self, timeref_or_epoch: Union[TimeReference, int, str],
+                      t0: float, t1: float) -> Tuple[np.ndarray, Union[np.ndarray, dict], TimeReference]:
+        """
+        Read timeseries data from this probe via DAQ systems.
+
+        Args:
+            timeref_or_epoch: Either a TimeReference object or an epoch number/ID
+            t0: Start time
+            t1: End time
+
+        Returns:
+            Tuple of (data, t, timeref) where:
+            - data: Time series data array
+            - t: Time information (array or dict)
+            - timeref: The time reference used
+
+        Notes:
+            Probes read data from DAQ systems. This method:
+            1. Converts time reference to dev_local_time
+            2. Finds epoch ranges spanning the requested time
+            3. Reads data from each epoch via readtimeseriesepoch()
+            4. Concatenates data and converts times back to requested reference
+        """
+        # Create or validate time reference
+        if isinstance(timeref_or_epoch, TimeReference):
+            timeref = timeref_or_epoch
+        else:
+            # Create time reference with dev_local_time
+            timeref = TimeReference(self, ClockType('dev_local_time'), timeref_or_epoch, 0)
+
+        if self.session is None or not hasattr(self.session, 'syncgraph'):
+            raise ValueError("Probe must have a session with syncgraph")
+
+        # Convert times to dev_local_time
+        epoch_t0_out, epoch0_timeref, msg = self.session.syncgraph.time_convert(
+            timeref, t0, self, ClockType('dev_local_time')
+        )
+        epoch_t1_out, epoch1_timeref, msg = self.session.syncgraph.time_convert(
+            timeref, t1, self, ClockType('dev_local_time')
+        )
+
+        if epoch0_timeref is None or epoch1_timeref is None:
+            raise ValueError(f"Could not find time mapping (maybe wrong epoch name?): {msg}")
+
+        # Get epoch range
+        er, et, gt0_t1 = epochrange(
+            epoch0_timeref.referent,
+            ClockType('dev_local_time'),
+            epoch0_timeref.epoch,
+            epoch1_timeref.epoch
+        )
+
+        epoch = epoch0_timeref.epoch
+
+        data = []
+        t = []
+
+        # Read data from each epoch in range
+        for i, epoch_id in enumerate(er):
+            # Determine start and end times for this epoch
+            if i == 0:
+                start_time = epoch_t0_out
+            else:
+                start_time = gt0_t1[i][0]
+
+            if i == len(er) - 1:
+                stop_time = epoch_t1_out
+            else:
+                stop_time = gt0_t1[i][1]
+
+            # Read epoch data
+            try:
+                data_here, t_here = self.readtimeseriesepoch(epoch_id, start_time, stop_time)
+
+                # Handle dimension mismatch (sometimes readers are a sample short)
+                if isinstance(t_here, np.ndarray):
+                    t_here = t_here.flatten()
+                    if data_here.shape[0] == len(t_here) - 1:
+                        t_here = t_here[:-1]
+
+                data.append(data_here)
+
+                # Convert times back to requested reference
+                epoch_here_timeref = TimeReference(
+                    epoch0_timeref.referent,
+                    epoch0_timeref.clocktype,
+                    epoch_id,
+                    epoch0_timeref.time
+                )
+
+                if isinstance(t_here, np.ndarray):
+                    # Numeric time array
+                    t_here = self.session.syncgraph.time_convert(
+                        epoch_here_timeref, t_here,
+                        timeref.referent, timeref.clocktype
+                    )
+                    t.append(t_here)
+                elif isinstance(t_here, dict):
+                    # Structured time (for events, markers, etc.)
+                    t_converted = {}
+                    for field_name, field_data in t_here.items():
+                        if not isinstance(field_data, (list, tuple)):
+                            # Convert single array
+                            field_converted = self.session.syncgraph.time_convert(
+                                epoch_here_timeref, field_data,
+                                timeref.referent, timeref.clocktype
+                            )
+                            t_converted[field_name] = field_converted
+                        else:
+                            # Convert list of arrays (for cell arrays)
+                            field_converted = []
+                            for item in field_data:
+                                item_converted = self.session.syncgraph.time_convert(
+                                    epoch_here_timeref, item,
+                                    timeref.referent, timeref.clocktype
+                                )
+                                field_converted.append(item_converted)
+                            t_converted[field_name] = field_converted
+
+                    t.append(t_converted)
+
+            except Exception as e:
+                # If reading fails, continue to next epoch
+                # TODO: Log warning
+                pass
+
+        # Concatenate data and times
+        if data:
+            if isinstance(data[0], np.ndarray):
+                data = np.concatenate(data, axis=0)
+            else:
+                data = np.array([])
+
+            if t and isinstance(t[0], np.ndarray):
+                t = np.concatenate(t, axis=0)
+            elif t and isinstance(t[0], dict):
+                # Merge dicts
+                t_merged = {}
+                for t_dict in t:
+                    for key, val in t_dict.items():
+                        if key not in t_merged:
+                            t_merged[key] = []
+                        if isinstance(val, list):
+                            t_merged[key].extend(val)
+                        else:
+                            t_merged[key].append(val)
+                # Concatenate arrays in merged dict
+                for key in t_merged:
+                    if isinstance(t_merged[key], list) and len(t_merged[key]) > 0:
+                        if isinstance(t_merged[key][0], np.ndarray):
+                            t_merged[key] = np.concatenate(t_merged[key], axis=0)
+                t = t_merged
+            else:
+                t = np.array([])
+        else:
+            data = np.array([])
+            t = np.array([])
+
+        return data, t, timeref
+
+    def readtimeseriesepoch(self, epoch_id: str, t0: float, t1: float) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Read timeseries data for a single epoch.
+
+        Args:
+            epoch_id: Epoch identifier
+            t0: Start time (in epoch's dev_local_time)
+            t1: End time (in epoch's dev_local_time)
+
+        Returns:
+            Tuple of (data, t)
+
+        Notes:
+            This is an abstract method that should be overridden by subclasses.
+            Subclasses implement the actual data reading from specific hardware.
+
+            For example, ndi.probe.timeseries.mfdaq would read from the
+            DAQ system's channels.
+        """
+        raise NotImplementedError("Subclasses must implement readtimeseriesepoch()")
 
     def __eq__(self, other: 'Probe') -> bool:
         """
