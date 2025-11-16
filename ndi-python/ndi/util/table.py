@@ -114,3 +114,48 @@ def vstack(tables: List[pd.DataFrame]) -> pd.DataFrame:
     result = pd.concat(standardized_tables, ignore_index=True, copy=False)
 
     return result
+
+
+def identify_valid_rows(table: pd.DataFrame,
+                       non_nan_variable_names: List[str]) -> np.ndarray:
+    """
+    Identify valid rows in a DataFrame based on non-NaN requirements.
+
+    A row is considered valid if all columns specified in non_nan_variable_names
+    contain non-NaN values.
+
+    Args:
+        table: DataFrame to check
+        non_nan_variable_names: List of column names that must not contain NaN
+
+    Returns:
+        Boolean array where True indicates a valid row
+
+    Examples:
+        >>> df = pd.DataFrame({
+        ...     'A': [1, 2, np.nan, 4],
+        ...     'B': [5, np.nan, 7, 8]
+        ... })
+        >>> valid = identify_valid_rows(df, ['A', 'B'])
+        >>> # valid is [True, False, False, True]
+
+    Notes:
+        - If non_nan_variable_names is empty, all rows are considered valid
+        - Missing columns in table are treated as all-NaN
+    """
+    if not non_nan_variable_names:
+        # All rows are valid if no constraints
+        return np.ones(len(table), dtype=bool)
+
+    # Start with all rows valid
+    valid = np.ones(len(table), dtype=bool)
+
+    for col_name in non_nan_variable_names:
+        if col_name not in table.columns:
+            # Column doesn't exist - all rows invalid for this column
+            valid[:] = False
+        else:
+            # Mark rows with NaN in this column as invalid
+            valid &= ~table[col_name].isna()
+
+    return valid

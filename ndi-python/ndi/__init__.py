@@ -28,6 +28,7 @@ from . import validators
 from . import util
 from . import calc
 from . import db
+from . import setup
 
 # Make key classes available at package level
 __all__ = [
@@ -55,5 +56,6 @@ __all__ = [
     "util",
     "calc",
     "db",
+    "setup",
     "__version__",
 ]
