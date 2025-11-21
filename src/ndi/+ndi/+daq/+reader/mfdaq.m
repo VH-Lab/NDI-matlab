@@ -856,6 +856,48 @@ classdef mfdaq < ndi.daq.reader
                 end
             end
         end % ingest_epochfiles()
+        function t = epochsamples2times(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s, S)
+            % EPOCHSAMPLES2TIMES - convert samples to time
+            %
+            % T = EPOCHSAMPLES2TIMES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S, [SESSION])
+            %
+            % Converts sample indices S to time T for the specified channel and epochfiles.
+            % If the data is ingested, SESSION is required.
+            %
+            if nargin < 6, S = []; end
+            if ndi.file.navigator.isingested(epochfiles)
+                sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
+            else
+                sr = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, channeltype, channel);
+            end
+            if numel(unique(sr))~=1
+                error(['Do not know how to handle multiple sampling rates across channels.']);
+            end
+            sr = unique(sr);
+            t = (s-1)/sr;
+        end
+
+        function s = epochtimes2samples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t, S)
+            % EPOCHTIMES2SAMPLES - convert time to samples
+            %
+            % S = EPOCHTIMES2SAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T, [SESSION])
+            %
+            % Converts time T to sample indices S for the specified channel and epochfiles.
+            % If the data is ingested, SESSION is required.
+            %
+            if nargin < 6, S = []; end
+            if ndi.file.navigator.isingested(epochfiles)
+                sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
+            else
+                sr = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, channeltype, channel);
+            end
+            if numel(unique(sr))~=1
+                error(['Do not know how to handle multiple sampling rates across channels.']);
+            end
+            sr = unique(sr);
+            s = 1 + round(t*sr);
+        end
+
     end % methods
 
     methods(Static)
