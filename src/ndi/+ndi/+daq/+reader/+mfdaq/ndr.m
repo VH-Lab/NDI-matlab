@@ -177,6 +177,20 @@ classdef ndr < ndi.daq.reader.mfdaq
             sr = ndr_reader.samplerate(epochfiles,1,channeltype,channel);
         end % samplerate
 
+        function t = epochsamples2times(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s, S)
+            % EPOCHSAMPLES2TIMES - convert samples to time
+            if nargin < 6, S = []; end
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            t = ndr_reader.samples2times(channeltype, channel, epochfiles, 1, s);
+        end
+
+        function s = epochtimes2samples(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t, S)
+            % EPOCHTIMES2SAMPLES - convert time to samples
+            if nargin < 6, S = []; end
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            s = ndr_reader.times2samples(channeltype, channel, epochfiles, 1, t);
+        end
+
         function ndi_document_obj = newdocument(ndi_daqreader_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
             %
