@@ -876,6 +876,9 @@ classdef mfdaq < ndi.daq.reader
             end
             sr = unique(sr);
             t = (s-1)/sr;
+            if any(isinf(s))
+                t(isinf(s) & s<0) = 0;
+            end
         end
 
         function s = epochtimes2samples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t, S)
@@ -897,6 +900,9 @@ classdef mfdaq < ndi.daq.reader
             end
             sr = unique(sr);
             s = 1 + round(t*sr);
+            if any(isinf(t))
+                s(isinf(t) & t<0) = 1;
+            end
         end
 
     end % methods
