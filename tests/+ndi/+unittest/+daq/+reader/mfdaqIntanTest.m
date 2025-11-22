@@ -1,4 +1,4 @@
-classdef mfdaqTest < matlab.unittest.TestCase
+classdef mfdaqIntanTest < matlab.unittest.TestCase
     methods (Test)
         function testIntanReader(testCase)
             % testIntanReader - Verify reading of Intan RHD files
