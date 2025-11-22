@@ -188,6 +188,11 @@ classdef ndr < ndi.daq.reader.mfdaq
             % EPOCHTIMES2SAMPLES - convert time to samples
             if nargin < 6, S = []; end
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            if any(isinf(t))
+                t0t1 = ndr_reader.t0_t1(epochfiles, 1);
+                t(isinf(t) & t<0) = t0t1{1}(1);
+                t(isinf(t) & t>0) = t0t1{1}(2);
+            end
             s = ndr_reader.times2samples(channeltype, channel, epochfiles, 1, t);
         end
 
