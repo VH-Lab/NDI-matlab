@@ -197,8 +197,9 @@ classdef mfdaq < ndi.daq.reader
             sr = sr_unique;
 
             t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
-            absolute_beginning = ndi.time.fun.times2samples(t0_t1{1}(1),t0_t1{1},sr);
-            absolute_end = ndi.time.fun.times2samples(t0_t1{1}(2),t0_t1{1},sr);
+            abs_s = ndi_daqreader_mfdaq_obj.epochtimes2samples(channeltype, channel, epochfiles, t0_t1{1}(:), S);
+            absolute_beginning = abs_s(1);
+            absolute_end = abs_s(2);
 
             if isinf(s0) | isinf(s1) % need to figure out actual values if user gave -inf/inf for either value
                 if isinf(s0)
@@ -781,7 +782,7 @@ classdef mfdaq < ndi.daq.reader
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
                             S0 = 1;
-                            S1 = 1+ (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+                            S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
 
                             s_starts = [S0:sample_analog_segment:S1];
                             compressClass = ndi.compress.datatypestring(underlying_format);
@@ -808,7 +809,7 @@ classdef mfdaq < ndi.daq.reader
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
                             S0 = 1;
-                            S1 = 1+(t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+                            S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
                             s_starts = [S0:sample_digital_segment:S1];
                             for s=1:numel(s_starts)
                                 mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
