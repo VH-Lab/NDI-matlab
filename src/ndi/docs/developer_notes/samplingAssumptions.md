@@ -1,3 +1,5 @@
+# Problems fixed in November 2025
+
 | Function Name | Line Number | Line of Code | Comment | Needs updating | Fixed |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `ndi.daq.reader.mfdaq.ingest_epochfiles` | 784 | `S1 = 1+ (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);` | Calculates total samples from duration and rate, assuming constant rate. | Yes | Yes |
