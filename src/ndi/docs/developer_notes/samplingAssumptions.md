@@ -4,10 +4,10 @@
 | `ndi.daq.reader.mfdaq.ingest_epochfiles` | 811 | `S1 = 1+(t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);` | Calculates total samples from duration and rate, assuming constant rate. | Yes | Yes |
 | `ndi.daq.reader.mfdaq.readchannels_epochsamples_ingested` | 200 | `absolute_beginning = ndi.time.fun.times2samples(t0_t1{1}(1),t0_t1{1},sr);` | Calls `ndi.time.fun.times2samples`, which assumes constant sampling rate. | Yes | Yes |
 | `ndi.daq.reader.mfdaq.readchannels_epochsamples_ingested` | 201 | `absolute_end = ndi.time.fun.times2samples(t0_t1{1}(2),t0_t1{1},sr);` | Calls `ndi.time.fun.times2samples`, which assumes constant sampling rate. | Yes | Yes |
-| `ndi.daq.reader.mfdaq.readevents_epochsamples` | 350 | `s0d = 1+round(srd*t0);` | Calculates sample index linearly from time, assuming constant rate. | Yes | No |
-| `ndi.daq.reader.mfdaq.readevents_epochsamples` | 351 | `s1d = 1+round(srd*t1);` | Calculates sample index linearly from time, assuming constant rate. | Yes | No |
-| `ndi.daq.reader.mfdaq.readevents_epochsamples_ingested` | 432 | `s0d = 1+round(srd*t0);` | Calculates sample index linearly from time, assuming constant rate. | Yes | No |
-| `ndi.daq.reader.mfdaq.readevents_epochsamples_ingested` | 433 | `s1d = 1+round(srd*t1);` | Calculates sample index linearly from time, assuming constant rate. | Yes | No |
+| `ndi.daq.reader.mfdaq.readevents_epochsamples` | 350 | `s0d = 1+round(srd*t0);` | Calculates sample index linearly from time, assuming constant rate. | Yes | Yes |
+| `ndi.daq.reader.mfdaq.readevents_epochsamples` | 351 | `s1d = 1+round(srd*t1);` | Calculates sample index linearly from time, assuming constant rate. | Yes | Yes |
+| `ndi.daq.reader.mfdaq.readevents_epochsamples_ingested` | 432 | `s0d = 1+round(srd*t0);` | Calculates sample index linearly from time, assuming constant rate. | Yes | Yes |
+| `ndi.daq.reader.mfdaq.readevents_epochsamples_ingested` | 433 | `s1d = 1+round(srd*t1);` | Calculates sample index linearly from time, assuming constant rate. | Yes | Yes |
 | `ndi.daq.system.mfdaq.readchannels` | 230 | `s0 = 1+round(sr*t0);` | Calculates sample index from time using a constant sampling rate. | Yes | Yes |
 | `ndi.daq.system.mfdaq.readchannels` | 231 | `s1 = 1+round(sr*t1);` | Calculates sample index from time using a constant sampling rate. | Yes | Yes |
 | `ndi.element.timeseries.samplerate` | 126 | `sr = 1/median(diff(t));` | Estimates a single constant sampling rate from the median of time differences. | No | N/A |

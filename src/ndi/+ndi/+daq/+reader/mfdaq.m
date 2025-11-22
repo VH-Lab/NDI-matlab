@@ -347,9 +347,9 @@ classdef mfdaq < ndi.daq.reader
                 data = {};
                 for i=1:numel(channel)
                     % optimization speed opportunity
-                    srd = ndi_daqreader_mfdaq_obj.samplerate(epochfiles,{'di'}, channel(i));
-                    s0d = 1+round(srd*t0);
-                    s1d = 1+round(srd*t1);
+                    sd = ndi_daqreader_mfdaq_obj.epochtimes2samples({'di'}, channel(i), epochfiles, [t0 t1]);
+                    s0d = sd(1);
+                    s1d = sd(2);
                     data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
                     time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
                     if any(strcmp(channeltype{i},{'dep','dimp'})) % look for 0 to 1 transitions
@@ -429,9 +429,9 @@ classdef mfdaq < ndi.daq.reader
                 data = {};
                 for i=1:numel(channel)
                     % optimization speed opportunity
-                    srd = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles,{'di'}, channel(i),S);
-                    s0d = 1+round(srd*t0);
-                    s1d = 1+round(srd*t1);
+                    sd = ndi_daqreader_mfdaq_obj.epochtimes2samples({'di'}, channel(i), epochfiles, [t0 t1], S);
+                    s0d = sd(1);
+                    s1d = sd(2);
                     data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
                     time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
                     if any(strcmp(channeltype{i},{'dep','dimp'})) % look for 0 to 1 transitions
