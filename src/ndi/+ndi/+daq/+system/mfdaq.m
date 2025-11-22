@@ -222,13 +222,9 @@ classdef mfdaq < ndi.daq.system
             else
                 epoch = timeref_or_epoch;
             end
-            sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel);
-            if numel(unique(sr))~=1
-                error(['Do not know how to handle multiple sampling rates across channels.']);
-            end
-            sr = unique(sr);
-            s0 = 1+round(sr*t0);
-            s1 = 1+round(sr*t1);
+            s = epochtimes2samples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, [t0 t1]);
+            s0 = s(1);
+            s1 = s(2);
             [data] = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, s0, s1);
         end %readchannels()
 
@@ -310,6 +306,36 @@ classdef mfdaq < ndi.daq.system
             else
                 sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate_ingested(epochfiles, ...
                     channeltype, channel, ndi_daqsystem_mfdaq_obj.session());
+            end
+        end
+
+        function t = epochsamples2times(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, s)
+            % EPOCHSAMPLES2TIMES - convert samples to time
+            %
+            % T = EPOCHSAMPLES2TIMES(NDI_DAQSYSTEM_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCH, S)
+            %
+            % Converts sample indices S to time T for the specified channel and epoch.
+            %
+            epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
+            if ~ndi.file.navigator.isingested(epochfiles)
+                t = ndi_daqsystem_mfdaq_obj.daqreader.epochsamples2times(channeltype, channel, epochfiles, s);
+            else
+                t = ndi_daqsystem_mfdaq_obj.daqreader.epochsamples2times(channeltype, channel, epochfiles, s, ndi_daqsystem_mfdaq_obj.session());
+            end
+        end
+
+        function s = epochtimes2samples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, t)
+            % EPOCHTIMES2SAMPLES - convert time to samples
+            %
+            % S = EPOCHTIMES2SAMPLES(NDI_DAQSYSTEM_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCH, T)
+            %
+            % Converts time T to sample indices S for the specified channel and epoch.
+            %
+            epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
+            if ~ndi.file.navigator.isingested(epochfiles)
+                s = ndi_daqsystem_mfdaq_obj.daqreader.epochtimes2samples(channeltype, channel, epochfiles, t);
+            else
+                s = ndi_daqsystem_mfdaq_obj.daqreader.epochtimes2samples(channeltype, channel, epochfiles, t, ndi_daqsystem_mfdaq_obj.session());
             end
         end
 
