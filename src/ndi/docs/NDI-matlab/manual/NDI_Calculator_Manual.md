@@ -189,6 +189,29 @@ classdef my_calculator < ndi.calculator
 
 #### 3.2 Calculate Method
 
+The `calculate()` method receives a `parameters` object with two key fields:
+
+**Parameters Structure**:
+- **`input_parameters`** - A structure containing parameters that modify the calculation (e.g., time windows, thresholds, filter settings). These are configuration values that don't depend on other documents.
+
+- **`depends_on`** - A structure array with `name` and `value` fields containing the document IDs that this calculation depends on. Each entry represents a matched document from the database query (e.g., element_id, stimulus_id, epoch_id). The `value` field contains the document's base ID.
+
+**Accessing Dependencies**:
+
+To extract a specific dependency ID from the `depends_on` array, use `did.db.struct_name_value_search()`:
+
+```matlab
+% Extract element_id from depends_on
+element_id = did.db.struct_name_value_search(parameters.depends_on, 'element_id');
+
+% Extract stimulus_tuningcurve_id from depends_on
+tuning_id = did.db.struct_name_value_search(parameters.depends_on, 'stimulus_tuningcurve_id');
+```
+
+This function searches the structure array for the matching `name` and returns the corresponding `value`.
+
+**Example Implementation**:
+
 ```matlab
         function doc = calculate(ndi_calculator_obj, parameters)
             % CALCULATE - perform the calculation
