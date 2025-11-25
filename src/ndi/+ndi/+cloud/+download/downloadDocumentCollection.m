@@ -82,7 +82,22 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 
         [success, downloadUrl, api_reply] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
         if ~success
-            error(['Failed to get bulk download URL: ' api_reply.message]);
+            err_msg = 'Unknown error';
+            if isa(api_reply, 'matlab.net.http.ResponseMessage')
+                try
+                    err_data = jsondecode(api_reply.Body.Data);
+                    if isfield(err_data, 'message')
+                        err_msg = err_data.message;
+                    else
+                        err_msg = 'No message field in API response body.';
+                    end
+                catch
+                    err_msg = 'Could not decode JSON from API response body.';
+                end
+            elseif isstruct(api_reply) && isfield(api_reply, 'message')
+                err_msg = api_reply.message;
+            end
+            error(['Failed to get bulk download URL: ' err_msg]);
         end
         tempZipFilepath = [tempname, '.zip'];
         zipfileCleanupObj = onCleanup(@() deleteIfExists(tempZipFilepath));
