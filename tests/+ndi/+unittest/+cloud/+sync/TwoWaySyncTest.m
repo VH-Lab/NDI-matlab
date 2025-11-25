@@ -21,15 +21,15 @@ classdef TwoWaySyncTest < ndi.unittest.cloud.sync.BaseSyncTest
             local_docs = testCase.localDataset.database_search(ndi.query('','isa','ndi_document_test'));
             testCase.verifyNumElements(local_docs, 2);
             local_names = sort(cellfun(@(x) string(x.document_properties.test.name), local_docs, 'UniformOutput', false));
-            testCase.verifyEqual(local_names(1), "local_doc_1");
-            testCase.verifyEqual(local_names(2), "remote_doc_2");
+            testCase.verifyEqual(local_names{1}, "local_doc_1");
+            testCase.verifyEqual(local_names{2}, "remote_doc_2");
 
             % Remote should have doc1 and doc2
             remote_docs = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId);
             testCase.verifyNumElements(remote_docs, 2);
-            remote_names = sort([remote_docs.name]);
-            testCase.verifyEqual(remote_names(1), "local_doc_1");
-            testCase.verifyEqual(remote_names(2), "remote_doc_2");
+            remote_names = sort({remote_docs.name});
+            testCase.verifyEqual(remote_names{1}, "local_doc_1");
+            testCase.verifyEqual(remote_names{2}, "remote_doc_2");
         end
 
     end

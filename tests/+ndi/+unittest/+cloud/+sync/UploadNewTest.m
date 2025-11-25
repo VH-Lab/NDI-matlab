@@ -40,9 +40,9 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             % 3. Verify that both documents are on the remote
             remote_docs = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId);
             testCase.verifyNumElements(remote_docs, 2);
-            names = sort([remote_docs.name]);
-            testCase.verifyEqual(names(1), "test_doc_1");
-            testCase.verifyEqual(names(2), "test_doc_2");
+            names = sort({remote_docs.name});
+            testCase.verifyEqual(names{1}, "test_doc_1");
+            testCase.verifyEqual(names{2}, "test_doc_2");
         end
     end
 end

@@ -53,8 +53,8 @@ classdef DownloadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             local_docs = testCase.localDataset.database_search(ndi.query('','isa','ndi_document_test'));
             testCase.verifyNumElements(local_docs, 2);
             names = sort(cellfun(@(x) string(x.document_properties.test.name), local_docs, 'UniformOutput', false));
-            testCase.verifyEqual(names(1), "remote_doc_1");
-            testCase.verifyEqual(names(2), "remote_doc_2");
+            testCase.verifyEqual(names{1}, "remote_doc_1");
+            testCase.verifyEqual(names{2}, "remote_doc_2");
         end
     end
 end

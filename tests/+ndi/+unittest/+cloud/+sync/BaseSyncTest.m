@@ -26,7 +26,7 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
 
             % Create a local session and link it to the remote dataset
             testCase.localDataset = ndi.session.dir('test_ref', testCase.testDir);
-            remote_doc = ndi.cloud.internal.createRemoteDatasetDoc(testCase.cloudDatasetId);
+            remote_doc = ndi.cloud.internal.createRemoteDatasetDoc(testCase.cloudDatasetId, testCase.localDataset);
             testCase.localDataset.database_add(remote_doc);
 
             % Queue teardown for both local and remote datasets

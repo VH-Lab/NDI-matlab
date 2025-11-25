@@ -27,7 +27,7 @@ classdef ValidateTest < ndi.unittest.cloud.sync.BaseSyncTest
             % 3. Verify
             testCase.verifyEqual(report.local_only_ids, ["doc3"]);
             testCase.verifyEqual(report.remote_only_ids, ["doc4"]);
-            testCase.verifyEqual(sort(report.common_ids), ["doc1"; "doc2"]);
+            testCase.verifyEqual(sort(report.common_ids), ["doc1", "doc2"]);
             testCase.verifyEqual(report.mismatched_ids, ["doc2"]);
         end
 
