@@ -84,6 +84,7 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
         if ~success
             err_msg = 'Unknown error';
             if isa(api_reply, 'matlab.net.http.ResponseMessage')
+                fprintf('Raw API Response Body:\n%s\n', api_reply.Body.Data);
                 try
                     err_data = jsondecode(api_reply.Body.Data);
                     if isfield(err_data, 'message')
