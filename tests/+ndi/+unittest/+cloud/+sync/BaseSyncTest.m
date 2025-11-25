@@ -7,7 +7,6 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
 
     properties
         testDir
-        localSession
         localDataset
         cloudDatasetId
     end
@@ -21,16 +20,12 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
             % Create a unique remote dataset
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
-            [b, cloudDatasetId, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, cloudDatasetId, ~, ~] = ndi.cloud.api.datasets.createDataset(datasetInfo);
             testCase.fatalAssertTrue(b, "Failed to create remote dataset in TestMethodSetup.");
             testCase.cloudDatasetId = cloudDatasetId;
 
-            % Create a local session and dataset, and link them
-            sessionDir = fullfile(testCase.testDir, 'session');
-            mkdir(sessionDir);
-            testCase.localSession = ndi.session.dir('ref1', sessionDir);
+            % Create a local dataset
             testCase.localDataset = ndi.dataset.dir('dref', testCase.testDir);
-            testCase.localDataset.add_linked_session(testCase.localSession);
 
             % Link the local and remote datasets
             remote_doc = ndi.cloud.internal.createRemoteDatasetDoc(testCase.cloudDatasetId, testCase.localDataset, 'replaceExisting', true);
@@ -59,11 +54,11 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
     methods(Access = protected)
         function addDocument(testCase, name, value)
             if nargin < 3
-                doc = testCase.localSession.newdocument('base', 'base.name', name);
+                doc = testCase.localDataset.newdocument('base', 'base.name', name);
             else
-                doc = testCase.localSession.newdocument('base', 'base.name', name, 'base.value', value);
+                doc = testCase.localDataset.newdocument('base', 'base.name', name, 'base.value', value);
             end
-            testCase.localSession.database_add(doc);
+            testCase.localDataset.database_add(doc);
         end
     end
 end
