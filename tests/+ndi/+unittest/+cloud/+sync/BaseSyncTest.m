@@ -13,7 +13,7 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
             global MOCK_CALLS;
             MOCK_CALLS = struct();
 
-            testCase.testDir = tempname;
+            testCase.testDir = char(tempname);
             mkdir(testCase.testDir);
             testCase.ndiDataset = ndi.session.dir(testCase.testDir, 1);
             testCase.syncDir = fullfile(testCase.testDir, '.ndi', 'sync');
