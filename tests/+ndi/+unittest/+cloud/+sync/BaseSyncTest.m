@@ -24,9 +24,11 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
             testCase.fatalAssertTrue(b, "Failed to create remote dataset in TestMethodSetup.");
             testCase.cloudDatasetId = cloudDatasetId;
 
-            % Create a local session and link it to the remote dataset
-            testCase.localDataset = ndi.session.dir('test_ref', testCase.testDir);
-            remote_doc = ndi.cloud.internal.createRemoteDatasetDoc(testCase.cloudDatasetId, testCase.localDataset);
+            % Create a local dataset
+            testCase.localDataset = ndi.dataset.dir('dref', testCase.testDir);
+
+            % Link the local and remote datasets
+            remote_doc = ndi.cloud.internal.createRemoteDatasetDoc(testCase.cloudDatasetId, testCase.localDataset, 'replaceExisting', true);
             testCase.localDataset.database_add(remote_doc);
 
             % Queue teardown for both local and remote datasets
@@ -52,8 +54,7 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
     methods(Access = protected)
         function addDocument(testCase, name, value)
             if nargin < 3, value = ''; end
-            doc = ndi.document('ndi_document_test.json');
-            doc = doc.set_properties('test.name', name, 'test.value', value);
+            doc = testCase.localDataset.newdocument('ndi_document_test', 'test.name', name, 'test.value', value);
             testCase.localDataset.database_add(doc);
         end
     end
