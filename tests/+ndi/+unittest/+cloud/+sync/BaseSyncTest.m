@@ -7,6 +7,7 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
 
     properties
         testDir
+        localSession
         localDataset
         cloudDatasetId
     end
@@ -24,8 +25,12 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
             testCase.fatalAssertTrue(b, "Failed to create remote dataset in TestMethodSetup.");
             testCase.cloudDatasetId = cloudDatasetId;
 
-            % Create a local dataset
+            % Create a local session and dataset, and link them
+            sessionDir = fullfile(testCase.testDir, 'session');
+            mkdir(sessionDir);
+            testCase.localSession = ndi.session.dir('ref1', sessionDir);
             testCase.localDataset = ndi.dataset.dir('dref', testCase.testDir);
+            testCase.localDataset.add_linked_session(testCase.localSession);
 
             % Link the local and remote datasets
             remote_doc = ndi.cloud.internal.createRemoteDatasetDoc(testCase.cloudDatasetId, testCase.localDataset, 'replaceExisting', true);
@@ -53,9 +58,12 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
 
     methods(Access = protected)
         function addDocument(testCase, name, value)
-            if nargin < 3, value = ''; end
-            doc = testCase.localDataset.newdocument('ndi_document_test', 'test.name', name, 'test.value', value);
-            testCase.localDataset.database_add(doc);
+            if nargin < 3
+                doc = testCase.localSession.newdocument('base', 'base.name', name);
+            else
+                doc = testCase.localSession.newdocument('base', 'base.name', name, 'base.value', value);
+            end
+            testCase.localSession.database_add(doc);
         end
     end
 end

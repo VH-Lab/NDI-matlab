@@ -13,9 +13,9 @@ classdef ValidateTest < ndi.unittest.cloud.sync.BaseSyncTest
             testCase.addDocument('doc2', 'B');
             testCase.addDocument('doc3', 'C');
 
-            doc1_remote = ndi.document('ndi_document_test.json').set_properties('test.name', 'doc1', 'test.value', 'A');
-            doc2_remote = ndi.document('ndi_document_test.json').set_properties('test.name', 'doc2', 'test.value', 'Different');
-            doc4_remote = ndi.document('ndi_document_test.json').set_properties('test.name', 'doc4', 'test.value', 'D');
+            doc1_remote = ndi.document('base', 'base.name', 'doc1', 'base.value', 'A');
+            doc2_remote = ndi.document('base', 'base.name', 'doc2', 'base.value', 'Different');
+            doc4_remote = ndi.document('base', 'base.name', 'doc4', 'base.value', 'D');
 
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc1_remote.document_properties));
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc2_remote.document_properties));

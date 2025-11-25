@@ -9,8 +9,7 @@ classdef MirrorToRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
             % 1. Initial State: Local has doc1, remote has doc2
             testCase.addDocument('local_doc_1');
 
-            doc2 = ndi.document('ndi_document_test.json');
-            doc2 = doc2.set_properties('test.name', 'remote_doc_2');
+            doc2 = ndi.document('base', 'base.name', 'remote_doc_2');
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc2.document_properties));
 
             % 2. Execute
