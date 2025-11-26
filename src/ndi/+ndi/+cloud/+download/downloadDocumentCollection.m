@@ -91,11 +91,11 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
                         err_msg = err_data.message;
                     else
                         % If no 'message' field, fall back to StatusLine
-                        err_msg = string(api_reply.StatusLine);
+                        err_msg = char(api_reply.StatusLine);
                     end
                 catch
                     % If JSON decoding fails, use the StatusLine
-                    err_msg = string(api_reply.StatusLine);
+                    err_msg = char(api_reply.StatusLine);
                 end
             elseif isstruct(api_reply) && isfield(api_reply, 'message')
                 err_msg = api_reply.message;
