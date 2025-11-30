@@ -36,7 +36,13 @@ classdef GetBulkDownloadURL < ndi.cloud.api.call
             method = matlab.net.http.RequestMethod.POST;
             
             % The body of the request specifies which document IDs to include
-            data = struct('documentIds', this.cloudDocumentID);
+            if isscalar(this.cloudDocumentID)
+                docIdRequest = [this.cloudDocumentID this.cloudDocumentID]; % work around to make an array in JSON
+            else
+                docIdRequest = this.cloudDocumentID;
+            end
+
+            data = struct('documentIds', docIdRequest);
             body = matlab.net.http.MessageBody(data);
             
             acceptField = matlab.net.http.HeaderField('accept','application/json');

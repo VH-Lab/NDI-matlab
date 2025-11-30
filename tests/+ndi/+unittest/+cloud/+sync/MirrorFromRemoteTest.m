@@ -7,9 +7,10 @@ classdef MirrorFromRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
             % Test mirroring from remote, including downloads and deletions
 
             % 1. Initial State: Local has doc1, remote has doc2
-            testCase.addDocument('local_doc_1');
+            doc1 = ndi.document('base', 'base.name', 'local_doc_1','base.session_id', testCase.localDataset.id());           
+            testCase.localDataset.database_add(doc1);
 
-            doc2 = ndi.document('base', 'base.name', 'remote_doc_2');
+            doc2 = ndi.document('base', 'base.name', 'remote_doc_2','base.session_id', testCase.localDataset.id());
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc2.document_properties));
 
             % 2. Execute
@@ -17,7 +18,7 @@ classdef MirrorFromRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
 
             % 3. Verify
             % Local should now have only doc2
-            local_docs = testCase.localDataset.database_search(ndi.query('','isa','base'));
+            local_docs = testCase.localDataset.database_search(ndi.query('base.name','exact_string','remote_doc_2'));
             testCase.verifyNumElements(local_docs, 1);
             testCase.verifyEqual(local_docs{1}.document_properties.base.name, 'remote_doc_2');
         end

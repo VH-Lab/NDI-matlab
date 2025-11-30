@@ -71,6 +71,8 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
 
             [b_count, numDocs, ~, ~] = ndi.cloud.api.documents.documentCount(this.cloudDatasetID);
 
+            currentTime = tic;
+
             if ~b_count
                 b = false;
                 answer = 'Could not determine document count.';
@@ -91,8 +93,13 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
 
             if this.checkForUpdates && b
                 update_reads = 0;
+                elapsedTime = toc(currentTime); % make sure we waited at least this.waitForUpdates seconds
+                if elapsedTime < this.waitForUpdates
+                    pause(this.waitForUpdates-elapsedTime);
+                end
                 [b_count, newNumDocs, ~, ~] = ndi.cloud.api.documents.documentCount(this.cloudDatasetID);
                 while b_count && newNumDocs > numDocs && update_reads < this.maximumNumberUpdateReads
+
                     pause(this.waitForUpdates);
                     numDocs = newNumDocs;
 
@@ -107,7 +114,7 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
                         end
                         last_page_read = p_update;
                     end
-                    if ~b, break; end;
+                    if ~b, break; end
                     update_reads = update_reads + 1;
                     [b_count, newNumDocs, ~, ~] = ndi.cloud.api.documents.documentCount(this.cloudDatasetID);
                 end

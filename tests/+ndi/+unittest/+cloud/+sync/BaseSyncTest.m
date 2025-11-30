@@ -20,9 +20,8 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
             % Create a unique remote dataset
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
-            [b, cloudDatasetId, ~, ~] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            [b, testCase.cloudDatasetId, ~, ~] = ndi.cloud.api.datasets.createDataset(datasetInfo);
             testCase.fatalAssertTrue(b, "Failed to create remote dataset in TestMethodSetup.");
-            testCase.cloudDatasetId = cloudDatasetId;
 
             % Create a local dataset
             testCase.localDataset = ndi.dataset.dir('dref', testCase.testDir);

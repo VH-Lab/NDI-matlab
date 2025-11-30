@@ -71,7 +71,7 @@ function mirrorToRemote(ndiDataset, syncOptions)
                 end
             end
         else
-            ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, documentsToUpload);
+            [b,report]=ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, documentsToUpload);
             if syncOptions.SyncFiles
                 if syncOptions.Verbose
                     fprintf('SyncFiles is true. Uploading associated data files...\n');

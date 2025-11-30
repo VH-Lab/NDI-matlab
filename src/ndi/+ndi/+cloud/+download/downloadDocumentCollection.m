@@ -131,6 +131,7 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
         jsonString = fileread(jsonFile);
         jsonRehydrated = ndi.util.rehydrateJSONNanNull(jsonString);
         documentStructs = jsondecode(jsonRehydrated);
+        documentStructs = ndi.cloud.internal.dropDuplicateDocsFromStruct(documentStructs);
 
         if isempty(all_document_structs)
             all_document_structs = documentStructs;

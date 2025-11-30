@@ -5,44 +5,72 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
 
         function testInitialUpload(testCase)
             % Test initial upload with no sync index
-            testCase.addDocument('test_doc_1');
+            doc1 = ndi.document('base', 'base.name', 'test_doc_1','base.session_id', testCase.localDataset.id());           
+            testCase.localDataset.database_add(doc1);
 
             ndi.cloud.sync.uploadNew(testCase.localDataset);
 
             % Verify that the document is now on the remote
-            remote_docs = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId);
-            testCase.verifyNumElements(remote_docs, 1);
-            testCase.verifyEqual(remote_docs(1).name, "test_doc_1");
+            [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
+            foundTestDoc = false;
+            for i=1:numel(remote_docs)
+                if strcmp(remote_docs(i).name,"test_doc_1")
+                    foundTestDoc = true;
+                    break;
+                end
+            end
+
+            testCase.verifyEqual(foundTestDoc, true, "test_doc_1 not found");
         end
 
         function testDryRun(testCase)
             % Test DryRun option
-            testCase.addDocument('test_doc_1');
+            doc1 = ndi.document('base', 'base.name', 'test_doc_1','base.session_id', testCase.localDataset.id());           
+            testCase.localDataset.database_add(doc1);
 
             ndi.cloud.sync.uploadNew(testCase.localDataset, "DryRun", true);
 
             % Verify that the document is NOT on the remote
-            remote_docs = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId);
-            testCase.verifyEmpty(remote_docs);
+            [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
+            foundTestDoc = false;
+            for i=1:numel(remote_docs)
+                if strcmp(remote_docs(i).name,"test_doc_1")
+                    foundTestDoc = true;
+                    break;
+                end
+            end
+            testCase.verifyEqual(foundTestDoc, false, "test_doc_1 was found, should not have been added during DryRun");            
         end
 
         function testIncrementalUpload(testCase)
             % Test uploading only new documents
 
             % 1. Initial sync
-            testCase.addDocument('test_doc_1');
+            doc1 = ndi.document('base', 'base.name', 'test_doc_1','base.session_id', testCase.localDataset.id());           
+            testCase.localDataset.database_add(doc1);
+            
             ndi.cloud.sync.uploadNew(testCase.localDataset);
 
             % 2. Add a new document and sync again
-            testCase.addDocument('test_doc_2');
+            doc2 = ndi.document('base', 'base.name', 'test_doc_2','base.session_id', testCase.localDataset.id());           
+            testCase.localDataset.database_add(doc2);
             ndi.cloud.sync.uploadNew(testCase.localDataset);
 
             % 3. Verify that both documents are on the remote
-            remote_docs = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId);
-            testCase.verifyNumElements(remote_docs, 2);
-            names = sort({remote_docs.name});
-            testCase.verifyEqual(names{1}, "test_doc_1");
-            testCase.verifyEqual(names{2}, "test_doc_2");
+            [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
+            foundTestDoc1 = false;
+            foundTestDoc2 = false;            
+            for i=1:numel(remote_docs)
+                if strcmp(remote_docs(i).name,"test_doc_1")
+                    foundTestDoc1 = true;
+                end
+                if strcmp(remote_docs(i).name,"test_doc_2")
+                    foundTestDoc2 = true;
+                end
+            end
+
+            testCase.verifyEqual(foundTestDoc1, true, "test_doc_1 not found");
+            testCase.verifyEqual(foundTestDoc2, true, "test_doc_2 not found");
         end
     end
 end

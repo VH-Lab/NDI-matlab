@@ -41,6 +41,14 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
             b = false;
             answer = [];
 
+            if isscalar(this.documentIDsToDelete)
+                % just delete it singly to avoid JSON conversion that API
+                % does not expect (it expects an array, Matlab produces a
+                % single object)
+                [b, answer, apiResponse, apiURL] = ndi.cloud.api.documents.deleteDocument(this.cloudDatasetID, this.documentIDsToDelete);
+                return
+            end
+
             token = ndi.cloud.authenticate();
             
             apiURL = ndi.cloud.api.url('bulk_delete_documents', 'dataset_id', this.cloudDatasetID);
