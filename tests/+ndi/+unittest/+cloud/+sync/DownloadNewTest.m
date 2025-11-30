@@ -10,7 +10,15 @@ classdef DownloadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             doc = ndi.document('base', 'base.name', 'remote_doc_1','base.session_id',testCase.localDataset.id());
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc.document_properties));
 
-            ndi.cloud.sync.downloadNew(testCase.localDataset);
+            [success, msg, report] = ndi.cloud.sync.downloadNew(testCase.localDataset);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+            testCase.verifyTrue(isfield(report, 'downloaded_document_ids'));
+
+            % Verify the specific document ID is in the report
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc.id())), ...
+                'Remote document ID should be in downloaded_document_ids');
 
             % Verify that the document is now on the local
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','exact_string','remote_doc_1'));
@@ -25,7 +33,11 @@ classdef DownloadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             doc = ndi.document('base', 'base.name', 'remote_doc_1','base.session_id',testCase.localDataset.id());
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc.document_properties));
 
-            ndi.cloud.sync.downloadNew(testCase.localDataset, "DryRun", true);
+            [success, msg, report] = ndi.cloud.sync.downloadNew(testCase.localDataset, "DryRun", true);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+            testCase.verifyEmpty(report.downloaded_document_ids);
 
             % Verify that the document is NOT on the local
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','exact_string','remote_doc_1'));
@@ -43,7 +55,15 @@ classdef DownloadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             % 2. Add a new document to remote and sync again
             doc2 = ndi.document('base', 'base.name', 'remote_doc_2','base.session_id',testCase.localDataset.id());
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc2.document_properties));
-            ndi.cloud.sync.downloadNew(testCase.localDataset);
+
+            [success, msg, report] = ndi.cloud.sync.downloadNew(testCase.localDataset);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+
+            % Verify doc2 ID is in the report
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc2.id())), ...
+                'New remote document ID should be in downloaded_document_ids');
 
             % 3. Verify that both documents are on the local
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','regexp','remote_doc_.*'));

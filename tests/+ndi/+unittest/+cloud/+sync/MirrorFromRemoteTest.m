@@ -14,13 +14,30 @@ classdef MirrorFromRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc2.document_properties));
 
             % 2. Execute
-            ndi.cloud.sync.mirrorFromRemote(testCase.localDataset);
+            [success, msg, report] = ndi.cloud.sync.mirrorFromRemote(testCase.localDataset);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+
+            % Check report
+            testCase.verifyTrue(isfield(report, 'downloaded_document_ids'));
+            testCase.verifyTrue(isfield(report, 'deleted_local_document_ids'));
+
+            % Verify specific IDs
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc2.id())), ...
+                'Remote doc ID should be downloaded');
+            testCase.verifyTrue(any(strcmp(report.deleted_local_document_ids, doc1.id())), ...
+                'Local doc ID should be deleted');
 
             % 3. Verify
             % Local should now have only doc2
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','exact_string','remote_doc_2'));
             testCase.verifyNumElements(local_docs, 1);
             testCase.verifyEqual(local_docs{1}.document_properties.base.name, 'remote_doc_2');
+
+            % doc1 should be deleted
+             local_docs_1 = testCase.localDataset.database_search(ndi.query('base.name','exact_string','local_doc_1'));
+             testCase.verifyEmpty(local_docs_1);
         end
 
     end

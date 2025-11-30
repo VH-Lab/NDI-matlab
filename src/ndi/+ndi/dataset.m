@@ -315,7 +315,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             arguments
                 ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj,"ndi.dataset")}
-                doc_unique_id {mustBeA(doc_unique_id,["cell" "ndi.document"])}
+                doc_unique_id {mustBeA(doc_unique_id,["cell" "ndi.document","string","char"])}
                 options.ErrIfNotFound (1,1) logical = false
             end
 
