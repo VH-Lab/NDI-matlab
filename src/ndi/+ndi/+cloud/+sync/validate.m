@@ -41,7 +41,7 @@ function [comparison_report, local_comparison_structs, remote_comparison_structs
         ndiDataset (1,1) ndi.dataset
         options.Mode (1,1) string {mustBeMember(options.Mode, ["bulk", "serial"])} = "bulk"
         options.Verbose (1,1) logical = true
-        options.cloudDatasetId (1,1) string = "";
+        options.cloudDatasetId (1,:) char = '';
     end
     if options.Verbose, fprintf('Starting validation for dataset: %s\n', ndiDataset.path); end
     % Initialize the report structure

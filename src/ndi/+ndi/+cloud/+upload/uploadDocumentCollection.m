@@ -145,7 +145,10 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
                 if ~success
                     error(['Failed to get bulk upload URL: ' uploadUrl.message]);
                 end
-                ndi.cloud.api.files.putFiles(uploadUrl, zipFilePath);
+                [batchUploadSucces] = ndi.cloud.api.files.putFiles(uploadUrl, zipFilePath);
+                if ~batchUploadSucces
+                    error('Failed to actually upload');
+                end
                 
                 % If we reached here, the upload was successful
                 report.manifest{end+1} = idManifest;
