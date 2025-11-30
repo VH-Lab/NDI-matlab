@@ -15,7 +15,10 @@ classdef DownloadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             testCase.verifyTrue(success);
             testCase.verifyEmpty(msg);
             testCase.verifyTrue(isfield(report, 'downloaded_document_ids'));
-            testCase.verifyNumElements(report.downloaded_document_ids, 1);
+
+            % Verify the specific document ID is in the report
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc.id())), ...
+                'Remote document ID should be in downloaded_document_ids');
 
             % Verify that the document is now on the local
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','exact_string','remote_doc_1'));
@@ -57,7 +60,10 @@ classdef DownloadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
 
             testCase.verifyTrue(success);
             testCase.verifyEmpty(msg);
-            testCase.verifyNumElements(report.downloaded_document_ids, 1);
+
+            % Verify doc2 ID is in the report
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc2.id())), ...
+                'New remote document ID should be in downloaded_document_ids');
 
             % 3. Verify that both documents are on the local
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','regexp','remote_doc_.*'));

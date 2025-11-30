@@ -153,7 +153,7 @@ function [success, errorMessage, report] = uploadNew(ndiDataset, syncOptions)
     catch ME
         success = false;
         errorMessage = ME.message;
-        if exist('syncOptions', 'var') && syncOptions.Verbose
+        if exist('syncOptions', 'var') && isprop(syncOptions, 'Verbose') && syncOptions.Verbose
              fprintf('Error in uploadNew: %s\n', errorMessage);
         end
     end

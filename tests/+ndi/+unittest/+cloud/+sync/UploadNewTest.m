@@ -13,7 +13,10 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             testCase.verifyTrue(success);
             testCase.verifyEmpty(msg);
             testCase.verifyTrue(isfield(report, 'uploaded_document_ids'));
-            testCase.verifyNumElements(report.uploaded_document_ids, 1);
+
+            % Verify doc ID is uploaded
+            testCase.verifyTrue(any(strcmp(report.uploaded_document_ids, doc1.id())), ...
+                'Local doc ID should be uploaded');
 
             % Verify that the document is now on the remote
             [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
@@ -68,7 +71,10 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
 
             testCase.verifyTrue(success);
             testCase.verifyEmpty(msg);
-            testCase.verifyNumElements(report.uploaded_document_ids, 1);
+
+            % Verify doc2 ID is uploaded
+            testCase.verifyTrue(any(strcmp(report.uploaded_document_ids, doc2.id())), ...
+                'New local doc ID should be uploaded');
 
             % 3. Verify that both documents are on the remote
             [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);

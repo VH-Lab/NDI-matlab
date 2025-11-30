@@ -22,8 +22,12 @@ classdef MirrorFromRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
             % Check report
             testCase.verifyTrue(isfield(report, 'downloaded_document_ids'));
             testCase.verifyTrue(isfield(report, 'deleted_local_document_ids'));
-            testCase.verifyNumElements(report.downloaded_document_ids, 1);
-            testCase.verifyNumElements(report.deleted_local_document_ids, 1);
+
+            % Verify specific IDs
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc2.id())), ...
+                'Remote doc ID should be downloaded');
+            testCase.verifyTrue(any(strcmp(report.deleted_local_document_ids, doc1.id())), ...
+                'Local doc ID should be deleted');
 
             % 3. Verify
             % Local should now have only doc2

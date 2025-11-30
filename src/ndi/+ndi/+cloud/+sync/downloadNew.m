@@ -143,7 +143,8 @@ function [success, errorMessage, report] = downloadNew(ndiDataset, syncOptions)
     catch ME
         success = false;
         errorMessage = ME.message;
-        if exist('syncOptions', 'var') && syncOptions.Verbose
+        % Check if syncOptions is an object with Verbose property before accessing
+        if exist('syncOptions', 'var') && isprop(syncOptions, 'Verbose') && syncOptions.Verbose
              fprintf('Error in downloadNew: %s\n', errorMessage);
         end
     end

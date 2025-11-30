@@ -176,7 +176,7 @@ function [success, errorMessage, report] = mirrorToRemote(ndiDataset, syncOption
     catch ME
         success = false;
         errorMessage = ME.message;
-        if exist('syncOptions', 'var') && syncOptions.Verbose
+        if exist('syncOptions', 'var') && isprop(syncOptions, 'Verbose') && syncOptions.Verbose
              fprintf('Error in mirrorToRemote: %s\n', errorMessage);
         end
     end

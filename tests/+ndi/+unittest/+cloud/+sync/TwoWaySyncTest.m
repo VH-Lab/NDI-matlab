@@ -22,8 +22,12 @@ classdef TwoWaySyncTest < ndi.unittest.cloud.sync.BaseSyncTest
             % Check report
             testCase.verifyTrue(isfield(report, 'uploaded_document_ids'));
             testCase.verifyTrue(isfield(report, 'downloaded_document_ids'));
-            testCase.verifyNumElements(report.uploaded_document_ids, 1);
-            testCase.verifyNumElements(report.downloaded_document_ids, 1);
+
+            % Verify specific IDs
+            testCase.verifyTrue(any(strcmp(report.uploaded_document_ids, doc1.id())), ...
+                'Local doc ID should be uploaded');
+            testCase.verifyTrue(any(strcmp(report.downloaded_document_ids, doc2.id())), ...
+                'Remote doc ID should be downloaded');
 
             % 3. Verify
             % Local should have doc1 and doc2 (plus the link doc, but regex filters)

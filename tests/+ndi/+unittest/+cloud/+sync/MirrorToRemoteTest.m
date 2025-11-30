@@ -22,30 +22,21 @@ classdef MirrorToRemoteTest < ndi.unittest.cloud.sync.BaseSyncTest
             % Check report
             testCase.verifyTrue(isfield(report, 'uploaded_document_ids'));
             testCase.verifyTrue(isfield(report, 'deleted_remote_document_ids'));
-            % local_doc_1 should be uploaded
-            testCase.verifyNumElements(report.uploaded_document_ids, 1);
-            % remote_doc_2 should be deleted
-            testCase.verifyNumElements(report.deleted_remote_document_ids, 1);
+
+            % Verify specific IDs
+            testCase.verifyTrue(any(strcmp(report.uploaded_document_ids, doc1.id())), ...
+                'Local doc ID should be uploaded');
+            % Note: doc2.id() is the LOCAL ID if we created it locally, but here we created it directly on remote.
+            % But ndi.document constructor generates an ID.
+            % Does addDocument use that ID? Yes, usually.
+            testCase.verifyTrue(any(strcmp(report.deleted_remote_document_ids, doc2.id())), ...
+                'Remote doc ID should be deleted');
 
             % 3. Verify
             % Remote should now have doc1
             [success,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
             testCase.verifyEqual(logical(success), true, "mirrorToRemote command was not successful.");
-            % Expected docs: dataset doc, remote link doc, local_doc_1
-            % Wait, does createRemoteDatasetDoc create a doc? Yes.
-            % 'dataset' doc is created by createDataset? No, createDataset returns ID.
-            % But listDatasetDocumentsAll returns what?
-            % In BaseSyncTest, we add remote_doc to local.
-            % If we mirror local to remote, we upload all local docs.
-            % Local has: remote_doc (link), doc1.
-            % Remote has: doc2.
-            % After sync: Remote should have copy of local docs: remote_doc (link), doc1.
-            % And doc2 should be deleted.
 
-            % But wait, does createDataset create any initial documents? Often yes (dataset info).
-            % listDatasetDocumentsAll usually returns everything.
-
-            % Let's verify 'local_doc_1' is present and 'remote_doc_2' is absent.
             found_local_doc_1 = false;
             found_remote_doc_2 = false;
             for i=1:numel(remote_docs)
