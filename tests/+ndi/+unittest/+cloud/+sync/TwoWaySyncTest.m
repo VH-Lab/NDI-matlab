@@ -14,10 +14,19 @@ classdef TwoWaySyncTest < ndi.unittest.cloud.sync.BaseSyncTest
             ndi.cloud.api.documents.addDocument(testCase.cloudDatasetId, jsonencodenan(doc2.document_properties));
 
             % 2. Execute
-            ndi.cloud.sync.twoWaySync(testCase.localDataset);
+            [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.localDataset);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+
+            % Check report
+            testCase.verifyTrue(isfield(report, 'uploaded_document_ids'));
+            testCase.verifyTrue(isfield(report, 'downloaded_document_ids'));
+            testCase.verifyNumElements(report.uploaded_document_ids, 1);
+            testCase.verifyNumElements(report.downloaded_document_ids, 1);
 
             % 3. Verify
-            % Local should have doc1 and doc2
+            % Local should have doc1 and doc2 (plus the link doc, but regex filters)
             local_docs = testCase.localDataset.database_search(ndi.query('base.name','regexp','(.*)_doc_(.*)')); 
             testCase.verifyNumElements(local_docs, 2);
             if numel(local_docs)==2

@@ -8,7 +8,12 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             doc1 = ndi.document('base', 'base.name', 'test_doc_1','base.session_id', testCase.localDataset.id());           
             testCase.localDataset.database_add(doc1);
 
-            ndi.cloud.sync.uploadNew(testCase.localDataset);
+            [success, msg, report] = ndi.cloud.sync.uploadNew(testCase.localDataset);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+            testCase.verifyTrue(isfield(report, 'uploaded_document_ids'));
+            testCase.verifyNumElements(report.uploaded_document_ids, 1);
 
             % Verify that the document is now on the remote
             [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
@@ -28,7 +33,11 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             doc1 = ndi.document('base', 'base.name', 'test_doc_1','base.session_id', testCase.localDataset.id());           
             testCase.localDataset.database_add(doc1);
 
-            ndi.cloud.sync.uploadNew(testCase.localDataset, "DryRun", true);
+            [success, msg, report] = ndi.cloud.sync.uploadNew(testCase.localDataset, "DryRun", true);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+            testCase.verifyEmpty(report.uploaded_document_ids);
 
             % Verify that the document is NOT on the remote
             [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
@@ -54,7 +63,12 @@ classdef UploadNewTest < ndi.unittest.cloud.sync.BaseSyncTest
             % 2. Add a new document and sync again
             doc2 = ndi.document('base', 'base.name', 'test_doc_2','base.session_id', testCase.localDataset.id());           
             testCase.localDataset.database_add(doc2);
-            ndi.cloud.sync.uploadNew(testCase.localDataset);
+
+            [success, msg, report] = ndi.cloud.sync.uploadNew(testCase.localDataset);
+
+            testCase.verifyTrue(success);
+            testCase.verifyEmpty(msg);
+            testCase.verifyNumElements(report.uploaded_document_ids, 1);
 
             % 3. Verify that both documents are on the remote
             [b,remote_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.cloudDatasetId,"checkForUpdates",true);
