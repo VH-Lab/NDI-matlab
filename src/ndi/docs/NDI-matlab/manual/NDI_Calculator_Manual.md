@@ -225,6 +225,8 @@ This function searches the structure array for the matching `name` and returns t
             % Step 1: Extract dependencies
             element_id = did.db.struct_name_value_search(...
                 parameters.depends_on, 'element_id');
+            % now do something with the dependency,
+            %maybe create an object or load some information
             element = ndi.database.fun.ndi_document2ndi_object(...
                 element_id, ndi_calculator_obj.session);
 
@@ -243,7 +245,8 @@ This function searches the structure array for the matching `name` and returns t
                 'my_calculator_calc', ...
                 output);
 
-            % Step 5: Set dependencies
+            % Step 5: Set dependencies if your document needs them
+            %  most will, to store the provenance of the calculation
             for i = 1:numel(parameters.depends_on)
                 doc = doc.set_dependency_value(...
                     parameters.depends_on(i).name, ...
