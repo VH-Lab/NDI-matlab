@@ -271,6 +271,8 @@ This function searches the structure array for the matching `name` and returns t
 
 #### 3.3 Default Search Parameters
 
+Either or both of `default_search_for_input_parameters` or `default_parameters_query` must be overridden in order for the calculator to have a default method to find documents to operate on.
+
 ```matlab
         function parameters = default_search_for_input_parameters(...
                 ndi_calculator_obj)
@@ -627,7 +629,7 @@ When creating a new calculator:
 - [ ] Create MATLAB class in `+ndi/+calc/+[category]/`
 - [ ] Implement constructor with dynamic path resolution
 - [ ] Implement `calculate()` method
-- [ ] Implement `default_search_for_input_parameters()` method
+- [ ] Implement `default_search_for_input_parameters()` and/or `default_parameters_query` method
 - [ ] Add optional methods as needed (plot, load, etc.)
 - [ ] Test with real or mock data
 - [ ] Document all methods and parameters
