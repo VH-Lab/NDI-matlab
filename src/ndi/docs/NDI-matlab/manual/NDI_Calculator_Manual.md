@@ -63,10 +63,10 @@ Each calculator consists of two main components:
 
 Your calculator class must:
 - Inherit from `ndi.calculator`
-- Implement three required methods:
+- Implement required methods:
   - `constructor(session)` - Initialize the calculator
   - `calculate(parameters)` - Perform the computation
-  - `default_search_for_input_parameters()` - Define default parameters
+  - `default_search_for_input_parameters()` OR `default_parameters_query()` - Define default search logic
 
 **Location**: `+ndi/+calc/+[category]/[calculator_name].m`
 
@@ -171,21 +171,14 @@ classdef my_calculator < ndi.calculator
             % Creates a MY_CALCULATOR ndi.calculator object
             %
 
-            % Get path to JSON file using dynamic path resolution
-            w = which('ndi.calc.category.my_calculator');
-            parparparpar = fileparts(fileparts(fileparts(fileparts(w))));
-
             % Call superclass constructor with document type info
-            obj = obj@ndi.calculator(session, 'my_calculator_calc', ...
-                fullfile(parparparpar, 'ndi_common', 'database_documents', ...
-                'calc', 'my_calculator_calc.json'));
+            obj = obj@ndi.calculator(session, 'my_calculator_calc');
         end
 ```
 
 **Key points**:
-- Use `fileparts()` chain to navigate from class location to root directory
 - First argument to superclass: document type name (without `.json`)
-- Second argument: full path to JSON definition file
+- The calculator automatically locates the JSON definition file based on the document type name (ensure the JSON file is in the standard `ndi_common/database_documents/calc/` location).
 
 #### 3.2 Calculate Method
 
@@ -500,14 +493,8 @@ value1 = results.output_field1;
 - **Parameters**: Store all configuration values in `input_parameters`
 - **Output**: Store both raw results and derived statistics
 
-### 3. Path Resolution
-Always use dynamic path resolution in constructor:
-```matlab
-w = which('ndi.calc.category.my_calculator');
-parparparpar = fileparts(fileparts(fileparts(fileparts(w))));
-```
-
-This ensures your calculator works regardless of installation location.
+### 3. JSON File Location
+Ensure your JSON document definition file is named identically to the document type (e.g., `my_calculator_calc.json`) and is placed in the `ndi_common/database_documents/calc/` directory so NDI can locate it automatically.
 
 ### 4. Query Construction
 - Use `ndi.query()` for database searches
@@ -604,8 +591,8 @@ session.database_closebinarydoc(myfile);
 - Ensure JSON definition matches document structure
 
 ### Path errors
-- Use dynamic path resolution with `which()` and `fileparts()`
-- Verify JSON file exists at specified path
+- Verify JSON file exists at `ndi_common/database_documents/calc/`
+- Ensure the JSON filename matches the document type name exactly
 - Check MATLAB path includes calculator directory
 
 ### Query syntax errors
@@ -627,7 +614,7 @@ When creating a new calculator:
 - [ ] Plan inputs, parameters, outputs, and granularity
 - [ ] Create JSON document definition in `ndi_common/database_documents/calc/`
 - [ ] Create MATLAB class in `+ndi/+calc/+[category]/`
-- [ ] Implement constructor with dynamic path resolution
+- [ ] Implement constructor passing the document type name
 - [ ] Implement `calculate()` method
 - [ ] Implement `default_search_for_input_parameters()` and/or `default_parameters_query` method
 - [ ] Add optional methods as needed (plot, load, etc.)
