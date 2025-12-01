@@ -1,0 +1,85 @@
+classdef buildSession < matlab.unittest.TestCase
+    properties
+        Session
+    end
+
+    methods (TestMethodSetup)
+        function buildSessionSetup(testCase)
+            % BUILDSESSIONSETUP - Build an example Intan session in a temporary directory
+
+            % Create a temporary directory
+            dirname = tempname;
+            mkdir(dirname);
+
+            % Locate the source file
+            source_dir = fullfile(ndi.common.PathConstants.ExampleDataFolder, 'exp1_eg_saved');
+            filename = 'Intan_160317_125049_short.rhd';
+            source_file = fullfile(source_dir, filename);
+
+            % Copy the file
+            copyfile(source_file, dirname);
+
+            % Create the probe map file
+            probemap_filename = fullfile(dirname, 'Intan_160317_125049_short.epochprobemap.ndi');
+            if ~exist(probemap_filename,'file')
+                fid = fopen(probemap_filename, 'wt');
+                if fid<0
+                    error(['Could not open ' probemap_filename ' for writing.']);
+                end
+                fprintf(fid,'name\treference\ttype\tdevicestring\tsubjectstring\n');
+                fprintf(fid,'ctx\t1\tn-trode\tintan1:ai1\tanteater27@nosuchlab.org\n');
+                fclose(fid);
+            end
+
+            % Create the session object
+            testCase.Session = ndi.session.dir('exp1', dirname);
+
+            % Remove every element from the session to start
+            testCase.Session.database_clear('yes');
+
+            % Remove any existing daqsystem
+            dev = testCase.Session.daqsystem_load('name','(.*)');
+            if ~isempty(dev) && ~iscell(dev)
+                dev = {dev};
+            end
+            if iscell(dev)
+                for i=1:numel(dev)
+                    testCase.Session.daqsystem_rm(dev{i});
+                end
+            end
+            testCase.Session.cache.clear();
+
+            % Add acquisition daqsystem (intan)
+            dt = ndi.file.navigator(testCase.Session, {'#.rhd', '#.epochprobemap.ndi'},'ndi.epoch.epochprobemap_daqsystem',{'(.*)epochprobemap.ndi'});
+            dev1 = ndi.daq.system.mfdaq('intan1',dt,ndi.daq.reader.mfdaq.intan());
+            testCase.Session.daqsystem_add(dev1);
+
+            % Add subject
+            subject = ndi.subject('anteater27@nosuchlab.org','');
+            testCase.Session.database_add(subject.newdocument());
+
+            % Add a document
+            doc = testCase.Session.newdocument('subjectmeasurement',...
+                'base.name','Animal statistics',...
+                'subjectmeasurement.measurement','age',...
+                'subjectmeasurement.value',30,...
+                'subjectmeasurement.datestamp','2017-03-17T19:53:57.066Z'...
+                );
+
+            doc = doc.set_dependency_value('subject_id',subject.id());
+            testCase.Session.database_add(doc);
+        end
+    end
+
+    methods (TestMethodTeardown)
+        function buildSessionTeardown(testCase)
+            if ~isempty(testCase.Session)
+                % Clean up temporary directory
+                path = testCase.Session.path();
+                if isfolder(path)
+                    rmdir(path, 's');
+                end
+            end
+        end
+    end
+end
