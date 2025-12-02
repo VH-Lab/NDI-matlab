@@ -90,7 +90,7 @@ classdef testDiff < matlab.unittest.TestCase
             props2.depends_on = [struct('name', 'depB', 'value', 'idB'), struct('name', 'depA', 'value', 'idA')];
             doc2 = ndi.document(props2);
 
-            [are_equal, report] = ndi.fun.doc.diff(doc1, doc2);
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2);
             testCase.verifyTrue(are_equal, 'Dependency order should not affect equality.');
 
             % Change a value
@@ -145,7 +145,17 @@ classdef testDiff < matlab.unittest.TestCase
             % Clone doc1 to doc2 in a "second session" (using same session for simplicity of file access, but different docs)
             % Ideally we would use two sessions, but we can mock it by passing the same session twice
             % However, we need the documents to be distinct objects.
-            doc2 = ndi.document(doc1.document_properties);
+
+            % Note: In real life we can't add same ID twice. Here we just need the file access to work.
+            % But database_openbinarydoc works on doc objects.
+            % Let's use a second session to be proper.
+            tempDir2 = [testCase.TempDir '_2'];
+            mkdir(tempDir2);
+            S2 = ndi.session.dir('test_session_2', tempDir2);
+
+            new_properties = doc1.document_properties;
+            new_properties.base.session_id = S2.id(); % session_id must match
+            doc2 = ndi.document(new_properties);
 
             % Create a different file for doc2
             file2_path = fullfile(testCase.TempDir, 'file2.bin');
@@ -158,12 +168,7 @@ classdef testDiff < matlab.unittest.TestCase
             doc2 = doc2.add_file('filename1.ext', file2_path);
 
             % Add doc2 to database so we can open it
-            % Note: In real life we can't add same ID twice. Here we just need the file access to work.
-            % But database_openbinarydoc works on doc objects.
-            % Let's use a second session to be proper.
-            tempDir2 = [testCase.TempDir '_2'];
-            mkdir(tempDir2);
-            S2 = ndi.session.dir('test_session_2', tempDir2);
+
             S2.database_add(doc2);
 
             % Test mismatch detection
@@ -171,21 +176,33 @@ classdef testDiff < matlab.unittest.TestCase
             testCase.verifyFalse(are_equal, 'Files with different content should be detected.');
             testCase.verifyTrue(any(contains(report.details, 'content mismatch')), 'Report should mention content mismatch.');
 
+            % Note: In real life we can't add same ID twice. Here we just need the file access to work.
+            % But database_openbinarydoc works on doc objects.
+            % Let's use a second session to be proper.
+            tempDir3 = [testCase.TempDir '_3'];
+            mkdir(tempDir3);
+            S3 = ndi.session.dir('test_session_3', tempDir3);
+
+            new_properties3 = doc1.document_properties;
+            new_properties3.base.session_id = S3.id(); % session_id must match
+            doc3 = ndi.document(new_properties3);
+
             % Test identical files
             file3_path = fullfile(tempDir2, 'file3.bin');
             fid3 = fopen(file3_path, 'w');
             fwrite(fid3, 'content1', 'char'); % Same content as file1
             fclose(fid3);
-            doc3 = doc2.reset_file_info();
-            doc3 = doc3.add_file('filename1.ext', file3_path);
-            S2.database_rm(doc2.id()); % Remove old doc2 to avoid conflict
-            S2.database_add(doc3);
 
-            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc3, 'checkFiles', true, 'session1', testCase.Session, 'session2', S2);
+            doc3 = doc3.reset_file_info();
+            doc3 = doc3.add_file('filename1.ext', file3_path);
+            S3.database_add(doc3);
+
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc3, 'checkFiles', true, 'session1', testCase.Session, 'session2', S3);
             testCase.verifyTrue(are_equal, 'Files with identical content should match.');
 
             % Clean up
             rmdir(tempDir2, 's');
+            rmdir(tempDir3, 's');
         end
     end
 end
