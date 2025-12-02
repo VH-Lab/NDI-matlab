@@ -13,8 +13,7 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
 
             % Add a doc
-            fixed_id = '12345_fixed_id_for_testing';
-            doc1 = S1.newdocument('demoNDI', 'base.id', fixed_id, 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             S1.database_add(doc1);
 
             % Create S2 as a COPY of S1
@@ -118,9 +117,9 @@ classdef diffTest < matlab.unittest.TestCase
 
             S1 = ndi.session.dir('ref1', tempDir1);
 
-            fixed_id = '99999_mismatch_test_id';
-            doc1 = S1.newdocument('demoNDI', 'base.id', fixed_id, 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             S1.database_add(doc1);
+            fixed_id = doc1.id();
 
             % Create S2 as copy
             tempDir2 = tempname;
@@ -159,15 +158,15 @@ classdef diffTest < matlab.unittest.TestCase
 
             S1 = ndi.session.dir('ref1', tempDir1);
 
-            fixed_id = '88888_file_test_id';
             file1_path = fullfile(tempDir1, 'file1.bin');
             fid1 = fopen(file1_path, 'w');
             fwrite(fid1, 'content1', 'char');
             fclose(fid1);
 
-            doc1 = S1.newdocument('demoNDI', 'base.id', fixed_id, 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             doc1 = doc1.add_file('filename1.ext', file1_path);
             S1.database_add(doc1);
+            fixed_id = doc1.id();
 
             % Create S2 as copy
             tempDir2 = tempname;
