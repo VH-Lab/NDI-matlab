@@ -61,8 +61,8 @@ function [report] = diff(S1,S2, options)
             % But here we are rechecking based on IDs from a previous report.
             % The previous report contains document IDs.
 
-            doc1 = S1.database_search(ndi.query('ndi_document.id', 'exact_string', entry.documentA_uid, ''));
-            doc2 = S2.database_search(ndi.query('ndi_document.id', 'exact_string', entry.documentB_uid, ''));
+            doc1 = S1.database_search(ndi.query('base.id', 'exact_string', entry.documentA_uid, ''));
+            doc2 = S2.database_search(ndi.query('base.id', 'exact_string', entry.documentB_uid, ''));
 
             if isempty(doc1) || isempty(doc2)
                 % If doc not found, we can't really recheck file diff properly in the same way,
