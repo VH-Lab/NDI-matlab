@@ -73,7 +73,7 @@ classdef testDiff < matlab.unittest.TestCase
             testCase.verifyFalse(are_equal, 'Documents with different IDs should differ by default.');
 
             % Ignore base.id
-            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id', 'base.id'});
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id', 'base.id', 'base.datestamp'});
             testCase.verifyTrue(are_equal, 'Documents should be equal if ID is ignored.');
         end
 
