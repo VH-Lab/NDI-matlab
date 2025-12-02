@@ -125,10 +125,6 @@ classdef diffTest < matlab.unittest.TestCase
 
             S1 = ndi.session.dir('ref1', tempDir1);
 
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
-            S1.database_add(doc1);
-            fixed_id = doc1.id();
-
             % Create S2 as copy
             delete(S1);
             tempDir2 = tempname;
@@ -137,11 +133,11 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
-            % Modify doc in S2
-            % First remove the old one (which is identical to S1's)
-            S2.database_rm(fixed_id);
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            S1.database_add(doc1);
+            fixed_id = doc1.id();
 
-            % Add modified version
+            % Add modified version to S2
             doc2_props = doc1.document_properties;
             doc2_props.demoNDI.value = 2;
             doc2 = ndi.document(doc2_props);
@@ -173,11 +169,6 @@ classdef diffTest < matlab.unittest.TestCase
             fwrite(fid1, 'content1', 'char');
             fclose(fid1);
 
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
-            doc1 = doc1.add_file('filename1.ext', file1_path);
-            S1.database_add(doc1);
-            fixed_id = doc1.id();
-
             % Create S2 as copy
             delete(S1);
             tempDir2 = tempname;
@@ -186,9 +177,10 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
-            % In S2, modify the file content.
-            % We must update S2's doc to point to a new file in S2's dir because copyfile doesn't update paths.
-            S2.database_rm(fixed_id);
+            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = doc1.add_file('filename1.ext', file1_path);
+            S1.database_add(doc1);
+            fixed_id = doc1.id();
 
             file2_path = fullfile(tempDir2, 'file2.bin');
             fid2 = fopen(file2_path, 'w');
