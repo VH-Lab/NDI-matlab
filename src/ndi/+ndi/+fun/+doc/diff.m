@@ -1,14 +1,15 @@
 function [are_equal, report] = diff(doc1, doc2, options)
 % DIFF - Compare two NDI documents for equality.
 %
-%   [ARE_EQUAL, REPORT] = ndi.fun.doc.diff(DOC1, DOC2, 'ignoreFields', {'base.session_id'}, 'checkFiles', true)
+%   [ARE_EQUAL, REPORT] = ndi.fun.doc.diff(DOC1, DOC2, 'ignoreFields', {'base.session_id'}, 'checkFileList', true, 'checkFiles', false, 'session1', [], 'session2', [])
 %
 %   Compares two NDI documents (DOC1, DOC2) and determines if they are equal
 %   in content. This comparison is more robust than simple equality checks as
 %   it handles:
 %   1. Order-independent comparison of 'depends_on' fields.
-%   2. Order-independent comparison of file lists (if 'checkFiles' is true).
+%   2. Order-independent comparison of file lists (if 'checkFileList' is true).
 %   3. Exclusion of specific fields (like 'base.session_id').
+%   4. Binary comparison of files (if 'checkFiles' is true).
 %
 %   Inputs:
 %   DOC1, DOC2 - ndi.document objects to compare.
@@ -23,15 +24,27 @@ function [are_equal, report] = diff(doc1, doc2, options)
 %   'ignoreFields' - Cell array of strings specifying fields to ignore in the
 %                    comparison. Default: {'base.session_id'}.
 %                    Fields can be nested using dot notation (e.g., 'base.id').
-%   'checkFiles'   - Logical. If true (default), checks if the file lists
+%   'checkFileList'- Logical. If true (default), checks if the file lists
 %                    in the 'files' property contain the same file names.
-%                    It does NOT compare the binary content of the files.
+%   'checkFiles'   - Logical. If true (default false), checks if the binary content
+%                    of the files matches. If true, session1 and session2 MUST be provided.
+%   'session1'     - ndi.session object for doc1. Required if checkFiles is true.
+%   'session2'     - ndi.session object for doc2. Required if checkFiles is true.
 
     arguments
         doc1 (1,1) ndi.document
         doc2 (1,1) ndi.document
         options.ignoreFields (1,:) cell = {'base.session_id'}
-        options.checkFiles (1,1) logical = true
+        options.checkFileList (1,1) logical = true
+        options.checkFiles (1,1) logical = false
+        options.session1
+        options.session2
+    end
+
+    if options.checkFiles
+        if ~isfield(options, 'session1') || isempty(options.session1) || ~isfield(options, 'session2') || isempty(options.session2)
+            error('If checkFiles is true, session1 and session2 must be provided.');
+        end
     end
 
     are_equal = true;
@@ -100,14 +113,14 @@ function [are_equal, report] = diff(doc1, doc2, options)
         props2 = rmfield(props2, 'files');
     end
 
-    if options.checkFiles
+    if options.checkFileList
         fList1 = {};
         fList2 = {};
 
         if isfield(files1, 'file_list'), fList1 = files1.file_list; end
         if isfield(files2, 'file_list'), fList2 = files2.file_list; end
 
-        % Ensure column vectors for consistancy
+        % Ensure column vectors for consistency
         fList1 = sort(fList1(:));
         fList2 = sort(fList2(:));
 
@@ -121,6 +134,65 @@ function [are_equal, report] = diff(doc1, doc2, options)
     if ~isequaln(props1, props2)
         are_equal = false;
         details{end+1} = 'Document properties do not match.';
+    end
+
+    % 5. Check binary file content if requested
+    if options.checkFiles
+        fList1 = doc1.current_file_list();
+        fList2 = doc2.current_file_list();
+        all_fnames = union(fList1, fList2);
+
+        for f = 1:numel(all_fnames)
+            fname = all_fnames{f};
+
+            % Check presence in both docs
+            [in1, ~, ~, fuid1] = doc1.is_in_file_list(fname);
+            [in2, ~, ~, fuid2] = doc2.is_in_file_list(fname);
+
+            if in1 ~= in2
+                are_equal = false;
+                if in1
+                    details{end+1} = sprintf('File %s present in doc1 but not doc2.', fname);
+                else
+                    details{end+1} = sprintf('File %s present in doc2 but not doc1.', fname);
+                end
+                continue; % Cannot compare content if not in both
+            end
+
+            % Compare content
+            if in1 && in2
+                file_obj1 = [];
+                file_obj2 = [];
+                try
+                    file_obj1 = options.session1.database_openbinarydoc(doc1, fname);
+                    fseek(file_obj1.fid, 0, 'eof');
+                    size1 = ftell(file_obj1.fid);
+                    fseek(file_obj1.fid, 0, 'bof'); % Rewind
+
+                    file_obj2 = options.session2.database_openbinarydoc(doc2, fname);
+                    fseek(file_obj2.fid, 0, 'eof');
+                    size2 = ftell(file_obj2.fid);
+                    fseek(file_obj2.fid, 0, 'bof'); % Rewind
+
+                    if size1 ~= size2
+                        are_equal = false;
+                        details{end+1} = sprintf('File %s size mismatch: %d vs %d.', fname, size1, size2);
+                    else
+                        [are_identical, diff_output] = ndi.util.getHexDiffFromFileObj(file_obj1, file_obj2);
+                        if ~are_identical
+                            are_equal = false;
+                            details{end+1} = sprintf('File %s content mismatch.', fname);
+                        end
+                    end
+                catch e
+                    are_equal = false;
+                    details{end+1} = sprintf('Error comparing file %s: %s', fname, e.message);
+                end
+
+                if ~isempty(file_obj1), options.session1.database_closebinarydoc(file_obj1); end
+                if ~isempty(file_obj2), options.session2.database_closebinarydoc(file_obj2); end
+            end
+        end
     end
 
     report.mismatch = ~are_equal;

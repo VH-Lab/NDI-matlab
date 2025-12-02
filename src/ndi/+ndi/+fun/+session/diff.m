@@ -179,7 +179,7 @@ function [report] = diff(S1,S2, options)
         doc1 = d1_map(doc_id);
         doc2 = d2_map(doc_id);
 
-        [are_equal, diff_report] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id'}, 'checkFiles', true);
+        [are_equal, diff_report] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id'}, 'checkFileList', true);
 
         if ~are_equal
             mismatched_docs_list{end+1} = struct('id', doc_id, 'mismatch', strjoin(diff_report.details, ' '));

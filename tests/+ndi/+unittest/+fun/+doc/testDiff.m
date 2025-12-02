@@ -116,20 +116,76 @@ classdef testDiff < matlab.unittest.TestCase
             props2.files.file_list = {'fileB.txt', 'fileA.txt'}; % Swapped
             doc2 = ndi.document(props2);
 
-            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2, 'checkFiles', true);
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2, 'checkFileList', true);
             testCase.verifyTrue(are_equal, 'File list order should not affect equality.');
 
             props3 = props1;
             props3.files.file_list = {'fileA.txt'}; % Missing one
             doc3 = ndi.document(props3);
 
-            [are_equal, report] = ndi.fun.doc.diff(doc1, doc3, 'checkFiles', true);
+            [are_equal, report] = ndi.fun.doc.diff(doc1, doc3, 'checkFileList', true);
             testCase.verifyFalse(are_equal, 'Mismatched file lists should be detected.');
             testCase.verifyTrue(any(contains(report.details, 'File lists')), 'Report should mention file lists.');
 
-            % Test checkFiles = false
-            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc3, 'checkFiles', false);
-            testCase.verifyTrue(are_equal, 'Should be equal if checkFiles is false and other props match.');
+            % Test checkFileList = false
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc3, 'checkFileList', false);
+            testCase.verifyTrue(are_equal, 'Should be equal if checkFileList is false and other props match.');
+        end
+
+        function testBinaryFileComparison(testCase)
+            % Create documents with files
+            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            file1_path = fullfile(testCase.TempDir, 'file1.bin');
+            fid1 = fopen(file1_path, 'w');
+            fwrite(fid1, 'content1', 'char');
+            fclose(fid1);
+            doc1 = doc1.add_file('filename1.ext', file1_path);
+            testCase.Session.database_add(doc1);
+
+            % Clone doc1 to doc2 in a "second session" (using same session for simplicity of file access, but different docs)
+            % Ideally we would use two sessions, but we can mock it by passing the same session twice
+            % However, we need the documents to be distinct objects.
+            doc2 = ndi.document(doc1.document_properties);
+
+            % Create a different file for doc2
+            file2_path = fullfile(testCase.TempDir, 'file2.bin');
+            fid2 = fopen(file2_path, 'w');
+            fwrite(fid2, 'content2', 'char'); % Different content
+            fclose(fid2);
+
+            % We need to hack the file location for doc2 because reset_file_info clears it
+            doc2 = doc2.reset_file_info();
+            doc2 = doc2.add_file('filename1.ext', file2_path);
+
+            % Add doc2 to database so we can open it
+            % Note: In real life we can't add same ID twice. Here we just need the file access to work.
+            % But database_openbinarydoc works on doc objects.
+            % Let's use a second session to be proper.
+            tempDir2 = [testCase.TempDir '_2'];
+            mkdir(tempDir2);
+            S2 = ndi.session.dir('test_session_2', tempDir2);
+            S2.database_add(doc2);
+
+            % Test mismatch detection
+            [are_equal, report] = ndi.fun.doc.diff(doc1, doc2, 'checkFiles', true, 'session1', testCase.Session, 'session2', S2);
+            testCase.verifyFalse(are_equal, 'Files with different content should be detected.');
+            testCase.verifyTrue(any(contains(report.details, 'content mismatch')), 'Report should mention content mismatch.');
+
+            % Test identical files
+            file3_path = fullfile(tempDir2, 'file3.bin');
+            fid3 = fopen(file3_path, 'w');
+            fwrite(fid3, 'content1', 'char'); % Same content as file1
+            fclose(fid3);
+            doc3 = doc2.reset_file_info();
+            doc3 = doc3.add_file('filename1.ext', file3_path);
+            S2.database_rm(doc2.id()); % Remove old doc2 to avoid conflict
+            S2.database_add(doc3);
+
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc3, 'checkFiles', true, 'session1', testCase.Session, 'session2', S2);
+            testCase.verifyTrue(are_equal, 'Files with identical content should match.');
+
+            % Clean up
+            rmdir(tempDir2, 's');
         end
     end
 end
