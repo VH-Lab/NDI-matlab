@@ -179,30 +179,10 @@ function [report] = diff(S1,S2, options)
         doc1 = d1_map(doc_id);
         doc2 = d2_map(doc_id);
 
-        mismatches = {};
+        [are_equal, diff_report] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id'}, 'checkFiles', true);
 
-        props1 = doc1.document_properties;
-        props2 = doc2.document_properties;
-
-        if isfield(props1, 'files')
-            props1 = rmfield(props1, 'files');
-        end
-        if isfield(props2, 'files')
-            props2 = rmfield(props2, 'files');
-        end
-
-        if isfield(props1.base, 'session_id')
-            props1.base = rmfield(props1.base, 'session_id');
-        end
-        if isfield(props2.base, 'session_id')
-            props2.base = rmfield(props2.base, 'session_id');
-        end
-
-        if ~isequaln(props1, props2)
-            mismatches{end+1} = 'Document properties do not match.';
-        end
-        if ~isempty(mismatches)
-            mismatched_docs_list{end+1} = struct('id', doc_id, 'mismatch', strjoin(mismatches, ' '));
+        if ~are_equal
+            mismatched_docs_list{end+1} = struct('id', doc_id, 'mismatch', strjoin(diff_report.details, ' '));
         end
 
         fnames1 = doc1.current_file_list();
