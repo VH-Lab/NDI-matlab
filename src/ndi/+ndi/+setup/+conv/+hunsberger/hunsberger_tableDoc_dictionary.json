@@ -1,0 +1,30 @@
+{
+  "ID": "EMPTY:subject local identifier",
+  "Tg": "MI:tag",
+  "AvgFreezingDay2": "",
+  "BrainRegion": "",
+  "BrainRegionName": "",
+  "BrainRegionOntology": "",
+  "eYFPAvg": "",
+  "cFosAvg": "",
+  "eYFPEngramAvg": "",
+  "cFosEngramAvg": "",
+  "Cohort": "NCIT:Cohort",
+  "AgeDays": "",
+  "BoxNumber": "",
+  "CFCFreezing": "",
+  "BlockType": "",
+  "BlockMinute": "",
+  
+  
+  
+  "Today": "",
+  "InitialWeightTraining": "EMPTY:initial weight: training",
+  "DrugAmount_ml_": "",
+  "TotalDrug": "",
+  "InjectionTime": "",
+  "CFCDay1_time_": "",
+  "injectionTimeDay2": "",
+  "CFCDay2": "",
+  "Timeline": ""
+}
