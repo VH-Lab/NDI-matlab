@@ -17,11 +17,15 @@ classdef diffTest < matlab.unittest.TestCase
             S1.database_add(doc1);
 
             % Create S2 as a COPY of S1
+            % We need to close the database before copying to avoid locking issues
+            delete(S1);
+
             tempDir2 = tempname;
-            % To copy efficiently, we must copy the content.
             copyfile(tempDir1, tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
+            % Re-open S1
+            S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
             % Ensure IDs match (they should if logic works)
@@ -52,15 +56,20 @@ classdef diffTest < matlab.unittest.TestCase
             % Setup S1
             S1 = ndi.session.dir('ref1', tempDir1);
 
-            % Create S2 as a copy of S1 (initially identical)
-            tempDir2 = tempname;
-            copyfile(tempDir1, tempDir2);
-            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
-            S2 = ndi.session.dir('ref1', tempDir2);
-
             % Add a document only to S1
             doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
             S1.database_add(doc1);
+
+            % Create S2 as a copy of S1 (initially identical)
+            delete(S1);
+            tempDir2 = tempname;
+            copyfile(tempDir1, tempDir2);
+            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+            S1 = ndi.session.dir('ref1', tempDir1);
+            S2 = ndi.session.dir('ref1', tempDir2);
+
+            % Remove the document from S2
+            S2.database_rm(doc1.id());
 
             % Call the diff function
             report = ndi.fun.session.diff(S1, S2);
@@ -72,10 +81,7 @@ classdef diffTest < matlab.unittest.TestCase
             testCase.verifyFalse(any(strcmp(doc1.id(), report.documentsInBOnly)), 'The added document was found in B only.');
 
             % Check that NO common docs have mismatches (doc1 is not common)
-            % We generally don't check verifyEmpty(mismatchedDocuments) because internal docs might mismatch if session logic changes.
-            % But we can verify that doc1 is NOT in mismatched documents (which implies it's not in both).
-            mismatchedIDs = {report.mismatchedDocuments.id};
-            testCase.verifyFalse(any(strcmp(doc1.id(), mismatchedIDs)), 'Our doc should not have a mismatch.');
+            testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
         end
 
         function testDocumentsInBOnly(testCase)
@@ -88,9 +94,11 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
 
             % Create S2 as a copy
+            delete(S1);
             tempDir2 = tempname;
             copyfile(tempDir1, tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+            S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
             % Add a document only to S2
@@ -122,9 +130,11 @@ classdef diffTest < matlab.unittest.TestCase
             fixed_id = doc1.id();
 
             % Create S2 as copy
+            delete(S1);
             tempDir2 = tempname;
             copyfile(tempDir1, tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+            S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
             % Modify doc in S2
@@ -169,9 +179,11 @@ classdef diffTest < matlab.unittest.TestCase
             fixed_id = doc1.id();
 
             % Create S2 as copy
+            delete(S1);
             tempDir2 = tempname;
             copyfile(tempDir1, tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
+            S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
             % In S2, modify the file content.

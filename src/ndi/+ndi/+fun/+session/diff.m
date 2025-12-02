@@ -92,6 +92,7 @@ function [report] = diff(S1,S2, options)
                 file_obj1 = S1.database_openbinarydoc(doc1{1}, entry.documentA_fname);
                 fseek(file_obj1.fid, 0, 'eof');
                 file_diff_entry.documentA_size = ftell(file_obj1.fid);
+                fseek(file_obj1.fid, 0, 'bof');
             catch e
                 file_diff_entry.documentA_errormsg = e.message;
             end
@@ -100,6 +101,7 @@ function [report] = diff(S1,S2, options)
                 file_obj2 = S2.database_openbinarydoc(doc2{1}, entry.documentB_fname);
                 fseek(file_obj2.fid, 0, 'eof');
                 file_diff_entry.documentB_size = ftell(file_obj2.fid);
+                fseek(file_obj2.fid, 0, 'bof');
             catch e
                 file_diff_entry.documentB_errormsg = e.message;
             end
@@ -189,6 +191,13 @@ function [report] = diff(S1,S2, options)
             props2 = rmfield(props2, 'files');
         end
 
+        if isfield(props1.base, 'session_id')
+            props1.base = rmfield(props1.base, 'session_id');
+        end
+        if isfield(props2.base, 'session_id')
+            props2.base = rmfield(props2.base, 'session_id');
+        end
+
         if ~isequaln(props1, props2)
             mismatches{end+1} = 'Document properties do not match.';
         end
@@ -226,6 +235,7 @@ function [report] = diff(S1,S2, options)
                     file_obj1 = S1.database_openbinarydoc(doc1, fname);
                     fseek(file_obj1.fid, 0, 'eof');
                     file_diff_entry.documentA_size = ftell(file_obj1.fid);
+                    fseek(file_obj1.fid, 0, 'bof');
                 catch e
                     file_diff_entry.documentA_errormsg = e.message;
                 end
@@ -238,6 +248,7 @@ function [report] = diff(S1,S2, options)
                     file_obj2 = S2.database_openbinarydoc(doc2, fname);
                     fseek(file_obj2.fid, 0, 'eof');
                     file_diff_entry.documentB_size = ftell(file_obj2.fid);
+                    fseek(file_obj2.fid, 0, 'bof');
                 catch e
                     file_diff_entry.documentB_errormsg = e.message;
                 end
