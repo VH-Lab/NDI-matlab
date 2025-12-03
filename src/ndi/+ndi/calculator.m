@@ -400,6 +400,31 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
         end % calculate()
 
+        function [docs, doc_output, doc_expected_output] = generate_mock_docs(ndi_calculator_obj, scope, number_of_tests, options)
+            % GENERATE_MOCK_DOCS - generate mock documents for testing
+            %
+            % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(NDI_CALCULATOR_OBJ, SCOPE, NUMBER_OF_TESTS, 'PARAM', VALUE, ...)
+            %
+            % The generate_mock_docs method is a testing utility present in NDI visualization calculator classes
+            % (e.g., contrast_tuning, oridir_tuning, spatial_frequency_tuning, speed_tuning, temporal_frequency_tuning).
+            % It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
+            % which can then be compared against expected outputs.
+            %
+            % This blank method, for the superclass, returns empty for all inputs.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                scope (1,:) char
+                number_of_tests (1,1) double
+                options.generate_expected_docs (1,1) logical = false
+                options.specific_test_inds (1,:) double = []
+            end
+
+            docs = {};
+            doc_output = {};
+            doc_expected_output = {};
+        end % generate_mock_docs()
+
         function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
             % PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
             %
