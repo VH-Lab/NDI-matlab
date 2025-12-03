@@ -1,4 +1,4 @@
-function [docs] = stimulus_response(S, parameter_struct, independent_variables, X, R, noise, reps, varargin)
+function [docs] = stimulus_response(S, parameter_struct, independent_variables, X, R, noise, reps, options)
     % ndi.mock.fun.stimulus_response- make a set of mock documents to simulate a stimulus and spiking response
     %
     % [DOCS] = ndi.mock.fun.stimulus_presentation(ndi_session_obj, parameter_struct, ...
@@ -47,9 +47,30 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     %    docs = ndi.mock.fun.stimulus_response(S,param_struct, independent_variable, X, R, noise, reps);
     %
 
+    arguments
+        S (1,1) ndi.session
+        parameter_struct (1,:) struct
+        independent_variables (1,:) cell
+        X (:,:) double
+        R (:,1) double
+        noise (1,1) double
+        reps (1,1) double
+        options.stim_duration (1,1) double = 2
+        options.interstimulus_interval (1,1) double = 3
+        options.stim_duration_min (1,1) double = 0.2
+        options.epochid (1,:) char = 'mockepoch'
+    end
+
     mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
+
+    % Convert options to name-value pairs for forwarding
+    fn = fieldnames(options);
+    vals = struct2cell(options);
+    nv_pairs = [fn(:)'; vals(:)'];
+    nv_pairs = nv_pairs(:)';
+
     [stim_pres_doc,spiketimes] = ndi.mock.fun.stimulus_presentation(S,mock_output.mock_stimulator.id(),...
-        parameter_struct, independent_variables, X, R, noise, reps);
+        parameter_struct, independent_variables, X, R, noise, reps, nv_pairs{:});
 
     S.database_add(stim_pres_doc);
 
@@ -59,11 +80,12 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
 
     end_time = presentation_time(end).stimclose + 5;
 
-    mock_output.mock_spikes.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
+    t0_t1_matrix = [ [0 end_time]' [0 end_time]'];
+    mock_output.mock_spikes.addepoch('mockepoch','dev_local_time,utc', t0_t1_matrix, ...
         spiketimes, ones(size(spiketimes)) );
 
     % add a blank epoch so that the stimulator has an epoch to connect with stim_pres_doc
-    mock_output.mock_stimulator.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
+    mock_output.mock_stimulator.addepoch('mockepoch','dev_local_time,utc', t0_t1_matrix, ...
         [], [] );
 
     stimulator_doc = mock_output.mock_stimulator.load_element_doc();
@@ -86,6 +108,7 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     for i=1:numel(stim_response_doc)
         for j=1:numel(stim_response_doc{i})
             parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{i}{j}.id());
+            parameters.depends_on = did.datastructures.emptystruct('name','value');
             tc_docs{end+1} = tc.run('Replace',parameters);
         end
     end
