@@ -11,14 +11,14 @@ function results = unittestsbutnotcloud(options)
 %
 % Input Arguments:
 %   OPTIONS - Optional name-value pairs:
-%       'Verbosity' - Level of detail for output (default: matlab.automation.Verbosity.Concise)
+%       'Verbosity' - Level of detail for output (default: matlab.automation.Verbosity.Detailed)
 %                     See matlab.automation.Verbosity
 %
 % Output Arguments:
 %   RESULTS - The test results (array of TestResult objects)
 
 arguments
-    options.Verbosity (1,1) matlab.automation.Verbosity = matlab.automation.Verbosity.Concise;
+    options.Verbosity (1,1) matlab.automation.Verbosity = matlab.automation.Verbosity.Detailed;
 end
 
 unitTestPath = fullfile(ndi.toolboxdir,'..','..','tests','+ndi','+unittest');
