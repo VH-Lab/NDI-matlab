@@ -9,6 +9,10 @@ function clear(S)
     % or elements based on those subjects and analyses of those probes.
     %
 
+    arguments
+        S (1,1) ndi.session
+    end
+
     s = S.database_search(ndi.query('subject.local_identifier','contains_string','mock'));
 
     S.database_rm(s);

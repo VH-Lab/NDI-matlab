@@ -1,4 +1,4 @@
-function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_id, parameter_struct, independent_variables, X, R, noise, reps, varargin)
+function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_id, parameter_struct, independent_variables, X, R, noise, reps, options)
     % ndi.mock.fun.stimulus_presentation - make a mock stimulus presentation document base
     %
     % [STIM_PRES_DOC,SPIKETIMES] = ndi.mock.fun.stimulus_presentation(S, stimulus_element_id, parameter_struct_array, ...
@@ -52,13 +52,26 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
     %
     %
 
-    stim_duration = 10;
-    interstimulus_interval = 5;
-    stim_duration_min = 0.2;
-    epochid = 'mockepoch';
-    t_eps = 1e-4; % time epsilon, make sure we stay within the edges of the stimulus
+    arguments
+        S (1,1) ndi.session
+        stimulus_element_id (1,:) char
+        parameter_struct (1,:) struct
+        independent_variables (1,:) cell
+        X (:,:) double
+        R (:,1) double
+        noise (1,1) double
+        reps (1,1) double
+        options.stim_duration (1,1) double = 10
+        options.interstimulus_interval (1,1) double = 5
+        options.stim_duration_min (1,1) double = 0.2
+        options.epochid (1,:) char = 'mockepoch'
+    end
 
-    vlt.data.assign(varargin{:});
+    stim_duration = options.stim_duration;
+    interstimulus_interval = options.interstimulus_interval;
+    stim_duration_min = options.stim_duration_min;
+    epochid = options.epochid;
+    t_eps = 1e-4; % time epsilon, make sure we stay within the edges of the stimulus
 
     stimulus_N = size(X,1);
     stims = vlt.data.colvec(1:stimulus_N);
