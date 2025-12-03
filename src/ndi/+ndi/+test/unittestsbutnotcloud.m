@@ -25,8 +25,10 @@ if isempty(testsToRun)
     return;
 end
 
-% Use a TestRunner with text output to generate the standard report
-runner = matlab.unittest.TestRunner.withTextOutput;
-runner.run(testsToRun);
+% Extract the names of the tests to run
+testNames = {testsToRun.Name};
+
+% Run the tests using runtests, which generates a summary report
+runtests(testNames);
 
 end
