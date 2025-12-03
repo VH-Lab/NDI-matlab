@@ -80,11 +80,12 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
 
     end_time = presentation_time(end).stimclose + 5;
 
-    mock_output.mock_spikes.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
+    t0_t1_matrix = [ [0 end_time]' [0 end_time]'];
+    mock_output.mock_spikes.addepoch('mockepoch','dev_local_time,utc', t0_t1_matrix, ...
         spiketimes, ones(size(spiketimes)) );
 
     % add a blank epoch so that the stimulator has an epoch to connect with stim_pres_doc
-    mock_output.mock_stimulator.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
+    mock_output.mock_stimulator.addepoch('mockepoch','dev_local_time,utc', t0_t1_matrix, ...
         [], [] );
 
     stimulator_doc = mock_output.mock_stimulator.load_element_doc();
