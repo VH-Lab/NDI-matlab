@@ -62,8 +62,6 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     end
 
     mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
-    mock_output.mock_stimulator
-    mock_output.mock_spikes
 
     % Convert options to name-value pairs for forwarding
     fn = fieldnames(options);
