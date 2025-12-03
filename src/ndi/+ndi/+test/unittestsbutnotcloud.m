@@ -17,6 +17,14 @@ TL=matlab.unittest.TestSuite.fromFolder(unitTestPath, 'IncludeSubfolders', true)
 % Note: Test names usually include the class and method name (e.g., 'pkg.Class/method').
 % This is safer than [TL.TestClass] which can be misaligned if some tests are not class-based.
 isCloudTest = contains({TL.Name}, '.cloud.');
-run(TL(~isCloudTest));
+
+testsToRun = TL(~isCloudTest);
+
+if isempty(testsToRun)
+    warning('No tests found to run (excluding cloud tests).');
+    return;
+end
+
+runtests(testsToRun);
 
 end
