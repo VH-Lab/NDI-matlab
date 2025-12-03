@@ -28,7 +28,11 @@ NDIcalc-REPONAME-matlab/
 │           ├── docs/
 │           │   ├── calculator1.docs.general.txt
 │           │   ├── calculator1.docs.output.txt
-│           │   └── calculator1.docs.searching.txt
+│           │   ├── calculator1.docs.searching.txt
+│           │   ├── calculator2.docs.general.txt
+│           │   ├── calculator2.docs.output.txt
+│           │   ├── calculator2.docs.searching.txt
+│           │   └── ...
 │           ├── calculator1.m
 │           ├── calculator2.m
 │           └── ...
