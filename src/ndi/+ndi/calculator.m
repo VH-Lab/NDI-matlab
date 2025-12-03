@@ -1057,9 +1057,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
             [parentdir, appname] = fileparts(w);
 
-            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples']
+            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
 
-            d = dir([dirname filesep '*.txt'])
+            d = dir([dirname filesep '*.txt']);
 
             contents = {};
             names = {};

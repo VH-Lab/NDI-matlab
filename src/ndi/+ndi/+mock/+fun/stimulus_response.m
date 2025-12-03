@@ -62,12 +62,16 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     end
 
     mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
+    mock_output.mock_stimulator
+    mock_output.mock_spikes
 
     % Convert options to name-value pairs for forwarding
     fn = fieldnames(options);
     vals = struct2cell(options);
     nv_pairs = [fn(:)'; vals(:)'];
     nv_pairs = nv_pairs(:)';
+
+    S.cache.clear();
 
     [stim_pres_doc,spiketimes] = ndi.mock.fun.stimulus_presentation(S,mock_output.mock_stimulator.id(),...
         parameter_struct, independent_variables, X, R, noise, reps, nv_pairs{:});
