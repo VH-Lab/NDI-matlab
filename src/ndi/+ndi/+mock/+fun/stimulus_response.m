@@ -108,6 +108,7 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     for i=1:numel(stim_response_doc)
         for j=1:numel(stim_response_doc{i})
             parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{i}{j}.id());
+            parameters.depends_on = did.datastructures.emptystruct('name','value');
             tc_docs{end+1} = tc.run('Replace',parameters);
         end
     end
