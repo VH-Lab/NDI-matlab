@@ -1,4 +1,4 @@
-function [docs] = stimulus_response(S, parameter_struct, independent_variables, X, R, noise, reps, varargin)
+function [docs] = stimulus_response(S, parameter_struct, independent_variables, X, R, noise, reps, options)
     % ndi.mock.fun.stimulus_response- make a set of mock documents to simulate a stimulus and spiking response
     %
     % [DOCS] = ndi.mock.fun.stimulus_presentation(ndi_session_obj, parameter_struct, ...
@@ -47,9 +47,30 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     %    docs = ndi.mock.fun.stimulus_response(S,param_struct, independent_variable, X, R, noise, reps);
     %
 
+    arguments
+        S (1,1) ndi.session
+        parameter_struct (1,:) struct
+        independent_variables (1,:) cell
+        X (:,:) double
+        R (:,1) double
+        noise (1,1) double
+        reps (1,1) double
+        options.stim_duration (1,1) double = 2
+        options.interstimulus_interval (1,1) double = 3
+        options.stim_duration_min (1,1) double = 0.2
+        options.epochid (1,:) char = 'mockepoch'
+    end
+
     mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
+
+    % Convert options to name-value pairs for forwarding
+    fn = fieldnames(options);
+    vals = struct2cell(options);
+    nv_pairs = [fn(:)'; vals(:)'];
+    nv_pairs = nv_pairs(:)';
+
     [stim_pres_doc,spiketimes] = ndi.mock.fun.stimulus_presentation(S,mock_output.mock_stimulator.id(),...
-        parameter_struct, independent_variables, X, R, noise, reps);
+        parameter_struct, independent_variables, X, R, noise, reps, nv_pairs{:});
 
     S.database_add(stim_pres_doc);
 

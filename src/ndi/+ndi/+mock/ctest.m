@@ -21,10 +21,10 @@ classdef ctest
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-        function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, varargin)
+        function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, options)
             % test - perform a test of an ndi.calculator object
             %
-            % [B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, VARARGIN)
+            % [B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
             %
             % Perform tests of the calculator for a certain SCOPE.
             %
@@ -61,12 +61,18 @@ classdef ctest
             % | specific_test_inds([])   | Should we specify which tests to run?             |
             % |--------------------------|---------------------------------------------------|
             %
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+                scope (1,:) char {mustBeMember(scope, {'standard', 'low_noise', 'high_noise', 'random_parameters'})}
+                number_of_tests (1,1) double {mustBeInteger, mustBeNonnegative}
+                plot_it (1,1) {mustBeNumericOrLogical}
+                options.specific_test_inds (1,:) double = []
+            end
+
             % Step 1: generate_mock_docs
-            specific_test_inds = [];
-            vlt.data.assign(varargin{:});
             % override number_of_tests
             [docs,doc_output,doc_expected_output] = ...
-                ctest_obj.generate_mock_docs(scope,number_of_tests,'specific_test_inds',specific_test_inds);
+                ctest_obj.generate_mock_docs(scope,number_of_tests,'specific_test_inds',options.specific_test_inds);
 
             % Step 2:
 
@@ -106,11 +112,16 @@ classdef ctest
             %
             % In the abstract class, nothing is done.
 
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+                document (1,1) ndi.document
+            end
+
         end % plot()
 
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-        function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope, number_of_tests)
+        function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope, number_of_tests, options)
             % GENERATE_MOCK_DOCS - generate tests for ndi.calc.* objects
             %
             % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(CSTEST_OBJ,...
@@ -125,6 +136,13 @@ classdef ctest
             %
             % NUMBER_OF_TESTS is the number of tests to generate.
             %
+
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+                scope (1,:) char
+                number_of_tests (1,1) double
+                options.specific_test_inds (1,:) double = []
+            end
 
             docs = {};
             doc_output = {};
@@ -162,6 +180,12 @@ classdef ctest
             %
             % Developer's note: this method should be overridden in each calculator object.
             %
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+                expected_doc (1,1) ndi.document
+                actual_doc (1,1) ndi.document
+                scope (1,:) char
+            end
             b = 1;
             errormsg = '';
         end % compare_mock_docs()
@@ -170,6 +194,10 @@ classdef ctest
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function clean_mock_docs(ctest_obj)
             % CLEAN_MOCK_DOCS - remove mock/test documents
+
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+            end
 
         end % clean_mock_docs()
 
@@ -182,6 +210,9 @@ classdef ctest
             %
             % Return the path of an ndi.calculator object.
             %
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+            end
             w = which(class(ctest_obj));
             [parent,classname,ext] = fileparts(w);
             path = [parent filesep];
@@ -197,6 +228,9 @@ classdef ctest
             % Returns the path to the mock document example outputs.
             % The returned path ends in a file separator.
             %
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+            end
             w = which(class(ctest_obj));
             [parent,classname,ext] = fileparts(w);
             mp = [ctest_obj.calc_path() filesep 'mock' filesep classname filesep];
