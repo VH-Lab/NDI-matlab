@@ -25,6 +25,8 @@ if isempty(testsToRun)
     return;
 end
 
-runtests(testsToRun);
+% Use a TestRunner with text output to generate the standard report
+runner = matlab.unittest.TestRunner.withTextOutput;
+runner.run(testsToRun);
 
 end
