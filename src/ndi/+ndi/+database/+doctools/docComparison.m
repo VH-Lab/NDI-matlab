@@ -254,21 +254,48 @@ classdef docComparison
                         for k=1:numel(comparison_methods)
                             fprintf('%d. %s\n', k, comparison_methods{k});
                         end
+                        fprintf('11. abs difference (scalar) 0.01\n');
+                        fprintf('12. abs difference (scalar) 0.1\n');
+                        fprintf('13. abs difference (scalar) 0.2\n');
+                        fprintf('14. abs difference (scalar) 1\n');
+                        fprintf('15. abs difference (scalar) 2\n');
+                        fprintf('16. abs difference (scalar) 5\n');
+                        fprintf('17. abs difference (scalar) 10\n');
 
                         method_input = input('Enter number: ', 's');
                         method_idx = str2double(method_input);
 
-                        if isnan(method_idx) || method_idx < 1 || method_idx > numel(comparison_methods)
+                        if isnan(method_idx)
                             fprintf('Invalid selection.\n');
                             continue;
                         end
 
-                        newMethod = comparison_methods{method_idx};
+                        newMethod = '';
                         newTol = 0;
+                        skipTolPrompt = false;
+
+                        if method_idx >= 1 && method_idx <= numel(comparison_methods)
+                            newMethod = comparison_methods{method_idx};
+                        elseif method_idx >= 11 && method_idx <= 17
+                            newMethod = 'abs difference';
+                            skipTolPrompt = true;
+                            switch method_idx
+                                case 11, newTol = 0.01;
+                                case 12, newTol = 0.1;
+                                case 13, newTol = 0.2;
+                                case 14, newTol = 1;
+                                case 15, newTol = 2;
+                                case 16, newTol = 5;
+                                case 17, newTol = 10;
+                            end
+                        else
+                             fprintf('Invalid selection.\n');
+                             continue;
+                        end
 
                         % Ask for tolerance if needed
                         % 'none' and 'character exact' don't need tolerance
-                        if ~strcmp(newMethod, 'none') && ~strcmp(newMethod, 'character exact')
+                        if ~skipTolPrompt && ~strcmp(newMethod, 'none') && ~strcmp(newMethod, 'character exact')
                              % Check if current value is vector/matrix
                              is_vector = false;
                              try
