@@ -164,6 +164,132 @@ classdef docComparison
         end
     end
 
+    methods (Static)
+        function obj = interview(doc, existingDocComparison)
+            % INTERVIEW - Interactive interview to create or modify a docComparison object
+            %
+            % OBJ = INTERVIEW(DOC, [EXISTINGDOCCOMPARISON])
+            %
+            % Inputs:
+            %   DOC: An ndi.document object to use as a template or reference.
+            %   EXISTINGDOCCOMPARISON: (Optional) An existing docComparison object to modify.
+            %
+            % If EXISTINGDOCCOMPARISON is not provided, a new one is created from DOC.
+            % The function iterates through each field and asks the user to specify
+            % the comparison method and tolerance.
+            %
+
+            arguments
+                doc (1,1) ndi.document
+                existingDocComparison = []
+            end
+
+            if isempty(existingDocComparison)
+                obj = ndi.database.doctools.docComparison(doc);
+            else
+                obj = existingDocComparison;
+            end
+
+            % Validate existingDocComparison is of correct type if passed
+            if ~isa(obj, 'ndi.database.doctools.docComparison')
+                 error('Second argument must be an ndi.database.doctools.docComparison object.');
+            end
+
+            original_obj = obj; % Keep copy for 'exit' option
+
+            comparison_methods = {'none', 'abs difference', 'difference', ...
+                'abs percent difference', 'percent difference', 'character exact'};
+
+            fprintf('Starting docComparison interview...\n');
+
+            i = 1;
+            while i <= numel(obj.comparisonStruct)
+                item = obj.comparisonStruct(i);
+                name = item.name;
+                currentMethod = item.comparisonMethod;
+                currentTol = item.toleranceAmount;
+
+                % Try to get value from doc for display
+                try
+                    val = obj.getValue(doc.document_properties, name);
+                    if isnumeric(val) || islogical(val)
+                        if numel(val) < 10
+                            valStr = mat2str(val);
+                        else
+                            valStr = sprintf('[%dx%d %s]', size(val,1), size(val,2), class(val));
+                        end
+                    elseif ischar(val) || isstring(val)
+                        valStr = ['"' char(val) '"'];
+                    else
+                        valStr = ['[' class(val) ']'];
+                    end
+                catch
+                    valStr = '<missing in doc>';
+                end
+
+                fprintf('\n------------------------------------------------\n');
+                fprintf('Field: %s\n', name);
+                fprintf('Value in document: %s\n', valStr);
+                fprintf('Current Method: %s\n', currentMethod);
+                fprintf('Current Tolerance: %g\n', currentTol);
+
+                valid_choice = false;
+                while ~valid_choice
+                    choice = input('Change (c), Keep (k), Save and Exit (s), Exit (e)? ', 's');
+
+                    if strcmpi(choice, 'k')
+                        valid_choice = true;
+                        i = i + 1;
+                    elseif strcmpi(choice, 's')
+                        return; % Return current modified obj
+                    elseif strcmpi(choice, 'e')
+                        obj = original_obj; % Revert
+                        return;
+                    elseif strcmpi(choice, 'c')
+                        % Show menu
+                        fprintf('Select comparison method:\n');
+                        for k=1:numel(comparison_methods)
+                            fprintf('%d. %s\n', k, comparison_methods{k});
+                        end
+
+                        method_input = input('Enter number: ', 's');
+                        method_idx = str2double(method_input);
+
+                        if isnan(method_idx) || method_idx < 1 || method_idx > numel(comparison_methods)
+                            fprintf('Invalid selection.\n');
+                            continue;
+                        end
+
+                        newMethod = comparison_methods{method_idx};
+                        newTol = 0;
+
+                        % Ask for tolerance if needed
+                        % 'none' and 'character exact' don't need tolerance
+                        if ~strcmp(newMethod, 'none') && ~strcmp(newMethod, 'character exact')
+                             tol_str = input(sprintf('Enter tolerance for "%s": ', newMethod), 's');
+                             tol_input = str2double(tol_str);
+                             if ~isnan(tol_input)
+                                 newTol = tol_input;
+                             else
+                                 fprintf('Invalid tolerance. Using 0.\n');
+                             end
+                        end
+
+                        % Update object
+                        obj.comparisonStruct(i).comparisonMethod = newMethod;
+                        obj.comparisonStruct(i).toleranceAmount = newTol;
+                        valid_choice = true;
+                        i = i + 1;
+                    else
+                        fprintf('Invalid option.\n');
+                    end
+                end
+            end
+
+            fprintf('Interview completed.\n');
+        end
+    end
+
     methods (Access = private)
         function s = parseStruct(obj, str, prefix)
             s = struct('name', {}, 'comparisonMethod', {}, 'toleranceAmount', {});
