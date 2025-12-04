@@ -114,7 +114,7 @@ classdef buildSession < matlab.unittest.TestCase
 
                 % Create document
                 % Create a blank document first to get the structure
-                doc = ndi.document('demoNDI');
+                doc = ndi.document('demoNDI') + session.newdocument();
 
                 % Modify properties
                 doc_props = doc.document_properties;
