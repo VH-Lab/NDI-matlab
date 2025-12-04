@@ -72,7 +72,7 @@ classdef docComparison
             % structure.
             %
             s.comparisonStruct = obj.comparisonStruct;
-            json_str = char(jsonencode(s));
+            json_str = char(vlt.data.prettyjson(jsonencode(s)));
         end
 
         function obj = addComparisonParameters(obj, scope, comparisonMethod, toleranceAmount)
