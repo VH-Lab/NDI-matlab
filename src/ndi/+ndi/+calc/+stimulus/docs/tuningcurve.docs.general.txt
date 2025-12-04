@@ -1,0 +1,66 @@
+Description:
+The tuningcurve calculator generates tuning curves from stimulus response scalar documents. It allows the user to define one or more independent variables (e.g., 'Contrast', 'Orientation') and filter or select other stimulus parameters to isolate the tuning relationship of interest.
+
+Methodology:
+The calculator processes a `stimulus_response_scalar` document, which contains aggregated responses (e.g., mean firing rate) for various stimulus presentations. The user specifies:
+- `independent_label` and `independent_parameter`: The variables to vary in the tuning curve.
+- `selection`: A set of criteria to filter the stimuli. This can include:
+    - `exact_number`: Match a specific value.
+    - `hasnumericvalue`: Check for existence of a value.
+    - `best`: Select the value that yields the maximum response (using 'empirical_maximum' algorithm).
+    - `deal`: Iterate over all values of a parameter, creating a separate tuning curve document for each value.
+    - `varies`: Ensure a parameter varies.
+    - `constant`: Ensure a parameter is constant.
+
+The calculator uses the `ndi.app.stimulus.tuning_response` application to perform the data extraction and organization. If 'deal' is used, multiple output documents are generated.
+
+References:
+This calculator implements standard tuning curve generation by slicing and dicing multi-dimensional stimulus spaces.
+
+Formulas:
+The 'empirical_maximum' algorithm for 'best' selection finds the stimulus parameter value associated with the highest mean response (or magnitude of complex response).
+
+Examples:
+
+    c = ndi.calc.stimulus.tuningcurve(S);
+    % break out contrast tuning curves
+    clear parameters;
+    parameters.input_parameters.independent_label='Contrast';
+    parameters.input_parameters.independent_parameter = 'contrast';
+    parameters.input_parameters.best_algorithm = 'empirical_maximum';
+    parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
+    parameters.input_parameters.selection = struct('property','angle','operation','exact_number','value','best');
+    parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','exact_number','value','deal');
+    parameters.input_parameters.selection(3) = struct('property','sFrequency','operation','hasfield','value','varies');
+    parameters.input_parameters.selection(4) = struct('property','contrast','operation','hasfield','value','varies');
+    parameters.input_parameters.selection(5) = struct('property','angle','operation','hasfield','value','varies');
+    parameters.depends_on = vlt.data.emptystruct('name','value');
+
+
+    c = ndi.calc.stimulus.tuningcurve(S);
+    % break out orientation tuning curves
+    clear parameters;
+    parameters.input_parameters.independent_label='Orientation';
+    parameters.input_parameters.independent_parameter = 'angle';
+    parameters.input_parameters.best_algorithm = 'empirical_maximum';
+    parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
+    parameters.input_parameters.selection = struct('property','sFrequency','operation','exact_number','value','best');
+    parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','hasfield','value','varies');
+    parameters.input_parameters.selection(3) = struct('property','contrast','operation','exact_number','value',1);
+    parameters.input_parameters.selection(4) = struct('property','angle','operation','hasfield','value','varies');
+    parameters.depends_on = vlt.data.emptystruct('name','value');
+
+
+    c_d = ndi.calc.stimulus.tuningcurve(S);
+    % break out direction tuning curves
+    clear parameters;
+    parameters.input_parameters.independent_label='Direction';
+    parameters.input_parameters.independent_parameter = 'angle';
+    parameters.input_parameters.best_algorithm = 'empirical_maximum';
+    parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
+    parameters.input_parameters.selection = struct('property','tFrequency','operation','exact_number','value','best');
+    parameters.input_parameters.selection(2) = struct('property','tFrequency','operation','hasfield','value','varies');
+    parameters.input_parameters.selection(3) = struct('property','angle','operation','hasfield','value','varies');
+    parameters.input_parameters.selection(4) = struct('property','angle','operation','hasnumericvalue','value',270);
+    parameters.input_parameters.selection(5) = struct('property','loops','operation','hasnumericvalue','value',0);
+    parameters.depends_on = vlt.data.emptystruct('name','value');
