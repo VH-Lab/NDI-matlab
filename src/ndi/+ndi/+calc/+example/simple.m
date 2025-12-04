@@ -35,9 +35,7 @@ classdef simple < ndi.calculator
 
             % Step 3: place the results of the calculator into an NDI document
             doc = ndi.document(ndi_calculator_obj.doc_document_types{1},'simple',simple);
-            for i=1:numel(parameters.depends_on)
-                doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
-            end
+            doc = doc.set_dependency_value('document_id',parameters.depends_on(1).value);
         end % calculate
 
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)
@@ -52,7 +50,9 @@ classdef simple < ndi.calculator
             end
             parameters.input_parameters = struct('answer',5);
             parameters.depends_on = vlt.data.emptystruct('name','value');
-            parameters.query = struct('name','element_id','query',ndi.query('','isa','element',''));
+            % for this example, calculate on all documents (i.e., any
+            % ndi document that is of class 'base', which is all of them)
+            parameters.query = struct('name','document_id','query',ndi.query('','isa','base',''));
         end % default_search_for_input_parameters
 
     end % methods()
