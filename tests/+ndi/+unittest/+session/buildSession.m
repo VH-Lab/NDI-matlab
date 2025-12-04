@@ -120,13 +120,12 @@ classdef buildSession < matlab.unittest.TestCase
                 doc_props = doc.document_properties;
                 doc_props.base.name = docname;
                 doc_props.demoNDI.value = i;
-                doc_props.files.file_list = {docname}; % Override the schema default
 
                 % Recreate document with modified properties
                 doc = ndi.document(doc_props);
 
                 % Add the file info
-                doc = doc.add_file(docname, filename);
+                doc = doc.add_file('filename1.ext', filename);
 
                 % Add to session
                 session.database_add(doc);

@@ -43,7 +43,7 @@ classdef testDatasetBuild < ndi.unittest.dataset.buildDataset
                         % Check content
                         % Read the file associated with the doc
                         % We use database_openbinarydoc
-                        fid = testCase.Dataset.database_openbinarydoc(docs{j}, docname);
+                        fid = testCase.Dataset.database_openbinarydoc(docs{j}, 'filename1.ext');
                         % Read content
                         fseek(fid.fid, 0, 'bof'); % Reset pointer just in case
                         content = fread(fid.fid, inf, '*char')';
