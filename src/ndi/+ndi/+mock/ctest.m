@@ -2,10 +2,6 @@ classdef ctest
     %  ndi.mock.ctest - calculator test class, provides methods for testing ndi.calculator objects
     %
 
-    properties
-        base_scope % structure with the base scope information for the class
-    end % properties
-
     methods
         function ctest_obj = ctest()
             % ndi.mock.ctest - object that provides methods for testing ndi.calculator objects
@@ -14,7 +10,6 @@ classdef ctest
             %
             % Create an ndi.mock.ctest object.
             %
-            ctest_obj.base_scope = ndi.mock.ctest.default_scope();
         end % ctest (creator)
 
         function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, options)
@@ -267,18 +262,5 @@ classdef ctest
     end
 
     methods(Static)
-        function base_scope = default_scope()
-            % ndi.mock.ctest.default_scope - default scope types for ndi.mock.ctest object
-            %
-            % BASE_SCOPE = ndi.mock.ctest.default_scope();
-            %
-            % Return a default base_scope structure for an ndi.mock.ctest object.
-            %
-            %
-            base_scope(1) = struct('scope', 'highSNR', 'autocompare', 1);
-            base_scope(2) = struct('scope', 'lowSNR', 'autocompare', 0);
-
-        end % ndi.mock.ctest.default_scope()
-
     end % static methods
 end
