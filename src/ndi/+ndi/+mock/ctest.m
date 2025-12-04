@@ -69,18 +69,48 @@ classdef ctest
 
             % Step 2:
 
+            % load comparisons
+            test_inds = 1:number_of_tests;
+            if ~isempty(options.specific_test_inds)
+                test_inds = options.specific_test_inds;
+            end
+
+            docComparisons = cell(1,numel(test_inds));
+            for i=1:numel(test_inds)
+                docComparisons{i} = ctest_obj.load_mock_comparison(test_inds(i));
+            end
+
             b = [];
             errormsg = {};
             b_expected = [];
             for i=1:numel(doc_output)
                 for j=1:numel(doc_output)
-                    [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
-                        doc_output{i}, scope);
+                    try
+                        [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
+                            doc_output{i}, scope, docComparisons{j});
+                    catch ME
+                        if strcmp(ME.identifier, 'MATLAB:TooManyInputs')
+                            [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
+                                doc_output{i}, scope);
+                        else
+                            rethrow(ME);
+                        end
+                    end
                     b(i,j) = doesitmatch;
                     b(j,i) = doesitmatch;
                     errormsg{i,j} = theerrormsg;
-                    [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
-                        doc_expected_output{j}, scope);
+
+                    try
+                        [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
+                            doc_expected_output{j}, scope, docComparisons{j});
+                    catch ME
+                        if strcmp(ME.identifier, 'MATLAB:TooManyInputs')
+                            [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
+                                doc_expected_output{j}, scope);
+                        else
+                            rethrow(ME);
+                        end
+                    end
                     b_expected(i,j) = doesitmatch;
                     b_expected(j,i) = doesitmatch;
                 end
@@ -144,10 +174,10 @@ classdef ctest
 
         end % generate_mock_docs()
 
-        function [b, errormsg] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope)
+        function [b, errormsg] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope, docCompare)
             % COMPARE_MOCK_DOCS - compare an expected calculation answer with an actual answer
             %
-            % [B, ERRORMSG] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE)
+            % [B, ERRORMSG] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE, [DOCCOMPARE])
             %
             % Given an NDI document with the expected answer to a calculation (EXPECTED_DOC),
             % the ACTUAL_DOC computed, and the SCOPE (a string: 'highSNR', 'lowSNR'),
@@ -167,7 +197,14 @@ classdef ctest
                 expected_doc (1,1) ndi.document
                 actual_doc (1,1) ndi.document
                 scope (1,:) char
+                docCompare = []
             end
+
+            if strcmpi(scope, 'highSNR') && ~isempty(docCompare) && isa(docCompare, 'ndi.database.doctools.docComparison')
+                [b, errormsg] = docCompare.compare(actual_doc, expected_doc);
+                return;
+            end
+
             b = 1;
             errormsg = '';
         end % compare_mock_docs()
@@ -240,6 +277,36 @@ classdef ctest
             %
             fname = [ctest_obj.mock_path() 'mock.' int2str(number) '.json'];
         end % mock_expected_filename()
+
+        function fname = mock_comparison_filename(ctest_obj, number)
+            % MOCK_COMPARISON_FILENAME - file of expected NDI document comparison for a calculation
+            %
+            % FNAME = MOCK_COMPARISON_FILENAME(CTEST_OBJ, N)
+            %
+            % Return the filename for the Nth stored ndi.database.doctools.docComparison JSON object
+            % that contains the comparison parameters for the Nth standard mock test.
+            %
+            fname = [ctest_obj.mock_path() 'mock.' int2str(number) '.compare.json'];
+        end % mock_comparison_filename()
+
+        function docCompare = load_mock_comparison(ctest_obj, number)
+            % LOAD_MOCK_COMPARISON - load comparison object for a calculation
+            %
+            % DOCCOMPARE = LOAD_MOCK_COMPARISON(CTEST_OBJ, N)
+            %
+            % Load the Nth stored ndi.database.doctools.docComparison object that contains the
+            % comparison parameters for the Nth standard mock test.
+            %
+            % If the file does not exist, empty is returned.
+            %
+            fname = ctest_obj.mock_comparison_filename(number);
+            docCompare = [];
+            if vlt.file.isfile(fname)
+                json_data = vlt.file.textfile2char(fname);
+                docCompare = ndi.database.doctools.docComparison(json_data);
+            end
+
+        end % load_mock_comparison()
 
         function b = write_mock_expected_output(ctest_obj, number, doc)
             % WRITE_MOCK_EXPECTED_OUTPUT - write
