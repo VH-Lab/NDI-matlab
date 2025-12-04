@@ -196,7 +196,7 @@ classdef ctest
             end
 
             if strcmpi(scope, 'highSNR') && ~isempty(docCompare) && isa(docCompare, 'ndi.database.doctools.docComparison')
-                actual_doc_struct = vlt.data.columnize_struct(actual_doc.document_properties);
+                actual_doc_struct = vlt.data.columnize_struct(actual_doc.document_properties, 'columnizeNumericVectors', true);
                 actual_doc_col = ndi.document(actual_doc_struct);
                 [b, errormsg] = docCompare.compare(actual_doc_col, expected_doc);
                 return;
