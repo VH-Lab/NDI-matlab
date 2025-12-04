@@ -7,8 +7,6 @@ classdef ctest
     end % properties
 
     methods
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function ctest_obj = ctest()
             % ndi.mock.ctest - object that provides methods for testing ndi.calculator objects
             %
@@ -19,8 +17,6 @@ classdef ctest
             ctest_obj.base_scope = ndi.mock.ctest.default_scope();
         end % ctest (creator)
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, options)
             % test - perform a test of an ndi.calculator object
             %
@@ -44,12 +40,9 @@ classdef ctest
             %   might have the same expected outcome, which can be useful for
             %   interpreting the results in B.
             %
-            % SCOPE should be one of 'standard', 'low_noise', or 'high_noise'.
-            %   'standard' performs tests on specific hard-coded inputs.
-            %   'low_noise' performs tests on specific hard-coded inputs with small amounts
-            %      of noise added.
-            %   'high_noise' performs tests on specific hard-coded inputs with large amounts
-            %      of noise added.
+            % SCOPE should be one of 'highSNR' or 'lowSNR'.
+            %   'highSNR' performs tests on specific hard-coded inputs.
+            %   'lowSNR' performs tests on specific hard-coded inputs with noise added.
             %
             % NUMBER_OF_TESTS indicates the number of tests to perform.
             % PLOT_IT indicates (0/1) whether or not the results should be plotted.
@@ -63,7 +56,7 @@ classdef ctest
             %
             arguments
                 ctest_obj (1,1) ndi.mock.ctest
-                scope (1,:) char {mustBeMember(scope, {'standard', 'low_noise', 'high_noise', 'random_parameters'})}
+                scope (1,:) char {mustBeMember(scope, {'highSNR', 'lowSNR'})}
                 number_of_tests (1,1) double {mustBeInteger, mustBeNonnegative}
                 plot_it (1,1) {mustBeNumericOrLogical}
                 options.specific_test_inds (1,:) double = []
@@ -101,8 +94,6 @@ classdef ctest
             end
         end % test()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function h = plot(ctest_obj, document)
             % PLOT - plot a calculation test document
             %
@@ -119,20 +110,15 @@ classdef ctest
 
         end % plot()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope, number_of_tests, options)
             % GENERATE_MOCK_DOCS - generate tests for ndi.calc.* objects
             %
             % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(CSTEST_OBJ,...
             %    SCOPE, NUMBER_OF_TESTS)
             %
-            % SCOPE should be one of 'standard', 'low_noise', or 'high_noise'.
-            %   'standard' performs tests on specific hard-coded inputs.
-            %   'low_noise' performs tests on specific hard-coded inputs with small amounts
-            %      of noise added.
-            %   'high_noise' performs tests on specific hard-coded inputs with large amounts
-            %      of noise added.
+            % SCOPE should be one of 'highSNR' or 'lowSNR'.
+            %   'highSNR' performs tests on specific hard-coded inputs.
+            %   'lowSNR' performs tests on specific hard-coded inputs with noise added.
             %
             % NUMBER_OF_TESTS is the number of tests to generate.
             %
@@ -150,25 +136,21 @@ classdef ctest
 
             switch (scope)
 
-                case 'standard'
+                case 'highSNR'
 
-                case 'low-noise'
-
-                case 'high-noise'
+                case 'lowSNR'
 
             end
 
         end % generate_mock_docs()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function [b, errormsg] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope)
             % COMPARE_MOCK_DOCS - compare an expected calculation answer with an actual answer
             %
             % [B, ERRORMSG] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE)
             %
             % Given an NDI document with the expected answer to a calculation (EXPECTED_DOC),
-            % the ACTUAL_DOC computed, and the SCOPE (a string: 'standard', 'low_noise','high_noise'),
+            % the ACTUAL_DOC computed, and the SCOPE (a string: 'highSNR', 'lowSNR'),
             % this function computes whether the ACTUAL_DOC is within an allowed tolerance of
             % EXPECTED_DOC.
             %
@@ -190,8 +172,6 @@ classdef ctest
             errormsg = '';
         end % compare_mock_docs()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function clean_mock_docs(ctest_obj)
             % CLEAN_MOCK_DOCS - remove mock/test documents
 
@@ -201,8 +181,6 @@ classdef ctest
 
         end % clean_mock_docs()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function path = calc_path(ctest_obj)
             % CALC_PATH return the path to the ndi.calculator object
             %
@@ -218,8 +196,6 @@ classdef ctest
             path = [parent filesep];
         end % calc_path
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function mp = mock_path(ctest_obj)
             % MOCK_PATH - return the path to the stored mock example output documents
             %
@@ -236,8 +212,6 @@ classdef ctest
             mp = [ctest_obj.calc_path() filesep 'mock' filesep classname filesep];
         end % mock_path
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function doc = load_mock_expected_output(ctest_obj, number)
             % LOAD_MOCK_EXPECTED_OUTPUT - load expected NDI document answer for a calculation
             %
@@ -256,8 +230,6 @@ classdef ctest
 
         end % load_mock_expected_output()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function fname = mock_expected_filename(ctest_obj, number)
             % MOCK_EXPECTED_FILENAME - file of expected NDI document answer for a calculation
             %
@@ -269,8 +241,6 @@ classdef ctest
             fname = [ctest_obj.mock_path() 'mock.' int2str(number) '.json'];
         end % mock_expected_filename()
 
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function b = write_mock_expected_output(ctest_obj, number, doc)
             % WRITE_MOCK_EXPECTED_OUTPUT - write
             %
@@ -297,8 +267,6 @@ classdef ctest
     end
 
     methods(Static)
-        % 80 character reference; documentation should be within 80 character limit
-        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function base_scope = default_scope()
             % ndi.mock.ctest.default_scope - default scope types for ndi.mock.ctest object
             %
@@ -307,14 +275,8 @@ classdef ctest
             % Return a default base_scope structure for an ndi.mock.ctest object.
             %
             %
-            base_scope(1) = struct(...
-                'scope', 'standard', 'autocompare', 1);
-            base_scope(2) = struct(...
-                'scope', 'random_parameters', 'autocompare', 1);
-            base_scope(3) = struct(...
-                'scope', 'low_noise', 'autocompare', 1);
-            base_scope(4) = struct(...
-                'scope', 'high_noise', 'autocompare', 0);
+            base_scope(1) = struct('scope', 'highSNR', 'autocompare', 1);
+            base_scope(2) = struct('scope', 'lowSNR', 'autocompare', 0);
 
         end % ndi.mock.ctest.default_scope()
 
