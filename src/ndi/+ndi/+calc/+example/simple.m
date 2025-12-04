@@ -24,12 +24,8 @@ classdef simple < ndi.calculator
             %
             arguments
                 ndi_calculator_obj (1,1) ndi.calc.example.simple
-                parameters (1,1) struct
+                parameters (1,1) struct {ndi.validators.mustHaveFields(parameters, {'input_parameters', 'depends_on'})}
             end
-
-            % check inputs
-            if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end
-            if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end
 
             % Step 1: set up the output structure
             simple = parameters;
