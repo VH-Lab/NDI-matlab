@@ -52,9 +52,11 @@ classdef docComparison
             elseif ischar(input_arg) || isstring(input_arg)
                  % JSON input
                  jsonStruct = jsondecode(input_arg);
-                 % Ensure it is a struct array with correct fields.
-                 % (Assumes valid JSON input for now)
-                 obj.comparisonStruct = jsonStruct;
+                 if isstruct(jsonStruct) && isscalar(jsonStruct) && isfield(jsonStruct, 'comparisonStruct')
+                     obj.comparisonStruct = jsonStruct.comparisonStruct;
+                 else
+                     obj.comparisonStruct = jsonStruct;
+                 end
             else
                  % Should not happen given mustBeA, unless user passes struct which is not supported as direct input unless empty
                  error('Input must be an ndi.document or a JSON string.');
@@ -69,7 +71,8 @@ classdef docComparison
             % Returns a JSON character array representation of the comparison
             % structure.
             %
-            json_str = char(jsonencode(obj.comparisonStruct));
+            s.comparisonStruct = obj.comparisonStruct;
+            json_str = char(jsonencode(s));
         end
 
         function obj = addComparisonParameters(obj, scope, comparisonMethod, toleranceAmount)
@@ -96,7 +99,7 @@ classdef docComparison
                 comparisonMethod (1,:) char {mustBeMember(comparisonMethod, ...
                     {'none', 'abs difference', 'difference', 'abs percent difference', ...
                      'percent difference', 'character exact'})}
-                toleranceAmount (1,1) double
+                toleranceAmount double {mustBeNumeric}
             end
 
             % Update matches
@@ -266,12 +269,51 @@ classdef docComparison
                         % Ask for tolerance if needed
                         % 'none' and 'character exact' don't need tolerance
                         if ~strcmp(newMethod, 'none') && ~strcmp(newMethod, 'character exact')
-                             tol_str = input(sprintf('Enter tolerance for "%s": ', newMethod), 's');
-                             tol_input = str2double(tol_str);
-                             if ~isnan(tol_input)
-                                 newTol = tol_input;
+                             % Check if current value is vector/matrix
+                             is_vector = false;
+                             try
+                                 val = obj.getValue(doc.document_properties, name);
+                                 if isnumeric(val) && numel(val) > 1
+                                     is_vector = true;
+                                 end
+                             catch
+                             end
+
+                             use_scalar = true;
+                             if is_vector
+                                 tol_type = input('Tolerance type: Scalar (s) or Matrix (m)? ', 's');
+                                 if strcmpi(tol_type, 'm')
+                                     use_scalar = false;
+                                 end
+                             end
+
+                             if use_scalar
+                                 tol_str = input(sprintf('Enter scalar tolerance for "%s": ', newMethod), 's');
+                                 tol_input = str2double(tol_str);
+                                 if ~isnan(tol_input)
+                                     newTol = tol_input;
+                                 else
+                                     fprintf('Invalid tolerance. Using 0.\n');
+                                 end
                              else
-                                 fprintf('Invalid tolerance. Using 0.\n');
+                                 tol_str = input(sprintf('Enter matrix tolerance for "%s" (e.g. [0.1 0.1]): ', newMethod), 's');
+                                 tol_input = str2num(tol_str); %#ok<ST2NM>
+                                 if isnumeric(tol_input) && ~isempty(tol_input)
+                                     % Check size compatibility
+                                     try
+                                         val = obj.getValue(doc.document_properties, name);
+                                         if isequal(size(val), size(tol_input))
+                                             newTol = tol_input;
+                                         else
+                                              fprintf('Tolerance matrix size does not match value size. Using 0.\n');
+                                         end
+                                     catch
+                                         % Can't check size, accept it
+                                         newTol = tol_input;
+                                     end
+                                 else
+                                     fprintf('Invalid tolerance matrix. Using 0.\n');
+                                 end
                              end
                         end
 
@@ -376,7 +418,11 @@ classdef docComparison
                          msg = 'Result contains NaN (likely from input NaNs).';
                      elseif any(diff_val(:) > tol)
                          pass = false;
-                         msg = sprintf('Abs difference > tolerance %g', tol);
+                         if isscalar(tol)
+                             msg = sprintf('Abs difference > tolerance %g', tol);
+                         else
+                             msg = 'Abs difference > tolerance matrix';
+                         end
                      end
                  case 'difference'
                      diff_val = valA - valE;
@@ -385,7 +431,11 @@ classdef docComparison
                          msg = 'Result contains NaN (likely from input NaNs).';
                      elseif any(diff_val(:) > tol)
                          pass = false;
-                         msg = sprintf('Difference > tolerance %g', tol);
+                         if isscalar(tol)
+                             msg = sprintf('Difference > tolerance %g', tol);
+                         else
+                             msg = 'Difference > tolerance matrix';
+                         end
                      end
                  case 'abs percent difference'
                      denom = valE;
@@ -404,7 +454,11 @@ classdef docComparison
                          msg = 'Result contains NaN (likely from input NaNs).';
                      elseif any(diff_val(:) > tol)
                          pass = false;
-                         msg = sprintf('Abs percent difference > tolerance %g%%', tol);
+                         if isscalar(tol)
+                             msg = sprintf('Abs percent difference > tolerance %g%%', tol);
+                         else
+                             msg = 'Abs percent difference > tolerance matrix';
+                         end
                      end
                  case 'percent difference'
                      denom = valE;
@@ -422,7 +476,11 @@ classdef docComparison
                          msg = 'Result contains NaN (likely from input NaNs).';
                      elseif any(diff_val(:) > tol)
                          pass = false;
-                         msg = sprintf('Percent difference > tolerance %g%%', tol);
+                         if isscalar(tol)
+                             msg = sprintf('Percent difference > tolerance %g%%', tol);
+                         else
+                             msg = 'Percent difference > tolerance matrix';
+                         end
                      end
                  otherwise
                      pass = false;
