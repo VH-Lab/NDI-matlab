@@ -82,4 +82,55 @@ classdef buildSession < matlab.unittest.TestCase
             end
         end
     end
+
+    methods (Static)
+        function session = withDocsAndFiles()
+            % WITHDOCSANDFILES - Create a session with docs and files
+            %
+            % SESSION = WITHDOCSANDFILES()
+            %
+            % Creates an NDI.SESSION.DIR object in a temporary directory
+            % with 5 NDI.DOCUMENTS of type 'demoNDI'.
+            %
+            % The documents have names 'doc_1', 'doc_2', ..., 'doc_5'.
+            % The file content for each is 'doc_1', 'doc_2', etc.
+
+            % Create a temporary directory
+            dirname = tempname;
+            mkdir(dirname);
+
+            % Create the session object
+            session = ndi.session.dir('exp_demo', dirname);
+
+            % Create docs and files
+            for i=1:5
+                docname = sprintf('doc_%d', i);
+                filename = fullfile(dirname, docname);
+
+                % Create file content
+                fid = fopen(filename, 'w');
+                fwrite(fid, docname, 'char');
+                fclose(fid);
+
+                % Create document
+                % Create a blank document first to get the structure
+                doc = ndi.document('demoNDI');
+
+                % Modify properties
+                doc_props = doc.document_properties;
+                doc_props.base.name = docname;
+                doc_props.demoNDI.value = i;
+                doc_props.files.file_list = {docname}; % Override the schema default
+
+                % Recreate document with modified properties
+                doc = ndi.document(doc_props);
+
+                % Add the file info
+                doc = doc.add_file(docname, filename);
+
+                % Add to session
+                session.database_add(doc);
+            end
+        end
+    end
 end
