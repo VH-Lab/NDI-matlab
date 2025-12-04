@@ -104,32 +104,44 @@ classdef buildSession < matlab.unittest.TestCase
 
             % Create docs and files
             for i=1:5
-                docname = sprintf('doc_%d', i);
-                filename = fullfile(dirname, docname);
-
-                % Create file content
-                fid = fopen(filename, 'w');
-                fwrite(fid, docname, 'char');
-                fclose(fid);
-
-                % Create document
-                % Create a blank document first to get the structure
-                doc = ndi.document('demoNDI') + session.newdocument();
-
-                % Modify properties
-                doc_props = doc.document_properties;
-                doc_props.base.name = docname;
-                doc_props.demoNDI.value = i;
-
-                % Recreate document with modified properties
-                doc = ndi.document(doc_props);
-
-                % Add the file info
-                doc = doc.add_file('filename1.ext', filename);
-
-                % Add to session
-                session.database_add(doc);
+                ndi.unittest.session.buildSession.addDocsWithFiles(session, i);
             end
+        end
+
+        function addDocsWithFiles(session, docNumber)
+            % ADDDOCSWITHFILES - Add a document with files to the session
+            %
+            % ADDDOCSWITHFILES(SESSION, DOCNUMBER)
+            %
+            % Adds a document of type 'demoNDI' to the session.
+            % The document has name 'doc_<DOCNUMBER>' and the file content is also 'doc_<DOCNUMBER>'.
+
+            dirname = session.path();
+            docname = sprintf('doc_%d', docNumber);
+            filename = fullfile(dirname, docname);
+
+            % Create file content
+            fid = fopen(filename, 'w');
+            fwrite(fid, docname, 'char');
+            fclose(fid);
+
+            % Create document
+            % Create a blank document first to get the structure
+            doc = ndi.document('demoNDI') + session.newdocument();
+
+            % Modify properties
+            doc_props = doc.document_properties;
+            doc_props.base.name = docname;
+            doc_props.demoNDI.value = docNumber;
+
+            % Recreate document with modified properties
+            doc = ndi.document(doc_props);
+
+            % Add the file info
+            doc = doc.add_file('filename1.ext', filename);
+
+            % Add to session
+            session.database_add(doc);
         end
     end
 end
