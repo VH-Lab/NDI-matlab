@@ -1049,7 +1049,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
             arguments
                 calculator_type (1,:) char {ndi.validators.mustBeClassnameOfType(calculator_type, 'ndi.calculator')}
-                doc_type (1,:) char
+                doc_type (1,:) char {mustBeMember(doc_type, {'general', 'searching for inputs', 'output'})}
             end
 
             switch (lower(doc_type))
