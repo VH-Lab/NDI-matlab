@@ -607,6 +607,11 @@ For production calculators, implement:
 - `generate_mock_docs()` - Create synthetic test data
 - `compare_mock_docs()` - Validate results against expected output
 
+When implementing `generate_mock_docs`, you should support two "scopes" for producing mock documents:
+
+*   **`highSNR`**: This scope corresponds to a high signal-to-noise ratio condition (previously known as "standard"). In this scope, the test checks to make sure that the document produced is highly accurate and matches the output one expects.
+*   **`lowSNR`**: This scope corresponds to a high noise condition (previously known as "high noise"). In this scope, the test makes sure that a document is produced successfully and that an error is not generated.
+
 See `contrast_tuning.m` lines 281-393 for examples.
 
 ## Common Patterns
