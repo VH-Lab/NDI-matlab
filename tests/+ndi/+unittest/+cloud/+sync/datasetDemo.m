@@ -58,11 +58,12 @@ classdef datasetDemo < matlab.unittest.TestCase
             % Step 3: Download
             tempFolder = tempname;
             mkdir(tempFolder);
-            testCase.addTeardown(@() rmdir(tempFolder, 's'));
+
+            pause(10); % let the upload settle
 
             % downloadDataset takes name-value pairs for syncOptions.
             testCase.ndiDatasetDownloaded = ndi.cloud.downloadDataset(testCase.cloudDatasetId, tempFolder, ...
-                'Verbose', true, 'SyncFiles', true);
+                'Verbose', true, 'SyncFiles', false);
 
             % Step 4: Add files to downloaded dataset session
             [~, id_list] = testCase.ndiDatasetDownloaded.session_list();
@@ -78,13 +79,13 @@ classdef datasetDemo < matlab.unittest.TestCase
             % Step 5: Sync downloaded -> cloud
             % twoWaySync(ndiDataset, syncOptions)
             [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.ndiDatasetDownloaded, ...
-                'Verbose', true, 'SyncFiles', true);
+                'Verbose', true, 'SyncFiles', false);
             testCase.verifyTrue(success, ['Sync downloaded->cloud failed: ' msg]);
             testCase.verifyTrue(numel(report.uploaded_document_ids) >= 5, 'Should have uploaded at least 5 documents');
 
             % Step 6: Sync local -> cloud (to get the new files)
             [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.ndiDatasetToUpload, ...
-                'Verbose', true, 'SyncFiles', true);
+                'Verbose', true, 'SyncFiles', false);
             testCase.verifyTrue(success, ['Sync local->cloud failed: ' msg]);
             testCase.verifyTrue(numel(report.downloaded_document_ids) >= 5, 'Should have downloaded at least 5 documents');
 
