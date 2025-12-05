@@ -26,7 +26,8 @@ classdef dir < ndi.dataset
                 % Todo: Switch off specific warnings using warning ids
                 warningStruct = warning('off');
                 resetWarningCleanupObj = onCleanup(@() warning(warningStruct));
-                ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
+                datasetSessionId = ndi.cloud.sync.internal.datasetSessionIdFromDocs(docs);
+                ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name, datasetSessionId);
                 mystruct = struct(ndi_dataset_dir_obj.session); % don't do this but we need to here
                 mystruct.database.add(docs);
                 clear resetWarningCleanupObj
