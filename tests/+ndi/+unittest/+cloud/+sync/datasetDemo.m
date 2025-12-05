@@ -43,12 +43,11 @@ classdef datasetDemo < matlab.unittest.TestCase
     methods (Test)
         function uploadDownloadThenSync(testCase)
             % Step 2: Upload
-            % Note: syncOptions is 2nd argument, name-value pairs follow.
-            % We pass an empty SyncOptions object for defaults, or SyncOptions object if needed.
-            % But uploadDataset expects `syncOptions.?ndi.cloud.sync.SyncOptions` which means a value convertible to SyncOptions.
-            % However, it's defined as a positional argument.
-            syncOptions = ndi.cloud.sync.SyncOptions();
-            [success, testCase.cloudDatasetId, message] = ndi.cloud.uploadDataset(testCase.ndiDatasetToUpload, syncOptions, ...
+            % Pass options as name-value pairs.
+            % User requested 'SyncFiles', false for upload.
+            [success, testCase.cloudDatasetId, message] = ndi.cloud.uploadDataset(testCase.ndiDatasetToUpload, ...
+                'Verbose', true, ...
+                'SyncFiles', false, ...
                 'uploadAsNew', true, ...
                 'skipMetadataEditorMetadata', true, ...
                 'remoteDatasetName', 'Dataset sync test');
@@ -61,16 +60,9 @@ classdef datasetDemo < matlab.unittest.TestCase
             mkdir(tempFolder);
             testCase.addTeardown(@() rmdir(tempFolder, 's'));
 
-            % downloadDataset takes syncOptions as 3rd arg (positional).
-            % It can be a SyncOptions object or name-value pairs (if implicit conversion works, but it's defined as `.?SyncOptions`).
-            % Actually, the definition `syncOptions.?ndi.cloud.sync.SyncOptions` allows passing a struct or name-value args if the constructor supports it?
-            % No, usually `.?Class` means "must be of this class or empty".
-            % But `downloadDataset` implementation does `syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);`.
-            % This implies we can pass what the constructor takes.
-            % The constructor of SyncOptions takes name-value pairs.
-            % So passing a SyncOptions object is safest.
-            syncOptionsDownload = ndi.cloud.sync.SyncOptions('SyncFiles', true);
-            testCase.ndiDatasetDownloaded = ndi.cloud.downloadDataset(testCase.cloudDatasetId, tempFolder, syncOptionsDownload);
+            % downloadDataset takes name-value pairs for syncOptions.
+            testCase.ndiDatasetDownloaded = ndi.cloud.downloadDataset(testCase.cloudDatasetId, tempFolder, ...
+                'Verbose', true, 'SyncFiles', true);
 
             % Step 4: Add files to downloaded dataset session
             [~, id_list] = testCase.ndiDatasetDownloaded.session_list();
@@ -85,12 +77,14 @@ classdef datasetDemo < matlab.unittest.TestCase
 
             % Step 5: Sync downloaded -> cloud
             % twoWaySync(ndiDataset, syncOptions)
-            [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.ndiDatasetDownloaded, syncOptions);
+            [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.ndiDatasetDownloaded, ...
+                'Verbose', true, 'SyncFiles', true);
             testCase.verifyTrue(success, ['Sync downloaded->cloud failed: ' msg]);
             testCase.verifyTrue(numel(report.uploaded_document_ids) >= 5, 'Should have uploaded at least 5 documents');
 
             % Step 6: Sync local -> cloud (to get the new files)
-            [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.ndiDatasetToUpload, syncOptions);
+            [success, msg, report] = ndi.cloud.sync.twoWaySync(testCase.ndiDatasetToUpload, ...
+                'Verbose', true, 'SyncFiles', true);
             testCase.verifyTrue(success, ['Sync local->cloud failed: ' msg]);
             testCase.verifyTrue(numel(report.downloaded_document_ids) >= 5, 'Should have downloaded at least 5 documents');
 
