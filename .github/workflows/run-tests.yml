@@ -59,6 +59,7 @@ jobs:
           release: ${{ inputs.matlab_release || 'latest' }}
           cache: true
           products: |
+            Communications_Toolbox
             Statistics_and_Machine_Learning_Toolbox
             Signal_Processing_Toolbox
 
