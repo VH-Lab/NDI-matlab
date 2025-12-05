@@ -94,32 +94,25 @@ classdef datasetDemo < matlab.unittest.TestCase
             testCase.verifyTrue(success, ['Sync local->cloud failed: ' msg]);
             testCase.verifyTrue(numel(report.downloaded_document_ids) >= 5, 'Should have downloaded at least 5 documents');
 
-            % Step 7: Compare documents 101-105
+            % Step 7: Compare datasets using ndi.fun.dataset.diff
+            diffReport = ndi.fun.dataset.diff(testCase.ndiDatasetToUpload, testCase.ndiDatasetDownloaded, 'verbose', true);
+
+            testCase.verifyEmpty(diffReport.mismatchedDocuments, 'Found mismatched documents between datasets.');
+            testCase.verifyEmpty(diffReport.fileDifferences, 'Found file differences between datasets.');
+
+            % Verify that the specific documents (101-105) are present in both (not exclusive to one)
+            % We get the IDs of the documents of interest from the downloaded dataset (where we created them)
             for i = 101:105
                 docname = sprintf('doc_%d', i);
                 q = ndi.query('base.name', 'exact_string', docname);
-
-                % Search in downloaded (source of new docs)
-                docs_down = testCase.ndiDatasetDownloaded.database_search(q);
-                testCase.verifyNotEmpty(docs_down, ['Document ' docname ' should exist in downloaded dataset']);
-
-                % Search in original (uploaded) - should have received them
-                docs_up = testCase.ndiDatasetToUpload.database_search(q);
-                testCase.verifyNotEmpty(docs_up, ['Document ' docname ' should exist in uploaded dataset after sync']);
-
-                if ~isempty(docs_down) && ~isempty(docs_up)
-                     testCase.verifyEqual(docs_down{1}.id(), docs_up{1}.id(), ['IDs should match for ' docname]);
-
-                     % Check file existence in uploaded dataset
-                     [exists, path] = testCase.ndiDatasetToUpload.database_existbinarydoc(docs_up{1}, 'filename1.ext');
-                     testCase.verifyTrue(exists, ['File should exist for ' docname ' in uploaded dataset']);
-
-                     if exists
-                         fid = fopen(path, 'r');
-                         content = fread(fid, '*char')';
-                         fclose(fid);
-                         testCase.verifyEqual(content, docname, ['File content should match for ' docname]);
-                     end
+                docs = testCase.ndiDatasetDownloaded.database_search(q);
+                testCase.verifyNotEmpty(docs, ['Document ' docname ' must exist in the downloaded dataset']);
+                if ~isempty(docs)
+                     docId = docs{1}.id();
+                     testCase.verifyFalse(ismember(docId, diffReport.documentsInAOnly), ...
+                         ['Document ' docname ' (' docId ') should not be in dataset A only']);
+                     testCase.verifyFalse(ismember(docId, diffReport.documentsInBOnly), ...
+                         ['Document ' docname ' (' docId ') should not be in dataset B only']);
                 end
             end
         end
