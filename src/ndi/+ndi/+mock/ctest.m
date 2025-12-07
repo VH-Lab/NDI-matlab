@@ -15,7 +15,7 @@ classdef ctest
         function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, options)
             % test - perform a test of an ndi.calculator object
             %
-            % [B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
+            % [B, ERRORMSG,B_EXPECTED] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
             %
             % Perform tests of the calculator for a certain SCOPE.
             %
@@ -70,9 +70,9 @@ classdef ctest
                 test_inds = options.specific_test_inds;
             end
 
-            docComparisons = cell(1,numel(test_inds));
+            docComparisons = cell(numel(doc_output),1);
             for i=1:numel(test_inds)
-                docComparisons{i} = ctest_obj.load_mock_comparison(test_inds(i));
+                docComparisons{i} = ctest_obj.load_mock_comparison(i);
             end
 
             b = [];
@@ -80,15 +80,20 @@ classdef ctest
             b_expected = [];
             for i=1:numel(doc_output)
                 for j=1:numel(doc_output)
-                    try
-                        [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
-                            doc_output{i}, scope, docComparisons{j});
-                    catch ME
-                        if strcmp(ME.identifier, 'MATLAB:TooManyInputs')
+                    if isempty(doc_output{i})
+                        doesitmatch = NaN;
+                        theerrormsg = 'Test not run';
+                    else
+                        try
                             [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
-                                doc_output{i}, scope);
-                        else
-                            rethrow(ME);
+                                doc_output{i}, scope, docComparisons{j});
+                        catch ME
+                            if strcmp(ME.identifier, 'MATLAB:TooManyInputs')
+                                [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
+                                    doc_output{i}, scope);
+                            else
+                                rethrow(ME);
+                            end
                         end
                     end
                     b(i,j) = doesitmatch;
@@ -113,8 +118,10 @@ classdef ctest
 
             if plot_it
                 for i=1:numel(doc_output)
-                    figure;
-                    ctest_obj.plot(doc_output{i});
+                    if ~isempty(doc_output{i})
+                        figure;
+                        ctest_obj.plot(doc_output{i});
+                    end
                 end
             end
         end % test()
