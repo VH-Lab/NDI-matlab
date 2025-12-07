@@ -58,6 +58,11 @@ jobs:
         with:
           release: ${{ inputs.matlab_release || 'latest' }}
           cache: true
+          products: |
+            Communications_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
+
 
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@v1
