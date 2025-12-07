@@ -152,7 +152,16 @@ classdef ctest
             %   'highSNR' performs tests on specific hard-coded inputs.
             %   'lowSNR' performs tests on specific hard-coded inputs with noise added.
             %
-            % NUMBER_OF_TESTS is the number of tests to generate.
+            % NUMBER_OF_TESTS is the number of tests to generate. A document entry will
+            %   be generated for each test.
+            %
+            % This function also accepts name/value pairs that modify its behavior:
+            % Parameter (default)        | Description
+            % ----------------------------------------------------------------------
+            % specific_test_inds ([])    | A vector of specific test indices to generate.
+            %                            | If provided, only the documents for these tests
+            %                            | (among the number requested in NUMBER_OF_TESTS)
+            %                            | will be 'filled in'; the others will be returned empty.
             %
 
             arguments
