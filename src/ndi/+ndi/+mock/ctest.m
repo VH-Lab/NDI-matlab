@@ -12,10 +12,10 @@ classdef ctest
             %
         end % ctest (creator)
 
-        function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, options)
+        function [b,reports,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, options)
             % test - perform a test of an ndi.calculator object
             %
-            % [B, ERRORMSG,B_EXPECTED] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
+            % [B, REPORTS, B_EXPECTED] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
             %
             % Perform tests of the calculator for a certain SCOPE.
             %
@@ -27,7 +27,7 @@ classdef ctest
             %   specified, B becomes a numel(specific_test_inds) x
             %   numel(specific_test_inds) array.
             %
-            % ERRORMSG{i,j} is any error message given if the comparison between the
+            % REPORTS{i,j} is a structure array of reports from docCompare given if the comparison between the
             %   expected outcome of test i and the actual outcome of test j.
             %
             % B_EXPECTED is the result of the comparisons between the expected
@@ -76,20 +76,20 @@ classdef ctest
             end
 
             b = [];
-            errormsg = {};
+            reports = {};
             b_expected = [];
             for i=1:numel(doc_output)
                 for j=1:numel(doc_output)
                     if isempty(doc_output{i})
                         doesitmatch = NaN;
-                        theerrormsg = 'Test not run';
+                        thereport = 'Test not run';
                     else
                         try
-                            [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
+                            [doesitmatch,thereport] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
                                 doc_output{i}, scope, docComparisons{j});
                         catch ME
                             if strcmp(ME.identifier, 'MATLAB:TooManyInputs')
-                                [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
+                                [doesitmatch,thereport] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
                                     doc_output{i}, scope);
                             else
                                 rethrow(ME);
@@ -98,14 +98,14 @@ classdef ctest
                     end
                     b(i,j) = doesitmatch;
                     b(j,i) = doesitmatch;
-                    errormsg{i,j} = theerrormsg;
+                    reports{i,j} = thereport;
 
                     try
-                        [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
+                        [doesitmatch,thereport] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
                             doc_expected_output{j}, scope, docComparisons{j});
                     catch ME
                         if strcmp(ME.identifier, 'MATLAB:TooManyInputs')
-                            [doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
+                            [doesitmatch,thereport] = ctest_obj.compare_mock_docs(doc_expected_output{i},...
                                 doc_expected_output{j}, scope);
                         else
                             rethrow(ME);
@@ -185,10 +185,10 @@ classdef ctest
 
         end % generate_mock_docs()
 
-        function [b, errormsg] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope, docCompare)
+        function [b, report] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope, docCompare)
             % COMPARE_MOCK_DOCS - compare an expected calculation answer with an actual answer
             %
-            % [B, ERRORMSG] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE, [DOCCOMPARE])
+            % [B, REPORT] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE, [DOCCOMPARE])
             %
             % Given an NDI document with the expected answer to a calculation (EXPECTED_DOC),
             % the ACTUAL_DOC computed, and the SCOPE (a string: 'highSNR', 'lowSNR'),
@@ -197,9 +197,9 @@ classdef ctest
             %
             % B is 1 if the differences in the documents are within the tolerance of the class.
             % Otherwise, B is 0.
-            % If B is 0, ERRORMSG is a string that indicates where the ACTUAL_DOC is out of tolerance.
+            % If B is 0, REPORT is a string or report structure that indicates where the ACTUAL_DOC is out of tolerance.
             %
-            % In this abstract class, B is always 1 and ERRORMSG is always an empty string.
+            % In this abstract class, B is always 1 and REPORT is always an empty string.
             %
             % Developer's note: this method should be overridden in each calculator object.
             %
@@ -214,12 +214,12 @@ classdef ctest
             if strcmpi(scope, 'highSNR') && ~isempty(docCompare) && isa(docCompare, 'ndi.database.doctools.docComparison')
                 actual_doc_struct = vlt.data.columnize_struct(actual_doc.document_properties, 'columnizeNumericVectors', true);
                 actual_doc_col = ndi.document(actual_doc_struct);
-                [b, errormsg] = docCompare.compare(actual_doc_col, expected_doc);
+                [b, report] = docCompare.compare(actual_doc_col, expected_doc);
                 return;
             end
 
             b = 1;
-            errormsg = '';
+            report = '';
         end % compare_mock_docs()
 
         function clean_mock_docs(ctest_obj)
