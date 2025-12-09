@@ -45,6 +45,8 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
         options.remoteDatasetName (1,:) char = ''
     end
 
+    syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
+
     success = false;
     message = '';
 

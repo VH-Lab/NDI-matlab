@@ -8,7 +8,8 @@ classdef SyncOptions < matlab.mixin.SetGet
 %   functions in order to provide a reusable set of sync options.
 %
 %   Available options:
-%     SyncFiles (logical) - If true, files will be synced (default: false).
+%     SyncFiles (logical) - If true, files will be downloaded (default: false).
+%                           Files are always uploaded regardless of this setting.
 %     Verbose (logical) - If true, verbose output is printed (default: true).
 %     DryRun (logical) - If true, actions are simulated but not performed (default: false).
 %     FileUploadStrategy (string) - "serial" to upload files one by one or
@@ -17,7 +18,7 @@ classdef SyncOptions < matlab.mixin.SetGet
 %           and the serial option can be used as a fallback if batch upload fails.
 
     properties
-        SyncFiles (1,1) logical = false  % Whether to sync file portion (binary data) of documents
+        SyncFiles (1,1) logical = false  % Whether to download file portion (binary data) of documents
         Verbose (1,1) logical = true    % Whether to print verbose output
         DryRun (1,1) logical = false    % Simulate actions without executing
         FileUploadStrategy (1,1) string {mustBeMember(FileUploadStrategy, ["serial", "batch"])} = "batch"
