@@ -137,27 +137,10 @@ else
          return;
     end
 
-    % Create new session info struct
-    new_session_info = ndi.dataset.session_info_struct(S, 0);
+    % Update session info and create document structure using shared logic
+    [~, updated_session_info] = ndi.dataset.add_session_to_dataset_doc(current_session_info, S, 0);
 
-    % Also clear input2 (path) as in add_ingested_session for ndi.session.dir
-    if isa(S, 'ndi.session.dir')
-        new_session_info.session_creator_input2 = '';
-    end
-
-    % Append to list
-    updated_session_info = current_session_info;
-    if iscell(updated_session_info)
-        updated_session_info{end+1} = new_session_info;
-    else
-         try
-            updated_session_info(end+1) = new_session_info;
-         catch
-             updated_session_info = vlt.data.structvcat(updated_session_info, new_session_info);
-         end
-    end
-
-    % Update the dataset_session_info document
+    % Update the dataset_session_info document content
     doc_content.document_properties.dataset_session_info.dataset_session_info = updated_session_info;
     json_doc = vlt.data.prettyjson(doc_content.document_properties);
 

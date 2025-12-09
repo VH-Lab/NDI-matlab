@@ -71,20 +71,14 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             % okay, it is new, let's add it
 
-            session_info_here = ndi.dataset.session_info_struct(ndi_session_obj, 1);
+            [d, updated_info] = ndi.dataset.add_session_to_dataset_doc(ndi_dataset_obj, ndi_session_obj, 1);
 
-            % maybe later
-            % assume that the second creator argument is a file path that needs to be made relative
-            % session_info.session_creator_input2 = vlt.file.relativeFilename(ndi_dataset_obj.getpath(),ndi_session_obj.getpath)
-
-            ndi_dataset_obj.session_info(end+1) = session_info_here;
+            ndi_dataset_obj.session_info = updated_info;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',ndi_session_obj);
 
-            d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
             d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
             % delete the previous
             ndi_dataset_obj.session.database_rm(d_);
-            d = d.set_session_id(ndi_dataset_obj.id());
             ndi_dataset_obj.session.database_add(d);
             mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
@@ -116,26 +110,16 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 error(['ndi.session object with id ' ndi_session_obj.id() ' and reference ' ndi_session_obj.reference ' is not yet fully ingested. It must be fully ingested before it can be added in ingested form to an ndi.dataset object.']);
             end
 
-            % okay, let's add it
-            session_info_here = ndi.dataset.session_info_struct(ndi_session_obj, 0);
-
-            % terrible kludge
-            if isa(ndi_session_obj,'ndi.session.dir')
-                session_info_here = setfield(session_info_here,'session_creator_input2',''); % same relative path % ndi_dataset_obj.getpath());
-            else
-                error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
-            end
-
             ndi.database.fun.copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj);
 
-            ndi_dataset_obj.session_info(end+1) = session_info_here;
+            [d, updated_info] = ndi.dataset.add_session_to_dataset_doc(ndi_dataset_obj, ndi_session_obj, 0);
+
+            ndi_dataset_obj.session_info = updated_info;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',[]); % make it open it again
 
-            d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
             d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
             % delete the previous
             ndi_dataset_obj.session.database_rm(d_);
-            d = d.set_session_id(ndi_dataset_obj.id());
             ndi_dataset_obj.session.database_add(d);
             mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
@@ -493,5 +477,59 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
             end
         end % session_info_struct
+
+        function [doc, updated_info] = add_session_to_dataset_doc(dataset_or_info, ndi_session_obj, is_linked)
+            % ADD_SESSION_TO_DATASET_DOC - add a session to a dataset info structure and create the document
+            %
+            % [DOC, UPDATED_INFO] = ADD_SESSION_TO_DATASET_DOC(DATASET_OR_INFO, NDI_SESSION_OBJ, IS_LINKED)
+            %
+            % Inputs:
+            %   DATASET_OR_INFO - either an ndi.dataset object OR a structure/cell array of session info
+            %   NDI_SESSION_OBJ - the ndi.session object to add
+            %   IS_LINKED - boolean, true if linked, false if ingested
+            %
+            % Outputs:
+            %   DOC - the new ndi.document of type 'dataset_session_info'
+            %   UPDATED_INFO - the updated session info structure/cell array
+            %
+
+            if isa(dataset_or_info, 'ndi.dataset')
+                current_info = dataset_or_info.session_info;
+            else
+                current_info = dataset_or_info;
+            end
+
+            new_item = ndi.dataset.session_info_struct(ndi_session_obj, is_linked);
+
+            % Special handling for ndi.session.dir path
+             if isa(ndi_session_obj,'ndi.session.dir')
+                 if ~is_linked
+                     new_item.session_creator_input2 = '';
+                 end
+             end
+
+            % Append
+            if isempty(current_info)
+                updated_info = new_item;
+            elseif iscell(current_info)
+                 updated_info = current_info;
+                 updated_info{end+1} = new_item;
+            else
+                 try
+                     updated_info = current_info;
+                     updated_info(end+1) = new_item;
+                 catch
+                     % struct mismatch
+                     updated_info = vlt.data.structvcat(updated_info, new_item);
+                 end
+            end
+
+            doc = ndi.document('dataset_session_info', 'dataset_session_info.dataset_session_info', updated_info);
+
+            if isa(dataset_or_info, 'ndi.dataset')
+                 doc = doc.set_session_id(dataset_or_info.id());
+            end
+        end % add_session_to_dataset_doc
+
     end % methods (Static)
 end % class
