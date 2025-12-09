@@ -109,56 +109,49 @@ if ~isempty(current_session_info)
     end
 end
 
-% c) Adjust dataset_session_information document and upload
-% d) If a local dataset is provided, sync it
+% c) Adjust dataset_session_information document and upload manually
+% We do this always, regardless of whether a local dataset is provided.
 
-if ~isempty(options.ndiDataset)
-    % Branch for local dataset provided: Add locally and Sync
-    try
-        options.ndiDataset.add_ingested_session(S);
-    catch ME
-        message = ['Failed to add session to local dataset: ' ME.message];
-        return;
-    end
-
-    % Use uploadDataset to push changes.
-    syncOpts = ndi.cloud.sync.SyncOptions();
-
-    [success, ~, msg] = ndi.cloud.uploadDataset(options.ndiDataset, syncOpts);
-    if ~success
-        message = ['Sync failed: ' msg];
-        return;
-    end
-
-else
-    % Branch for NO local dataset (Manual remote update)
-    if isempty(dataset_session_info_doc_summary)
-         message = 'Remote dataset does not have a dataset_session_info document, and no local dataset context was provided to create one.';
-         return;
-    end
-
-    % Update session info and create document structure using shared logic
-    [~, updated_session_info] = ndi.dataset.add_session_to_dataset_doc(current_session_info, S, 0);
-
-    % Update the dataset_session_info document content
-    doc_content.document_properties.dataset_session_info.dataset_session_info = updated_session_info;
-    json_doc = vlt.data.prettyjson(doc_content.document_properties);
-
-    [b, ~, apiResponse] = ndi.cloud.api.documents.updateDocument(cloudDatasetId, dataset_session_info_doc_summary.id, json_doc);
-    if ~b
-         message = ['Failed to update dataset_session_info document: ' apiResponse.StatusLine.ReasonPhrase];
-         return;
-    end
-
-    % Upload session documents (content)
-    % Since we don't have a local dataset to manage the sync, we manually upload the session's documents.
-    docs_to_upload = S.database_search(ndi.query('','isa','base'));
-
-    if ~isempty(docs_to_upload)
-        ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, docs_to_upload, "onlyUploadMissing", true);
-    end
-
-    success = true;
+if isempty(dataset_session_info_doc_summary)
+     message = 'Remote dataset does not have a dataset_session_info document.';
+     return;
 end
+
+% Update session info and create document structure using shared logic
+[~, updated_session_info] = ndi.dataset.add_session_to_dataset_doc(current_session_info, S, 0);
+
+% Update the dataset_session_info document content
+doc_content.document_properties.dataset_session_info.dataset_session_info = updated_session_info;
+json_doc = vlt.data.prettyjson(doc_content.document_properties);
+
+[b, ~, apiResponse] = ndi.cloud.api.documents.updateDocument(cloudDatasetId, dataset_session_info_doc_summary.id, json_doc);
+if ~b
+     message = ['Failed to update dataset_session_info document: ' apiResponse.StatusLine.ReasonPhrase];
+     return;
+end
+
+% Upload session documents (content)
+% Manually upload the session's documents.
+docs_to_upload = S.database_search(ndi.query('','isa','base'));
+
+if ~isempty(docs_to_upload)
+    ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, docs_to_upload, "onlyUploadMissing", true);
+end
+
+% d) If a local dataset is provided, sync it (DownloadNew)
+if ~isempty(options.ndiDataset)
+    % Sync the local dataset with the remote one.
+    % We use 'DownloadNew' to get the newly uploaded session info and documents (as stubs if SyncFiles=false).
+    % The user requested "syncFiles as false".
+
+    try
+        ndi.cloud.syncDataset(options.ndiDataset, 'SyncMode', "DownloadNew", 'SyncFiles', false, 'Verbose', true);
+    catch ME
+        message = ['Sync failed: ' ME.message];
+        return;
+    end
+end
+
+success = true;
 
 end
