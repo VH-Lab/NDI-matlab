@@ -98,7 +98,7 @@ classdef docComparison
                 scope {mustBeA(scope, {'char', 'string', 'cell'})}
                 comparisonMethod (1,:) char {mustBeMember(comparisonMethod, ...
                     {'none', 'abs difference', 'difference', 'abs percent difference', ...
-                     'percent difference', 'character exact'})}
+                     'percent difference', 'character exact', 'pValueConsistent'})}
                 toleranceAmount double {mustBeNumeric}
             end
 
@@ -201,7 +201,8 @@ classdef docComparison
             original_obj = obj; % Keep copy for 'exit' option
 
             comparison_methods = {'none', 'abs difference', 'difference', ...
-                'abs percent difference', 'percent difference', 'character exact'};
+                'abs percent difference', 'percent difference', 'character exact', ...
+                'pValueConsistent'};
 
             fprintf('Starting docComparison interview...\n');
 
@@ -261,6 +262,7 @@ classdef docComparison
                         fprintf('15. abs difference (scalar) 2\n');
                         fprintf('16. abs difference (scalar) 5\n');
                         fprintf('17. abs difference (scalar) 10\n');
+                        fprintf('18. pValueConsistent 0.05\n');
 
                         method_input = input('Enter number: ', 's');
                         method_idx = str2double(method_input);
@@ -288,6 +290,10 @@ classdef docComparison
                                 case 16, newTol = 5;
                                 case 17, newTol = 10;
                             end
+                        elseif method_idx == 18
+                            newMethod = 'pValueConsistent';
+                            skipTolPrompt = true;
+                            newTol = 0.05;
                         else
                              fprintf('Invalid selection.\n');
                              continue;
@@ -508,6 +514,15 @@ classdef docComparison
                          else
                              msg = 'Percent difference > tolerance matrix';
                          end
+                     end
+                 case 'pValueConsistent'
+                     % Pass if both actual and expected are less than p (tol)
+                     % OR both actual and expected are greater than or equal to p (tol)
+
+                     check = (valA < tol & valE < tol) | (valA >= tol & valE >= tol);
+                     if ~all(check(:))
+                         pass = false;
+                         msg = sprintf('Values are not consistently less than or >= p-value %g', tol);
                      end
                  otherwise
                      pass = false;
