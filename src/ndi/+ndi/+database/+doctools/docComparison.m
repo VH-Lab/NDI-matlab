@@ -17,6 +17,103 @@ classdef docComparison
         comparisonStruct % Internal structure defining fields and comparison methods
     end
 
+    methods (Static)
+        function dc = interview(dc)
+            % INTERVIEW - Interactive interview to set up docComparison
+            %
+            % DC = INTERVIEW(DC)
+            %
+            % Interactively edit the comparison parameters of DC.
+            %
+
+            if nargin<1,
+                error('Must provide a docComparison object.');
+            end
+
+            while 1
+                % Display status
+                fprintf('\nCurrent Comparison Parameters:\n');
+                for i=1:numel(dc.comparisonStruct)
+                    fprintf('%d. %s: %s (tol %g)\n', i, dc.comparisonStruct(i).name, ...
+                        dc.comparisonStruct(i).comparisonMethod, dc.comparisonStruct(i).toleranceAmount);
+                end
+
+                fprintf('\nOptions:\n');
+                fprintf('Enter a number (1-%d) to edit a field.\n', numel(dc.comparisonStruct));
+                fprintf('Enter "q" to quit.\n');
+
+                choice = input('Choice: ', 's');
+                if strcmpi(choice, 'q')
+                    return;
+                end
+
+                n = str2double(choice);
+                if ~isnan(n) && n >= 1 && n <= numel(dc.comparisonStruct)
+                    field_name = dc.comparisonStruct(n).name;
+                    fprintf('Editing %s\n', field_name);
+
+                    fprintf('Choose comparison method/tolerance:\n');
+                    fprintf('1. none\n');
+                    fprintf('2. abs difference\n');
+                    fprintf('3. difference\n');
+                    fprintf('4. abs percent difference\n');
+                    fprintf('5. percent difference\n');
+                    fprintf('6. character exact\n');
+                    fprintf('7. pValueConsistent\n');
+
+                    fprintf('\nPresets (Method + Tolerance):\n');
+                    fprintf('11. abs difference, 1e-9\n');
+                    fprintf('12. abs difference, 1e-6\n');
+                    fprintf('13. abs difference, 1e-3\n');
+                    fprintf('14. abs difference, 0.01\n');
+                    fprintf('15. abs difference, 0.1\n');
+                    fprintf('16. abs difference, 1\n');
+                    fprintf('17. abs difference, 10\n');
+                    fprintf('18. pValueConsistent, 0.05\n');
+
+                    subchoice = input('Selection: ', 's');
+                    val = str2double(subchoice);
+
+                    method = '';
+                    tol = [];
+
+                    if ~isnan(val)
+                        if val == 1, method = 'none'; tol = 0;
+                        elseif val == 2, method = 'abs difference';
+                        elseif val == 3, method = 'difference';
+                        elseif val == 4, method = 'abs percent difference';
+                        elseif val == 5, method = 'percent difference';
+                        elseif val == 6, method = 'character exact'; tol = 0;
+                        elseif val == 7, method = 'pValueConsistent';
+
+                        elseif val == 11, method = 'abs difference'; tol = 1e-9;
+                        elseif val == 12, method = 'abs difference'; tol = 1e-6;
+                        elseif val == 13, method = 'abs difference'; tol = 1e-3;
+                        elseif val == 14, method = 'abs difference'; tol = 0.01;
+                        elseif val == 15, method = 'abs difference'; tol = 0.1;
+                        elseif val == 16, method = 'abs difference'; tol = 1;
+                        elseif val == 17, method = 'abs difference'; tol = 10;
+                        elseif val == 18, method = 'pValueConsistent'; tol = 0.05;
+                        end
+                    end
+
+                    if ~isempty(method)
+                        if isempty(tol)
+                             if strcmpi(method, 'pValueConsistent')
+                                 t_str = input('Enter p value: ', 's');
+                             else
+                                 t_str = input('Enter tolerance: ', 's');
+                             end
+                             tol = str2double(t_str);
+                        end
+
+                        dc = dc.addComparisonParameters(field_name, method, tol);
+                    end
+                end
+            end
+        end
+    end
+
     methods
         function obj = docComparison(input_arg)
             % DOCCOMPARISON - Create a docComparison object
@@ -86,7 +183,7 @@ classdef docComparison
             %   COMPARISONMETHOD: The method to use. Options:
             %          'none', 'abs difference', 'difference',
             %          'abs percent difference', 'percent difference',
-            %          'character exact'.
+            %          'character exact', 'pValueConsistent'.
             %   TOLERANCEAMOUNT: Numeric scalar tolerance.
             %
 
@@ -95,7 +192,7 @@ classdef docComparison
                 scope {mustBeA(scope, {'char', 'string', 'cell'})}
                 comparisonMethod (1,:) char {mustBeMember(comparisonMethod, ...
                     {'none', 'abs difference', 'difference', 'abs percent difference', ...
-                     'percent difference', 'character exact'})}
+                     'percent difference', 'character exact', 'pValueConsistent'})}
                 toleranceAmount (1,1) double
             end
 
@@ -297,6 +394,18 @@ classdef docComparison
                      elseif any(diff_val(:) > tol)
                          pass = false;
                          msg = sprintf('Percent difference > tolerance %g%%', tol);
+                     end
+                 case 'pValueConsistent'
+                     % Pass if both < tol OR both >= tol
+                     % Ensure scalars are compared element-wise if arrays are passed,
+                     % but existing logic usually handles arrays by element-wise check.
+                     % Here, if valA/valE are arrays, we need to check consistency element-wise.
+
+                     consistent = (valA < tol & valE < tol) | (valA >= tol & valE >= tol);
+
+                     if ~all(consistent(:))
+                         pass = false;
+                         msg = sprintf('Values are not p-value consistent (p=%g). One is < p and the other is >= p.', tol);
                      end
                  otherwise
                      pass = false;

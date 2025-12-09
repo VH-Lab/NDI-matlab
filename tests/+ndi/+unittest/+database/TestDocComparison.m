@@ -145,5 +145,36 @@ classdef TestDocComparison < matlab.unittest.TestCase
             testCase.verifyFalse(b);
             testCase.verifyEqual(report(1).comment, 'Dimension mismatch between actual and expected values.');
         end
+
+        function testPValueConsistent(testCase)
+            d1 = ndi.document(struct('base', struct('id', '1'), 'p', 0.01, 'q', 0.06));
+            d2 = ndi.document(struct('base', struct('id', '1'), 'p', 0.04, 'q', 0.02));
+
+            dc = ndi.database.doctools.docComparison(d1);
+
+            % Test 1: p < 0.05 (0.01) and p < 0.05 (0.04) -> Pass
+            dc = dc.addComparisonParameters('p', 'pValueConsistent', 0.05);
+            [b, report] = dc.compare(d1, d2);
+            testCase.verifyTrue(b, 'Both < 0.05 should pass');
+
+            % Test 2: q >= 0.05 (0.06) and q < 0.05 (0.02) -> Fail
+            dc = dc.addComparisonParameters('q', 'pValueConsistent', 0.05);
+            [b, report] = dc.compare(d1, d2);
+            testCase.verifyFalse(b, 'One < 0.05 and one >= 0.05 should fail');
+
+            % Find report for q
+            % report is a struct array, we need to check the entries
+            idx = find(strcmp({report.name}, 'q'));
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyTrue(contains(report(idx).comment, 'p-value consistent'));
+
+            % Test 3: Both >= 0.05
+            d3 = ndi.document(struct('base', struct('id', '1'), 'p', 0.1));
+            d4 = ndi.document(struct('base', struct('id', '1'), 'p', 0.2));
+            dc2 = ndi.database.doctools.docComparison(d3);
+            dc2 = dc2.addComparisonParameters('p', 'pValueConsistent', 0.05);
+            [b, report] = dc2.compare(d3, d4);
+            testCase.verifyTrue(b, 'Both >= 0.05 should pass');
+        end
     end
 end
