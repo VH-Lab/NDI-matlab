@@ -71,18 +71,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             % okay, it is new, let's add it
 
-            session_info_here.session_id = ndi_session_obj.id();
-            session_info_here.session_reference = ndi_session_obj.reference();
-            session_info_here.is_linked = 1;
-            session_info_here.session_creator = class(ndi_session_obj);
-            session_creator_args = ndi_session_obj.creator_args();
-            for i=1:6 %numel(session_creator_args),
-                field_here = ['session_creator_input' int2str(i)];
-                session_info_here = setfield(session_info_here,field_here,'');
-                if numel(session_creator_args)>=i
-                    session_info_here = setfield(session_info_here,field_here,session_creator_args{i});
-                end
-            end
+            session_info_here = ndi.dataset.session_info_struct(ndi_session_obj, 1);
 
             % maybe later
             % assume that the second creator argument is a file path that needs to be made relative
@@ -128,18 +117,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
 
             % okay, let's add it
-            session_info_here.session_id = ndi_session_obj.id();
-            session_info_here.session_reference = ndi_session_obj.reference;
-            session_info_here.session_creator = class(ndi_session_obj);
-            session_info_here.is_linked = 0;
-            session_creator_args = ndi_session_obj.creator_args();
-            for i=1:6 %numel(session_creator_args),
-                field_here = ['session_creator_input' int2str(i)];
-                session_info_here = setfield(session_info_here,field_here,'');
-                if numel(session_creator_args)>=i
-                    session_info_here = setfield(session_info_here,field_here,session_creator_args{i});
-                end
-            end
+            session_info_here = ndi.dataset.session_info_struct(ndi_session_obj, 0);
 
             % terrible kludge
             if isa(ndi_session_obj,'ndi.session.dir')
@@ -491,4 +469,29 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % open_linked_sessions
 
     end % methods protected
+
+    methods (Static)
+        function session_info = session_info_struct(ndi_session_obj, is_linked)
+            % SESSION_INFO_STRUCT - create a session info structure for a dataset
+            %
+            % SESSION_INFO = SESSION_INFO_STRUCT(NDI_SESSION_OBJ, IS_LINKED)
+            %
+            % Creates a session info structure from an NDI_SESSION_OBJ. IS_LINKED
+            % is a boolean that indicates whether the session is linked (1) or ingested (0).
+            %
+
+            session_info.session_id = ndi_session_obj.id();
+            session_info.session_reference = ndi_session_obj.reference;
+            session_info.session_creator = class(ndi_session_obj);
+            session_info.is_linked = is_linked;
+            session_creator_args = ndi_session_obj.creator_args();
+            for i=1:6
+                field_here = ['session_creator_input' int2str(i)];
+                session_info.(field_here) = '';
+                if numel(session_creator_args)>=i
+                    session_info.(field_here) = session_creator_args{i};
+                end
+            end
+        end % session_info_struct
+    end % methods (Static)
 end % class
