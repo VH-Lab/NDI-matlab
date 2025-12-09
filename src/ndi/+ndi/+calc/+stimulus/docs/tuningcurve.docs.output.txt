@@ -1,0 +1,29 @@
+Document Type: tuningcurve_calc
+Superclasses: ndi.document, stimulus_tuningcurve
+
+Fields Description:
+The output document contains the calculated tuning curve data and the parameters used to generate it.
+
+Properties:
+- tuningcurve_calc:
+    - input_parameters: The configuration structure used for the calculation.
+        - independent_label: Label(s) for the x-axis.
+        - independent_parameter: Parameter name(s) corresponding to the labels.
+        - best_algorithm: Algorithm used for 'best' selection (e.g., 'empirical_maximum').
+        - selection: Structure array of selection criteria used to filter stimuli.
+    - log: A log string recording operations performed, such as values selected as 'best' or 'greatest'.
+    - stim_property_list: (If 'deal' was used)
+        - names: Names of the parameters that were dealt.
+        - values: The specific values of the dealt parameters for this document.
+
+- stimulus_tuningcurve (inherited):
+    - independent_variable_label: Cell array of labels for the independent variables.
+    - independent_variable_value: Array of values for the independent variables.
+    - response_mean: Mean response for each point on the curve.
+    - response_stddev: Standard deviation of the response.
+    - response_stderr: Standard error of the mean.
+    - individual_responses_real: Individual trial responses (real part).
+    - individual_responses_imaginary: Individual trial responses (imaginary part).
+    - response_units: Units of the response (e.g., 'Spikes/s').
+    - control_response_mean: Mean response of the control/baseline stimulus.
+    - control_response_stderr: Standard error of the control response.

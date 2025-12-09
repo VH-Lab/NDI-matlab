@@ -82,7 +82,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 if ~isempty(previous_calculators_here)
                     switch(docExistsAction)
                         case 'Error'
-                            error(['Doc for input parameters already exists; error was requested.']);
+                            error('Doc for input parameters already exists; error was requested.');
                         case {'NoAction','ReplaceIfDifferent'}
                             docs_tocat{i} = previous_calculators_here;
                             continue; % skip to the next calculator
@@ -480,7 +480,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             if ~params.suppress_title
                 if isa(doc_or_parameters,'ndi.document')
                     id = doc_or_parameters.id();
-                    h.title = title([id],'interp','none');
+                    h.title = title(id,'interp','none');
                 end
             end
             if params.holdstate
@@ -657,7 +657,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
 
             if isempty(fig)
-                error(['Empty figure, do not know what to work on.']);
+                error('Empty figure, do not know what to work on.');
             end
 
             disp(['Command is ' command '.']);
@@ -669,7 +669,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     % now build the window
                     uid = vlt.ui.basicuitools_defs;
 
-                    callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
+                    callbackstr = 'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);';
 
                     % Step 1: Establish window geometry
 
@@ -690,7 +690,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     commands_popup_height = row;
                     button_width = 100;
                     button_height = row;
-                    button_center = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3) ];
+                    button_center = linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3);
 
                     % Step 2 now build it
 
@@ -698,7 +698,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     set(fig,'NumberTitle','off');
                     set(fig,'Name',['Editing ' ud.calc.name ' of type ' ud.calc.type ]);
 
-                    session_title = ['Empty session'];
+                    session_title = 'Empty session';
                     if isa(ud.session,'ndi.session')
                         session_title = session.reference;
                     end
@@ -882,7 +882,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             evalin('base',search_code);
                             disp(['Search done, variable ED now has existing calculation documents found.']);
                             disp(['Now will plot all of these ' int2str(evalin('base','numel(ED)')) ' documents.']);
-                            evalin('base',['for i=1:numel(ED), figure; thecalc.plot(ED{i}); end;']);
+                            evalin('base','for i=1:numel(ED), figure; thecalc.plot(ED{i}); end;');
                             disp(['Finished plotting.']);
                         case 6 % Run but don''t replace existing docs
                             disp(['Popup is ' str{val} '.']);
@@ -1000,10 +1000,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     elseif paramval == 1
                         msgbox('Please select parameter code')
                     else
-                        defaultfilename = {[filename]};
+                        defaultfilename = {filename};
                         prompt = {'File name:'};
                         dlgtitle = 'Save As';
-                        extension_list = {[ext]};
+                        extension_list = {ext};
                         dir = filepath;
                         [success,filename,replaces] = ndi.util.choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list);
                         json_filename = char(strcat(filepath, filesep, filename,'.json'));
