@@ -1,0 +1,13 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/session_in_a_dataset.json",
+		"validation":						"$NDISCHEMAPATH\/session_in_a_dataset_schema.json",
+		"class_name":						"session_in_a_dataset",
+		"property_list_name":					"session_in_a_dataset",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [ ]
+}

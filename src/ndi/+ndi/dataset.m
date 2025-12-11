@@ -428,6 +428,79 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
     end % methods
 
+    methods (Static)
+        function [new_docs] = repairDatasetSessionInfo(ndi_dataset_obj, options)
+            % REPAIRDATASETSESSIONINFO - Break out dataset_session_info into individual session_in_a_dataset documents
+            %
+            % [NEW_DOCS] = ndi.dataset.repairDatasetSessionInfo(NDI_DATASET_OBJ, 'DryRun', [true|false])
+            %
+            % Checks to see if NDI_DATASET_OBJ has a dataset_session_info document. If so, it breaks
+            % the information out into new individual session_in_a_dataset documents.
+            %
+            % If 'DryRun' is false (default), it deletes the dataset_session_info document and adds
+            % the new session_in_a_dataset documents.
+            %
+            % If 'DryRun' is true, it only returns the new documents that would be added.
+
+            arguments
+                ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj, 'ndi.dataset')}
+                options.DryRun (1,1) logical = false
+            end
+
+            new_docs = {};
+
+            q = ndi.query('','isa','dataset_session_info') & ...
+                ndi.query('base.session_id', 'exact_string', ndi_dataset_obj.id());
+
+            doc = ndi_dataset_obj.session.database_search(q);
+
+            if isempty(doc)
+                return;
+            end
+
+            if numel(doc)>1
+                 error(['Found too many dataset session info documents (' int2str(numel(doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
+            end
+
+            dataset_session_info_struct = doc{1}.document_properties.dataset_session_info.dataset_session_info;
+
+            if isstruct(dataset_session_info_struct)
+                 fields_to_copy = {'session_id','session_reference','is_linked','session_creator',...
+                    'session_creator_input1','session_creator_input2','session_creator_input3',...
+                    'session_creator_input4','session_creator_input5','session_creator_input6'};
+
+                 for i = 1:numel(dataset_session_info_struct)
+                     s = dataset_session_info_struct(i);
+                     doc_struct = struct();
+                     for f = 1:numel(fields_to_copy)
+                        fn = fields_to_copy{f};
+                        if isfield(s, fn)
+                            doc_struct.(fn) = s.(fn);
+                        else
+                             if strcmp(fn, 'is_linked')
+                                 doc_struct.(fn) = 0;
+                             else
+                                 doc_struct.(fn) = '';
+                             end
+                        end
+                     end
+
+                     new_doc = ndi.document('session_in_a_dataset', 'session_in_a_dataset', doc_struct);
+                     new_doc = new_doc.set_session_id(ndi_dataset_obj.id());
+
+                     new_docs{end+1} = new_doc;
+                 end
+            end
+
+            if ~options.DryRun
+                 if ~isempty(new_docs)
+                     ndi_dataset_obj.session.database_add(new_docs);
+                 end
+                 ndi_dataset_obj.session.database_rm(doc{1});
+            end
+        end
+    end % methods (Static)
+
     methods (Hidden)
         function [hCleanup, filename] = open_database(ndi_dataset_obj)
             [hCleanup, filename] = ndi_dataset_obj.session.open_database();

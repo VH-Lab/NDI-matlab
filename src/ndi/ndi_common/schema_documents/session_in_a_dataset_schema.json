@@ -1,0 +1,77 @@
+{
+	"classname": "session_in_a_dataset",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"session_in_a_dataset": [
+		{
+			"name": "session_id",
+			"type": "char",
+			"default_value": "",
+			"queryable": 1,
+			"documentation": "Unique identifier of the session"
+		},
+		{
+			"name": "session_reference",
+			"type": "char",
+			"default_value": "",
+			"queryable": 1,
+			"documentation": "Reference string of the session"
+		},
+		{
+			"name": "is_linked",
+			"type": "double",
+			"default_value": 0,
+			"queryable": 1,
+			"documentation": "1 if the session is linked, 0 if it is ingested"
+		},
+		{
+			"name": "session_creator",
+			"type": "char",
+			"default_value": "",
+			"queryable": 1,
+			"documentation": "Matlab command that creates the session object"
+		},
+		{
+			"name": "session_creator_input1",
+			"type": "char",
+			"default_value": "",
+			"queryable": 0,
+			"documentation": "Input argument 1 for session creator"
+		},
+		{
+			"name": "session_creator_input2",
+			"type": "char",
+			"default_value": "",
+			"queryable": 0,
+			"documentation": "Input argument 2 for session creator"
+		},
+		{
+			"name": "session_creator_input3",
+			"type": "char",
+			"default_value": "",
+			"queryable": 0,
+			"documentation": "Input argument 3 for session creator"
+		},
+		{
+			"name": "session_creator_input4",
+			"type": "char",
+			"default_value": "",
+			"queryable": 0,
+			"documentation": "Input argument 4 for session creator"
+		},
+		{
+			"name": "session_creator_input5",
+			"type": "char",
+			"default_value": "",
+			"queryable": 0,
+			"documentation": "Input argument 5 for session creator"
+		},
+		{
+			"name": "session_creator_input6",
+			"type": "char",
+			"default_value": "",
+			"queryable": 0,
+			"documentation": "Input argument 6 for session creator"
+		}
+	]
+}
