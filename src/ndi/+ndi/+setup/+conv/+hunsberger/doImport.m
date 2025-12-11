@@ -48,6 +48,17 @@ end
 
 %% Step 4: SUBJECTS. Build subject documents.
 
+% Add cell tagging subjects
+subjectCellTag = dataTables{1}(:,{'ID','Sex','Condition'});
+subjectCellTag{:,'StrainType'} = 'ArcCreERT2';
+subjectCFC = ndi.fun.table.vstack({dataTables{2}(:,1:8), ...
+    renamevars(dataTables{3}(:,1:17),'Age_months_','Age_Months_'), ...
+    dataTables{4}(:,1:8)});
+subjectCFC{:,'StrainType'} = '129S6/SvEv';
+subjectTable = ndi.fun.table.vstack({subjectCellTag,subjectCFC});
+
+% Are the animals in data table 3 "ArcCreERT2" or '129S6/SvEv'?
+
 
 %%
 
