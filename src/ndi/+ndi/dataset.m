@@ -520,16 +520,24 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             q = ndi.query('','isa','dataset_session_info') & ...
                 ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
             session_info_doc = ndi_dataset_obj.session.database_search(q); % we know we are searching the dataset session
-            if isempty(session_info_doc)
-                % we don't have any
-                ndi_dataset_obj.session_info = did.datastructures.emptystruct('session_id','session_reference','is_linked','session_creator',...
+
+            if ~isempty(session_info_doc)
+                % we have the old style, let's repair it
+                ndi.dataset.repairDatasetSessionInfo(ndi_dataset_obj);
+            end
+
+            q2 = ndi.query('','isa','session_in_a_dataset') & ...
+                ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
+            session_info_doc = ndi_dataset_obj.session.database_search(q2);
+
+            ndi_dataset_obj.session_info = did.datastructures.emptystruct('session_id','session_reference','is_linked','session_creator',...
                     'session_creator_input1','session_creator_input2','session_creator_input3',...
                     'session_creator_input4','session_creator_input5','session_creator_input6');
-            else
-                if numel(session_info_doc)>1
-                    error(['Found too many dataset session info documents (' int2str(numel(session_info_doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
-                end
-                ndi_dataset_obj.session_info = session_info_doc{1}.document_properties.dataset_session_info.dataset_session_info;
+
+            for i=1:numel(session_info_doc)
+                info_here = session_info_doc{i}.document_properties.session_in_a_dataset;
+                % fix field order, etc?
+                ndi_dataset_obj.session_info(end+1) = info_here;
             end
 
             % now we have session_info structure, build the initial session_array
