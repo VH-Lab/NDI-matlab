@@ -91,12 +91,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.session_info(end+1) = session_info_here;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',ndi_session_obj);
 
-            d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
-            d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
-            % delete the previous
-            ndi_dataset_obj.session.database_rm(d_);
-            d = d.set_session_id(ndi_dataset_obj.id());
-            ndi_dataset_obj.session.database_add(d);
+            ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
         end % add_linked_session()
@@ -153,12 +148,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.session_info(end+1) = session_info_here;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',[]); % make it open it again
 
-            d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
-            d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
-            % delete the previous
-            ndi_dataset_obj.session.database_rm(d_);
-            d = d.set_session_id(ndi_dataset_obj.id());
-            ndi_dataset_obj.session.database_add(d);
+            ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
         end % add_ingested_session()
@@ -498,6 +488,36 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                  end
                  ndi_dataset_obj.session.database_rm(doc{1});
             end
+        end
+
+        function addSessionInfoToDataset(ndi_dataset_obj, session_info)
+             % ADDSESSIONINFOTODATASET - Add a session_in_a_dataset document to the dataset
+             %
+             % ndi.dataset.addSessionInfoToDataset(NDI_DATASET_OBJ, SESSION_INFO)
+             %
+             % Creates a new 'session_in_a_dataset' document based on the SESSION_INFO structure
+             % and adds it to the NDI_DATASET_OBJ's internal session database. The document's
+             % base.session_id is set to the dataset's ID.
+
+             new_doc = ndi.document('session_in_a_dataset', 'session_in_a_dataset', session_info);
+             new_doc = new_doc.set_session_id(ndi_dataset_obj.id());
+             ndi_dataset_obj.session.database_add(new_doc);
+        end
+
+        function removeSessionInfoFromDataset(ndi_dataset_obj, session_id)
+             % REMOVESESSIONINFOFROMDATASET - Remove session_in_a_dataset document(s) for a given session ID
+             %
+             % ndi.dataset.removeSessionInfoFromDataset(NDI_DATASET_OBJ, SESSION_ID)
+             %
+             % Searches for 'session_in_a_dataset' documents that match the given SESSION_ID
+             % (and belong to the dataset's session ID) and removes them from the database.
+
+             q = ndi.query('session_in_a_dataset.session_id', 'exact_string', session_id) & ...
+                 ndi.query('base.session_id', 'exact_string', ndi_dataset_obj.id());
+             docs = ndi_dataset_obj.session.database_search(q);
+             if ~isempty(docs)
+                 ndi_dataset_obj.session.database_rm(docs);
+             end
         end
     end % methods (Static)
 
