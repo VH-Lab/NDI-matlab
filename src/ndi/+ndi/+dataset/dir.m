@@ -64,7 +64,7 @@ classdef dir < ndi.dataset
                 end
             end
 
-            if numel(candidate_session_doc)==1
+            if isscalar(candidate_session_doc)
                 ref = candidate_session_doc{1}.document_properties.session.reference;
                 session_id = candidate_session_doc{1}.document_properties.base.session_id;
                 ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);

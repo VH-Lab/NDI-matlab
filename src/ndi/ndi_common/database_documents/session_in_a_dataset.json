@@ -9,5 +9,17 @@
 			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
-	"depends_on": [ ]
+	"depends_on": [ ],
+    "session_in_a_dataset": {
+        "session_id": [],
+        "session_reference": [],
+        "is_linked": [],
+        "session_creator": [],
+        "session_creator_input1": [],
+        "session_creator_input2": [],
+        "session_creator_input3": [],
+        "session_creator_input4": [],
+        "session_creator_input5": [],
+        "session_creator_input6": []
+    }
 }
