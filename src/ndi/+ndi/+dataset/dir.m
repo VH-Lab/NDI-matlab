@@ -23,6 +23,10 @@ classdef dir < ndi.dataset
             elseif nargin==2
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
             elseif nargin==3 % hidden third option
+                if isstruct(docs) && isempty(docs)
+                    ndi_dataset_dir_obj = ndi.dataset.dir(reference, path_name);
+                    return;
+                end
                 % Todo: Switch off specific warnings using warning ids
                 warningStruct = warning('off');
                 resetWarningCleanupObj = onCleanup(@() warning(warningStruct));
