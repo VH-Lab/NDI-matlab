@@ -31,7 +31,7 @@ classdef emptyDataset < matlab.unittest.TestCase
 
     methods(Test)
         function testEmptyUpload(testCase)
-            ndiDataset = ndi.dataset.dir(testCase.testDir);
+            ndiDataset = ndi.dataset.dir('emptyHere', testCase.testDir);
 
             [success, cloudId, msg] = ndi.cloud.uploadDataset(ndiDataset, ...
                 'skipMetadataEditorMetadata', true, ...
