@@ -36,13 +36,13 @@ classdef testDatasetConstructor < matlab.unittest.TestCase
 
             ds1 = ndi.dataset.dir(ref, path);
 
-            % 2. Call with 3 arguments (empty struct)
+            % 2. Call with 3 arguments (empty cell array)
             % Use a different path so they don't conflict, although they are separate objects
             path2 = fullfile(testCase.TempDir, 'test_dataset_2');
             mkdir(path2);
             mkdir(fullfile(path2, '.ndi'));
 
-            ds2 = ndi.dataset.dir(ref, path2, struct([]));
+            ds2 = ndi.dataset.dir(ref, path2, {});
 
             % Verify ds2 is a valid ndi.dataset.dir object
             testCase.verifyClass(ds2, 'ndi.dataset.dir');
