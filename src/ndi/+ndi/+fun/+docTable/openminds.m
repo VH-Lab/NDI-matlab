@@ -121,8 +121,8 @@ for i = 1:numel(typeDocs)
     for j = 1:numel(openminds_fields)
         fieldName = openminds_fields{j};
         openminds_field = docProp.openminds.fields.(fieldName);
-        if iscell(openminds_field) && contains(openminds_field,'ndi')
-            dependentDocs(j) = regexp(openminds_field, '[^/]*$', 'match', 'once');
+        if iscell(openminds_field) && all(contains(openminds_field,'ndi'))
+            dependentDocs{j} = regexp(openminds_field, '[^/]*$', 'match', 'once');
             dependentTypes{j} = [upper(fieldName(1)),fieldName(2:end)];
         else
             removeCells(j) = true;
@@ -130,17 +130,35 @@ for i = 1:numel(typeDocs)
     end
     dependentDocs(removeCells) = []; dependentTypes(removeCells) = [];
     for j = 1:numel(dependentDocs)
-        dependentDoc_idx = strcmp(allDocs_id,dependentDocs{j});
-        if ~any(dependentDoc_idx)
-            continue;
-        end % Skip if not found
-        dependentDoc = allDocs{dependentDoc_idx};
-        docProp_dep = dependentDoc.document_properties;
-        fieldNames_dep = fields(docProp_dep.openminds.fields);
-        ontologyField_dep = fieldNames_dep{contains(fieldNames_dep,'ontology','IgnoreCase',true)};
-        openMINDsRow.([dependentTypes{j},'Name']) = {docProp_dep.openminds.fields.name};
-        if ~isempty(docProp_dep.openminds.fields.(ontologyField_dep))
-            openMINDsRow.([dependentTypes{j},'Ontology']) = {docProp_dep.openminds.fields.(ontologyField_dep)};
+        depDocIDs = dependentDocs{j};
+        if ~iscell(depDocIDs)
+            depDocIDs = {depDocIDs};
+        end
+
+        depNames = {};
+        depOntologies = {};
+
+        for k = 1:numel(depDocIDs)
+            dependentDoc_idx = strcmp(allDocs_id,depDocIDs{k});
+            if ~any(dependentDoc_idx)
+                continue;
+            end
+            dependentDoc = allDocs{dependentDoc_idx};
+            docProp_dep = dependentDoc.document_properties;
+            fieldNames_dep = fields(docProp_dep.openminds.fields);
+            ontologyField_dep = fieldNames_dep{contains(fieldNames_dep,'ontology','IgnoreCase',true)};
+
+            depNames{end+1} = docProp_dep.openminds.fields.name;
+            if ~isempty(docProp_dep.openminds.fields.(ontologyField_dep))
+                 depOntologies{end+1} = docProp_dep.openminds.fields.(ontologyField_dep);
+            end
+        end
+
+        if ~isempty(depNames)
+            openMINDsRow.([dependentTypes{j},'Name']) = {strjoin(depNames, ', ')};
+        end
+        if ~isempty(depOntologies)
+            openMINDsRow.([dependentTypes{j},'Ontology']) = {strjoin(depOntologies, ', ')};
         end
     end
     openmindsCell{i} = openMINDsRow;
