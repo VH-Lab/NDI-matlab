@@ -790,7 +790,7 @@ classdef mfdaq < ndi.daq.reader
                                 mylog.msg('system',1,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
                                 s1 = min(s0+sample_analog_segment-1,S1);
-                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
+                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
                                     channels_here, epochfiles, s0, s1);
                                 data = ndi.compress.scaled2underlying(data, mypoly);
                                 output_bit_size = datasize;
@@ -815,7 +815,7 @@ classdef mfdaq < ndi.daq.reader
                                 mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
                                 s1 = min(s0+sample_digital_segment-1,S1);
-                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
+                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
                                     channels_here, epochfiles, s0, s1);
                                 data = ndi.compress.scaled2underlying(data, mypoly);
                                 output_bit_size = datasize;
