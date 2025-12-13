@@ -20,7 +20,7 @@ classdef mfdaqNDRAxonTest < matlab.unittest.TestCase
                 filename = fullfile(files(i).folder, files(i).name);
 
                 % Create NDR reader
-                reader = ndi.daq.reader.mfdaq.ndr('axon');
+                reader = ndi.daq.reader.mfdaq.ndr('abf');
 
                 epochfiles = {filename};
                 channels = reader.getchannelsepoch(epochfiles);
