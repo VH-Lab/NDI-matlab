@@ -43,6 +43,23 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
                 'Operation aborted during selection of a dataset target folder.')
         end
     end
+
+    % Verify dataset existence
+    if syncOptions.Verbose
+        disp('Verifying dataset existence...');
+    end
+    [success, answer] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
+    if ~success
+        if isstruct(answer) && isfield(answer, 'message')
+            reason = answer.message;
+        elseif ischar(answer) || isstring(answer)
+            reason = answer;
+        else
+            reason = 'Unknown error.';
+        end
+        error('NDI:DownloadDataset:DatasetNotFound', ...
+            'Could not find or access dataset "%s". Reason: %s', cloudDatasetId, reason);
+    end
     
     % Download dataset documents
     if syncOptions.Verbose
