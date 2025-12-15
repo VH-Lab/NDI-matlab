@@ -33,7 +33,21 @@ function [id_map] = listRemoteDocumentIds(cloudDatasetId, options)
 
     try
         % Delegate the fetching and pagination logic to the dedicated function
-        [~,all_documents] = ndi.cloud.api.documents.listDatasetDocumentsAll(cloudDatasetId);
+        [success,all_documents] = ndi.cloud.api.documents.listDatasetDocumentsAll(cloudDatasetId);
+
+        if ~success
+             % Handle failure
+             if ischar(all_documents) || isstring(all_documents)
+                 error('NDI:listRemoteDocumentIds:apiError', ...
+                     'Failed to list remote documents for dataset %s. Reason: %s', cloudDatasetId, all_documents);
+             elseif isstruct(all_documents) && isfield(all_documents, 'message')
+                 error('NDI:listRemoteDocumentIds:apiError', ...
+                     'Failed to list remote documents for dataset %s. Reason: %s', cloudDatasetId, all_documents.message);
+             else
+                 error('NDI:listRemoteDocumentIds:apiError', ...
+                     'Failed to list remote documents for dataset %s. Unknown error.', cloudDatasetId);
+             end
+        end
 
         if isempty(all_documents)
             % Handle case where the dataset is empty
