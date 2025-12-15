@@ -7,12 +7,10 @@ classdef OldDatasetTest < matlab.unittest.TestCase
 
             % Copy to a temporary directory so we don't modify the example
             tempDir = tempname;
-            mkdir(tempDir);
+            copyfile(originalDatasetPath, tempDir);
             testCase.addTeardown(@rmdir, tempDir, 's');
 
-            [~, datasetName] = fileparts(originalDatasetPath);
-            copyfile(originalDatasetPath, tempDir);
-            datasetPath = fullfile(tempDir, datasetName);
+            datasetPath = tempDir;
 
             % Open the dataset with ndi.dataset.dir (1 input form)
             D = ndi.dataset.dir(datasetPath);
