@@ -7,8 +7,11 @@ classdef InvalidDatasetTest < matlab.unittest.TestCase
             % We expect an error, but we want to verify the error message is somewhat helpful
             % rather than "Dot indexing is not supported".
 
+            myTempDir = fullfile(tempdir,"invalidTest");
+            mkdir(myTempDir);
+
             try
-                [D] = ndi.cloud.downloadDataset('asdjjdsf');
+                [D] = ndi.cloud.downloadDataset('asdjjdsf',myTempDir);
                 % If we get here, it means no error was thrown, which might be okay if it just returns empty?
                 % But the user says "One should get an error saying that there is no such dataset."
                 testCase.verifyFail('Expected an error when downloading an invalid dataset, but none was thrown.');
@@ -28,6 +31,8 @@ classdef InvalidDatasetTest < matlab.unittest.TestCase
                         ['Still receiving dot indexing error: ' ME.message]);
                 end
             end
+
+            rmdir(myTempDir);
         end
     end
 end
