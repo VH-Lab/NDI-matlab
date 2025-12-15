@@ -1,0 +1,7 @@
+{
+	"classname": "demoNDIMock",
+	"superclasses":  [ "mock", "demoNDI" ],
+	"depends_on": [ ],
+	"demoNDIMock": [
+	]
+}
