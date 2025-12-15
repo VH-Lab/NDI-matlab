@@ -58,7 +58,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
             reason = 'Unknown error.';
         end
         error('NDI:DownloadDataset:DatasetNotFound', ...
-            'Could not find or access dataset "%s". Reason: %s', cloudDatasetId, reason);
+            'Could not find or access dataset "%s". The dataset may not exist or you may not have access to it. Reason: %s', cloudDatasetId, reason);
     end
     
     % Download dataset documents
