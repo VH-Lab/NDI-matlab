@@ -3,7 +3,14 @@ classdef OldDatasetTest < matlab.unittest.TestCase
     methods (Test)
         function testOldDataset(testCase)
             % Construct path to the dataset
-            datasetPath = fullfile(ndi.toolboxdir, 'ndi_common', 'example_datasets', 'oldDataset');
+            originalDatasetPath = fullfile(ndi.toolboxdir, 'ndi_common', 'example_datasets', 'oldDataset');
+
+            % Copy to a temporary directory so we don't modify the example
+            tempDir = tempname;
+            copyfile(originalDatasetPath, tempDir);
+            testCase.addTeardown(@rmdir, tempDir, 's');
+
+            datasetPath = tempDir;
 
             % Open the dataset with ndi.dataset.dir (1 input form)
             D = ndi.dataset.dir(datasetPath);
