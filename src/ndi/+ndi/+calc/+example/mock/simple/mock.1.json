@@ -1,0 +1,42 @@
+{
+  "app": {
+    "name": "ndi.calc.example.simple",
+    "version": "44c01a997aebb5f8da215af2128c3dbaa0e1ca52",
+    "url": "https://github.com/VH-lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "15.6.1",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
+  },
+  "base": {
+    "session_id": "412694ff3855b91d_c0d52dfaea736fc7",
+    "id": "412694ff44ccf271_c0d27081818f7455",
+    "name": "",
+    "datestamp": "2025-12-16T20:13:30.096Z"
+  },
+  "depends_on": {
+    "name": "document_id",
+    "value": "412694ff44b7e58c_c0c3bf143b542c1c"
+  },
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH/apps/calculations/simple_calc.json",
+    "validation": "$NDISCHEMAPATH/apps/calculations/simple_calc_schema.json",
+    "class_name": "simple_calc",
+    "property_list_name": "simple_calc",
+    "class_version": 1,
+    "superclasses": [
+      {
+        "definition": "$NDIDOCUMENTPATH/app.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      }
+    ]
+  },
+  "simple_calc": {
+    "input_parameters": {
+      "answer": 5
+    },
+    "answer": 5
+  }
+}
