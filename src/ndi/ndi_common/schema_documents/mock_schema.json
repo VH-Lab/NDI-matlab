@@ -1,0 +1,15 @@
+{
+	"classname": "mock",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"mock": [
+		{
+			"name": "ismock",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [1,1,0,0],
+			"queryable": 1,
+			"documentation": "A parameter that denotes the document as a mock document"
+		}
+	]
+}

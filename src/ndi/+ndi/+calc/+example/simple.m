@@ -12,7 +12,9 @@ classdef simple < ndi.calculator
             arguments
                 session (1,1) ndi.session
             end
-            simple_obj = simple_obj@ndi.calculator(session,'simple_calc');
+            simple_obj = simple_obj@ndi.calculator(session,'simple_calc','simple_calc');
+
+            simple_obj.numberOfSelfTests = 2;
         end % simple()
 
         function doc = calculate(ndi_calculator_obj, parameters)
@@ -28,13 +30,14 @@ classdef simple < ndi.calculator
             end
 
             % Step 1: set up the output structure
-            simple = parameters;
+            simple_calc.input_parameters = parameters.input_parameters;
 
             % Step 2: perform the calculator, which here is a simple one-line statement
-            simple.answer = parameters.input_parameters.answer;
+            simple_calc.answer = parameters.input_parameters.answer;
 
             % Step 3: place the results of the calculator into an NDI document
-            doc = ndi.document(ndi_calculator_obj.doc_document_types{1},'simple',simple);
+            doc = ndi.document(ndi_calculator_obj.doc_document_types{1},'simple_calc',simple_calc) + ...
+                ndi_calculator_obj.session.newdocument();
             doc = doc.set_dependency_value('document_id',parameters.depends_on(1).value);
         end % calculate
 
@@ -98,7 +101,7 @@ classdef simple < ndi.calculator
             if isempty(docs_test1)
                 mock_doc1_struct.demoNDI.value = 5;
                 % demoNDIMock requires a file because it inherits from demoNDI
-                mock_doc1 = ndi.document('demoNDIMock', 'demoNDIMock', mock_doc1_struct);
+                mock_doc1 = ndi.document('demoNDIMock', 'demoNDI', mock_doc1_struct.demoNDI) + ndi_calculator_obj.session.newdocument();
                 % We need to add a dummy file because demoNDI schema requires 'filename1.ext'
                 % Ideally we create a dummy file on disk.
                 fname1 = [ndi_calculator_obj.session.path() filesep 'test1_dummy.txt'];
@@ -117,7 +120,7 @@ classdef simple < ndi.calculator
 
             if isempty(docs_test2)
                 mock_doc2_struct.demoNDI.value = 10;
-                mock_doc2 = ndi.document('demoNDIMock', 'demoNDIMock', mock_doc2_struct);
+                mock_doc2 = ndi.document('demoNDIMock', 'demoNDI', mock_doc2_struct.demoNDI) + ndi_calculator_obj.session.newdocument();;
                 fname2 = [ndi_calculator_obj.session.path() filesep 'test2_dummy.txt'];
                 vlt.file.str2text(fname2, 'dummy content');
                 mock_doc2 = mock_doc2.add_file('filename1.ext', fname2);
@@ -173,11 +176,7 @@ classdef simple < ndi.calculator
                         doc_expected_output{test_idx} = doc_output{test_idx};
                      end
                 else
-                     try
                         doc_expected_output{test_idx} = ndi_calculator_obj.load_mock_expected_output(test_idx);
-                     catch
-                        % Expected file might not exist yet
-                     end
                 end
             end
 
