@@ -23,6 +23,7 @@ function datasetSessionId = datasetSessionIdFromDocs(docs)
     dataset_session_info_doc_inds = [];
 
     allSessions = {};
+    confirmedSessionIds = {};
     datasetSessionId = '';
 
     for i = 1:numel(docs)
@@ -38,6 +39,8 @@ function datasetSessionId = datasetSessionIdFromDocs(docs)
             allSessions{end+1} = docs{i}.document_properties.base.session_id;
         elseif strcmp(className, 'dataset_session_info')
             dataset_session_info_doc_inds(end+1) = i;
+        elseif strcmp(className, 'session_in_a_dataset')
+            confirmedSessionIds{end+1} = docs{i}.document_properties.session_in_a_dataset.session_id;
         end
     end
 
@@ -46,7 +49,6 @@ function datasetSessionId = datasetSessionIdFromDocs(docs)
             'More than 1 dataset_session_info document found.');
     end
 
-    confirmedSessionIds = {};
     if ~isempty(dataset_session_info_doc_inds)
         ds_info = docs{dataset_session_info_doc_inds(1)}.document_properties.dataset_session_info.dataset_session_info;
         % ds_info is a struct array
