@@ -67,6 +67,8 @@ classdef simple < ndi.calculator
             % It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
             % which can then be compared against expected outputs.
             %
+            % SCOPE is the scope to be tested: 'highSNR' or 'lowSNR'.
+            %
             % This method takes additional input arguments as name/value pairs:
             % |---------------------------|------------------------------------------------------|
             % | Parameter (default)       | Description                                          |
@@ -80,7 +82,7 @@ classdef simple < ndi.calculator
             %
             arguments
                 ndi_calculator_obj (1,1) ndi.calc.example.simple
-                scope (1,:) char
+                scope (1,:) char {mustBeMember(scope,{'highSNR','lowSNR'})}
                 number_of_tests (1,1) double
                 options.generate_expected_docs (1,1) logical = false
                 options.specific_test_inds (1,:) double = []
@@ -182,6 +184,6 @@ classdef simple < ndi.calculator
 
         end
 
-    end % methods()
+    end % methods
 
 end % simple
