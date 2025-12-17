@@ -6,14 +6,10 @@ classdef cpipeline
     end % methods
     methods (Static)
         function p = defaultPath()
-            % Returns the root 'My Pipelines' folder
             p = fullfile(ndi.common.PathConstants.LogFolder, '..', 'My Pipelines');
-            if ~isfolder(p)
-                mkdir(p);
-            end
-            % Ensure subdirectories exist
+            if ~isfolder(p), mkdir(p); end
             if ~isfolder(fullfile(p, 'Pipelines')), mkdir(fullfile(p, 'Pipelines')); end
-            if ~isfolder(fullfile(p, 'Instances')), mkdir(fullfile(p, 'Instances')); end
+            if ~isfolder(fullfile(p, 'Calculator_Parameters')), mkdir(fullfile(p, 'Calculator_Parameters')); end
         end
         
         function edit(options)
@@ -24,8 +20,8 @@ classdef cpipeline
                 options.window_params (1,1) struct = struct('height', 600, 'width', 700)
                 options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
                 options.selectedPipeline (1,:) char = ''
-                options.pipeline_name (1,:) char = ''
                 options.slider_val (1,1) double = 0
+                options.order_idx (1,1) double = 0
             end
             
             fig = options.fig;
@@ -38,12 +34,9 @@ classdef cpipeline
                 command = 'NewWindow';
                 if ~isempty(options.pipelinePath) && isfolder(options.pipelinePath)
                     ud.pipelinePath = options.pipelinePath;
-                    ud.pipelineList = []; 
-                    ud.pipelineListChar = {}; 
+                    ud.pipelineList = []; ud.pipelineListChar = {}; 
                     ud.linked_object = options.session;
-                    ud.gui_rows = []; 
-                    ud.row_params = {}; 
-                    ud.selected_row_index = []; 
+                    ud.gui_rows = []; ud.selected_row_index = []; 
                     set(fig,'userdata',ud);
                 else
                     error(['The provided pipeline path does not exist: ' options.pipelinePath '.']);
@@ -59,737 +52,549 @@ classdef cpipeline
                     uid = vlt.ui.basicuitools_defs;
                     callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);'];
                     
-                    fig_bg_color = [0.8 0.8 0.8];
-                    edit_bg_color = [1 1 1];
+                    fig_bg = [0.8 0.8 0.8]; edit_bg = [1 1 1];
                     top = options.window_params.height;
+                    margin = 0.04; row_h = 0.04;
                     
-                    margin = 0.04; 
-                    row_h = 0.04;  
-                    
-                    set(fig,'position',[50 50 options.window_params.width top], 'Color', fig_bg_color, ...
+                    set(fig,'position',[50 50 options.window_params.width top], 'Color', fig_bg, ...
                         'NumberTitle','off', 'Name',['Editing Pipelines at ' ud.pipelinePath], ...
                         'MenuBar','none', 'ToolBar','none', 'Units','normalized', 'Resize','on');
                     
                     y = 1 - margin - row_h;
                     
-                    % --- TOP CONTROLS ---
-                    uicontrol(uid.txt,'Units','normalized','position',[margin y 0.4 row_h],'string','Select Pipeline / Instance:',...
-                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    % Top Controls
+                    uicontrol(uid.txt,'Units','normalized','position',[margin y 0.4 row_h],'string','Select Pipeline:',...
+                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
                     y = y - row_h;
                     uicontrol(uid.popup,'Units','normalized','position',[margin y 0.94 row_h],...
-                        'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+                        'string',{'---'},'tag','PipelinePopup','callback',callbackstr,'BackgroundColor',edit_bg);
                     
                     y = y - row_h - 0.02; 
-                    
                     uicontrol(uid.txt,'Units','normalized','position',[margin y 0.4 row_h],'string','NDI Data:',...
-                         'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                         'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
                     y = y - row_h;
                     uicontrol(uid.popup,'Units','normalized','position',[margin y 0.94 row_h],...
-                        'string',{'None'},'tag','PipelineObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+                        'string',{'None'},'tag','PipelineObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg);
                     
                     y = y - 0.05; 
-                    
                     header_y = y;
-                    uicontrol(uid.txt,'Units','normalized','position',[margin header_y 0.4 row_h],'string','Calculator Instance',...
-                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
-                    uicontrol(uid.txt,'Units','normalized','position',[0.5 header_y 0.4 row_h],'string','Input Parameters',...
-                        'BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
                     
+                    % Headers
+                    uicontrol(uid.txt,'Units','normalized','position',[margin header_y 0.38 row_h],'string','Calculator Instance',...
+                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
+                    uicontrol(uid.txt,'Units','normalized','position',[0.45 header_y 0.35 row_h],'string','Input Parameters',...
+                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
+                    uicontrol(uid.txt,'Units','normalized','position',[0.82 header_y 0.12 row_h],'string','Order',...
+                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
+                    
+                    % Main List Area
                     list_top = header_y; 
                     bottom_area_height = 0.20;
                     list_height = list_top - bottom_area_height;
                     list_bottom = bottom_area_height + 0.01;
                     
                     panel_pos = [margin, list_bottom, 1-(2*margin), list_height];
+                    
+                    % LIST CONTAINER
                     uipanel('Units','normalized', 'Position', panel_pos, 'BackgroundColor', [1 1 1], ...
-                        'Tag', 'ListContainerPanel', 'BorderType', 'line', 'HighlightColor', [0.6 0.6 0.6]);
+                        'Tag', 'ListContainerPanel', 'BorderType', 'line', 'HighlightColor', [0.6 0.6 0.6], ...
+                        'Visible', 'on');
                     
                     slider_w = 0.04;
                     uicontrol('Style','slider','Units','normalized',...
                         'Position',[panel_pos(1)+panel_pos(3), list_bottom, slider_w, list_height],...
                         'Tag','ListSlider', 'Callback', callbackstr, 'Min', 0, 'Max', 1, 'Value', 1);
                     
-                    % --- BUTTONS ---
-                    btn_h = 0.05; 
-                    gap_v = 0.015; 
-                    gap_h = 0.015; 
+                    % Buttons
+                    btn_h = 0.05; gap = 0.015; 
+                    y_row_top = 0.11; y_row_bot = y_row_top - btn_h - gap;
+                    btn_w = 0.22; 
                     
-                    y_row_top = 0.11; 
-                    y_row_bot = y_row_top - btn_h - gap_v;
-                    btn_w = 0.18; 
-                    
-                    % Top Row: New, Delete, SAVE
-                    x1 = margin;
-                    uicontrol(uid.button,'Units','normalized','position',[x1 y_row_top btn_w btn_h],...
+                    x = margin;
+                    uicontrol(uid.button,'Units','normalized','position',[x y_row_top btn_w btn_h],...
                         'string','New Pipeline','tag','NewPipelineButton','callback',callbackstr);
-                    x2 = x1 + btn_w + gap_h;
-                    uicontrol(uid.button,'Units','normalized','position',[x2 y_row_top btn_w btn_h],...
+                    x = x + btn_w + gap;
+                    uicontrol(uid.button,'Units','normalized','position',[x y_row_top btn_w btn_h],...
                         'string','Delete Pipeline','tag','DeletePipelineButton','callback',callbackstr);
-                    x3 = x2 + btn_w + gap_h;
-                    uicontrol(uid.button,'Units','normalized','position',[x3 y_row_top btn_w btn_h],...
-                        'string','Save Pipeline','tag','SavePipelineButton','callback',callbackstr, ...
-                        'Tooltip', 'Save current configuration as a shareable Instance');
                     
-                    % Bottom Row: New Calc, Delete Calc, Edit Calc
-                    uicontrol(uid.button,'Units','normalized','position',[x1 y_row_bot btn_w btn_h],...
+                    x = margin;
+                    uicontrol(uid.button,'Units','normalized','position',[x y_row_bot btn_w btn_h],...
                         'string','New Calculator','tag','NewCalculatorInstanceButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[x2 y_row_bot btn_w btn_h],...
+                    x = x + btn_w + gap;
+                    uicontrol(uid.button,'Units','normalized','position',[x y_row_bot btn_w btn_h],...
                         'string','Delete Calculator','tag','DeleteCalculatorInstanceButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[x3 y_row_bot btn_w btn_h],...
+                    x = x + btn_w + gap;
+                    uicontrol(uid.button,'Units','normalized','position',[x y_row_bot btn_w btn_h],...
                         'string','Edit Calculator','tag','EditButton','callback',callbackstr);
                     
-                    run_x = x3 + btn_w + 0.05; 
-                    run_w = 1 - run_x - margin;
-                    total_btn_block_h = (y_row_top + btn_h) - y_row_bot;
-                    run_h = 0.08; 
-                    run_y = y_row_bot + (total_btn_block_h - run_h)/2;
+                    run_x = x + btn_w + 0.05; run_w = 1 - run_x - margin;
+                    run_h = 0.08; run_y = y_row_bot + ((y_row_top+btn_h)-y_row_bot-run_h)/2;
                     
                     uicontrol(uid.button,'Units','normalized','position',[run_x run_y run_w run_h],...
                         'string','RUN PIPELINE','tag','RunButton','callback',callbackstr, ...
                         'FontWeight','bold', 'FontSize', 10, 'BackgroundColor',[0.8 1 0.8]);
+                    
                     ndi.cpipeline.edit('command','RefreshObjectVariablePopup','fig',fig);
                     ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
+                case 'PipelinePopup'
+                    ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','fig',fig);
                     
                 case 'UpdateCalculatorInstanceList'
-                    if ~isfield(ud,'row_params'), ud.row_params = {}; set(fig,'userdata',ud); end
                     container = findobj(fig, 'Tag', 'ListContainerPanel');
-                    delete(container.Children); 
+                    if ~isempty(container.Children), delete(container.Children); end
+                    drawnow limitrate; 
+                    
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
-                    str = get(pipelinePopupObj, 'string');
                     
-                    if val <= 1 || isempty(str)
-                        ud.gui_rows = []; set(fig,'userdata',ud); return;
+                    if val <= 1 || isempty(ud.pipelineList)
+                        ud.gui_rows = []; set(fig,'userdata',ud); drawnow; return;
                     end
                     
-                    selected_pipeline = ud.pipelineList(val);
-                    is_instance = strcmp(selected_pipeline.type, 'instance');
+                    try, current_pipeline = ud.pipelineList(val - 1); catch, return; end
                     
-                    % Toggle Button Enable State based on type
-                    edit_btns = findobj(fig, '-regexp', 'Tag', '(NewCalculator|DeleteCalculator|EditButton|NewPipeline|DeletePipeline)');
+                    if isfield(current_pipeline, 'items')
+                        calc_items = current_pipeline.items;
+                        if iscell(calc_items)
+                            temp_items = [];
+                            for c_i = 1:numel(calc_items)
+                                if isstruct(calc_items{c_i}), temp_items = [temp_items, calc_items{c_i}]; end
+                            end
+                            calc_items = temp_items;
+                        end
+                    else, calc_items = []; end
                     
-                    if is_instance
-                        enable_val = 'off';
-                    else
-                        enable_val = 'on';
+                    if iscolumn(calc_items), calc_items = calc_items'; end
+                    if ~isempty(calc_items)
+                        [~, sort_idx] = sort([calc_items.order]);
+                        calc_items = calc_items(sort_idx);
                     end
                     
-                    set(edit_btns, 'Enable', enable_val);
-                    set(findobj(fig,'Tag','SavePipelineButton'), 'Enable', enable_val);
-                    
-                    % Specifically handle EditButton text
-                    editBtn = findobj(fig,'Tag','EditButton');
-                    if is_instance
-                        set(editBtn, 'Enable', 'on', 'String', 'View Calculator');
-                    else
-                        set(editBtn, 'Enable', 'on', 'String', 'Edit Calculator');
-                    end
-                    
-                    calc_list = selected_pipeline.calculatorInstances;
-                    n_calcs = numel(calc_list);
-                    row_h_pix = 30; 
-                    total_h_pix = n_calcs * row_h_pix;
+                    n_calcs = numel(calc_items);
+                    order_options = cellstr(string(1:n_calcs)); 
                     
                     set(container, 'Units', 'pixels');
                     p_pos = get(container, 'Position');
-                    panel_h = p_pos(4);
-                    set(container, 'Units', 'normalized');
+                    panel_w = p_pos(3); panel_h = p_pos(4);
+                    
+                    row_h_pix = 30; total_h_pix = n_calcs * row_h_pix;
                     
                     slider = findobj(fig, 'Tag', 'ListSlider');
                     if total_h_pix > panel_h
                         set(slider, 'Enable', 'on', 'Min', 0, 'Max', total_h_pix - panel_h, ...
-                            'SliderStep', [row_h_pix/(total_h_pix-panel_h), 3*row_h_pix/(total_h_pix-panel_h)]);
+                            'SliderStep', [row_h_pix/(total_h_pix-panel_h), 5*row_h_pix/(total_h_pix-panel_h)]);
                     else
                         set(slider, 'Enable', 'off', 'Value', 0, 'Max', 0);
                     end
                     
-                    slider_val = get(slider, 'Value');
-                    slider_max = get(slider, 'Max');
+                    slider_val = get(slider, 'Value'); slider_max = get(slider, 'Max');
                     scroll_offset = slider_max - slider_val;
                     
-                    ud.gui_rows = struct('bg',{},'name',{},'param',{},'calc_class',{});
-                    
-                    % Determine Path for Parameter Loading
-                    if ~is_instance
-                        pipeline_dir = fullfile(ud.pipelinePath, 'Pipelines', selected_pipeline.pipeline_name);
-                    end
+                    ud.gui_rows = struct('bg',{},'order_popup',{},'name',{},'param',{});
                     
                     for i = 1:n_calcs
-                        row_y_bottom = panel_h - (i * row_h_pix) + scroll_offset;
-                        
-                        if (row_y_bottom + row_h_pix > 0) && (row_y_bottom < panel_h + row_h_pix)
-                            y_norm = row_y_bottom / panel_h;
-                            h_norm = row_h_pix / panel_h;
-                            
-                            bg_color = [1 1 1];
-                            if isfield(ud,'selected_row_index') && ~isempty(ud.selected_row_index) && ud.selected_row_index == i
-                                bg_color = [0.7 0.85 1];
-                            end
-                            
-                            bg = uicontrol(container, 'Style', 'text', 'Units', 'normalized', ...
-                                'Position', [0, y_norm, 1, h_norm], 'BackgroundColor', bg_color, ...
-                                'Enable', 'inactive', ...
-                                'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
-                            
-                            txt = uicontrol(container, 'Style', 'text', 'Units', 'normalized', ...
-                                'Position', [0.02, y_norm, 0.45, h_norm*0.8], 'String', calc_list(i).instanceName, ...
-                                'BackgroundColor', bg_color, 'HorizontalAlignment', 'left', 'FontSize', 10, ...
-                                'Enable', 'inactive', ...
-                                'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
-                            
-                            calc_class = calc_list(i).calculatorClassname;
-                            
-                            if is_instance
-                                % In Instance mode, options are fixed to the saved parameter name
-                                opts = {calc_list(i).selected_param_name}; 
-                                enable_pop = 'off';
-                            else
-                                % In Pipeline mode, load available options
-                                opts = {'Default'};
-                                % Pass the pipeline-specific user_parameter file
-                                user_param_file = fullfile(pipeline_dir, 'user_parameters.json');
-                                [names, ~] = ndi.calculator.readParameterCode(calc_class, user_param_file);
-                                if ~isempty(names), opts = [opts, names]; end
-                                
-                                if ~isempty(ud.linked_object)
-                                    try
-                                        search_q = ndi.query('ndi_document.name','.*',''); 
-                                        docs = ud.linked_object.search('ndi_document', search_q);
-                                        for d=1:numel(docs)
-                                            if isfield(docs{d}.document_properties.ndi_document,'name')
-                                                opts{end+1} = docs{d}.document_properties.ndi_document.name;
-                                            end
-                                        end
-                                    catch, end
-                                end
-                                opts = unique(opts, 'stable');
-                                enable_pop = 'on';
-                            end
-                            
-                            current_val = 1; 
-                            if i <= numel(ud.row_params) && ~isempty(ud.row_params{i})
-                                idx = find(strcmp(opts, ud.row_params{i}));
-                                if ~isempty(idx), current_val = idx; end
-                            end
-                            
-                            pop = uicontrol(container, 'Style', 'popupmenu', 'Units', 'normalized', ...
-                                'Position', [0.5, y_norm+0.1*h_norm, 0.48, h_norm*0.8], 'String', opts, ...
-                                'Value', current_val, ...
-                                'BackgroundColor', [1 1 1], ...
-                                'Enable', enable_pop, ...
-                                'Callback', @(s,e)ndi.cpipeline.edit('command','ParamChange','fig',fig,'slider_val',i));
-                            
-                            ud.gui_rows(i).bg = bg;
-                            ud.gui_rows(i).name = txt;
-                            ud.gui_rows(i).param = pop;
-                            ud.gui_rows(i).calc_class = calc_class;
-                        else
-                            ud.gui_rows(i).bg = [];
+                        item_top_virtual = (i-1) * row_h_pix; 
+                        y_pix = panel_h + scroll_offset - item_top_virtual - row_h_pix;
+                        if (y_pix + row_h_pix < 0) || (y_pix > panel_h), continue; end
+                        bg_color = [1 1 1];
+                        if isfield(ud,'selected_row_index') && ~isempty(ud.selected_row_index) && ud.selected_row_index == i
+                            bg_color = [0.7 0.85 1];
                         end
+                        
+                        w_name = 0.40 * panel_w; w_param = 0.35 * panel_w; w_order = 0.12 * panel_w;
+                        
+                        bg = uicontrol(container, 'Style', 'text', 'Units', 'pixels', ...
+                            'Position', [0, y_pix, panel_w, row_h_pix], ...
+                            'BackgroundColor', bg_color, 'Enable', 'inactive', ...
+                            'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
+                        
+                        txt = uicontrol(container, 'Style', 'text', 'Units', 'pixels', ...
+                            'Position', [5, y_pix+5, w_name, row_h_pix-10], ...
+                            'String', calc_items(i).instanceName, ...
+                            'BackgroundColor', bg_color, 'HorizontalAlignment', 'left', 'FontSize', 10, ...
+                            'Enable', 'inactive', 'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
+                        
+                        try, global_params = ndi.calculator.get_available_parameters(calc_items(i).calculatorClass, ud.pipelinePath);
+                        catch, global_params = {'Error loading params'}; end
+                        
+                        curr_sel = calc_items(i).selected_param_name;
+                        val_idx = find(strcmp(global_params, curr_sel));
+                        if isempty(val_idx), val_idx = 1; end
+                        
+                        pop = uicontrol(container, 'Style', 'popupmenu', 'Units', 'pixels', ...
+                            'Position', [10+w_name, y_pix+5, w_param, row_h_pix-8], ...
+                            'String', global_params, 'Value', val_idx, 'BackgroundColor', [1 1 1], ...
+                            'Callback', @(s,e)ndi.cpipeline.edit('command','ParamChange','fig',fig,'slider_val',i));
+                        
+                        order_popup = uicontrol(container, 'Style', 'popupmenu', 'Units', 'pixels', ...
+                            'Position', [15+w_name+w_param, y_pix+5, w_order, row_h_pix-8], ...
+                            'String', order_options, 'Value', calc_items(i).order, 'BackgroundColor', [1 1 1], ...
+                            'Callback', @(s,e)ndi.cpipeline.edit('command','OrderChange','fig',fig,'order_idx',i));
+                        
+                        ud.gui_rows(i).bg = bg; ud.gui_rows(i).order_popup = order_popup;
+                        ud.gui_rows(i).name = txt; ud.gui_rows(i).param = pop;
                     end
-                    set(fig, 'userdata', ud);
+                    set(container, 'Units', 'normalized'); set(fig, 'userdata', ud);
+                    set(container, 'Visible', 'off'); set(container, 'Visible', 'on'); drawnow; 
+                    
+                case 'OrderChange'
+                    idx = options.order_idx; 
+                    pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                    val = get(pipelinePopupObj, 'value');
+                    if val <= 1, return; end
+                    current_pipeline = ud.pipelineList(val - 1);
+                    [~, sort_idx] = sort([current_pipeline.items.order]);
+                    
+                    new_order = get(ud.gui_rows(idx).order_popup, 'Value');
+                    current_order = current_pipeline.items(sort_idx(idx)).order;
+                    if new_order == current_order, return; end
+                    
+                    item_A_real_idx = sort_idx(idx); item_B_real_idx = sort_idx(new_order);
+                    current_pipeline.items(item_A_real_idx).order = new_order;
+                    current_pipeline.items(item_B_real_idx).order = current_order;
+                    
+                    ud.pipelineList(val - 1) = current_pipeline;
+                    set(fig,'userdata',ud);
+                    ndi.cpipeline.savePipelineFile(ud.pipelinePath, current_pipeline);
+                    ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','fig',fig);
                     
                 case 'ParamChange'
                     idx = options.slider_val;
-                    if idx <= numel(ud.gui_rows) && isvalid(ud.gui_rows(idx).param)
-                        items = get(ud.gui_rows(idx).param, 'String');
-                        val = get(ud.gui_rows(idx).param, 'Value');
-                        ud.row_params{idx} = items{val}; 
-                        set(fig, 'userdata', ud);
-                    end
+                    pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                    val = get(pipelinePopupObj, 'value');
+                    if val <= 1, return; end
+                    current_pipeline = ud.pipelineList(val - 1);
+                    [~, sort_idx] = sort([current_pipeline.items.order]);
+                    actual_index = sort_idx(idx);
                     
-                case 'ListSlider'
-                    val = get(gcbo, 'Value');
-                    max_val = get(gcbo, 'Max');
-                    ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','fig',fig, 'slider_val', max_val - val);
+                    items = get(ud.gui_rows(idx).param, 'String'); v = get(ud.gui_rows(idx).param, 'Value');
+                    current_pipeline.items(actual_index).selected_param_name = items{v};
                     
-                case 'SelectRow'
-                    idx = options.slider_val;
-                    ud.selected_row_index = idx;
-                    set(fig, 'userdata', ud);
-                    for i=1:numel(ud.gui_rows)
-                        if ~isempty(ud.gui_rows(i).bg) && isvalid(ud.gui_rows(i).bg)
-                            if i == idx
-                                set(ud.gui_rows(i).bg, 'BackgroundColor', [0.7 0.85 1]);
-                                set(ud.gui_rows(i).name, 'BackgroundColor', [0.7 0.85 1]);
-                            else
-                                set(ud.gui_rows(i).bg, 'BackgroundColor', [1 1 1]);
-                                set(ud.gui_rows(i).name, 'BackgroundColor', [1 1 1]);
-                            end
-                        end
-                    end
+                    ud.pipelineList(val - 1) = current_pipeline; set(fig, 'userdata', ud);
+                    ndi.cpipeline.savePipelineFile(ud.pipelinePath, current_pipeline);
                     
                 case 'RunButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
-                    if val <= 1, msgbox('Select a pipeline.', 'Error', 'modal'); return; end
+                    if val <= 1, msgbox('Select a pipeline.', 'Error'); return; end
                     
-                    % Determine if Instance
-                    selected_pipeline = ud.pipelineList(val);
-                    is_instance = strcmp(selected_pipeline.type, 'instance');
+                    current_pipeline = ud.pipelineList(val - 1);
+                    items = current_pipeline.items; if isempty(items), return; end
+                    [~, s_idx] = sort([items.order]); items = items(s_idx);
                     
                     dataPopupObj = findobj(fig, 'tag', 'PipelineObjectVariablePopup');
-                    data_val = get(dataPopupObj, 'value');
-                    data_list = get(dataPopupObj, 'userdata'); 
-                    if data_val > 1 && numel(data_list) >= data_val
-                        selected_var = data_list{data_val};
-                        try, ud.linked_object = evalin('base', selected_var); set(fig, 'userdata', ud);
-                        catch, msgbox(['Error accessing variable "' selected_var '" in base workspace.'], 'Error', 'modal'); return; end
-                    end
-                    if isempty(ud.linked_object), msgbox('Please link an NDI Data object.', 'Error', 'modal'); return; end
+                    dv = get(dataPopupObj, 'value'); dlist = get(dataPopupObj, 'userdata');
+                    pipeline_session = [];
+                    if dv > 1, try, pipeline_session = evalin('base', dlist{dv}); catch, end; end
                     
-                    calc_instances = selected_pipeline.calculatorInstances;
-                    if isempty(calc_instances), return; end
+                    if isempty(pipeline_session), msgbox('Please link NDI Data to Run.', 'Error'); return; end
                     
-                    % If not an instance, set up path to read user_params
-                    if ~is_instance
-                        pipeline_dir = fullfile(ud.pipelinePath, 'Pipelines', selected_pipeline.pipeline_name);
-                        user_param_file = fullfile(pipeline_dir, 'user_parameters.json');
-                    end
-                    
-                    fprintf('\n\n--- PIPELINE EXECUTION STARTED ---\n');
-                    h_wait = waitbar(0, 'Running Pipeline...');
+                    fprintf('\n=======================================================\n');
+                    fprintf('Running Pipeline: %s\n', current_pipeline.pipeline_name);
+                    fprintf('Linked Session: %s\n', pipeline_session.reference);
+                    fprintf('=======================================================\n');
+                    h_wait = waitbar(0, 'Executing Pipeline...');
                     
                     try
-                        for i = 1:numel(calc_instances)
-                            this_instance = calc_instances(i);
-                            calc_class = this_instance.calculatorClassname;
-                            calc_name = this_instance.instanceName;
+                        for i = 1:numel(items)
+                            calc_name = items(i).instanceName;
+                            fprintf('Step %d/%d: Running ''%s'' (%s)...\n', i, numel(items), calc_name, items(i).calculatorClass);
+                            waitbar((i-1)/numel(items), h_wait, ['Running ' calc_name]);
                             
-                            % Determine Parameter Source
-                            if is_instance
-                                param_source = this_instance.selected_param_name;
-                                param_code_text = this_instance.selected_param_code; % Embedded code
-                            else
-                                param_source = 'Default';
-                                if i <= numel(ud.row_params) && ~isempty(ud.row_params{i})
-                                    param_source = ud.row_params{i};
-                                elseif i <= numel(ud.gui_rows) && ~isempty(ud.gui_rows(i).param) && isvalid(ud.gui_rows(i).param)
-                                    str = get(ud.gui_rows(i).param, 'String');
-                                    val = get(ud.gui_rows(i).param, 'Value');
-                                    if iscell(str), param_source = str{val}; else, param_source = str; end
-                                end
-                                param_code_text = ''; 
-                            end
-                            
-                            fprintf('\nSTEP %d: %s (Params: %s)\n', i, calc_name, param_source);
-                            waitbar((i-1)/numel(calc_instances), h_wait, sprintf('Running %s...', calc_name));
-                            
-                            if exist(calc_class, 'class')
-                                calc_obj = feval(calc_class, ud.linked_object);
-                                params = struct();
-                                if strcmp(param_source, 'Default')
-                                    params = calc_obj.default_search_for_input_parameters();
-                                else
-                                    code = '';
-                                    found_code = false;
-                                    
-                                    if is_instance
-                                        % Use embedded code from instance file
-                                        code = param_code_text;
-                                        found_code = ~isempty(code);
-                                        % Fallback if stored code is empty but it was 'Default'
-                                        if isempty(code) && strcmp(param_source, 'Default')
-                                            try
-                                                code = ndi.calculator.parameter_default(calc_class);
-                                                found_code = true;
-                                            catch, end
-                                        end
-                                    else
-                                        % Look up code in pipeline file
-                                        [names, contents] = ndi.calculator.readParameterCode(calc_class, user_param_file);
-                                        idx = find(strcmp(names, param_source), 1);
-                                        if ~isempty(idx)
-                                            code = contents{idx};
-                                            found_code = true;
-                                        end
-                                    end
-                                    
-                                    if found_code
-                                        % --- FIX: SANITIZE CODE FOR EVAL ---
-                                        if iscell(code), code = strjoin(code, newline); end
-                                        if isstring(code) && numel(code) > 1, code = strjoin(code, newline); end
-                                        if isstring(code), code = char(code); end
-                                        % -----------------------------------
-                                        
-                                        S = ud.linked_object; pipeline_session = S;
+                            try
+                                fprintf('   > Loading parameters...\n');
+                                forced_code = '';
+                                if strcmpi(items(i).selected_param_name, 'Default')
+                                    def_file = fullfile(ud.pipelinePath, 'Calculator_Parameters', items(i).calculatorClass, 'Default.json');
+                                    if isfile(def_file)
                                         try
-                                            if exist('parameters','var'), clear parameters; end
-                                            eval(code);
-                                            if exist('parameters','var'), params = parameters;
-                                            else, error('Custom code did not create "parameters".'); end
-                                        catch e
-                                            error(sprintf('Error in param code "%s":\n%s', param_source, e.message));
-                                        end
-                                    else
-                                        % Fallback to searching DB for a named doc
-                                        try
-                                            q = ndi.query('ndi_document.name','exact_string',param_source);
-                                            d = ud.linked_object.search('ndi_document',q);
-                                            if ~isempty(d), params = d{1}; 
-                                            else, params = calc_obj.default_search_for_input_parameters(); end
+                                            txt = fileread(def_file);
+                                            j = jsondecode(txt);
+                                            if isfield(j, 'code'), forced_code = j.code; end
                                         catch
-                                            params = calc_obj.default_search_for_input_parameters();
                                         end
                                     end
                                 end
                                 
-                                if ~isstruct(params) && ~isa(params,'ndi.document')
-                                    w = calc_obj.default_search_for_input_parameters(); w.input_parameters = params; params = w;
-                                elseif isstruct(params) && ~isfield(params,'input_parameters')
-                                    w = calc_obj.default_search_for_input_parameters(); w.input_parameters = params; params = w;
+                                if ~isempty(forced_code)
+                                    param_code = forced_code;
+                                else
+                                    param_code = ndi.calculator.load_parameter_code(items(i).calculatorClass, items(i).selected_param_name, ud.pipelinePath);
                                 end
-                                generated_docs = calc_obj.run('NoAction', params);
-                                num_docs = 0;
-                                if iscell(generated_docs), num_docs = numel(generated_docs); 
-                                elseif ~isempty(generated_docs), num_docs = numel(generated_docs); end
-                                fprintf('  Result: %d docs generated/updated.\n', num_docs);
+                                
+                                if iscell(param_code), param_code = strjoin(param_code, newline);
+                                elseif isstring(param_code) && numel(param_code) > 1, param_code = join(param_code, newline); end
+                                param_code = char(param_code);
+                                
+                                S = pipeline_session;
+                                if exist('parameters','var'), clear parameters; end
+                                eval(param_code); 
+                                
+                                if ~exist('parameters','var')
+                                    thecalc = feval(items(i).calculatorClass, pipeline_session);
+                                    parameters = thecalc.default_search_for_input_parameters();
+                                end
+                                
+                                fprintf('   > Calculating...\n');
+                                calc_obj = feval(items(i).calculatorClass, pipeline_session);
+                                new_docs = calc_obj.run('NoAction', parameters);
+                                doc_count = 0;
+                                if iscell(new_docs), doc_count = numel(new_docs);
+                                elseif isa(new_docs, 'ndi.document'), doc_count = numel(new_docs); 
+                                end
+                                fprintf('   > Success. Generated/Found %d documents.\n', doc_count);
+                            catch run_err
+                                fprintf(2, '   > EXECUTION ERROR: %s\n', run_err.message);
+                                err_msg = sprintf('Error executing calculator "%s":\n\n%s\n\nCheck your Input Parameters.', calc_name, run_err.message);
+                                uiwait(msgbox(err_msg, 'Calculator Error', 'error'));
+                                delete(h_wait); fprintf('   > Pipeline Stopped due to error.\n'); return; 
                             end
                         end
-                        if isvalid(h_wait), delete(h_wait); end
-                        m = msgbox('Pipeline Finished!', 'Success', 'modal');
-                        figure(fig); 
+                        delete(h_wait); msgbox('Success! Pipeline Completed.', 'Info');
+                        fprintf('Pipeline Complete.\n');
                     catch e
                         if isvalid(h_wait), delete(h_wait); end
-                        errordlg(e.message, 'Execution Error', 'modal');
-                    end
-                case {'LoadPipelines','RefreshObjectVariablePopup','PipelinePopup','PipelineObjectVariablePopup'}
-                    if strcmp(command,'LoadPipelines')
-                        ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
-                        ud.pipelineListChar = ndi.cpipeline.pipelineListToChar(ud.pipelineList);
-                        set(fig,'userdata',ud);
-                        set(findobj(fig,'Tag','PipelinePopup'),'String',ud.pipelineListChar);
-                        
-                        % If a selectedPipeline was passed, select it
-                        if isfield(options, 'selectedPipeline') && ~isempty(options.selectedPipeline)
-                           idx = find(strcmp(ud.pipelineListChar, options.selectedPipeline));
-                           if ~isempty(idx), set(findobj(fig,'Tag','PipelinePopup'),'Value',idx(1)); end
-                        end
-                        
-                    elseif strcmp(command,'RefreshObjectVariablePopup')
-                         vars = evalin('base', 'whos');
-                         vn = {};
-                         for i=1:length(vars), if ismember(vars(i).class, {'ndi.session','ndi.session.dir','ndi.dataset'}), vn{end+1}=vars(i).name; end; end
-                         set(findobj(fig,'Tag','PipelineObjectVariablePopup'),'String',[{'None'}, vn]);
-                         set(findobj(fig,'Tag','PipelineObjectVariablePopup'),'userdata',[{[]}, vn]);
-                    end
-                    ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','fig',fig);
-                
-                case 'SavePipelineButton'
-                    % Logic: Gather current pipeline + selected params, save to Instances/
-                    pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-                    val = get(pipelinePopupObj, 'value');
-                    if val <= 1, return; end
-                    
-                    selected_pipeline = ud.pipelineList(val);
-                    if strcmp(selected_pipeline.type, 'instance')
-                         msgbox('Cannot save an Instance as another Instance (not implemented). Load the original pipeline to make changes.', 'Info', 'modal');
-                         return;
+                        errordlg(e.message, 'Execution Error');
+                        fprintf(2, 'Pipeline Crashed: %s\n', e.message);
                     end
                     
-                    ans = inputdlg('Enter name for this Pipeline Instance:', 'Save Instance');
-                    if isempty(ans), return; end
-                    instance_name = ans{1};
+                case 'LoadPipelines'
+                    ud.pipelineList = ndi.cpipeline.getPipelines(ud.pipelinePath);
+                    ud.pipelineListChar = {ud.pipelineList.pipeline_name};
+                    fullList = [{'Select a Pipeline...'}, ud.pipelineListChar];
+                    set(fig,'userdata',ud);
+                    set(findobj(fig,'Tag','PipelinePopup'),'String',fullList, 'Value', 1);
                     
-                    % Build structure
-                    instanceStruct.pipeline_name = selected_pipeline.pipeline_name;
-                    instanceStruct.type = 'instance';
-                    instanceStruct.calculatorInstances = selected_pipeline.calculatorInstances;
-                    
-                    % Path to current pipeline parameters to fetch code
-                    pipeline_dir = fullfile(ud.pipelinePath, 'Pipelines', selected_pipeline.pipeline_name);
-                    user_param_file = fullfile(pipeline_dir, 'user_parameters.json');
-                    
-                    % Iterate rows to lock in params
-                    for i = 1:numel(instanceStruct.calculatorInstances)
-                        param_name = 'Default';
-                        param_code = '';
-                        
-                        if i <= numel(ud.row_params) && ~isempty(ud.row_params{i})
-                             param_name = ud.row_params{i};
-                        elseif i <= numel(ud.gui_rows) && ~isempty(ud.gui_rows(i).param)
-                             items = get(ud.gui_rows(i).param, 'String');
-                             idx = get(ud.gui_rows(i).param, 'Value');
-                             if iscell(items), param_name = items{idx}; else, param_name = items; end
-                        end
-                        
-                        % If custom, fetch the code now and save it into the instance
-                        if ~strcmp(param_name, 'Default')
-                             [names, contents] = ndi.calculator.readParameterCode(instanceStruct.calculatorInstances(i).calculatorClassname, user_param_file);
-                             k = find(strcmp(names, param_name), 1);
-                             if ~isempty(k)
-                                 param_code = contents{k};
-                             end
-                        else
-                             % UPDATED: If Default, generate and save the default code string
-                             param_code = ndi.calculator.parameter_default(instanceStruct.calculatorInstances(i).calculatorClassname);
-                        end
-                        
-                        instanceStruct.calculatorInstances(i).selected_param_name = param_name;
-                        instanceStruct.calculatorInstances(i).selected_param_code = param_code;
+                    if isfield(options, 'selectedPipeline') && ~isempty(options.selectedPipeline)
+                       idx = find(strcmp(ud.pipelineListChar, options.selectedPipeline));
+                       if ~isempty(idx)
+                           set(findobj(fig,'Tag','PipelinePopup'),'Value',idx(1)+1); 
+                           ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','fig',fig);
+                       end
                     end
                     
-                    % Save
-                    save_path = fullfile(ud.pipelinePath, 'Instances', [matlab.lang.makeValidName(instance_name) '.json']);
-                    fid = fopen(save_path, 'w');
-                    fprintf(fid, '%s', jsonencode(instanceStruct, 'PrettyPrint', true));
-                    fclose(fid);
-                    
-                    msgbox(['Instance "' instance_name '" saved successfully.'], 'Success');
-                    ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
-
-                case 'DeleteCalculatorInstanceButton'
-                     if isfield(ud, 'selected_row_index') && ~isempty(ud.selected_row_index)
-                         pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-                         val = get(pipelinePopupObj, 'value');
-                         str = get(pipelinePopupObj, 'string');
-                         pipeline_name = str{val};
-                         selected_pipeline = ud.pipelineList(val);
-                         if strcmp(selected_pipeline.type, 'instance'), return; end % Safety
-                         
-                         idx = ud.selected_row_index;
-                         if idx <= numel(selected_pipeline.calculatorInstances)
-                             fname = selected_pipeline.calculatorInstances(idx).JSONFilename;
-                             full_f = fullfile(ud.pipelinePath, 'Pipelines', pipeline_name, fname);
-                             try
-                                 if isfile(full_f), delete(full_f); end
-                                 ndi.cpipeline.edit('command','LoadPipelines','fig',fig); 
-                             catch ME
-                                 errordlg(['Could not delete file: ' ME.message]);
-                             end
-                         end
-                     else
-                         msgbox('Please select a calculator instance to delete.', 'Error', 'modal');
-                     end
+                case 'RefreshObjectVariablePopup'
+                     vars = evalin('base', 'whos'); vn = {};
+                     for i=1:length(vars), if ismember(vars(i).class, {'ndi.session','ndi.session.dir','ndi.dataset'}), vn{end+1}=vars(i).name; end; end
+                     set(findobj(fig,'Tag','PipelineObjectVariablePopup'),'String',[{'None'}, vn], 'userdata',[{[]}, vn]);
                      
                 case 'EditButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
-                    selected_pipeline = ud.pipelineList(val);
-                    is_instance = strcmp(selected_pipeline.type, 'instance');
+                    if val <= 1, return; end
+                    current_pipeline = ud.pipelineList(val - 1);
                     
+                    dataPopupObj = findobj(fig, 'tag', 'PipelineObjectVariablePopup');
+                    dv = get(dataPopupObj, 'value'); 
+                    dlist = get(dataPopupObj, 'userdata'); 
+                    session_to_pass = [];
+                    if dv > 1
+                        try, varName = dlist{dv}; session_to_pass = evalin('base', varName); catch, end
+                    end
+                    
+                    [~, s_idx] = sort([current_pipeline.items.order]);
                     if isfield(ud, 'selected_row_index') && ~isempty(ud.selected_row_index)
-                         idx = ud.selected_row_index;
-                         fname = selected_pipeline.calculatorInstances(idx).JSONFilename;
-                         
-                         if is_instance
-                             % View Mode: Pass embedded code directly
-                             raw_code = selected_pipeline.calculatorInstances(idx).selected_param_code;
-                             
-                             if isfield(selected_pipeline.calculatorInstances(idx), 'selected_param_name')
-                                 param_name_str = selected_pipeline.calculatorInstances(idx).selected_param_name;
-                             else
-                                 param_name_str = 'View Only';
-                             end
-                             
-                             % SANITIZE CODE INPUT TO PREVENT ERRORS
-                             if isstring(raw_code), raw_code = char(raw_code); end
-                             if iscell(raw_code), raw_code = strjoin(raw_code, newline); end
-                             if isempty(raw_code), raw_code = ''; end
-                             
-                             % FALLBACK: If code is empty but it was 'Default', generate it
-                             if isempty(raw_code) && strcmp(param_name_str, 'Default')
-                                 raw_code = ndi.calculator.parameter_default(selected_pipeline.calculatorInstances(idx).calculatorClassname);
-                             end
-                             
-                             param_code = raw_code;
-                             
-                             ndi.calculator.graphical_edit_calculator('command','Edit','filename','', ...
-                                 'session',ud.linked_object, 'pipelinePath', '', ...
-                                 'viewOnly', true, 'code', param_code, ...
-                                 'paramName', param_name_str, ...
-                                 'name', selected_pipeline.calculatorInstances(idx).instanceName, ...
-                                 'calculatorClassname', selected_pipeline.calculatorInstances(idx).calculatorClassname);
-                         else
-                             % Edit Mode
-                             str = get(pipelinePopupObj, 'string');
-                             pipeline_name = str{val};
-                             pipeline_dir = fullfile(ud.pipelinePath, 'Pipelines', pipeline_name);
-                             full_f = fullfile(pipeline_dir, fname);
-                             ndi.calculator.graphical_edit_calculator('command','Edit','filename',full_f,'session',ud.linked_object, 'pipelinePath', pipeline_dir);
-                         end
+                        calc_entry = current_pipeline.items(s_idx(ud.selected_row_index));
+                        
+                        ndi.calculator.graphical_edit_calculator('command','Edit', 'session', session_to_pass, ...
+                            'pipelinePath', ud.pipelinePath, 'calculatorClassname', calc_entry.calculatorClass, ...
+                            'name', calc_entry.instanceName, 'paramName', calc_entry.selected_param_name); 
                     else
-                         action_word = 'edit';
-                         if is_instance, action_word = 'view'; end
-                         msgbox(['Please select a calculator instance to ' action_word '.'], 'Error', 'modal');
+                        msgbox('Select a Calculator Instance to edit.', 'Info');
                     end
                     
                 case 'NewPipelineButton'
                     read_dir = fullfile(ud.pipelinePath, 'Pipelines');
-                    [success,filename,replaces] = ndi.util.choosefileordir(read_dir, {'Pipeline name:'}, {['untitled']}, 'Save new pipeline', {['']});
+                    [success,filename,~] = ndi.util.choosefileordir(read_dir, {'Pipeline name:'}, {['untitled']}, 'New Pipeline', {['']});
                     if success
-                        if replaces, rmdir(fullfile(read_dir, filename), 's'); end
-                        mkdir(read_dir,filename);
+                        new_pipe_dir = fullfile(read_dir, filename);
+                        if ~isfolder(new_pipe_dir), mkdir(new_pipe_dir); end
+                        s.pipeline_name = filename; s.items = [];
+                        fid = fopen(fullfile(new_pipe_dir, 'pipeline.json'), 'w'); fprintf(fid, '%s', jsonencode(s, 'PrettyPrint', true)); fclose(fid);
                         ndi.cpipeline.edit('command','LoadPipelines','selectedPipeline',filename,'fig',fig);
                     end
                     
                 case 'DeletePipelineButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
-                    if val>1
-                        selected_pipeline = ud.pipelineList(val);
-                        if strcmp(selected_pipeline.type, 'instance')
-                            target_path = fullfile(ud.pipelinePath, 'Instances', [selected_pipeline.display_name '.json']);
-                            msg = ['Delete Instance "' selected_pipeline.display_name '"?'];
-                            is_dir = false;
-                        else
-                            target_path = fullfile(ud.pipelinePath, 'Pipelines', selected_pipeline.pipeline_name);
-                            msg = ['Delete Pipeline Folder "' selected_pipeline.pipeline_name '" and all contents?'];
-                            is_dir = true;
-                        end
-                        
-                        button = questdlg(msg, 'Confirm Delete', 'Yes', 'No', 'No');
-                        if strcmp(button, 'Yes')
-                            if is_dir
-                                rmdir(target_path, 's');
-                            else
-                                delete(target_path);
-                            end
-                            % ADDED: Reset popup to 1 before reloading
-                            set(findobj(fig,'Tag','PipelinePopup'), 'Value', 1);
-                            ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
-                        end
+                    if val > 1
+                        current_pipeline = ud.pipelineList(val - 1);
+                        rmdir(fullfile(ud.pipelinePath, 'Pipelines', current_pipeline.pipeline_name), 's');
+                        set(pipelinePopupObj, 'Value', 1); ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
                     end
+                    
                 case 'NewCalculatorInstanceButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
-                    if val > 1
-                        str = get(pipelinePopupObj, 'string');
-                        pipeline_name = str{val};
-                        selected_pipeline = ud.pipelineList(val);
-                        if strcmp(selected_pipeline.type, 'instance'), return; end
-                        
-                        calcTypeList = ndi.calculator.find_calculator_subclasses();
-                        if ~isempty(calcTypeList)
-                            [calcTypeIndex, isSel] = listdlg('ListString',calcTypeList);
-                            if isSel
-                                answer = inputdlg('Name:');
-                                if ~isempty(answer)
-                                    calcName = answer{1};
-                                    newC = ndi.cpipeline.setDefaultCalculatorInstance(calcTypeList{calcTypeIndex}, calcName);
-                                    
-                                    try
-                                        pipeline_dir = fullfile(ud.pipelinePath, 'Pipelines', pipeline_name);
-                                        ndi.cpipeline.saveCalculatorInstanceFile(pipeline_dir, newC);
-                                        ndi.cpipeline.edit('command','LoadPipelines','fig',fig); 
-                                    catch ME
-                                        errordlg(['Error creating calculator instance: ' ME.message], 'Error');
+                    if val <= 1, return; end
+                    current_pipeline = ud.pipelineList(val - 1);
+                    
+                    dataPopupObj = findobj(fig, 'tag', 'PipelineObjectVariablePopup');
+                    dv = get(dataPopupObj, 'value'); dlist = get(dataPopupObj, 'userdata');
+                    temp_session = [];
+                    if dv > 1, try, temp_session = evalin('base', dlist{dv}); catch, end; end
+                    
+                    calcTypeList = ndi.calculator.find_calculator_subclasses();
+                    if isstring(calcTypeList), calcTypeList = cellstr(calcTypeList); end
+                    
+                    if ~isempty(calcTypeList)
+                        [idx, isSel] = listdlg('ListString',calcTypeList);
+                        if isSel
+                            dlg_ans = inputdlg('Name:');
+                            if ~isempty(dlg_ans)
+                                chosenClass = calcTypeList{idx};
+                                param_dir = fullfile(ud.pipelinePath, 'Calculator_Parameters', chosenClass);
+                                if ~isfolder(param_dir), mkdir(param_dir); end
+                                
+                                % -------------------------------------------------------------
+                                % CODE GENERATION LOGIC
+                                % -------------------------------------------------------------
+                                code_cell = {};
+                                code_cell{end+1} = sprintf('thecalc = %s(pipeline_session);', chosenClass);
+                                code_cell{end+1} = 'parameters = thecalc.default_search_for_input_parameters();';
+                                code_cell{end+1} = ''; 
+                                
+                                query_lines = {};
+                                query_vars = {};
+                                
+                                try
+                                    % Find source file
+                                    m_file = which(chosenClass);
+                                    if ~isempty(m_file)
+                                        txt = fileread(m_file);
+                                        lines = splitlines(txt);
+                                        
+                                        for k=1:numel(lines)
+                                            l = strtrim(lines{k});
+                                            if startsWith(l, '%'), continue; end 
+                                            
+                                            % REGEX: Matches 'var = ndi.query('field', 'op', value'
+                                            pat = '(\w+)\s*=\s*ndi\.query\s*\(\s*''([^'']+)''\s*,\s*[^,]+\s*,\s*([^,\);]+)';
+                                            tokens = regexp(l, pat, 'tokens');
+                                            
+                                            if ~isempty(tokens)
+                                                q_var = tokens{1}{1};
+                                                q_field = tokens{1}{2};
+                                                raw_val = strtrim(tokens{1}{3});
+                                                
+                                                % AUTO-CORRECT: tuning_curve -> stimulus_tuningcurve
+                                                if startsWith(q_field, 'tuning_curve.')
+                                                    q_field = replace(q_field, 'tuning_curve.', 'stimulus_tuningcurve.');
+                                                end
+
+                                                if startsWith(raw_val, '''') && ~strcmp(q_var, 'query')
+                                                    % Safe string literal, force 'contains_string'
+                                                    new_line = sprintf('%s = ndi.query(''%s'', ''contains_string'', %s, '''');', ...
+                                                        q_var, q_field, raw_val);
+                                                    
+                                                    query_lines{end+1} = new_line;
+                                                    query_vars{end+1} = q_var;
+                                                end
+                                            end
+                                        end
                                     end
+                                catch
                                 end
+                                
+                                if ~isempty(query_lines)
+                                    code_cell = [code_cell, query_lines];
+                                    
+                                    if ~isempty(query_vars)
+                                        code_cell{end+1} = '';
+                                        joined_vars = strjoin(query_vars, ' | ');
+                                        code_cell{end+1} = sprintf('q_total = %s;', joined_vars);
+                                        code_cell{end+1} = 'query_struct = struct(''name'',''generated_id'',''query'',q_total);';
+                                        code_cell{end+1} = '';
+                                        code_cell{end+1} = 'parameters.query = query_struct;';
+                                    end
+                                else
+                                    code_cell{end+1} = '% No specific static text queries found in source.';
+                                end
+                                
+                                json_struct = struct();
+                                json_struct.name = 'Default';
+                                json_struct.code = code_cell; 
+                                
+                                fid_j = fopen(fullfile(param_dir, 'Default.json'), 'w');
+                                fprintf(fid_j, '%s', jsonencode(json_struct, 'PrettyPrint', true));
+                                fclose(fid_j);
+                                
+                                rehash; pause(0.5); 
+                                
+                                new_item.calculatorClass = chosenClass; new_item.instanceName = dlg_ans{1};
+                                new_item.selected_param_name = 'Default'; 
+                                if isempty(current_pipeline.items)
+                                    new_item.order = 1;
+                                    current_pipeline.items = new_item;
+                                else
+                                    new_item.order = numel(current_pipeline.items) + 1;
+                                    if iscell(current_pipeline.items), current_pipeline.items{end+1} = new_item;
+                                    else, current_pipeline.items(end+1) = new_item; end
+                                end
+                                
+                                ndi.cpipeline.savePipelineFile(ud.pipelinePath, current_pipeline);
+                                ndi.cpipeline.edit('command','LoadPipelines','selectedPipeline',current_pipeline.pipeline_name,'fig',fig);
                             end
+                        end
+                    end
+                    
+                case 'DeleteCalculatorInstanceButton'
+                    pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                    val = get(pipelinePopupObj, 'value');
+                    if val <= 1, return; end
+                    current_pipeline = ud.pipelineList(val - 1);
+                    if isfield(ud, 'selected_row_index') && ~isempty(ud.selected_row_index)
+                        [~, s_idx] = sort([current_pipeline.items.order]);
+                        current_pipeline.items(s_idx(ud.selected_row_index)) = [];
+                        if ~isempty(current_pipeline.items)
+                             [~, s2_idx] = sort([current_pipeline.items.order]);
+                             current_pipeline.items = current_pipeline.items(s2_idx);
+                             for k=1:numel(current_pipeline.items), current_pipeline.items(k).order = k; end
+                        end
+                        ndi.cpipeline.savePipelineFile(ud.pipelinePath, current_pipeline);
+                        ndi.cpipeline.edit('command','LoadPipelines','selectedPipeline',current_pipeline.pipeline_name,'fig',fig);
+                    end
+                    
+                case 'SelectRow'
+                    ud.selected_row_index = options.slider_val; set(fig, 'userdata', ud);
+                    for i=1:numel(ud.gui_rows)
+                        if ~isempty(ud.gui_rows(i).bg)
+                            col = [1 1 1]; if i == ud.selected_row_index, col = [0.7 0.85 1]; end
+                            set(ud.gui_rows(i).bg, 'BackgroundColor', col);
+                            set(ud.gui_rows(i).name, 'BackgroundColor', col);
                         end
                     end
             end
         end
-        % ... Helper functions ...
-        function saveCalculatorInstanceFile(directory_path, instanceStruct)
-             base_name = matlab.lang.makeValidName(instanceStruct.instanceName);
-             filename = [base_name '.json'];
-             full_p = fullfile(directory_path, filename);
-             
-             try
-                 fid = fopen(full_p,'w'); 
-                 if fid == -1, error('Cannot open file for writing. Check permissions.'); end
-                 fprintf(fid, '%s', jsonencode(instanceStruct, 'PrettyPrint', true)); 
-                 fclose(fid);
-                 instanceStruct.JSONFilename = filename; 
-             catch ME
-                 if exist('fid','var') && fid > -1, fclose(fid); end
-                 rethrow(ME);
-             end
+        
+        function savePipelineFile(root_path, pipelineStruct)
+            target_file = fullfile(root_path, 'Pipelines', pipelineStruct.pipeline_name, 'pipeline.json');
+            fid = fopen(target_file, 'w'); fprintf(fid, '%s', jsonencode(pipelineStruct, 'PrettyPrint', true)); fclose(fid);
         end
-
-        function calculatorInstanceList = getCalculatorInstancesFromPipeline(pipelineList, pipeline_name)
-            % Deprecated mostly by direct access in UpdateCalculatorInstanceList, but kept for compat
-            calculatorInstanceList = [];
-            for i = 1:length(pipelineList)
-                if strcmp(pipelineList(i).pipeline_name, pipeline_name)
-                    calculatorInstanceList = pipelineList(i).calculatorInstances;
-                end
-            end
-        end 
-        function calculatorInstanceListChar = calculatorInstancesToChar(calculatorInstanceList)
-            calculatorInstanceListChar = {};
-            for i = 1:numel(calculatorInstanceList)
-                calculatorInstanceListChar{i} = [calculatorInstanceList(i).instanceName ' (' calculatorInstanceList(i).JSONFilename ')'];
-            end
-        end
-        function newCalculatorInstance = setDefaultCalculatorInstance(calculatorInstanceType, name)
-            newCalculatorInstance.calculatorClassname = calculatorInstanceType;
-            newCalculatorInstance.instanceName = name;
-            newCalculatorInstance.default_options = containers.Map("if_document_exists_do","NoAction");
-            newCalculatorInstance.JSONFilename = ''; % To be filled on save
-        end
+        
         function pipelineList = getPipelines(root_dir)
-            % Load Pipelines (Folders)
             pipelines_dir = fullfile(root_dir, 'Pipelines');
-            d = dir(pipelines_dir);
-            isub = [d(:).isdir];
-            nameList = {d(isub).name}';
+            if ~isfolder(pipelines_dir), mkdir(pipelines_dir); end
+            d = dir(pipelines_dir); nameList = {d([d.isdir]).name}';
             nameList(ismember(nameList,{'.','..'})) = [];
-            
-            % IMPORTANT: Initialize as 0x0 struct so empty pipelines don't count as 1 item
-            empty_calc_struct = struct('calculatorClassname',{},'instanceName',{},'JSONFilename',{},'default_options',{});
-            
-            pipelineList = struct('pipeline_name', {}, 'type', {}, 'display_name', {}, 'calculatorInstances', {});
-            
-            pipelineList(1).pipeline_name = '---';
-            pipelineList(1).display_name = '---';
-            pipelineList(1).type = 'none';
-            pipelineList(1).calculatorInstances = empty_calc_struct;
-            
-            % Process Editable Pipelines
+            pipelineList = [];
             for i = 1:numel(nameList)
-                p_struct.pipeline_name = nameList{i};
-                p_struct.display_name = nameList{i};
-                p_struct.type = 'definition';
-                
-                D = dir(fullfile(pipelines_dir, nameList{i}, '*.json'));
-                temp_cell = {}; 
-                if ~isempty(D)
-                    for d_i = 1:numel(D)
-                        if strcmp(D(d_i).name, 'user_parameters.json'), continue; end % Skip param file
-                        full_json_path = fullfile(pipelines_dir, nameList{i}, D(d_i).name);
-                        try
-                            json_text = fileread(full_json_path);
-                            if ~isempty(strtrim(json_text))
-                                decoded_json = jsondecode(json_text);
-                                if isfield(decoded_json, 'calculatorClassname')
-                                    decoded_json.JSONFilename = D(d_i).name;
-                                    temp_cell{end+1} = decoded_json;
-                                end
-                            end
-                        catch, end
-                    end
+                json_path = fullfile(pipelines_dir, nameList{i}, 'pipeline.json');
+                if isfile(json_path)
+                    try
+                        p_struct = jsondecode(fileread(json_path));
+                        if ~isfield(p_struct, 'items'), p_struct.items = []; end
+                        if iscolumn(p_struct.items), p_struct.items = p_struct.items'; end
+                        if iscell(p_struct.items)
+                             temp = [];
+                             for k=1:numel(p_struct.items), temp = [temp, p_struct.items{k}]; end
+                             p_struct.items = temp;
+                        end
+                        pipelineList = [pipelineList, p_struct];
+                    catch, end
                 end
-                if ~isempty(temp_cell)
-                    p_struct.calculatorInstances = [temp_cell{:}];
-                else
-                    p_struct.calculatorInstances = empty_calc_struct;
-                end
-                pipelineList(end+1) = p_struct;
             end
-            
-            % Process Saved Instances
-            instances_dir = fullfile(root_dir, 'Instances');
-            D_inst = dir(fullfile(instances_dir, '*.json'));
-            for i = 1:numel(D_inst)
-                 try
-                     json_text = fileread(fullfile(instances_dir, D_inst(i).name));
-                     inst_data = jsondecode(json_text);
-                     if isfield(inst_data, 'type') && strcmp(inst_data.type, 'instance')
-                         [~, fname, ~] = fileparts(D_inst(i).name);
-                         p_struct.pipeline_name = inst_data.pipeline_name;
-                         p_struct.display_name = [fname ' (Instance)'];
-                         p_struct.type = 'instance';
-                         p_struct.calculatorInstances = inst_data.calculatorInstances;
-                         pipelineList(end+1) = p_struct;
-                     end
-                 catch, end
-            end
-        end
-        function pipelineListChar = pipelineListToChar(pipelineList)
-            pipelineListChar = {pipelineList.display_name};
+            if isempty(pipelineList), pipelineList = struct('pipeline_name',{}, 'items',{}); end
         end
     end
 end
