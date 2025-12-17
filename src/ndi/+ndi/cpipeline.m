@@ -17,7 +17,7 @@ classdef cpipeline
                 options.command (1,:) char = 'new'
                 options.pipelinePath (1,:) char = ndi.cpipeline.defaultPath()
                 options.session ndi.session = ndi.session.empty()
-                options.window_params (1,1) struct = struct('height', 600, 'width', 700)
+                options.window_params (1,1) struct = struct('height', 600, 'width', 900)
                 options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
                 options.selectedPipeline (1,:) char = ''
                 options.slider_val (1,1) double = 0
@@ -28,6 +28,9 @@ classdef cpipeline
             if ~strcmpi(options.command,'new') && isempty(fig)
                 error('The ''fig'' argument must be provided for all commands except ''new''.');
             end
+            
+            % GLOBAL FONT SIZE
+            fs = 12; 
             
             if strcmpi(options.command,'new')
                 if isempty(fig), fig = figure; end
@@ -54,7 +57,7 @@ classdef cpipeline
                     
                     fig_bg = [0.8 0.8 0.8]; edit_bg = [1 1 1];
                     top = options.window_params.height;
-                    margin = 0.04; row_h = 0.04;
+                    margin = 0.04; row_h = 0.05;
                     
                     set(fig,'position',[50 50 options.window_params.width top], 'Color', fig_bg, ...
                         'NumberTitle','off', 'Name',['Editing Pipelines at ' ud.pipelinePath], ...
@@ -64,28 +67,54 @@ classdef cpipeline
                     
                     % Top Controls
                     uicontrol(uid.txt,'Units','normalized','position',[margin y 0.4 row_h],'string','Select Pipeline:',...
-                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
+                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left', 'FontSize', fs);
                     y = y - row_h;
                     uicontrol(uid.popup,'Units','normalized','position',[margin y 0.94 row_h],...
-                        'string',{'---'},'tag','PipelinePopup','callback',callbackstr,'BackgroundColor',edit_bg);
+                        'string',{'---'},'tag','PipelinePopup','callback',callbackstr,'BackgroundColor',edit_bg, 'FontSize', fs);
                     
                     y = y - row_h - 0.02; 
                     uicontrol(uid.txt,'Units','normalized','position',[margin y 0.4 row_h],'string','NDI Data:',...
-                         'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
+                         'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left', 'FontSize', fs);
                     y = y - row_h;
                     uicontrol(uid.popup,'Units','normalized','position',[margin y 0.94 row_h],...
-                        'string',{'None'},'tag','PipelineObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg);
+                        'string',{'None'},'tag','PipelineObjectVariablePopup','callback',callbackstr,'BackgroundColor',edit_bg, 'FontSize', fs);
                     
-                    y = y - 0.05; 
+                    y = y - 0.06; 
                     header_y = y;
                     
+                    % ---------------------------------------------------------------------
+                    % COLUMN DEFINITIONS 
+                    % ---------------------------------------------------------------------
+                    panel_width_norm = 1 - (2 * margin);
+                    
+                    c.name_x = 0.00; c.name_w = 0.32;
+                    c.param_x = 0.33; c.param_w = 0.35;
+                    c.order_x = 0.70; c.order_w = 0.14; 
+                    c.plot_x = 0.86; c.plot_w = 0.14; 
+                    
+                    ud.col_defs = c;
+                    set(fig, 'userdata', ud);
+                    % Calculate Header Positions
+                    hx_name = margin + (c.name_x * panel_width_norm); hw_name = c.name_w * panel_width_norm;
+                    hx_param = margin + (c.param_x * panel_width_norm); hw_param = c.param_w * panel_width_norm;
+                    hx_order = margin + (c.order_x * panel_width_norm); hw_order = c.order_w * panel_width_norm;
+                    hx_plot = margin + (c.plot_x * panel_width_norm); hw_plot = c.plot_w * panel_width_norm;
                     % Headers
-                    uicontrol(uid.txt,'Units','normalized','position',[margin header_y 0.38 row_h],'string','Calculator Instance',...
-                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
-                    uicontrol(uid.txt,'Units','normalized','position',[0.45 header_y 0.35 row_h],'string','Input Parameters',...
-                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
-                    uicontrol(uid.txt,'Units','normalized','position',[0.82 header_y 0.12 row_h],'string','Order',...
-                        'BackgroundColor',fig_bg,'FontWeight','bold','HorizontalAlignment','left');
+                    uicontrol(uid.txt,'Units','normalized','position',[hx_name header_y hw_name row_h],...
+                        'string','Calculator Instance','BackgroundColor',fig_bg,'FontWeight','bold',...
+                        'HorizontalAlignment','left', 'FontSize', fs);
+                    
+                    uicontrol(uid.txt,'Units','normalized','position',[hx_param header_y hw_param row_h],...
+                        'string','Parameter Setup Code','BackgroundColor',fig_bg,'FontWeight','bold',...
+                        'HorizontalAlignment','left', 'FontSize', fs);
+                    
+                    uicontrol(uid.txt,'Units','normalized','position',[hx_order header_y hw_order row_h],...
+                        'string','Order','BackgroundColor',fig_bg,'FontWeight','bold',...
+                        'HorizontalAlignment','center', 'FontSize', fs);
+                    
+                    uicontrol(uid.txt,'Units','normalized','position',[hx_plot header_y hw_plot row_h],...
+                        'string','Figure Output','BackgroundColor',fig_bg,'FontWeight','bold',...
+                        'HorizontalAlignment','center', 'FontSize', fs);
                     
                     % Main List Area
                     list_top = header_y; 
@@ -96,9 +125,11 @@ classdef cpipeline
                     panel_pos = [margin, list_bottom, 1-(2*margin), list_height];
                     
                     % LIST CONTAINER
-                    uipanel('Units','normalized', 'Position', panel_pos, 'BackgroundColor', [1 1 1], ...
+                    container = uipanel('Units','normalized', 'Position', panel_pos, 'BackgroundColor', [1 1 1], ...
                         'Tag', 'ListContainerPanel', 'BorderType', 'line', 'HighlightColor', [0.6 0.6 0.6], ...
-                        'Visible', 'on');
+                        'Visible', 'on', 'FontSize', fs);
+                    
+                    set(container, 'SizeChangedFcn', @(s,e)ndi.cpipeline.edit('command','UpdateCalculatorInstanceList','fig',fig));
                     
                     slider_w = 0.04;
                     uicontrol('Style','slider','Units','normalized',...
@@ -106,33 +137,33 @@ classdef cpipeline
                         'Tag','ListSlider', 'Callback', callbackstr, 'Min', 0, 'Max', 1, 'Value', 1);
                     
                     % Buttons
-                    btn_h = 0.05; gap = 0.015; 
-                    y_row_top = 0.11; y_row_bot = y_row_top - btn_h - gap;
+                    btn_h = 0.06; gap = 0.015; 
+                    y_row_top = 0.12; y_row_bot = y_row_top - btn_h - gap;
                     btn_w = 0.22; 
                     
                     x = margin;
                     uicontrol(uid.button,'Units','normalized','position',[x y_row_top btn_w btn_h],...
-                        'string','New Pipeline','tag','NewPipelineButton','callback',callbackstr);
+                        'string','New Pipeline','tag','NewPipelineButton','callback',callbackstr, 'FontSize', fs);
                     x = x + btn_w + gap;
                     uicontrol(uid.button,'Units','normalized','position',[x y_row_top btn_w btn_h],...
-                        'string','Delete Pipeline','tag','DeletePipelineButton','callback',callbackstr);
+                        'string','Delete Pipeline','tag','DeletePipelineButton','callback',callbackstr, 'FontSize', fs);
                     
                     x = margin;
                     uicontrol(uid.button,'Units','normalized','position',[x y_row_bot btn_w btn_h],...
-                        'string','New Calculator','tag','NewCalculatorInstanceButton','callback',callbackstr);
+                        'string','New Calculator','tag','NewCalculatorInstanceButton','callback',callbackstr, 'FontSize', fs);
                     x = x + btn_w + gap;
                     uicontrol(uid.button,'Units','normalized','position',[x y_row_bot btn_w btn_h],...
-                        'string','Delete Calculator','tag','DeleteCalculatorInstanceButton','callback',callbackstr);
+                        'string','Delete Calculator','tag','DeleteCalculatorInstanceButton','callback',callbackstr, 'FontSize', fs);
                     x = x + btn_w + gap;
                     uicontrol(uid.button,'Units','normalized','position',[x y_row_bot btn_w btn_h],...
-                        'string','Edit Calculator','tag','EditButton','callback',callbackstr);
+                        'string','Edit Calculator','tag','EditButton','callback',callbackstr, 'FontSize', fs);
                     
                     run_x = x + btn_w + 0.05; run_w = 1 - run_x - margin;
-                    run_h = 0.08; run_y = y_row_bot + ((y_row_top+btn_h)-y_row_bot-run_h)/2;
+                    run_h = 0.10; run_y = y_row_bot + ((y_row_top+btn_h)-y_row_bot-run_h)/2;
                     
                     uicontrol(uid.button,'Units','normalized','position',[run_x run_y run_w run_h],...
                         'string','RUN PIPELINE','tag','RunButton','callback',callbackstr, ...
-                        'FontWeight','bold', 'FontSize', 10, 'BackgroundColor',[0.8 1 0.8]);
+                        'FontWeight','bold', 'FontSize', fs+2, 'BackgroundColor',[0.8 1 0.8]);
                     
                     ndi.cpipeline.edit('command','RefreshObjectVariablePopup','fig',fig);
                     ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
@@ -143,6 +174,8 @@ classdef cpipeline
                     container = findobj(fig, 'Tag', 'ListContainerPanel');
                     if ~isempty(container.Children), delete(container.Children); end
                     drawnow limitrate; 
+                    
+                    fs = 12;
                     
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
@@ -177,7 +210,8 @@ classdef cpipeline
                     p_pos = get(container, 'Position');
                     panel_w = p_pos(3); panel_h = p_pos(4);
                     
-                    row_h_pix = 30; total_h_pix = n_calcs * row_h_pix;
+                    row_h_pix = 36; 
+                    total_h_pix = n_calcs * row_h_pix;
                     
                     slider = findobj(fig, 'Tag', 'ListSlider');
                     if total_h_pix > panel_h
@@ -190,7 +224,15 @@ classdef cpipeline
                     slider_val = get(slider, 'Value'); slider_max = get(slider, 'Max');
                     scroll_offset = slider_max - slider_val;
                     
-                    ud.gui_rows = struct('bg',{},'order_popup',{},'name',{},'param',{});
+                    ud.gui_rows = struct('bg',{},'order_popup',{},'name',{},'param',{},'plot_check',{});
+                    
+                    if isfield(ud, 'col_defs'), c = ud.col_defs;
+                    else
+                        c.name_x = 0.00; c.name_w = 0.32;
+                        c.param_x = 0.33; c.param_w = 0.35;
+                        c.order_x = 0.70; c.order_w = 0.14; 
+                        c.plot_x = 0.86; c.plot_w = 0.14; 
+                    end
                     
                     for i = 1:n_calcs
                         item_top_virtual = (i-1) * row_h_pix; 
@@ -201,38 +243,75 @@ classdef cpipeline
                             bg_color = [0.7 0.85 1];
                         end
                         
-                        w_name = 0.40 * panel_w; w_param = 0.35 * panel_w; w_order = 0.12 * panel_w;
+                        % 1. NAME
+                        x_name = c.name_x * panel_w; w_name = c.name_w * panel_w;
+                        
+                        % 2. PARAM
+                        x_param = c.param_x * panel_w; w_param = c.param_w * panel_w;
+                        
+                        % 3. ORDER (Nudged Right)
+                        w_order_box = 60; 
+                        center_order = (c.order_x + (c.order_w/2)) * panel_w;
+                        x_order = center_order - (w_order_box / 2) + 15; 
+                        
+                        % 4. PLOT (Nudged Right to 'O')
+                        w_chk = 20; 
+                        center_plot = (c.plot_x + (c.plot_w/2)) * panel_w;
+                        x_plot = center_plot - (w_chk / 2) + 10; 
                         
                         bg = uicontrol(container, 'Style', 'text', 'Units', 'pixels', ...
                             'Position', [0, y_pix, panel_w, row_h_pix], ...
-                            'BackgroundColor', bg_color, 'Enable', 'inactive', ...
+                            'BackgroundColor', bg_color, 'Enable', 'inactive', 'FontSize', fs, ...
                             'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
                         
                         txt = uicontrol(container, 'Style', 'text', 'Units', 'pixels', ...
-                            'Position', [5, y_pix+5, w_name, row_h_pix-10], ...
+                            'Position', [x_name+5, y_pix+5, w_name-5, row_h_pix-10], ...
                             'String', calc_items(i).instanceName, ...
-                            'BackgroundColor', bg_color, 'HorizontalAlignment', 'left', 'FontSize', 10, ...
+                            'BackgroundColor', bg_color, 'HorizontalAlignment', 'left', 'FontSize', fs, ...
                             'Enable', 'inactive', 'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
                         
-                        try, global_params = ndi.calculator.get_available_parameters(calc_items(i).calculatorClass, ud.pipelinePath);
-                        catch, global_params = {'Error loading params'}; end
+                        % LOAD PARAMETERS
+                        try 
+                            avail_params = ndi.calculator.get_available_parameters(calc_items(i).calculatorClass, ud.pipelinePath);
+                        catch 
+                            avail_params = {}; 
+                        end
                         
+                        % FORMAT DROPDOWN LIST: Default, ---, Example, [others]
+                        % Filter out Default/Example from raw list to re-order them manually
+                        other_params = avail_params(~ismember(avail_params, {'Default', 'Example'}));
+                        display_list = [{'Default', '---', 'Example'}, other_params];
+                        
+                        % Match current selection
                         curr_sel = calc_items(i).selected_param_name;
-                        val_idx = find(strcmp(global_params, curr_sel));
-                        if isempty(val_idx), val_idx = 1; end
+                        val_idx = find(strcmp(display_list, curr_sel));
+                        if isempty(val_idx)
+                            % Fallback: if selected is not in list (e.g. removed), default to Example
+                            val_idx = 3; % 'Example'
+                            if numel(display_list) < 3, val_idx = 1; end
+                        end
                         
                         pop = uicontrol(container, 'Style', 'popupmenu', 'Units', 'pixels', ...
-                            'Position', [10+w_name, y_pix+5, w_param, row_h_pix-8], ...
-                            'String', global_params, 'Value', val_idx, 'BackgroundColor', [1 1 1], ...
+                            'Position', [x_param, y_pix+5, w_param, row_h_pix-8], ...
+                            'String', display_list, 'Value', val_idx, 'BackgroundColor', [1 1 1], 'FontSize', fs, ...
                             'Callback', @(s,e)ndi.cpipeline.edit('command','ParamChange','fig',fig,'slider_val',i));
                         
                         order_popup = uicontrol(container, 'Style', 'popupmenu', 'Units', 'pixels', ...
-                            'Position', [15+w_name+w_param, y_pix+5, w_order, row_h_pix-8], ...
-                            'String', order_options, 'Value', calc_items(i).order, 'BackgroundColor', [1 1 1], ...
+                            'Position', [x_order, y_pix+5, w_order_box, row_h_pix-8], ...
+                            'String', order_options, 'Value', calc_items(i).order, 'BackgroundColor', [1 1 1], 'FontSize', fs, ...
                             'Callback', @(s,e)ndi.cpipeline.edit('command','OrderChange','fig',fig,'order_idx',i));
+                        
+                        plot_val = 0; 
+                        if isfield(calc_items(i), 'plot_output'), plot_val = calc_items(i).plot_output; end
+                        
+                        chk = uicontrol(container, 'Style', 'checkbox', 'Units', 'pixels', ...
+                            'Position', [x_plot, y_pix+5, w_chk, row_h_pix-8], ...
+                            'String', '', 'Value', plot_val, 'BackgroundColor', bg_color, 'FontSize', fs, ...
+                            'Callback', @(s,e)ndi.cpipeline.edit('command','PlotCheckChange','fig',fig,'slider_val',i));
                         
                         ud.gui_rows(i).bg = bg; ud.gui_rows(i).order_popup = order_popup;
                         ud.gui_rows(i).name = txt; ud.gui_rows(i).param = pop;
+                        ud.gui_rows(i).plot_check = chk;
                     end
                     set(container, 'Units', 'normalized'); set(fig, 'userdata', ud);
                     set(container, 'Visible', 'off'); set(container, 'Visible', 'on'); drawnow; 
@@ -268,11 +347,33 @@ classdef cpipeline
                     actual_index = sort_idx(idx);
                     
                     items = get(ud.gui_rows(idx).param, 'String'); v = get(ud.gui_rows(idx).param, 'Value');
-                    current_pipeline.items(actual_index).selected_param_name = items{v};
+                    selectedStr = items{v};
+                    
+                    if strcmp(selectedStr, '---')
+                        % If user selects separator, revert to previous or Example
+                        set(ud.gui_rows(idx).param, 'Value', 3); % Example
+                        current_pipeline.items(actual_index).selected_param_name = 'Example';
+                    else
+                        current_pipeline.items(actual_index).selected_param_name = selectedStr;
+                    end
                     
                     ud.pipelineList(val - 1) = current_pipeline; set(fig, 'userdata', ud);
                     ndi.cpipeline.savePipelineFile(ud.pipelinePath, current_pipeline);
+                
+                case 'PlotCheckChange'
+                    idx = options.slider_val;
+                    pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                    val = get(pipelinePopupObj, 'value');
+                    if val <= 1, return; end
+                    current_pipeline = ud.pipelineList(val - 1);
+                    [~, sort_idx] = sort([current_pipeline.items.order]);
+                    actual_index = sort_idx(idx);
                     
+                    isChecked = get(ud.gui_rows(idx).plot_check, 'Value');
+                    current_pipeline.items(actual_index).plot_output = isChecked;
+                    
+                    ud.pipelineList(val - 1) = current_pipeline; set(fig, 'userdata', ud);
+                    ndi.cpipeline.savePipelineFile(ud.pipelinePath, current_pipeline);
                 case 'RunButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
@@ -298,17 +399,27 @@ classdef cpipeline
                     try
                         for i = 1:numel(items)
                             calc_name = items(i).instanceName;
+                            param_name = items(i).selected_param_name;
+                            
+                            % Skip separator if somehow selected
+                            if strcmp(param_name, '---'), param_name = 'Example'; end
+                            
                             fprintf('Step %d/%d: Running ''%s'' (%s)...\n', i, numel(items), calc_name, items(i).calculatorClass);
-                            waitbar((i-1)/numel(items), h_wait, ['Running ' calc_name]);
+                            
+                            % ESCAPE UNDERSCORES for waitbar
+                            safe_calc_name = strrep(calc_name, '_', '\_');
+                            waitbar((i-1)/numel(items), h_wait, ['Running ' safe_calc_name]);
                             
                             try
-                                fprintf('   > Loading parameters...\n');
+                                fprintf('   > Loading parameters (%s)...\n', param_name);
                                 forced_code = '';
-                                if strcmpi(items(i).selected_param_name, 'Default')
-                                    def_file = fullfile(ud.pipelinePath, 'Calculator_Parameters', items(i).calculatorClass, 'Default.json');
-                                    if isfile(def_file)
+                                
+                                % Handle special JSON files manually to ensure correct loading
+                                if strcmpi(param_name, 'Default') || strcmpi(param_name, 'Example')
+                                    json_file = fullfile(ud.pipelinePath, 'Calculator_Parameters', items(i).calculatorClass, [param_name '.json']);
+                                    if isfile(json_file)
                                         try
-                                            txt = fileread(def_file);
+                                            txt = fileread(json_file);
                                             j = jsondecode(txt);
                                             if isfield(j, 'code'), forced_code = j.code; end
                                         catch
@@ -319,33 +430,93 @@ classdef cpipeline
                                 if ~isempty(forced_code)
                                     param_code = forced_code;
                                 else
-                                    param_code = ndi.calculator.load_parameter_code(items(i).calculatorClass, items(i).selected_param_name, ud.pipelinePath);
+                                    param_code = ndi.calculator.load_parameter_code(items(i).calculatorClass, param_name, ud.pipelinePath);
                                 end
                                 
                                 if iscell(param_code), param_code = strjoin(param_code, newline);
                                 elseif isstring(param_code) && numel(param_code) > 1, param_code = join(param_code, newline); end
                                 param_code = char(param_code);
                                 
+                                % Ensure pipeline_session is available in local scope
                                 S = pipeline_session;
                                 if exist('parameters','var'), clear parameters; end
+                                
+                                % EXECUTE PARAMETER CODE
                                 eval(param_code); 
                                 
                                 if ~exist('parameters','var')
+                                    fprintf('   > Warning: Parameters not created by code. Using default.\n');
                                     thecalc = feval(items(i).calculatorClass, pipeline_session);
                                     parameters = thecalc.default_search_for_input_parameters();
+                                end
+                                
+                                if isempty(parameters)
+                                    error('Parameters structure is empty. Cannot run calculator.');
                                 end
                                 
                                 fprintf('   > Calculating...\n');
                                 calc_obj = feval(items(i).calculatorClass, pipeline_session);
                                 new_docs = calc_obj.run('NoAction', parameters);
+                                
                                 doc_count = 0;
                                 if iscell(new_docs), doc_count = numel(new_docs);
                                 elseif isa(new_docs, 'ndi.document'), doc_count = numel(new_docs); 
                                 end
-                                fprintf('   > Success. Generated/Found %d documents.\n', doc_count);
+                                fprintf('   > Success. Generated/Updated %d documents.\n', doc_count);
+                                
+                                % ----------------------------------------------------------------
+                                % FIGURE OUTPUT LOGIC
+                                % ----------------------------------------------------------------
+                                if isfield(items(i), 'plot_output') && items(i).plot_output == 1
+                                    plot_mode = questdlg(sprintf('Plotting figures for %s?\nSelect Mode:', calc_name), ...
+                                        ['Plot Output: ' calc_name], 'Individual', 'Subplots', 'Individual');
+                                    
+                                    if ~isempty(plot_mode)
+                                        plot_docs = calc_obj.search_for_calculator_docs(parameters);
+                                        plot_count = numel(plot_docs);
+                                        
+                                        if plot_count > 0
+                                            if strcmp(plot_mode, 'Individual')
+                                                fprintf('   > Plotting figures: Generating %d plots for %d documents...\n', plot_count, plot_count);
+                                                for p_i = 1:plot_count
+                                                    calc_obj.plot(plot_docs{p_i}, 'newfigure', 1);
+                                                end
+                                            elseif strcmp(plot_mode, 'Subplots')
+                                                 num_figs = max(1, min(5, ceil(plot_count/5))); 
+                                                 fprintf('   > Plotting figures: Generating %d subplot figures for %d documents...\n', num_figs, plot_count);
+                                                 
+                                                 for f = 1:num_figs
+                                                     figure; 
+                                                     set(gcf, 'Name', sprintf('%s: Batch %d of %d', calc_name, f, num_figs), 'NumberTitle', 'on');
+                                                     items_per_fig = ceil(plot_count / num_figs);
+                                                     start_idx = (f-1)*items_per_fig + 1;
+                                                     end_idx = min(f*items_per_fig, plot_count);
+                                                     if start_idx > plot_count, break; end
+                                                     
+                                                     current_chunk = plot_docs(start_idx:end_idx);
+                                                     num_in_chunk = numel(current_chunk);
+                                                     n_cols = ceil(sqrt(num_in_chunk));
+                                                     n_rows = ceil(num_in_chunk / n_cols);
+                                                     for k = 1:num_in_chunk
+                                                         ax = subplot(n_rows, n_cols, k);
+                                                         try
+                                                             calc_obj.plot(current_chunk{k}, 'newfigure', 0, 'suppress_title', 0);
+                                                         catch plot_err
+                                                             text(0.5, 0.5, 'Error', 'HorizontalAlignment', 'center');
+                                                             warning(['Error plotting doc: ' plot_err.message]);
+                                                         end
+                                                     end
+                                                 end
+                                            end
+                                        else
+                                            fprintf('   > No documents to plot.\n');
+                                        end
+                                    end
+                                end
+                                
                             catch run_err
                                 fprintf(2, '   > EXECUTION ERROR: %s\n', run_err.message);
-                                err_msg = sprintf('Error executing calculator "%s":\n\n%s\n\nCheck your Input Parameters.', calc_name, run_err.message);
+                                err_msg = sprintf('Error executing calculator "%s":\n\n%s\n\nCheck your Input Parameters code.', calc_name, run_err.message);
                                 uiwait(msgbox(err_msg, 'Calculator Error', 'error'));
                                 delete(h_wait); fprintf('   > Pipeline Stopped due to error.\n'); return; 
                             end
@@ -396,9 +567,15 @@ classdef cpipeline
                     if isfield(ud, 'selected_row_index') && ~isempty(ud.selected_row_index)
                         calc_entry = current_pipeline.items(s_idx(ud.selected_row_index));
                         
+                        % REDIRECT DEFAULT TO EXAMPLE (Silent switch)
+                        param_to_edit = calc_entry.selected_param_name;
+                        if strcmpi(param_to_edit, 'Default')
+                            param_to_edit = 'Example';
+                        end
+                        
                         ndi.calculator.graphical_edit_calculator('command','Edit', 'session', session_to_pass, ...
                             'pipelinePath', ud.pipelinePath, 'calculatorClassname', calc_entry.calculatorClass, ...
-                            'name', calc_entry.instanceName, 'paramName', calc_entry.selected_param_name); 
+                            'name', calc_entry.instanceName, 'paramName', param_to_edit); 
                     else
                         msgbox('Select a Calculator Instance to edit.', 'Info');
                     end
@@ -423,7 +600,7 @@ classdef cpipeline
                         set(pipelinePopupObj, 'Value', 1); ndi.cpipeline.edit('command','LoadPipelines','fig',fig);
                     end
                     
-                case 'NewCalculatorInstanceButton'
+            case 'NewCalculatorInstanceButton'
                     pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                     val = get(pipelinePopupObj, 'value');
                     if val <= 1, return; end
@@ -447,7 +624,19 @@ classdef cpipeline
                                 if ~isfolder(param_dir), mkdir(param_dir); end
                                 
                                 % -------------------------------------------------------------
-                                % CODE GENERATION LOGIC
+                                % 1. GENERATE "Default.json" (Read-Only)
+                                % -------------------------------------------------------------
+                                default_code = {};
+                                default_code{end+1} = sprintf('thecalc = %s(pipeline_session);', chosenClass);
+                                default_code{end+1} = 'parameters = thecalc.default_search_for_input_parameters();';
+                                
+                                default_struct = struct('name', 'Default', 'code', {default_code});
+                                fid_d = fopen(fullfile(param_dir, 'Default.json'), 'w');
+                                fprintf(fid_d, '%s', jsonencode(default_struct, 'PrettyPrint', true));
+                                fclose(fid_d);
+                                
+                                % -------------------------------------------------------------
+                                % 2. GENERATE "Example.json" (Editable, Source Scanned)
                                 % -------------------------------------------------------------
                                 code_cell = {};
                                 code_cell{end+1} = sprintf('thecalc = %s(pipeline_session);', chosenClass);
@@ -458,7 +647,6 @@ classdef cpipeline
                                 query_vars = {};
                                 
                                 try
-                                    % Find source file
                                     m_file = which(chosenClass);
                                     if ~isempty(m_file)
                                         txt = fileread(m_file);
@@ -468,7 +656,6 @@ classdef cpipeline
                                             l = strtrim(lines{k});
                                             if startsWith(l, '%'), continue; end 
                                             
-                                            % REGEX: Matches 'var = ndi.query('field', 'op', value'
                                             pat = '(\w+)\s*=\s*ndi\.query\s*\(\s*''([^'']+)''\s*,\s*[^,]+\s*,\s*([^,\);]+)';
                                             tokens = regexp(l, pat, 'tokens');
                                             
@@ -477,13 +664,10 @@ classdef cpipeline
                                                 q_field = tokens{1}{2};
                                                 raw_val = strtrim(tokens{1}{3});
                                                 
-                                                % AUTO-CORRECT: tuning_curve -> stimulus_tuningcurve
                                                 if startsWith(q_field, 'tuning_curve.')
                                                     q_field = replace(q_field, 'tuning_curve.', 'stimulus_tuningcurve.');
                                                 end
-
                                                 if startsWith(raw_val, '''') && ~strcmp(q_var, 'query')
-                                                    % Safe string literal, force 'contains_string'
                                                     new_line = sprintf('%s = ndi.query(''%s'', ''contains_string'', %s, '''');', ...
                                                         q_var, q_field, raw_val);
                                                     
@@ -498,12 +682,27 @@ classdef cpipeline
                                 
                                 if ~isempty(query_lines)
                                     code_cell = [code_cell, query_lines];
-                                    
                                     if ~isempty(query_vars)
                                         code_cell{end+1} = '';
                                         joined_vars = strjoin(query_vars, ' | ');
                                         code_cell{end+1} = sprintf('q_total = %s;', joined_vars);
-                                        code_cell{end+1} = 'query_struct = struct(''name'',''generated_id'',''query'',q_total);';
+                                        
+                                        % --- START DYNAMIC NAME UPDATE ---
+                                        % Use the calculator instance to find the correct query field name
+                                        q_name = 'generated_id'; % Fallback default
+                                        try
+                                            temp_calc = feval(chosenClass, temp_session);
+                                            def_p = temp_calc.default_search_for_input_parameters();
+                                            if isfield(def_p, 'query') && ~isempty(def_p.query) && isfield(def_p.query(1), 'name')
+                                                q_name = def_p.query(1).name;
+                                            end
+                                        catch
+                                            % If instantiation fails, keep 'generated_id'
+                                        end
+                                        % Use the dynamic q_name variable here
+                                        code_cell{end+1} = sprintf('query_struct = struct(''name'',''%s'',''query'',q_total);', q_name);
+                                        % --- END DYNAMIC NAME UPDATE ---
+                                        
                                         code_cell{end+1} = '';
                                         code_cell{end+1} = 'parameters.query = query_struct;';
                                     end
@@ -511,18 +710,16 @@ classdef cpipeline
                                     code_cell{end+1} = '% No specific static text queries found in source.';
                                 end
                                 
-                                json_struct = struct();
-                                json_struct.name = 'Default';
-                                json_struct.code = code_cell; 
-                                
-                                fid_j = fopen(fullfile(param_dir, 'Default.json'), 'w');
-                                fprintf(fid_j, '%s', jsonencode(json_struct, 'PrettyPrint', true));
-                                fclose(fid_j);
+                                example_struct = struct('name', 'Example', 'code', {code_cell});
+                                fid_e = fopen(fullfile(param_dir, 'Example.json'), 'w');
+                                fprintf(fid_e, '%s', jsonencode(example_struct, 'PrettyPrint', true));
+                                fclose(fid_e);
                                 
                                 rehash; pause(0.5); 
                                 
                                 new_item.calculatorClass = chosenClass; new_item.instanceName = dlg_ans{1};
-                                new_item.selected_param_name = 'Default'; 
+                                new_item.selected_param_name = 'Example'; 
+                                new_item.plot_output = 0; 
                                 if isempty(current_pipeline.items)
                                     new_item.order = 1;
                                     current_pipeline.items = new_item;
@@ -562,6 +759,7 @@ classdef cpipeline
                             col = [1 1 1]; if i == ud.selected_row_index, col = [0.7 0.85 1]; end
                             set(ud.gui_rows(i).bg, 'BackgroundColor', col);
                             set(ud.gui_rows(i).name, 'BackgroundColor', col);
+                            set(ud.gui_rows(i).plot_check, 'BackgroundColor', col);
                         end
                     end
             end
@@ -589,6 +787,14 @@ classdef cpipeline
                              temp = [];
                              for k=1:numel(p_struct.items), temp = [temp, p_struct.items{k}]; end
                              p_struct.items = temp;
+                        end
+                        % Ensure new fields exist on load to avoid crashes
+                        if ~isempty(p_struct.items)
+                            if ~isfield(p_struct.items, 'plot_output')
+                                for k=1:numel(p_struct.items)
+                                    p_struct.items(k).plot_output = 0; 
+                                end
+                            end
                         end
                         pipelineList = [pipelineList, p_struct];
                     catch, end

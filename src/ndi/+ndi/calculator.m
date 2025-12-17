@@ -62,7 +62,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             for n=1:prod(V)
                 is_valid = 1; g = vlt.math.group_enumeration(V,n); extra_depends = vlt.data.emptystruct('name','value');
                 for i=1:numel(parameters_specification.query)
-                    s = struct('name',parameters_specification.query(i).name,'value',doclist{i}{g(i)}.id());
+                    if isfield(parameters_specification.query(i), 'name')
+                        p_name = parameters_specification.query(i).name;
+                    else
+                        p_name = sprintf('input_%d', i);
+                    end
+                    s = struct('name', p_name, 'value', doclist{i}{g(i)}.id());
                     is_valid = is_valid & ndi_calculator_obj.is_valid_dependency_input(s.name,s.value);
                     extra_depends(end+1) = s; if ~is_valid, break; end
                 end
@@ -106,7 +111,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             h.figure = []; if params.newfigure, h.figure = figure; else, h.figure = gcf; end
             h.axes = gca; 
             h.objects = []; 
-            h.params = params; % This fixes the "Unrecognized field name 'params'" error
+            h.params = params;
             if ~params.suppress_title && isa(doc_or_parameters,'ndi.document'), h.title = title([doc_or_parameters.id()],'interp','none'); end
             if params.holdstate, hold on; else, hold off; end
         end 
@@ -124,6 +129,32 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             vlt.data.assign(varargin{:});
             param = vlt.data.workspace2struct(); param = rmfield(param,'varargin');
         end
+        function classes = find_calculator_subclasses()
+            classes = {};
+            % Try to find the ndi.calc package and search recursively
+            p = meta.package.fromName('ndi.calc');
+            if isempty(p), return; end
+            
+            q = {p};
+            while ~isempty(q)
+                curr_p = q{1}; q(1) = [];
+                % Check classes in the current package
+                for i = 1:numel(curr_p.ClassList)
+                    try
+                        % Check inheritance
+                        if any(strcmp(superclasses(curr_p.ClassList(i).Name), 'ndi.calculator'))
+                            classes{end+1} = curr_p.ClassList(i).Name;
+                        end
+                    catch
+                    end
+                end
+                % Add subpackages to the search queue
+                for i = 1:numel(curr_p.PackageList)
+                    q{end+1} = curr_p.PackageList(i);
+                end
+            end
+            classes = sort(classes);
+        end
         
         function graphical_edit_calculator(options)
             arguments
@@ -134,7 +165,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 options.session = [] 
                 options.name (1,:) char = ''
                 options.calculatorClassname (1,:) char = ''
-                options.window_params (1,1) struct = struct('height', 600, 'width', 700)
+                options.window_params (1,1) struct = struct('height', 450, 'width', 700)
                 options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
                 options.pipelinePath (1,:) char = '' 
                 options.paramName (1,:) char = '' 
@@ -170,18 +201,20 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     top = ud.window_params.height; right = ud.window_params.width;
                     edge_n = 10/right; row_h_n = 25/top; gap_v_n = 15/top; button_area_h_n = 5*row_h_n;
                     
+                    fs = 12;
+                    
                     set(fig,'position',[50 50 right top], 'Color', fig_bg_color, 'NumberTitle','off',...
                         'Name',['Editing ' ud.calculatorInstance.instanceName ' (' ud.calculatorInstance.calculatorClassname ')'],...
-                        'MenuBar','none','ToolBar','none','Units','normalized');
+                        'MenuBar','none','ToolBar','none','Units','normalized', 'Resize', 'on');
                     
                     y_cursor = 1 - edge_n - row_h_n;
-                    uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Documentation','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
-                    uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],'string',{'General','Calculator Input Options','Output document'},'tag','DocPopup','callback',callbackstr,'value',1,'BackgroundColor',edit_bg_color);
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Documentation','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left','FontSize',fs);
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],'string',{'General','Calculator Input Options','Output document'},'tag','DocPopup','callback',callbackstr,'value',1,'BackgroundColor',edit_bg_color,'FontSize',fs);
                     y_cursor = y_cursor - (0.2 * (1 - button_area_h_n));
-                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.2*(1-button_area_h_n)],'string','...','tag','DocTxt','max',2,'enable','inactive','HorizontalAlignment','left');
+                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.2*(1-button_area_h_n)],'string','...','tag','DocTxt','max',2,'enable','inactive','HorizontalAlignment','left','FontSize',fs);
                     
                     y_cursor = y_cursor - gap_v_n - row_h_n;
-                    uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Parameter code:','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left');
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Parameter code:','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left','FontSize',fs);
                     
                     global_opts = ndi.calculator.get_available_parameters(ud.calculatorInstance.calculatorClassname, ud.pipelinePath);
                     popup_str = [{'Template','---'}, global_opts];
@@ -190,22 +223,22 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                          idx = find(strcmp(popup_str, ud.active_parameter_name));
                          if ~isempty(idx), val_idx = idx(1); end
                     end
-                    uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],'string',popup_str,'tag','ParameterCodePopup', 'callback',callbackstr,'value',val_idx,'BackgroundColor',edit_bg_color);
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],'string',popup_str,'tag','ParameterCodePopup', 'callback',callbackstr,'value',val_idx,'BackgroundColor',edit_bg_color,'FontSize',fs);
                     y_cursor = y_cursor - (0.4 * (1 - button_area_h_n));
                     init_code = ndi.calculator.load_parameter_code(ud.calculatorInstance.calculatorClassname, ud.active_parameter_name, ud.pipelinePath);
-                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.4*(1-button_area_h_n)],'string',init_code,'tag','ParameterCodeTxt','max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left');
+                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.4*(1-button_area_h_n)],'string',init_code,'tag','ParameterCodeTxt','max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left','FontSize',fs);
                     
                     y_cursor = y_cursor - gap_v_n - row_h_n;
-                    uicontrol(uid.popup,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n row_h_n],'string',{'Commands:','---','Try searching for inputs','Show existing outputs','Plot existing outputs','Run but don''t replace','Run and replace'},'tag','CommandPopup','callback',callbackstr,'BackgroundColor',edit_bg_color);
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n row_h_n],'string',{'Commands:','---','Try searching for inputs','Show existing outputs','Plot existing outputs','Run but don''t replace','Run and replace'},'tag','CommandPopup','callback',callbackstr,'BackgroundColor',edit_bg_color,'FontSize',fs);
                     y_cursor = y_cursor - gap_v_n - row_h_n;
                     
                     num_buttons = 5; button_w_n = 0.16;
                     button_centers_n = linspace(edge_n+button_w_n/2, 1-edge_n-button_w_n/2, num_buttons);
-                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(1)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Save','tag','SaveButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(2)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Save As...','tag','SaveAsButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(3)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Delete...','tag','DeleteParameterInstanceButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(4)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Refresh','tag','RefreshPipelineButton','callback',callbackstr);
-                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(5)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Exit','tag','ExitButton','callback',callbackstr);
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(1)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Save','tag','SaveButton','callback',callbackstr,'FontSize',fs);
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(2)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Save As...','tag','SaveAsButton','callback',callbackstr,'FontSize',fs);
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(3)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Delete...','tag','DeleteParameterInstanceButton','callback',callbackstr,'FontSize',fs);
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(4)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Refresh','tag','RefreshPipelineButton','callback',callbackstr,'FontSize',fs);
+                    uicontrol(uid.button,'Units','normalized','position',[button_centers_n(5)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Exit','tag','ExitButton','callback',callbackstr,'FontSize',fs);
                     
                     ndi.calculator.graphical_edit_calculator('command','DocPopup','fig',fig);
                 case 'DocPopup'
@@ -239,7 +272,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                              fprintf('\n--- %s CALCULATOR COMMAND RUN ---\n', calcName);
                              fprintf('STEP: Try searching for inputs (Parameters: %s)...\n', paramName);
                              
-                             % Execute logic in base, set a simple status flag
+                             % Execute logic in base
                              check_cmd = ['if exist(''parameters'',''var'') && isstruct(parameters) && isfield(parameters,''query'') && ~isempty(parameters.query), ' ...
                                           '  if isfield(parameters.query(1),''query''), ' ...
                                           '    MYQ = parameters.query(1).query; ' ...
@@ -249,16 +282,15 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                           'else, NDI_CMD_STATUS = -1; end'];
                              evalin('base', check_cmd);
                              
-                             % Retrieve status and act
                              status = evalin('base', 'NDI_CMD_STATUS');
                              if status == 1
                                  count = evalin('base', 'numel(DOCS)');
-                                 fprintf('  Result: Found %d matching documents for the current query.\n', count);
-                                 msgbox({'Search Check Complete.', 'Look at Command Window for document count.', 'See variable DOCS for document information.'}, 'Search Results', 'modal');
+                                 fprintf('  Result: Found %d matching documents.\n', count);
+                                 msgbox({'Search Check Complete.', 'See Command Window for details.', 'See variable DOCS.'}, 'Results', 'modal');
                              elseif status == 0
                                  fprintf('  Result: Error - parameters.query(1) missing "query" field.\n');
                              else
-                                 fprintf('  Result: Error - parameters variable is not a valid structure or missing "query" field.\n');
+                                 fprintf('  Result: Error - parameters variable invalid.\n');
                              end
                              evalin('base', 'clear NDI_CMD_STATUS');
                             
@@ -275,11 +307,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                 
                                 if ~isempty(ED)
                                     evalin('base', 'openvar(''NDI_CALCULATOR_OUTPUT_DOCS'')');
-                                    fprintf('  Result: %d Output documents found and opened in Variable Editor.\n', numel(ED));
-                                    msgbox(sprintf('Found %d Output documents.\nOpened in MATLAB Variable Editor.', numel(ED)), 'Outputs Found', 'modal');
+                                    fprintf('  Result: %d Output documents found and opened.\n', numel(ED));
+                                    msgbox(sprintf('Found %d Output documents.\nOpened in Variable Editor.', numel(ED)), 'Outputs Found', 'modal');
                                 else
                                     fprintf('  Result: No existing output documents found.\n');
-                                    msgbox('No existing output documents found for these parameters.', 'No Outputs', 'modal');
+                                    msgbox('No existing output documents found.', 'No Outputs', 'modal');
                                 end
                             catch ME
                                 fprintf('  Result: Error searching outputs - %s\n', ME.message);
@@ -300,9 +332,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                      fprintf('  Result: No docs to plot.\n');
                                      msgbox('No docs to plot.', 'Plotting', 'modal');
                                  else
-                                     answer = questdlg('Plot individual figures or create subplots?', ...
-                                         'Plot Mode', 'Individual', 'Subplots', 'Individual');
-                                     
+                                     answer = questdlg('Plot individual figures or create subplots?', 'Plot Mode', 'Individual', 'Subplots', 'Individual');
                                      calc_obj = feval(ud.calculatorInstance.calculatorClassname, ud.linked_object);
                                      
                                      if strcmp(answer, 'Individual')
@@ -342,15 +372,14 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                  fprintf('  Result: Error plotting - %s\n', ME.message);
                                  errordlg(ME.message, 'Plotting Error');
                              end
-                            
-                        case 6 % Run (No Replace)
+                             
+                       case 6 % Run (No Replace)
                             fprintf('\n--- %s CALCULATOR COMMAND RUN ---\n', calcName);
                             fprintf('STEP: Run but do not replace (Parameters: %s)...\n', paramName);
                             try 
                                 evalin('base',['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session);']);
                                 evalin('base', 'if ~exist(''parameters'',''var''), parameters = thecalc.default_search_for_input_parameters(); end');
                                 evalin('base', 'RUNDOCS=thecalc.run(''NoAction'',parameters);');
-                                
                                 num_docs = evalin('base', 'numel(RUNDOCS)');
                                 fprintf('  Result: %d docs generated.\n', num_docs);
                                 msgbox(sprintf('Run complete. Results in RUNDOCS variable.\nDocs returned: %d', num_docs), 'Success', 'modal'); 
@@ -366,7 +395,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                                 evalin('base',['thecalc=' ud.calculatorInstance.calculatorClassname '(pipeline_session);']);
                                 evalin('base', 'if ~exist(''parameters'',''var''), parameters = thecalc.default_search_for_input_parameters(); end');
                                 evalin('base', 'RUNDOCS=thecalc.run(''Replace'',parameters);');
-                                
                                 num_docs = evalin('base', 'numel(RUNDOCS)');
                                 fprintf('  Result: %d docs generated and replaced existing docs.\n', num_docs);
                                 msgbox(sprintf('Run complete. Results in RUNDOCS variable.\nDocs returned: %d', num_docs), 'Success', 'modal'); 
@@ -376,7 +404,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                             end
                     end
                     set(cmdPopupObj, 'Value', 1);
-                    bring_gui_to_front(fig); 
+                    ndi.calculator.bring_gui_to_front(fig); 
                     
                 case 'ParameterCodePopup'
                     paramPopupObj = findobj(fig,'tag','ParameterCodePopup'); val = get(paramPopupObj, 'value');
@@ -391,7 +419,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     end
                     code = get(findobj(fig,'tag','ParameterCodeTxt'), 'String');
                     ndi.calculator.save_parameter_file(ud.calculatorInstance.calculatorClassname, ud.active_parameter_name, code, ud.pipelinePath);
-                    msgbox('Saved.', 'Success'); bring_gui_to_front(fig);
+                    msgbox('Saved.', 'Success'); ndi.calculator.bring_gui_to_front(fig);
                     
                 case 'SaveAsButton'
                     code = get(findobj(fig,'tag','ParameterCodeTxt'), 'String'); ans = inputdlg('Name:');
@@ -400,7 +428,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         ud.active_parameter_name = ans{1}; set(fig,'userdata',ud);
                         ndi.calculator.graphical_edit_calculator('command','RefreshPipelineButton','fig',fig);
                     end
-                    bring_gui_to_front(fig);
+                    ndi.calculator.bring_gui_to_front(fig);
                     
                 case 'RefreshPipelineButton'
                     ndi.calculator.graphical_edit_calculator('command','RefreshParameterPopup','fig',fig);
@@ -417,12 +445,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 case 'ExitButton'
                     close(fig);
             end
-            
-            function bring_gui_to_front(fig)
-                 pipeline_fig = findobj('tag','ndi.cpipeline.edit');
-                 if ~isempty(pipeline_fig), figure(pipeline_fig(1)); end
-                 if ishandle(fig), figure(fig); end
-            end
         end
         
         function params = get_available_parameters(classname, root_dir)
@@ -435,7 +457,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 catch, end
             end
             d = dir(fullfile(param_dir, '*.json'));
-            for i=1:numel(d), [~, name, ~] = fileparts(d(i).name); params{end+1} = name; end
+            for i=1:numel(d), [~, name, ~] = fileparts(d(i).name); if ~strcmp(name,'Default'), params{end+1} = name; end; end
         end
         
         function code = load_parameter_code(classname, param_name, root_dir)
@@ -458,7 +480,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         end
         
         function text = docfiletext(calculator_type, doc_type)
-            % Clean Input
             calculator_type = strtrim(char(calculator_type));
             w = which(calculator_type);
             if isempty(w)
@@ -477,6 +498,25 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             else, text={'Documentation file missing.'}; end
         end
         
+        function contents = user_parameter_template(calculator_type)
+            contents = sprintf(['%% User parameters for %s\n' ...
+                                'thecalc = %s(pipeline_session);\n' ...
+                                'parameters = thecalc.default_search_for_input_parameters();\n'], calculator_type, calculator_type);
+            input_name = 'input_1'; 
+            try
+                txt = fileread(which(calculator_type));
+                % Find default_parameters_query and search within it for name: 'something'
+                idx_func = strfind(txt, 'default_parameters_query');
+                if ~isempty(idx_func)
+                    sub_txt = txt(idx_func(1):end);
+                    t = regexp(sub_txt, '''name''\s*,\s*''([^'']+)''', 'tokens', 'once');
+                    if ~isempty(t), input_name = t{1}; end
+                end
+            catch
+            end
+            query_line = sprintf('parameters.query = struct(''name'',''%s'',''query'',ndi.query(''stimulus_tuningcurve.independent_variable_label'',''contains_string'',''independent_label'',''''));\n', input_name);
+            contents = [contents query_line];
+        end
         function contents = parameter_default(calculator_type)
             contents = sprintf('thecalc = %s(pipeline_session);\nparameters = thecalc.default_search_for_input_parameters();\n', calculator_type);
             try
@@ -507,41 +547,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
         end
         
-        function contents = user_parameter_template(calculator_type)
-            contents = sprintf('%% User parameters for %s\nthecalc = %s(pipeline_session);\nparameters = thecalc.default_search_for_input_parameters();\n', calculator_type, calculator_type);
-            contents = [contents 'parameters.query.query = ndi.query(''stimulus_tuningcurve.independent_variable_label'',''contains_string'',''independent_variable'','''');'];
+        function bring_gui_to_front(fig)
+             pipeline_fig = findobj('tag','ndi.cpipeline.edit');
+             if ~isempty(pipeline_fig), figure(pipeline_fig(1)); end
+             if ishandle(fig), figure(fig); end
         end
-        
-        function calc_list = find_calculator_subclasses(forceUpdate)
-            arguments, forceUpdate (1,1) logical = false; end
-            persistent cached_calc_list;
-            if isempty(cached_calc_list) || forceUpdate
-                calc_list = {}; all_paths = strsplit(path, pathsep);
-                roots = {};
-                for i = 1:numel(all_paths)
-                    p = all_paths{i}; if isfolder(fullfile(p, '+ndi', '+calc')), roots{end+1} = fullfile(p, '+ndi', '+calc'); end
-                end
-                roots = unique(roots);
-                if isempty(roots), cached_calc_list = {}; calc_list = {}; return; end
-                for i = 1:numel(roots)
-                    sub_classes = find_recursively(roots{i}, 'ndi.calc');
-                    calc_list = [calc_list, sub_classes];
-                end
-                cached_calc_list = unique(calc_list); 
-            end
-            calc_list = cached_calc_list(:);
-            function list = find_recursively(pth, pkg)
-                list = {}; d = dir(pth); d = d(~ismember({d.name}, {'.', '..'}));
-                base_meta = ?ndi.calculator;
-                for k = 1:numel(d)
-                    if d(k).isdir && startsWith(d(k).name, '+') 
-                        list = [list, find_recursively(fullfile(pth, d(k).name), [pkg '.' d(k).name(2:end)])];
-                    elseif endsWith(d(k).name, '.m') 
-                        [~, n] = fileparts(d(k).name); cname = [pkg '.' n];
-                        try, mc = meta.class.fromName(cname); if mc < base_meta && ~mc.Abstract, list{end+1} = mc.Name; end; catch, end
-                    end
-                end
-            end 
-        end 
-    end 
-end
+    end % End of methods (Static)
+end % End of classdef
