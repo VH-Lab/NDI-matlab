@@ -145,6 +145,12 @@ classdef DatasetsTest < matlab.unittest.TestCase
             
             % --- 3. Verify the new dataset is in the list ---
             if ~isempty(answer_get)
+                if ~isstruct(answer_get{1}) || ~isfield(answer_get{1}, 'id')
+                    % Fallback safe check to avoid crash if structure is unexpected
+                    narrative(end+1) = "FAILURE: List items are not structs with 'id'.";
+                    get_message_badstruct = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, apiResponse_get, apiURL_get);
+                    testCase.assertTrue(false, get_message_badstruct);
+                end
                 all_ids = cellfun(@(x) x.id, answer_get, 'UniformOutput', false);
             else
                 all_ids = {};
@@ -226,7 +232,8 @@ classdef DatasetsTest < matlab.unittest.TestCase
             
             narrative(end+1) = "Testing: Verifying the update API call was successful (APICallSuccessFlag should be true).";
             update_message = ndi.unittest.cloud.APIMessage(narrative, b_update, answer_update, apiResponse_update, apiURL_update);
-            testCase.verifyTrue(b_update, update_message);
+            % Use assert so we stop if update fails
+            testCase.assertTrue(b_update, update_message);
             
             % --- 3. Verify the change by re-fetching the dataset ---
             narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.getDataset to verify the update.";
@@ -235,10 +242,15 @@ classdef DatasetsTest < matlab.unittest.TestCase
             
             narrative(end+1) = "Testing: Verifying the verification API call was successful (APICallSuccessFlag should be true).";
             get_message_success = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, apiResponse_get, apiURL_get);
-            testCase.verifyTrue(b_get, get_message_success);
+            testCase.assertTrue(b_get, get_message_success);
             
             narrative(end+1) = "Testing: Verifying the dataset name was updated correctly.";
             get_message_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, apiResponse_get, apiURL_get);
+
+            % Robust check to prevent crash if field is missing
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + get_message_content);
+            testCase.assertTrue(isfield(answer_get, 'name'), "Response is missing 'name' field. " + get_message_content);
+
             testCase.verifyEqual(answer_get.name, newName, get_message_content);
             
             narrative(end+1) = "updateDataset test completed successfully.";
@@ -263,15 +275,22 @@ classdef DatasetsTest < matlab.unittest.TestCase
                 
                 narrative(end+1) = "Testing: Verifying the submit API call was successful (APICallSuccessFlag should be true).";
                 submit_message = ndi.unittest.cloud.APIMessage(narrative, b_submit, answer_submit, apiResponse_submit, apiURL_submit);
-                testCase.verifyTrue(b_submit, submit_message);
+                testCase.assertTrue(b_submit, submit_message);
                 narrative(end+1) = "Dataset submitted successfully.";
     
                 % --- 2.5 Verify submission status ---
                 narrative(end+1) = "Preparing to get dataset info to verify submission status.";
                 [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-                testCase.verifyTrue(b_get, "Failed to get dataset to verify submission status.");
-                narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
                 msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+                testCase.assertTrue(b_get, "Failed to get dataset to verify submission status. " + msg_get_content);
+
+                narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
+                % Regenerate message with updated narrative
+                msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+                testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+                testCase.assertTrue(isfield(answer_get, 'isSubmitted'), "Response is missing 'isSubmitted' field. " + msg_get_content);
+
                 testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
                 narrative(end+1) = "Dataset 'isSubmitted' flag is correctly true.";
             end
@@ -283,15 +302,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
             
             narrative(end+1) = "Testing: Verifying the publish API call was successful (APICallSuccessFlag should be true).";
             publish_message = ndi.unittest.cloud.APIMessage(narrative, b_publish, answer_publish, apiResponse_publish, apiURL_publish);
-            testCase.verifyTrue(b_publish, publish_message);
+            testCase.assertTrue(b_publish, publish_message);
             narrative(end+1) = "Dataset published successfully.";
 
             % --- 3.5 Verify publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status.");
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.assertTrue(b_get, "Failed to get dataset to verify publication status. " + msg_get_content);
+
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+            testCase.assertTrue(isfield(answer_get, 'isPublished'), "Response is missing 'isPublished' field. " + msg_get_content);
+
             testCase.verifyTrue(answer_get.isPublished, msg_get_content);
             narrative(end+1) = "Dataset 'isPublished' flag is correctly true.";
             
@@ -302,15 +327,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
             
             narrative(end+1) = "Testing: Verifying the unpublish API call was successful (APICallSuccessFlag should be true).";
             unpublish_message = ndi.unittest.cloud.APIMessage(narrative, b_unpublish, answer_unpublish, apiResponse_unpublish, apiURL_unpublish);
-            testCase.verifyTrue(b_unpublish, unpublish_message);
+            testCase.assertTrue(b_unpublish, unpublish_message);
             narrative(end+1) = "Dataset unpublished successfully.";
 
             % --- 4.5 Verify un-publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.assertTrue(b_get, "Failed to get dataset to verify un-publication status. " + msg_get_content);
+
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+            testCase.assertTrue(isfield(answer_get, 'isPublished'), "Response is missing 'isPublished' field. " + msg_get_content);
+
             testCase.verifyFalse(answer_get.isPublished, msg_get_content);
             narrative(end+1) = "Dataset 'isPublished' flag is correctly false.";
 
@@ -323,15 +354,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
     
                 narrative(end+1) = "Testing: Verifying the update API call was successful (APICallSuccessFlag should be true).";
                 update_message = ndi.unittest.cloud.APIMessage(narrative, b_update, answer_update, apiResponse_update, apiURL_update);
-                testCase.verifyTrue(b_update, update_message);
+                testCase.assertTrue(b_update, update_message);
                 narrative(end+1) = "Dataset 'isSubmitted' flag set to false successfully.";
     
                 % --- 5.5 Verify isSubmitted status ---
                 narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
                 [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-                testCase.verifyTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+                msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+                testCase.assertTrue(b_get, "Failed to get dataset to verify isSubmitted status. " + msg_get_content);
+
                 narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
                 msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+                testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+                testCase.assertTrue(isfield(answer_get, 'isSubmitted'), "Response is missing 'isSubmitted' field. " + msg_get_content);
+
                 testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
                 narrative(end+1) = "Dataset 'isSubmitted' flag is correctly false.";
             end
@@ -362,15 +399,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Testing: Verifying the submit API call was successful (APICallSuccessFlag should be true).";
             submit_message = ndi.unittest.cloud.APIMessage(narrative, b_submit, answer_submit, apiResponse_submit, apiURL_submit);
-            testCase.verifyTrue(b_submit, submit_message);
+            testCase.assertTrue(b_submit, submit_message);
             narrative(end+1) = "Dataset submitted successfully.";
 
             % --- 2.5 Verify submission status ---
             narrative(end+1) = "Preparing to get dataset info to verify submission status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify submission status.");
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.assertTrue(b_get, "Failed to get dataset to verify submission status. " + msg_get_content);
+
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+            testCase.assertTrue(isfield(answer_get, 'isSubmitted'), "Response is missing 'isSubmitted' field. " + msg_get_content);
+
             testCase.verifyTrue(answer_get.isSubmitted, msg_get_content);
             narrative(end+1) = "Dataset 'isSubmitted' flag is correctly true.";
 
@@ -382,15 +425,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Testing: Verifying the update API call was successful (APICallSuccessFlag should be true).";
             update_message = ndi.unittest.cloud.APIMessage(narrative, b_update, answer_update, apiResponse_update, apiURL_update);
-            testCase.verifyTrue(b_update, update_message);
+            testCase.assertTrue(b_update, update_message);
             narrative(end+1) = "Dataset 'isSubmitted' flag set to false successfully.";
 
             % --- 5.5 Verify isSubmitted status ---
             narrative(end+1) = "Preparing to get dataset info to verify isSubmitted status is false.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify isSubmitted status.");
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.assertTrue(b_get, "Failed to get dataset to verify isSubmitted status. " + msg_get_content);
+
             narrative(end+1) = "Testing: Verifying the 'isSubmitted' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+            testCase.assertTrue(isfield(answer_get, 'isSubmitted'), "Response is missing 'isSubmitted' field. " + msg_get_content);
+
             testCase.verifyFalse(answer_get.isSubmitted, msg_get_content);
             narrative(end+1) = "Dataset 'isSubmitted' flag is correctly false.";
 
@@ -415,15 +464,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Testing: Verifying the publish API call was successful (APICallSuccessFlag should be true).";
             publish_message = ndi.unittest.cloud.APIMessage(narrative, b_publish, answer_publish, apiResponse_publish, apiURL_publish);
-            testCase.verifyTrue(b_publish, publish_message);
+            testCase.assertTrue(b_publish, publish_message);
             narrative(end+1) = "Dataset published successfully.";
 
             % --- 3.5 Verify publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status.");
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.assertTrue(b_get, "Failed to get dataset to verify publication status. " + msg_get_content);
+
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+            testCase.assertTrue(isfield(answer_get, 'isPublished'), "Response is missing 'isPublished' field. " + msg_get_content);
+
             testCase.verifyTrue(answer_get.isPublished, msg_get_content);
             narrative(end+1) = "Dataset 'isPublished' flag is correctly true.";
 
@@ -434,15 +489,21 @@ classdef DatasetsTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Testing: Verifying the unpublish API call was successful (APICallSuccessFlag should be true).";
             unpublish_message = ndi.unittest.cloud.APIMessage(narrative, b_unpublish, answer_unpublish, apiResponse_unpublish, apiURL_unpublish);
-            testCase.verifyTrue(b_unpublish, unpublish_message);
+            testCase.assertTrue(b_unpublish, unpublish_message);
             narrative(end+1) = "Dataset unpublished successfully.";
 
             % --- 4.5 Verify un-publication status ---
             narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
             [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status.");
+            msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+            testCase.assertTrue(b_get, "Failed to get dataset to verify un-publication status. " + msg_get_content);
+
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
+
+            testCase.assertTrue(isstruct(answer_get), "Response must be a struct. " + msg_get_content);
+            testCase.assertTrue(isfield(answer_get, 'isPublished'), "Response is missing 'isPublished' field. " + msg_get_content);
+
             testCase.verifyFalse(answer_get.isPublished, msg_get_content);
             narrative(end+1) = "Dataset 'isPublished' flag is correctly false.";
 
@@ -451,4 +512,3 @@ classdef DatasetsTest < matlab.unittest.TestCase
         end
     end
 end
-
