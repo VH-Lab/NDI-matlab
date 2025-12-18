@@ -37,7 +37,7 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
     reportStruct.APICalledURL = string(apiURL);
 
     % Robustly handle the APIResponseBody, which might not be JSON
-    if isstruct(APIResponseBody) || ischar(APIResponseBody) || isstring(APIResponseBody) || isnumeric(APIResponseBody) || islogical(APIResponseBody)
+    if isstruct(APIResponseBody) || ischar(APIResponseBody) || isstring(APIResponseBody) || isnumeric(APIResponseBody) || islogical(APIResponseBody) || iscell(APIResponseBody)
         % It's already JSON-friendly or a simple value
         reportStruct.APIResponseBody = APIResponseBody;
     elseif isa(APIResponseBody, 'org.apache.xerces.dom.DeferredDocumentImpl')
@@ -54,4 +54,3 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
 
     msg = jsonencode(reportStruct, "PrettyPrint", true);
 end
-
