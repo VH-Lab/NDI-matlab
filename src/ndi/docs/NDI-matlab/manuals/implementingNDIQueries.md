@@ -37,7 +37,12 @@ Unlike the MATLAB environment where properties are often nested under `document_
 
 ## 2. The NDI Query Object
 
-An `ndi.query` object defines search criteria. When serialized or inspected, it contains a structure with four fields:
+An `ndi.query` object defines search criteria. When passed to the API, it is provided as a **JSON representation of its `searchstructure` field**.
+
+*   **Structure**: The `searchstructure` is a JSON array of objects.
+*   **AND Logic**: If the array contains multiple objects, they are composed using a logical **AND** operation. All conditions in the array must be met for a document to be a match.
+
+Each element in the `searchstructure` array contains four fields:
 
 *   **`field`**: The name of the field to examine (e.g., `'base.name'`).
 *   **`operation`**: The comparison operation to perform (e.g., `'exact_string'`).
