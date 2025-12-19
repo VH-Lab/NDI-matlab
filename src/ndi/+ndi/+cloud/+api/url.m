@@ -45,6 +45,7 @@ function url = url(endpointName, options)
         endpointMap("reset_password")                 = "/auth/password/forgot";
         endpointMap("set_new_password")               = "/auth/password/confirm";
         endpointMap("create_user")                    = "/users";
+        endpointMap("get_current_user")               = "/users/me";
         endpointMap("get_user")                       = "/users/{userId}";
         endpointMap("get_dataset")                    = "/datasets/{datasetId}";
         endpointMap("update_dataset")                 = "/datasets/{datasetId}";
