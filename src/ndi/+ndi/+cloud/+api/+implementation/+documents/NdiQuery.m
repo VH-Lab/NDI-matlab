@@ -108,9 +108,10 @@ classdef NdiQuery < ndi.cloud.api.call
             if (apiResponse.StatusCode == 200)
                 b = true;
                 raw_answer = apiResponse.Body.Data;
+                answer = raw_answer;
 
                 % Standardize the output format
-                answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
+                doc_list = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
 
                 if isfield(raw_answer, 'documents') && ~isempty(raw_answer.documents)
                     docs_from_api = raw_answer.documents;
@@ -120,15 +121,17 @@ classdef NdiQuery < ndi.cloud.api.call
                          % convert to struct array if possible, or iterate
                          for i = 1:numel(docs_from_api)
                              doc_in = docs_from_api{i};
-                             answer(end+1) = ndi.cloud.api.implementation.documents.NdiQuery.process_doc_summary(doc_in);
+                             doc_list(end+1) = ndi.cloud.api.implementation.documents.NdiQuery.process_doc_summary(doc_in);
                          end
                     else
                         for i = 1:numel(docs_from_api)
                             doc_in = docs_from_api(i);
-                            answer(end+1) = ndi.cloud.api.implementation.documents.NdiQuery.process_doc_summary(doc_in);
+                            doc_list(end+1) = ndi.cloud.api.implementation.documents.NdiQuery.process_doc_summary(doc_in);
                         end
                     end
                 end
+
+                answer.documents = doc_list;
             else
                 if isprop(apiResponse.Body, 'Data')
                     answer = apiResponse.Body.Data;

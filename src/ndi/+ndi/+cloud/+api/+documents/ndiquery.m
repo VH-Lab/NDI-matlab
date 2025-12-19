@@ -14,7 +14,7 @@ function [b, answer, apiResponse, apiURL] = ndiquery(scope, query_obj, args)
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
-%       answer       - A struct array of document summaries on success.
+%       answer       - A structure containing search metadata and the list of documents on success.
 %       apiResponse  - The full matlab.net.http.ResponseMessage object.
 %       apiURL       - The URL that was called.
 %

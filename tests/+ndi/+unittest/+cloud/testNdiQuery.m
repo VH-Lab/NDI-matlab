@@ -116,8 +116,14 @@ classdef testNdiQuery < matlab.unittest.TestCase
             % If we search by unique ID, we should find it.
 
             found = false;
-            for i = 1:numel(answer)
-                if strcmp(answer(i).ndiId, target_id)
+
+            testCase.verifyTrue(isstruct(answer), "Answer should be a struct.");
+            testCase.verifyTrue(isfield(answer, 'documents'), "Answer should have a documents field.");
+
+            docs_result = answer.documents;
+
+            for i = 1:numel(docs_result)
+                if strcmp(docs_result(i).ndiId, target_id)
                     found = true;
                     break;
                 end
@@ -133,20 +139,23 @@ classdef testNdiQuery < matlab.unittest.TestCase
              [b, answer, resp, url] = ndi.cloud.api.documents.ndiquery('private', q);
              testCase.verifyTrue(b, "ndiquery failed for non-existent ID.");
 
+             testCase.verifyTrue(isstruct(answer), "Answer should be a struct.");
+             testCase.verifyTrue(isfield(answer, 'documents'), "Answer should have a documents field.");
+
+             docs_result = answer.documents;
+
              % Expect empty result? Or just not the id.
-             % The API should return empty list or just no matches.
-             % If result is empty, fine. If not, verify none match.
-             if ~isempty(answer)
+             if ~isempty(docs_result)
                  found = false;
-                 for i = 1:numel(answer)
-                    if strcmp(answer(i).ndiId, 'non_existent_id_12345')
+                 for i = 1:numel(docs_result)
+                    if strcmp(docs_result(i).ndiId, 'non_existent_id_12345')
                         found = true;
                         break;
                     end
                  end
                  testCase.verifyFalse(found, "Found non-existent ID!");
              else
-                 testCase.verifyEmpty(answer, "Answer should be empty for non-existent ID");
+                 testCase.verifyEmpty(docs_result, "Documents list should be empty for non-existent ID");
              end
         end
     end
