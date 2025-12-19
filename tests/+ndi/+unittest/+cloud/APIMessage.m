@@ -26,8 +26,12 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
             responseDetails.StatusCode = "NONE - empty";
             responseDetails.StatusLine = "NONE - empty";
         else
-            responseDetails.StatusCode = char(apiResponse.StatusCode);
-            responseDetails.StatusLine = apiResponse.StatusLine;
+            % Handle potential array of ResponseMessage objects
+            codes = [apiResponse.StatusCode];
+            responseDetails.StatusCode = char(join(string(codes), ', '));
+
+            lines = [apiResponse.StatusLine];
+            responseDetails.StatusLine = char(join(string(lines), ', '));
         end
     else
         responseDetails.ResponseObject = 'Not a standard HTTP ResponseMessage';
