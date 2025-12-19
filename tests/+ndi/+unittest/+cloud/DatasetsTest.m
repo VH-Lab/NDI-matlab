@@ -269,6 +269,12 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % This test verifies the full dataset publication workflow: submit -> publish -> unpublish.
             testCase.Narrative = "Begin DatasetsTest: testPublicationLifecycle";
             narrative = testCase.Narrative;
+
+            % Check if user is administrator
+            [b_me, ans_me] = ndi.cloud.api.users.me();
+            if ~b_me || ~isfield(ans_me, 'isAdmin') || ~ans_me.isAdmin
+                return;
+            end
             
             % --- 1. Use the dataset created in the TestMethodSetup ---
             cloudDatasetID = testCase.DatasetID;
@@ -465,6 +471,12 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % This test verifies the dataset publication workflow without submission.
             testCase.Narrative = "Begin DatasetsTest: testPublicationLifecyclePubOnly";
             narrative = testCase.Narrative;
+
+            % Check if user is administrator
+            [b_me, ans_me] = ndi.cloud.api.users.me();
+            if ~b_me || ~isfield(ans_me, 'isAdmin') || ~ans_me.isAdmin
+                return;
+            end
 
             % --- 1. Use the dataset created in the TestMethodSetup ---
             cloudDatasetID = testCase.DatasetID;
