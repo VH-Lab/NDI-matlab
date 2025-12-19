@@ -55,50 +55,14 @@ classdef NdiQuery < ndi.cloud.api.call
             bodyData = struct('scope', this.scope, 'searchstructure', this.searchstructure);
 
             % Ensure searchstructure is treated as an array even if it's a single struct
-            % jsonencode usually handles struct arrays as arrays, but a single struct
-            % might be encoded as an object. However, the Swagger says "items": {"type": "object"}.
-            % If searchstructure is 1x1 struct, jsonencode makes it an object.
-            % We need to make sure it is an array.
-            % In MATLAB, to force a single struct to be an array in JSON, you can put it in a cell array
-            % but that might make it [ { ... } ].
-            % The API expects "searchstructure": [ { ... }, ... ]
-            % Let's test how jsonencode behaves.
-            % If it's a struct array with >1 elements, it's [{},{}].
-            % If it's 1 element, it's {}.
-            % To force array, we might need a workaround or verify if the API accepts single object.
-            % Swagger says "type": "array". So it must be [{}].
-            % We can use a cell array for searchstructure in the body struct.
-
-            if isstruct(bodyData.searchstructure) && isscalar(bodyData.searchstructure)
-                 bodyData.searchstructure = {bodyData.searchstructure};
-            elseif isstruct(bodyData.searchstructure)
-                 % If it's a struct array, we might need to convert to cell array to ensure JSON array?
-                 % Actually jsonencode of a struct array produces a JSON array.
-                 % But jsonencode of a scalar struct produces a JSON object.
-                 % So if scalar, wrap in cell. If array, leave as struct array.
-                 % BUT, if we have a struct array, jsonencode works fine.
-                 % Only scalar struct is the issue.
-                 % Let's try to handle the scalar case above.
-                 % Wait, bodyData.searchstructure = {bodyData.searchstructure} works for scalar.
-                 % For array, it would become a cell array of structs? No.
-                 % jsonencode({struct('a',1), struct('b',2)}) -> [{"a":1},{"b":2}]?
-                 % jsonencode(struct('a',1)) -> {"a":1}
-                 % jsonencode([struct('a',1)]) -> [{"a":1}] ?? No, MATLAB treats [struct] same as struct.
-                 % So yes, we need to wrap in cell if we want array.
-
-                 % Check if it is a struct array (numel > 1)
-                 if numel(bodyData.searchstructure) > 1
-                     % It will be encoded as array automatically?
-                     % Actually, [s s] is a struct array. jsonencode([s s]) gives [{"..."}, {"..."}].
-                     % So only scalar struct needs wrapping.
-                     % BUT, converting struct array to cell array of structs is safer?
-                     % Let's convert to cell array to be safe.
+            if isstruct(bodyData.searchstructure)
+                if isscalar(bodyData.searchstructure)
+                     bodyData.searchstructure = {bodyData.searchstructure};
+                else
+                     % If it's a struct array, convert to cell array to ensure JSON array
                      c = num2cell(bodyData.searchstructure);
                      bodyData.searchstructure = c;
-                 else
-                     % Scalar struct
-                     bodyData.searchstructure = {bodyData.searchstructure};
-                 end
+                end
             end
 
             request = matlab.net.http.RequestMessage(method, headers, bodyData);

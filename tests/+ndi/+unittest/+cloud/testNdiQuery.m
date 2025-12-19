@@ -158,5 +158,50 @@ classdef testNdiQuery < matlab.unittest.TestCase
                  testCase.verifyEmpty(docs_result, "Documents list should be empty for non-existent ID");
              end
         end
+
+        function testQueryAll(testCase)
+            testCase.Narrative = "Begin testQueryAll";
+            narrative = testCase.Narrative;
+
+            % 1. Create multiple documents to test pagination
+            numDocs = 5;
+            narrative(end+1) = "Creating " + numDocs + " documents for pagination test.";
+            prefix = "queryall_test_" + string(did.ido.unique_id());
+
+            for i = 1:numDocs
+                doc_to_add = ndi.document('base', 'base.name', prefix + "_" + i);
+                json_doc = jsonencodenan(doc_to_add.document_properties);
+                [b_add, ~, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
+                testCase.fatalAssertTrue(b_add, "Failed to add document " + i);
+            end
+
+            % 2. Construct ndiqueryAll
+            % Search for documents containing the prefix
+            q = ndi.query('base.name', 'contains_string', prefix);
+
+            % 3. Execute ndiqueryAll with small pageSize to force pagination
+            pageSize = 2;
+            narrative(end+1) = "Executing ndiqueryAll with pageSize=" + pageSize;
+            [b, answer, resp, url] = ndi.cloud.api.documents.ndiqueryAll('private', q, 'pageSize', pageSize);
+
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, answer, resp, url);
+            testCase.verifyTrue(b, "ndiqueryAll failed. " + msg);
+
+            % 4. Verify results
+            narrative(end+1) = "Verifying results.";
+            testCase.verifyEqual(numel(answer), numDocs, "Did not retrieve all documents.");
+
+            % Verify names
+            found_count = 0;
+            for i = 1:numel(answer)
+                name = answer(i).name;
+                if contains(name, prefix)
+                    found_count = found_count + 1;
+                end
+            end
+            testCase.verifyEqual(found_count, numDocs, "Retrieved documents do not match criteria.");
+
+            testCase.Narrative = narrative;
+        end
     end
 end
