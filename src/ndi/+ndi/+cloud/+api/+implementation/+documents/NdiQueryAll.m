@@ -37,7 +37,7 @@ classdef NdiQueryAll < ndi.cloud.api.call
 
             % Initialize outputs
             b = true;
-            answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
+            answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {}, 'datasetId', {});
             apiResponse = matlab.net.http.ResponseMessage.empty;
             apiURL = matlab.net.URI.empty;
 
@@ -89,7 +89,7 @@ classdef NdiQueryAll < ndi.cloud.api.call
                  % Unexpected format or no documents
                  % If ans_page is empty or lacks documents, we assume empty result?
                  if isempty(answer)
-                     answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
+                     answer = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {}, 'datasetId', {});
                  end
             end
         end

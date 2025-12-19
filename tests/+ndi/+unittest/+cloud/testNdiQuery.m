@@ -125,6 +125,13 @@ classdef testNdiQuery < matlab.unittest.TestCase
             for i = 1:numel(docs_result)
                 if strcmp(docs_result(i).ndiId, target_id)
                     found = true;
+                    % Verify datasetId presence
+                    if isfield(docs_result(i), 'datasetId')
+                        testCase.verifyNotEmpty(docs_result(i).datasetId, "datasetId is empty for found document.");
+                    else
+                        % Should be a field
+                        testCase.verifyTrue(isfield(docs_result(i), 'datasetId'), "datasetId field missing from document summary.");
+                    end
                     break;
                 end
             end

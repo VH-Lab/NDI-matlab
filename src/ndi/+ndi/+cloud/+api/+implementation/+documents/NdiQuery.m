@@ -75,7 +75,7 @@ classdef NdiQuery < ndi.cloud.api.call
                 answer = raw_answer;
 
                 % Standardize the output format
-                doc_list = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {});
+                doc_list = struct('id', {}, 'ndiId', {}, 'name', {}, 'className', {}, 'datasetId', {});
 
                 if isfield(raw_answer, 'documents') && ~isempty(raw_answer.documents)
                     docs_from_api = raw_answer.documents;
@@ -126,6 +126,12 @@ classdef NdiQuery < ndi.cloud.api.call
                 doc_out.className = doc_in.className;
             else
                 doc_out.className = '';
+            end
+
+            if isfield(doc_in, 'datasetId') && ~isempty(doc_in.datasetId)
+                doc_out.datasetId = doc_in.datasetId;
+            else
+                doc_out.datasetId = '';
             end
         end
     end
