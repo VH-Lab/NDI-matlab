@@ -26,8 +26,19 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
             responseDetails.StatusCode = "NONE - empty";
             responseDetails.StatusLine = "NONE - empty";
         else
-            responseDetails.StatusCode = char(apiResponse.StatusCode);
-            responseDetails.StatusLine = apiResponse.StatusLine;
+            % Handle potential array of ResponseMessage objects
+            codes = [apiResponse.StatusCode];
+            responseDetails.StatusCode = char(join(string(codes), ', '));
+
+            lines = [apiResponse.StatusLine];
+            % Use arrayfun to convert each StatusLine object to string individually
+            % to avoid 'Too many input arguments' error with object arrays
+            if isempty(lines)
+                 lineStrs = string([]);
+            else
+                 lineStrs = arrayfun(@string, lines);
+            end
+            responseDetails.StatusLine = char(join(lineStrs, ', '));
         end
     else
         responseDetails.ResponseObject = 'Not a standard HTTP ResponseMessage';
