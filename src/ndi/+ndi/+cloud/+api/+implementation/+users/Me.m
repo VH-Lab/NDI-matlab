@@ -33,26 +33,45 @@ classdef Me < ndi.cloud.api.call
                 b = true;
                 answer = apiResponse.Body.Data;
 
-                % Process organizationID to ensure it is a cell array
-                if isfield(answer, 'organizationID')
-                    if ischar(answer.organizationID) || (isstring(answer.organizationID) && isscalar(answer.organizationID))
-                         answer.organizationID = {char(answer.organizationID)};
-                    elseif isstring(answer.organizationID)
-                         answer.organizationID = cellstr(answer.organizationID);
-                    elseif iscell(answer.organizationID)
-                        % Make sure it is a cell array of character vectors (char)
-                        for i = 1:numel(answer.organizationID)
-                             if isstring(answer.organizationID{i})
-                                 answer.organizationID{i} = char(answer.organizationID{i});
-                             end
-                        end
-                    end
+                % Ensure id is a character array
+                if isfield(answer, 'id') && isstring(answer.id)
+                    answer.id = char(answer.id);
                 end
 
-                % Ensure id is a character array
-                 if isfield(answer, 'id') && isstring(answer.id)
-                     answer.id = char(answer.id);
-                 end
+                % Process organizations to create organizationID cell array
+                if isfield(answer, 'organizations')
+                    % Initialize as empty cell array
+                    answer.organizationID = {};
+
+                    orgs = answer.organizations;
+                    if isstruct(orgs)
+                        % If it's a struct array
+                        if isfield(orgs, 'id')
+                            % Extract IDs
+                            for i = 1:numel(orgs)
+                                val = orgs(i).id;
+                                if isstring(val)
+                                    val = char(val);
+                                end
+                                answer.organizationID{end+1} = val;
+                            end
+                        end
+                    elseif iscell(orgs)
+                        % If it's a cell array of structs (e.g. from jsondecode sometimes)
+                        for i = 1:numel(orgs)
+                            if isfield(orgs{i}, 'id')
+                                val = orgs{i}.id;
+                                if isstring(val)
+                                    val = char(val);
+                                end
+                                answer.organizationID{end+1} = val;
+                            end
+                        end
+                    end
+                else
+                    % If no organizations field, ensure organizationID exists as empty cell
+                    answer.organizationID = {};
+                end
             else
                 if isprop(apiResponse.Body, 'Data')
                     answer = apiResponse.Body.Data;
