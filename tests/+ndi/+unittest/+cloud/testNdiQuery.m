@@ -23,36 +23,13 @@ classdef testNdiQuery < matlab.unittest.TestCase
             % 1. Create local dataset and session using buildDataset
             [testCase.Dataset, testCase.Session] = ndi.unittest.dataset.buildDataset.sessionWithIngestedDocsAndFiles();
 
-            % 2. Create remote dataset
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
-            datasetInfo = struct("name", unique_name);
-            [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
-
-            if ~b
-                setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
-                msg = ndi.unittest.cloud.APIMessage(setup_narrative, b, cloudDatasetID, resp, url);
-                testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
-            end
-            testCase.DatasetID = cloudDatasetID;
-
-            % 3. Upload the local dataset to the remote dataset
-            % We need to link them first or use uploadDataset with options.
-            % uploadDataset takes the local dataset and sync options.
-            % We need to tell it to upload to THIS remote dataset.
-            % ndi.cloud.uploadDataset checks for existing link.
-
-            % Link manually
-            remoteDatasetDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudDatasetID, testCase.Dataset);
-            testCase.Dataset.database_add(remoteDatasetDoc);
-
-            % Upload
-            % Create sync options
-            syncOpts = ndi.cloud.sync.SyncOptions();
-            % Upload
-            [b_up, id_up, msg_up] = ndi.cloud.uploadDataset(testCase.Dataset, syncOpts);
+            [b_up, testCase.DatasetID, msg_up] = ndi.cloud.uploadDataset(testCase.Dataset, 'skipMetadataEditorMetadata',true,...
+                'remoteDatasetName',unique_name);
             testCase.fatalAssertTrue(b_up, "Failed to upload dataset: " + msg_up);
 
-            testCase.addTeardown(@() testCase.teardownDataset());
+            testCase.addTeardown(@() testCase.teardownDataset());            
+
         end
     end
 
@@ -178,6 +155,7 @@ classdef testNdiQuery < matlab.unittest.TestCase
             for i = 1:numDocs
                 doc_to_add = ndi.document('base', 'base.name', prefix + "_" + i);
                 json_doc = jsonencodenan(doc_to_add.document_properties);
+                testCase.DatasetID
                 [b_add, ~, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
                 testCase.fatalAssertTrue(b_add, "Failed to add document " + i);
             end
