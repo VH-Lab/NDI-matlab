@@ -72,6 +72,7 @@ function url = url(endpointName, options)
         endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents?page={page}&pageSize={page_size}";
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";
+        endpointMap("ndiquery")                       = "/ndiquery?page={page}&pageSize={page_size}";
     end
 
     endpointPath = endpointMap(endpointName);
