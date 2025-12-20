@@ -155,7 +155,6 @@ classdef testNdiQuery < matlab.unittest.TestCase
             for i = 1:numDocs
                 doc_to_add = ndi.document('base', 'base.name', prefix + "_" + i);
                 json_doc = jsonencodenan(doc_to_add.document_properties);
-                testCase.DatasetID
                 [b_add, ~, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
                 testCase.fatalAssertTrue(b_add, "Failed to add document " + i);
             end
