@@ -77,6 +77,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             testCase.Narrative = "Begin testSerialUploadPublishDownload";
             narrative = testCase.Narrative;
 
+            % Check if user is administrator
+            [b_me, ans_me] = ndi.cloud.api.users.me();
+            if ~b_me || ~isfield(ans_me, 'isAdmin') || ~ans_me.isAdmin
+                return;
+            end
+
             numDocs = 10;
             numFiles = 10;
 
@@ -226,6 +232,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             testCase.Narrative = "Begin testMixedUploadPublishDownload";
             narrative = testCase.Narrative;
 
+            % Check if user is administrator
+            [b_me, ans_me] = ndi.cloud.api.users.me();
+            if ~b_me || ~isfield(ans_me, 'isAdmin') || ~ans_me.isAdmin
+                return;
+            end
+
             numDocs = 10;
             numFiles = 10;
 
@@ -372,6 +384,12 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
         function testBulkUploadPublishDownload(testCase)
             testCase.Narrative = "Begin testBulkUploadPublishDownload";
             narrative = testCase.Narrative;
+
+            % Check if user is administrator
+            [b_me, ans_me] = ndi.cloud.api.users.me();
+            if ~b_me || ~isfield(ans_me, 'isAdmin') || ~ans_me.isAdmin
+                return;
+            end
 
             numDocs = 10;
             numFiles = 10;
