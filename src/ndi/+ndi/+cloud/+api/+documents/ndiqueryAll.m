@@ -7,7 +7,7 @@ function [b, answer, apiResponse, apiURL] = ndiqueryAll(scope, query_obj, args)
 %
 %   Inputs:
 %       scope       - The scope of the search ('public', 'private', 'all').
-%       query_obj   - An ndi.query object defining the search criteria.
+%       query_obj   - An ndi.query or did.query object defining the search criteria.
 %   Name-Value Inputs:
 %       pageSize    - (Optional) The number of results per page. Default is 1000.
 %
@@ -25,7 +25,7 @@ function [b, answer, apiResponse, apiURL] = ndiqueryAll(scope, query_obj, args)
 
     arguments
         scope (1,1) string {mustBeMember(scope, ["public", "private", "all"])}
-        query_obj (1,1) ndi.query
+        query_obj (1,1) did.query
         args.pageSize (1,1) double = 1000
     end
 

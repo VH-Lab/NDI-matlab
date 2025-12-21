@@ -14,7 +14,7 @@ classdef NdiQuery < ndi.cloud.api.call
             %
             %   Inputs:
             %       'scope'           - The scope of the search ('public', 'private', 'all').
-            %       'searchstructure' - The search structure defining the query criteria.
+            %       'searchstructure' - The search structure defining the query criteria (e.g. from an ndi.query or did.query object).
             %       'page'            - (Optional) The page number of results. Default is 1.
             %       'pageSize'        - (Optional) The number of results per page. Default is 20.
             %
