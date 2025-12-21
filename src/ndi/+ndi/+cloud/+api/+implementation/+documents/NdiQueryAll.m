@@ -15,7 +15,7 @@ classdef NdiQueryAll < ndi.cloud.api.call
             %
             %   Inputs:
             %       'scope'           - The scope of the search ('public', 'private', 'all').
-            %       'searchstructure' - The search structure defining the query criteria.
+            %       'searchstructure' - The search structure defining the query criteria (e.g. from an ndi.query or did.query object).
             %       'pageSize'        - (Optional) The number of results per page. Default is 1000.
             %       'retries'         - (Optional) The number of retries for each page. Default is 10.
             %
