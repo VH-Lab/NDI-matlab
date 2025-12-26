@@ -1,66 +1,126 @@
-Description:
-The tuningcurve calculator generates tuning curves from stimulus response scalar documents. It allows the user to define one or more independent variables (e.g., 'Contrast', 'Orientation') and filter or select other stimulus parameters to isolate the tuning relationship of interest.
+NDI_CALCULATOR: ndi.calc.stimulus.tuningcurve
 
-Methodology:
-The calculator processes a `stimulus_response_scalar` document, which contains aggregated responses (e.g., mean firing rate) for various stimulus presentations. The user specifies:
-- `independent_label` and `independent_parameter`: The variables to vary in the tuning curve.
-- `selection`: A set of criteria to filter the stimuli. This can include:
-    - `exact_number`: Match a specific value.
-    - `hasnumericvalue`: Check for existence of a value.
-    - `best`: Select the value that yields the maximum response (using 'empirical_maximum' algorithm).
-    - `deal`: Iterate over all values of a parameter, creating a separate tuning curve document for each value.
-    - `varies`: Ensure a parameter varies.
-    - `constant`: Ensure a parameter is constant.
+**Description**
 
-The calculator uses the `ndi.app.stimulus.tuning_response` application to perform the data extraction and organization. If 'deal' is used, multiple output documents are generated.
+The `ndi.calc.stimulus.tuningcurve` calculator computes tuning curves from stimulus response data. It operates on `stimulus_response_scalar` documents, which contain scalar responses (like mean firing rate) to various stimuli. The calculator allows users to define independent variables and sophisticated selection criteria to filter or group stimuli, enabling the extraction of specific tuning relationships (e.g., contrast response functions, orientation tuning curves) from complex, multi-dimensional stimulus sets.
 
-References:
-This calculator implements standard tuning curve generation by slicing and dicing multi-dimensional stimulus spaces.
+**Methodology**
 
-Formulas:
-The 'empirical_maximum' algorithm for 'best' selection finds the stimulus parameter value associated with the highest mean response (or magnitude of complex response).
+The calculator identifies a `stimulus_response_scalar` document (specified via `depends_on`) and applies a set of filtering and grouping operations defined in `input_parameters`. The core idea is to build up a selection structure that precisely defines which stimuli to include and how to group them.
 
-Examples:
+**Building a Selection Structure by Example**
 
-    c = ndi.calc.stimulus.tuningcurve(S);
-    % break out contrast tuning curves
-    clear parameters;
-    parameters.input_parameters.independent_label='Contrast';
-    parameters.input_parameters.independent_parameter = 'contrast';
-    parameters.input_parameters.best_algorithm = 'empirical_maximum';
+To understand how to use this calculator, we will build up a parameter structure for two specific use cases.
+
+**Example 1: Contrast Tuning Curve (Best Orientation, Split by Spatial Frequency)**
+
+We want to generate a contrast tuning curve at the "best" orientation, while creating separate curves for each spatial frequency.
+
+1.  **Define Independent Variables**:
+    First, we specify the variable that changes along the x-axis of our tuning curve.
+    ```matlab
+    parameters.input_parameters.independent_label = 'Contrast';       % Label for the plot/document
+    parameters.input_parameters.independent_parameter = 'contrast';   % The actual stimulus parameter name
+    ```
+
+2.  **Define Optimization Algorithm**:
+    We need to tell the calculator how to determine what is "best" when we ask for the best parameter value.
+    ```matlab
+    parameters.input_parameters.best_algorithm = 'empirical_maximum'; % Use the value with the highest response
+    ```
+
+3.  **Specify Dependency**:
+    We identify the source data.
+    ```matlab
     parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
-    parameters.input_parameters.selection = struct('property','angle','operation','exact_number','value','best');
-    parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','exact_number','value','deal');
-    parameters.input_parameters.selection(3) = struct('property','sFrequency','operation','hasfield','value','varies');
-    parameters.input_parameters.selection(4) = struct('property','contrast','operation','hasfield','value','varies');
-    parameters.input_parameters.selection(5) = struct('property','angle','operation','hasfield','value','varies');
-    parameters.depends_on = vlt.data.emptystruct('name','value');
+    ```
 
+4.  **Build the Selection Structure**:
+    Now we define the `selection` structure array. Each element specifies a `property` (stimulus parameter), an `operation`, and a `value`.
 
-    c = ndi.calc.stimulus.tuningcurve(S);
-    % break out orientation tuning curves
-    clear parameters;
-    parameters.input_parameters.independent_label='Orientation';
-    parameters.input_parameters.independent_parameter = 'angle';
+    *   **Step 4a: Fix Orientation to the Best Value**
+        We want the contrast tuning curve to be measured at the neuron's preferred orientation. This line says: "use stimuli with the parameter 'angle' whose value exactly matches the stimulus with the best empirical response."
+        ```matlab
+        parameters.input_parameters.selection(1) = struct('property','angle','operation','exact_number','value','best');
+        ```
+
+    *   **Step 4b: Iterate over Spatial Frequencies**
+        We want to see how contrast tuning changes with spatial frequency. Instead of picking one frequency, we use the `deal` operation. This line says: "create a different tuning curve document for each unique value of 'sFrequency'."
+        ```matlab
+        parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','exact_number','value','deal');
+        ```
+
+    *   **Step 4c: Verify Parameter Variation**
+        It is good practice to ensure the parameters we expect to vary actually do vary in the dataset.
+
+        This line says: "only examine stimulus_parameter documents where the stimuli have the field 'sFrequency' and where this varies across at least some stimulus presentations."
+        ```matlab
+        parameters.input_parameters.selection(3) = struct('property','sFrequency','operation','hasfield','value','varies');
+        ```
+
+        This line says: "only build tuning curves when the associated stimulus_presentation document varies in 'contrast'."
+        ```matlab
+        parameters.input_parameters.selection(4) = struct('property','contrast','operation','hasfield','value','varies');
+        ```
+
+**Example 2: 2D Tuning Curve (Spatial Frequency vs. Temporal Frequency)**
+
+In this example, we generate a 2-dimensional tuning curve where the response varies as a function of both Spatial Frequency and Temporal Frequency. This requires specifying two independent variables. We also restrict the analysis to the "best" orientation.
+
+1.  **Define Two Independent Variables**:
+    We list both variables for the axes. The order matters for plotting (usually X and Y axes).
+    ```matlab
+    parameters.input_parameters.independent_label = 'spatial_frequency, temporal_frequency';
+    parameters.input_parameters.independent_parameter = 'sFrequency, tFrequency';
+    ```
+
+2.  **Define Optimization Algorithm**:
+    ```matlab
     parameters.input_parameters.best_algorithm = 'empirical_maximum';
-    parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
-    parameters.input_parameters.selection = struct('property','sFrequency','operation','exact_number','value','best');
-    parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','hasfield','value','varies');
-    parameters.input_parameters.selection(3) = struct('property','contrast','operation','exact_number','value',1);
-    parameters.input_parameters.selection(4) = struct('property','angle','operation','hasfield','value','varies');
-    parameters.depends_on = vlt.data.emptystruct('name','value');
+    ```
 
-
-    c_d = ndi.calc.stimulus.tuningcurve(S);
-    % break out direction tuning curves
-    clear parameters;
-    parameters.input_parameters.independent_label='Direction';
-    parameters.input_parameters.independent_parameter = 'angle';
-    parameters.input_parameters.best_algorithm = 'empirical_maximum';
+3.  **Specify Dependency**:
+    ```matlab
     parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
-    parameters.input_parameters.selection = struct('property','tFrequency','operation','exact_number','value','best');
-    parameters.input_parameters.selection(2) = struct('property','tFrequency','operation','hasfield','value','varies');
-    parameters.input_parameters.selection(3) = struct('property','angle','operation','hasfield','value','varies');
-    parameters.input_parameters.selection(4) = struct('property','angle','operation','hasnumericvalue','value',270);
-    parameters.input_parameters.selection(5) = struct('property','loops','operation','hasnumericvalue','value',0);
-    parameters.depends_on = vlt.data.emptystruct('name','value');
+    ```
+
+4.  **Build the Selection Structure**:
+
+    *   **Step 4a: Fix Orientation to the Best Value**
+        Just like in Example 1, we restrict the data to the orientation that produces the maximum response.
+        ```matlab
+        parameters.input_parameters.selection(1) = struct('property','angle','operation','exact_number','value','best');
+        ```
+
+    *   **Step 4b: Verify Variation of Independent Variables**
+        We must ensure that both independent parameters actually vary in the dataset to form a valid 2D space.
+
+        Verify `sFrequency` varies:
+        ```matlab
+        parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','hasfield','value','varies');
+        ```
+
+        Verify `tFrequency` varies:
+        ```matlab
+        parameters.input_parameters.selection(3) = struct('property','tFrequency','operation','hasfield','value','varies');
+        ```
+
+    *   **Step 4c: Verify Angle Variation**
+        Even though we are selecting the "best" angle, the dataset itself must have variation in angle for the "best" selection to be meaningful (otherwise, there's only one angle to choose from).
+        ```matlab
+        parameters.input_parameters.selection(4) = struct('property','angle','operation','hasfield','value','varies');
+        ```
+
+    *   **Final Setup**:
+        Clear the depends_on field if you are initializing it for a new calculator run.
+        ```matlab
+        parameters.depends_on = vlt.data.emptystruct('name','value');
+        ```
+
+**References**
+
+*   N/A
+
+**Formulas**
+
+*   **Empirical Maximum**: The 'best' value is determined by finding the stimulus condition with the largest mean response magnitude (or absolute magnitude for complex responses).
