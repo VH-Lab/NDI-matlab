@@ -10,7 +10,11 @@ The calculator identifies a `stimulus_response_scalar` document (specified via `
 
 **Building a Selection Structure by Example**
 
-To understand how to use this calculator, we will build up a parameter structure for a specific use case: generating a **Contrast Tuning Curve** at the "best" orientation, while creating separate curves for each spatial frequency.
+To understand how to use this calculator, we will build up a parameter structure for two specific use cases.
+
+**Example 1: Contrast Tuning Curve (Best Orientation, Split by Spatial Frequency)**
+
+We want to generate a contrast tuning curve at the "best" orientation, while creating separate curves for each spatial frequency.
 
 1.  **Define Independent Variables**:
     First, we specify the variable that changes along the x-axis of our tuning curve.
@@ -57,6 +61,60 @@ To understand how to use this calculator, we will build up a parameter structure
         This line says: "only build tuning curves when the associated stimulus_presentation document varies in 'contrast'."
         ```matlab
         parameters.input_parameters.selection(4) = struct('property','contrast','operation','hasfield','value','varies');
+        ```
+
+**Example 2: 2D Tuning Curve (Spatial Frequency vs. Temporal Frequency)**
+
+In this example, we generate a 2-dimensional tuning curve where the response varies as a function of both Spatial Frequency and Temporal Frequency. This requires specifying two independent variables. We also restrict the analysis to the "best" orientation.
+
+1.  **Define Two Independent Variables**:
+    We list both variables for the axes. The order matters for plotting (usually X and Y axes).
+    ```matlab
+    parameters.input_parameters.independent_label = 'spatial_frequency, temporal_frequency';
+    parameters.input_parameters.independent_parameter = 'sFrequency, tFrequency';
+    ```
+
+2.  **Define Optimization Algorithm**:
+    ```matlab
+    parameters.input_parameters.best_algorithm = 'empirical_maximum';
+    ```
+
+3.  **Specify Dependency**:
+    ```matlab
+    parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
+    ```
+
+4.  **Build the Selection Structure**:
+
+    *   **Step 4a: Fix Orientation to the Best Value**
+        Just like in Example 1, we restrict the data to the orientation that produces the maximum response.
+        ```matlab
+        parameters.input_parameters.selection(1) = struct('property','angle','operation','exact_number','value','best');
+        ```
+
+    *   **Step 4b: Verify Variation of Independent Variables**
+        We must ensure that both independent parameters actually vary in the dataset to form a valid 2D space.
+
+        Verify `sFrequency` varies:
+        ```matlab
+        parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','hasfield','value','varies');
+        ```
+
+        Verify `tFrequency` varies:
+        ```matlab
+        parameters.input_parameters.selection(3) = struct('property','tFrequency','operation','hasfield','value','varies');
+        ```
+
+    *   **Step 4c: Verify Angle Variation**
+        Even though we are selecting the "best" angle, the dataset itself must have variation in angle for the "best" selection to be meaningful (otherwise, there's only one angle to choose from).
+        ```matlab
+        parameters.input_parameters.selection(4) = struct('property','angle','operation','hasfield','value','varies');
+        ```
+
+    *   **Final Setup**:
+        Clear the depends_on field if you are initializing it for a new calculator run.
+        ```matlab
+        parameters.depends_on = vlt.data.emptystruct('name','value');
         ```
 
 **References**
