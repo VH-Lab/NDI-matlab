@@ -335,6 +335,143 @@ classdef tuningcurve < ndi.calculator
             b = isempty(ndi_calculator_obj.session.database_search(q1&q2));
         end % is_valid_dependency_input()
 
+        function [docs, doc_output, doc_expected_output] = generate_mock_docs(ndi_calculator_obj, scope, number_of_tests, options)
+            % GENERATE_MOCK_DOCS - generate mock documents for testing
+            %
+            % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(NDI_CALCULATOR_OBJ, SCOPE, NUMBER_OF_TESTS, 'PARAM', VALUE, ...)
+            %
+            % The generate_mock_docs method is a testing utility present in NDI calculator classes.
+            % It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
+            % which can then be compared against expected outputs.
+            %
+            % This method takes additional input arguments as name/value pairs:
+            % |---------------------------|------------------------------------------------------|
+            % | Parameter (default)       | Description                                          |
+            % |---------------------------|------------------------------------------------------|
+            % | generate_expected_docs    | If true, the method saves the current output as the  |
+            % |   (false)                 | "expected" output for future tests. Use this when    |
+            % |                           | updating the calculator logic or creating new tests. |
+            % | specific_test_inds ([])   | Allows specifying a subset of test indices to run.   |
+            % |                           | If empty, all NUMBER_OF_TESTS are run.               |
+            % |---------------------------|------------------------------------------------------|
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calc.stimulus.tuningcurve
+                scope (1,:) char
+                number_of_tests (1,1) double
+                options.generate_expected_docs (1,1) logical = false
+                options.specific_test_inds (1,:) double = []
+            end
+
+            docs = cell(1, number_of_tests);
+            doc_output = cell(1, number_of_tests);
+            doc_expected_output = cell(1, number_of_tests);
+
+            test_inds = 1:number_of_tests;
+            if ~isempty(options.specific_test_inds)
+                test_inds = options.specific_test_inds;
+            end
+
+            % Common parameters for all tests (can be varied if needed)
+            param_struct = struct('spatial_frequency',0.5);
+            independent_variables = {'contrast'};
+
+            % Different scenarios could be implemented here based on scope and test index
+            % For simplicity, we use the same structure but vary noise based on scope
+
+            for i = test_inds
+
+                % Create variations based on index i
+                X = [0; 0.2; 0.4; 0.6; 0.8; 1.0];
+                % Response function: Sigmoid-like response
+                % R = Rmax * X^n / (X^n + C50^n) + Baseline
+                Rmax = 10;
+                C50 = 0.5;
+                n = 2;
+                Baseline = 1;
+                R = Rmax * (X.^n) ./ (X.^n + C50.^n) + Baseline;
+
+                noise = 0;
+                if strcmpi(scope, 'lowSNR')
+                    noise = 0.2; % 20% noise
+                end
+
+                reps = 5; % Number of repetitions
+
+                % Use the mock utility to generate documents
+                docs_here = ndi.mock.fun.stimulus_response(ndi_calculator_obj.session, ...
+                    param_struct, independent_variables, X, R, noise, reps);
+
+                % Extract the relevant input documents (subject, stimulator, spikes, stim_pres, control_stim, stim_response)
+                % ndi.mock.fun.stimulus_response returns:
+                % { mock_output.mock_subject stimulator_doc spikes_doc stim_pres_doc control_stim_doc stim_response_doc{1}{:} tc_docs{1}{:} };
+
+                % We identify the stimulus_response_scalar document. It's usually near the end, before tc_docs.
+                % The last element(s) of docs_here are the tuning curve calculated by stimulus_response.
+                % We want to discard that and run the calculator ourselves.
+
+                % Let's inspect the returned docs to find the stimulus_response_scalar
+                stim_response_doc = {};
+                input_docs = {};
+                for k = 1:numel(docs_here)
+                    d = docs_here{k};
+                    if isa(d, 'ndi.document')
+                         if strcmpi(d.document_properties.document_class.class_name, 'stimulus_response_scalar')
+                             stim_response_doc{end+1} = d;
+                             input_docs{end+1} = d;
+                         elseif strcmpi(d.document_properties.document_class.class_name, 'tuningcurve_calc')
+                             % Skip the pre-calculated one
+                         else
+                             input_docs{end+1} = d;
+                         end
+                    end
+                end
+
+                % Now run the calculator on the stimulus_response_doc(s)
+                % We need to set up the parameters properly.
+
+                parameters.input_parameters.independent_label = independent_variables;
+                parameters.input_parameters.independent_parameter = independent_variables;
+                parameters.input_parameters.best_algorithm = 'empirical_maximum';
+                parameters.input_parameters.selection = struct('property',independent_variables{1},'operation','hasfield','value','varies');
+
+                % If multiple independent variables, 'selection' logic might need adjustment, but here we have 1.
+
+                % Run the calculator
+                calc_docs_this_test = {};
+                for k=1:numel(stim_response_doc)
+                    parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{k}.id());
+
+                    % We use 'Replace' to ensure we get a fresh document (or replace the one from stimulus_response if it added one)
+                    new_docs = ndi_calculator_obj.run('Replace',parameters);
+
+                    if iscell(new_docs)
+                        calc_docs_this_test = cat(2, calc_docs_this_test, new_docs);
+                    else
+                        calc_docs_this_test{end+1} = new_docs;
+                    end
+                end
+
+                % Store results
+                docs{i} = input_docs;
+                if ~isempty(calc_docs_this_test)
+                    doc_output{i} = calc_docs_this_test{1}; % Assuming 1 output doc per test case here for simplicity
+                else
+                    doc_output{i} = [];
+                end
+
+                if options.generate_expected_docs
+                    ndi_calculator_obj.write_mock_expected_output(i, doc_output{i});
+                end
+
+                try
+                    doc_expected_output{i} = ndi_calculator_obj.load_mock_expected_output(i);
+                catch
+                    doc_expected_output{i} = [];
+                end
+            end
+        end % generate_mock_docs()
+
         function doc_about(ndi_calculator_obj)
             % ----------------------------------------------------------------------------------------------
             % NDI_CALCULATOR: TUNINGCURVE_CALC
