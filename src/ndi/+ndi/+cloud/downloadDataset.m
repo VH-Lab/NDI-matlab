@@ -52,6 +52,9 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     if ~success
         if isstruct(answer) && isfield(answer, 'message')
             reason = answer.message;
+            if isstruct(reason) && isfield(reason, 'error')
+                reason = reason.error;
+            end
         elseif ischar(answer) || isstring(answer)
             reason = answer;
         else
