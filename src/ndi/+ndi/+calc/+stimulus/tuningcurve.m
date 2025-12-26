@@ -10,6 +10,7 @@ classdef tuningcurve < ndi.calculator
             %
             tuningcurve_obj = tuningcurve_obj@ndi.calculator(session,'tuningcurve_calc',...
                 fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','tuningcurve_calc.json'));
+            tuningcurve_obj.numberOfSelfTests = 4;
         end % tuningcurve()
 
         function doc = calculate(ndi_calculator_obj, parameters)
