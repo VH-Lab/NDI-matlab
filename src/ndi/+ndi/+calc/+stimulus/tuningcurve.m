@@ -373,24 +373,97 @@ classdef tuningcurve < ndi.calculator
                 test_inds = options.specific_test_inds;
             end
 
-            % Common parameters for all tests (can be varied if needed)
-            param_struct = struct('spatial_frequency',0.5);
-            independent_variables = {'contrast'};
-
-            % Different scenarios could be implemented here based on scope and test index
-            % For simplicity, we use the same structure but vary noise based on scope
-
             for i = test_inds
 
-                % Create variations based on index i
-                X = [0; 0.2; 0.4; 0.6; 0.8; 1.0];
-                % Response function: Sigmoid-like response
-                % R = Rmax * X^n / (X^n + C50^n) + Baseline
-                Rmax = 10;
-                C50 = 0.5;
-                n = 2;
-                Baseline = 1;
-                R = Rmax * (X.^n) ./ (X.^n + C50.^n) + Baseline;
+                % Defaults
+                param_struct = struct('spatial_frequency',0.5, 'angle', 0, 'contrast', 1);
+                independent_variables = {'contrast'};
+                selection = struct('property','contrast','operation','hasfield','value','varies');
+                calc_independent_label = [];
+
+                switch i
+                    case 1
+                        % Contrast tuning
+                        scope_str = 'Contrast Tuning';
+                        independent_variables = {'contrast'};
+                        X = [0; 0.2; 0.4; 0.6; 0.8; 1.0];
+                        Rmax = 10; C50 = 0.5; n = 2; Baseline = 1;
+                        R = Rmax * (X.^n) ./ (X.^n + C50.^n) + Baseline;
+                        selection = struct('property','contrast','operation','hasfield','value','varies');
+
+                    case 2
+                        % Orientation tuning with contrast variation
+                        scope_str = 'Orientation Tuning (Best Contrast)';
+                        independent_variables = {'angle', 'contrast'};
+
+                        % Grid generation
+                        angles = 0:45:315;
+                        contrasts = [0, 0.25, 0.50, 0.75, 1];
+                        [A, C] = ndgrid(angles, contrasts);
+                        X = [A(:), C(:)];
+
+                        % Response generation
+                        Preferred = 90; Width = 30; Baseline = 2; Amplitude = 20;
+                        C50 = 0.3; n = 2; % Contrast parameters
+
+                        % Angle part (Gaussian)
+                        diff_angle = min(abs(A(:) - Preferred), abs(A(:) - Preferred - 360));
+                        diff_angle = min(diff_angle, abs(A(:) - Preferred + 360));
+                        R_angle = exp( - (diff_angle.^2) / (2*Width^2));
+
+                        % Contrast part (Naka-Rushton)
+                        R_contrast = (C(:).^n) ./ (C(:).^n + C50.^n);
+
+                        R = Baseline + Amplitude * R_angle .* R_contrast;
+
+                        % Selection
+                        selection = struct('property','angle','operation','hasfield','value','varies');
+                        selection(2) = struct('property','contrast','operation','hasfield','value','varies');
+                        selection(3) = struct('property','contrast','operation','hasfield','value','best');
+
+                        calc_independent_label = {'angle'};
+
+                    case 3
+                        % 2D: Contrast x Spatial Frequency
+                        scope_str = '2D Tuning';
+                        independent_variables = {'contrast', 'spatial_frequency'};
+                         % Generate grid
+                        c_values = [0, 0.5, 1];
+                        sf_values = [0.1, 1, 10];
+                        [C, SF] = ndgrid(c_values, sf_values);
+                        X = [C(:), SF(:)];
+
+                        % Response: Product
+                        % Contrast part
+                        Rmax = 10; C50 = 0.5; n = 2;
+                        Rc = (C(:).^n) ./ (C(:).^n + C50.^n);
+                        % SF part (log gaussian)
+                        PrefSF = 1; SigmaSF = 0.5;
+                        Rsf = exp( - (log10(SF(:)) - log10(PrefSF)).^2 / (2*SigmaSF^2));
+
+                        R = 20 * Rc .* Rsf + 1;
+
+                        selection = struct('property','contrast','operation','hasfield','value','varies');
+                        selection(2) = struct('property','spatial_frequency','operation','hasfield','value','varies');
+
+                    case 4
+                         % Orientation tuning different preferred
+                        scope_str = 'Orientation Tuning Shifted';
+                        independent_variables = {'angle'};
+                         X = (0:30:330)';
+                        Preferred = 180; Width = 45; Baseline = 5; Amplitude = 15;
+                        diff_angle = min(abs(X - Preferred), abs(X - Preferred - 360));
+                        diff_angle = min(diff_angle, abs(X - Preferred + 360));
+                        R = Amplitude * exp( - (diff_angle.^2) / (2*Width^2)) + Baseline;
+                        selection = struct('property','angle','operation','hasfield','value','varies');
+
+                    otherwise
+                         % Default fallback
+                         independent_variables = {'contrast'};
+                         X = [0; 1]';
+                         R = [0; 10]';
+                         selection = struct('property','contrast','operation','hasfield','value','varies');
+                end
 
                 noise = 0;
                 if strcmpi(scope, 'lowSNR')
@@ -431,12 +504,20 @@ classdef tuningcurve < ndi.calculator
                 % Now run the calculator on the stimulus_response_doc(s)
                 % We need to set up the parameters properly.
 
-                parameters.input_parameters.independent_label = independent_variables;
-                parameters.input_parameters.independent_parameter = independent_variables;
-                parameters.input_parameters.best_algorithm = 'empirical_maximum';
-                parameters.input_parameters.selection = struct('property',independent_variables{1},'operation','hasfield','value','varies');
+                if isempty(calc_independent_label)
+                    calc_independent_label = independent_variables;
+                end
 
-                % If multiple independent variables, 'selection' logic might need adjustment, but here we have 1.
+                if iscell(calc_independent_label)
+                     lbl = strjoin(calc_independent_label, ',');
+                else
+                     lbl = calc_independent_label;
+                end
+
+                parameters.input_parameters.independent_label = lbl;
+                parameters.input_parameters.independent_parameter = lbl;
+                parameters.input_parameters.best_algorithm = 'empirical_maximum';
+                parameters.input_parameters.selection = selection;
 
                 % Run the calculator
                 calc_docs_this_test = {};
