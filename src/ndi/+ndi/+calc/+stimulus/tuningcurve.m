@@ -393,7 +393,7 @@ classdef tuningcurve < ndi.calculator
 
                     case 2
                         % Orientation tuning with contrast variation
-                        scope_str = 'Orientation Tuning (Best Contrast)';
+                        scope_str = 'Contrast Tuning (Best Angle)';
                         independent_variables = {'angle', 'contrast'};
 
                         % Grid generation
@@ -419,9 +419,9 @@ classdef tuningcurve < ndi.calculator
                         % Selection
                         selection = struct('property','angle','operation','hasfield','value','varies');
                         selection(2) = struct('property','contrast','operation','hasfield','value','varies');
-                        selection(3) = struct('property','contrast','operation','hasfield','value','best');
+                        selection(3) = struct('property','angle','operation','exact_number','value','best');
 
-                        calc_independent_label = {'angle'};
+                        calc_independent_label = {'contrast'};
 
                     case 3
                         % 2D: Contrast x Spatial Frequency
