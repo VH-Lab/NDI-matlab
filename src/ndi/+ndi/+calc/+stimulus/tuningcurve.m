@@ -10,6 +10,7 @@ classdef tuningcurve < ndi.calculator
             %
             tuningcurve_obj = tuningcurve_obj@ndi.calculator(session,'tuningcurve_calc',...
                 fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','tuningcurve_calc.json'));
+            tuningcurve_obj.numberOfSelfTests = 4;
         end % tuningcurve()
 
         function doc = calculate(ndi_calculator_obj, parameters)
@@ -334,6 +335,224 @@ classdef tuningcurve < ndi.calculator
             % can't also be a tuningcurve_calc document or we could have infinite recursion
             b = isempty(ndi_calculator_obj.session.database_search(q1&q2));
         end % is_valid_dependency_input()
+
+        function [docs, doc_output, doc_expected_output] = generate_mock_docs(ndi_calculator_obj, scope, number_of_tests, options)
+            % GENERATE_MOCK_DOCS - generate mock documents for testing
+            %
+            % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(NDI_CALCULATOR_OBJ, SCOPE, NUMBER_OF_TESTS, 'PARAM', VALUE, ...)
+            %
+            % The generate_mock_docs method is a testing utility present in NDI calculator classes.
+            % It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
+            % which can then be compared against expected outputs.
+            %
+            % This method takes additional input arguments as name/value pairs:
+            % |---------------------------|------------------------------------------------------|
+            % | Parameter (default)       | Description                                          |
+            % |---------------------------|------------------------------------------------------|
+            % | generate_expected_docs    | If true, the method saves the current output as the  |
+            % |   (false)                 | "expected" output for future tests. Use this when    |
+            % |                           | updating the calculator logic or creating new tests. |
+            % | specific_test_inds ([])   | Allows specifying a subset of test indices to run.   |
+            % |                           | If empty, all NUMBER_OF_TESTS are run.               |
+            % |---------------------------|------------------------------------------------------|
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calc.stimulus.tuningcurve
+                scope (1,:) char
+                number_of_tests (1,1) double
+                options.generate_expected_docs (1,1) logical = false
+                options.specific_test_inds (1,:) double = []
+            end
+
+            docs = cell(1, number_of_tests);
+            doc_output = cell(1, number_of_tests);
+            doc_expected_output = cell(1, number_of_tests);
+
+            test_inds = 1:number_of_tests;
+            if ~isempty(options.specific_test_inds)
+                test_inds = options.specific_test_inds;
+            end
+
+            for i = test_inds
+
+                % Defaults
+                param_struct = struct('spatial_frequency',0.5, 'angle', 0, 'contrast', 1);
+                independent_variables = {'contrast'};
+                selection = struct('property','contrast','operation','hasfield','value','varies');
+                calc_independent_label = [];
+
+                switch i
+                    case 1
+                        % Contrast tuning
+                        scope_str = 'Contrast Tuning';
+                        independent_variables = {'contrast'};
+                        X = [0; 0.2; 0.4; 0.6; 0.8; 1.0];
+                        Rmax = 10; C50 = 0.5; n = 2; Baseline = 1;
+                        R = Rmax * (X.^n) ./ (X.^n + C50.^n) + Baseline;
+                        selection = struct('property','contrast','operation','hasfield','value','varies');
+
+                    case 2
+                        % Orientation tuning with contrast variation
+                        scope_str = 'Contrast Tuning (Best Angle)';
+                        independent_variables = {'angle', 'contrast'};
+
+                        % Grid generation
+                        angles = 0:45:315;
+                        contrasts = [0, 0.25, 0.50, 0.75, 1];
+                        [A, C] = ndgrid(angles, contrasts);
+                        X = [A(:), C(:)];
+
+                        % Response generation
+                        Preferred = 90; Width = 30; Baseline = 2; Amplitude = 20;
+                        C50 = 0.3; n = 2; % Contrast parameters
+
+                        % Angle part (Gaussian)
+                        diff_angle = min(abs(A(:) - Preferred), abs(A(:) - Preferred - 360));
+                        diff_angle = min(diff_angle, abs(A(:) - Preferred + 360));
+                        R_angle = exp( - (diff_angle.^2) / (2*Width^2));
+
+                        % Contrast part (Naka-Rushton)
+                        R_contrast = (C(:).^n) ./ (C(:).^n + C50.^n);
+
+                        R = Baseline + Amplitude * R_angle .* R_contrast;
+
+                        % Selection
+                        selection = struct('property','angle','operation','hasfield','value','varies');
+                        selection(2) = struct('property','contrast','operation','hasfield','value','varies');
+                        selection(3) = struct('property','angle','operation','exact_number','value','best');
+
+                        calc_independent_label = {'contrast'};
+
+                    case 3
+                        % 2D: Contrast x Spatial Frequency
+                        scope_str = '2D Tuning';
+                        independent_variables = {'contrast', 'spatial_frequency'};
+                         % Generate grid
+                        c_values = [0, 0.5, 1];
+                        sf_values = [0.1, 1, 10];
+                        [C, SF] = ndgrid(c_values, sf_values);
+                        X = [C(:), SF(:)];
+
+                        % Response: Product
+                        % Contrast part
+                        Rmax = 10; C50 = 0.5; n = 2;
+                        Rc = (C(:).^n) ./ (C(:).^n + C50.^n);
+                        % SF part (log gaussian)
+                        PrefSF = 1; SigmaSF = 0.5;
+                        Rsf = exp( - (log10(SF(:)) - log10(PrefSF)).^2 / (2*SigmaSF^2));
+
+                        R = 20 * Rc .* Rsf + 1;
+
+                        selection = struct('property','contrast','operation','hasfield','value','varies');
+                        selection(2) = struct('property','spatial_frequency','operation','hasfield','value','varies');
+
+                    case 4
+                         % Orientation tuning different preferred
+                        scope_str = 'Orientation Tuning Shifted';
+                        independent_variables = {'angle'};
+                         X = (0:30:330)';
+                        Preferred = 180; Width = 45; Baseline = 5; Amplitude = 15;
+                        diff_angle = min(abs(X - Preferred), abs(X - Preferred - 360));
+                        diff_angle = min(diff_angle, abs(X - Preferred + 360));
+                        R = Amplitude * exp( - (diff_angle.^2) / (2*Width^2)) + Baseline;
+                        selection = struct('property','angle','operation','hasfield','value','varies');
+
+                    otherwise
+                         % Default fallback
+                         independent_variables = {'contrast'};
+                         X = [0; 1]';
+                         R = [0; 10]';
+                         selection = struct('property','contrast','operation','hasfield','value','varies');
+                end
+
+                noise = 0;
+                if strcmpi(scope, 'lowSNR')
+                    noise = 0.2; % 20% noise
+                end
+
+                reps = 5; % Number of repetitions
+
+                % Use the mock utility to generate documents
+                docs_here = ndi.mock.fun.stimulus_response(ndi_calculator_obj.session, ...
+                    param_struct, independent_variables, X, R, noise, reps);
+
+                % Extract the relevant input documents (subject, stimulator, spikes, stim_pres, control_stim, stim_response)
+                % ndi.mock.fun.stimulus_response returns:
+                % { mock_output.mock_subject stimulator_doc spikes_doc stim_pres_doc control_stim_doc stim_response_doc{1}{:} tc_docs{1}{:} };
+
+                % We identify the stimulus_response_scalar document. It's usually near the end, before tc_docs.
+                % The last element(s) of docs_here are the tuning curve calculated by stimulus_response.
+                % We want to discard that and run the calculator ourselves.
+
+                % Let's inspect the returned docs to find the stimulus_response_scalar
+                stim_response_doc = {};
+                input_docs = {};
+                for k = 1:numel(docs_here)
+                    d = docs_here{k};
+                    if isa(d, 'ndi.document')
+                         if strcmpi(d.document_properties.document_class.class_name, 'stimulus_response_scalar')
+                             stim_response_doc{end+1} = d;
+                             input_docs{end+1} = d;
+                         elseif strcmpi(d.document_properties.document_class.class_name, 'tuningcurve_calc')
+                             % Skip the pre-calculated one
+                         else
+                             input_docs{end+1} = d;
+                         end
+                    end
+                end
+
+                % Now run the calculator on the stimulus_response_doc(s)
+                % We need to set up the parameters properly.
+
+                if isempty(calc_independent_label)
+                    calc_independent_label = independent_variables;
+                end
+
+                if iscell(calc_independent_label)
+                     lbl = strjoin(calc_independent_label, ',');
+                else
+                     lbl = calc_independent_label;
+                end
+
+                parameters.input_parameters.independent_label = lbl;
+                parameters.input_parameters.independent_parameter = lbl;
+                parameters.input_parameters.best_algorithm = 'empirical_maximum';
+                parameters.input_parameters.selection = selection;
+
+                % Run the calculator
+                calc_docs_this_test = {};
+                for k=1:numel(stim_response_doc)
+                    parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{k}.id());
+
+                    % We use 'Replace' to ensure we get a fresh document (or replace the one from stimulus_response if it added one)
+                    new_docs = ndi_calculator_obj.run('Replace',parameters);
+
+                    if iscell(new_docs)
+                        calc_docs_this_test = cat(2, calc_docs_this_test, new_docs);
+                    else
+                        calc_docs_this_test{end+1} = new_docs;
+                    end
+                end
+
+                % Store results
+                docs{i} = input_docs;
+                if ~isempty(calc_docs_this_test)
+                    doc_output{i} = calc_docs_this_test{1}; % Assuming 1 output doc per test case here for simplicity
+                else
+                    doc_output{i} = [];
+                end
+
+                if options.generate_expected_docs
+                    ndi_calculator_obj.write_mock_expected_output(i, doc_output{i});
+                end
+
+                try
+                    doc_expected_output{i} = ndi_calculator_obj.load_mock_expected_output(i);
+                catch
+                    doc_expected_output{i} = [];
+                end
+            end
+        end % generate_mock_docs()
 
         function doc_about(ndi_calculator_obj)
             % ----------------------------------------------------------------------------------------------

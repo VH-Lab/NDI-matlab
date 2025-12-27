@@ -1,0 +1,67 @@
+{"comparisonStruct": [
+  {
+    "comparisonMethod": "none",
+    "name": "app.name",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.version",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.url",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.os",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.os_version",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.interpreter",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.interpreter_version",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.session_id",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.id",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.name",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.datestamp",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "simple_calc.input_parameters.answer",
+    "toleranceAmount": 0.2
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "simple_calc.answer",
+    "toleranceAmount": 0.2
+  }
+]}

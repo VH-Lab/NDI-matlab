@@ -11,7 +11,7 @@
 		]
 	},
 	"depends_on": [
-		{	"name": "probe_id",
+		{	"name": "document_id",
 			"value": 0 
 		}
 	],
