@@ -15,6 +15,7 @@ classdef simple < ndi.calculator
             simple_obj = simple_obj@ndi.calculator(session,'simple_calc','simple_calc');
 
             simple_obj.numberOfSelfTests = 2;
+            simple_obj.defaultParametersCanFunction = true;
         end % simple()
 
         function doc = calculate(ndi_calculator_obj, parameters)

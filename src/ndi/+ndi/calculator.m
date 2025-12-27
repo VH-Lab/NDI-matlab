@@ -3,6 +3,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     properties (SetAccess=protected,GetAccess=public)
         fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
         numberOfSelfTests = 0;
+        defaultParametersCanFunction = false; % indicates whether or not the default parameters for a given calculator class can function without any overriding by the user
     end % properties
 
     methods
