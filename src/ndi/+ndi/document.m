@@ -857,6 +857,9 @@ classdef document
                         isfield(ndi_document_obj.document_properties.files, 'file_info')
 
                     files = ndi_document_obj.document_properties.files.file_info;
+                    if ~isstruct(files)
+                        files = struct([]);
+                    end
 
                     for i=1:numel(files)
                         localfilename = [filePrefix '_' files(i).name];
@@ -882,11 +885,18 @@ classdef document
                             % Local copy
                             % Find a location that is a file
                             found = false;
-                            for j=1:numel(files(i).locations)
-                                if strcmp(files(i).locations(j).location_type, 'file')
-                                    copyfile(files(i).locations(j).location, localfilename);
-                                    found = true;
-                                    break;
+                            if isfield(files(i), 'locations')
+                                locs = files(i).locations;
+                                if isstruct(locs)
+                                    for j=1:numel(locs)
+                                        if isfield(locs(j), 'location_type') && ...
+                                                strcmpi(locs(j).location_type, 'file') && ...
+                                                isfield(locs(j), 'location')
+                                            copyfile(locs(j).location, localfilename);
+                                            found = true;
+                                            break;
+                                        end
+                                    end
                                 end
                             end
 
