@@ -1,0 +1,332 @@
+{
+  "base": {
+    "session_id": "412694e3b3458fcc_40c4622706c2c487",
+    "id": "41269512cad6db2a_40d426803a40a0a2",
+    "name": "",
+    "datestamp": "2025-12-26T14:30:29.128Z"
+  },
+  "depends_on": [
+    {
+      "name": "element_id",
+      "value": "41269512cad2725c_c0d8e711eec57588"
+    },
+    {
+      "name": "stimulus_response_scalar_id",
+      "value": "41269512cad62b23_40d227d58077f05e"
+    }
+  ],
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH/apps/calculations/tuningcurve_calc.json",
+    "validation": "$NDISCHEMAPATH/apps/calculations/tuningcurve_calc_schema.json",
+    "class_name": "tuningcurve_calc",
+    "property_list_name": "tuningcurve_calc",
+    "class_version": 1,
+    "superclasses": [
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/stimulus/stimulus_tuningcurve.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      }
+    ]
+  },
+  "stimulus_tuningcurve": {
+    "independent_variable_label": [
+      "contrast"
+    ],
+    "independent_variable_value": [
+      0,
+      0.25,
+      0.5,
+      0.75,
+      1
+    ],
+    "stimid": [
+      3,
+      11,
+      19,
+      27,
+      35
+    ],
+    "response_mean": [
+      2,
+      10.196721311475523,
+      16.705882352941188,
+      19.241379310345007,
+      20.348623853211244
+    ],
+    "response_stddev": [
+      0,
+      1.5373442269193168E-13,
+      0,
+      1.2075307437951707E-13,
+      3.1523703137877268E-13
+    ],
+    "response_stderr": [
+      0,
+      6.8752123924169079E-14,
+      0,
+      5.4002416560937682E-14,
+      1.4097828623763397E-13
+    ],
+    "individual_responses_real": [
+      [
+        2,
+        10.196721311475409,
+        16.705882352941188,
+        19.24137931034479,
+        20.3486238532109
+      ],
+      [
+        2,
+        10.196721311475409,
+        16.705882352941188,
+        19.24137931034506,
+        20.3486238532109
+      ],
+      [
+        2,
+        10.196721311475409,
+        16.705882352941188,
+        19.24137931034506,
+        20.348623853211475
+      ],
+      [
+        2,
+        10.19672131147569,
+        16.705882352941188,
+        19.24137931034506,
+        20.348623853211475
+      ],
+      [
+        2,
+        10.19672131147569,
+        16.705882352941188,
+        19.24137931034506,
+        20.348623853211475
+      ]
+    ],
+    "individual_responses_imaginary": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "stimulus_presentation_number": [
+      [
+        3,
+        11,
+        19,
+        27,
+        35
+      ],
+      [
+        43,
+        51,
+        59,
+        67,
+        75
+      ],
+      [
+        83,
+        91,
+        99,
+        107,
+        115
+      ],
+      [
+        123,
+        131,
+        139,
+        147,
+        155
+      ],
+      [
+        163,
+        171,
+        179,
+        187,
+        195
+      ]
+    ],
+    "control_stimid": [],
+    "control_response_mean": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_response_stddev": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_response_stderr": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_individual_responses_real": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "control_individual_responses_imaginary": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "response_units": []
+  },
+  "tuningcurve_calc": {
+    "input_parameters": {
+      "independent_label": "contrast",
+      "independent_parameter": "contrast",
+      "best_algorithm": "empirical_maximum",
+      "selection": [
+        {
+          "property": "angle",
+          "operation": "hasfield",
+          "value": "varies"
+        },
+        {
+          "property": "contrast",
+          "operation": "hasfield",
+          "value": "varies"
+        },
+        {
+          "property": "angle",
+          "operation": "exact_number",
+          "value": "best"
+        }
+      ]
+    },
+    "depends_on": [
+      {
+        "name": "stimulus_response_scalar_id",
+        "value": "41269512cad62b23_40d227d58077f05e"
+      },
+      {
+        "name": "stimulus_response_scalar_id",
+        "value": "41269512cad103f5_c0d873103e8cdb1a"
+      }
+    ],
+    "log": "angle best value is 90.",
+    "stim_property_list": {
+      "names": [],
+      "values": []
+    }
+  },
+  "app": {
+    "name": "ndi.calc.stimulus.tuningcurve",
+    "version": "21139a3ddbf6ccac7c77e164bcfe800aa02ae9d1",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "15.7.3",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
+  }
+}

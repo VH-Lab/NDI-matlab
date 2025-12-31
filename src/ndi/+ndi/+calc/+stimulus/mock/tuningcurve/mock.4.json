@@ -1,0 +1,551 @@
+{
+  "base": {
+    "session_id": "412694e3b3458fcc_40c4622706c2c487",
+    "id": "41269512caddd31c_c0b14008ff8b46c2",
+    "name": "",
+    "datestamp": "2025-12-26T14:30:33.722Z"
+  },
+  "depends_on": [
+    {
+      "name": "element_id",
+      "value": "41269512cadae717_40d4e76006de3842"
+    },
+    {
+      "name": "stimulus_response_scalar_id",
+      "value": "41269512cadd3d4f_40bfafc88d58d411"
+    }
+  ],
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH/apps/calculations/tuningcurve_calc.json",
+    "validation": "$NDISCHEMAPATH/apps/calculations/tuningcurve_calc_schema.json",
+    "class_name": "tuningcurve_calc",
+    "property_list_name": "tuningcurve_calc",
+    "class_version": 1,
+    "superclasses": [
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/stimulus/stimulus_tuningcurve.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      }
+    ]
+  },
+  "stimulus_tuningcurve": {
+    "independent_variable_label": [
+      "angle"
+    ],
+    "independent_variable_value": [
+      0,
+      30,
+      60,
+      90,
+      120,
+      150,
+      180,
+      210,
+      240,
+      270,
+      300,
+      330
+    ],
+    "stimid": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "response_mean": [
+      5.0050319394185454,
+      5.0579888020920851,
+      5.4284825117682693,
+      7.0300292485491864,
+      11.166684357607828,
+      17.011061043752104,
+      20,
+      17.011061043752104,
+      11.166684357607824,
+      7.0300292485491864,
+      5.4284825117682693,
+      5.0579888020920976
+    ],
+    "response_stddev": [
+      1.8202241076109967E-14,
+      3.66205343881779E-15,
+      8.3790584533508322E-15,
+      3.9084896609310475E-14,
+      6.7466491113183272E-14,
+      9.7989871611050469E-14,
+      0,
+      9.7989871611050469E-14,
+      6.9124022618216226E-14,
+      3.9084896609310475E-14,
+      8.3790584533508322E-15,
+      2.9790409838967274E-14
+    ],
+    "response_stderr": [
+      8.1402896778041619E-15,
+      1.6377200852866889E-15,
+      3.7472288578273423E-15,
+      1.7479297142393851E-14,
+      3.0171932066492649E-14,
+      4.3822402805757132E-14,
+      0,
+      4.3822402805757132E-14,
+      3.0913202690512892E-14,
+      1.7479297142393851E-14,
+      3.7472288578273423E-15,
+      1.3322676295501877E-14
+    ],
+    "individual_responses_real": [
+      [
+        5.0050319394185383,
+        5.0579888020920922,
+        5.4284825117682551,
+        7.0300292485491971,
+        11.166684357607812,
+        17.011061043752125,
+        20,
+        17.011061043752125,
+        11.166684357607792,
+        7.0300292485491971,
+        5.4284825117682551,
+        5.0579888020920842
+      ],
+      [
+        5.0050319394185294,
+        5.0579888020920842,
+        5.4284825117682738,
+        7.0300292485491731,
+        11.166684357607792,
+        17.011061043752068,
+        20,
+        17.011061043752068,
+        11.166684357607792,
+        7.0300292485491731,
+        5.4284825117682738,
+        5.0579888020920842
+      ],
+      [
+        5.0050319394185294,
+        5.0579888020920842,
+        5.4284825117682738,
+        7.03002924854922,
+        11.166684357607792,
+        17.011061043752186,
+        20,
+        17.011061043752186,
+        11.166684357607792,
+        7.03002924854922,
+        5.4284825117682738,
+        5.0579888020920842
+      ],
+      [
+        5.0050319394185649,
+        5.0579888020920842,
+        5.4284825117682738,
+        7.03002924854922,
+        11.166684357607792,
+        17.011061043752186,
+        20,
+        17.011061043752186,
+        11.166684357607792,
+        7.03002924854922,
+        5.4284825117682738,
+        5.0579888020920842
+      ],
+      [
+        5.0050319394185649,
+        5.0579888020920842,
+        5.4284825117682738,
+        7.0300292485491269,
+        11.166684357607947,
+        17.011061043751951,
+        20,
+        17.011061043751951,
+        11.166684357607947,
+        7.0300292485491269,
+        5.4284825117682738,
+        5.0579888020921508
+      ]
+    ],
+    "individual_responses_imaginary": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "stimulus_presentation_number": [
+      [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      [
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ],
+      [
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48
+      ],
+      [
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60
+      ]
+    ],
+    "control_stimid": [],
+    "control_response_mean": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_response_stddev": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_response_stderr": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_individual_responses_real": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "control_individual_responses_imaginary": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "response_units": []
+  },
+  "tuningcurve_calc": {
+    "input_parameters": {
+      "independent_label": "angle",
+      "independent_parameter": "angle",
+      "best_algorithm": "empirical_maximum",
+      "selection": {
+        "property": "angle",
+        "operation": "hasfield",
+        "value": "varies"
+      }
+    },
+    "depends_on": [
+      {
+        "name": "stimulus_response_scalar_id",
+        "value": "41269512cadd3d4f_40bfafc88d58d411"
+      },
+      {
+        "name": "stimulus_response_scalar_id",
+        "value": "41269512cad103f5_c0d873103e8cdb1a"
+      }
+    ],
+    "log": "",
+    "stim_property_list": {
+      "names": [],
+      "values": []
+    }
+  },
+  "app": {
+    "name": "ndi.calc.stimulus.tuningcurve",
+    "version": "21139a3ddbf6ccac7c77e164bcfe800aa02ae9d1",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "15.7.3",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
+  }
+}
