@@ -32,7 +32,7 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             jsonStr = fread(fid, '*char')';
             fclose(fid);
 
-            data = jsondecode(jsonStr'); % Transpose to make it row vector if needed
+            data = jsondecode(jsonStr);
             testCase.verifyEqual(data.base.name, 'test_doc');
         end
 
@@ -43,9 +43,9 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             fprintf(fid, 'Hello World');
             fclose(fid);
 
-            % Create doc and add file
-            d = ndi.document('base');
-            d = d.add_file('myfile.txt', dummyFile);
+            % Create doc and add file. Use demoNDI type.
+            d = ndi.document('demoNDI', 'demoNDI.value', 1);
+            d = d.add_file('filename1.ext', dummyFile);
 
             outputPrefix = fullfile(testCase.TempDir, 'test_output_local');
 
@@ -56,13 +56,13 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             testCase.assertTrue(isfile([outputPrefix '.json']));
 
             % Check file copy exists
-            targetFile = [outputPrefix '_myfile.txt'];
+            targetFile = [outputPrefix '_filename1.ext'];
             testCase.assertTrue(isfile(targetFile));
 
             fid = fopen(targetFile, 'r');
             content = fread(fid, '*char')';
             fclose(fid);
-            testCase.verifyEqual(content', 'Hello World');
+            testCase.verifyEqual(content, 'Hello World');
         end
 
         function testWriteSessionFiles(testCase)
@@ -79,8 +79,8 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             fclose(fid);
 
             % Create doc
-            d = S.newdocument('base', 'base.name', 'session_doc');
-            d = d.add_file('ingest.txt', dummyFile); % Default ingest=1 for local file
+            d = S.newdocument('demoNDI', 'base.name', 'session_doc', 'demoNDI.value', 1);
+            d = d.add_file('filename1.ext', dummyFile);
 
             % Add to session database
             S.database_add(d);
@@ -93,13 +93,13 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             testCase.assertTrue(isfile([outputPrefix '.json']));
 
             % Check file
-            targetFile = [outputPrefix '_ingest.txt'];
+            targetFile = [outputPrefix '_filename1.ext'];
             testCase.assertTrue(isfile(targetFile));
 
             fid = fopen(targetFile, 'r');
             content = fread(fid, '*char')';
             fclose(fid);
-            testCase.verifyEqual(content', 'Session Content');
+            testCase.verifyEqual(content, 'Session Content');
         end
     end
 end

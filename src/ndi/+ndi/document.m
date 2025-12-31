@@ -819,7 +819,7 @@ classdef document
             ndi_document_obj.document_properties = newproperties;
         end % setproperties
 
-        function write(ndi_document_obj, filePrefix, varargin)
+        function write(ndi_document_obj, filePrefix, options)
             % WRITE - write the document properties to a file
             %
             % WRITE(NDI_DOCUMENT_OBJ, FILEPREFIX, ...)
@@ -836,12 +836,12 @@ classdef document
             %                            | If empty and writeLocalFiles is true, tries
             %                            | to copy local files specified in the document.
             %
-            writeLocalFiles = false;
-            session = ndi.session.empty;
-
-            vlt.data.assign(varargin{:});
-
-            filePrefix = char(filePrefix);
+            arguments
+                ndi_document_obj (1,1) ndi.document
+                filePrefix (1,:) char
+                options.writeLocalFiles (1,1) logical = false
+                options.session ndi.session = ndi.session.empty()
+            end
 
             jsonStr = jsonencode(ndi_document_obj.document_properties, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
 
@@ -852,7 +852,7 @@ classdef document
             fprintf(fid, '%s', jsonStr);
             fclose(fid);
 
-            if writeLocalFiles
+            if options.writeLocalFiles
                 if isfield(ndi_document_obj.document_properties, 'files') && ...
                         isfield(ndi_document_obj.document_properties.files, 'file_info')
 
@@ -864,15 +864,15 @@ classdef document
                     for i=1:numel(files)
                         localfilename = [filePrefix '_' files(i).name];
 
-                        if ~isempty(session)
+                        if ~isempty(options.session)
                             % Use session to read
-                            bindoc = session.database_openbinarydoc(ndi_document_obj, files(i).name);
+                            bindoc = options.session.database_openbinarydoc(ndi_document_obj, files(i).name);
                             % Read all data
                             fseek(bindoc, 0, 'eof');
                             fsize = ftell(bindoc);
                             fseek(bindoc, 0, 'bof');
                             data = fread(bindoc, fsize, '*uint8');
-                            session.database_closebinarydoc(bindoc);
+                            options.session.database_closebinarydoc(bindoc);
 
                             fid = fopen(localfilename, 'W'); % 'W' for no flushing, faster? Or just 'w'
                             if fid<0
