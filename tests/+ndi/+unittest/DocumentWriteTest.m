@@ -44,8 +44,7 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             fclose(fid);
 
             % Create doc and add file. Use demoNDI type.
-            d = ndi.document('demoNDI');
-            d.document_properties.demoNDI.value = 1; % Set required field
+            d = ndi.document('demoNDI', 'demoNDI.value', 1);
             d = d.add_file('filename1.ext', dummyFile);
 
             outputPrefix = fullfile(testCase.TempDir, 'test_output_local');
@@ -80,8 +79,7 @@ classdef DocumentWriteTest < matlab.unittest.TestCase
             fclose(fid);
 
             % Create doc
-            d = S.newdocument('demoNDI', 'base.name', 'session_doc');
-            d.document_properties.demoNDI.value = 1; % Set required field
+            d = S.newdocument('demoNDI', 'base.name', 'session_doc', 'demoNDI.value', 1);
             d = d.add_file('filename1.ext', dummyFile);
 
             % Add to session database
