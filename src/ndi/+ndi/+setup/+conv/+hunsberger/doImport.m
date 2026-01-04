@@ -30,13 +30,13 @@ fileList = fileList(include);
 %% Step 2: SESSIONS. Build the session.
 
 % Build variableTable
-variableTable = cell2table({'Hunsberger','hunsberger'}, ...
+subjectTable = cell2table({'Hunsberger','hunsberger'}, ...
     'VariableNames',{'SessionRef','SessionPath'});
 
 % Employ the sessionMaker
-SM = ndi.setup.NDIMaker.sessionMaker(dataParentDir,variableTable,...
+SM = ndi.setup.NDIMaker.sessionMaker(dataParentDir,subjectTable,...
     'Overwrite',options.Overwrite);
-[sessionArray,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
+[sessionArray,subjectTable.sessionInd,subjectTable.sessionID] = SM.sessionIndices;
 
 %% Step 3. DATA. Get data tables
 
@@ -48,36 +48,29 @@ end
 
 %% Step 4: SUBJECTS. Build subject documents.
 
-% Add cell tagging subjects
-subjectCellTag = dataTables{1}(:,{'ID','Sex','Condition'});
-subjectCellTag{:,'StrainType'} = 'ArcCreERT2';
+% Create subject table
+subjectCellTag = dataTables{1}(:,{'ID','Sex','Condition','Tg'});
+subjectCellTag{:,'StrainType'} = {'ArcCreERT2 x eYFP'};
 subjectCFC = ndi.fun.table.vstack({dataTables{2}(:,1:8), ...
     renamevars(dataTables{3}(:,1:17),'Age_months_','Age_Months_'), ...
     dataTables{4}(:,1:8)});
-subjectCFC{:,'StrainType'} = '129S6/SvEv';
+subjectCFC{:,'StrainType'} = {'129S6/SvEv'};
 subjectTable = ndi.fun.table.vstack({subjectCellTag,subjectCFC});
 
-% Are the animals in data table 3 "ArcCreERT2" or '129S6/SvEv'?
+% Create subjectMaker
+subjectMaker = ndi.setup.NDIMaker.subjectMaker();
+subjectCreator = ndi.setup.conv.hunsberger.SubjectInformationCreator();
 
-
-%%
-
-% 1. Instantiate the subjectMaker and the lab-specific SubjectInformationCreator
-subM = ndi.setup.NDIMaker.subjectMaker();
-creator = ndi.setup.conv.dabrowska.SubjectInformationCreator();
-
-% 2. Call a single function to extract subject info, create documents, and add to the session.
-%    This also returns the subject string for each row of the variableTable, which is
-%    essential for linking other documents later.
-[~, variableTable.SubjectString] = ...
-    subM.addSubjectsFromTable(sessionArray{1}, variableTable, creator);
-
-%%
-
-varMatch = @(dataTable,s) dataTable(contains(dataTable,s));
+% Create subjects
+[~, subjectTable.SubjectLocalIdentifier,subjectTable.SubjectDocumentIdentifier] = ...
+    subjectMaker.addSubjectsFromTable(sessionArray{1}, subjectTable, subjectCreator);
 
 %% Cell count table
 
+% Helper function
+varMatch = @(dataTable,s) dataTable(contains(dataTable,s));
+
+% Get cell count table data
 cellTable = dataTables{1};
 
 % Fix efyp > eyfp
@@ -114,9 +107,13 @@ cfosEngramTable = stack(cellTable,cfosEngramVariables,...
 cfosEngramTable.BrainRegion = cellstr(replace(string(cfosEngramTable.BrainRegion),'_c_fosEngramAvg_',''));
 cfosEngramTable = cfosEngramTable(:,[1:5,24:25]);
 
+% Combine cell count tables
 cellTable = ndi.fun.table.join({eyfpTable,cfosTable,eyfpEngramTable,cfosEngramTable});
 
-% Subjects (species, strain, sex)
+% Add subjects
+cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Tg','Sex'}, ...
+    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+
 % Treatments (need new terms for control/treatment here)
 % OntologyTableRows
 
@@ -147,7 +144,12 @@ end
 cfcTable.BlockType = replace(cfcTable.BlockType, 'RE_EXPOSE', 'Re-exposure');
 cfcTable.BlockType = replace(cfcTable.BlockType, 'TRAINING', 'Training');
 
-% Subjects (species, strain, sex)
+% Add subjects
+cfcTable = innerjoin(cfcTable,subjectTable,'Keys',...
+    {'ID','Cohort','Condition','Sex','BoxNumber','DOB'}, ...
+    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+cfcTable =  unique(cfcTable,'rows'); % duplicates for unknown reason
+
 % Measurements (DOB, weight)
 % Treatments (condition)
 
@@ -173,6 +175,11 @@ reexposureTable = reexposureTable(:,[1:17,end-1:end]);
 reexposureTable{:,'BlockType'} = {'Re-exposure'};
 
 stateTable = [trainingTable;reexposureTable];
+
+% Add subjects
+stateTable = innerjoin(stateTable,subjectTable,'Keys',...
+    {'Cohort','Today','Condition','Sex','BoxNumber','Tg'}, ...
+    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
 
 % drug treatment
 
@@ -203,3 +210,9 @@ for i = 1:height(behaviorTable)
 end
 behaviorTable.BlockType = replace(behaviorTable.BlockType, 'RE_EXPOSE', 'Re-exposure');
 behaviorTable.BlockType = replace(behaviorTable.BlockType, 'TRAINING', 'Training');
+
+% Add subjects
+behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
+    {'Cohort','ID','Condition','Sex','BoxNumber','DOB'}, ...
+    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+behaviorTable = unique(behaviorTable,'rows'); % duplicates for unknown reason

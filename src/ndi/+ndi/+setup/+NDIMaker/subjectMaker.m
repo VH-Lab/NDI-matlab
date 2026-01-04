@@ -80,7 +80,9 @@ classdef subjectMaker < handle
                 obj.addSubjectsToSessions({session}, subDocStruct.documents);
 
                 % 4. Return subject document ids
-                subjectDocIDs = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
+                docIDs = cellfun(@(d) d{1}.id,subDocStruct.documents,'UniformOutput',false);
+                mapName2ID = containers.Map(subDocStruct.subjectName, docIDs);
+                subjectDocIDs = cellfun(@(x) mapName2ID(x),allSubjectNamesFromTable,'UniformOutput',false);
         end
 
 

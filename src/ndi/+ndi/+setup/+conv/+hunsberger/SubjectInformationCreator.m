@@ -1,13 +1,13 @@
 classdef SubjectInformationCreator < ndi.setup.NDIMaker.SubjectInformationCreator
-% HALEY - Creates NDI subject information for the Chalasani Lab.
+% HALEY - Creates NDI subject information for the Hunsberger Lab.
 %
 % This class implements the 'create' method to generate subject identifiers
 % and openMINDS objects based on the specific metadata structure used in the
-% Chalasani lab's experimental tables for C. elegans.
+% Hunsberger lab's experimental tables.
 
 methods
     function [subjectIdentifier, strain, species, biologicalSex] = create(obj, tableRow)
-        % CREATE - Generates subject data from a Haley Lab table row.
+        % CREATE - Generates subject data from a Hunsberger Lab table row.
         %
         %   [SUBJECTIDENTIFIER, STRAIN, SPECIES, BIOLOGICALSEX] = CREATE(OBJ, TABLEROW)
         %
@@ -16,9 +16,8 @@ methods
         %   species, strain, and biological sex.
         %
         %   Inputs:
-        %       obj (ndi.setup.NDIMaker.SubjectInformationCreator.haley) - The instance of this creator class.
-        %       tableRow (table) - A single row from a MATLAB table. It must contain the columns
-        %                          'strain', 'expTime', 'wormID', and 'assayType'.
+        %       obj (ndi.setup.NDIMaker.SubjectInformationCreator) - The instance of this creator class.
+        %       tableRow (table) - A single row from a MATLAB table.
         %
         %   Outputs:
         %       subjectIdentifier (char) - The unique local identifier string for the subject.
@@ -33,13 +32,6 @@ methods
         %   See also: ndi.setup.NDIMaker.SubjectInformationCreator
         %
 
-        % --- Validate required columns ---
-        requiredCols = {'strain', 'expTime', 'wormID', 'assayType'};
-        if ~all(ismember(requiredCols, tableRow.Properties.VariableNames))
-            error('ndi:validators:MissingRequiredColumns',...
-                'The tableRow is missing one or more required columns for the Haley subject creator.');
-        end
-
         % --- Populate openMINDS Objects by calling helper methods ---
         % The creation process is sequential, as some objects depend on others.
         species = obj.createSpeciesObject();
@@ -48,7 +40,7 @@ methods
         strain = obj.createStrainObject(tableRow, species);
         if ~isobject(strain), return; end % Stop if strain creation fails
 
-        biologicalSex = obj.createBiologicalSexObject();
+        biologicalSex = obj.createBiologicalSexObject(tableRow);
 
         % --- Construct the final subject identifier string ---
         subjectIdentifier = obj.constructSubjectIdentifier(tableRow, strain);
@@ -58,14 +50,13 @@ end % methods
 methods (Access = private, Static)
 
     function species = createSpeciesObject()
-        % Creates a hardcoded openMINDS species object for C. elegans.
+        % Creates an openMINDS species object for M. musculus.
         species = NaN;
         try
             sp = openminds.controlledterms.Species();
-            sp.name = 'Caenorhabditis elegans';
-            sp.preferredOntologyIdentifier = 'NCBITaxon:6239';
-            sp.definition = 'Caenorhabditis elegans is a species of nematode in the family Rhabditidae that is widely used as an experimental model organism.';
-            sp.synonym = 'C. elegans';
+            sp.name = 'Mus musculus';
+            sp.preferredOntologyIdentifier = 'NCBITaxon:10090';
+            sp.synonym = 'house mouse';
             species = sp;
         catch ME
             warning('ndi:createSubjectInformation:SpeciesCreationFailed',...
@@ -77,29 +68,43 @@ methods (Access = private, Static)
         % Creates an openMINDS strain object based on the table row data.
         strain = NaN;
         try
-            % Define the wild type N2 strain, which may be the background strain
-            N2 = openminds.core.research.Strain();
-            N2.name = 'N2';
-            N2.species = species;
-            N2.ontologyIdentifier = 'WBStrain:00000001';
-            N2.description = 'Genotype: Caenorhabditis elegans wild isolate.';
-            N2.geneticStrainType = 'wild type';
+            % Define the 129S/SvEv strain, which may be the background strain
+            SvEv = openminds.core.research.Strain();
+            SvEv.name = '129S/SvEv';
+            SvEv.species = species;
+            SvEv.ontologyIdentifier = 'NCIT:C37334';
+            SvEv.geneticStrainType = 'wildtype';
 
-            strainID = tableRow.strain{1};
-            if strcmp(strainID, 'WBStrain:00000001')
-                % If the strain is N2, use the object we just created
-                strain = N2;
-            else
-                % Otherwise, create a new transgenic strain object
-                st_trans = openminds.core.research.Strain();
-                [id, name, ~, definition] = ndi.ontology.lookup(strainID);
-                st_trans.name = name;
-                st_trans.species = species;
-                st_trans.ontologyIdentifier = id;
-                st_trans.description = definition;
-                st_trans.geneticStrainType = 'transgenic';
-                st_trans.backgroundStrain = N2; % Set N2 as the background
-                strain = st_trans;
+            strainID = tableRow.StrainType{1};
+            if strcmp(strainID, '129S6/SvEv')
+                strain = SvEv;
+            elseif strcmp(strainID, 'ArcCreERT2 x eYFP')
+                ArcCreERT2 = openminds.core.research.Strain();
+                [id, name, ~, definition] = ndi.ontology.lookup('EMPTY:00000284');
+                ArcCreERT2.name = name;
+                ArcCreERT2.species = species;
+                ArcCreERT2.ontologyIdentifier = id;
+                ArcCreERT2.description = definition;
+                ArcCreERT2.geneticStrainType = 'transgenic';
+                ArcCreERT2.backgroundStrain = SvEv;
+
+                eYFP = openminds.core.research.Strain();
+                [id, name, ~, definition] = ndi.ontology.lookup('EMPTY:00000287');
+                eYFP.name = name;
+                eYFP.species = species;
+                eYFP.ontologyIdentifier = id;
+                eYFP.description = definition;
+                eYFP.geneticStrainType = 'transgenic';
+                eYFP.backgroundStrain = SvEv;
+
+                strain = openminds.core.research.Strain();
+                [id, name, ~, definition] = ndi.ontology.lookup('EMPTY:00000288');
+                strain.name = name;
+                strain.species = species;
+                strain.ontologyIdentifier = id;
+                strain.description = definition;
+                strain.geneticStrainType = 'transgenic';
+                strain.backgroundStrain = [ArcCreERT2,eYFP];
             end
         catch ME
             warning('ndi:createSubjectInformation:StrainCreationFailed',...
@@ -107,14 +112,18 @@ methods (Access = private, Static)
         end
     end
 
-    function biologicalSex = createBiologicalSexObject()
-        % Creates a hardcoded openMINDS biological sex object for hermaphrodite.
+    function biologicalSex = createBiologicalSexObject(tableRow)
+        % Creates an openMINDS biological sex object.
         biologicalSex = NaN;
         try
-            bs = openminds.controlledterms.BiologicalSex();
-            bs.name = 'hermaphrodite';
-            bs.preferredOntologyIdentifier = 'PATO:0001340';
-            biologicalSex = bs;
+            sex = tableRow.Sex{1};
+            if strcmp(sex, 'F')
+                biologicalSex = openminds.controlledterms.BiologicalSex(...
+                    'name','female','preferredOntologyIdentifier','PATO:0000383');
+            elseif strcmp(sex, 'M')
+                biologicalSex = openminds.controlledterms.BiologicalSex(...
+                    'name','male','preferredOntologyIdentifier','PATO:0000384');
+            end
         catch ME
             warning('ndi:createSubjectInformation:BiologicalSexCreationFailed',...
                 'Could not create openMINDS BiologicalSex object: %s', ME.message);
@@ -125,15 +134,28 @@ methods (Access = private, Static)
         % Constructs the subject identifier string from table data.
         subjectIdentifier = NaN;
         try
+            % Format the strain name
+            strainName = replace(tableRow.StrainType{1},' ','');
+
+            % Format ID
+            if ~isnan(tableRow.ID)
+                id = num2str(tableRow.ID);
+            else
+                id = '';
+            end
+
             % Format the experiment date to 'yyMMdd'
-            expDate = char(datetime(tableRow.expTime{1}), 'yyMMdd');
+            expDate = char(datetime(tableRow.DOB), 'yyMMdd');
 
             % Join the components with underscores
-            subjectParts = {strain.name{1}, tableRow.wormID{1}, tableRow.assayType{1}, expDate};
+            subjectParts = {'mouse',strainName, tableRow.Condition{1},...
+                 tableRow.Sex{1}, id, tableRow.BoxNumber{1}, expDate};
             baseString = strjoin(subjectParts, '_');
+            baseString = replace(baseString,'_ _','_');
+            baseString = replace(baseString,'_NaT','');
 
             % Append the lab-specific suffix
-            subjectIdentifier = [baseString, '@chalasani-lab.salk.edu'];
+            subjectIdentifier = [baseString, '@hunsberger-lab.rosalindfranklin.edu'];
         catch ME
             warning('ndi:createSubjectInformation:IdentifierCreationFailed',...
                 'Could not construct the subject identifier string: %s', ME.message);
