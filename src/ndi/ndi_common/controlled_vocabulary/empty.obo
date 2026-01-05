@@ -1136,7 +1136,7 @@ def: "Specifies the pharmacological treatment assigned to a subject. This assign
 
 [Term]
 id: EMPTY:10000012
-name: treatment: date of birth
+name: measurement: date of birth
 namespace: empty_ontology
 def: "Specifies the date of birth in YYYY-MM-DD format" []
 
