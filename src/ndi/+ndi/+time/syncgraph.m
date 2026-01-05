@@ -530,6 +530,8 @@ classdef syncgraph < ndi.ido
                             % self is still 1, and across-object maps are still 1
                             ginfo.G(matches(j),matches(k)) = 77;
                             ginfo.mapping{matches(j),matches(k)} = ndi.time.timemapping([1 0]);
+                            ginfo.G(matches(k),matches(j)) = 77;
+                            ginfo.mapping{matches(k),matches(j)} = ndi.time.timemapping([1 0]);
                         end
                     end
                 end

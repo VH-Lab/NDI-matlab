@@ -1,10 +1,14 @@
-By default, this ndi.calc.example.simple object looks for all probes in the experiment, and creates an output document that depends on that probe with the answer value requested.
+By default, the ndi.calc.example.simple calculator searches for all NDI documents in the session.
 
-If one wished to restrict this further, one might add an additional condition to the default query.
+Default Search Criteria:
+- Searches for any document that is a subclass of 'base' (which includes all NDI documents).
+- The dependency name is set to 'document_id'.
+
+Modifying the Search:
+To restrict the operation to a specific subset of documents, modify the 'query' field of the search parameters.
 
 Example:
-% Only perform the operation on the probe called 'myprobe'
-
+% Only perform the operation on documents with the name 'my_experiment_data'
 DQ = c.default_search_for_input_parameters();
-DQ.query = DQ.query & ndi.query('element.name','exact_string','myprobe','');
-c.run('Replace',DQ);
+DQ.query = DQ.query & ndi.query('base.name', 'exact_string', 'my_experiment_data', '');
+c.run('Replace', DQ);

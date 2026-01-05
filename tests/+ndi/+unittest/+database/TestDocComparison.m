@@ -145,5 +145,50 @@ classdef TestDocComparison < matlab.unittest.TestCase
             testCase.verifyFalse(b);
             testCase.verifyEqual(report(1).comment, 'Dimension mismatch between actual and expected values.');
         end
+
+        function testPValueConsistent(testCase)
+            d1 = ndi.document(struct('base', struct('id', '1'), 'p', 0.01));
+            d2 = ndi.document(struct('base', struct('id', '1'), 'p', 0.03));
+            d3 = ndi.document(struct('base', struct('id', '1'), 'p', 0.06));
+            d4 = ndi.document(struct('base', struct('id', '1'), 'p', 0.08));
+
+            dc = ndi.database.doctools.docComparison(d1);
+            dc = dc.addComparisonParameters('p', 'pValueConsistent', 0.05);
+
+            % Both < 0.05
+            [b, report] = dc.compare(d2, d1);
+            testCase.verifyTrue(b);
+
+            % One < 0.05, one >= 0.05 (Fail)
+            [b, report] = dc.compare(d3, d1);
+            testCase.verifyFalse(b);
+            testCase.verifyEqual(report(1).comment, 'Values are not consistently less than or >= p-value 0.05');
+
+            % Both >= 0.05
+            dc3 = ndi.database.doctools.docComparison(d3);
+            dc3 = dc3.addComparisonParameters('p', 'pValueConsistent', 0.05);
+            [b, report] = dc3.compare(d4, d3);
+            testCase.verifyTrue(b);
+
+            % Matrix
+            d_mat1 = ndi.document(struct('base', struct('id', '1'), 'p', [0.01 0.06]));
+            d_mat2 = ndi.document(struct('base', struct('id', '1'), 'p', [0.03 0.08]));
+            d_mat3 = ndi.document(struct('base', struct('id', '1'), 'p', [0.03 0.04])); % 2nd element fail (0.04 < 0.05, expected >= 0.05 from d_mat1)
+
+            dc_mat = ndi.database.doctools.docComparison(d_mat1);
+            dc_mat = dc_mat.addComparisonParameters('p', 'pValueConsistent', 0.05);
+
+            % Comparing d_mat1 (expected) and d_mat2 (actual).
+            % 1: A=0.03, E=0.01 (Both < 0.05) -> Pass
+            % 2: A=0.08, E=0.06 (Both >= 0.05) -> Pass
+            [b, report] = dc_mat.compare(d_mat2, d_mat1);
+            testCase.verifyTrue(b);
+
+            % Comparing d_mat1 (expected) and d_mat3 (actual).
+            % 1: A=0.03, E=0.01 -> Pass
+            % 2: A=0.04, E=0.06 (A < 0.05, E >= 0.05) -> Fail
+            [b, report] = dc_mat.compare(d_mat3, d_mat1);
+            testCase.verifyFalse(b);
+        end
     end
 end
