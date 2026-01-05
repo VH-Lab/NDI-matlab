@@ -138,18 +138,15 @@ methods (Access = private, Static)
             strainName = replace(tableRow.StrainType{1},' ','');
 
             % Format ID
-            if ~isnan(tableRow.ID)
-                id = num2str(tableRow.ID);
-            else
-                id = '';
-            end
+            id = replace(tableRow.ID{1},' ','');
 
             % Format the experiment date to 'yyMMdd'
-            expDate = char(datetime(tableRow.DOB), 'yyMMdd');
+            % expDate = char(datetime(tableRow.DOB), 'yyMMdd');
 
             % Join the components with underscores
-            subjectParts = {'mouse',strainName, tableRow.Condition{1},...
-                 tableRow.Sex{1}, id, tableRow.BoxNumber{1}, expDate};
+            % subjectParts = {'mouse',strainName, tableRow.Condition{1},...
+            %      tableRow.Sex{1}, id, tableRow.BoxNumber{1}, expDate};
+            subjectParts = {'mouse',strainName,id,tableRow.BoxNumber{1}};
             baseString = strjoin(subjectParts, '_');
             baseString = replace(baseString,'_ _','_');
             baseString = replace(baseString,'_NaT','');

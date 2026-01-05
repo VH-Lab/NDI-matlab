@@ -43,19 +43,24 @@ SM = ndi.setup.NDIMaker.sessionMaker(dataParentDir,subjectTable,...
 dataTables = cell(size(fileList));
 variableNames = {};
 for i = 1:numel(fileList)
-    dataTables{i} = readtable(fullfile(dataParentDir,fileList{i}));
+    fileName = fullfile(dataParentDir,fileList{i});
+    opts = detectImportOptions(fileName);
+    opts.VariableTypes{strcmp(opts.VariableNames,'ID')} = 'char';
+    dataTables{i} = readtable(fileName,opts);
 end
 
 %% Step 4: SUBJECTS. Build subject documents.
 
 % Create subject table
 subjectCellTag = dataTables{1}(:,{'ID','Sex','Condition','Tg'});
-subjectCellTag{:,'StrainType'} = {'ArcCreERT2 x eYFP'};
-subjectCFC = ndi.fun.table.vstack({dataTables{2}(:,1:8), ...
-    renamevars(dataTables{3}(:,1:17),'Age_months_','Age_Months_'), ...
-    dataTables{4}(:,1:8)});
-subjectCFC{:,'StrainType'} = {'129S6/SvEv'};
-subjectTable = ndi.fun.table.vstack({subjectCellTag,subjectCFC});
+subjectBehavior = dataTables{4}(:,{'ID','Sex','Condition','BoxNumber','DOB'});
+subjectCFC = dataTables{2}(:,{'ID','Sex','Condition','BoxNumber','DOB'});
+subject1 = innerjoin(subjectCellTag,subjectBehavior); % same cohort
+subject2 = outerjoin(subjectCFC,subject1,'MergeKeys',true); % overlapping cohorts
+subject2{:,'StrainType'} = {'ArcCreERT2 x eYFP'};
+subjectState = dataTables{3}(:,{'ID','Sex','Condition','BoxNumber','DOB','Tg'}); 
+subjectState{:,'StrainType'} = {'129S6/SvEv'};
+subjectTable = ndi.fun.table.vstack({subject2,subjectState});
 
 % Create subjectMaker
 subjectMaker = ndi.setup.NDIMaker.subjectMaker();
@@ -64,6 +69,9 @@ subjectCreator = ndi.setup.conv.hunsberger.SubjectInformationCreator();
 % Create subjects
 [~, subjectTable.SubjectLocalIdentifier,subjectTable.SubjectDocumentIdentifier] = ...
     subjectMaker.addSubjectsFromTable(sessionArray{1}, subjectTable, subjectCreator);
+
+% Add DOB measurements
+
 
 %% Cell count table
 
@@ -111,11 +119,45 @@ cfosEngramTable = cfosEngramTable(:,[1:5,24:25]);
 cellTable = ndi.fun.table.join({eyfpTable,cfosTable,eyfpEngramTable,cfosEngramTable});
 
 % Add subjects
-cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Tg','Sex'}, ...
+cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Sex','Tg'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
 
 % Treatments (need new terms for control/treatment here)
 % OntologyTableRows
+
+%% Behavior table
+
+behaviorTable = dataTables{4};
+
+% Remove average values
+avgVariables = varMatch(behaviorTable.Properties.VariableNames,'Avg');
+behaviorTable = removevars(behaviorTable,avgVariables);
+
+% Stack values
+cfcVariables = varMatch(behaviorTable.Properties.VariableNames,'CFC');
+behaviorTable = stack(behaviorTable, cfcVariables, ...
+    'NewDataVariableName', 'CFCFreezing', ...
+    'IndexVariableName', 'TrainingBlock');
+
+behaviorTable.TrainingBlock = cellstr(behaviorTable.TrainingBlock);
+
+% Extract block info
+pattern = 'CFC(RE_EXPOSE|TRAINING)(\d+)';
+extractedData = regexp(behaviorTable.TrainingBlock, pattern, 'tokens');
+for i = 1:height(behaviorTable)
+    if ~isempty(extractedData{i})
+        behaviorTable.BlockType{i} = extractedData{i}{1}{1};
+        behaviorTable.BlockMinute(i) = str2double(extractedData{i}{1}{2});
+    end
+end
+behaviorTable.BlockType = replace(behaviorTable.BlockType, 'RE_EXPOSE', 'Re-exposure');
+behaviorTable.BlockType = replace(behaviorTable.BlockType, 'TRAINING', 'Training');
+
+% Add subjects
+behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
+    {'Cohort','ID','Condition','Sex','BoxNumber','DOB'}, ...
+    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+% behaviorTable = unique(behaviorTable,'rows'); % duplicates for unknown reason
 
 %% CFC table
 
@@ -182,37 +224,3 @@ stateTable = innerjoin(stateTable,subjectTable,'Keys',...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
 
 % drug treatment
-
-%% Behavior table
-
-behaviorTable = dataTables{4};
-
-% Remove average values
-avgVariables = varMatch(behaviorTable.Properties.VariableNames,'Avg');
-behaviorTable = removevars(behaviorTable,avgVariables);
-
-% Stack values
-cfcVariables = varMatch(behaviorTable.Properties.VariableNames,'CFC');
-behaviorTable = stack(behaviorTable, cfcVariables, ...
-    'NewDataVariableName', 'CFCFreezing', ...
-    'IndexVariableName', 'TrainingBlock');
-
-behaviorTable.TrainingBlock = cellstr(behaviorTable.TrainingBlock);
-
-% Extract block info
-pattern = 'CFC(RE_EXPOSE|TRAINING)(\d+)';
-extractedData = regexp(behaviorTable.TrainingBlock, pattern, 'tokens');
-for i = 1:height(behaviorTable)
-    if ~isempty(extractedData{i})
-        behaviorTable.BlockType{i} = extractedData{i}{1}{1};
-        behaviorTable.BlockMinute(i) = str2double(extractedData{i}{1}{2});
-    end
-end
-behaviorTable.BlockType = replace(behaviorTable.BlockType, 'RE_EXPOSE', 'Re-exposure');
-behaviorTable.BlockType = replace(behaviorTable.BlockType, 'TRAINING', 'Training');
-
-% Add subjects
-behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
-    {'Cohort','ID','Condition','Sex','BoxNumber','DOB'}, ...
-    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
-behaviorTable = unique(behaviorTable,'rows'); % duplicates for unknown reason
