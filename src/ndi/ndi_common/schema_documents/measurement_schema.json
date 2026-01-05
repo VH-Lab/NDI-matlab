@@ -1,0 +1,43 @@
+{
+	"classname": "measurement",
+	"superclasses":  ["base"],
+	"depends_on": [
+		 { "name": "subject_id", "mustbenotempty": 1},
+		 { "name": "manipulation_id", "mustbenotempty": 0},
+		 { "name": "protocol_id", "mustbenotempty": 0}
+	],
+	"measurement": [
+		{
+			"name": "ontologyName",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node of a measurement"
+		},
+		{
+			"name": "name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the measurement in the ontology node"
+		},
+		{
+			"name": "numeric_value",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The numeric value associated with a measurement"
+		},
+		{
+			"name": "string_value",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The character string value associated with a measurement"
+		}
+	]
+}
