@@ -39,7 +39,8 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             end
 
             % Initialize the output table with all possible columns using the superclass method
-            treatmentTable = obj.initialize_treatment_table();
+            treatmentTable = renamevars(obj.initialize_treatment_table(),...
+                'location_ontologyNode','location_ontologyName');
 
             % Initialize mixture structs
             alprazolam = struct2table(struct('ontologyName','NCIT:C227',...
@@ -57,12 +58,12 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
                 case 'DOB'
                     tempTable.stringValue = cellstr(string(subjectTable.DOB, 'yyyy-MM-dd'));
                     tempTable(:,'treatmentType') = {'measurement'};
-                    tempTable(:,'treatment') = {'EMPTY:measurement: date of birth'};
+                    tempTable(:,'treatment') = {'NCIT:C94173'};
                     indRemove = ndi.fun.table.identifyMatchingRows(tempTable,'stringValue','');
                 case 'InitialWeight_g_'
                     tempTable.numericValue = subjectTable.InitialWeight_g_;
                     tempTable(:,'treatmentType') = {'measurement'};
-                    tempTable(:,'treatment') = {'EMPTY:measurement: initial weight'};
+                    tempTable(:,'treatment') = {'NCIT:C81328'};
                 case 'InjectionTime'
                     for i = 1:height(subjectTable)
                         if isnan(subjectTable.InjectionTime(i))
@@ -80,7 +81,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
                         end
                         tempTable.mixture_table(i) = {ndi.database.fun.writetablechar(mixtureTable)};
                     end
-                    tempTable(:,'location_ontologyNode') = {'SNOMED:783351009'};
+                    tempTable(:,'location_ontologyName') = {'SNOMED:783351009'};
                     tempTable(:,'location_name') = {'Intraperitoneal'};
                     tempTable(:,'treatmentType') = {'treatment_drug'};
                 case 'injectionTimeDay2'
@@ -99,7 +100,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
                         end
                         tempTable.mixture_table(i) = {ndi.database.fun.writetablechar(mixtureTable)};
                     end
-                    tempTable(:,'location_ontologyNode') = {'SNOMED:783351009'};
+                    tempTable(:,'location_ontologyName') = {'SNOMED:783351009'};
                     tempTable(:,'location_name') = {'Intraperitoneal'};
                     tempTable(:,'treatmentType') = {'treatment_drug'};
             end
@@ -107,6 +108,10 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             tempTable(:,'sessionPath') = {session.path};
             tempTable(indRemove,:) = [];
             treatmentTable = outerjoin(treatmentTable,tempTable,'MergeKeys',true);
+            
+            % Apply fillmissing to all variables that are strings or cells
+            isText = varfun(@(x) isstring(x) || iscell(x), treatmentTable, 'OutputFormat', 'uniform');
+            treatmentTable = fillmissing(treatmentTable, 'constant', "", 'DataVariables', isText);
         end
     end
 

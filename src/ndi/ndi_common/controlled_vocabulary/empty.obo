@@ -1039,6 +1039,78 @@ namespace: empty_ontology
 def: "" []
 
 [Term]
+id: EMPTY:00000269
+name: brain region name
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000270
+name: brain region ontology identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000274
+name: EYFP average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000275
+name: c-fos average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000276
+name: EYFP engram average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000277
+name: c-Fos engram average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000278
+name: subject box identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000279
+name: contextual fear conditioning: block type
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000280
+name: contextual fear conditioning: block minute
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000281
+name: contextual fear conditioning: time freezing
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000282
+name: contextual fear conditioning: block duration
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000283
+name: contextual fear conditioning: percent time freezing
+namespace: empty_ontology
+def: "" []
+
+[Term]
 id: EMPTY:00000284
 name: ArcCreERT2 ( +) (129S6/SvEv)
 namespace: empty_ontology
@@ -1130,7 +1202,7 @@ def: "Specifies the pharmacological treatment assigned to a subject. This assign
 
 [Term]
 id: EMPTY:10000012
-name: measurement: date of birth
+name: treatment: date of birth
 namespace: empty_ontology
 def: "Specifies the date of birth in YYYY-MM-DD format" []
 

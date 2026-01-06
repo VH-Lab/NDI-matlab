@@ -94,10 +94,15 @@ injection2Table = treatmentCreator.create(subjectTable, session, 'injectionTimeD
 treatmentTable = [dobTable;weightTable;injection1Table;injection2Table];
 treatmentMaker.addTreatmentsFromTable(session, treatmentTable);
 
-%% Cell count table
+%% Step 5. TABLES. Create ontologyTableRow docs.
+
+% Initialize tableDocMaker
+tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,'hunsberger');
 
 % Helper function
 varMatch = @(dataTable,s) dataTable(contains(dataTable,s));
+
+%% Cell count table
 
 % Get cell count table data
 cellTable = dataTables{1};
@@ -140,54 +145,30 @@ cfosEngramTable = cfosEngramTable(:,[1:5,24:25]);
 cellTable = ndi.fun.table.join({eyfpTable,cfosTable,eyfpEngramTable,cfosEngramTable});
 
 % Add subjects
-cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Sex','Tg'}, ...
+cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Sex'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
 
-% Initialize tableDocMaker
-tdm = ndi.setup.NDIMaker.tableDocMaker(session,'hunsberger');
-
-% Create EPM docs
-tdm.table2ontologyTableRowDocs(dataTable_EPM,{'SubjectString','Treatment'},...
-    'Overwrite',options.Overwrite);
-
-% Create FPS docs
-tdm.table2ontologyTableRowDocs(dataTable_FPS,...
-    {'SubjectString','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
-
-% OntologyTableRows
-
-%% Behavior table
-
-behaviorTable = dataTables{4};
-
-% Remove average values
-avgVariables = varMatch(behaviorTable.Properties.VariableNames,'Avg');
-behaviorTable = removevars(behaviorTable,avgVariables);
-
-% Stack values
-cfcVariables = varMatch(behaviorTable.Properties.VariableNames,'CFC');
-behaviorTable = stack(behaviorTable, cfcVariables, ...
-    'NewDataVariableName', 'CFCFreezing', ...
-    'IndexVariableName', 'TrainingBlock');
-
-behaviorTable.TrainingBlock = cellstr(behaviorTable.TrainingBlock);
-
-% Extract block info
-pattern = 'CFC(RE_EXPOSE|TRAINING)(\d+)';
-extractedData = regexp(behaviorTable.TrainingBlock, pattern, 'tokens');
-for i = 1:height(behaviorTable)
-    if ~isempty(extractedData{i})
-        behaviorTable.BlockType{i} = extractedData{i}{1}{1};
-        behaviorTable.BlockMinute(i) = str2double(extractedData{i}{1}{2});
-    end
+% Add brain region ontology ids
+brainRegions = {'dDG','dCA3','dCA1','vDG','vCA3','vCA1'};
+brainRegionNames = {'dorsal dentate gyrus of hippocampal formation',...
+    'dorsal CA3','dorsal CA1',...
+    'ventral dentate gyrus of hippocampal formation',...
+    'ventral CA3','ventral CA1'};
+brainRegionOntology = {'EMPTY:00000289','EMPTY:00000291','EMPTY:00000293',...
+    'EMPTY:00000290','EMPTY:00000292','EMPTY:00000294'};
+for i = 1:numel(brainRegions)
+    ind = strcmp(cellTable.BrainRegion,brainRegions{i});
+    cellTable(ind,'BrainRegionName') = brainRegionNames(i);
+    cellTable(ind,'BrainRegionOntology') = brainRegionOntology(i);
 end
-behaviorTable.BlockType = replace(behaviorTable.BlockType, 'RE_EXPOSE', 'Re-exposure');
-behaviorTable.BlockType = replace(behaviorTable.BlockType, 'TRAINING', 'Training');
 
-% Add subjects
-behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
-    {'Cohort','ID','Condition','Sex','BoxNumber','DOB'}, ...
-    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+% Create cellTag table docs
+cellTagVars = {'SubjectLocalIdentifier','SubjectDocumentIdentifier',...
+    'BrainRegionName','BrainRegionOntology','eYFPAvg','cFosAvg',...
+    'eYFPEngramAvg','cFosEngramAvg'};
+tableDocMaker.table2ontologyTableRowDocs(cellTable(:,cellTagVars),...
+    {'SubjectDocumentIdentifier','BrainRegionName'},...
+    'Overwrite',options.Overwrite);
 
 %% CFC table
 
@@ -228,9 +209,15 @@ cfcTable.CFCSeconds = cfcTable.CFCDuration.*(cfcTable.CFCFreezing./100);
 % Convert age in months to days
 cfcTable.AgeDays = round(cfcTable.Age_Months_.*30.5); % reverse formula used by lab
 cfcTable.ExperimentDate = cfcTable.DOB + cfcTable.AgeDays;
+cfcTable.ExperimentDate = cellstr(string(cfcTable.ExperimentDate,'yyyy-MM-dd'));
 
-% Measurements (weight)
-% Treatments (condition)
+% Create CFC table docs
+cfcVars = {'SubjectLocalIdentifier','SubjectDocumentIdentifier',...
+    'ExperimentDate','AgeDays','BlockType','BlockMinute',...
+    'CFCSeconds','CFCDuration','CFCFreezing'};
+tableDocMaker.table2ontologyTableRowDocs(cfcTable(:,cfcVars),...
+    {'SubjectDocumentIdentifier','BlockType','BlockMinute'},...
+    'Overwrite',options.Overwrite);
 
 %% State dependent table
 
@@ -271,10 +258,90 @@ stateTable.ExperimentDate(indTrain) = stateTable.Today(indTrain) + ...
 stateTable.ExperimentDate(indReExp) = stateTable.Today(indReExp) + ...
     days(5 + fillmissing(stateTable.CFCDay2(indReExp),'constant',0));
 
+% Format timestamp
+stateTable.ExperimentDate = cellstr(string(stateTable.ExperimentDate,'yyyy-MM-dd') + ...
+    "T" + string(stateTable.ExperimentDate,'hh:mm:ss'));
+stateTable.ExperimentDate = replace(stateTable.ExperimentDate,'T12:00:00','');
+
 % Add CFC time and duration
 stateTable{:,'CFCDuration'} = 60; % 60 s blocks
 stateTable.CFCSeconds = stateTable.CFCDuration.*(stateTable.CFCFreezing./100);
 
+% Create CFC table docs
+stateVars = {'SubjectLocalIdentifier','SubjectDocumentIdentifier',...
+    'ExperimentDate','AgeDays','BlockType','BlockMinute',...
+    'CFCSeconds','CFCDuration','CFCFreezing'};
+tableDocMaker.table2ontologyTableRowDocs(stateTable(:,stateVars),...
+    {'SubjectDocumentIdentifier','BlockType','BlockMinute'},...
+    'Overwrite',options.Overwrite);
 
+%% Behavior table (redundant with CFC table)
 
-% drug treatment
+behaviorTable = dataTables{4};
+
+% Remove average values
+avgVariables = varMatch(behaviorTable.Properties.VariableNames,'Avg');
+behaviorTable = removevars(behaviorTable,avgVariables);
+
+% Stack values
+cfcVariables = varMatch(behaviorTable.Properties.VariableNames,'CFC');
+behaviorTable = stack(behaviorTable, cfcVariables, ...
+    'NewDataVariableName', 'CFCFreezing', ...
+    'IndexVariableName', 'TrainingBlock');
+
+behaviorTable.TrainingBlock = cellstr(behaviorTable.TrainingBlock);
+
+% Extract block info
+pattern = 'CFC(RE_EXPOSE|TRAINING)(\d+)';
+extractedData = regexp(behaviorTable.TrainingBlock, pattern, 'tokens');
+for i = 1:height(behaviorTable)
+    if ~isempty(extractedData{i})
+        behaviorTable.BlockType{i} = extractedData{i}{1}{1};
+        behaviorTable.BlockMinute(i) = str2double(extractedData{i}{1}{2});
+    end
+end
+behaviorTable.BlockType = replace(behaviorTable.BlockType, 'RE_EXPOSE', 'Re-exposure');
+behaviorTable.BlockType = replace(behaviorTable.BlockType, 'TRAINING', 'Training');
+
+% Add CFC time and duration
+behaviorTable{:,'CFCDuration'} = 60; % 60 s blocks
+behaviorTable.CFCSeconds = behaviorTable.CFCDuration.*(behaviorTable.CFCFreezing./100);
+
+% Add subjects
+behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
+    {'ID','Condition','Sex','BoxNumber','DOB'}, ...
+    'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+
+% Create behavior table docs
+% behaviorVars = {'SubjectLocalIdentifier','SubjectDocumentIdentifier',...
+%     'BlockType','BlockMinute','CFCFreezing'};
+% tableDocMaker.table2ontologyTableRowDocs(behaviorTable(:,behaviorVars),...
+%     {'SubjectDocumentIdentifier','BlockType','BlockMinute'},...
+%     'Overwrite',options.Overwrite);
+
+%% Step 6. Make dataset
+
+% Create dataset
+datasetName = 'hunsberger_2025';
+datasetDir = fullfile(dataPath,datasetName);
+if ~exist(datasetDir,'dir')
+    mkdir(datasetDir);
+elseif options.Overwrite
+    rmdir(datasetDir,'s');
+    mkdir(datasetDir);
+end
+dataset = ndi.dataset.dir(datasetName,datasetDir);
+
+% Ingest and add sessions
+for i = 1:numel(sessionArray)
+    sessionDatabaseDir = fullfile(sessionArray{i}.path,'.ndi');
+    if options.Overwrite && exist([sessionDatabaseDir,'_'],'dir')
+        rmdir([sessionDatabaseDir,'_'],'s');
+    end
+    copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
+    sessionArray{i}.ingest;
+    dataset.add_ingested_session(sessionArray{i});
+end
+
+% Compress dataset
+zip([datasetDir,'.zip'],datasetDir);
