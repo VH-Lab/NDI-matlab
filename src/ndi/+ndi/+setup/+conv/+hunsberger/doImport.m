@@ -37,11 +37,11 @@ subjectTable = cell2table({'Hunsberger','hunsberger'}, ...
 SM = ndi.setup.NDIMaker.sessionMaker(dataParentDir,subjectTable,...
     'Overwrite',options.Overwrite);
 [sessionArray,subjectTable.sessionInd,subjectTable.sessionID] = SM.sessionIndices;
+session = sessionArray{1}; % only 1 session
 
 %% Step 3. DATA. Get data tables
 
 dataTables = cell(size(fileList));
-variableNames = {};
 for i = 1:numel(fileList)
     fileName = fullfile(dataParentDir,fileList{i});
     opts = detectImportOptions(fileName);
@@ -52,26 +52,47 @@ end
 %% Step 4: SUBJECTS. Build subject documents.
 
 % Create subject table
-subjectCellTag = dataTables{1}(:,{'ID','Sex','Condition','Tg'});
-subjectBehavior = dataTables{4}(:,{'ID','Sex','Condition','BoxNumber','DOB'});
-subjectCFC = dataTables{2}(:,{'ID','Sex','Condition','BoxNumber','DOB'});
+subjectCellTag = dataTables{1}(:,[1,2,4]);
+subjectBehavior = dataTables{4}(:,2:8);
+subjectCFC = dataTables{2}(:,2:8);
 subject1 = innerjoin(subjectCellTag,subjectBehavior); % same cohort
 subject2 = outerjoin(subjectCFC,subject1,'MergeKeys',true); % overlapping cohorts
 subject2{:,'StrainType'} = {'ArcCreERT2 x eYFP'};
-subjectState = dataTables{3}(:,{'ID','Sex','Condition','BoxNumber','DOB','Tg'}); 
+subjectState = renamevars(dataTables{3}(:,[1,3:17]), ...
+    {'Age_months_','InitialWeightTraining'},{'Age_Months_','InitialWeight_g_'}); 
 subjectState{:,'StrainType'} = {'129S6/SvEv'};
 subjectTable = ndi.fun.table.vstack({subject2,subjectState});
+
+% Add experiment date
+ind = isnat(subjectTable.Today);
+subjectTable.AgeDays = round(subjectTable.Age_Months_.*30.5); % reverse formula used by lab
+subjectTable.Today(ind) = subjectTable.DOB(ind) + subjectTable.AgeDays(ind);
 
 % Create subjectMaker
 subjectMaker = ndi.setup.NDIMaker.subjectMaker();
 subjectCreator = ndi.setup.conv.hunsberger.SubjectInformationCreator();
 
 % Create subjects
-[~, subjectTable.SubjectLocalIdentifier,subjectTable.SubjectDocumentIdentifier] = ...
-    subjectMaker.addSubjectsFromTable(sessionArray{1}, subjectTable, subjectCreator);
+[~,subjectTable.SubjectLocalIdentifier,subjectTable.SubjectDocumentIdentifier] = ...
+    subjectMaker.addSubjectsFromTable(session, subjectTable, subjectCreator);
 
-% Add DOB measurements
+%% Add measurements and drug treatments
 
+% Create treatment creator and maker
+treatmentCreator = ndi.setup.conv.hunsberger.TreatmentCreator();
+treatmentMaker = ndi.setup.NDIMaker.treatmentMaker();
+
+% Create DOB and weight measurement tables
+dobTable = treatmentCreator.create(subjectTable, session, 'DOB');
+weightTable = treatmentCreator.create(subjectTable, session, 'InitialWeight_g_');
+
+% Create drug treatment tables
+injection1Table = treatmentCreator.create(subjectTable, session, 'InjectionTime');
+injection2Table = treatmentCreator.create(subjectTable, session, 'injectionTimeDay2');
+
+% Create treatment documents
+treatmentTable = [dobTable;weightTable;injection1Table;injection2Table];
+treatmentMaker.addTreatmentsFromTable(session, treatmentTable);
 
 %% Cell count table
 
@@ -122,7 +143,17 @@ cellTable = ndi.fun.table.join({eyfpTable,cfosTable,eyfpEngramTable,cfosEngramTa
 cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Sex','Tg'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
 
-% Treatments (need new terms for control/treatment here)
+% Initialize tableDocMaker
+tdm = ndi.setup.NDIMaker.tableDocMaker(session,'hunsberger');
+
+% Create EPM docs
+tdm.table2ontologyTableRowDocs(dataTable_EPM,{'SubjectString','Treatment'},...
+    'Overwrite',options.Overwrite);
+
+% Create FPS docs
+tdm.table2ontologyTableRowDocs(dataTable_FPS,...
+    {'SubjectString','Trial_Num','Sheet_Name'},'Overwrite',options.Overwrite);
+
 % OntologyTableRows
 
 %% Behavior table
@@ -157,7 +188,6 @@ behaviorTable.BlockType = replace(behaviorTable.BlockType, 'TRAINING', 'Training
 behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
     {'Cohort','ID','Condition','Sex','BoxNumber','DOB'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
-% behaviorTable = unique(behaviorTable,'rows'); % duplicates for unknown reason
 
 %% CFC table
 
@@ -188,11 +218,18 @@ cfcTable.BlockType = replace(cfcTable.BlockType, 'TRAINING', 'Training');
 
 % Add subjects
 cfcTable = innerjoin(cfcTable,subjectTable,'Keys',...
-    {'ID','Cohort','Condition','Sex','BoxNumber','DOB'}, ...
+    {'ID','Condition','Sex','BoxNumber','DOB'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
-cfcTable =  unique(cfcTable,'rows'); % duplicates for unknown reason
 
-% Measurements (DOB, weight)
+% Add CFC time and duration
+cfcTable{:,'CFCDuration'} = 60; % 60 s blocks
+cfcTable.CFCSeconds = cfcTable.CFCDuration.*(cfcTable.CFCFreezing./100);
+
+% Convert age in months to days
+cfcTable.AgeDays = round(cfcTable.Age_Months_.*30.5); % reverse formula used by lab
+cfcTable.ExperimentDate = cfcTable.DOB + cfcTable.AgeDays;
+
+% Measurements (weight)
 % Treatments (condition)
 
 %% State dependent table
@@ -220,7 +257,24 @@ stateTable = [trainingTable;reexposureTable];
 
 % Add subjects
 stateTable = innerjoin(stateTable,subjectTable,'Keys',...
-    {'Cohort','Today','Condition','Sex','BoxNumber','Tg'}, ...
+    {'ID','Condition','Sex','BoxNumber','Tg'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
+
+% Convert age in months to days
+stateTable.AgeDays = round(stateTable.Age_months_.*30.5); % reverse formula used by lab
+
+% Add cfc timestamp
+indTrain = ndi.fun.table.identifyMatchingRows(stateTable,'BlockType','Training');
+indReExp = ndi.fun.table.identifyMatchingRows(stateTable,'BlockType','Re-exposure');
+stateTable.ExperimentDate(indTrain) = stateTable.Today(indTrain) + ...
+    days(fillmissing(stateTable.CFCDay1_time_(indTrain),'constant',0));
+stateTable.ExperimentDate(indReExp) = stateTable.Today(indReExp) + ...
+    days(5 + fillmissing(stateTable.CFCDay2(indReExp),'constant',0));
+
+% Add CFC time and duration
+stateTable{:,'CFCDuration'} = 60; % 60 s blocks
+stateTable.CFCSeconds = stateTable.CFCDuration.*(stateTable.CFCFreezing./100);
+
+
 
 % drug treatment

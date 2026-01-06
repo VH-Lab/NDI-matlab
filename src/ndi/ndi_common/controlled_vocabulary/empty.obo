@@ -1009,19 +1009,13 @@ namespace: empty_ontology
 def: "" []
 
 [Term]
-id: EMPTY:00000262
+id: EMPTY:00000295
 name: subject cage identifier
 namespace: empty_ontology
 def: "" []
 
 [Term]
-id: EMPTY:00000263
-name: subject text identifier
-namespace: empty_ontology
-def: "" []
-
-[Term]
-id: EMPTY:00000264
+id: EMPTY:00000296
 name: subject text identifier
 namespace: empty_ontology
 def: "" []
