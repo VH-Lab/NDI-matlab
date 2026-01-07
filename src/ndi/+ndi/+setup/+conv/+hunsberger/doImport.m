@@ -1,10 +1,20 @@
-options.Overwrite = true;
+function [] = doImport(dataParentDir,options)
+
+% Input argument validation
+arguments
+    dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath,'data')
+    options.Overwrite (1,1) logical = true
+end
+
+% Initialize progress bar
+progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
+progressBar.setTimeout(hours(1));
 
 %% Step 1: FILES. Get data path and files.
 
 % Get data path
-dataParentDir = fullfile(userpath,'data');
-dataPath = fullfile(dataParentDir,'hunsberger');
+labName = 'hunsberger';
+dataPath = fullfile(dataParentDir,labName);
 
 % If overwriting, delete NDI docs
 fileList = vlt.file.manifest(dataPath);
@@ -24,13 +34,15 @@ end
 [dirList,isDir] = vlt.file.manifest(dataPath);
 fileList = dirList(~isDir);
 include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
-    ~contains(fileList,'.DS_Store') & ~endsWith(fileList,'epochprobemap.txt') & ~endsWith(fileList,'.epochid.ndi');
+    ~contains(fileList,'.ndi') & ~contains(fileList,'.DS_Store') & ...
+    ~endsWith(fileList,'epochprobemap.txt') & ~endsWith(fileList,'.epochid.ndi') & ...
+    ~endsWith(fileList,'.zip');
 fileList = fileList(include);
 
 %% Step 2: SESSIONS. Build the session.
 
 % Build variableTable
-subjectTable = cell2table({'Hunsberger','hunsberger'}, ...
+subjectTable = cell2table({labName,labName}, ...
     'VariableNames',{'SessionRef','SessionPath'});
 
 % Employ the sessionMaker
@@ -97,7 +109,7 @@ treatmentMaker.addTreatmentsFromTable(session, treatmentTable);
 %% Step 5. TABLES. Create ontologyTableRow docs.
 
 % Initialize tableDocMaker
-tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,'hunsberger');
+tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
 % Helper function
 varMatch = @(dataTable,s) dataTable(contains(dataTable,s));
@@ -145,7 +157,8 @@ cfosEngramTable = cfosEngramTable(:,[1:5,24:25]);
 cellTable = ndi.fun.table.join({eyfpTable,cfosTable,eyfpEngramTable,cfosEngramTable});
 
 % Add subjects
-cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Sex'}, ...
+cellTable = innerjoin(cellTable,subjectBehavior);
+cellTable = innerjoin(cellTable,subjectTable,'Keys',{'ID','Condition','Sex','BoxNumber'}, ...
     'RightVariables',{'SubjectLocalIdentifier','SubjectDocumentIdentifier'});
 
 % Add brain region ontology ids
@@ -322,7 +335,7 @@ behaviorTable = innerjoin(behaviorTable,subjectTable,'Keys',...
 %% Step 6. Make dataset
 
 % Create dataset
-datasetName = 'hunsberger_2025';
+datasetName = [labName,'_2025'];
 datasetDir = fullfile(dataPath,datasetName);
 if ~exist(datasetDir,'dir')
     mkdir(datasetDir);
