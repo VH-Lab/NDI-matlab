@@ -12,7 +12,7 @@
   "BrainRegionName": "EMPTY:brain region name",
   "BrainRegionOntology": "EMPTY:brain region ontology identifier",
   "eYFPAvg": "EMPTY:EYFP average cell count",
-  "cFosAvg": "EMPTY:c-fos average cell count",
+  "cFosAvg": "EMPTY:c-Fos average cell count",
   "eYFPEngramAvg": "EMPTY:EYFP engram average cell count",
   "cFosEngramAvg": "EMPTY:c-Fos engram average cell count"
 }
