@@ -46,11 +46,11 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             alprazolam = struct2table(struct('ontologyName','NCIT:C227',...
                                 'name','alprazolam', 'value',1, ...
                                 'ontologyUnit','SNOMED:396163008', ...
-                                'unitName','Milligram/kilogram'));
+                                'unitName','mg/kg'));
             saline = struct2table(struct('ontologyName','EFO:0002677',...
                                 'name','saline', 'value',1, ...
                                 'ontologyUnit','SNOMED:396163008', ...
-                                'unitName','Milligram/kilogram'));
+                                'unitName','mg/kg'));
 
             tempTable = table();
             indRemove = [];
@@ -74,7 +74,9 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
                                 cellstr(string(subjectTable.Today(i),'yyyy-MM-dd') + "T" + ...
                                 string(days(subjectTable.InjectionTime(i)),'hh:mm:ss'));
                         end
-                        if strcmp(subjectTable.Timeline{i}(1),'A')
+                        if strcmp(subjectTable.Timeline{i}(1),'A') 
+                            mixtureTable = alprazolam;
+                        elseif strcmp(subjectTable.Condition{i},'Treatment')
                             mixtureTable = alprazolam;
                         else
                             mixtureTable = saline;
