@@ -1058,7 +1058,7 @@ def: "" []
 
 [Term]
 id: EMPTY:00000275
-name: c-fos average cell count
+name: c-Fos average cell count
 namespace: empty_ontology
 def: "" []
 
