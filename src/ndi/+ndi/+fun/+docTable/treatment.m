@@ -2,9 +2,9 @@ function [treatmentTable,docIDs,dependencyIDs] = treatment(session,options)
 % TREATMENT Gathers NDI treatment document properties into a table.
 %
 %   [treatmentTable, docIDs, dependencyIDs] = TREATMENT(SESSION, OPTIONS)
-%   retrieves all 'treatment', 'treatment_drug', and 'virus_injection'
-%   documents from an NDI session and organizes their properties into a
-%   MATLAB table.
+%   retrieves all 'treatment', 'treatment_drug', 'virus_injection', and
+%   'measurement'documents from an NDI session and organizes their 
+%   properties into a MATLAB table.
 %
 %   The function aggregates all treatments for a given dependency (e.g., a
 %   subject) into a single row. If multiple treatments of the same type exist,
@@ -35,6 +35,7 @@ arguments
     options.depends_on {mustBeText} = 'subject_id';
     options.errorIfEmpty (1,1) logical = false;
     options.depends_on_docs (1,:) cell = {};
+    options.hideMixtureTable (1,1) logical = true;
 end
 
 % Check depends_on class
@@ -49,8 +50,17 @@ end
 q_treat = ndi.query('','isa','treatment');
 q_drug = ndi.query('','isa','treatment_drug');
 q_virus = ndi.query('','isa','virus_injection');
-query = q_treat | q_drug | q_virus;
+q_measurement = ndi.query('','isa','measurement');
+query = q_treat | q_drug | q_virus | q_measurement;
 treatmentDocs = session.database_search(query);
+
+% Drug Treatment Field Renaming
+drugTreatmentFieldsOld = {'location_name','location_ontologyName',...
+    'mixture_table','administration_onset_time',...
+    'administration_offset_time','administration_duration'};
+drugTreatmentFields = {'DrugTreatmentLocationName','DrugTreatmentLocationOntology',...
+    'DrugTreatmentMixtureTable','DrugTreatmentOnsetTime',...
+    'DrugTreatmentOffsetTime','DrugTreatmentDuration'};
 
 % Handle case where no documents are found
 if isempty(treatmentDocs)
@@ -78,11 +88,39 @@ for i = 1:numel(treatmentDocs)
     if doc.doc_isa('treatment_drug')
         fields = docProp.treatment_drug;
         fn = fieldnames(fields);
+        indSkip = false(size(fn));
         for f = 1:numel(fn)
             val = fields.(fn{f});
-            if ischar(val), val = strtrim(val); end
+            if ischar(val)
+                val = strtrim(val);
+            end
+            if (isnumeric(val) & isnan(val)) | (ischar(val) & isempty(val))
+                indSkip(f) = true;
+                continue
+            end
+            if contains(fn{f},'_time')
+                if contains(val,'T')
+                    inputFormat = 'yyyy-MM-dd''T''HH:mm:ss';
+                else
+                    inputFormat = 'yyyy-MM-dd';
+                end
+                    val = datetime(val,'InputFormat',inputFormat);
+            end
+            if strcmp(fn{f},'mixture_table')
+                mixtureTable = ndi.database.fun.readtablechar(val,'.txt','Delimiter',',');
+                treatmentRow.DrugTreatmentMixtureName = mixtureTable.name;
+                treatmentRow.DrugTreatmentMixtureQuantity = cellstr(compose("%g %s", ...
+                   mixtureTable.value,mixtureTable.unitName{1}));
+                treatmentRow.DrugTreatmentMixtureOntology = mixtureTable.ontologyName;
+                if options.hideMixtureTable
+                    indSkip(f) = true;
+                    continue
+                end
+            end
             treatmentRow.(fn{f}) = {val};
         end
+        treatmentRow = renamevars(treatmentRow, ...
+            drugTreatmentFieldsOld(~indSkip),drugTreatmentFields(~indSkip));
     elseif doc.doc_isa('virus_injection')
         fields = docProp.virus_injection;
         fn = fieldnames(fields);
@@ -105,8 +143,32 @@ for i = 1:numel(treatmentDocs)
         end
         if ~isempty(numericValue) && isempty(stringValue)
             treatmentRow.(dataType) = numericValue;
+        elseif ~isempty(stringDate)
+            treatmentRow.(dataType) = {stringDate};
+        elseif ~isempty(stringOntology)
+            treatmentRow.([dataType,'Name']) = {strtrim(stringName)};
+            treatmentRow.([dataType,'Ontology']) = {stringOntology};
+        elseif ischar(stringValue) && isempty(numericValue)
+            treatmentRow.(dataType) = {stringValue};
+        elseif ischar(stringValue) && ~isempty(numericValue)
+            treatmentRow.([dataType,'Number']) = {numericValue};
+            treatmentRow.([dataType,'String']) = {stringValue};
         end
-        if ~isempty(stringDate)
+    elseif doc.doc_isa('measurement')
+        [~,~,~,~,~,dataType] = ndi.ontology.lookup(docProp.measurement.ontologyName);
+        numericValue = docProp.measurement.numeric_value;
+        stringValue = strtrim(docProp.measurement.string_value);
+        stringOntology = [];
+        stringName = [];
+        stringDate = [];
+        if ~isempty(stringValue) && isStringDatetime(stringValue)
+            stringDate = datetime(stringValue);
+        elseif contains(stringValue,':')
+            [stringOntology,stringName] = ndi.ontology.lookup(stringValue);
+        end
+        if ~isempty(numericValue) && isempty(stringValue)
+            treatmentRow.(dataType) = numericValue;
+        elseif ~isempty(stringDate)
             treatmentRow.(dataType) = {stringDate};
         elseif ~isempty(stringOntology)
             treatmentRow.([dataType,'Name']) = {strtrim(stringName)};
