@@ -1,31 +1,47 @@
-% file: +ndi/+setup/+conv/+birren/TreatmentCreator.m
+% file: +ndi/+setup/+conv/+hunsberger/TreatmentCreator.m
 classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
-% TREATMENTCREATOR - Creates an NDI treatment table for the Birren lab project.
+% TREATMENTCREATOR - Creates an NDI treatment table for the Hunsberger lab project.
 %
-% This class implements the 'create' method to generate a treatment table
-% from the main epochs table. It produces a table that can describe simple
-% treatments (cell culture), drug treatments, and virus treatments based on
-% binary indicators in the table. It also corrects for outdated column names
-% from its superclass to ensure compatibility with the NDI schema.
+% This class implements the 'create' method to generate NDI-compliant treatment 
+% and measurement tables from a subject metadata table. It handles the logic 
+% for drug administrations (Alprazolam/Saline), dose calculations, and 
+% biometric measurements like weight and date of birth.
 %
+% It automatically corrects for legacy column names in the superclass, specifically
+% mapping 'location_ontologyNode' to 'location_ontologyName'.
+%
+% See also: ndi.setup.NDIMaker.TreatmentCreator, ndi.ontology.EMPTY
+%
+
     methods
         function treatmentTable = create(obj, subjectTable, session, columnName)
-        % CREATE - Generates a treatment table from the project's epochs table.
+        % CREATE - Generates a treatment or measurement table based on specific columns.
         %
-        %   TREATMENTTABLE = CREATE(OBJ, EPOCHSTABLE, ALLSUBJECTNAMES, SESSION)
+        %   TREATMENTTABLE = CREATE(OBJ, SUBJECTTABLE, SESSION, COLUMNNAME)
         %
-        %   This method processes the input epochsTable to identify treatments for each
-        %   subject. It extracts information based on values in several columns that
-        %   indicate the presence or absence of a treatment.
+        %   This method processes a specific column from the SUBJECTTABLE to generate
+        %   NDI documents. It handles four primary cases:
+        %
+        %   1. 'DOB': Extracts Date of Birth as a 'measurement' (NCIT:C94173).
+        %   2. 'InitialWeight_g_': Extracts weight as a 'measurement' (NCIT:C81328).
+        %   3. 'InjectionTime': Processes the first drug administration. Logic:
+        %      - Identifies mixture (Alprazolam/Saline) based on Timeline/Condition.
+        %      - Sets location to Intraperitoneal (SNOMED:783351009).
+        %      - Formats ISO 8601 onset times.
+        %   4. 'injectionTimeDay2': Processes second drug administration (Day 2).
+        %      - Handles specific dose logic (e.g., 0.25 mg/kg if indicated).
         %
         %   Inputs:
-        %       obj (ndi.setup.conv.birren.TreatmentCreator) - The instance of this creator class.
-        %       epochsTable (table) - A MATLAB table containing all epoch metadata.
-        %       allSubjectNames (cell) - A cell array of subject identifiers for each row of epochsTable.
-        %       session (ndi.session.dir) - The NDI session object.
+        %       obj (ndi.setup.conv.hunsberger.TreatmentCreator) - The instance of this creator class.
+        %       subjectTable (table) - A MATLAB table containing subject metadata.
+        %           Must contain 'SubjectLocalIdentifier'.
+        %       session (ndi.session.dir) - The NDI session object where data is stored.
+        %       columnName (char) - The specific column in subjectTable to process.
         %
         %   Outputs:
-        %       treatmentTable (table) - A MATLAB table formatted for creating NDI treatment documents.
+        %       treatmentTable (table) - A table containing formatted NDI treatment/measurement fields:
+        %           'treatmentType', 'treatment', 'administration_onset_time', 'mixture_table',
+        %           'location_ontologyName', 'stringValue' or 'numericValue'.
         %
         %   See also: ndi.setup.NDIMaker.TreatmentCreator
         %
