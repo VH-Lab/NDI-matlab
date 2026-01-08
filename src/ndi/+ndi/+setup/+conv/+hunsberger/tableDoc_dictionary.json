@@ -3,6 +3,7 @@
   "SubjectDocumentIdentifier": "EMPTY:subject document identifier",
   "BoxNumber": "EMPTY:subject box identifier",
   "ExperimentDate": "EMPTY:experiment trial execution timestamp",
+  "Cohort": "NCIT:C61512",
   "AgeDays": "NCIT:C172676",
   "BlockType": "EMPTY:contextual fear conditioning: block type",
   "BlockMinute": "EMPTY:contextual fear conditioning: block minute",
