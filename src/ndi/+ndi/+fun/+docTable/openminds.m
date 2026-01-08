@@ -129,6 +129,7 @@ for i = 1:numel(typeDocs)
         end
     end
     dependentDocs(removeCells) = []; dependentTypes(removeCells) = [];
+    dependentDocs = vertcat(dependentDocs{:}); dependentTypes = vertcat(dependentTypes{:});
     for j = 1:numel(dependentDocs)
         depDocIDs = dependentDocs{j};
         if ~iscell(depDocIDs)

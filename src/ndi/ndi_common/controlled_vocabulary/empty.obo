@@ -1009,19 +1009,13 @@ namespace: empty_ontology
 def: "" []
 
 [Term]
-id: EMPTY:00000262
+id: EMPTY:00000295
 name: subject cage identifier
 namespace: empty_ontology
 def: "" []
 
 [Term]
-id: EMPTY:00000263
-name: subject text identifier
-namespace: empty_ontology
-def: "" []
-
-[Term]
-id: EMPTY:00000264
+id: EMPTY:00000296
 name: subject text identifier
 namespace: empty_ontology
 def: "" []
@@ -1041,6 +1035,96 @@ def: "" []
 [Term]
 id: EMPTY:00000267
 name: echocardiogram acquisition
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000269
+name: brain region name
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000270
+name: brain region ontology identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000274
+name: EYFP average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000275
+name: c-Fos average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000276
+name: EYFP engram average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000277
+name: c-Fos engram average cell count
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000278
+name: subject box identifier
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000279
+name: contextual fear conditioning: block type
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000280
+name: contextual fear conditioning: block minute
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000281
+name: contextual fear conditioning: time freezing
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000282
+name: contextual fear conditioning: block duration
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000283
+name: contextual fear conditioning: percent time freezing
+namespace: empty_ontology
+def: "" []
+
+[Term]
+id: EMPTY:00000284
+name: ArcCreERT2 ( +) (129S6/SvEv)
+namespace: empty_ontology
+def: "Transgenic mouse strain on 129S6/SvEv background." []
+
+[Term]
+id: EMPTY:00000287
+name: ROSA26-CAG-loxp-stop-loxp-EYFP-WPRE (-/-) (129S6/SvEv)
+namespace: empty_ontology
+def: "Transgenic mouse strain on 129S6/SvEv background." []
+
+[Term]
+id: EMPTY:00000288
+name: ArcCreERT2 x eYFP (129S/SvEv)
 namespace: empty_ontology
 def: "" []
 

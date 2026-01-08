@@ -99,6 +99,8 @@ classdef treatmentMaker < handle
                     doc = obj.create_treatment_drug_doc(S, tableRow, subject_doc_id);
                 case 'virus_injection' % CORRECTED from 'treatment_virus'
                     doc = obj.create_virus_injection_doc(S, tableRow, subject_doc_id);
+                case 'measurement'
+                    doc = obj.create_measurement_doc(S, tableRow, subject_doc_id);
                 otherwise
                     error('Unknown treatmentType: "%s". Must be "treatment", "treatment_drug", or "virus_injection".', treatmentType);
             end
@@ -115,6 +117,20 @@ classdef treatmentMaker < handle
             treatment_struct.string_value = char(tableRow.stringValue);
             treatment_struct.numeric_value = tableRow.numericValue;
             doc = S.newdocument('treatment', 'treatment', treatment_struct);
+            doc = doc.set_dependency_value('subject_id', subject_doc_id);
+        end
+        function doc = create_measurement_doc(~, S, tableRow, subject_doc_id)
+            % Creates a standard 'measurement' document
+            [id, name] = ndi.ontology.lookup(char(tableRow.treatment));
+            if isempty(id)
+                error('Could not find ontology entry for measurement: %s', char(tableRow.treatment));
+            end
+            
+            measurement_struct.ontologyName = id;
+            measurement_struct.name = name;
+            measurement_struct.string_value = char(tableRow.stringValue);
+            measurement_struct.numeric_value = tableRow.numericValue;
+            doc = S.newdocument('measurement', 'measurement', measurement_struct);
             doc = doc.set_dependency_value('subject_id', subject_doc_id);
         end
         function doc = create_treatment_drug_doc(~, S, tableRow, subject_doc_id)
