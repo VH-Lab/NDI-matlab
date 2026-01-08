@@ -47,7 +47,9 @@
     {"prefix": "PATO", "ontology_name": "PATO"},
     {"prefix": "EMPTY", "ontology_name": "EMPTY"},
     {"prefix": "NCIT", "ontology_name": "NCIT"},
-    {"prefix": "WBStrain", "ontology_name": "WBStrain"}
+    {"prefix": "SNOMED", "ontology_name": "SNOMED"},
+    {"prefix": "WBStrain", "ontology_name": "WBStrain"},
+    {"prefix": "EFO", "ontology_name": "EFO"}
   ],
   "Ontologies": [
     {
@@ -115,6 +117,16 @@
       "name": "WBStrain",
       "homepage": "https://wormbase.org",
       "api_url": "https://wormbase.org/species/c_elegans/strain"
+    },
+    {
+      "name": "SNOMED",
+      "homepage": "https://www.snomed.org/use-snomed-ct",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/snomed"
+    },
+    {
+      "name": "EFO",
+      "homepage": "https://www.ebi.ac.uk/efo/",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/efo"
     }
   ]
 }
