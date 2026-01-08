@@ -1,89 +1,104 @@
-% Location: +ndi/+ontology/EMPTY.m
 classdef EMPTY < ndi.ontology
-% EMPTY - NDI Ontology object for a local experimental ontology (EMPTY).
+% EMPTY - NDI Ontology object for a remote experimental ontology (EMPTY).
 %   Inherits from ndi.ontology and implements lookupTermOrID for EMPTY
-%   by reading from a local .obo file.
-%
-%   This class demonstrates how to integrate ontologies stored in local
-%   OBO format files.
+%   by reading from a GitHub-hosted .owl file.
 
     properties (Constant)
-        % Define the ontology prefix for this specific ontology
         ONTOLOGY_PREFIX = 'EMPTY';
-
-        % Define the relative path to the OBO file from CommonFolder
-        OBO_FILE_SUBPATH = fullfile('controlled_vocabulary', 'empty.obo');
-    end
-
-    properties (Access = private)
-        OboFilePath % Full path to the OBO file
+        % The RAW URL ensures we get the RDF/XML content directly
+        OWL_URL = 'https://raw.githubusercontent.com/Waltham-Data-Science/empty-ontology/main/empty-base.owl';
     end
 
     methods
         function obj = EMPTY()
-            % EMPTY - Constructor for the EMPTY ontology object.
-            % Implicitly calls the superclass constructor ndi.ontology().
-            % It also resolves the full path to the OBO file.
-
-            % Construct the full path to the OBO file
-            try
-                commonFolder = ndi.common.PathConstants.CommonFolder();
-                obj.OboFilePath = fullfile(commonFolder, obj.OBO_FILE_SUBPATH);
-            catch ME
-                error('ndi:ontology:EMPTY:PathError', ...
-                    'Could not determine CommonFolder or construct path to EMPTY OBO file: %s', ME.message);
-            end
-
-            if ~isfile(obj.OboFilePath)
-                warning('ndi:ontology:EMPTY:FileNotFound', ...
-                    'The EMPTY OBO file was not found at the expected location: %s. Lookups will fail.', obj.OboFilePath);
-            end
-        end % constructor
+            % EMPTY - Constructor (no local path resolution needed)
+        end 
 
         function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name_fragment)
-            % LOOKUPTERMORID - Looks up a term in the local EMPTY.obo file.
-            %
-            %   [ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME_FRAGMENT)
-            %
-            %   Overrides the base class method. It uses the static helper
-            %   ndi.ontology.lookupOBOFile to parse and search the OBO file.
-            %
-            %   The input TERM_OR_ID_OR_NAME_FRAGMENT is the part of the original
-            %   lookup string after the 'EMPTY:' prefix has been removed (e.g.,
-            %   '00000090' for an ID, or 'Behavioral measurement' for a name).
-            %
-            %   See also: ndi.ontology.lookup (static dispatcher),
-            %             ndi.ontology.lookupOBOFile (static helper)
-
-            if isempty(obj.OboFilePath) || ~isfile(obj.OboFilePath)
-                 error('ndi:ontology:EMPTY:LookupFailed_NoFile', ...
-                    'Cannot perform lookup. The EMPTY OBO file path is not set or file does not exist: %s', obj.OboFilePath);
-            end
-
+            id = ''; name = ''; definition = ''; synonyms = {};
+            
             try
-                % Call the static helper from the base class
-                [id, name, definition, synonyms] = ndi.ontology.lookupOBOFile(...
-                    obj.OboFilePath, ...
-                    obj.ONTOLOGY_PREFIX, ...
-                    term_or_id_or_name_fragment);
-            catch ME
-                % Check if the error is from the OBO lookup itself (e.g., term not found)
-                % or a more fundamental parsing/file error.
-                if strcmp(ME.identifier, 'ndi:ontology:lookupOBOFile:TermNotFound') || ...
-                   strcmp(ME.identifier, 'ndi:ontology:lookupOBOFile:InvalidInput')
-                    % These are expected "not found" type errors, rethrow to be caught by main lookup
-                    rethrow(ME);
-                else
-                    % More serious error (e.g., file parsing, path issue)
-                    baseME = MException('ndi:ontology:EMPTY:LookupFailed', ...
-                        'EMPTY.obo lookup failed for input "%s".', term_or_id_or_name_fragment);
-                    baseME = addCause(baseME, ME);
-                    throw(baseME);
+                % 1. Fetch the OWL content from GitHub
+                options = weboptions('Timeout', 30, 'ContentType', 'text');
+                owl_xml_string = webread(obj.OWL_URL, options);
+                
+                % 2. Parse XML into a Document Object
+                temp_file = [tempname '.owl'];
+                fid = fopen(temp_file, 'w', 'n', 'UTF-8');
+                fprintf(fid, '%s', owl_xml_string);
+                fclose(fid);
+                
+                xDoc = xmlread(temp_file);
+                delete(temp_file); % Clean up temp file
+                
+                % 3. Search for the term in owl:Class elements
+                classes = xDoc.getElementsByTagName('owl:Class');
+                found = false;
+                
+                for k = 0:classes.getLength-1
+                    thisClass = classes.item(k);
+                    
+                    % Get the URI (e.g., http://purl.obolibrary.org/obo/EMPTY_0000085)
+                    uri = char(thisClass.getAttribute('rdf:about'));
+                    % Extract the fragment after the last / or _
+                    tokens = regexp(uri, 'EMPTY_(\d+)$', 'tokens');
+                    if ~isempty(tokens)
+                        shortId = tokens{1}{1}; % Result: '0000085'
+                    else
+                        shortId = uri;
+                    end
+                    
+                    % Get Label (Name) via rdfs:label
+                    labels = thisClass.getElementsByTagName('rdfs:label');
+                    thisName = '';
+                    if labels.getLength > 0
+                        thisName = char(labels.item(0).getTextContent());
+                    end
+                    
+                    % Match Logic: Match against the numeric ID or the Name
+                    is_id_match = strcmpi(shortId, term_or_id_or_name_fragment);
+                    is_name_match = strcmpi(thisName, term_or_id_or_name_fragment);
+                    
+                    if is_id_match || is_name_match
+                        id = [obj.ONTOLOGY_PREFIX ':' shortId];
+                        name = thisName;
+                        
+                        % Get Definition via standard OBO definition tag (IAO_0000115)
+                        % Fallback to rdfs:comment if IAO is missing
+                        defs = thisClass.getElementsByTagName('obo:IAO_0000115');
+                        if defs.getLength == 0
+                            defs = thisClass.getElementsByTagName('rdfs:comment');
+                        end
+                        
+                        if defs.getLength > 0
+                            definition = char(defs.item(0).getTextContent());
+                        end
+                        
+                        % Get Synonyms (Standard OBO synonym tags)
+                        synTags = {'oboInOwl:hasExactSynonym', 'oboInOwl:hasRelatedSynonym'};
+                        for t = 1:length(synTags)
+                            synNodes = thisClass.getElementsByTagName(synTags{t});
+                            for s = 0:synNodes.getLength-1
+                                synonyms{end+1} = char(synNodes.item(s).getTextContent());
+                            end
+                        end
+                        
+                        found = true;
+                        break;
+                    end
                 end
+                
+                if ~found
+                    error('ndi:ontology:EMPTY:TermNotFound', ...
+                        'Term "%s" not found in EMPTY GitHub repository.', term_or_id_or_name_fragment);
+                end
+
+            catch ME
+                baseME = MException('ndi:ontology:EMPTY:LookupFailed', ...
+                    'EMPTY remote lookup failed for input "%s".', term_or_id_or_name_fragment);
+                baseME = addCause(baseME, ME);
+                throw(baseME);
             end
-        end % function lookupTermOrID
-
-    end % methods
-
-end % classdef EMPTY
-
+        end 
+    end 
+end
