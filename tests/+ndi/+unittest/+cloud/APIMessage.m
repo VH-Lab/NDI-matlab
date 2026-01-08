@@ -26,8 +26,19 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
             responseDetails.StatusCode = "NONE - empty";
             responseDetails.StatusLine = "NONE - empty";
         else
-            responseDetails.StatusCode = char(apiResponse.StatusCode);
-            responseDetails.StatusLine = apiResponse.StatusLine;
+            % Handle potential array of ResponseMessage objects
+            codes = [apiResponse.StatusCode];
+            responseDetails.StatusCode = char(join(string(codes), ', '));
+
+            lines = [apiResponse.StatusLine];
+            % Use arrayfun to convert each StatusLine object to string individually
+            % to avoid 'Too many input arguments' error with object arrays
+            if isempty(lines)
+                 lineStrs = string([]);
+            else
+                 lineStrs = arrayfun(@string, lines);
+            end
+            responseDetails.StatusLine = char(join(lineStrs, ', '));
         end
     else
         responseDetails.ResponseObject = 'Not a standard HTTP ResponseMessage';
@@ -37,7 +48,7 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
     reportStruct.APICalledURL = string(apiURL);
 
     % Robustly handle the APIResponseBody, which might not be JSON
-    if isstruct(APIResponseBody) || ischar(APIResponseBody) || isstring(APIResponseBody) || isnumeric(APIResponseBody) || islogical(APIResponseBody)
+    if isstruct(APIResponseBody) || ischar(APIResponseBody) || isstring(APIResponseBody) || isnumeric(APIResponseBody) || islogical(APIResponseBody) || iscell(APIResponseBody)
         % It's already JSON-friendly or a simple value
         reportStruct.APIResponseBody = APIResponseBody;
     elseif isa(APIResponseBody, 'org.apache.xerces.dom.DeferredDocumentImpl')
@@ -54,4 +65,3 @@ function msg = APIMessage(narrative, APICallSuccessFlag, APIResponseBody, apiRes
 
     msg = jsonencode(reportStruct, "PrettyPrint", true);
 end
-

@@ -23,10 +23,15 @@ classdef dir < ndi.dataset
             elseif nargin==2
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
             elseif nargin==3 % hidden third option
+                if iscell(docs) && isempty(docs)
+                    ndi_dataset_dir_obj = ndi.dataset.dir(reference, path_name);
+                    return;
+                end
                 % Todo: Switch off specific warnings using warning ids
                 warningStruct = warning('off');
                 resetWarningCleanupObj = onCleanup(@() warning(warningStruct));
-                ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
+                datasetSessionId = ndi.cloud.sync.internal.datasetSessionIdFromDocs(docs);
+                ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name, datasetSessionId);
                 mystruct = struct(ndi_dataset_dir_obj.session); % don't do this but we need to here
                 mystruct.database.add(docs);
                 clear resetWarningCleanupObj
@@ -39,16 +44,36 @@ classdef dir < ndi.dataset
             q = ndi.query('','isa','dataset_session_info');
             d = ndi_dataset_dir_obj.database_search(q);
             if ~isempty(d)
-                if numel(d)>1
-                    error(['More than one dataset_session_info object found in dataset.']);
+                ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj);
+            end
+
+            q = ndi.query('','isa','session_in_a_dataset');
+            d = ndi_dataset_dir_obj.database_search(q);
+
+            contained_session_ids = {};
+            if ~isempty(d)
+                for i=1:numel(d)
+                    contained_session_ids{i} = d{i}.document_properties.session_in_a_dataset.session_id;
                 end
-                session_id = d{1}.document_properties.base.session_id;
-                q2 = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',session_id);
-                d2 = ndi_dataset_dir_obj.database_search(q2);
-                if ~isempty(d2)
-                    ref = d2{1}.document_properties.session.reference;
-                    ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
+            end
+
+            q2 = ndi.query('','isa','session');
+            d2 = ndi_dataset_dir_obj.database_search(q2);
+
+            candidate_session_doc = {};
+
+            for i=1:numel(d2)
+                if ~any(strcmp(d2{i}.document_properties.base.session_id, contained_session_ids))
+                    candidate_session_doc{end+1} = d2{i};
                 end
+            end
+
+            if isscalar(candidate_session_doc)
+                ref = candidate_session_doc{1}.document_properties.session.reference;
+                session_id = candidate_session_doc{1}.document_properties.base.session_id;
+                ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
+            elseif numel(candidate_session_doc)>1
+                error(['More than 1 candidate for the dataset session document found.']);
             end
         end % dir(), creator
     end % methods

@@ -52,23 +52,6 @@ classdef simple < ndi.calculator
             parameters.query = struct('name','probe_id','query',ndi.query('element.ndi_element_class','contains_string','ndi.probe',''));
         end % default_search_for_input_parameters
 
-        function doc_about(ndi_calculator_obj)
-            % ----------------------------------------------------------------------------------------------
-            % NDI_CALCULATOR: SIMPLE_CALC
-            % ----------------------------------------------------------------------------------------------
-            %
-            %   ------------------------
-            %   | SIMPLE_CALC -- ABOUT |
-            %   ------------------------
-            %
-            %   SIMPLE_CALC is a demonstration document. It simply produces the 'answer' that
-            %   is provided in the input parameters. Each SIMPLE_CALC document 'depends_on' an
-            %   NDI daq system.
-            %
-            %   Definition: apps/simple_calc.json
-            %
-            eval(['help ndi.calc.example.simple.doc_about']);
-        end %doc_about()
     end % methods()
 
 end % simple

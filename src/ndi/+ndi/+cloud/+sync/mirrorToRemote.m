@@ -19,7 +19,8 @@ function [success, errorMessage, report] = mirrorToRemote(ndiDataset, syncOption
 %   Inputs:
 %       ndiDataset (1,1) ndi.dataset - The local NDI dataset object.
 %       syncOptions (name, value pairs) - Optional synchronization options:
-%       - SyncFiles (logical) - If true, files will be synced (default: true).
+%       - SyncFiles (logical) - If true, files will be downloaded (default: true).
+%                               Files are always uploaded regardless of this setting.
 %       - Verbose (logical) - If true, verbose output is printed (default: true).
 %       - DryRun (logical) - If true, actions are simulated but not performed (default: false).
 %
@@ -96,19 +97,16 @@ function [success, errorMessage, report] = mirrorToRemote(ndiDataset, syncOption
                      report.uploaded_document_ids = string(ndiIdsToUpload);
                 end
 
-                if syncOptions.SyncFiles
-                    if syncOptions.Verbose
-                        fprintf('SyncFiles is true. Uploading associated data files...\n');
-                    end
-                    ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
-                        cloudDatasetId, ...
-                        ndiDataset, ...
-                        documentsToUpload, ...
-                        "Verbose", syncOptions.Verbose, ...
-                        "FileUploadStrategy", syncOptions.FileUploadStrategy);
-                elseif syncOptions.Verbose
-                    fprintf('"SyncFiles" option is false. Skipping upload of associated data files.\n');
+                if syncOptions.Verbose
+                    fprintf('Uploading associated data files...\n');
                 end
+                ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
+                    cloudDatasetId, ...
+                    ndiDataset, ...
+                    documentsToUpload, ...
+                    "Verbose", syncOptions.Verbose, ...
+                    "FileUploadStrategy", syncOptions.FileUploadStrategy);
+
                 if syncOptions.Verbose
                     fprintf('Completed upload phase.\n');
                 end

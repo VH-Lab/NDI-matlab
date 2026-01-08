@@ -2,6 +2,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
     properties (SetAccess=protected,GetAccess=public)
         fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
+        numberOfSelfTests = 0;
     end % properties
 
     methods
@@ -51,17 +52,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % This function is primarily intended to be called by external programs and users.
             %
 
-
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                docExistsAction (1,:) char {mustBeMember(docExistsAction,{'Error','NoAction','Replace','ReplaceIfDifferent'})}
+                parameters (1,1) struct {ndi.validators.mustHaveFields(parameters, {'input_parameters','depends_on'})} = ndi_calculator_obj.default_search_for_input_parameters()
+            end
 
               % Step 1: set up input parameters; they can either be completely specified by
               % the caller, or defaults can be used
 
             docs = {};
             docs_tocat = {};
-
-            if nargin<3
-                parameters = ndi_calculator_obj.default_search_for_input_parameters();
-            end
 
             % Step 2: identify all sets of possible input parameters that are compatible with
             % what was specified by 'parameters'
@@ -125,11 +126,14 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % (not private) so that it can be used for debugging. But in general, user code should
             % not call this function.
             %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+            end
             parameters.input_parameters = [];
             parameters.depends_on = vlt.data.emptystruct('name','value');
         end % default_search_for_input_parameters
 
-        function parameters = search_for_input_parameters(ndi_calculator_obj, parameters_specification, varargin)
+        function parameters = search_for_input_parameters(ndi_calculator_obj, parameters_specification)
             % SEARCH_FOR_INPUT_PARAMETERS - search for valid inputs to the calculator
             %
             % PARAMETERS = SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATOR_OBJ, PARAMETERS_SPECIFICATION)
@@ -158,6 +162,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % |-----------------------|-----------------------------------------------
             %
             %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters_specification (1,1) struct
+            end
             t_start = tic;
             fixed_input_parameters = parameters_specification.input_parameters;
             if isfield(parameters_specification,'depends_on')
@@ -241,6 +249,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % (not private) so that it can be used for debugging. But in general, user code should
             % not call this function.
             %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters_specification (1,1) struct
+            end
             query = vlt.data.emptystruct('name','query');
             if isfield(parameters_specification.input_parameters,'depends_on')
                 for i=1:numel(parameters_specification.input_parameters.depends_on)
@@ -281,6 +293,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % (not private) so that it can be used for debugging. But in general, user code should
             % not call this function.
             %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters (1,1) struct
+            end
             myemptydoc = ndi.document(ndi_calculator_obj.doc_document_types{1});
             property_list_name = myemptydoc.document_properties.document_class.property_list_name;
             % class_name = myemptydoc.document_properties.document_class.class_name
@@ -331,6 +347,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % (not private) so that it can be used for debugging. But in general, user code should
             % not call this function.
             %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                input_parameters1
+                input_parameters2
+            end
             if ~isempty(input_parameters1)
                 input_parameters1 = vlt.data.columnize_struct(input_parameters1);
             end
@@ -372,9 +393,48 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % not call this function.
             %
             % In the base class, this always returns empty.
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters (1,1) struct {ndi.validators.mustHaveFields(parameters, {'input_parameters','depends_on'})}
+            end
             doc = {};
 
         end % calculate()
+
+        function [docs, doc_output, doc_expected_output] = generate_mock_docs(ndi_calculator_obj, scope, number_of_tests, options)
+            % GENERATE_MOCK_DOCS - generate mock documents for testing
+            %
+            % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(NDI_CALCULATOR_OBJ, SCOPE, NUMBER_OF_TESTS, 'PARAM', VALUE, ...)
+            %
+            % The generate_mock_docs method is a testing utility present in NDI calculator classes.
+            % It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
+            % which can then be compared against expected outputs.
+            %
+            % This method takes additional input arguments as name/value pairs:
+            % |---------------------------|------------------------------------------------------|
+            % | Parameter (default)       | Description                                          |
+            % |---------------------------|------------------------------------------------------|
+            % | generate_expected_docs    | If true, the method saves the current output as the  |
+            % |   (false)                 | "expected" output for future tests. Use this when    |
+            % |                           | updating the calculator logic or creating new tests. |
+            % | specific_test_inds ([])   | Allows specifying a subset of test indices to run.   |
+            % |                           | If empty, all NUMBER_OF_TESTS are run.               |
+            % |---------------------------|------------------------------------------------------|
+            %
+            % This blank method, for the superclass, returns empty for all inputs.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                scope (1,:) char
+                number_of_tests (1,1) double
+                options.generate_expected_docs (1,1) logical = false
+                options.specific_test_inds (1,:) double = []
+            end
+
+            docs = {};
+            doc_output = {};
+            doc_expected_output = {};
+        end % generate_mock_docs()
 
         function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
             % PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
@@ -394,6 +454,13 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % This function takes additional input arguments as name/value pairs.
             % See ndi.calculator.plot_parameters for a description of those parameters.
             %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                doc_or_parameters
+            end
+            arguments (Repeating)
+                varargin
+            end
             params = ndi.calculator.plot_parameters(varargin{:});
             % base class does nothing except pop up figure and title after the doc name
             h.axes = [];
@@ -472,7 +539,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
     methods (Static)
 
-        function param = plot_parameters(varargin)
+        function param = plot_parameters(options)
             % PLOT_PARAMETERS - provide a diagnostic plot to show the results of the calculator, if appropriate
             %
             % PLOT_PARAMETERS(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
@@ -497,15 +564,21 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % |---------------------------|--------------------------------------|
             %
 
-            newfigure = 0;
-            holdstate = 0;
-            suppress_x_label = 0;
-            suppress_y_label = 0;
-            suppress_z_label = 0;
-            suppress_title = 0;
-            vlt.data.assign(varargin{:});
-            param = vlt.data.workspace2struct();
-            param = rmfield(param,'varargin');
+            arguments
+                options.newfigure (1,1) {mustBeNumericOrLogical} = 0
+                options.holdstate (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_x_label (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_y_label (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_z_label (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_title (1,1) {mustBeNumericOrLogical} = 0
+            end
+
+            param.newfigure = options.newfigure;
+            param.holdstate = options.holdstate;
+            param.suppress_x_label = options.suppress_x_label;
+            param.suppress_y_label = options.suppress_y_label;
+            param.suppress_z_label = options.suppress_z_label;
+            param.suppress_title = options.suppress_title;
         end
 
         function graphical_edit_calculator(varargin)
@@ -974,6 +1047,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %    text = ndi.calculator.docfiletext('ndi.calc.stimulus.tuningcurve','general');
             %
 
+            arguments
+                calculator_type (1,:) char {ndi.validators.mustBeClassnameOfType(calculator_type, 'ndi.calculator')}
+                doc_type (1,:) char {mustBeMember(doc_type, {'general', 'searching for inputs', 'output'})}
+            end
+
             switch (lower(doc_type))
                 case 'general'
                     doctype = 'general';
@@ -1020,9 +1098,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
             [parentdir, appname] = fileparts(w);
 
-            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples']
+            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
 
-            d = dir([dirname filesep '*.txt'])
+            d = dir([dirname filesep '*.txt']);
 
             contents = {};
             names = {};

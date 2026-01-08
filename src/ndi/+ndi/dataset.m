@@ -91,12 +91,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.session_info(end+1) = session_info_here;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',ndi_session_obj);
 
-            d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
-            d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
-            % delete the previous
-            ndi_dataset_obj.session.database_rm(d_);
-            d = d.set_session_id(ndi_dataset_obj.id());
-            ndi_dataset_obj.session.database_add(d);
+            ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
         end % add_linked_session()
@@ -153,12 +148,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.session_info(end+1) = session_info_here;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',[]); % make it open it again
 
-            d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
-            d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
-            % delete the previous
-            ndi_dataset_obj.session.database_rm(d_);
-            d = d.set_session_id(ndi_dataset_obj.id());
-            ndi_dataset_obj.session.database_add(d);
+            ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
         end % add_ingested_session()
@@ -428,6 +418,109 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
     end % methods
 
+    methods (Static)
+        function [new_docs] = repairDatasetSessionInfo(ndi_dataset_obj, options)
+            % REPAIRDATASETSESSIONINFO - Break out dataset_session_info into individual session_in_a_dataset documents
+            %
+            % [NEW_DOCS] = ndi.dataset.repairDatasetSessionInfo(NDI_DATASET_OBJ, 'DryRun', [true|false])
+            %
+            % Checks to see if NDI_DATASET_OBJ has a dataset_session_info document. If so, it breaks
+            % the information out into new individual session_in_a_dataset documents.
+            %
+            % If 'DryRun' is false (default), it deletes the dataset_session_info document and adds
+            % the new session_in_a_dataset documents.
+            %
+            % If 'DryRun' is true, it only returns the new documents that would be added.
+
+            arguments
+                ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj, 'ndi.dataset')}
+                options.DryRun (1,1) logical = false
+            end
+
+            new_docs = {};
+
+            q = ndi.query('','isa','dataset_session_info') & ...
+                ndi.query('base.session_id', 'exact_string', ndi_dataset_obj.id());
+
+            doc = ndi_dataset_obj.session.database_search(q);
+
+            if isempty(doc)
+                return;
+            end
+
+            if numel(doc)>1
+                 error(['Found too many dataset session info documents (' int2str(numel(doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
+            end
+
+            dataset_session_info_struct = doc{1}.document_properties.dataset_session_info.dataset_session_info;
+
+            if isstruct(dataset_session_info_struct)
+                 fields_to_copy = {'session_id','session_reference','is_linked','session_creator',...
+                    'session_creator_input1','session_creator_input2','session_creator_input3',...
+                    'session_creator_input4','session_creator_input5','session_creator_input6'};
+
+                 for i = 1:numel(dataset_session_info_struct)
+                     s = dataset_session_info_struct(i);
+                     doc_struct = struct();
+                     for f = 1:numel(fields_to_copy)
+                        fn = fields_to_copy{f};
+                        if isfield(s, fn)
+                            doc_struct.(fn) = s.(fn);
+                        else
+                             if strcmp(fn, 'is_linked')
+                                 doc_struct.(fn) = 0;
+                             else
+                                 doc_struct.(fn) = '';
+                             end
+                        end
+                     end
+
+                     new_doc = ndi.document('session_in_a_dataset', 'session_in_a_dataset', doc_struct);
+                     new_doc = new_doc.set_session_id(ndi_dataset_obj.id());
+
+                     new_docs{end+1} = new_doc;
+                 end
+            end
+
+            if ~options.DryRun
+                 if ~isempty(new_docs)
+                     ndi_dataset_obj.session.database_add(new_docs);
+                 end
+                 ndi_dataset_obj.session.database_rm(doc{1});
+            end
+        end
+
+        function addSessionInfoToDataset(ndi_dataset_obj, session_info)
+             % ADDSESSIONINFOTODATASET - Add a session_in_a_dataset document to the dataset
+             %
+             % ndi.dataset.addSessionInfoToDataset(NDI_DATASET_OBJ, SESSION_INFO)
+             %
+             % Creates a new 'session_in_a_dataset' document based on the SESSION_INFO structure
+             % and adds it to the NDI_DATASET_OBJ's internal session database. The document's
+             % base.session_id is set to the dataset's ID.
+
+             new_doc = ndi.document('session_in_a_dataset', 'session_in_a_dataset', session_info);
+             new_doc = new_doc.set_session_id(ndi_dataset_obj.id());
+             ndi_dataset_obj.session.database_add(new_doc);
+        end
+
+        function removeSessionInfoFromDataset(ndi_dataset_obj, session_id)
+             % REMOVESESSIONINFOFROMDATASET - Remove session_in_a_dataset document(s) for a given session ID
+             %
+             % ndi.dataset.removeSessionInfoFromDataset(NDI_DATASET_OBJ, SESSION_ID)
+             %
+             % Searches for 'session_in_a_dataset' documents that match the given SESSION_ID
+             % (and belong to the dataset's session ID) and removes them from the database.
+
+             q = ndi.query('session_in_a_dataset.session_id', 'exact_string', session_id) & ...
+                 ndi.query('base.session_id', 'exact_string', ndi_dataset_obj.id());
+             docs = ndi_dataset_obj.session.database_search(q);
+             if ~isempty(docs)
+                 ndi_dataset_obj.session.database_rm(docs);
+             end
+        end
+    end % methods (Static)
+
     methods (Hidden)
         function [hCleanup, filename] = open_database(ndi_dataset_obj)
             [hCleanup, filename] = ndi_dataset_obj.session.open_database();
@@ -447,16 +540,24 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             q = ndi.query('','isa','dataset_session_info') & ...
                 ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
             session_info_doc = ndi_dataset_obj.session.database_search(q); % we know we are searching the dataset session
-            if isempty(session_info_doc)
-                % we don't have any
-                ndi_dataset_obj.session_info = did.datastructures.emptystruct('session_id','session_reference','is_linked','session_creator',...
+
+            if ~isempty(session_info_doc)
+                % we have the old style, let's repair it
+                ndi.dataset.repairDatasetSessionInfo(ndi_dataset_obj);
+            end
+
+            q2 = ndi.query('','isa','session_in_a_dataset') & ...
+                ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
+            session_info_doc = ndi_dataset_obj.session.database_search(q2);
+
+            ndi_dataset_obj.session_info = did.datastructures.emptystruct('session_id','session_reference','is_linked','session_creator',...
                     'session_creator_input1','session_creator_input2','session_creator_input3',...
                     'session_creator_input4','session_creator_input5','session_creator_input6');
-            else
-                if numel(session_info_doc)>1
-                    error(['Found too many dataset session info documents (' int2str(numel(session_info_doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
-                end
-                ndi_dataset_obj.session_info = session_info_doc{1}.document_properties.dataset_session_info.dataset_session_info;
+
+            for i=1:numel(session_info_doc)
+                info_here = session_info_doc{i}.document_properties.session_in_a_dataset;
+                % fix field order, etc?
+                ndi_dataset_obj.session_info(end+1) = info_here;
             end
 
             % now we have session_info structure, build the initial session_array

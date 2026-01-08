@@ -21,6 +21,10 @@ function [output] = subject_stimulator_neuron(ndi_session_obj)
     %   (ndi.element.timeseries with name 'mock spikes', a pseduorandom reference, type 'spikes')
     %
 
+    arguments
+        ndi_session_obj (1,1) ndi.session
+    end
+
     S = ndi_session_obj; % shorten the name so it's easier to work with
 
     % Step 0:

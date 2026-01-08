@@ -60,7 +60,11 @@ function remoteDatasetDoc = createRemoteDatasetDoc(cloudDatasetId, ndiDataset, o
 
     [success, remoteDataset] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
     if ~success
-        error(['Failed to get dataset: ' remoteDataset.message]);
+        msg = remoteDataset.message;
+        if isstruct(msg) && isfield(msg, 'error')
+             msg = msg.error;
+        end
+        error(['Failed to get dataset: ' msg]);
     end
     remoteDatasetDoc = ndi.document('dataset_remote', ...
             'base.session_id', ndiDataset.id, ...
