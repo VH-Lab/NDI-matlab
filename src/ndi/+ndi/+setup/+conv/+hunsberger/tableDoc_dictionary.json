@@ -1,0 +1,19 @@
+{
+  "SubjectLocalIdentifier": "EMPTY:subject local identifier",
+  "SubjectDocumentIdentifier": "EMPTY:subject document identifier",
+  "BoxNumber": "EMPTY:subject box identifier",
+  "ExperimentDate": "EMPTY:experiment trial execution timestamp",
+  "Cohort": "NCIT:C61512",
+  "AgeDays": "NCIT:C172676",
+  "BlockType": "EMPTY:contextual fear conditioning: block type",
+  "BlockMinute": "EMPTY:contextual fear conditioning: block minute",
+  "CFCSeconds": "EMPTY:contextual fear conditioning: time freezing",
+  "CFCDuration": "EMPTY:contextual fear conditioning: block duration",
+  "CFCFreezing": "EMPTY:contextual fear conditioning: percent time freezing",
+  "BrainRegionName": "EMPTY:brain region name",
+  "BrainRegionOntology": "EMPTY:brain region ontology identifier",
+  "eYFPAvg": "EMPTY:EYFP average cell count",
+  "cFosAvg": "EMPTY:c-Fos average cell count",
+  "eYFPEngramAvg": "EMPTY:EYFP engram average cell count",
+  "cFosEngramAvg": "EMPTY:c-Fos engram average cell count"
+}

@@ -1,4 +1,4 @@
-function [subjectTable] = subject(session)
+function [subjectTable] = subject(session,options)
 %SUBJECT Creates a summary table of subjects and their associated metadata.
 %
 %   subjectTable = subject(SESSION)
@@ -38,6 +38,7 @@ function [subjectTable] = subject(session)
 % Input argument validation
 arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
+    options.hideMixtureTable (1,1) logical = true;
 end
 
 % --- Step 1: Get all subject documents ---
@@ -86,7 +87,8 @@ if ~isempty(bioSexTable)
 end
 
 % Get Treatment table
-[treatmentTable,~,treatmentSubjects] = ndi.fun.docTable.treatment(session,'depends_on_docs',subjectDocs);
+[treatmentTable,~,treatmentSubjects] = ndi.fun.docTable.treatment(session,...
+    'depends_on_docs',subjectDocs,'hideMixtureTable',options.hideMixtureTable);
 if ~isempty(treatmentTable)
     treatmentTable.SubjectDocumentIdentifier = treatmentSubjects;
     subjectTable = outerjoin(subjectTable,treatmentTable,'MergeKeys',true);

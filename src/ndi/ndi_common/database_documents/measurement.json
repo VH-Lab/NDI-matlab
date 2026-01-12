@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/measurement.json",
+		"validation":						"$NDISCHEMAPATH\/measurement_schema.json",
+		"comment":						"A measurement of a subject (that is not associated with a particular recording epoch). This document type does not contain a full protocol but may contain a link to a protocol with a dependency.",
+		"class_name":						"measurement",
+		"property_list_name":					"measurement",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "subject_id", "value": [] },
+		{ "name": "manipulation_id", "value": [] },
+		{ "name": "protocol_id", "value": [] }
+
+	],
+	"measurement": {
+		"ontologyName":						"",
+		"name":							"",
+		"numeric_value":					"",
+		"string_value":						""
+	}
+}
+
