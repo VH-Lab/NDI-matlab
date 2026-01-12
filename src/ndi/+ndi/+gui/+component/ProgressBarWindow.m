@@ -665,6 +665,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
 
             % Get bar index
             [barNum,status] = getBarNum(app,barID);
+            if isempty(barNum)
+                return
+            end
 
             % Retrieve state
             if ~isempty(status.identifier)
