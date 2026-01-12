@@ -1,7 +1,10 @@
 classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     properties (SetAccess=protected,GetAccess=public)
         fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
-    end 
+        numberOfSelfTests = 0;
+        defaultParametersCanFunction = false; % indicates whether or not the default parameters for a given calculator class can function without any overriding by the user
+    end % properties
+
     methods
         function ndi_calculator_obj = calculator(varargin)
             session = []; if nargin>0, session = varargin{1}; end
@@ -13,17 +16,46 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         end 
         
         function docs = run(ndi_calculator_obj, docExistsAction, parameters)
-            docs = {}; docs_tocat = {}; docs_to_add = {};
-            if nargin<3, parameters = ndi_calculator_obj.default_search_for_input_parameters(); end
+            % RUN - run calculator on all possible inputs that match some parameters
+            %
+            % DOCS = RUN(NDI_CALCULATOR_OBJ, DOCEXISTSACTION, PARAMETERS)
+            %
+            % DOCEXISTSACTION can be 'Error', 'NoAction', 'Replace', or 'ReplaceIfDifferent'
+            % For calculators, 'ReplaceIfDifferent' is equivalent to 'NoAction' because
+            % the input parameters define the calculator.
+            %
+            % This function is primarily intended to be called by external programs and users.
+            %
+
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                docExistsAction (1,:) char {mustBeMember(docExistsAction,{'Error','NoAction','Replace','ReplaceIfDifferent'})}
+                parameters (1,1) struct {ndi.validators.mustHaveFields(parameters, {'input_parameters','depends_on'})} = ndi_calculator_obj.default_search_for_input_parameters()
+            end
+
+              % Step 1: set up input parameters; they can either be completely specified by
+              % the caller, or defaults can be used
+
+            docs = {};
+            docs_tocat = {};
+
+            % Step 2: identify all sets of possible input parameters that are compatible with
+            % what was specified by 'parameters'
+
             all_parameters = ndi_calculator_obj.search_for_input_parameters(parameters);
             for i=1:numel(all_parameters)
                 previous_calculators_here = ndi_calculator_obj.search_for_calculator_docs(all_parameters{i});
                 do_calc = 0;
                 if ~isempty(previous_calculators_here)
                     switch(docExistsAction)
-                        case 'Error', error(['Doc exists.']);
-                        case {'NoAction','ReplaceIfDifferent'}, docs_tocat{i} = previous_calculators_here; continue;
-                        case {'Replace'}, ndi_calculator_obj.session.database_rm(previous_calculators_here); do_calc = 1;
+                        case 'Error'
+                            error('Doc for input parameters already exists; error was requested.');
+                        case {'NoAction','ReplaceIfDifferent'}
+                            docs_tocat{i} = previous_calculators_here;
+                            continue; % skip to the next calculator
+                        case {'Replace'}
+                            ndi_calculator_obj.session.database_rm(previous_calculators_here);
+                            do_calc = 1;
                     end
                 else, do_calc = 1; end
                 if do_calc
@@ -41,12 +73,58 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         end 
         
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)
+            % DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
+            %
+            % PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATOR_OBJ)
+            %
+            % Returns a list of the default search parameters for finding appropriate inputs
+            % to the calculator.
+            % 
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+            end
             parameters.input_parameters = [];
             parameters.depends_on = vlt.data.emptystruct('name','value');
-        end 
-        
-        function parameters = search_for_input_parameters(ndi_calculator_obj, parameters_specification, varargin)
-            if ~isstruct(parameters_specification), error('parameters_specification must be a structure.'); end
+        end % default_search_for_input_parameters
+
+        function parameters = search_for_input_parameters(ndi_calculator_obj, parameters_specification)
+            % SEARCH_FOR_INPUT_PARAMETERS - search for valid inputs to the calculator
+            %
+            % PARAMETERS = SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATOR_OBJ, PARAMETERS_SPECIFICATION)
+            %
+            % Identifies all possible sets of specific input PARAMETERS that can be
+            % used as inputs to the calculator. PARAMETERS is a cell array of parameter
+            % structures with fields 'input_parameters' and 'depends_on'.
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            % PARAMETERS_SPECIFICATION is a structure with the following fields:
+            % |----------------------------------------------------------------------|
+            % | input_parameters      | A structure of fixed input parameters needed |
+            % |                       |   by the calculator. Should not depend on   |
+            % |                       |   values in other documents.                 |
+            % | depends_on            | A structure with 'name' and 'value' fields   |
+            % |                       |   that lists specific inputs that should be  |
+            % |                       |   used for the 'depends_on' field in the     |
+            % |                       |   PARAMETERS output.                         |
+            % | query                 | A structure with 'name' and 'query' fields   |
+            % |                       |   that describes a search to be performed to |
+            % |                       |   identify inputs for the 'depends_on' field |
+            % |                       |   in the PARAMETERS output.                  |
+            % |-----------------------|-----------------------------------------------
+            %
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters_specification (1,1) struct
+            end
+            t_start = tic;
             fixed_input_parameters = parameters_specification.input_parameters;
             if isfield(parameters_specification,'depends_on'), fixed_depends_on = parameters_specification.depends_on; else, fixed_depends_on = vlt.data.emptystruct('name','value'); end
             if ~isfield(parameters_specification,'query'), parameters_specification.query = ndi_calculator_obj.default_parameters_query(parameters_specification); end
@@ -78,10 +156,79 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         end 
         
         function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
-             query = vlt.data.emptystruct('name','query');
-        end 
-        
-        function docs = search_for_calculator_docs(ndi_calculator_obj, parameters)
+            % DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
+            %
+            % QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATOR_OBJ, PARAMETERS_SPECIFICATION)
+            %
+            % When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
+            % select particular documents to be placed into the parameters 'depends_on' specification.
+            % If one does not provide any 'query' structure, then the default values here are used.
+            %
+            % The function returns:
+            % |-----------------------|----------------------------------------------|
+            % | query                 | A structure with 'name' and 'query' fields   |
+            % |                       |   that describes a search to be performed to |
+            % |                       |   identify inputs for the 'depends_on' field |
+            % |                       |   in the PARAMETERS output.                  |
+            % |-----------------------|-----------------------------------------------
+            %
+            % In the base class, this examines the parameters_specifications for
+            % fixed 'depends_on' entries (entries that have both a 'name' and a 'value').
+            % If it finds any, it creates a query indicating that the 'depends_on' field
+            % must match the specified name and value.
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters_specification (1,1) struct
+            end
+            query = vlt.data.emptystruct('name','query');
+            if isfield(parameters_specification.input_parameters,'depends_on')
+                for i=1:numel(parameters_specification.input_parameters.depends_on)
+                    if ~isempty(parameters_specification.input_parameters.depends_on(i).value) & ...
+                            ~isempty(parameters_specification.input_parameters.depends_on(i).name)
+                        query_here = struct('name',parameters_specification.input_parameters.depends_on(i).name,...
+                            'query',...
+                            ndi.query('base.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
+                        query(end+1) = query_here;
+                    end
+                end
+            end
+        end % default_parameters_query()
+
+        function docs = search_for_calculator_docs(ndi_calculator_obj, parameters)  % can call find_appdoc, most of the code should be put in find_appdoc
+            % SEARCH_FOR_CALCULATOR_DOCS - search for previous calculators
+            %
+            % [DOCS] = SEARCH_FOR_CALCULATOR_DOCS(NDI_CALCULATOR_OBJ, PARAMETERS)
+            %
+            % Performs a search to find all previously-created calculator
+            % documents that this mini-app creates.
+            %
+            % PARAMETERS is a structure with the following fields
+            % |------------------------|----------------------------------|
+            % | Fieldname              | Description                      |
+            % |-----------------------------------------------------------|
+            % | input_parameters       | A structure of input parameters  |
+            % |                        |  needed by the calculator.       |
+            % | depends_on             | A structure with fields 'name'   |
+            % |                        |  and 'value' that indicates any  |
+            % |                        |  exact matches that should be    |
+            % |                        |  satisfied.                      |
+            % |------------------------|----------------------------------|
+            %
+            % in the abstract class, this returns empty
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters (1,1) struct
+            end
             myemptydoc = ndi.document(ndi_calculator_obj.doc_document_types{1});
             property_list_name = myemptydoc.document_properties.document_class.property_list_name;
             [~,class_name,~] = fileparts(myemptydoc.document_properties.document_class.definition);
@@ -99,23 +246,172 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         end 
         
         function b = are_input_parameters_equivalent(ndi_calculator_obj, input_parameters1, input_parameters2)
-            if ~isempty(input_parameters1), input_parameters1 = vlt.data.columnize_struct(input_parameters1); end
-            if ~isempty(input_parameters2), input_parameters2 = vlt.data.columnize_struct(input_parameters2); end
+            % ARE_INPUT_PARAMETERS_EQUIVALENT? - are two sets of input parameters equivalent?
+            %
+            % B = ARE_INPUT_PARAMETERS_EQUIVALENT(NDI_CALCULATOR_OBJ, INPUT_PARAMETERS1, INPUT_PARAMETERS2)
+            %
+            % Are two sets of input parameters equivalent? This function is used by
+            % SEARCH_FOR_CALCULATOR_DOCS to determine whether potential documents
+            % were actually generated by identical input parameters.
+            %
+            % In the base class, the structures are first re-organized so that all one-dimensional
+            % substructures are columns and then compared with vlt.data.eqlen(INPUT_PARAMETERS1, INPUT_PARAMETERS2).
+            %
+            % It is necessary to "columnize" the substructures because Matlab does not not necessarily preserve that
+            % orientation when data is written to or read from JSON.
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                input_parameters1
+                input_parameters2
+            end
+            if ~isempty(input_parameters1)
+                input_parameters1 = vlt.data.columnize_struct(input_parameters1);
+            end
+            if ~isempty(input_parameters2)
+                input_parameters2 = vlt.data.columnize_struct(input_parameters2);
+            end
             b = eqlen(input_parameters1, input_parameters2);
         end
-        function b = is_valid_dependency_input(ndi_calculator_obj, name, value), b = 1; end 
-        function doc = calculate(ndi_calculator_obj, parameters), doc = {}; end 
-        
+
+        function b = is_valid_dependency_input(ndi_calculator_obj, name, value)
+            % IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculator?
+            %
+            % B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATOR_OBJ, NAME, VALUE)
+            %
+            % Tests whether a potential input to a calculator is valid.
+            % The potential dependency name is provided in NAME and its ndi.document id is
+            % provided in VALUE.
+            %
+            % The base class behavior of this function is simply to return true, but it
+            % can be overridden if additional criteria beyond an ndi.query are needed to
+            % assess if a document is an appropriate input for the calculator.
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            b = 1; % base class behavior
+        end % is_valid_dependency_input()
+
+        function doc = calculate(ndi_calculator_obj, parameters)
+            % CALCULATE - perform calculator and generate an ndi document with the answer
+            %
+            % DOC = CALCULATE(NDI_CALCULATOR_OBJ, PARAMETERS)
+            %
+            % Perform the calculator and return an ndi.document with the answer.
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
+            % In the base class, this always returns empty.
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                parameters (1,1) struct {ndi.validators.mustHaveFields(parameters, {'input_parameters','depends_on'})}
+            end
+            doc = {};
+
+        end % calculate()
+
+        function [docs, doc_output, doc_expected_output] = generate_mock_docs(ndi_calculator_obj, scope, number_of_tests, options)
+            % GENERATE_MOCK_DOCS - generate mock documents for testing
+            %
+            % [DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(NDI_CALCULATOR_OBJ, SCOPE, NUMBER_OF_TESTS, 'PARAM', VALUE, ...)
+            %
+            % The generate_mock_docs method is a testing utility present in NDI calculator classes.
+            % It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
+            % which can then be compared against expected outputs.
+            %
+            % This method takes additional input arguments as name/value pairs:
+            % |---------------------------|------------------------------------------------------|
+            % | Parameter (default)       | Description                                          |
+            % |---------------------------|------------------------------------------------------|
+            % | generate_expected_docs    | If true, the method saves the current output as the  |
+            % |   (false)                 | "expected" output for future tests. Use this when    |
+            % |                           | updating the calculator logic or creating new tests. |
+            % | specific_test_inds ([])   | Allows specifying a subset of test indices to run.   |
+            % |                           | If empty, all NUMBER_OF_TESTS are run.               |
+            % |---------------------------|------------------------------------------------------|
+            %
+            % This blank method, for the superclass, returns empty for all inputs.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                scope (1,:) char
+                number_of_tests (1,1) double
+                options.generate_expected_docs (1,1) logical = false
+                options.specific_test_inds (1,:) double = []
+            end
+
+            docs = {};
+            doc_output = {};
+            doc_expected_output = {};
+        end % generate_mock_docs()
+
         function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
+            % PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
+            %
+            % H=PLOT(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
+            %
+            % Produce a diagnostic plot that can indicate to a reader whether or not
+            % the calculator has been performed in a manner that makes sense with
+            % its input data. Useful for debugging / validating a calculator.
+            %
+            % This function is intended to be called by external users and code.
+            %
+            % Handles to the figure, the axes, and any objects created are returned in H.
+            %
+            % By default, this plot is made in the current axes.
+            %
+            % This function takes additional input arguments as name/value pairs.
+            % See ndi.calculator.plot_parameters for a description of those parameters.
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                doc_or_parameters
+            end
+            arguments (Repeating)
+                varargin
+            end
             params = ndi.calculator.plot_parameters(varargin{:});
             h.figure = []; if params.newfigure, h.figure = figure; else, h.figure = gcf; end
             h.axes = gca; 
             h.objects = []; 
             h.params = params;
-            if ~params.suppress_title && isa(doc_or_parameters,'ndi.document'), h.title = title([doc_or_parameters.id()],'interp','none'); end
-            if params.holdstate, hold on; else, hold off; end
-        end 
-        
+            h.title = [];
+            h.xlabel = [];
+            h.ylabel = [];
+            h.zlabel = [];
+            if params.newfigure
+                h.figure = figure;
+            else
+                h.figure = gcf;
+            end
+            h.axes = gca;
+            if ~params.suppress_title
+                if isa(doc_or_parameters,'ndi.document')
+                    id = doc_or_parameters.id();
+                    h.title = title(id,'interp','none');
+                end
+            end
+            if params.holdstate
+                hold on;
+            else
+                hold off;
+            end
+        end % plot()
+
+        %%%% methods that override ndi.appdoc %%%%
+
+        % function struct2doc - should call calculator
+        % function doc2struct - should build the input parameters from the document
+        % function defaultstruct_appdoc - should call default search for input parameters and return a structure
+
         function b = isequal_appdoc_struct(ndi_app_appdoc_obj, appdoc_type, appdoc_struct1, appdoc_struct2)
             b = vlt.data.partial_struct_match(appdoc_struct1, appdoc_struct2);
         end 
@@ -124,29 +420,117 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     end 
     
     methods (Static)
-        function param = plot_parameters(varargin)
-            newfigure = 0; holdstate = 0; suppress_x_label = 0; suppress_y_label = 0; suppress_z_label = 0; suppress_title = 0;
-            vlt.data.assign(varargin{:});
-            param = vlt.data.workspace2struct(); param = rmfield(param,'varargin');
+
+        function param = plot_parameters(options)
+            % PLOT_PARAMETERS - provide a diagnostic plot to show the results of the calculator, if appropriate
+            %
+            % PLOT_PARAMETERS(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
+            %
+            % Produce a diagnostic plot that can indicate to a reader whether or not
+            % the calculator has been performed in a manner that makes sense with
+            % its input data. Useful for debugging / validating a calculator.
+            %
+            % By default, this plot is made in the current axes.
+            %
+            % This function takes additional input arguments as name/value pairs:
+            % |---------------------------|--------------------------------------|
+            % | Parameter (default)       | Description                          |
+            % |---------------------------|--------------------------------------|
+            % | newfigure (0)             | 0/1 Should we make a new figure?     |
+            % | holdstate (0)             | 0/1 Should we preserve the 'hold'    |
+            % |                           |   state of the current axes?         |
+            % | suppress_x_label (0)      | 0/1 Should we suppress the x label?  |
+            % | suppress_y_label (0)      | 0/1 Should we suppress the y label?  |
+            % | suppress_z_label (0)      | 0/1 Should we suppress the z label?  |
+            % | suppress_title (0)        | 0/1 Should we suppress the title?    |
+            % |---------------------------|--------------------------------------|
+            %
+
+            arguments
+                options.newfigure (1,1) {mustBeNumericOrLogical} = 0
+                options.holdstate (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_x_label (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_y_label (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_z_label (1,1) {mustBeNumericOrLogical} = 0
+                options.suppress_title (1,1) {mustBeNumericOrLogical} = 0
+            end
+
+            param.newfigure = options.newfigure;
+            param.holdstate = options.holdstate;
+            param.suppress_x_label = options.suppress_x_label;
+            param.suppress_y_label = options.suppress_y_label;
+            param.suppress_z_label = options.suppress_z_label;
+            param.suppress_title = options.suppress_title;
         end
-        function classes = find_calculator_subclasses()
-            classes = {};
-            % Try to find the ndi.calc package and search recursively
-            p = meta.package.fromName('ndi.calc');
-            if isempty(p), return; end
-            
-            q = {p};
-            while ~isempty(q)
-                curr_p = q{1}; q(1) = [];
-                % Check classes in the current package
-                for i = 1:numel(curr_p.ClassList)
-                    try
-                        % Check inheritance
-                        if any(strcmp(superclasses(curr_p.ClassList(i).Name), 'ndi.calculator'))
-                            classes{end+1} = curr_p.ClassList(i).Name;
-                        end
-                    catch
-                    end
+
+        function graphical_edit_calculator(varargin)
+            % GRAPHICAL_EDIT_CALCULATOR - create and control a GUI to graphically edit an NDI calculator instance
+            %
+            % GRAPHICAL_EDIT_CALCULATOR(...)
+            %
+            % Creates and controls a graphical user interface for creating an instance of
+            % an ndi.calculator object.
+            %
+            % Usage by the user:
+            %
+            %   GRAPHICAL_EDIT_CALCULATOR('command','NEW','type','ndi.calc.TYPE','filename',filename,'name',name)
+            %      or
+            %   GRAPHICAL_EDIT_CALCULATOR('command','EDIT','filename',filename)
+            %
+            %
+            command = '';
+            window_params.height = 600;
+            window_params.width = 400;
+            session = [];
+
+            name = '';
+            filename = '';
+            type = '';
+            fig = []; % figure to use
+
+            vlt.data.assign(varargin{:});
+
+            calc.name = name;
+            calc.filename = filename;
+            calc.type = type;
+            if ~isempty(type)
+                calc.parameter_code_default = ndi.calculator.parameter_default(calc.type);
+                calc.parameter_code = calc.parameter_code_default;
+                [calc.parameter_example_names,calc.parameter_example_code] = ndi.calculator.parameter_examples(calc.type);
+            end
+
+            varlist_ud = {'calc','window_params','session'};
+            edit = false;
+
+            if strcmpi(command,'new')
+                % set up for new window
+                for i=1:numel(varlist_ud)
+                    eval(['ud.' varlist_ud{i} '=' varlist_ud{i} ';']);
+                end
+                if isempty(fig)
+                    fig = figure;
+                end
+                command = 'NewWindow';
+                % would check calc name and calc type and calc filename for validity here
+            elseif strcmpi(command,'edit')
+                % set up for editing
+                % read from file
+                edit = true;
+                filename,
+                ud = jsondecode(vlt.file.textfile2char(filename))
+                if ~exist('ud.calc','var')
+                    ud.calc.type = ud.ndi_pipeline_element.calculator;
+                    ud.calc.parameter_code_default = ''; %ndi.calculator.parameter_default(ud.calc.type);
+                    ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
+                    ud.calc.parameter_code_old = ud.ndi_pipeline_element.parameter_code;
+                    ud.calc.name = ud.ndi_pipeline_element.name;
+                    ud.calc.filename = filename;
+                    [ud.calc.parameter_example_names,ud.calc.parameter_example_code] = ndi.calculator.parameter_examples(ud.calc.type);
+                    ud.session = session;
+                end
+                if ~exist('ud.window_params','var')
+                    ud.window_params.height = 600;
+                    ud.window_params.width = 400;
                 end
                 % Add subpackages to the search queue
                 for i = 1:numel(curr_p.PackageList)
@@ -444,6 +828,54 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     
                 case 'ExitButton'
                     close(fig);
+                otherwise
+                    disp(['Unknown command ' command '.']);
+
+            end % switch(command)
+        end % graphical_edit_calculation ()
+
+        function text = docfiletext(calculator_type, doc_type)
+            % ndi.calculator.docfiletext - return the text in the requested documentation file
+            %
+            % TEXT = ndi.calculator.docfiletext(CALCULATOR_TYPE, DOC_TYPE)
+            %
+            % Returns the text of the documentation files.
+            % CALCULATOR_TYPE should be the full object name of the calculator of interest.
+            %  (for example: 'ndi.calc.stimulus.tuningcurve' or 'ndi.calc.vis.contrasttuning')
+            % DOC_TYPE should be the type of document requested ('general', 'output', 'searching for inputs')
+            %
+            % Example:
+            %    text = ndi.calculator.docfiletext('ndi.calc.stimulus.tuningcurve','general');
+            %
+
+            arguments
+                calculator_type (1,:) char {ndi.validators.mustBeClassnameOfType(calculator_type, 'ndi.calculator')}
+                doc_type (1,:) char {mustBeMember(doc_type, {'general', 'searching for inputs', 'output'})}
+            end
+
+            switch (lower(doc_type))
+                case 'general'
+                    doctype = 'general';
+                case 'searching for inputs'
+                    doctype = 'searching';
+                case 'output'
+                    doctype = 'output';
+                otherwise
+                    error(['Unknown document type ' doc_type '.']);
+            end
+
+            w = which(calculator_type);
+            if isempty(w)
+                error(['No known calculator on the path called ' calculator_type '.']);
+            end
+            [parentdir, appname] = fileparts(w);
+            filename = [parentdir filesep 'docs' filesep appname '.docs.' doctype '.txt'];
+
+            paramfile_present = isfile(filename);
+            if paramfile_present
+                text = vlt.file.text2cellstr(filename);
+            else
+                error(['No such file ' filename '.']);
             end
         end
         
@@ -486,11 +918,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 text = {['Calculator Class not found: ' calculator_type], 'Make sure it is on your MATLAB path.'}; return;
             end
             [parentdir, appname] = fileparts(w);
-            switch (lower(doc_type))
-                case 'general', doctype = 'general';
-                case 'searching', doctype = 'searching';
-                case 'output', doctype = 'output';
-                otherwise, error(['Unknown doc type ' doc_type]);
+
+            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
+
+            d = dir([dirname filesep '*.txt']);
+
+            contents = {};
+            names = {};
+
+            for i=1:numel(d)
+                names{end+1} = d(i).name;
+                contents{end+1} = vlt.file.textfile2char([dirname filesep d(i).name]);
             end
             filename = fullfile(parentdir, 'docs', [appname '.docs.' doctype '.txt']);
             if isfile(filename)

@@ -89,12 +89,12 @@ include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
 fileList = fileList(include);
 
 % Get variable table (electrophysiology)
-jsonPath = fullfile(userpath,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_ephys.json');
+jsonPath = fullfile(userpath,'tools/NDI-matlab/src/ndi/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_ephys.json');
 j = jsondecode(fileread(jsonPath));
 variableTable_ephys = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
 
 % Get variable table (optogenetics)
-jsonPath = fullfile(userpath,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_opto.json');
+jsonPath = fullfile(userpath,'tools/NDI-matlab/src/ndi/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_opto.json');
 j = jsondecode(fileread(jsonPath));
 variableTable_opto = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
 

@@ -1,6 +1,0 @@
-function opts = get_weboptions_with_auth_header()
-    auth_token = ndi.cloud.authenticate();
-    opts = weboptions(...
-        'HeaderFields', ["Authorization", sprintf("Bearer %s", auth_token)] ...
-        );
-end

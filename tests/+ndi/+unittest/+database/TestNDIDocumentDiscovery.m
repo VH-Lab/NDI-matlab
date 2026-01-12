@@ -25,9 +25,11 @@ classdef TestNDIDocumentDiscovery < matlab.unittest.TestCase
             % Find files in any additional calculated document folders
             if iscell(ndi.common.PathConstants.CalcDoc)
                 for i=1:numel(ndi.common.PathConstants.CalcDoc)
-                    more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i}, ...
-                        {'.*\.json\>'});
-                    json_docs = cat(1, json_docs, more_json_docs);
+                    if isfolder(ndi.common.PathConstants.CalcDoc{i})
+                        more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i}, ...
+                            {'.*\.json\>'});
+                        json_docs = cat(1, json_docs, more_json_docs);
+                    end
                 end
             end
             

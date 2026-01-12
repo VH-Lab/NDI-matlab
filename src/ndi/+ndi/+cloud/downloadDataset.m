@@ -43,6 +43,26 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
                 'Operation aborted during selection of a dataset target folder.')
         end
     end
+
+    % Verify dataset existence
+    if syncOptions.Verbose
+        disp('Verifying dataset existence...');
+    end
+    [success, answer] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
+    if ~success
+        if isstruct(answer) && isfield(answer, 'message')
+            reason = answer.message;
+            if isstruct(reason) && isfield(reason, 'error')
+                reason = reason.error;
+            end
+        elseif ischar(answer) || isstring(answer)
+            reason = answer;
+        else
+            reason = 'Unknown error.';
+        end
+        error('NDI:DownloadDataset:DatasetNotFound', ...
+            'Could not find or access dataset "%s". The dataset may not exist or you may not have access to it. Reason: %s', cloudDatasetId, reason);
+    end
     
     % Download dataset documents
     if syncOptions.Verbose
@@ -63,6 +83,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     if ~isfolder(datasetFolder)
         mkdir(datasetFolder)
     end
+
     ndiDataset = ndi.dataset.dir([], datasetFolder, ndiDocuments);
     if syncOptions.Verbose
         disp('Created dataset.')
@@ -77,7 +98,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     % Add document with the cloud dataset ID to the local dataset
     doc = ndiDataset.database_search( ndi.query('','isa','dataset_remote') );
     if isempty(doc)
-        remoteDatasetDoc = ndi.cloud.internal.create_remote_dataset_doc(cloudDatasetId, ndiDataset);
+        remoteDatasetDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudDatasetId, ndiDataset);
         ndiDataset.database_add(remoteDatasetDoc);
     end
 end

@@ -10,7 +10,7 @@
 		]
 	},
 	"depends_on": [
-		{	"name":		"ontologyTableRow_id",
+		{	"name":		"document_id",
 			"value":	"" 
 		}
 	],

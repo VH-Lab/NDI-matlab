@@ -2,131 +2,200 @@ function [treatmentTable,docIDs,dependencyIDs] = treatment(session,options)
 % TREATMENT Gathers NDI treatment document properties into a table.
 %
 %   [treatmentTable, docIDs, dependencyIDs] = TREATMENT(SESSION, OPTIONS)
-%   retrieves 'treatment' type documents from an NDI session and organizes
-%   their properties into a MATLAB table. For each treatment document, it
-%   extracts its numeric and/or string values, interpreting them based on
-%   an associated ontology. It also identifies and returns the IDs of
-%   documents that the treatment documents 'depend on'.
+%   retrieves all 'treatment', 'treatment_drug', and 'virus_injection'
+%   documents from an NDI session and organizes their properties into a
+%   MATLAB table.
+%
+%   The function aggregates all treatments for a given dependency (e.g., a
+%   subject) into a single row. If multiple treatments of the same type exist,
+%   their values are combined (numeric values become row vectors, strings
+%   become comma-separated lists).
 %
 %   Input Arguments:
-%     session (ndi.session.dir or ndi.dataset.dir) - An NDI session or dataset
-%       directory object from which to retrieve treatment documents.
-%     options.depends_on (char or string, optional) - Specifies a field name
-%       within the treatment document's 'depends_on' structure to extract
-%       dependency IDs. For example, use 'subject_id' to retrieve the IDs of
-%       subjects that the treatment documents depend on. Defaults to an empty
-%       string, meaning no specific dependency IDs are extracted unless specified.
+%     session (ndi.session.dir or ndi.dataset.dir) - An NDI session object.
+%
+%   Optional Name-Value Arguments:
+%     depends_on (char or string) - Dependency field to extract (e.g., 'subject_id' (default)).
+%     errorIfEmpty (logical) - If true, errors if no documents are found. Default is false.
+%     depends_on_docs (cell) - Pre-fetched documents that the target documents depend on.
+%                              If provided, a much more efficient, targeted query is performed.
 %
 %   Output Arguments:
-%     treatmentTable (table) - A MATLAB table where each row represents a
-%       treatment document. The table dynamically includes columns based on
-%       the `dataType` derived from the treatment's ontology name. These
-%       columns may include:
-%         - `[dataType]` for numeric or string values.
-%         - `[dataType]Name` and `[dataType]Ontology` if the string value
-%           is an ontology node.
-%         - `[dataType]Number` and `[dataType]String` if both numeric and
-%           string values are present.
-%       The function attempts to combine treatments that share the same
-%       dependency into a single row, concatenating their properties.
-%     docIDs (cell) - A cell array of character vectors. Each element is the
-%       unique document ID of the treatment document corresponding to the
-%       rows in 'treatmentTable', in the same order.
-%     dependencyIDs (cell) - A cell array of character vectors. Each element
-%       is the ID of the document that the corresponding treatment document
-%       'depends on', as specified by 'options.depends_on'. If 'depends_on'
-%       is not specified or no dependency is found, elements will be empty strings.
+%     treatmentTable (table) - A table with one row per unique dependency,
+%                              summarizing all associated treatments.
+%     docIDs (cell) - A cell array where each element contains a cell array of
+%                     the document IDs for the treatments in the corresponding row.
+%     dependencyIDs (cell) - A cell array of the unique dependency IDs
+%                            (e.g., subject IDs) for each row.
 %
-%   See also: ndi.query, ndi.session.dir, ndi.dataset.dir, ndi.fun.table.vstack, ndi.ontology.lookup
-
-% Input argument validation
+%   See also: ndi.query, ndi.session.dir, ndi.dataset.dir, ndi.fun.table.vstack
+%
 arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
-    options.depends_on {mustBeText} = {''};
+    options.depends_on {mustBeText} = 'subject_id';
+    options.errorIfEmpty (1,1) logical = false;
+    options.depends_on_docs (1,:) cell = {};
 end
 
 % Check depends_on class
 options.depends_on = cellstr(options.depends_on);
 if ~isscalar(options.depends_on)
-    error('openMINDsDocTable:InvalidType',...
-        'The type input must be a single character array or string.');
+    error('depends_on must be a single string.');
 else
     options.depends_on = options.depends_on{1};
 end
 
-% Get all openminds documents matching that in the session
-query = ndi.query('','isa','treatment');
+% Get documents
+q_treat = ndi.query('','isa','treatment');
+q_drug = ndi.query('','isa','treatment_drug');
+q_virus = ndi.query('','isa','virus_injection');
+query = q_treat | q_drug | q_virus;
 treatmentDocs = session.database_search(query);
-docIDs = cellfun(@(d) d.id,treatmentDocs,'UniformOutput',false)';
 
-% Initialize table
-treatmentCell = cell(size(treatmentDocs))';
-dependencyIDs = cell(size(treatmentDocs))';
+% Handle case where no documents are found
+if isempty(treatmentDocs)
+    if options.errorIfEmpty
+        error('No treatment documents were found.');
+    end
+    treatmentTable = table(); docIDs = {}; dependencyIDs = {}; return;
+end
 
+% --- Step 1: Create a cell array of tables, one for each document ---
+treatmentCell = cell(numel(treatmentDocs), 1);
+dependencyIDs_all = cell(numel(treatmentDocs), 1);
+docIDs_all = cellfun(@(d) d.id, treatmentDocs, 'UniformOutput', false);
 for i = 1:numel(treatmentDocs)
-
     treatmentRow = table();
-    
-    % Get document properties
-    docProp = treatmentDocs{i}.document_properties;
+    doc = treatmentDocs{i};
+    docProp = doc.document_properties;
 
-    % Get depends_on (if using)
     try
-        dependencyIDs{i} = treatmentDocs{i}.dependency_value(options.depends_on);
+        dependencyIDs_all{i} = doc.dependency_value(options.depends_on);
     catch
-        dependencyIDs{i} = '';
+        dependencyIDs_all{i} = '';
     end
 
-    % Get datatype and values
-    [~,~,~,~,~,dataType] = ndi.ontology.lookup(docProp.treatment.ontologyName);
-    numericValue = docProp.treatment.numeric_value;
-    stringValue = docProp.treatment.string_value;
-
-    % Check if string value is an ontology node
-    if contains(stringValue,':')
-        try
+    if doc.doc_isa('treatment_drug')
+        fields = docProp.treatment_drug;
+        fn = fieldnames(fields);
+        for f = 1:numel(fn)
+            val = fields.(fn{f});
+            if ischar(val), val = strtrim(val); end
+            treatmentRow.(fn{f}) = {val};
+        end
+    elseif doc.doc_isa('virus_injection')
+        fields = docProp.virus_injection;
+        fn = fieldnames(fields);
+        for f=1:numel(fn)
+            val = fields.(fn{f});
+            if ischar(val), val = strtrim(val); end
+            treatmentRow.(fn{f}) = {val};
+        end
+    elseif doc.doc_isa('treatment') % Must be last, as others are subclasses
+        [~,~,~,~,~,dataType] = ndi.ontology.lookup(docProp.treatment.ontologyName);
+        numericValue = docProp.treatment.numeric_value;
+        stringValue = strtrim(docProp.treatment.string_value);
+        stringOntology = [];
+        stringName = [];
+        stringDate = [];
+        if ~isempty(stringValue) && isStringDatetime(stringValue)
+            stringDate = datetime(stringValue);
+        elseif contains(stringValue,':')
             [stringOntology,stringName] = ndi.ontology.lookup(stringValue);
-        catch
-            stringOntology = [];
-            stringName = [];
+        end
+        if ~isempty(numericValue) && isempty(stringValue)
+            treatmentRow.(dataType) = numericValue;
+        end
+        if ~isempty(stringDate)
+            treatmentRow.(dataType) = {stringDate};
+        elseif ~isempty(stringOntology)
+            treatmentRow.([dataType,'Name']) = {strtrim(stringName)};
+            treatmentRow.([dataType,'Ontology']) = {stringOntology};
+        elseif ischar(stringValue) && isempty(numericValue)
+            treatmentRow.(dataType) = {stringValue};
+        elseif ischar(stringValue) && ~isempty(numericValue)
+            treatmentRow.([dataType,'Number']) = {numericValue};
+            treatmentRow.([dataType,'String']) = {stringValue};
         end
     end
-
-    % Get values
-    if ~isempty(numericValue) & isempty(stringValue)
-        treatmentRow.(dataType) = numericValue;
-    end
-    if ~isempty(stringOntology)
-        treatmentRow.([dataType,'Name']) = {stringName};
-        treatmentRow.([dataType,'Ontology']) = {stringOntology};
-    elseif ~isempty(stringValue) & isempty(numericValue)
-        treatmentRow.(dataType) = {stringValue};
-    elseif ~isempty(stringValue) & ~isempty(numericValue)
-        treatmentRow.([dataType,'Number']) = {numericValue};
-        treatmentRow.([dataType,'String']) = {stringValue};
-    end
-
-    % Add row to cell array
     treatmentCell{i} = treatmentRow;
 end
 
-% Check if treatments can be combined on one row
-[~,~,indDepend] = unique(dependencyIDs);
-removeRows = false(size(dependencyIDs));
-for i = 1:max(indDepend)
-    ind = find(indDepend == i);
-    try
-        join(treatmentCell{ind});
-    catch
-        treatmentCell{ind(1)} = cat(2,treatmentCell{ind});
-        removeRows(ind(2:end)) = true;
+% --- Step 2: Aggregate treatments by unique dependency ID ---
+[dependencyIDs, ~, ic] = unique(dependencyIDs_all);
+aggregatedCell = cell(numel(dependencyIDs), 1);
+docIDs = cell(numel(dependencyIDs), 1);
+for i = 1:numel(dependencyIDs)
+    idx = find(ic == i);
+    docIDs{i} = docIDs_all(idx);
+
+    mergedRow = table();
+    for j = 1:numel(idx)
+        new_table = treatmentCell{idx(j)};
+        if isempty(new_table), continue; end % Skip if no treatment info was extracted
+        new_vars = new_table.Properties.VariableNames;
+
+        for k = 1:numel(new_vars)
+            var_name = new_vars{k};
+            new_val = new_table.(var_name);
+
+            if ismember(var_name, mergedRow.Properties.VariableNames)
+                old_val = mergedRow.(var_name);
+                % Aggregate values
+                if isnumeric(old_val) && iscell(new_val) && isnumeric(new_val{1})
+                    mergedRow.(var_name) = [old_val new_val{1}];
+                elseif iscell(old_val) && iscell(new_val)
+                    % Convert all cell contents to char and trim for consistent joining
+                    old_str = cellfun(@(x) strtrim(char(x)), old_val, 'UniformOutput', false);
+                    new_str = cellfun(@(x) strtrim(char(x)), new_val, 'UniformOutput', false);
+
+                    % Combine and filter out empty strings before joining
+                    combined_cell = [old_str new_str];
+                    combined_cell(cellfun('isempty', combined_cell)) = [];
+
+                    if ~isempty(combined_cell)
+                        mergedRow.(var_name) = {strjoin(combined_cell, ', ')};
+                    else
+                        mergedRow.(var_name) = {''}; % Ensure it's an empty string if all were empty
+                    end
+                else
+                    mergedRow.(var_name) = old_val; % Fallback
+                end
+            else
+                % Add new variable to the row
+                mergedRow.(var_name) = new_val;
+            end
+        end
     end
+    aggregatedCell{i} = mergedRow;
 end
-treatmentCell(removeRows) = [];
-docIDs(removeRows) = [];
-dependencyIDs(removeRows) = [];
 
-% Stack table
-treatmentTable = ndi.fun.table.vstack(treatmentCell);
+% --- Step 3: Stack the aggregated rows into the final table ---
+if isempty(aggregatedCell)
+    treatmentTable = table();
+    return;
+end
+treatmentTable = ndi.fun.table.vstack(aggregatedCell);
+end
 
+function tf = isStringDatetime(str)
+%ISSTRINGDATETIME Checks if a string can be converted to a datetime object.
+%   TF = ISSTRINGDATETIME(STR) returns true if STR is a character array or
+%   string that can be parsed by the DATETIME function, and false otherwise.
+
+% Ensure the input is a character vector or a string
+if ~ischar(str) && ~isstring(str)
+    tf = false;
+    return;
+end
+
+try
+    % Attempt to convert the string to a datetime
+    datetime(str);
+    % If the above line does not error, the string is a valid datetime
+    tf = true;
+catch
+    % If an error occurs, the string is not a valid datetime
+    tf = false;
+end
 end

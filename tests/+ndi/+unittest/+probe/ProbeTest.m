@@ -1,45 +1,28 @@
-classdef ProbeTest <  matlab.unittest.TestCase
-    % ProbeTest - Unit test for testing the probe type map.
-
-    properties
-        ProbeMap = ndi.probe.fun.getProbeTypeMap()
-    end
-
-    properties (TestParameter)
-        % pass?
-    end
-
-    methods (TestClassSetup)
-        function setupClass(testCase) %#ok<*MANU>
-            testCase.applyFixture(matlab.unittest.fixtures.WorkingFolderFixture);
-        end
-    end
-
-    methods (TestClassTeardown)
-        function tearDownClass(testCase)
-            % Pass. No class teardown routines needed
-        end
-    end
-
-    methods (TestMethodSetup)
-        function setupMethod(testCase)
-            % Pass. No method setup routines needed
-        end
-    end
-
+classdef ProbeTest < ndi.unittest.session.buildSession
     methods (Test)
-        function testInitProbeTypeMap(testCase)
-            probeTypeMap = ndi.probe.fun.initProbeTypeMap();
-            if isMATLABReleaseOlderThan('R2022b')
-                testCase.verifyClass(probeTypeMap, 'containers.Map')
-            else
-                testCase.verifyClass(probeTypeMap, 'dictionary')
-            end
-        end
+        function testProbe(testCase)
+             probes = testCase.Session.getprobes();
 
-        function testInitProbeTypeMapLegacy(testCase)
-            probeTypeMap = ndi.probe.fun.initProbeTypeMap(true);
-            testCase.verifyClass(probeTypeMap, 'containers.Map')
+             % Check if probes are found
+             testCase.verifyNotEmpty(probes);
+
+             if ~isempty(probes)
+                 % sr = probes{1}.samplerate(1);
+                 % It seems samplerate takes 2 arguments: epoch and index?
+                 % Based on build_intan_flat_exp: sr_d = samplerate(dev1,1,{'digital_in'},1);
+                 % But here we are calling it on a probe, not a daqsystem.
+                 % The user instruction said:
+                 % probes = S.getprobes();
+                 % sr = probes{1}.samplerate(1);
+                 % [data,time] = probes{1}.read_epochsamples(1,0,10);
+
+                 sr = probes{1}.samplerate(1);
+                 testCase.verifyGreaterThan(sr, 0);
+
+                 [data,time] = probes{1}.read_epochsamples(1,0,10);
+                 testCase.verifyNotEmpty(data);
+                 testCase.verifyNotEmpty(time);
+             end
         end
     end
 end

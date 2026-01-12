@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/generic_file.json",
+		"validation":						"$NDISCHEMAPATH\/data\/generic_file_schema.json",
+		"class_name":						"generic_file",
+		"property_list_name":               "generic_file",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "document_id", "value": "" }
+	],
+	"files": {
+		"file_list": [ "generic_file.ext" ]
+    },
+	"generic_file":  {
+		"filename":		"",
+		"formatOntology":		"",
+		"dateCreated":		"",
+		"dateUpdated":		"",
+		"checksum":		""
+	}
+}

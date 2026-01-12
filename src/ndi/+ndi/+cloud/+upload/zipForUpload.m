@@ -1,0 +1,265 @@
+function [b, msg] = zipForUpload(D, doc_file_struct, total_size, dataset_id, options)
+% ZIPFORUPLOAD - Create and upload zip files in batches to the NDI cloud.
+%
+%   [B, MSG] = ndi.cloud.upload.zipForUpload(D, DOC_FILE_STRUCT, TOTAL_SIZE, DATASET_ID, 'Verbose', true, 'DebugLog', true)
+%
+% Inputs:
+%  D - The ndi.database object.
+%  DOC_FILE_STRUCT - A structure array with file information.
+%  TOTAL_SIZE - The total size of all files to be uploaded (in bytes). (Note: This is no longer used for the progress bar).
+%  DATASET_ID - The dataset ID for the upload.
+%
+% Name-Value Options:
+%  'Verbose'   - A logical (true/false) to control whether detailed
+%                information is printed to the console. Defaults to false.
+%  'SizeLimit' - The maximum size of each zip file batch in bytes.
+%                Defaults to 25 MB (25e6).
+%  'DebugLog'  - A logical (true/false) to enable logging of zipped files.
+%                Defaults to false.
+%
+% Outputs:
+%   B - A boolean indicating success (1) or failure (0).
+%   MSG - An error message if the operation failed; otherwise empty.
+%
+arguments
+    D
+    doc_file_struct (1,:) struct
+    total_size (1,1) {mustBeNumeric}
+    dataset_id (1,:) char {mustBeTextScalar}
+    options.Verbose (1,1) logical = true
+    options.SizeLimit (1,1) {mustBeNumeric, mustBePositive} = 50e6
+    options.DebugLog (1,1) logical = true
+    options.numberRetries (1,1) {mustBeNumeric, mustBeInteger, mustBeNonnegative} = 3
+end
+% --- Initial Setup ---
+msg = '';
+b = 1;
+files_to_process = doc_file_struct(~[doc_file_struct.is_uploaded]);
+files_left = numel(files_to_process);
+files_uploaded_count = 0;
+processed_bytes = 0;
+base_dir = fullfile(D.path, '.ndi', 'files');
+skipped_files = {};
+
+if options.Verbose
+    fprintf('Beginning upload process. %d files to upload.\n', files_left);
+end
+
+% --- Log File Initialization ---
+if options.DebugLog
+    log_folder = ndi.common.PathConstants.LogFolder;
+    if ~isfolder(log_folder), mkdir(log_folder); end
+    
+    % Erase previous logs by opening in write mode 'wt' and writing headers
+    log_files_to_clear = {'zip_log.csv', 'processed_log.csv', 'skipped_log.csv'};
+    % **Updated header for zip_log.csv**
+    headers = {'ZipFile,ZippedFile,UncompressedBytes', 'TotalProcessedBytes', 'SkippedFile,UID'};
+    
+    for k = 1:numel(log_files_to_clear)
+        fid = fopen(fullfile(log_folder, log_files_to_clear{k}), 'wt');
+        if fid ~= -1
+            fprintf(fid, '%s\n', headers{k});
+            fclose(fid);
+        else
+            warning('Could not create log file: %s', log_files_to_clear{k});
+        end
+    end
+end
+
+% --- Progress Bar Setup ---
+h = waitbar(0, 'Preparing to upload files...');
+cleanupObj = onCleanup(@() delete(h(ishandle(h))));
+size_limit = options.SizeLimit;
+file_processed = false(1, numel(files_to_process)); % Track processed files
+
+% --- Main Loop: Continue until all files are processed ---
+while ~all(file_processed)
+    current_batch_size = 0;
+    files_for_current_batch = {};
+    indices_for_current_batch = [];
+
+    % --- Inner Loop: Find files that fit into the current batch ---
+    for i = 1:numel(files_to_process)
+        if ~file_processed(i)
+            current_file = files_to_process(i);
+            file_path = fullfile(base_dir, current_file.uid);
+            file_bytes = current_file.bytes;
+
+            % --- Logic Check: Ensure file exists on disk ---
+            if ~isfile(file_path)
+                if options.Verbose
+                    warning('File %s (UID: %s) not found on disk. Skipping.', current_file.name, current_file.uid);
+                end
+                skipped_files{end+1} = current_file;
+                file_processed(i) = true; % Mark as processed to skip
+                continue;
+            end
+
+            % --- Batching Logic ---
+            if (current_batch_size + file_bytes <= size_limit)
+                files_for_current_batch{end+1} = file_path;
+                current_batch_size = current_batch_size + file_bytes;
+                indices_for_current_batch(end+1) = i;
+            end
+        end
+    end
+
+    % --- Upload the batch if it contains any files ---
+    if ~isempty(files_for_current_batch)
+        [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options.numberRetries, options);
+        files_uploaded_count = files_uploaded_count + uploaded_count;
+
+        if success
+            file_processed(indices_for_current_batch) = true; % Mark files as processed
+        else
+            b = 0;
+            files_not_uploaded = files_left - sum(file_processed);
+            msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
+                batch_msg, files_uploaded_count, files_not_uploaded);
+            return;
+        end
+    else
+        % No files could be added to a batch, break to avoid infinite loop
+        % This might happen if a single file is larger than the size limit
+        unprocessed_files = files_to_process(~file_processed);
+        for k = 1:numel(unprocessed_files)
+            if unprocessed_files(k).bytes > size_limit
+                warning('File %s (UID: %s) is larger than the size limit and cannot be uploaded.', unprocessed_files(k).name, unprocessed_files(k).uid);
+                skipped_files{end+1} = unprocessed_files(k);
+
+                % find the original index to mark it as processed
+                original_index = find(arrayfun(@(x) strcmp(x.uid, unprocessed_files(k).uid), files_to_process));
+                file_processed(original_index) = true;
+            end
+        end
+
+        % If there are still unprocessed files, it's an unexpected state
+        if ~all(file_processed)
+            msg = 'An unexpected error occurred: unable to process remaining files.';
+            b = 0;
+            return;
+        end
+    end
+
+    % --- Update Progress Bar ---
+    try
+        progress = sum(file_processed) / files_left;
+        message = sprintf('Processed %d of %d files...', sum(file_processed), files_left);
+        waitbar(progress, h, message);
+    catch
+        b = 0; msg = 'Upload cancelled by user.'; return;
+    end
+end
+
+% --- Final Logging ---
+if options.DebugLog
+    log_folder = ndi.common.PathConstants.LogFolder;
+    
+    % Log processed files summary
+    processed_log_file = fullfile(log_folder, 'processed_log.csv');
+    fid = fopen(processed_log_file, 'at'); % Append total size
+    if fid ~= -1
+        fprintf(fid, '%d\n', processed_bytes);
+        fclose(fid);
+    end
+    
+    % Log skipped files
+    if ~isempty(skipped_files)
+        skipped_log_file = fullfile(log_folder, 'skipped_log.csv');
+        fid = fopen(skipped_log_file, 'at'); % Append skipped files
+        if fid ~= -1
+            for k = 1:numel(skipped_files)
+                fprintf(fid, '"%s","%s"\n', skipped_files{k}.name, skipped_files{k}.uid);
+            end
+            fclose(fid);
+        end
+    end
+end
+
+if options.Verbose
+    fprintf('Upload process finished. %d files were included in upload batches.\n', files_uploaded_count);
+end
+end
+
+% --- Helper Function for Zipped Batches ---
+function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id, numberRetries, options)
+    success = 1;
+    msg = '';
+    file_count = numel(files_to_zip);
+    tempFile = tempname;
+    [parentDir,zip_file_unique_part] = fileparts(tempFile);
+    zip_file = fullfile(parentDir,[dataset_id '.' zip_file_unique_part '.zip']);
+    
+    try
+        if options.Verbose
+            batch_size_bytes = 0;
+            for i=1:numel(files_to_zip), s = dir(files_to_zip{i}); batch_size_bytes = batch_size_bytes + s.bytes; end
+            fprintf('Zipping %d files (%.2f MB) for upload...\n', file_count, batch_size_bytes / 1e6);
+        end
+        
+        zip(zip_file, files_to_zip);
+        
+        if options.DebugLog
+            log_file = fullfile(ndi.common.PathConstants.LogFolder, 'zip_log.csv');
+            fid = fopen(log_file, 'at');
+            if fid ~= -1
+                [~, zip_name, zip_ext] = fileparts(zip_file);
+                zip_filename_str = [zip_name zip_ext];
+                
+                % **Get and log the size of each file**
+                for i = 1:numel(files_to_zip)
+                    file_info = dir(files_to_zip{i});
+                    file_size_bytes = file_info.bytes;
+                    fprintf(fid, '"%s","%s",%d\n', zip_filename_str, files_to_zip{i}, file_size_bytes);
+                end
+                fclose(fid);
+            end
+        end
+        
+        if options.Verbose, disp('Getting upload URL for zipped batch...'); end
+
+        upload_url = '';
+        for r=1:numberRetries
+            [success, upload_url_or_err] = ndi.cloud.api.files.getFileCollectionUploadURL(dataset_id);
+            if success
+                upload_url = upload_url_or_err;
+                break;
+            else
+                if options.Verbose
+                    fprintf('Attempt %d of %d to get upload URL failed. Retrying in 5s...\n', r, numberRetries);
+                end
+                pause(5);
+            end
+        end
+
+        if ~success
+            msg = sprintf('Failed to get upload URL after %d attempts: %s', numberRetries, upload_url_or_err.message);
+            error(msg);
+        end
+        
+        if options.Verbose, disp('Uploading zip archive...'); end
+        for r=1:numberRetries
+            [success, err] = ndi.cloud.api.files.putFiles(upload_url, zip_file);
+            if success
+                break;
+            else
+                if options.Verbose
+                    fprintf('Attempt %d of %d to upload file failed. Retrying in 5s...\n', r, numberRetries);
+                end
+                pause(5);
+            end
+        end
+
+        if ~success
+            msg = sprintf('Failed to upload file after %d attempts: %s', numberRetries, err.message);
+            error(msg);
+        end
+        
+    catch e
+        success = 0;
+        msg = sprintf('An error occurred during the zip/upload process: %s', e.message);
+    end
+    
+    if isfile(zip_file), delete(zip_file); end
+    if options.Verbose && success, disp('Batch upload successful.'); end
+end

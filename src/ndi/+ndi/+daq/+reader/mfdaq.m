@@ -197,8 +197,9 @@ classdef mfdaq < ndi.daq.reader
             sr = sr_unique;
 
             t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
-            absolute_beginning = ndi.time.fun.times2samples(t0_t1{1}(1),t0_t1{1},sr);
-            absolute_end = ndi.time.fun.times2samples(t0_t1{1}(2),t0_t1{1},sr);
+            abs_s = ndi_daqreader_mfdaq_obj.epochtimes2samples_ingested(channeltype, channel, epochfiles, t0_t1{1}(:), S);
+            absolute_beginning = abs_s(1);
+            absolute_end = abs_s(2);
 
             if isinf(s0) | isinf(s1) % need to figure out actual values if user gave -inf/inf for either value
                 if isinf(s0)
@@ -346,9 +347,9 @@ classdef mfdaq < ndi.daq.reader
                 data = {};
                 for i=1:numel(channel)
                     % optimization speed opportunity
-                    srd = ndi_daqreader_mfdaq_obj.samplerate(epochfiles,{'di'}, channel(i));
-                    s0d = 1+round(srd*t0);
-                    s1d = 1+round(srd*t1);
+                    sd = ndi_daqreader_mfdaq_obj.epochtimes2samples({'di'}, channel(i), epochfiles, [t0 t1]);
+                    s0d = sd(1);
+                    s1d = sd(2);
                     data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
                     time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
                     if any(strcmp(channeltype{i},{'dep','dimp'})) % look for 0 to 1 transitions
@@ -428,9 +429,9 @@ classdef mfdaq < ndi.daq.reader
                 data = {};
                 for i=1:numel(channel)
                     % optimization speed opportunity
-                    srd = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles,{'di'}, channel(i),S);
-                    s0d = 1+round(srd*t0);
-                    s1d = 1+round(srd*t1);
+                    sd = ndi_daqreader_mfdaq_obj.epochtimes2samples_ingested({'di'}, channel(i), epochfiles, [t0 t1], S);
+                    s0d = sd(1);
+                    s1d = sd(2);
                     data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
                     time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
                     if any(strcmp(channeltype{i},{'dep','dimp'})) % look for 0 to 1 transitions
@@ -781,7 +782,7 @@ classdef mfdaq < ndi.daq.reader
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
                             S0 = 1;
-                            S1 = 1+ (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+                            S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
 
                             s_starts = [S0:sample_analog_segment:S1];
                             compressClass = ndi.compress.datatypestring(underlying_format);
@@ -808,13 +809,13 @@ classdef mfdaq < ndi.daq.reader
                             channels_here = [ci(chan_entries_indexes(group_indexes)).number];
                             t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
                             S0 = 1;
-                            S1 = 1+(t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+                            S1 = ndi_daqreader_mfdaq_obj.epochtimes2samples(types{i}, channels_here, epochfiles, t0t1{1}(end));
                             s_starts = [S0:sample_digital_segment:S1];
                             for s=1:numel(s_starts)
                                 mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
                                 s0 = s_starts(s);
                                 s1 = min(s0+sample_digital_segment-1,S1);
-                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
+                                data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, ...
                                     channels_here, epochfiles, s0, s1);
                                 data = ndi.compress.scaled2underlying(data, mypoly);
                                 output_bit_size = datasize;
@@ -856,6 +857,86 @@ classdef mfdaq < ndi.daq.reader
                 end
             end
         end % ingest_epochfiles()
+        function t = epochsamples2times(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s)
+            % EPOCHSAMPLES2TIMES - convert samples to time
+            %
+            % T = EPOCHSAMPLES2TIMES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S)
+            %
+            % Converts sample indices S to time T for the specified channel and epochfiles.
+            %
+            sr = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, channeltype, channel);
+            if numel(unique(sr))~=1
+                error(['Do not know how to handle multiple sampling rates across channels.']);
+            end
+            sr = unique(sr);
+            t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+            t0 = t0t1{1}(1);
+            t = t0 + (s-1)/sr;
+            if any(isinf(s))
+                t(isinf(s) & s<0) = t0;
+            end
+        end
+
+        function t = epochsamples2times_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s, S)
+            % EPOCHSAMPLES2TIMES_INGESTED - convert samples to time
+            %
+            % T = EPOCHSAMPLES2TIMES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S, SESSION)
+            %
+            % Converts sample indices S to time T for the specified channel and epochfiles.
+            %
+            sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
+            if numel(unique(sr))~=1
+                error(['Do not know how to handle multiple sampling rates across channels.']);
+            end
+            sr = unique(sr);
+            t0t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles, S);
+            t0 = t0t1{1}(1);
+            t = t0 + (s-1)/sr;
+            if any(isinf(s))
+                t(isinf(s) & s<0) = t0;
+            end
+        end
+
+        function s = epochtimes2samples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t)
+            % EPOCHTIMES2SAMPLES - convert time to samples
+            %
+            % S = EPOCHTIMES2SAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T)
+            %
+            % Converts time T to sample indices S for the specified channel and epochfiles.
+            %
+            sr = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, channeltype, channel);
+            if numel(unique(sr))~=1
+                error(['Do not know how to handle multiple sampling rates across channels.']);
+            end
+            sr = unique(sr);
+            t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+            t0 = t0t1{1}(1);
+            s = 1 + round((t-t0)*sr);
+            if any(isinf(t))
+                s(isinf(t) & t<0) = 1;
+            end
+        end
+
+        function s = epochtimes2samples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t, S)
+            % EPOCHTIMES2SAMPLES_INGESTED - convert time to samples
+            %
+            % S = EPOCHTIMES2SAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T, SESSION)
+            %
+            % Converts time T to sample indices S for the specified channel and epochfiles.
+            %
+            sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
+            if numel(unique(sr))~=1
+                error(['Do not know how to handle multiple sampling rates across channels.']);
+            end
+            sr = unique(sr);
+            t0t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles, S);
+            t0 = t0t1{1}(1);
+            s = 1 + round((t-t0)*sr);
+            if any(isinf(t))
+                s(isinf(t) & t<0) = 1;
+            end
+        end
+
     end % methods
 
     methods(Static)

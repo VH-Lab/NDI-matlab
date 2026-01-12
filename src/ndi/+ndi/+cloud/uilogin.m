@@ -20,10 +20,10 @@ function [token, organization_id] = uilogin(force_relogin, options)
         options.UserName (1,1) string = missing
     end
 
-    [token, organization_id] = ndi.cloud.internal.get_active_token();
+    [token, organization_id] = ndi.cloud.internal.getActiveToken();
     
     if ~isempty(token) && ~ismissing(options.UserName)
-        decodedToken = ndi.cloud.internal.decode_jwt(token);
+        decodedToken = ndi.cloud.internal.decodeJwt(token);
         force_relogin = ~strcmp(decodedToken.email, options.UserName);
     end
 

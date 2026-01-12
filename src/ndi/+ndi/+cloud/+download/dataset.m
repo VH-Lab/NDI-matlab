@@ -55,7 +55,13 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
 
     if verbose, disp(['Retrieving dataset...']); end
 
-    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+    [success, dataset] = ndi.cloud.api.datasets.getDataset(dataset_id);
+    if ~success
+        b = 0;
+        msg = ['Failed to get dataset: ' dataset.message];
+        D = [];
+        return;
+    end
 
     if strcmp(mode,'local') % download files
 
@@ -81,7 +87,12 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
                 if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
                 continue;
             end
-            [~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(dataset_id, file_uid);
+            [success, answer, ~] = ndi.cloud.api.files.getFileDetails(dataset_id, file_uid);
+            if ~success
+                warning(['Failed to get file details: ' answer.message]);
+                continue;
+            end
+            downloadURL = answer.downloadUrl;
             if verbose, disp(['Saving file ' int2str(i) '...']); end
 
             % save the file
@@ -91,7 +102,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
     end
 
     % use helper function for documents
-    [b_,msg_,] = ndi.cloud.download.dataset_documents(dataset, mode, jsonpath, filepath, 'verbose', verbose);
+    [b_,msg_,] = ndi.cloud.download.datasetDocuments(dataset, mode, jsonpath, filepath, 'verbose', verbose);
 
     ndiDocuments = ndi.cloud.download.jsons2documents(jsonpath);
 

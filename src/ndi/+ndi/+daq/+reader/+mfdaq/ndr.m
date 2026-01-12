@@ -177,6 +177,60 @@ classdef ndr < ndi.daq.reader.mfdaq
             sr = ndr_reader.samplerate(epochfiles,1,channeltype,channel);
         end % samplerate
 
+        function t = epochsamples2times(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s)
+            % EPOCHSAMPLES2TIMES - convert samples to time
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            if ndr_reader.MightHaveTimeGaps()
+                t_all = ndi_daq_reader_mfdaq_ndr_obj.readchannels_epochsamples({'time'}, 1, epochfiles, -inf, inf);
+                t_all = t_all(:);
+                s_all = (1:numel(t_all))';
+                t = interp1(s_all, t_all, s, 'linear', 'extrap');
+            else
+                t = epochsamples2times@ndi.daq.reader.mfdaq(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s);
+            end
+        end
+
+        function s = epochtimes2samples(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t)
+            % EPOCHTIMES2SAMPLES - convert time to samples
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            if ndr_reader.MightHaveTimeGaps()
+                t_all = ndi_daq_reader_mfdaq_ndr_obj.readchannels_epochsamples({'time'}, 1, epochfiles, -inf, inf);
+                t_all = t_all(:);
+                s_all = (1:numel(t_all))';
+                s = interp1(t_all, s_all, t, 'linear', 'extrap');
+                s = round(s);
+            else
+                s = epochtimes2samples@ndi.daq.reader.mfdaq(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t);
+            end
+        end
+
+        function t = epochsamples2times_ingested(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s, S)
+            % EPOCHSAMPLES2TIMES_INGESTED - convert samples to time for ingested data
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            if ndr_reader.MightHaveTimeGaps()
+                t_all = ndi_daq_reader_mfdaq_ndr_obj.readchannels_epochsamples_ingested({'time'}, 1, epochfiles, -inf, inf, S);
+                t_all = t_all(:);
+                s_all = (1:numel(t_all))';
+                t = interp1(s_all, t_all, s, 'linear', 'extrap');
+            else
+                t = epochsamples2times_ingested@ndi.daq.reader.mfdaq(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s, S);
+            end
+        end
+
+        function s = epochtimes2samples_ingested(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t, S)
+            % EPOCHTIMES2SAMPLES_INGESTED - convert time to samples for ingested data
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            if ndr_reader.MightHaveTimeGaps()
+                t_all = ndi_daq_reader_mfdaq_ndr_obj.readchannels_epochsamples_ingested({'time'}, 1, epochfiles, -inf, inf, S);
+                t_all = t_all(:);
+                s_all = (1:numel(t_all))';
+                s = interp1(t_all, s_all, t, 'linear', 'extrap');
+                s = round(s);
+            else
+                s = epochtimes2samples_ingested@ndi.daq.reader.mfdaq(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t, S);
+            end
+        end
+
         function ndi_document_obj = newdocument(ndi_daqreader_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
             %

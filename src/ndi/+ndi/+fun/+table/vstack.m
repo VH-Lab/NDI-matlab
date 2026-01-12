@@ -105,7 +105,7 @@ end
                     if ~isempty(declaredTypeForEmpty)
                         try
                             if strcmp(declaredTypeForEmpty, 'datetime')
-                                bestExampleCol = NaT([]);
+                                bestExampleCol = NaT(0); % Use 0 instead of [] for compatibility with MATLAB <= R2021b
                             elseif strcmp(declaredTypeForEmpty, 'string')
                                 bestExampleCol = string([]);
                             elseif strcmp(declaredTypeForEmpty, 'categorical')
@@ -123,6 +123,7 @@ end
                             % Defaults to double if creating the declared empty type fails
                             bestExampleCol = double([]);
                             bestNumCols = 1;
+                            warning('vstack:UnknownDataType','Data type could not be detected. Filling empty cells with [].')
                         end
                     else
                         % Defaults to double if no declared type is found and all columns are empty

@@ -52,7 +52,7 @@ function [token, organizationID] = authenticate(options)
     end
 
     if nargout >= 1
-        token = ndi.cloud.internal.get_active_token();
+        token = ndi.cloud.internal.getActiveToken();
     end
     if nargout >= 2
         organizationID = getenv("NDI_CLOUD_ORGANIZATION_ID");
@@ -61,11 +61,11 @@ end
 
 
 function result = isAuthenticated(username)
-    token = ndi.cloud.internal.get_active_token();
+    token = ndi.cloud.internal.getActiveToken();
     result = ~isempty(token);
 
     if ~ismissing(username)
-        decodedToken = ndi.cloud.internal.decode_jwt(token);
+        decodedToken = ndi.cloud.internal.decodeJwt(token);
         if ~strcmp(decodedToken.email, username)
             result = false;
         end
@@ -146,10 +146,22 @@ end
 function isSuccess = login(userName, password)
     isSuccess = false;
 
-    [token, organization_id] = ndi.cloud.api.auth.login(userName, password);
-    if ~strcmp(token, 'Unable to Login')
+    [b, answer, apiResponse, ~] = ndi.cloud.api.auth.login(userName, password);
+    
+    if b
+        token = answer.token;
+        organization_id = answer.user.organizations.id;
         setenv('NDI_CLOUD_TOKEN', token)
         setenv('NDI_CLOUD_ORGANIZATION_ID', organization_id)
         isSuccess = true;
+    else
+        body_details = jsonencode(answer, "PrettyPrint", true);
+        error_message = sprintf('Failed to authenticate with NDI Cloud.\n');
+        error_message = [error_message sprintf('  Status: %d %s\n', apiResponse.StatusCode, apiResponse.StatusLine.ReasonPhrase)];
+        error_message = [error_message sprintf('  Response Body:\n%s', body_details)];
+        
+        error('NDI:Cloud:AuthenticationFailed', error_message);
     end
 end
+
+

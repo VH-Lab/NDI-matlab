@@ -1,0 +1,486 @@
+{
+  "base": {
+    "session_id": "412694e3b3458fcc_40c4622706c2c487",
+    "id": "41269512cada35a0_c0d798328edafd3f",
+    "name": "",
+    "datestamp": "2025-12-26T14:30:31.339Z"
+  },
+  "depends_on": [
+    {
+      "name": "element_id",
+      "value": "41269512cad788b6_c0dfcf4a9327ee81"
+    },
+    {
+      "name": "stimulus_response_scalar_id",
+      "value": "41269512cad99568_c0c5eb35c395d7b2"
+    }
+  ],
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH/apps/calculations/tuningcurve_calc.json",
+    "validation": "$NDISCHEMAPATH/apps/calculations/tuningcurve_calc_schema.json",
+    "class_name": "tuningcurve_calc",
+    "property_list_name": "tuningcurve_calc",
+    "class_version": 1,
+    "superclasses": [
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/stimulus/stimulus_tuningcurve.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      }
+    ]
+  },
+  "stimulus_tuningcurve": {
+    "independent_variable_label": [
+      "contrast,spatial_frequency"
+    ],
+    "independent_variable_value": [
+      [
+        0,
+        0.1
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        10
+      ],
+      [
+        0.5,
+        0.1
+      ],
+      [
+        0.5,
+        1
+      ],
+      [
+        0.5,
+        10
+      ],
+      [
+        1,
+        0.1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        10
+      ]
+    ],
+    "stimid": [
+      1,
+      4,
+      7,
+      2,
+      5,
+      8,
+      3,
+      6,
+      9
+    ],
+    "response_mean": [
+      1,
+      1,
+      1,
+      2.3533528323661308,
+      11,
+      2.3533528323661321,
+      3.165364531785805,
+      17,
+      3.165364531785805
+    ],
+    "response_stddev": [
+      0,
+      0,
+      0,
+      3.7022234168422464E-15,
+      0,
+      3.3820826609804605E-15,
+      0,
+      0,
+      0
+    ],
+    "response_stderr": [
+      0,
+      0,
+      0,
+      1.6556846455901605E-15,
+      0,
+      1.512513347095137E-15,
+      0,
+      0,
+      0
+    ],
+    "individual_responses_real": [
+      [
+        1,
+        1,
+        1,
+        2.3533528323661277,
+        11,
+        2.3533528323661259,
+        3.165364531785805,
+        17,
+        3.165364531785805
+      ],
+      [
+        1,
+        1,
+        1,
+        2.3533528323661259,
+        11,
+        2.3533528323661335,
+        3.165364531785805,
+        17,
+        3.165364531785805
+      ],
+      [
+        1,
+        1,
+        1,
+        2.3533528323661335,
+        11,
+        2.3533528323661335,
+        3.165364531785805,
+        17,
+        3.165364531785805
+      ],
+      [
+        1,
+        1,
+        1,
+        2.3533528323661335,
+        11,
+        2.3533528323661335,
+        3.165364531785805,
+        17,
+        3.165364531785805
+      ],
+      [
+        1,
+        1,
+        1,
+        2.3533528323661335,
+        11,
+        2.3533528323661335,
+        3.165364531785805,
+        17,
+        3.165364531785805
+      ]
+    ],
+    "individual_responses_imaginary": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "stimulus_presentation_number": [
+      [
+        1,
+        4,
+        7,
+        2,
+        5,
+        8,
+        3,
+        6,
+        9
+      ],
+      [
+        10,
+        13,
+        16,
+        11,
+        14,
+        17,
+        12,
+        15,
+        18
+      ],
+      [
+        19,
+        22,
+        25,
+        20,
+        23,
+        26,
+        21,
+        24,
+        27
+      ],
+      [
+        28,
+        31,
+        34,
+        29,
+        32,
+        35,
+        30,
+        33,
+        36
+      ],
+      [
+        37,
+        40,
+        43,
+        38,
+        41,
+        44,
+        39,
+        42,
+        45
+      ]
+    ],
+    "control_stimid": [],
+    "control_response_mean": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_response_stddev": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_response_stderr": [
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "control_individual_responses_real": [
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ],
+      [
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN,
+        NaN
+      ]
+    ],
+    "control_individual_responses_imaginary": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "response_units": []
+  },
+  "tuningcurve_calc": {
+    "input_parameters": {
+      "independent_label": "contrast,spatial_frequency",
+      "independent_parameter": "contrast,spatial_frequency",
+      "best_algorithm": "empirical_maximum",
+      "selection": [
+        {
+          "property": "contrast",
+          "operation": "hasfield",
+          "value": "varies"
+        },
+        {
+          "property": "spatial_frequency",
+          "operation": "hasfield",
+          "value": "varies"
+        }
+      ]
+    },
+    "depends_on": [
+      {
+        "name": "stimulus_response_scalar_id",
+        "value": "41269512cad99568_c0c5eb35c395d7b2"
+      },
+      {
+        "name": "stimulus_response_scalar_id",
+        "value": "41269512cad103f5_c0d873103e8cdb1a"
+      }
+    ],
+    "log": "",
+    "stim_property_list": {
+      "names": [],
+      "values": []
+    }
+  },
+  "app": {
+    "name": "ndi.calc.stimulus.tuningcurve",
+    "version": "21139a3ddbf6ccac7c77e164bcfe800aa02ae9d1",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "15.7.3",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
+  }
+}
