@@ -26,5 +26,17 @@
   [
     "orientation",
     "ori"
+  ],
+  [
+    "currentfrequency_FIcurves_calc",
+    "FIcalc"
+  ],
+  [
+    "referenceCurrent",
+    "refCurrent"
+  ],
+  [
+    "input_parameters",
+    "input_p"
   ]
 ]
