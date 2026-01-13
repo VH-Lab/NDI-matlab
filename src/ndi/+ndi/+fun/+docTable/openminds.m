@@ -123,13 +123,15 @@ for i = 1:numel(typeDocs)
         openminds_field = docProp.openminds.fields.(fieldName);
         if iscell(openminds_field) && all(contains(openminds_field,'ndi'))
             dependentDocs{j} = regexp(openminds_field, '[^/]*$', 'match', 'once');
-            dependentTypes{j} = [upper(fieldName(1)),fieldName(2:end)];
+            dependentTypes{j} = repmat({[upper(fieldName(1)),fieldName(2:end)]}, size(dependentDocs{j}));
         else
             removeCells(j) = true;
         end
     end
-    dependentDocs(removeCells) = []; dependentTypes(removeCells) = [];
-    dependentDocs = vertcat(dependentDocs{:}); dependentTypes = vertcat(dependentTypes{:});
+    dependentDocs(removeCells) = [];
+    dependentTypes(removeCells) = [];
+    dependentDocs = vertcat(dependentDocs{:});
+    dependentTypes = vertcat(dependentTypes{:});
     for j = 1:numel(dependentDocs)
         depDocIDs = dependentDocs{j};
         if ~iscell(depDocIDs)
@@ -189,4 +191,3 @@ end
 % Stack table
 openmindsTable = ndi.fun.table.vstack(openmindsCell);
 end
-
