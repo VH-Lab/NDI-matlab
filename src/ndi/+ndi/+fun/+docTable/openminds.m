@@ -137,6 +137,9 @@ for i = 1:numel(typeDocs)
         if ~iscell(depDocIDs)
             depDocIDs = {depDocIDs};
         end
+        if ~iscell(dependentTypes)
+            dependentTypes = {dependentTypes};
+        end
 
         depNames = {};
         depOntologies = {};
