@@ -10,6 +10,8 @@ function url = url(endpointName, options)
         options.document_id (1,1) string = ""
         options.file_uid (1,1) string = ""
         options.organization_id (1,1) string = ""
+        options.session_id (1,1) string = ""
+        options.stage_id (1,1) string = ""
         options.page (1,1) double = 1
         options.page_size (1,1) double = 20
     end
@@ -73,6 +75,14 @@ function url = url(endpointName, options)
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";
         endpointMap("ndiquery")                       = "/ndiquery?page={page}&pageSize={page_size}";
+
+        % Compute endpoints
+        endpointMap("start_compute_session")          = "/compute/start";
+        endpointMap("get_compute_session")            = "/compute/{sessionId}";
+        endpointMap("abort_compute_session")          = "/compute/{sessionId}";
+        endpointMap("trigger_compute_stage")          = "/compute/{sessionId}/stage/{stageId}";
+        endpointMap("finalize_compute_session")       = "/compute/{sessionId}/finalize";
+        endpointMap("list_compute_sessions")          = "/compute";
     end
 
     endpointPath = endpointMap(endpointName);
@@ -109,6 +119,8 @@ function options = processOptions(options)
     options = renameStructField(options, 'organization_id', 'organizationId');
     options = renameStructField(options, 'user_id', 'userId');
     options = renameStructField(options, 'page_size', 'pageSize');
+    options = renameStructField(options, 'session_id', 'sessionId');
+    options = renameStructField(options, 'stage_id', 'stageId');
 
     function s = renameStructField(s, oldname, newname)
         s.(newname) = s.(oldname);
