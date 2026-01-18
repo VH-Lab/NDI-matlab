@@ -41,7 +41,10 @@ classdef FinalizeSession < ndi.cloud.api.call
             authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' token]);
             headers = [acceptField authorizationField];
 
-            request = matlab.net.http.RequestMessage(method, headers);
+            % Send empty body to avoid warning "Expected a message using request method POST to have a Body."
+            body = matlab.net.http.MessageBody([]);
+
+            request = matlab.net.http.RequestMessage(method, headers, body);
 
             apiResponse = send(request, apiURL);
 
