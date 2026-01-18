@@ -149,6 +149,7 @@ classdef ZombieTest < matlab.unittest.TestCase
 
                 timestamp = char(datetime('now', 'Format', 'HH:mm:ss'));
                 narrative(end+1) = timestamp + " - Status: " + status + " | Stage: " + currentStage + " | Stage Status: " + stageStatus;
+                disp(narrative(end));
 
                 if strcmp(status, 'ABORTED') || strcmp(status, 'FAILED') || strcmp(status, 'COMPLETED')
                     narrative(end+1) = "Final Status Reached: " + status;
