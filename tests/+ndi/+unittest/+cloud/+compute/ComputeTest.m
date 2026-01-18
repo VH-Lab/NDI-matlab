@@ -83,10 +83,27 @@ classdef ComputeTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_list, list_message);
 
             % Verify our session is in the list
-            if strlength(sessionId) > 0 && iscell(answer_list)
+            if strlength(sessionId) > 0
+                % Handle different possible return types (Struct Array, Cell Array, or Envelope)
+                sessionsList = [];
+                if isstruct(answer_list)
+                    if isfield(answer_list, 'sessions')
+                        sessionsList = answer_list.sessions;
+                    else
+                        sessionsList = answer_list; % Struct array
+                    end
+                elseif iscell(answer_list)
+                    sessionsList = answer_list;
+                end
+
                  found = false;
-                 for i = 1:numel(answer_list)
-                     s = answer_list{i};
+                 for i = 1:numel(sessionsList)
+                     if iscell(sessionsList)
+                         s = sessionsList{i};
+                     else
+                         s = sessionsList(i);
+                     end
+
                      if isstruct(s) && ( (isfield(s, 'id') && strcmp(s.id, sessionId)) || (isfield(s, 'sessionId') && strcmp(s.sessionId, sessionId)) )
                          found = true;
                          break;

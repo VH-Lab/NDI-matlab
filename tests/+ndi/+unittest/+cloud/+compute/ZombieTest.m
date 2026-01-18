@@ -61,16 +61,33 @@ classdef ZombieTest < matlab.unittest.TestCase
             narrative(end+1) = "Monitoring session status. Pipeline should timeout after 2 minutes.";
 
             % 2. Initial Wait
-            pause(5);
+            pause(10);
 
             % 3. List Sessions (Verification)
             narrative(end+1) = "Verifying session appears in list...";
             [b_list, answer_list, ~, ~] = listSessions();
 
             found = false;
-            if b_list && iscell(answer_list)
-                for i = 1:numel(answer_list)
-                    s = answer_list{i};
+            if b_list
+                % Handle different possible return types (Struct Array, Cell Array, or Envelope)
+                sessionsList = [];
+                if isstruct(answer_list)
+                    if isfield(answer_list, 'sessions')
+                        sessionsList = answer_list.sessions;
+                    else
+                        sessionsList = answer_list; % Struct array
+                    end
+                elseif iscell(answer_list)
+                    sessionsList = answer_list;
+                end
+
+                for i = 1:numel(sessionsList)
+                    if iscell(sessionsList)
+                        s = sessionsList{i};
+                    else
+                        s = sessionsList(i);
+                    end
+
                     % Check for sessionId or id
                     sid = "";
                     if isfield(s, 'sessionId'), sid = s.sessionId;
