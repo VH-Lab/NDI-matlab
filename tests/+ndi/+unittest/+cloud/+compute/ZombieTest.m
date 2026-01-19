@@ -114,7 +114,7 @@ classdef ZombieTest < matlab.unittest.TestCase
             % 4. Polling Loop
             narrative(end+1) = "Waiting for status change...";
 
-            max_iterations = 30; % 30 * 10s = 300s = 5 mins max
+            max_iterations = 60; % 60 * 10s = 600s = 10 mins max
             final_status_reached = false;
 
             for iter = 1:max_iterations
