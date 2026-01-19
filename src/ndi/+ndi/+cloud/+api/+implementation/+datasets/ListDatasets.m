@@ -11,12 +11,18 @@ classdef ListDatasets < ndi.cloud.api.call
             %       'cloudOrganizationID' - The ID of the organization. If not
             %           provided, the environment variable NDI_CLOUD_ORGANIZATION_ID
             %           will be used.
+            %       'page' - The page number to retrieve (default 1).
+            %       'pageSize' - The number of datasets per page (default 20).
             %
             arguments
                 args.cloudOrganizationID (1,1) string = missing
+                args.page (1,1) double = 1
+                args.pageSize (1,1) double = 20
             end
             
             this.cloudOrganizationID = args.cloudOrganizationID;
+            this.page = args.page;
+            this.pageSize = args.pageSize;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -26,7 +32,9 @@ classdef ListDatasets < ndi.cloud.api.call
             %
             %   Outputs:
             %       b            - True if the call succeeded, false otherwise.
-            %       answer       - The datasets struct on success, or error message on failure.
+            %       answer       - A struct with fields 'totalNumber', 'page',
+            %                      'pageSize', and 'datasets' on success, or
+            %                      an error struct on failure.
             %       apiResponse  - The full matlab.net.http.ResponseMessage object.
             %       apiURL       - The URL that was called.
             %
@@ -42,7 +50,8 @@ classdef ListDatasets < ndi.cloud.api.call
                 organization_id = org_id_env;
             end
             
-            apiURL = ndi.cloud.api.url('list_datasets', 'organization_id', organization_id);
+            apiURL = ndi.cloud.api.url('list_datasets', 'organization_id', organization_id, ...
+                'page', this.page, 'page_size', this.pageSize);
 
             method = matlab.net.http.RequestMethod.GET;
             
@@ -56,13 +65,44 @@ classdef ListDatasets < ndi.cloud.api.call
             
             if (apiResponse.StatusCode == 200)
                 b = true;
-                if isfield(apiResponse.Body.Data, 'datasets') && ~isempty(apiResponse.Body.Data.datasets)
-                    answer = apiResponse.Body.Data.datasets;
+
+                % Parse the response body.
+                % The API is expected to return:
+                % {
+                %   "totalNumber": integer,
+                %   "page": integer,
+                %   "pageSize": integer,
+                %   "datasets": [...]
+                % }
+
+                if ~isempty(apiResponse.Body.Data)
+                    answer = apiResponse.Body.Data;
+
+                    % Ensure 'datasets' field is present and is a cell array (or appropriate type)
+                    % If "datasets" is returned as a struct array by MATLAB's automatic JSON parsing,
+                    % we might need to convert it or leave it as is depending on downstream expectations.
+                    % But users expect a cell array of structs usually?
+                    % The previous implementation returned `apiResponse.Body.Data.datasets` which
+                    % could be a cell array or struct array.
+                    % The user requirements say: "datasets": ["..."]
+
+                    % If datasets is missing, default to empty list/cell
+                    if ~isfield(answer, 'datasets')
+                        answer.datasets = {};
+                    end
+                else
+                     % Fallback if data is empty but status is 200 (unlikely for this schema)
+                    answer = struct('totalNumber', 0, 'page', this.page, 'pageSize', this.pageSize, 'datasets', {{}});
                 end
             else
-                answer = {};
+                % On failure, we might want to return the error body or empty
+                answer = apiResponse.Body.Data;
             end
         end
     end
-end
 
+    properties
+        page (1,1) double
+        pageSize (1,1) double
+    end
+end
