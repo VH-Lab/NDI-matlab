@@ -101,8 +101,4 @@ classdef ListDatasets < ndi.cloud.api.call
         end
     end
 
-    properties
-        page (1,1) double
-        pageSize (1,1) double
-    end
 end
