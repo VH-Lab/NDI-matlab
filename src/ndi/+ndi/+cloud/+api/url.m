@@ -52,7 +52,7 @@ function url = url(endpointName, options)
         endpointMap("get_dataset")                    = "/datasets/{datasetId}";
         endpointMap("update_dataset")                 = "/datasets/{datasetId}";
         endpointMap("delete_dataset")                 = "/datasets/{datasetId}";
-        endpointMap("list_datasets")                  = "/organizations/{organizationId}/datasets";
+        endpointMap("list_datasets")                  = "/organizations/{organizationId}/datasets?page={page}&pageSize={page_size}";
         endpointMap("create_dataset")                 = "/organizations/{organizationId}/datasets";
         endpointMap("get_published")                  = "/datasets/published?page={page}&pageSize={page_size}";
         endpointMap("get_unpublished")                = "/datasets/unpublished?page={page}&pageSize={page_size}";
