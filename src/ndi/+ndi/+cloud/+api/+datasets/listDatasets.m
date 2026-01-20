@@ -9,32 +9,39 @@ function [b, answer, apiResponse, apiURL] = listDatasets(options)
 %       cloudOrganizationID - The ID of the organization to query. If not
 %           provided, the function will use the organization ID stored in
 %           the 'NDI_CLOUD_ORGANIZATION_ID' environment variable.
+%       page - The page number to retrieve (default 1).
+%       pageSize - The number of datasets per page (default 20).
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
-%       answer       - A struct array of datasets on success, or an error struct on failure.
+%       answer       - A structure with fields 'totalNumber', 'page', 'pageSize',
+%                      and 'datasets' on success, or an error struct on failure.
 %       apiResponse  - The full matlab.net.http.ResponseMessage object.
 %       apiURL       - The URL that was called.
 %
 %   Example:
-%       % List datasets in the default organization
-%       [success, my_datasets] = ndi.cloud.api.datasets.listDatasets();
+%       % List datasets in the default organization (first page, default size)
+%       [success, result] = ndi.cloud.api.datasets.listDatasets();
+%       my_datasets = result.datasets;
 %
-%       % List datasets in a specific organization
-%       [s, org_datasets] = ndi.cloud.api.datasets.listDatasets('cloudOrganizationID', 'org-12345');
+%       % List datasets with pagination
+%       [s, res] = ndi.cloud.api.datasets.listDatasets('page', 2, 'pageSize', 50);
 %
 %   See also: ndi.cloud.api.implementation.datasets.ListDatasets
 
     arguments
         options.cloudOrganizationID (1,1) string = missing
+        options.page (1,1) double = 1
+        options.pageSize (1,1) double = 20
     end
 
     % 1. Create an instance of the implementation class, passing options.
     api_call = ndi.cloud.api.implementation.datasets.ListDatasets(...
-        'cloudOrganizationID', options.cloudOrganizationID);
+        'cloudOrganizationID', options.cloudOrganizationID, ...
+        'page', options.page, ...
+        'pageSize', options.pageSize);
     
     % 2. Call the execute method and return its outputs directly.
     [b, answer, apiResponse, apiURL] = api_call.execute();
     
 end
-
