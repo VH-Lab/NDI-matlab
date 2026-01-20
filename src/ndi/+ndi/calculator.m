@@ -38,12 +38,18 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
             docs = {};
             docs_tocat = {};
+            docs_to_add = {};
 
             % Step 2: identify all sets of possible input parameters that are compatible with
             % what was specified by 'parameters'
 
             all_parameters = ndi_calculator_obj.search_for_input_parameters(parameters);
+
+            mylog = ndi.common.getLogger();
+            mylog.msg('system',1,['Beginning calculator by class ' class(ndi_calculator_obj) '...']);
+            
             for i=1:numel(all_parameters)
+                mylog.msg('system',1,['Performing calculator ' int2str(i) ' of ' int2str(numel(all_parameters)) '.']);                
                 previous_calculators_here = ndi_calculator_obj.search_for_calculator_docs(all_parameters{i});
                 do_calc = 0;
                 if ~isempty(previous_calculators_here)
@@ -61,7 +67,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 if do_calc
                     docs_out = ndi_calculator_obj.calculate(all_parameters{i});
                     if ~iscell(docs_out), docs_out = {docs_out}; end
-                    docs_tocat{i} = docs_out; docs_to_add = cat(2, docs_to_add, docs_out);
+                    docs_tocat{i} = docs_out;
+                    docs_to_add = cat(2, docs_to_add, docs_out);
                 end
             end
             for i=1:numel(all_parameters), if i <= numel(docs_tocat), docs = cat(2,docs,docs_tocat{i}); end; end
@@ -70,6 +77,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 for i=1:numel(docs_to_add), docs_to_add{i} = docs_to_add{i}.setproperties('app',app_doc.document_properties.app); end
                 ndi_calculator_obj.session.database_add(docs_to_add);
             end
+            mylog.msg('system',1,'Concluding calculator.');
         end 
         
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)
@@ -463,83 +471,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             param.suppress_title = options.suppress_title;
         end
 
-        function graphical_edit_calculator(varargin)
-            % GRAPHICAL_EDIT_CALCULATOR - create and control a GUI to graphically edit an NDI calculator instance
-            %
-            % GRAPHICAL_EDIT_CALCULATOR(...)
-            %
-            % Creates and controls a graphical user interface for creating an instance of
-            % an ndi.calculator object.
-            %
-            % Usage by the user:
-            %
-            %   GRAPHICAL_EDIT_CALCULATOR('command','NEW','type','ndi.calc.TYPE','filename',filename,'name',name)
-            %      or
-            %   GRAPHICAL_EDIT_CALCULATOR('command','EDIT','filename',filename)
-            %
-            %
-            command = '';
-            window_params.height = 600;
-            window_params.width = 400;
-            session = [];
-
-            name = '';
-            filename = '';
-            type = '';
-            fig = []; % figure to use
-
-            vlt.data.assign(varargin{:});
-
-            calc.name = name;
-            calc.filename = filename;
-            calc.type = type;
-            if ~isempty(type)
-                calc.parameter_code_default = ndi.calculator.parameter_default(calc.type);
-                calc.parameter_code = calc.parameter_code_default;
-                [calc.parameter_example_names,calc.parameter_example_code] = ndi.calculator.parameter_examples(calc.type);
-            end
-
-            varlist_ud = {'calc','window_params','session'};
-            edit = false;
-
-            if strcmpi(command,'new')
-                % set up for new window
-                for i=1:numel(varlist_ud)
-                    eval(['ud.' varlist_ud{i} '=' varlist_ud{i} ';']);
-                end
-                if isempty(fig)
-                    fig = figure;
-                end
-                command = 'NewWindow';
-                % would check calc name and calc type and calc filename for validity here
-            elseif strcmpi(command,'edit')
-                % set up for editing
-                % read from file
-                edit = true;
-                filename,
-                ud = jsondecode(vlt.file.textfile2char(filename))
-                if ~exist('ud.calc','var')
-                    ud.calc.type = ud.ndi_pipeline_element.calculator;
-                    ud.calc.parameter_code_default = ''; %ndi.calculator.parameter_default(ud.calc.type);
-                    ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
-                    ud.calc.parameter_code_old = ud.ndi_pipeline_element.parameter_code;
-                    ud.calc.name = ud.ndi_pipeline_element.name;
-                    ud.calc.filename = filename;
-                    [ud.calc.parameter_example_names,ud.calc.parameter_example_code] = ndi.calculator.parameter_examples(ud.calc.type);
-                    ud.session = session;
-                end
-                if ~exist('ud.window_params','var')
-                    ud.window_params.height = 600;
-                    ud.window_params.width = 400;
-                end
-                % Add subpackages to the search queue
-                for i = 1:numel(curr_p.PackageList)
-                    q{end+1} = curr_p.PackageList(i);
-                end
-            end
-            classes = sort(classes);
-        end
-        
+       
         function graphical_edit_calculator(options)
             arguments
                 options.command (1,:) char {mustBeMember(options.command, {'New','Edit','Close',...
@@ -910,32 +842,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             fid = fopen(fullfile(param_dir, [param_name '.json']), 'w');
             fprintf(fid, '%s', jsonencode(s, 'PrettyPrint', true)); fclose(fid);
         end
-        
-        function text = docfiletext(calculator_type, doc_type)
-            calculator_type = strtrim(char(calculator_type));
-            w = which(calculator_type);
-            if isempty(w)
-                text = {['Calculator Class not found: ' calculator_type], 'Make sure it is on your MATLAB path.'}; return;
-            end
-            [parentdir, appname] = fileparts(w);
-
-            dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples'];
-
-            d = dir([dirname filesep '*.txt']);
-
-            contents = {};
-            names = {};
-
-            for i=1:numel(d)
-                names{end+1} = d(i).name;
-                contents{end+1} = vlt.file.textfile2char([dirname filesep d(i).name]);
-            end
-            filename = fullfile(parentdir, 'docs', [appname '.docs.' doctype '.txt']);
-            if isfile(filename)
-                fid=fopen(filename,'r'); text=regexp(fread(fid,'*char')','\r?\n','split')'; fclose(fid);
-            else, text={'Documentation file missing.'}; end
-        end
-        
+                
         function contents = user_parameter_template(calculator_type)
             contents = sprintf(['%% User parameters for %s\n' ...
                                 'thecalc = %s(pipeline_session);\n' ...
