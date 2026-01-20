@@ -26,79 +26,79 @@ function b = ndi_install(directory, dependencies)
 
     b = git_embedded_assert;
 
-    if ~b,
-        error(['The program git was not detected on the system. Please install git and restart Matlab.']);
-    end;
+    if ~b
+        error('The program git was not detected on the system. Please install git and restart Matlab.');
+    end
 
     need_to_set_directory = 0;
 
-    if nargin<1,
+    if nargin<1
         need_to_set_directory = 1;
         directory = ' '; % not empty
-    end;
+    end
 
-    if isempty(directory),
+    if isempty(directory)
         need_to_set_directory = 1;
-    end;
+    end
 
-    if need_to_set_directory,
-        if isempty(userpath),
-            disp(['Your Matlab USERPATH is empty. This is your ''home'' directory for your Matlab use.']);
+    if need_to_set_directory
+        if isempty(userpath)
+            disp('Your Matlab USERPATH is empty. This is your ''home'' directory for your Matlab use.');
             reply = input('Can we reset your USERPATH to the default? Y/N [Y]:','s');
             if isempty(reply)
                 reply = 'Y';
             end
-            if strcmpi(strtrim(reply),'Y'),
+            if strcmpi(strtrim(reply),'Y')
                 userpath('reset');
-            else,
-                error(['User elected NOT to reset USERPATH. USERPATH is blank, so we cannot install. See help userpath']);
-            end;
-        end;
+            else
+                error('User elected NOT to reset USERPATH. USERPATH is blank, so we cannot install. See help userpath');
+            end
+        end
         directory = [userpath filesep 'tools'];
-    end;
+    end
 
     disp(['About to install at directory ' directory '...']);
 
-    if nargin<2,
+    if nargin<2
         dependencies = 1;
-    end;
+    end
 
     % If a numeric
-    if isnumeric(dependencies),
-        if dependencies == 2,
+    if isnumeric(dependencies)
+        if dependencies == 2
             dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/refs/heads/master/vhtools_standard_distribution.json';
             t = webread(dependencies_filepath);
             j = jsondecode(t);
             dependencies = j.dependency;
-        elseif dependencies == 1 || dependencies == 3,
+        elseif dependencies == 1 || dependencies == 3
             dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/requirements.txt';
             t = webread(dependencies_filepath);
             dependencies = splitlines(t);
             dependencies = dependencies(~cellfun('isempty',dependencies));
-        else,
+        else
             error('Dependencies must be 1, 2 or 3');
-        end;
-    end;
+        end
+    end
 
     % are we updating at least NDI?
 
     w = which('ndi_Init');
-    if isempty(w),
+    if isempty(w)
         updating = 0;
-    else,
+    else
         updating = 1;
-    end;
+    end
 
-    if updating,
-        disp(['We are updating an existing installation on the path...']);
-        disp(['  We must temporarily reset the Matlab path.']);
-        disp(['  startup.m will be called during the installation, which should restore your path to your desired path.']);
+    if updating
+        disp('We are updating an existing installation on the path...');
+        disp('  We must temporarily reset the Matlab path.');
+        disp('  startup.m will be called during the installation, which should restore your path to your desired path.');
         currentpath = path(); % for now, don't do anything with this
         currpwd = pwd();
 
         % copy 'ndi_install.m' file to userpath directory
         thisfile = which('ndi_Init'); % ndi_Init is in same directory as ndi_install; ndi_install can have multiple copies
-        [thisparent,thisfilename,thisextension] = fileparts(thisfile);
+        [thisparent,~,~] = fileparts(thisfile);
         copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
 
         cd(userpath);
@@ -106,19 +106,19 @@ function b = ndi_install(directory, dependencies)
         ndi_install(directory, dependencies);
 
         % now clean up
-        try,
+        try
             delete([userpath filesep 'ndi_install.m']);
-        end;
-        try,
+        end
+        try
             cd(currpwd);
-        end;
+        end
 
         addpath(currentpath) % Restore the user's path
 
         return;
-    end;
+    end
 
-    for i=1:numel(dependencies),
+    for i=1:numel(dependencies)
         libparts = split(dependencies{i},'/');
         disp(['Installing/updating ' dependencies{i} '...']);
         if startsWith(dependencies{i}, 'fex')
@@ -127,31 +127,30 @@ function b = ndi_install(directory, dependencies)
         else
             git_embedded_install([directory filesep libparts{end}],dependencies{i});
         end
-    end;
+    end
 
-    disp(['Examining startup.m file to add startup line.']);
+    disp('Examining startup.m file to add startup line.');
 
-    s = which('startup.m');
+    s = fullfile(userpath,'startup.m');
 
-    if ~isempty(s),
+    if exist(s,'file')
         t = text2cellstr_embedded(s);
-    else,
-        s = [userpath filesep 'startup.m'];
+    else
         t = {};
-    end;
+    end
 
     z = regexp(t,'vhtools_startup','forceCellOutput');
 
-    if all(cellfun('isempty',z)),
+    if all(cellfun('isempty',z))
         text_to_add = ['run([''' directory filesep 'vhlab_vhtools' filesep 'vhtools_startup.m'']);'];
         disp(['Adding ' text_to_add ' to startup.m']);
         t{end+1} = text_to_add;
         cellstr2text_embedded(s,t);
-    else,
-        disp(['startup.m seems to already have needed line. No action taken.']);
-    end;
+    else
+        disp('startup.m seems to already have needed line. No action taken.');
+    end
 
-    startup
+    run(s);
 
     % embedded version
 
@@ -196,30 +195,30 @@ function b = git_embedded_install(dirname, repository)
 
     must_clone = 0;
 
-    if ~exist(dirname,'dir'),
+    if ~exist(dirname,'dir')
         must_clone = 1;
-    end;
+    end
 
     status_good = 0;
-    if ~must_clone,
-        try,
+    if ~must_clone
+        try
             [uptodate,changes,untrackedfiles] = git_embedded_status(dirname);
             status_good = ~changes; %  & ~untrackedfiles;  % untracked files okay
-        end;
+        end
 
-        if status_good, % we can pull without difficulty
+        if status_good % we can pull without difficulty
             b=git_embedded_pull(dirname);
-        else, % stash first, then pull
+        else % stash first, then pull
             warning(['STASHING changes in ' dirname '...']);
             git_embedded_stash(dirname);
             b=git_embedded_pull(dirname);
-        end;
-    else,
-        if exist(dirname,'dir'),
+        end
+    else
+        if exist(dirname,'dir')
             rmdir(dirname,'s');
-        end;
+        end
         b=git_embedded_clone(repository,localparentdir);
-    end;
+    end
 
 function b = git_embedded_pull(dirname)
     % GIT_EMBEDDED_PULL - pull changes to a git repository
@@ -239,15 +238,15 @@ function b = git_embedded_pull(dirname)
 
     pull_success = 1; % assume success, and update to failure if need be
 
-    if ~exist(dirname,'dir'),
+    if ~exist(dirname,'dir')
         pull_success = 0;
-    end;
+    end
 
-    if pull_success, % if we are still going, try to pull
-        [status,results]=system(['git -C "' dirname '" pull']);
+    if pull_success % if we are still going, try to pull
+        [status,~]=system(['git -C "' dirname '" pull']);
 
         pull_success=(status==0);
-    end;
+    end
 
     b = pull_success;
 
@@ -259,12 +258,12 @@ function b = git_embedded_isgitdirectory(dirname)
     % Examines whether DIRNAME is a GIT directory.
     %
 
-    if git_embedded_assert,
+    if git_embedded_assert
         [status,results] = system(['git -C "' dirname '" status']);
         b = ((status==0) | (status==1)) & ~isempty(results);
-    else,
-        error(['GIT not available on system.']);
-    end;
+    else
+        error('GIT not available on system.');
+    end
 
 function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
     % GIT_EMBEDDED_STATUS - return git working tree status
@@ -283,22 +282,19 @@ function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
 
     b = git_embedded_isgitdirectory(dirname);
 
-    if ~b,
+    if ~b
         error(['Not a GIT directory: ' dirname '.']);
-    end;
+    end
 
     [status,results] = system(['git -C "' dirname '" status ']);
 
-    uptodate = 0;
-    untracked_present = 0;
-
-    if status==0,
-        uptodate = ~isempty(strfind(results,'Your branch is up to date with'));
-        changes = ~isempty(strfind(results,'Changes'));
-        untracked_present = ~isempty(strfind(results,'untracked files present'));
-    else,
+    if status==0
+        uptodate = contains(results,'Your branch is up to date with');
+        changes = contains(results,'Changes');
+        untracked_present = contains(results,'untracked files present');
+    else
         error(['Error running git status: ' results]);
-    end;
+    end
 
 function b = git_embedded_stash(dirname)
     % GIT_EMBEDDED_STASH - stash changes to a git repository
@@ -314,15 +310,15 @@ function b = git_embedded_stash(dirname)
 
     stash_success = 1; % assume success, and update to failure if need be
 
-    if ~exist(dirname,'dir'),
+    if ~exist(dirname,'dir')
         stash_success = 0;
-    end;
+    end
 
-    if stash_success, % if we are still going, try to
-        [status,results]=system(['git -C "' dirname '" stash']);
+    if stash_success % if we are still going, try to
+        [status,~]=system(['git -C "' dirname '" stash']);
 
         stash_success=(status==0);
-    end;
+    end
 
     b = stash_success;
 
@@ -340,19 +336,19 @@ function b = git_embedded_clone(repository, localparentdir)
     % B is 1 if the operation is successful.
     %
 
-    if ~exist(localparentdir,'dir'),
+    if ~exist(localparentdir,'dir')
         mkdir(localparentdir);
-    end;
+    end
 
     reponames = split(repository,'/');
 
     localreponame = [localparentdir filesep reponames{end}];
 
-    if exist([localreponame],'dir'),
+    if exist(localreponame,'dir')
         error([localreponame ' already exists.']);
-    end;
+    end
 
-    [status,results]=system(['git -C "' localparentdir '" clone ' repository]);
+    [status,~]=system(['git -C "' localparentdir '" clone ' repository]);
 
     b = (status==0);
 
@@ -370,13 +366,13 @@ function c = text2cellstr_embedded(filename)
 
     fid = fopen(filename,'rt');
 
-    if fid<0,
+    if fid<0
         error(['Could not open file ' filename ' for reading.']);
-    end;
+    end
 
-    while ~feof(fid),
+    while ~feof(fid)
         c{end+1} = fgetl(fid);
-    end;
+    end
     fclose(fid);
 
 function cellstr2text_embedded(filename, cs)
@@ -393,14 +389,14 @@ function cellstr2text_embedded(filename, cs)
 
     newline = sprintf('\n');
 
-    if fid>=0,
-        for i=1:numel(cs),
+    if fid>=0
+        for i=1:numel(cs)
             fwrite(fid,[cs{i} newline],'char');
-        end;
+        end
         fclose(fid);
-    else,
+    else
         error(['Could not open ' filename ' for writing.']);
-    end;
+    end
 
 function installFexPackage(toolboxIdentifier, installLocation)
 
