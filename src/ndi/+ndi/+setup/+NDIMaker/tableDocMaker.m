@@ -46,11 +46,17 @@ classdef tableDocMaker < handle
             labFolder = fullfile(ndi.common.PathConstants.RootFolder,...
                 '+ndi','+setup','+conv',['+',labName]);
             
-            obj.variableMapFilename = fullfile(labFolder,'tableDoc_dictionary.json'); % UPDATED FILENAME
+            obj.variableMapFilename = fullfile(labFolder,'tableDoc_dictionary.json');
             if ~isfile(obj.variableMapFilename)
-                error('tableDocMaker:VariableMapFileNotFound',...
-                    'Variable map dictionary file not found: %s',...
-                    obj.variableMapFilename);
+                variableMapFilename = which(fullfile('+ndi','+setup',...
+                    '+conv',['+',labName],'tableDoc_dictionary.json'));
+                if isfile(variableMapFilename)
+                    obj.variableMapFilename = variableMapFilename;
+                else
+                    error('tableDocMaker:VariableMapFileNotFound',...
+                        'Variable map dictionary file not found: %s',...
+                        obj.variableMapFilename);
+                end
             end
             try
                 obj.variableMapStruct = jsondecode(fileread(obj.variableMapFilename));

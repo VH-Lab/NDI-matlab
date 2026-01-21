@@ -139,14 +139,36 @@ classdef DatasetsTest < matlab.unittest.TestCase
             get_message_success = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, apiResponse_get, apiURL_get);
             testCase.verifyTrue(b_get, get_message_success);
             
-            narrative(end+1) = "Testing: Verifying the returned answer is a cell array.";
+            narrative(end+1) = "Testing: Verifying the returned answer is a struct with pagination fields.";
             get_message_type = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, apiResponse_get, apiURL_get);
-            testCase.verifyTrue(iscell(answer_get), get_message_type);
-            
+            testCase.verifyTrue(isstruct(answer_get), get_message_type);
+            testCase.verifyTrue(isfield(answer_get, 'datasets'), get_message_type);
+            testCase.verifyTrue(isfield(answer_get, 'page'), get_message_type);
+            testCase.verifyTrue(isfield(answer_get, 'pageSize'), get_message_type);
+            testCase.verifyTrue(isfield(answer_get, 'totalNumber'), get_message_type);
+
             % --- 3. Verify the new dataset is in the list ---
             has_valid_structure = true;
-            if ~isempty(answer_get)
-                if ~isstruct(answer_get{1}) || ~isfield(answer_get{1}, 'id')
+            datasets_list = answer_get.datasets;
+
+            if ~iscell(datasets_list) && isstruct(datasets_list) && isscalar(datasets_list) && isempty(fieldnames(datasets_list))
+                 % Sometimes empty struct is returned for empty list? Convert to cell if needed, or check logic.
+                 % Usually matlab.net.http returns cell array for list.
+                 % If it's empty, it might be empty double or empty cell.
+            end
+
+            % Ensure datasets_list is iterable as expected (cell array of structs usually)
+            % Depending on JSON parser, it might be a struct array if all elements have same fields.
+
+            if ~isempty(datasets_list)
+                first_item = datasets_list;
+                if iscell(first_item)
+                   first_item = first_item{1};
+                elseif isstruct(first_item) && numel(first_item) > 0
+                   first_item = first_item(1);
+                end
+
+                if ~isstruct(first_item) || ~isfield(first_item, 'id')
                     % Fallback safe check to avoid crash if structure is unexpected
                     narrative(end+1) = "FAILURE: List items are not structs with 'id'.";
                     get_message_badstruct = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, apiResponse_get, apiURL_get);
@@ -156,8 +178,14 @@ classdef DatasetsTest < matlab.unittest.TestCase
             end
             
             if has_valid_structure
-                if ~isempty(answer_get)
-                    all_ids = cellfun(@(x) x.id, answer_get, 'UniformOutput', false);
+                if ~isempty(datasets_list)
+                    if iscell(datasets_list)
+                        all_ids = cellfun(@(x) x.id, datasets_list, 'UniformOutput', false);
+                    elseif isstruct(datasets_list)
+                        all_ids = {datasets_list.id};
+                    else
+                         all_ids = {};
+                    end
                 else
                     all_ids = {};
                 end
