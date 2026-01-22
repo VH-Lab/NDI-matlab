@@ -324,23 +324,23 @@
     },
     {
       "ontology": "EMPTY",
-      "lookup_string": "EMPTY:00000090",
+      "lookup_string": "EMPTY:0000002",
       "should_succeed": true,
-      "expected_id": "EMPTY:00000090",
+      "expected_id": "EMPTY:0000002",
       "expected_name": "Behavioral measurement"
     },
     {
       "ontology": "EMPTY",
       "lookup_string": "EMPTY:Behavioral measurement",
       "should_succeed": true,
-      "expected_id": "EMPTY:00000090",
+      "expected_id": "EMPTY:0000002",
       "expected_name": "Behavioral measurement"
     },
     {
       "ontology": "EMPTY",
-      "lookup_string": "EMPTY:00000100",
+      "lookup_string": "EMPTY:0000006",
       "should_succeed": true,
-      "expected_id": "EMPTY:00000100",
+      "expected_id": "EMPTY:0000006",
       "expected_name": "Elevated Plus Maze: open arm (north) - entries"
     },
     {
