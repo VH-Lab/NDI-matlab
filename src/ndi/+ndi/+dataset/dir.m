@@ -41,21 +41,19 @@ classdef dir < ndi.dataset
             % Use the session.dir's path as the path for this object
             ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
 
-            weMadeSessionInDatasetObjs = false;
             q = ndi.query('','isa','dataset_session_info');
             d = ndi_dataset_dir_obj.database_search(q);
             if ~isempty(d)
-                session_in_dataset_objs = ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj);
-                weMadeSessionInDatasetObjs = true;
-            else
-                q = ndi.query('','isa','session_in_a_dataset');
-                session_in_dataset_objs = ndi_dataset_dir_obj.database_search(q);
+                ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj);
             end
 
+            q = ndi.query('','isa','session_in_a_dataset');
+            d = ndi_dataset_dir_obj.database_search(q);
+
             contained_session_ids = {};
-            if ~isempty(session_in_dataset_objs)
-                for i=1:numel(session_in_dataset_objs)
-                    contained_session_ids{i} = session_in_dataset_objs{i}.document_properties.session_in_a_dataset.session_id;
+            if ~isempty(d)
+                for i=1:numel(d)
+                    contained_session_ids{i} = d{i}.document_properties.session_in_a_dataset.session_id;
                 end
             end
 
@@ -74,9 +72,6 @@ classdef dir < ndi.dataset
                 ref = candidate_session_doc{1}.document_properties.session.reference;
                 session_id = candidate_session_doc{1}.document_properties.base.session_id;
                 ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
-                if weMadeSessionInDatasetObjs
-                    ndi_dataset_dir_obj.database_add(session_in_dataset_objs);
-                end
             elseif numel(candidate_session_doc)>1
                 error(['More than 1 candidate for the dataset session document found.']);
             end

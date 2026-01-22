@@ -460,8 +460,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             new_docs = {};
 
-            q = ndi.query('','isa','dataset_session_info') & ...
-                ndi.query('base.session_id', 'exact_string', ndi_dataset_obj.id());
+            q = ndi.query('','isa','dataset_session_info');
 
             doc = ndi_dataset_obj.session.database_search(q);
 
