@@ -89,7 +89,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % session_info.session_creator_input2 = vlt.file.relativeFilename(ndi_dataset_obj.getpath(),ndi_session_obj.getpath)
 
             new_doc = ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
-            session_info_here.session_doc_id = new_doc.id();
+            session_info_here.session_doc_in_dataset_id = new_doc.id();
 
             ndi_dataset_obj.session_info(end+1) = session_info_here;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',ndi_session_obj);
@@ -148,7 +148,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi.database.fun.copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj);
 
             new_doc = ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
-            session_info_here.session_doc_id = new_doc.id();
+            session_info_here.session_doc_in_dataset_id = new_doc.id();
 
             ndi_dataset_obj.session_info(end+1) = session_info_here;
             ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',[]); % make it open it again
@@ -222,7 +222,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             ref_list = {ndi_dataset_obj.session_info.session_reference};
             id_list = {ndi_dataset_obj.session_info.session_id};
-            session_doc_ids = {ndi_dataset_obj.session_info.session_doc_id};
+            session_doc_ids = {ndi_dataset_obj.session_info.session_doc_in_dataset_id};
 
             dataset_session_doc_id = '';
             q_dataset_session_doc = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
@@ -573,11 +573,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             ndi_dataset_obj.session_info = did.datastructures.emptystruct('session_id','session_reference','is_linked','session_creator',...
                     'session_creator_input1','session_creator_input2','session_creator_input3',...
-                    'session_creator_input4','session_creator_input5','session_creator_input6','session_doc_id');
+                    'session_creator_input4','session_creator_input5','session_creator_input6','session_doc_in_dataset_id');
 
             for i=1:numel(session_info_doc)
                 info_here = session_info_doc{i}.document_properties.session_in_a_dataset;
-                info_here.session_doc_id = session_info_doc{i}.id();
+                info_here.session_doc_in_dataset_id = session_info_doc{i}.id();
                 % fix field order, etc?
                 ndi_dataset_obj.session_info(end+1) = info_here;
             end
