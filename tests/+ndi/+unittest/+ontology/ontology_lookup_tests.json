@@ -2,9 +2,9 @@
   "ontology_lookup_tests": [
     {
       "ontology": "NCBITaxon",
-      "lookup_string": "taxonomy:9606",
+      "lookup_string": "NCBITaxon:9606",
       "should_succeed": true,
-      "expected_id": "9606",
+      "expected_id": "NCBITaxon:9606",
       "expected_name": "Homo sapiens"
     },
     {
@@ -39,7 +39,7 @@
       "ontology": "NCBITaxon",
       "lookup_string": "NCBITaxon:9606",
       "should_succeed": true,
-      "expected_id": "9606",
+      "expected_id": "NCBITaxon:9606",
       "expected_name": "Homo sapiens"
     },
     {
@@ -200,7 +200,7 @@
       "ontology": "NCBITaxon",
       "lookup_string": "NCBITaxon:Homo sapiens",
       "should_succeed": true,
-      "expected_id": "9606",
+      "expected_id": "NCBITaxon:9606",
       "expected_name": "Homo sapiens"
     },
     {
@@ -270,7 +270,7 @@
       "ontology": "NCBITaxon",
       "lookup_string": "taxonomy:9606",
       "should_succeed": true,
-      "expected_id": "9606",
+      "expected_id": "NCBITaxon:9606",
       "expected_name": "Homo sapiens"
     },
     {

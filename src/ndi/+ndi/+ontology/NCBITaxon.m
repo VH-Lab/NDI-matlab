@@ -142,6 +142,8 @@ classdef NCBITaxon < ndi.ontology
                     id = taxid;
                 end
 
+                id = ['NCBITaxon:' id];
+
                 name_match = regexp(xml_response, '<ScientificName>(.*?)</ScientificName>', 'tokens', 'once');
                 if ~isempty(name_match), name = name_match{1}; else, name = ''; end
 
