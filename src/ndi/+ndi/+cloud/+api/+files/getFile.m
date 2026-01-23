@@ -24,15 +24,15 @@ function [b, answer, apiResponse, apiURL] = getFile(downloadURL, downloadedFile,
 %       apiURL       - The URL that was called (the downloadURL).
 %
 %   Example:
-%       % Get a URL for a single file download
-%       [s, url] = ndi.cloud.api.files.getFileDownloadURL('d-123', 'f-abc');
+%       % Get details (including a download URL) for a single file
+%       [s, fileInfo] = ndi.cloud.api.files.getFileDetails('d-123', 'f-abc');
 %       if s
 %           % If successful, download the file
-%           [s2] = ndi.cloud.api.files.getFile(url, 'localfile.dat');
+%           [s2] = ndi.cloud.api.files.getFile(fileInfo.downloadUrl, 'localfile.dat');
 %       end
 %
 %   See also: ndi.cloud.api.implementation.files.GetFile,
-%             ndi.cloud.api.files.getFileDownloadURL
+%             ndi.cloud.api.files.getFileDetails
 %
     arguments
         downloadURL (1,1) string

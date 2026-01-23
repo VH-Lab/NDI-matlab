@@ -158,7 +158,7 @@ methods (Static)
             [id, name, definition, synonyms] = lookupTermOrID(ontologyObj, remainder);
         catch ME_lookup
             baseME = MException('ndi:ontology:lookup:SpecificLookupError', ...
-                'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s".', className, remainder);
+                'Error occurred during lookupTermOrID call for class "%s" with input remainder "%s". Error: %s', className, remainder, ME_lookup.message);
             baseME = addCause(baseME, ME_lookup);
             throw(baseME);
         end
@@ -285,7 +285,33 @@ methods (Static)
                 if numFound == 1, doc = search_response.response.docs(1); if strcmp(search_field,'label'), if ~(isfield(doc,'label') && strcmpi(doc.label, search_query)), label_found = '[Label Missing]'; if isfield(doc,'label'), label_found = doc.label; end; error('ndi:ontology:searchOLSAndPerformIRILookup:MismatchOnSingleResult','Search for name "%s" returned single result with non-matching label ("%s").', search_query, label_found); end; end; if isfield(doc, 'iri') && ~isempty(doc.iri), term_iri = char(doc.iri); else, error('ndi:ontology:searchOLSAndPerformIRILookup:MissingIRIInSearchResult','Found unique term for %s, but could not extract IRI.', lookup_type_msg); end
                 elseif numFound == 0, error('ndi:ontology:searchOLSAndPerformIRILookup:NotFound', 'Term matching %s not found in "%s" via OLS search.', lookup_type_msg, ontology_name_ols);
                 else % numFound > 1
-                     if strcmp(search_field, 'label'), docs_array = search_response.response.docs; match_indices = find(arrayfun(@(x) isfield(x,'label') && strcmpi(x.label, search_query), docs_array)); if numel(match_indices) == 1, doc = docs_array(match_indices); if isfield(doc, 'iri') && ~isempty(doc.iri), term_iri = char(doc.iri); else, error('ndi:ontology:searchOLSAndPerformIRILookup:MissingIRIInSearchResult','Found unique name for %s among multiple results, but could not extract IRI.', lookup_type_msg); end; elseif numel(match_indices) == 0, error('ndi:ontology:searchOLSAndPerformIRILookup:NotFound', 'No exact (case-insensitive) label match for "%s" found among %d results in "%s".', search_query, numFound, ontology_name_ols); else, error('ndi:ontology:searchOLSAndPerformIRILookup:NotUnique', 'Term matching %s resulted in %d exact matches (case-insensitive) in "%s". Requires unique match.', lookup_type_msg, numel(match_indices), ontology_name_ols); end
+                     if strcmp(search_field, 'label')
+                        docs_array = search_response.response.docs;
+                        if iscell(docs_array)
+                            % Handle cell array (heterogeneous fields)
+                            match_mask = cellfun(@(x) isfield(x,'label') && strcmpi(x.label, search_query), docs_array);
+                        else
+                            % Handle struct array (homogeneous fields)
+                            match_mask = arrayfun(@(x) isfield(x,'label') && strcmpi(x.label, search_query), docs_array);
+                        end
+                        match_indices = find(match_mask);
+
+                        if numel(match_indices) == 1
+                            if iscell(docs_array)
+                                doc = docs_array{match_indices};
+                            else
+                                doc = docs_array(match_indices);
+                            end
+                            if isfield(doc, 'iri') && ~isempty(doc.iri)
+                                term_iri = char(doc.iri);
+                            else
+                                error('ndi:ontology:searchOLSAndPerformIRILookup:MissingIRIInSearchResult','Found unique name for %s among multiple results, but could not extract IRI.', lookup_type_msg);
+                            end
+                        elseif numel(match_indices) == 0
+                            error('ndi:ontology:searchOLSAndPerformIRILookup:NotFound', 'No exact (case-insensitive) label match for "%s" found among %d results in "%s".', search_query, numFound, ontology_name_ols);
+                        else
+                            error('ndi:ontology:searchOLSAndPerformIRILookup:NotUnique', 'Term matching %s resulted in %d exact matches (case-insensitive) in "%s". Requires unique match.', lookup_type_msg, numel(match_indices), ontology_name_ols);
+                        end
                      else, error('ndi:ontology:searchOLSAndPerformIRILookup:NotUnique', 'Term matching %s yielded %d results in "%s" (expected 1 for ID search).', lookup_type_msg, numFound, ontology_name_ols); end
                 end
             else, error('ndi:ontology:searchOLSAndPerformIRILookup:InvalidSearchResponse', 'Invalid search response structure from OLS for %s in "%s".', lookup_type_msg, ontology_name_ols); end

@@ -43,7 +43,30 @@ classdef AuthTest < matlab.unittest.TestCase
             logout_message = ndi.unittest.cloud.APIMessage(narrative, b_logout, answer_logout, apiResponse_logout, apiURL_logout);
             testCase.verifyTrue(b_logout, logout_message);
             narrative(end+1) = "Logout call successful.";
-        end        
+        end
+
+        function testHighLevelLogout(testCase)
+            % This test verifies the behavior of ndi.cloud.logout
+
+            % Setup: Set environment variables to simulate a logged-in state
+            setenv('NDI_CLOUD_TOKEN', 'fake_token');
+            setenv('NDI_CLOUD_ORGANIZATION_ID', 'fake_org_id');
+
+            % Action: Call logout
+            % We expect a warning because the token is fake and API call will likely fail,
+            % but the function should still clear the environment variables.
+            warning('off', 'NDI:Cloud:LogoutAPIError');
+            cleanup = onCleanup(@() warning('on', 'NDI:Cloud:LogoutAPIError'));
+
+            ndi.cloud.logout();
+
+            % Verify: Environment variables should be empty
+            token = getenv('NDI_CLOUD_TOKEN');
+            org_id = getenv('NDI_CLOUD_ORGANIZATION_ID');
+
+            testCase.verifyEmpty(token, 'NDI_CLOUD_TOKEN should be empty after logout');
+            testCase.verifyEmpty(org_id, 'NDI_CLOUD_ORGANIZATION_ID should be empty after logout');
+        end
     end
 end
 
