@@ -51,6 +51,12 @@ classdef dir < ndi.dataset
                 session_in_a_dataset_docs = ndi_dataset_dir_obj.database_search(q);
                 if ~isempty(session_in_a_dataset_docs)
                     correctSessionId = session_in_a_dataset_docs{1}.document_properties.base.session_id;
+                else
+                    q_session = ndi.query('','isa','session');
+                    candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                    if isscalar(candidate_session_doc)
+                       correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                    end
                 end
             end
 
