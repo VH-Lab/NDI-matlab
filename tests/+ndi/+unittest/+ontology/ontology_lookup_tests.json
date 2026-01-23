@@ -2,7 +2,7 @@
   "ontology_lookup_tests": [
     {
       "ontology": "NCBITaxon",
-      "lookup_string": "taxonomy:9606",
+      "lookup_string": "NCBITaxon:9606",
       "should_succeed": true,
       "expected_id": "NCBITaxon:9606",
       "expected_name": "Homo sapiens"
