@@ -19,10 +19,11 @@ function [b, answer, apiResponse, apiURL] = getFileDetails(cloudDatasetID, cloud
 %   Example:
 %       [success, file_info] = ndi.cloud.api.files.getFileDetails('d-12345', 'f-abcde');
 %       if success
-%           websave('myfile.dat', file_info.downloadUrl);
+%           ndi.cloud.api.files.getFile(file_info.downloadUrl, 'myfile.dat');
 %       end
 %
-%   See also: ndi.cloud.api.implementation.files.GetFileDetails
+%   See also: ndi.cloud.api.implementation.files.GetFileDetails,
+%             ndi.cloud.api.files.getFile
 
     arguments
         cloudDatasetID (1,1) string

@@ -41,39 +41,44 @@ classdef dir < ndi.dataset
             % Use the session.dir's path as the path for this object
             ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
 
-            q = ndi.query('','isa','dataset_session_info');
-            d = ndi_dataset_dir_obj.database_search(q);
-            if ~isempty(d)
-                ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj);
-            end
-
-            q = ndi.query('','isa','session_in_a_dataset');
-            d = ndi_dataset_dir_obj.database_search(q);
-
-            contained_session_ids = {};
-            if ~isempty(d)
-                for i=1:numel(d)
-                    contained_session_ids{i} = d{i}.document_properties.session_in_a_dataset.session_id;
+            dataset_session_info_docs = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+            
+            correctSessionId = '';
+            if ~isempty(dataset_session_info_docs)
+                correctSessionId = dataset_session_info_docs{1}.document_properties.base.session_id;
+            else
+                q = ndi.query('','isa','session_in_a_dataset');
+                session_in_a_dataset_docs = ndi_dataset_dir_obj.database_search(q);
+                if ~isempty(session_in_a_dataset_docs)
+                    correctSessionId = session_in_a_dataset_docs{1}.document_properties.base.session_id;
+                else
+                    q_session = ndi.query('','isa','session');
+                    candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                    if isscalar(candidate_session_doc)
+                       correctSessionId = candidate_session_doc{1}.document_properties.base.session_id;
+                    end
                 end
             end
 
-            q2 = ndi.query('','isa','session');
-            d2 = ndi_dataset_dir_obj.database_search(q2);
-
-            candidate_session_doc = {};
-
-            for i=1:numel(d2)
-                if ~any(strcmp(d2{i}.document_properties.base.session_id, contained_session_ids))
-                    candidate_session_doc{end+1} = d2{i};
+            if ~isempty(correctSessionId)
+                q_session = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',correctSessionId);                
+                candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
+                if isscalar(candidate_session_doc)
+                    ref = candidate_session_doc{1}.document_properties.session.reference;
+                    session_id = candidate_session_doc{1}.document_properties.base.session_id;
+                    ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
+                else
+                    error('Could not find dataset session document.');
                 end
+            else
+                error('Could not find dataset session document.');
             end
 
-            if isscalar(candidate_session_doc)
-                ref = candidate_session_doc{1}.document_properties.session.reference;
-                session_id = candidate_session_doc{1}.document_properties.base.session_id;
-                ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
-            elseif numel(candidate_session_doc)>1
-                error(['More than 1 candidate for the dataset session document found.']);
+            if ~isempty(dataset_session_info_docs)
+                %disp('updating dataset to new form');
+                % double-check we still need to do it
+                dataset_session_info_docs2 = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+                ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj,dataset_session_info_docs);
             end
         end % dir(), creator
     end % methods
