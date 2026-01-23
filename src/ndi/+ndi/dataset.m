@@ -440,13 +440,15 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
     end % methods
 
     methods (Static)
-        function [new_docs] = repairDatasetSessionInfo(ndi_dataset_obj, options)
+        function [new_docs] = repairDatasetSessionInfo(ndi_dataset_obj, doc, options)
             % REPAIRDATASETSESSIONINFO - Break out dataset_session_info into individual session_in_a_dataset documents
             %
-            % [NEW_DOCS] = ndi.dataset.repairDatasetSessionInfo(NDI_DATASET_OBJ, 'DryRun', [true|false])
+            % [NEW_DOCS] = ndi.dataset.repairDatasetSessionInfo(NDI_DATASET_OBJ, DOC, 'DryRun', [true|false])
             %
             % Checks to see if NDI_DATASET_OBJ has a dataset_session_info document. If so, it breaks
             % the information out into new individual session_in_a_dataset documents.
+            %
+            % DOC should be an ndi.document of type 'dataset_session_info'.
             %
             % If 'DryRun' is false (default), it deletes the dataset_session_info document and adds
             % the new session_in_a_dataset documents.
@@ -455,23 +457,21 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             arguments
                 ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj, 'ndi.dataset')}
+                doc {mustBeA(doc,{'cell','ndi.document','did.document'})}
                 options.DryRun (1,1) logical = false
             end
 
             new_docs = {};
 
-            q = ndi.query('','isa','dataset_session_info');
-
-            doc = ndi_dataset_obj.session.database_search(q);
-
-            if isempty(doc)
-                return;
+            if ~iscell(doc)
+                doc = {doc};
             end
 
             if numel(doc)>1
                  error(['Found too many dataset session info documents (' int2str(numel(doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
             end
 
+            currentDatasetID = doc{1}.document_properties.base.session_id;
             dataset_session_info_struct = doc{1}.document_properties.dataset_session_info.dataset_session_info;
 
             if isstruct(dataset_session_info_struct)
@@ -496,17 +496,17 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                      end
 
                      new_doc = ndi.document('session_in_a_dataset', 'session_in_a_dataset', doc_struct);
-                     new_doc = new_doc.set_session_id(ndi_dataset_obj.id());
-
+                     new_doc = new_doc.set_session_id(currentDatasetID);
+                     
                      new_docs{end+1} = new_doc;
                  end
             end
 
             if ~options.DryRun
                  if ~isempty(new_docs)
-                     ndi_dataset_obj.session.database_add(new_docs);
+                     ndi_dataset_obj.database_add(new_docs);
                  end
-                 ndi_dataset_obj.session.database_rm(doc{1});
+                 ndi_dataset_obj.database_rm(doc{1});
             end
         end
 
@@ -563,7 +563,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             if ~isempty(session_info_doc)
                 % we have the old style, let's repair it
-                ndi.dataset.repairDatasetSessionInfo(ndi_dataset_obj);
+                ndi.dataset.repairDatasetSessionInfo(ndi_dataset_obj,session_info_doc);
             end
 
             q2 = ndi.query('','isa','session_in_a_dataset') & ...
