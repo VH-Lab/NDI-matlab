@@ -371,7 +371,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             open_linked_sessions(ndi_dataset_obj);
             match = find([ndi_dataset_obj.session_info.is_linked]);
             for i=1:numel(match)
-                ndi_document_obj = cat(1,ndi_document_obj,...
+                ndi_document_obj = cat(2,ndi_document_obj,...
                     ndi_dataset_obj.session_array(match(i)).session.database_search(searchparameters));
                 mksqlite('close'); % TODO: update ndi.session with a close database files method
             end
