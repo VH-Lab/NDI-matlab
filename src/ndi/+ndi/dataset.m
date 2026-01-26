@@ -180,7 +180,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             arguments
                 ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj,"ndi.dataset")}
-                session_id (1,1) {mustBeA(session_id,["string","char"])}
+                session_id (1,:) char
                 options.areYouSure (1,1) logical = false
                 options.askUserToConfirm (1,1) logical = true
             end
@@ -383,10 +383,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             dataset_session_doc_id = '';
             q_dataset_session_doc = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
             doc = ndi_dataset_obj.session.database_search(q_dataset_session_doc);
-            if numel(doc)==1
+            if isscalar(doc)
                 dataset_session_doc_id = doc{1}.id();
             elseif numel(doc)>1
-                error(['More than 1 session document for the dataset session found.']);
+                error('More than 1 session document for the dataset session found.');
             end
 
         end % session_list()
@@ -591,7 +591,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % the document.
             %
             session_id = ndi_document_obj.document_properties.base.session_id;
-            ndi_session_obj = ndi_dataset_obj.open_session(session_id)
+            ndi_session_obj = ndi_dataset_obj.open_session(session_id);
         end % document_session()
 
     end % methods
