@@ -157,6 +157,78 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
         end % add_ingested_session()
 
+        function ndi_dataset_obj = deleteIngestedSession(ndi_dataset_obj, session_id, options)
+            % DELETEINGESTEDSESSION - delete an ingested session from the dataset
+            %
+            % NDI_DATASET_OBJ = DELETEINGESTEDSESSION(NDI_DATASET_OBJ, SESSION_ID, 'areYouSure', false, 'askUserToConfirm', true)
+            %
+            % Removes an ingested session from the dataset.
+            %
+            % The function removes the session_in_a_dataset document corresponding to the session,
+            % and any document whose base.session_id matches the session_id to be deleted.
+            %
+            % WARNING: At present, this step is irreversible, because one cannot add back documents
+            % to a dataset that have the same IDs as a previously-deleted dataset. This is a known
+            % issue that may be solved in a future release but for now prevents deletion and
+            % re-adding of the same ingested session. This issue does not impact linked sessions.
+            %
+            % Inputs:
+            %   SESSION_ID - The ID of the session to delete.
+            %   'areYouSure' - (Optional) Logical, default false. Must be true for the function to work.
+            %   'askUserToConfirm' - (Optional) Logical, default true. If true, a question dialog will confirm the choice.
+            %
+
+            arguments
+                ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj,"ndi.dataset")}
+                session_id (1,1) {mustBeA(session_id,["string","char"])}
+                options.areYouSure (1,1) logical = false
+                options.askUserToConfirm (1,1) logical = true
+            end
+
+            if options.askUserToConfirm && ~options.areYouSure
+                 answer = questdlg(sprintf('Are you sure you want to delete session %s? This is irreversible.', session_id), ...
+                     'Confirm Deletion', 'Yes', 'No', 'No');
+                 if strcmp(answer, 'Yes')
+                     options.areYouSure = true;
+                 end
+            end
+
+            if ~options.areYouSure
+                error('ndi:dataset:deleteIngestedSession:notConfirmed', 'Deletion not confirmed.');
+            end
+
+            if isempty(ndi_dataset_obj.session_array)
+                ndi_dataset_obj.build_session_info;
+            end
+
+            match_idx = find(strcmp(session_id, {ndi_dataset_obj.session_info.session_id}));
+            if isempty(match_idx)
+                 error('ndi:dataset:deleteIngestedSession:notFound', ['Session ' session_id ' not found in dataset.']);
+            end
+
+            if ndi_dataset_obj.session_info(match_idx).is_linked
+                 error('ndi:dataset:deleteIngestedSession:isLinked', ['Session ' session_id ' is a linked session, not an ingested one.']);
+            end
+
+            session_doc_id = ndi_dataset_obj.session_info(match_idx).session_doc_in_dataset_id;
+
+            % Find all documents with base.session_id == session_id
+            q_docs = ndi.query('base.session_id', 'exact_string', session_id);
+            docs_to_delete = ndi_dataset_obj.database_search(q_docs);
+
+            % Delete session doc
+            ndi_dataset_obj.database_rm(session_doc_id);
+
+            % Delete other docs
+            if ~isempty(docs_to_delete)
+                 ndi_dataset_obj.database_rm(docs_to_delete);
+            end
+
+            % Rebuild session info
+            ndi_dataset_obj.build_session_info();
+
+        end % deleteIngestedSession()
+
         function ndi_session_obj = open_session(ndi_dataset_obj, session_id)
             % OPEN_SESSION - open an ndi.session object from an ndi.dataset
             %
