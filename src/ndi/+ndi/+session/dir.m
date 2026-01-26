@@ -181,6 +181,61 @@ classdef dir < ndi.session
             inputs{2} = ndi_session_obj.getpath();
             inputs{3} = ndi_session_obj.id();
         end % creator_args()
+
+        function obj_out = delete(ndi_session_dir_obj, areYouSure, askUserToConfirm)
+            % DELETE - delete the session files
+            %
+            % OBJ_OUT = DELETE(NDI_SESSION_DIR_OBJ, AREYOUSURE, ASKUSERTOCONFIRM)
+            %
+            % Deletes the session files (recursively removes .ndi directory).
+            %
+            % Inputs:
+            %   AREYOUSURE (default false) - boolean, if true, proceeds with deletion without confirmation (unless ASKUSERTOCONFIRM is true and fails?)
+            %       Actually, logic: if AREYOUSURE is true, we delete.
+            %       If AREYOUSURE is false, we check ASKUSERTOCONFIRM.
+            %   ASKUSERTOCONFIRM (default true) - boolean, if true and AREYOUSURE is false, asks user via popup.
+            %
+            % Returns:
+            %   OBJ_OUT - ndi.session.dir.empty()
+            %
+            arguments
+                ndi_session_dir_obj (1,1) ndi.session.dir
+                areYouSure (1,1) logical = false
+                askUserToConfirm (1,1) logical = true
+            end
+
+            % Check if ingested
+            if ismethod(ndi_session_dir_obj, 'isIngestedInDataset')
+                if ndi_session_dir_obj.isIngestedInDataset()
+                    error('Cannot directly delete session that is embedded in dataset; use ndi.dataset.delete_session');
+                end
+            end
+
+            passed = areYouSure;
+            if ~passed && askUserToConfirm
+                % We can only use questdlg if we have a display?
+                % But typical usage is desktop.
+                answer = questdlg('Are you sure you want to delete the session files?', 'Confirm Delete', 'Yes', 'No', 'No');
+                if strcmp(answer, 'Yes')
+                    passed = true;
+                end
+            end
+
+            if passed
+                p = fullfile(ndi_session_dir_obj.path, '.ndi');
+                if isfolder(p)
+                    rmdir(p, 's');
+                end
+                obj_out = ndi.session.dir.empty();
+            else
+                % If not passed, we return the object itself? Or empty?
+                % "output object should be set to ndi.session.dir.empty()" was only specified "If the confirmation and the areYouSure pass".
+                % If it fails, presumably we return the original object or nothing?
+                % But the signature says we return `obj_out`.
+                % If I return the original object, the user can continue using it.
+                obj_out = ndi_session_dir_obj;
+            end
+        end
     end % methods
 
     methods (Static)
