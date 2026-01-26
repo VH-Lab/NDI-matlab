@@ -36,27 +36,27 @@ classdef TestDeleteSession < matlab.unittest.TestCase
 
     methods (Test)
         function testDeleteNoConfirm(testCase)
-            % Test delete(s, false, false) -> Should not delete
+            % Test deleteSessionDataStructures(s, false, false) -> Should not delete
 
             ndi_dir = fullfile(testCase.TempPath, '.ndi');
             testCase.verifyTrue(isfolder(ndi_dir), '.ndi directory should exist initially');
 
-            % delete(areYouSure=false, askUserToConfirm=false)
-            testCase.Session.delete(false, false);
+            % deleteSessionDataStructures(areYouSure=false, askUserToConfirm=false)
+            testCase.Session.deleteSessionDataStructures(false, false);
 
-            testCase.verifyTrue(isfolder(ndi_dir), 'delete(false, false) should not delete the directory');
+            testCase.verifyTrue(isfolder(ndi_dir), 'deleteSessionDataStructures(false, false) should not delete the directory');
         end
 
         function testDeleteConfirm(testCase)
-            % Test delete(s, true, false) -> Should delete
+            % Test deleteSessionDataStructures(s, true, false) -> Should delete
 
             ndi_dir = fullfile(testCase.TempPath, '.ndi');
             testCase.verifyTrue(isfolder(ndi_dir), '.ndi directory should exist initially');
 
-            % delete(areYouSure=true, askUserToConfirm=false)
-            testCase.Session.delete(true, false);
+            % deleteSessionDataStructures(areYouSure=true, askUserToConfirm=false)
+            testCase.Session.deleteSessionDataStructures(true, false);
 
-            testCase.verifyFalse(isfolder(ndi_dir), 'delete(true, false) should delete the directory');
+            testCase.verifyFalse(isfolder(ndi_dir), 'deleteSessionDataStructures(true, false) should delete the directory');
         end
 
         function testIngestedSessionDelete(testCase)
@@ -77,8 +77,8 @@ classdef TestDeleteSession < matlab.unittest.TestCase
 
              % Try to delete the ingested session
              try
-                 session_ingested.delete(true, false);
-                 testCase.verifyFail('delete() did not error on ingested session');
+                 session_ingested.deleteSessionDataStructures(true, false);
+                 testCase.verifyFail('deleteSessionDataStructures() did not error on ingested session');
              catch ME
                  testCase.verifyTrue(contains(ME.message, 'Cannot directly delete session that is embedded in dataset'), ...
                      ['Unexpected error message: ' ME.message]);
