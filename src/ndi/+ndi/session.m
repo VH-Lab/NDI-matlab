@@ -546,6 +546,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
         end % is_fully_ingested
 
+        function b = isIngestedInDataset(ndi_session_obj)
+            % ISINGESTEDINDATASET - is the session ingested in a dataset?
+            %
+            % B = ISINGESTEDINDATASET(NDI_SESSION_OBJ)
+            %
+            % Returns 1 if the session is ingested in a dataset (that is visible
+            % to the session's database), and 0 otherwise.
+            %
+            % This method searches for a 'session_in_a_dataset' document in the
+            % database that matches the session's ID and has is_linked=0.
+            %
+
+            q = ndi.query('','isa','session_in_a_dataset') & ...
+                ndi.query('session_in_a_dataset.session_id', 'exact_string', ndi_session_obj.id());
+            docs = ndi_session_obj.database.search(q);
+
+            b = false;
+            for i=1:numel(docs)
+                if docs{i}.document_properties.session_in_a_dataset.is_linked == 0
+                    b = true;
+                    return;
+                end
+            end
+        end % isIngestedInDataset
+
         %%%%%% PATH methods
 
         function p = getpath(ndi_session_obj)
