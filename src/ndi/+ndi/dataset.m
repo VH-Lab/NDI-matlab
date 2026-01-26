@@ -305,7 +305,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             if options.AlsoDeleteSessionAfterUnlinking
                 if ~isempty(session_obj)
                      % Pass areYouSure (which is true here) and DeleteSessionAskToConfirm
-                     session_obj.delete(options.areYouSure, options.DeleteSessionAskToConfirm);
+                     session_obj.deleteSessionDataStructures(options.areYouSure, options.DeleteSessionAskToConfirm);
                 else
                     warning(['Could not open session ' ndi_session_id ' to delete it.']);
                 end

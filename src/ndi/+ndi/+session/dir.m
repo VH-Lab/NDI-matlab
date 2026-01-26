@@ -182,10 +182,10 @@ classdef dir < ndi.session
             inputs{3} = ndi_session_obj.id();
         end % creator_args()
 
-        function obj_out = delete(ndi_session_dir_obj, areYouSure, askUserToConfirm)
-            % DELETE - delete the session files
+        function obj_out = deleteSessionDataStructures(ndi_session_dir_obj, areYouSure, askUserToConfirm)
+            % DELETESESSIONDATASTRUCTURES - delete the session files
             %
-            % OBJ_OUT = DELETE(NDI_SESSION_DIR_OBJ, AREYOUSURE, ASKUSERTOCONFIRM)
+            % OBJ_OUT = DELETESESSIONDATASTRUCTURES(NDI_SESSION_DIR_OBJ, AREYOUSURE, ASKUSERTOCONFIRM)
             %
             % Deletes the session files (recursively removes .ndi directory).
             %
