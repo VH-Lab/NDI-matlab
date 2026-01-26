@@ -228,6 +228,90 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.build_session_info();
 
         end % deleteIngestedSession()
+        
+        function unlink_session(ndi_dataset_obj, ndi_session_id, options)
+            % UNLINK_SESSION - unlink a session from an ndi.dataset
+            %
+            % UNLINK_SESSION(NDI_DATASET_OBJ, NDI_SESSION_ID, 'areYouSure', false, ...)
+            %
+            % Unlinks a session from the dataset. The session must be a linked session (not ingested).
+            %
+            % Options:
+            %  areYouSure (false) - must be true to proceed, unless confirmed by user
+            %  askUserToConfirm (true) - if true, will ask user for confirmation via dialog (unless areYouSure is true)
+            %  AlsoDeleteSessionAfterUnlinking (false) - if true, will also delete the session files
+            %  DeleteSessionAskToConfirm (true) - passed to the session delete method
+            %
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ndi_session_id (1,:) char
+                options.areYouSure (1,1) logical = false
+                options.askUserToConfirm (1,1) logical = true
+                options.AlsoDeleteSessionAfterUnlinking (1,1) logical = false
+                options.DeleteSessionAskToConfirm (1,1) logical = true
+            end
+
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+
+            match_idx = find(strcmp(ndi_session_id, {ndi_dataset_obj.session_info.session_id}), 1);
+
+            if isempty(match_idx)
+                error(['Session with ID ' ndi_session_id ' not found in dataset ' ndi_dataset_obj.id() '.']);
+            end
+
+            % Check if it is linked
+            if ndi_dataset_obj.session_info(match_idx).is_linked == 0
+                 error(['The session with ID ' ndi_session_id ' is an INGESTED session, not a linked session. Cannot unlink.']);
+            end
+
+            proceed = options.areYouSure;
+
+            if ~proceed && options.askUserToConfirm
+                 answer = questdlg(['Are you sure you want to unlink session ' ndi_session_id '?'], ...
+                     'Confirm Unlink', ...
+                     'Yes','No','No');
+                 if strcmp(answer, 'Yes')
+                     proceed = true;
+                 end
+            end
+
+            if ~proceed
+                 error('Operation not confirmed. Set areYouSure to true or confirm via dialog.');
+            end
+
+            % If we need to delete the session later, we need the object.
+            session_obj = [];
+            if options.AlsoDeleteSessionAfterUnlinking
+                % Try to find if it is already open
+                if numel(ndi_dataset_obj.session_array) >= match_idx && ...
+                        strcmp(ndi_dataset_obj.session_array(match_idx).session_id, ndi_session_id) && ...
+                        ~isempty(ndi_dataset_obj.session_array(match_idx).session)
+                    session_obj = ndi_dataset_obj.session_array(match_idx).session;
+                else
+                    % Open it
+                    session_obj = ndi_dataset_obj.open_session(ndi_session_id);
+                end
+            end
+
+            % Remove the session info (unlink)
+            ndi.dataset.removeSessionInfoFromDataset(ndi_dataset_obj, ndi_session_id);
+
+            % Rebuild info to update state
+            ndi_dataset_obj.build_session_info();
+
+            % Delete session if requested
+            if options.AlsoDeleteSessionAfterUnlinking
+                if ~isempty(session_obj)
+                     % Pass areYouSure (which is true here) and DeleteSessionAskToConfirm
+                     session_obj.delete(options.areYouSure, options.DeleteSessionAskToConfirm);
+                else
+                    warning(['Could not open session ' ndi_session_id ' to delete it.']);
+                end
+            end
+
+        end % unlink_session()
 
         function ndi_session_obj = open_session(ndi_dataset_obj, session_id)
             % OPEN_SESSION - open an ndi.session object from an ndi.dataset
