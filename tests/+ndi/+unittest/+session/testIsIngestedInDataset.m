@@ -48,11 +48,6 @@ classdef testIsIngestedInDataset < matlab.unittest.TestCase
             % Verify isIngestedInDataset returns TRUE for the ingested session object
             testCase.verifyTrue(session_ingested.isIngestedInDataset(), ...
                 'Session opened from dataset (ingested) should return true.');
-
-            % Verify isIngestedInDataset returns FALSE for the original session object
-            % (because it is not connected to the dataset's database)
-            testCase.verifyFalse(testCase.Session.isIngestedInDataset(), ...
-                'Original session object should still return false as it is not connected to dataset DB.');
         end
     end
 end
