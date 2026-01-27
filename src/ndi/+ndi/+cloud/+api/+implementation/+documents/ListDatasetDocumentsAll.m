@@ -149,7 +149,7 @@ classdef ListDatasetDocumentsAll < ndi.cloud.api.call
                                 new_ids = string({new_docs.id});
                                 [~, new_indices] = setdiff(new_ids, existing_ids);
                                 if ~isempty(new_indices)
-                                    answer = cat(1, answer(:), new_docs(new_indices));
+                                    answer = cat(1, answer(:), reshape(new_docs(new_indices), [], 1));
                                 end
                             else
                                 answer = cat(1, answer(:), new_docs(:));
