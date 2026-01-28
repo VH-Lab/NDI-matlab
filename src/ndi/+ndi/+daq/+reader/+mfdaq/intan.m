@@ -57,6 +57,8 @@ classdef intan < ndi.daq.reader.mfdaq
             filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
             header = read_Intan_RHD2000_header(filename);
 
+            ai_counter = 0;
+
             for k=1:length(intan_channel_types)
                 if isfield(header,intan_channel_types{k})
                     channel_type_entry = ndi_daqreader_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(...
@@ -73,10 +75,15 @@ classdef intan < ndi.daq.reader.mfdaq
                         if strcmp(newchannel.type,'auxiliary_in')
                             newchannel.time_channel = 2;
                         end
+                        if strcmp(newchannel.type,'analog_in')  % in the NDI intan reader (but not NDR reader), ai channels are numbered by active channels, always from 1, ...
+                            ai_counter = ai_counter + 1;
+                            newchannel.name = ['ai' int2str(ai_counter)];
+                        end
                         channels(end+1) = newchannel;
                     end
                 end
             end
+
         end % getchannels()
 
         function [b,msg] = verifyepochprobemap(ndi_daqreader_mfdaq_intan_obj, epochprobemap, epochfiles)
