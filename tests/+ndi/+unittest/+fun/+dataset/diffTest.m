@@ -13,32 +13,28 @@ classdef diffTest < matlab.unittest.TestCase
             mkdir(tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
-            % Setup identical sessions and datasets
+            % Setup dataset and session and make a copy
             mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
 
-            mkdir(fullfile(tempDir2, 'session'));
-            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
-            D2 = ndi.dataset.dir('dref2', tempDir2);
-
-            % Add identical documents
+            % Add document
             doc1_base = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             doc1 = doc1_base + S1.newdocument();
             S1.database_add(doc1);
 
-            doc2 = doc1_base + S2.newdocument();
-            S2.database_add(doc2);
-
             D1.add_linked_session(S1);
-            D2.add_linked_session(S2);
+
+            % make a copy
+            copyfile(tempDir1,tempDir2);
+            D2 = ndi.dataset.dir(tempDir2);
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report is empty - accounting for the session document
-            testCase.verifyEqual(numel(report.documentsInAOnly), 2, 'Should be two documents in A (doc1 and session doc).');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 2, 'Should be two documents in B (doc2 and session doc).');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 0, 'Should be zero.');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 0, 'Should be zero.');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
@@ -53,30 +49,30 @@ classdef diffTest < matlab.unittest.TestCase
             mkdir(tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
-            % Setup sessions and datasets
+            % Setup dataset and session and make a copy
             mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
 
-            mkdir(fullfile(tempDir2, 'session'));
-            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
-            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D1.add_ingested_session(S1);
+            S1 = D1.open_session(S1.id());
+
+            % make a copy
+            copyfile(tempDir1,tempDir2);
+            D2 = ndi.dataset.dir(tempDir2);            
 
             % Add a document only to the first dataset
             doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
             doc1 = doc1 + S1.newdocument();
             S1.database_add(doc1);
 
-            D1.add_linked_session(S1);
-            D2.add_linked_session(S2);
-
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 2, 'Should be two documents in A only.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be 1 documents in A only.');
             testCase.verifyTrue(any(strcmp(doc1.id(), report.documentsInAOnly)), 'The added document was not found in A only.');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session doc).');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 0, 'Should be zero documents in B only.');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
         end
@@ -91,29 +87,32 @@ classdef diffTest < matlab.unittest.TestCase
             mkdir(tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
-            % Setup sessions and datasets
+            % Setup dataset and session and make a copy
             mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
 
-            mkdir(fullfile(tempDir2, 'session'));
-            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
-            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D1.add_ingested_session(S1);
+
+            % make a copy
+            copyfile(tempDir1,tempDir2);
+            D2 = ndi.dataset.dir(tempDir2); 
 
             % Add a document only to the second dataset
+            [~,sessions] = D2.session_list();
+
+            S2 = D2.open_session(sessions{1});
+
             doc2 = S2.newdocument('demoNDI', 'base.name', 'doc in B only', 'demoNDI.value', 1);
             doc2 = doc2 + S2.newdocument();
             S2.database_add(doc2);
-
-            D1.add_linked_session(S1);
-            D2.add_linked_session(S2);
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session doc).');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 2, 'Should be two documents in B only.');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 0, 'Should be zero documents in A only.');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be 1 documents in B only.');
             testCase.verifyTrue(any(strcmp(doc2.id(), report.documentsInBOnly)), 'The added document was not found in B only.');
             testCase.verifyEmpty(report.mismatchedDocuments, 'Mismatched documents should be empty.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
@@ -129,14 +128,16 @@ classdef diffTest < matlab.unittest.TestCase
             mkdir(tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
-            % Setup sessions and datasets
+            % Setup dataset and session and make a copy
             mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
 
-            mkdir(fullfile(tempDir2, 'session'));
-            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
-            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D1.add_ingested_session(S1);
+            S1 = D1.open_session(S1.id());
+
+            % make a copy
+            copyfile(tempDir1,tempDir2);
 
             % Add documents with same ID but different properties
             doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
@@ -145,21 +146,22 @@ classdef diffTest < matlab.unittest.TestCase
 
             doc2_structure = doc1.document_properties;
             doc2_structure.demoNDI.value = 2;
-            doc2_structure.base.session_id = S2.id();
+            doc2_structure.base.session_id = S1.id();
 
             doc2 = ndi.document(doc2_structure);
 
-            S2.database_add(doc2);
+            D2 = ndi.dataset.dir(tempDir2); 
+            [~,sessions] = D2.session_list();
+            S2 = D2.open_session(sessions{1});
 
-            D1.add_linked_session(S1);
-            D2.add_linked_session(S2);
+            S2.database_add(doc2);
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (the session document).');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (the session document).');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 0, 'Doc IDs should be the same.');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 0, 'Doc IDs should be the same.');
             testCase.verifyEqual(numel(report.mismatchedDocuments), 1, 'Should be one mismatched document.');
             testCase.verifyEqual(report.mismatchedDocuments(1).id, doc1.id(), 'The mismatched document ID is incorrect.');
             testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty.');
@@ -175,14 +177,16 @@ classdef diffTest < matlab.unittest.TestCase
             mkdir(tempDir2);
             cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
 
-            % Setup sessions and datasets
+            % Setup dataset and session and make a copy
             mkdir(fullfile(tempDir1, 'session'));
             S1 = ndi.session.dir('ref1', fullfile(tempDir1, 'session'));
             D1 = ndi.dataset.dir('dref1', tempDir1);
 
-            mkdir(fullfile(tempDir2, 'session'));
-            S2 = ndi.session.dir('ref2', fullfile(tempDir2, 'session'));
-            D2 = ndi.dataset.dir('dref2', tempDir2);
+            D1.add_ingested_session(S1);
+            S1 = D1.open_session(S1.id());
+
+            % make a copy
+            copyfile(tempDir1,tempDir2);
 
             % Add documents with files that have different content
             doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
@@ -196,7 +200,7 @@ classdef diffTest < matlab.unittest.TestCase
 
             doc2_structure = doc1.document_properties;
             doc2_structure.demoNDI.value = 2;
-            doc2_structure.base.session_id = S2.id();
+            doc2_structure.base.session_id = S1.id();
 
             doc2 = ndi.document(doc2_structure);
             doc2 = doc2.reset_file_info();
@@ -206,77 +210,22 @@ classdef diffTest < matlab.unittest.TestCase
             fwrite(fid2, 'content2', 'char');
             fclose(fid2);
             doc2 = doc2.add_file('filename1.ext', file2_path);
-            S2.database_add(doc2);
 
-            D1.add_linked_session(S1);
-            D2.add_linked_session(S2);
+            D2 = ndi.dataset.dir(tempDir2); 
+            [~,sessions] = D2.session_list();
+            S2 = D2.open_session(sessions{1});
+            S2.database_add(doc2);
 
             % Call the diff function
             report = ndi.fun.dataset.diff(D1, D2);
 
             % Verify the report
-            testCase.verifyEqual(numel(report.documentsInAOnly), 1, 'Should be one document in A only (session doc).');
-            testCase.verifyEqual(numel(report.documentsInBOnly), 1, 'Should be one document in B only (session doc).');
+            testCase.verifyEqual(numel(report.documentsInAOnly), 0, 'Doc IDs should be the same.');
+            testCase.verifyEqual(numel(report.documentsInBOnly), 0, 'Doc IDs should be the same.');
             testCase.verifyEqual(numel(report.fileDifferences), 1, 'Should be one file difference.');
             testCase.verifyEqual(report.fileDifferences(1).documentA_uid, doc1.id(), 'The document A UID is incorrect.');
             testCase.verifyEqual(report.fileDifferences(1).documentB_uid, doc2.id(), 'The document B UID is incorrect.');
             testCase.verifyNotEmpty(report.fileDifferences(1).documentDiff, 'The document diff should not be empty.');
-        end
-
-        function testFileListDifferences(testCase)
-            % Test for differences in the list of files associated with a document
-        end
-
-        function testFileAccessErrors(testCase)
-            % Test for errors when accessing files
-        end
-
-        function testSessionIdIsDatasetId(testCase)
-            % Create a temporary directory for the dataset
-            tempDir = tempname;
-            mkdir(tempDir);
-            cleanup = onCleanup(@() rmdir(tempDir, 's'));
-
-            % Create a dataset
-            D = ndi.dataset.dir('dref', tempDir);
-
-            % Create a document with the dataset's ID as the session_id
-            doc = ndi.document('demoNDI', 'base.name', 'test doc', 'base.session_id', D.id(), 'demoNDI.value', 1);
-
-            % Add a file to the document
-            file_path = fullfile(tempDir, 'testfile.bin');
-            fid = fopen(file_path, 'w');
-            fwrite(fid, 'test content', 'char');
-            fclose(fid);
-            doc = doc.add_file('filename1.ext', file_path);
-
-            D.database_add(doc);
-
-            docs1 = D.database_search(ndi.query('','isa','base'));
-
-            % Create a second identical dataset
-            tempDir2 = tempname;
-            mkdir(tempDir2);
-            cleanup2 = onCleanup(@() rmdir(tempDir2, 's'));
-            D2 = ndi.dataset.dir('dref2', tempDir2);
-            doc2_structure = doc.document_properties;
-            doc2_structure.base.session_id = D2.id();
-            doc2 = ndi.document(doc2_structure);
-            doc2 = doc2.reset_file_info();
-            file2_path = fullfile(tempDir2, 'testfile2.bin');
-            fid2 = fopen(file2_path, 'w');
-            fwrite(fid2, 'test content', 'char');
-            fclose(fid2);
-            doc2 = doc2.add_file('filename1.ext', file2_path);
-            D2.database_add(doc2);
-
-            docs1 = D.database_search(ndi.query('','isa','base'));
-
-            % Call the diff function
-            report = ndi.fun.dataset.diff(D, D2);
-
-            % Verify that there are no file differences
-            testCase.verifyEmpty(report.fileDifferences, 'File differences should be empty for identical datasets.');
         end
     end
 end

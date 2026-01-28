@@ -393,7 +393,7 @@ classdef intan < ndi.daq.reader.mfdaq
                     isaux = 1;
                 end
             end
-            chan_intan = str2num(name(sep+1:end));
+            chan_intan = str2num(name(sep(end)+1:end));
             if ~isaux
                 chan = chan_intan + 1; % intan numbers from 0
             else
