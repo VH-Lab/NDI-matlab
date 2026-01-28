@@ -1,5 +1,5 @@
 {
-  "Name": "neilsen_intan",
+  "Name": "nielsen_intan",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
   "DaqReaderClass": "ndi.daq.reader.mfdaq.intan",
   "MetadataReaderClass": "ndi.daq.metadatareader",
