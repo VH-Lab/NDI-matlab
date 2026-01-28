@@ -870,6 +870,10 @@ classdef tuning_response < ndi.app
                     document_properties.stimulus_tuningcurve.stimulus_presentation_number';
             end
 
+            if iscell(document_properties.stimulus_tuningcurve.individual_responses_real)
+                return; % nothing to do
+            end
+
             if numel(document_properties.stimulus_tuningcurve.individual_responses_real) == numel(document_properties.stimulus_tuningcurve.response_mean)
                 % special case where each entry has 1 item, so Matlab makes it a vector instead of a cell array
                 document_properties.stimulus_tuningcurve.individual_responses_real = ...
@@ -883,19 +887,17 @@ classdef tuning_response < ndi.app
                 document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
                     num2cell(document_properties.stimulus_tuningcurve.stimulus_presentation_number);
             else
-                for i=1:numel(document_properties.stimulus_tuningcurve.individual_responses_real)
-                    % grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
-                    document_properties.stimulus_tuningcurve.individual_responses_real = ...
-                        vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_real);
-                    document_properties.stimulus_tuningcurve.individual_responses_imaginary= ...
-                        vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_imaginary);
-                    document_properties.stimulus_tuningcurve.control_individual_responses_real = ...
-                        vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_real);
-                    document_properties.stimulus_tuningcurve.control_individual_responses_imaginary= ...
-                        vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_imaginary);
-                    document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
-                        vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.stimulus_presentation_number);
-                end
+                % grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+                document_properties.stimulus_tuningcurve.individual_responses_real = ...
+                    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_real);
+                document_properties.stimulus_tuningcurve.individual_responses_imaginary= ...
+                    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_imaginary);
+                document_properties.stimulus_tuningcurve.control_individual_responses_real = ...
+                    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_real);
+                document_properties.stimulus_tuningcurve.control_individual_responses_imaginary= ...
+                    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_imaginary);
+                document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
+                    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.stimulus_presentation_number);
             end
 
             tc_doc = setproperties(tc_doc, 'stimulus_tuningcurve',document_properties.stimulus_tuningcurve);
