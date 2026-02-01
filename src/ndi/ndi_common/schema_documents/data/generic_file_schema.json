@@ -22,7 +22,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The ontology node describing the file format in the form of ontology:nodeID (e.g 'EMPTY:00000090')."
+			"documentation": "The ontology node describing the file format in the form of ontology:nodeID (e.g 'EMPTY:0000002')."
 		},
 		{
 			"name": "dateCreated",

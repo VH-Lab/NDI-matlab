@@ -11,7 +11,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The ontology node id specified as ontology:nodeID (e.g 'EMPTY:00000090' or 'UBERON:3373')."
+			"documentation": "The ontology node id specified as ontology:nodeID (e.g 'EMPTY:0000002' or 'UBERON:3373')."
 		}
 
 	]

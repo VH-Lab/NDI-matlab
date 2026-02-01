@@ -126,8 +126,8 @@ probeSummary = ndi.fun.docTable.probe(dataset)
 | SubjectDocumentIdentifier | ProbeDocumentIdentifier | ProbeName | ProbeType | ProbeReference | ProbeLocationName | ProbeLocationOntology | CellTypeName | CellTypeOntology |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf98cde_40ce5a2a60a82dd2 | bath_210401_BNSTIII_a | stimulator | [1] | | | | |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf99bbe_c0cb88b37570afba | Vm_210401_BNSTIII_a | patch-Vm | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:00000170 |
-| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf9aa56_40ca24db9ac1470d | I_210401_BNSTIII_a | patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:00000170 |
+| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf99bbe_c0cb88b37570afba | Vm_210401_BNSTIII_a | patch-Vm | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:0000073 |
+| 412693bb0b2cf772_c0d06cadbb168eb5 | 412693bb0bf9aa56_40ca24db9ac1470d | I_210401_BNSTIII_a | patch-I | [1] | bed nucleus of stria terminalis (BNST) | UBERON:0001880 | Type III BNST neuron | EMPTY:0000073 |
 
 *Type this into MATLAB:*
 ```matlab
@@ -341,7 +341,7 @@ termInfo = cell2table({id,name,definition,shortName}',...
 
 | Property | Value |
 | :--- | :--- |
-| id | EMPTY:00000100 |
+| id | EMPTY:0000006 |
 | name | Elevated Plus Maze: open arm (north) - entries |
 | definition | In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup. Unit of measure: count |
 | shortName | ElevatedPlusMaze_OpenArmNorth_Entries |
