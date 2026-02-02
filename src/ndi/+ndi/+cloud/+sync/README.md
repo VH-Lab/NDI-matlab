@@ -55,14 +55,26 @@ Maintaining a synced database across local and cloud machines involves several c
 ### 3. Propagation of Deletions
 **Current Logic**: `twoWaySync.m` is strictly additive.
 **Issue**: If a user deletes a document locally, the next `twoWaySync` will re-download it from the cloud. This makes it impossible to delete documents in bidirectional mode.
-**Best Practice**: Use **"Tombstones"** (deletion markers) to track when a document has been intentionally removed. Comparing the current state against the "Last Sync" state in the index can distinguish a "new remote document" from a "locally deleted document".
+**Best Practice**: Use **"Tombstones"** (deletion markers) or a `deleted: true` metadata flag. This allows the system to distinguish between a "missing" document (needs download) and a "deleted" document (needs deletion propagation).
 
 ### 4. Concurrency and Atomicity
 **Current Logic**: Sync involves multiple API calls (list documents, upload/download metadata, upload/download files).
-**Issue**: There is no built-in locking mechanism. Simultaneous syncs by different users or processes against the same cloud dataset could lead to race conditions or inconsistent states.
-**Best Practice**: Use a server-side lock or a reserved "lock document" within the NDI dataset to ensure atomicity of the sync operation.
+**Issue**: There is no built-in locking mechanism. Simultaneous syncs could lead to inconsistent states.
+**Best Practice**: Implement a **Locking Mechanism** (e.g., a "lock" document on the cloud) to ensure only one sync occurs at a time.
 
 ### 5. Data Integrity
 **Current Logic**: Files are transferred via batch or serial upload/download.
-**Issue**: There is no explicit verification that the transferred binary files are bit-identical to the source (e.g., no MD5/SHA256 verification after transfer).
-**Best Practice**: Always compute and verify checksums for binary files as part of the synchronization process.
+**Issue**: There is no explicit verification (checksums) of binary file integrity after transfer.
+**Best Practice**: Store **MD5/SHA256 hashes** in the document metadata and verify them immediately after any download or upload.
+
+---
+
+## Future Design Recommendations
+
+To prevent unwanted behavior and improve reliability, the following design improvements are recommended:
+
+1.  **Dependency-Aware Synchronization**: NDI documents often have relationships (the `depends_on` field). The sync system should ensure that if Document A depends on Document B, Document B is synced before or at the same time as A to maintain referential integrity.
+2.  **Transactional (Atomic) Updates**: A document and its associated binary files should be treated as a single atomic unit. A document should only be marked as "Live" or "Synced" on the remote after **both** the metadata and all associated files have been successfully verified.
+3.  **Holistic SyncIndex**: The `SyncIndex` should move away from simple ID lists and instead store a "Snapshot" of the last known good state, including file hashes and transfer status for every item.
+4.  **Audit Logging**: Maintain a dedicated `sync_history` document in the dataset to track the history of sync operations, providing a trail for debugging sync failures or data loss.
+5.  **Idempotency & Resumption**: All sync operations should be idempotent (safe to run multiple times). For large files, the system should support resumable transfers using HTTP range requests to handle network interruptions gracefully.
