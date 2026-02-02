@@ -30,6 +30,12 @@ The `SyncIndex` (`index.json`) is the primary mechanism for incremental synchron
     *   **Partial Failures**: In `uploadNew`, the `SyncIndex` is updated even if the file upload phase fails (as long as the metadata upload succeeded). This prevents the system from retrying the failed file uploads in subsequent incremental syncs, as the document is now considered "synced".
 3.  **Correctness**: For strictly immutable documents where files are never added post-creation, the logic is mostly correct. For a dynamic database, the `SyncIndex` is insufficient.
 
+### 4. Incremental Sync "Masking" (Critical Logic Flaw)
+There is a critical dependency between `uploadNew` and `downloadNew` through the `SyncIndex`:
+*   **The Issue**: `downloadNew` updates the `localDocumentIdsLastSync` field with the current local state after it finishes. If there are local documents that have been created but **not yet uploaded**, `downloadNew` will still add their IDs to the "last sync" list.
+*   **The Consequence**: When `uploadNew` is subsequently run, it calculates the delta by comparing the current local documents against `localDocumentIdsLastSync`. Since `downloadNew` already added the new local IDs to that list, `uploadNew` will see them as "already processed" and **skip them permanently**.
+*   **Comparison**: Interestingly, `twoWaySync.m` avoids this flaw because it performs a live comparison between the local and remote datasets rather than relying on the index to identify new documents. This makes `twoWaySync` more reliable for data integrity than the incremental `uploadNew` function.
+
 ---
 
 ## Synchronization Logic Analysis & Best Practices
