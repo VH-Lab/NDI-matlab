@@ -20,6 +20,18 @@ This namespace provides functions for synchronizing NDI documents and their asso
 
 ---
 
+## SyncIndex and File-Level Tracking
+
+The `SyncIndex` (`index.json`) is the primary mechanism for incremental synchronization in `uploadNew` and `downloadNew`. However, it has significant limitations regarding binary data files:
+
+1.  **Document-Centric Tracking**: The index only stores **Document IDs** (`localDocumentIdsLastSync` and `remoteDocumentIdsLastSync`). It does not track individual **File UIDs** or file hashes.
+2.  **Proxy for File Presence**: The system uses "New Document ID" as a proxy for "New Files".
+    *   **The Issue**: If a file is added to an *existing* document, the sync functions will not detect it because the document ID is already in the index.
+    *   **Partial Failures**: In `uploadNew`, the `SyncIndex` is updated even if the file upload phase fails (as long as the metadata upload succeeded). This prevents the system from retrying the failed file uploads in subsequent incremental syncs, as the document is now considered "synced".
+3.  **Correctness**: For strictly immutable documents where files are never added post-creation, the logic is mostly correct. For a dynamic database, the `SyncIndex` is insufficient.
+
+---
+
 ## Synchronization Logic Analysis & Best Practices
 
 Maintaining a synced database across local and cloud machines involves several challenges. Below is an analysis of the current implementation's logic and potential issues for maintenance.
