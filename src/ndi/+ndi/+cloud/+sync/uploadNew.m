@@ -61,13 +61,13 @@ function [success, errorMessage, report] = uploadNew(ndiDataset, syncOptions)
 
         % 1. Read sync index
         syncIndex = ndi.cloud.sync.internal.index.readSyncIndex(ndiDataset);
-        if isempty(syncIndex) || isempty(syncIndex.localDocumentIdsLastSync)
-            localIdsLastSync = strings(0,1); % Ensure it's an empty string array for setdiff
+        if isempty(syncIndex) || isempty(syncIndex.remoteDocumentIdsLastSync)
+            remoteIdsLastSync = strings(0,1); % Ensure it's an empty string array for setdiff
         else
-            localIdsLastSync = string(syncIndex.localDocumentIdsLastSync); % Ensure string array
+            remoteIdsLastSync = string(syncIndex.remoteDocumentIdsLastSync); % Ensure string array
         end
         if syncOptions.Verbose
-            fprintf('Read sync index. Last sync recorded %d local documents.\n', numel(localIdsLastSync));
+            fprintf('Read sync index. Last sync recorded %d remote documents.\n', numel(remoteIdsLastSync));
         end
 
         % 2. Get current local state
@@ -77,11 +77,11 @@ function [success, errorMessage, report] = uploadNew(ndiDataset, syncOptions)
         end
 
         % 3. Calculate differences: documents added locally since last sync
-        [ndiIdsToUpload, indToUpload] = setdiff(localDocumentIds, localIdsLastSync, 'stable');
+        [ndiIdsToUpload, indToUpload] = setdiff(localDocumentIds, remoteIdsLastSync, 'stable');
         documentsToUpload = localDocuments(indToUpload);
 
         if syncOptions.Verbose
-            fprintf('Found %d documents added locally since last sync.\n', numel(ndiIdsToUpload));
+            fprintf('Found %d documents added locally since last upload.\n', numel(ndiIdsToUpload));
         end
 
         % 4. Perform upload actions
