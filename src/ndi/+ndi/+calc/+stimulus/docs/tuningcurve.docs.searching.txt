@@ -1,0 +1,29 @@
+Default Search Criteria:
+By default, the calculator looks for input documents of type `stimulus_response_scalar` where the `response_type` field contains 'mean', 'F1', or 'F2'.
+
+Query:
+ndi.query('','isa','stimulus_response_scalar','') & (
+    ndi.query('stimulus_response_scalar.response_type','contains_string','mean','') |
+    ndi.query('stimulus_response_scalar.response_type','contains_string','F1','') |
+    ndi.query('stimulus_response_scalar.response_type','contains_string','F2','')
+)
+
+Modifying the Search:
+The user can modify the search by providing a `query` field in the parameters structure passed to `run` or `default_search_for_input_parameters`.
+
+Example:
+% Only calculate tuning curves for a specific element (e.g., a specific neuron)
+% identified by 'element_id'.
+
+S = ndi.session.dir('/path/to/session');
+c = ndi.calc.stimulus.tuningcurve(S);
+params = c.default_search_for_input_parameters();
+
+% Assume 'my_element_doc' is the ndi.document for the neuron of interest
+element_id = my_element_doc.id();
+
+% Add a dependency check to the query
+params.query.query = params.query.query & ...
+    ndi.query('','depends_on','element_id', element_id);
+
+c.run('Replace', params);

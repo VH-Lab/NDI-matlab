@@ -1,0 +1,202 @@
+{"comparisonStruct": [
+  {
+    "comparisonMethod": "none",
+    "name": "base.session_id",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.id",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.name",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "base.datestamp",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.independent_variable_label",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "stimulus_tuningcurve.independent_variable_value",
+    "toleranceAmount": 0.2
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "stimulus_tuningcurve.stimid",
+    "toleranceAmount": 0.2
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "stimulus_tuningcurve.response_mean",
+    "toleranceAmount": 1
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "stimulus_tuningcurve.response_stddev",
+    "toleranceAmount": 0.2
+  },
+  {
+    "comparisonMethod": "abs difference",
+    "name": "stimulus_tuningcurve.response_stderr",
+    "toleranceAmount": 0.2
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.individual_responses_real",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.individual_responses_imaginary",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.stimulus_presentation_number",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.control_stimid",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.control_response_mean",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.control_response_stddev",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.control_response_stderr",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.control_individual_responses_real",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.control_individual_responses_imaginary",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "stimulus_tuningcurve.response_units",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "character exact",
+    "name": "tuningcurve_calc.input_parameters.independent_label",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "character exact",
+    "name": "tuningcurve_calc.input_parameters.independent_parameter",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "character exact",
+    "name": "tuningcurve_calc.input_parameters.best_algorithm",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.input_parameters.selection.property",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.input_parameters.selection.operation",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.input_parameters.selection.value",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.depends_on(1).name",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.depends_on(1).value",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.depends_on(2).name",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.depends_on(2).value",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.log",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.stim_property_list.names",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "tuningcurve_calc.stim_property_list.values",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.name",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.version",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.url",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.os",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.os_version",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.interpreter",
+    "toleranceAmount": 0
+  },
+  {
+    "comparisonMethod": "none",
+    "name": "app.interpreter_version",
+    "toleranceAmount": 0
+  }
+]}

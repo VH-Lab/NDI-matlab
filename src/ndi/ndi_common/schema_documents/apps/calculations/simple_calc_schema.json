@@ -2,7 +2,7 @@
 	"classname": "simple_calc",
 	"superclasses":  [ "base", "app"],
 	"depends_on": [
-		{ "name": "probe_id", "mustbenotempty": 1}
+		{ "name": "document_id", "mustbenotempty": 1}
 	],
 	"file": [ ],
 	"simple_calc": [
