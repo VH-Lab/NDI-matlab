@@ -109,6 +109,55 @@ Override `readevents_epochsamples_native` to perform the core logic: reading sti
 
 If your device uses the standard local time of the DAQ system, you usually do not need to change this. However, some implementations explicitly return `ndi.time.clocktype('dev_local_time')`.
 
+## 6. Metadata Readers (`ndi.daq.metadatareader`)
+
+To keep the stimulus reader class focused on synchronization and data formatting, parsing complex metadata files is often offloaded to a dedicated **Metadata Reader** class.
+
+These classes are found in `src/ndi/+ndi/+daq/+metadatareader/` or `src/ndi/+ndi/+setup/+daq/+metadatareader/`.
+
+### How to Write a New Metadata Reader
+
+1.  **Inherit from `ndi.daq.metadatareader`**:
+    Your new class must inherit from `ndi.daq.metadatareader`.
+
+    ```matlab
+    classdef my_metadata_reader < ndi.daq.metadatareader
+    ```
+
+2.  **Override `readmetadatafromfile`**:
+    This is the core method you must implement. It takes a filename, parses it, and returns a cell array of parameter structures.
+
+    ```matlab
+    methods
+        function parameters = readmetadatafromfile(obj, file)
+            % READMETADATAFROMFILE - Read metadata from the specified file
+            %
+            % PARAMETERS = READMETADATAFROMFILE(OBJ, FILE)
+            %
+            % Returns a cell array where PARAMETERS{i} is a structure
+            % containing the parameters for the i-th stimulus.
+
+            parameters = {};
+
+            % Example: Loading a MATLAB file
+            data = load(file, '-mat');
+
+            % Iterate through loaded data and populate the cell array
+            for i = 1:numel(data.stimuli)
+                parameters{i} = data.stimuli(i);
+            end
+        end
+    end
+    ```
+
+3.  **Use in Stimulus Reader**:
+    In your main stimulus reader class (step 4 above), instantiate and use your metadata reader:
+
+    ```matlab
+    md_reader = ndi.setup.daq.metadatareader.my_metadata_reader();
+    parameters = md_reader.readmetadatafromfile(my_metadata_file);
+    ```
+
 ## Examples in Codebase
 
 Refer to the following files in `src/ndi/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/` for concrete examples:
@@ -116,3 +165,8 @@ Refer to the following files in `src/ndi/+ndi/+setup/+daq/+reader/+mfdaq/+stimul
 *   **`angelucci_visstim.m`**: Example using `ndi.daq.reader.mfdaq.blackrock` and a separate metadata reader class.
 *   **`nielsenvisintan.m`**: Example using `ndi.daq.reader.mfdaq.intan`, reading `.analyzer` files and aligning with digital inputs.
 *   **`vhlabvisspike2.m`**: Example using `ndi.daq.reader.mfdaq.cedspike2`, reading text files and Spike2 files.
+
+For metadata readers, see:
+*   `src/ndi/+ndi/+daq/metadatareader.m` (Base class)
+*   `src/ndi/+ndi/+setup/+daq/+metadatareader/AngelucciStims.m`
+*   `src/ndi/+ndi/+daq/+metadatareader/NewStimStims.m`
