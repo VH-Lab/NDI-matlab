@@ -1,0 +1,41 @@
+{
+	"classname": "syncValue",
+	"superclasses":  [ "base"],
+	"depends_on": [
+        {
+            "name": "daqSystem1",
+            "mustbenotempty": 1
+        },
+        {
+            "name": "daqSystem2",
+            "mustbenotempty": 1
+        }
+    ],
+	"file": [ ],
+	"syncValue": [
+		{
+			"name": "epochnode1",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure describing the epochnode1"
+		},
+		{
+			"name": "epochnode2",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure describing the epochnode2"
+		},
+        {
+			"name": "shiftScale",
+			"type": "double",
+			"default_value": [0, 1],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A 1x2 vector [shift scale] such that time2 = shift + scale * time1"
+		}
+	]
+}
