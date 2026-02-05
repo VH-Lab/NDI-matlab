@@ -4,13 +4,11 @@
 	"depends_on": [
         {
             "name": "daqSystem1",
-            "value": "daq_id",
-            "required": 1
+            "mustbenotempty": 1
         },
         {
             "name": "daqSystem2",
-            "value": "daq_id",
-            "required": 1
+            "mustbenotempty": 1
         }
     ],
 	"file": [ ],
