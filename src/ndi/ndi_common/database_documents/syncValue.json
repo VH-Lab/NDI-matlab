@@ -18,8 +18,8 @@
 		}
 	],
 	"syncValue": {
-		"epoch1":						"",
-		"epoch2":						"",
+		"epochnode1":						"",
+		"epochnode2":						"",
         "shiftScale":                   [0, 1]
 	}
 }

@@ -14,20 +14,20 @@
 	"file": [ ],
 	"syncValue": [
 		{
-			"name": "epoch1",
-			"type": "string",
+			"name": "epochnode1",
+			"type": "structure",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The identifier of the epoch on daqSystem1"
+			"documentation": "A structure describing the epochnode1"
 		},
 		{
-			"name": "epoch2",
-			"type": "string",
+			"name": "epochnode2",
+			"type": "structure",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The identifier of the epoch on daqSystem2"
+			"documentation": "A structure describing the epochnode2"
 		},
         {
 			"name": "shiftScale",
