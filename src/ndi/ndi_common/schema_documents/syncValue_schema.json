@@ -1,0 +1,43 @@
+{
+	"classname": "syncValue",
+	"superclasses":  [ "base"],
+	"depends_on": [
+        {
+            "name": "daqSystem1",
+            "value": "daq_id",
+            "required": 1
+        },
+        {
+            "name": "daqSystem2",
+            "value": "daq_id",
+            "required": 1
+        }
+    ],
+	"file": [ ],
+	"syncValue": [
+		{
+			"name": "epoch1",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The identifier of the epoch on daqSystem1"
+		},
+		{
+			"name": "epoch2",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The identifier of the epoch on daqSystem2"
+		},
+        {
+			"name": "shiftScale",
+			"type": "double",
+			"default_value": [0, 1],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A 1x2 vector [shift scale] such that time2 = shift + scale * time1"
+		}
+	]
+}

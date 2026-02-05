@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/syncValue.json",
+		"validation":						"$NDISCHEMAPATH\/syncValue_schema.json",
+		"class_name":						"syncValue",
+		"property_list_name":					"syncValue",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "daqSystem1",
+			"value": ""
+		},
+		{	"name": "daqSystem2",
+			"value": ""
+		}
+	],
+	"syncValue": {
+		"epoch1":						"",
+		"epoch2":						"",
+        "shiftScale":                   [0, 1]
+	}
+}
