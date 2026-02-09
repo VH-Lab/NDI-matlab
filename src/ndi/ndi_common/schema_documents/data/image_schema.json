@@ -3,7 +3,7 @@
 	"superclasses":  [ "base" , "imageStackParameters" ],
 	"depends_on": [
 		{ "name": "subject_id", "mustbenotempty": 0},
-		{ "name": "imageCollection_id", "mustbenotempty": 0},
+		{ "name": "imageCollection_id", "mustbenotempty": 0}
 	],
 	"file": [ 
 		{"name": "imageFile", "mustbenotempty": 1}
@@ -33,6 +33,5 @@
 			"queryable": 1,
 			"documentation": "The compression of the imageFile (e.g. 'jpeg')."
 		}
-
 	]
 }

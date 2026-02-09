@@ -11,7 +11,7 @@ function build()
     % on regular command line (not Matlab command line).
     %
 
-    disp(['Writing NDI document documentation...']);
+    disp('Writing NDI document documentation...');
 
     ndi.docs.all_documents2markdown();
 
@@ -24,19 +24,26 @@ function build()
 
     vlt.file.touch([ndi_path filesep 'site' filesep '.matlab2markdown-ignore']);
 
-    disp(['Now writing function reference...']);
+    disp('Now writing function reference...');
 
     ndi_docs = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'reference']; % code reference path
+    % clear reference directory of any old files
+    if isfolder(ndi_docs)
+        rmdir(ndi_docs,'s');
+    end
+    mkdir(ndi_docs);
+    vlt.file.touch([ndi_docs filesep '.matlab2markdown-ignore']);
+    
     ymlpath = 'NDI-matlab/reference';
 
-    disp(['Writing documents pass 1']);
+    disp('Writing documents pass 1');
 
     out1 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath,[],'','https://vh-lab.github.io/NDI-matlab/');
     os = vlt.docs.markdownoutput2objectstruct(out1); % get object structures
 
     save([ndi_path filesep 'docs' filesep 'documentation_structure.mat'],'os','-mat');
 
-    disp(['Writing documents pass 2, with all links']);
+    disp('Writing documents pass 2, with all links');
     out2 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath, os,'','https://vh-lab.github.io/NDI-matlab/');
 
     spaces = 6; % used to be 4 when only 1 set of tools
@@ -59,3 +66,7 @@ function build()
     Tnew = cat(2,T0,T1,T1_1,T2,T3);
 
     vlt.file.cellstr2text(ymlfile.main,Tnew);
+
+    copyfile(ymlfile.main,fullfile(ndi_path,'mkdocs.yml'));
+
+

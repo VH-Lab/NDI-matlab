@@ -74,7 +74,7 @@ function docs = schemastructure2docstructure(schema, varargin)
                 p_here(1).property = '**depends_on**';
                 p_here(1).doc_default_value = '-';
                 p_here(1).doc_data_type = 'structure';
-                p_here(1).doc_description = ['Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`.'];
+                p_here(1).doc_description = 'Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`.';
                 docs(end+1) = p_here;
 
                 for j=1:numel(v_i.items)
@@ -83,7 +83,7 @@ function docs = schemastructure2docstructure(schema, varargin)
                     if isfield(v_i.items(j).properties.name,'const')
                         p_here(1).property = ['**depends_on**: ' v_i.items(j).properties.name.const];
                     else
-                        p_here(1).property = ['**depends_on**: *variable dependencies*'];
+                        p_here(1).property = '**depends_on**: *variable dependencies*';
                     end
                     fni = fieldnames(v_i.items(j).properties);
                     for k=1:numel(docstring)
