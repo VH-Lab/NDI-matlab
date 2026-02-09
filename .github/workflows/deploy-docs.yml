@@ -37,8 +37,8 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
-            addpath(genpath('tools'));
             matbox.installRequirements(pwd);
+            addpath(genpath('tools'));
             addpath(genpath('src'));
             ndi_Init();
             ndi.docs.build();
