@@ -47,7 +47,7 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
     superclass_info = {};
 
     if examine_superclasses
-        md = cat(2,md,['**Superclasses**: ']);
+        md = cat(2,md,'**Superclasses**: ');
 
         if numel(ndi_document_obj.document_properties.document_class.superclasses)==0
             md = cat(2,md,'*none*');
@@ -76,7 +76,6 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
     if ~isfile(info.validation_path)
         info.validation_json = struct('properties',vlt.data.emptystruct());
     else
-        info.validation_path,
         info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
     end
     md = cat(2,md,['**Schema for validation**: [' info.validation '](' info.validation_url ')<br>' newline]);
