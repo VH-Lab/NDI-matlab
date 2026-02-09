@@ -42,6 +42,7 @@ jobs:
             addpath(genpath('src'));
             ndi_Init();
             ndi.docs.build();
+            quit;
 
       - name: Prepare mkdocs files
         run: |
