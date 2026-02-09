@@ -50,6 +50,8 @@ jobs:
                 disp(['Directory ' tools_path ' does not exist.']);
             end
             addpath(genpath(fullfile(pwd, 'src')));
+            disp('Listing files in /home/runner/work/');
+            system('ls -R /home/runner/work/');
             ndi_Init();
             ndi.docs.build();
             quit;
