@@ -58,7 +58,6 @@ jobs:
             end
             addpath(genpath(fullfile(pwd, 'src')));
             addpath(genpath('MATLAB-AddOns'));
-            ndi_Init();
             ndi.docs.build();
             quit;
 
