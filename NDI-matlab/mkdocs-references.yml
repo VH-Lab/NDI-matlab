@@ -638,7 +638,7 @@
               - ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters: 'NDI-matlab/reference/+ndi/+setup/+stimulus/+kjnielsenlab/extractStimulusParameters.m.md'
             - vhlab PACKAGE:
               - ndi.setup.stimulus.vhlab.add_stimulus_approach: 'NDI-matlab/reference/+ndi/+setup/+stimulus/+vhlab/add_stimulus_approach.m.md'
-          - @DaqSystemConfiguration FOLDER:
+          - '@DaqSystemConfiguration FOLDER':
             - ndi.setup/@DaqSystemConfiguration.DaqSystemConfiguration: 'NDI-matlab/reference/+ndi/+setup/@DaqSystemConfiguration/DaqSystemConfiguration.m.md'
         - test PACKAGE:
           - ndi.test.cache: 'NDI-matlab/reference/+ndi/+test/cache.m.md'
