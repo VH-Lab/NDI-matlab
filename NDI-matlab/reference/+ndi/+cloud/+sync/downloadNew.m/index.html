@@ -23157,7 +23157,7 @@
 <pre><code> DOWNLOADNEW Download new documents (and associated data files) from remote to local.
 
   Syntax:
-    ndi.cloud.sync.downloadNew(NDIDATASET, SYNCOPTIONS)
+    [SUCCESS, ERRORMESSAGE, REPORT] = ndi.cloud.sync.downloadNew(NDIDATASET, SYNCOPTIONS)
 
     This function implements the &quot;DownloadNew&quot; synchronization mode.
     It identifies documents present on the remote cloud storage that are
@@ -23178,6 +23178,13 @@
         - SyncFiles (logical) - If true, files will be synced (default: true).
         - Verbose (logical) - If true, verbose output is printed (default: true).
         - DryRun (logical) - If true, actions are simulated but not performed (default: false).
+
+    Outputs:
+        success (logical) - True if the operation completed successfully, false otherwise.
+        errorMessage (string) - Error message if success is false, empty otherwise.
+        report (struct) - Structure containing details of the changes applied.
+            Fields:
+            - downloaded_document_ids (string array)
 
     See also:
         ndi.cloud.syncDataset

@@ -23305,8 +23305,16 @@
 </thead>
 <tbody>
 <tr>
+<td><em>all</em></td>
+<td>return a query that matches all documents</td>
+</tr>
+<tr>
 <td><em>and</em></td>
 <td>add DID.QUERY objects</td>
+</tr>
+<tr>
+<td><em>none</em></td>
+<td>return a query that matches no documents</td>
 </tr>
 <tr>
 <td><em>or</em></td>
@@ -23331,6 +23339,16 @@
 </tbody>
 </table>
 <h3 id="methods-help">Methods help</h3>
+<p><strong>all</strong> - <em>return a query that matches all documents</em></p>
+<pre><code>Q = NDI.QUERY.ALL()
+
+  Returns a query that will match all documents.
+  The query is NDI.QUERY('','isa','base').
+
+  Example:
+    q_all = ndi.query.all();
+</code></pre>
+<hr />
 <p><strong>and</strong> - <em>add DID.QUERY objects</em></p>
 <pre><code>C = AND(A,B) or C = A &amp; B
 
@@ -23341,6 +23359,19 @@
   all of the characteristics of A and B are satisfied.
 
 Help for ndi.query/and is inherited from superclass did.query
+</code></pre>
+<hr />
+<p><strong>none</strong> - <em>return a query that matches no documents</em></p>
+<pre><code>Q = NDI.QUERY.NONE()
+
+  Returns a query that will match no documents.
+  This is sometimes useful as a first element for an array of OR
+  queries, or for test situations where one wants to match no documents.
+
+  The query is NDI.QUERY('','isa','ladskjfldksjfkds').
+
+  Example:
+    q_none = ndi.query.none();
 </code></pre>
 <hr />
 <p><strong>or</strong> - <em>search for <em>this</em> DID.QUERY object or <em>that</em> DID.QUERY object</em></p>

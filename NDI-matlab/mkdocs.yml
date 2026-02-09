@@ -62,10 +62,12 @@ nav:
       - element_epoch : 'NDI-matlab/documents/element_epoch.md'
       - epochclocktimes : 'NDI-matlab/documents/epochclocktimes.md'
       - epochid : 'NDI-matlab/documents/epochid.md'
+      - measurement : 'NDI-matlab/documents/measurement.md'
       - mock : 'NDI-matlab/documents/mock.md'
       - oneepoch : 'NDI-matlab/documents/oneepoch.md'
       - projectvar : 'NDI-matlab/documents/projectvar.md'
       - session : 'NDI-matlab/documents/session.md'
+      - session_in_a_dataset : 'NDI-matlab/documents/session_in_a_dataset.md'
       - subject : 'NDI-matlab/documents/subject.md'
       - subject_group : 'NDI-matlab/documents/subject_group.md'
       - subjectmeasurement : 'NDI-matlab/documents/subjectmeasurement.md'
@@ -126,6 +128,8 @@ nav:
         - openminds_element : 'NDI-matlab/documents/metadata/openminds_element.md'
         - openminds_stimulus : 'NDI-matlab/documents/metadata/openminds_stimulus.md'
         - openminds_subject : 'NDI-matlab/documents/metadata/openminds_subject.md'
+      - mock:
+        - demoNDIMock : 'NDI-matlab/documents/mock/demoNDIMock.md'
       - neuron:
         - neuron_extracellular : 'NDI-matlab/documents/neuron/neuron_extracellular.md'
       - probe:
@@ -159,6 +163,7 @@ nav:
         - ndi.app: 'NDI-matlab/reference/+ndi/app.m.md'
         - ndi.cache: 'NDI-matlab/reference/+ndi/cache.m.md'
         - ndi.calculator: 'NDI-matlab/reference/+ndi/calculator.m.md'
+        - ndi.cpipeline: 'NDI-matlab/reference/+ndi/cpipeline.m.md'
         - ndi.database: 'NDI-matlab/reference/+ndi/database.m.md'
         - ndi.dataset: 'NDI-matlab/reference/+ndi/dataset.m.md'
         - ndi.document: 'NDI-matlab/reference/+ndi/document.m.md'
@@ -169,7 +174,6 @@ nav:
         - ndi.ido: 'NDI-matlab/reference/+ndi/ido.m.md'
         - ndi.neuron: 'NDI-matlab/reference/+ndi/neuron.m.md'
         - ndi.ontology: 'NDI-matlab/reference/+ndi/ontology.m.md'
-        - ndi.pipeline: 'NDI-matlab/reference/+ndi/pipeline.m.md'
         - ndi.probe: 'NDI-matlab/reference/+ndi/probe.m.md'
         - ndi.query: 'NDI-matlab/reference/+ndi/query.m.md'
         - ndi.session: 'NDI-matlab/reference/+ndi/session.m.md'
@@ -187,6 +191,7 @@ nav:
             - ndi.app.stimulus.decoder: 'NDI-matlab/reference/+ndi/+app/+stimulus/decoder.m.md'
             - ndi.app.stimulus.tuning_response: 'NDI-matlab/reference/+ndi/+app/+stimulus/tuning_response.m.md'
         - calc PACKAGE:
+          - ndi.calc.tuning_fit: 'NDI-matlab/reference/+ndi/+calc/tuning_fit.m.md'
           - example PACKAGE:
             - ndi.calc.example.simple: 'NDI-matlab/reference/+ndi/+calc/+example/simple.m.md'
           - stimulus PACKAGE:
@@ -195,6 +200,7 @@ nav:
           - ndi.cloud.authenticate: 'NDI-matlab/reference/+ndi/+cloud/authenticate.m.md'
           - ndi.cloud.authenticateOriginal: 'NDI-matlab/reference/+ndi/+cloud/authenticateOriginal.m.md'
           - ndi.cloud.downloadDataset: 'NDI-matlab/reference/+ndi/+cloud/downloadDataset.m.md'
+          - ndi.cloud.logout: 'NDI-matlab/reference/+ndi/+cloud/logout.m.md'
           - ndi.cloud.syncDataset: 'NDI-matlab/reference/+ndi/+cloud/syncDataset.m.md'
           - ndi.cloud.uilogin: 'NDI-matlab/reference/+ndi/+cloud/uilogin.m.md'
           - ndi.cloud.uploadDataset: 'NDI-matlab/reference/+ndi/+cloud/uploadDataset.m.md'
@@ -227,6 +233,13 @@ nav:
               - ndi.cloud.api.auth.resendConfirmation: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/resendConfirmation.m.md'
               - ndi.cloud.api.auth.resetPassword: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/resetPassword.m.md'
               - ndi.cloud.api.auth.verifyUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+auth/verifyUser.m.md'
+            - compute PACKAGE:
+              - ndi.cloud.api.compute.abortSession: 'NDI-matlab/reference/+ndi/+cloud/+api/+compute/abortSession.m.md'
+              - ndi.cloud.api.compute.finalizeSession: 'NDI-matlab/reference/+ndi/+cloud/+api/+compute/finalizeSession.m.md'
+              - ndi.cloud.api.compute.getSessionStatus: 'NDI-matlab/reference/+ndi/+cloud/+api/+compute/getSessionStatus.m.md'
+              - ndi.cloud.api.compute.listSessions: 'NDI-matlab/reference/+ndi/+cloud/+api/+compute/listSessions.m.md'
+              - ndi.cloud.api.compute.startSession: 'NDI-matlab/reference/+ndi/+cloud/+api/+compute/startSession.m.md'
+              - ndi.cloud.api.compute.triggerStage: 'NDI-matlab/reference/+ndi/+cloud/+api/+compute/triggerStage.m.md'
             - datasets PACKAGE:
               - ndi.cloud.api.datasets.createDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/createDataset.m.md'
               - ndi.cloud.api.datasets.createDatasetBranch: 'NDI-matlab/reference/+ndi/+cloud/+api/+datasets/createDatasetBranch.m.md'
@@ -252,12 +265,15 @@ nav:
               - ndi.cloud.api.documents.getDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/getDocument.m.md'
               - ndi.cloud.api.documents.listDatasetDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/listDatasetDocuments.m.md'
               - ndi.cloud.api.documents.listDatasetDocumentsAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/listDatasetDocumentsAll.m.md'
+              - ndi.cloud.api.documents.ndiquery: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/ndiquery.m.md'
+              - ndi.cloud.api.documents.ndiqueryAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/ndiqueryAll.m.md'
               - ndi.cloud.api.documents.updateDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+documents/updateDocument.m.md'
             - files PACKAGE:
               - ndi.cloud.api.files.getFile: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFile.m.md'
               - ndi.cloud.api.files.getFileCollectionUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFileCollectionUploadURL.m.md'
               - ndi.cloud.api.files.getFileDetails: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFileDetails.m.md'
               - ndi.cloud.api.files.getFileUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/getFileUploadURL.m.md'
+              - ndi.cloud.api.files.listFiles: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/listFiles.m.md'
               - ndi.cloud.api.files.putFiles: 'NDI-matlab/reference/+ndi/+cloud/+api/+files/putFiles.m.md'
             - implementation PACKAGE:
               - auth PACKAGE:
@@ -267,6 +283,13 @@ nav:
                 - ndi.cloud.api.implementation.auth.ResendConfirmation: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/ResendConfirmation.m.md'
                 - ndi.cloud.api.implementation.auth.ResetPassword: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/ResetPassword.m.md'
                 - ndi.cloud.api.implementation.auth.VerifyUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+auth/VerifyUser.m.md'
+              - compute PACKAGE:
+                - ndi.cloud.api.implementation.compute.AbortSession: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+compute/AbortSession.m.md'
+                - ndi.cloud.api.implementation.compute.FinalizeSession: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+compute/FinalizeSession.m.md'
+                - ndi.cloud.api.implementation.compute.GetSessionStatus: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+compute/GetSessionStatus.m.md'
+                - ndi.cloud.api.implementation.compute.ListSessions: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+compute/ListSessions.m.md'
+                - ndi.cloud.api.implementation.compute.StartSession: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+compute/StartSession.m.md'
+                - ndi.cloud.api.implementation.compute.TriggerStage: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+compute/TriggerStage.m.md'
               - datasets PACKAGE:
                 - ndi.cloud.api.implementation.datasets.CreateDataset: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/CreateDataset.m.md'
                 - ndi.cloud.api.implementation.datasets.CreateDatasetBranch: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+datasets/CreateDatasetBranch.m.md'
@@ -292,24 +315,29 @@ nav:
                 - ndi.cloud.api.implementation.documents.GetDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/GetDocument.m.md'
                 - ndi.cloud.api.implementation.documents.ListDatasetDocuments: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/ListDatasetDocuments.m.md'
                 - ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/ListDatasetDocumentsAll.m.md'
+                - ndi.cloud.api.implementation.documents.NdiQuery: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/NdiQuery.m.md'
+                - ndi.cloud.api.implementation.documents.NdiQueryAll: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/NdiQueryAll.m.md'
                 - ndi.cloud.api.implementation.documents.UpdateDocument: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+documents/UpdateDocument.m.md'
               - files PACKAGE:
                 - ndi.cloud.api.implementation.files.GetFile: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFile.m.md'
                 - ndi.cloud.api.implementation.files.GetFileCollectionUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFileCollectionUploadURL.m.md'
                 - ndi.cloud.api.implementation.files.GetFileDetails: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFileDetails.m.md'
                 - ndi.cloud.api.implementation.files.GetFileUploadURL: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/GetFileUploadURL.m.md'
+                - ndi.cloud.api.implementation.files.ListFiles: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/ListFiles.m.md'
                 - ndi.cloud.api.implementation.files.PutFiles: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+files/PutFiles.m.md'
               - users PACKAGE:
                 - ndi.cloud.api.implementation.users.CreateUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+users/CreateUser.m.md'
                 - ndi.cloud.api.implementation.users.GetUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+users/GetUser.m.md'
+                - ndi.cloud.api.implementation.users.Me: 'NDI-matlab/reference/+ndi/+cloud/+api/+implementation/+users/Me.m.md'
             - users PACKAGE:
               - ndi.cloud.api.users.GetUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/GetUser.m.md'
               - ndi.cloud.api.users.createUser: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/createUser.m.md'
+              - ndi.cloud.api.users.me: 'NDI-matlab/reference/+ndi/+cloud/+api/+users/me.m.md'
           - download PACKAGE:
             - ndi.cloud.download.dataset: 'NDI-matlab/reference/+ndi/+cloud/+download/dataset.m.md'
-            - ndi.cloud.download.dataset_documents: 'NDI-matlab/reference/+ndi/+cloud/+download/dataset_documents.m.md'
-            - ndi.cloud.download.download_dataset_files: 'NDI-matlab/reference/+ndi/+cloud/+download/download_dataset_files.m.md'
-            - ndi.cloud.download.download_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+download/download_document_collection.m.md'
+            - ndi.cloud.download.datasetDocuments: 'NDI-matlab/reference/+ndi/+cloud/+download/datasetDocuments.m.md'
+            - ndi.cloud.download.downloadDatasetFiles: 'NDI-matlab/reference/+ndi/+cloud/+download/downloadDatasetFiles.m.md'
+            - ndi.cloud.download.downloadDocumentCollection: 'NDI-matlab/reference/+ndi/+cloud/+download/downloadDocumentCollection.m.md'
             - ndi.cloud.download.jsons2documents: 'NDI-matlab/reference/+ndi/+cloud/+download/jsons2documents.m.md'
           - sync PACKAGE:
             - ndi.cloud.sync.SyncOptions: 'NDI-matlab/reference/+ndi/+cloud/+sync/SyncOptions.m.md'
@@ -325,16 +353,16 @@ nav:
             - dialog PACKAGE:
               - ndi.cloud.ui.dialog.selectCloudDataset: 'NDI-matlab/reference/+ndi/+cloud/+ui/+dialog/selectCloudDataset.m.md'
           - upload PACKAGE:
-            - ndi.cloud.upload.new_dataset: 'NDI-matlab/reference/+ndi/+cloud/+upload/new_dataset.m.md'
-            - ndi.cloud.upload.scan_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/scan_for_upload.m.md'
-            - ndi.cloud.upload.upload_document_collection: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_document_collection.m.md'
-            - ndi.cloud.upload.upload_to_NDI_cloud: 'NDI-matlab/reference/+ndi/+cloud/+upload/upload_to_NDI_cloud.m.md'
-            - ndi.cloud.upload.zip_for_upload: 'NDI-matlab/reference/+ndi/+cloud/+upload/zip_for_upload.m.md'
+            - ndi.cloud.upload.newDataset: 'NDI-matlab/reference/+ndi/+cloud/+upload/newDataset.m.md'
+            - ndi.cloud.upload.scanForUpload: 'NDI-matlab/reference/+ndi/+cloud/+upload/scanForUpload.m.md'
+            - ndi.cloud.upload.uploadDocumentCollection: 'NDI-matlab/reference/+ndi/+cloud/+upload/uploadDocumentCollection.m.md'
+            - ndi.cloud.upload.uploadToNDICloud: 'NDI-matlab/reference/+ndi/+cloud/+upload/uploadToNDICloud.m.md'
+            - ndi.cloud.upload.zipForUpload: 'NDI-matlab/reference/+ndi/+cloud/+upload/zipForUpload.m.md'
             - for_deletion FOLDER:
               - ndi.cloud.upload/for_deletion.update_cloud_metadata: 'NDI-matlab/reference/+ndi/+cloud/+upload/for_deletion/update_cloud_metadata.m.md'
               - ndi.cloud.upload/for_deletion.update_cloud_metadata_struct: 'NDI-matlab/reference/+ndi/+cloud/+upload/for_deletion/update_cloud_metadata_struct.m.md'
           - utility PACKAGE:
-            - ndi.cloud.utility.create_cloud_metadata_struct: 'NDI-matlab/reference/+ndi/+cloud/+utility/create_cloud_metadata_struct.m.md'
+            - ndi.cloud.utility.createCloudMetadataStruct: 'NDI-matlab/reference/+ndi/+cloud/+utility/createCloudMetadataStruct.m.md'
             - ndi.cloud.utility.mustBeValidMetadata: 'NDI-matlab/reference/+ndi/+cloud/+utility/mustBeValidMetadata.m.md'
         - common PACKAGE:
           - ndi.common.PathConstants: 'NDI-matlab/reference/+ndi/+common/PathConstants.m.md'
@@ -375,6 +403,8 @@ nav:
               - utility PACKAGE:
                 - ndi.database.app.dataset_viewer.utility.listLocalDatasets: 'NDI-matlab/reference/+ndi/+database/+app/+dataset_viewer/+utility/listLocalDatasets.m.md'
                 - ndi.database.app.dataset_viewer.utility.listRemoteDatasets: 'NDI-matlab/reference/+ndi/+database/+app/+dataset_viewer/+utility/listRemoteDatasets.m.md'
+          - doctools PACKAGE:
+            - ndi.database.doctools.docComparison: 'NDI-matlab/reference/+ndi/+database/+doctools/docComparison.m.md'
           - fun PACKAGE:
             - ndi.database.fun.copy_session_to_dataset: 'NDI-matlab/reference/+ndi/+database/+fun/copy_session_to_dataset.m.md'
             - ndi.database.fun.copydocfile2temp: 'NDI-matlab/reference/+ndi/+database/+fun/copydocfile2temp.m.md'
@@ -564,7 +594,12 @@ nav:
             - ndi.fun.data.readImageStack: 'NDI-matlab/reference/+ndi/+fun/+data/readImageStack.m.md'
             - ndi.fun.data.readngrid: 'NDI-matlab/reference/+ndi/+fun/+data/readngrid.m.md'
             - ndi.fun.data.writengrid: 'NDI-matlab/reference/+ndi/+fun/+data/writengrid.m.md'
+          - dataset PACKAGE:
+            - ndi.fun.dataset.diff: 'NDI-matlab/reference/+ndi/+fun/+dataset/diff.m.md'
           - doc PACKAGE:
+            - ndi.fun.doc.allTypes: 'NDI-matlab/reference/+ndi/+fun/+doc/allTypes.m.md'
+            - ndi.fun.doc.diff: 'NDI-matlab/reference/+ndi/+fun/+doc/diff.m.md'
+            - ndi.fun.doc.findFuid: 'NDI-matlab/reference/+ndi/+fun/+doc/findFuid.m.md'
             - ndi.fun.doc.getDocTypes: 'NDI-matlab/reference/+ndi/+fun/+doc/getDocTypes.m.md'
             - ndi.fun.doc.ontologyTableRowDoc2Table: 'NDI-matlab/reference/+ndi/+fun/+doc/ontologyTableRowDoc2Table.m.md'
             - ndi.fun.doc.ontologyTableRowVars: 'NDI-matlab/reference/+ndi/+fun/+doc/ontologyTableRowVars.m.md'
@@ -589,7 +624,12 @@ nav:
             - ndi.fun.file.dateCreated: 'NDI-matlab/reference/+ndi/+fun/+file/dateCreated.m.md'
             - ndi.fun.file.dateUpdated: 'NDI-matlab/reference/+ndi/+fun/+file/dateUpdated.m.md'
           - plot PACKAGE:
+            - ndi.fun.plot.bar3: 'NDI-matlab/reference/+ndi/+fun/+plot/bar3.m.md'
             - ndi.fun.plot.multichan: 'NDI-matlab/reference/+ndi/+fun/+plot/multichan.m.md'
+          - probe PACKAGE:
+            - ndi.fun.probe.location: 'NDI-matlab/reference/+ndi/+fun/+probe/location.m.md'
+          - session PACKAGE:
+            - ndi.fun.session.diff: 'NDI-matlab/reference/+ndi/+fun/+session/diff.m.md'
           - stimulus PACKAGE:
             - ndi.fun.stimulus.f0_f1_responses: 'NDI-matlab/reference/+ndi/+fun/+stimulus/f0_f1_responses.m.md'
             - ndi.fun.stimulus.findMixtureName: 'NDI-matlab/reference/+ndi/+fun/+stimulus/findMixtureName.m.md'
@@ -625,6 +665,7 @@ nav:
         - ontology PACKAGE:
           - ndi.ontology.CHEBI: 'NDI-matlab/reference/+ndi/+ontology/CHEBI.m.md'
           - ndi.ontology.CL: 'NDI-matlab/reference/+ndi/+ontology/CL.m.md'
+          - ndi.ontology.EFO: 'NDI-matlab/reference/+ndi/+ontology/EFO.m.md'
           - ndi.ontology.EMPTY: 'NDI-matlab/reference/+ndi/+ontology/EMPTY.m.md'
           - ndi.ontology.NCBITaxon: 'NDI-matlab/reference/+ndi/+ontology/NCBITaxon.m.md'
           - ndi.ontology.NCIT: 'NDI-matlab/reference/+ndi/+ontology/NCIT.m.md'
@@ -634,6 +675,7 @@ nav:
           - ndi.ontology.PATO: 'NDI-matlab/reference/+ndi/+ontology/PATO.m.md'
           - ndi.ontology.PubChem: 'NDI-matlab/reference/+ndi/+ontology/PubChem.m.md'
           - ndi.ontology.RRID: 'NDI-matlab/reference/+ndi/+ontology/RRID.m.md'
+          - ndi.ontology.SNOMED: 'NDI-matlab/reference/+ndi/+ontology/SNOMED.m.md'
           - ndi.ontology.Uberon: 'NDI-matlab/reference/+ndi/+ontology/Uberon.m.md'
           - ndi.ontology.WBStrain: 'NDI-matlab/reference/+ndi/+ontology/WBStrain.m.md'
         - probe PACKAGE:
@@ -692,6 +734,10 @@ nav:
               - ndi.setup.conv.haley.SubjectInformationCreator: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/SubjectInformationCreator.m.md'
               - ndi.setup.conv.haley.createSubjectInformation: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/createSubjectInformation.m.md'
               - ndi.setup.conv.haley.doImport: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/doImport.m.md'
+            - hunsberger PACKAGE:
+              - ndi.setup.conv.hunsberger.SubjectInformationCreator: 'NDI-matlab/reference/+ndi/+setup/+conv/+hunsberger/SubjectInformationCreator.m.md'
+              - ndi.setup.conv.hunsberger.TreatmentCreator: 'NDI-matlab/reference/+ndi/+setup/+conv/+hunsberger/TreatmentCreator.m.md'
+              - ndi.setup.conv.hunsberger.doImport: 'NDI-matlab/reference/+ndi/+setup/+conv/+hunsberger/doImport.m.md'
             - marder PACKAGE:
               - ndi.setup.conv.marder.abf2probetable: 'NDI-matlab/reference/+ndi/+setup/+conv/+marder/abf2probetable.m.md'
               - ndi.setup.conv.marder.abfepochprobemap: 'NDI-matlab/reference/+ndi/+setup/+conv/+marder/abfepochprobemap.m.md'
@@ -755,6 +801,7 @@ nav:
             - ndi.setup/@DaqSystemConfiguration.DaqSystemConfiguration: 'NDI-matlab/reference/+ndi/+setup/@DaqSystemConfiguration/DaqSystemConfiguration.m.md'
         - test PACKAGE:
           - ndi.test.cache: 'NDI-matlab/reference/+ndi/+test/cache.m.md'
+          - ndi.test.unittestsbutnotcloud: 'NDI-matlab/reference/+ndi/+test/unittestsbutnotcloud.m.md'
           - app PACKAGE:
             - ndi.test.app.markgarbage: 'NDI-matlab/reference/+ndi/+test/+app/markgarbage.m.md'
             - ndi.test.app.spikeextractor: 'NDI-matlab/reference/+ndi/+test/+app/spikeextractor.m.md'
@@ -836,7 +883,9 @@ nav:
           - ndi.util.choosefileordir: 'NDI-matlab/reference/+ndi/+util/choosefileordir.m.md'
           - ndi.util.datestamp2datetime: 'NDI-matlab/reference/+ndi/+util/datestamp2datetime.m.md'
           - ndi.util.downsampleTimeseries: 'NDI-matlab/reference/+ndi/+util/downsampleTimeseries.m.md'
+          - ndi.util.getHexDiffFromFileObj: 'NDI-matlab/reference/+ndi/+util/getHexDiffFromFileObj.m.md'
           - ndi.util.hexDiff: 'NDI-matlab/reference/+ndi/+util/hexDiff.m.md'
+          - ndi.util.hexDiffBytes: 'NDI-matlab/reference/+ndi/+util/hexDiffBytes.m.md'
           - ndi.util.hexDump: 'NDI-matlab/reference/+ndi/+util/hexDump.m.md'
           - ndi.util.rehydrateJSONNanNull: 'NDI-matlab/reference/+ndi/+util/rehydrateJSONNanNull.m.md'
           - ndi.util.toolboxdir: 'NDI-matlab/reference/+ndi/+util/toolboxdir.m.md'
@@ -845,12 +894,15 @@ nav:
             - ndi.util.openminds.find_instance_name: 'NDI-matlab/reference/+ndi/+util/+openminds/find_instance_name.m.md'
             - ndi.util.openminds.find_techniques_names: 'NDI-matlab/reference/+ndi/+util/+openminds/find_techniques_names.m.md'
         - validators PACKAGE:
+          - ndi.validators.mustBeCellArrayOfClass: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfClass.m.md'
           - ndi.validators.mustBeCellArrayOfNdiSessions: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfNdiSessions.m.md'
           - ndi.validators.mustBeCellArrayOfNonEmptyCharacterArrays: 'NDI-matlab/reference/+ndi/+validators/mustBeCellArrayOfNonEmptyCharacterArrays.m.md'
+          - ndi.validators.mustBeClassnameOfType: 'NDI-matlab/reference/+ndi/+validators/mustBeClassnameOfType.m.md'
           - ndi.validators.mustBeEpochInput: 'NDI-matlab/reference/+ndi/+validators/mustBeEpochInput.m.md'
           - ndi.validators.mustBeID: 'NDI-matlab/reference/+ndi/+validators/mustBeID.m.md'
           - ndi.validators.mustBeNumericClass: 'NDI-matlab/reference/+ndi/+validators/mustBeNumericClass.m.md'
           - ndi.validators.mustBeTextLike: 'NDI-matlab/reference/+ndi/+validators/mustBeTextLike.m.md'
+          - ndi.validators.mustHaveFields: 'NDI-matlab/reference/+ndi/+validators/mustHaveFields.m.md'
           - ndi.validators.mustHaveRequiredColumns: 'NDI-matlab/reference/+ndi/+validators/mustHaveRequiredColumns.m.md'
           - ndi.validators.mustMatchRegex: 'NDI-matlab/reference/+ndi/+validators/mustMatchRegex.m.md'
     - FAQ: 'NDI-matlab/faq.md'

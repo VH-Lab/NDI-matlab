@@ -23429,6 +23429,10 @@
 <td>ingest the raw data and synchronization information into the database</td>
 </tr>
 <tr>
+<td><em>isIngestedInDataset</em></td>
+<td>is the session ingested in a dataset?</td>
+</tr>
+<tr>
 <td><em>is_fully_ingested</em></td>
 <td>is an ndi.session object fully ingested?</td>
 </tr>
@@ -23618,14 +23622,19 @@ Help for ndi.session/addlistener is inherited from superclass handle
 </code></pre>
 <hr />
 <p><strong>database_openbinarydoc</strong> - <em>open the ndi.database.binarydoc channel of an ndi.document</em></p>
-<pre><code>NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+<pre><code>NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME, ...)
 
    Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
    NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
    The document is opened for reading only. Document binary streams may not be edited once the
    document is added to the database.
 
-   Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC.
+   Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC unless 'autoClose' is used.
+
+   This function takes name/value pairs that modify its behavior.
+   Parameter (default)     | Description
+   ------------------------------------------------------------------
+   autoClose (false)       | Automatically close the file when the returned object goes out of scope.
 </code></pre>
 <hr />
 <p><strong>database_rm</strong> - <em>Remove an ndi.document with a given document ID from an ndi.session object</em></p>
@@ -23824,6 +23833,16 @@ Help for ndi.session/gt is inherited from superclass handle
 <pre><code>[B,ERRMSG] = INGEST(NDI_SESSION_OBJ)
 
   Ingest all raw data and synchronization information into the database.
+</code></pre>
+<hr />
+<p><strong>isIngestedInDataset</strong> - <em>is the session ingested in a dataset?</em></p>
+<pre><code>B = ISINGESTEDINDATASET(NDI_SESSION_OBJ)
+
+  Returns 1 if the session is ingested in a dataset (that is visible
+  to the session's database), and 0 otherwise.
+
+  This method searches for a 'session_in_a_dataset' document in the
+  database that matches the session's ID and has is_linked=0.
 </code></pre>
 <hr />
 <p><strong>is_fully_ingested</strong> - <em>is an ndi.session object fully ingested?</em></p>

@@ -23157,7 +23157,7 @@
 <pre><code> MIRRORFROMREMOTE Mirrors the remote dataset to the local dataset.
 
   Syntax:
-    ndi.cloud.sync.mirrorFromRemote(NDIDATASET, SYNCOPTIONS)
+    [SUCCESS, ERRORMESSAGE, REPORT] = ndi.cloud.sync.mirrorFromRemote(NDIDATASET, SYNCOPTIONS)
 
     This function implements the &quot;MirrorFromRemote&quot; synchronization mode.
     It ensures the local dataset becomes an exact representation of the
@@ -23177,6 +23177,14 @@
         - SyncFiles (logical) - If true, files will be synced (default: true).
         - Verbose (logical) - If true, verbose output is printed (default: true).
         - DryRun (logical) - If true, actions are simulated but not performed (default: false).
+
+    Outputs:
+        success (logical) - True if the operation completed successfully, false otherwise.
+        errorMessage (string) - Error message if success is false, empty otherwise.
+        report (struct) - Structure containing details of the changes applied.
+            Fields:
+            - downloaded_document_ids (string array)
+            - deleted_local_document_ids (string array)
 
     See also:
         ndi.cloud.syncDataset

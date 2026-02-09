@@ -23274,17 +23274,8 @@
 
 
 <h1 id="class-ndicalculator">CLASS ndi.calculator</h1>
-<pre><code>  CALCULATOR - create an ndi.calculator object
-
-  NDI_CALCULATOR_OBJ = CALCULATOR(SESSION, DOC_TYPE, PATH_TO_DOC_TYPE)
-
-  Creates a new ndi.calculator mini-app for performing
-  a particular calculator. SESSION is the ndi.session object
-  to operate on.
-
-  Classes that override this function should call
-  the creator for ndi.appdoc to record the document type
-  that is used by the ndi.calculator mini-app.
+<pre><code>ndi.calculator is a class.
+    ndi_calculator_obj = ndi.calculator(varargin)
 
 
 </code></pre>
@@ -23301,6 +23292,14 @@
 <tbody>
 <tr>
 <td><em>fast_start</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>numberOfSelfTests</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>defaultParametersCanFunction</em></td>
 <td></td>
 </tr>
 <tr>
@@ -23323,10 +23322,6 @@
 <td><em>doc_session</em></td>
 <td></td>
 </tr>
-<tr>
-<td><em>base_scope</em></td>
-<td></td>
-</tr>
 </tbody>
 </table>
 <h2 id="methods">Methods</h2>
@@ -23344,11 +23339,15 @@
 </tr>
 <tr>
 <td><em>appdoc_description</em></td>
-<td>return documentation for the type of document that is created by this calculator.</td>
+<td>a function that prints a description of all appdoc types</td>
 </tr>
 <tr>
 <td><em>are_input_parameters_equivalent</em></td>
 <td>are two sets of input parameters equivalent?</td>
+</tr>
+<tr>
+<td><em>bring_gui_to_front</em></td>
+<td>ndi.calculator.bring_gui_to_front is a function.</td>
 </tr>
 <tr>
 <td><em>calc_path</em></td>
@@ -23360,7 +23359,7 @@
 </tr>
 <tr>
 <td><em>calculator</em></td>
-<td>create an ndi.calculator object</td>
+<td>ndi.calculator/calculator is a constructor.</td>
 </tr>
 <tr>
 <td><em>clean_mock_docs</em></td>
@@ -23379,10 +23378,6 @@
 <td>what queries should be used to search for input parameters if none are provided?</td>
 </tr>
 <tr>
-<td><em>default_scope</em></td>
-<td>default scope types for ndi.mock.ctest object</td>
-</tr>
-<tr>
 <td><em>default_search_for_input_parameters</em></td>
 <td>default parameters for searching for inputs</td>
 </tr>
@@ -23396,7 +23391,7 @@
 </tr>
 <tr>
 <td><em>doc_about</em></td>
-<td>return the about information for an NDI calculator</td>
+<td>ndi.calculator/doc_about is a function.</td>
 </tr>
 <tr>
 <td><em>docfiletext</em></td>
@@ -23408,11 +23403,15 @@
 </tr>
 <tr>
 <td><em>generate_mock_docs</em></td>
-<td>generate tests for ndi.calc.* objects</td>
+<td>generate mock documents for testing</td>
+</tr>
+<tr>
+<td><em>get_available_parameters</em></td>
+<td>ndi.calculator.get_available_parameters is a function.</td>
 </tr>
 <tr>
 <td><em>graphical_edit_calculator</em></td>
-<td>create and control a GUI to graphically edit an NDI calculator instance</td>
+<td>ndi.calculator.graphical_edit_calculator is a function.</td>
 </tr>
 <tr>
 <td><em>is_valid_dependency_input</em></td>
@@ -23427,12 +23426,24 @@
 <td>is an input structure a valid descriptor for an APPDOC?</td>
 </tr>
 <tr>
+<td><em>load_mock_comparison</em></td>
+<td>load comparison object for a calculation</td>
+</tr>
+<tr>
 <td><em>load_mock_expected_output</em></td>
 <td>load expected NDI document answer for a calculation</td>
 </tr>
 <tr>
+<td><em>load_parameter_code</em></td>
+<td>ndi.calculator.load_parameter_code is a function.</td>
+</tr>
+<tr>
 <td><em>loaddata_appdoc</em></td>
 <td>Load data from an application document</td>
+</tr>
+<tr>
+<td><em>mock_comparison_filename</em></td>
+<td>file of expected NDI document comparison for a calculation</td>
 </tr>
 <tr>
 <td><em>mock_expected_filename</em></td>
@@ -23448,11 +23459,7 @@
 </tr>
 <tr>
 <td><em>parameter_default</em></td>
-<td>return the default parameter code for a given calculator_type</td>
-</tr>
-<tr>
-<td><em>parameter_examples</em></td>
-<td>return the parameter code examples for a given calculator_type</td>
+<td>ndi.calculator.parameter_default is a function.</td>
 </tr>
 <tr>
 <td><em>plot</em></td>
@@ -23465,6 +23472,10 @@
 <tr>
 <td><em>run</em></td>
 <td>run calculator on all possible inputs that match some parameters</td>
+</tr>
+<tr>
+<td><em>save_parameter_file</em></td>
+<td>ndi.calculator.save_parameter_file is a function.</td>
 </tr>
 <tr>
 <td><em>search_for_calculator_docs</em></td>
@@ -23485,6 +23496,10 @@
 <tr>
 <td><em>test</em></td>
 <td>perform a test of an ndi.calculator object</td>
+</tr>
+<tr>
+<td><em>user_parameter_template</em></td>
+<td>ndi.calculator.user_parameter_template is a function.</td>
 </tr>
 <tr>
 <td><em>varappname</em></td>
@@ -23532,13 +23547,73 @@
 Help for ndi.calculator/add_appdoc is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
-<p><strong>appdoc_description</strong> - <em>return documentation for the type of document that is created by this calculator.</em></p>
-<pre><code>TEXT = APP_DOC_DESCRIPTION(NDI_CALCULATOR_OBJ)
+<p><strong>appdoc_description</strong> - <em>a function that prints a description of all appdoc types</em></p>
+<pre><code>Every subclass should override this function to describe the APPDOC types available
+  to the subclass. It should follow the following form.
 
-  Returns the help information for the document type for an NDI
-  calculator object.
+  --------------------
 
-  This function is intended to be called by external users or code.
+  The APPDOCs available to this class are the following:
+
+  APPDOC_TYPE               | Description
+  ----------------------------------------------------------------------------------------------
+  'doctype1'                | The first app document type.
+  (in the base class, there are no APPDOCS; in subclasses, the document types should appear here)
+  (here, 'doctype1' is a dummy example.)
+
+  ----------------------------------------------------------------------------------------------
+  APPDOC 1: DOCTYPE1
+  ----------------------------------------------------------------------------------------------
+
+    ---------------------
+    | DOCTYPE1 -- ABOUT |
+    ---------------------
+
+    DOCTYPE documents store X. It DEPENDS ON documents Y and Z.
+
+    Definition: app/myapp/doctype1
+
+    --------------------------
+    | DOCTYPE1 -- CREATION |
+    --------------------------
+
+    DOC = STRUCT2DOC(NDI_APPDOC_OBJ, 'doctype1', DOCTYPE1PARAMS, ...)
+
+    DOCTYPE1PARAMS should contain the following fields:
+    Fieldname                 | Description
+    -------------------------------------------------------------------------
+    field1                    | field1 description
+    overlap                   | field2 description
+
+    ------------------------
+    | DOCTYPE1 - FINDING |
+    ------------------------
+
+    [DOCTYPE1_DOC] = FIND_APPDOC(NDI_APPDOC_OBJ, 'doctype1', INPUT1, INPUT2, ...)
+
+    INPUTS:
+       INPUT1 - first input needed to find doctype1 documents
+       INPUT2 - the second input needed to find doctype1 documents
+    OUTPUT:
+       DOCTYPE1_DOC - the ndi.document of the application document DOCTYPE1
+
+    ------------------------
+    | DOCTYPE1 - LOADING |
+    ------------------------
+
+    [OUTPUT1,OUTPUT2,...,DOCTYPE1_DOC] = LOADDOC_APPDOC(NDI_APPDOC_OBJ, ...
+        'doctype1', INPUT1, INPUT2,...);
+
+    INPUTS:
+       INPUT1 - first input needed to find doctype1 documents
+       INPUT2 - the second input needed to find doctype1 documents
+    OUTPUT:
+       OUTPUT1 - the first type of loaded data contained in DOCTYPE1 documents
+       OUTPUT2 - the second type of loaded data contained in DOCTYPE1 documents
+
+  (If there were more appdoc types, list them here...)
+
+Help for ndi.calculator/appdoc_description is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
 <p><strong>are_input_parameters_equivalent</strong> - <em>are two sets of input parameters equivalent?</em></p>
@@ -23557,6 +23632,10 @@ Help for ndi.calculator/add_appdoc is inherited from superclass ndi.app.appdoc
   This function is primarily intended as an internal function but is left exposed
   (not private) so that it can be used for debugging. But in general, user code should
   not call this function.
+</code></pre>
+<hr />
+<p><strong>bring_gui_to_front</strong> - <em>ndi.calculator.bring_gui_to_front is a function.</em></p>
+<pre><code>ndi.calculator.bring_gui_to_front(fig)
 </code></pre>
 <hr />
 <p><strong>calc_path</strong> - <em>CALC_PATH return the path to the ndi.calculator object</em></p>
@@ -23579,16 +23658,8 @@ Help for ndi.calculator/calc_path is inherited from superclass ndi.mock.ctest
   In the base class, this always returns empty.
 </code></pre>
 <hr />
-<p><strong>calculator</strong> - <em>create an ndi.calculator object</em></p>
-<pre><code>NDI_CALCULATOR_OBJ = CALCULATOR(SESSION, DOC_TYPE, PATH_TO_DOC_TYPE)
-
-  Creates a new ndi.calculator mini-app for performing
-  a particular calculator. SESSION is the ndi.session object
-  to operate on.
-
-  Classes that override this function should call
-  the creator for ndi.appdoc to record the document type
-  that is used by the ndi.calculator mini-app.
+<p><strong>calculator</strong> - <em>ndi.calculator/calculator is a constructor.</em></p>
+<pre><code>ndi_calculator_obj = calculator(varargin)
 
     Documentation for ndi.calculator/calculator
        doc ndi.calculator
@@ -23612,18 +23683,18 @@ Help for ndi.calculator/clear_appdoc is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
 <p><strong>compare_mock_docs</strong> - <em>compare an expected calculation answer with an actual answer</em></p>
-<pre><code>[B, ERRORMSG] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE)
+<pre><code>[B, REPORT] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE, [DOCCOMPARE])
 
   Given an NDI document with the expected answer to a calculation (EXPECTED_DOC),
-  the ACTUAL_DOC computed, and the SCOPE (a string: 'standard', 'low_noise','high_noise'),
+  the ACTUAL_DOC computed, and the SCOPE (a string: 'highSNR', 'lowSNR'),
   this function computes whether the ACTUAL_DOC is within an allowed tolerance of
   EXPECTED_DOC.
 
   B is 1 if the differences in the documents are within the tolerance of the class.
   Otherwise, B is 0.
-  If B is 0, ERRORMSG is a string that indicates where the ACTUAL_DOC is out of tolerance.
+  If B is 0, REPORT is a string or report structure that indicates where the ACTUAL_DOC is out of tolerance.
 
-  In this abstract class, B is always 1 and ERRORMSG is always an empty string.
+  In this abstract class, B is always 1 and REPORT is always an empty string.
 
   Developer's note: this method should be overridden in each calculator object.
 
@@ -23653,14 +23724,6 @@ Help for ndi.calculator/compare_mock_docs is inherited from superclass ndi.mock.
   This function is primarily intended as an internal function but is left exposed
   (not private) so that it can be used for debugging. But in general, user code should
   not call this function.
-</code></pre>
-<hr />
-<p><strong>default_scope</strong> - <em>default scope types for ndi.mock.ctest object</em></p>
-<pre><code>BASE_SCOPE = ndi.mock.ctest.default_scope();
-
-  Return a default base_scope structure for an ndi.mock.ctest object.
-
-Help for ndi.calculator.default_scope is inherited from superclass ndi.mock.ctest
 </code></pre>
 <hr />
 <p><strong>default_search_for_input_parameters</strong> - <em>default parameters for searching for inputs</em></p>
@@ -23696,13 +23759,8 @@ Help for ndi.calculator/defaultstruct_appdoc is inherited from superclass ndi.ap
 Help for ndi.calculator/doc2struct is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
-<p><strong>doc_about</strong> - <em>return the about information for an NDI calculator</em></p>
-<pre><code>TEXT = DOC_ABOUT(NDI_CALCULATOR_OBJ)
-
-  Returns the help information for the document type for an NDI
-  calculator object.
-
-  This function is intended to be called by external users or code.
+<p><strong>doc_about</strong> - <em>ndi.calculator/doc_about is a function.</em></p>
+<pre><code>text = doc_about(ndi_calculator_obj)
 </code></pre>
 <hr />
 <p><strong>docfiletext</strong> - <em>return the text in the requested documentation file</em></p>
@@ -23735,33 +23793,33 @@ Help for ndi.calculator/doc2struct is inherited from superclass ndi.app.appdoc
 Help for ndi.calculator/find_appdoc is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
-<p><strong>generate_mock_docs</strong> - <em>generate tests for ndi.calc.</em> objects*</p>
-<pre><code>[DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(CSTEST_OBJ,...
-     SCOPE, NUMBER_OF_TESTS)
+<p><strong>generate_mock_docs</strong> - <em>generate mock documents for testing</em></p>
+<pre><code>[DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(NDI_CALCULATOR_OBJ, SCOPE, NUMBER_OF_TESTS, 'PARAM', VALUE, ...)
 
-  SCOPE should be one of 'standard', 'low_noise', or 'high_noise'.
-    'standard' performs tests on specific hard-coded inputs.
-    'low_noise' performs tests on specific hard-coded inputs with small amounts
-       of noise added.
-    'high_noise' performs tests on specific hard-coded inputs with large amounts
-       of noise added.
+  The generate_mock_docs method is a testing utility present in NDI calculator classes.
+  It generates synthetic input data (mock documents) and runs the calculator to produce actual outputs,
+  which can then be compared against expected outputs.
 
-  NUMBER_OF_TESTS is the number of tests to generate.
+  This method takes additional input arguments as name/value pairs:
+  |---------------------------|------------------------------------------------------|
+  | Parameter (default)       | Description                                          |
+  |---------------------------|------------------------------------------------------|
+  | generate_expected_docs    | If true, the method saves the current output as the  |
+  |   (false)                 | &quot;expected&quot; output for future tests. Use this when    |
+  |                           | updating the calculator logic or creating new tests. |
+  | specific_test_inds ([])   | Allows specifying a subset of test indices to run.   |
+  |                           | If empty, all NUMBER_OF_TESTS are run.               |
+  |---------------------------|------------------------------------------------------|
 
-Help for ndi.calculator/generate_mock_docs is inherited from superclass ndi.mock.ctest
+  This blank method, for the superclass, returns empty for all inputs.
 </code></pre>
 <hr />
-<p><strong>graphical_edit_calculator</strong> - <em>create and control a GUI to graphically edit an NDI calculator instance</em></p>
-<pre><code>GRAPHICAL_EDIT_CALCULATOR(...)
-
-  Creates and controls a graphical user interface for creating an instance of
-  an ndi.calculator object.
-
-  Usage by the user:
-
-    GRAPHICAL_EDIT_CALCULATOR('command','NEW','type','ndi.calc.TYPE','filename',filename,'name',name)
-       or
-    GRAPHICAL_EDIT_CALCULATOR('command','EDIT','filename',filename)
+<p><strong>get_available_parameters</strong> - <em>ndi.calculator.get_available_parameters is a function.</em></p>
+<pre><code>params = ndi.calculator.get_available_parameters(classname, root_dir)
+</code></pre>
+<hr />
+<p><strong>graphical_edit_calculator</strong> - <em>ndi.calculator.graphical_edit_calculator is a function.</em></p>
+<pre><code>ndi.calculator.graphical_edit_calculator(options)
 </code></pre>
 <hr />
 <p><strong>is_valid_dependency_input</strong> - <em>is a potential dependency input actually valid for this calculator?</em></p>
@@ -23783,10 +23841,11 @@ Help for ndi.calculator/generate_mock_docs is inherited from superclass ndi.mock
 <p><strong>isequal_appdoc_struct</strong> - <em>are two APPDOC data structures the same (equal)?</em></p>
 <pre><code>B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_STRUCT2)
 
-  Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. This is true if
-  APPDOC_STRUCT2
+  Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. In the base class, this is
   true if APPDOC_STRUCT1 and APPDOC_STRUCT2 have the same field names and same values and same sizes. That is,
   B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
+
+Help for ndi.calculator/isequal_appdoc_struct is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
 <p><strong>isvalid_appdoc_struct</strong> - <em>is an input structure a valid descriptor for an APPDOC?</em></p>
@@ -23800,6 +23859,17 @@ Help for ndi.calculator/generate_mock_docs is inherited from superclass ndi.mock
 Help for ndi.calculator/isvalid_appdoc_struct is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
+<p><strong>load_mock_comparison</strong> - <em>load comparison object for a calculation</em></p>
+<pre><code>DOCCOMPARE = LOAD_MOCK_COMPARISON(CTEST_OBJ, N)
+
+  Load the Nth stored ndi.database.doctools.docComparison object that contains the
+  comparison parameters for the Nth standard mock test.
+
+  If the file does not exist, empty is returned.
+
+Help for ndi.calculator/load_mock_comparison is inherited from superclass ndi.mock.ctest
+</code></pre>
+<hr />
 <p><strong>load_mock_expected_output</strong> - <em>load expected NDI document answer for a calculation</em></p>
 <pre><code>DOC = LOAD_MOCK_EXPECTED_OUTPUT(CTEST_OBJ, N)
 
@@ -23807,6 +23877,10 @@ Help for ndi.calculator/isvalid_appdoc_struct is inherited from superclass ndi.a
   Nth standard mock test.
 
 Help for ndi.calculator/load_mock_expected_output is inherited from superclass ndi.mock.ctest
+</code></pre>
+<hr />
+<p><strong>load_parameter_code</strong> - <em>ndi.calculator.load_parameter_code is a function.</em></p>
+<pre><code>code = ndi.calculator.load_parameter_code(classname, param_name, root_dir)
 </code></pre>
 <hr />
 <p><strong>loaddata_appdoc</strong> - <em>Load data from an application document</em></p>
@@ -23823,6 +23897,15 @@ Help for ndi.calculator/load_mock_expected_output is inherited from superclass n
   The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.
 
 Help for ndi.calculator/loaddata_appdoc is inherited from superclass ndi.app.appdoc
+</code></pre>
+<hr />
+<p><strong>mock_comparison_filename</strong> - <em>file of expected NDI document comparison for a calculation</em></p>
+<pre><code>FNAME = MOCK_COMPARISON_FILENAME(CTEST_OBJ, N)
+
+  Return the filename for the Nth stored ndi.database.doctools.docComparison JSON object
+  that contains the comparison parameters for the Nth standard mock test.
+
+Help for ndi.calculator/mock_comparison_filename is inherited from superclass ndi.mock.ctest
 </code></pre>
 <hr />
 <p><strong>mock_expected_filename</strong> - <em>file of expected NDI document answer for a calculation</em></p>
@@ -23852,26 +23935,8 @@ Help for ndi.calculator/mock_path is inherited from superclass ndi.mock.ctest
 Help for ndi.calculator/newdocument is inherited from superclass ndi.app
 </code></pre>
 <hr />
-<p><strong>parameter_default</strong> - <em>return the default parameter code for a given calculator_type</em></p>
-<pre><code>[CONTENTS] = ndi.calculator.parameter_examples(CALCULATOR_TYPE)
-
-  Return the default parameter code CONTENTS for a given CALCULATOR_TYPE. CONTENTS is a
-  character string.
-
-  Example:
-    [contents] = ndi.calculator.parameter_default('ndi.calc.stimulus.tuningcurve');
-</code></pre>
-<hr />
-<p><strong>parameter_examples</strong> - <em>return the parameter code examples for a given calculator_type</em></p>
-<pre><code>[NAMES, CONTENTS] = ndi.calculator.parameter_examples(CALCULATOR_TYPE)
-
-  Return the example NAMES and parameter example code CONTENTS for a given CALCULATOR_TYPE.
-
-  NAMES is a cell array of strings with the code example names. CONTENTS is a cell array of strings with
-  the contents of the code examples.
-
-  Example:
-    [names,contents] = ndi.calculator.parameter_examples('ndi.calc.stimulus.tuningcurve');
+<p><strong>parameter_default</strong> - <em>ndi.calculator.parameter_default is a function.</em></p>
+<pre><code>contents = ndi.calculator.parameter_default(calculator_type)
 </code></pre>
 <hr />
 <p><strong>plot</strong> - <em>provide a diagnostic plot to show the results of the calculator, if appropriate</em></p>
@@ -23922,6 +23987,10 @@ Help for ndi.calculator/newdocument is inherited from superclass ndi.app
   the input parameters define the calculator.
 
   This function is primarily intended to be called by external programs and users.
+</code></pre>
+<hr />
+<p><strong>save_parameter_file</strong> - <em>ndi.calculator.save_parameter_file is a function.</em></p>
+<pre><code>ndi.calculator.save_parameter_file(classname, param_name, code, root_dir)
 </code></pre>
 <hr />
 <p><strong>search_for_calculator_docs</strong> - <em>search for previous calculators</em></p>
@@ -23999,7 +24068,7 @@ Help for ndi.calculator/struct2doc is inherited from superclass ndi.app.appdoc
 </code></pre>
 <hr />
 <p><strong>test</strong> - <em>perform a test of an ndi.calculator object</em></p>
-<pre><code>[B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, VARARGIN)
+<pre><code>[B, REPORTS, B_EXPECTED] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
 
   Perform tests of the calculator for a certain SCOPE.
 
@@ -24011,7 +24080,7 @@ Help for ndi.calculator/struct2doc is inherited from superclass ndi.app.appdoc
     specified, B becomes a numel(specific_test_inds) x
     numel(specific_test_inds) array.
 
-  ERRORMSG{i,j} is any error message given if the comparison between the
+  REPORTS{i,j} is a structure array of reports from docCompare given if the comparison between the
     expected outcome of test i and the actual outcome of test j.
 
   B_EXPECTED is the result of the comparisons between the expected
@@ -24019,12 +24088,9 @@ Help for ndi.calculator/struct2doc is inherited from superclass ndi.app.appdoc
     might have the same expected outcome, which can be useful for
     interpreting the results in B.
 
-  SCOPE should be one of 'standard', 'low_noise', or 'high_noise'.
-    'standard' performs tests on specific hard-coded inputs.
-    'low_noise' performs tests on specific hard-coded inputs with small amounts
-       of noise added.
-    'high_noise' performs tests on specific hard-coded inputs with large amounts
-       of noise added.
+  SCOPE should be one of 'highSNR' or 'lowSNR'.
+    'highSNR' performs tests on specific hard-coded inputs.
+    'lowSNR' performs tests on specific hard-coded inputs with noise added.
 
   NUMBER_OF_TESTS indicates the number of tests to perform.
   PLOT_IT indicates (0/1) whether or not the results should be plotted.
@@ -24036,9 +24102,11 @@ Help for ndi.calculator/struct2doc is inherited from superclass ndi.app.appdoc
   | specific_test_inds([])   | Should we specify which tests to run?             |
   |--------------------------|---------------------------------------------------|
 
-  Step 1: generate_mock_docs
-
 Help for ndi.calculator/test is inherited from superclass ndi.mock.ctest
+</code></pre>
+<hr />
+<p><strong>user_parameter_template</strong> - <em>ndi.calculator.user_parameter_template is a function.</em></p>
+<pre><code>contents = ndi.calculator.user_parameter_template(calculator_type)
 </code></pre>
 <hr />
 <p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>

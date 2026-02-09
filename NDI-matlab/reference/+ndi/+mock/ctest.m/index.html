@@ -23283,20 +23283,7 @@
 <h2 id="superclasses">Superclasses</h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties</h2>
-<table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><em>base_scope</em></td>
-<td>structure with the base scope information for the class</td>
-</tr>
-</tbody>
-</table>
+<p><em>none</em></p>
 <h2 id="methods">Methods</h2>
 <table>
 <thead>
@@ -23323,16 +23310,20 @@
 <td>object that provides methods for testing ndi.calculator objects</td>
 </tr>
 <tr>
-<td><em>default_scope</em></td>
-<td>default scope types for ndi.mock.ctest object</td>
-</tr>
-<tr>
 <td><em>generate_mock_docs</em></td>
 <td>generate tests for ndi.calc.* objects</td>
 </tr>
 <tr>
+<td><em>load_mock_comparison</em></td>
+<td>load comparison object for a calculation</td>
+</tr>
+<tr>
 <td><em>load_mock_expected_output</em></td>
 <td>load expected NDI document answer for a calculation</td>
+</tr>
+<tr>
+<td><em>mock_comparison_filename</em></td>
+<td>file of expected NDI document comparison for a calculation</td>
 </tr>
 <tr>
 <td><em>mock_expected_filename</em></td>
@@ -23368,18 +23359,18 @@
 </code></pre>
 <hr />
 <p><strong>compare_mock_docs</strong> - <em>compare an expected calculation answer with an actual answer</em></p>
-<pre><code>[B, ERRORMSG] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE)
+<pre><code>[B, REPORT] = COMPARE_MOCK_DOCS(CTEST_OBJ, EXPECTED_DOC, ACTUAL_DOC, SCOPE, [DOCCOMPARE])
 
   Given an NDI document with the expected answer to a calculation (EXPECTED_DOC),
-  the ACTUAL_DOC computed, and the SCOPE (a string: 'standard', 'low_noise','high_noise'),
+  the ACTUAL_DOC computed, and the SCOPE (a string: 'highSNR', 'lowSNR'),
   this function computes whether the ACTUAL_DOC is within an allowed tolerance of
   EXPECTED_DOC.
 
   B is 1 if the differences in the documents are within the tolerance of the class.
   Otherwise, B is 0.
-  If B is 0, ERRORMSG is a string that indicates where the ACTUAL_DOC is out of tolerance.
+  If B is 0, REPORT is a string or report structure that indicates where the ACTUAL_DOC is out of tolerance.
 
-  In this abstract class, B is always 1 and ERRORMSG is always an empty string.
+  In this abstract class, B is always 1 and REPORT is always an empty string.
 
   Developer's note: this method should be overridden in each calculator object.
 </code></pre>
@@ -23393,24 +23384,33 @@
        doc ndi.mock.ctest
 </code></pre>
 <hr />
-<p><strong>default_scope</strong> - <em>default scope types for ndi.mock.ctest object</em></p>
-<pre><code>BASE_SCOPE = ndi.mock.ctest.default_scope();
-
-  Return a default base_scope structure for an ndi.mock.ctest object.
-</code></pre>
-<hr />
 <p><strong>generate_mock_docs</strong> - <em>generate tests for ndi.calc.</em> objects*</p>
 <pre><code>[DOCS, DOC_OUTPUT, DOC_EXPECTED_OUTPUT] = GENERATE_MOCK_DOCS(CSTEST_OBJ,...
      SCOPE, NUMBER_OF_TESTS)
 
-  SCOPE should be one of 'standard', 'low_noise', or 'high_noise'.
-    'standard' performs tests on specific hard-coded inputs.
-    'low_noise' performs tests on specific hard-coded inputs with small amounts
-       of noise added.
-    'high_noise' performs tests on specific hard-coded inputs with large amounts
-       of noise added.
+  SCOPE should be one of 'highSNR' or 'lowSNR'.
+    'highSNR' performs tests on specific hard-coded inputs.
+    'lowSNR' performs tests on specific hard-coded inputs with noise added.
 
-  NUMBER_OF_TESTS is the number of tests to generate.
+  NUMBER_OF_TESTS is the number of tests to generate. A document entry will
+    be generated for each test.
+
+  This function also accepts name/value pairs that modify its behavior:
+  Parameter (default)        | Description
+  ----------------------------------------------------------------------
+  specific_test_inds ([])    | A vector of specific test indices to generate.
+                             | If provided, only the documents for these tests
+                             | (among the number requested in NUMBER_OF_TESTS)
+                             | will be 'filled in'; the others will be returned empty.
+</code></pre>
+<hr />
+<p><strong>load_mock_comparison</strong> - <em>load comparison object for a calculation</em></p>
+<pre><code>DOCCOMPARE = LOAD_MOCK_COMPARISON(CTEST_OBJ, N)
+
+  Load the Nth stored ndi.database.doctools.docComparison object that contains the
+  comparison parameters for the Nth standard mock test.
+
+  If the file does not exist, empty is returned.
 </code></pre>
 <hr />
 <p><strong>load_mock_expected_output</strong> - <em>load expected NDI document answer for a calculation</em></p>
@@ -23418,6 +23418,13 @@
 
   Load the Nth stored ndi.document that contains the expected answer for the
   Nth standard mock test.
+</code></pre>
+<hr />
+<p><strong>mock_comparison_filename</strong> - <em>file of expected NDI document comparison for a calculation</em></p>
+<pre><code>FNAME = MOCK_COMPARISON_FILENAME(CTEST_OBJ, N)
+
+  Return the filename for the Nth stored ndi.database.doctools.docComparison JSON object
+  that contains the comparison parameters for the Nth standard mock test.
 </code></pre>
 <hr />
 <p><strong>mock_expected_filename</strong> - <em>file of expected NDI document answer for a calculation</em></p>
@@ -23443,7 +23450,7 @@
 </code></pre>
 <hr />
 <p><strong>test</strong> - <em>perform a test of an ndi.calculator object</em></p>
-<pre><code>[B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, VARARGIN)
+<pre><code>[B, REPORTS, B_EXPECTED] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, ...)
 
   Perform tests of the calculator for a certain SCOPE.
 
@@ -23455,7 +23462,7 @@
     specified, B becomes a numel(specific_test_inds) x
     numel(specific_test_inds) array.
 
-  ERRORMSG{i,j} is any error message given if the comparison between the
+  REPORTS{i,j} is a structure array of reports from docCompare given if the comparison between the
     expected outcome of test i and the actual outcome of test j.
 
   B_EXPECTED is the result of the comparisons between the expected
@@ -23463,12 +23470,9 @@
     might have the same expected outcome, which can be useful for
     interpreting the results in B.
 
-  SCOPE should be one of 'standard', 'low_noise', or 'high_noise'.
-    'standard' performs tests on specific hard-coded inputs.
-    'low_noise' performs tests on specific hard-coded inputs with small amounts
-       of noise added.
-    'high_noise' performs tests on specific hard-coded inputs with large amounts
-       of noise added.
+  SCOPE should be one of 'highSNR' or 'lowSNR'.
+    'highSNR' performs tests on specific hard-coded inputs.
+    'lowSNR' performs tests on specific hard-coded inputs with noise added.
 
   NUMBER_OF_TESTS indicates the number of tests to perform.
   PLOT_IT indicates (0/1) whether or not the results should be plotted.
@@ -23479,8 +23483,6 @@
   |--------------------------|---------------------------------------------------|
   | specific_test_inds([])   | Should we specify which tests to run?             |
   |--------------------------|---------------------------------------------------|
-
-  Step 1: generate_mock_docs
 </code></pre>
 <hr />
 <p><strong>write_mock_expected_output</strong> - <em>write</em></p>

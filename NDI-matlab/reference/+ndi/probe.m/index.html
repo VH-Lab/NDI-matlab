@@ -23372,6 +23372,10 @@
 <td>build the epoch table for an ndi.probe.*</td>
 </tr>
 <tr>
+<td><em>buildmultipleepochtables</em></td>
+<td>build epoch tables for multiple ndi.probe objects</td>
+</tr>
+<tr>
 <td><em>cache2ginfo</em></td>
 <td>CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache</td>
 </tr>
@@ -23575,6 +23579,16 @@ Help for ndi.probe/buildepochgraph is inherited from superclass ndi.epoch.epochs
                             |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
   'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
+</code></pre>
+<hr />
+<p><strong>buildmultipleepochtables</strong> - <em>build epoch tables for multiple ndi.probe objects</em></p>
+<pre><code>ET = BUILDMULTIPLEEPOCHTABLES(PROBECELLARRAY)
+
+  ET is a cell array of structures, where each structure is an epoch table for the
+  corresponding ndi.probe object in the input cell array PROBECELLARRAY.
+
+  This function is more efficient than calling BUILDEPOCHTABLE for each probe individually
+  because it minimizes redundant operations by using an index and checking the session cache.
 </code></pre>
 <hr />
 <p><strong>cache2ginfo</strong> - <em>CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache</em></p>

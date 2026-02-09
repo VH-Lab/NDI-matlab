@@ -23283,6 +23283,9 @@
 
 <h1 id="class-ndicloudapiimplementationdocumentslistdatasetdocumentsall">CLASS ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll</h1>
 <pre><code> LISTDATASETDOCUMENTSALL Implementation class for retrieving all documents in a dataset.
+    This class handles the paginated retrieval of all document summaries from a
+    cloud dataset. It also includes an optional mechanism to check for and fetch
+    newly-added documents that may appear while the initial list is being read.
 
 
 </code></pre>
@@ -23299,6 +23302,18 @@
 <tbody>
 <tr>
 <td><em>retries</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>checkForUpdates</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>waitForUpdates</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>maximumNumberUpdateReads</em></td>
 <td></td>
 </tr>
 <tr>
@@ -23415,6 +23430,9 @@
     Optional Name-Value Inputs:
         'pageSize'   - The number of results per page (default 1000).
         'retries'    - The number of times to retry a failed page read (default 10).
+        'checkForUpdates' - Flag to enable checking for new documents (default true).
+        'waitForUpdates'  - Pause duration in seconds before re-checking (default 5).
+        'maximumNumberUpdateReads' - Limit on update re-polls (default 100).
 
     Documentation for ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll/ListDatasetDocumentsAll
        doc ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll
@@ -23483,11 +23501,21 @@ Help for ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll/eq is in
 </code></pre>
 <hr />
 <p><strong>execute</strong> - <em>EXECUTE Performs the API call to list all documents.</em></p>
-<pre><code>[B, ANSWER, APIRESPONSE, APIURL] = EXECUTE(THIS)
+<pre><code>This method first determines the total number of pages and then iterates
+    through them, fetching each one using the private `fetch_and_append_page`
+    helper method.
+
+    If `checkForUpdates` is true, it then enters a loop to re-check the
+    total document count. If new documents have been added, it fetches
+    the new pages, de-duplicating results to ensure no duplicates are
+    added. This continues until no new documents are found or the
+    `maximumNumberUpdateReads` limit is reached.
+
+    [B, ANSWER, APIRESPONSE, APIURL] = EXECUTE(THIS)
 
     Outputs:
         b            - True if all pages were read successfully, false otherwise.
-        answer       - A struct with a 'documents' field containing all summaries, or an error struct.
+        answer       - A struct array of document summaries on success, or an error struct.
         apiResponse  - An array of matlab.net.http.ResponseMessage objects from all page calls.
         apiURL       - An array of URLs that were called.
 

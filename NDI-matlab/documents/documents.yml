@@ -8,10 +8,12 @@
       - element_epoch : 'NDI-matlab/documents/element_epoch.md'
       - epochclocktimes : 'NDI-matlab/documents/epochclocktimes.md'
       - epochid : 'NDI-matlab/documents/epochid.md'
+      - measurement : 'NDI-matlab/documents/measurement.md'
       - mock : 'NDI-matlab/documents/mock.md'
       - oneepoch : 'NDI-matlab/documents/oneepoch.md'
       - projectvar : 'NDI-matlab/documents/projectvar.md'
       - session : 'NDI-matlab/documents/session.md'
+      - session_in_a_dataset : 'NDI-matlab/documents/session_in_a_dataset.md'
       - subject : 'NDI-matlab/documents/subject.md'
       - subject_group : 'NDI-matlab/documents/subject_group.md'
       - subjectmeasurement : 'NDI-matlab/documents/subjectmeasurement.md'
@@ -72,6 +74,8 @@
         - openminds_element : 'NDI-matlab/documents/metadata/openminds_element.md'
         - openminds_stimulus : 'NDI-matlab/documents/metadata/openminds_stimulus.md'
         - openminds_subject : 'NDI-matlab/documents/metadata/openminds_subject.md'
+      - mock:
+        - demoNDIMock : 'NDI-matlab/documents/mock/demoNDIMock.md'
       - neuron:
         - neuron_extracellular : 'NDI-matlab/documents/neuron/neuron_extracellular.md'
       - probe:

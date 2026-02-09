@@ -23410,6 +23410,8 @@
         'cloudOrganizationID' - The ID of the organization. If not
             provided, the environment variable NDI_CLOUD_ORGANIZATION_ID
             will be used.
+        'page' - The page number to retrieve (default 1).
+        'pageSize' - The number of datasets per page (default 20).
 
     Documentation for ndi.cloud.api.implementation.datasets.ListDatasets/ListDatasets
        doc ndi.cloud.api.implementation.datasets.ListDatasets
@@ -23482,7 +23484,9 @@ Help for ndi.cloud.api.implementation.datasets.ListDatasets/eq is inherited from
 
     Outputs:
         b            - True if the call succeeded, false otherwise.
-        answer       - The datasets struct on success, or error message on failure.
+        answer       - A struct with fields 'totalNumber', 'page',
+                       'pageSize', and 'datasets' on success, or
+                       an error struct on failure.
         apiResponse  - The full matlab.net.http.ResponseMessage object.
         apiURL       - The URL that was called.
 </code></pre>

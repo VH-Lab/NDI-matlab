@@ -23353,6 +23353,10 @@
 <td>build the epoch table for an ndi.probe.*</td>
 </tr>
 <tr>
+<td><em>buildmultipleepochtables</em></td>
+<td>build epoch tables for multiple ndi.probe objects</td>
+</tr>
+<tr>
 <td><em>cache2ginfo</em></td>
 <td>CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache</td>
 </tr>
@@ -23578,6 +23582,18 @@ Help for ndi.probe.timeseries.stimulator/buildepochgraph is inherited from super
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
 Help for ndi.probe.timeseries.stimulator/buildepochtable is inherited from superclass ndi.probe
+</code></pre>
+<hr />
+<p><strong>buildmultipleepochtables</strong> - <em>build epoch tables for multiple ndi.probe objects</em></p>
+<pre><code>ET = BUILDMULTIPLEEPOCHTABLES(PROBECELLARRAY)
+
+  ET is a cell array of structures, where each structure is an epoch table for the
+  corresponding ndi.probe object in the input cell array PROBECELLARRAY.
+
+  This function is more efficient than calling BUILDEPOCHTABLE for each probe individually
+  because it minimizes redundant operations by using an index and checking the session cache.
+
+Help for ndi.probe.timeseries.stimulator.buildmultipleepochtables is inherited from superclass ndi.probe
 </code></pre>
 <hr />
 <p><strong>cache2ginfo</strong> - <em>CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache</em></p>

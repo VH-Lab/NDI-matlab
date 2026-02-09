@@ -23401,6 +23401,14 @@
 <td>return the filename for the ndi.epoch.epochprobemap_daqsystem file for an epoch</td>
 </tr>
 <tr>
+<td><em>epochsamples2times</em></td>
+<td>convert samples to time</td>
+</tr>
+<tr>
+<td><em>epochsamples2times_ingested</em></td>
+<td>convert samples to time for ingested data</td>
+</tr>
+<tr>
 <td><em>epochsetname</em></td>
 <td>the name of the ndi.epoch.epochset object, for EPOCHNODES</td>
 </tr>
@@ -23415,6 +23423,14 @@
 <tr>
 <td><em>epochtagfilename</em></td>
 <td>return the file path for the tag file for an epoch</td>
+</tr>
+<tr>
+<td><em>epochtimes2samples</em></td>
+<td>convert time to samples</td>
+</tr>
+<tr>
+<td><em>epochtimes2samples_ingested</em></td>
+<td>convert time to samples for ingested data</td>
 </tr>
 <tr>
 <td><em>eq</em></td>
@@ -23753,6 +23769,18 @@ Help for ndi.daq.system.mfdaq/epochnodes is inherited from superclass ndi.epoch.
 Help for ndi.daq.system.mfdaq/epochprobemapfilename is inherited from superclass ndi.daq.system
 </code></pre>
 <hr />
+<p><strong>epochsamples2times</strong> - <em>convert samples to time</em></p>
+<pre><code>T = EPOCHSAMPLES2TIMES(NDI_DAQSYSTEM_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCH, S)
+
+  Converts sample indices S to time T for the specified channel and epoch.
+</code></pre>
+<hr />
+<p><strong>epochsamples2times_ingested</strong> - <em>convert samples to time for ingested data</em></p>
+<pre><code>T = EPOCHSAMPLES2TIMES_INGESTED(NDI_DAQSYSTEM_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCH, S)
+
+  Converts sample indices S to time T for the specified channel and epoch.
+</code></pre>
+<hr />
 <p><strong>epochsetname</strong> - <em>the name of the ndi.epoch.epochset object, for EPOCHNODES</em></p>
 <pre><code>NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
 
@@ -23806,6 +23834,18 @@ Help for ndi.daq.system.mfdaq/epochtableentry is inherited from superclass ndi.e
   In this base class, empty is returned because it is an abstract class.
 
 Help for ndi.daq.system.mfdaq/epochtagfilename is inherited from superclass ndi.daq.system
+</code></pre>
+<hr />
+<p><strong>epochtimes2samples</strong> - <em>convert time to samples</em></p>
+<pre><code>S = EPOCHTIMES2SAMPLES(NDI_DAQSYSTEM_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCH, T)
+
+  Converts time T to sample indices S for the specified channel and epoch.
+</code></pre>
+<hr />
+<p><strong>epochtimes2samples_ingested</strong> - <em>convert time to samples for ingested data</em></p>
+<pre><code>S = EPOCHTIMES2SAMPLES_INGESTED(NDI_DAQSYSTEM_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCH, T)
+
+  Converts time T to sample indices S for the specified channel and epoch.
 </code></pre>
 <hr />
 <p><strong>eq</strong> - <em>are two ndi.daq.system objects equal?</em></p>

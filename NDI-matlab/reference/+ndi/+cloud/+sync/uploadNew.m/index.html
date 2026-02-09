@@ -23157,7 +23157,7 @@
 <pre><code> UPLOADNEW Upload new local documents (and associated files) to remote.
 
   Syntax:
-    ndi.cloud.sync.uploadNew(NDI_DATASET, SYNC_OPTIONS)
+    [SUCCESS, ERRORMESSAGE, REPORT] = ndi.cloud.sync.uploadNew(NDI_DATASET, SYNC_OPTIONS)
 
     This function implements the &quot;UploadNew&quot; synchronization mode.
     mode, it compares the current local state to the local state from the
@@ -23173,9 +23173,18 @@
     Inputs:
         ndiDataset (1,1) ndi.dataset - The local NDI dataset object.
         syncOptions (name, value pairs) - Optional synchronization options:
-        - SyncFiles (logical) - If true, files will be synced (default: true).
+        - SyncFiles (logical) - If true, files will be downloaded (default: true).
+                                Files are always uploaded regardless of this setting.
         - Verbose (logical) - If true, verbose output is printed (default: true).
         - DryRun (logical) - If true, actions are simulated but not performed (default: false).
+
+    Outputs:
+        success (logical) - True if the operation completed successfully, false otherwise.
+        errorMessage (string) - Error message if success is false, empty otherwise.
+        report (struct) - Structure containing details of the changes applied.
+            Fields:
+            - uploaded_document_ids (string array)
+            - uploaded_documents_report (struct) - Detailed report from uploadDocumentCollection
 
     See also:
         ndi.cloud.syncDataset

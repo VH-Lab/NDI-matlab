@@ -23331,6 +23331,22 @@
 <td>return the ndi.time.clocktype objects for an ingested epoch</td>
 </tr>
 <tr>
+<td><em>epochsamples2times</em></td>
+<td>convert samples to time</td>
+</tr>
+<tr>
+<td><em>epochsamples2times_ingested</em></td>
+<td>convert samples to time</td>
+</tr>
+<tr>
+<td><em>epochtimes2samples</em></td>
+<td>convert time to samples</td>
+</tr>
+<tr>
+<td><em>epochtimes2samples_ingested</em></td>
+<td>convert time to samples</td>
+</tr>
+<tr>
 <td><em>eq</em></td>
 <td>tests whether 2 ndi.daq.reader objects are equal</td>
 </tr>
@@ -23500,6 +23516,38 @@ Help for ndi.daq.reader.mfdaq.spikegadgets/epochclock is inherited from supercla
   See also: ndi.time.clocktype
 
 Help for ndi.daq.reader.mfdaq.spikegadgets/epochclock_ingested is inherited from superclass ndi.daq.reader
+</code></pre>
+<hr />
+<p><strong>epochsamples2times</strong> - <em>convert samples to time</em></p>
+<pre><code>T = EPOCHSAMPLES2TIMES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S)
+
+  Converts sample indices S to time T for the specified channel and epochfiles.
+
+Help for ndi.daq.reader.mfdaq.spikegadgets/epochsamples2times is inherited from superclass ndi.daq.reader.mfdaq
+</code></pre>
+<hr />
+<p><strong>epochsamples2times_ingested</strong> - <em>convert samples to time</em></p>
+<pre><code>T = EPOCHSAMPLES2TIMES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S, SESSION)
+
+  Converts sample indices S to time T for the specified channel and epochfiles.
+
+Help for ndi.daq.reader.mfdaq.spikegadgets/epochsamples2times_ingested is inherited from superclass ndi.daq.reader.mfdaq
+</code></pre>
+<hr />
+<p><strong>epochtimes2samples</strong> - <em>convert time to samples</em></p>
+<pre><code>S = EPOCHTIMES2SAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T)
+
+  Converts time T to sample indices S for the specified channel and epochfiles.
+
+Help for ndi.daq.reader.mfdaq.spikegadgets/epochtimes2samples is inherited from superclass ndi.daq.reader.mfdaq
+</code></pre>
+<hr />
+<p><strong>epochtimes2samples_ingested</strong> - <em>convert time to samples</em></p>
+<pre><code>S = EPOCHTIMES2SAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T, SESSION)
+
+  Converts time T to sample indices S for the specified channel and epochfiles.
+
+Help for ndi.daq.reader.mfdaq.spikegadgets/epochtimes2samples_ingested is inherited from superclass ndi.daq.reader.mfdaq
 </code></pre>
 <hr />
 <p><strong>eq</strong> - <em>tests whether 2 ndi.daq.reader objects are equal</em></p>

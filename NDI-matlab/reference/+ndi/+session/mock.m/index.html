@@ -23387,6 +23387,10 @@
 <td>DELETE   Delete a handle object.</td>
 </tr>
 <tr>
+<td><em>deleteSessionDataStructures</em></td>
+<td>delete the session files</td>
+</tr>
+<tr>
 <td><em>docinput2docs</em></td>
 <td>convert an array of ndi.documents or doc_ids to documents</td>
 </tr>
@@ -23441,6 +23445,10 @@
 <tr>
 <td><em>ingest</em></td>
 <td>ingest the raw data and synchronization information into the database</td>
+</tr>
+<tr>
+<td><em>isIngestedInDataset</em></td>
+<td>is the session ingested in a dataset?</td>
 </tr>
 <tr>
 <td><em>is_fully_ingested</em></td>
@@ -23667,14 +23675,19 @@ Help for ndi.session.mock/database_existbinarydoc is inherited from superclass n
 </code></pre>
 <hr />
 <p><strong>database_openbinarydoc</strong> - <em>open the ndi.database.binarydoc channel of an ndi.document</em></p>
-<pre><code>NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+<pre><code>NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME, ...)
 
    Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
    NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
    The document is opened for reading only. Document binary streams may not be edited once the
    document is added to the database.
 
-   Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC.
+   Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC unless 'autoClose' is used.
+
+   This function takes name/value pairs that modify its behavior.
+   Parameter (default)     | Description
+   ------------------------------------------------------------------
+   autoClose (false)       | Automatically close the file when the returned object goes out of scope.
 
 Help for ndi.session.mock/database_openbinarydoc is inherited from superclass ndi.session
 </code></pre>
@@ -23717,6 +23730,23 @@ Help for ndi.session.mock/database_search is inherited from superclass ndi.sessi
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/ISVALID, CLEAR
 
 Help for ndi.session.mock/delete is inherited from superclass handle
+</code></pre>
+<hr />
+<p><strong>deleteSessionDataStructures</strong> - <em>delete the session files</em></p>
+<pre><code>OBJ_OUT = DELETESESSIONDATASTRUCTURES(NDI_SESSION_DIR_OBJ, AREYOUSURE, ASKUSERTOCONFIRM)
+
+  Deletes the session files (recursively removes .ndi directory).
+
+  Inputs:
+    AREYOUSURE (default false) - boolean, if true, proceeds with deletion without confirmation (unless ASKUSERTOCONFIRM is true and fails?)
+        Actually, logic: if AREYOUSURE is true, we delete.
+        If AREYOUSURE is false, we check ASKUSERTOCONFIRM.
+    ASKUSERTOCONFIRM (default true) - boolean, if true and AREYOUSURE is false, asks user via popup.
+
+  Returns:
+    OBJ_OUT - ndi.session.dir.empty()
+
+Help for ndi.session.mock/deleteSessionDataStructures is inherited from superclass ndi.session.dir
 </code></pre>
 <hr />
 <p><strong>docinput2docs</strong> - <em>convert an array of ndi.documents or doc_ids to documents</em></p>
@@ -23898,6 +23928,18 @@ Help for ndi.session.mock/id is inherited from superclass ndi.session
   Ingest all raw data and synchronization information into the database.
 
 Help for ndi.session.mock/ingest is inherited from superclass ndi.session
+</code></pre>
+<hr />
+<p><strong>isIngestedInDataset</strong> - <em>is the session ingested in a dataset?</em></p>
+<pre><code>B = ISINGESTEDINDATASET(NDI_SESSION_OBJ)
+
+  Returns 1 if the session is ingested in a dataset (that is visible
+  to the session's database), and 0 otherwise.
+
+  This method searches for a 'session_in_a_dataset' document in the
+  database that matches the session's ID and has is_linked=0.
+
+Help for ndi.session.mock/isIngestedInDataset is inherited from superclass ndi.session
 </code></pre>
 <hr />
 <p><strong>is_fully_ingested</strong> - <em>is an ndi.session object fully ingested?</em></p>

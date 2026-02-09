@@ -23276,7 +23276,9 @@
 
 
 <h1 id="class-ndiontologyempty">CLASS ndi.ontology.EMPTY</h1>
-<pre><code>  Location: +ndi/+ontology/EMPTY.m
+<pre><code>  EMPTY - NDI Ontology object for a remote experimental ontology (EMPTY).
+    Inherits from ndi.ontology and implements lookupTermOrID for EMPTY
+    by reading from a GitHub-hosted .owl file (Supports XML and Functional syntax).
 
 
 </code></pre>
@@ -23296,7 +23298,11 @@
 <td></td>
 </tr>
 <tr>
-<td><em>OBO_FILE_SUBPATH</em></td>
+<td><em>OWL_URL_MAIN</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>OWL_URL_DEV</em></td>
 <td></td>
 </tr>
 </tbody>
@@ -23312,7 +23318,7 @@
 <tbody>
 <tr>
 <td><em>EMPTY</em></td>
-<td>Constructor for the EMPTY ontology object.</td>
+<td>Constructor</td>
 </tr>
 <tr>
 <td><em>clearCache</em></td>
@@ -23340,7 +23346,7 @@
 </tr>
 <tr>
 <td><em>lookupTermOrID</em></td>
-<td>Looks up a term in the local EMPTY.obo file.</td>
+<td>Search with failover from Main (XML) to Dev (Functional)</td>
 </tr>
 <tr>
 <td><em>performIriLookup</em></td>
@@ -23357,11 +23363,8 @@
 </tbody>
 </table>
 <h3 id="methods-help">Methods help</h3>
-<p><strong>EMPTY</strong> - <em>Constructor for the EMPTY ontology object.</em></p>
-<pre><code>Implicitly calls the superclass constructor ndi.ontology().
-  It also resolves the full path to the OBO file.
-
-    Documentation for ndi.ontology.EMPTY/EMPTY
+<p><strong>EMPTY</strong> - <em>Constructor</em></p>
+<pre><code>Documentation for ndi.ontology.EMPTY/EMPTY
        doc ndi.ontology.EMPTY
 </code></pre>
 <hr />
@@ -23402,18 +23405,8 @@ Help for ndi.ontology.EMPTY.lookup is inherited from superclass ndi.ontology
 Help for ndi.ontology.EMPTY.lookupOBOFile is inherited from superclass ndi.ontology
 </code></pre>
 <hr />
-<p><strong>lookupTermOrID</strong> - <em>Looks up a term in the local EMPTY.obo file.</em></p>
-<pre><code>[ID, NAME, DEFINITION, SYNONYMS, SHORTNAME] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME_FRAGMENT)
-
-    Overrides the base class method. It uses the static helper
-    ndi.ontology.lookupOBOFile to parse and search the OBO file.
-
-    The input TERM_OR_ID_OR_NAME_FRAGMENT is the part of the original
-    lookup string after the 'EMPTY:' prefix has been removed (e.g.,
-    '00000090' for an ID, or 'Behavioral measurement' for a name).
-
-    See also: ndi.ontology.lookup (static dispatcher),
-              ndi.ontology.lookupOBOFile (static helper)
+<p><strong>lookupTermOrID</strong> - <em>Search with failover from Main (XML) to Dev (Functional)</em></p>
+<pre><code>
 </code></pre>
 <hr />
 <p><strong>performIriLookup</strong> - <em>PERFORMIRILOOKUP Fetches ontology term details from EBI OLS using its IRI.</em></p>

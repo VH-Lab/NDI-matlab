@@ -23154,13 +23154,40 @@
 <h1 id="ndiclouduploaddataset">ndi.cloud.uploadDataset</h1>
 <pre><code>  UPLOADDATASET - upload a dataset to NDI cloud
 
-  DATASETID = ndi.cloud.UPLOADDATASET(ndiDataset)
+  [SUCCESS, DATASETID, MESSAGE] = ndi.cloud.UPLOADDATASET(ndiDataset, SYNCOPTIONS, ...
+     NAME/VALUE PAIRS)
 
-  Upload an ndi.dataset object to NDI Cloud. The DATASETID on
-  NDI Cloud is returned.
+  Upload an ndi.dataset object to NDI Cloud.
 
-  Example:
-    ndi.cloud.upload.new_dataset(ndiDataset)
+  This function uploads all documents and associated data files for a given
+  NDIDATASET to the NDI cloud.
+
+  Inputs:
+    ndiDataset - The ndi.dataset object to be uploaded.
+    syncOptions - An ndi.cloud.sync.SyncOptions object for additional configuration.
+
+  By default, this function will not re-upload a dataset if it already exists
+  on the remote server. See the 'uploadAsNew' option to override this behavior.
+
+  The function returns a boolean SUCCESS flag, the CLOUDDATASETID of the
+  created remote dataset, and a MESSAGE string that will contain an error
+  message if SUCCESS is false.
+
+  It can be configured with the following NAME/VALUE pairs:
+  | Name                         | Description                                                              |
+  |------------------------------|--------------------------------------------------------------------------|
+  | 'uploadAsNew'                | (logical) If true, a new remote dataset will be created even if one      |
+  |                              | already exists. The local reference to the original remote dataset will  |
+  |                              | be removed, but the original remote dataset will not be deleted.         |
+  |                              | Default is false. If a remote dataset exists and this is false,          |
+  |                              | the function will proceed to sync documents and files to it.             |
+  | 'skipMetadataEditorMetadata' | (logical) If true, the function will skip generating metadata from the   |
+  |                              | dataset. Default is false. If you use this option, you must also provide |
+  |                              | 'remoteDatasetName'.                                                     |
+  | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This |
+  |                              | is *required* if 'skipMetadataEditorMetadata' is true.                   |
+
+  See also: ndi.cloud.sync.SyncOptions, ndi.cloud.downloadDataset
 
 </code></pre>
 
