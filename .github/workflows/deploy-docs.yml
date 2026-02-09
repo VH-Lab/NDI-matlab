@@ -49,6 +49,8 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
+            mkdir('tools');
+            copyfile('requirements.txt', fullfile('tools', 'requirements.txt'));
             matbox.installRequirements(fullfile(pwd, 'tools'));
             tools_path = fullfile(pwd, 'tools');
             if exist(tools_path, 'dir')
