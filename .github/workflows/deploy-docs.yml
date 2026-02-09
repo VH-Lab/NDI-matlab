@@ -37,21 +37,13 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
-            disp(['Current directory: ' pwd]);
-            system('ls -al');
             matbox.installRequirements(pwd);
             tools_path = fullfile(pwd, 'tools');
             if exist(tools_path, 'dir')
-                disp(['Listing contents of ' tools_path ':']);
-                system(['ls -al "' tools_path '"']);
-                disp(['Adding ' tools_path ' and subdirectories to path.']);
                 addpath(genpath(tools_path));
-            else
-                disp(['Directory ' tools_path ' does not exist.']);
             end
             addpath(genpath(fullfile(pwd, 'src')));
-            disp('Listing files in /home/runner/work/');
-            system('ls -R /home/runner/work/');
+            addpath(genpath('MATLAB-AddOns'));
             ndi_Init();
             ndi.docs.build();
             quit;
