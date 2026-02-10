@@ -1,5 +1,5 @@
 % NDI-matlab
-% Version 1.1.0 (R2021b+) 10-Oct-2025
+% Version 1.1.2 (R2021b+) 10-Feb-2026
 %
-% Copyright (c) 2025, Steve Van Hooser
+% Copyright (c) 2026, Steve Van Hooser
 % ------------------------------------
