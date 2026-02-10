@@ -17,6 +17,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Start virtual display server
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -29,6 +36,11 @@ jobs:
         uses: matlab-actions/setup-matlab@v2
         with:
           release: 'latest'
+          cache: true
+          products: |
+            Communications_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
 
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@v1
@@ -37,10 +49,15 @@ jobs:
         uses: matlab-actions/run-command@v2
         with:
           command: |
-            addpath(genpath('tools'));
-            matbox.installRequirements(pwd);
-            addpath(genpath('src'));
-            ndi_Init();
+            mkdir('tools');
+            copyfile('requirements.txt', fullfile('tools', 'requirements.txt'));
+            matbox.installRequirements(fullfile(pwd, 'tools'));
+            tools_path = fullfile(pwd, 'tools');
+            if exist(tools_path, 'dir')
+                addpath(genpath(tools_path));
+            end
+            addpath(genpath(fullfile(pwd, 'src')));
+            addpath(genpath('MATLAB-AddOns'));
             ndi.docs.build();
             quit;
 
