@@ -35,7 +35,7 @@ jobs:
       matrix:
         # Some graphical (GUI) tests fail on R2023b and R2024a in GitHub runner
         # One failing test on R2023a. Need to debug.
-        MATLABVersion: [R2021b, R2022a, R2022b, R2024b]
+        MATLABVersion: [R2024b, 2025a]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
