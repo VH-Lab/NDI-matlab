@@ -12,7 +12,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The ontology node id corresponding to the first object/subject for which the second column of datapoints in the element of type 'distance' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'EMPTY:0000146' which defines a subject local id)."
+			"documentation": "The ontology node id corresponding to the first object/subject for which the second column of datapoints in the element of type 'distance' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'EMPTY:0000052' which defines a subject local id)."
 		},
 		{
 			"name": "integerIDs_A",
@@ -44,7 +44,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The ontology node id corresponding to the second object/subject for which the third column of datapoints in the element of type 'distance' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'EMPTY:0000146' which defines a subject local id)."
+			"documentation": "The ontology node id corresponding to the second object/subject for which the third column of datapoints in the element of type 'distance' is referring to. The ontology term should be reported in the form of ontology:nodeID (e.g 'EMPTY:0000052' which defines a subject local id)."
 		},
 		{
 			"name": "integerIDs_B",
