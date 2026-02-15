@@ -7689,6 +7689,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../%2Bdatasets/listDeletedDatasets.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.datasets.listDeletedDatasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../%2Bdatasets/publishDataset.m/" class="md-nav__link">
         
   
@@ -7725,6 +7753,34 @@
     
   
     ndi.cloud.api.datasets.submitDataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%2Bdatasets/undeleteDataset.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.datasets.undeleteDataset
   
 
     
@@ -8156,6 +8212,34 @@
     
   
     ndi.cloud.api.documents.listDatasetDocumentsAll
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../listDeletedDocuments.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.documents.listDeletedDocuments
   
 
     
@@ -9255,6 +9339,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../%2Bimplementation/%2Bdatasets/ListDeletedDatasets.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.implementation.datasets.ListDeletedDatasets
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../%2Bimplementation/%2Bdatasets/PublishDataset.m/" class="md-nav__link">
         
   
@@ -9291,6 +9403,34 @@
     
   
     ndi.cloud.api.implementation.datasets.SubmitDataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%2Bimplementation/%2Bdatasets/UndeleteDataset.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.implementation.datasets.UndeleteDataset
   
 
     
@@ -9710,6 +9850,34 @@
     
   
     ndi.cloud.api.implementation.documents.ListDatasetDocumentsAll
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../%2Bimplementation/%2Bdocuments/ListDeletedDocuments.m/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ndi.cloud.api.implementation.documents.ListDeletedDocuments
   
 
     
@@ -29716,26 +29884,22 @@
 
 
 <h1 id="ndicloudapidocumentsbulkdeletedocuments">ndi.cloud.api.documents.bulkDeleteDocuments</h1>
-<pre><code> BULKDELETEDOCUMENTS User-facing wrapper to delete multiple documents from a dataset.
+<pre><code> BULKDELETEDOCUMENTS User-facing wrapper to delete multiple documents.
 
-    [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.documents.bulkDeleteDocuments(CLOUDDATASETID, CLOUDDOCUMENTIDS)
+    [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.documents.bulkDeleteDocuments(CLOUD_DATASET_ID, CLOUD_DOCUMENT_IDS, 'when', '7d')
 
-    Deletes a specified list of documents from a dataset on the NDI Cloud in
-    a single API call.
+    Deletes multiple documents from a dataset on the NDI Cloud.
 
     Inputs:
-        cloudDatasetID   - The ID of the dataset from which documents will be deleted.
-        cloudDocumentIDs - A string array of the cloud API document IDs to delete.
+        cloudDatasetID   - The ID of the dataset containing the documents.
+        cloudDocumentIDs - A string array of cloud API document IDs to delete.
+        options.when     - (Optional) Duration string (e.g., '7d', 'now'). Default: '7d'.
 
     Outputs:
         b            - True if the call succeeded, false otherwise.
-        answer       - The API response body on success, or an error struct on failure.
+        answer       - The body of the API response on success.
         apiResponse  - The full matlab.net.http.ResponseMessage object.
         apiURL       - The URL that was called.
-
-    Example:
-        ids_to_delete = [&quot;doc_id_1&quot;, &quot;doc_id_2&quot;];
-        [success, result] = ndi.cloud.api.documents.bulkDeleteDocuments('d-12345', ids_to_delete);
 
     See also: ndi.cloud.api.implementation.documents.BulkDeleteDocuments
 
