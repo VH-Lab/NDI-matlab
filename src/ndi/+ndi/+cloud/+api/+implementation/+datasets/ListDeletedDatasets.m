@@ -1,11 +1,6 @@
 classdef ListDeletedDatasets < ndi.cloud.api.call
     %LISTDELETEDDATASETS Implements the API call to list soft-deleted datasets.
 
-    properties (Access = protected)
-        page
-        pageSize
-    end
-
     methods
         function this = ListDeletedDatasets(args)
             %LISTDELETEDDATASETS Creates a new ListDeletedDatasets API call object.
