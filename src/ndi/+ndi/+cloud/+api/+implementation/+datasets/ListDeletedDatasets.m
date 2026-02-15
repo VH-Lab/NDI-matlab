@@ -29,7 +29,7 @@ classdef ListDeletedDatasets < ndi.cloud.api.call
 
             request = matlab.net.http.RequestMessage(method, headers);
 
-            apiURL = ndi.cloud.api.url(this.endpointName, 'page', this.page, 'pageSize', this.pageSize);
+            apiURL = ndi.cloud.api.url(this.endpointName, 'page', this.page, 'page_size', this.pageSize);
 
             apiResponse = request.send(apiURL);
 
