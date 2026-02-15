@@ -19,13 +19,18 @@ classdef UndeleteDataset < ndi.cloud.api.call
 
             auth_token = ndi.cloud.authenticate();
             acceptField = matlab.net.http.HeaderField('accept','application/json');
+            contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
             authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
-            headers = [acceptField authorizationField];
+            headers = [acceptField contentTypeField authorizationField];
 
-            body = matlab.net.http.MessageBody();
+            body = matlab.net.http.MessageBody('');
             request = matlab.net.http.RequestMessage(method, headers, body);
 
             apiURL = ndi.cloud.api.url(this.endpointName, 'dataset_id', this.cloudDatasetID);
+
+            % Suppress MATLAB warning for POST with empty body
+            warnState = warning('off', 'MATLAB:http:BodyExpectedFor');
+            cleanupObj = onCleanup(@() warning(warnState));
 
             apiResponse = request.send(apiURL);
 
