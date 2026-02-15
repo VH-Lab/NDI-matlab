@@ -2,7 +2,6 @@ classdef ListDeletedDocuments < ndi.cloud.api.call
     %LISTDELETEDDOCUMENTS Implements the API call to list soft-deleted documents.
 
     properties (Access = protected)
-        cloudDatasetID
         page
         pageSize
     end
