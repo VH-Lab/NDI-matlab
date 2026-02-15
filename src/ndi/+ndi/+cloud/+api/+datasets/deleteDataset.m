@@ -1,4 +1,4 @@
-function [b, answer, apiResponse, apiURL] = deleteDataset(cloudDatasetID)
+function [b, answer, apiResponse, apiURL] = deleteDataset(cloudDatasetID, options)
 %DELETEDATASET User-facing wrapper to delete a dataset on NDI Cloud.
 %
 %   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.datasets.deleteDataset(CLOUD_DATASET_ID)
@@ -7,6 +7,8 @@ function [b, answer, apiResponse, apiURL] = deleteDataset(cloudDatasetID)
 %
 %   Inputs:
 %       cloudDatasetID - The string ID of the dataset to delete.
+%       options.when   - (Optional) Duration string (e.g., '7d', 'now') specifying
+%                        when the dataset should be permanently removed. Default: '7d'.
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
@@ -18,15 +20,14 @@ function [b, answer, apiResponse, apiURL] = deleteDataset(cloudDatasetID)
 
     arguments
         cloudDatasetID (1,1) string
+        options.when (1,1) string = "7d"
     end
 
     % 1. Create an instance of the implementation class.
     api_call = ndi.cloud.api.implementation.datasets.DeleteDataset(...
-        'cloudDatasetID', cloudDatasetID);
+        'cloudDatasetID', cloudDatasetID, 'when', options.when);
     
     % 2. Call the execute method and return its outputs directly.
     [b, answer, apiResponse, apiURL] = api_call.execute();
     
 end
-
-
