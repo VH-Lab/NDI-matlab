@@ -22,7 +22,8 @@ classdef UndeleteDataset < ndi.cloud.api.call
             authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
             headers = [acceptField authorizationField];
 
-            request = matlab.net.http.RequestMessage(method, headers);
+            body = matlab.net.http.MessageBody();
+            request = matlab.net.http.RequestMessage(method, headers, body);
 
             apiURL = ndi.cloud.api.url(this.endpointName, 'dataset_id', this.cloudDatasetID);
 
