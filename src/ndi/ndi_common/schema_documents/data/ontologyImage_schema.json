@@ -14,7 +14,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The ontology node id(s) of the data variable (s) in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:00000090,UBERON:3373')."
+			"documentation": "The ontology node id(s) of the data variable (s) in a comma-seperated list of ontology:nodeID (e.g 'EMPTY:0000002,UBERON:3373')."
 		}
 
 	]

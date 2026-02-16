@@ -3,6 +3,7 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
 
     properties (Access=protected)
         documentIDsToDelete
+        when
     end
 
     methods
@@ -10,19 +11,22 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
             %BULKDELETEDOCUMENTS Creates a new BulkDeleteDocuments API call object.
             %
             %   THIS = ndi.cloud.api.implementation.documents.BulkDeleteDocuments( ...
-            %      'cloudDatasetID', ID, 'cloudDocumentIDs', DOC_IDS)
+            %      'cloudDatasetID', ID, 'cloudDocumentIDs', DOC_IDS, 'when', '7d')
             %
             %   Inputs:
             %       'cloudDatasetID'   - The ID of the dataset from which to delete documents.
             %       'cloudDocumentIDs' - A string array of cloud API document IDs to delete.
+            %       'when'             - (Optional) Duration string. Default: '7d'.
             %
             arguments
                 args.cloudDatasetID (1,1) string
                 args.cloudDocumentIDs (1,:) string
+                args.when (1,1) string = "7d"
             end
             
             this.cloudDatasetID = args.cloudDatasetID;
             this.documentIDsToDelete = args.cloudDocumentIDs;
+            this.when = args.when;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -45,7 +49,8 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
                 % just delete it singly to avoid JSON conversion that API
                 % does not expect (it expects an array, Matlab produces a
                 % single object)
-                [b, answer, apiResponse, apiURL] = ndi.cloud.api.documents.deleteDocument(this.cloudDatasetID, this.documentIDsToDelete);
+                [b, answer, apiResponse, apiURL] = ndi.cloud.api.documents.deleteDocument(...
+                    this.cloudDatasetID, this.documentIDsToDelete, 'when', this.when);
                 return
             end
 
@@ -55,7 +60,7 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
 
             method = matlab.net.http.RequestMethod.POST;
 
-            json = struct('documentIds', this.documentIDsToDelete);
+            json = struct('documentIds', this.documentIDsToDelete, 'when', this.when);
             body = matlab.net.http.MessageBody(json);
 
             acceptField = matlab.net.http.HeaderField('accept','application/json');
@@ -67,13 +72,16 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
             
             apiResponse = send(request, apiURL);
             
-            if (apiResponse.StatusCode == 200)
+            if (apiResponse.StatusCode == 200 || apiResponse.StatusCode == 204 || apiResponse.StatusCode == 504)
                 b = true;
-                answer = apiResponse.Body.Data;
+                if ~isempty(apiResponse.Body.Data)
+                    answer = apiResponse.Body.Data;
+                else
+                    answer = "Documents deleted.";
+                end
             else
                 answer = apiResponse.Body.Data;
             end
         end
     end
 end
-

@@ -1,4 +1,4 @@
-classdef ResendConfirmation < ndi.cloud.api.call
+classdef resendConfirmation < ndi.cloud.api.call
 %RESENDCONFIRMATION Implementation class for resending a user confirmation email.
 
     properties
@@ -6,7 +6,7 @@ classdef ResendConfirmation < ndi.cloud.api.call
     end
 
     methods
-        function this = ResendConfirmation(args)
+        function this = resendConfirmation(args)
             %RESENDCONFIRMATION Creates a new ResendConfirmation API call object.
             %
             %   Inputs:

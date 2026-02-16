@@ -1,0 +1,75 @@
+name: Deploy Documentation
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Start virtual display server
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install mkdocs and mkdocs-material
+        run: pip install mkdocs mkdocs-material
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: 'latest'
+          cache: true
+          products: |
+            Communications_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Build Documentation (MATLAB)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            mkdir('tools');
+            copyfile('requirements.txt', fullfile('tools', 'requirements.txt'));
+            matbox.installRequirements(fullfile(pwd, 'tools'));
+            tools_path = fullfile(pwd, 'tools');
+            if exist(tools_path, 'dir')
+                addpath(genpath(tools_path));
+            end
+            addpath(genpath(fullfile(pwd, 'src')));
+            addpath(genpath('MATLAB-AddOns'));
+            ndi.docs.build();
+            quit;
+
+      - name: Prepare mkdocs files
+        run: |
+          mv src/ndi/docs/NDI-matlab/mkdocs.yml ./mkdocs.yml
+          mv src/ndi/docs ./docs
+
+      - name: Configure Git
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force

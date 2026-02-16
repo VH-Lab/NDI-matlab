@@ -415,7 +415,7 @@ for i = 1:numel(infoFiles)
                 'clocktype','exp_global_time');
             
             % Create imageStack document
-            [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:00000226');
+            [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:0000129');
             imageStack = struct('label',ontologyDef,...
                 'formatOntology','NCIT:C190180');
             videoDocs{p} = ndi.document('imageStack', ...
@@ -456,7 +456,7 @@ for i = 1:numel(infoFiles)
             dataType = class(dataTable.arenaMask{p});
             imageStack_parameters.data_type = dataType;
             imageStack_parameters.data_limits = [0 1];
-            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000227');
+            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:0000130');
             imageStack.formatOntology = 'NCIT:C85437';
             arenaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
@@ -473,7 +473,7 @@ for i = 1:numel(infoFiles)
                 'document_id',arenaMaskDocs{p}.id);
 
             % Bacteria mask imageStack
-            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000228');
+            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:0000131');
             bacteriaMaskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
             bacteriaMaskDocs{p} = bacteriaMaskDocs{p}.set_dependency_value( ...
@@ -492,7 +492,7 @@ for i = 1:numel(infoFiles)
             dataType = 'uint8';
             imageStack_parameters.data_type = dataType;
             imageStack_parameters.data_limits = [intmin(dataType) intmax(dataType)];
-            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000229');
+            [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:0000132');
             closestPatchDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
                 'imageStack_parameters', imageStack_parameters) + session.newdocument;
             closestPatchDocs{p} = closestPatchDocs{p}.set_dependency_value( ...
@@ -774,7 +774,7 @@ closestDocs = cell(height(imageTable),1);
 closestLabels = cell(height(imageTable),1);
 for p = 1:height(imageTable)
     dataType = imageTable.bitDepth{p};
-    [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:00000230');
+    [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:0000133');
     imageStack = struct('label',ontologyDef,...
         'formatOntology','NCIT:C70631');
     imageStack_parameters = struct('dimension_order','YX',...
@@ -806,7 +806,7 @@ for p = 1:height(imageTable)
     maskFileName = fullfile(dataParentDir,maskFiles{ind});
     imageStack_parameters.data_type = 'logical';
     imageStack_parameters.data_limits = [0 1];
-    [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000228');
+    [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:0000131');
     imageStack.formatOntology = 'NCIT:C85437';
     maskDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
         'imageStack_parameters', imageStack_parameters) + session.newdocument;
@@ -823,7 +823,7 @@ for p = 1:height(imageTable)
     closestFileName = fullfile(dataParentDir,closestFiles{ind});
     imageStack_parameters.data_type = 'uint8';
     imageStack_parameters.data_limits = [intmin('uint8') intmax('uint8')];
-    [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:00000229');
+    [ontologyLabel.ontologyNode,~,~,imageStack.label] = ndi.ontology.lookup('EMPTY:0000132');
     closestDocs{p} = ndi.document('imageStack','imageStack',imageStack,...
         'imageStack_parameters', imageStack_parameters) + session.newdocument;
     closestDocs{p} = closestDocs{p}.set_dependency_value( ...

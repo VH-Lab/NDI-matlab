@@ -52,7 +52,9 @@ function url = url(endpointName, options)
         endpointMap("get_dataset")                    = "/datasets/{datasetId}";
         endpointMap("update_dataset")                 = "/datasets/{datasetId}";
         endpointMap("delete_dataset")                 = "/datasets/{datasetId}";
+        endpointMap("undelete_dataset")               = "/datasets/{datasetId}/undelete";
         endpointMap("list_datasets")                  = "/organizations/{organizationId}/datasets?page={page}&pageSize={page_size}";
+        endpointMap("list_deleted_datasets")          = "/datasets/deleted?page={page}&pageSize={page_size}";
         endpointMap("create_dataset")                 = "/organizations/{organizationId}/datasets";
         endpointMap("get_published")                  = "/datasets/published?page={page}&pageSize={page_size}";
         endpointMap("get_unpublished")                = "/datasets/unpublished?page={page}&pageSize={page_size}";
@@ -68,6 +70,7 @@ function url = url(endpointName, options)
         endpointMap("get_document")                   = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("update_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("delete_document")                = "/datasets/{datasetId}/documents/{documentId}";
+        endpointMap("list_deleted_documents")         = "/datasets/{datasetId}/documents/deleted?page={page}&pageSize={page_size}";
         endpointMap("bulk_delete_documents")          = "/datasets/{datasetId}/documents/bulk-delete";
         endpointMap("bulk_upload_documents")          = "/datasets/{datasetId}/documents/bulk-upload";
         endpointMap("bulk_download_documents")        = "/datasets/{datasetId}/documents/bulk-download";

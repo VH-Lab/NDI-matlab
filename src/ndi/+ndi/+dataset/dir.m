@@ -78,7 +78,9 @@ classdef dir < ndi.dataset
                 %disp('updating dataset to new form');
                 % double-check we still need to do it
                 dataset_session_info_docs2 = ndi_dataset_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
-                ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj,dataset_session_info_docs);
+                if ~isempty(dataset_session_info_docs2)
+                    ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj,dataset_session_info_docs2);
+                end
             end
         end % dir(), creator
     end % methods
