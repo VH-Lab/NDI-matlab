@@ -83,7 +83,7 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
             % Process requested channels
             for i=1:numel(channel)
                 switch channeltype{i}
-                    case 'event'
+                    case {'event','e'}
                         if channel(i) == 1 % e1: StartTime
                             ts = start_seconds;
                             d = ones(size(ts));
@@ -93,7 +93,7 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
                         else
                             error(['Unknown event channel ' num2str(channel(i))]);
                         end
-                    case 'marker'
+                    case {'marker','mk'}
                         if channel(i) == 1 % mk1: StartTime with StimID
                             ts = start_seconds;
                             d = stimid;
