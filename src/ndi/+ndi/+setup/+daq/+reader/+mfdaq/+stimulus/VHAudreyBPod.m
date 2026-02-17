@@ -102,9 +102,9 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
                         elseif channel(i) == 2 % mk2: StartTime with stimid
                             ts = start_seconds;
                             d = stimid;
-                        elseif channel(i) == 3 % mk3: EndTime with 1
+                        elseif channel(i) == 3 % mk3: EndTime with -1
                             ts = end_seconds;
-                            d = ones(size(ts));
+                            d = -1*ones(size(ts));
                         else
                             error(['Unknown marker channel ' num2str(channel(i))]);
                         end
