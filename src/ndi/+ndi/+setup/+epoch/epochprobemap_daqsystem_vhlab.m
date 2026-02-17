@@ -65,6 +65,9 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 [filepath, localfile, ext] = fileparts(filename);
 
                 [parentpath, localdirname] = fileparts(filepath);
+                if endsWith([localfile ext], '_stimulus_triggers_log.tsv')
+                   parentpath = fileparts(parentpath);
+                end
                 subjectfile = [parentpath filesep 'subject.txt'];
                 if vlt.file.isfile(subjectfile)
                     subjecttext = vlt.file.textfile2char(subjectfile);
@@ -85,6 +88,22 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                             1,...
                             ['stimulator'  ] , ...  % type
                             ['vhvis_spike2' ':' mylist{i}], ...  % device string
+                            subject_id);
+                        obj(i) = nextentry;
+                    end
+                    return;
+                end
+
+                trigger_suffix = '_stimulus_triggers_log.tsv';
+                if endsWith([localfile ext], trigger_suffix)
+                    devicename = 'vhtaste_bpod';
+
+                    mylist = {'mk1','mk2','mk3','e1','e2','md1'};
+                    for i=1:numel(mylist)
+                        nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab(devicename,...
+                            1,...
+                            'stimulator', ...  % type
+                            [devicename ':' mylist{i}], ...  % device string
                             subject_id);
                         obj(i) = nextentry;
                     end

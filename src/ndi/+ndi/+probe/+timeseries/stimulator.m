@@ -117,7 +117,7 @@ classdef stimulator < ndi.probe.timeseries
             if markermode
                 for i=1:numel(channeltype)
                     switch(channeltype{i})
-                        case {'mk','text'}
+                        case {'mk','marker','text'}
                             mk_ = mk_ + 1;
                             switch mk_
                                 case 1 % stimonoff
@@ -132,12 +132,19 @@ classdef stimulator < ndi.probe.timeseries
                                         end
                                     end
                                 case 3 % stimopenclose
-                                    t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1);
-                                    t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1);
+                                    on_ = timestamps{i}( find(edata{i}(:,1)>0) , 1);
+                                    off_ = timestamps{i}( find(edata{i}(:,1)==-1) , 1);
+                                    if numel(on_)>0
+                                        t.stimopenclose(1:numel(on_),1) = on_;
+                                    end
+                                    if numel(off_)>0
+                                        t.stimopenclose(1:numel(off_),2) = off_;
+                                        if isempty(t.stimoff), t.stimoff = off_; end
+                                    end
                                 otherwise
                                     error(['Got more mark channels than expected.']);
                             end
-                        case 'e'
+                        case {'e','event'}
                             e_ = e_ + 1;
                             event_data{e_} = timestamps{i};
                         case {'md'}
