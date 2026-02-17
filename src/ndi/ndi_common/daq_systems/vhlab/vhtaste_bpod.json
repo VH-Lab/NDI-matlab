@@ -9,7 +9,7 @@
     "#.*_summary_log.json"
   ],
   "DaqReaderFileParameters": [],
-  "MetadataReaderFileParameters": "*.json",
+  "MetadataReaderFileParameters": "(.*)\\.json",
   "EpochProbeMapFileParameters": "#_stimulus_triggers_log.tsv",
   "HasEpochDirectories": false
 }
