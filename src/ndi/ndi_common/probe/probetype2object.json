@@ -46,7 +46,7 @@
 	},{
 		"type":"ppg","classname":"ndi.probe.timeseries.mfdaq"
 	},{
-		"type":"event","classname":"ndi.probe.timeseries.mfdaq"
+		"type":"event","classname":"ndi.probe.timeseries.stimulator"
 	}
 ]
 
