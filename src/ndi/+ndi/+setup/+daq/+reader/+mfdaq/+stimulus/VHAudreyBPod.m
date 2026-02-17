@@ -20,6 +20,8 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
             channels = struct('name','e1','type','event','time_channel',NaN);
             channels(end+1) = struct('name','e2','type','event','time_channel',NaN);
             channels(end+1) = struct('name','mk1','type','marker','time_channel',NaN);
+            channels(end+1) = struct('name','mk2','type','marker','time_channel',NaN);
+            channels(end+1) = struct('name','mk3','type','marker','time_channel',NaN);
         end
 
         function [timestamps,data] = readevents_epochsamples_native(obj, channeltype, channel, epochfiles, t0, t1)
@@ -83,7 +85,7 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
             % Process requested channels
             for i=1:numel(channel)
                 switch channeltype{i}
-                    case 'event'
+                    case {'event','e'}
                         if channel(i) == 1 % e1: StartTime
                             ts = start_seconds;
                             d = ones(size(ts));
@@ -93,10 +95,16 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
                         else
                             error(['Unknown event channel ' num2str(channel(i))]);
                         end
-                    case 'marker'
-                        if channel(i) == 1 % mk1: StartTime with StimID
+                    case {'marker','mk'}
+                        if channel(i) == 1 % mk1: StartTime with 1
+                            ts = start_seconds;
+                            d = ones(size(ts));
+                        elseif channel(i) == 2 % mk2: StartTime with stimid
                             ts = start_seconds;
                             d = stimid;
+                        elseif channel(i) == 3 % mk3: EndTime with -1
+                            ts = end_seconds;
+                            d = -1*ones(size(ts));
                         else
                             error(['Unknown marker channel ' num2str(channel(i))]);
                         end
