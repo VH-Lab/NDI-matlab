@@ -96,8 +96,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
                 trigger_suffix = '_stimulus_triggers_log.tsv';
                 if endsWith([localfile ext], trigger_suffix)
-                    devicename = [localfile ext];
-                    devicename = devicename(1:end-length(trigger_suffix));
+                    devicename = 'vhtaste_bpod';
 
                     mylist = {'mk1','e1','e2','md1'};
                     for i=1:numel(mylist)
