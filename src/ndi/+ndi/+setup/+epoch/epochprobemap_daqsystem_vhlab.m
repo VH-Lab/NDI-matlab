@@ -81,6 +81,13 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     error(['subject_id string ' subject_id ' is not a valid subject id: ' msg]);
                 end
 
+                if strcmp([localfile ext],'vhtaste_sync.txt')
+                    devicename = 'vhtaste_sync';
+                    nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab(devicename, 1, 'event', 'vhtaste_sync:dep1', subject_id);
+                    obj(1) = nextentry;
+                    return;
+                end
+
                 if strcmp([localfile ext],'stimtimes.txt') % vhvis_spike2
                     mylist = {'mk1','mk2','mk3','e1','e2','e3','md1'};
                     for i=1:numel(mylist)

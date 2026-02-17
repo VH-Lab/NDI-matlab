@@ -1,0 +1,17 @@
+{
+  "Name": "vhtaste_sync",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.intan",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileParameters": [
+    "reference.txt",
+    ".*\\.rhd\\>",
+    "vhintan_channelgrouping.txt",
+    "vhtaste_sync.txt"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "vhtaste_sync.txt",
+  "HasEpochDirectories": true
+}
