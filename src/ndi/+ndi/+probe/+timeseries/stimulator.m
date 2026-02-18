@@ -104,7 +104,7 @@ classdef stimulator < ndi.probe.timeseries
             end
             channel_labels = getchannels(dev{1});
 
-            markermode = any(strcmp('mk',channeltype));
+            markermode = any(ismember(channeltype, {'mk','marker','text','e','event','dep','den'}));
             dimmode = ~isempty(intersect(channeltype,{'dimp','dimn'}));
             mk_ = 0;
             e_ = 0;
@@ -144,7 +144,7 @@ classdef stimulator < ndi.probe.timeseries
                                 otherwise
                                     error(['Got more mark channels than expected.']);
                             end
-                        case {'e','event'}
+                        case {'e','event','dep','den'}
                             e_ = e_ + 1;
                             event_data{e_} = timestamps{i};
                         case {'md'}
