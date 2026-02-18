@@ -33,6 +33,10 @@ classdef StimulatorTest < matlab.unittest.TestCase
             % Setup DAQ System
             dev = ndi.daq.system.mfdaq('mockdev', fn, reader);
             testCase.Session.daqsystem_add(dev);
+
+            % Add Subject
+            subject = ndi.subject('subject1', 'test_subject');
+            testCase.Session.database_add(subject.newdocument());
         end
     end
 
