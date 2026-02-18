@@ -98,14 +98,16 @@ classdef commontriggers < ndi.time.syncrule
                 {'ndi.epoch.epochset','ndi.epoch.epochset.param','ndi.file.navigator'});
         end % ineligibleepochsets
 
-        function [cost,mapping] = apply(ndi_syncrule_commontriggers_obj, epochnode_a, epochnode_b)
+        function [cost,mapping] = apply(ndi_syncrule_commontriggers_obj, epochnode_a, epochnode_b, daqsystem1)
             % APPLY - apply an ndi.time.syncrule.commontriggers to obtain a cost and ndi.time.timemapping between two ndi.epoch.epochset objects
             %
-            % [COST, MAPPING] = APPLY(NDI_SYNCRULE_COMMONTRIGGERS_OBJ, EPOCHNODE_A, EPOCHNODE_B)
+            % [COST, MAPPING] = APPLY(NDI_SYNCRULE_COMMONTRIGGERS_OBJ, EPOCHNODE_A, EPOCHNODE_B, DAQSYSTEM1)
             %
             % Given an ndi.time.syncrule.commontriggers object and two EPOCHNODES (see ndi.epoch.epochset/EPOCHNODES),
             % this function attempts to identify whether a time synchronization can be made across these epochs. If so,
             % a cost COST and an ndi.time.timemapping object MAPPING is returned.
+            %
+            % DAQSYSTEM1 is the ndi.daq.system object corresponding to EPOCHNODE_A.
             %
             % Otherwise, COST and MAPPING are empty.
             %

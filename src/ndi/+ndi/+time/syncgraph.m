@@ -426,7 +426,7 @@ classdef syncgraph < ndi.ido
                                 % check here to see if we have a match already saved
                                 [c,m] = ndi.time.syncgraph.checkingestedrules(savedRules, ginfo.syncRuleIDs{K}, ginfo.nodes(i_), ginfo.nodes(j_));
                                 if isempty(c)
-                                    [c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+                                    [c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_), ndi_daqsystem_obj);
                                 end
                                 if c<lowcost
                                     lowcost = c;
