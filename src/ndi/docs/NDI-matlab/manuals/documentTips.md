@@ -21,7 +21,7 @@ In MATLAB, an epoch node is represented as a `struct` with the following fields:
 
 ### Storage in Documents
 
-When storing epoch nodes in NDI database documents (such as `syncrule_mapping` or `syncValue`), the data is stored as a generic `structure` type.
+When storing epoch nodes in NDI database documents (such as `syncrule_mapping`), the data is stored as a generic `structure` type.
 
 **Important Storage Convention:**
 While the in-memory MATLAB structure includes `underlying_epochs`, this field is **not** stored in the database document. `underlying_epochs` often contains complex structures with custom object types that are not suitable for direct serialization into the document schema.
@@ -41,5 +41,3 @@ Epoch nodes are stored in the following document types:
 
 *   **`syncrule_mapping`**: Used to store the relationship between two epochs in a synchronization graph.
     *   Fields: `epochnode_a`, `epochnode_b`
-*   **`syncValue`**: Used to store manual or calculated synchronization values between systems.
-    *   Fields: `epochnode1`, `epochnode2`
