@@ -31,18 +31,18 @@ classdef MockDAQReader < ndi.daq.reader.mfdaq
             if s0 < 1, s0 = 1; end
             if s1 > total_samples, s1 = total_samples; end
 
+            current_samples = s0:s1;
+            t = (current_samples(:) - 1) / 1000;
+
+            if (ischar(channeltype) && strcmp(channeltype, 'time')) || ...
+               (iscell(channeltype) && any(strcmp(channeltype, 'time')))
+               data = t;
+               return;
+            end
+
             num_samples = s1 - s0 + 1;
             data = zeros(num_samples, 1);
 
-            % Generate data based on global sample index
-            current_samples = s0:s1;
-
-            % Square wave: 1 when mod(t, 2) < 1.
-            % t = (s-1)/1000.
-            % mod((s-1)/1000, 2) < 1 => high.
-
-            t = (current_samples - 1) / 1000;
-            is_high = mod(t, 2) >= 1; % Low 0-1, High 1-2, Low 2-3...
             % Wait, user wants rising events.
             % Let's make it simpler. Pulse at t=1, t=3, t=5.
 
