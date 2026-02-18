@@ -20,7 +20,7 @@ classdef StimulatorTest < matlab.unittest.TestCase
             fid = fopen(fullfile(testCase.TempDir, 'test.epochprobemap.ndi'), 'wt');
             fprintf(fid, 'name\treference\ttype\tdevicestring\tsubjectstring\n');
             % Create a probe named 'stim' type 'event' mapped to 'mockdev:dep1'
-            fprintf(fid, 'stim\t1\tevent\tmockdev:dep1\tsubject1\n');
+            fprintf(fid, 'stim\t1\tevent\tmockdev:dep1\tsubject1@test\n');
             fclose(fid);
 
             % Setup file navigator
@@ -35,7 +35,7 @@ classdef StimulatorTest < matlab.unittest.TestCase
             testCase.Session.daqsystem_add(dev);
 
             % Add Subject
-            subject = ndi.subject('subject1', 'test_subject');
+            subject = ndi.subject('subject1@test', 'test_subject');
             testCase.Session.database_add(subject.newdocument());
         end
     end
