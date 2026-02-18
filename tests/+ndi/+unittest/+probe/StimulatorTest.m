@@ -24,7 +24,7 @@ classdef StimulatorTest < matlab.unittest.TestCase
             fclose(fid);
 
             % Setup file navigator
-            fn = ndi.file.navigator(testCase.Session, {'test.bin'}, ...
+            fn = ndi.file.navigator(testCase.Session, {'test.bin', 'test.epochprobemap.ndi'}, ...
                 'ndi.epoch.epochprobemap_daqsystem', {'test.epochprobemap.ndi'});
 
             % Setup Mock Reader
