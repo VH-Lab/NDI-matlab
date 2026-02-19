@@ -1,16 +1,16 @@
-function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId, cloudDocumentIds, targetFolder, options)
-%DOWNLOADDOCUMENTFILES Download files for specific cloud documents to a folder.
+function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId, ndiDocumentIds, targetFolder, options)
+%DOWNLOADDOCUMENTFILES Download files for specific NDI documents to a folder.
 %
 % Syntax:
 %   [SUCCESS, ERRORMESSAGE, REPORT] = ...
-%       ndi.cloud.download.downloadDocumentFiles(CLOUDDATASETID, CLOUDDOCUMENTIDS, TARGETFOLDER, ...)
+%       ndi.cloud.download.downloadDocumentFiles(CLOUDDATASETID, NDIDOCUMENTIDS, TARGETFOLDER, ...)
 %
 %   This function downloads the data files associated with the specified
-%   cloud API document IDs and saves them into the specified TARGETFOLDER.
+%   NDI document IDs and saves them into the specified TARGETFOLDER.
 %
 %   Inputs:
 %       cloudDatasetId (1,1) string - The ID of the dataset on the cloud.
-%       cloudDocumentIds (1,:) string - The cloud API document IDs.
+%       ndiDocumentIds (1,:) string - The NDI document IDs.
 %       targetFolder (1,1) string - The destination folder for the files.
 %
 %   Name-Value Pairs:
@@ -29,7 +29,7 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
 
     arguments
         cloudDatasetId (1,1) string
-        cloudDocumentIds (1,:) string
+        ndiDocumentIds (1,:) string
         targetFolder (1,1) string
         options.Verbose (1,1) logical = true
         options.Zip (1,1) logical = false
@@ -41,8 +41,8 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
                     'zip_file', '');
 
     try
-        if isempty(cloudDocumentIds)
-            if options.Verbose, fprintf('No document IDs provided.\n'); end
+        if isempty(ndiDocumentIds)
+            if options.Verbose, fprintf('No NDI document IDs provided.\n'); end
             return;
         end
 
@@ -50,19 +50,39 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
             mkdir(targetFolder);
         end
 
-        % 1. Download document metadata to get file UIDs
+        % 1. Map NDI IDs to Cloud API IDs
+        if options.Verbose, fprintf('Mapping NDI IDs to Cloud API IDs...\n'); end
+        remoteIdMap = ndi.cloud.sync.internal.listRemoteDocumentIds(cloudDatasetId);
+        [found, loc] = ismember(ndiDocumentIds, remoteIdMap.ndiId);
+        cloudApiIdsToDownload = remoteIdMap.apiId(loc(found));
+
+        actuallyMissing = ndiDocumentIds(~found);
+        if ~isempty(actuallyMissing) && options.Verbose
+            warning('NDI:downloadDocumentFiles:DocumentsNotFound', ...
+                'The following %d NDI document IDs were not found on the remote and will be skipped:\n%s', ...
+                numel(actuallyMissing), strjoin(actuallyMissing, ', '));
+        end
+
+        if isempty(cloudApiIdsToDownload)
+             if options.Verbose
+                fprintf('No valid documents found on remote to process.\n');
+             end
+             return;
+        end
+
+        % 2. Download document metadata to get file UIDs
         if options.Verbose
             fprintf('Downloading metadata for %d documents from cloud dataset %s...\n', ...
-                numel(cloudDocumentIds), cloudDatasetId);
+                numel(cloudApiIdsToDownload), cloudDatasetId);
         end
-        documents = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, cloudDocumentIds);
+        documents = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, cloudApiIdsToDownload);
 
         if isempty(documents)
             if options.Verbose, fprintf('No documents found for provided IDs.\n'); end
             return;
         end
 
-        % 2. Extract unique file UIDs
+        % 3. Extract unique file UIDs
         fileUids = ndi.cloud.sync.internal.getFileUidsFromDocuments(documents);
 
         if isempty(fileUids)
@@ -70,7 +90,7 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
             return;
         end
 
-        % 3. Download files
+        % 4. Download files
         if options.Verbose
             fprintf('Downloading %d unique files to %s...\n', numel(fileUids), targetFolder);
         end
@@ -82,7 +102,7 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
 
         report.downloaded_file_uids = string(fileUids);
 
-        % 4. Optional Zip
+        % 5. Optional Zip
         if options.Zip
             zipFileName = fullfile(targetFolder, sprintf('exported_files_%s.zip', datestr(now, 'yyyymmdd_HHMMSS')));
             if options.Verbose
