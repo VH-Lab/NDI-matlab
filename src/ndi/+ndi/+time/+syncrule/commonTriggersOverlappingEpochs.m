@@ -238,17 +238,6 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 T1_total = [];
                 T2_total = [];
 
-                % Helper to parse channel
-                function [ch_type, ch_num] = parse_channel(ch_str)
-                    % e.g. 'dep1' -> 'dep', 1
-                    first_digit = find(isstrprop(ch_str, 'digit'), 1);
-                    if isempty(first_digit)
-                        error(['Invalid channel string: ' ch_str]);
-                    end
-                    ch_type = ch_str(1:first_digit-1);
-                    ch_num = str2double(ch_str(first_digit:end));
-                end
-
                 [type1, ch1] = parse_channel(p.daqsystem_ch1);
                 [type2, ch2] = parse_channel(p.daqsystem_ch2);
 
@@ -348,3 +337,14 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
 
     end % methods
 end % classdef
+
+% Helper to parse channel
+function [ch_type, ch_num] = parse_channel(ch_str)
+    % e.g. 'dep1' -> 'dep', 1
+    first_digit = find(isstrprop(ch_str, 'digit'), 1);
+    if isempty(first_digit)
+        error(['Invalid channel string: ' ch_str]);
+    end
+    ch_type = ch_str(1:first_digit-1);
+    ch_num = str2double(ch_str(first_digit:end));
+end
