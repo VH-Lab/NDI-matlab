@@ -96,9 +96,10 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
         if options.Verbose
             fprintf('Downloading %d unique files to %s...\n', numel(fileUids), targetFolder);
         end
+        dateString = string(datetime('now', 'Format', 'yyyyMMdd_HHmmss'));
         ndi.cloud.download.downloadDatasetFiles(...
             cloudDatasetId, ...
-            targetFolder, ...
+            fullfile(targetFolder,sprintf('export_%s', dateString)), ...
             string(fileUids), ...
             "Verbose", options.Verbose);
 
@@ -106,7 +107,7 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
 
         % 5. Optional Zip
         if options.Zip
-            zipFileName = fullfile(targetFolder, sprintf('exported_files_%s.zip', datestr(now, 'yyyymmdd_HHMMSS')));
+            zipFileName = fullfile(targetFolder, sprintf('export_%s.zip', dateString));
             if options.Verbose
                 fprintf('Zipping files into: %s\n', zipFileName);
             end
