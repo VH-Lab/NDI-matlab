@@ -32,13 +32,12 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             session.addDAQ(daq1);
             session.addDAQ(daq2);
 
-            % Setup Epochs with embedded overlap (same parent)
-            % Epoch 1 in DAQ1 overlaps with Epoch 1 in DAQ2 via parent
-            % Files: daq1_e1 has {'data/sess1/e1/f1.dat'}
-            %        daq2_e1 has {'data/sess1/e1/sub/f2.dat'}
+            % Setup Epochs with embedded overlap (grandparent of A matches parent of B)
+            % A: /data/sess1/e1/f1.dat. GP: /data/sess1
+            % B: /data/sess1/f2.dat. P: /data/sess1
 
-            daq1 = daq1.addEpoch('e1', {'data/sess1/e1/f1.dat'});
-            daq2 = daq2.addEpoch('e1', {'data/sess1/e1/sub/f2.dat'});
+            daq1 = daq1.addEpoch('e1', {'/data/sess1/e1/f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'/data/sess1/f2.dat'});
 
             % Setup Triggers
             % DAQ1: [0 1 2 3 4]
@@ -62,10 +61,10 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             % Create Epoch Nodes (Inputs to apply)
             node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'data/sess1/e1/f1.dat'}}));
+                'underlying_epochs', struct('underlying', {{'/data/sess1/e1/f1.dat'}}));
             node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'data/sess1/e1/sub/f2.dat'}}));
+                'underlying_epochs', struct('underlying', {{'/data/sess1/f2.dat'}}));
 
             % Apply
             [cost, mapping] = rule.apply(node1, node2, daq1);
@@ -105,25 +104,37 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             session.addDAQ(daq2);
 
             % Chain of overlaps:
-            % DAQ1_E1 overlaps DAQ2_E1 via parent1
-            % DAQ2_E1 overlaps DAQ1_E2 via parent2
-            % DAQ1_E2 overlaps DAQ2_E2 via parent3
+            % E1: A has /data/p1/e1/f1.dat (GP=/data/p1). B has /data/p1/f2.dat (P=/data/p1). Match.
+            % E2: A has /data/p2/e2/f3.dat (GP=/data/p2). B has /data/p2/f4.dat (P=/data/p2). Match.
+            % B also has /data/p1/fX.dat in E1 so E1 is connected.
 
-            % P1: data/p1
-            % P2: data/p2
-            % P3: data/p3
+            daq1 = daq1.addEpoch('e1', {'/data/p1/e1/f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'/data/p1/f2.dat'});
 
-            daq1 = daq1.addEpoch('e1', {'data/p1/f1.dat'});
-            daq2 = daq2.addEpoch('e1', {'data/p1/f2.dat', 'data/p2/f3.dat'});
-            daq1 = daq1.addEpoch('e2', {'data/p2/f4.dat', 'data/p3/f5.dat'});
-            daq2 = daq2.addEpoch('e2', {'data/p3/f6.dat'});
+            daq1 = daq1.addEpoch('e2', {'/data/p2/e2/f3.dat'});
+            % Make sure daq2 e1 and e2 are connected or daq1 e1 and e2 are connected?
+            % The logic finds ALL epochs in A and B that are connected via overlaps.
+            % If we start with E1. A-E1 matches B-E1.
+            % Does A-E1 match anything else? No.
+            % Does B-E1 match anything else?
+            % If B-E1 had a file that matched A-E2?
+            % Let's make B-E1 have 2 files: /data/p1/f2.dat and /data/p2/fX.dat.
+            % Then /data/p2/fX.dat (P=/data/p2) matches A-E2 (/data/p2/e2/f3.dat, GP=/data/p2).
+
+            daq2 = daq2.addEpoch('e1', {'/data/p1/f2.dat', '/data/p2/fX.dat'});
 
             % Triggers (Linear: T2 = T1 + 5)
             daq1 = daq1.addEvents('e1', 'dep', 1, [0 10]');
             daq2 = daq2.addEvents('e1', 'mk', 1, [5 15]');
 
             daq1 = daq1.addEvents('e2', 'dep', 1, [20 30]');
-            daq2 = daq2.addEvents('e2', 'mk', 1, [25 35]');
+            % daq2 triggers for e1 are already added.
+            % daq2 needs e2 triggers? No, daq2 has e1.
+            % Wait, does daq2 have e2?
+            % I didn't add e2 to daq2.
+            % But I added file /data/p2/fX.dat to daq2 E1.
+            % So daq2 E1 matches daq1 E2.
+            % So daq1 E2 is included.
 
             % Manually set t0 for epochs to ensure order
             % E1 starts at 0, E2 starts at 20
@@ -140,8 +151,6 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
              for i=1:numel(daq2.Epochs)
                 if strcmp(daq2.Epochs(i).epoch_id, 'e1')
                     daq2.Epochs(i).t0_t1 = {[5 15]};
-                elseif strcmp(daq2.Epochs(i).epoch_id, 'e2')
-                    daq2.Epochs(i).t0_t1 = {[25 35]};
                 end
             end
 
@@ -159,16 +168,31 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             % Start with E1 nodes
              node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'data/p1/f1.dat'}}));
+                'underlying_epochs', struct('underlying', {{'/data/p1/e1/f1.dat'}}));
              node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'data/p1/f2.dat', 'data/p2/f3.dat'}}));
+                'underlying_epochs', struct('underlying', {{'/data/p1/f2.dat', '/data/p2/fX.dat'}}));
 
              [cost, mapping] = rule.apply(node1, node2, daq1);
 
              testCase.verifyEqual(cost, 1);
-             % Should include triggers from e2 as well
-             % T1 total: [0 10 20 30], T2 total: [5 15 25 35]
+             % Should include triggers from daq1 e1 AND daq1 e2.
+             % daq1 e1: [0 10]. daq1 e2: [20 30]. Total T1: [0 10 20 30].
+             % daq2 e1: [5 15].
+             % Wait, T1 and T2 must be same length for syncTriggers.
+             % Here T1 has 4, T2 has 2.
+             % This setup will FAIL syncTriggers.
+             % I need to add triggers to T2 to match.
+             % Let's add triggers to daq2 e1 to match all 4.
+             % [5 15 25 35].
+
+             daq2 = daq2.addEvents('e1', 'mk', 1, [5 15 25 35]');
+             % Re-add to session? No, daq2 is value class, need to re-add.
+             session.addDAQ(daq2);
+
+             % Re-run apply
+             [cost, mapping] = rule.apply(node1, node2, daq1);
+
              % Map: T2 = T1 + 5.
              testCase.verifyEqual(mapping.map(100), 105, 'AbsTol', 1e-5);
 
@@ -184,8 +208,8 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             daq2 = MockMFDAQ('daq2', session);
 
             % Different parents
-            daq1 = daq1.addEpoch('e1', {'data/sess1/f1.dat'});
-            daq2 = daq2.addEpoch('e1', {'data/sess2/f2.dat'});
+            daq1 = daq1.addEpoch('e1', {'/data/sess1/e1/f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'/data/sess2/f2.dat'});
 
             session.addDAQ(daq1);
             session.addDAQ(daq2);
@@ -199,10 +223,10 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
 
              node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'data/sess1/f1.dat'}}));
+                'underlying_epochs', struct('underlying', {{'/data/sess1/e1/f1.dat'}}));
              node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'data/sess2/f2.dat'}}));
+                'underlying_epochs', struct('underlying', {{'/data/sess2/f2.dat'}}));
 
             [cost, mapping] = rule.apply(node1, node2, daq1);
 

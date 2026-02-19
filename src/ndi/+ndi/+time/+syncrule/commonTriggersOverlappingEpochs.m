@@ -165,14 +165,13 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             % Start with seed epochs
 
             % Check initial overlap
-            parents_a = get_parent_paths(epochnode_a.underlying_epochs.underlying);
-            parents_b = get_parent_paths(epochnode_b.underlying_epochs.underlying);
-            common = intersect(parents_a, parents_b);
+            files_a = epochnode_a.underlying_epochs.underlying;
+            files_b = epochnode_b.underlying_epochs.underlying;
 
-            if numel(common) < p.minEmbeddedFileOverlap
-                % No overlap between the requested nodes?
-                % The user says: "Look for at least files in common between epochnode_a and epochnode_b... Find overlaps ... If it does, then we can explore..."
-                % If they don't overlap, we probably can't sync them directly via this rule starting here.
+            count1 = count_embedded_matches(files_a, files_b);
+            count2 = count_embedded_matches(files_b, files_a);
+
+            if max(count1, count2) < p.minEmbeddedFileOverlap
                 return;
             end
 
@@ -210,11 +209,12 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                     % Check overlap with ANY in group B
                     for j = 1:numel(group_b_indices)
                         b_idx = group_b_indices(j);
-                        parents_a = get_parent_paths(epochs_a_all(i).underlying_epochs.underlying);
-                        parents_b = get_parent_paths(epochs_b_all(b_idx).underlying_epochs.underlying);
-                        common_files = intersect(parents_a, parents_b);
+                        f_a = epochs_a_all(i).underlying_epochs.underlying;
+                        f_b = epochs_b_all(b_idx).underlying_epochs.underlying;
+                        c1 = count_embedded_matches(f_a, f_b);
+                        c2 = count_embedded_matches(f_b, f_a);
 
-                        if numel(common_files) >= p.minEmbeddedFileOverlap
+                        if max(c1, c2) >= p.minEmbeddedFileOverlap
                             group_a_indices(end+1) = i;
                             added = true;
                             break;
@@ -227,11 +227,12 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                     if ismember(i, group_b_indices), continue; end
                     for j = 1:numel(group_a_indices)
                         a_idx = group_a_indices(j);
-                        parents_b = get_parent_paths(epochs_b_all(i).underlying_epochs.underlying);
-                        parents_a = get_parent_paths(epochs_a_all(a_idx).underlying_epochs.underlying);
-                        common_files = intersect(parents_b, parents_a);
+                        f_b = epochs_b_all(i).underlying_epochs.underlying;
+                        f_a = epochs_a_all(a_idx).underlying_epochs.underlying;
+                        c1 = count_embedded_matches(f_b, f_a);
+                        c2 = count_embedded_matches(f_a, f_b);
 
-                        if numel(common_files) >= p.minEmbeddedFileOverlap
+                        if max(c1, c2) >= p.minEmbeddedFileOverlap
                             group_b_indices(end+1) = i;
                             added = true;
                             break;
@@ -356,14 +357,49 @@ function [ch_type, ch_num] = parse_channel(ch_str)
     ch_num = str2double(ch_str(first_digit:end));
 end
 
-function paths = get_parent_paths(files)
-    paths = {};
+function parents = get_parents(files)
+    parents = {};
     if ischar(files), files = {files}; end
     for i=1:numel(files)
-        p1 = fileparts(files{i});
-        p2 = fileparts(p1);
-        paths{end+1} = p1;
-        paths{end+1} = p2;
+        parents{end+1} = fileparts(files{i});
     end
-    paths = unique(paths);
+    parents = unique(parents);
+end
+
+function grandparents = get_grandparents(files)
+    grandparents = {};
+    if ischar(files), files = {files}; end
+    for i=1:numel(files)
+        p = fileparts(files{i});
+        grandparents{end+1} = fileparts(p);
+    end
+    grandparents = unique(grandparents);
+end
+
+function count = count_embedded_matches(files_deep, files_shallow)
+    % Counts how many files in files_deep have a grandparent that matches a parent of a file in files_shallow
+    gps = get_grandparents(files_deep);
+    ps = get_parents(files_shallow);
+    % Actually, requirements say: "grandparent of EACH file in epochnode_1 and compare to the parent of EACH file in epochnode_2"
+    % "asking whether there are at least minEmbeddedFileOverlap matches"
+    % This implies counting file-level matches?
+    % "grandparent of EACH file... compare... matches"
+    % If I have 10 files in A, and all 10 have grandparent "X".
+    % If B has 1 file with parent "X".
+    % Then all 10 files in A match. Count = 10.
+
+    count = 0;
+    if ischar(files_deep), files_deep = {files_deep}; end
+
+    % We need the SET of parents from shallow to check against
+    ps_set = ps; % already unique from get_parents, but wait
+    % get_parents returns unique parents.
+
+    for i=1:numel(files_deep)
+        p = fileparts(files_deep{i});
+        gp = fileparts(p);
+        if ismember(gp, ps_set)
+            count = count + 1;
+        end
+    end
 end
