@@ -76,10 +76,7 @@ function [success, errorMessage, report] = downloadSelectedFiles(ndiDataset, ndi
 
             if ~isempty(cloudApiIdsToDownload)
                 % Download metadata only (we'll handle files for all together)
-                optsMetadataOnly = syncOptions;
-                optsMetadataOnly.SyncFiles = false;
-                newDocs = ndi.cloud.sync.internal.downloadNdiDocuments(...
-                    cloudDatasetId, cloudApiIdsToDownload, ndi.dataset.empty, optsMetadataOnly);
+                newDocs = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, cloudApiIdsToDownload);
                 allDocs = [allDocs, newDocs];
             end
 
