@@ -7,8 +7,6 @@ This namespace provides functions for synchronizing NDI documents and their asso
 ### Core Sync Functions
 
 *   **`downloadNew.m`**: Incrementally downloads new documents from the cloud. It identifies documents present on the remote cloud storage that are not present in the local NDI dataset since the last recorded sync.
-*   **`downloadSelectedDocuments.m`**: Downloads a specific set of documents and their associated files from the cloud given a list of NDI document IDs.
-*   **`downloadSelectedFiles.m`**: Ensures that the data files for a specific set of NDI documents are downloaded locally to the dataset.
 *   **`uploadNew.m`**: Incrementally uploads new local documents to the cloud. It identifies and uploads local documents that were created since the last sync.
 *   **`mirrorFromRemote.m`**: Ensures the local dataset is an exact mirror of the remote dataset. It downloads missing documents and **deletes** local documents that do not exist on the remote.
 *   **`mirrorToRemote.m`**: Ensures the remote dataset is an exact mirror of the local dataset. It uploads missing documents and **deletes** remote documents that do not exist locally.
