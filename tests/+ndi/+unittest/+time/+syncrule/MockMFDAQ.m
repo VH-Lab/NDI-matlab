@@ -60,7 +60,7 @@ classdef MockMFDAQ < ndi.daq.system.mfdaq
         function addEpoch(obj, id, files)
             idx = numel(obj.Epochs) + 1;
             obj.Epochs(idx).epoch_id = id;
-            obj.Epochs(idx).underlying_epochs = struct('underlying', {files});
+            obj.Epochs(idx).underlying_epochs = struct('underlying', {{files}});
              % Add extra fields if needed by epochtable?
              obj.Epochs(idx).epoch_session_id = 'sess1';
              obj.Epochs(idx).epoch_clock = {ndi.time.clocktype('dev_local_time')};

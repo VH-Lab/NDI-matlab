@@ -12,7 +12,12 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             % Test invalid params
             params = struct('daqsystem1_name', 123); % Invalid
             % We expect an error, but the ID might be empty or generic
-            testCase.verifyError(@() commonTriggersOverlappingEpochs(params), ?MException);
+            try
+                commonTriggersOverlappingEpochs(params);
+                testCase.verifyFail('Expected exception was not thrown');
+            catch
+                % Expected
+            end
         end
 
         function testApplyWithOverlap(testCase)

@@ -96,6 +96,8 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             cost = [];
             mapping = [];
 
+            disp('DEBUG: Entering apply');
+
             p = ndi_syncrule_ctoe_obj.parameters;
 
             % 1. Verify epochnodes match parameters
@@ -107,12 +109,14 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             node_b_is_2 = strcmp(epochnode_b.objectname, p.daqsystem2_name);
 
             if ~((node_a_is_1 && node_b_is_2) || (node_a_is_2 && node_b_is_1))
+                disp('DEBUG: Names do not match');
                 return; % Names do not match the pair we are looking for
             end
 
             % Check epoch clock type
             if ~strcmp(epochnode_a.epoch_clock.type, p.epochclocktype) || ...
                ~strcmp(epochnode_b.epoch_clock.type, p.epochclocktype)
+               disp('DEBUG: Clock types do not match');
                 return; % Clock types do not match
             end
 
@@ -166,10 +170,12 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
 
             % Check initial overlap
             common = intersect(epochnode_a.underlying_epochs.underlying, epochnode_b.underlying_epochs.underlying);
+            disp(['DEBUG: Common files: ' num2str(numel(common))]);
             if numel(common) < p.minFileOverlap
                 % No overlap between the requested nodes?
                 % The user says: "Look for at least files in common between epochnode_a and epochnode_b... Find overlaps ... If it does, then we can explore..."
                 % If they don't overlap, we probably can't sync them directly via this rule starting here.
+                disp('DEBUG: No overlap');
                 return;
             end
 
@@ -189,7 +195,10 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             idx_a_seed = find(strcmp({epochs_a_all.epoch_id}, id_a_seed));
             idx_b_seed = find(strcmp({epochs_b_all.epoch_id}, id_b_seed));
 
+            disp(['DEBUG: idx_a_seed: ' num2str(idx_a_seed) ' idx_b_seed: ' num2str(idx_b_seed)]);
+
             if isempty(idx_a_seed) || isempty(idx_b_seed)
+                 disp('DEBUG: Seed not found');
                  return; % Should not happen
             end
 
@@ -295,6 +304,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 end
 
                 % 5. Compute Mapping
+                disp(['DEBUG: T1 size: ' num2str(numel(T1_total)) ' T2 size: ' num2str(numel(T2_total))]);
                 map_coeffs = vlt.time.syncTriggers(T1_total, T2_total);
                 % map_coeffs is [shift scale] -> T2 = shift + scale * T1
                 % ndi.time.timemapping expects [m b] where y = m*x + b.
@@ -325,6 +335,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 end
 
             catch ME
+                disp(['DEBUG: Error caught: ' ME.message]);
                 if p.errorOnFailure
                     rethrow(ME);
                 else
