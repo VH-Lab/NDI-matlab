@@ -37,15 +37,19 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             % Files: daq1_e1 has {'file1.dat', 'common.dat'}
             %        daq2_e1 has {'file2.dat', 'common.dat'}
 
-            daq1.addEpoch('e1', {'common.dat', 'f1.dat'});
-            daq2.addEpoch('e1', {'common.dat', 'f2.dat'});
+            daq1 = daq1.addEpoch('e1', {'common.dat', 'f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'common.dat', 'f2.dat'});
 
             % Setup Triggers
             % DAQ1: [0 1 2 3 4]
             % DAQ2: [10 12 14 16 18] -> T2 = 2*T1 + 10. Scale=2, Shift=10.
 
-            daq1.addEvents('e1', 'dep', 1, [0 1 2 3 4]');
-            daq2.addEvents('e1', 'mk', 1, [10 12 14 16 18]');
+            daq1 = daq1.addEvents('e1', 'dep', 1, [0 1 2 3 4]');
+            daq2 = daq2.addEvents('e1', 'mk', 1, [10 12 14 16 18]');
+
+            % Add DAQs to session AFTER modification (since they are value classes)
+            session.addDAQ(daq1);
+            session.addDAQ(daq2);
 
             % Create Rule
             params = struct('daqsystem1_name','daq1', 'daqsystem2_name','daq2', ...
@@ -105,17 +109,17 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             % DAQ2_E1 overlaps DAQ1_E2
             % DAQ1_E2 overlaps DAQ2_E2
 
-            daq1.addEpoch('e1', {'c1.dat'});
-            daq2.addEpoch('e1', {'c1.dat', 'c2.dat'});
-            daq1.addEpoch('e2', {'c2.dat', 'c3.dat'});
-            daq2.addEpoch('e2', {'c3.dat'});
+            daq1 = daq1.addEpoch('e1', {'c1.dat'});
+            daq2 = daq2.addEpoch('e1', {'c1.dat', 'c2.dat'});
+            daq1 = daq1.addEpoch('e2', {'c2.dat', 'c3.dat'});
+            daq2 = daq2.addEpoch('e2', {'c3.dat'});
 
             % Triggers (Linear: T2 = T1 + 5)
-            daq1.addEvents('e1', 'dep', 1, [0 10]');
-            daq2.addEvents('e1', 'mk', 1, [5 15]');
+            daq1 = daq1.addEvents('e1', 'dep', 1, [0 10]');
+            daq2 = daq2.addEvents('e1', 'mk', 1, [5 15]');
 
-            daq1.addEvents('e2', 'dep', 1, [20 30]');
-            daq2.addEvents('e2', 'mk', 1, [25 35]');
+            daq1 = daq1.addEvents('e2', 'dep', 1, [20 30]');
+            daq2 = daq2.addEvents('e2', 'mk', 1, [25 35]');
 
             % Manually set t0 for epochs to ensure order
             % E1 starts at 0, E2 starts at 20
@@ -136,6 +140,10 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
                     daq2.Epochs(i).t0_t1 = {[25 35]};
                 end
             end
+
+            % Add DAQs to session AFTER modification
+            session.addDAQ(daq1);
+            session.addDAQ(daq2);
 
             % Rule
             params = struct('daqsystem1_name','daq1', 'daqsystem2_name','daq2', ...
@@ -170,11 +178,12 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             session = MockSession();
             daq1 = MockMFDAQ('daq1', session);
             daq2 = MockMFDAQ('daq2', session);
+
+            daq1 = daq1.addEpoch('e1', {'f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'f2.dat'}); % No common file
+
             session.addDAQ(daq1);
             session.addDAQ(daq2);
-
-            daq1.addEpoch('e1', {'f1.dat'});
-            daq2.addEpoch('e1', {'f2.dat'}); % No common file
 
              % Rule
             params = struct('daqsystem1_name','daq1', 'daqsystem2_name','daq2', ...
