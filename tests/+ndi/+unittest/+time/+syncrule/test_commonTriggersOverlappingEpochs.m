@@ -32,13 +32,13 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             session.addDAQ(daq1);
             session.addDAQ(daq2);
 
-            % Setup Epochs with overlap
-            % Epoch 1 in DAQ1 overlaps with Epoch 1 in DAQ2
-            % Files: daq1_e1 has {'file1.dat', 'common.dat'}
-            %        daq2_e1 has {'file2.dat', 'common.dat'}
+            % Setup Epochs with embedded overlap (same parent)
+            % Epoch 1 in DAQ1 overlaps with Epoch 1 in DAQ2 via parent
+            % Files: daq1_e1 has {'data/sess1/e1/f1.dat'}
+            %        daq2_e1 has {'data/sess1/e1/sub/f2.dat'}
 
-            daq1 = daq1.addEpoch('e1', {'common.dat', 'f1.dat'});
-            daq2 = daq2.addEpoch('e1', {'common.dat', 'f2.dat'});
+            daq1 = daq1.addEpoch('e1', {'data/sess1/e1/f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'data/sess1/e1/sub/f2.dat'});
 
             % Setup Triggers
             % DAQ1: [0 1 2 3 4]
@@ -55,17 +55,17 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             params = struct('daqsystem1_name','daq1', 'daqsystem2_name','daq2', ...
                 'daqsystem_ch1','dep1', 'daqsystem_ch2','mk1', ...
                 'epochclocktype','dev_local_time', ...
-                'minFileOverlap', 1, 'errorOnFailure', true);
+                'minEmbeddedFileOverlap', 1, 'errorOnFailure', true);
 
             rule = commonTriggersOverlappingEpochs(params);
 
             % Create Epoch Nodes (Inputs to apply)
             node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'common.dat', 'f1.dat'}}));
+                'underlying_epochs', struct('underlying', {{'data/sess1/e1/f1.dat'}}));
             node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'common.dat', 'f2.dat'}}));
+                'underlying_epochs', struct('underlying', {{'data/sess1/e1/sub/f2.dat'}}));
 
             % Apply
             [cost, mapping] = rule.apply(node1, node2, daq1);
@@ -105,14 +105,18 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             session.addDAQ(daq2);
 
             % Chain of overlaps:
-            % DAQ1_E1 overlaps DAQ2_E1
-            % DAQ2_E1 overlaps DAQ1_E2
-            % DAQ1_E2 overlaps DAQ2_E2
+            % DAQ1_E1 overlaps DAQ2_E1 via parent1
+            % DAQ2_E1 overlaps DAQ1_E2 via parent2
+            % DAQ1_E2 overlaps DAQ2_E2 via parent3
 
-            daq1 = daq1.addEpoch('e1', {'c1.dat'});
-            daq2 = daq2.addEpoch('e1', {'c1.dat', 'c2.dat'});
-            daq1 = daq1.addEpoch('e2', {'c2.dat', 'c3.dat'});
-            daq2 = daq2.addEpoch('e2', {'c3.dat'});
+            % P1: data/p1
+            % P2: data/p2
+            % P3: data/p3
+
+            daq1 = daq1.addEpoch('e1', {'data/p1/f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'data/p1/f2.dat', 'data/p2/f3.dat'});
+            daq1 = daq1.addEpoch('e2', {'data/p2/f4.dat', 'data/p3/f5.dat'});
+            daq2 = daq2.addEpoch('e2', {'data/p3/f6.dat'});
 
             % Triggers (Linear: T2 = T1 + 5)
             daq1 = daq1.addEvents('e1', 'dep', 1, [0 10]');
@@ -149,16 +153,16 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             params = struct('daqsystem1_name','daq1', 'daqsystem2_name','daq2', ...
                 'daqsystem_ch1','dep1', 'daqsystem_ch2','mk1', ...
                 'epochclocktype','dev_local_time', ...
-                'minFileOverlap', 1, 'errorOnFailure', true);
+                'minEmbeddedFileOverlap', 1, 'errorOnFailure', true);
             rule = commonTriggersOverlappingEpochs(params);
 
             % Start with E1 nodes
              node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'c1.dat'}}));
+                'underlying_epochs', struct('underlying', {{'data/p1/f1.dat'}}));
              node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'c1.dat', 'c2.dat'}}));
+                'underlying_epochs', struct('underlying', {{'data/p1/f2.dat', 'data/p2/f3.dat'}}));
 
              [cost, mapping] = rule.apply(node1, node2, daq1);
 
@@ -179,8 +183,9 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             daq1 = MockMFDAQ('daq1', session);
             daq2 = MockMFDAQ('daq2', session);
 
-            daq1 = daq1.addEpoch('e1', {'f1.dat'});
-            daq2 = daq2.addEpoch('e1', {'f2.dat'}); % No common file
+            % Different parents
+            daq1 = daq1.addEpoch('e1', {'data/sess1/f1.dat'});
+            daq2 = daq2.addEpoch('e1', {'data/sess2/f2.dat'});
 
             session.addDAQ(daq1);
             session.addDAQ(daq2);
@@ -189,15 +194,15 @@ classdef test_commonTriggersOverlappingEpochs < matlab.unittest.TestCase
             params = struct('daqsystem1_name','daq1', 'daqsystem2_name','daq2', ...
                 'daqsystem_ch1','dep1', 'daqsystem_ch2','mk1', ...
                 'epochclocktype','dev_local_time', ...
-                'minFileOverlap', 1, 'errorOnFailure', true);
+                'minEmbeddedFileOverlap', 1, 'errorOnFailure', true);
             rule = commonTriggersOverlappingEpochs(params);
 
              node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'f1.dat'}}));
+                'underlying_epochs', struct('underlying', {{'data/sess1/f1.dat'}}));
              node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'epoch_clock', struct('type','dev_local_time'), ...
-                'underlying_epochs', struct('underlying', {{'f2.dat'}}));
+                'underlying_epochs', struct('underlying', {{'data/sess2/f2.dat'}}));
 
             [cost, mapping] = rule.apply(node1, node2, daq1);
 

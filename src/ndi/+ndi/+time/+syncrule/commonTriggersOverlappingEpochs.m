@@ -23,14 +23,14 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             % daqsystem_ch1 ('')           | The channel to read on daq system 1 (e.g., 'dep1')
             % daqsystem_ch2 ('')           | The channel to read on daq system 2 (e.g., 'mk1')
             % epochclocktype ('dev_local_time') | The epoch clock type to consider
-            % minFileOverlap (1)           | The minimum number of files that need to overlap before epochs are considered overlapping
+            % minEmbeddedFileOverlap (1)   | The minimum number of embedded file matches (parent or grandparent directories) required
             % errorOnFailure (true)        | If the trigger synchronization fails, cause an error.
             %
             if nargin==0
                 parameters = struct('daqsystem1_name','', 'daqsystem2_name','', ...
                     'daqsystem_ch1','', 'daqsystem_ch2','', ...
                     'epochclocktype','dev_local_time', ...
-                    'minFileOverlap', 1, 'errorOnFailure', true);
+                    'minEmbeddedFileOverlap', 1, 'errorOnFailure', true);
                 varargin = {parameters};
             end
             ndi_syncrule_ctoe_obj = ndi_syncrule_ctoe_obj@ndi.time.syncrule(varargin{:});
@@ -46,7 +46,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             % See also: ndi.time.syncrule/SETPARAMETERS
 
             [b,msg] = vlt.data.hasAllFields(parameters,{'daqsystem1_name','daqsystem2_name',...
-                'daqsystem_ch1','daqsystem_ch2','epochclocktype','minFileOverlap','errorOnFailure'});
+                'daqsystem_ch1','daqsystem_ch2','epochclocktype','minEmbeddedFileOverlap','errorOnFailure'});
             if b
                 if ~ischar(parameters.daqsystem1_name) || ~ischar(parameters.daqsystem2_name) || ...
                         ~ischar(parameters.daqsystem_ch1) || ~ischar(parameters.daqsystem_ch2) || ...
@@ -54,9 +54,9 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                     b = 0;
                     msg = 'daqsystem names, channels, and epochclocktype must be strings.';
                 end
-                if ~isnumeric(parameters.minFileOverlap)
+                if ~isnumeric(parameters.minEmbeddedFileOverlap)
                     b = 0;
-                    msg = 'minFileOverlap must be a number.';
+                    msg = 'minEmbeddedFileOverlap must be a number.';
                 end
                 if ~islogical(parameters.errorOnFailure) && ~isnumeric(parameters.errorOnFailure)
                     b = 0;
@@ -165,8 +165,11 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
             % Start with seed epochs
 
             % Check initial overlap
-            common = intersect(epochnode_a.underlying_epochs.underlying, epochnode_b.underlying_epochs.underlying);
-            if numel(common) < p.minFileOverlap
+            parents_a = get_parent_paths(epochnode_a.underlying_epochs.underlying);
+            parents_b = get_parent_paths(epochnode_b.underlying_epochs.underlying);
+            common = intersect(parents_a, parents_b);
+
+            if numel(common) < p.minEmbeddedFileOverlap
                 % No overlap between the requested nodes?
                 % The user says: "Look for at least files in common between epochnode_a and epochnode_b... Find overlaps ... If it does, then we can explore..."
                 % If they don't overlap, we probably can't sync them directly via this rule starting here.
@@ -207,9 +210,11 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                     % Check overlap with ANY in group B
                     for j = 1:numel(group_b_indices)
                         b_idx = group_b_indices(j);
-                        common_files = intersect(epochs_a_all(i).underlying_epochs.underlying, ...
-                                                 epochs_b_all(b_idx).underlying_epochs.underlying);
-                        if numel(common_files) >= p.minFileOverlap
+                        parents_a = get_parent_paths(epochs_a_all(i).underlying_epochs.underlying);
+                        parents_b = get_parent_paths(epochs_b_all(b_idx).underlying_epochs.underlying);
+                        common_files = intersect(parents_a, parents_b);
+
+                        if numel(common_files) >= p.minEmbeddedFileOverlap
                             group_a_indices(end+1) = i;
                             added = true;
                             break;
@@ -222,9 +227,11 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                     if ismember(i, group_b_indices), continue; end
                     for j = 1:numel(group_a_indices)
                         a_idx = group_a_indices(j);
-                        common_files = intersect(epochs_b_all(i).underlying_epochs.underlying, ...
-                                                 epochs_a_all(a_idx).underlying_epochs.underlying);
-                        if numel(common_files) >= p.minFileOverlap
+                        parents_b = get_parent_paths(epochs_b_all(i).underlying_epochs.underlying);
+                        parents_a = get_parent_paths(epochs_a_all(a_idx).underlying_epochs.underlying);
+                        common_files = intersect(parents_b, parents_a);
+
+                        if numel(common_files) >= p.minEmbeddedFileOverlap
                             group_b_indices(end+1) = i;
                             added = true;
                             break;
@@ -347,4 +354,16 @@ function [ch_type, ch_num] = parse_channel(ch_str)
     end
     ch_type = ch_str(1:first_digit-1);
     ch_num = str2double(ch_str(first_digit:end));
+end
+
+function paths = get_parent_paths(files)
+    paths = {};
+    if ischar(files), files = {files}; end
+    for i=1:numel(files)
+        p1 = fileparts(files{i});
+        p2 = fileparts(p1);
+        paths{end+1} = p1;
+        paths{end+1} = p2;
+    end
+    paths = unique(paths);
 end
