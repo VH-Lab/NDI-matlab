@@ -289,7 +289,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 % Read T1
                 for k = 1:numel(indices_1)
                     eid = epochs_1(indices_1(k)).epoch_id;
-                    [ts, ~] = daqsystem1.readevents(type1, ch1, eid, -Inf, Inf);
+                    [ts, ~] = daqsystem1.readevents({type1}, ch1, eid, -Inf, Inf);
                     if iscell(ts), ts = ts{1}; end
                     T1_total = [T1_total; ts(:)];
                 end
@@ -297,7 +297,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 % Read T2
                 for k = 1:numel(indices_2)
                     eid = epochs_2(indices_2(k)).epoch_id;
-                    [ts, ~] = daqsystem2.readevents(type2, ch2, eid, -Inf, Inf);
+                    [ts, ~] = daqsystem2.readevents({type2}, ch2, eid, -Inf, Inf);
                     if iscell(ts), ts = ts{1}; end
                     T2_total = [T2_total; ts(:)];
                 end
