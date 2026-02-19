@@ -29,11 +29,13 @@ function [success, errorMessage, report] = downloadDocumentFiles(cloudDatasetId,
 
     arguments
         cloudDatasetId (1,1) string
-        ndiDocumentIds (1,:) string
+        ndiDocumentIds string
         targetFolder (1,1) string
         options.Verbose (1,1) logical = true
         options.Zip (1,1) logical = false
     end
+
+    ndiDocumentIds = string(ndiDocumentIds(:).'); % Ensure it's a row vector of strings
 
     success = true;
     errorMessage = '';
