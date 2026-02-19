@@ -1,4 +1,4 @@
-classdef MockMFDAQ < ndi.daq.system.mfdaq
+classdef MockMFDAQ < ndi.daq.system.mfdaq & handle
     properties
         Epochs
         Events
