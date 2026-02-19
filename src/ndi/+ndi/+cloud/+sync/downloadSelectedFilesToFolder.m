@@ -28,6 +28,7 @@ function [success, errorMessage, report] = downloadSelectedFilesToFolder(ndiData
 %       report (struct) - Structure containing details of the changes applied.
 %
 %   See also:
+%       ndi.cloud.download.downloadDocumentFiles,
 %       ndi.cloud.sync.downloadSelectedFiles,
 %       ndi.cloud.sync.downloadSelectedDocuments
 
@@ -50,82 +51,53 @@ function [success, errorMessage, report] = downloadSelectedFilesToFolder(ndiData
             return;
         end
 
-        if ~options.DryRun && ~isfolder(targetFolder)
-            mkdir(targetFolder);
-        end
-
         if options.Verbose
-            fprintf('Downloading files for %d documents to: %s\n', ...
+            fprintf('Processing request to export files for %d documents to: %s\n', ...
                 numel(ndiDocumentIds), targetFolder);
         end
 
-        % 1. Find documents (metadata) to get file UIDs
-        % We check locally first, then cloud if needed.
-        q = ndi.query('base.id', 'hasmember', ndiDocumentIds);
-        allDocs = ndiDataset.database_search(q);
-
-        localDocIds = string(cellfun(@(d) d.id(), allDocs, 'UniformOutput', false));
-        missingIds = setdiff(ndiDocumentIds, localDocIds);
-
+        % 1. Resolve cloud dataset identifier
         cloudDatasetId = ndi.cloud.internal.getCloudDatasetIdForLocalDataset(ndiDataset);
 
-        if ~isempty(missingIds)
-            if options.Verbose
-                fprintf('Fetching metadata from cloud for %d documents not found locally...\n', numel(missingIds));
-            end
-            remoteIdMap = ndi.cloud.sync.internal.listRemoteDocumentIds(cloudDatasetId);
-            [found, loc] = ismember(missingIds, remoteIdMap.ndiId);
-            cloudApiIdsToDownload = remoteIdMap.apiId(loc(found));
+        % 2. Map NDI IDs to Cloud API IDs
+        if options.Verbose, fprintf('Mapping NDI IDs to Cloud API IDs...\n'); end
+        remoteIdMap = ndi.cloud.sync.internal.listRemoteDocumentIds(cloudDatasetId);
+        [found, loc] = ismember(ndiDocumentIds, remoteIdMap.ndiId);
+        cloudApiIdsToDownload = remoteIdMap.apiId(loc(found));
 
-            if ~isempty(cloudApiIdsToDownload)
-                newDocs = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, cloudApiIdsToDownload);
-                allDocs = [allDocs, newDocs];
-            end
+        actuallyMissing = ndiDocumentIds(~found);
+        if ~isempty(actuallyMissing) && options.Verbose
+            warning('NDI:downloadSelectedFilesToFolder:DocumentsNotFound', ...
+                'The following %d NDI document IDs were not found on the remote and will be skipped:\n%s', ...
+                numel(actuallyMissing), strjoin(actuallyMissing, ', '));
         end
 
-        if isempty(allDocs)
-            if options.Verbose, fprintf('No valid documents found.\n'); end
-            return;
+        if isempty(cloudApiIdsToDownload)
+             if options.Verbose
+                fprintf('No valid documents found on remote to process.\n');
+             end
+             return;
         end
 
-        % 2. Get unique file UIDs
-        fileUids = ndi.cloud.sync.internal.getFileUidsFromDocuments(allDocs);
-
-        if isempty(fileUids)
-            if options.Verbose, fprintf('No files found for these documents.\n'); end
-            return;
-        end
-
-        % 3. Download files
+        % 3. Perform download actions
         if options.DryRun
-            fprintf('[DryRun] Would download %d files to %s\n', numel(fileUids), targetFolder);
+            % For DryRun, we still need to fetch metadata to know which files would be downloaded
+            if options.Verbose, fprintf('[DryRun] Fetching metadata to identify files...\n'); end
+            documents = ndi.cloud.download.downloadDocumentCollection(cloudDatasetId, cloudApiIdsToDownload);
+            fileUids = ndi.cloud.sync.internal.getFileUidsFromDocuments(documents);
+
+            fprintf('[DryRun] Would download %d files for %d documents to %s\n', ...
+                numel(fileUids), numel(cloudApiIdsToDownload), targetFolder);
+            if options.Zip
+                fprintf('[DryRun] Would zip downloaded files.\n');
+            end
             report.downloaded_file_uids = string(fileUids);
         else
-            ndi.cloud.download.downloadDatasetFiles(...
-                cloudDatasetId, ...
-                targetFolder, ...
-                string(fileUids), ...
-                "Verbose", options.Verbose);
-
-            report.downloaded_file_uids = string(fileUids);
-
-            % 4. Optional Zip
-            if options.Zip
-                zipFileName = fullfile(targetFolder, sprintf('exported_files_%s.zip', datestr(now, 'yyyymmdd_HHMMSS')));
-                if options.Verbose
-                    fprintf('Zipping files into: %s\n', zipFileName);
-                end
-
-                % We only zip the files we just downloaded, and we keep them at the zip root
-                % by using the targetFolder as the root for the zip operation.
-                zip(zipFileName, cellstr(fileUids), targetFolder);
-                report.zip_file = zipFileName;
-
-                if options.Verbose
-                    fprintf('Zip complete. Zip file size: %.2f MB\n', ...
-                        dir(zipFileName).bytes / 1024^2);
-                end
-            end
+            % Call the specialized download function
+            [success, errorMessage, report] = ndi.cloud.download.downloadDocumentFiles(...
+                cloudDatasetId, cloudApiIdsToDownload, targetFolder, ...
+                "Verbose", options.Verbose, ...
+                "Zip", options.Zip);
         end
 
     catch ME
