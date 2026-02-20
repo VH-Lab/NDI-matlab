@@ -93,23 +93,14 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         cloudDatasetId = cloudDatasetIdDocs{1}.document_properties.dataset_remote.dataset_id;
 
         % 3. Extract file information (UIDs and filenames)
-        downloadList = struct('uid', {}, 'filename', {});
+        downloadList = struct('id', {}, 'uid', {},'filename', {}, 'ext', {});
         for i = 1:numel(documents)
-            doc = documents{i};
-            if doc.has_files()
-                fileInfo = doc.document_properties.files.file_info;
-                for j = 1:numel(fileInfo)
-                    if isfield(fileInfo(j), 'locations') && ~isempty(fileInfo(j).locations)
-                        % For now, we take the first location. In NDI cloud context,
-                        % this should be the UID we need.
-                        uid = fileInfo(j).locations(1).uid;
-                        % Use the registered name for the file, which includes extension
-                        filename = fileInfo(j).name;
-                        downloadList(end+1).uid = uid; %#ok<AGROW>
-                        downloadList(end).filename = filename;
-                    end
-                end
-            end
+            doc = documents{i}.document_properties;
+            downloadList(end+1).id = doc.base.id;
+            downloadList(end).uid = doc.files.file_info.locations.uid;
+            downloadList(end).filename = doc.generic_file.filename;
+            [~,~,downloadList(end).ext] = fileparts(doc.generic_file.filename);
+            % [~,downloadList(end).ext] = ndi.ontology.lookup(doc.generic_file.formatOntology);
         end
 
         if isempty(downloadList)
@@ -126,7 +117,7 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         downloadedFiles = string.empty;
         for i = 1:numFiles
             uid = downloadList(i).uid;
-            filename = downloadList(i).filename;
+            filename = [downloadList(i).id,'.',downloadList(i).ext];
             targetPath = fullfile(targetFolder, filename);
 
             if options.Verbose
