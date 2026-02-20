@@ -10,6 +10,8 @@ NDI datasets and documents can exist both on local computers and in the NDI Clou
 
 Every NDI dataset has a **local identifier** obtained via `D.id()`. When a dataset is uploaded to the cloud, it receives a distinct **cloud dataset identifier** (`cloudDatasetID`). These two identifiers are not the same. This intentional separation allows multiple independent copies of the same local dataset to exist in the cloud — for example, in different user accounts or organizational spaces — without conflict.
 
+> In the examples throughout this manual, `D` refers to an `ndi.dataset` variable and `doc` refers to an `ndi.document` variable.
+
 #### Document Identifiers
 
 Similarly, every NDI document has a **local identifier** accessible via `doc.id()`, which is also stored in the `document_properties.base.id` field. When a document is represented in the cloud, it is referred to by its `ndiID` (corresponding to `base.id`), but it also receives a separate **cloud API document identifier** that is assigned by the cloud system. As with datasets, these two identifiers are different, permitting multiple cloud copies of the same logical document to coexist across different datasets or user spaces.
