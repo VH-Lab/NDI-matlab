@@ -23,6 +23,14 @@ function [h, htext] = stimulusTimeseries(timeref, y, options)
 %   'textycoord' ([])                    - Text y coordinate. If empty, defaults to Y+1.
 %   'HorizontalAlignment' ('center')     - Text horizontal alignment
 %
+% Example:
+%   % Create a time reference for the first epoch of a probe
+%   timeref = ndi.time.timereference(my_probe, ndi.time.clocktype('dev_local_time'), 1, 0);
+%
+%   % Plot the stimulus timeseries at y=0
+%   figure;
+%   ndi.fun.plot.stimulusTimeseries(timeref, 0);
+%
 % See also: vlt.neuro.stimulus.plot_stimulus_timeseries, ndi.time.timereference
 
     arguments
