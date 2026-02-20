@@ -1,4 +1,10 @@
 classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
+    % COMMONTRIGGERSOVERLAPPINGEPOCHS - syncrule based on common triggers in overlapping embedded epochs
+    %
+    % This sync rule assumes that the 'dev_local_time' of the DAQ systems reflects a shared absolute time
+    % reference (e.g., time of day) such that sorting disjoint trigger events chronologically aligns them correctly.
+    % It is a special case rule for systems that have this property.
+    %
 
     properties (SetAccess=protected,GetAccess=public)
     end % properties
@@ -303,7 +309,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 end
 
                 % 5. Compute Mapping
-                map_coeffs = vlt.time.syncTriggers(T1_total, T2_total);
+                map_coeffs = vlt.time.syncTriggers(sort(T1_total), sort(T2_total));
                 % map_coeffs is [shift scale] -> T2 = shift + scale * T1
                 % ndi.time.timemapping expects [m b] where y = m*x + b.
                 % Wait, let's check vlt.time.syncTriggers description again.
