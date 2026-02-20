@@ -42,6 +42,7 @@ classdef MockMFDAQ < ndi.daq.system.mfdaq
         end
 
         function [ts, data] = readevents(obj, type, ch, epoch, t0, t1)
+             if iscell(type), type = type{1}; end
             key = sprintf('%s_%s_%d', epoch, type, ch);
             if isfield(obj.Events, key)
                 ts = obj.Events.(key);
