@@ -363,6 +363,27 @@
       "should_succeed": false,
       "expected_id": "",
       "expected_name": ""
+    },
+    {
+      "ontology": "EDAM",
+      "lookup_string": "EDAM:1929",
+      "should_succeed": true,
+      "expected_id": "EDAM:1929",
+      "expected_name": "FASTA"
+    },
+    {
+      "ontology": "EDAM",
+      "lookup_string": "format:1929",
+      "should_succeed": true,
+      "expected_id": "EDAM:1929",
+      "expected_name": "FASTA"
+    },
+    {
+      "ontology": "EDAM",
+      "lookup_string": "format:FASTA",
+      "should_succeed": true,
+      "expected_id": "EDAM:1929",
+      "expected_name": "FASTA"
     }
   ]
 }
