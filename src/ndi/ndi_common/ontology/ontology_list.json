@@ -49,7 +49,9 @@
     {"prefix": "NCIT", "ontology_name": "NCIT"},
     {"prefix": "SNOMED", "ontology_name": "SNOMED"},
     {"prefix": "WBStrain", "ontology_name": "WBStrain"},
-    {"prefix": "EFO", "ontology_name": "EFO"}
+    {"prefix": "EFO", "ontology_name": "EFO"},
+    {"prefix": "EDAM", "ontology_name": "EDAM"},
+    {"prefix": "format", "ontology_name": "EDAM"}
   ],
   "Ontologies": [
     {
@@ -127,6 +129,11 @@
       "name": "EFO",
       "homepage": "https://www.ebi.ac.uk/efo/",
       "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/efo"
+    },
+    {
+      "name": "EDAM",
+      "homepage": "http://edamontology.org",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/edam"
     }
   ]
 }
