@@ -60,6 +60,13 @@ classdef test_file_syncrules < matlab.unittest.TestCase
             daq1 = daq1.addEpoch('e1', {'common.dat'});
             daq2 = daq2.addEpoch('e1', {'common.dat', syncfile});
 
+            % Fix: Update node1 to contain the syncfile if testing forward direction where code checks node_a
+            % Code logic for forward: checks epochnode_a.
+            % Code logic for backward: checks epochnode_b.
+
+            % Let's put file in daq1 (node1) to match forward logic of filefind
+            daq1 = daq1.addEpoch('e1', {'common.dat', syncfile});
+
             session.addDAQ(daq1);
             session.addDAQ(daq2);
 
@@ -71,47 +78,10 @@ classdef test_file_syncrules < matlab.unittest.TestCase
 
             node1 = struct('objectname', 'daq1', 'epoch_id', 'e1', ...
                 'objectclass', 'ndi.unittest.time.syncrule.MockMFDAQ', ...
-                'underlying_epochs', struct('underlying', {{'common.dat'}}));
+                'underlying_epochs', struct('underlying', {{'common.dat', syncfile}}));
             node2 = struct('objectname', 'daq2', 'epoch_id', 'e1', ...
                 'objectclass', 'ndi.unittest.time.syncrule.MockMFDAQ', ...
                 'underlying_epochs', struct('underlying', {{'common.dat', syncfile}}));
-
-            % Apply Forward (daq1 -> daq2)
-            % Wait, logic checks if file is in "epochnode_a" (forward) or "epochnode_b" (backward).
-            % Forward condition: node_a is daq1, node_b is daq2.
-            % Code checks if syncfile is in `epochnode_a.underlying_epochs`.
-            % In my setup, syncfile is in `node2` (daq2).
-            % So `node1` is `daq1` (a), `node2` is `daq2` (b).
-            % Syncfile is in `node2`.
-            % Logic says:
-            % if forward (a=d1, b=d2): check a for syncfile.
-            % if backward (b=d1, a=d2): check b for syncfile.
-            % Wait, let's re-read filefind.m.
-            % "This file should be in the second daq system's epoch files."
-            % Parameters: daqsystem1, daqsystem2.
-            % If a=d1, b=d2 (forward): checks `epochnode_a` for file?
-            % Code:
-            % if forward
-            %    for i=1... epochnode_a...
-            %       if match... return mapping [scale shift]
-            % This implies the sync file is in DAQ1?
-            % Documentation says "This file should be in the second daq system's epoch files."
-            % If daqsystem2 is the "second", then `b` should have it?
-            % If `forward` is true, `a` is `d1`.
-            % Code checks `a`!
-            % This looks like a bug in `filefind.m` vs its documentation, OR I am misinterpreting.
-            % Documentation: "TimeOnDaqSystem2 = shift + scale * TimeOnDaqSystem1". "file should be in the second daq system's epoch files".
-            % If `a` is `d1` and `b` is `d2`.
-            % Code checks `epochnode_a` (d1).
-            % So code expects file in d1. Doc says d2.
-            % I will test based on CODE behavior (file in `node1`/`a`).
-
-            % Move syncfile to node1 for the test to match code logic?
-            % Or should I test backward?
-            % Let's put file in `node1`.
-
-            daq1 = daq1.addEpoch('e1', {'common.dat', syncfile});
-            node1.underlying_epochs.underlying = {'common.dat', syncfile};
 
             [cost, mapping] = rule.apply(node1, node2, daq1);
 

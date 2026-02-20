@@ -7,8 +7,10 @@ classdef MockMFDAQ < ndi.daq.system.mfdaq
     methods
         function obj = MockMFDAQ(name, session)
             obj = obj@ndi.daq.system.mfdaq(); % Use 0-arg constructor
-            obj.name = name;
-            obj.MySession = session;
+            if nargin > 0
+                obj.name = name;
+                obj.MySession = session;
+            end
             obj.Epochs = struct('epoch_id',{}, 'underlying_epochs',{});
             obj.Events = struct();
         end
