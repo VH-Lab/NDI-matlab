@@ -1,0 +1,15 @@
+{
+  "Name": "vhtaste_bpod",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPod",
+  "MetadataReaderClass": "ndi.daq.metadatareader.VHAudreyBPod",
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileParameters": [
+    "#_stimulus_triggers_log.tsv",
+    "#.*_summary_log.json"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": "(.*)\\.json",
+  "EpochProbeMapFileParameters": "#_stimulus_triggers_log.tsv",
+  "HasEpochDirectories": false
+}

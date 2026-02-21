@@ -426,7 +426,7 @@ classdef syncgraph < ndi.ido
                                 % check here to see if we have a match already saved
                                 [c,m] = ndi.time.syncgraph.checkingestedrules(savedRules, ginfo.syncRuleIDs{K}, ginfo.nodes(i_), ginfo.nodes(j_));
                                 if isempty(c)
-                                    [c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+                                    [c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_), ndi_daqsystem_obj);
                                 end
                                 if c<lowcost
                                     lowcost = c;
@@ -438,9 +438,14 @@ classdef syncgraph < ndi.ido
                                 error('this is an error. notify developers. we did not think we could get here.');
                             end
                             ginfo.G(i_,j_) = lowcost;
+                            ginfo.G(j_,i_) = lowcost;
                             ginfo.mapping{i_,j_} = mappinghere;
+                            if ~isempty(mappinghere)
+                                ginfo.mapping{j_,i_} = mappinghere.reverse;
+                            end
                             if match
                                 ginfo.syncRuleG(i_,j_) = K;
+                                ginfo.syncRuleG(j_,i_) = K;
                             end
                         end
                     end
