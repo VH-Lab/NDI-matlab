@@ -440,7 +440,9 @@ classdef syncgraph < ndi.ido
                             ginfo.G(i_,j_) = lowcost;
                             ginfo.G(j_,i_) = lowcost;
                             ginfo.mapping{i_,j_} = mappinghere;
-                            ginfo.mapping{j_,i_} = mappinghere.reverse;
+                            if ~isempty(mappinghere)
+                                ginfo.mapping{j_,i_} = mappinghere.reverse;
+                            end
                             if match
                                 ginfo.syncRuleG(i_,j_) = K;
                                 ginfo.syncRuleG(j_,i_) = K;
