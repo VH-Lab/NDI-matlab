@@ -438,9 +438,12 @@ classdef syncgraph < ndi.ido
                                 error('this is an error. notify developers. we did not think we could get here.');
                             end
                             ginfo.G(i_,j_) = lowcost;
+                            ginfo.G(j_,i_) = lowcost;
                             ginfo.mapping{i_,j_} = mappinghere;
+                            ginfo.mapping{j_,i_} = mappinghere.reverse;
                             if match
                                 ginfo.syncRuleG(i_,j_) = K;
+                                ginfo.syncRuleG(j_,i_) = K;
                             end
                         end
                     end
