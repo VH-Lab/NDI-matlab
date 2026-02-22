@@ -141,7 +141,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
 
             % 4. List Deleted Documents
             narrative(end+1) = "VERIFICATION: Listing deleted documents.";
-            [b_list_docs, ans_list_docs] = ndi.cloud.api.documents.listDeletedDocuments(cloudDatasetID, 'page_size', 100);
+            [b_list_docs, ans_list_docs] = ndi.cloud.api.documents.listDeletedDocuments(cloudDatasetID, 'pageSize', 100);
             testCase.verifyTrue(b_list_docs, "Failed to list deleted documents.");
 
             % Verify our document is in the list
