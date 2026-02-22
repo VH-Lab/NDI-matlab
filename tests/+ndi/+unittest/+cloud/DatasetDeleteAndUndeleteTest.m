@@ -103,7 +103,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
 
             % 5. Verify it is visible again
             narrative(end+1) = "VERIFICATION: Dataset should be visible.";
-            pause(2);
+            pause(5);
             [b_get_after, ans_get_after] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
             testCase.verifyTrue(b_get_after, "Dataset not visible after undelete.");
 
@@ -137,7 +137,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             [b_del_doc, ~] = ndi.cloud.api.documents.deleteDocument(cloudDatasetID, cloudDocID, 'when', '1d');
             testCase.verifyTrue(b_del_doc, "Failed to soft delete document.");
 
-            pause(2);
+            pause(5);
 
             % 4. List Deleted Documents
             narrative(end+1) = "VERIFICATION: Listing deleted documents.";
@@ -163,7 +163,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             [b_del_ds, ~] = ndi.cloud.api.datasets.deleteDataset(cloudDatasetID, 'when', '1d');
             testCase.verifyTrue(b_del_ds, "Failed to soft delete dataset.");
 
-            pause(2);
+            pause(5);
 
             % 6. List Deleted Datasets
             narrative(end+1) = "VERIFICATION: Listing deleted datasets.";
