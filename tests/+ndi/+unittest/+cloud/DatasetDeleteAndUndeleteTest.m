@@ -172,6 +172,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
 
             % Verify our dataset is in the list
             foundDs = false;
+            ids = {};
             if isstruct(ans_list_ds) && isfield(ans_list_ds, 'datasets')
                 dss = ans_list_ds.datasets;
                 if isstruct(dss)
@@ -182,6 +183,15 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
                     foundDs = any(strcmp(ids, cloudDatasetID));
                 end
             end
+
+            if ~foundDs
+                fprintf('Expected dataset ID: %s\n', cloudDatasetID);
+                fprintf('Found dataset IDs:\n');
+                for k=1:numel(ids)
+                    fprintf('%s\n', ids{k});
+                end
+            end
+
             testCase.verifyTrue(foundDs, "Deleted dataset not found in list.");
 
             testCase.Narrative = narrative;
