@@ -96,7 +96,7 @@ classdef dir < ndi.dataset
             % Use with care. If AREYOUSURE is 'yes' then the
             % function will proceed. Otherwise, it will not.
             arguments
-                ndi_dataset_dir_obj {mustBeA(ndi_dataset_dir_obj,'ndi.session.dir')}
+                ndi_dataset_dir_obj {mustBeA(ndi_dataset_dir_obj,'ndi.dataset.dir')}
                 areyousure (1,:) char = 'no';
             end
 
