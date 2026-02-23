@@ -568,6 +568,23 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %  exists for an ndi.document and, if it exists, the full file
             %  path (FILE_PATH) to the file where the binary data is stored.
 
+            doc_input = ndi.session.docinput2docs(ndi_dataset_obj, ndi_document_or_id);
+            if ~isempty(doc_input)
+                doc = doc_input{1};
+                session_id = doc.document_properties.base.session_id;
+                if ~strcmp(session_id, ndi_dataset_obj.id())
+                    % session matches one of the linked sessions
+                    % (actually docinput2docs found it, so it's either in dataset or linked session)
+                    try
+                        s = ndi_dataset_obj.open_session(session_id);
+                        [tf, file_path] = s.database_existbinarydoc(doc, filename);
+                        return;
+                    catch
+                        % if we can't open it or something goes wrong, fall back to current behavior
+                    end
+                end
+            end
+
             [tf, file_path] = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
         end
 
