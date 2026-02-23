@@ -93,63 +93,37 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         cloudDatasetId = cloudDatasetIdDocs{1}.document_properties.dataset_remote.dataset_id;
 
         % 3. Extract file information (UIDs and filenames)
-        downloadList = struct('uid', {}, 'filename', {}, 'dataset_id', {});
-        filesFoundCount = 0;
-        filesWithCloudLocationCount = 0;
-
+        downloadList = struct('uid', {}, 'filename', {});
         for i = 1:numel(documents)
             doc = documents{i};
             if doc.has_files()
                 fileInfo = doc.document_properties.files.file_info;
                 for j = 1:numel(fileInfo)
-                    filesFoundCount = filesFoundCount + 1;
                     if isfield(fileInfo(j), 'locations') && ~isempty(fileInfo(j).locations)
-                        % Find a cloud location
-                        cloudLocIdx = find(strcmpi({fileInfo(j).locations.location_type}, 'ndicloud'), 1);
+                        % Take the UID
+                        uid = fileInfo(j).locations(1).uid;
 
-                        if ~isempty(cloudLocIdx)
-                            filesWithCloudLocationCount = filesWithCloudLocationCount + 1;
-                            locEntry = fileInfo(j).locations(cloudLocIdx);
-                            uid = locEntry.uid;
+                        % Determine filename with appropriate extension
+                        % We check the generic_file.filename property for the original name
+                        originalFullname = doc.document_properties.generic_file.filename;
+                        [~, name_part, ext_part] = fileparts(originalFullname);
 
-                            % Try to extract dataset ID from location string: ndic://dataset_id/file_uid
-                            fileDatasetId = cloudDatasetId; % Default fallback
-                            if isfield(locEntry, 'location') && startsWith(locEntry.location, 'ndic://', 'IgnoreCase', true)
-                                parts = split(erase(locEntry.location, 'ndic://'), '/');
-                                if numel(parts) >= 1 && ~isempty(parts{1})
-                                    fileDatasetId = parts{1};
-                                end
-                            end
-
-                            % Determine filename with appropriate extension
-                            % We check the generic_file.filename property for the original name
-                            originalFullname = doc.document_properties.generic_file.filename;
-                            [~, name_part, ext_part] = fileparts(originalFullname);
-
-                            if ~isempty(name_part)
-                                filename = [name_part ext_part];
-                            else
-                                % Fallback to the registered name in file_info
-                                filename = fileInfo(j).name;
-                            end
-
-                            downloadList(end+1).uid = uid; %#ok<AGROW>
-                            downloadList(end).filename = filename;
-                            downloadList(end).dataset_id = fileDatasetId;
+                        if ~isempty(name_part)
+                            filename = [name_part ext_part];
+                        else
+                            % Fallback to the registered name in file_info
+                            filename = fileInfo(j).name;
                         end
+
+                        downloadList(end+1).uid = uid; %#ok<AGROW>
+                        downloadList(end).filename = filename;
                     end
                 end
             end
         end
 
         if isempty(downloadList)
-            if options.Verbose
-                if filesFoundCount > 0
-                    fprintf('Found %d local files, but none have been synchronized to the cloud (no "ndicloud" locations found).\n', filesFoundCount);
-                else
-                    fprintf('No files associated with these documents.\n');
-                end
-            end
+            if options.Verbose, fprintf('No files associated with these documents.\n'); end
             return;
         end
 
@@ -163,7 +137,6 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         for i = 1:numFiles
             uid = downloadList(i).uid;
             filename = downloadList(i).filename;
-            fileDatasetId = downloadList(i).dataset_id;
             targetPath = fullfile(targetFolder, filename);
 
             if options.Verbose
@@ -171,7 +144,7 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
             end
 
             % Get the download URL for the specific file
-            [success_api, answer, ~] = ndi.cloud.api.files.getFileDetails(fileDatasetId, uid);
+            [success_api, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, uid);
             if ~success_api
                 warning('NDI:downloadGenericFiles:ApiError', ...
                     'Failed to get download URL for file %s (UID: %s): %s', filename, uid, answer.message);
