@@ -20,7 +20,7 @@ function [success, errorMessage, report] = downloadNew(ndiDataset, syncOptions)
 %   Inputs:
 %       ndiDataset (1,1) ndi.dataset - The local NDI dataset object.
 %       syncOptions (name, value pairs) - Optional synchronization options:
-%       - SyncFiles (logical) - If true, files will be synced (default: true).
+%       - SyncFiles (logical) - If true, files will be synced (default: false).
 %       - Verbose (logical) - If true, verbose output is printed (default: true).
 %       - DryRun (logical) - If true, actions are simulated but not performed (default: false).
 %

@@ -18,10 +18,9 @@ function [success, errorMessage, report] = uploadNew(ndiDataset, syncOptions)
 %   Inputs:
 %       ndiDataset (1,1) ndi.dataset - The local NDI dataset object.
 %       syncOptions (name, value pairs) - Optional synchronization options:
-%       - SyncFiles (logical) - If true, files will be downloaded (default: true).
-%                               Files are always uploaded regardless of this setting.
 %       - Verbose (logical) - If true, verbose output is printed (default: true).
 %       - DryRun (logical) - If true, actions are simulated but not performed (default: false).
+%       - FileUploadStrategy (string) - "serial" or "batch" (default: "batch").
 %
 %   Outputs:
 %       success (logical) - True if the operation completed successfully, false otherwise.
