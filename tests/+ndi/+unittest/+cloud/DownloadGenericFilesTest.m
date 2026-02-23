@@ -173,5 +173,33 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             testCase.verifyNotEmpty(report.zip_file);
             testCase.verifyTrue(isfile(report.zip_file));
         end
+
+        function testNamingStrategies(testCase)
+            testCase.Narrative = "Begin testNamingStrategies";
+
+            q = ndi.query('base.name', 'exact_string', 'test_doc_1');
+            docs = testCase.LocalDataset.database_search(q);
+            docId = docs{1}.id();
+
+            % 1. Test 'id' strategy
+            destFolderId = fullfile(testCase.LocalDataset.path, 'download_test_id');
+            mkdir(destFolderId);
+            [success, ~, report] = ndi.cloud.download.downloadGenericFiles(...
+                testCase.LocalDataset, docId, destFolderId, 'NamingStrategy', 'id');
+            testCase.verifyTrue(success);
+            expectedName = [docId '.txt'];
+            testCase.verifyTrue(ismember(expectedName, report.downloaded_filenames));
+            testCase.verifyTrue(isfile(fullfile(destFolderId, expectedName)));
+
+            % 2. Test 'id_original' strategy
+            destFolderBoth = fullfile(testCase.LocalDataset.path, 'download_test_both');
+            mkdir(destFolderBoth);
+            [success, ~, report] = ndi.cloud.download.downloadGenericFiles(...
+                testCase.LocalDataset, docId, destFolderBoth, 'NamingStrategy', 'id_original');
+            testCase.verifyTrue(success);
+            expectedName = [docId '_renamed_test1.txt'];
+            testCase.verifyTrue(ismember(expectedName, report.downloaded_filenames));
+            testCase.verifyTrue(isfile(fullfile(destFolderBoth, expectedName)));
+        end
     end
 end
