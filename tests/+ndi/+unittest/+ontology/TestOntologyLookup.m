@@ -30,6 +30,7 @@ classdef TestOntologyLookup < matlab.unittest.TestCase
     methods (Test)
         % The main test method, parameterized by testCases.
         function testLookupFunctionality(testCase, testCases)
+            pause(1);
             % testCases here refers to a single element (a struct) from the testCases cell array for each iteration.
 
             lookupStr = testCases.lookup_string;

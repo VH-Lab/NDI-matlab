@@ -18,7 +18,7 @@ classdef emptyDataset < matlab.unittest.TestCase
         function cleanup(testCase)
             if ~isempty(testCase.cloudDatasetId)
                  try
-                     ndi.cloud.api.datasets.deleteDataset(testCase.cloudDatasetId);
+                     ndi.cloud.api.datasets.deleteDataset(testCase.cloudDatasetId, 'when', 'now');
                  catch ME
                      warning(['Failed to delete remote dataset: ' ME.message]);
                  end
