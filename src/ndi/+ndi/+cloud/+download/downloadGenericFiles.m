@@ -67,7 +67,7 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         % Find all documents that depend on these
         dependentDocs = ndi.database.fun.findalldependencies(ndiDataset, [], initialDocs{:});
 
-        allDocs = [initialDocs, dependentDocs];
+        allDocs = [initialDocs(:)', dependentDocs(:)'];
 
         % Ensure uniqueness of documents based on ID
         allDocIds = cellfun(@(d) d.id(), allDocs, 'UniformOutput', false);

@@ -71,7 +71,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             [success_upload] = ndi.cloud.uploadDataset(testCase.LocalDataset);
             testCase.fatalAssertTrue(success_upload, "Failed to upload test dataset to cloud.");
 
-            pause(5); % allow server to process
+            pause(10); % allow server to process
 
             testCase.addTeardown(@() testCase.cleanupCloudDataset());
         end
@@ -104,7 +104,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 testCase.LocalDataset, docId, destFolder);
 
             testCase.verifyTrue(success, "Function returned failure: " + errMsg);
-            testCase.verifyMember('renamed_test1.txt', report.downloaded_filenames);
+            testCase.verifyTrue(ismember('renamed_test1.txt', report.downloaded_filenames));
 
             % Check file existence and name
             downloadedFile = fullfile(destFolder, 'renamed_test1.txt');
@@ -139,7 +139,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
 
             % Re-upload dataset to include doc3
             ndi.cloud.uploadDataset(testCase.LocalDataset);
-            pause(5);
+            pause(10);
 
             destFolder = fullfile(testCase.LocalDataset.path, 'download_test_dep');
             mkdir(destFolder);
@@ -150,8 +150,8 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 testCase.LocalDataset, targetId, destFolder);
 
             testCase.verifyTrue(success);
-            testCase.verifyMember('renamed_test1.txt', report.downloaded_filenames);
-            testCase.verifyMember('file3.dat', report.downloaded_filenames);
+            testCase.verifyTrue(ismember('renamed_test1.txt', report.downloaded_filenames));
+            testCase.verifyTrue(ismember('file3.dat', report.downloaded_filenames));
             testCase.verifyTrue(isfile(fullfile(destFolder, 'renamed_test1.txt')));
             testCase.verifyTrue(isfile(fullfile(destFolder, 'file3.dat')));
         end
