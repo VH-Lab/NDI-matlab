@@ -93,14 +93,33 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         cloudDatasetId = cloudDatasetIdDocs{1}.document_properties.dataset_remote.dataset_id;
 
         % 3. Extract file information (UIDs and filenames)
-        downloadList = struct('id', {}, 'uid', {},'filename', {}, 'ext', {});
+        downloadList = struct('uid', {}, 'filename', {});
         for i = 1:numel(documents)
-            doc = documents{i}.document_properties;
-            downloadList(end+1).id = doc.base.id;
-            downloadList(end).uid = doc.files.file_info.locations.uid;
-            downloadList(end).filename = doc.generic_file.filename;
-            [~,~,downloadList(end).ext] = fileparts(doc.generic_file.filename);
-            % [~,downloadList(end).ext] = ndi.ontology.lookup(doc.generic_file.formatOntology);
+            doc = documents{i};
+            if doc.has_files()
+                fileInfo = doc.document_properties.files.file_info;
+                for j = 1:numel(fileInfo)
+                    if isfield(fileInfo(j), 'locations') && ~isempty(fileInfo(j).locations)
+                        % Take the UID
+                        uid = fileInfo(j).locations(1).uid;
+
+                        % Determine filename with appropriate extension
+                        % We check the generic_file.filename property for the original name
+                        originalFullname = doc.document_properties.generic_file.filename;
+                        [~, name_part, ext_part] = fileparts(originalFullname);
+
+                        if ~isempty(name_part)
+                            filename = [name_part ext_part];
+                        else
+                            % Fallback to the registered name in file_info
+                            filename = fileInfo(j).name;
+                        end
+
+                        downloadList(end+1).uid = uid; %#ok<AGROW>
+                        downloadList(end).filename = filename;
+                    end
+                end
+            end
         end
 
         if isempty(downloadList)
@@ -117,7 +136,7 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         downloadedFiles = string.empty;
         for i = 1:numFiles
             uid = downloadList(i).uid;
-            filename = [downloadList(i).id,'.',downloadList(i).ext];
+            filename = downloadList(i).filename;
             targetPath = fullfile(targetFolder, filename);
 
             if options.Verbose
