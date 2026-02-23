@@ -18,10 +18,10 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
-                'LOCAL CONFIGURATION ERROR: NDI_CLOUD_USERNAME not set.');
-            testCase.fatalAssertNotEmpty(password, ...
-                'LOCAL CONFIGURATION ERROR: NDI_CLOUD_PASSWORD not set.');
+
+            diagMsg = 'Missing NDI Cloud credentials (NDI_CLOUD_USERNAME/NDI_CLOUD_PASSWORD). Skipping cloud-dependent tests.';
+            testCase.assumeNotEmpty(username, diagMsg);
+            testCase.assumeNotEmpty(password, diagMsg);
         end
     end
 
