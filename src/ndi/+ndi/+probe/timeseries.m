@@ -63,11 +63,17 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
                         startTime = epoch_t0_out;
                     else
                         startTime = gt0_t1(i,1);
+                        if isnan(startTime)
+                            startTime = -Inf;
+                        end
                     end
                     if (i==numel(er))
                         stopTime = epoch_t1_out;
                     else
                         stopTime = gt0_t1(i,2);
+                        if isnan(stopTime)
+                            stopTime = Inf;
+                        end
                     end
                     [data_here] = ndi_probe_timeseries_obj.readtimeseriesepoch(er{i}, startTime, stopTime);
                     data = cat(1,data,data_here);
@@ -78,11 +84,17 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
                         startTime = epoch_t0_out;
                     else
                         startTime = gt0_t1(i,1);
+                        if isnan(startTime)
+                            startTime = -Inf;
+                        end
                     end
                     if (i==numel(er))
                         stopTime = epoch_t1_out;
                     else
                         stopTime = gt0_t1(i,2);
+                        if isnan(stopTime)
+                            stopTime = Inf;
+                        end
                     end
                     [data_here,t_here] = ndi_probe_timeseries_obj.readtimeseriesepoch(er{i}, startTime, stopTime);
                     t_here = t_here(:);

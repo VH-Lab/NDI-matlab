@@ -61,7 +61,9 @@ function [h, htext, stimulusData, stimulusTimeData] = stimulusTimeseries(stimulu
     stimid = options.stimid;
 
     if isempty(stimid) && isfield(stimulusData, 'stimid')
-        stimid = stimulusData.stimid;
+        for i=1:numel(stimulusData)
+            stimid = cat(1,stimid(:),stimulusData(i).stimid(:));
+        end
     end
 
     % Prepare arguments for vlt.neuro.stimulus.plot_stimulus_timeseries
