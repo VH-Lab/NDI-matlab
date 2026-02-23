@@ -35,15 +35,13 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             testCase.LocalDataset = ndi.dataset.dir('test_ds', tempFolder.Folder);
 
-            % 1a. Create an element document
-            doc_el = ndi.document('element', ...
-                'base.name', 'test_element', ...
-                'element.name', 'test_element', ...
-                'element.type', 'test', ...
+            % 1a. Create a target document (using base, which doesn't depend on anything)
+            doc_target = ndi.document('base', ...
+                'base.name', 'test_target', ...
                 'base.session_id', testCase.LocalDataset.id());
-            testCase.LocalDataset.database_add(doc_el);
+            testCase.LocalDataset.database_add(doc_target);
 
-            % 1b. Create a generic_file document that depends on the element
+            % 1b. Create a generic_file document that depends on the target
             doc1_path = fullfile(tempFolder.Folder, 'test1.txt');
             fid = fopen(doc1_path, 'w');
             fprintf(fid, 'test content 1');
@@ -56,7 +54,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 'generic_file.dateUpdated', 0, ...
                 'base.session_id', testCase.LocalDataset.id());
             doc1 = doc1.add_file('generic_file.ext', doc1_path);
-            doc1 = doc1.set_dependency_value('document_id', doc_el.id());
+            doc1 = doc1.set_dependency_value('document_id', doc_target.id(), 'ErrorIfNotFound', 0);
             testCase.LocalDataset.database_add(doc1);
 
             % 2. Create cloud dataset
@@ -119,13 +117,13 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
         function testDownloadWithDependencies(testCase)
             testCase.Narrative = "Begin testDownloadWithDependencies";
 
-            % Get ID of the element document (which doesn't have files itself)
-            q = ndi.query('base.name', 'exact_string', 'test_element');
+            % Get ID of the target document (which doesn't have files itself)
+            q = ndi.query('base.name', 'exact_string', 'test_target');
             docs = testCase.LocalDataset.database_search(q);
             testCase.fatalAssertNumElements(docs, 1);
-            elementId = docs{1}.id();
+            targetId = docs{1}.id();
 
-            % We already have doc1 (generic_file) that depends on this element.
+            % We already have doc1 (generic_file) that depends on this target.
             % Let's create another one, doc3, that also depends on it.
             doc3_path = fullfile(testCase.LocalDataset.path, 'test3.dat');
             fid = fopen(doc3_path, 'w'); fprintf(fid, 'content 3'); fclose(fid);
@@ -136,7 +134,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 'generic_file.dateUpdated', 0, ...
                 'base.session_id', testCase.LocalDataset.id());
             doc3 = doc3.add_file('generic_file.ext', doc3_path);
-            doc3 = doc3.set_dependency_value('document_id', elementId);
+            doc3 = doc3.set_dependency_value('document_id', targetId, 'ErrorIfNotFound', 0);
             testCase.LocalDataset.database_add(doc3);
 
             % Re-upload dataset to include doc3
@@ -146,10 +144,10 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             destFolder = fullfile(testCase.LocalDataset.path, 'download_test_dep');
             mkdir(destFolder);
 
-            % Call downloadGenericFiles with element ID.
-            % It should find doc1 and doc3 because they depend on the element.
+            % Call downloadGenericFiles with target ID.
+            % It should find doc1 and doc3 because they depend on the target.
             [success, ~, report] = ndi.cloud.download.downloadGenericFiles(...
-                testCase.LocalDataset, elementId, destFolder);
+                testCase.LocalDataset, targetId, destFolder);
 
             testCase.verifyTrue(success);
             testCase.verifyMember('renamed_test1.txt', report.downloaded_filenames);
