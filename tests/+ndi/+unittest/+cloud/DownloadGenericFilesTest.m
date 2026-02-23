@@ -35,13 +35,20 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             testCase.LocalDataset = ndi.dataset.dir('test_ds', tempFolder.Folder);
 
-            % Use generic_file documents
+            % 1a. Create an element document
+            doc_el = ndi.document('element', ...
+                'base.name', 'test_element', ...
+                'element.name', 'test_element', ...
+                'element.type', 'test', ...
+                'base.session_id', testCase.LocalDataset.id());
+            testCase.LocalDataset.database_add(doc_el);
+
+            % 1b. Create a generic_file document that depends on the element
             doc1_path = fullfile(tempFolder.Folder, 'test1.txt');
             fid = fopen(doc1_path, 'w');
             fprintf(fid, 'test content 1');
             fclose(fid);
 
-            % ndi.dataset doesn't have newdocument, so we call ndi.document directly
             doc1 = ndi.document('generic_file', ...
                 'base.name', 'test_doc_1', ...
                 'generic_file.filename', 'renamed_test1.txt', ...
@@ -49,14 +56,8 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 'generic_file.dateUpdated', 0, ...
                 'base.session_id', testCase.LocalDataset.id());
             doc1 = doc1.add_file('generic_file.ext', doc1_path);
+            doc1 = doc1.set_dependency_value('document_id', doc_el.id());
             testCase.LocalDataset.database_add(doc1);
-
-            % Create a document that depends on doc1
-            doc2 = ndi.document('base', ...
-                'base.name', 'dependent_doc', ...
-                'base.session_id', testCase.LocalDataset.id());
-            doc2 = doc2.set_dependency_value('document_id', doc1.id(), 'ErrorIfNotFound', 0);
-            testCase.LocalDataset.database_add(doc2);
 
             % 2. Create cloud dataset
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
@@ -118,12 +119,14 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
         function testDownloadWithDependencies(testCase)
             testCase.Narrative = "Begin testDownloadWithDependencies";
 
-            % Get ID of the dependent document (which doesn't have files itself)
-            q = ndi.query('base.name', 'exact_string', 'dependent_doc');
+            % Get ID of the element document (which doesn't have files itself)
+            q = ndi.query('base.name', 'exact_string', 'test_element');
             docs = testCase.LocalDataset.database_search(q);
             testCase.fatalAssertNumElements(docs, 1);
+            elementId = docs{1}.id();
 
-            % Let's create doc3 that depends on doc2 and is a generic_file.
+            % We already have doc1 (generic_file) that depends on this element.
+            % Let's create another one, doc3, that also depends on it.
             doc3_path = fullfile(testCase.LocalDataset.path, 'test3.dat');
             fid = fopen(doc3_path, 'w'); fprintf(fid, 'content 3'); fclose(fid);
             doc3 = ndi.document('generic_file', ...
@@ -133,7 +136,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 'generic_file.dateUpdated', 0, ...
                 'base.session_id', testCase.LocalDataset.id());
             doc3 = doc3.add_file('generic_file.ext', doc3_path);
-            doc3 = doc3.set_dependency_value('document_id', docs{1}.id(), 'ErrorIfNotFound', 0); % doc3 depends on doc2
+            doc3 = doc3.set_dependency_value('document_id', elementId);
             testCase.LocalDataset.database_add(doc3);
 
             % Re-upload dataset to include doc3
@@ -143,12 +146,15 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             destFolder = fullfile(testCase.LocalDataset.path, 'download_test_dep');
             mkdir(destFolder);
 
-            % Call downloadGenericFiles with doc2 ID. It should find doc3 because doc3 depends on doc2.
+            % Call downloadGenericFiles with element ID.
+            % It should find doc1 and doc3 because they depend on the element.
             [success, ~, report] = ndi.cloud.download.downloadGenericFiles(...
-                testCase.LocalDataset, docs{1}.id(), destFolder);
+                testCase.LocalDataset, elementId, destFolder);
 
             testCase.verifyTrue(success);
+            testCase.verifyMember('renamed_test1.txt', report.downloaded_filenames);
             testCase.verifyMember('file3.dat', report.downloaded_filenames);
+            testCase.verifyTrue(isfile(fullfile(destFolder, 'renamed_test1.txt')));
             testCase.verifyTrue(isfile(fullfile(destFolder, 'file3.dat')));
         end
 

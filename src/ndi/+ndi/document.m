@@ -708,9 +708,11 @@ classdef document
                     ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
                 elseif ~ErrorIfNotFound % add it
                     ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
+                    notfound = 0;
                 end
             elseif ~ErrorIfNotFound
                 ndi_document_obj.document_properties.depends_on = d_struct;
+                notfound = 0;
             end
 
             if notfound & ErrorIfNotFound
