@@ -141,7 +141,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
 
             % 4. List Deleted Documents
             narrative(end+1) = "VERIFICATION: Listing deleted documents.";
-            [b_list_docs, ans_list_docs] = ndi.cloud.api.documents.listDeletedDocuments(cloudDatasetID);
+            [b_list_docs, ans_list_docs] = ndi.cloud.api.documents.listDeletedDocuments(cloudDatasetID, 'pageSize', 100);
             testCase.verifyTrue(b_list_docs, "Failed to list deleted documents.");
 
             % Verify our document is in the list
@@ -167,7 +167,10 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
 
             % 6. List Deleted Datasets
             narrative(end+1) = "VERIFICATION: Listing deleted datasets.";
-            [b_list_ds, ans_list_ds] = ndi.cloud.api.datasets.listDeletedDatasets();
+
+            % Increase pageSize and add a small pause to handle potential cloud latency/pagination
+            pause(5);
+            [b_list_ds, ans_list_ds] = ndi.cloud.api.datasets.listDeletedDatasets('pageSize', 100);
             testCase.verifyTrue(b_list_ds, "Failed to list deleted datasets.");
 
             % Verify our dataset is in the list
@@ -176,10 +179,10 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
                 dss = ans_list_ds.datasets;
                 if isstruct(dss)
                     ids = {dss.id};
-                    foundDs = any(strcmp(ids, cloudDatasetID));
+                    foundDs = any(strcmp(ids, char(cloudDatasetID)));
                 elseif iscell(dss)
                     ids = cellfun(@(x) x.id, dss, 'UniformOutput', false);
-                    foundDs = any(strcmp(ids, cloudDatasetID));
+                    foundDs = any(strcmp(ids, char(cloudDatasetID)));
                 end
             end
             testCase.verifyTrue(foundDs, "Deleted dataset not found in list.");

@@ -41,14 +41,18 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             fprintf(fid, 'test content 1');
             fclose(fid);
 
-            doc1 = testCase.LocalDataset.newdocument('generic_file', ...
+            % ndi.dataset doesn't have newdocument, so we call ndi.document directly
+            doc1 = ndi.document('generic_file', ...
                 'base.name', 'test_doc_1', ...
-                'generic_file.filename', 'renamed_test1.txt');
+                'generic_file.filename', 'renamed_test1.txt', ...
+                'base.session_id', testCase.LocalDataset.id());
             doc1 = doc1.add_file('generic_file.ext', doc1_path);
             testCase.LocalDataset.database_add(doc1);
 
             % Create a document that depends on doc1
-            doc2 = testCase.LocalDataset.newdocument('base', 'base.name', 'dependent_doc');
+            doc2 = ndi.document('base', ...
+                'base.name', 'dependent_doc', ...
+                'base.session_id', testCase.LocalDataset.id());
             doc2 = doc2.set_dependency_value('document_id', doc1.id());
             testCase.LocalDataset.database_add(doc2);
 
@@ -117,24 +121,13 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             docs = testCase.LocalDataset.database_search(q);
             testCase.fatalAssertNumElements(docs, 1);
 
-            % doc1 depends on NOTHING
-            % doc2 depends on doc1
-            % findalldependencies(doc1) -> returns [doc2]
-            % findalldependencies(doc2) -> returns []
-
-            % The user wants: allDocuments = docinput2docs(doc2_id) -> returns doc2
-            % allDependentDocs = findalldependencies(doc2) -> returns things that depend on doc2.
-
-            % If the user wants to find doc1 given doc2, they should use findallantecedents.
-            % But they explicitly said findalldependencies.
-            % So I must ensure my test follows THEIR logic.
-
             % Let's create doc3 that depends on doc2 and is a generic_file.
             doc3_path = fullfile(testCase.LocalDataset.path, 'test3.dat');
             fid = fopen(doc3_path, 'w'); fprintf(fid, 'content 3'); fclose(fid);
-            doc3 = testCase.LocalDataset.newdocument('generic_file', ...
+            doc3 = ndi.document('generic_file', ...
                 'base.name', 'test_doc_3', ...
-                'generic_file.filename', 'file3.dat');
+                'generic_file.filename', 'file3.dat', ...
+                'base.session_id', testCase.LocalDataset.id());
             doc3 = doc3.add_file('generic_file.ext', doc3_path);
             doc3 = doc3.set_dependency_value('document_id', docs{1}.id()); % doc3 depends on doc2
             testCase.LocalDataset.database_add(doc3);
