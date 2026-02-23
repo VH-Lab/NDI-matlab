@@ -724,8 +724,23 @@ classdef syncgraph < ndi.ido
             D = distances(ginfo.diG,sourcenodeindex,destinationnodeindexes);
             indexes = find(~isinf(D));
             if numel(indexes)>1
-                [minDistance,minIndex] = min(D);
-                indexes = indexes(minIndex);
+                minDist = min(D);
+                indexes = indexes(D==minDist);
+                if numel(indexes)>1
+                    % there can only be one
+                    candidateNodes = ginfo.nodes(indexes);
+                    [sorted,sortOrder] = sort({candidateNodes.epoch_id});
+                    if isinf(t_in) && (t_in>0)
+                        indexes = indexes(sortOrder(end));
+                    elseif isinf(t_in) && (t_in<0)
+                        indexes = indexes(sortOrder(1));
+                    elseif t_in==0
+                        indexes = indexes(sortOrder(1));
+                    else
+                        msg = 'Too many paths, do not yet know which to choose. (Report a bug in syncgraph please.)'
+                        return;
+                    end
+                end
             elseif numel(indexes)==0
                 msg = 'Cannot get there from here, no path';
                 return;
