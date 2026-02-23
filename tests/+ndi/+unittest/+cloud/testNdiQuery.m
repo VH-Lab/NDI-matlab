@@ -51,7 +51,7 @@ classdef testNdiQuery < matlab.unittest.TestCase
 
              % Clean up remote
             if ~ismissing(testCase.DatasetID)
-                [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID);
+                [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID, 'when', 'now');
                 if ~b
                     warning("Failed to delete dataset " + testCase.DatasetID);
                 end
