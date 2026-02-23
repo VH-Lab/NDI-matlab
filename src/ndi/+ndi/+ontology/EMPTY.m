@@ -16,18 +16,35 @@ classdef EMPTY < ndi.ontology
 
         function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name_fragment)
             % lookupTermOrID - Search with failover from Main (XML) to Dev (Functional)
+            mainError = [];
             try
                 [id, name, definition, synonyms] = obj.performRemoteLookup(obj.OWL_URL_MAIN, term_or_id_or_name_fragment);
                 return; 
-            catch
-                fprintf('Term "%s" not found in MAIN (XML). Checking DEVELOPMENT (Functional Syntax)...\n', term_or_id_or_name_fragment);
+            catch ME
+                mainError = ME;
             end
+
+            % If we are here, MAIN lookup failed (TermNotFound or connection issue).
+            % Try the DEVELOPMENT branch, but only if it exists.
 
             try
                 [id, name, definition, synonyms] = obj.performRemoteLookup(obj.OWL_URL_DEV, term_or_id_or_name_fragment);
+                return;
             catch ME
+                % If DEV branch doesn't exist (404), skip it and return original error or a clean failure.
+                % GitHub raw URLs return "404: Not Found" for missing branches.
+                is404 = contains(ME.message, '404') || contains(ME.message, 'Not Found');
+
+                if is404
+                    if ~isempty(mainError), throw(mainError);
+                    else, error('ndi:ontology:EMPTY:LookupFailed', 'EMPTY lookup failed for "%s".', term_or_id_or_name_fragment);
+                    end
+                end
+
+                % If it was some other error (e.g., TermNotFound in DEV), combine them
                 baseME = MException('ndi:ontology:EMPTY:LookupFailed', ...
-                    'EMPTY lookup failed for "%s" in both branches.', term_or_id_or_name_fragment);
+                    'EMPTY lookup failed for "%s" in both MAIN and DEVELOPMENT branches.', term_or_id_or_name_fragment);
+                if ~isempty(mainError), baseME = addCause(baseME, mainError); end
                 baseME = addCause(baseME, ME);
                 throw(baseME);
             end
@@ -103,17 +120,59 @@ classdef EMPTY < ndi.ontology
         end
 
         function [id, name, definition, synonyms] = parseXMLFormat(obj, xml_string, fragment)
-            % (Original xmlread logic goes here)
-            temp_file = [tempname '.owl'];
-            fid = fopen(temp_file, 'w', 'n', 'UTF-8');
-            fprintf(fid, '%s', xml_string);
-            fclose(fid);
-            xDoc = xmlread(temp_file);
-            delete(temp_file);
+            % parseXMLFormat - Robust Regex-based parser for OWL/XML
+            id = ''; name = ''; definition = ''; synonyms = {};
+
+            % Extract Class blocks using a regex that handles newlines and attributes
+            class_blocks = regexp(xml_string, '(?s)<owl:Class\s+rdf:about=["'']([^"'']*)["'']>(.*?)</owl:Class>', 'tokens');
             
-            % ... [Rest of your original XML search loop] ...
-            % [Note: Ensure this handles found/not found correctly]
-            id = ''; % Placeholder for your existing code
+            found = false;
+            for i = 1:length(class_blocks)
+                about_url = class_blocks{i}{1};
+                content = class_blocks{i}{2};
+
+                % Extract numeric ID from URL (e.g., .../EMPTY_0000001)
+                id_tokens = regexp(about_url, 'EMPTY_(\d+)', 'tokens');
+                if isempty(id_tokens), continue; end
+                thisId = id_tokens{1}{1};
+
+                % Extract Label: <rdfs:label ...>Label Text</rdfs:label>
+                % Handle potential xml:lang or other attributes
+                label_match = regexp(content, '(?s)<rdfs:label[^>]*>(.*?)</rdfs:label>', 'tokens');
+                thisName = '';
+                if ~isempty(label_match), thisName = obj.unescapeXML(label_match{1}{1}); end
+
+                % Check for match: numeric ID match or exact label match
+                if strcmpi(thisId, fragment) || strcmpi(thisName, fragment)
+                    id = [obj.ONTOLOGY_PREFIX ':' thisId];
+                    name = thisName;
+
+                    % Extract Definition: <obo:IAO_0000115>...</obo:IAO_0000115>
+                    def_match = regexp(content, '(?s)<obo:IAO_0000115[^>]*>(.*?)</obo:IAO_0000115>', 'tokens');
+                    if ~isempty(def_match), definition = obj.unescapeXML(def_match{1}{1}); end
+
+                    % Extract Synonyms: <oboInOwl:hasExactSynonym ...>...</oboInOwl:hasExactSynonym>
+                    syn_matches = regexp(content, '(?s)<oboInOwl:has(?:Exact|Related)Synonym[^>]*>(.*?)</oboInOwl:has(?:Exact|Related)Synonym>', 'tokens');
+                    synonyms = cellfun(@(x) obj.unescapeXML(x{1}), syn_matches, 'UniformOutput', false);
+
+                    found = true;
+                    break;
+                end
+            end
+
+            if ~found, error('TermNotFound', 'Term "%s" not found in XML format.', fragment); end
+        end
+
+        function str = unescapeXML(obj, str)
+            % unescapeXML - Helper to handle common XML entities in labels/definitions
+            str = strrep(str, '&apos;', '''');
+            str = strrep(str, '&quot;', '"');
+            str = strrep(str, '&amp;', '&');
+            str = strrep(str, '&lt;', '<');
+            str = strrep(str, '&gt;', '>');
+            % Remove any remaining tags if they somehow leaked in
+            str = regexprep(str, '<[^>]*>', '');
+            str = strtrim(str);
         end
     end 
 end
