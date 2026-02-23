@@ -55,7 +55,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             doc2 = ndi.document('base', ...
                 'base.name', 'dependent_doc', ...
                 'base.session_id', testCase.LocalDataset.id());
-            doc2 = doc2.set_dependency_value('document_id', doc1.id());
+            doc2 = doc2.set_dependency_value('document_id', doc1.id(), 'ErrorIfNotFound', 0);
             testCase.LocalDataset.database_add(doc2);
 
             % 2. Create cloud dataset
@@ -133,7 +133,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
                 'generic_file.dateUpdated', 0, ...
                 'base.session_id', testCase.LocalDataset.id());
             doc3 = doc3.add_file('generic_file.ext', doc3_path);
-            doc3 = doc3.set_dependency_value('document_id', docs{1}.id()); % doc3 depends on doc2
+            doc3 = doc3.set_dependency_value('document_id', docs{1}.id(), 'ErrorIfNotFound', 0); % doc3 depends on doc2
             testCase.LocalDataset.database_add(doc3);
 
             % Re-upload dataset to include doc3
