@@ -52,3 +52,6 @@ nav:
         - 7. Submitting your data to an archive: 'NDI-matlab/tutorials/archive.md'
         - 8. Search and analyze NDI databases on the web: 'NDI-matlab/tutorials/search_ndi_databases.md'
     - Document reference:
+    - 5 Manual:
+      - Developer Manual:
+        - Cloud: 'manual/developer/cloud.md'

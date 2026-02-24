@@ -185,6 +185,7 @@
             - ndi.cloud.download.datasetDocuments: 'NDI-matlab/reference/+ndi/+cloud/+download/datasetDocuments.m.md'
             - ndi.cloud.download.downloadDatasetFiles: 'NDI-matlab/reference/+ndi/+cloud/+download/downloadDatasetFiles.m.md'
             - ndi.cloud.download.downloadDocumentCollection: 'NDI-matlab/reference/+ndi/+cloud/+download/downloadDocumentCollection.m.md'
+            - ndi.cloud.download.downloadGenericFiles: 'NDI-matlab/reference/+ndi/+cloud/+download/downloadGenericFiles.m.md'
             - ndi.cloud.download.jsons2documents: 'NDI-matlab/reference/+ndi/+cloud/+download/jsons2documents.m.md'
           - sync PACKAGE:
             - ndi.cloud.sync.SyncOptions: 'NDI-matlab/reference/+ndi/+cloud/+sync/SyncOptions.m.md'
@@ -225,6 +226,7 @@
           - metadatareader PACKAGE:
             - ndi.daq.metadatareader.NewStimStims: 'NDI-matlab/reference/+ndi/+daq/+metadatareader/NewStimStims.m.md'
             - ndi.daq.metadatareader.NielsenLabStims: 'NDI-matlab/reference/+ndi/+daq/+metadatareader/NielsenLabStims.m.md'
+            - ndi.daq.metadatareader.VHAudreyBPod: 'NDI-matlab/reference/+ndi/+daq/+metadatareader/VHAudreyBPod.m.md'
           - reader PACKAGE:
             - ndi.daq.reader.mfdaq: 'NDI-matlab/reference/+ndi/+daq/+reader/mfdaq.m.md'
             - mfdaq PACKAGE:
@@ -473,6 +475,7 @@
           - plot PACKAGE:
             - ndi.fun.plot.bar3: 'NDI-matlab/reference/+ndi/+fun/+plot/bar3.m.md'
             - ndi.fun.plot.multichan: 'NDI-matlab/reference/+ndi/+fun/+plot/multichan.m.md'
+            - ndi.fun.plot.stimulusTimeseries: 'NDI-matlab/reference/+ndi/+fun/+plot/stimulusTimeseries.m.md'
           - probe PACKAGE:
             - ndi.fun.probe.location: 'NDI-matlab/reference/+ndi/+fun/+probe/location.m.md'
           - session PACKAGE:
@@ -512,6 +515,7 @@
         - ontology PACKAGE:
           - ndi.ontology.CHEBI: 'NDI-matlab/reference/+ndi/+ontology/CHEBI.m.md'
           - ndi.ontology.CL: 'NDI-matlab/reference/+ndi/+ontology/CL.m.md'
+          - ndi.ontology.EDAM: 'NDI-matlab/reference/+ndi/+ontology/EDAM.m.md'
           - ndi.ontology.EFO: 'NDI-matlab/reference/+ndi/+ontology/EFO.m.md'
           - ndi.ontology.EMPTY: 'NDI-matlab/reference/+ndi/+ontology/EMPTY.m.md'
           - ndi.ontology.NCBITaxon: 'NDI-matlab/reference/+ndi/+ontology/NCBITaxon.m.md'
@@ -581,6 +585,7 @@
               - ndi.setup.conv.haley.SubjectInformationCreator: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/SubjectInformationCreator.m.md'
               - ndi.setup.conv.haley.createSubjectInformation: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/createSubjectInformation.m.md'
               - ndi.setup.conv.haley.doImport: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/doImport.m.md'
+              - ndi.setup.conv.haley.nansen_demo: 'NDI-matlab/reference/+ndi/+setup/+conv/+haley/nansen_demo.m.md'
             - hunsberger PACKAGE:
               - ndi.setup.conv.hunsberger.SubjectInformationCreator: 'NDI-matlab/reference/+ndi/+setup/+conv/+hunsberger/SubjectInformationCreator.m.md'
               - ndi.setup.conv.hunsberger.TreatmentCreator: 'NDI-matlab/reference/+ndi/+setup/+conv/+hunsberger/TreatmentCreator.m.md'
@@ -621,6 +626,7 @@
             - reader PACKAGE:
               - mfdaq PACKAGE:
                 - stimulus PACKAGE:
+                  - ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPod: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/VHAudreyBPod.m.md'
                   - ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/angelucci_visstim.m.md'
                   - ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisintan: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/nielsenvisintan.m.md'
                   - ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m.md'
@@ -722,7 +728,7 @@
             - ndi.time.fun.samples2times: 'NDI-matlab/reference/+ndi/+time/+fun/samples2times.m.md'
             - ndi.time.fun.times2samples: 'NDI-matlab/reference/+ndi/+time/+fun/times2samples.m.md'
           - syncrule PACKAGE:
-            - ndi.time.syncrule.commontriggers: 'NDI-matlab/reference/+ndi/+time/+syncrule/commontriggers.m.md'
+            - ndi.time.syncrule.commonTriggersOverlappingEpochs: 'NDI-matlab/reference/+ndi/+time/+syncrule/commonTriggersOverlappingEpochs.m.md'
             - ndi.time.syncrule.filefind: 'NDI-matlab/reference/+ndi/+time/+syncrule/filefind.m.md'
             - ndi.time.syncrule.filematch: 'NDI-matlab/reference/+ndi/+time/+syncrule/filematch.m.md'
         - util PACKAGE:
