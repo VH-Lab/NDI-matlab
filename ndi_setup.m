@@ -1,6 +1,6 @@
 function ndi_setup(options)
     
-    arguments
+    arguments 
         options.InstallationLocation (1,1) string = missing 
         options.UseGit (1,1) logical = true % Todo
         options.InstallationMode (1,1) string ...
