@@ -177,10 +177,10 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
                 dss = ans_list_ds.datasets;
                 if isstruct(dss)
                     ids = {dss.id};
-                    foundDs = any(strcmp(ids, cloudDatasetID));
+                    foundDs = any(strcmp(ids, char(cloudDatasetID)));
                 elseif iscell(dss)
                     ids = cellfun(@(x) x.id, dss, 'UniformOutput', false);
-                    foundDs = any(strcmp(ids, cloudDatasetID));
+                    foundDs = any(strcmp(ids, char(cloudDatasetID)));
                 end
             end
 
