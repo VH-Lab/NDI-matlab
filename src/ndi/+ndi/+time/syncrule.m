@@ -150,14 +150,16 @@ classdef syncrule < ndi.ido & ndi.documentservice
             ies = {}; %
         end % ineligibleepochsets
 
-        function [cost,mapping] = apply(ndi_syncrule_obj, epochnode_a, epochnode_b)
+        function [cost,mapping] = apply(ndi_syncrule_obj, epochnode_a, epochnode_b, daqsystem1)
             % APPLY - apply an ndi.time.syncrule to obtain a cost and ndi.time.timemapping between two ndi.epoch.epochset objects
             %
-            % [COST, MAPPING] = APPLY(NDI_SYNCRULE_OBJ, EPOCHNODE_A, EPOCHNODE_B)
+            % [COST, MAPPING] = APPLY(NDI_SYNCRULE_OBJ, EPOCHNODE_A, EPOCHNODE_B, DAQSYSTEM1)
             %
             % Given an ndi.time.syncrule object and two epochnodes returned from ndi.epoch.epochset/EPOCHNODES
             % this function attempts to identify whether a time synchronization can be made across
             % these epoch nodes. If so, a cost COST and an ndi.time.timemapping object MAPPING is returned.
+            %
+            % DAQSYSTEM1 is the ndi.daq.system object corresponding to EPOCHNODE_A.
             %
             % Otherwise, COST and MAPPING are empty.
             %

@@ -70,5 +70,44 @@ classdef timemapping
             t_out = polyval(ndi_timemapping_obj.mapping, t_in);
         end % map
 
+        function tm = reverse(ndi_timemapping_obj)
+            % REVERSE - return the reverse mapping (b -> a)
+            %
+            % TM = REVERSE(NDI_TIMEMAPPING_OBJ)
+            %
+            % Returns the reverse mapping, if possible.
+            %
+            % If the mapping is a polynomial of order > 1, an error is returned.
+            % If the mapping is a polynomial of order 1 (linear), the reverse mapping
+            % is calculated.
+            %
+            % If the mapping has length 2 (linear), say P = [m b], then
+            % y = m*x + b => x = (y - b)/m = (1/m)*y - (b/m).
+            % So the reverse mapping is [1/m -b/m].
+            %
+            % See also: POLYVAL
+            %
+            if numel(ndi_timemapping_obj.mapping) > 2
+                error('ndi:time:timemapping:reverse:tooManyCoefficients', ...
+                    'Only linear mappings are supported for now.');
+            end
+
+            p = ndi_timemapping_obj.mapping;
+
+            if numel(p) == 1
+                error('ndi:time:timemapping:reverse:zeroSlope', ...
+                    'Constant mapping cannot be reversed.');
+            elseif numel(p) == 2
+                if p(1) == 0
+                    error('ndi:time:timemapping:reverse:zeroSlope', ...
+                        'Slope is zero, mapping cannot be reversed.');
+                end
+                tm = ndi.time.timemapping([1/p(1) -p(2)/p(1)]);
+            else
+                error('ndi:time:timemapping:reverse:emptyMapping', ...
+                    'Empty mapping cannot be reversed.');
+            end
+        end % reverse
+
     end % methods
 end % class ndi.time.timemapping

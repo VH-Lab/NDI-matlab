@@ -39,7 +39,7 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
     methods (Access = private)
         function deleteRemoteDataset(testCase)
             if ~ismissing(testCase.cloudDatasetId)
-                ndi.cloud.api.datasets.deleteDataset(testCase.cloudDatasetId);
+                ndi.cloud.api.datasets.deleteDataset(testCase.cloudDatasetId, 'when', 'now');
             end
         end
 

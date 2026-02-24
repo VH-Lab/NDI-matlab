@@ -353,14 +353,14 @@ classdef mfdaq < ndi.daq.reader
                     data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
                     time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
                     if any(strcmp(channeltype{i},{'dep','dimp'})) % look for 0 to 1 transitions
-                        transitions_on_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
+                        transitions_on_samples = 1 + find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         if strcmp(channeltype{i},'dimp')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         else
                             transitions_off_samples = [];
                         end
                     elseif any(strcmp(channeltype{i},{'den','dimn'})) % look for 1 to 0 transitions
-                        transitions_on_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
+                        transitions_on_samples = 1 + find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         if strcmp(channeltype{i},'dimp')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         else
@@ -435,14 +435,14 @@ classdef mfdaq < ndi.daq.reader
                     data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
                     time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
                     if any(strcmp(channeltype{i},{'dep','dimp'})) % look for 0 to 1 transitions
-                        transitions_on_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
+                        transitions_on_samples = 1 + find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         if strcmp(channeltype{i},'dimp')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         else
                             transitions_off_samples = [];
                         end
                     elseif any(strcmp(channeltype{i},{'den','dimn'})) % look for 1 to 0 transitions
-                        transitions_on_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
+                        transitions_on_samples = 1 + find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
                         if strcmp(channeltype{i},'dimp')
                             transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
                         else

@@ -80,7 +80,7 @@ classdef DatasetsTest < matlab.unittest.TestCase
             % --- 2. Delete the created dataset ---
             
             narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.deleteDataset with the new ID.";
-            [b_delete, answer_delete, apiResponse_delete, apiURL_delete] = ndi.cloud.api.datasets.deleteDataset(cloudDatasetID);
+            [b_delete, answer_delete, apiResponse_delete, apiURL_delete] = ndi.cloud.api.datasets.deleteDataset(cloudDatasetID, 'when', 'now');
             narrative(end+1) = "Attempted to call API with URL " + string(apiURL_delete);
             
             narrative(end+1) = "Testing: Verifying the API call was successful (APICallSuccessFlag should be true).";
