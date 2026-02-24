@@ -20,3 +20,4 @@ Neuroscience Data Interface - A means of specifying and accessing neuroscience d
 Please post issues to [the issues page on GitHub](https://github.com/VH-Lab/NDI-matlab/issues)
 
 We have an RRID now: RRID:SCR_023368
+ 
