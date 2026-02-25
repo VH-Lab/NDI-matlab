@@ -1,8 +1,8 @@
 {
 	"classname": "pyraview",
-	"superclasses":  [ "epochclocktimes", "filter" ],
+	"superclasses":  [ "epochclocktimes", "filter" , "base", "epochid"],
 	"depends_on": [
-		{ "name": "elementID", "mustbenotempty": 1}
+		{ "name": "element_id", "mustbenotempty": 1}
 	],
 	"file": [
 		{"name": "level1.bin", "mustbenotempty": 0},
@@ -74,7 +74,7 @@
 			"documentation": "Vector of decimation sampling rates (doubles)."
 		},
 		{
-			"name": "decimationStartTime",
+			"name": "decimationStartTimes",
 			"type": "matrix",
 			"default_value": "",
 			"parameters": [1,NaN],

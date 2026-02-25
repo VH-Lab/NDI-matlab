@@ -27,6 +27,6 @@
 			"dataType":					"",
 			"decimationLevels":				[],
 			"decimationSamplingRates":			[],
-			"decimationStartTime":				[]
+			"decimationStartTimes":				[]
 	}
 }

@@ -44,13 +44,13 @@ Vector of levels (integers).
 
 Vector of rates (doubles).
 
-### decimationStartTime
+### decimationStartTimes
 
 Vector of decimation start times (doubles).
 
 ## Dependencies
 
-* **elementID**: The ID of the element this pyraview is associated with.
+* **element_id**: The ID of the element this pyraview is associated with.
 
 ## Files
 
