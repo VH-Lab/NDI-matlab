@@ -29,7 +29,7 @@
 			"name": "nativeRate",
 			"type": "double",
 			"default_value": "",
-			"parameters": "",
+			"parameters": [0,1e15,1,1],
 			"queryable": 1,
 			"documentation": "Native sampling rate."
 		},
@@ -37,7 +37,7 @@
 			"name": "nativeStartTime",
 			"type": "double",
 			"default_value": "",
-			"parameters": "",
+			"parameters": [-1e15,1e15,0,0],
 			"queryable": 1,
 			"documentation": "Native start time (t0)."
 		},
@@ -45,7 +45,7 @@
 			"name": "channels",
 			"type": "integer",
 			"default_value": "",
-			"parameters": "",
+			"parameters": [0,1e15,0,0],
 			"queryable": 1,
 			"documentation": "Number of channels in the probe."
 		},
