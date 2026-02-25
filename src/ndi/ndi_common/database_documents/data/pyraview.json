@@ -11,7 +11,7 @@
 		]
 	},
 	"depends_on": [
-		{ "name": "elementID", "value": "" }
+		{ "name": "element_id", "value": "" }
 	],
 	"files": {
 		"file_list": [
