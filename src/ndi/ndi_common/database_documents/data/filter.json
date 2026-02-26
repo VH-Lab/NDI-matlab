@@ -10,6 +10,7 @@
 		]
 	},
 	"filter" : {
+                        "label":                                        "",
 			"type":						"",
 			"algorithm":					"",
 			"parameters":					""

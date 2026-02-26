@@ -4,6 +4,14 @@
 	"depends_on": [ ],
 	"file": [ ],
 	"filter": [
+                 {
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A user label"
+		},
 		{
 			"name": "type",
 			"type": "string",
