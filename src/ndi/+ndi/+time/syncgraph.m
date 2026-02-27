@@ -723,6 +723,7 @@ classdef syncgraph < ndi.ido
             % STEP 3: are there any paths from our source to any of the candidate destinations?
             D = distances(ginfo.diG,sourcenodeindex,destinationnodeindexes);
             indexes = find(~isinf(D));
+            D = find(~isinf(D));
             if numel(indexes)>1
                 minDist = min(D);
                 indexes = indexes(D==minDist);
