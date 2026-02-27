@@ -9,6 +9,9 @@
 			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
+	"depends_on": [
+		{ "name": "document_id", "value": "" }
+	],
 	"ontologyTableRow" : {
 			"names":					"",
 			"variableNames":					"",

@@ -124,12 +124,14 @@ classdef tableDocMaker < handle
                 obj
                 tableRow (1,:) table % Input is a single table row
                 identifyingVariables {mustBeText}
+                options.dependencyVariable {mustBeTextScalar} = ''
                 options.Overwrite (1,1) logical = false
                 options.OldDocs cell = {NaN}
             end
 
             % Ensure identifyingVariables is a cell array
             identifyingVariables = cellstr(identifyingVariables);
+            dependencyVariable = char(options.dependencyVariable);
 
             % Search for existing document(s)
             if isempty(options.OldDocs)| isa(options.OldDocs{1},'ndi.document')
@@ -173,6 +175,7 @@ classdef tableDocMaker < handle
 
             % Get variable (column) names from table
             varNames = tableRow.Properties.VariableNames;
+            varNames(strcmp(varNames,options.dependencyVariable)) = [];
 
             % Initialize ontologyTableRow field names
             names = cell(numel(varNames),1); variableNames = cell(numel(varNames),1);
@@ -228,6 +231,15 @@ classdef tableDocMaker < handle
             doc = ndi.document('ontologyTableRow','ontologyTableRow',ontologyTableRow) + ...
                 obj.session.newdocument();
 
+            % Add dependency (if applicable)
+            if ~isempty(dependencyVariable)
+                value = tableRow.(dependencyVariable);
+                if isa(value,'cell')
+                    value = value{1};
+                end
+                doc = doc.set_dependency_value('document_id',value);
+            end
+
         end % createOntologyTableRowDoc
 
         function docs = table2ontologyTableRowDocs(obj, dataTable, identifyingVariables, options)
@@ -264,6 +276,7 @@ classdef tableDocMaker < handle
                 obj
                 dataTable table
                 identifyingVariables {mustBeText}
+                options.DependencyVariable {mustBeTextScalar} = ''
                 options.Overwrite (1,1) logical = false
             end
 
@@ -322,7 +335,7 @@ classdef tableDocMaker < handle
                 % Create ontologyTableRowDoc
                 [docs{i},inDatabase(i)] = createOntologyTableRowDoc(obj, dataTable(i,:), ...
                     identifyingVariables,'Overwrite',options.Overwrite,...
-                    'OldDocs',OldDocs);
+                    'DependencyVariable',options.DependencyVariable,'OldDocs',OldDocs);
 
                 % Update progress bar
                 if mod(i,onePercent)==1 || onePercent == 1 % update every 1% so it doesn't slow down the process too much
