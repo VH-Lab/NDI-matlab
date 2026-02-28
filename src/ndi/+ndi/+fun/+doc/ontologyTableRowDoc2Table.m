@@ -1,4 +1,4 @@
-function [dataTables,docIDs] = ontologyTableRowDoc2Table(tableRowDoc,options)
+function [dataTables,docIDs,sessionIDs,dependencyIDs] = ontologyTableRowDoc2Table(tableRowDoc,options)
 %ONTOLOGYTABLEROWDOC2TABLE Converts NDI ontologyTableRow documents to MATLAB tables.
 %
 %   [dataTables, docIDs] = ONTOLOGYTABLEROWDOC2TABLE(tableRowDoc)
@@ -49,6 +49,8 @@ end
 tableRows = cell(size(tableRowDoc));
 variableNames = cell(size(tableRowDoc));
 docID = cell(size(tableRowDoc));
+sessionID = cell(size(tableRowDoc));
+dependencyID = cell(size(tableRowDoc));
 
 % Loop through each document provided
 for i = 1:numel(tableRowDoc)
@@ -56,20 +58,28 @@ for i = 1:numel(tableRowDoc)
     tableRows{i} = vlt.data.flattenstruct2table(tableRowDoc{i}.document_properties.ontologyTableRow.data);
     variableNames{i} = tableRowDoc{i}.document_properties.ontologyTableRow.variableNames;
     docID{i} = tableRowDoc{i}.id;
+    sessionID{i} = tableRowDoc{i}.document_properties.base.session_id;  
+    dependencyID{i} = tableRowDoc{i}.dependency_value('document_id');
 end
 
 if options.StackAll
     % Vertically stack all the individual tables into a single output table
     dataTables = {ndi.fun.table.vstack(tableRows)};
     docIDs = {docID};
+    sessionIDs = {sessionID};
+    dependencyIDs = {dependencyID};
 else
     % Vertically stack all the tables by common variables
     [varNames,~,indGroup] = unique(variableNames);
     dataTables = cell(numel(varNames),1);
     docIDs = cell(numel(varNames),1);
+    sessionIDs = cell(numel(varNames),1);
+    dependencyIDs = cell(numel(varNames),1);
     for i = 1:numel(varNames)
         dataTables{i} = ndi.fun.table.vstack(tableRows(indGroup == i));
         docIDs{i} = docID(indGroup == i);
+        sessionIDs{i} = sessionID(indGroup == i);
+        dependencyIDs{i} = dependencyID(indGroup == i);
     end
 end
 
