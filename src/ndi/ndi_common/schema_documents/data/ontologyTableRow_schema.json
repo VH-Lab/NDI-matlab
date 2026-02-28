@@ -1,7 +1,9 @@
 {
 	"classname": "ontologyTableRow",
 	"superclasses":  [ "base" ],
-	"depends_on": [ ],
+	"depends_on": [ 
+		{ "name": "document_id", "mustbenotempty": 0}
+	],
 	"file": [ ],
 	"ontologyTableRow": [
 		{
