@@ -573,6 +573,51 @@ classdef syncgraph < ndi.ido
 
         end % removeepoch
 
+        function plot(ndi_syncgraph_obj, options)
+            % PLOT - plot the synchronization graph
+            %
+            % PLOT(NDI_SYNCGRAPH_OBJ, ...)
+            %
+            % Plots the directed graph of epoch nodes and mapping rules.
+            % Node names are determined by ndi.epoch.fun.epochNodeName.
+            % Underscores in node names are escaped to prevent LaTeX interpretation.
+            % Identity connectivity (self-loops) is removed for visual clarity.
+            %
+            % This function takes optional name/value pair arguments:
+            %   'Layout' (default: 'auto')
+            %   The layout style passed to the digraph plot function.
+            %
+
+            arguments
+                ndi_syncgraph_obj
+                options.Layout = 'auto';
+            end
+
+            ginfo = ndi_syncgraph_obj.graphinfo();
+
+            node_names = ndi.epoch.fun.epochNodeName(ginfo.nodes);
+
+            for i=1:numel(node_names)
+                node_names{i} = strrep(node_names{i}, '_', '\_');
+            end
+
+            G = ginfo.diG;
+
+            % Remove identity connectivity (self-loops) before setting Name (EndNodes is numeric here)
+            if ~isempty(G.Edges)
+                self_loop_idx = find(G.Edges.EndNodes(:,1) == G.Edges.EndNodes(:,2));
+                G = rmedge(G, self_loop_idx);
+            end
+
+            G.Nodes.Name = node_names(:);
+
+            figure;
+            plot(G, 'Layout', options.Layout);
+            title_str = [ndi_syncgraph_obj.session.reference ' syncgraph'];
+            title(strrep(title_str, '_', '\_'));
+
+        end % plot()
+
         function [t_out, timeref_out, msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
             % TIME_CONVERT - convert time from one ndi.time.timereference to another
             %
@@ -723,7 +768,7 @@ classdef syncgraph < ndi.ido
             % STEP 3: are there any paths from our source to any of the candidate destinations?
             D = distances(ginfo.diG,sourcenodeindex,destinationnodeindexes);
             indexes = find(~isinf(D));
-            D = find(~isinf(D));
+            D = D(find(~isinf(D)));
             if numel(indexes)>1
                 minDist = min(D);
                 indexes = indexes(D==minDist);
