@@ -602,11 +602,14 @@ classdef syncgraph < ndi.ido
             end
 
             G = ginfo.diG;
-            G.Nodes.Name = node_names(:);
 
-            % Remove identity connectivity (self-loops)
-            self_loop_idx = find(G.Edges.EndNodes(:,1) == G.Edges.EndNodes(:,2));
-            G = rmedge(G, self_loop_idx);
+            % Remove identity connectivity (self-loops) before setting Name (EndNodes is numeric here)
+            if ~isempty(G.Edges)
+                self_loop_idx = find(G.Edges.EndNodes(:,1) == G.Edges.EndNodes(:,2));
+                G = rmedge(G, self_loop_idx);
+            end
+
+            G.Nodes.Name = node_names(:);
 
             figure;
             plot(G, 'Layout', options.Layout);

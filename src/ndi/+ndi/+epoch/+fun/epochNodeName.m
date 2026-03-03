@@ -26,6 +26,11 @@ arguments
     options.singlularResponseIsNotCell logical = false
 end
 
+if isempty(epochnodes)
+    names = {};
+    return;
+end
+
 names = cell(1, numel(epochnodes));
 
 for i = 1:numel(epochnodes)
