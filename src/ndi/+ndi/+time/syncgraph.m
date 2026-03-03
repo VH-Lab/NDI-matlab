@@ -573,6 +573,27 @@ classdef syncgraph < ndi.ido
 
         end % removeepoch
 
+        function plot(ndi_syncgraph_obj)
+            % PLOT - plot the synchronization graph
+            %
+            % PLOT(NDI_SYNCGRAPH_OBJ)
+            %
+            % Plots the directed graph of epoch nodes and mapping rules.
+            % Node names are determined by ndi.epoch.fun.epochNodeName.
+            %
+            ginfo = ndi_syncgraph_obj.graphinfo();
+
+            node_names = ndi.epoch.fun.epochNodeName(ginfo.nodes);
+
+            G = ginfo.diG;
+            G.Nodes.Name = node_names(:);
+
+            figure;
+            plot(G);
+            title([ndi_syncgraph_obj.session.reference ' syncgraph']);
+
+        end % plot()
+
         function [t_out, timeref_out, msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
             % TIME_CONVERT - convert time from one ndi.time.timereference to another
             %
