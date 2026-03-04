@@ -96,10 +96,13 @@ while ~all(file_processed)
             end
 
             % --- Batching Logic ---
-            if (current_batch_size + file_bytes <= size_limit)
+            if (current_batch_size + file_bytes <= size_limit) || isempty(files_for_current_batch)
                 files_for_current_batch{end+1} = file_path;
                 current_batch_size = current_batch_size + file_bytes;
                 indices_for_current_batch(end+1) = i;
+                if current_batch_size >= size_limit
+                    break;
+                end
             end
         end
     end
@@ -120,19 +123,6 @@ while ~all(file_processed)
         end
     else
         % No files could be added to a batch, break to avoid infinite loop
-        % This might happen if a single file is larger than the size limit
-        unprocessed_files = files_to_process(~file_processed);
-        for k = 1:numel(unprocessed_files)
-            if unprocessed_files(k).bytes > size_limit
-                warning('File %s (UID: %s) is larger than the size limit and cannot be uploaded.', unprocessed_files(k).name, unprocessed_files(k).uid);
-                skipped_files{end+1} = unprocessed_files(k);
-
-                % find the original index to mark it as processed
-                original_index = find(arrayfun(@(x) strcmp(x.uid, unprocessed_files(k).uid), files_to_process));
-                file_processed(original_index) = true;
-            end
-        end
-
         % If there are still unprocessed files, it's an unexpected state
         if ~all(file_processed)
             msg = 'An unexpected error occurred: unable to process remaining files.';
