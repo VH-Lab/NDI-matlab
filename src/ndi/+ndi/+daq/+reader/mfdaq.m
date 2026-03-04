@@ -549,7 +549,12 @@ classdef mfdaq < ndi.daq.reader
             % strings the same length as the vector CHANNEL.
             % If CHANNELTYPE is a single string, then it is assumed that
             % that CHANNELTYPE applies to every entry of CHANNEL.
-            sr = []; % abstract class;
+                if iscell(channel)
+                    N = numel(channel);
+                else
+                    N = 1;
+                end
+                sr = NaN(N,1);
         end % samplerate()
 
         % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
