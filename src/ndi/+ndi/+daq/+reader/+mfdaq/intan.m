@@ -271,7 +271,11 @@ classdef intan < ndi.daq.reader.mfdaq
             for i=1:numel(channel)
                 channeltype_here = vlt.data.celloritem(channeltype,i);
                 freq_fieldname = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
-                sr(i) = getfield(head.frequency_parameters,freq_fieldname);
+                if ~isempty(freq_fieldname)
+                    sr(i) = getfield(head.frequency_parameters,freq_fieldname);
+                else
+                    sr(i) = NaN;
+                end
             end
         end % samplerate()
 
@@ -428,6 +432,8 @@ classdef intan < ndi.daq.reader.mfdaq
                     headername = 'amplifier_sample_rate';
                 case {'auxiliary','aux','auxiliary_in'}
                     headername = 'aux_input_sample_rate';
+                case {'marker','event','dep','den'}
+                    headername = '';
                 otherwise
                     error(['Do not know frequency header name for channel type ' channeltype '.']);
             end
