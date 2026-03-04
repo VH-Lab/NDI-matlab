@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/filter.json",
+		"validation":						"$NDISCHEMAPATH\/data\/filter_schema.json",
+		"class_name":						"filter",
+		"property_list_name":					"filter",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"filter" : {
+                        "label":                                        "",
+			"type":						"",
+			"algorithm":					"",
+			"parameters":					""
+	}
+}
