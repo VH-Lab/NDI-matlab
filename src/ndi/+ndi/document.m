@@ -562,7 +562,9 @@ classdef document
             fl = {};
             if isfield(ndi_document_obj.document_properties,'files')
                 if isfield(ndi_document_obj.document_properties.files,'file_info')
-                    fl = {ndi_document_obj.document_properties.files.file_info.name};
+                    if ~isempty(ndi_document_obj.document_properties.files.file_info)
+                        fl = {ndi_document_obj.document_properties.files.file_info.name};
+                    end
                 end
             end
         end %  current_file_list()
