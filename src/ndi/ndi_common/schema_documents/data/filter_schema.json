@@ -1,0 +1,40 @@
+{
+	"classname": "filter",
+	"superclasses":  [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"filter": [
+                 {
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A user label"
+		},
+		{
+			"name": "type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The filter type: 'bandpass', 'low', 'high', 'none'"
+		},
+		{
+			"name": "algorithm",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The filter algorithm: 'chebyshev_1', 'chebyshev_2', 'butterworth', 'bessel', 'elliptic', 'none'"
+		},
+		{
+			"name": "parameters",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure containing filter parameters: sampleFrequency, order, filterFrequency, passbandRipple, stopbandAttenuation"
+		}
+	]
+}

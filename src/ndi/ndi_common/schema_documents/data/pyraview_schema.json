@@ -1,0 +1,85 @@
+{
+	"classname": "pyraview",
+	"superclasses":  [ "epochclocktimes", "filter" , "base", "epochid"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [
+		{"name": "level1.bin", "mustbenotempty": 0},
+		{"name": "level2.bin", "mustbenotempty": 0},
+		{"name": "level3.bin", "mustbenotempty": 0},
+		{"name": "level4.bin", "mustbenotempty": 0},
+		{"name": "level5.bin", "mustbenotempty": 0},
+		{"name": "level6.bin", "mustbenotempty": 0},
+		{"name": "level7.bin", "mustbenotempty": 0},
+		{"name": "level8.bin", "mustbenotempty": 0},
+		{"name": "level9.bin", "mustbenotempty": 0},
+		{"name": "level10.bin", "mustbenotempty": 0}
+	],
+	"pyraview": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string label."
+		},
+		{
+			"name": "nativeRate",
+			"type": "double",
+			"default_value": "",
+			"parameters": [0,1e15,1,1],
+			"queryable": 1,
+			"documentation": "Native sampling rate."
+		},
+		{
+			"name": "nativeStartTime",
+			"type": "double",
+			"default_value": "",
+			"parameters": [-1e15,1e15,0,0],
+			"queryable": 1,
+			"documentation": "Native start time (t0)."
+		},
+		{
+			"name": "channels",
+			"type": "integer",
+			"default_value": "",
+			"parameters": [0,1e15,0,0],
+			"queryable": 1,
+			"documentation": "Number of channels in the probe."
+		},
+		{
+			"name": "dataType",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Data type: 'int8', 'uint8', 'int16', 'uint16', 'int32', 'uint32', 'int64', 'uint64', 'single', 'double'."
+		},
+		{
+			"name": "decimationLevels",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "Vector of decimation levels (integers)."
+		},
+		{
+			"name": "decimationSamplingRates",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "Vector of decimation sampling rates (doubles)."
+		},
+		{
+			"name": "decimationStartTimes",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "Vector of decimation start times (doubles)."
+		}
+	]
+}

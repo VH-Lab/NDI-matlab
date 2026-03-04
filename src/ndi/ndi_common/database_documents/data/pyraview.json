@@ -1,0 +1,32 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/pyraview.json",
+		"validation":						"$NDISCHEMAPATH\/data\/pyraview_schema.json",
+		"class_name":						"pyraview",
+		"property_list_name":					"pyraview",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/epochclocktimes.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/data\/filter.json" }
+		]
+	},
+	"depends_on": [
+		{ "name": "element_id", "value": "" }
+	],
+	"files": {
+		"file_list": [
+            "level1.bin", "level2.bin", "level3.bin", "level4.bin", "level5.bin",
+            "level6.bin", "level7.bin", "level8.bin", "level9.bin", "level10.bin"
+        ]
+    },
+	"pyraview" : {
+			"label":					"",
+			"nativeRate":					"",
+			"nativeStartTime":				"",
+			"channels":					"",
+			"dataType":					"",
+			"decimationLevels":				[],
+			"decimationSamplingRates":			[],
+			"decimationStartTimes":				[]
+	}
+}
