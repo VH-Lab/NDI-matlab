@@ -1,8 +1,8 @@
 classdef MockProbe < handle
-    properties
-        elementstring = 'mock_probe'
-    end
     methods
+        function str = elementstring(obj)
+            str = 'mock_probe';
+        end
         function et = epochtable(obj)
             et = struct('epoch_id', 'epoch1', 't0_t1', {{[0 200]}});
         end
