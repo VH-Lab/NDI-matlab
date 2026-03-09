@@ -1,7 +1,7 @@
 function test_export_binary()
     disp('Testing ndi.fun.probe.export_binary');
 
-    mockProbe = ndi.fun.probe.MockProbe();
+    mockProbe = ndi.unittest.fun.probe.MockProbe();
 
     outputfile = [tempdir, 'test_export.bin'];
 

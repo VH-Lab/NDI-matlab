@@ -1,4 +1,4 @@
-function export_binary(probe, outputfile, options)
+function export_binary(probe, outputfile)
 % NDI.FUN.PROBE.EXPORT_BINARY - export data from a probe to an int16 binary file
 %
 % NDI.FUN.PROBE.EXPORT_BINARY(PROBE, OUTPUTFILE, ...)
