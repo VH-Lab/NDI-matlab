@@ -1,7 +1,7 @@
 function [shift, scale] = syncRandomTriggers(t1, t2, options)
 % SYNCRANDOMTRIGGERS - Synchronize clocks using random digital triggers
 %
-%   [SHIFT, SCALE] = ndi.fun.time.syncRandomTriggers(T1, T2)
+%   [SHIFT, SCALE] = ndi.time.fun.syncRandomTriggers(T1, T2)
 %   returns SHIFT and SCALE such that T1 = SHIFT + SCALE * T2.
 %
 %   This function aligns two devices that recorded the same stochastic 
@@ -32,7 +32,7 @@ function [shift, scale] = syncRandomTriggers(t1, t2, options)
 %       scale: Clock drift/ratio. Returns NaN if no match is found.
 %
 %   EXAMPLE:
-%       [s, m] = ndi.fun.time.syncRandomTriggers(daq_times, cam_times);
+%       [s, m] = ndi.time.fun.syncRandomTriggers(daq_times, cam_times);
 
     arguments
         t1 (:,1) double
