@@ -1,5 +1,5 @@
 classdef testSyncRandomTriggers < matlab.unittest.TestCase
-% TESTSYNCRANDOMTRIGGERS - Unit test for ndi.fun.time.syncRandomTriggers
+% TESTSYNCRANDOMTRIGGERS - Unit test for ndi.time.fun.syncRandomTriggers
 %
 % This test suite verifies the robustness of the sparse fingerprinting 
 % synchronization algorithm under various real-world conditions.
@@ -20,7 +20,7 @@ classdef testSyncRandomTriggers < matlab.unittest.TestCase
             t2 = cumsum(dt);
             t1 = true_shift + true_scale * t2;
             
-            [shift, scale] = ndi.fun.time.syncRandomTriggers(t1, t2, 'alignmentTolerance', testCase.Tolerance);
+            [shift, scale] = ndi.time.fun.syncRandomTriggers(t1, t2, 'alignmentTolerance', testCase.Tolerance);
             
             testCase.verifyEqual(scale, true_scale, 'RelTol', 1e-10);
             testCase.verifyEqual(shift, true_shift, 'AbsTol', 1e-10);
@@ -35,7 +35,7 @@ classdef testSyncRandomTriggers < matlab.unittest.TestCase
             t2 = cumsum(dt);
             t1 = true_shift + true_scale * t2;
             
-            [shift, scale] = ndi.fun.time.syncRandomTriggers(t1, t2, 'alignmentTolerance', testCase.Tolerance);
+            [shift, scale] = ndi.time.fun.syncRandomTriggers(t1, t2, 'alignmentTolerance', testCase.Tolerance);
             
             testCase.verifyEqual(scale, true_scale, 'RelTol', 1e-8);
             testCase.verifyEqual(shift, true_shift, 'AbsTol', 1e-8);
@@ -54,7 +54,7 @@ classdef testSyncRandomTriggers < matlab.unittest.TestCase
             keep_idx = sort(randperm(length(t2_full), 475));
             t2_dropped = t2_full(keep_idx);
             
-            [shift, scale] = ndi.fun.time.syncRandomTriggers(t1_full, t2_dropped, 'alignmentTolerance', testCase.Tolerance);
+            [shift, scale] = ndi.time.fun.syncRandomTriggers(t1_full, t2_dropped, 'alignmentTolerance', testCase.Tolerance);
             
             testCase.verifyFalse(isnan(scale), 'Should find a match despite dropped pulses');
             testCase.verifyEqual(scale, true_scale, 'RelTol', 1e-6);
@@ -75,7 +75,7 @@ classdef testSyncRandomTriggers < matlab.unittest.TestCase
             true_scale = 1.0;
             t2 = t_master(350:800);
             
-            [shift, scale] = ndi.fun.time.syncRandomTriggers(t1, t2);
+            [shift, scale] = ndi.time.fun.syncRandomTriggers(t1, t2);
             
             testCase.verifyFalse(isnan(scale), 'Should find the 10-second overlap');
             testCase.verifyEqual(scale, true_scale, 'RelTol', 1e-10);
@@ -86,7 +86,7 @@ classdef testSyncRandomTriggers < matlab.unittest.TestCase
             t1 = cumsum(rand(100, 1));
             t2 = cumsum(rand(100, 1)) + 5000; % Distant in time and different intervals
             
-            [shift, scale] = ndi.fun.time.syncRandomTriggers(t1, t2);
+            [shift, scale] = ndi.time.fun.syncRandomTriggers(t1, t2);
             
             testCase.verifyTrue(isnan(shift), 'Should return NaN for unrelated data');
             testCase.verifyTrue(isnan(scale), 'Should return NaN for unrelated data');
