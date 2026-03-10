@@ -395,6 +395,8 @@
           - ndi.epoch.findepochnode: 'NDI-matlab/reference/+ndi/+epoch/findepochnode.m.md'
           - epochset PACKAGE:
             - ndi.epoch.epochset.param: 'NDI-matlab/reference/+ndi/+epoch/+epochset/param.m.md'
+          - fun PACKAGE:
+            - ndi.epoch.fun.epochNodeName: 'NDI-matlab/reference/+ndi/+epoch/+fun/epochNodeName.m.md'
         - example PACKAGE:
           - fun PACKAGE:
             - ndi.example.fun.element2spiketimes: 'NDI-matlab/reference/+ndi/+example/+fun/element2spiketimes.m.md'
@@ -477,6 +479,8 @@
             - ndi.fun.plot.multichan: 'NDI-matlab/reference/+ndi/+fun/+plot/multichan.m.md'
             - ndi.fun.plot.stimulusTimeseries: 'NDI-matlab/reference/+ndi/+fun/+plot/stimulusTimeseries.m.md'
           - probe PACKAGE:
+            - ndi.fun.probe.export_all_binary: 'NDI-matlab/reference/+ndi/+fun/+probe/export_all_binary.m.md'
+            - ndi.fun.probe.export_binary: 'NDI-matlab/reference/+ndi/+fun/+probe/export_binary.m.md'
             - ndi.fun.probe.location: 'NDI-matlab/reference/+ndi/+fun/+probe/location.m.md'
           - session PACKAGE:
             - ndi.fun.session.diff: 'NDI-matlab/reference/+ndi/+fun/+session/diff.m.md'

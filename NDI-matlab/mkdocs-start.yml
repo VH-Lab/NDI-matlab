@@ -43,7 +43,9 @@ nav:
         - 3.1 Newbie version of your first electrophysiology experiment with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset.md'
       - 4 Datasets:
         - Francesconi_et_al_2025: 'NDI-matlab/tutorials/datasets/Francesconi_et_al_2025/1_getting_started.md'
-     - 7 Writing your own apps and calculators:
+      - 5 Many examples:
+        - 5.1 Spiking neurons: 'NDI-matlab/tutorials/many_examples/1_spiking_neurons.md'
+      - 7 Writing your own apps and calculators:
         - 7.2 Writing short calculations: 'NDI-matlab/tutorials/writing_own_app/2_ndi_calculators.md'
       - Planned:
         - 4. Case studies in reading data in NDI: 'NDI-matlab/tutorials/case_studies_reading_data.md'
@@ -51,11 +53,11 @@ nav:
         - 6. Making your own analysis app that uses NDI: 'NDI-matlab/tutorials/analysis_app.md'
         - 7. Submitting your data to an archive: 'NDI-matlab/tutorials/archive.md'
         - 8. Search and analyze NDI databases on the web: 'NDI-matlab/tutorials/search_ndi_databases.md'
-     - Manual (in progress):
-        - User manual:
-          - Queries: 'NDI-matlab/manual/Queries.md'
-        - Developer Manual:
-          - Cloud: 'NDI-matlab/manual/developer/cloud.md'
-          - Calculators: 'NDI-matlab/manual/developer/NDI_Calculator_Manual.md'
-          - Documents: 'NDI-matlab/manual/developer/Document_Design.md'
+    - Manual (in progress):
+       - User manual:
+         - Queries: 'NDI-matlab/manual/Queries.md'
+       - Developer Manual:
+         - Cloud: 'NDI-matlab/manual/developer/cloud.md'
+         - Calculators: 'NDI-matlab/manual/developer/NDI_Calculator_Manual.md'
+         - Documents: 'NDI-matlab/manual/developer/Document_Design.md'
     - Document reference:

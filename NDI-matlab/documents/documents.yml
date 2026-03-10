@@ -49,6 +49,7 @@
         - syncrule : 'NDI-matlab/documents/daq/syncrule.md'
       - data:
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
+        - filter : 'NDI-matlab/documents/data/filter.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
         - generic_file : 'NDI-matlab/documents/data/generic_file.md'
         - image : 'NDI-matlab/documents/data/image.md'
@@ -59,6 +60,7 @@
         - ontologyImage : 'NDI-matlab/documents/data/ontologyImage.md'
         - ontologyLabel : 'NDI-matlab/documents/data/ontologyLabel.md'
         - ontologyTableRow : 'NDI-matlab/documents/data/ontologyTableRow.md'
+        - pyraview : 'NDI-matlab/documents/data/pyraview.md'
       - element:
         - distance_metadata : 'NDI-matlab/documents/element/distance_metadata.md'
         - position_metadata : 'NDI-matlab/documents/element/position_metadata.md'
