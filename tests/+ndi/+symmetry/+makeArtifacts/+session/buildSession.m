@@ -46,7 +46,7 @@ classdef buildSession < ndi.unittest.session.buildSession
             end
 
             % Store probes list
-            probes = testCase.Session.getProbes();
+            probes = testCase.Session.getprobes();
             probeStructs = cell(1, numel(probes));
             for i=1:numel(probes)
                 s = struct(...

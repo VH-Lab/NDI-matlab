@@ -49,7 +49,7 @@ classdef readArtifacts < matlab.unittest.TestCase
             expectedProbes = jsondecode(rawJson);
 
             % 3. Verify they agree
-            actualProbes = S.getProbes();
+            actualProbes = S.getprobes();
             testCase.verifyEqual(numel(actualProbes), numel(expectedProbes));
         end
     end

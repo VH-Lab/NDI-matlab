@@ -29,7 +29,7 @@ classdef buildSession < matlab.unittest.TestCase
             expectedProbes = jsondecode(rawJson);
 
             % Get actual probes from session
-            actualProbes = session.getProbes();
+            actualProbes = session.getprobes();
 
             % Verify probe count matches
             testCase.verifyEqual(numel(actualProbes), numel(expectedProbes), ['Number of actual probes does not match ' SourceType ' generated artifacts.']);
