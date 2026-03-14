@@ -15,21 +15,22 @@ classdef buildSession < ndi.unittest.session.buildSession
             % Determine the artifact directory
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', 'matlabArtifacts', 'session', 'buildSession', 'testBuildSessionArtifacts');
 
-            % Create directories
-            if ~isfolder(artifactDir)
-                mkdir(artifactDir);
+            % Clear previous artifacts if they exist
+            if isfolder(artifactDir)
+                rmdir(artifactDir, 's');
             end
 
+            % Create directories
+            mkdir(artifactDir);
+
             jsonDocsDir = fullfile(artifactDir, 'jsonDocuments');
-            if ~isfolder(jsonDocsDir)
-                mkdir(jsonDocsDir);
-            end
+            mkdir(jsonDocsDir);
 
             % Copy the entire original NDI session folder into our persistent artifact directory
             % so that the Python test suite has access to the actual data files and the document database.
             sessionPath = testCase.Session.path();
             if isfolder(sessionPath)
-                copyfile(sessionPath, artifactDir);
+                copyfile(fullfile(sessionPath, '*'), artifactDir);
             end
 
             % Store JSON conversion of all NDI documents
