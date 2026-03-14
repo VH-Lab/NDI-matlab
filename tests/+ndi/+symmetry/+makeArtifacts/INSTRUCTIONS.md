@@ -12,6 +12,8 @@ This folder contains MATLAB unit tests whose purpose is to generate standard NDI
    - `<class_name>`: The name of the test class (e.g., `buildSession`).
    - `<test_name>`: The specific name of the test method being executed (e.g., `testBuildSessionArtifacts`).
 
+3. **Persistent Teardown**: The generated artifacts and the underlying NDI session database must persist in the temporary directory so that the Python test suite can read them. To achieve this, you must explicitly override any superclass test teardown methods (e.g., `buildSessionTeardown`) to do nothing.
+
 ## Example:
 For a test class `buildSession.m` in `tests/+ndi/+symmetry/+makeArtifacts/+session` with a test method `testBuildSessionArtifacts`, the artifacts should be saved to:
 `[tempdir(), 'NDI/symmetryTest/matlabArtifacts/session/buildSession/testBuildSessionArtifacts/']`
