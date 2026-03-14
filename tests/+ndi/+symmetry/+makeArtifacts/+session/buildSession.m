@@ -41,10 +41,14 @@ classdef buildSession < ndi.unittest.session.buildSession
 
             probesJsonStr = jsonencode(probeStructs, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
 
+            % Re-open the session before capturing documents.
+            % `ndi.session.dir` generates internal documents when first instantiated on a directory.
+            sessionPath = testCase.Session.path();
+            testCase.Session = ndi.session.dir('exp1', sessionPath);
+
             % Copy the entire original NDI session folder into our persistent artifact directory
             % so that the Python test suite has access to the actual data files and the document database.
             % We copy before creating the directory so that copyfile correctly handles hidden folders like `.ndi`
-            sessionPath = testCase.Session.path();
             if isfolder(sessionPath)
                 copyfile(sessionPath, artifactDir);
             else
