@@ -79,8 +79,10 @@ for i = 1:numel(common_fields)
 
             % Very basic struct/string comparison for cells
             if ischar(item1) || isstring(item1)
-                if ~strcmp(item1, item2)
-                    report{end+1} = sprintf('Field %s{%d} differs: "%s" vs "%s"', field, j, char(item1), char(item2));
+                item1Str = regexprep(char(item1), '[\r\n]+', '');
+                item2Str = regexprep(char(item2), '[\r\n]+', '');
+                if ~strcmp(item1Str, item2Str)
+                    report{end+1} = sprintf('Field %s{%d} differs: "%s" vs "%s"', field, j, item1Str, item2Str);
                 end
             elseif isstruct(item1)
                 sub_report = ndi.util.compareSessionSummary(item1, item2);
@@ -109,20 +111,42 @@ for i = 1:numel(common_fields)
         end
 
     elseif ischar(val1) || isstring(val1)
-        if ~strcmp(val1, val2)
-            report{end+1} = sprintf('Field %s differs: "%s" vs "%s"', field, char(val1), char(val2));
+        val1Str = regexprep(char(val1), '[\r\n\t]+', '');
+        val2Str = regexprep(char(val2), '[\r\n\t]+', '');
+        if ~strcmp(val1Str, val2Str)
+            report{end+1} = sprintf('Field %s differs: "%s" vs "%s"', field, val1Str, val2Str);
         end
 
     else
         % Compare numeric/logical or objects
-        if ~isequaln(val1, val2)
+
+        is_same = false;
+        if isnumeric(val1) && isnumeric(val2) || islogical(val1) && islogical(val2)
+            % Compare vectorized form to avoid row/col orientation issues from jsondecode
+            is_same = isequaln(val1(:), val2(:));
+        else
+            is_same = isequaln(val1, val2);
+
+            % If not strictly equal, check if their JSON serializations are identical
+            % (e.g. NDI objects, or objects containing path separators that differ)
+            if ~is_same
+                try
+                    v1Str = regexprep(jsonencode(val1), '[\r\n\t]+', '');
+                    v2Str = regexprep(jsonencode(val2), '[\r\n\t]+', '');
+                    is_same = strcmp(v1Str, v2Str);
+                catch
+                    % Fallback to false
+                end
+            end
+        end
+
+        if ~is_same
             try
                 % Try to format numeric/logical values
                 if isnumeric(val1) || islogical(val1)
                     v1Str = mat2str(val1);
                     v2Str = mat2str(val2);
                 else
-                    % For objects or other types, try to convert to JSON for display
                     v1Str = jsonencode(val1);
                     v2Str = jsonencode(val2);
                 end
