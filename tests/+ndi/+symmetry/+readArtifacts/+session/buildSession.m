@@ -21,41 +21,22 @@ classdef buildSession < matlab.unittest.TestCase
             % Note: the session reference name might vary; here we use 'exp1' as it is the default in buildSessionSetup
             session = ndi.session.dir('exp1', artifactDir);
 
-            % Read probes.json
-            probesJsonFile = fullfile(artifactDir, 'probes.json');
-            if ~isfile(probesJsonFile)
-                disp(['probes.json file not found in ' SourceType ' artifact directory. Skipping.']);
-                return;
-            end
+            % Verify session summary
+            summaryJsonFile = fullfile(artifactDir, 'sessionSummary.json');
+            if ~isfile(summaryJsonFile)
+                disp(['sessionSummary.json file not found in ' SourceType ' artifact directory. Skipping summary comparison.']);
+            else
+                fid = fopen(summaryJsonFile, 'r');
+                rawJson = fread(fid, inf, '*char')';
+                fclose(fid);
+                expectedSummary = jsondecode(rawJson);
 
-            fid = fopen(probesJsonFile, 'r');
-            rawJson = fread(fid, inf, '*char')';
-            fclose(fid);
+                % Get actual session summary
+                actualSummary = ndi.util.sessionSummary(session);
 
-            expectedProbes = jsondecode(rawJson);
-
-            % Get actual probes from session
-            actualProbes = session.getprobes();
-
-            % Verify probe count matches
-            testCase.verifyEqual(numel(actualProbes), numel(expectedProbes), ['Number of actual probes does not match ' SourceType ' generated artifacts.']);
-
-            % Sort and compare expected vs actual if counts match
-            if numel(actualProbes) == numel(expectedProbes)
-                for i = 1:numel(expectedProbes)
-                    % Match based on properties since order might not be guaranteed
-                    expected = expectedProbes(i);
-                    found = false;
-                    for j = 1:numel(actualProbes)
-                        actual = actualProbes{j};
-                        if strcmp(expected.name, actual.name) && expected.reference == actual.reference && strcmp(expected.type, actual.type)
-                            found = true;
-                            testCase.verifyEqual(actual.subject_id, expected.subject_id, ['Subject ID mismatch for probe ', expected.name, ' in ', SourceType]);
-                            break;
-                        end
-                    end
-                    testCase.verifyTrue(found, ['Probe from ', SourceType, ' artifact not found in MATLAB session: ', expected.name]);
-                end
+                % Compare the two summaries
+                report = ndi.util.compareSessionSummary(actualSummary, expectedSummary);
+                testCase.verifyEmpty(report, ['Session summary mismatch against ' SourceType ' generated artifacts.']);
             end
 
             % Read expected documents

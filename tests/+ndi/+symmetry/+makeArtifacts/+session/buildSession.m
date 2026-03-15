@@ -22,29 +22,16 @@ classdef buildSession < ndi.unittest.session.buildSession
 
             % Store probes list BEFORE copying the session because `getprobes()`
             % generates new internal NDI documents that need to be captured.
-            probes = testCase.Session.getprobes();
-            probeStructs = cell(1, numel(probes));
-            for i=1:numel(probes)
-                s = struct(...
-                    'name', probes{i}.name, ...
-                    'reference', probes{i}.reference, ...
-                    'type', probes{i}.type, ...
-                    'subject_id', probes{i}.subject_id ...
-                );
-                probeStructs{i} = s;
-            end
-
-            % If cell array is empty it gets converted to [] not an array in JSON, so explicitly empty it if so
-            if isempty(probes)
-                probeStructs = {};
-            end
-
-            probesJsonStr = jsonencode(probeStructs, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+            testCase.Session.getprobes();
 
             % Re-open the session before capturing documents.
             % `ndi.session.dir` generates internal documents when first instantiated on a directory.
             sessionPath = testCase.Session.path();
             testCase.Session = ndi.session.dir('exp1', sessionPath);
+
+            % Create a comprehensive session summary (including probes, files, daqs, etc.)
+            summary = ndi.util.sessionSummary(testCase.Session);
+            summaryJsonStr = jsonencode(summary, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
 
             % Copy the entire original NDI session folder into our persistent artifact directory
             % so that the Python test suite has access to the actual data files and the document database.
@@ -71,13 +58,13 @@ classdef buildSession < ndi.unittest.session.buildSession
                 end
             end
 
-            % Write out probes.json
-            fid = fopen(fullfile(artifactDir, 'probes.json'), 'w');
+            % Write out session summary JSON
+            fid = fopen(fullfile(artifactDir, 'sessionSummary.json'), 'w');
             if fid > 0
-                fprintf(fid, '%s', probesJsonStr);
+                fprintf(fid, '%s', summaryJsonStr);
                 fclose(fid);
             else
-                error('Could not create probes.json file');
+                error('Could not create sessionSummary.json file');
             end
         end
     end
