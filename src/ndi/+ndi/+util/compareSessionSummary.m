@@ -82,7 +82,12 @@ for i = 1:numel(common_fields)
                 item1Str = regexprep(char(item1), '[\r\n]+', '');
                 item2Str = regexprep(char(item2), '[\r\n]+', '');
                 if ~strcmp(item1Str, item2Str)
-                    report{end+1} = sprintf('Field %s{%d} differs: "%s" vs "%s"', field, j, item1Str, item2Str);
+                    % Check if it's an absolute path difference but the filename is the same
+                    [~, name1, ext1] = fileparts(item1Str);
+                    [~, name2, ext2] = fileparts(item2Str);
+                    if ~(~isempty(name1) && strcmp(name1, name2) && strcmp(ext1, ext2))
+                        report{end+1} = sprintf('Field %s{%d} differs: "%s" vs "%s"', field, j, item1Str, item2Str);
+                    end
                 end
             elseif isstruct(item1)
                 sub_report = ndi.util.compareSessionSummary(item1, item2);
@@ -114,7 +119,12 @@ for i = 1:numel(common_fields)
         val1Str = regexprep(char(val1), '[\r\n\t]+', '');
         val2Str = regexprep(char(val2), '[\r\n\t]+', '');
         if ~strcmp(val1Str, val2Str)
-            report{end+1} = sprintf('Field %s differs: "%s" vs "%s"', field, val1Str, val2Str);
+            % Check if it's an absolute path difference but the filename is the same
+            [~, name1, ext1] = fileparts(val1Str);
+            [~, name2, ext2] = fileparts(val2Str);
+            if ~(~isempty(name1) && strcmp(name1, name2) && strcmp(ext1, ext2))
+                report{end+1} = sprintf('Field %s differs: "%s" vs "%s"', field, val1Str, val2Str);
+            end
         end
 
     else
