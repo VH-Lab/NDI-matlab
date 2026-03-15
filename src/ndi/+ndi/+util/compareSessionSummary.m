@@ -1,13 +1,24 @@
-function report = compareSessionSummary(summary1, summary2)
+function report = compareSessionSummary(summary1, summary2, options)
 % COMPARESESSIONSUMMARY - compare two session summaries and return a report
 %
-% REPORT = NDI.UTIL.COMPARESESSIONSUMMARY(SUMMARY1, SUMMARY2)
+% REPORT = NDI.UTIL.COMPARESESSIONSUMMARY(SUMMARY1, SUMMARY2, ...)
 %
 % Compares SUMMARY1 and SUMMARY2, identifying any differences in fields,
 % arrays, or nested structures. Returns a cell array of character arrays
 % with one entry per difference noted. If no differences are found, returns
 % an empty cell array {}.
 %
+% This function accepts name-value pair arguments:
+%   'excludeFiles' - A cell array of strings or character arrays specifying
+%                    filenames (or directories) to ignore when comparing the
+%                    'files' and 'filesInDotNDI' fields.
+%
+
+arguments
+    summary1 (1,1) struct
+    summary2 (1,1) struct
+    options.excludeFiles (1,:) cell = {}
+end
 
 report = {};
 
@@ -32,6 +43,16 @@ for i = 1:numel(common_fields)
     field = common_fields{i};
     val1 = summary1.(field);
     val2 = summary2.(field);
+
+    % Filter excluded files if checking file arrays
+    if ~isempty(options.excludeFiles) && (strcmp(field, 'files') || strcmp(field, 'filesInDotNDI'))
+        if iscell(val1)
+            val1 = setdiff(val1, options.excludeFiles);
+        end
+        if iscell(val2)
+            val2 = setdiff(val2, options.excludeFiles);
+        end
+    end
 
     % Handle JSON decode empty array vs empty cell array issue
     if isempty(val1) && isempty(val2)
@@ -93,9 +114,23 @@ for i = 1:numel(common_fields)
         end
 
     else
-        % Compare numeric/logical
-        if ~isequal(val1, val2)
-            report{end+1} = sprintf('Field %s differs in numeric/logical value', field);
+        % Compare numeric/logical or objects
+        if ~isequaln(val1, val2)
+            try
+                % Try to format numeric/logical values
+                if isnumeric(val1) || islogical(val1)
+                    v1Str = mat2str(val1);
+                    v2Str = mat2str(val2);
+                else
+                    % For objects or other types, try to convert to JSON for display
+                    v1Str = jsonencode(val1);
+                    v2Str = jsonencode(val2);
+                end
+            catch
+                v1Str = '<unprintable>';
+                v2Str = '<unprintable>';
+            end
+            report{end+1} = sprintf('Field %s differs in value/object:\n  Val1: %s\n  Val2: %s', field, v1Str, v2Str);
         end
     end
 end

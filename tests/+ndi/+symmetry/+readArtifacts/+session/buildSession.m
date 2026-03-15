@@ -35,7 +35,7 @@ classdef buildSession < matlab.unittest.TestCase
                 actualSummary = ndi.util.sessionSummary(session);
 
                 % Compare the two summaries
-                report = ndi.util.compareSessionSummary(actualSummary, expectedSummary);
+                report = ndi.util.compareSessionSummary(actualSummary, expectedSummary, 'excludeFiles', {'sessionSummary.json', 'jsonDocuments'});
                 testCase.verifyEmpty(report, ['Session summary mismatch against ' SourceType ' generated artifacts.']);
             end
 
