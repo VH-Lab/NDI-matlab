@@ -92,14 +92,17 @@ summary.daqSystemDetails = daqDetails;
 
 % 5. Probes
 probes = session_obj.getprobes();
-probe_cell = cell(1, numel(probes));
+% Preallocate a struct array instead of a cell array to avoid JSON decoding
+% turning it into a struct array and causing comparison failures later.
+probe_structs = struct('name', {}, 'reference', {}, 'type', {}, 'subject_id', {});
 for i = 1:numel(probes)
     p = probes{i};
-    % We extract key properties into a struct so it is JSON serializable
-    % without infinite recursion/handle issues
-    probe_cell{i} = struct('name', p.name, 'reference', p.reference, ...
-                           'type', p.type, 'subject_id', p.subject_id);
+    probe_structs(i).name = p.name;
+    probe_structs(i).reference = p.reference;
+    probe_structs(i).type = p.type;
+    probe_structs(i).subject_id = p.subject_id;
 end
-summary.probes = probe_cell;
+
+summary.probes = probe_structs;
 
 end

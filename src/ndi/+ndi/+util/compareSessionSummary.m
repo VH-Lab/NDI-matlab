@@ -33,6 +33,18 @@ for i = 1:numel(common_fields)
     val1 = summary1.(field);
     val2 = summary2.(field);
 
+    % Handle JSON decode empty array vs empty cell array issue
+    if isempty(val1) && isempty(val2)
+        continue;
+    end
+
+    % If one is cell and other is string/char array (sometimes happens with single elements in JSON)
+    if iscell(val1) && ~iscell(val2) && numel(val1) == 1
+        val1 = val1{1};
+    elseif ~iscell(val1) && iscell(val2) && numel(val2) == 1
+        val2 = val2{1};
+    end
+
     if iscell(val1) && iscell(val2)
         % Compare cells
         if numel(val1) ~= numel(val2)

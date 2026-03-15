@@ -64,7 +64,7 @@ classdef sessionSummaryTest < matlab.unittest.TestCase
             % Verify types
             testCase.verifyClass(summary.files, 'cell');
             testCase.verifyClass(summary.daqSystemDetails, 'struct');
-            testCase.verifyClass(summary.probes, 'cell');
+            testCase.verifyClass(summary.probes, 'struct');
 
             % Cleanup
             builder.buildSessionTeardown();
