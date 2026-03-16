@@ -50,7 +50,28 @@ jobs:
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
             matbox.installRequirements(fullfile(pwd, 'tests'))
-            results = matlab.unittest.TestRunner.withTextOutput.run( testsuite("tests/+ndi/+symmetry") );
+
+            import matlab.unittest.TestSuite
+            import matlab.unittest.TestRunner
+            import matlab.unittest.plugins.DiagnosticsValidationPlugin
+
+            suite = TestSuite.fromPackage("ndi.symmetry", "IncludingSubpackages", true);
+
+            fprintf("\n=== Discovered %d test(s) ===\n", numel(suite));
+            for k = 1:numel(suite)
+                fprintf("  %d. %s\n", k, suite(k).Name);
+            end
+            fprintf("\n");
+            assert(~isempty(suite), "No symmetry tests were found. Check tests/+ndi/+symmetry.")
+
+            runner = TestRunner.withTextOutput("Verbosity", "Detailed");
+            results = runner.run(suite);
+
+            fprintf("\n=== Symmetry Test Results ===\n");
+            fprintf("  %d passed, %d failed, %d incomplete\n", ...
+                nnz([results.Passed]), nnz([results.Failed]), nnz([results.Incomplete]));
+            disp(table(results));
+
             assert(all(~[results.Failed]), "Some symmetry tests failed")
 
       - name: Restore MATLAB Path
