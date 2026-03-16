@@ -53,9 +53,10 @@ jobs:
 
             import matlab.unittest.TestSuite
             import matlab.unittest.TestRunner
-            import matlab.unittest.plugins.DiagnosticsValidationPlugin
 
-            suite = TestSuite.fromPackage("ndi.symmetry", "IncludingSubpackages", true);
+            makeSuite = TestSuite.fromPackage("ndi.symmetry.makeArtifacts", "IncludingSubpackages", true);
+            readSuite = TestSuite.fromPackage("ndi.symmetry.readArtifacts", "IncludingSubpackages", true);
+            suite = [makeSuite, readSuite];
 
             fprintf("\n=== Discovered %d test(s) ===\n", numel(suite));
             for k = 1:numel(suite)
