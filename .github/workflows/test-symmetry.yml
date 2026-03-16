@@ -66,11 +66,22 @@ jobs:
             assert(~isempty(suite), "No symmetry tests were found. Check tests/+ndi/+symmetry.")
 
             runner = TestRunner.withTextOutput("Verbosity", "Detailed");
-            results = runner.run(suite);
 
-            fprintf("\n=== Symmetry Test Results ===\n");
-            fprintf("  %d passed, %d failed, %d incomplete\n", ...
-                nnz([results.Passed]), nnz([results.Failed]), nnz([results.Incomplete]));
+            nMake = numel(makeSuite);
+            nRead = numel(readSuite);
+
+            makeResults = runner.run(makeSuite);
+            fprintf("\n=== makeArtifacts Results: %d passed, %d failed, %d incomplete out of %d ===\n", ...
+                nnz([makeResults.Passed]), nnz([makeResults.Failed]), nnz([makeResults.Incomplete]), nMake);
+
+            readResults = runner.run(readSuite);
+            fprintf("\n=== readArtifacts Results: %d passed, %d failed, %d incomplete out of %d ===\n", ...
+                nnz([readResults.Passed]), nnz([readResults.Failed]), nnz([readResults.Incomplete]), nRead);
+
+            results = [makeResults, readResults];
+            fprintf("\n=== Overall Symmetry Test Results ===\n");
+            fprintf("  %d passed, %d failed, %d incomplete out of %d total\n", ...
+                nnz([results.Passed]), nnz([results.Failed]), nnz([results.Incomplete]), numel(results));
             disp(table(results));
 
             assert(all(~[results.Failed]), "Some symmetry tests failed")
