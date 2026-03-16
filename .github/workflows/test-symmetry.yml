@@ -1,0 +1,95 @@
+name: Test NDI Symmetry
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run_tests:
+    name: Run symmetry tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Start virtual display server
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: |
+            Communications_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Run symmetry tests
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
+            setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            addpath(genpath( "src" ));
+            ndi.cloud.authenticate("InteractionEnabled", "off")
+            addpath(genpath( "tests" ));
+            addpath(genpath( "tools" ));
+            matbox.installRequirements(fullfile(pwd, 'tests'))
+
+            import matlab.unittest.TestSuite
+            import matlab.unittest.TestRunner
+
+            makeSuite = TestSuite.fromPackage("ndi.symmetry.makeArtifacts", "IncludingSubpackages", true);
+            readSuite = TestSuite.fromPackage("ndi.symmetry.readArtifacts", "IncludingSubpackages", true);
+            suite = [makeSuite, readSuite];
+
+            fprintf("\n=== Discovered %d test(s) ===\n", numel(suite));
+            for k = 1:numel(suite)
+                fprintf("  %d. %s\n", k, suite(k).Name);
+            end
+            fprintf("\n");
+            assert(~isempty(suite), "No symmetry tests were found. Check tests/+ndi/+symmetry.")
+
+            runner = TestRunner.withTextOutput("Verbosity", "Detailed");
+
+            nMake = numel(makeSuite);
+            nRead = numel(readSuite);
+
+            makeResults = runner.run(makeSuite);
+            fprintf("\n=== makeArtifacts Results: %d passed, %d failed, %d incomplete out of %d ===\n", ...
+                nnz([makeResults.Passed]), nnz([makeResults.Failed]), nnz([makeResults.Incomplete]), nMake);
+
+            readResults = runner.run(readSuite);
+            fprintf("\n=== readArtifacts Results: %d passed, %d failed, %d incomplete out of %d ===\n", ...
+                nnz([readResults.Passed]), nnz([readResults.Failed]), nnz([readResults.Incomplete]), nRead);
+
+            results = [makeResults, readResults];
+            fprintf("\n=== Overall Symmetry Test Results ===\n");
+            fprintf("  %d passed, %d failed, %d incomplete out of %d total\n", ...
+                nnz([results.Passed]), nnz([results.Failed]), nnz([results.Incomplete]), numel(results));
+            disp(table(results));
+
+            assert(all(~[results.Failed]), "Some symmetry tests failed")
+
+      - name: Restore MATLAB Path
+        uses: matlab-actions/run-command@v2
+        if: always()
+        with:
+          command: |
+            restoredefaultpath()
+            savepath()
