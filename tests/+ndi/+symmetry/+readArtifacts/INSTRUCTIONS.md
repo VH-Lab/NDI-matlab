@@ -41,16 +41,17 @@ classdef readArtifacts < matlab.unittest.TestCase
             % (Assuming the session was copied here or created here)
             S = ndi.session.dir('exp1', targetPath);
 
-            % 2. Load the "Ground Truth" file (e.g., probes.json)
+            % 2. Load the "Ground Truth" file (e.g., sessionSummary.json)
             % that the 'makeArtifacts' suite placed next to the NDI folder
-            fid = fopen(fullfile(targetPath, 'probes.json'), 'r');
+            fid = fopen(fullfile(targetPath, 'sessionSummary.json'), 'r');
             rawJson = fread(fid, inf, '*char')';
             fclose(fid);
-            expectedProbes = jsondecode(rawJson);
+            expectedSummary = jsondecode(rawJson);
 
             % 3. Verify they agree
-            actualProbes = S.getprobes();
-            testCase.verifyEqual(numel(actualProbes), numel(expectedProbes));
+            actualSummary = ndi.util.sessionSummary(S);
+            report = ndi.util.compareSessionSummary(actualSummary, expectedSummary);
+            testCase.verifyEmpty(report);
         end
     end
 end
