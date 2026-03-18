@@ -51,6 +51,25 @@ classdef buildDataset < ndi.unittest.dataset.buildDataset
                 mkdir(artifactDir);
             end
 
+            % Export jsonDocuments for each session in the dataset
+            for i = 1:numSessions
+                sess = dataset.open_session(id_list{i});
+                sessionJsonDocsDir = fullfile(artifactDir, 'jsonDocuments', id_list{i});
+                mkdir(sessionJsonDocsDir);
+
+                docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
+                for j = 1:numel(docs)
+                    jsonStr = jsonencode(docs{j}.document_properties, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+                    fid = fopen(fullfile(sessionJsonDocsDir, [docs{j}.id() '.json']), 'w');
+                    if fid > 0
+                        fprintf(fid, '%s', jsonStr);
+                        fclose(fid);
+                    else
+                        error('Could not create document JSON file');
+                    end
+                end
+            end
+
             % Write out dataset summary JSON
             fid = fopen(fullfile(artifactDir, 'datasetSummary.json'), 'w');
             if fid > 0

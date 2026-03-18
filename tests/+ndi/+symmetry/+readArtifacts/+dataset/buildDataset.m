@@ -82,7 +82,7 @@ classdef buildDataset < matlab.unittest.TestCase
                 if ~isempty(matchIdx)
                     % Compare the session summaries using the existing comparison utility
                     report = ndi.util.compareSessionSummary(actualSummary, expectedSessionSummaries{matchIdx}, ...
-                        'excludeFiles', {'datasetSummary.json'});
+                        'excludeFiles', {'datasetSummary.json', 'jsonDocuments'});
                     testCase.verifyEmpty(report, ...
                         ['Session summary mismatch for session ' id_list{i} ' against ' SourceType ' generated artifacts.']);
                 end
