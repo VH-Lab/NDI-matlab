@@ -67,6 +67,10 @@ for i = 1:numel(common_fields)
     end
 
     if iscell(val1) && iscell(val2)
+        % Sort cells so comparison is order-independent
+        val1 = sortCellBySerialization(val1);
+        val2 = sortCellBySerialization(val2);
+
         % Compare cells
         if numel(val1) ~= numel(val2)
             report{end+1} = sprintf('Field %s has different lengths in summary1 (%d) and summary2 (%d)', field, numel(val1), numel(val2));
@@ -169,4 +173,24 @@ for i = 1:numel(common_fields)
     end
 end
 
+end
+
+function c = sortCellBySerialization(c)
+% SORTCELLBYSERIALIZATION - sort a cell array by a string key for each element
+    if isempty(c)
+        return;
+    end
+    keys = cell(size(c));
+    for idx = 1:numel(c)
+        item = c{idx};
+        if ischar(item)
+            keys{idx} = item;
+        elseif isstring(item)
+            keys{idx} = char(item);
+        else
+            keys{idx} = jsonencode(item);
+        end
+    end
+    [~, order] = sort(keys);
+    c = c(order);
 end
