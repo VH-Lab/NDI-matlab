@@ -39,6 +39,11 @@ jobs:
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@v1
 
+      - name: Download test datasets
+        run: |
+          curl -L -o /tmp/69a8705aa9ab25373cdc6563.tgz \
+            https://github.com/Waltham-Data-Science/file-passing/raw/refs/heads/main/69a8705aa9ab25373cdc6563.tgz
+
       - name: Run symmetry tests
         uses: matlab-actions/run-command@v2
         with:
