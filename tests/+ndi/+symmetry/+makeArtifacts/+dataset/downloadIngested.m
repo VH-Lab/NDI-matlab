@@ -11,14 +11,16 @@ classdef downloadIngested < matlab.unittest.TestCase
             end
             mkdir(artifactDir);
 
-            % Download the saved dataset archive using curl (handles
-            % redirects reliably in CI environments where websave can hang)
-            tgzUrl = 'https://github.com/Waltham-Data-Science/file-passing/raw/refs/heads/main/69a8705aa9ab25373cdc6563.tgz';
+            % Look for a pre-downloaded archive (placed by CI workflow step)
+            % or download it via curl as a fallback for local runs.
             tgzFile = fullfile(tempdir(), '69a8705aa9ab25373cdc6563.tgz');
-            command = sprintf('curl -L -o "%s" "%s"', tgzFile, tgzUrl);
-            [status, result] = system(command);
-            if status ~= 0
-                error('Failed to download dataset archive: %s', result);
+            if ~isfile(tgzFile)
+                tgzUrl = 'https://github.com/Waltham-Data-Science/file-passing/raw/refs/heads/main/69a8705aa9ab25373cdc6563.tgz';
+                command = sprintf('curl -L -o "%s" "%s"', tgzFile, tgzUrl);
+                [status, result] = system(command);
+                if status ~= 0
+                    error('Failed to download dataset archive: %s', result);
+                end
             end
             testCase.addTeardown(@() delete(tgzFile));
 
