@@ -93,24 +93,16 @@ classdef downloadIngested < matlab.unittest.TestCase
             end
 
             % Verify document counts match for each session
-            jsonDocsDir = fullfile(artifactDir, 'jsonDocuments');
-            if isfolder(jsonDocsDir)
+            if isfield(expectedSummary, 'documentCounts')
                 for i = 1:numSessions
                     sess = dataset.open_session(id_list{i});
-                    sessionJsonDocsDir = fullfile(jsonDocsDir, id_list{i});
+                    docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
+                    actualDocCount = numel(docs);
 
-                    if isfolder(sessionJsonDocsDir)
-                        % Count JSON files in the artifact directory
-                        jsonFiles = dir(fullfile(sessionJsonDocsDir, '*.json'));
-                        expectedDocCount = numel(jsonFiles);
+                    expectedDocCount = expectedSummary.documentCounts.(id_list{i});
 
-                        % Count documents from the actual session
-                        docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
-                        actualDocCount = numel(docs);
-
-                        testCase.verifyEqual(actualDocCount, expectedDocCount, ...
-                            ['Document count mismatch for session ' id_list{i} ' against ' SourceType ' generated artifacts.']);
-                    end
+                    testCase.verifyEqual(actualDocCount, expectedDocCount, ...
+                        ['Document count mismatch for session ' id_list{i} ' against ' SourceType ' generated artifacts.']);
                 end
             end
         end

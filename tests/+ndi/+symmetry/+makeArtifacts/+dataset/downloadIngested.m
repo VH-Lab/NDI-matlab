@@ -46,34 +46,25 @@ classdef downloadIngested < matlab.unittest.TestCase
                 sessionSummaries{i} = ndi.util.sessionSummary(sess);
             end
 
+            % Record document counts per session (avoid exporting all
+            % documents individually — this dataset has thousands)
+            documentCounts = struct();
+            for i = 1:numSessions
+                sess = dataset.open_session(id_list{i});
+                docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
+                documentCounts.(id_list{i}) = numel(docs);
+            end
+
             % Build the dataset summary structure
             datasetSummary = struct();
             datasetSummary.numSessions = numSessions;
             datasetSummary.references = ref_list;
             datasetSummary.sessionIds = id_list;
             datasetSummary.sessionSummaries = sessionSummaries;
+            datasetSummary.documentCounts = documentCounts;
 
             % Encode to JSON
             summaryJsonStr = jsonencode(datasetSummary, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
-
-            % Export jsonDocuments for each session in the dataset
-            for i = 1:numSessions
-                sess = dataset.open_session(id_list{i});
-                sessionJsonDocsDir = fullfile(artifactDir, 'jsonDocuments', id_list{i});
-                mkdir(sessionJsonDocsDir);
-
-                docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
-                for j = 1:numel(docs)
-                    jsonStr = jsonencode(docs{j}.document_properties, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
-                    fid = fopen(fullfile(sessionJsonDocsDir, [docs{j}.id() '.json']), 'w');
-                    if fid > 0
-                        fprintf(fid, '%s', jsonStr);
-                        fclose(fid);
-                    else
-                        error('Could not create document JSON file');
-                    end
-                end
-            end
 
             % Write out dataset summary JSON
             fid = fopen(fullfile(artifactDir, 'datasetSummary.json'), 'w');
