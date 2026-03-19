@@ -39,20 +39,42 @@ classdef downloadIngested < matlab.unittest.TestCase
             [ref_list, id_list] = dataset.session_list();
             numSessions = numel(ref_list);
 
-            % Build session summaries for each session in the dataset
+            % Build lightweight session summaries for each session.
+            % This dataset has thousands of documents, so calling the full
+            % ndi.util.sessionSummary (which runs getprobes, daqsystem_load,
+            % epochnodes) would take 20+ minutes. Instead, capture the
+            % essential metadata: reference, ID, files, and document count.
             sessionSummaries = cell(1, numSessions);
-            for i = 1:numSessions
-                sess = dataset.open_session(id_list{i});
-                sessionSummaries{i} = ndi.util.sessionSummary(sess);
-            end
-
-            % Record document counts per session (avoid exporting all
-            % documents individually — this dataset has thousands)
             documentCounts = struct();
             for i = 1:numSessions
                 sess = dataset.open_session(id_list{i});
+
+                summary = struct();
+                summary.reference = sess.reference;
+                summary.sessionId = sess.id();
+
+                session_path = sess.path();
+                if isfolder(session_path)
+                    d = dir(session_path);
+                    d = d(~ismember({d.name}, {'.', '..'}));
+                    summary.files = {d.name};
+                else
+                    summary.files = {};
+                end
+
+                dot_ndi_path = fullfile(session_path, '.ndi');
+                if isfolder(dot_ndi_path)
+                    d_ndi = dir(dot_ndi_path);
+                    d_ndi = d_ndi(~ismember({d_ndi.name}, {'.', '..'}));
+                    summary.filesInDotNDI = {d_ndi.name};
+                else
+                    summary.filesInDotNDI = {};
+                end
+
                 docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
                 documentCounts.(id_list{i}) = numel(docs);
+
+                sessionSummaries{i} = summary;
             end
 
             % Build the dataset summary structure
