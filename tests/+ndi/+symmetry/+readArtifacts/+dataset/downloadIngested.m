@@ -60,7 +60,7 @@ classdef downloadIngested < matlab.unittest.TestCase
             testCase.verifyEqual(sort(id_list), sort(expectedIds'), ...
                 ['Session IDs mismatch against ' SourceType ' generated artifacts.']);
 
-            % Verify lightweight session summaries for each session
+            % Verify session summaries for each session
             expectedSessionSummaries = expectedSummary.sessionSummaries;
             if ~iscell(expectedSessionSummaries)
                 expectedSessionSummaries = {expectedSessionSummaries};
@@ -68,6 +68,7 @@ classdef downloadIngested < matlab.unittest.TestCase
 
             for i = 1:numSessions
                 sess = dataset.open_session(id_list{i});
+                actualSummary = ndi.util.sessionSummary(sess);
 
                 % Find the expected summary with the same sessionId
                 matchIdx = [];
@@ -82,27 +83,11 @@ classdef downloadIngested < matlab.unittest.TestCase
                     ['No expected session summary found for session ID ' id_list{i} ' in ' SourceType]);
 
                 if ~isempty(matchIdx)
-                    expectedSess = expectedSessionSummaries{matchIdx};
-
-                    % Verify reference
-                    testCase.verifyEqual(sess.reference, expectedSess.reference, ...
-                        ['Session reference mismatch for ' id_list{i} ' against ' SourceType]);
-
-                    % Verify .ndi directory files
-                    dot_ndi_path = fullfile(sess.path(), '.ndi');
-                    if isfolder(dot_ndi_path)
-                        d_ndi = dir(dot_ndi_path);
-                        d_ndi = d_ndi(~ismember({d_ndi.name}, {'.', '..'}));
-                        actualDotNdiFiles = sort({d_ndi.name});
-                    else
-                        actualDotNdiFiles = {};
-                    end
-                    expectedDotNdiFiles = expectedSess.filesInDotNDI;
-                    if ischar(expectedDotNdiFiles)
-                        expectedDotNdiFiles = {expectedDotNdiFiles};
-                    end
-                    testCase.verifyEqual(actualDotNdiFiles, sort(expectedDotNdiFiles'), ...
-                        ['Files in .ndi mismatch for session ' id_list{i} ' against ' SourceType]);
+                    % Compare the session summaries using the existing comparison utility
+                    report = ndi.util.compareSessionSummary(actualSummary, expectedSessionSummaries{matchIdx}, ...
+                        'excludeFiles', {'datasetSummary.json', 'jsonDocuments'});
+                    testCase.verifyEmpty(report, ...
+                        ['Session summary mismatch for session ' id_list{i} ' against ' SourceType ' generated artifacts.']);
                 end
             end
 
