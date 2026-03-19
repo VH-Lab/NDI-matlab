@@ -47,11 +47,11 @@ classdef downloadIngested < matlab.unittest.TestCase
             end
 
             % Record document counts per session
-            documentCounts = struct();
+            documentCounts = cell(1, numSessions);
             for i = 1:numSessions
                 sess = dataset.open_session(id_list{i});
                 docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
-                documentCounts.(id_list{i}) = numel(docs);
+                documentCounts{i} = struct('sessionId', id_list{i}, 'count', numel(docs));
             end
 
             % Build the dataset summary structure
@@ -60,7 +60,7 @@ classdef downloadIngested < matlab.unittest.TestCase
             datasetSummary.references = ref_list;
             datasetSummary.sessionIds = id_list;
             datasetSummary.sessionSummaries = sessionSummaries;
-            datasetSummary.documentCounts = documentCounts;
+            datasetSummary.documentCounts = {documentCounts{:}};
 
             % Encode to JSON
             summaryJsonStr = jsonencode(datasetSummary, 'ConvertInfAndNaN', true, 'PrettyPrint', true);

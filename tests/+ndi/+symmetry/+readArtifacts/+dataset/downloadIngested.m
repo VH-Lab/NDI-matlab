@@ -93,15 +93,28 @@ classdef downloadIngested < matlab.unittest.TestCase
 
             % Verify document counts match for each session
             if isfield(expectedSummary, 'documentCounts')
+                expectedDocCounts = expectedSummary.documentCounts;
+                if ~iscell(expectedDocCounts)
+                    expectedDocCounts = {expectedDocCounts};
+                end
                 for i = 1:numSessions
                     sess = dataset.open_session(id_list{i});
                     docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
                     actualDocCount = numel(docs);
 
-                    expectedDocCount = expectedSummary.documentCounts.(id_list{i});
+                    % Find expected count for this session
+                    expectedDocCount = [];
+                    for j = 1:numel(expectedDocCounts)
+                        if strcmp(expectedDocCounts{j}.sessionId, id_list{i})
+                            expectedDocCount = expectedDocCounts{j}.count;
+                            break;
+                        end
+                    end
 
-                    testCase.verifyEqual(actualDocCount, expectedDocCount, ...
-                        ['Document count mismatch for session ' id_list{i} ' against ' SourceType ' generated artifacts.']);
+                    if ~isempty(expectedDocCount)
+                        testCase.verifyEqual(actualDocCount, expectedDocCount, ...
+                            ['Document count mismatch for session ' id_list{i} ' against ' SourceType ' generated artifacts.']);
+                    end
                 end
             end
         end
