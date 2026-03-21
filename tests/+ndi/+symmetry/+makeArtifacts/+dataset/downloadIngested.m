@@ -46,32 +46,9 @@ classdef downloadIngested < matlab.unittest.TestCase
             % Open the dataset
             dataset = ndi.dataset.dir(datasetPath);
 
-            % Get session list from dataset
-            [ref_list, id_list] = dataset.session_list();
-            numSessions = numel(ref_list);
-
-            % Build session summaries for each session in the dataset
-            sessionSummaries = cell(1, numSessions);
-            for i = 1:numSessions
-                sess = dataset.open_session(id_list{i});
-                sessionSummaries{i} = ndi.util.sessionSummary(sess);
-            end
-
-            % Record document counts per session
-            documentCounts = cell(1, numSessions);
-            for i = 1:numSessions
-                sess = dataset.open_session(id_list{i});
-                docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
-                documentCounts{i} = struct('sessionId', id_list{i}, 'count', numel(docs));
-            end
-
-            % Build the dataset summary structure
-            datasetSummary = struct();
-            datasetSummary.numSessions = numSessions;
-            datasetSummary.references = ref_list;
-            datasetSummary.sessionIds = id_list;
-            datasetSummary.sessionSummaries = sessionSummaries;
-            datasetSummary.documentCounts = {documentCounts{:}};
+            % Build the dataset summary using the shared utility (with document counts)
+            datasetSummary = ndi.util.datasetSummary(dataset, ...
+                'includeDocumentCounts', true);
 
             % Encode to JSON
             summaryJsonStr = jsonencode(datasetSummary, 'ConvertInfAndNaN', true, 'PrettyPrint', true);

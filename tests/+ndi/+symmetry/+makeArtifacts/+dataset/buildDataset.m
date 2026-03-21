@@ -22,26 +22,15 @@ classdef buildDataset < ndi.unittest.dataset.buildDataset
 
             dataset = testCase.Dataset;
 
-            % Get session list from dataset
-            [ref_list, id_list] = dataset.session_list();
-            numSessions = numel(ref_list);
-
-            % Build session summaries for each session in the dataset
-            sessionSummaries = cell(1, numSessions);
-            for i = 1:numSessions
-                sess = dataset.open_session(id_list{i});
-                sessionSummaries{i} = ndi.util.sessionSummary(sess);
-            end
-
-            % Build the dataset summary structure
-            datasetSummary = struct();
-            datasetSummary.numSessions = numSessions;
-            datasetSummary.references = ref_list;
-            datasetSummary.sessionIds = id_list;
-            datasetSummary.sessionSummaries = sessionSummaries;
+            % Build the dataset summary using the shared utility
+            datasetSummary = ndi.util.datasetSummary(dataset);
 
             % Encode to JSON
             summaryJsonStr = jsonencode(datasetSummary, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+
+            % Get session list for artifact export below
+            [~, id_list] = dataset.session_list();
+            numSessions = numel(id_list);
 
             % Copy the entire dataset folder into our persistent artifact directory
             datasetPath = dataset.path;
