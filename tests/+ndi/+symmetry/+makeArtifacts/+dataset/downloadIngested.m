@@ -27,6 +27,13 @@ classdef downloadIngested < matlab.unittest.TestCase
             % Extract the archive into the artifact directory
             untar(tgzFile, artifactDir);
 
+            % Remove macOS resource fork files (._*) that may be in the archive;
+            % these are invisible metadata files and should not appear in file listings.
+            dotUnderscoreFiles = dir(fullfile(artifactDir, '**', '._*'));
+            for k = 1:numel(dotUnderscoreFiles)
+                delete(fullfile(dotUnderscoreFiles(k).folder, dotUnderscoreFiles(k).name));
+            end
+
             % Find the extracted directory (expect exactly one folder)
             entries = dir(artifactDir);
             subdirs = entries([entries.isdir] & ~ismember({entries.name}, {'.', '..'}));
