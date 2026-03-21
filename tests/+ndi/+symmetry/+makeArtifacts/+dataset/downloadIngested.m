@@ -27,10 +27,14 @@ classdef downloadIngested < matlab.unittest.TestCase
             % Extract the archive into the artifact directory
             untar(tgzFile, artifactDir);
 
-            % The extracted directory is an ndi.dataset.dir object
-            datasetPath = fullfile(artifactDir, '69a8705aa9ab25373cdc6563');
+            % Find the extracted directory (expect exactly one folder)
+            entries = dir(artifactDir);
+            subdirs = entries([entries.isdir] & ~ismember({entries.name}, {'.', '..'}));
+            testCase.verifyEqual(numel(subdirs), 1, ...
+                sprintf('Expected exactly one directory in extracted archive, found %d.', numel(subdirs)));
+            datasetPath = fullfile(artifactDir, subdirs(1).name);
             testCase.verifyTrue(isfolder(datasetPath), ...
-                'Expected extracted directory 69a8705aa9ab25373cdc6563 not found.');
+                'Expected extracted dataset directory not found.');
 
             % Open the dataset
             dataset = ndi.dataset.dir(datasetPath);
