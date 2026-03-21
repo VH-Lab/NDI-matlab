@@ -28,8 +28,12 @@ classdef downloadIngested < matlab.unittest.TestCase
             fclose(fid);
             expectedSummary = jsondecode(rawJson);
 
-            % The downloaded dataset lives inside the artifact directory
-            datasetPath = fullfile(artifactDir, '69a8705aa9ab25373cdc6563');
+            % Find the dataset directory (expect exactly one folder)
+            entries = dir(artifactDir);
+            subdirs = entries([entries.isdir] & ~ismember({entries.name}, {'.', '..'}));
+            testCase.verifyEqual(numel(subdirs), 1, ...
+                ['Expected exactly one directory in ' SourceType ' artifacts, found ' num2str(numel(subdirs)) '.']);
+            datasetPath = fullfile(artifactDir, subdirs(1).name);
             testCase.verifyTrue(isfolder(datasetPath), ...
                 ['Expected dataset directory not found in ' SourceType ' artifacts.']);
 
