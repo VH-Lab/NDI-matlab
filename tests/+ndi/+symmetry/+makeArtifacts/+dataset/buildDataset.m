@@ -22,26 +22,15 @@ classdef buildDataset < ndi.unittest.dataset.buildDataset
 
             dataset = testCase.Dataset;
 
-            % Get session list from dataset
-            [ref_list, id_list] = dataset.session_list();
-            numSessions = numel(ref_list);
-
-            % Build session summaries for each session in the dataset
-            sessionSummaries = cell(1, numSessions);
-            for i = 1:numSessions
-                sess = dataset.open_session(id_list{i});
-                sessionSummaries{i} = ndi.util.sessionSummary(sess);
-            end
-
-            % Build the dataset summary structure
-            datasetSummary = struct();
-            datasetSummary.numSessions = numSessions;
-            datasetSummary.references = ref_list;
-            datasetSummary.sessionIds = id_list;
-            datasetSummary.sessionSummaries = sessionSummaries;
+            % Build the dataset summary using the shared utility
+            datasetSummary = ndi.util.datasetSummary(dataset);
 
             % Encode to JSON
             summaryJsonStr = jsonencode(datasetSummary, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+
+            % Get session list for artifact export below
+            [~, id_list] = dataset.session_list();
+            numSessions = numel(id_list);
 
             % Copy the entire dataset folder into our persistent artifact directory
             datasetPath = dataset.path;
@@ -49,6 +38,25 @@ classdef buildDataset < ndi.unittest.dataset.buildDataset
                 copyfile(datasetPath, artifactDir);
             else
                 mkdir(artifactDir);
+            end
+
+            % Export jsonDocuments for each session in the dataset
+            for i = 1:numSessions
+                sess = dataset.open_session(id_list{i});
+                sessionJsonDocsDir = fullfile(artifactDir, 'jsonDocuments', id_list{i});
+                mkdir(sessionJsonDocsDir);
+
+                docs = sess.database_search(ndi.query('base.id', 'regexp', '(.*)'));
+                for j = 1:numel(docs)
+                    jsonStr = jsonencode(docs{j}.document_properties, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+                    fid = fopen(fullfile(sessionJsonDocsDir, [docs{j}.id() '.json']), 'w');
+                    if fid > 0
+                        fprintf(fid, '%s', jsonStr);
+                        fclose(fid);
+                    else
+                        error('Could not create document JSON file');
+                    end
+                end
             end
 
             % Write out dataset summary JSON

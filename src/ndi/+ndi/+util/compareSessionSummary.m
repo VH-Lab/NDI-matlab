@@ -67,6 +67,10 @@ for i = 1:numel(common_fields)
     end
 
     if iscell(val1) && iscell(val2)
+        % Sort cells so comparison is order-independent
+        val1 = sortCellBySerialization(val1);
+        val2 = sortCellBySerialization(val2);
+
         % Compare cells
         if numel(val1) ~= numel(val2)
             report{end+1} = sprintf('Field %s has different lengths in summary1 (%d) and summary2 (%d)', field, numel(val1), numel(val2));
@@ -107,6 +111,10 @@ for i = 1:numel(common_fields)
             report{end+1} = sprintf('Field %s struct array has different lengths in summary1 (%d) and summary2 (%d)', field, numel(val1), numel(val2));
             continue;
         end
+
+        % Sort struct arrays so comparison is order-independent
+        val1 = sortStructArrayBySerialization(val1);
+        val2 = sortStructArrayBySerialization(val2);
 
         for j = 1:numel(val1)
             sub_report = ndi.util.compareSessionSummary(val1(j), val2(j));
@@ -169,4 +177,37 @@ for i = 1:numel(common_fields)
     end
 end
 
+end
+
+function s = sortStructArrayBySerialization(s)
+% SORTSTRUCTARRAYBYSERIALIZATION - sort a struct array by JSON key for each element
+    if numel(s) <= 1
+        return;
+    end
+    keys = cell(1, numel(s));
+    for idx = 1:numel(s)
+        keys{idx} = jsonencode(s(idx));
+    end
+    [~, order] = sort(keys);
+    s = s(order);
+end
+
+function c = sortCellBySerialization(c)
+% SORTCELLBYSERIALIZATION - sort a cell array by a string key for each element
+    if isempty(c)
+        return;
+    end
+    keys = cell(size(c));
+    for idx = 1:numel(c)
+        item = c{idx};
+        if ischar(item)
+            keys{idx} = item;
+        elseif isstring(item)
+            keys{idx} = char(item);
+        else
+            keys{idx} = jsonencode(item);
+        end
+    end
+    [~, order] = sort(keys);
+    c = c(order);
 end

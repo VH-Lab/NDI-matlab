@@ -1,4 +1,4 @@
-classdef buildDataset < matlab.unittest.TestCase
+classdef downloadIngested < matlab.unittest.TestCase
 
     properties (TestParameter)
         % Define the two potential sources of artifacts
@@ -6,12 +6,11 @@ classdef buildDataset < matlab.unittest.TestCase
     end
 
     methods (Test)
-        function testBuildDatasetArtifacts(testCase, SourceType)
+        function testDownloadIngestedArtifacts(testCase, SourceType)
             % Determine the artifact directory expected from either MATLAB or Python
-            artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'dataset', 'buildDataset', 'testBuildDatasetArtifacts');
+            artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'dataset', 'downloadIngested', 'testDownloadIngestedArtifacts');
 
-            % If the directory does not exist, we cannot run the read tests.
-            % Return early so the test passes silently instead of showing up as "Incomplete/Filtered"
+            % If the directory does not exist, skip gracefully
             if ~isfolder(artifactDir)
                 disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
                 return;
@@ -29,11 +28,21 @@ classdef buildDataset < matlab.unittest.TestCase
             fclose(fid);
             expectedSummary = jsondecode(rawJson);
 
-            % Open the dataset from the artifact directory
-            dataset = ndi.dataset.dir('ds_demo', artifactDir);
+            % Find the dataset directory (expect exactly one folder)
+            entries = dir(artifactDir);
+            subdirs = entries([entries.isdir] & ~ismember({entries.name}, {'.', '..'}));
+            testCase.verifyEqual(numel(subdirs), 1, ...
+                ['Expected exactly one directory in ' SourceType ' artifacts, found ' num2str(numel(subdirs)) '.']);
+            datasetPath = fullfile(artifactDir, subdirs(1).name);
+            testCase.verifyTrue(isfolder(datasetPath), ...
+                ['Expected dataset directory not found in ' SourceType ' artifacts.']);
 
-            % Build the actual dataset summary using the shared utility
-            actualDatasetSummary = ndi.util.datasetSummary(dataset);
+            % Open the dataset from the artifact directory
+            dataset = ndi.dataset.dir(datasetPath);
+
+            % Build the actual dataset summary (with document counts)
+            actualDatasetSummary = ndi.util.datasetSummary(dataset, ...
+                'includeDocumentCounts', true);
 
             % Compare using the shared comparison utility
             report = ndi.util.compareDatasetSummary(actualDatasetSummary, expectedSummary, ...
