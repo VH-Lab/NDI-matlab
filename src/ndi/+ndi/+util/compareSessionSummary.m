@@ -112,6 +112,10 @@ for i = 1:numel(common_fields)
             continue;
         end
 
+        % Sort struct arrays so comparison is order-independent
+        val1 = sortStructArrayBySerialization(val1);
+        val2 = sortStructArrayBySerialization(val2);
+
         for j = 1:numel(val1)
             sub_report = ndi.util.compareSessionSummary(val1(j), val2(j));
             for k = 1:numel(sub_report)
@@ -173,6 +177,19 @@ for i = 1:numel(common_fields)
     end
 end
 
+end
+
+function s = sortStructArrayBySerialization(s)
+% SORTSTRUCTARRAYBYSERIALIZATION - sort a struct array by JSON key for each element
+    if numel(s) <= 1
+        return;
+    end
+    keys = cell(1, numel(s));
+    for idx = 1:numel(s)
+        keys{idx} = jsonencode(s(idx));
+    end
+    [~, order] = sort(keys);
+    s = s(order);
 end
 
 function c = sortCellBySerialization(c)
