@@ -226,6 +226,10 @@ methods (Static)
             if isfield(data, 'obo_id') && ~isempty(data.obo_id) && startsWith(data.obo_id, [ontology_prefix ':'], 'IgnoreCase', true), id = char(data.obo_id);
             elseif isfield(data, 'short_form') && ~isempty(data.short_form), id_temp = char(data.short_form); expected_prefix_us = [ontology_prefix '_']; if startsWith(id_temp, expected_prefix_us, 'IgnoreCase', true), id = strrep(id_temp, '_', ':'); else, if ~isempty(regexp(id_temp,'^\d+$','once')), id = [ontology_prefix ':' id_temp]; elseif startsWith(id_temp, [ontology_prefix ':'], 'IgnoreCase', true), id = id_temp; else, id = ''; end; end
             else, id = ''; end
+            % Fallback: if ID is still empty but obo_id exists (e.g., EDAM
+            % uses sub-ontology prefixes like 'format:1929' instead of
+            % 'EDAM:1929'), use the raw obo_id as a last resort.
+            if isempty(id) && isfield(data, 'obo_id') && ~isempty(data.obo_id), id = char(data.obo_id); end
             if isempty(id), warning('ndi:ontology:performIriLookup:IDExtractionFailed', 'Could not extract valid ID (e.g., %s:123) from OLS response for ontology "%s", IRI "%s".', ontology_prefix, ontology_name_ols, term_iri); end
             if isfield(data, 'label') && ~isempty(data.label), name = char(data.label); else, name = ''; end
              if isempty(name), warning('ndi:ontology:performIriLookup:MissingField', 'Field "label" not found/empty for ontology "%s", IRI "%s".', ontology_name_ols, term_iri); end

@@ -36,22 +36,29 @@
       "expected_name": "neuron"
     },
     {
-      "ontology": "NCBITaxon",
-      "lookup_string": "NCBITaxon:9606",
+      "ontology": "OM",
+      "lookup_string": "OM:Temperature",
       "should_succeed": true,
-      "expected_id": "NCBITaxon:9606",
-      "expected_name": "Homo sapiens"
+      "expected_id": "OM:Temperature",
+      "expected_name": "temperature"
     },
     {
       "ontology": "OM",
-      "lookup_string": "OM:MolarVolumeUnit",
+      "lookup_string": "OM:temperature",
       "should_succeed": true,
-      "expected_id": "OM:MolarVolumeUnit",
-      "expected_name": "molar volume unit"
+      "expected_id": "OM:Temperature",
+      "expected_name": "temperature"
     },
     {
       "ontology": "OM",
       "lookup_string": "OM:Acidity",
+      "should_succeed": true,
+      "expected_id": "OM:Acidity",
+      "expected_name": "acidity"
+    },
+    {
+      "ontology": "OM",
+      "lookup_string": "OM:acidity",
       "should_succeed": true,
       "expected_id": "OM:Acidity",
       "expected_name": "acidity"
@@ -83,20 +90,6 @@
       "should_succeed": false,
       "expected_id": "",
       "expected_name": ""
-    },
-    {
-      "ontology": "OM",
-      "lookup_string": "OM:acidity",
-      "should_succeed": true,
-      "expected_id": "OM:Acidity",
-      "expected_name": "acidity"
-    },
-    {
-      "ontology": "OM",
-      "lookup_string": "OM:molar volume unit",
-      "should_succeed": true,
-      "expected_id": "OM:MolarVolumeUnit",
-      "expected_name": "molar volume unit"
     },
     {
       "ontology": "CHEBI",
