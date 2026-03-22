@@ -4,68 +4,181 @@ classdef EDAM < ndi.ontology
 %   Inherits from ndi.ontology and implements lookupTermOrID for EDAM.
 %   EDAM is an ontology of data analysis and management in life sciences.
 %
+%   EDAM uses sub-ontology prefixes in its OBO IDs (format, data,
+%   operation, topic) rather than the top-level 'EDAM' prefix. For
+%   example, the FASTA format has IRI http://edamontology.org/format_1929.
+%
+%   This class downloads and parses the EDAM OWL file directly from
+%   GitHub, bypassing the OLS search API for reliability.
+%
 %   See also: http://edamontology.org
-%             https://www.ebi.ac.uk/ols4/ontologies/edam
+%             https://github.com/edamontology/edamontology
+
+    properties (Constant, Access = private)
+        ONTOLOGY_PREFIX = 'EDAM';
+        % Raw OWL file from the EDAM GitHub releases
+        OWL_URL = 'https://raw.githubusercontent.com/edamontology/edamontology/main/EDAM_dev.owl';
+        % EDAM IRI base used in OWL rdf:about attributes
+        IRI_BASE = 'http://edamontology.org/';
+    end
 
     methods
         function obj = EDAM()
-            % EDAM - Constructor for the EDAM ontology object.
-            % Implicitly calls the superclass constructor ndi.ontology().
-        end % constructor
+        end
 
         function [id, name, definition, synonyms] = lookupTermOrID(obj, term_or_id_or_name)
             % LOOKUPTERMORID - Looks up a term in the EDAM ontology.
             %
-            %   [ID, NAME, DEFINITION, SYNONYMS] = lookupTermOrID(OBJ, TERM_OR_ID_OR_NAME)
+            %   Downloads and caches the EDAM OWL file from GitHub, then
+            %   searches by numeric ID or label name.
             %
-            %   Overrides the base class method to provide specific lookup functionality
-            %   for the EDAM ontology using the EBI OLS API via static helper methods
-            %   from the ndi.ontology base class.
-            %
-            %   The input TERM_OR_ID_OR_NAME is the part of the original lookup string
-            %   after the prefix has been removed (e.g., '1929' for 'format:1929' or 'FASTA'
-            %   for 'format:FASTA').
-            %
-            %   Example Usage (after being called by ndi.ontology.lookup):
+            %   Example:
             %   [id, name, ~, def] = ndi.ontology.lookup('format:1929'); % FASTA
             %   [id, name, ~, def] = ndi.ontology.lookup('EDAM:1929');   % FASTA
-            %
-            %   See also: ndi.ontology.lookup (static dispatcher),
-            %             ndi.ontology.preprocessLookupInput (static helper),
-            %             ndi.ontology.searchOLSAndPerformIRILookup (static helper)
 
-            % Define ontology specifics for EDAM
-            ontology_prefix = 'EDAM';
-            ontology_name_ols = 'edam'; % OLS uses 'edam' as the ontology ID
-
-            % --- Step 1: Preprocess Input using Base Class Static Helper ---
-            % Standard preprocessing should work. If numeric, it will prepend 'EDAM:'.
-            try
-                % Call static method using full class name qualification
-                [search_query, search_field, lookup_type_msg, ~] = ...
-                    ndi.ontology.preprocessLookupInput(term_or_id_or_name, ontology_prefix);
-            catch ME
-                baseME = MException('ndi:ontology:EDAM:PreprocessingError', ...
-                    'Error preprocessing EDAM lookup input "%s".', term_or_id_or_name);
-                baseME = addCause(baseME, ME);
-                throw(baseME);
+            persistent edamCache;
+            if isempty(edamCache)
+                edamCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
             end
 
-            % --- Step 2: Perform Search and IRI Lookup using Base Class Static Helper ---
-            try
-                % Call static method using full class name qualification
-                [id, name, definition, synonyms] = ...
-                    ndi.ontology.searchOLSAndPerformIRILookup(...
-                        search_query, search_field, ontology_name_ols, ontology_prefix, lookup_type_msg);
-            catch ME
-                baseME = MException('ndi:ontology:EDAM:LookupFailed', ...
-                    'EDAM lookup failed for %s.', lookup_type_msg);
-                baseME = addCause(baseME, ME);
-                throw(baseME);
+            % Parse and cache the EDAM terms
+            cacheKey = 'edam_terms';
+            if ~isKey(edamCache, cacheKey)
+                terms = ndi.ontology.EDAM.downloadAndParseEDAM();
+                edamCache(cacheKey) = terms;
+            end
+            terms = edamCache(cacheKey);
+
+            if isempty(terms)
+                error('ndi:ontology:EDAM:NoTerms', ...
+                    'EDAM ontology file contained no parseable terms.');
             end
 
-        end % function lookupTermOrID
+            % Determine if input is a numeric ID or a name
+            isNumericID = ~isempty(regexp(term_or_id_or_name, '^\d+$', 'once'));
 
-    end % methods
+            found = false;
+            id = ''; name = ''; definition = ''; synonyms = {};
 
-end % classdef EDAM
+            for i = 1:numel(terms)
+                t = terms(i);
+                if isNumericID
+                    % Match by numeric ID portion
+                    if strcmp(t.numeric_id, term_or_id_or_name)
+                        found = true;
+                    end
+                else
+                    % Match by label (case-insensitive)
+                    if strcmpi(t.name, term_or_id_or_name)
+                        found = true;
+                    end
+                end
+
+                if found
+                    id = [obj.ONTOLOGY_PREFIX ':' t.numeric_id];
+                    name = t.name;
+                    definition = t.definition;
+                    synonyms = t.synonyms;
+                    break;
+                end
+            end
+
+            if ~found
+                if isNumericID
+                    error('ndi:ontology:EDAM:LookupFailed', ...
+                        'EDAM lookup failed for numeric ID "%s".', term_or_id_or_name);
+                else
+                    error('ndi:ontology:EDAM:LookupFailed', ...
+                        'EDAM lookup failed for name "%s".', term_or_id_or_name);
+                end
+            end
+        end
+    end
+
+    methods (Static, Access = private)
+        function terms = downloadAndParseEDAM()
+            %DOWNLOADANDPARSEEDAM Download EDAM OWL and extract terms.
+            %   Returns a struct array with fields: numeric_id, sub_prefix,
+            %   name, definition, synonyms.
+
+            terms = struct('numeric_id', {}, 'sub_prefix', {}, ...
+                           'name', {}, 'definition', {}, 'synonyms', {});
+
+            options = weboptions('Timeout', 60, 'ContentType', 'text');
+            try
+                owl_content = webread(ndi.ontology.EDAM.OWL_URL, options);
+            catch ME
+                error('ndi:ontology:EDAM:DownloadFailed', ...
+                    'Failed to download EDAM OWL file: %s', ME.message);
+            end
+
+            % Extract owl:Class blocks with EDAM IRIs
+            % Pattern: <owl:Class rdf:about="http://edamontology.org/{sub}_{id}">...</owl:Class>
+            iri_base_escaped = regexptranslate('escape', ndi.ontology.EDAM.IRI_BASE);
+            class_pattern = ['(?s)<owl:Class\s+rdf:about="' iri_base_escaped '([^"]+)">(.*?)</owl:Class>'];
+            class_blocks = regexp(owl_content, class_pattern, 'tokens');
+
+            for i = 1:numel(class_blocks)
+                local_id = class_blocks{i}{1};   % e.g., 'format_1929'
+                content  = class_blocks{i}{2};
+
+                % Parse local_id into sub_prefix and numeric_id
+                id_parts = regexp(local_id, '^(\w+)_(\d+)$', 'tokens', 'once');
+                if isempty(id_parts)
+                    continue;  % Skip non-standard IDs
+                end
+                sub_prefix = id_parts{1};
+                numeric_id = id_parts{2};
+
+                % Extract label
+                label_match = regexp(content, '(?s)<rdfs:label[^>]*>([^<]+)</rdfs:label>', 'tokens', 'once');
+                thisName = '';
+                if ~isempty(label_match)
+                    thisName = strtrim(ndi.ontology.EDAM.unescapeXML(label_match{1}));
+                end
+
+                % Skip deprecated terms (have owl:deprecated true)
+                if contains(content, '>true<') && contains(content, 'deprecated')
+                    continue;
+                end
+
+                % Extract definition
+                thisDef = '';
+                def_match = regexp(content, '(?s)<oboInOwl:hasDefinition[^>]*>.*?<rdfs:label[^>]*>([^<]+)</rdfs:label>.*?</oboInOwl:hasDefinition>', 'tokens', 'once');
+                if isempty(def_match)
+                    % Try alternative definition patterns
+                    def_match = regexp(content, '(?s)<obo:IAO_0000115[^>]*>([^<]+)</obo:IAO_0000115>', 'tokens', 'once');
+                end
+                if ~isempty(def_match)
+                    thisDef = strtrim(ndi.ontology.EDAM.unescapeXML(def_match{1}));
+                end
+
+                % Extract synonyms
+                syn_matches = regexp(content, '(?s)<oboInOwl:has(?:Exact|Narrow|Related|Broad)Synonym[^>]*>([^<]+)</oboInOwl:has(?:Exact|Narrow|Related|Broad)Synonym>', 'tokens');
+                thisSynonyms = {};
+                if ~isempty(syn_matches)
+                    thisSynonyms = cellfun(@(x) strtrim(ndi.ontology.EDAM.unescapeXML(x{1})), ...
+                        syn_matches, 'UniformOutput', false);
+                end
+
+                % Add to terms array
+                idx = numel(terms) + 1;
+                terms(idx).numeric_id = numeric_id;
+                terms(idx).sub_prefix = sub_prefix;
+                terms(idx).name = thisName;
+                terms(idx).definition = thisDef;
+                terms(idx).synonyms = thisSynonyms;
+            end
+        end
+
+        function str = unescapeXML(str)
+            %UNESCAPEXML Handle common XML entities
+            str = strrep(str, '&apos;', '''');
+            str = strrep(str, '&quot;', '"');
+            str = strrep(str, '&amp;', '&');
+            str = strrep(str, '&lt;', '<');
+            str = strrep(str, '&gt;', '>');
+            str = strtrim(str);
+        end
+    end
+end
