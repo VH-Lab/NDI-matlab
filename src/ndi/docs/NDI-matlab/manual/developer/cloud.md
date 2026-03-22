@@ -104,48 +104,6 @@ The dataset is created in a subfolder named after the `cloudDatasetId` within `t
 
 ### Lower-Level Download Functions (`ndi.cloud.download.*`)
 
-#### `ndi.cloud.download.dataset`
-
-```matlab
-[b, msg, D] = ndi.cloud.download.dataset(dataset_id, mode, output_path)
-```
-
-Downloads a dataset from NDI Cloud, including its documents and (optionally) its files.
-
-**Inputs:**
-- `dataset_id` — The cloud dataset identifier.
-- `mode` — `'local'` to download all files locally, or `'hybrid'` to leave binary files in the cloud.
-- `output_path` — (Optional) The local path where the dataset should be placed. If empty, a directory picker is shown.
-
-**Optional name-value inputs:**
-- `verbose` (logical) — Enables verbose output. Default: `true`.
-
-**Outputs:**
-- `b` — `1` if download succeeded, `0` if it failed.
-- `msg` — An error message string if the download failed; `''` otherwise.
-- `D` — An `ndi.dataset` object built from the downloaded documents.
-
-#### `ndi.cloud.download.datasetDocuments`
-
-```matlab
-[b, msg] = ndi.cloud.download.datasetDocuments(dataset, mode, jsonpath, filepath)
-```
-
-Downloads the documents belonging to a dataset from NDI Cloud and saves each document as a JSON file.
-
-**Inputs:**
-- `dataset` — The dataset structure returned by `ndi.cloud.api.datasets.getDataset`.
-- `mode` — `'local'` or `'hybrid'` (controls how file paths within documents are set).
-- `jsonpath` — Directory where document JSON files are saved.
-- `filepath` — Directory where associated binary files are saved.
-
-**Optional name-value inputs:**
-- `verbose` (logical) — Enables verbose output. Default: `true`.
-
-**Outputs:**
-- `b` — `1` if successful, `0` otherwise.
-- `msg` — An error message if the operation failed; `''` otherwise.
-
 #### `ndi.cloud.download.downloadDatasetFiles`
 
 ```matlab

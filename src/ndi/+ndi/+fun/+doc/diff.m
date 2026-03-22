@@ -94,7 +94,7 @@ function [are_equal, report] = diff(doc1, doc2, options)
             [~, idx2] = sort({dep2.name});
             dep2 = dep2(idx2);
 
-            if ~isequal(dep1, dep2)
+            if ~isequaln(dep1, dep2)
                 are_equal = false;
                 details{end+1} = 'Dependencies do not match.';
             end
@@ -124,7 +124,7 @@ function [are_equal, report] = diff(doc1, doc2, options)
         fList1 = sort(fList1(:));
         fList2 = sort(fList2(:));
 
-        if ~isequal(fList1, fList2)
+        if ~isequaln(fList1, fList2)
             are_equal = false;
             details{end+1} = 'File lists do not match.';
         end
