@@ -32,7 +32,7 @@ jobs:
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@v1
 
-      - name: Run ontology tests
+      - name: Install dependencies and run ontology tests
         uses: matlab-actions/run-command@v2
         with:
           command: |
@@ -40,9 +40,12 @@ jobs:
             addpath(genpath("tests"));
             addpath(genpath("tools"));
 
+            % Install dependencies (same as testToolbox does)
+            projectRootDir = nditools.projectdir();
+            matbox.installRequirements(fullfile(projectRootDir, 'tests'))
+
             import matlab.unittest.TestRunner
             import matlab.unittest.TestSuite
-            import matlab.unittest.plugins.DiagnosticsOutputPlugin
 
             suite = TestSuite.fromClass(?ndi.unittest.ontology.TestOntologyLookup);
             runner = TestRunner.withTextOutput("Verbosity", "Detailed");
