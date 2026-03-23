@@ -330,7 +330,7 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                         ' and epoch_b=' epochnode_b.epoch_id ...
                         '; using syncTriggerTrains fallback.']);
                     [mshift,mscale] = ndi.time.fun.syncTriggerTrains(sort(T1_total), sort(T2_total));
-                    map_coeffs = [mscale mshift];
+                    map_coeffs = [mshift mscale];
                 end
 
                 cost = 1; % As requested
