@@ -309,16 +309,22 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                 end
 
                 % 5. Compute Mapping
-                map_coeffs = vlt.time.syncTriggers(sort(T1_total), sort(T2_total));
-                % map_coeffs is [shift scale] -> T2 = shift + scale * T1
-                % ndi.time.timemapping expects [m b] where y = m*x + b.
-                % Wait, let's check vlt.time.syncTriggers description again.
-                % "T2 is approximately equal to shift + scale * T1"
-                % So T2 = scale * T1 + shift.
-                % ndi.time.timemapping([m b]) means y = m*x + b.
-                % So m = scale, b = shift.
-                % But wait, vlt.time.syncTriggers returns [shift scale].
-                % So mapping params should be [scale shift].
+
+                if numel(T1_total)==numel(T2_total)
+                    map_coeffs = vlt.time.syncTriggers(sort(T1_total), sort(T2_total));
+                    % map_coeffs is [shift scale] -> T2 = shift + scale * T1
+                    % ndi.time.timemapping expects [m b] where y = m*x + b.
+                    % Wait, let's check vlt.time.syncTriggers description again.
+                    % "T2 is approximately equal to shift + scale * T1"
+                    % So T2 = scale * T1 + shift.
+                    % ndi.time.timemapping([m b]) means y = m*x + b.
+                    % So m = scale, b = shift.
+                    % But wait, vlt.time.syncTriggers returns [shift scale].
+                    % So mapping params should be [scale shift].
+                else
+                    [mshift,mscale] = ndi.time.fun.syncTriggerTrains(sort(T1_total), sort(T2_total));
+                    map_coeffs = [mshift mscale]
+                end
 
                 cost = 1; % As requested
                 mapping = ndi.time.timemapping([map_coeffs(2) map_coeffs(1)]);
