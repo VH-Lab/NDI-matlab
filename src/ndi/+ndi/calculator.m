@@ -944,8 +944,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             for iPkg = 1:numel(allPackages)
                 w = what(allPackages(iPkg));
                 for iW = 1:numel(w)
-                    for iM = 1:numel(w(iW).classes)
-                        candidateName = allPackages(iPkg) + "." + w(iW).classes{iM};
+                    for iM = 1:numel(w(iW).m)
+                        candidateName = allPackages(iPkg) + "." + w(iW).m{iM};
                         try
                             mc = meta.class.fromName(candidateName);
                             if ~isempty(mc) && isCalculatorSubclass(mc)
