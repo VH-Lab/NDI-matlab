@@ -3,21 +3,21 @@ classdef testFindCalculatorSubclasses < matlab.unittest.TestCase
     methods (Test)
         function testReturnsNonEmpty(testCase)
             % The repo has known calculator subclasses, so result should not be empty
-            result = ndi.calculator.find_calculator_subclasses('UseCache', false);
+            result = ndi.calculator.find_calculator_subclasses('ClearCache', true);
             testCase.verifyNotEmpty(result, ...
                 'find_calculator_subclasses should return at least one subclass');
         end
 
         function testKnownSubclassesPresent(testCase)
             % Verify known calculator subclasses are found
-            result = ndi.calculator.find_calculator_subclasses('UseCache', false);
+            result = ndi.calculator.find_calculator_subclasses('ClearCache', true);
             testCase.verifyTrue(ismember("ndi.calc.example.simple", result), ...
                 'ndi.calc.example.simple should be found as a calculator subclass');
         end
 
         function testAllResultsAreCalculatorSubclasses(testCase)
             % Every returned class should actually be a subclass of ndi.calculator
-            result = ndi.calculator.find_calculator_subclasses('UseCache', false);
+            result = ndi.calculator.find_calculator_subclasses('ClearCache', true);
             for i = 1:numel(result)
                 mc = meta.class.fromName(result(i));
                 testCase.verifyNotEmpty(mc, ...
@@ -29,8 +29,8 @@ classdef testFindCalculatorSubclasses < matlab.unittest.TestCase
 
         function testCachingWorks(testCase)
             % First call with cache cleared, second call should use cache
-            result1 = ndi.calculator.find_calculator_subclasses('UseCache', false);
-            result2 = ndi.calculator.find_calculator_subclasses('UseCache', true);
+            result1 = ndi.calculator.find_calculator_subclasses('ClearCache', true);
+            result2 = ndi.calculator.find_calculator_subclasses();
             testCase.verifyEqual(result1, result2, ...
                 'Cached result should match fresh result');
         end
@@ -38,7 +38,7 @@ classdef testFindCalculatorSubclasses < matlab.unittest.TestCase
         function testClearCacheDoesNotError(testCase)
             % Calling with UseCache=false should not error
             testCase.verifyWarningFree( ...
-                @() ndi.calculator.find_calculator_subclasses('UseCache', false));
+                @() ndi.calculator.find_calculator_subclasses('ClearCache', true));
         end
     end
 end

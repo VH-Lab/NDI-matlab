@@ -901,23 +901,27 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % FIND_CALCULATOR_SUBCLASSES - find all subclasses of ndi.calculator on the MATLAB path
             %
             % CLASSNAMES = ndi.calculator.find_calculator_subclasses()
-            % CLASSNAMES = ndi.calculator.find_calculator_subclasses('UseCache', false)
+            % CLASSNAMES = ndi.calculator.find_calculator_subclasses('ClearCache', true)
             %
             % Searches the MATLAB path for all classes under the ndi.calc namespace
             % that are subclasses of ndi.calculator. Returns a string array of
             % fully-qualified class names (e.g., "ndi.calc.example.simple").
             %
-            % The results are cached in a persistent variable. Set 'UseCache' to
-            % false to clear the cache and re-scan.
+            % The results are cached in a persistent variable. Set 'ClearCache' to
+            % true to clear the cache and re-scan.
             %
 
             arguments
-                options.UseCache (1,1) logical = true
+                options.ClearCache (1,1) logical = false
             end
 
             persistent cachedResult
 
-            if options.UseCache && ~isempty(cachedResult)
+            if options.ClearCache
+                cachedResult = [];
+            end
+
+            if ~isempty(cachedResult)
                 classNames = cachedResult;
                 return;
             end
