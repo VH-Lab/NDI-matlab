@@ -8,10 +8,21 @@ classdef testFindCalculatorSubclasses < matlab.unittest.TestCase
                 'find_calculator_subclasses should return at least one subclass');
         end
 
+        function testReturnsCellArrayOfChar(testCase)
+            % Result should be a column cell array of character arrays
+            result = ndi.calculator.find_calculator_subclasses('ClearCache', true);
+            testCase.verifyTrue(iscell(result), 'Result should be a cell array');
+            testCase.verifyEqual(size(result, 2), 1, 'Result should be a column cell array');
+            for i = 1:numel(result)
+                testCase.verifyTrue(ischar(result{i}), ...
+                    sprintf('Entry %d should be a character array', i));
+            end
+        end
+
         function testKnownSubclassesPresent(testCase)
             % Verify known calculator subclasses are found
             result = ndi.calculator.find_calculator_subclasses('ClearCache', true);
-            testCase.verifyTrue(ismember("ndi.calc.example.simple", result), ...
+            testCase.verifyTrue(ismember('ndi.calc.example.simple', result), ...
                 'ndi.calc.example.simple should be found as a calculator subclass');
         end
 
@@ -19,11 +30,11 @@ classdef testFindCalculatorSubclasses < matlab.unittest.TestCase
             % Every returned class should actually be a subclass of ndi.calculator
             result = ndi.calculator.find_calculator_subclasses('ClearCache', true);
             for i = 1:numel(result)
-                mc = meta.class.fromName(result(i));
+                mc = meta.class.fromName(result{i});
                 testCase.verifyNotEmpty(mc, ...
-                    sprintf('%s should be a valid class', result(i)));
+                    sprintf('%s should be a valid class', result{i}));
                 testCase.verifyTrue(isSubclassOf(mc, 'ndi.calculator'), ...
-                    sprintf('%s should be a subclass of ndi.calculator', result(i)));
+                    sprintf('%s should be a subclass of ndi.calculator', result{i}));
             end
         end
 
