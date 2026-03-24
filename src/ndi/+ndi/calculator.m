@@ -926,38 +926,25 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 return;
             end
 
-            % Find all packages under ndi.calc recursively
-            packagesToSearch = {"ndi.calc"};
-            allPackages = string.empty;
-            while ~isempty(packagesToSearch)
-                pkg = packagesToSearch{1};
-                packagesToSearch(1) = [];
-                allPackages(end+1) = pkg; %#ok<AGROW>
-                % Use what to find sub-packages
-                w = what(pkg);
-                for iW = 1:numel(w)
-                    for iP = 1:numel(w(iW).packages)
-                        subPkg = pkg + "." + w(iW).packages{iP};
-                        packagesToSearch{end+1} = subPkg; %#ok<AGROW>
-                    end
-                end
-            end
-
-            % Collect all .m files from each package and check if they are calculator subclasses
+            % Find all classes under ndi.calc recursively using meta.package
             classNames = string.empty;
-            for iPkg = 1:numel(allPackages)
-                w = what(allPackages(iPkg));
-                for iW = 1:numel(w)
-                    for iM = 1:numel(w(iW).m)
-                        candidateName = allPackages(iPkg) + "." + w(iW).m{iM};
-                        try
-                            mc = meta.class.fromName(candidateName);
-                            if ~isempty(mc) && isCalculatorSubclass(mc)
-                                classNames(end+1) = candidateName; %#ok<AGROW>
-                            end
-                        catch
-                            % Not a valid class or cannot introspect; skip
-                        end
+            packagesToSearch = {"ndi.calc"};
+            while ~isempty(packagesToSearch)
+                pkgName = packagesToSearch{1};
+                packagesToSearch(1) = [];
+                mp = meta.package.fromName(pkgName);
+                if isempty(mp)
+                    continue;
+                end
+                % Queue sub-packages for recursive search
+                for iP = 1:numel(mp.PackageList)
+                    packagesToSearch{end+1} = mp.PackageList(iP).Name; %#ok<AGROW>
+                end
+                % Check each class in this package
+                for iC = 1:numel(mp.ClassList)
+                    mc = mp.ClassList(iC);
+                    if isCalculatorSubclass(mc)
+                        classNames(end+1) = string(mc.Name); %#ok<AGROW>
                     end
                 end
             end
