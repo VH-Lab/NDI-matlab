@@ -897,5 +897,84 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
              if ~isempty(pipeline_fig), figure(pipeline_fig(1)); end
              if ishandle(fig), figure(fig); end
         end
+        function classNames = find_calculator_subclasses(options)
+            % FIND_CALCULATOR_SUBCLASSES - find all subclasses of ndi.calculator on the MATLAB path
+            %
+            % CLASSNAMES = ndi.calculator.find_calculator_subclasses()
+            % CLASSNAMES = ndi.calculator.find_calculator_subclasses('UseCache', false)
+            %
+            % Searches the MATLAB path for all classes under the ndi.calc namespace
+            % that are subclasses of ndi.calculator. Returns a string array of
+            % fully-qualified class names (e.g., "ndi.calc.example.simple").
+            %
+            % The results are cached in a persistent variable. Set 'UseCache' to
+            % false to clear the cache and re-scan.
+            %
+
+            arguments
+                options.UseCache (1,1) logical = true
+            end
+
+            persistent cachedResult
+
+            if options.UseCache && ~isempty(cachedResult)
+                classNames = cachedResult;
+                return;
+            end
+
+            % Find all packages under ndi.calc recursively
+            packagesToSearch = {"ndi.calc"};
+            allPackages = string.empty;
+            while ~isempty(packagesToSearch)
+                pkg = packagesToSearch{1};
+                packagesToSearch(1) = [];
+                allPackages(end+1) = pkg; %#ok<AGROW>
+                % Use what to find sub-packages
+                w = what(pkg);
+                for iW = 1:numel(w)
+                    for iP = 1:numel(w(iW).packages)
+                        subPkg = pkg + "." + w(iW).packages{iP};
+                        packagesToSearch{end+1} = subPkg; %#ok<AGROW>
+                    end
+                end
+            end
+
+            % Collect all .m files from each package and check if they are calculator subclasses
+            classNames = string.empty;
+            for iPkg = 1:numel(allPackages)
+                w = what(allPackages(iPkg));
+                for iW = 1:numel(w)
+                    for iM = 1:numel(w(iW).classes)
+                        candidateName = allPackages(iPkg) + "." + w(iW).classes{iM};
+                        try
+                            mc = meta.class.fromName(candidateName);
+                            if ~isempty(mc) && isCalculatorSubclass(mc)
+                                classNames(end+1) = candidateName; %#ok<AGROW>
+                            end
+                        catch
+                            % Not a valid class or cannot introspect; skip
+                        end
+                    end
+                end
+            end
+
+            cachedResult = classNames;
+        end
+
     end % End of methods (Static)
 end % End of classdef
+
+function tf = isCalculatorSubclass(mc)
+    % ISCALCULATORSUBCLASS - recursively check if a meta.class inherits from ndi.calculator
+    tf = false;
+    for i = 1:numel(mc.SuperclassList)
+        if strcmp(mc.SuperclassList(i).Name, 'ndi.calculator')
+            tf = true;
+            return;
+        end
+        if isCalculatorSubclass(mc.SuperclassList(i))
+            tf = true;
+            return;
+        end
+    end
+end
