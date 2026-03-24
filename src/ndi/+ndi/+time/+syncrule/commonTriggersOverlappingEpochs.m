@@ -322,8 +322,15 @@ classdef commonTriggersOverlappingEpochs < ndi.time.syncrule
                     % But wait, vlt.time.syncTriggers returns [shift scale].
                     % So mapping params should be [scale shift].
                 else
+                    mylog = ndi.common.getLogger();
+                    mylog.msg('system', 1, ...
+                        ['commonTriggersOverlappingEpochs: trigger count mismatch ' ...
+                        '(T1=' int2str(numel(T1_total)) ', T2=' int2str(numel(T2_total)) ') ' ...
+                        'between epoch_a=' epochnode_a.epoch_id ...
+                        ' and epoch_b=' epochnode_b.epoch_id ...
+                        '; using syncTriggerTrains fallback.']);
                     [mshift,mscale] = ndi.time.fun.syncTriggerTrains(sort(T1_total), sort(T2_total));
-                    map_coeffs = [mshift mscale]
+                    map_coeffs = [mshift mscale];
                 end
 
                 cost = 1; % As requested

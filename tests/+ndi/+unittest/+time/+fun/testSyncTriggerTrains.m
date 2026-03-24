@@ -12,11 +12,11 @@ classdef testSyncTriggerTrains < matlab.unittest.TestCase
         function testIdentityWithJitter(testCase)
             % TEST 1: Identity mapping with minor jitter
             % Validates that hashing works when the signal isn't perfectly periodic.
-            t_base = (0:10:500)'; 
-            jitter = 0.05 * randn(size(t_base)); 
+            t_base = (0:10:500)';
+            jitter = 0.05 * randn(size(t_base));
             true_shift = 50;
-            t1 = t_base + jitter + true_shift;
-            t2 = t_base + jitter;
+            t1 = t_base + jitter;
+            t2 = t_base + jitter + true_shift;
             
             [s, m] = ndi.time.fun.syncTriggerTrains(t1, t2);
             
@@ -27,11 +27,11 @@ classdef testSyncTriggerTrains < matlab.unittest.TestCase
         function testJitterAndDrift(testCase)
             % TEST 2: High-precision recovery of drift (200ppm) and noise
             % Ensures the seed search and validation handle "stretched" intervals.
-            true_s = 12.345; 
+            true_s = 12.345;
             true_m = 1.0002;
             % Use non-uniform intervals to provide a unique hash fingerprint
-            t2 = cumsum(1 + 0.5 * rand(200,1)); 
-            t1 = true_m * t2 + true_s + 0.0002 * randn(size(t2));
+            t1 = cumsum(1 + 0.5 * rand(200,1));
+            t2 = true_m * t1 + true_s + 0.0002 * randn(size(t1));
             
             [s, m] = ndi.time.fun.syncTriggerTrains(t1, t2);
             
@@ -43,17 +43,18 @@ classdef testSyncTriggerTrains < matlab.unittest.TestCase
         function testDevice1DroppedPulse(testCase)
             % TEST 3: The "Steve" Case - Device 1 is missing a pulse
             % Simulates a periodic signal where a single drop reveals the mapping.
-            t2_periodic = [];
+            t1_periodic = [];
             for i = 0:40
-                t2_periodic = [t2_periodic; i*30; i*30+5]; 
+                t1_periodic = [t1_periodic; i*30; i*30+5];
             end
-            t2_periodic = t2_periodic + 0.01*randn(size(t2_periodic)); % Add jitter
-            
+            t1_periodic = t1_periodic + 0.01*randn(size(t1_periodic)); % Add jitter
+
             true_shift = 100;
-            t1_dropped = t2_periodic + true_shift;
+            t2_full = t1_periodic + true_shift;
+            t1_dropped = t1_periodic;
             t1_dropped(25) = []; % Simulate dropped pulse in T1
-            
-            [s, m] = ndi.time.fun.syncTriggerTrains(t1_dropped, t2_periodic);
+
+            [s, m] = ndi.time.fun.syncTriggerTrains(t1_dropped, t2_full);
             
             testCase.verifyFalse(isnan(s), 'Failed when Device 1 dropped a pulse.');
             testCase.verifyEqual(s, true_shift, 'AbsTol', 0.05);
@@ -70,7 +71,7 @@ classdef testSyncTriggerTrains < matlab.unittest.TestCase
             t1_periodic = t1_periodic + 0.01*randn(size(t1_periodic));
             
             true_shift = -50;
-            t2_dropped = t1_periodic - true_shift; 
+            t2_dropped = t1_periodic + true_shift;
             t2_dropped(10) = []; % Simulate dropped pulse in T2
             
             [s, m] = ndi.time.fun.syncTriggerTrains(t1_periodic, t2_dropped);
@@ -94,8 +95,8 @@ classdef testSyncTriggerTrains < matlab.unittest.TestCase
             % TEST 6: Performance check with 1000 pulses
             % Ensures the exhaustive validation loop remains performant.
             n = 1000;
-            t2 = cumsum(0.2 + 0.8 * rand(n,1));
-            t1 = 1.0001 * t2 + 5.0 + 0.0001*randn(n,1);
+            t1 = cumsum(0.2 + 0.8 * rand(n,1));
+            t2 = 1.0001 * t1 + 5.0 + 0.0001*randn(n,1);
             
             tic;
             [s, m] = ndi.time.fun.syncTriggerTrains(t1, t2);

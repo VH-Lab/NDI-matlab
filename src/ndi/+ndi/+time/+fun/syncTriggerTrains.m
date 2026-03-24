@@ -2,7 +2,7 @@ function [shift, scale] = syncTriggerTrains(t1, t2, options)
 % NDI.TIME.FUN.SYNCTRIGGERTRAINS - Synchronize clocks with drift and drop robustness
 %
 %   [SHIFT, SCALE] = NDI.TIME.FUN.SYNCTRIGGERTRAINS(T1, T2)
-%   returns SHIFT and SCALE such that T1 = SHIFT + SCALE * T2.
+%   returns SHIFT and SCALE such that T2 = SHIFT + SCALE * T1.
 %
 %   This function aligns two independent clocks recording a common digital 
 %   pulse train. It is engineered for high-precision electrophysiology 
@@ -28,7 +28,7 @@ function [shift, scale] = syncTriggerTrains(t1, t2, options)
 %       fingerprintSize:    (Default 5) Number of intervals per hash key.
 %
 %   OUTPUTS:
-%       shift: Time intercept (s) for the mapping T1 = SHIFT + SCALE * T2.
+%       shift: Time intercept (s) for the mapping T2 = SHIFT + SCALE * T1.
 %       scale: Clock drift ratio. Returns NaN if no match is found.
 %
 %   ERRORS:
@@ -50,15 +50,19 @@ function [shift, scale] = syncTriggerTrains(t1, t2, options)
     if length(t1) < fSize || length(t2) < fSize, return; end
 
     % Standardize direction: Target is the longer recording (by count)
+    % runRobustGlobalSync(target, prober) returns target = shift + scale * prober
+    % We want T2 = shift + scale * T1, so:
     if length(t1) >= length(t2)
-        [shift, scale] = runRobustGlobalSync(t1, t2, options);
-    else
-        [s_inv, m_inv] = runRobustGlobalSync(t2, t1, options);
-        if ~isnan(s_inv)
-            % Algebrically invert: t1 = (1/m_inv)*t2 - (s_inv/m_inv)
-            scale = 1 / m_inv;
-            shift = -s_inv / m_inv;
+        % runRobustGlobalSync(t1, t2) gives t1 = s_raw + m_raw * t2
+        % Invert: t2 = (1/m_raw)*t1 - s_raw/m_raw
+        [s_raw, m_raw] = runRobustGlobalSync(t1, t2, options);
+        if ~isnan(s_raw)
+            scale = 1 / m_raw;
+            shift = -s_raw / m_raw;
         end
+    else
+        % runRobustGlobalSync(t2, t1) gives t2 = shift + scale * t1 directly
+        [shift, scale] = runRobustGlobalSync(t2, t1, options);
     end
 end
 
