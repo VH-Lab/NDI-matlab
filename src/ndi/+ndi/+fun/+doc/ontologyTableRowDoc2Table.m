@@ -59,7 +59,7 @@ for i = 1:numel(tableRowDoc)
     variableNames{i} = tableRowDoc{i}.document_properties.ontologyTableRow.variableNames;
     docID{i} = tableRowDoc{i}.id;
     sessionID{i} = tableRowDoc{i}.document_properties.base.session_id;  
-    dependencyID{i} = tableRowDoc{i}.dependency_value('document_id');
+    dependencyID{i} = tableRowDoc{i}.dependency_value_n('document_id');
 end
 
 if options.StackAll

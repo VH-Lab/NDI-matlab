@@ -1,34 +1,45 @@
-function updatedDate = dateUpdated(fileName)
-%DATEUPDATED Gets the last modification date of a file.
+function updatedDate = dateUpdated(pathName)
+% DATEUPDATED Gets the last modification date of a file or folder.
 %
 % SYNTAX:
-%   updatedDate = dateUpdated(fileName)
+%   updatedDate = dateUpdated(pathName)
 %
 % DESCRIPTION:
-%   dateUpdated(fileName) returns the last modification (last updated) date
-%   of the specified file as a standard MATLAB datetime object. It uses the
-%   built-in, cross-platform `dir` function and is a reliable way to get
-%   file metadata on any operating system.
+%   Returns the last modification date of the specified file or folder 
+%   as a standard MATLAB datetime object.
 %
 % INPUTS:
-%   fileName - Path to the file (string or character vector).
-%
-% OUTPUTS:
-%   updatedDate - A datetime object representing the last modification time.
-%                 Returns NaT (Not-a-Time) if the file does not exist.
+%   pathName - Path to the file or folder (string or character vector).
 
-% 1. Check if the file exists.
-if ~isfile(fileName)
-    warning('File not found: %s', fileName);
-    updatedDate = NaT; % NaT stands for "Not-a-Time"
+% 1. Check if the path exists (works for both files and folders)
+if ~exist(pathName, 'file')
+    warning('Path not found: %s', pathName);
+    updatedDate = NaT; 
     return;
 end
 
-% 2. Get file information using the built-in dir function.
-fileInfo = dir(fileName);
+% 2. Get information using dir
+% Note: Using dir on a specific path returns the info for that entity.
+fileInfo = dir(pathName);
 
-% 3. Convert the file's serial date number to a standard datetime object.
-% The '.datenum' field is the most reliable, locale-independent source.
-updatedDate = datetime(fileInfo(1).datenum, 'ConvertFrom', 'datenum');
+% 3. Extract the date
+% If pathName is a folder, dir(pathName) returns contents. 
+% To get the folder's own metadata, we use the '.' entry or index carefully.
+% However, a safer cross-platform way to get the specific entity's info
+% regardless of type is to ensure we aren't looking at folder contents:
+if isfolder(pathName)
+    % When dir is called on a folder, the '.' entry (index 1) 
+    % represents the folder itself.
+    info = fileInfo(strcmp({fileInfo.name}, '.'));
+    
+    % Fallback: if '.' isn't found for some reason, use the first entry
+    if isempty(info); info = fileInfo(1); end
+else
+    % It's a file
+    info = fileInfo(1);
+end
+
+% 4. Convert to datetime
+updatedDate = datetime(info.datenum, 'ConvertFrom', 'datenum');
 
 end

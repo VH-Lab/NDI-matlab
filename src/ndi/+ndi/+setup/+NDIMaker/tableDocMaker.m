@@ -124,14 +124,14 @@ classdef tableDocMaker < handle
                 obj
                 tableRow (1,:) table % Input is a single table row
                 identifyingVariables {mustBeText}
-                options.dependencyVariable {mustBeTextScalar} = ''
+                options.dependencyVariable {mustBeText} = ''
                 options.Overwrite (1,1) logical = false
                 options.OldDocs cell = {NaN}
             end
 
             % Ensure identifyingVariables is a cell array
             identifyingVariables = cellstr(identifyingVariables);
-            dependencyVariable = char(options.dependencyVariable);
+            dependencyVariable = cellstr(options.dependencyVariable);
 
             % Search for existing document(s)
             if isempty(options.OldDocs)| isa(options.OldDocs{1},'ndi.document')
@@ -175,7 +175,7 @@ classdef tableDocMaker < handle
 
             % Get variable (column) names from table
             varNames = tableRow.Properties.VariableNames;
-            varNames(strcmp(varNames,options.dependencyVariable)) = [];
+            varNames(ismember(varNames,dependencyVariable)) = [];
 
             % Initialize ontologyTableRow field names
             names = cell(numel(varNames),1); variableNames = cell(numel(varNames),1);
@@ -232,12 +232,19 @@ classdef tableDocMaker < handle
                 obj.session.newdocument();
 
             % Add dependency (if applicable)
-            if ~isempty(dependencyVariable)
-                value = tableRow.(dependencyVariable);
-                if isa(value,'cell')
-                    value = value{1};
+            if ~isequal(dependencyVariable,{''})
+                values = tableRow{:,dependencyVariable};
+                for d = 1:numel(values)
+                    value = values{d};
+                    if iscell(value)
+                        value = value{1};
+                    end
+                    if isscalar(values)
+                        doc = doc.set_dependency_value('document_id',value);
+                    else
+                        doc = doc.add_dependency_value_n('document_id',value);
+                    end
                 end
-                doc = doc.set_dependency_value('document_id',value);
             end
 
         end % createOntologyTableRowDoc
@@ -276,7 +283,7 @@ classdef tableDocMaker < handle
                 obj
                 dataTable table
                 identifyingVariables {mustBeText}
-                options.DependencyVariable {mustBeTextScalar} = ''
+                options.DependencyVariable {mustBeText} = ''
                 options.Overwrite (1,1) logical = false
             end
 
