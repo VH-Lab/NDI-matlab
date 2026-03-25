@@ -370,6 +370,13 @@ classdef document
                     if isempty(matches) & i == 1
                         % Try looking for non-numbered dependency
                         matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
+                        % Skip if the matched dependency has an empty value (template placeholder)
+                        if ~isempty(matches)
+                            val = ndi_document_obj.document_properties.depends_on(matches(1)).value;
+                            if isempty(val)
+                                matches = [];
+                            end
+                        end
                     end
                     if numel(matches)>0
                         notfound = 0;
