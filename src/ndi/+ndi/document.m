@@ -367,6 +367,10 @@ classdef document
                 i = 1;
                 while ~finished
                     matches = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
+                    if isempty(matches) & i == 1
+                        % Try looking for non-numbered dependency
+                        matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
+                    end
                     if numel(matches)>0
                         notfound = 0;
                         d{i} = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
