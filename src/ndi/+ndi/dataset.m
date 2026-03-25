@@ -556,7 +556,26 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     filename
                     options.autoClose (1,1) logical = true
                 end
-            ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
+
+                doc_input = ndi.session.docinput2docs(ndi_dataset_obj, ndi_document_or_id);
+                if ~isempty(doc_input)
+                    doc = doc_input{1};
+                    session_id = doc.document_properties.base.session_id;
+
+                    % session matches one of the linked sessions
+                    if ~strcmp(session_id, ndi_dataset_obj.id())
+                        try
+                            ndi_session_obj = ndi_dataset_obj.open_session(session_id);
+                            ndi_binarydoc_obj = ndi_session_obj.database_openbinarydoc(doc, filename, 'autoClose', options.autoClose);
+                            return;
+                        catch
+                            % if we can't open it or something goes wrong, fall back to current behavior
+                        end
+                    end
+                end
+                
+                ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
+
         end % database_openbinarydoc
 
         function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
