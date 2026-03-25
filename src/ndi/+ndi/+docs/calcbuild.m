@@ -31,8 +31,11 @@ function calcbuild(ndicalc_path)
     out1 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath,[],'',url_prefix);
     os = vlt.docs.markdownoutput2objectstruct(out1); % get object structures
 
-    ndi_os = load([ndi.common.PathConstants.RootFolder filesep 'docs' filesep 'documentation_structure.mat']);
-    os = cat(2,os,ndi_os.os);
+    ndi_os_file = [ndi.common.PathConstants.RootFolder filesep 'docs' filesep 'documentation_structure.mat'];
+    if isfile(ndi_os_file)
+        ndi_os = load(ndi_os_file);
+        os = cat(2,os,ndi_os.os);
+    end
 
     disp(['Writing documents pass 2, with all links']);
     out2 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath, os,'',url_prefix);
