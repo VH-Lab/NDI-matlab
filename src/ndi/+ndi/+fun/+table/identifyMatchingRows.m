@@ -106,7 +106,7 @@ elseif isscalar(columnNames) && iscell(dataValues) && iscell(dataValues{1}) && i
     % No action needed, already in correct {{'value'}} format for iteration
 elseif isscalar(columnNames) && iscell(dataValues) && ~iscell(dataValues{1})
     % This handles rowInd = identifyMatchingRows(dataTable, 'column1',{'abc'})
-    % No action needed, already in correct {{'value1','value2'}} format for iteration
+    dataValues = {dataValues};
 else
     % Ensure dataValues is consistently a cell array of cell arrays for iteration,
     % where each inner cell contains the possible match values for a column.
