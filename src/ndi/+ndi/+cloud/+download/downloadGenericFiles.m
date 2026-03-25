@@ -157,8 +157,13 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
             % Get the download URL for the specific file
             [success_api, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, uid);
             if ~success_api
+                if isfield(answer,'error')
+                    errorMsg = answer.error;
+                else
+                    errorMsg = answer.message;
+                end
                 warning('NDI:downloadGenericFiles:ApiError', ...
-                    'Failed to get download URL for file %s (UID: %s): %s', filename, uid, answer.message);
+                    'Failed to get download URL for file %s (UID: %s): %s', filename, uid, errorMsg);
                 continue;
             end
 
