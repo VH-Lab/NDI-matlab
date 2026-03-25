@@ -82,13 +82,13 @@ while ~all(file_processed)
     for i = 1:numel(files_to_process)
         if ~file_processed(i)
             current_file = files_to_process(i);
-            file_path = fullfile(base_dir, current_file.uid);
+            file_path = current_file.file_path;
             file_bytes = current_file.bytes;
 
             % --- Logic Check: Ensure file exists on disk ---
             if ~isfile(file_path)
                 if options.Verbose
-                    warning('File %s (UID: %s) not found on disk. Skipping.', current_file.name, current_file.uid);
+                    warning('File %s (UID: %s) not found on disk. Skipping.', current_file.file_path, current_file.uid);
                 end
                 skipped_files{end+1} = current_file;
                 file_processed(i) = true; % Mark as processed to skip
@@ -159,7 +159,7 @@ if options.DebugLog
         fid = fopen(skipped_log_file, 'at'); % Append skipped files
         if fid ~= -1
             for k = 1:numel(skipped_files)
-                fprintf(fid, '"%s","%s"\n', skipped_files{k}.name, skipped_files{k}.uid);
+                fprintf(fid, '"%s","%s"\n', skipped_files{k}.file_path, skipped_files{k}.uid);
             end
             fclose(fid);
         end

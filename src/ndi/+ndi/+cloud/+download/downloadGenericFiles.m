@@ -113,6 +113,9 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
                             % Fallback to the registered name in file_info
                             [~, name_part, ext_part] = fileparts(fileInfo(j).name);
                         end
+                        if contains(fileInfo(j).locations.location,'.zip') & isempty(ext_part)
+                            ext_part = '.zip';
+                        end
 
                         switch options.NamingStrategy
                             case "id"
@@ -154,8 +157,13 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
             % Get the download URL for the specific file
             [success_api, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, uid);
             if ~success_api
+                if isfield(answer,'error')
+                    errorMsg = answer.error;
+                else
+                    errorMsg = answer.message;
+                end
                 warning('NDI:downloadGenericFiles:ApiError', ...
-                    'Failed to get download URL for file %s (UID: %s): %s', filename, uid, answer.message);
+                    'Failed to get download URL for file %s (UID: %s): %s', filename, uid, errorMsg);
                 continue;
             end
 
