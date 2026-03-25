@@ -113,6 +113,9 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
                             % Fallback to the registered name in file_info
                             [~, name_part, ext_part] = fileparts(fileInfo(j).name);
                         end
+                        if contains(fileInfo(j).locations.location,'.zip') & isempty(ext_part)
+                            ext_part = '.zip';
+                        end
 
                         switch options.NamingStrategy
                             case "id"
