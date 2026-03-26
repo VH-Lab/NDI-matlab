@@ -14,6 +14,7 @@ function prism2csv(inputSource, outputDir, options)
         inputSource {mustBeTextScalar, mustBeNonempty}
         outputDir {mustBeTextScalar} = ""
         options.Overwrite logical = true
+        options.Verbose logical = false
     end
 
     % 1. Locate the R script relative to THIS .m file
@@ -65,7 +66,11 @@ function prism2csv(inputSource, outputDir, options)
         rBinPath, rScriptPath, inputSource, outputDirArg, ovrArg);
     
     % Execute with -echo to see R's output in the MATLAB console
-    [status, cmdOut] = system(cmd, '-echo');
+    if options.Verbose
+        [status, cmdOut] = system(cmd, '-echo');
+    else
+        [status, cmdOut] = system(cmd);
+    end
     
     if status ~= 0
         warning('NDI:prism2csv:RError', 'R process exited with an error:\n%s', cmdOut);

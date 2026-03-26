@@ -1,0 +1,78 @@
+[
+  {
+    "VariableName": "Figure",
+    "StringFormat": "(?i)Figure[_\\s]([^/_]+)"
+  },
+  {
+    "VariableName": "Repetition",
+    "StringFormat": "(?i)Rep\\s([IVXLCDM]+)"
+  },
+  {
+    "VariableName": "Heat",
+    "StringFormat": "(?i)heat|37"
+  },
+  {
+    "VariableName": "Naive",
+    "StringFormat": "(?i)naive"
+  },
+  {
+    "VariableName": "NaiveToTrained",
+    "StringFormat": "(?i)naive\\s*to\\s*trained"
+  },
+  {
+    "VariableName": "TrainedToNaive",
+    "StringFormat": "(?i)naive\\s*to\\s*trained"
+  },
+  {
+    "VariableName": "Trained",
+    "StringFormat": "(?i)trained"
+  },
+  {
+    "VariableName": "IAA",
+    "StringFormat": "(?i)IAA"
+  },
+  {
+    "VariableName": "Heptanone",
+    "StringFormat": "(?i)hept"
+  },
+  {
+    "VariableName": "Benzaldehyde",
+    "StringFormat": "(?i)benz"
+  },
+  {
+    "VariableName": "Diacetyl",
+    "StringFormat": "(?i)diacetyl"
+  },
+  {
+    "VariableName": "SGCDC",
+    "StringFormat": "(?i)SGCDC|All3|All4"
+  },
+  {
+    "VariableName": "Methanol",
+    "StringFormat": "(?i)methanol"
+  },
+  {
+    "VariableName": "Xylidine",
+    "StringFormat": "(?i)xyl"
+  },
+  {
+    "VariableName": "XylidineDose",
+    "StringFormat": "(\\d+)MM(?i)xyl"
+  },
+  {
+    "VariableName": "x2M5M",
+    "StringFormat": "(?i)2M5M|All3|All4"
+  },
+  {
+    "VariableName": "Imazapyr",
+    "StringFormat": "(?i)imazapyr|All3|All4"
+  },
+  {
+    "VariableName": "klp6",
+    "StringFormat": "(?i)klp_6"
+  },
+  {
+    "VariableName": "Rescue",
+    "StringFormat": "(?i)rescue"
+  }
+]

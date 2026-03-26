@@ -11,14 +11,17 @@ options.Overwrite = true;
 options.OverwritePrism2CSV = false;
 options.OverwriteAVI2MP4 = false; 
 
+labName = 'babu';
+
 % Initialize progress bar
 progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
 progressBar.setTimeout(hours(1));
 
 %% Step 1: FILES. Get data path and files.
 
-labName = 'babu';
+% Get data path
 dataPath = fullfile(dataParentDir,labName);
+addpath(genpath(dataPath));
 
 % Get files
 fileList = vlt.file.manifest(dataPath);
@@ -32,37 +35,39 @@ if options.Overwrite
 end
 
 % Convert .prism files to .csv
-[~, gitRoot] = system('git rev-parse --show-toplevel');
-rBinPath = '/usr/local/bin/Rscript';
-rScriptPath = fullfile(strtrim(gitRoot), 'src', 'ndi', '+ndi', '+fun', '+data', 'prism2csv.R');
-if exist(rScriptPath, 'file')
-    cmd = sprintf('"%s" --verbose "%s" "%s" "%s" "%s"', rBinPath, ...
-        rScriptPath, dataPath, 'NULL',char(string(logical(options.OverwritePrism2CSV)).upper));
-    [status, result] = system(cmd,"-echo");
-end
 ndi.fun.data.prism2csv(dataPath,'Overwrite',options.OverwritePrism2CSV);
 
 % Convert .avi files to .mp4
-ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
-
-
-
-% Re-export csvs
-    
-    
-
+% ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
 
 % Get files by type
-tableFiles = fileList(endsWith(fileList,'.csv') | endsWith(fileList,'.xlsx'));
-videoFiles = fileList(endsWith(fileList,'.mp4'));
+csvFiles = fileList(endsWith(fileList,'.csv'));
+xlsxFiles = fileList(endsWith(fileList,'.xlsx'));
+aviFiles = fileList(endsWith(fileList,'.avi'));
+mp4Files = fileList(endsWith(fileList,'.mp4'));
 imageFiles = fileList(endsWith(fileList,'.tif'));
 plasmidFiles = fileList(endsWith(fileList,'.dna'));
-otherFiles = setdiff(fileList,[tableFiles;videoFiles;imageFiles;plasmidFiles]);
+otherFiles = setdiff(fileList,[csvFiles;xlsxFiles;aviFiles;mp4Files;...
+    imageFiles;plasmidFiles]);
 
-% Get video metatdata
-jsonPath = which(fullfile('+ndi','+setup','+conv',['+',labName],'fileManifest.json'));
-j = jsondecode(fileread(jsonPath));
-videoTable = ndi.setup.conv.datalocation.processFileManifest(videoFiles,j);
+%% Step 2: MATCH TABLES AND VIDEOS
+
+% Get table names and columns
+csvTable = cell(numel(csvFiles),1);
+for i = 1:numel(csvFiles)
+    opts = detectImportOptions(csvFiles{i});
+    ColumnName = opts.VariableNames';
+    TableFileName = repmat(csvFiles(i),numel(ColumnName),1);
+    csvTable{i} = table(TableFileName,ColumnName);
+end
+csvTable = ndi.fun.table.vstack(csvTable);
+
+% Extract manifest metadata
+textParser = which(fullfile('+ndi','+setup','+conv',['+',labName],'textParser.json'));
+csvTable = [csvTable,ndi.fun.parseText(table2cell(csvTable),textParser)];
+videoTable = [cell2table(aviFiles,'VariableNames',{'VideoFileName'}),...
+    ndi.fun.parseText(aviFiles,textParser)];
+
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
@@ -75,26 +80,43 @@ sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
 sessions = sessionMaker.sessionIndices;
 if options.Overwrite
     sessions{1}.cache.clear;
-    sessions{2}.cache.clear;
 end
 session = sessions{1};
 
-%% Step 3. SUBJECTMAKER AND TABLEDOCMAKER.
+%% Step 3. SUBJECTS AND TABLES.
+
+
+
+%%
 
 % Create subjectMaker
-subjectMaker = ndi.setup.NDIMaker.subjectMaker();
-subjectCreator = eval(ndi.setup.conv.(labName).subjectInformationCreator);
+% subjectMaker = ndi.setup.NDIMaker.subjectMaker();
+% subjectCreator = eval(ndi.setup.conv.(labName).subjectInformationCreator);
 
 % Create tableDocMaker
-tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
-tableDocMaker_ecoli = ndi.setup.NDIMaker.tableDocMaker(sessions{2},labName);
+% tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
-%% 
+% Each cell of a table refers to a subject, each column of a table can
+% refer to a subject_group. Videos and images can be linked to the 
+% subject_groups. Should treatments be linked to subjects or
+% subject_groups?
+
+% ontologyTableRow
+for i = 1:numel(csvFiles)
+    dataTable = readtable(csvFiles{i})
+end
+% subject | CI | 
+
+
+%% Step 4.TABLES.
+
+%% Step 5. IMAGES AND VIDEOS
+
+% read 
 
 % treatment: heat *should this be treatment_drug too?*
 % treatment_drug: chemoattractant (IAA, hepatanone, diacetyl)
 % behavioral measurement: chemotaxis index
-
 
 
 % end
