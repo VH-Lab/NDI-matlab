@@ -74,5 +74,30 @@
   {
     "VariableName": "Rescue",
     "StringFormat": "(?i)rescue"
+  },
+  {
+    "VariableName": "P1",
+    "StringFormat": "P1"
+  },
+  {
+    "VariableName": "P2",
+    "StringFormat": "P2"
+  },
+  {
+    "VariableName": "Hours",
+    "StringFormat": "(\\d+([._]\\d+)?)_?[hr|hour]"
+  },
+  {
+    "VariableName": "FluorescenceIntensity",
+    "StringFormat": "Figure_5E_part_1_Mean_summation"
+  },
+  {
+    "VariableName": "NumPuncta",
+    "StringFormat": "Number_of_puncta"
+  },
+  {
+    "VariableName": "M9",
+    "StringFormat": "Figure_S1C"
   }
+
 ]

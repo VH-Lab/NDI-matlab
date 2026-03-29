@@ -57,8 +57,17 @@ csvTable = cell(numel(csvFiles),1);
 for i = 1:numel(csvFiles)
     opts = detectImportOptions(csvFiles{i});
     ColumnName = opts.VariableNames';
-    TableFileName = repmat(csvFiles(i),numel(ColumnName),1);
-    csvTable{i} = table(TableFileName,ColumnName);
+    if any(contains(ColumnName,'Var'))
+        dataTable = readtable(csvFiles{i});
+        indEmpty = all(cellfun(@(x) isequal(x,'NA'),table2cell(dataTable)),1);
+        ColumnName(indEmpty) = [];
+    end
+    if isempty(ColumnName)
+        csvTable{i} = table();
+    else
+        TableFileName = repmat(csvFiles(i),numel(ColumnName),1);
+        csvTable{i} = table(TableFileName,ColumnName);
+    end
 end
 csvTable = ndi.fun.table.vstack(csvTable);
 
@@ -101,12 +110,131 @@ session = sessions{1};
 % subject_groups. Should treatments be linked to subjects or
 % subject_groups?
 
-% ontologyTableRow
-for i = 1:numel(csvFiles)
-    dataTable = readtable(csvFiles{i})
-end
-% subject | CI | 
 
+% SUBJECT
+% - species
+
+% TRAINING
+% plates contain OP50 (live or heat-killed)
+% 5 x [2 minutes (37C and/or odor), 10 minutes 22C]
+% maintain on training plate for 20 hours at 22C
+
+% TRAINING (alternatives)
+% - wash w/ M9
+% - transfer to different plate
+% - heat-killed food
+% - unpaired protocol
+% - odor (IAA, diacetyl, heptanone, or diacetyl)
+% - chemical application (Xyl/imazapyr/2M5M/SGCDC/all3/all4/Methanol)
+
+% TESTING
+% plates contain 1uL 1% IAA, diacetyl, heptanone, or diacetyl
+
+
+% Figure 1B
+% - naive, trained w/ heat, IAA, heat+IAA
+
+% Figure 1D-F
+% - naive, trained w/ heat, IAA, heat+IAA
+% - animals transfered to new plate at 0, 6, or 12 hours after training
+
+% Figure S1C
+% - naive, trained w/ heat, IAA, heat+IAA
+% - M9 wash 12 hours after training
+
+% Figure 2B
+% - naive, trained w/ heat+IAA, naive to trained, trained to naive
+% - <30 mins after training, swap
+
+% Figure 2C
+% - same as 2B with heat-killed OP50
+
+% Figure S2C
+% naive, trained, naive to trained
+% unpaired training 5 x [2 minutes (IAA), 10 minutes 22C, 2 minutes(37C)]
+
+% Figure S2D
+% naive, trained, naive to trained
+% unpaired training 5 x [2 minutes (37C), 10 minutes 22C, 2 minutes(IAA)]
+
+% Figure 3A-I
+% naive, trained w/ heat+odor, naive to trained, trained to naive
+% |   | trained | tested |
+% | A | IAA | heptanone |
+% | B | IAA | benzaldehyde |
+% | C | IAA | diacetyl |
+% | D | heptanone | heptanone |
+% | E | heptanone | IAA |
+% | F | benzaldehyde | benzaldehyde |
+% | G | benzaldehyde | IAA |
+% | H | diacetyl | diacetyl |
+% | I | diacetyl | IAA |
+
+% Figure 4A-C
+% - naive, trained w/ heat, IAA, heat+IAA
+% - daf-22, klp-6, cil-7
+
+% Figure 4E
+% - N2 naive, klp-6 naive, klp-6 trained to N2 trained w/ heat+IAA, N2
+% trained to klp-6 trained w/ heat+IAA
+
+% Figure 4F
+% - naive, trained, naive to trained, trained to naive
+% - klp-6 rescue
+
+% Figure 5A-B
+
+
+% Figure 5D-E
+% - naive, trained w/ heat, IAA, heat+IAA
+% - cil-7::mNG
+
+% Figure S5
+
+
+% Figure 6A-C
+% - naive animals + (70/80 mM Xyl) + (imazapyr+2M5M+SGCDC)
+% - tested on IAA 3.5, 6, or 20 hours after chemical application
+
+% Figure S6B-C
+% - naive animals + (imazapyr/2M5M/SGCDC/all3)
+% - tested on IAA 3.5 or 6 hours after chemical application
+
+% Figure 6D-F
+% - same as 6A-C, tested on diacetyl
+
+% Figure S6D-E
+% - same as S6B-C, tested on diacetyl
+
+% Figure 6G
+
+
+% Figure 6H
+% - naive animals + (methanol/80mM Xyl)
+% - tested on IAA, heptanone, benzaldehyde 20 hours after chemical application
+
+% Figure S6G
+
+
+
+
+% testing (depend on subject) - on 1DOA
+% - ontologyTableRow : chemotaxis index | chemoattractant id + quantity
+% - ontologyTableRow : # of puncta
+% - ontologyTableRow : fluorescence intensity
+
+% subject_group (depend on subjects)
+
+% videos (depend on subject_group)
+% - imageStack
+% - imageStack_parameters
+% - ontology_label
+
+% images
+
+% plasmid maps
+
+% LC_ms
 
 %% Step 4.TABLES.
 
