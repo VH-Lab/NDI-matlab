@@ -235,15 +235,15 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % B = ISINGESTED(NDI_DATASET_OBJ)
             %
             % Returns true if all sessions in the dataset are ingested,
-            % and false otherwise. Returns false if the dataset has no
-            % sessions.
+            % and false otherwise. A dataset with no sessions is
+            % considered ingested.
 
             if isempty(ndi_dataset_obj.session_info)
                 ndi_dataset_obj.build_session_info();
             end
 
             if isempty(ndi_dataset_obj.session_info)
-                b = false;
+                b = true;
                 return;
             end
 
