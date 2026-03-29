@@ -50,6 +50,11 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     success = false;
     message = '';
 
+    if ~ndiDataset.isIngested()
+        message = 'Dataset is not fully ingested. All sessions must be ingested before uploading.';
+        return;
+    end
+
     [cloudDatasetId, remote_doc] = ndi.cloud.internal.getCloudDatasetIdForLocalDataset(ndiDataset);
 
     if ~isempty(cloudDatasetId) & options.uploadAsNew

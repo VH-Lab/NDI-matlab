@@ -119,8 +119,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
 
             % second, make sure it is fully ingested
-            is_fully_ingested = ndi_session_obj.is_fully_ingested();
-            if ~is_fully_ingested
+            is_ingested = ndi_session_obj.isIngested();
+            if ~is_ingested
                 error(['ndi.session object with id ' ndi_session_obj.id() ' and reference ' ndi_session_obj.reference ' is not yet fully ingested. It must be fully ingested before it can be added in ingested form to an ndi.dataset object.']);
             end
 
@@ -228,7 +228,35 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.build_session_info();
 
         end % deleteIngestedSession()
-        
+
+        function b = isIngested(ndi_dataset_obj)
+            % ISINGESTED - is a dataset fully ingested?
+            %
+            % B = ISINGESTED(NDI_DATASET_OBJ)
+            %
+            % Returns true if all sessions in the dataset are ingested,
+            % and false otherwise. Returns false if the dataset has no
+            % sessions.
+
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+
+            if isempty(ndi_dataset_obj.session_info)
+                b = false;
+                return;
+            end
+
+            b = true;
+            for i = 1:numel(ndi_dataset_obj.session_info)
+                S = ndi_dataset_obj.open_session(ndi_dataset_obj.session_info(i).session_id);
+                if ~S.isIngested()
+                    b = false;
+                    return;
+                end
+            end
+        end % isIngested()
+
         function unlink_session(ndi_dataset_obj, ndi_session_id, options)
             % UNLINK_SESSION - unlink a session from an ndi.dataset
             %
