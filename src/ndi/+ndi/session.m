@@ -518,10 +518,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
         end % get_ingested_docs
 
-        function b = is_fully_ingested(ndi_session_obj)
-            % IS_FULLY_INGESTED - is an ndi.session object fully ingested?
+        function b = isIngested(ndi_session_obj)
+            % ISINGESTED - is an ndi.session object fully ingested?
             %
-            % B = IS_FULLY_INGESTED(NDI_SESSION_OBJ)
+            % B = ISINGESTED(NDI_SESSION_OBJ)
             %
             % Returns 1 if the ndi.session object NDI_SESSION_OBJ is fully
             % ingested and 0 if there are still elements on disk that would
@@ -544,7 +544,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                     return;
                 end
             end
-        end % is_fully_ingested
+        end % isIngested
 
         function b = isIngestedInDataset(ndi_session_obj)
             % ISINGESTEDINDATASET - is the session ingested in a dataset?
