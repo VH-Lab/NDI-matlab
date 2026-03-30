@@ -11,12 +11,23 @@ classdef readIngested < matlab.unittest.TestCase
         Session
     end
 
+    properties (Constant)
+        CloudDatasetId = '668b0539f13096e04f1feccd';
+    end
+
     methods (TestClassSetup)
         function downloadDataset(testCase)
             testCase.TargetDir = tempdir;
+
+            % Remove any leftover dataset folder from a previous run
+            datasetFolder = fullfile(testCase.TargetDir, testCase.CloudDatasetId);
+            if isfolder(datasetFolder)
+                rmdir(datasetFolder, 's');
+            end
+
             testCase.addTeardown(@() testCase.cleanupTargetDir());
 
-            testCase.Dataset = ndi.cloud.downloadDataset('668b0539f13096e04f1feccd', testCase.TargetDir);
+            testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
 
             [~, sess_ids] = testCase.Dataset.session_list();
             testCase.fatalAssertNumElements(sess_ids, 1, ...
