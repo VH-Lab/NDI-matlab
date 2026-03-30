@@ -16,7 +16,7 @@ classdef readIngested < matlab.unittest.TestCase
             testCase.TargetDir = tempdir;
             testCase.addTeardown(@() testCase.cleanupTargetDir());
 
-            testCase.Dataset = ndi.cloud.downloadDataset('668b0539f13096e04f1feccd', testCase.TargetDir, 'SyncFiles', true);
+            testCase.Dataset = ndi.cloud.downloadDataset('668b0539f13096e04f1feccd', testCase.TargetDir);
 
             [~, sess_ids] = testCase.Dataset.session_list();
             testCase.fatalAssertNumElements(sess_ids, 1, ...
@@ -36,6 +36,76 @@ classdef readIngested < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testBinaryFileDownload(testCase)
+            % Diagnostic test: download a single binary file and check it
+            % is a valid gzip (tgz) file. This helps diagnose platform
+            % differences in how websave handles binary content.
+
+            % Find a document with ingested ephys data
+            p_cf = testCase.Session.getprobes('name', 'carbonfiber', 'reference', 1);
+            testCase.fatalAssertNumElements(p_cf, 1);
+
+            e = p_cf{1}.epochsethandle();
+            et = e.epochtable();
+            epoch_doc = et(1).epoch_id;
+
+            % Search for the daqreader ingested data document for this epoch
+            q_epoch = ndi.query('', 'isa', 'daqreader_mfdaq_epochdata_ingested');
+            docs = testCase.Session.database_search(q_epoch);
+            testCase.fatalAssertNotEmpty(docs, 'No ingested data documents found.');
+
+            % Use the first ingested data document
+            d = docs{1};
+
+            % Try to open and read the first binary file
+            file_info = d.document_properties.document_class.files;
+            testCase.fatalAssertNotEmpty(file_info, 'Document has no binary files.');
+
+            fname = file_info(1).name;
+            f = testCase.Session.database_openbinarydoc(d, fname);
+            data = f.fread(Inf);
+            testCase.Session.database_closebinarydoc(f);
+
+            % Write to temp file and check
+            tname = [tempname '.nbf.tgz'];
+            fid = fopen(tname, 'wb', 'ieee-le');
+            fwrite(fid, data, 'uint8');
+            fclose(fid);
+
+            % Diagnostic: check file size and magic bytes
+            finfo = dir(tname);
+            fprintf('Downloaded file: %s\n', tname);
+            fprintf('File size: %d bytes\n', finfo.bytes);
+
+            fid2 = fopen(tname, 'rb');
+            magic = fread(fid2, 4, 'uint8');
+            fclose(fid2);
+            fprintf('First 4 bytes (hex): %s\n', sprintf('%02X ', magic));
+
+            % gzip magic number is 1F 8B
+            isGzip = numel(magic) >= 2 && magic(1) == 0x1F && magic(2) == 0x8B;
+            fprintf('Is gzip: %d\n', isGzip);
+
+            % Try system gunzip as diagnostic
+            [status, result] = system(sprintf('file "%s"', tname));
+            fprintf('file command output: %s\n', result);
+
+            if ~isGzip
+                % Try untar anyway to capture error
+                try
+                    untar(tname, tempdir);
+                    fprintf('untar succeeded despite non-gzip magic bytes\n');
+                catch ME
+                    fprintf('untar failed: %s\n', ME.message);
+                end
+            end
+
+            delete(tname);
+            testCase.verifyTrue(isGzip, ...
+                sprintf('Downloaded file is not a valid gzip file. Magic bytes: %s', ...
+                sprintf('%02X ', magic)));
+        end
+
         function testReadCarbonFiberProbe(testCase)
             p_cf = testCase.Session.getprobes('name', 'carbonfiber', 'reference', 1);
             testCase.fatalAssertNumElements(p_cf, 1, ...
