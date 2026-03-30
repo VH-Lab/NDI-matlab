@@ -58,6 +58,87 @@ classdef readIngested < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testBinarySegmentFile(testCase)
+            % Diagnostic: use copydocfile2temp on a seg.nbf file and
+            % inspect the result to understand why untar fails on Linux.
+
+            q = ndi.query('', 'isa', 'daqreader_mfdaq_epochdata_ingested');
+            docs = testCase.Session.database_search(q);
+            testCase.fatalAssertNotEmpty(docs, 'No ingested data documents found.');
+
+            % Find a document with seg.nbf files
+            doc = [];
+            segFileName = '';
+            for i = 1:numel(docs)
+                if docs{i}.has_files()
+                    fi = docs{i}.document_properties.files.file_info;
+                    for j = 1:numel(fi)
+                        if contains(fi(j).name, 'seg.nbf')
+                            doc = docs{i};
+                            segFileName = fi(j).name;
+                            % Print all location info for this file
+                            for k = 1:numel(fi(j).locations)
+                                fprintf('File "%s" location %d: type=%s, loc=%s\n', ...
+                                    fi(j).name, k, ...
+                                    fi(j).locations(k).location_type, ...
+                                    fi(j).locations(k).location);
+                            end
+                            break;
+                        end
+                    end
+                    if ~isempty(doc); break; end
+                end
+            end
+            testCase.fatalAssertNotEmpty(doc, 'No document with seg.nbf files found.');
+
+            % Check DID database FileDir for cached files
+            db = testCase.Session.database;
+            if isprop(db, 'db') && isprop(db.db, 'FileDir')
+                fprintf('DID FileDir: %s\n', db.db.FileDir);
+                if isfolder(db.db.FileDir)
+                    d = dir(db.db.FileDir);
+                    fprintf('FileDir has %d entries\n', numel(d)-2);
+                end
+            end
+
+            % Check DID cache
+            cachePath = did.common.PathConstants.filecachepath;
+            fprintf('DID cache path: %s\n', cachePath);
+            if isfolder(cachePath)
+                d = dir(cachePath);
+                fprintf('Cache has %d entries\n', numel(d)-2);
+            end
+
+            % Now call copydocfile2temp exactly like the mfdaq reader does
+            fprintf('Calling copydocfile2temp for "%s"...\n', segFileName);
+            [tname, ~] = ndi.database.fun.copydocfile2temp(doc, testCase.Session, segFileName, '.nbf.tgz');
+
+            % Inspect the result
+            finfo = dir(tname);
+            fprintf('Result file: %s\n', tname);
+            fprintf('File size: %d bytes\n', finfo.bytes);
+
+            fid = fopen(tname, 'rb');
+            magic = fread(fid, 4, 'uint8');
+            allBytes = finfo.bytes;
+            fclose(fid);
+            fprintf('Magic bytes: %s\n', sprintf('%02X ', magic));
+
+            [~, filetype] = system(sprintf('file "%s"', tname));
+            fprintf('file type: %s\n', strtrim(filetype));
+
+            isGzip = numel(magic) >= 2 && magic(1) == 0x1F && magic(2) == 0x8B;
+            if ~isGzip && allBytes < 5000
+                content = fileread(tname);
+                fprintf('Content (first 300 chars):\n%.300s\n', content);
+            end
+
+            delete(tname);
+            testCase.verifyTrue(isGzip, ...
+                sprintf('seg.nbf file is not gzip. Size: %d, Magic: %s', ...
+                allBytes, sprintf('%02X ', magic)));
+        end
+
         function testReadCarbonFiberProbe(testCase)
             p_cf = testCase.Session.getprobes('name', 'carbonfiber', 'reference', 1);
             testCase.fatalAssertNumElements(p_cf, 1, ...
