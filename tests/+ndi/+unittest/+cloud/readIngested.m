@@ -16,6 +16,14 @@ classdef readIngested < matlab.unittest.TestCase
     end
 
     methods (TestClassSetup)
+        function checkCredentials(testCase)
+            username = getenv("NDI_CLOUD_USERNAME");
+            password = getenv("NDI_CLOUD_PASSWORD");
+            diagMsg = 'Missing NDI Cloud credentials. Skipping cloud-dependent tests.';
+            testCase.assumeNotEmpty(username, diagMsg);
+            testCase.assumeNotEmpty(password, diagMsg);
+        end
+
         function downloadDataset(testCase)
             testCase.TargetDir = tempdir;
 
@@ -26,6 +34,9 @@ classdef readIngested < matlab.unittest.TestCase
             end
 
             testCase.addTeardown(@() testCase.cleanupTargetDir());
+
+            % Re-authenticate in case token expired during a long test suite
+            ndi.cloud.authenticate('InteractionEnabled', 'off');
 
             testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
 
