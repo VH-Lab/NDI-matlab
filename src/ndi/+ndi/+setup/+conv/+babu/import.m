@@ -38,7 +38,7 @@ end
 ndi.fun.data.prism2csv(dataPath,'Overwrite',options.OverwritePrism2CSV);
 
 % Convert .avi files to .mp4
-% ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
+ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
 
 % Get files by type
 csvFiles = fileList(endsWith(fileList,'.csv'));
@@ -110,6 +110,41 @@ session = sessions{1};
 % subject_groups. Should treatments be linked to subjects or
 % subject_groups?
 
+% subject <- species, strain, bioSex, strainType, treatments
+% ~100 subjects <- subject_group (plot)
+% 20-30 subjects <- subject_group (condition) <- videos
+
+% 5 x treatment_drug: 
+% - mixture table: 37 C, odor
+% - onset: datetime(-20 hours) convert to YYYY-MM-DDThh:mm:ssZ
+% - offset: -19 hours - 58 minutes
+
+% treatment_drug:
+% - mixture table: heat-killed vs. live OP50
+% - onset: days earlier
+% - offset: 0 hours
+
+% treatment_drug:
+% - mixture table: chemicals
+
+% ontologyTableRow:
+% - chemotaxis index
+% - chemoattractant name
+% - chemoattractant id
+% - chemotaxis assay duration
+% - c. elegans velocity during chemotaxis assay
+
+% subjects (plate 1) <- subject_group (condition 1)
+% subjects (plate 2) <- subject_group (condition 2)
+% at time t subjects (plate2) experienced the emissions of subjects (plate 1)
+% emissions of subject_group (condition 1)
+
+% treatment_donor
+% donor: subject_group (or subject_id)
+% recipient: subject_id
+% onset_time:
+% offset_time:
+% donated entity: agar plate post-training
 
 % SUBJECT
 % - species
