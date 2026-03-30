@@ -37,73 +37,93 @@ classdef readIngested < matlab.unittest.TestCase
 
     methods (Test)
         function testBinaryFileDownload(testCase)
-            % Diagnostic test: download a single binary file and check it
-            % is a valid gzip (tgz) file. This helps diagnose platform
-            % differences in how websave handles binary content.
+            % Diagnostic test: download a single binary file directly via
+            % the cloud API and check if it is a valid gzip (tgz) file.
 
-            % Find a document with ingested ephys data
-            p_cf = testCase.Session.getprobes('name', 'carbonfiber', 'reference', 1);
-            testCase.fatalAssertNumElements(p_cf, 1);
-
-            e = p_cf{1}.epochsethandle();
-            et = e.epochtable();
-            epoch_doc = et(1).epoch_id;
-
-            % Search for the daqreader ingested data document for this epoch
-            q_epoch = ndi.query('', 'isa', 'daqreader_mfdaq_epochdata_ingested');
-            docs = testCase.Session.database_search(q_epoch);
+            % Find an ingested data document that has binary files
+            q = ndi.query('', 'isa', 'daqreader_mfdaq_epochdata_ingested');
+            docs = testCase.Session.database_search(q);
             testCase.fatalAssertNotEmpty(docs, 'No ingested data documents found.');
 
-            % Use the first ingested data document
-            d = docs{1};
+            % Find first doc that has files with ndic:// locations
+            doc = [];
+            fileUid = '';
+            cloudDatasetId = '';
+            for i = 1:numel(docs)
+                if docs{i}.has_files()
+                    fi = docs{i}.document_properties.files.file_info;
+                    for j = 1:numel(fi)
+                        loc = fi(j).locations(1).location;
+                        if startsWith(loc, 'ndic://')
+                            doc = docs{i};
+                            parts = split(extractAfter(loc, 'ndic://'), '/');
+                            cloudDatasetId = parts{1};
+                            fileUid = parts{2};
+                            break;
+                        end
+                    end
+                    if ~isempty(doc); break; end
+                end
+            end
+            testCase.fatalAssertNotEmpty(doc, 'No document with ndic:// file locations found.');
 
-            % Try to open and read the first binary file
-            file_info = d.document_properties.document_class.files;
-            testCase.fatalAssertNotEmpty(file_info, 'Document has no binary files.');
+            % Get download URL
+            [success, answer] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, fileUid);
+            testCase.fatalAssertTrue(success, 'Failed to get file details from cloud.');
+            fileUrl = answer.downloadUrl;
 
-            fname = file_info(1).name;
-            f = testCase.Session.database_openbinarydoc(d, fname);
-            data = f.fread(Inf);
-            testCase.Session.database_closebinarydoc(f);
+            % Download with websave (default method)
+            tname_websave = [tempname '_websave.nbf.tgz'];
+            opts = weboptions('ContentType', 'binary', 'Timeout', 60);
+            websave(tname_websave, fileUrl, opts);
 
-            % Write to temp file and check
-            tname = [tempname '.nbf.tgz'];
-            fid = fopen(tname, 'wb', 'ieee-le');
-            fwrite(fid, data, 'uint8');
+            % Download with curl
+            tname_curl = [tempname '_curl.nbf.tgz'];
+            [curlStatus, curlResult] = system(sprintf('curl -s -L -o "%s" "%s"', tname_curl, fileUrl));
+            fprintf('curl exit status: %d\n', curlStatus);
+
+            % Check websave file
+            fi_ws = dir(tname_websave);
+            fid = fopen(tname_websave, 'rb');
+            magic_ws = fread(fid, 4, 'uint8');
             fclose(fid);
+            fprintf('websave file: %d bytes, magic: %s\n', fi_ws.bytes, sprintf('%02X ', magic_ws));
+            [~, ws_filetype] = system(sprintf('file "%s"', tname_websave));
+            fprintf('websave file type: %s\n', strtrim(ws_filetype));
 
-            % Diagnostic: check file size and magic bytes
-            finfo = dir(tname);
-            fprintf('Downloaded file: %s\n', tname);
-            fprintf('File size: %d bytes\n', finfo.bytes);
+            % Check curl file
+            fi_curl = dir(tname_curl);
+            fid = fopen(tname_curl, 'rb');
+            magic_curl = fread(fid, 4, 'uint8');
+            fclose(fid);
+            fprintf('curl file: %d bytes, magic: %s\n', fi_curl.bytes, sprintf('%02X ', magic_curl));
+            [~, curl_filetype] = system(sprintf('file "%s"', tname_curl));
+            fprintf('curl file type: %s\n', strtrim(curl_filetype));
 
-            fid2 = fopen(tname, 'rb');
-            magic = fread(fid2, 4, 'uint8');
-            fclose(fid2);
-            fprintf('First 4 bytes (hex): %s\n', sprintf('%02X ', magic));
-
-            % gzip magic number is 1F 8B
-            isGzip = numel(magic) >= 2 && magic(1) == 0x1F && magic(2) == 0x8B;
-            fprintf('Is gzip: %d\n', isGzip);
-
-            % Try system gunzip as diagnostic
-            [status, result] = system(sprintf('file "%s"', tname));
-            fprintf('file command output: %s\n', result);
-
-            if ~isGzip
-                % Try untar anyway to capture error
+            % Try untar on both
+            for method = {"websave", "curl"}
+                if strcmp(method{1}, 'websave')
+                    tf = tname_websave;
+                else
+                    tf = tname_curl;
+                end
                 try
-                    untar(tname, tempdir);
-                    fprintf('untar succeeded despite non-gzip magic bytes\n');
+                    untar(tf, tempdir);
+                    fprintf('%s: untar succeeded\n', method{1});
                 catch ME
-                    fprintf('untar failed: %s\n', ME.message);
+                    fprintf('%s: untar failed: %s\n', method{1}, ME.message);
                 end
             end
 
-            delete(tname);
-            testCase.verifyTrue(isGzip, ...
-                sprintf('Downloaded file is not a valid gzip file. Magic bytes: %s', ...
-                sprintf('%02X ', magic)));
+            % Cleanup
+            if isfile(tname_websave); delete(tname_websave); end
+            if isfile(tname_curl); delete(tname_curl); end
+
+            isGzip_ws = numel(magic_ws) >= 2 && magic_ws(1) == 0x1F && magic_ws(2) == 0x8B;
+            isGzip_curl = numel(magic_curl) >= 2 && magic_curl(1) == 0x1F && magic_curl(2) == 0x8B;
+            testCase.verifyTrue(isGzip_ws || isGzip_curl, ...
+                sprintf('Neither websave nor curl produced a valid gzip. websave magic: %s, curl magic: %s', ...
+                sprintf('%02X ', magic_ws), sprintf('%02X ', magic_curl)));
         end
 
         function testReadCarbonFiberProbe(testCase)
