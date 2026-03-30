@@ -127,6 +127,10 @@ classdef readIngested < matlab.unittest.TestCase
             [~, filetype] = system(sprintf('file "%s"', tname));
             fprintf('file type: %s\n', strtrim(filetype));
 
+            % Print checksum so we can compare with Mac
+            [~, md5out] = system(sprintf('md5sum "%s"', tname));
+            fprintf('MD5: %s\n', strtrim(md5out));
+
             isGzip = numel(magic) >= 2 && magic(1) == 0x1F && magic(2) == 0x8B;
             if ~isGzip && allBytes < 5000
                 content = fileread(tname);
