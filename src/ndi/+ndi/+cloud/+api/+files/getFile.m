@@ -8,7 +8,9 @@ function [b, answer, apiResponse, apiURL] = getFile(downloadURL, downloadedFile,
 %
 %   Inputs:
 %       downloadURL     - The pre-signed URL for the download, obtained from the API.
-%       downloadedFile  - The path to save the downloaded file.
+%       downloadedFile  - The path to save the downloaded file. If a file
+%                         already exists at this path, it will be overwritten
+%                         without warning.
 %
 %   Name-Value Pairs:
 %       'useCurl' (logical) - If true, the function will use a system call
