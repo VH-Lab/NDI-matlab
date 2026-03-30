@@ -72,26 +72,17 @@ classdef readIngested < matlab.unittest.TestCase
             testCase.fatalAssertTrue(success, 'Failed to get file details from cloud.');
             fileUrl = answer.downloadUrl;
 
-            % Download with websave (default method)
-            tname_websave = [tempname '_websave.nbf.tgz'];
-            opts = weboptions('ContentType', 'binary', 'Timeout', 60);
-            websave(tname_websave, fileUrl, opts);
+            % Print diagnostic info about the file location and URL
+            fprintf('cloudDatasetId: %s\n', cloudDatasetId);
+            fprintf('fileUid: %s\n', fileUid);
+            fprintf('downloadUrl (first 200 chars): %.200s\n', fileUrl);
+            fprintf('getFileDetails answer fields: %s\n', strjoin(fieldnames(answer), ', '));
 
             % Download with curl
             tname_curl = [tempname '_curl.nbf.tgz'];
-            [curlStatus, curlResult] = system(sprintf('curl -s -L -o "%s" "%s"', tname_curl, fileUrl));
+            [curlStatus, ~] = system(sprintf('curl -s -L -o "%s" "%s"', tname_curl, fileUrl));
             fprintf('curl exit status: %d\n', curlStatus);
 
-            % Check websave file
-            fi_ws = dir(tname_websave);
-            fid = fopen(tname_websave, 'rb');
-            magic_ws = fread(fid, 4, 'uint8');
-            fclose(fid);
-            fprintf('websave file: %d bytes, magic: %s\n', fi_ws.bytes, sprintf('%02X ', magic_ws));
-            [~, ws_filetype] = system(sprintf('file "%s"', tname_websave));
-            fprintf('websave file type: %s\n', strtrim(ws_filetype));
-
-            % Check curl file
             fi_curl = dir(tname_curl);
             fid = fopen(tname_curl, 'rb');
             magic_curl = fread(fid, 4, 'uint8');
@@ -100,30 +91,19 @@ classdef readIngested < matlab.unittest.TestCase
             [~, curl_filetype] = system(sprintf('file "%s"', tname_curl));
             fprintf('curl file type: %s\n', strtrim(curl_filetype));
 
-            % Try untar on both
-            for method = {"websave", "curl"}
-                if strcmp(method{1}, 'websave')
-                    tf = tname_websave;
-                else
-                    tf = tname_curl;
-                end
-                try
-                    untar(tf, tempdir);
-                    fprintf('%s: untar succeeded\n', method{1});
-                catch ME
-                    fprintf('%s: untar failed: %s\n', method{1}, ME.message);
-                end
+            % Print first 500 chars of the file content if it's ASCII
+            isGzip = numel(magic_curl) >= 2 && magic_curl(1) == 0x1F && magic_curl(2) == 0x8B;
+            if ~isGzip
+                content = fileread(tname_curl);
+                fprintf('File content (first 500 chars):\n%.500s\n', content);
             end
 
             % Cleanup
-            if isfile(tname_websave); delete(tname_websave); end
             if isfile(tname_curl); delete(tname_curl); end
 
-            isGzip_ws = numel(magic_ws) >= 2 && magic_ws(1) == 0x1F && magic_ws(2) == 0x8B;
-            isGzip_curl = numel(magic_curl) >= 2 && magic_curl(1) == 0x1F && magic_curl(2) == 0x8B;
-            testCase.verifyTrue(isGzip_ws || isGzip_curl, ...
-                sprintf('Neither websave nor curl produced a valid gzip. websave magic: %s, curl magic: %s', ...
-                sprintf('%02X ', magic_ws), sprintf('%02X ', magic_curl)));
+            testCase.verifyTrue(isGzip, ...
+                sprintf('Downloaded file is not gzip. Magic: %s, Size: %d bytes', ...
+                sprintf('%02X ', magic_curl), fi_curl.bytes));
         end
 
         function testReadCarbonFiberProbe(testCase)
