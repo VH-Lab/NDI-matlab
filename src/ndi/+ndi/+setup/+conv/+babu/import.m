@@ -38,7 +38,7 @@ end
 ndi.fun.data.prism2csv(dataPath,'Overwrite',options.OverwritePrism2CSV);
 
 % Convert .avi files to .mp4
-ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
+% ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
 
 % Get files by type
 csvFiles = fileList(endsWith(fileList,'.csv'));
@@ -77,6 +77,20 @@ csvTable = [csvTable,ndi.fun.parseText(table2cell(csvTable),textParser)];
 videoTable = [cell2table(aviFiles,'VariableNames',{'VideoFileName'}),...
     ndi.fun.parseText(aviFiles,textParser)];
 
+% Check strains
+strainNames = {'N2','PT1194','PT3602','TM5848',...
+    'BAB9001','BAB9002','BAB9003','BAB9004','BAB9005'};
+if any(sum(csvTable{:,strainNames},2) > 1)
+    error('Subjects matching more than one strain.')
+end
+
+% Assign strain names to csv files
+csvTable{:,'StrainName'} = {'N2'};
+for i = 1:numel(strainNames)
+    indStrain = csvTable{:,strainNames{i}};
+    csvTable.StrainName(indStrain) = strainNames(i);
+end
+
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
@@ -92,19 +106,60 @@ if options.Overwrite
 end
 session = sessions{1};
 
-%% Step 3. SUBJECTS AND TABLES.
+%% Step 3. SUBJECTS. Get data and create subjects.
 
+% Get all subjects
+subjectTable = cell(height(csvTable),1);
+for i = 1:numel(csvFiles)
+    dataTable = readtable(csvFiles{i});
+    rowNums = find(strcmp(csvTable.TableFileName,csvFiles{i}));
+    for j = 1:numel(rowNums)
+        rowNum = rowNums(j);
+        Value = dataTable.(csvTable.ColumnName{rowNum});
+        if iscell(Value), Value = str2double(Value); end
+        Value(isnan(Value)) = [];
+        subjectTable{rowNum} = table(Value);
+        subjectTable{rowNum}{:,'StrainName'} = csvTable.StrainName(rowNum);
+        subjectTable{rowNum}{:,'Figure'} = csvTable.Figure(rowNum);
+        subjectTable{rowNum}{:,'ColumnName'} = csvTable.ColumnName(rowNum);
+        subjectTable{rowNum}{:,'N'} = (1:numel(Value))';
+    end
+end
+subjectTable = ndi.fun.table.vstack(subjectTable);
 
+% Create subjects
+subjectMaker = ndi.setup.NDIMaker.subjectMaker();
+subjectCreator = ndi.setup.conv.(labName).SubjectInformationCreator();
+[~,subjectTable.SubjectLocalIdentifier,subjectTable.SubjectDocumentIdentifier] = subjectMaker.addSubjectsFromTable( ...
+    session, subjectTable, subjectCreator);
+
+%% Create subject groups for each condition and figure
+subject_group_figure = cell(numel(csvFiles),1);
+subject_group_condition = cell(height(csvTable),1);
+for i = 1:numel(csvFiles)
+    rowNums = find(strcmp(csvTable.TableFileName,csvFiles{i}));
+    for j = 1:numel(rowNums)
+        subject_group_condition = ndi.document('subject_group') + session.newdocument();
+
+    end
+
+    subject_group_figure = ndi.document('subject_group') + session.newdocument();
+end
+
+            for k = 1:numel(ind)
+                subject_group_doc = subject_group_doc.add_dependency_value_n(...
+                    'subject_id',wormTable.subject_id{ind(k)});
+            end
+            session.database_add(subject_group_doc);
+
+%% Step 3. GET DATA.
+
+% Create tableDocMaker
+tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
 %%
 
-% Create subjectMaker
-% subjectMaker = ndi.setup.NDIMaker.subjectMaker();
-% subjectCreator = eval(ndi.setup.conv.(labName).subjectInformationCreator);
-
-% Create tableDocMaker
-% tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
-
+%%
 % Each cell of a table refers to a subject, each column of a table can
 % refer to a subject_group. Videos and images can be linked to the 
 % subject_groups. Should treatments be linked to subjects or

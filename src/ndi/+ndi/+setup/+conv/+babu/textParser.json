@@ -13,19 +13,23 @@
   },
   {
     "VariableName": "Naive",
-    "StringFormat": "(?i)naive"
-  },
-  {
-    "VariableName": "NaiveToTrained",
-    "StringFormat": "(?i)naive\\s*to\\s*trained"
-  },
-  {
-    "VariableName": "TrainedToNaive",
-    "StringFormat": "(?i)naive\\s*to\\s*trained"
+    "StringFormat": "(?<!To.*)(?i)naive"
   },
   {
     "VariableName": "Trained",
-    "StringFormat": "(?i)trained"
+    "StringFormat": "(?<!To.*)(?i)trained"
+  },
+  {
+    "VariableName": "Transfer",
+    "StringFormat": "To"
+  },
+  {
+    "VariableName": "TransferDonor",
+    "StringFormat": "\\s+([^/. ]+)+To"
+  },
+  {
+    "VariableName": "TransferRecipient",
+    "StringFormat": "To([^/. ]+)"
   },
   {
     "VariableName": "IAA",
@@ -68,24 +72,48 @@
     "StringFormat": "(?i)imazapyr|All3|All4"
   },
   {
-    "VariableName": "klp6",
-    "StringFormat": "(?i)klp_6"
+    "VariableName": "N2",
+    "StringFormat": "(?<!To.*)(?i)WT"
   },
   {
-    "VariableName": "Rescue",
-    "StringFormat": "(?i)rescue"
+    "VariableName": "PT1194",
+    "StringFormat": "(?<!To.*)(?i)klp_6(?!Rescue)"
   },
   {
-    "VariableName": "P1",
-    "StringFormat": "P1"
+    "VariableName": "PT3602",
+    "StringFormat": "Figure_5E"
   },
   {
-    "VariableName": "P2",
-    "StringFormat": "P2"
+    "VariableName": "TM5848",
+    "StringFormat": "Figure_4C"
+  },
+  {
+    "VariableName": "BAB9001",
+    "StringFormat": "(?<!To.*)(?i)daf_22"
+  },
+  {
+    "VariableName": "BAB9002",
+    "StringFormat": "(?<!To.*)(?i)klp_6Rescue"
+  },
+  {
+    "VariableName": "BAB9003",
+    "StringFormat": "(?<!To.*)P1(?!_P2)"
+  },
+  {
+    "VariableName": "BAB9004",
+    "StringFormat": "(?<!To.*)(?<!P1_)P2"
+  },
+  {
+    "VariableName": "BAB9005",
+    "StringFormat": "(?<!To.*)P1_P2"
+  },
+  {
+    "VariableName": "Immediate",
+    "StringFormat": "(?i)immediate"
   },
   {
     "VariableName": "Hours",
-    "StringFormat": "(\\d+([._]\\d+)?)_?[hr|hour]"
+    "StringFormat": "(\\d+([._]\\d+)?)[_ ]*(?:hr|hour)"
   },
   {
     "VariableName": "FluorescenceIntensity",
