@@ -91,25 +91,19 @@ classdef readIngested < matlab.unittest.TestCase
             end
             testCase.fatalAssertNotEmpty(doc, 'No document with seg.nbf files found.');
 
-            % Check DID database FileDir for cached files
-            db = testCase.Session.database;
-            if isprop(db, 'db') && isprop(db.db, 'FileDir')
-                fprintf('DID FileDir: %s\n', db.db.FileDir);
-                if isfolder(db.db.FileDir)
-                    d = dir(db.db.FileDir);
-                    fprintf('FileDir has %d entries\n', numel(d)-2);
-                end
-            end
-
             % Check DID cache
-            cachePath = did.common.PathConstants.filecachepath;
-            fprintf('DID cache path: %s\n', cachePath);
-            if isfolder(cachePath)
-                d = dir(cachePath);
-                fprintf('Cache has %d entries\n', numel(d)-2);
+            try
+                cachePath = did.common.PathConstants.filecachepath;
+                fprintf('DID cache path: %s\n', cachePath);
+                if isfolder(cachePath)
+                    d = dir(cachePath);
+                    fprintf('Cache has %d entries\n', numel(d)-2);
+                end
+            catch
+                fprintf('Could not check DID cache path\n');
             end
 
-            % Now call copydocfile2temp exactly like the mfdaq reader does
+            % Call copydocfile2temp exactly like the mfdaq reader does
             fprintf('Calling copydocfile2temp for "%s"...\n', segFileName);
             [tname, ~] = ndi.database.fun.copydocfile2temp(doc, testCase.Session, segFileName, '.nbf.tgz');
 
