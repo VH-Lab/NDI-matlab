@@ -91,6 +91,13 @@ for i = 1:numel(strainNames)
     csvTable.StrainName(indStrain) = strainNames(i);
 end
 
+% Add figure part # (if applicable)
+for i = 1:height(csvTable)
+    if ~isempty(csvTable.FigurePart{i})
+        csvTable{i,'FigureName'} = {[csvTable.FigureName{i},num2str(csvTable.FigurePart{i})]};
+    end
+end
+
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
@@ -112,15 +119,15 @@ session = sessions{1};
 subjectTable = cell(height(csvTable),1);
 for i = 1:numel(csvFiles)
     dataTable = readtable(csvFiles{i});
-    rowNums = find(strcmp(csvTable.TableFileName,csvFiles{i}));
-    for j = 1:numel(rowNums)
-        rowNum = rowNums(j);
+    csvRows = find(strcmp(csvTable.TableFileName,csvFiles{i}));
+    for j = 1:numel(csvRows)
+        rowNum = csvRows(j);
         Value = dataTable.(csvTable.ColumnName{rowNum});
         if iscell(Value), Value = str2double(Value); end
         Value(isnan(Value)) = [];
         subjectTable{rowNum} = table(Value);
         subjectTable{rowNum}{:,'StrainName'} = csvTable.StrainName(rowNum);
-        subjectTable{rowNum}{:,'Figure'} = csvTable.Figure(rowNum);
+        subjectTable{rowNum}{:,'FigureName'} = csvTable.FigureName(rowNum);
         subjectTable{rowNum}{:,'ColumnName'} = csvTable.ColumnName(rowNum);
         subjectTable{rowNum}{:,'N'} = (1:numel(Value))';
     end
@@ -133,25 +140,103 @@ subjectCreator = ndi.setup.conv.(labName).SubjectInformationCreator();
 [~,subjectTable.SubjectLocalIdentifier,subjectTable.SubjectDocumentIdentifier] = subjectMaker.addSubjectsFromTable( ...
     session, subjectTable, subjectCreator);
 
+% Add csv info to table
+subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','StrainName'});
+
 %% Create subject groups for each condition and figure
 subject_group_figure = cell(numel(csvFiles),1);
 subject_group_condition = cell(height(csvTable),1);
 for i = 1:numel(csvFiles)
-    rowNums = find(strcmp(csvTable.TableFileName,csvFiles{i}));
-    for j = 1:numel(rowNums)
-        subject_group_condition = ndi.document('subject_group') + session.newdocument();
-
+    
+    % Create subject group for the figure
+    figureName = unique(csvTable.TableFileName(csvRows));
+    subject_group_figure{i} = ndi.document('subject_group') + session.newdocument();
+    subjectRows = find(strcmp(subjectTable.FigureName,figureName));
+    for k = 1:numel(subjectRows)
+        subject_group_figure{i} = subject_group_figure{i}.add_dependency_value_n(...
+            'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
     end
 
-    subject_group_figure = ndi.document('subject_group') + session.newdocument();
+    % Create subject_group for the column
+    csvRows = find(strcmp(csvTable.TableFileName,csvFiles{i}));
+    for j = 1:numel(csvRows)
+        columnName = csvTable.ColumnName{csvRows(j)};
+        subject_group_condition{csvRows(j)} = ndi.document('subject_group') + session.newdocument();
+        subjectRows = find(strcmp(subjectTable.FigureName,figureName) & ...
+            strcmp(subjectTable.ColumnName,columnName));
+        for k = 1:numel(subjectRows)
+            subject_group_condition{csvRows(j)} = subject_group_condition{csvRows(j)}.add_dependency_value_n(...
+                'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
+        end
+    end
 end
 
-            for k = 1:numel(ind)
-                subject_group_doc = subject_group_doc.add_dependency_value_n(...
-                    'subject_id',wormTable.subject_id{ind(k)});
-            end
-            session.database_add(subject_group_doc);
+%session.database_add(subject_group_condition);
+%session.database_add(subject_group_figure);
 
+%% Step 4. TREATMENTS.
+
+% Create treatment creator and maker
+treatmentCreator = ndi.setup.conv.(labName).TreatmentCreator();
+treatmentMaker = ndi.setup.NDIMaker.treatmentMaker();
+
+% Add heat timing info
+indHeat = subjectTable.Heat | subjectTable.Trained;
+indHeatIAA = strcmp(subjectTable.FigureName,'S2D');
+indIAAHeat = strcmp(subjectTable.FigureName,'S2C');
+subjectTable.HeatOnset(indHeat) = hours(-21);
+subjectTable.HeatOnset(indHeatIAA) = hours(-22);
+subjectTable.HeatOnset(indIAAHeat) = hours(-22) + minutes(12);
+subjectTable.HeatInterval(indHeat) = minutes(12);
+subjectTable.HeatInterval(indHeatIAA | indIAAHeat) = minutes(24);
+
+
+treatmentDocs = cell(height(subjectTable,1);
+for i = 1:height(subjectTable)
+    csvRow = strcmp(csvTable.FigureName,subjectTable.FigureName{i}) & ...
+        strcmp(csvTable.FigureName,subjectTable.ColumnName{i});
+
+    % Heat treatment
+    if csvTable.Heat(csvRow) || csvTable.Trained(csvRow)
+
+    % Create treatment document
+    ontologyID = ndi.ontology.lookup('EMPTY:Optogenetic Tetanus Stimulation Target Location');
+    treatment = struct('ontologyName',ontologyID,...
+        'name','Optogenetic Tetanus Stimulation Target Location',...
+        'numeric_value',[],...
+        'string_value',anatomy(optoLocation{:}));
+    treatmentDocs{i} = ndi.document('treatment',...
+        'treatment', treatment) + sessionArray{1}.newdocument();
+    treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
+        'subject_id', subject_id);
+    end
+end
+
+sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
+    'GetProbes',true);
+
+% Get mixture dictionary
+jsonPath = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+setup','+conv',...
+    '+dabrowska','dabrowska_mixtures_dictionary.json');
+mixture_dictionary = jsondecode(fileread(jsonPath));
+
+% Get stimulus bath docs
+sd.table2bathDocs(variableTable,...
+    'bath','BathConditionString',...
+    'MixtureDictionary',mixture_dictionary,...
+    'NonNaNVariableNames','sessionInd', ...
+    'MixtureDelimeter','+',...
+    'Overwrite',options.Overwrite);
+
+req_cols = {'location_ontologyName', 'location_name', 'mixture_table', ...
+                        'administration_onset_time', 'administration_offset_time', 'administration_duration'};
+            ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
+            drug_struct.location_ontologyName = char(tableRow.location_ontologyName);
+            drug_struct.location_name = char(tableRow.location_name);
+            drug_struct.mixture_table = char(tableRow.mixture_table);
+            drug_struct.administration_onset_time = char(tableRow.administration_onset_time);
+            drug_struct.administration_offset_time = char(tableRow.administration_offset_time);
+            drug_struct.administration_duration = tableRow.administration_duration;
 %% Step 3. GET DATA.
 
 % Create tableDocMaker

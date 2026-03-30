@@ -1,7 +1,11 @@
 [
   {
-    "VariableName": "Figure",
+    "VariableName": "FigureName",
     "StringFormat": "(?i)Figure[_\\s]([^/_]+)"
+  },
+  {
+    "VariableName": "FigurePart",
+    "StringFormat": "(?i)Part[_\\s]([^/_]+)"
   },
   {
     "VariableName": "Repetition",

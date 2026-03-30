@@ -34,7 +34,7 @@ methods
         %
 
         % --- Validate required columns ---
-        requiredCols = {'StrainName','Figure','ColumnName','N'};
+        requiredCols = {'StrainName','FigureName','ColumnName','N'};
         if ~all(ismember(requiredCols, tableRow.Properties.VariableNames))
             error('ndi:validators:MissingRequiredColumns',...
                 'The tableRow is missing one or more required columns for the Haley subject creator.');
@@ -131,7 +131,7 @@ methods (Access = private, Static)
         subjectIdentifier = NaN;
         try
             % Join the components with underscores
-            subjectParts = {['Fig',tableRow.Figure{1}],tableRow.ColumnName{1},...
+            subjectParts = {['Fig',tableRow.FigureName{1}],tableRow.ColumnName{1},...
                 num2str(tableRow.N,'%02d')};
             baseString = strjoin(subjectParts, '_');
 
