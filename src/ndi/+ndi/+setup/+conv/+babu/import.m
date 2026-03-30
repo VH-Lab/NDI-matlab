@@ -98,6 +98,29 @@ for i = 1:height(csvTable)
     end
 end
 
+% Assign chemoattractants to csv columns
+trainOdorants = {'TrainIAA','TrainDiacetyl','TrainBenzaldehyde','TrainHeptanone'};
+if any(sum(csvTable{:,trainOdorants},2) > 1)
+    error('Subjects matching more than one training odor.')
+end
+testOdorants = {'TestIAA','TestDiacetyl','TestBenzaldehyde','TestHeptanone'};
+ind3B = strcmp(csvTable.FigureName,'3B');
+csvTable.TrainIAA(ind3B) = true; csvTable.TestIAA(ind3B) = false;
+if any(sum(csvTable{:,testOdorants},2) > 1)
+    error('Subjects matching more than one testing odor.')
+end
+
+% Assign chemoattractant names to csv files
+csvTable{:,'TrainOdor'} = {''};
+csvTable{csvTable.Trained,'TrainOdor'} = {'IAA'};
+csvTable{:,'TestOdor'} = {'IAA'};
+for i = 1:numel(trainOdorants)
+    indOdor = csvTable{:,trainOdorants{i}};
+    csvTable.TrainOdor(indOdor) = {replace(trainOdorants{i},'Train','')};
+    indOdor = csvTable{:,testOdorants{i}};
+    csvTable.TestOdor(indOdor) = {replace(testOdorants{i},'Test','')};
+end
+
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
@@ -141,7 +164,8 @@ subjectCreator = ndi.setup.conv.(labName).SubjectInformationCreator();
     session, subjectTable, subjectCreator);
 
 % Add csv info to table
-subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','StrainName'});
+subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','StrainName'},...
+    'KeepOneCopy',intersect(subjectTable.Properties.VariableNames,csvTable.Properties.VariableNames));
 
 %% Create subject groups for each condition and figure
 subject_group_figure = cell(numel(csvFiles),1);
@@ -180,6 +204,10 @@ end
 treatmentCreator = ndi.setup.conv.(labName).TreatmentCreator();
 treatmentMaker = ndi.setup.NDIMaker.treatmentMaker();
 
+% Add chemoattractant info
+indTrainIAA = 
+subjectTable.TrainOdor = 
+
 % Add heat timing info
 indHeat = subjectTable.Heat | subjectTable.Trained;
 indHeatIAA = strcmp(subjectTable.FigureName,'S2D');
@@ -189,6 +217,7 @@ subjectTable.HeatOnset(indHeatIAA) = hours(-22);
 subjectTable.HeatOnset(indIAAHeat) = hours(-22) + minutes(12);
 subjectTable.HeatInterval(indHeat) = minutes(12);
 subjectTable.HeatInterval(indHeatIAA | indIAAHeat) = minutes(24);
+
 
 
 treatmentDocs = cell(height(subjectTable,1);

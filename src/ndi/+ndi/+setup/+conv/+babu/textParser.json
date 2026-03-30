@@ -36,20 +36,36 @@
     "StringFormat": "To([^/. ]+)"
   },
   {
-    "VariableName": "IAA",
-    "StringFormat": "(?i)IAA"
+    "VariableName": "TrainIAA",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)IAA"
   },
   {
-    "VariableName": "Heptanone",
-    "StringFormat": "(?i)hept"
+    "VariableName": "TrainHeptanone",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)hept"
   },
   {
-    "VariableName": "Benzaldehyde",
-    "StringFormat": "(?i)benz"
+    "VariableName": "TrainBenzaldehyde",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)benz"
   },
   {
-    "VariableName": "Diacetyl",
-    "StringFormat": "(?i)diacetyl"
+    "VariableName": "TrainDiacetyl",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)diacetyl"
+  },
+  {
+    "VariableName": "TestIAA",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?IAA|^(?!.*(?:with|wrt).*)IAA)"
+  },
+  {
+    "VariableName": "TestHeptanone",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?hept|^(?!.*(?:with|wrt).*)hept)"
+  },
+  {
+    "VariableName": "TestBenzaldehyde",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?benz|^(?!.*(?:with|wrt).*)benz)"
+  },
+  {
+    "VariableName": "TestDiacetyl",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?diacetyl|^(?!.*(?:with|wrt).*)diacetyl)"
   },
   {
     "VariableName": "SGCDC",
@@ -126,6 +142,10 @@
   {
     "VariableName": "NumPuncta",
     "StringFormat": "Number_of_puncta"
+  },
+  {
+    "VariableName": "Velocity",
+    "StringFormat": "(?i)speed"
   },
   {
     "VariableName": "M9",
