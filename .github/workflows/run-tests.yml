@@ -64,6 +64,9 @@ jobs:
             Signal_Processing_Toolbox
 
 
+      - name: Clone NDIcalc-vis-matlab as sibling directory
+        run: git clone https://github.com/VH-Lab/NDIcalc-vis-matlab.git ../NDIcalc-vis-matlab
+
       - name: Install MatBox
         uses: ehennestad/matbox-actions/install-matbox@v1
 
