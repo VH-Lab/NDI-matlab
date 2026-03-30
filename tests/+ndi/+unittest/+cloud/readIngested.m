@@ -45,17 +45,21 @@ classdef readIngested < matlab.unittest.TestCase
             docs = testCase.Session.database_search(q);
             testCase.fatalAssertNotEmpty(docs, 'No ingested data documents found.');
 
-            % Find first doc that has files with ndic:// locations
+            % Find first doc that has a seg.nbf file with ndic:// location
+            % (seg.nbf files are the actual compressed binary data segments,
+            %  not the channel metadata text files)
             doc = [];
             fileUid = '';
             cloudDatasetId = '';
+            fileName = '';
             for i = 1:numel(docs)
                 if docs{i}.has_files()
                     fi = docs{i}.document_properties.files.file_info;
                     for j = 1:numel(fi)
                         loc = fi(j).locations(1).location;
-                        if startsWith(loc, 'ndic://')
+                        if startsWith(loc, 'ndic://') && contains(fi(j).name, 'seg.nbf')
                             doc = docs{i};
+                            fileName = fi(j).name;
                             parts = split(extractAfter(loc, 'ndic://'), '/');
                             cloudDatasetId = parts{1};
                             fileUid = parts{2};
@@ -65,7 +69,8 @@ classdef readIngested < matlab.unittest.TestCase
                     if ~isempty(doc); break; end
                 end
             end
-            testCase.fatalAssertNotEmpty(doc, 'No document with ndic:// file locations found.');
+            testCase.fatalAssertNotEmpty(doc, 'No document with ndic:// seg.nbf file found.');
+            fprintf('Selected file: %s\n', fileName);
 
             % Get download URL
             [success, answer] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, fileUid);
