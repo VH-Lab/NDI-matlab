@@ -5,3 +5,4 @@ https://github.com/a-ma72/mksqlite@master
 https://github.com/VH-lab/vhlab-thirdparty-matlab@master
 https://github.com/Waltham-Data-Science/NDI-compress-matlabp
 https://github.com/openMetadataInitiative/openMINDS_MATLAB
+https://github.com/VH-Lab/NDIcalc-vis-matlab
