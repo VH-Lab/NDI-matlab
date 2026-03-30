@@ -43,14 +43,6 @@ jobs:
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
             matbox.installRequirements(fullfile(pwd, 'tests'))
-            disp('NDI toolboxdir:');
-            disp(ndi.toolboxdir());
-            calcDirsBase = fileparts(fileparts(fileparts(ndi.toolboxdir())));
-            disp('Searching for NDIcalc*-matlab in:');
-            disp(calcDirsBase);
-            d = dir(fullfile(calcDirsBase, 'NDIcalc*-matlab'));
-            disp('Found calc directories:');
-            disp({d.name});
             ndi.cloud.authenticate("InteractionEnabled", "off")
             results = runtests('ndi.unittest.cloud.readIngested', 'IncludeSubfolders', false);
             assertSuccess(results);

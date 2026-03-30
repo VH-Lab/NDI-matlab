@@ -16,7 +16,7 @@ classdef readIngested < matlab.unittest.TestCase
             testCase.TargetDir = tempdir;
             testCase.addTeardown(@() testCase.cleanupTargetDir());
 
-            testCase.Dataset = ndi.cloud.downloadDataset('668b0539f13096e04f1feccd', testCase.TargetDir);
+            testCase.Dataset = ndi.cloud.downloadDataset('668b0539f13096e04f1feccd', testCase.TargetDir, 'SyncFiles', true);
 
             [~, sess_ids] = testCase.Dataset.session_list();
             testCase.fatalAssertNumElements(sess_ids, 1, ...
