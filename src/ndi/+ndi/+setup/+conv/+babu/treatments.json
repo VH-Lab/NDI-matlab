@@ -43,43 +43,62 @@
 			"unitName": "Molar"
 		}
 	],
+	"OP50": [
+		{
+			"ontologyName": "NCBITaxon:637912",
+			"name": "Eschericia coli OP50"
+		}
+	],
+	"OP50HK": [
+		{
+			"ontologyName": "EMPTY:0000254",
+			"name": "Eschericia coli OP50: heat-killed"
+		}
+	],
 	"IAA": [
 		{
 			"ontologyName": "CHEBI:15837",
 			"name": "isoamylol",
-			"value": 1,
+			"value": 10,
 			"ontologyUnit": "NCIT:C48571",
 			"unitName": "Percent Volume per Volume"
 		}
 	],
-	"diacetyl": [
+	"Diacetyl": [
 		{
 			"ontologyName": "CHEBI:16583",
 			"name": "butane-2,3-dione",
-			"value": 0.1,
+			"value": 1,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		},
+		{
+			"ontologyName": "CHEBI:16236",
+			"name": "ethanol",
+			"value": 99,
 			"ontologyUnit": "NCIT:C48571",
 			"unitName": "Percent Volume per Volume"
 		}
 	],
-	"heptanone": [
+	"Heptanone": [
 		{
 			"ontologyName": "CHEBI:5672",
 			"name": "heptan-2-one",
-			"value": 1,
+			"value": 10,
 			"ontologyUnit": "NCIT:C48571",
 			"unitName": "Percent Volume per Volume"
 		}
 	],
-	"benzaldehyde": [
+	"Benzaldehyde": [
 		{
 			"ontologyName": "CHEBI:17169",
 			"name": "benzaldehyde",
-			"value": 1,
+			"value": 10,
 			"ontologyUnit": "NCIT:C48571",
 			"unitName": "Percent Volume per Volume"
 		}
 	],
-	"xylidine": [
+	"Xylidine": [
 		{
 			"ontologyName": "CHEBI:27840",
 			"name": "2,4-dimethylaniline",
@@ -88,7 +107,7 @@
 			"unitName": "Molar"
 		}
 	],
-	"imazapyr": [
+	"Imazapyr": [
 		{
 			"ontologyName": "CHEBI:82021",
 			"name": "imazapyr",
@@ -97,7 +116,7 @@
 			"unitName": "Molar"
 		}
 	],
-	"2M5M": [
+	"x2M5M": [
 		{
 			"ontologyName": "CHEBI:82307",
 			"name": "2-methoxy-5-methylaniline",
@@ -115,7 +134,7 @@
 			"unitName": "Molar"
 		}
 	],
-	"methanol": [
+	"Methanol": [
 		{
 			"ontologyName": "CHEBI:17790",
 			"name": "methanol",
@@ -143,6 +162,30 @@
 		{
 			"location_ontologyName": "MICRO:0000480",
 			"location_name": "agar plate medium"
+		}
+	],
+	"bath": [
+		{
+			"location_ontologyName": "NCIm:C0179246",
+			"location_name": "bath"
+		}
+	],
+	"transfer_entity": [
+		{
+			"entity_name": "agar plate medium",
+			"entity_ontologyNode": "MICRO:0000480"
+		}
+	],
+	"transfer_M9": [
+		{
+			"method_name": "C. elegans transfer method: M9 buffer wash",
+			"method_ontologyNode": "EMPTY:0000255"
+		}
+	],
+	"transfer_pick": [
+		{
+			"method_name": "C. elegans transfer method: titanium pick",
+			"method_ontologyNode": "EMPTY:0000256"
 		}
 	]
 }

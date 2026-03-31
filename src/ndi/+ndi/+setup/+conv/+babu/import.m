@@ -38,7 +38,7 @@ end
 ndi.fun.data.prism2csv(dataPath,'Overwrite',options.OverwritePrism2CSV);
 
 % Convert .avi files to .mp4
-% ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
+ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
 
 % Get files by type
 csvFiles = fileList(endsWith(fileList,'.csv'));
@@ -49,6 +49,10 @@ imageFiles = fileList(endsWith(fileList,'.tif'));
 plasmidFiles = fileList(endsWith(fileList,'.dna'));
 otherFiles = setdiff(fileList,[csvFiles;xlsxFiles;aviFiles;mp4Files;...
     imageFiles;plasmidFiles]);
+
+% Ignore table
+indRemove = contains(csvFiles,{'Figure_3A_Data_1','Figure_4E_Data_2'});
+csvFiles(indRemove) = [];
 
 %% Step 2: MATCH TABLES AND VIDEOS
 
@@ -71,11 +75,23 @@ for i = 1:numel(csvFiles)
 end
 csvTable = ndi.fun.table.vstack(csvTable);
 
+% Add placeholder subjects for which no TrainedToNaive data is given
+ind = cellfun(@(f) find(contains(csvTable.TableFileName,f),1),{'3D','3E','S2C','S2D','S3B'});
+csvTable = [csvTable;csvTable(ind,:)];
+csvTable{(end-numel(ind)+1):end,'ColumnName'} = {'TrainedToNaive'};
+
 % Extract manifest metadata
 textParser = which(fullfile('+ndi','+setup','+conv',['+',labName],'textParser.json'));
 csvTable = [csvTable,ndi.fun.parseText(table2cell(csvTable),textParser)];
 videoTable = [cell2table(aviFiles,'VariableNames',{'VideoFileName'}),...
     ndi.fun.parseText(aviFiles,textParser)];
+
+% Rename figures
+csvTable{contains(csvTable.TableFileName,'Figure_S3B'),'FigureName'} = {'S3C'};
+csvTable{contains(csvTable.TableFileName,'Figure_S3C'),'FigureName'} = {'S3D'};
+csvTable{contains(csvTable.TableFileName,'Figure_S3D'),'FigureName'} = {'S3B'};
+videoTable{contains(videoTable.VideoFileName,'Figure S3C'),'FigureName'} = {'S3D'};
+videoTable{contains(videoTable.VideoFileName,'Figure S3D'),'FigureName'} = {'S3B'};
 
 % Check strains
 strainNames = {'N2','PT1194','PT3602','TM5848',...
@@ -121,6 +137,20 @@ for i = 1:numel(trainOdorants)
     csvTable.TestOdor(indOdor) = {replace(testOdorants{i},'Test','')};
 end
 
+% Assign chemicals
+trainChemicals = {'Xylidine','Methanol','SGCDC','x2M5M','Imazapyr'};
+indChemical = csvTable{:,trainChemicals};
+chemicalMixture = cellfun(@(i) strjoin(trainChemicals(i),','),num2cell(indChemical,2),'UniformOutput',false);
+csvTable.TrainOdor(any(indChemical,2)) = chemicalMixture(any(indChemical,2));
+
+% Manual corrections
+ind = strcmp(csvTable.FigureName,'3A');
+csvTable{ind,{'TrainOdor','TestOdor'}} = repmat({'IAA','Heptanone'},sum(ind),1);
+ind = strcmp(csvTable.FigureName,'6J') & strcmp(csvTable.ColumnName,'Supp');
+csvTable.TrainOdor(ind) = {'Xylidine'}; csvTable.XylidineDose(ind) = 80;
+csvTable{csvTable.Naive,'TrainOdor'} = {''};
+csvTable{csvTable.Heat,'TrainOdor'} = {''};
+
 %% Step 2: SESSIONS. Build the session.
 
 % Create sessionMaker
@@ -141,13 +171,17 @@ session = sessions{1};
 % Get all subjects
 subjectTable = cell(height(csvTable),1);
 for i = 1:numel(csvFiles)
-    dataTable = readtable(csvFiles{i});
     csvRows = find(strcmp(csvTable.TableFileName,csvFiles{i}));
+    dataTable = readtable(csvFiles{i});
     for j = 1:numel(csvRows)
         rowNum = csvRows(j);
-        Value = dataTable.(csvTable.ColumnName{rowNum});
-        if iscell(Value), Value = str2double(Value); end
-        Value(isnan(Value)) = [];
+        if ismember(csvTable.ColumnName{rowNum},dataTable.Properties.VariableNames)
+            Value = dataTable.(csvTable.ColumnName{rowNum});
+            if iscell(Value), Value = str2double(Value); end
+            Value(isnan(Value)) = [];
+        else
+            Value = nan(1,1);
+        end
         subjectTable{rowNum} = table(Value);
         subjectTable{rowNum}{:,'StrainName'} = csvTable.StrainName(rowNum);
         subjectTable{rowNum}{:,'FigureName'} = csvTable.FigureName(rowNum);
@@ -168,21 +202,29 @@ subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','Str
     'KeepOneCopy',intersect(subjectTable.Properties.VariableNames,csvTable.Properties.VariableNames));
 
 %% Create subject groups for each condition and figure
+
+% Merge Figure 5A and 5B (matched)
+ind = strcmp(subjectTable.FigureName,'5A') | strcmp(subjectTable.FigureName,'5B');
+subjectTable{ind,'FigureName'} = {'5AB'};
+ind = strcmp(csvTable.FigureName,'5A') | strcmp(csvTable.FigureName,'5B');
+csvTable{ind,'FigureName'} = {'5AB'};
+
 subject_group_figure = cell(numel(csvFiles),1);
 subject_group_condition = cell(height(csvTable),1);
 for i = 1:numel(csvFiles)
     
     % Create subject group for the figure
-    figureName = unique(csvTable.TableFileName(csvRows));
+    csvRows = find(strcmp(csvTable.TableFileName,csvFiles{i}));
+    figureName = unique(csvTable.FigureName(csvRows));
     subject_group_figure{i} = ndi.document('subject_group') + session.newdocument();
     subjectRows = find(strcmp(subjectTable.FigureName,figureName));
     for k = 1:numel(subjectRows)
         subject_group_figure{i} = subject_group_figure{i}.add_dependency_value_n(...
             'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
     end
+    subjectTable{subjectRows,'SubjectGroupIdentifier_Figure'} = {subject_group_figure{i}.id};
 
     % Create subject_group for the column
-    csvRows = find(strcmp(csvTable.TableFileName,csvFiles{i}));
     for j = 1:numel(csvRows)
         columnName = csvTable.ColumnName{csvRows(j)};
         subject_group_condition{csvRows(j)} = ndi.document('subject_group') + session.newdocument();
@@ -192,6 +234,7 @@ for i = 1:numel(csvFiles)
             subject_group_condition{csvRows(j)} = subject_group_condition{csvRows(j)}.add_dependency_value_n(...
                 'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
         end
+        subjectTable{subjectRows,'SubjectGroupIdentifier_Column'} = {subject_group_condition{csvRows(j)}.id};
     end
 end
 
@@ -200,78 +243,73 @@ end
 
 %% Step 4. TREATMENTS.
 
-% Create treatment creator and maker
-treatmentCreator = ndi.setup.conv.(labName).TreatmentCreator();
-treatmentMaker = ndi.setup.NDIMaker.treatmentMaker();
-
-% Add chemoattractant info
-indTrainIAA = 
-subjectTable.TrainOdor = 
-
-% Add heat timing info
+% Add heat training timing info
 indHeat = subjectTable.Heat | subjectTable.Trained;
 indHeatIAA = strcmp(subjectTable.FigureName,'S2D');
 indIAAHeat = strcmp(subjectTable.FigureName,'S2C');
 subjectTable.HeatOnset(indHeat) = hours(-21);
 subjectTable.HeatOnset(indHeatIAA) = hours(-22);
 subjectTable.HeatOnset(indIAAHeat) = hours(-22) + minutes(12);
-subjectTable.HeatInterval(indHeat) = minutes(12);
-subjectTable.HeatInterval(indHeatIAA | indIAAHeat) = minutes(24);
+subjectTable{:,'TrainInterval'} = minutes(12);
+subjectTable.TrainInterval(indHeatIAA | indIAAHeat) = minutes(24);
 
+% Get times points of chemical training
+indOdor = strcmp(subjectTable.TrainOdor,'IAA') | strcmp(subjectTable.TrainOdor,'Diacetyl') | ...
+    strcmp(subjectTable.TrainOdor,'Heptanone') | strcmp(subjectTable.TrainOdor,'Benzaldehyde');
+subjectTable.Odor = indOdor;
+subjectTable.OdorOnset(indOdor) = hours(-21);
+subjectTable.OdorOnset(indHeatIAA) = hours(-22) + minutes(12);
+subjectTable.OdorOnset(indIAAHeat) = hours(-22);
+subjectTable{:,'OdorDuration'} = minutes(2);
+indChemical = contains(subjectTable.TrainOdor,'Xylidine') | contains(subjectTable.TrainOdor,'x2M5M') | ...
+    contains(subjectTable.TrainOdor,'SGCDC') | contains(subjectTable.TrainOdor,'Imazapyr') | ...
+    contains(subjectTable.TrainOdor,'Methanol');
+subjectTable.Chemical = indChemical;
+chemicalStart = -hours(20*ones(height(subjectTable),1));
+indValue = indChemical & ~isnan(subjectTable.Hours);
+chemicalStart(indValue) = -hours(subjectTable.Hours(indValue));
+subjectTable.OdorOnset(indChemical) = chemicalStart(indChemical);
+subjectTable.OdorDuration(indChemical) = -subjectTable.OdorOnset(indChemical);
 
-
-treatmentDocs = cell(height(subjectTable,1);
-for i = 1:height(subjectTable)
-    csvRow = strcmp(csvTable.FigureName,subjectTable.FigureName{i}) & ...
-        strcmp(csvTable.FigureName,subjectTable.ColumnName{i});
-
-    % Heat treatment
-    if csvTable.Heat(csvRow) || csvTable.Trained(csvRow)
-
-    % Create treatment document
-    ontologyID = ndi.ontology.lookup('EMPTY:Optogenetic Tetanus Stimulation Target Location');
-    treatment = struct('ontologyName',ontologyID,...
-        'name','Optogenetic Tetanus Stimulation Target Location',...
-        'numeric_value',[],...
-        'string_value',anatomy(optoLocation{:}));
-    treatmentDocs{i} = ndi.document('treatment',...
-        'treatment', treatment) + sessionArray{1}.newdocument();
-    treatmentDocs{i} = treatmentDocs{i}.set_dependency_value(...
-        'subject_id', subject_id);
-    end
+% Get matched onset times
+for i = 1:height(csvTable)
+    ind = strcmp(subjectTable.FigureName,csvTable.FigureName{i});
+    subjectTable.FoodOnset(ind) = min([subjectTable.OdorOnset(ind);subjectTable.HeatOnset(ind)]);
 end
 
-sd = ndi.setup.NDIMaker.stimulusDocMaker(sessionArray{1},'dabrowska',...
-    'GetProbes',true);
+% Get transfer time for washes
+indWash = subjectTable.Pick | subjectTable.M9;
+subjectTable.TransferTime = nan(height(subjectTable),1);
+subjectTable.TransferTime(indWash) = subjectTable.Hours(indWash);
+subjectTable.TransferTime(indWash & contains(subjectTable.TableFileName,'immediate')) = 0;
+subjectTable.TransferTime(indWash & isnan(subjectTable.TransferTime)) = 12;
 
-% Get mixture dictionary
-jsonPath = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+setup','+conv',...
-    '+dabrowska','dabrowska_mixtures_dictionary.json');
-mixture_dictionary = jsondecode(fileread(jsonPath));
+% Get transfer donor ids
+indTransfer = subjectTable.Transfer;
+donorColumnName = cellfun(@(r,c) strjoin({r,c},'To'),subjectTable.TransferRecipient(indTransfer),subjectTable.TransferDonor(indTransfer),'UniformOutput',false);
+donorColumnName(strcmp(donorColumnName,'TrainedToklp_6RescueNaive')) = {'klp_6RescueTrainedToNaive'};
+donorColumnName(strcmp(donorColumnName,'NaiveToklp_6RescueTrained')) = {'klp_6RescueNaiveToTrained'};
+donorFigureName = subjectTable.FigureName(indTransfer);
+subjectTable{:,'donor_id'} = {''};
+subjectTable.donor_id(indTransfer) = cellfun(@(c,f) unique(subjectTable.SubjectGroupIdentifier_Column(strcmpi(subjectTable.ColumnName,c) & strcmpi(subjectTable.FigureName,f))),...
+    donorColumnName,donorFigureName,'UniformOutput',false);
+subjectTable.TransferTime(indTransfer) = 20;
 
-% Get stimulus bath docs
-sd.table2bathDocs(variableTable,...
-    'bath','BathConditionString',...
-    'MixtureDictionary',mixture_dictionary,...
-    'NonNaNVariableNames','sessionInd', ...
-    'MixtureDelimeter','+',...
-    'Overwrite',options.Overwrite);
+% Create treatment table
+treatmentCreator = ndi.setup.conv.(labName).TreatmentCreator();
+treatmentTable = treatmentCreator.create(subjectTable,session);
 
-req_cols = {'location_ontologyName', 'location_name', 'mixture_table', ...
-                        'administration_onset_time', 'administration_offset_time', 'administration_duration'};
-            ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
-            drug_struct.location_ontologyName = char(tableRow.location_ontologyName);
-            drug_struct.location_name = char(tableRow.location_name);
-            drug_struct.mixture_table = char(tableRow.mixture_table);
-            drug_struct.administration_onset_time = char(tableRow.administration_onset_time);
-            drug_struct.administration_offset_time = char(tableRow.administration_offset_time);
-            drug_struct.administration_duration = tableRow.administration_duration;
-%% Step 3. GET DATA.
+% Create treatment docs
+treatmentMaker = ndi.setup.NDIMaker.treatmentMaker();
+treatmentDocs = treatmentMaker.addTreatmentsFromTable(session,treatmentTable);
+% session.database_add(treatmentDocs);
+
+%% Step 5. DATAPOINTS.
 
 % Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
-%%
+%% Step 6. IMAGESTACKS AND GENERIC_FILES.
 
 %%
 % Each cell of a table refers to a subject, each column of a table can
@@ -308,12 +346,14 @@ tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 % at time t subjects (plate2) experienced the emissions of subjects (plate 1)
 % emissions of subject_group (condition 1)
 
-% treatment_donor
-% donor: subject_group (or subject_id)
-% recipient: subject_id
-% onset_time:
-% offset_time:
-% donated entity: agar plate post-training
+% treatment_transfer
+% depends_on: subject_id (recipient)
+% donor_id: subject_group
+% timestamp:
+% entity_name: agar plate medium
+% entity_ontologyNode: MICRO:0000480
+% method_name: M9 buffer wash
+% method_ontologyNode: EMPTY:0000
 
 % SUBJECT
 % - species
@@ -327,9 +367,9 @@ tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 % - wash w/ M9
 % - transfer to different plate
 % - heat-killed food
-% - unpaired protocol
-% - odor (IAA, diacetyl, heptanone, or diacetyl)
-% - chemical application (Xyl/imazapyr/2M5M/SGCDC/all3/all4/Methanol)
+% - unpaired protocol *
+% - odor (IAA, diacetyl, heptanone, or diacetyl) *
+% - chemical application (Xyl/imazapyr/2M5M/SGCDC/all3/all4/Methanol) *
 
 % TESTING
 % plates contain 1uL 1% IAA, diacetyl, heptanone, or diacetyl

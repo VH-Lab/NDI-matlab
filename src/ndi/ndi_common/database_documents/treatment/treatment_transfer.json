@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/treatment\/treatment_transfer.json",
+		"validation":						"$NDISCHEMAPATH\/treatment\/treatment_transfer.json",
+		"class_name":						"treatment_transfer",
+                "property_list_name":                                   "treatment_transfer",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "recipient_id", "value": "" },
+		{ "name": "donor_id", "value": "" }
+	],
+	"treatment_transfer": {
+		"timestamp":				[],
+		"clocktype":					[],
+		"entity_name": 				[],
+		"entity_ontologyNode":                    [],
+		"method_name":                   [],
+		"method_ontologyNode":			[]
+	}
+}
+

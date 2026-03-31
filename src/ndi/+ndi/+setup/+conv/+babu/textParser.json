@@ -149,7 +149,15 @@
   },
   {
     "VariableName": "M9",
-    "StringFormat": "Figure_S1C"
+    "StringFormat": "Figure_S1C|Figure S1C"
+  },
+  {
+    "VariableName": "Pick",
+    "StringFormat": "Picked|Time_point"
+  },
+  {
+    "VariableName": "HeatKilledOP50",
+    "StringFormat": "Figure_2C|Figure 2C"
   }
 
 ]

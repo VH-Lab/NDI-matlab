@@ -51,7 +51,7 @@ classdef treatmentMaker < handle
             report.success = logical([]);
             report.errors = {};
             % Step 1: Validate the input table has the base required columns
-            base_req = {'treatmentType', 'treatment', 'stringValue', 'numericValue', 'subjectIdentifier', 'sessionPath'};
+            base_req = {'subjectIdentifier', 'sessionPath'};
             ndi.validators.mustHaveRequiredColumns(treatmentTable, base_req);
             % Step 2: Efficiently map subject identifiers to NDI document IDs
             subject_docs = S.database_search(ndi.query('','isa','subject'));
@@ -97,6 +97,8 @@ classdef treatmentMaker < handle
                     doc = obj.create_treatment_doc(S, tableRow, subject_doc_id);
                 case 'treatment_drug'
                     doc = obj.create_treatment_drug_doc(S, tableRow, subject_doc_id);
+                case 'treatment_transfer'
+                    doc = obj.create_treatment_transfer_doc(S, tableRow, subject_doc_id);
                 case 'virus_injection' % CORRECTED from 'treatment_virus'
                     doc = obj.create_virus_injection_doc(S, tableRow, subject_doc_id);
                 case 'measurement'
@@ -106,6 +108,8 @@ classdef treatmentMaker < handle
             end
         end
         function doc = create_treatment_doc(~, S, tableRow, subject_doc_id)
+            req_cols = {'treatmentType', 'treatment', 'stringValue', 'numericValue'};
+            ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
             % Creates a standard 'treatment' document
             [id, name] = ndi.ontology.lookup(char(tableRow.treatment));
             if isempty(id)
@@ -132,6 +136,24 @@ classdef treatmentMaker < handle
             measurement_struct.numeric_value = tableRow.numericValue;
             doc = S.newdocument('measurement', 'measurement', measurement_struct);
             doc = doc.set_dependency_value('subject_id', subject_doc_id);
+        end
+        function doc = create_treatment_transfer_doc(~, S, tableRow, subject_doc_id)
+            % Creates a 'treatment_transfer' document
+            req_cols = {'donor_id','timestamp', 'clocktype', 'entity_name', ...
+                        'entity_ontologyNode', 'method_name', 'method_ontologyNode'};
+            ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
+            transfer_struct.timestamp = char(tableRow.timestamp);
+            transfer_struct.clocktype = char(tableRow.clocktype);
+            transfer_struct.entity_name = char(tableRow.entity_name);
+            transfer_struct.entity_ontologyNode = char(tableRow.entity_ontologyNode);
+            transfer_struct.method_name = char(tableRow.method_name);
+            transfer_struct.method_ontologyNode = char(tableRow.method_ontologyNode);
+            
+            doc = S.newdocument('treatment_transfer', 'treatment_transfer', transfer_struct);
+            doc = doc.set_dependency_value('recipient_id', subject_doc_id);
+            if ~isempty(tableRow.donor_id)
+                doc = doc.set_dependency_value('donor_id', char(tableRow.donor_id));
+            end
         end
         function doc = create_treatment_drug_doc(~, S, tableRow, subject_doc_id)
             % Creates a 'treatment_drug' document

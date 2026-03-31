@@ -54,6 +54,15 @@ function avi2mp4(inputSource, outputDir, options)
 %       avi2mp4(dataPath, 'Overwrite', false, 'crf', 18);
 %
 %   See also: SYSTEM, DIR, FULLFILE.
+
+% Input argument validation
+arguments
+    inputSource {mustBeText, mustBeNonempty}
+    outputDir {mustBeTextScalar} = ""
+    options.crf = []
+    options.preset = []
+    options.Overwrite logical = true
+end
     
 % 1. Unify inputSource into a struct array of files
 filesToProcess = struct('name', {}, 'folder', {});
