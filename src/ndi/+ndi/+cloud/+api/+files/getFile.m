@@ -39,7 +39,7 @@ function [b, answer, apiResponse, apiURL] = getFile(downloadURL, downloadedFile,
     arguments
         downloadURL (1,1) string
         downloadedFile (1,1) string
-        options.useCurl (1,1) logical = true
+        options.useCurl (1,1) logical = false
     end
     % 1. Create an instance of the implementation class, passing the options.
     api_call = ndi.cloud.api.implementation.files.GetFile(...

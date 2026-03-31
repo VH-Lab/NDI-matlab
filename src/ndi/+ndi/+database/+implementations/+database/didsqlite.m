@@ -97,7 +97,7 @@ classdef  didsqlite < ndi.database
                         error(['Failed to get file details: ' answer.message]);
                     end
                     fileUrl = answer.downloadUrl;
-                    [success2, answer2] = ndi.cloud.api.files.getFile(fileUrl, destPath, 'useCurl', true);
+                    [success2, answer2] = ndi.cloud.api.files.getFile(fileUrl, destPath);
                     if ~success2
                         error(['Failed to download file from cloud: ' answer2]);
                     end
