@@ -142,7 +142,7 @@ classdef treatmentMaker < handle
             req_cols = {'donor_id','timestamp', 'clocktype', 'entity_name', ...
                         'entity_ontologyNode', 'method_name', 'method_ontologyNode'};
             ndi.validators.mustHaveRequiredColumns(tableRow, req_cols);
-            transfer_struct.timestamp = char(tableRow.timestamp);
+            transfer_struct.timestamp = tableRow.timestamp;
             transfer_struct.clocktype = char(tableRow.clocktype);
             transfer_struct.entity_name = char(tableRow.entity_name);
             transfer_struct.entity_ontologyNode = char(tableRow.entity_ontologyNode);
@@ -151,8 +151,8 @@ classdef treatmentMaker < handle
             
             doc = S.newdocument('treatment_transfer', 'treatment_transfer', transfer_struct);
             doc = doc.set_dependency_value('recipient_id', subject_doc_id);
-            if ~isempty(tableRow.donor_id)
-                doc = doc.set_dependency_value('donor_id', char(tableRow.donor_id));
+            if ~isempty(string(tableRow.donor_id))
+                doc = doc.set_dependency_value('donor_id', char(string(tableRow.donor_id)));
             end
         end
         function doc = create_treatment_drug_doc(~, S, tableRow, subject_doc_id)

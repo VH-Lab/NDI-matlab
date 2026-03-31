@@ -238,8 +238,8 @@ for i = 1:numel(csvFiles)
     end
 end
 
-%session.database_add(subject_group_condition);
-%session.database_add(subject_group_figure);
+session.database_add(subject_group_condition);
+session.database_add(subject_group_figure);
 
 %% Step 4. TREATMENTS.
 
@@ -306,8 +306,34 @@ treatmentDocs = treatmentMaker.addTreatmentsFromTable(session,treatmentTable);
 
 %% Step 5. DATAPOINTS.
 
-% Create tableDocMaker
+treatmentFile = which(fullfile('+ndi','+setup','+conv','+babu','treatments.json'));
+treatments = jsondecode(fileread(treatmentFile));
+
+dataTable = subjectTable(:,{'Value','SubjectDocumentIdentifier'});
+dataTable.mixture_table = cellfun(@(o) ndi.database.fun.writetablechar(struct2table(treatments.([o,'_test']))),...
+    subjectTable.TestOdor,'UniformOutput',false);
+dataTable{:,'odorVolume'} = 1;
+dataTable{:,'duration'} = 10;
+
+% Create chemotaxis tables
+indCI = ~subjectTable.FluorescenceIntensity & ~subjectTable.NumPuncta & ...
+    ~subjectTable.Velocity & ~isnan(subjectTable.Value);
+ciTable = renamevars(dataTable(indCI,:),'Value','CI');
+speedTable = renamevars(dataTable(subjectTable.Velocity,:),'Value','speed');
+
+% Create fluorescence tables
+dataTable = removevars(dataTable,{'odorVolume','mixture_table','duration'});
+dataTable{:,'neuron'} = 'IL2 neuron';
+dataTable{:,'neuronID'} = 'WBbt:0005118';
+fluorTable = renamevars(dataTable(subjectTable.FluorescenceIntensity,:),'Value','fluorescence');
+punctaTable = renamevars(dataTable(subjectTable.NumPuncta,:),'Value','puncta');
+
+%% Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
+
+ciDocs = tableDocMaker.table2ontologyTableRowDocs(ciTable,...
+    'DependencyVariable','SubjectDocumentIdentifier',...
+    'Overwrite',options.Overwrite);
 
 %% Step 6. IMAGESTACKS AND GENERIC_FILES.
 

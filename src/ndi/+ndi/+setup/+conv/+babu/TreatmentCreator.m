@@ -64,8 +64,8 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             heatTable.subjectIdentifier = subjectTable.SubjectLocalIdentifier(indHeat);
             heatTable.administration_onset_time = subjectTable.HeatOnset(indHeat);
             heatTable.administration_offset_time = heatTable.administration_onset_time + minutes(2);
-            heatTable.administration_duration = string(days(heatTable.administration_offset_time - ...
-                heatTable.administration_onset_time));
+            heatTable.administration_duration = days(heatTable.administration_offset_time - ...
+                heatTable.administration_onset_time);
             heatTable = repmat(heatTable,5,1);
             delay = reshape(subjectTable.TrainInterval(indHeat)*(0:4),[],1);
             heatTable.administration_onset_time = string(heatTable.administration_onset_time + delay,'hh:mm:ss');
@@ -80,7 +80,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
                 subjectTable.TrainOdor(indOdor),'UniformOutput',false);
             odorTable.administration_onset_time = subjectTable.OdorOnset(indOdor);
             odorTable.administration_offset_time = subjectTable.OdorOnset(indOdor) + subjectTable.OdorDuration(indOdor);
-            odorTable.administration_duration = string(days(subjectTable.OdorDuration(indOdor)));
+            odorTable.administration_duration = days(subjectTable.OdorDuration(indOdor));
             odorTable = repmat(odorTable,5,1);
             delay = reshape(subjectTable.TrainInterval(indOdor)*(0:4),[],1);
             odorTable.administration_onset_time = string(odorTable.administration_onset_time + delay,'hh:mm:ss');
@@ -96,7 +96,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
                 subjectTable.TrainOdor(indChemical),'UniformOutput',false);
             chemicalTable.administration_onset_time = subjectTable.OdorOnset(indChemical);
             chemicalTable.administration_offset_time = subjectTable.OdorOnset(indChemical) + subjectTable.OdorDuration(indChemical);
-            chemicalTable.administration_duration = string(days(subjectTable.OdorDuration(indChemical)));
+            chemicalTable.administration_duration = days(subjectTable.OdorDuration(indChemical));
             chemicalTable = repmat(chemicalTable,5,1);
             delay = reshape(subjectTable.TrainInterval(indChemical)*(0:4),[],1);
             chemicalTable.administration_onset_time = string(chemicalTable.administration_onset_time + delay,'hh:mm:ss');
@@ -110,7 +110,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             OP50Table{subjectTable.HeatKilledOP50,'mixture_table'} = {ndi.database.fun.writetablechar(struct2table(treatments.OP50HK))};
             OP50Table.administration_onset_time = string(subjectTable.FoodOnset,'hh:mm:ss');
             OP50Table{:,'administration_offset_time'} = string(hours(0),'hh:mm:ss');
-            OP50Table.administration_duration = string(days(-subjectTable.FoodOnset));
+            OP50Table.administration_duration = days(-subjectTable.FoodOnset);
 
             % Combine treatment_drug tables
             drugTable = ndi.fun.table.vstack({heatTable,odorTable,chemicalTable,OP50Table});
@@ -119,13 +119,13 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             % Create treatment_transfer table rows
             transferTable = convertvars(struct2table(treatments.transfer_entity),{'entity_name','entity_ontologyNode'},'string');
             transferTable.treatmentType = {'treatment_transfer'};
-            transferTable.clockType = {'local'};
+            transferTable.clocktype = {'local'};
             indM9 = subjectTable.M9;
             indPick = subjectTable.Pick | subjectTable.Transfer;
             indTransfer = indM9 | indPick;
             transferTable = repmat(transferTable,sum(indTransfer),1);
             transferTable.subjectIdentifier = subjectTable.SubjectLocalIdentifier(indTransfer);
-            transferTable.timestamp = string(seconds(hours(-subjectTable.TransferTime(indTransfer))));
+            transferTable.timestamp = seconds(hours(-subjectTable.TransferTime(indTransfer)));
             transferTable(indM9(indTransfer),{'method_name','method_ontologyNode'}) = ...
                 repmat(convertvars(struct2table(treatments.transfer_M9),...
                 {'method_name','method_ontologyNode'},'string'),sum(indM9),1);

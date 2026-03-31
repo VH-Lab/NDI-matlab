@@ -2,7 +2,7 @@
 	"classname": "treatment_transfer",
 	"superclasses":  [ "base" ],
 	"depends_on": [ 
-		{ "name":"recipient_id", "mustbenotempty":1 }
+		{ "name":"recipient_id", "mustbenotempty":1 },
 		{ "name":"donor_id", "mustbenotempty":0 }
 	],
 	"treatment_transfer": [
@@ -10,7 +10,7 @@
 			"name": "timestamp",
 			"type": "double",
 			"default_value": [0],
-			"parameters": [0,10000000,1],
+			"parameters": [-10000000,10000000,1],
 			"queryable": 1,
 			"documentation": "The time that the transfer occured specified as a datenum (if global clock) or in seconds (if local clock)."
 		},
