@@ -353,6 +353,33 @@ punctaDocs = tableDocMaker.table2ontologyTableRowDocs(punctaTable,...
 
 %% Step 6. IMAGESTACKS AND GENERIC_FILES.
 
+%% Step 7. DATASET.
+
+% Create dataset
+dirName = [labName,'_',char(datetime('now'),'yyyy')];
+datasetDir = fullfile(dataPath,dirName);
+if ~exist(datasetDir,'dir')
+    mkdir(datasetDir);
+elseif options.Overwrite
+    rmdir(datasetDir,'s');
+    mkdir(datasetDir);
+end
+dataset = ndi.dataset.dir(dirName,datasetDir);
+
+% Ingest and add sessions
+for i = 1:numel(sessions)
+    sessionDatabaseDir = fullfile(sessions{i}.path,'.ndi');
+    if options.Overwrite && exist([sessionDatabaseDir,'_'],'dir')
+        rmdir([sessionDatabaseDir,'_'],'s');
+    end
+    copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
+    sessions{i}.ingest;
+    dataset.add_ingested_session(sessions{i});
+end
+
+% Compress dataset
+zip([datasetDir,'.zip'],datasetDir);
+
 %%
 % Each cell of a table refers to a subject, each column of a table can
 % refer to a subject_group. Videos and images can be linked to the 
