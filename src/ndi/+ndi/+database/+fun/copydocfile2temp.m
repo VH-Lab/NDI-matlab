@@ -29,7 +29,7 @@ function [tname,tname_without_extension] = copydocfile2temp(doc, S, filename, ex
     tname = [ tname_without_extension extension ];
 
     f = S.database_openbinarydoc(doc,filename);
-    data = f.fread(Inf);
+    data = f.fread(Inf,'uint8');
 
     fid = fopen(tname,'wb','ieee-le');
     fwrite(fid,data,'uint8');
