@@ -6,6 +6,6 @@
   "speed": "EMPTY:C. elegans chemotaxis assay measurement: mean velocity",
   "puncta": "EMPTY:fluorescent punctal count",
   "fluorescence": "EMPTY:mean fluorescence intensity",
-  "neuron": "fluorescence target name",
-  "neuronID": "fluorescence target ontology identifier"
+  "neuron": "EMPTY:fluorescence target name",
+  "neuronID": "EMPTY:fluorescence target ontology identifier"
 }

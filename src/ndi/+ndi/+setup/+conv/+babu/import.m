@@ -302,7 +302,7 @@ treatmentTable = treatmentCreator.create(subjectTable,session);
 % Create treatment docs
 treatmentMaker = ndi.setup.NDIMaker.treatmentMaker();
 treatmentDocs = treatmentMaker.addTreatmentsFromTable(session,treatmentTable);
-% session.database_add(treatmentDocs);
+session.database_add(treatmentDocs);
 
 %% Step 5. DATAPOINTS.
 
@@ -328,10 +328,26 @@ dataTable{:,'neuronID'} = 'WBbt:0005118';
 fluorTable = renamevars(dataTable(subjectTable.FluorescenceIntensity,:),'Value','fluorescence');
 punctaTable = renamevars(dataTable(subjectTable.NumPuncta,:),'Value','puncta');
 
-%% Create tableDocMaker
+% Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
+if options.Overwrite
+    query = ndi.query('','isa','ontologyTableRow');
+    docs = session.database_search(query);
+    session.database_rm(docs);
+end
+
+% Make ontologyTableRow docs
 ciDocs = tableDocMaker.table2ontologyTableRowDocs(ciTable,...
+    'DependencyVariable','SubjectDocumentIdentifier',...
+    'Overwrite',options.Overwrite);
+speedDocs = tableDocMaker.table2ontologyTableRowDocs(speedTable,...
+    'DependencyVariable','SubjectDocumentIdentifier',...
+    'Overwrite',options.Overwrite);
+fluorDocs = tableDocMaker.table2ontologyTableRowDocs(fluorTable,...
+    'DependencyVariable','SubjectDocumentIdentifier',...
+    'Overwrite',options.Overwrite);
+punctaDocs = tableDocMaker.table2ontologyTableRowDocs(punctaTable,...
     'DependencyVariable','SubjectDocumentIdentifier',...
     'Overwrite',options.Overwrite);
 
