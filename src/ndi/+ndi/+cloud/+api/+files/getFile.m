@@ -8,7 +8,9 @@ function [b, answer, apiResponse, apiURL] = getFile(downloadURL, downloadedFile,
 %
 %   Inputs:
 %       downloadURL     - The pre-signed URL for the download, obtained from the API.
-%       downloadedFile  - The path to save the downloaded file.
+%       downloadedFile  - The path to save the downloaded file. If a file
+%                         already exists at this path, it will be overwritten
+%                         without warning.
 %
 %   Name-Value Pairs:
 %       'useCurl' (logical) - If true, the function will use a system call
@@ -37,7 +39,7 @@ function [b, answer, apiResponse, apiURL] = getFile(downloadURL, downloadedFile,
     arguments
         downloadURL (1,1) string
         downloadedFile (1,1) string
-        options.useCurl (1,1) logical = false
+        options.useCurl (1,1) logical = true
     end
     % 1. Create an instance of the implementation class, passing the options.
     api_call = ndi.cloud.api.implementation.files.GetFile(...

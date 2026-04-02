@@ -16,7 +16,7 @@ classdef GetFile < ndi.cloud.api.call
             arguments
                 args.downloadURL (1,1) string
                 args.downloadedFile (1,1) string
-                args.useCurl (1,1) logical = false
+                args.useCurl (1,1) logical = true
             end
             this.downloadURL = args.downloadURL;
             this.downloadedFile = args.downloadedFile;
