@@ -51,7 +51,8 @@
     {"prefix": "WBStrain", "ontology_name": "WBStrain"},
     {"prefix": "EFO", "ontology_name": "EFO"},
     {"prefix": "EDAM", "ontology_name": "EDAM"},
-    {"prefix": "format", "ontology_name": "EDAM"}
+    {"prefix": "format", "ontology_name": "EDAM"},
+    {"prefix": "data", "ontology_name": "EDAM"}
   ],
   "Ontologies": [
     {

@@ -111,6 +111,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             OP50Table.administration_onset_time = string(subjectTable.FoodOnset,'hh:mm:ss');
             OP50Table{:,'administration_offset_time'} = string(hours(0),'hh:mm:ss');
             OP50Table.administration_duration = days(-subjectTable.FoodOnset);
+            OP50Table(~subjectTable.HeatKilledOP50 & ~subjectTable.OP50) = [];
 
             % Combine treatment_drug tables
             drugTable = ndi.fun.table.vstack({heatTable,odorTable,chemicalTable,OP50Table});

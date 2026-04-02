@@ -78,8 +78,10 @@ ind = cellfun(@(f) find(contains(csvTable.TableFileName,f),1),{'3D','3E','S2C','
 csvTable = [csvTable;csvTable(ind,:)];
 csvTable{(end-numel(ind)+1):end,'ColumnName'} = {'TrainedToNaive'};
 
-% Add placeholder subjects for Figure S5D
+% Add placeholder subjects for Figure S5D and S6A
 temp = imageFiles(contains(imageFiles,'S5D'));
+csvTable = [csvTable;table(temp,repmat({''},numel(temp),1),'VariableNames',csvTable.Properties.VariableNames)];
+temp = lcmsFiles(contains(lcmsFiles,'S6A') & ~contains(lcmsFiles,'_P.xlsx') & ~contains(lcmsFiles,'All_set'));
 csvTable = [csvTable;table(temp,repmat({''},numel(temp),1),'VariableNames',csvTable.Properties.VariableNames)];
 
 % Extract manifest metadata
@@ -122,6 +124,12 @@ for i = 1:height(csvTable)
         csvTable{i,'FigureName'} = {[csvTable.FigureName{i},num2str(csvTable.FigurePart{i})]};
     end
 end
+
+% Assign column name (if missing)
+ind = cellfun(@isempty,csvTable.ColumnName);
+[~,csvTable.ColumnName(ind)] = fileparts(csvTable.TableFileName(ind));
+ind = contains(csvTable.FigureName,'S6A');
+csvTable.ColumnName(ind) = cellfun(@(s) s(1:end-1),replace(csvTable.ColumnName(ind),'_',''),'UniformOutput',false);
 
 % Assign chemoattractants to csv columns
 trainOdorants = {'TrainIAA','TrainDiacetyl','TrainBenzaldehyde','TrainHeptanone'};
@@ -209,6 +217,15 @@ subjectCreator = ndi.setup.conv.(labName).SubjectInformationCreator();
 % Add csv info to table
 subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','StrainName'},...
     'KeepOneCopy',intersect(subjectTable.Properties.VariableNames,csvTable.Properties.VariableNames));
+
+% Remove openminds docs for Figure 6A NGM controls (no worms)
+ind = find(contains(subjectTable.TableFileName,'NGM_') & strcmp(subjectTable.FigureName,'6A'));
+for i = 1:numel(ind)
+    query = ndi.query('','depends_on','subject_id',subjectTable.SubjectDocumentIdentifier{ind(i)}) & ...
+        ndi.query('','isa','openminds_subject');
+    docs = session.database_search(query);
+    session.database_rm(docs);
+end
 
 %% Create subject groups for each condition and figure
 
@@ -371,11 +388,6 @@ ind = (strcmp(videoTable.FigureName,'6I') | strcmp(videoTable.FigureName,'6J')) 
     videoTable.Xylidine;
 videoTable{ind,'XylidineDose'} = 80;
 
-% Remove videos for Figure 2B - heat only, IAA only
-ind = contains(videoTable.VideoFileName,'Figure 2B/IAA Rep') | ...
-    contains(videoTable.VideoFileName,'Figure 2B/37 Rep');
-videoTable(ind,:) = [];
-
 % Add imageTable
 logicalColumns = strcmp(videoTable.Properties.VariableTypes,'logical');
 imStackTable = ndi.fun.table.vstack({videoTable,imageTable});
@@ -491,28 +503,81 @@ end
 
 % Create plasmid generic_file docs
 plasmidDocs = cell(numel(plasmidFiles),1);
+lcmsLabelDocs = cell(numel(plasmidFiles),1);
 for i = 1:numel(plasmidFiles)
     % Get file metadata
-    plasmidFile = fullfile(dataParentDir,plasmidFiles{i});
-    checksum = ndi.fun.file.MD5(plasmidFile);
-    dateCreated = convertTo(ndi.fun.file.dateCreated(plasmidFile),'datenum');
-    dateUpdated = convertTo(ndi.fun.file.dateUpdated(plasmidFile),'datenum');
+    lcmsFile = fullfile(dataParentDir,plasmidFiles{i});
+    checksum = ndi.fun.file.MD5(lcmsFile);
+    dateCreated = convertTo(ndi.fun.file.dateCreated(lcmsFile),'datenum');
+    dateUpdated = convertTo(ndi.fun.file.dateUpdated(lcmsFile),'datenum');
 
     % Create generic_file document
     generic_file = struct('filename',plasmidFiles{i},'formatOntology','EMPTY:0000259', ...
         'checksum',checksum,'dateCreated',dateCreated,'dateUpdated',dateUpdated);
     plasmidDocs{i} = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    plasmidDocs{i} = plasmidDocs{i}.add_file('generic_file.ext',plasmidFile,...
-        'delete_original',0);
+    plasmidDocs{i} = plasmidDocs{i}.add_file('generic_file.ext',lcmsFile,'delete_original',0);
     plasmidDocs{i} = plasmidDocs{i}.set_dependency_value('document_id',subject_group_plasmid{i}.id);
+
+    % Create ontologyLabel document
+    lcmsLabelDocs{i} = ndi.document('ontologyLabel','ontologyLabel',...
+        struct('ontologyNode','EDAM:data_1286')) + session.newdocument;
+    lcmsLabelDocs{i} = lcmsLabelDocs{i}.set_dependency_value( ...
+        'document_id',plasmidDocs{i}.id);
 end
 
-% session.database_add(subject_group_plasmid);
-% session.database_add(plasmidDocs);
+session.database_add(subject_group_plasmid);
+session.database_add(plasmidDocs);
+session.database_add(lcmsLabelDocs);
 
 %% Step 8. LC-MS.
 
+% Match subjects to LC-MS files
+for i = 1:height(lcmsTable)
+    ind = contains(subjectTable.TableFileName,lcmsTable.TableFileName{i}(1:end-7));
+    if isscalar(ind)
+        lcmsTable.SubjectDocumentIdentifier(i) = subjectTable.SubjectDocumentIdentifier(ind);
+    end
+end
+
+% Create subject_group for all_set
+subject_group_lcms = ndi.document('subject_group') + session.newdocument();
+subjectRows = find(strcmp(subjectTable.FigureName,'S6A'));
+for k = 1:numel(subjectRows)
+    subject_group_lcms = subject_group_lcms.add_dependency_value_n(...
+        'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
+end
+ind = contains(lcmsTable.TableFileName,'All_set');
+lcmsTable.SubjectDocumentIdentifier(ind) = subject_group_lcms.id;
+
+% Create LCMS generic_file docs
+lcmsDocs = cell(height(lcmsTable),1);
+lcmsLabelDocs = cell(height(lcmsTable),1);
+for i = 1:height(lcmsTable)
+    % Get file metadata
+    lcmsFile = fullfile(dataParentDir,lcmsTable.TableFileName{i});
+    checksum = ndi.fun.file.MD5(lcmsFile);
+    dateCreated = convertTo(ndi.fun.file.dateCreated(lcmsFile),'datenum');
+    dateUpdated = convertTo(ndi.fun.file.dateUpdated(lcmsFile),'datenum');
+
+    % Create generic_file document
+    generic_file = struct('filename',lcmsTable.TableFileName{i},'formatOntology','EDAM:format_3620', ...
+        'checksum',checksum,'dateCreated',dateCreated,'dateUpdated',dateUpdated);
+    lcmsDocs{i} = ndi.document('generic_file','generic_file',generic_file) + ...
+        session.newdocument();
+    lcmsDocs{i} = lcmsDocs{i}.add_file('generic_file.ext',lcmsFile,'delete_original',0);
+    lcmsDocs{i} = lcmsDocs{i}.set_dependency_value('document_id',lcmsTable.SubjectDocumentIdentifier{i});
+
+    % Create ontologyLabel document
+    lcmsLabelDocs{i} = ndi.document('ontologyLabel','ontologyLabel',...
+        struct('ontologyNode','EDAM:data_2536')) + session.newdocument;
+    lcmsLabelDocs{i} = lcmsLabelDocs{i}.set_dependency_value( ...
+        'document_id',plasmidDocs{i}.id);
+end
+
+session.database_add(subject_group_lcms);
+session.database_add(lcmsDocs);
+session.database_add(lcmsLabelDocs);
 
 %% Step 9. DATASET.
 

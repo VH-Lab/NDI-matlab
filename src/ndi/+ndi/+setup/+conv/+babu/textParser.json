@@ -149,7 +149,7 @@
   },
   {
     "VariableName": "M9",
-    "StringFormat": "Figure_S1C|Figure S1C"
+    "StringFormat": "Figure_S1C|Figure S1C|Figure S6A"
   },
   {
     "VariableName": "Pick",
@@ -158,6 +158,10 @@
   {
     "VariableName": "HeatKilledOP50",
     "StringFormat": "Figure_2C|Figure 2C"
+  },
+  {
+    "VariableName": "OP50",
+    "StringFormat": "Figure(?!.*NGM_Only|_2C|\\s+2C)"
   }
 
 ]
