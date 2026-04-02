@@ -119,7 +119,7 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             % Create treatment_transfer table rows
             transferTable = convertvars(struct2table(treatments.transfer_entity),{'entity_name','entity_ontologyNode'},'string');
             transferTable.treatmentType = {'treatment_transfer'};
-            transferTable.clocktype = {'local'};
+            transferTable.clocktype = {'dev_local_time'};
             indM9 = subjectTable.M9;
             indPick = subjectTable.Pick | subjectTable.Transfer;
             indTransfer = indM9 | indPick;

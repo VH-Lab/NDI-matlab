@@ -13,19 +13,19 @@
   },
   {
     "VariableName": "Heat",
-    "StringFormat": "(?i)heat|37"
+    "StringFormat": "(?i)heat|(?<!\\s+to\\s+.*|\\+)37"
   },
   {
     "VariableName": "Naive",
-    "StringFormat": "(?<!To.*)(?i)naive"
+    "StringFormat": "(?<!To.*|\\s+to\\s+.*)(?i)naive"
   },
   {
     "VariableName": "Trained",
-    "StringFormat": "(?<!To.*)(?i)trained"
+    "StringFormat": "(?<!To.*|\\s+to\\s+.*)(?:(?i)trained|(?i)test(?!ed)|IAA\\+37|Figure S5D)(?!.*Only)"
   },
   {
     "VariableName": "Transfer",
-    "StringFormat": "To"
+    "StringFormat": "To|\\s+to\\s"
   },
   {
     "VariableName": "TransferDonor",
@@ -69,7 +69,7 @@
   },
   {
     "VariableName": "SGCDC",
-    "StringFormat": "(?i)SGCDC|All3|All4"
+    "StringFormat": "(?i)SGCDC|All"
   },
   {
     "VariableName": "Methanol",
@@ -77,19 +77,19 @@
   },
   {
     "VariableName": "Xylidine",
-    "StringFormat": "(?i)xyl"
+    "StringFormat": "(?i)xyl|All"
   },
   {
     "VariableName": "XylidineDose",
-    "StringFormat": "(\\d+)MM(?i)xyl"
+    "StringFormat": "(\\d+)MM(?i:xyl)|(\\d+)\\s+mM|(\\d+)mM"
   },
   {
     "VariableName": "x2M5M",
-    "StringFormat": "(?i)2M5M|All3|All4"
+    "StringFormat": "(?i)2M5M|All"
   },
   {
     "VariableName": "Imazapyr",
-    "StringFormat": "(?i)imazapyr|All3|All4"
+    "StringFormat": "(?i)imazapyr|All"
   },
   {
     "VariableName": "N2",
@@ -97,11 +97,11 @@
   },
   {
     "VariableName": "PT1194",
-    "StringFormat": "(?<!To.*)(?i)klp_6(?!Rescue)"
+    "StringFormat": "(?<!To.*)(?i)(?:klp_6|(?i)pt1194|PT 1194|PT114)(?!.*Rescue)"
   },
   {
     "VariableName": "PT3602",
-    "StringFormat": "Figure_5E"
+    "StringFormat": "S5D.*Control|Figure_5)E"
   },
   {
     "VariableName": "TM5848",
@@ -113,19 +113,19 @@
   },
   {
     "VariableName": "BAB9002",
-    "StringFormat": "(?<!To.*)(?i)klp_6Rescue"
+    "StringFormat": "(?<!To.*)(?i)klp_6Rescue|PT1194\\s+Rescue"
   },
   {
     "VariableName": "BAB9003",
-    "StringFormat": "(?<!To.*)P1(?!_P2)"
+    "StringFormat": "(?<!To.*)P1(?!_?P2)"
   },
   {
     "VariableName": "BAB9004",
-    "StringFormat": "(?<!To.*)(?<!P1_)P2"
+    "StringFormat": "(?<!To.*)(?<!P1_?)P2"
   },
   {
     "VariableName": "BAB9005",
-    "StringFormat": "(?<!To.*)P1_P2"
+    "StringFormat": "(?<!To.*|\\s+to\\s+.*)(?:P1_P2|P1P2)"
   },
   {
     "VariableName": "Immediate",

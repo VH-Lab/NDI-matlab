@@ -42,13 +42,11 @@ ndi.fun.data.avi2mp4(dataPath,'Overwrite',options.OverwriteAVI2MP4);
 
 % Get files by type
 csvFiles = fileList(endsWith(fileList,'.csv'));
-xlsxFiles = fileList(endsWith(fileList,'.xlsx'));
+lcmsFiles = fileList(endsWith(fileList,'.xlsx'));
 aviFiles = fileList(endsWith(fileList,'.avi'));
 mp4Files = fileList(endsWith(fileList,'.mp4'));
 imageFiles = fileList(endsWith(fileList,'.tif'));
 plasmidFiles = fileList(endsWith(fileList,'.dna'));
-otherFiles = setdiff(fileList,[csvFiles;xlsxFiles;aviFiles;mp4Files;...
-    imageFiles;plasmidFiles]);
 
 % Ignore table
 indRemove = contains(csvFiles,{'Figure_3A_Data_1','Figure_4E_Data_2'});
@@ -80,11 +78,19 @@ ind = cellfun(@(f) find(contains(csvTable.TableFileName,f),1),{'3D','3E','S2C','
 csvTable = [csvTable;csvTable(ind,:)];
 csvTable{(end-numel(ind)+1):end,'ColumnName'} = {'TrainedToNaive'};
 
+% Add placeholder subjects for Figure S5D
+temp = imageFiles(contains(imageFiles,'S5D'));
+csvTable = [csvTable;table(temp,repmat({''},numel(temp),1),'VariableNames',csvTable.Properties.VariableNames)];
+
 % Extract manifest metadata
 textParser = which(fullfile('+ndi','+setup','+conv',['+',labName],'textParser.json'));
 csvTable = [csvTable,ndi.fun.parseText(table2cell(csvTable),textParser)];
 videoTable = [cell2table(aviFiles,'VariableNames',{'VideoFileName'}),...
     ndi.fun.parseText(aviFiles,textParser)];
+imageTable = [cell2table(imageFiles,'VariableNames',{'VideoFileName'}),...
+    ndi.fun.parseText(imageFiles,textParser)];
+lcmsTable = [cell2table(lcmsFiles,'VariableNames',{'TableFileName'}),...
+    ndi.fun.parseText(lcmsFiles,textParser)];
 
 % Rename figures
 csvTable{contains(csvTable.TableFileName,'Figure_S3B'),'FigureName'} = {'S3C'};
@@ -92,6 +98,9 @@ csvTable{contains(csvTable.TableFileName,'Figure_S3C'),'FigureName'} = {'S3D'};
 csvTable{contains(csvTable.TableFileName,'Figure_S3D'),'FigureName'} = {'S3B'};
 videoTable{contains(videoTable.VideoFileName,'Figure S3C'),'FigureName'} = {'S3D'};
 videoTable{contains(videoTable.VideoFileName,'Figure S3D'),'FigureName'} = {'S3B'};
+
+% Manual correct trained
+csvTable.Trained(csvTable.Naive) = false;
 
 % Check strains
 strainNames = {'N2','PT1194','PT3602','TM5848',...
@@ -158,7 +167,7 @@ SessionRef = {[labName,'_',char(datetime('now'),'yyyy')]};
 SessionPath = {labName};
 sessionMaker = ndi.setup.NDIMaker.sessionMaker(dataParentDir,...
     table(SessionRef,SessionPath),'Overwrite',options.Overwrite);
-
+ 
 % Get the session object
 sessions = sessionMaker.sessionIndices;
 if options.Overwrite
@@ -208,6 +217,16 @@ ind = strcmp(subjectTable.FigureName,'5A') | strcmp(subjectTable.FigureName,'5B'
 subjectTable{ind,'FigureName'} = {'5AB'};
 ind = strcmp(csvTable.FigureName,'5A') | strcmp(csvTable.FigureName,'5B');
 csvTable{ind,'FigureName'} = {'5AB'};
+ind = strcmp(videoTable.FigureName,'5A') | strcmp(videoTable.FigureName,'5B');
+videoTable{ind,'FigureName'} = {'5AB'};
+
+% Merge Figure 5E1 and 5E2 (matched)
+ind = strcmp(subjectTable.FigureName,'5E1') | strcmp(subjectTable.FigureName,'5E2');
+subjectTable{ind,'FigureName'} = {'5E'};
+ind = strcmp(csvTable.FigureName,'5E1') | strcmp(csvTable.FigureName,'5E2');
+csvTable{ind,'FigureName'} = {'5E'};
+ind = strcmp(imageTable.FigureName,'5D');
+imageTable{ind,'FigureName'} = {'5E'};
 
 subject_group_figure = cell(numel(csvFiles),1);
 subject_group_condition = cell(height(csvTable),1);
@@ -331,12 +350,6 @@ punctaTable = renamevars(dataTable(subjectTable.NumPuncta,:),'Value','puncta');
 % Create tableDocMaker
 tableDocMaker = ndi.setup.NDIMaker.tableDocMaker(session,labName);
 
-if options.Overwrite
-    query = ndi.query('','isa','ontologyTableRow');
-    docs = session.database_search(query);
-    session.database_rm(docs);
-end
-
 % Make ontologyTableRow docs
 ciDocs = tableDocMaker.table2ontologyTableRowDocs(ciTable,...
     'DependencyVariable','SubjectDocumentIdentifier',...
@@ -351,9 +364,157 @@ punctaDocs = tableDocMaker.table2ontologyTableRowDocs(punctaTable,...
     'DependencyVariable','SubjectDocumentIdentifier',...
     'Overwrite',options.Overwrite);
 
-%% Step 6. IMAGESTACKS AND GENERIC_FILES.
+%% Step 6. VIDEOS.
 
-%% Step 7. DATASET.
+% Manually add xlyidine dose to Figure 6I and 6J
+ind = (strcmp(videoTable.FigureName,'6I') | strcmp(videoTable.FigureName,'6J')) & ...
+    videoTable.Xylidine;
+videoTable{ind,'XylidineDose'} = 80;
+
+% Remove videos for Figure 2B - heat only, IAA only
+ind = contains(videoTable.VideoFileName,'Figure 2B/IAA Rep') | ...
+    contains(videoTable.VideoFileName,'Figure 2B/37 Rep');
+videoTable(ind,:) = [];
+
+% Add imageTable
+logicalColumns = strcmp(videoTable.Properties.VariableTypes,'logical');
+imStackTable = ndi.fun.table.vstack({videoTable,imageTable});
+tempTable = imStackTable{:,logicalColumns};
+tempTable(isnan(tempTable)) = 0; tempTable = logical(tempTable);
+imStackTable{:,logicalColumns} = tempTable;
+
+% Match videoTable to csvTable 
+for i = 1:height(imStackTable)
+    ind = strcmp(csvTable.FigureName,imStackTable.FigureName(i)) & ...
+        csvTable.Heat == imStackTable.Heat(i) & ...
+        csvTable.Naive == imStackTable.Naive(i) & ...
+        csvTable.Trained == imStackTable.Trained(i) & ...
+        csvTable.Transfer == imStackTable.Transfer(i) & ...
+        csvTable.PT1194 == imStackTable.PT1194(i) & ...
+        csvTable.BAB9002 == imStackTable.BAB9002(i) & ...
+        csvTable.BAB9003 == imStackTable.BAB9003(i) & ...
+        csvTable.BAB9004 == imStackTable.BAB9004(i) & ...
+        csvTable.BAB9005 == imStackTable.BAB9005(i) & ...
+        arrayfun(@(d) isequaln(d,imStackTable.XylidineDose(i)),csvTable.XylidineDose) & ...
+        csvTable.SGCDC == imStackTable.SGCDC(i) & ...
+        csvTable.x2M5M == imStackTable.x2M5M(i);
+    if sum(ind) == 1
+        imStackTable.TableFileName(i) = csvTable.TableFileName(ind);
+        imStackTable.ColumnName(i) = csvTable.ColumnName(ind);
+        indSubject = strcmp(subjectTable.FigureName,csvTable.FigureName(ind)) & ...
+            strcmp(subjectTable.ColumnName,csvTable.ColumnName(ind));
+        imStackTable.SubjectGroupIdentifier_Column(i) = unique(subjectTable.SubjectGroupIdentifier_Column(indSubject));
+    end
+end
+
+%% Create imageStack and ontologyLabel docs
+imageStackDocs = cell(height(imStackTable),1);
+imageLabelDocs = cell(height(imStackTable),1);
+for i = 1:height(imStackTable)
+    imStackFile = fullfile(dataParentDir,imStackTable.VideoFileName{i});
+    timeStamp = ndi.fun.file.dateUpdated(imStackFile);
+    if contains(imStackFile,'.avi')
+        imStackFile = replace(imStackFile,'.avi','_compressed.mp4');
+        vidObj = imStackFile(mp4File);
+        firstFrame = read(vidObj,1);
+        dimOrder3 = 'T'; dimLabel3 = ',time';
+        dimSize3 = vidObj.NumFrames;
+        dimScale3 = vidObj.FrameRate;
+        dimUnit3 = ',second';
+    else
+        vidObj = imfInfo(imStackFile);
+        firstFrame = imread(imStackFile);
+        [dimOrder3,dimLabel3] = deal('');
+        [dimSize3,dimScale3,dimUnit3] = deal([]);
+    end
+
+    % Define imageStack_parameters
+    dataType = class(firstFrame);
+    imageStack_parameters = struct('dimension_order',['YX',dimOrder3],...
+        'dimension_labels',['height,width',dimLabel3],...
+        'dimension_size',[vidObj.Height,vidObj.Width,dimSize3],...
+        'dimension_scale',[1,1,dimScale3],...
+        'dimension_scale_units',['pixel,pixel',dimUnit3],...
+        'data_type',dataType,...
+        'data_limits',[intmin(dataType) intmax(dataType)],...
+        'timestamp',convertTo(timeStamp,'datenum'),...
+        'clocktype','exp_global_time');
+            
+    % Create imageStack document
+    if contains(imStackFile,'.avi')
+        [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:0000257');
+        imageStack = struct('label',ontologyDef,'formatOntology','NCIT:C190180');
+    else
+        [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:0000258');
+        imageStack = struct('label',ontologyDef,'formatOntology','NCIT:C70631');
+    end
+    imageStackDocs{i} = ndi.document('imageStack','imageStack',imageStack,...
+        'imageStack_parameters', imageStack_parameters) + ...
+        session.newdocument;
+
+    % Add dependency
+    imageStackDocs{i} = imageStackDocs{i}.set_dependency_value( ...
+        'subject_id',imStackTable.SubjectGroupIdentifier_Column);
+
+    % Add file
+    imageStackDocs{i} = imageStackDocs{i}.add_file('imageStack',imStackFile,'delete_original',0);
+
+    % Add ontologyLabel
+    ontologyLabel = struct('ontologyNode',ontologyID);
+    imageLabelDocs{i} = ndi.document('ontologyLabel', ...
+        'ontologyLabel',ontologyLabel) + session.newdocument;
+    imageLabelDocs{i} = imageLabelDocs{i}.set_dependency_value( ...
+        'document_id',imageStackDocs{i}.id);
+end
+
+% session.database_add(imageStackDocs);
+% session.database_add(imageLabelDocs);
+
+%% Step 7. PLASMIDS.
+
+% Make sure P1 is listed first
+if find(contains(plasmidFiles,'klp-6')) == 2
+    plasmidFiles = flipud(plasmidFiles);
+end
+
+% Create subject groups for plasmids
+plasmidGroups = {{'BAB9003','BAB9005'},{'BAB9004','BAB9005'}};
+subject_group_plasmid = cell(numel(plasmidGroups),1);
+for i = 1:numel(plasmidGroups)
+    subject_group_plasmid{i} = ndi.document('subject_group') + session.newdocument();
+    subjectRows = find(ismember(subjectTable.StrainName,plasmidGroups{i}));
+    for k = 1:numel(subjectRows)
+        subject_group_plasmid{i} = subject_group_plasmid{i}.add_dependency_value_n(...
+            'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
+    end
+end
+
+% Create plasmid generic_file docs
+plasmidDocs = cell(numel(plasmidFiles),1);
+for i = 1:numel(plasmidFiles)
+    % Get file metadata
+    plasmidFile = fullfile(dataParentDir,plasmidFiles{i});
+    checksum = ndi.fun.file.MD5(plasmidFile);
+    dateCreated = convertTo(ndi.fun.file.dateCreated(plasmidFile),'datenum');
+    dateUpdated = convertTo(ndi.fun.file.dateUpdated(plasmidFile),'datenum');
+
+    % Create generic_file document
+    generic_file = struct('filename',plasmidFiles{i},'formatOntology','EMPTY:0000259', ...
+        'checksum',checksum,'dateCreated',dateCreated,'dateUpdated',dateUpdated);
+    plasmidDocs{i} = ndi.document('generic_file','generic_file',generic_file) + ...
+        session.newdocument();
+    plasmidDocs{i} = plasmidDocs{i}.add_file('generic_file.ext',plasmidFile,...
+        'delete_original',0);
+    plasmidDocs{i} = plasmidDocs{i}.set_dependency_value('document_id',subject_group_plasmid{i}.id);
+end
+
+% session.database_add(subject_group_plasmid);
+% session.database_add(plasmidDocs);
+
+%% Step 8. LC-MS.
+
+
+%% Step 9. DATASET.
 
 % Create dataset
 dirName = [labName,'_',char(datetime('now'),'yyyy')];
