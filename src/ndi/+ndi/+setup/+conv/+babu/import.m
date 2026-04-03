@@ -223,8 +223,8 @@ subjectCreator = ndi.setup.conv.(labName).SubjectInformationCreator();
 subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','StrainName'},...
     'KeepOneCopy',intersect(subjectTable.Properties.VariableNames,csvTable.Properties.VariableNames));
 
-%% Remove openminds docs for Figure 6A NGM controls (no worms)
-ind = find(contains(subjectTable.TableFileName,'NGM_') & strcmp(subjectTable.FigureName,'6A'));
+% Remove openminds docs for Figure 6A NGM controls (no worms)
+ind = find(contains(subjectTable.TableFileName,'NGM_') & strcmp(subjectTable.FigureName,'S6A'));
 for i = 1:numel(ind)
     query = ndi.query('','depends_on','subject_id',subjectTable.SubjectDocumentIdentifier{ind(i)}) & ...
         ndi.query('','isa','openminds_subject');
@@ -278,6 +278,8 @@ for i = 1:numel(csvFiles)
         subjectTable{subjectRows,'SubjectGroupIdentifier_Column'} = {subject_group_condition{csvRows(j)}.id};
     end
 end
+ind = cellfun(@isempty,subject_group_condition);
+subject_group_condition(ind) = [];
 
 session.database_add(subject_group_condition);
 session.database_add(subject_group_figure);
@@ -324,6 +326,7 @@ subjectTable.TransferTime = nan(height(subjectTable),1);
 subjectTable.TransferTime(indWash) = subjectTable.Hours(indWash);
 subjectTable.TransferTime(indWash & contains(subjectTable.TableFileName,'immediate')) = 0;
 subjectTable.TransferTime(indWash & isnan(subjectTable.TransferTime)) = 12;
+subjectTable.TransferTime(strcmp(subjectTable.FigureName,'S6A')) = 0;
 
 % Get transfer donor ids
 indTransfer = subjectTable.Transfer;
@@ -402,7 +405,7 @@ imStackTable{:,logicalColumns} = tempTable;
 
 % Match videoTable to csvTable 
 for i = 1:height(imStackTable)
-    ind = strcmp(csvTable.FigureName,imStackTable.FigureName(i)) & ...
+    ind = find(strcmp(csvTable.FigureName,imStackTable.FigureName(i)) & ...
         csvTable.Heat == imStackTable.Heat(i) & ...
         csvTable.Naive == imStackTable.Naive(i) & ...
         csvTable.Trained == imStackTable.Trained(i) & ...
@@ -414,17 +417,20 @@ for i = 1:height(imStackTable)
         csvTable.BAB9005 == imStackTable.BAB9005(i) & ...
         arrayfun(@(d) isequaln(d,imStackTable.XylidineDose(i)),csvTable.XylidineDose) & ...
         csvTable.SGCDC == imStackTable.SGCDC(i) & ...
-        csvTable.x2M5M == imStackTable.x2M5M(i);
-    if sum(ind) == 1
-        imStackTable.TableFileName(i) = csvTable.TableFileName(ind);
-        imStackTable.ColumnName(i) = csvTable.ColumnName(ind);
-        indSubject = strcmp(subjectTable.FigureName,csvTable.FigureName(ind)) & ...
-            strcmp(subjectTable.ColumnName,csvTable.ColumnName(ind));
-        imStackTable.SubjectGroupIdentifier_Column(i) = unique(subjectTable.SubjectGroupIdentifier_Column(indSubject));
+        csvTable.x2M5M == imStackTable.x2M5M(i));
+    if ~isempty(ind)
+        indSubject = arrayfun(@(k) strcmp(subjectTable.FigureName,csvTable.FigureName(k)) & ...
+            strcmp(subjectTable.ColumnName,csvTable.ColumnName(k)),ind,'UniformOutput',false);
+        indSubject = any([indSubject{:}],2);
+        subject_id = subjectTable.SubjectGroupIdentifier_Column(indSubject);
+        if isempty(subject_id{1}) & sum(indSubject) == 1
+            subject_id = subjectTable.SubjectDocumentIdentifier(indSubject);
+        end
+        imStackTable.SubjectGroupIdentifier_Column(i) = unique(subject_id);
     end
 end
 
-%% Create imageStack and ontologyLabel docs
+% Create imageStack and ontologyLabel docs
 imageStackDocs = cell(height(imStackTable),1);
 imageLabelDocs = cell(height(imStackTable),1);
 for i = 1:height(imStackTable)
@@ -432,7 +438,7 @@ for i = 1:height(imStackTable)
     timeStamp = ndi.fun.file.dateUpdated(imStackFile);
     if contains(imStackFile,'.avi')
         imStackFile = replace(imStackFile,'.avi','_compressed.mp4');
-        vidObj = imStackFile(mp4File);
+        vidObj = VideoReader(imStackFile);
         firstFrame = read(vidObj,1);
         dimOrder3 = 'T'; dimLabel3 = ',time';
         dimSize3 = vidObj.NumFrames;
@@ -484,8 +490,9 @@ for i = 1:height(imStackTable)
         'document_id',imageStackDocs{i}.id);
 end
 
-% session.database_add(imageStackDocs);
-% session.database_add(imageLabelDocs);
+%%
+session.database_add(imageStackDocs);
+session.database_add(imageLabelDocs);
 
 %% Step 7. PLASMIDS.
 
