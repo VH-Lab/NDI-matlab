@@ -445,7 +445,7 @@ for i = 1:height(imStackTable)
         dimScale3 = vidObj.FrameRate;
         dimUnit3 = ',second';
     else
-        vidObj = imfInfo(imStackFile);
+        vidObj = imfinfo(imStackFile);
         firstFrame = imread(imStackFile);
         [dimOrder3,dimLabel3] = deal('');
         [dimSize3,dimScale3,dimUnit3] = deal([]);
@@ -477,7 +477,7 @@ for i = 1:height(imStackTable)
 
     % Add dependency
     imageStackDocs{i} = imageStackDocs{i}.set_dependency_value( ...
-        'subject_id',imStackTable.SubjectGroupIdentifier_Column);
+        'subject_id',imStackTable.SubjectGroupIdentifier_Column{i});
 
     % Add file
     imageStackDocs{i} = imageStackDocs{i}.add_file('imageStack',imStackFile,'delete_original',0);
@@ -490,7 +490,6 @@ for i = 1:height(imStackTable)
         'document_id',imageStackDocs{i}.id);
 end
 
-%%
 session.database_add(imageStackDocs);
 session.database_add(imageLabelDocs);
 
@@ -515,7 +514,7 @@ end
 
 % Create plasmid generic_file docs
 plasmidDocs = cell(numel(plasmidFiles),1);
-lcmsLabelDocs = cell(numel(plasmidFiles),1);
+plasmidLabelDocs = cell(numel(plasmidFiles),1);
 for i = 1:numel(plasmidFiles)
     % Get file metadata
     lcmsFile = fullfile(dataParentDir,plasmidFiles{i});
@@ -532,15 +531,15 @@ for i = 1:numel(plasmidFiles)
     plasmidDocs{i} = plasmidDocs{i}.set_dependency_value('document_id',subject_group_plasmid{i}.id);
 
     % Create ontologyLabel document
-    lcmsLabelDocs{i} = ndi.document('ontologyLabel','ontologyLabel',...
+    plasmidLabelDocs{i} = ndi.document('ontologyLabel','ontologyLabel',...
         struct('ontologyNode','EDAM:data_1286')) + session.newdocument;
-    lcmsLabelDocs{i} = lcmsLabelDocs{i}.set_dependency_value( ...
+    plasmidLabelDocs{i} = plasmidLabelDocs{i}.set_dependency_value( ...
         'document_id',plasmidDocs{i}.id);
 end
 
 session.database_add(subject_group_plasmid);
 session.database_add(plasmidDocs);
-session.database_add(lcmsLabelDocs);
+session.database_add(plasmidLabelDocs);
 
 %% Step 8. LC-MS.
 
@@ -560,7 +559,7 @@ for k = 1:numel(subjectRows)
         'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
 end
 ind = contains(lcmsTable.TableFileName,'All_set');
-lcmsTable.SubjectDocumentIdentifier(ind) = subject_group_lcms.id;
+lcmsTable{ind,'SubjectDocumentIdentifier'} = {subject_group_lcms.id};
 
 % Create LCMS generic_file docs
 lcmsDocs = cell(height(lcmsTable),1);
@@ -584,7 +583,7 @@ for i = 1:height(lcmsTable)
     lcmsLabelDocs{i} = ndi.document('ontologyLabel','ontologyLabel',...
         struct('ontologyNode','EDAM:data_2536')) + session.newdocument;
     lcmsLabelDocs{i} = lcmsLabelDocs{i}.set_dependency_value( ...
-        'document_id',plasmidDocs{i}.id);
+        'document_id',lcmsDocs{i}.id);
 end
 
 session.database_add(subject_group_lcms);
@@ -610,7 +609,7 @@ for i = 1:numel(sessions)
     if options.Overwrite && exist([sessionDatabaseDir,'_'],'dir')
         rmdir([sessionDatabaseDir,'_'],'s');
     end
-    copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
+    % copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
     sessions{i}.ingest;
     dataset.add_ingested_session(sessions{i});
 end
