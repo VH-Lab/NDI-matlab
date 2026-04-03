@@ -187,9 +187,14 @@ session = sessions{1};
 
 % Get all subjects
 subjectTable = cell(height(csvTable),1);
-for i = 1:numel(csvFiles)
-    csvRows = find(strcmp(csvTable.TableFileName,csvFiles{i}));
-    dataTable = readtable(csvFiles{i});
+fileNames = unique(csvTable.TableFileName);
+for i = 1:numel(fileNames)
+    csvRows = find(strcmp(csvTable.TableFileName,fileNames{i}));
+    if contains(fileNames{i},'.csv')
+        dataTable = readtable(fileNames{i});
+    else
+        dataTable = table();
+    end
     for j = 1:numel(csvRows)
         rowNum = csvRows(j);
         if ismember(csvTable.ColumnName{rowNum},dataTable.Properties.VariableNames)
@@ -218,7 +223,7 @@ subjectCreator = ndi.setup.conv.(labName).SubjectInformationCreator();
 subjectTable = join(subjectTable,csvTable,'Keys',{'FigureName','ColumnName','StrainName'},...
     'KeepOneCopy',intersect(subjectTable.Properties.VariableNames,csvTable.Properties.VariableNames));
 
-% Remove openminds docs for Figure 6A NGM controls (no worms)
+%% Remove openminds docs for Figure 6A NGM controls (no worms)
 ind = find(contains(subjectTable.TableFileName,'NGM_') & strcmp(subjectTable.FigureName,'6A'));
 for i = 1:numel(ind)
     query = ndi.query('','depends_on','subject_id',subjectTable.SubjectDocumentIdentifier{ind(i)}) & ...
