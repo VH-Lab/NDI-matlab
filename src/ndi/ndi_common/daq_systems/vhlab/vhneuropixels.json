@@ -5,6 +5,7 @@
   "MetadataReaderClass": [],
   "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
   "FileParameters": [
+    "reference.txt",
     "#_g0_imec0.ap.bin",
     "#_g0_imec0.ap.meta"
   ],
