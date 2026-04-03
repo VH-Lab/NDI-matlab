@@ -1,7 +1,7 @@
 {
   "Name": "vhneuropixels",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
-  "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr('neuropixels')",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr('neuropixelsGLX')",
   "MetadataReaderClass": [],
   "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
   "FileParameters": [
