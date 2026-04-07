@@ -75,12 +75,15 @@ classdef analogEventTest < matlab.unittest.TestCase
 
         function testDefaultThresholdIsZero(testCase)
             % aep without _t suffix should use threshold 0
+            % The pulse signal baseline is exactly 0, which is >= 0, so it is
+            % never "below" threshold. No below-to-above crossings should occur.
             reader = ndi.unittest.daq.reader.MockPulseAnalogDAQReader();
             epochfiles = {'mock'};
-            % Pulse signal goes from 0 to 5 — with threshold 0, every crossing from exactly 0 counts
-            [timestamps, data] = reader.readevents_epochsamples({'aep'}, 1, epochfiles, -Inf, Inf);
-            testCase.verifyNotEmpty(timestamps, 'Should detect crossings at threshold 0');
-            testCase.verifyTrue(all(data == 1), 'All should be upward crossings');
+            [timestamps, ~] = reader.readevents_epochsamples({'aep'}, 1, epochfiles, -Inf, Inf);
+            testCase.verifyEmpty(timestamps, 'Signal never goes below 0, so no upward crossings at threshold 0');
+            % Verify that the threshold is actually parsed as 0
+            [~, thresh] = ndi.daq.daqsystemstring.parse_analog_event_channeltype('aep');
+            testCase.verifyEqual(thresh, 0, 'Default threshold should be 0');
         end
 
         function testHighThresholdNoCrossings(testCase)

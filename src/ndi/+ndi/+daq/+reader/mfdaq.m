@@ -418,8 +418,13 @@ classdef mfdaq < ndi.daq.reader
                             transitions_off_samples = [];
                         end
                     end
+                    if any(strcmp(base_types{i},{'aep','aimp'}))
+                        on_sign = 1; off_sign = -1;
+                    else
+                        on_sign = -1; off_sign = 1;
+                    end
                     timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
-                    data{i} = [ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ];
+                    data{i} = [on_sign*ones(numel(transitions_on_samples),1); off_sign*ones(numel(transitions_off_samples),1) ];
                     if ~isempty(transitions_off_samples)
                         [dummy,order] = sort(timestamps{i}(:,1));
                         timestamps{i} = timestamps{i}(order,:);
@@ -551,8 +556,13 @@ classdef mfdaq < ndi.daq.reader
                             transitions_off_samples = [];
                         end
                     end
+                    if any(strcmp(base_types{i},{'aep','aimp'}))
+                        on_sign = 1; off_sign = -1;
+                    else
+                        on_sign = -1; off_sign = 1;
+                    end
                     timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
-                    data{i} = [ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ];
+                    data{i} = [on_sign*ones(numel(transitions_on_samples),1); off_sign*ones(numel(transitions_off_samples),1) ];
                     if ~isempty(transitions_off_samples)
                         [dummy,order] = sort(timestamps{i}(:,1));
                         timestamps{i} = timestamps{i}(order,:);
