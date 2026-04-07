@@ -414,6 +414,13 @@ classdef mfdaq < ndi.daq.system
             %
             % See also: ndi.daq.system.mfdaq/MFDAQ_TYPE
             %
+            % strip threshold suffix (e.g., '_t2.5') before matching
+            t_idx = strfind(channeltype, '_t');
+            threshold_suffix = '';
+            if ~isempty(t_idx)
+                threshold_suffix = channeltype(t_idx(1):end);
+                channeltype = channeltype(1:t_idx(1)-1);
+            end
             switch channeltype
                 case {'analog_in','ai'}
                     prefix = 'ai';
@@ -431,6 +438,14 @@ classdef mfdaq < ndi.daq.system
                     prefix = 'dimp';
                 case {'digital_in_mark_neg','dimn'}
                     prefix = 'dimn';
+                case {'analog_in_event','analog_in_event_pos','ae','aep'}
+                    prefix = 'aep';
+                case {'analog_in_event_neg','aen'}
+                    prefix = 'aen';
+                case {'analog_in_mark','analog_in_mark_pos','aim','aimp'}
+                    prefix = 'aimp';
+                case {'analog_in_mark_neg','aimn'}
+                    prefix = 'aimn';
                 case {'time','timestamp','t'}
                     prefix = 't';
                 case {'auxiliary','aux','ax','auxiliary_in'}
@@ -443,6 +458,10 @@ classdef mfdaq < ndi.daq.system
                     prefix = 'md';
                 case {'text'}
                     prefix = 'tx';
+            end
+            % re-attach threshold suffix for analog event types
+            if ~isempty(threshold_suffix) && any(strcmp(prefix,{'aep','aen','aimp','aimn'}))
+                prefix = [prefix threshold_suffix];
             end
         end % mfdaq_prefix()
 
@@ -467,6 +486,11 @@ classdef mfdaq < ndi.daq.system
             %
             % See also: ndi.daq.system.mfdaq/MFDAQ_PREFIX
             %
+            % strip threshold suffix before matching
+            t_idx = strfind(channeltype, '_t');
+            if ~isempty(t_idx)
+                channeltype = channeltype(1:t_idx(1)-1);
+            end
             switch channeltype
                 case {'analog_in','ai'}
                     type = 'analog_in';
@@ -484,6 +508,14 @@ classdef mfdaq < ndi.daq.system
                     type = 'mark';
                 case {'event','e'}
                     type = 'event';
+                case {'analog_in_event','analog_in_event_pos','ae','aep'}
+                    type = 'analog_in_event_pos';
+                case {'analog_in_event_neg','aen'}
+                    type = 'analog_in_event_neg';
+                case {'analog_in_mark','analog_in_mark_pos','aim','aimp'}
+                    type = 'analog_in_mark_pos';
+                case {'analog_in_mark_neg','aimn'}
+                    type = 'analog_in_mark_neg';
             end
         end
 

@@ -337,6 +337,16 @@ classdef mfdaq < ndi.daq.reader
             %                    negative then positive transitions. TIMESTAMPS mark the occurrence of
             %                    each event, and DATA indicates whether the event is a negative
             %                    transition (1) or a positive transition (-1).
+            %      'aep'    - Create events from an analog channel with positive (upward) threshold crossings.
+            %      'aep_tX' - Same as 'aep' but with threshold X (e.g., 'aep_t2.5'). Default threshold is 0.
+            %      'aen'    - Create events from an analog channel with negative (downward) threshold crossings.
+            %      'aen_tX' - Same as 'aen' but with threshold X. Default threshold is 0.
+            %      'aimp'   - Create events from an analog channel by finding pulses that cross above then
+            %                    below the threshold. DATA indicates crossing direction (1 or -1).
+            %      'aimp_tX'- Same as 'aimp' but with threshold X. Default threshold is 0.
+            %      'aimn'   - Create events from an analog channel by finding pulses that cross below then
+            %                    above the threshold. DATA indicates crossing direction (1 or -1).
+            %      'aimn_tX'- Same as 'aimn' but with threshold X. Default threshold is 0.
             %
             %  CHANNEL is a vector with the identity(ies) of the channel(s) to be read.
             %
@@ -369,6 +379,52 @@ classdef mfdaq < ndi.daq.reader
                     end
                     timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
                     data{i} = [ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ];
+                    if ~isempty(transitions_off_samples)
+                        [dummy,order] = sort(timestamps{i}(:,1));
+                        timestamps{i} = timestamps{i}(order,:);
+                        data{i} = data{i}(order,:); % sort by on/off
+                    end
+                end
+
+                if numel(channel)==1
+                    timestamps = timestamps{1};
+                    data = data{1};
+                end
+            elseif ndi.daq.reader.mfdaq.is_analog_event_type(channeltype)
+                [~, base_types, thresholds] = ndi.daq.reader.mfdaq.is_analog_event_type(channeltype);
+                timestamps = {};
+                data = {};
+                for i=1:numel(channel)
+                    sd = ndi_daqreader_mfdaq_obj.epochtimes2samples({'ai'}, channel(i), epochfiles, [t0 t1]);
+                    s0d = sd(1);
+                    s1d = sd(2);
+                    data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'ai'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
+                    time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
+                    thresh = thresholds(i);
+                    below = data_here(1:end-1) < thresh;
+                    above = data_here(2:end) >= thresh;
+                    if any(strcmp(base_types{i},{'aep','aimp'})) % look for below-to-above threshold crossings
+                        transitions_on_samples = 1 + find(below & above);
+                        if strcmp(base_types{i},'aimp')
+                            transitions_off_samples = 1 + find(~below & ~above);
+                        else
+                            transitions_off_samples = [];
+                        end
+                    elseif any(strcmp(base_types{i},{'aen','aimn'})) % look for above-to-below threshold crossings
+                        transitions_on_samples = 1 + find(~below & ~above);
+                        if strcmp(base_types{i},'aimn')
+                            transitions_off_samples = 1 + find(below & above);
+                        else
+                            transitions_off_samples = [];
+                        end
+                    end
+                    if any(strcmp(base_types{i},{'aep','aimp'}))
+                        on_sign = 1; off_sign = -1;
+                    else
+                        on_sign = -1; off_sign = 1;
+                    end
+                    timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
+                    data{i} = [on_sign*ones(numel(transitions_on_samples),1); off_sign*ones(numel(transitions_off_samples),1) ];
                     if ~isempty(transitions_off_samples)
                         [dummy,order] = sort(timestamps{i}(:,1));
                         timestamps{i} = timestamps{i}(order,:);
@@ -419,6 +475,16 @@ classdef mfdaq < ndi.daq.reader
             %                    negative then positive transitions. TIMESTAMPS mark the occurrence of
             %                    each event, and DATA indicates whether the event is a negative
             %                    transition (1) or a positive transition (-1).
+            %      'aep'    - Create events from an analog channel with positive (upward) threshold crossings.
+            %      'aep_tX' - Same as 'aep' but with threshold X (e.g., 'aep_t2.5'). Default threshold is 0.
+            %      'aen'    - Create events from an analog channel with negative (downward) threshold crossings.
+            %      'aen_tX' - Same as 'aen' but with threshold X. Default threshold is 0.
+            %      'aimp'   - Create events from an analog channel by finding pulses that cross above then
+            %                    below the threshold. DATA indicates crossing direction (1 or -1).
+            %      'aimp_tX'- Same as 'aimp' but with threshold X. Default threshold is 0.
+            %      'aimn'   - Create events from an analog channel by finding pulses that cross below then
+            %                    above the threshold. DATA indicates crossing direction (1 or -1).
+            %      'aimn_tX'- Same as 'aimn' but with threshold X. Default threshold is 0.
             %
             %  CHANNEL is a vector with the identity(ies) of the channel(s) to be read.
             %
@@ -451,6 +517,52 @@ classdef mfdaq < ndi.daq.reader
                     end
                     timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
                     data{i} = [ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ];
+                    if ~isempty(transitions_off_samples)
+                        [dummy,order] = sort(timestamps{i}(:,1));
+                        timestamps{i} = timestamps{i}(order,:);
+                        data{i} = data{i}(order,:); % sort by on/off
+                    end
+                end
+
+                if numel(channel)==1
+                    timestamps = timestamps{1};
+                    data = data{1};
+                end
+            elseif ndi.daq.reader.mfdaq.is_analog_event_type(channeltype)
+                [~, base_types, thresholds] = ndi.daq.reader.mfdaq.is_analog_event_type(channeltype);
+                timestamps = {};
+                data = {};
+                for i=1:numel(channel)
+                    sd = ndi_daqreader_mfdaq_obj.epochtimes2samples_ingested({'ai'}, channel(i), epochfiles, [t0 t1], S);
+                    s0d = sd(1);
+                    s1d = sd(2);
+                    data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'ai'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
+                    time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
+                    thresh = thresholds(i);
+                    below = data_here(1:end-1) < thresh;
+                    above = data_here(2:end) >= thresh;
+                    if any(strcmp(base_types{i},{'aep','aimp'})) % look for below-to-above threshold crossings
+                        transitions_on_samples = 1 + find(below & above);
+                        if strcmp(base_types{i},'aimp')
+                            transitions_off_samples = 1 + find(~below & ~above);
+                        else
+                            transitions_off_samples = [];
+                        end
+                    elseif any(strcmp(base_types{i},{'aen','aimn'})) % look for above-to-below threshold crossings
+                        transitions_on_samples = 1 + find(~below & ~above);
+                        if strcmp(base_types{i},'aimn')
+                            transitions_off_samples = 1 + find(below & above);
+                        else
+                            transitions_off_samples = [];
+                        end
+                    end
+                    if any(strcmp(base_types{i},{'aep','aimp'}))
+                        on_sign = 1; off_sign = -1;
+                    else
+                        on_sign = -1; off_sign = 1;
+                    end
+                    timestamps{i} = [ndr.data.colvec(time_here(transitions_on_samples)); ndr.data.colvec(time_here(transitions_off_samples)) ];
+                    data{i} = [on_sign*ones(numel(transitions_on_samples),1); off_sign*ones(numel(transitions_off_samples),1) ];
                     if ~isempty(transitions_off_samples)
                         [dummy,order] = sort(timestamps{i}(:,1));
                         timestamps{i} = timestamps{i}(order,:);
@@ -1020,5 +1132,28 @@ classdef mfdaq < ndi.daq.reader
             end
 
         end % channelsepoch2timechannelinfo
+
+        function [tf, base_types, thresholds] = is_analog_event_type(channeltype)
+            % IS_ANALOG_EVENT_TYPE - check if channeltype(s) are analog event types
+            %
+            % [TF, BASE_TYPES, THRESHOLDS] = IS_ANALOG_EVENT_TYPE(CHANNELTYPE)
+            %
+            % Given a cell array of channel type strings CHANNELTYPE, returns:
+            %   TF - true if any channeltype is an analog event type (aep, aen, aimp, aimn)
+            %   BASE_TYPES - cell array of base types with threshold suffix stripped
+            %   THRESHOLDS - array of threshold values (0 if no threshold specified)
+            %
+            analog_event_prefixes = {'aep','aen','aimp','aimn'};
+            if ~iscell(channeltype)
+                channeltype = {channeltype};
+            end
+            base_types = cell(size(channeltype));
+            thresholds = zeros(size(channeltype));
+            for i=1:numel(channeltype)
+                [base_types{i}, thresholds(i)] = ndi.daq.daqsystemstring.parse_analog_event_channeltype(channeltype{i});
+            end
+            tf = ~isempty(intersect(base_types, analog_event_prefixes));
+        end % is_analog_event_type
+
     end % methods(Static)
 end % classdef
