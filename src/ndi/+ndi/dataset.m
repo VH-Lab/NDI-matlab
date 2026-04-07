@@ -145,7 +145,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
             end
 
-            ndi.database.fun.copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj);
+            ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj);
 
             new_doc = ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             session_info_here.session_doc_in_dataset_id = new_doc.id();
@@ -340,6 +340,125 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
 
         end % unlink_session()
+
+        function convertLinkedSessionToIngested(ndi_dataset_obj, session_id, options)
+            % CONVERTLINKEDSESSIONTOINGESTED - convert a linked session to an ingested session
+            %
+            % CONVERTLINKEDSESSIONTOINGESTED(NDI_DATASET_OBJ, SESSION_ID, ...)
+            %
+            % Converts a linked session in the dataset to an ingested session by
+            % copying all of its documents and binary files into the dataset. The
+            % session must already be fully ingested (S.isIngested() must return true)
+            % before conversion.
+            %
+            % After conversion, the session's data is self-contained within the
+            % dataset and no longer depends on the original session path.
+            %
+            % Note: This operation temporarily requires approximately 2x the disk
+            % space of the session being converted.
+            %
+            % Options:
+            %   areYouSure (false) - must be true to proceed, unless confirmed by user
+            %   askUserToConfirm (true) - if true, will ask user for confirmation via dialog
+            %
+            % See also: ndi.dataset/add_linked_session, ndi.dataset/add_ingested_session,
+            %   ndi.dataset/unlink_session
+
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                session_id (1,:) char
+                options.areYouSure (1,1) logical = false
+                options.askUserToConfirm (1,1) logical = true
+            end
+
+            if isempty(ndi_dataset_obj.session_info)
+                ndi_dataset_obj.build_session_info();
+            end
+
+            % Step 1: Find the session and verify it is linked
+
+            match_idx = find(strcmp(session_id, {ndi_dataset_obj.session_info.session_id}), 1);
+
+            if isempty(match_idx)
+                error(['Session with ID ' session_id ' not found in dataset ' ndi_dataset_obj.id() '.']);
+            end
+
+            if ndi_dataset_obj.session_info(match_idx).is_linked == 0
+                error(['Session with ID ' session_id ' is already an ingested session, not a linked session.']);
+            end
+
+            % Step 2: Open the session and verify it is fully ingested
+
+            ndi_session_obj = ndi_dataset_obj.open_session(session_id);
+
+            if ~ndi_session_obj.isIngested()
+                error(['Session with ID ' session_id ' and reference ' ...
+                    ndi_session_obj.reference ' is not yet fully ingested. ' ...
+                    'Call S.ingest() on the session before converting it.']);
+            end
+
+            % Step 3: Only ndi.session.dir is supported
+
+            if ~isa(ndi_session_obj, 'ndi.session.dir')
+                error(['Not smart enough to convert linked sessions of type ' class(ndi_session_obj) ' yet.']);
+            end
+
+            % Step 4: Confirm with user
+
+            proceed = options.areYouSure;
+
+            if ~proceed && options.askUserToConfirm
+                answer = questdlg(['Are you sure you want to convert linked session ' session_id ...
+                    ' to an ingested session? This will copy all data into the dataset.'], ...
+                    'Confirm Conversion', ...
+                    'Yes', 'No', 'No');
+                if strcmp(answer, 'Yes')
+                    proceed = true;
+                end
+            end
+
+            if ~proceed
+                error('Operation not confirmed. Set areYouSure to true or confirm via dialog.');
+            end
+
+            % Step 5: Copy all documents and binary files into the dataset.
+            % Use skipDuplicateCheck because the session is already listed
+            % as a linked session in session_list().
+
+            ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj, ...
+                'skipDuplicateCheck', true);
+
+            % Step 6: Remove the old linked session_in_a_dataset document
+
+            ndi.dataset.removeSessionInfoFromDataset(ndi_dataset_obj, session_id);
+
+            % Step 7: Add a new session_in_a_dataset document with is_linked=0
+
+            session_info_here.session_id = ndi_session_obj.id();
+            session_info_here.session_reference = ndi_session_obj.reference;
+            session_info_here.session_creator = class(ndi_session_obj);
+            session_info_here.is_linked = 0;
+            session_creator_args = ndi_session_obj.creator_args();
+            for i=1:6
+                field_here = ['session_creator_input' int2str(i)];
+                session_info_here.(field_here) = '';
+                if numel(session_creator_args) >= i
+                    session_info_here.(field_here) = session_creator_args{i};
+                end
+            end
+            % Clear the path so open_session uses the dataset path
+            session_info_here.session_creator_input2 = '';
+
+            new_doc = ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
+            session_info_here.session_doc_in_dataset_id = new_doc.id();
+
+            % Step 8: Rebuild in-memory state
+
+            ndi_dataset_obj.build_session_info();
+
+            mksqlite('close'); % TODO: update ndi.session with a close database files method
+
+        end % convertLinkedSessionToIngested()
 
         function ndi_session_obj = open_session(ndi_dataset_obj, session_id)
             % OPEN_SESSION - open an ndi.session object from an ndi.dataset
@@ -759,6 +878,79 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
              if ~isempty(docs)
                  ndi_dataset_obj.session.database_rm(docs);
              end
+        end
+
+        function [b,errmsg] = copySessionToDataset(ndi_session_obj, ndi_dataset_obj, options)
+            % COPYSESSIONTODATASET - copy an ingested ndi.session to an ndi.dataset
+            %
+            % [B,ERRMSG] = ndi.dataset.copySessionToDataset(NDI_SESSION_OBJ, NDI_DATASET_OBJ)
+            % [B,ERRMSG] = ndi.dataset.copySessionToDataset(..., 'skipDuplicateCheck', true)
+            %
+            % Copy the database documents of an ndi.session object to an ndi.dataset object.
+            %
+            % B is 1 if the operation succeeds and 0 otherwise. The copying process
+            % temporarily requires 2 times the total disk space occupied by NDI_SESSION_OBJ,
+            % and, long-term, requires 1 times the total disk space occupied by
+            % NDI_SESSION_OBJ, which is stored in NDI_DATASET_OBJ.
+            %
+            % Options:
+            %   skipDuplicateCheck (false) - If true, skip the check that prevents
+            %       copying a session that is already in the dataset. Used internally
+            %       by convertLinkedSessionToIngested when the session is already
+            %       linked (and thus already appears in session_list) but its
+            %       documents have not yet been copied.
+            %
+
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                ndi_dataset_obj (1,1) ndi.dataset
+                options.skipDuplicateCheck (1,1) logical = false
+            end
+
+            b = 1;
+            errmsg = '';
+
+            % Step 1, check to make sure we haven't previously copied the documents
+
+            if ~options.skipDuplicateCheck
+                [~,session_ids] = ndi_dataset_obj.session_list();
+
+                match = strcmp(ndi_session_obj.id(), session_ids);
+
+                if any(match)
+                    b = 0;
+                    errmsg = ['Session with ID ' ndi_session_obj.id() ...
+                        ' and reference ' ndi_session_obj.reference ...
+                        ' is already a part of ndi.dataset with ID ' ...
+                        ndi_dataset_obj.id() ' and reference ' ndi_dataset_obj.reference '.'];
+                    return;
+                end
+            end
+
+            % Step 2, make a copy of all the documents
+
+            [docs,~] = ndi.database.fun.extract_docs_files(ndi_session_obj);
+
+            % what we want is to make a surrogate ndi.session.dir with path matching the dataset path
+            % for this, we need to make sure the ndi.session.dir creator doesn't read its session_id or reference from the database
+            % this needs to be true at ANY time, when it is opened again later
+
+            are_empty_session_id_docs = 0;
+
+            for i=1:numel(docs)
+                if isempty(docs{i}.document_properties.base.session_id)
+                    are_empty_session_id_docs = are_empty_session_id_docs + 1;
+                    docs{i} = docs{i}.set_session_id(ndi_session_obj.id());
+                end
+            end
+
+            if are_empty_session_id_docs>0
+                warning(['Found ' int2str(are_empty_session_id_docs) ' documents with empty session_id. Setting them to match the current session.']);
+            end
+
+            ndi_session_surrogate = ndi.session.dir(ndi_session_obj.reference, ndi_dataset_obj.getpath(), ndi_session_obj.id());
+
+            ndi_session_surrogate.database_add(docs);
         end
     end % methods (Static)
 
