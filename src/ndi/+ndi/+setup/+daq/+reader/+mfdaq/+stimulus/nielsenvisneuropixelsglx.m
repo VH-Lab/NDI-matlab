@@ -188,20 +188,52 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
 
         end % readevents_epochsamples_native()
 
-        function sr = samplerate(ndi_daqreader_mfdaq_stimulus_nielsenvisneuropixelsglx_obj, epochfiles, channeltype, channel)
-            %
-            % SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
-            %
-            % SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
-            %
-            % SR is an array of sample rates from the specified channels
-            %
+        function data = readchannels_epochsamples(obj, channeltype, channel, epochfiles, s0, s1)
+            % READCHANNELS_EPOCHSAMPLES - read channel data, filtering epochfiles for the ndr reader
+            epochfiles = ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisneuropixelsglx.filter_epochfiles(epochfiles);
+            data = readchannels_epochsamples@ndi.daq.reader.mfdaq.ndr(obj, channeltype, channel, epochfiles, s0, s1);
+        end
 
-            sr = samplerate@ndi.daq.reader.mfdaq.ndr(ndi_daqreader_mfdaq_stimulus_nielsenvisneuropixelsglx_obj, epochfiles, channeltype, channel);
+        function sr = samplerate(obj, epochfiles, channeltype, channel)
+            % SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
+            epochfiles = ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisneuropixelsglx.filter_epochfiles(epochfiles);
+            sr = samplerate@ndi.daq.reader.mfdaq.ndr(obj, epochfiles, channeltype, channel);
+        end
+
+        function t0t1 = t0_t1(obj, epochfiles)
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
+            epochfiles = ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisneuropixelsglx.filter_epochfiles(epochfiles);
+            t0t1 = t0_t1@ndi.daq.reader.mfdaq.ndr(obj, epochfiles);
         end
 
     end % methods
 
-    methods (Static)  % helper functions
+    methods (Static)
+        function epochfiles = filter_epochfiles(epochfiles)
+            % FILTER_EPOCHFILES - remove .meta files that do not have a matching .bin file
+            %
+            %  EPOCHFILES = FILTER_EPOCHFILES(EPOCHFILES)
+            %
+            %  For each .bin file in EPOCHFILES, the matching .meta file has the same
+            %  name with .meta instead of .bin. Any .meta file without a corresponding
+            %  .bin file is removed so that the neuropixelsGLX reader sees exactly one.
+            %
+            bin_bases = {};
+            for i = 1:numel(epochfiles)
+                if endsWith(epochfiles{i}, '.bin')
+                    bin_bases{end+1} = epochfiles{i}(1:end-4); %#ok<AGROW>
+                end
+            end
+            keep = true(size(epochfiles));
+            for i = 1:numel(epochfiles)
+                if endsWith(epochfiles{i}, '.meta')
+                    meta_base = epochfiles{i}(1:end-5);
+                    if ~any(strcmp(meta_base, bin_bases))
+                        keep(i) = false;
+                    end
+                end
+            end
+            epochfiles = epochfiles(keep);
+        end
     end % static methods
 end
