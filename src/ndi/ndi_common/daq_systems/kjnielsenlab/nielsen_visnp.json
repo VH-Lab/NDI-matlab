@@ -1,12 +1,12 @@
 {
-  "Name": "nielsen_vis",
+  "Name": "nielsen_visnp",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
-  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisneuropixelsGLX",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisneuropixelsglx",
   "MetadataReaderClass": "ndi.daq.metadatareader.NielsenLabStims",
   "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
   "FileParameters": [
     "#.nidq\\.bin\\>",
-    "#.nidq.\\.meta\\>",
+    "#.nidq\\.meta\\>",
     "#.imec0.ap\\.meta\\>",
     "#.analyzer\\>",
     "epochprobemap.txt"
