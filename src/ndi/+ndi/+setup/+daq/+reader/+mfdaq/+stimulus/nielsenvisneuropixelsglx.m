@@ -132,8 +132,8 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
             stim_on_off_signal = analogData(:,2);
             pos_crossings_2 = find(stim_on_off_signal(1:end-1) < threshold & stim_on_off_signal(2:end) >= threshold) + 1;
             neg_crossings_2 = find(stim_on_off_signal(1:end-1) >= threshold & stim_on_off_signal(2:end) < threshold) + 1;
-            pos_crossings_2 = apply_refractory(pos_crossings_2, refractory_samples);
-            neg_crossings_2 = apply_refractory(neg_crossings_2, refractory_samples);
+            pos_crossings_2 = vlt.signal.refractory(pos_crossings_2, refractory_samples);
+            neg_crossings_2 = vlt.signal.refractory(neg_crossings_2, refractory_samples);
             stimontimes = timeData(pos_crossings_2);
             stimofftimes = timeData(neg_crossings_2);
 
@@ -141,8 +141,8 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
             setup_clear_signal = analogData(:,1);
             pos_crossings_1 = find(setup_clear_signal(1:end-1) < threshold & setup_clear_signal(2:end) >= threshold) + 1;
             neg_crossings_1 = find(setup_clear_signal(1:end-1) >= threshold & setup_clear_signal(2:end) < threshold) + 1;
-            pos_crossings_1 = apply_refractory(pos_crossings_1, refractory_samples);
-            neg_crossings_1 = apply_refractory(neg_crossings_1, refractory_samples);
+            pos_crossings_1 = vlt.signal.refractory(pos_crossings_1, refractory_samples);
+            neg_crossings_1 = vlt.signal.refractory(neg_crossings_1, refractory_samples);
             stimsetuptimes = timeData(pos_crossings_1);
             stimcleartimes = timeData(neg_crossings_1);
 
@@ -204,25 +204,4 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
 
     methods (Static)  % helper functions
     end % static methods
-end
-
-function crossings = apply_refractory(crossings, refractory_samples)
-    % APPLY_REFRACTORY - remove crossings that occur within a refractory period
-    %
-    %  CROSSINGS = APPLY_REFRACTORY(CROSSINGS, REFRACTORY_SAMPLES)
-    %
-    %  Removes any crossing that occurs within REFRACTORY_SAMPLES of the previous accepted crossing.
-    if isempty(crossings)
-        return;
-    end
-    keep = true(size(crossings));
-    last_accepted = crossings(1);
-    for i = 2:numel(crossings)
-        if crossings(i) - last_accepted < refractory_samples
-            keep(i) = false;
-        else
-            last_accepted = crossings(i);
-        end
-    end
-    crossings = crossings(keep);
 end
