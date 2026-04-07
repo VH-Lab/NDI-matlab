@@ -119,8 +119,20 @@ classdef daqsystemstring
                 if isempty(firstnumber)
                     error(['No number in ndi.daq.system substring: ' mysubstr '.']);
                 end
-                channelshere = vlt.string.str2intseq(mysubstr(firstnumber:end));
-                channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
+                ct = mysubstr(1:firstnumber-1);
+                remainder = mysubstr(firstnumber:end);
+                % check for threshold suffix (e.g., '_t2.5' in 'aep1-3_t2.5')
+                threshold_str = '';
+                t_idx = strfind(remainder, '_t');
+                if ~isempty(t_idx)
+                    threshold_str = remainder(t_idx(1):end);
+                    remainder = remainder(1:t_idx(1)-1);
+                end
+                channelshere = vlt.string.str2intseq(remainder);
+                if ~isempty(threshold_str)
+                    ct = [ct threshold_str];
+                end
+                channeltype = cat(2,channeltype,repmat({ct},1,numel(channelshere)));
                 channel = cat(2,channel,channelshere(:)');
             end
         end % ndi_daqsystemstring2channel
@@ -149,17 +161,57 @@ classdef daqsystemstring
                 elseif ~strcmp(currentchanneltype,prevchanneltype)
                     % we need to write the previous channels
                     if ~isempty(newchannellist) % do the writing
-                        devstr = cat(2,devstr, [prevchanneltype vlt.string.intseq2str(newchannellist) ]);
+                        devstr = cat(2,devstr, ndi.daq.daqsystemstring.channeltype2str(prevchanneltype, newchannellist));
                         devstr(end+1) = ';';
                     end
                     % start off the new list
                     newchannellist = [self.channellist(i)];
                 end
                 if i==numel(self.channellist) % need to write any channels accumulated
-                    devstr = cat(2,devstr, [currentchanneltype vlt.string.intseq2str(newchannellist) ]);
+                    devstr = cat(2,devstr, ndi.daq.daqsystemstring.channeltype2str(currentchanneltype, newchannellist));
                 end
                 prevchanneltype = currentchanneltype;
             end
         end % devicestring
+    end
+
+    methods (Static)
+        function s = channeltype2str(ct, channellist)
+            % CHANNELTYPE2STR - build a device string segment from a channeltype and channel list
+            %
+            % S = CHANNELTYPE2STR(CT, CHANNELLIST)
+            %
+            % Given a channeltype string CT (which may include a threshold suffix
+            % like '_t2.5') and a CHANNELLIST array, produce the device string
+            % segment such as 'aep1-3_t2.5'.
+            %
+            t_idx = strfind(ct, '_t');
+            if ~isempty(t_idx)
+                base = ct(1:t_idx(1)-1);
+                threshold_str = ct(t_idx(1):end);
+                s = [base vlt.string.intseq2str(channellist) threshold_str];
+            else
+                s = [ct vlt.string.intseq2str(channellist)];
+            end
+        end % channeltype2str
+
+        function [base_type, threshold] = parse_analog_event_channeltype(ct)
+            % PARSE_ANALOG_EVENT_CHANNELTYPE - extract base type and threshold from a channeltype
+            %
+            % [BASE_TYPE, THRESHOLD] = PARSE_ANALOG_EVENT_CHANNELTYPE(CT)
+            %
+            % Given a channeltype string CT such as 'aep_t2.5', returns the
+            % BASE_TYPE ('aep') and THRESHOLD (2.5). If no threshold suffix
+            % is present, THRESHOLD is 0.
+            %
+            t_idx = strfind(ct, '_t');
+            if ~isempty(t_idx)
+                base_type = ct(1:t_idx(1)-1);
+                threshold = str2double(ct(t_idx(1)+2:end));
+            else
+                base_type = ct;
+                threshold = 0;
+            end
+        end % parse_analog_event_channeltype
     end
 end
