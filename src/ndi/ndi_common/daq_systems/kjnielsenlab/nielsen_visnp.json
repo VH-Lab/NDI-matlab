@@ -6,7 +6,7 @@
   "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
   "FileParameters": [
     "#.nidq\\.bin\\>",
-    "#.nidq.\\.meta\\>",
+    "#.nidq\\.meta\\>",
     "#.imec0.ap\\.meta\\>",
     "#.analyzer\\>",
     "epochprobemap.txt"
