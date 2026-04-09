@@ -54,6 +54,15 @@ classdef (Abstract) TreatmentCreator < handle
         %           'diluent_OntologyName'       : (string/char)
         %           'diluent_name'               : (string/char)
         %
+        %       If any row has a 'treatmentType' of "treatment_transfer", the table MUST also include these columns:
+        %           'donor_id'                   : (string/char)
+        %           'timestamp'                  : (string/char)
+        %           'clocktype'                  : (string/char)
+        %           'entity_name'                : (string/char)
+        %           'entity_ontologyNode'        : (string/char)
+        %           'method_name'                : (string/char)
+        %           'method_ontologyNode'        : (string/char)
+        %
         treatmentTable = create(obj, datasetInfoTable);
     end % abstract methods
 
@@ -71,12 +80,13 @@ classdef (Abstract) TreatmentCreator < handle
                 'virus_OntologyName', 'virus_name', 'virusLocation_OntologyName', 'virusLocation_name', ...
                 'virus_AdministrationDate', 'virus_AdministrationPND', 'dilution', ...
                 'diluent_OntologyName', 'diluent_name' ...
-            };
+                'donor_id','timestamp', 'clocktype', 'entity_name', ...
+                'entity_ontologyNode', 'method_name', 'method_ontologyNode'};
             varTypes = { ...
                 'string', 'string', 'string', 'double', 'string', 'string', ...
                 'string', 'string', 'string', 'string', 'string', 'double', ...
                 'string', 'string', 'string', 'string', 'string', 'string', 'double', 'string', 'string' ...
-            };
+                'string', 'string', 'string', 'string', 'string', 'string', 'string'};
             T = table('Size', [0 numel(varNames)], 'VariableTypes', varTypes, 'VariableNames', varNames);
         end
     end % protected static methods

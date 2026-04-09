@@ -1,0 +1,234 @@
+{
+	"M9": [
+		{
+			"ontologyName": "CHEBI:63036",
+			"name": "potassium dihydrogen phosphate",
+			"value": 0.042,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "CHEBI:34683",
+			"name": "disodium hydrogenphosphate",
+			"value": 0.024,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "CHEBI:26710",
+			"name": "sodium chloride",
+			"value": 0.009,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "CHEBI:31206",
+			"name": "ammonium chloride",
+			"value": 0.019,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "CHEBI:32599",
+			"name": "magnesium sulfate",
+			"value": 0.001,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "CHEBI:3312",
+			"name": "calcium dichloride",
+			"value": 0.0001,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"OP50": [
+		{
+			"ontologyName": "NCBITaxon:637912",
+			"name": "Eschericia coli OP50"
+		}
+	],
+	"OP50HK": [
+		{
+			"ontologyName": "EMPTY:0000254",
+			"name": "Eschericia coli OP50: heat-killed"
+		}
+	],
+	"IAA": [
+		{
+			"ontologyName": "CHEBI:15837",
+			"name": "isoamylol",
+			"value": 10,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Diacetyl": [
+		{
+			"ontologyName": "CHEBI:16583",
+			"name": "butane-2,3-dione",
+			"value": 1,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		},
+		{
+			"ontologyName": "CHEBI:16236",
+			"name": "ethanol",
+			"value": 99,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Heptanone": [
+		{
+			"ontologyName": "CHEBI:5672",
+			"name": "heptan-2-one",
+			"value": 10,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Benzaldehyde": [
+		{
+			"ontologyName": "CHEBI:17169",
+			"name": "benzaldehyde",
+			"value": 10,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"IAA_test": [
+		{
+			"ontologyName": "CHEBI:15837",
+			"name": "isoamylol",
+			"value": 1,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Diacetyl_test": [
+		{
+			"ontologyName": "CHEBI:16583",
+			"name": "butane-2,3-dione",
+			"value": 0.1,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		},
+		{
+			"ontologyName": "CHEBI:16236",
+			"name": "ethanol",
+			"value": 99.9,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Heptanone_test": [
+		{
+			"ontologyName": "CHEBI:5672",
+			"name": "heptan-2-one",
+			"value": 1,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Benzaldehyde_test": [
+		{
+			"ontologyName": "CHEBI:17169",
+			"name": "benzaldehyde",
+			"value": 1,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"Xylidine": [
+		{
+			"ontologyName": "CHEBI:27840",
+			"name": "2,4-dimethylaniline",
+			"value": 1,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"Imazapyr": [
+		{
+			"ontologyName": "CHEBI:82021",
+			"name": "imazapyr",
+			"value": 0.08,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"x2M5M": [
+		{
+			"ontologyName": "CHEBI:82307",
+			"name": "2-methoxy-5-methylaniline",
+			"value": 0.1,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"SGCDC": [
+		{
+			"ontologyName": "CHEBI:87818",
+			"name": "sodium glycochenodeoxycholate",
+			"value": 0.1,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"Methanol": [
+		{
+			"ontologyName": "CHEBI:17790",
+			"name": "methanol",
+			"value": 100,
+			"ontologyUnit": "NCIT:C48571",
+			"unitName": "Percent Volume per Volume"
+		}
+	],
+	"heat": [
+		{
+			"ontologyName": "OM:Heat",
+			"name": "heat",
+			"value": 37,
+			"ontologyUnit": "NCIT:C42559",
+			"unitName": "Degree Celsius"
+		}
+	],
+	"air": [
+		{
+			"location_ontologyName": "XCO:0000918",
+			"location_name": "ambient air"
+		}
+	],
+	"agar": [
+		{
+			"location_ontologyName": "MICRO:0000480",
+			"location_name": "agar plate medium"
+		}
+	],
+	"bath": [
+		{
+			"location_ontologyName": "NCIm:C0179246",
+			"location_name": "bath"
+		}
+	],
+	"transfer_entity": [
+		{
+			"entity_name": "agar plate medium",
+			"entity_ontologyNode": "MICRO:0000480"
+		}
+	],
+	"transfer_M9": [
+		{
+			"method_name": "C. elegans transfer method: M9 buffer wash",
+			"method_ontologyNode": "EMPTY:0000255"
+		}
+	],
+	"transfer_pick": [
+		{
+			"method_name": "C. elegans transfer method: titanium pick",
+			"method_ontologyNode": "EMPTY:0000256"
+		}
+	]
+}
