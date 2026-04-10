@@ -1,7 +1,7 @@
 {
   "Name": "vhajbpod_np",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
-  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPodNP",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPod",
   "MetadataReaderClass": "ndi.daq.metadatareader.VHAudreyBPod",
   "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
   "FileNavigatorClass": "ndi.setup.file.navigator.vhlab_np_epochdir",
