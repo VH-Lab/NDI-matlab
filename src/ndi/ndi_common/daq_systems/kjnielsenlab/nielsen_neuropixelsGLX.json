@@ -1,0 +1,19 @@
+{
+  "Name": "nielsen_neuropixelsGLX",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr",
+  "MetadataReaderClass": "ndi.daq.metadatareader",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#.imec0.ap\\.bin\\>",
+    "#.nidq\\.meta\\>",
+    "#.imec0.ap\\.meta\\>",
+    "#.analyzer\\>",
+    "epochprobemap.txt"
+  ],
+  "DaqReaderFileParameters": "neuropixelsGLX",
+  "MetadataReaderFileParameters": [
+  ],
+  "EpochProbeMapFileParameters": "epochprobemap.txt",
+  "HasEpochDirectories": true
+}
