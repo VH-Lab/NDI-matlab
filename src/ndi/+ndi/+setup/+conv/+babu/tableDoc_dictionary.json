@@ -1,0 +1,11 @@
+{
+  "mixture_table": "EMPTY:C. elegans chemotaxis assay parameter: chemoattractant mixture table",
+  "odorVolume": "EMPTY:C. elegans chemotaxis assay parameter: chemoattractant mixture volume",
+  "duration": "EMPTY:C. elegans chemotaxis assay parameter: assay duration",
+  "CI": "EMPTY:C. elegans chemotaxis assay measurement: McCutcheon index",
+  "speed": "EMPTY:C. elegans chemotaxis assay measurement: mean velocity",
+  "puncta": "EMPTY:fluorescent punctal count",
+  "fluorescence": "EMPTY:mean fluorescence intensity",
+  "neuron": "EMPTY:fluorescence target name",
+  "neuronID": "EMPTY:fluorescence target ontology identifier"
+}

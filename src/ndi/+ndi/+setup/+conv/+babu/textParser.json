@@ -1,0 +1,167 @@
+[
+  {
+    "VariableName": "FigureName",
+    "StringFormat": "(?i)Figure[_\\s]([^/_]+)"
+  },
+  {
+    "VariableName": "FigurePart",
+    "StringFormat": "(?i)Part[_\\s]([^/_]+)"
+  },
+  {
+    "VariableName": "Repetition",
+    "StringFormat": "(?i)Rep\\s([IVXLCDM]+)"
+  },
+  {
+    "VariableName": "Heat",
+    "StringFormat": "(?i)heat|(?<!\\s+to\\s+.*|\\+)37"
+  },
+  {
+    "VariableName": "Naive",
+    "StringFormat": "(?<!To.*|\\s+to\\s+.*)(?i)naive"
+  },
+  {
+    "VariableName": "Trained",
+    "StringFormat": "(?<!To.*|\\s+to\\s+.*)(?:(?i)trained|(?i)test(?!ed)|IAA\\+37|Figure S5D)(?!.*Only)"
+  },
+  {
+    "VariableName": "Transfer",
+    "StringFormat": "To|\\s+to\\s"
+  },
+  {
+    "VariableName": "TransferDonor",
+    "StringFormat": "\\s+([^/. ]+)+To"
+  },
+  {
+    "VariableName": "TransferRecipient",
+    "StringFormat": "To([^/. ]+)"
+  },
+  {
+    "VariableName": "TrainIAA",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)IAA"
+  },
+  {
+    "VariableName": "TrainHeptanone",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)hept"
+  },
+  {
+    "VariableName": "TrainBenzaldehyde",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)benz"
+  },
+  {
+    "VariableName": "TrainDiacetyl",
+    "StringFormat": "(?i)(?<!(?:with|wrt).*?)diacetyl"
+  },
+  {
+    "VariableName": "TestIAA",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?IAA|^(?!.*(?:with|wrt).*)IAA)"
+  },
+  {
+    "VariableName": "TestHeptanone",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?hept|^(?!.*(?:with|wrt).*)hept)"
+  },
+  {
+    "VariableName": "TestBenzaldehyde",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?benz|^(?!.*(?:with|wrt).*)benz)"
+  },
+  {
+    "VariableName": "TestDiacetyl",
+    "StringFormat": "(?i)(?:(?:with|wrt).*?diacetyl|^(?!.*(?:with|wrt).*)diacetyl)"
+  },
+  {
+    "VariableName": "SGCDC",
+    "StringFormat": "(?i)SGCDC|All"
+  },
+  {
+    "VariableName": "Methanol",
+    "StringFormat": "(?i)methanol"
+  },
+  {
+    "VariableName": "Xylidine",
+    "StringFormat": "(?i)xyl|All"
+  },
+  {
+    "VariableName": "XylidineDose",
+    "StringFormat": "(\\d+)MM(?i:xyl)|(\\d+)\\s+mM|(\\d+)mM"
+  },
+  {
+    "VariableName": "x2M5M",
+    "StringFormat": "(?i)2M5M|All"
+  },
+  {
+    "VariableName": "Imazapyr",
+    "StringFormat": "(?i)imazapyr|All"
+  },
+  {
+    "VariableName": "N2",
+    "StringFormat": "(?<!To.*)(?i)WT"
+  },
+  {
+    "VariableName": "PT1194",
+    "StringFormat": "(?<!To.*)(?i)(?:klp_6|(?i)pt1194|PT 1194|PT114)(?!.*Rescue)"
+  },
+  {
+    "VariableName": "PT3602",
+    "StringFormat": "S5D.*Control|Figure_5)E"
+  },
+  {
+    "VariableName": "TM5848",
+    "StringFormat": "Figure_4C"
+  },
+  {
+    "VariableName": "BAB9001",
+    "StringFormat": "(?<!To.*)(?i)daf_22"
+  },
+  {
+    "VariableName": "BAB9002",
+    "StringFormat": "(?<!To.*)(?i)klp_6Rescue|PT1194\\s+Rescue"
+  },
+  {
+    "VariableName": "BAB9003",
+    "StringFormat": "(?<!To.*)P1(?!_?P2)"
+  },
+  {
+    "VariableName": "BAB9004",
+    "StringFormat": "(?<!To.*)(?<!P1_?)P2"
+  },
+  {
+    "VariableName": "BAB9005",
+    "StringFormat": "(?<!To.*|\\s+to\\s+.*)(?:P1_P2|P1P2)"
+  },
+  {
+    "VariableName": "Immediate",
+    "StringFormat": "(?i)immediate"
+  },
+  {
+    "VariableName": "Hours",
+    "StringFormat": "(\\d+([._]\\d+)?)[_ ]*(?:hr|hour)"
+  },
+  {
+    "VariableName": "FluorescenceIntensity",
+    "StringFormat": "Figure_5E_part_1_Mean_summation"
+  },
+  {
+    "VariableName": "NumPuncta",
+    "StringFormat": "Number_of_puncta"
+  },
+  {
+    "VariableName": "Velocity",
+    "StringFormat": "(?i)speed"
+  },
+  {
+    "VariableName": "M9",
+    "StringFormat": "Figure_S1C|Figure S1C|Figure S6A"
+  },
+  {
+    "VariableName": "Pick",
+    "StringFormat": "Picked|Time_point"
+  },
+  {
+    "VariableName": "HeatKilledOP50",
+    "StringFormat": "Figure_2C|Figure 2C"
+  },
+  {
+    "VariableName": "OP50",
+    "StringFormat": "Figure(?!.*NGM_Only|_2C|\\s+2C)"
+  }
+
+]
