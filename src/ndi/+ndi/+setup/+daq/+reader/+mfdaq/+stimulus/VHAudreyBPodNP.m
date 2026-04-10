@@ -90,17 +90,16 @@ classdef VHAudreyBPodNP < ndi.daq.reader.mfdaq.ndr
             stimid = raw_valve;
             stimid(raw_opentime > 5) = 7;
 
-            % Read the NI-DAQ digital input 1 TTL from the SpikeGLX nidq.bin
-            ndrEpochFiles = ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPodNP.filter_epochfiles(epochfiles);
-
+            % Read the NI-DAQ digital input 1 TTL from the SpikeGLX nidq.bin.
+            % obj.readchannels_epochsamples is overridden below to filter
+            % epochfiles down to the NDR-readable .bin / .meta files, so
+            % pass the raw epochfiles through.
             srt = obj.samplerate(epochfiles, 'time', 1);
             s0d = max(1, round(1 + round(srt * t0)));
             s1d = round(1 + round(srt * t1));
 
-            digitalData = readchannels_epochsamples@ndi.daq.reader.mfdaq.ndr(obj, ...
-                'digital_in', 1, ndrEpochFiles, s0d, s1d);
-            timeData = readchannels_epochsamples@ndi.daq.reader.mfdaq.ndr(obj, ...
-                'time', 1, ndrEpochFiles, s0d, s1d);
+            digitalData = obj.readchannels_epochsamples('digital_in', 1, epochfiles, s0d, s1d);
+            timeData    = obj.readchannels_epochsamples('time', 1, epochfiles, s0d, s1d);
 
             digitalData = double(digitalData(:) > 0);
             timeData    = timeData(:);
