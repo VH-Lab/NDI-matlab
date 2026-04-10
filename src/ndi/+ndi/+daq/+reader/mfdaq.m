@@ -1021,6 +1021,12 @@ classdef mfdaq < ndi.daq.reader
             %
             % Converts time T to sample indices S for the specified channel and epochfiles.
             %
+            % Entries of T that are -Inf are clamped to the first sample of the
+            % epoch (sample 1). Entries of T that are +Inf are clamped to the
+            % last sample of the epoch (computed from the epoch end time
+            % returned by t0_t1). This lets callers pass [-Inf Inf] to mean
+            % "read from the beginning to the end of the epoch".
+            %
             sr = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, channeltype, channel);
             if numel(unique(sr))~=1
                 error(['Do not know how to handle multiple sampling rates across channels.']);
@@ -1031,6 +1037,11 @@ classdef mfdaq < ndi.daq.reader
             s = 1 + round((t-t0)*sr);
             if any(isinf(t))
                 s(isinf(t) & t<0) = 1;
+                pos_inf = isinf(t) & t>0;
+                if any(pos_inf)
+                    s_end = 1 + round((t0t1{1}(2)-t0)*sr);
+                    s(pos_inf) = s_end;
+                end
             end
         end
 
@@ -1040,6 +1051,11 @@ classdef mfdaq < ndi.daq.reader
             % S = EPOCHTIMES2SAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T, SESSION)
             %
             % Converts time T to sample indices S for the specified channel and epochfiles.
+            %
+            % Entries of T that are -Inf are clamped to the first sample of the
+            % epoch; entries that are +Inf are clamped to the last sample of
+            % the epoch (computed from the epoch end time returned by
+            % t0_t1_ingested).
             %
             sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
             if numel(unique(sr))~=1
@@ -1051,6 +1067,11 @@ classdef mfdaq < ndi.daq.reader
             s = 1 + round((t-t0)*sr);
             if any(isinf(t))
                 s(isinf(t) & t<0) = 1;
+                pos_inf = isinf(t) & t>0;
+                if any(pos_inf)
+                    s_end = 1 + round((t0t1{1}(2)-t0)*sr);
+                    s(pos_inf) = s_end;
+                end
             end
         end
 

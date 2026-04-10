@@ -103,7 +103,15 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
                 trigger_suffix = '_stimulus_triggers_log.tsv';
                 if endsWith([localfile ext], trigger_suffix)
+                    % A TSV stimulus trigger log is used by both vhtaste_bpod
+                    % (intan-based) and vhajbpod_np (NI-DAQ on Neuropixels GLX).
+                    % Distinguish them by whether the TSV sits inside an
+                    % Epoch_Set_* subdirectory of an Epoch*_g0 epoch directory.
                     devicename = 'vhtaste_bpod';
+                    [~, immediate_parent] = fileparts(filepath);
+                    if startsWith(immediate_parent, 'Epoch_Set')
+                        devicename = 'vhajbpod_np';
+                    end
 
                     mylist = {'mk1','mk2','mk3','e1','e2','md1'};
                     for i=1:numel(mylist)
@@ -188,4 +196,5 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
             error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);
         end
     end  % methods
+
 end

@@ -1,0 +1,19 @@
+{
+  "Name": "vhajbpod_np",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPod",
+  "MetadataReaderClass": "ndi.daq.metadatareader.VHAudreyBPod",
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileNavigatorClass": "ndi.setup.file.navigator.vhlab_np_epochdir",
+  "FileParameters": [
+    ".*\\.nidq\\.bin\\>",
+    ".*\\.nidq\\.meta\\>",
+    ".*\\.imec0\\.ap\\.meta\\>",
+    ".*_stimulus_triggers_log\\.tsv\\>",
+    ".*_summary_log\\.json\\>"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": "(.*)\\.json",
+  "EpochProbeMapFileParameters": ".*_stimulus_triggers_log\\.tsv\\>",
+  "HasEpochDirectories": true
+}

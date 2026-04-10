@@ -40,6 +40,14 @@ classdef DaqSystemConfiguration
         % HasEpochDirectories - Whether epochs are organized in
         % subdirectories.
         HasEpochDirectories (1,1) logical = false
+
+        % FileNavigatorClass - Optional full class name for a custom
+        % file navigator. When non-empty, this class is instantiated
+        % instead of the default ndi.file.navigator /
+        % ndi.file.navigator.epochdir. It must accept the same
+        % constructor arguments (session, fileParameters,
+        % epochProbeMapClass, epochProbeMapFileParameters).
+        FileNavigatorClass (1,:) string = string.empty
     end
 
     methods
@@ -94,7 +102,9 @@ classdef DaqSystemConfiguration
     methods (Access = private)
         function fileNavigator = createFileNavigator(obj, ndiSession)
             % createFileNavigator - Create an instance of a file navigator
-            if obj.HasEpochDirectories
+            if ~isempty(obj.FileNavigatorClass)
+                navigatorClass = str2func(char(obj.FileNavigatorClass));
+            elseif obj.HasEpochDirectories
                 navigatorClass = @ndi.file.navigator.epochdir;
             else
                 navigatorClass = @ndi.file.navigator;
