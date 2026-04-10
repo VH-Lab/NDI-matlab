@@ -120,9 +120,14 @@ classdef VHAudreyBPod < ndi.daq.reader.mfdaq
             reader = obj.getNdrReader();
             ndrEpochFiles = ndi.setup.daq.reader.mfdaq.stimulus.VHAudreyBPod.filterNidqEpochFiles(epochfiles);
 
+            % Convert the requested time window to NI-DAQ sample indices
+            % via the framework helper, which already knows how to map
+            % -Inf / +Inf to the first / last sample of the epoch.
+            sd = reader.epochtimes2samples('time', 1, ndrEpochFiles, [t0 t1]);
+            s0d = sd(1);
+            s1d = sd(2);
+
             srt = reader.samplerate(ndrEpochFiles, 'time', 1);
-            s0d = max(1, round(1 + round(srt * t0)));
-            s1d = round(1 + round(srt * t1));
 
             digitalData = reader.readchannels_epochsamples('digital_in', 1, ndrEpochFiles, s0d, s1d);
             timeData    = reader.readchannels_epochsamples('time', 1, ndrEpochFiles, s0d, s1d);
