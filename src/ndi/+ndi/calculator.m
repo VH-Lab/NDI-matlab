@@ -545,7 +545,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 options.session = [] 
                 options.name (1,:) char = ''
                 options.calculatorClassname (1,:) char = ''
-                options.window_params (1,1) struct = struct('height', 450, 'width', 700)
+                options.window_params (1,1) struct = struct('height', 600, 'width', 700)
                 options.fig {mustBeA(options.fig,["matlab.ui.Figure","double"])} = []
                 options.pipelinePath (1,:) char = '' 
                 options.paramName (1,:) char = '' 
@@ -590,8 +590,8 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     y_cursor = 1 - edge_n - row_h_n;
                     uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Documentation','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left','FontSize',fs);
                     uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],'string',{'General','Calculator Input Options','Output document'},'tag','DocPopup','callback',callbackstr,'value',1,'BackgroundColor',edit_bg_color,'FontSize',fs);
-                    y_cursor = y_cursor - (0.2 * (1 - button_area_h_n));
-                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.2*(1-button_area_h_n)],'string','...','tag','DocTxt','max',2,'enable','inactive','HorizontalAlignment','left','FontSize',fs);
+                    y_cursor = y_cursor - (0.3 * (1 - button_area_h_n));
+                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.3*(1-button_area_h_n)],'string','...','tag','DocTxt','max',2,'enable','inactive','HorizontalAlignment','left','FontSize',fs);
                     
                     y_cursor = y_cursor - gap_v_n - row_h_n;
                     uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Parameter code:','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left','FontSize',fs);
@@ -604,9 +604,9 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                          if ~isempty(idx), val_idx = idx(1); end
                     end
                     uicontrol(uid.popup,'Units','normalized','position',[edge_n+0.6 y_cursor 1-2*edge_n-0.6 row_h_n],'string',popup_str,'tag','ParameterCodePopup', 'callback',callbackstr,'value',val_idx,'BackgroundColor',edit_bg_color,'FontSize',fs);
-                    y_cursor = y_cursor - (0.4 * (1 - button_area_h_n));
+                    y_cursor = y_cursor - (0.35 * (1 - button_area_h_n));
                     init_code = ndi.calculator.load_parameter_code(ud.calculatorInstance.calculatorClassname, ud.active_parameter_name, ud.pipelinePath);
-                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.4*(1-button_area_h_n)],'string',init_code,'tag','ParameterCodeTxt','max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left','FontSize',fs);
+                    uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.35*(1-button_area_h_n)],'string',init_code,'tag','ParameterCodeTxt','max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left','FontSize',fs);
                     
                     y_cursor = y_cursor - gap_v_n - row_h_n;
                     uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Parameter Code Commands','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left','FontSize',fs);
