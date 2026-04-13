@@ -1,4 +1,4 @@
-classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
+classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     properties (SetAccess=protected,GetAccess=public)
         fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
         numberOfSelfTests = 0;
@@ -1007,7 +1007,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 % Check each class in this package
                 for iC = 1:numel(mp.ClassList)
                     mc = mp.ClassList(iC);
-                    if isCalculatorSubclass(mc)
+                    if isCalculatorSubclass(mc) && ~mc.Abstract
                         classNames{end+1,1} = mc.Name; %#ok<AGROW>
                     end
                 end
