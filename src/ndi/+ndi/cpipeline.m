@@ -87,31 +87,37 @@ classdef cpipeline
                     % ---------------------------------------------------------------------
                     panel_width_norm = 1 - (2 * margin);
                     
-                    c.name_x = 0.00; c.name_w = 0.32;
-                    c.param_x = 0.33; c.param_w = 0.35;
-                    c.order_x = 0.70; c.order_w = 0.14; 
-                    c.plot_x = 0.86; c.plot_w = 0.14; 
-                    
+                    c.name_x = 0.00; c.name_w = 0.20;
+                    c.type_x = 0.21; c.type_w = 0.22;
+                    c.param_x = 0.44; c.param_w = 0.25;
+                    c.order_x = 0.70; c.order_w = 0.14;
+                    c.plot_x = 0.86; c.plot_w = 0.14;
+
                     ud.col_defs = c;
                     set(fig, 'userdata', ud);
                     % Calculate Header Positions
                     hx_name = margin + (c.name_x * panel_width_norm); hw_name = c.name_w * panel_width_norm;
+                    hx_type = margin + (c.type_x * panel_width_norm); hw_type = c.type_w * panel_width_norm;
                     hx_param = margin + (c.param_x * panel_width_norm); hw_param = c.param_w * panel_width_norm;
                     hx_order = margin + (c.order_x * panel_width_norm); hw_order = c.order_w * panel_width_norm;
                     hx_plot = margin + (c.plot_x * panel_width_norm); hw_plot = c.plot_w * panel_width_norm;
                     % Headers
                     uicontrol(uid.txt,'Units','normalized','position',[hx_name header_y hw_name row_h],...
-                        'string','Calculator Instance','BackgroundColor',fig_bg,'FontWeight','bold',...
+                        'string','Instance Name','BackgroundColor',fig_bg,'FontWeight','bold',...
                         'HorizontalAlignment','left', 'FontSize', fs);
-                    
+
+                    uicontrol(uid.txt,'Units','normalized','position',[hx_type header_y hw_type row_h],...
+                        'string','Calculator Type','BackgroundColor',fig_bg,'FontWeight','bold',...
+                        'HorizontalAlignment','left', 'FontSize', fs);
+
                     uicontrol(uid.txt,'Units','normalized','position',[hx_param header_y hw_param row_h],...
                         'string','Parameter Setup Code','BackgroundColor',fig_bg,'FontWeight','bold',...
                         'HorizontalAlignment','left', 'FontSize', fs);
-                    
+
                     uicontrol(uid.txt,'Units','normalized','position',[hx_order header_y hw_order row_h],...
                         'string','Order','BackgroundColor',fig_bg,'FontWeight','bold',...
                         'HorizontalAlignment','center', 'FontSize', fs);
-                    
+
                     uicontrol(uid.txt,'Units','normalized','position',[hx_plot header_y hw_plot row_h],...
                         'string','Figure Output','BackgroundColor',fig_bg,'FontWeight','bold',...
                         'HorizontalAlignment','center', 'FontSize', fs);
@@ -228,10 +234,11 @@ classdef cpipeline
                     
                     if isfield(ud, 'col_defs'), c = ud.col_defs;
                     else
-                        c.name_x = 0.00; c.name_w = 0.32;
-                        c.param_x = 0.33; c.param_w = 0.35;
-                        c.order_x = 0.70; c.order_w = 0.14; 
-                        c.plot_x = 0.86; c.plot_w = 0.14; 
+                        c.name_x = 0.00; c.name_w = 0.20;
+                        c.type_x = 0.21; c.type_w = 0.22;
+                        c.param_x = 0.44; c.param_w = 0.25;
+                        c.order_x = 0.70; c.order_w = 0.14;
+                        c.plot_x = 0.86; c.plot_w = 0.14;
                     end
                     
                     for i = 1:n_calcs
@@ -245,8 +252,11 @@ classdef cpipeline
                         
                         % 1. NAME
                         x_name = c.name_x * panel_w; w_name = c.name_w * panel_w;
-                        
-                        % 2. PARAM
+
+                        % 2. TYPE
+                        x_type = c.type_x * panel_w; w_type = c.type_w * panel_w;
+
+                        % 3. PARAM
                         x_param = c.param_x * panel_w; w_param = c.param_w * panel_w;
                         
                         % 3. ORDER (Nudged Right)
@@ -269,7 +279,13 @@ classdef cpipeline
                             'String', calc_items(i).instanceName, ...
                             'BackgroundColor', bg_color, 'HorizontalAlignment', 'left', 'FontSize', fs, ...
                             'Enable', 'inactive', 'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
-                        
+
+                        uicontrol(container, 'Style', 'text', 'Units', 'pixels', ...
+                            'Position', [x_type+5, y_pix+5, w_type-5, row_h_pix-10], ...
+                            'String', calc_items(i).calculatorClass, ...
+                            'BackgroundColor', bg_color, 'HorizontalAlignment', 'left', 'FontSize', fs, ...
+                            'Enable', 'inactive', 'ButtonDownFcn', @(s,e)ndi.cpipeline.edit('command','SelectRow','fig',fig,'slider_val',i));
+
                         % LOAD PARAMETERS
                         try 
                             avail_params = ndi.calculator.get_available_parameters(calc_items(i).calculatorClass, ud.pipelinePath);
