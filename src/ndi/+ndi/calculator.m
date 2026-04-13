@@ -624,7 +624,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 case 'DocPopup'
                     docPopupObj = findobj(fig,'tag','DocPopup');
                     docTextObj = findobj(fig,'tag','DocTxt');
-                    types = {'general','searching','output'};
+                    types = {'general','searching for inputs','output'};
                     mytext = ndi.calculator.docfiletext(ud.calculatorInstance.calculatorClassname, types{get(docPopupObj,'value')});
                     set(docTextObj,'string',mytext);
                     
