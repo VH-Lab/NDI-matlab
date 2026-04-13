@@ -609,9 +609,9 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     uicontrol(uid.edit,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n 0.4*(1-button_area_h_n)],'string',init_code,'tag','ParameterCodeTxt','max',2,'BackgroundColor',edit_bg_color,'HorizontalAlignment','left','FontSize',fs);
                     
                     y_cursor = y_cursor - gap_v_n - row_h_n;
-                    uicontrol(uid.popup,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n row_h_n],'string',{'Commands:','---','Try searching for inputs','Show existing outputs','Plot existing outputs','Run but don''t replace','Run and replace'},'tag','CommandPopup','callback',callbackstr,'BackgroundColor',edit_bg_color,'FontSize',fs);
+                    uicontrol(uid.txt,'Units','normalized','position',[edge_n y_cursor 0.6 row_h_n],'string','Parameter Code Commands','BackgroundColor',fig_bg_color,'FontWeight','bold','HorizontalAlignment','left','FontSize',fs);
                     y_cursor = y_cursor - gap_v_n - row_h_n;
-                    
+
                     num_buttons = 5; button_w_n = 0.16;
                     button_centers_n = linspace(edge_n+button_w_n/2, 1-edge_n-button_w_n/2, num_buttons);
                     uicontrol(uid.button,'Units','normalized','position',[button_centers_n(1)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Save','tag','SaveButton','callback',callbackstr,'FontSize',fs);
@@ -619,6 +619,9 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     uicontrol(uid.button,'Units','normalized','position',[button_centers_n(3)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Delete...','tag','DeleteParameterInstanceButton','callback',callbackstr,'FontSize',fs);
                     uicontrol(uid.button,'Units','normalized','position',[button_centers_n(4)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Refresh','tag','RefreshPipelineButton','callback',callbackstr,'FontSize',fs);
                     uicontrol(uid.button,'Units','normalized','position',[button_centers_n(5)-button_w_n/2 y_cursor button_w_n row_h_n],'string','Exit','tag','ExitButton','callback',callbackstr,'FontSize',fs);
+
+                    y_cursor = y_cursor - gap_v_n - row_h_n;
+                    uicontrol(uid.popup,'Units','normalized','position',[edge_n y_cursor 1-2*edge_n row_h_n],'string',{'Commands:','---','Try searching for inputs','Show existing outputs','Plot existing outputs','Run but don''t replace','Run and replace'},'tag','CommandPopup','callback',callbackstr,'BackgroundColor',edit_bg_color,'FontSize',fs);
                     
                     ndi.calculator.graphical_edit_calculator('command','DocPopup','fig',fig);
                 case 'DocPopup'
