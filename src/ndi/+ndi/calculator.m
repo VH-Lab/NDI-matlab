@@ -1,4 +1,4 @@
-classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
+classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     properties (SetAccess=protected,GetAccess=public)
         fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
         numberOfSelfTests = 0;
@@ -473,6 +473,70 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
        
         function graphical_edit_calculator(options)
+            % GRAPHICAL_EDIT_CALCULATOR - open a graphical editor for an ndi.calculator instance
+            %
+            % ndi.calculator.graphical_edit_calculator('command', COMMAND, ...)
+            %
+            % Opens or controls a GUI window for editing ndi.calculator parameters,
+            % viewing documentation, running calculators, and managing saved parameter
+            % files. The editor allows the user to interactively configure and execute
+            % an ndi.calculator on an ndi.session.
+            %
+            % The GUI provides the following sections:
+            %   - Documentation panel: displays general, input, or output documentation
+            %     for the selected calculator class.
+            %   - Parameter code editor: edit MATLAB code that defines the 'parameters'
+            %     struct used by the calculator. Saved parameter sets can be loaded from
+            %     a dropdown or created via 'Save As'.
+            %   - Commands dropdown: search for inputs, show/plot existing outputs, or
+            %     run the calculator with the current parameters.
+            %   - Buttons: Save, Save As, Delete, Refresh, and Exit.
+            %
+            % This function takes input arguments as name/value pairs:
+            % |-------------------------------|----------------------------------------------|
+            % | Parameter (default)           | Description                                  |
+            % |-------------------------------|----------------------------------------------|
+            % | command ('New')               | The GUI command to execute. Valid values:     |
+            % |                               |   'New'     - open a new editor window        |
+            % |                               |   'Edit'    - open editor for existing params |
+            % |                               |   'Close'   - close the editor window         |
+            % |-------------------------------|----------------------------------------------|
+            % | session ([])                  | An ndi.session object. Required for commands  |
+            % |                               |   that search or run the calculator.          |
+            % |-------------------------------|----------------------------------------------|
+            % | name ('')                     | The instance name for the calculator.         |
+            % |-------------------------------|----------------------------------------------|
+            % | calculatorClassname ('')      | The full classname of the calculator          |
+            % |                               |   (e.g., 'ndi.calc.stimulus.tuningcurve').    |
+            % |-------------------------------|----------------------------------------------|
+            % | window_params                 | A struct with fields 'height' and 'width'     |
+            % |   (struct('height',450,       |   specifying the figure window size in pixels. |
+            % |    'width',700))              |                                              |
+            % |-------------------------------|----------------------------------------------|
+            % | fig ([])                      | A figure handle. If empty, a new figure is    |
+            % |                               |   created for 'New' or 'Edit' commands.       |
+            % |-------------------------------|----------------------------------------------|
+            % | pipelinePath ('')             | Path to a pipeline directory for loading and  |
+            % |                               |   saving parameter files.                     |
+            % |-------------------------------|----------------------------------------------|
+            % | paramName ('')                | Name of a saved parameter set to load on      |
+            % |                               |   startup.                                   |
+            % |-------------------------------|----------------------------------------------|
+            %
+            % Examples:
+            %   % Open a new editor for a tuningcurve calculator:
+            %   ndi.calculator.graphical_edit_calculator('command', 'New', ...
+            %       'calculatorClassname', 'ndi.calc.stimulus.tuningcurve', ...
+            %       'name', 'mytc', 'session', S);
+            %
+            %   % Open an editor with a specific saved parameter set:
+            %   ndi.calculator.graphical_edit_calculator('command', 'Edit', ...
+            %       'calculatorClassname', 'ndi.calc.stimulus.tuningcurve', ...
+            %       'name', 'mytc', 'session', S, 'paramName', 'default');
+            %
+            % See also: ndi.calculator, ndi.calculator.run, ndi.calculator.docfiletext,
+            %   ndi.calculator.get_available_parameters, ndi.cpipeline.edit
+            %
             arguments
                 options.command (1,:) char {mustBeMember(options.command, {'New','Edit','Close',...
                     'NewWindow','UpdateWindow','DocPopup', 'ParameterCodePopup',...
@@ -943,7 +1007,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 % Check each class in this package
                 for iC = 1:numel(mp.ClassList)
                     mc = mp.ClassList(iC);
-                    if isCalculatorSubclass(mc)
+                    if isCalculatorSubclass(mc) && ~mc.Abstract
                         classNames{end+1,1} = mc.Name; %#ok<AGROW>
                     end
                 end
