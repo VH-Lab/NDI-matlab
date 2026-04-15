@@ -31,7 +31,11 @@ classdef testNdiQuery < matlab.unittest.TestCase
                 'remoteDatasetName',unique_name);
             testCase.fatalAssertTrue(b_up, "Failed to upload dataset: " + msg_up);
 
-            testCase.addTeardown(@() testCase.teardownDataset());            
+            testCase.addTeardown(@() testCase.teardownDataset());
+
+            % Allow the cloud's background bulk-document ingest worker to
+            % finish indexing the just-uploaded docs before the first query.
+            pause(5);
 
         end
     end
