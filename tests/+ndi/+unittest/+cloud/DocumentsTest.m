@@ -628,7 +628,131 @@ classdef DocumentsTest < matlab.unittest.TestCase
             end
             
             narrative(end+1) = "Bulk-downloaded NaN/Inf documents have correct content.";
-            
+
+            testCase.Narrative = narrative;
+        end
+
+        function testBulkFetchRoundTrip(testCase)
+            testCase.Narrative = "Begin testBulkFetchRoundTrip";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+            numDocs = 4;
+
+            % Step 1: Add several documents and collect their cloud IDs and names
+            narrative(end+1) = "Preparing to add " + numDocs + " documents to later bulk-fetch.";
+            cloudDocIDs = strings(1, numDocs);
+            expectedNames = strings(1, numDocs);
+            for i = 1:numDocs
+                expectedNames(i) = "bulkfetch_doc_" + i;
+                doc_to_add = ndi.document('base', 'base.name', char(expectedNames(i)));
+                json_doc = jsonencodenan(doc_to_add.document_properties);
+                [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
+                testCase.fatalAssertTrue(b_add, "Failed to add document #" + i + " in bulkFetch test.");
+                cloudDocIDs(i) = ans_add.id;
+            end
+            narrative(end+1) = "Added " + numDocs + " documents.";
+
+            % Step 2: Bulk-fetch them all
+            narrative(end+1) = "Preparing to call ndi.cloud.api.documents.bulkFetch for all IDs.";
+            [b_fetch, ans_fetch, resp_fetch, url_fetch] = ndi.cloud.api.documents.bulkFetch(testCase.DatasetID, cloudDocIDs);
+            narrative(end+1) = "Attempted to call API with URL " + string(url_fetch);
+            msg_fetch = ndi.unittest.cloud.APIMessage(narrative, b_fetch, ans_fetch, resp_fetch, url_fetch);
+            testCase.verifyTrue(b_fetch, msg_fetch);
+            narrative(end+1) = "bulkFetch call reported success.";
+
+            % Step 3: Verify the correct number of documents came back
+            narrative(end+1) = "Testing: Verifying bulkFetch returned " + numDocs + " documents.";
+            testCase.verifyNumElements(ans_fetch, numDocs, msg_fetch);
+
+            % Step 4: Verify each returned document has the expected fields and
+            %         that its name matches one of the names we uploaded.
+            narrative(end+1) = "Testing: Verifying each returned document has expected fields and a matching name.";
+            returnedIDs = strings(1, numel(ans_fetch));
+            returnedNames = strings(1, numel(ans_fetch));
+            for i = 1:numel(ans_fetch)
+                entry = ans_fetch(i);
+                testCase.verifyTrue(isfield(entry, 'id'), "Returned entry missing 'id' field. " + msg_fetch);
+                testCase.verifyTrue(isfield(entry, 'data'), "Returned entry missing 'data' field. " + msg_fetch);
+                returnedIDs(i) = string(entry.id);
+                returnedNames(i) = string(entry.data.base.name);
+            end
+            % Order is not guaranteed; compare as sets.
+            testCase.verifyEqual(sort(returnedIDs), sort(cloudDocIDs), msg_fetch);
+            testCase.verifyEqual(sort(returnedNames), sort(expectedNames), msg_fetch);
+            narrative(end+1) = "All returned documents match the set that was uploaded.";
+
+            testCase.Narrative = narrative;
+        end
+
+        function testBulkFetchSilentlyOmitsUnknownIDs(testCase)
+            testCase.Narrative = "Begin testBulkFetchSilentlyOmitsUnknownIDs";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+
+            % Step 1: Add one real document
+            doc_to_add = ndi.document('base', 'base.name', 'bulkfetch_real_doc');
+            json_doc = jsonencodenan(doc_to_add.document_properties);
+            [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
+            testCase.fatalAssertTrue(b_add, "Failed to add document in bulkFetch unknown-ID test.");
+            realID = string(ans_add.id);
+            narrative(end+1) = "Added real document with ID " + realID;
+
+            % Step 2: Bulk-fetch with a mix of one real ID and one syntactically
+            %         valid but nonexistent 24-char hex ID. The server should
+            %         silently omit the unknown ID, not error.
+            bogusID = "000000000000000000000000";
+            narrative(end+1) = "Preparing to bulkFetch with one real ID and one bogus 24-hex ID " + bogusID;
+            [b_fetch, ans_fetch, resp_fetch, url_fetch] = ndi.cloud.api.documents.bulkFetch(testCase.DatasetID, [realID bogusID]);
+            msg_fetch = ndi.unittest.cloud.APIMessage(narrative, b_fetch, ans_fetch, resp_fetch, url_fetch);
+            testCase.verifyTrue(b_fetch, msg_fetch);
+
+            narrative(end+1) = "Testing: Verifying exactly one document came back (the bogus ID was silently omitted).";
+            testCase.verifyNumElements(ans_fetch, 1, msg_fetch);
+            testCase.verifyEqual(string(ans_fetch(1).id), realID, msg_fetch);
+            narrative(end+1) = "Bogus ID was silently omitted as expected.";
+
+            testCase.Narrative = narrative;
+        end
+
+        function testBulkFetchRejectsMalformedIDs(testCase)
+            testCase.Narrative = "Begin testBulkFetchRejectsMalformedIDs";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+
+            % Server rejects any element that isn't a 24-char hex string with 400.
+            narrative(end+1) = "Preparing to bulkFetch with a malformed (non-hex) document ID.";
+            badIDs = ["65a1b2c3d4e5f6789abcdef0" "not-a-hex-id"];
+            [b_fetch, ans_fetch, resp_fetch, url_fetch] = ndi.cloud.api.documents.bulkFetch(testCase.DatasetID, badIDs);
+            msg_fetch = ndi.unittest.cloud.APIMessage(narrative, b_fetch, ans_fetch, resp_fetch, url_fetch);
+
+            narrative(end+1) = "Testing: Verifying the call did NOT succeed (b should be false).";
+            testCase.verifyFalse(b_fetch, msg_fetch);
+            narrative(end+1) = "Testing: Verifying the server returned HTTP 400.";
+            testCase.verifyEqual(double(resp_fetch.StatusCode), 400, msg_fetch);
+
+            testCase.Narrative = narrative;
+        end
+
+        function testBulkFetchRejectsEmptyList(testCase)
+            testCase.Narrative = "Begin testBulkFetchRejectsEmptyList";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+
+            % Empty documentIds array must be rejected by the server with 400.
+            narrative(end+1) = "Preparing to bulkFetch with an empty documentIDs array.";
+            emptyIDs = strings(1, 0);
+            [b_fetch, ans_fetch, resp_fetch, url_fetch] = ndi.cloud.api.documents.bulkFetch(testCase.DatasetID, emptyIDs);
+            msg_fetch = ndi.unittest.cloud.APIMessage(narrative, b_fetch, ans_fetch, resp_fetch, url_fetch);
+
+            narrative(end+1) = "Testing: Verifying the call did NOT succeed.";
+            testCase.verifyFalse(b_fetch, msg_fetch);
+            narrative(end+1) = "Testing: Verifying the server returned HTTP 400.";
+            testCase.verifyEqual(double(resp_fetch.StatusCode), 400, msg_fetch);
+
             testCase.Narrative = narrative;
         end
     end
