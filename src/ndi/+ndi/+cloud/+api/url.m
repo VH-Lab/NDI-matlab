@@ -67,6 +67,7 @@ function url = url(endpointName, options)
         endpointMap("publish_dataset")                = "/datasets/{datasetId}/publish";
         endpointMap("unpublish_dataset")              = "/datasets/{datasetId}/unpublish";
         endpointMap("document_count")                 = "/datasets/{datasetId}/document-count";
+        endpointMap("document_class_counts")          = "/datasets/{datasetId}/document-class-counts";
         endpointMap("get_document")                   = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("update_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("delete_document")                = "/datasets/{datasetId}/documents/{documentId}";
