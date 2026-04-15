@@ -1,6 +1,9 @@
 classdef testNdiQuery < matlab.unittest.TestCase
     properties (Constant)
         DatasetNamePrefix = 'NDI_UNITTEST_DATASET_NDIQUERY_';
+        % A published dataset ID accessible to all users on the NDI cloud.
+        % Used by the dataset-scoped ndiquery test.
+        cloudDatasetId = '668b0539f13096e04f1feccd';
     end
     properties
         Dataset
@@ -28,7 +31,11 @@ classdef testNdiQuery < matlab.unittest.TestCase
                 'remoteDatasetName',unique_name);
             testCase.fatalAssertTrue(b_up, "Failed to upload dataset: " + msg_up);
 
-            testCase.addTeardown(@() testCase.teardownDataset());            
+            testCase.addTeardown(@() testCase.teardownDataset());
+
+            % Allow the cloud's background bulk-document ingest worker to
+            % finish indexing the just-uploaded docs before the first query.
+            pause(5);
 
         end
     end
@@ -184,6 +191,71 @@ classdef testNdiQuery < matlab.unittest.TestCase
                 end
             end
             testCase.verifyEqual(found_count, numDocs, "Retrieved documents do not match criteria.");
+
+            testCase.Narrative = narrative;
+        end
+
+        function testSearchByDatasetIdScope(testCase)
+            % Verify that the new scope form accepts a comma-separated list
+            % of dataset ObjectIds and restricts results to those datasets.
+            testCase.Narrative = "Begin testSearchByDatasetIdScope";
+            narrative = testCase.Narrative;
+
+            cloudDatasetId = testCase.cloudDatasetId;
+            narrative(end+1) = "Using cloudDatasetId: " + cloudDatasetId;
+
+            % A broad query — we only care that results come back scoped to
+            % the requested dataset, not what they match.
+            q = ndi.query('base.id', 'hasfield', '');
+
+            % 1. Single-ID scope — results must be from cloudDatasetId only.
+            narrative(end+1) = "Executing ndiquery with single-ID scope.";
+            [b, answer, resp, url] = ndi.cloud.api.documents.ndiquery(cloudDatasetId, q);
+
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, answer, resp, url);
+            testCase.verifyTrue(b, "ndiquery with dataset-ID scope failed. " + msg);
+
+            testCase.verifyTrue(isstruct(answer), "Answer should be a struct.");
+            testCase.verifyTrue(isfield(answer, 'documents'), "Answer should have a documents field.");
+
+            docs_result = answer.documents;
+            for i = 1:numel(docs_result)
+                if isfield(docs_result(i), 'datasetId') && ~isempty(docs_result(i).datasetId)
+                    testCase.verifyEqual(string(docs_result(i).datasetId), string(cloudDatasetId), ...
+                        "Returned document is not from the scoped dataset.");
+                end
+            end
+
+            % 2. CSV of two IDs (the accessible one plus a well-formed but
+            % unknown-to-us one) — must also succeed and still restrict to
+            % the accessible dataset. The server silently drops IDs the
+            % caller cannot access.
+            bogusButValidId = '000000000000000000000000';
+            csvScope = cloudDatasetId + "," + bogusButValidId;
+            narrative(end+1) = "Executing ndiquery with CSV-of-IDs scope: " + csvScope;
+            [b2, answer2, resp2, url2] = ndi.cloud.api.documents.ndiquery(csvScope, q);
+
+            msg2 = ndi.unittest.cloud.APIMessage(narrative, b2, answer2, resp2, url2);
+            testCase.verifyTrue(b2, "ndiquery with CSV-of-IDs scope failed. " + msg2);
+            testCase.verifyTrue(isfield(answer2, 'documents'), "Answer should have a documents field.");
+
+            docs_result2 = answer2.documents;
+            for i = 1:numel(docs_result2)
+                if isfield(docs_result2(i), 'datasetId') && ~isempty(docs_result2(i).datasetId)
+                    testCase.verifyEqual(string(docs_result2(i).datasetId), string(cloudDatasetId), ...
+                        "CSV-scoped result leaked a dataset beyond the accessible one.");
+                end
+            end
+
+            % 3. Format-invalid scope must be rejected locally.
+            narrative(end+1) = "Verifying client-side rejection of a malformed scope.";
+            threw = false;
+            try
+                ndi.cloud.api.documents.ndiquery("not-a-hex,also-bad", q);
+            catch
+                threw = true;
+            end
+            testCase.verifyTrue(threw, "Malformed scope should be rejected by client-side validation.");
 
             testCase.Narrative = narrative;
         end
