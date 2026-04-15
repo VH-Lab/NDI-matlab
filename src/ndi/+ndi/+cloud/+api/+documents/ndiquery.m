@@ -6,7 +6,12 @@ function [b, answer, apiResponse, apiURL] = ndiquery(scope, query_obj, args)
 %   Executes an NDI query against the cloud database.
 %
 %   Inputs:
-%       scope       - The scope of the search ('public', 'private', 'all').
+%       scope       - The scope of the search. One of 'public', 'private',
+%                     'all', or a comma-separated list of 24-character hex
+%                     dataset ObjectIds (e.g. '65a...,65b...'). When dataset
+%                     IDs are provided, the server returns only documents from
+%                     those datasets the user has access to; inaccessible IDs
+%                     are silently dropped.
 %       query_obj   - An ndi.query or did.query object defining the search criteria.
 %   Name-Value Inputs:
 %       page        - (Optional) The page number of results. Default is 1.
@@ -25,7 +30,7 @@ function [b, answer, apiResponse, apiURL] = ndiquery(scope, query_obj, args)
 %   See also: ndi.cloud.api.implementation.documents.NdiQuery, ndi.query
 
     arguments
-        scope (1,1) string {mustBeMember(scope, ["public", "private", "all"])}
+        scope (1,1) string {iMustBeValidScope}
         query_obj (1,1) did.query
         args.page (1,1) double = 1
         args.pageSize (1,1) double = 20
@@ -44,4 +49,25 @@ function [b, answer, apiResponse, apiURL] = ndiquery(scope, query_obj, args)
     % 2. Call the execute method and return its outputs directly.
     [b, answer, apiResponse, apiURL] = api_call.execute();
 
+end
+
+function iMustBeValidScope(scope)
+    % Accepts 'public', 'private', 'all', or a comma-separated list of
+    % 24-character hex dataset ObjectIds.
+    s = string(scope);
+    if any(strcmp(s, ["public", "private", "all"]))
+        return;
+    end
+    parts = strtrim(split(s, ","));
+    parts(parts == "") = [];
+    if isempty(parts)
+        error("ndiquery:InvalidScope", ...
+            "scope must be 'public', 'private', 'all', or a comma-separated list of 24-character hex dataset IDs");
+    end
+    for i = 1:numel(parts)
+        if isempty(regexp(parts(i), '^[a-fA-F0-9]{24}$', 'once'))
+            error("ndiquery:InvalidScope", ...
+                "scope entry '%s' is not a valid 24-character hex dataset ID", parts(i));
+        end
+    end
 end
