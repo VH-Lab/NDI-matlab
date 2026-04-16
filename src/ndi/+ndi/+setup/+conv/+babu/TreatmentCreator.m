@@ -97,10 +97,8 @@ classdef TreatmentCreator < ndi.setup.NDIMaker.TreatmentCreator
             chemicalTable.administration_onset_time = subjectTable.OdorOnset(indChemical);
             chemicalTable.administration_offset_time = subjectTable.OdorOnset(indChemical) + subjectTable.OdorDuration(indChemical);
             chemicalTable.administration_duration = days(subjectTable.OdorDuration(indChemical));
-            chemicalTable = repmat(chemicalTable,5,1);
-            delay = reshape(subjectTable.TrainInterval(indChemical)*(0:4),[],1);
-            chemicalTable.administration_onset_time = string(chemicalTable.administration_onset_time + delay,'hh:mm:ss');
-            chemicalTable.administration_offset_time = string(chemicalTable.administration_offset_time + delay,'hh:mm:ss');
+            chemicalTable.administration_onset_time = string(chemicalTable.administration_onset_time,'hh:mm:ss');
+            chemicalTable.administration_offset_time = string(chemicalTable.administration_offset_time,'hh:mm:ss');
 
             % Create OP50 treatment table rows
             OP50Table = convertvars(struct2table(treatments.agar),{'location_ontologyName','location_name'},'string');

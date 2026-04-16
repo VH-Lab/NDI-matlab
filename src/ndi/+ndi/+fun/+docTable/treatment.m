@@ -32,7 +32,7 @@ function [treatmentTable,docIDs,dependencyIDs] = treatment(session,options)
 %
 arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.dataset.dir'})}
-    options.depends_on {mustBeText} = 'subject_id';
+    options.depends_on {mustBeText} = {'subject_id','recipient_id'};
     options.errorIfEmpty (1,1) logical = false;
     options.depends_on_docs (1,:) cell = {};
     options.hideMixtureTable (1,1) logical = true;
@@ -40,18 +40,14 @@ end
 
 % Check depends_on class
 options.depends_on = cellstr(options.depends_on);
-if ~isscalar(options.depends_on)
-    error('depends_on must be a single string.');
-else
-    options.depends_on = options.depends_on{1};
-end
 
 % Get documents
 q_treat = ndi.query('','isa','treatment');
 q_drug = ndi.query('','isa','treatment_drug');
+q_transfer = ndi.query('','isa','treatment_transfer');
 q_virus = ndi.query('','isa','virus_injection');
 q_measurement = ndi.query('','isa','measurement');
-query = q_treat | q_drug | q_virus | q_measurement;
+query = q_treat | q_drug | q_transfer | q_virus | q_measurement;
 treatmentDocs = session.database_search(query);
 
 % Drug Treatment Field Renaming
@@ -78,9 +74,14 @@ for i = 1:numel(treatmentDocs)
     treatmentRow = table();
     doc = treatmentDocs{i};
     docProp = doc.document_properties;
-
+    depends_on = intersect({docProp.depends_on.name},options.depends_on);
+    if ~isscalar(depends_on)
+        error('depends_on must be a single string.');
+    else
+        depends_on = depends_on{1};
+    end
     try
-        dependencyIDs_all{i} = doc.dependency_value(options.depends_on);
+        dependencyIDs_all{i} = doc.dependency_value(depends_on);
     catch
         dependencyIDs_all{i} = '';
     end
@@ -100,27 +101,50 @@ for i = 1:numel(treatmentDocs)
             end
             if contains(fn{f},'_time')
                 if contains(val,'T')
-                    inputFormat = 'yyyy-MM-dd''T''HH:mm:ss';
-                else
-                    inputFormat = 'yyyy-MM-dd';
+                    val = datetime(val,'InputFormat','yyyy-MM-dd''T''HH:mm:ss');
+                elseif contains(val,':')
+                    val = duration(val,'InputFormat','hh:mm:ss');
+                elseif contains(val, '-')
+                    val = datetime(val,'InputFormat','yyyy-MM-dd');
                 end
-                    val = datetime(val,'InputFormat',inputFormat);
+            elseif contains(fn{f},'_duration')
+                val = days(val);
             end
             if strcmp(fn{f},'mixture_table')
                 mixtureTable = ndi.database.fun.readtablechar(val,'.txt','Delimiter',',');
-                treatmentRow.DrugTreatmentMixtureName = mixtureTable.name;
-                treatmentRow.DrugTreatmentMixtureQuantity = cellstr(compose("%g %s", ...
-                   mixtureTable.value,mixtureTable.unitName{1}));
-                treatmentRow.DrugTreatmentMixtureOntology = mixtureTable.ontologyName;
+                treatmentRow.DrugTreatmentMixtureName = {strjoin(cellstr(mixtureTable.name),', ')};
+                drugTreatmentMixtureQuantity = cell(height(mixtureTable),1);
+                if any(ismember(mixtureTable.Properties.VariableNames,'value'))
+                    for m = 1:height(mixtureTable)
+                        drugTreatmentMixtureQuantity(m) = cellstr(compose("%g %s", ...
+                            mixtureTable.value(m),mixtureTable.unitName{m}));
+                    end
+                    treatmentRow.DrugTreatmentMixtureQuantity = {strjoin(drugTreatmentMixtureQuantity,', ')};
+                end
+                treatmentRow.DrugTreatmentMixtureOntology = {strjoin(cellstr(mixtureTable.ontologyName),', ')};
                 if options.hideMixtureTable
                     indSkip(f) = true;
                     continue
                 end
             end
-            treatmentRow.(fn{f}) = {val};
+            treatmentRow{:,fn{f}} = {val};
         end
         treatmentRow = renamevars(treatmentRow, ...
             drugTreatmentFieldsOld(~indSkip),drugTreatmentFields(~indSkip));
+    elseif doc.doc_isa('treatment_transfer')
+        fields = docProp.treatment_transfer;
+        if contains(fields.clocktype,'global')
+            treatmentRow.TransferTime = {datetime(fields.timestamp,'ConvertFrom','datenum')};
+        elseif contains(fields.clocktype,'local')
+            treatmentRow.TransferTime = {seconds(fields.timestamp)};
+        end
+        treatmentRow.TransferEntityName = {fields.entity_name};
+        treatmentRow.TransferEntityOntology = {fields.entity_ontologyNode};
+        treatmentRow.TransferMethodName = {fields.entity_name};
+        treatmentRow.TransferMethodOntology = {fields.entity_ontologyNode};
+        if ~isempty(doc.dependency_value('donor_id'))
+            treatmentRow.TransferDonorIdentifier = {doc.dependency_value('donor_id')};
+        end
     elseif doc.doc_isa('virus_injection')
         fields = docProp.virus_injection;
         fn = fieldnames(fields);
@@ -224,7 +248,6 @@ for i = 1:numel(dependencyIDs)
                     mergedRow.(var_name) = old_val; % Fallback
                 end
             else
-                % Add new variable to the row
                 mergedRow.(var_name) = new_val;
             end
         end
