@@ -464,7 +464,7 @@ for i = 1:height(imStackTable)
         'clocktype','exp_global_time');
             
     % Create imageStack document
-    if contains(imStackFile,'.avi')
+    if contains(imStackFile,'.mp4')
         [ontologyID,~,~,ontologyDef] = ndi.ontology.lookup('EMPTY:0000257');
         imageStack = struct('label',ontologyDef,'formatOntology','NCIT:C190180');
     else
@@ -517,17 +517,17 @@ plasmidDocs = cell(numel(plasmidFiles),1);
 plasmidLabelDocs = cell(numel(plasmidFiles),1);
 for i = 1:numel(plasmidFiles)
     % Get file metadata
-    lcmsFile = fullfile(dataParentDir,plasmidFiles{i});
-    checksum = ndi.fun.file.MD5(lcmsFile);
-    dateCreated = convertTo(ndi.fun.file.dateCreated(lcmsFile),'datenum');
-    dateUpdated = convertTo(ndi.fun.file.dateUpdated(lcmsFile),'datenum');
+    plasmidFile = fullfile(dataParentDir,plasmidFiles{i});
+    checksum = ndi.fun.file.MD5(plasmidFile);
+    dateCreated = convertTo(ndi.fun.file.dateCreated(plasmidFile),'datenum');
+    dateUpdated = convertTo(ndi.fun.file.dateUpdated(plasmidFile),'datenum');
 
     % Create generic_file document
     generic_file = struct('filename',plasmidFiles{i},'formatOntology','EMPTY:0000253', ...
         'checksum',checksum,'dateCreated',dateCreated,'dateUpdated',dateUpdated);
     plasmidDocs{i} = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
-    plasmidDocs{i} = plasmidDocs{i}.add_file('generic_file.ext',lcmsFile,'delete_original',0);
+    plasmidDocs{i} = plasmidDocs{i}.add_file('generic_file.ext',plasmidFile,'delete_original',0);
     plasmidDocs{i} = plasmidDocs{i}.set_dependency_value('document_id',subject_group_plasmid{i}.id);
 
     % Create ontologyLabel document
@@ -605,17 +605,12 @@ dataset = ndi.dataset.dir(dirName,datasetDir);
 
 % Ingest and add sessions
 for i = 1:numel(sessions)
-    sessionDatabaseDir = fullfile(sessions{i}.path,'.ndi');
-    if options.Overwrite && exist([sessionDatabaseDir,'_'],'dir')
-        rmdir([sessionDatabaseDir,'_'],'s');
-    end
-    % copyfile(sessionDatabaseDir,[sessionDatabaseDir,'_']);
     sessions{i}.ingest;
     dataset.add_ingested_session(sessions{i});
 end
 
 % Compress dataset
-zip([datasetDir,'.zip'],datasetDir);
+ 
 
 %%
 % Each cell of a table refers to a subject, each column of a table can
