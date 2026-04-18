@@ -40,7 +40,7 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
                 error(['Could not get file collection upload URL: ' url_or_error.message]);
             end
 
-            [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, zip_file);
+            [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, zip_file, 'useCurl', options.useCurl);
             if ~b_put
                 error(['Could not upload zip file: ' put_or_error.message]);
             end

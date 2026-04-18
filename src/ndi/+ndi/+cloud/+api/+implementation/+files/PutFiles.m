@@ -16,7 +16,7 @@ classdef PutFiles
             arguments
                 args.preSignedURL (1,1) string
                 args.filePath (1,1) string {mustBeFile}
-                args.useCurl (1,1) logical = false
+                args.useCurl (1,1) logical = true
             end
             this.preSignedURL = args.preSignedURL;
             this.filePath = args.filePath;
@@ -62,9 +62,16 @@ classdef PutFiles
             % Implementation using a system call to curl
             b = false;
             apiURL = this.preSignedURL; % Return the URL as a string
-            
-            command = sprintf('curl -X PUT --upload-file "%s" "%s"', this.filePath, this.preSignedURL);
-            
+
+            % -f so HTTP errors (403/404 on a stale signed URL, etc.) surface
+            % as a non-zero exit. Pin Content-Type to application/octet-stream
+            % and Accept-Encoding to identity so the object metadata stored in
+            % S3 is predictable regardless of the client's environment.
+            command = sprintf(['curl -fsSL -X PUT --upload-file "%s" ' ...
+                '-H "Content-Type: application/octet-stream" ' ...
+                '-H "Accept-Encoding: identity" ' ...
+                '"%s"'], this.filePath, this.preSignedURL);
+
             [status, result] = system(command);
             
             b = (status == 0);
@@ -75,4 +82,3 @@ classdef PutFiles
         end
     end
 end
-
