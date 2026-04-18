@@ -76,9 +76,14 @@ function downloadDatasetFiles(cloudDatasetId, targetFolder, fileUuids, options)
         end
         downloadURL = answer.downloadUrl;
 
-        % Save the file
+        % Save the file using curl so gateway-level HTTP compression
+        % does not corrupt the saved bytes (websave auto-decompresses).
         try
-            websave(targetFilepath, downloadURL);
+            [success_d, answer_d] = ndi.cloud.api.files.getFile(downloadURL, targetFilepath, 'useCurl', true);
+            if ~success_d
+                error('NDI:Cloud:FileDownloadFailed', ...
+                    'curl download failed: %s', char(string(answer_d)));
+            end
         catch ME
             if options.AbortOnError
                 rethrow(ME)
