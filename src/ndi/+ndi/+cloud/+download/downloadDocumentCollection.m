@@ -24,7 +24,7 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 %                   directly to avoid an extra API call to fetch the list again.
 %
 %    options.Timeout - (1,1) double, optional
-%                   The timeout in seconds for the websave download operation.
+%                   The timeout in seconds for the download operation.
 %                   Default is 20.
 %
 %    options.ChunkSize - (1,1) double, optional
@@ -107,12 +107,20 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 
         isFinished = false;
         t1 = tic;
+        lastErr = '';
         % The download URL may not be immediately ready. Retry until timeout.
+        % Use curl (not websave) so the response body is written as-is; HTTP
+        % content-encoding applied at the gateway otherwise corrupts the zip.
         while ~isFinished && toc(t1) < options.Timeout
             try
-                websave(tempZipFilepath, downloadUrl);
+                [success_d, answer_d] = ndi.cloud.api.files.getFile(downloadUrl, tempZipFilepath, 'useCurl', true);
+                if ~success_d
+                    lastErr = char(string(answer_d));
+                    error('NDI:Cloud:DocumentDownloadFailed', 'curl download failed: %s', lastErr);
+                end
                 isFinished = true;
             catch ME
+                lastErr = ME.message;
                 pause(1) % Wait a second before retrying
             end
         end
@@ -120,7 +128,7 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
         if ~isFinished
             error('NDI:Cloud:DocumentDownloadFailed', ...
                 ['Download failed for chunk %d with message:\n %s\n. If this persists, ', ...
-                'consider increasing the Timeout value.'], c, ME.message);
+                'consider increasing the Timeout value.'], c, lastErr);
         end
 
         % Unzip and process documents from the current chunk
