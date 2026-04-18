@@ -58,7 +58,12 @@ classdef GetFile < ndi.cloud.api.call
             b = false;
             apiURL = this.downloadURL; % Return the URL as a string
 
-            command = sprintf('curl -L -o "%s" "%s"', this.downloadedFile, this.downloadURL);
+            % --compressed advertises Accept-Encoding: gzip,deflate and
+            % transparently decompresses the response. The gateway serves
+            % binary artifacts (.zip, .nbf.tgz) with Content-Encoding set,
+            % so without this flag curl writes the raw compressed body and
+            % downstream unzip/untar fails with "invalid" archive errors.
+            command = sprintf('curl --compressed -L -o "%s" "%s"', this.downloadedFile, this.downloadURL);
 
             [status, result] = system(command);
 
