@@ -58,7 +58,15 @@ classdef GetFile < ndi.cloud.api.call
             b = false;
             apiURL = this.downloadURL; % Return the URL as a string
 
-            command = sprintf('curl -L -o "%s" "%s"', this.downloadedFile, this.downloadURL);
+            % Our payloads are already compressed archives (.zip, .nbf.tgz).
+            % Asking the gateway to apply HTTP compression on top of that
+            % buys nothing and has produced corrupt archives on both Mac
+            % and Linux (stream decoders fail on already-compressed bytes).
+            % Request identity encoding so the raw file is delivered as-is.
+            % Use -f so HTTP errors surface as non-zero exit codes instead
+            % of writing a server error body into the destination file.
+            command = sprintf('curl -fsSL -H "Accept-Encoding: identity" -o "%s" "%s"', ...
+                this.downloadedFile, this.downloadURL);
 
             [status, result] = system(command);
 
