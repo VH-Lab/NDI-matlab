@@ -15,17 +15,23 @@ function [names,variableNames,ontologyNodes] = ontologyTableRowVars(S)
 % [names,variableNames,ontologyNodes] = ndi.fun.doc.ontologyTableVars(S);
 %
 
-l = S.database_search(ndi.query('','isa','ontologyTableRow'));
+if isa(S,'ndi.session.dir') | isa(S,'ndi.dataset.dir')
+    docs = S.database_search(ndi.query('','isa','ontologyTableRow'));
+elseif iscell(S) & isa(S{1},'ndi.document')
+    docs = S;
+elseif isa(S,'ndi.document')
+    docs = {S};
+end
 
 names = {};
 variableNames = {};
 ontologyNodes = {};
 
-for i=1:numel(l)
-    if ~isempty(l{i}.document_properties.ontologyTableRow.names)
-        nameCellArray = strsplit(l{i}.document_properties.ontologyTableRow.names,',');
-        variableNamesArray = strsplit(l{i}.document_properties.ontologyTableRow.variableNames,',');
-        ontologyNodeArray = strsplit(l{i}.document_properties.ontologyTableRow.ontologyNodes,',');
+for i=1:numel(docs)
+    if ~isempty(docs{i}.document_properties.ontologyTableRow.names)
+        nameCellArray = strsplit(docs{i}.document_properties.ontologyTableRow.names,',');
+        variableNamesArray = strsplit(docs{i}.document_properties.ontologyTableRow.variableNames,',');
+        ontologyNodeArray = strsplit(docs{i}.document_properties.ontologyTableRow.ontologyNodes,',');
     end
     nameList = cat(1,names,nameCellArray(:));
     variableNamesArrayList = cat(1,variableNames,variableNamesArray(:));

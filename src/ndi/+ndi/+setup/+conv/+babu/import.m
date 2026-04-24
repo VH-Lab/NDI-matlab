@@ -545,21 +545,28 @@ session.database_add(plasmidLabelDocs);
 
 % Match subjects to LC-MS files
 for i = 1:height(lcmsTable)
-    ind = contains(subjectTable.TableFileName,lcmsTable.TableFileName{i}(1:end-7));
-    if isscalar(ind)
+    ind = contains(subjectTable.TableFileName,...
+        regexprep(lcmsTable.TableFileName{i},'_[^_]*$',''));
+    if any(ind)
         lcmsTable.SubjectDocumentIdentifier(i) = subjectTable.SubjectDocumentIdentifier(ind);
     end
 end
 
 % Create subject_group for all_set
-subject_group_lcms = ndi.document('subject_group') + session.newdocument();
-subjectRows = find(strcmp(subjectTable.FigureName,'S6A'));
-for k = 1:numel(subjectRows)
-    subject_group_lcms = subject_group_lcms.add_dependency_value_n(...
-        'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
-end
+subject_group_lcms_all = ndi.document('subject_group') + session.newdocument();
 ind = contains(lcmsTable.TableFileName,'All_set');
-lcmsTable{ind,'SubjectDocumentIdentifier'} = {subject_group_lcms.id};
+lcmsTable{ind,'SubjectGroupIdentifier'} = {subject_group_lcms_all.id};
+subjectRows = find(strcmp(subjectTable.FigureName,'S6A'));
+subject_group_lcms = cell(numel(subjectRows),1);
+for k = 1:numel(subjectRows)
+    subject_group_lcms{k} = ndi.document('subject_group') + session.newdocument();
+    subject_group_lcms{k} = subject_group_lcms{k}.add_dependency_value_n(...
+        'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
+    subject_group_lcms_all = subject_group_lcms_all.add_dependency_value_n(...
+        'subject_id',subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
+    ind = strcmp(lcmsTable.SubjectDocumentIdentifier,subjectTable.SubjectDocumentIdentifier{subjectRows(k)});
+    lcmsTable(ind,'SubjectGroupIdentifier') = {subject_group_lcms{k}.id};
+end
 
 % Create LCMS generic_file docs
 lcmsDocs = cell(height(lcmsTable),1);
@@ -577,7 +584,7 @@ for i = 1:height(lcmsTable)
     lcmsDocs{i} = ndi.document('generic_file','generic_file',generic_file) + ...
         session.newdocument();
     lcmsDocs{i} = lcmsDocs{i}.add_file('generic_file.ext',lcmsFile,'delete_original',0);
-    lcmsDocs{i} = lcmsDocs{i}.set_dependency_value('document_id',lcmsTable.SubjectDocumentIdentifier{i});
+    lcmsDocs{i} = lcmsDocs{i}.set_dependency_value('document_id',lcmsTable.SubjectGroupIdentifier{i});
 
     % Create ontologyLabel document
     lcmsLabelDocs{i} = ndi.document('ontologyLabel','ontologyLabel',...
@@ -586,7 +593,7 @@ for i = 1:height(lcmsTable)
         'document_id',lcmsDocs{i}.id);
 end
 
-session.database_add(subject_group_lcms);
+session.database_add([subject_group_lcms;{subject_group_lcms_all}]);
 session.database_add(lcmsDocs);
 session.database_add(lcmsLabelDocs);
 
@@ -610,7 +617,7 @@ for i = 1:numel(sessions)
 end
 
 % Compress dataset
- 
+zip([datasetDir,'.zip'],datasetDir);
 
 %%
 % Each cell of a table refers to a subject, each column of a table can
