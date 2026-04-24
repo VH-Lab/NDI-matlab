@@ -1,4 +1,4 @@
-name: Run NDI Test Suite
+name: Run NDI Test Suite No Cloud
 
 on:
   # Triggers the workflow on push or pull request events for the "main" branch
@@ -86,7 +86,7 @@ jobs:
             ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
-            testToolbox()
+            testToolboxNoCloud()
 
       - name: Restore MATLAB Path
         uses: matlab-actions/run-command@v2
