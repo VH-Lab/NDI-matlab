@@ -43,6 +43,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             datasetInfo = struct("name", unique_name);
 
             [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            if ~b
+                % Retry once after a brief wait to ride out transient backend 500s.
+                pause(10);
+                [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
+            end
 
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
@@ -60,13 +65,29 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
         function deleteDatasetAfterTest(testCase)
             if ~ismissing(testCase.DatasetID)
                 narrative = testCase.Narrative; % Make a local copy
+                narrative(end+1) = "TEARDOWN: Pausing before delete to let backend converge on any recent uploads.";
+                pause(5);
                 narrative(end+1) = "TEARDOWN: Deleting temporary dataset ID: " + testCase.DatasetID;
                 [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID, 'when', 'now');
+                if ~b
+                    narrative(end+1) = "TEARDOWN: First delete attempt failed; waiting and retrying once.";
+                    pause(15);
+                    [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID, 'when', 'now');
+                end
                 if ~b
                     msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_del, resp_del, url_del);
                     % Use assert instead of verify in teardown to ensure it's noted
                     testCase.assertTrue(b, "Failed to delete dataset in TestMethodTeardown. " + msg);
                 end
+            end
+        end
+
+        function [b, ans_details, resp, url] = getFileDetailsWithRetry(testCase, fileUID)
+            [b, ans_details, resp, url] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+            if ~b
+                % Retry once after a brief wait to ride out transient backend 500s.
+                pause(10);
+                [b, ans_details, resp, url] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
             end
         end
     end
@@ -152,7 +173,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fileUID = fileUIDs(i);
                 expectedContent = originalFileContents{i};
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
-                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                [b_details, ans_details, resp_details, url_details] = testCase.getFileDetailsWithRetry(fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
                 testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
                 downloadURL = ans_details.downloadUrl;
@@ -202,7 +223,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fileUID = fileUIDs(i);
                 expectedContent = originalFileContents{i};
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
-                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                [b_details, ans_details, resp_details, url_details] = testCase.getFileDetailsWithRetry(fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
                 testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
                 downloadURL = ans_details.downloadUrl;
@@ -305,7 +326,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fileUID = fileUIDs(i);
                 expectedContent = originalFileContents{i};
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
-                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                [b_details, ans_details, resp_details, url_details] = testCase.getFileDetailsWithRetry(fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
                 testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
                 downloadURL = ans_details.downloadUrl;
@@ -355,7 +376,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fileUID = fileUIDs(i);
                 expectedContent = originalFileContents{i};
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
-                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                [b_details, ans_details, resp_details, url_details] = testCase.getFileDetailsWithRetry(fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
                 testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
                 downloadURL = ans_details.downloadUrl;
@@ -463,7 +484,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fileUID = fileUIDs(i);
                 expectedContent = originalFileContents{i};
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
-                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                [b_details, ans_details, resp_details, url_details] = testCase.getFileDetailsWithRetry(fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
                 testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + " before publishing. " + msg_details);
                 downloadURL = ans_details.downloadUrl;
@@ -513,7 +534,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fileUID = fileUIDs(i);
                 expectedContent = originalFileContents{i};
                 narrative(end+1) = "  Verifying file with UID: " + fileUID;
-                [b_details, ans_details, resp_details, url_details] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, fileUID);
+                [b_details, ans_details, resp_details, url_details] = testCase.getFileDetailsWithRetry(fileUID);
                 msg_details = ndi.unittest.cloud.APIMessage(narrative, b_details, ans_details, resp_details, url_details);
                 testCase.verifyTrue(b_details, "Failed to get details for file " + fileUID + ". " + msg_details);
                 downloadURL = ans_details.downloadUrl;
