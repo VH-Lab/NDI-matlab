@@ -67,6 +67,7 @@ function url = url(endpointName, options)
         endpointMap("publish_dataset")                = "/datasets/{datasetId}/publish";
         endpointMap("unpublish_dataset")              = "/datasets/{datasetId}/unpublish";
         endpointMap("document_count")                 = "/datasets/{datasetId}/document-count";
+        endpointMap("document_class_counts")          = "/datasets/{datasetId}/document-class-counts";
         endpointMap("get_document")                   = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("update_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("delete_document")                = "/datasets/{datasetId}/documents/{documentId}";
@@ -74,6 +75,7 @@ function url = url(endpointName, options)
         endpointMap("bulk_delete_documents")          = "/datasets/{datasetId}/documents/bulk-delete";
         endpointMap("bulk_upload_documents")          = "/datasets/{datasetId}/documents/bulk-upload";
         endpointMap("bulk_download_documents")        = "/datasets/{datasetId}/documents/bulk-download";
+        endpointMap("bulk_fetch_documents")           = "/datasets/{datasetId}/documents/bulk-fetch";
         endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents?page={page}&pageSize={pageSize}";
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";

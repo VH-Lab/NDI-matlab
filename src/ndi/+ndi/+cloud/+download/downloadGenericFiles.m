@@ -167,8 +167,14 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
                 continue;
             end
 
+            % Download using curl so gateway-level HTTP compression does not
+            % corrupt the saved bytes (websave auto-decompresses responses).
             try
-                websave(targetPath, answer.downloadUrl);
+                [success_d, answer_d] = ndi.cloud.api.files.getFile(answer.downloadUrl, targetPath, 'useCurl', true);
+                if ~success_d
+                    error('NDI:downloadGenericFiles:DownloadError', ...
+                        'curl download failed: %s', char(string(answer_d)));
+                end
                 downloadedFiles(end+1) = filename; %#ok<AGROW>
             catch ME
                 warning('NDI:downloadGenericFiles:DownloadError', ...

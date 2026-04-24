@@ -652,10 +652,29 @@ To generate mock documents for testing:
 [docs, doc_output, doc_expected_output] = obj.generate_mock_docs(scope, number_of_tests, Name, Value);
 ```
 
-*   `scope`: Defines the test conditions.
-    *   `'highSNR'`: High signal-to-noise ratio (easy case).
-    *   `'lowSNR'`: High noise (stress test).
-*   `number_of_tests`: The number of test iterations to run.
+**Inputs:**
+
+| Input Argument | Type | Description |
+| :--- | :--- | :--- |
+| `obj` | `ndi.calculator` | The instance of the calculator object (e.g., `contrast_tuning_obj`). |
+| `scope` | String | Defines the testing conditions, primarily affecting noise levels and repetition counts. Allowed values:<br>- `'highSNR'`: High signal-to-noise ratio (standard conditions).<br>- `'lowSNR'`: Low signal-to-noise ratio (high noise). |
+| `number_of_tests` | Integer | The number of distinct test cases to generate. The method will loop from 1 to `number_of_tests`, generating different parameters for each iteration via `generate_mock_parameters`. |
+| `Name, Value` | Key/Value pairs | Optional parameters to modify behavior. These are defined in an `arguments` block. |
+
+**Optional Name-Value Arguments:**
+
+| Argument | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `generate_expected_docs` | logical | `false` | If `true`, the method saves the current output as the "expected" output for future tests. Use this when updating the calculator logic or creating new tests. |
+| `specific_test_inds` | double vector | `[]` | Allows specifying a subset of test indices to run (e.g., `[1 5]`). If empty, all `number_of_tests` are run. |
+
+**Outputs:**
+
+| Output Argument | Type | Description |
+| :--- | :--- | :--- |
+| `docs` | Cell Array | A 1xN cell array (where N is number of tests). `docs{i}` is a cell array containing the **input documents** generated for the `i`-th test. These mock documents (typically stimulus response documents) simulate the raw data in the database. |
+| `doc_output` | Cell Array | A 1xN cell array. `doc_output{i}` contains the **actual output document** produced by the calculator when processing the inputs in `docs{i}`. |
+| `doc_expected_output` | Cell Array | A 1xN cell array. `doc_expected_output{i}` contains the **expected output document**. If `generate_expected_docs` is `false`, this is loaded from a stored file. If `true`, it mirrors `doc_output{i}` (and is written to disk). |
 
 #### Generating "Gold Standard" Documents
 
@@ -759,7 +778,6 @@ session.database_closebinarydoc(myfile);
 
 - **Examples**: See `+ndi/+calc/+vis/` in NDIcalc-vis-matlab
 - **Base class**: `+ndi/calculator.m` in NDI-matlab
-- **Tutorial**: `making_a_new_calculator.md` in NDIcalc-vis-matlab
 - **Simple template**: `+ndi/+calc/+example/simple.m` in NDI-matlab
 
 ## Summary Checklist

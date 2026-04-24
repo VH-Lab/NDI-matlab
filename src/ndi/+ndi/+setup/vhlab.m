@@ -34,4 +34,12 @@ function S = vhlab(ref, dirname, force)
         'errorOnFailure',true));
 
     S.syncgraph_addrule(asyncrule);
+
+    % Synchronize vhneuropixelsGLX and vhajbpod_np. Both DAQ readers inherit
+    % from the NDR neuropixelsGLX reader and share the per-epoch .nidq.meta
+    % and .imec0.ap.meta files, so the default filematch rule (2 fullpath
+    % matches) added above already groups their epochs. The vhajbpod_np
+    % reader recovers event times directly from NI-DAQ digital input 1 of
+    % the same SpikeGLX recording, so its mk1/mk2 events are already in the
+    % NI-DAQ device-local time and no cross-clock mapping rule is needed.
 end

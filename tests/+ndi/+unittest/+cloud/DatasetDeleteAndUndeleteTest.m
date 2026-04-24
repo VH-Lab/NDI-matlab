@@ -101,11 +101,19 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_undel, "Failed to undelete dataset.");
             narrative(end+1) = "Dataset undelete initiated.";
 
-            % 5. Verify it is visible again
+            % 5. Verify it is visible again. Undelete is asynchronous on the
+            % server (the 200 response is documented as "process started"),
+            % so poll instead of relying on a fixed sleep.
             narrative(end+1) = "VERIFICATION: Dataset should be visible.";
-            pause(5);
-            [b_get_after, ans_get_after] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
-            testCase.verifyTrue(b_get_after, "Dataset not visible after undelete.");
+            deadline = tic;
+            b_get_after = false;
+            ans_get_after = [];
+            while toc(deadline) < 30
+                [b_get_after, ans_get_after] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+                if b_get_after, break; end
+                pause(1);
+            end
+            testCase.verifyTrue(b_get_after, "Dataset not visible within 30s after undelete.");
 
             testCase.Narrative = narrative;
         end

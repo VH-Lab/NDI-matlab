@@ -1,4 +1,4 @@
-classdef tuning_fit < ndi.calculator
+classdef (Abstract) tuning_fit < ndi.calculator
 
     methods
         function tuning_fit_obj = tuning_fit(session, name, doc_type)

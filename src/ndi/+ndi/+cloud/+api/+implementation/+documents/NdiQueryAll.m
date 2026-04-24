@@ -14,13 +14,15 @@ classdef NdiQueryAll < ndi.cloud.api.call
             %   THIS = ndi.cloud.api.implementation.documents.NdiQueryAll('scope', SCOPE, 'searchstructure', SEARCHSTRUCT, 'pageSize', PS)
             %
             %   Inputs:
-            %       'scope'           - The scope of the search ('public', 'private', 'all').
+            %       'scope'           - The scope of the search. One of 'public',
+            %                           'private', 'all', or a comma-separated list
+            %                           of 24-character hex dataset ObjectIds.
             %       'searchstructure' - The search structure defining the query criteria (e.g. from an ndi.query or did.query object).
             %       'pageSize'        - (Optional) The number of results per page. Default is 1000.
             %       'retries'         - (Optional) The number of retries for each page. Default is 10.
             %
             arguments
-                args.scope (1,1) string {mustBeMember(args.scope, ["public", "private", "all"])}
+                args.scope (1,1) string {iMustBeValidScope}
                 args.searchstructure (1,:) struct
                 args.pageSize (1,1) double = 1000
                 args.retries (1,1) double = 10
@@ -119,6 +121,27 @@ classdef NdiQueryAll < ndi.cloud.api.call
                     break;
                 end
             end
+        end
+    end
+end
+
+function iMustBeValidScope(scope)
+    % Accepts 'public', 'private', 'all', or a comma-separated list of
+    % 24-character hex dataset ObjectIds.
+    s = string(scope);
+    if any(strcmp(s, ["public", "private", "all"]))
+        return;
+    end
+    parts = strtrim(split(s, ","));
+    parts(parts == "") = [];
+    if isempty(parts)
+        error("NdiQueryAll:InvalidScope", ...
+            "scope must be 'public', 'private', 'all', or a comma-separated list of 24-character hex dataset IDs");
+    end
+    for i = 1:numel(parts)
+        if isempty(regexp(parts(i), '^[a-fA-F0-9]{24}$', 'once'))
+            error("NdiQueryAll:InvalidScope", ...
+                "scope entry '%s' is not a valid 24-character hex dataset ID", parts(i));
         end
     end
 end

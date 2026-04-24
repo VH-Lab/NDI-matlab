@@ -14,8 +14,10 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
 %   Name-Value Pairs:
 %       'useCurl' (logical) - If true, the function will use a system call
 %                             to the `curl` command-line tool to perform the
-%                             upload. This can be a robust fallback if the native
-%                             MATLAB HTTP client fails. Defaults to false.
+%                             upload. Defaults to true so every upload path
+%                             stores objects in S3 with consistent headers
+%                             (the MATLAB HTTP client can tag objects
+%                             differently, producing flaky downloads).
 %
 %   Outputs:
 %       b            - True if the upload succeeded (HTTP 200), false otherwise.
@@ -39,7 +41,7 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
     arguments
         preSignedURL (1,1) string
         filePath (1,1) string {mustBeFile}
-        options.useCurl (1,1) logical = false
+        options.useCurl (1,1) logical = true
     end
     % 1. Create an instance of the implementation class, passing the options.
     api_call = ndi.cloud.api.implementation.files.PutFiles(...
@@ -51,4 +53,3 @@ function [b, answer, apiResponse, apiURL] = putFiles(preSignedURL, filePath, opt
     [b, answer, apiResponse, apiURL] = api_call.execute();
     
 end
-
