@@ -27,7 +27,10 @@ function testToolboxNoCloud(varargin)
         mkdir(outputDirectory)
     end
 
-    suite = TestSuite.fromPackage("ndi.unittest", "IncludingSubpackages", true);
+    % Discover tests by folder (not by package namespace) so tests that
+    % share the ndi.unittest.* namespace from other repos on the MATLAB
+    % path (e.g. ndi-ontology-matlab) are not picked up here.
+    suite = TestSuite.fromFolder(testFolder, "IncludingSubfolders", true);
 
     suite = excludeCloudTests(suite);
 
