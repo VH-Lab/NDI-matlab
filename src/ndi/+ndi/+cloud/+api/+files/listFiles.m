@@ -24,7 +24,6 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
 %
 %   The ANSWER struct has the following fields:
 %       uid                 - The NDI UID of the file.
-%       isRaw               - A 0/1 flag indicating if the file is raw.
 %       uploaded            - A 0/1 flag indicating if the file has been uploaded.
 %       sourceDatasetId     - The cloudDatasetId of the file's parent dataset.
 %       size                - The file size in bytes.
