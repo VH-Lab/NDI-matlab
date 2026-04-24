@@ -58,8 +58,15 @@ classdef FilesTest < matlab.unittest.TestCase
             end
             if ~ismissing(testCase.DatasetID)
                 narrative = testCase.Narrative; % Make a local copy
+                narrative(end+1) = "TEARDOWN: Pausing before delete to let backend converge on any recent uploads.";
+                pause(5);
                 narrative(end+1) = "TEARDOWN: Deleting temporary dataset ID: " + testCase.DatasetID;
                 [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID, 'when', 'now');
+                if ~b
+                    narrative(end+1) = "TEARDOWN: First delete attempt failed; waiting and retrying once.";
+                    pause(15);
+                    [b, ans_del, resp_del, url_del] = ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID, 'when', 'now');
+                end
                 if ~b
                     msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_del, resp_del, url_del);
                     testCase.assertTrue(b, "Failed to delete dataset in TestMethodTeardown. " + msg);
