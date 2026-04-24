@@ -12,6 +12,8 @@ function url = url(endpointName, options)
         options.organization_id (1,1) string = ""
         options.session_id (1,1) string = ""
         options.stage_id (1,1) string = ""
+        options.job_id (1,1) string = ""
+        options.state (1,1) string = ""
         options.page (1,1) double = 1
         options.page_size (1,1) double = 20
     end
@@ -61,6 +63,8 @@ function url = url(endpointName, options)
         endpointMap("get_file_upload_url")            = "/datasets/{organizationId}/{datasetId}/files/{file_uid}";
         endpointMap("get_file_collection_upload_url") = "/datasets/{organizationId}/{datasetId}/files/bulk";
         endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{file_uid}/detail";
+        endpointMap("get_bulk_upload_status")         = "/bulk-uploads/{jobId}";
+        endpointMap("list_dataset_bulk_uploads")      = "/datasets/{datasetId}/bulk-uploads?state={state}";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
         endpointMap("submit_dataset")                 = "/datasets/{datasetId}/submit";
@@ -126,6 +130,7 @@ function options = processOptions(options)
     options = renameStructField(options, 'page_size', 'pageSize');
     options = renameStructField(options, 'session_id', 'sessionId');
     options = renameStructField(options, 'stage_id', 'stageId');
+    options = renameStructField(options, 'job_id', 'jobId');
 
     function s = renameStructField(s, oldname, newname)
         s.(newname) = s.(oldname);

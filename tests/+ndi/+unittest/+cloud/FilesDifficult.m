@@ -98,8 +98,9 @@ classdef FilesDifficult < matlab.unittest.TestCase
             msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
             testCase.verifyTrue(b_url, "Failed to get bulk file upload URL. " + msg_url);
             if ~b_url, return; end
-            uploadURL = ans_url;
-            narrative(end+1) = "Successfully obtained bulk upload URL." + " at " + string(datetime('now','TimeZone','UTC'));
+            uploadURL = ans_url.url;
+            uploadJobId = ans_url.jobId;
+            narrative(end+1) = "Successfully obtained bulk upload URL (jobId=" + uploadJobId + ")." + " at " + string(datetime('now','TimeZone','UTC'));
 
             % Step 3: Zip and upload the file with the correct naming convention
             narrative(end+1) = "Preparing to zip and upload the files." + " at " + string(datetime('now','TimeZone','UTC'));
@@ -117,7 +118,8 @@ classdef FilesDifficult < matlab.unittest.TestCase
                 return;
             end
 
-            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath);
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath, ...
+                'jobId', uploadJobId);
             narrative(end+1) = "Attempted to upload zip file to " + string(url_put) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.verifyTrue(b_put, "Bulk file upload (PUT request) failed. " + msg_put);

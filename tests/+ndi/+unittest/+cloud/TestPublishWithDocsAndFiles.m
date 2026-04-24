@@ -443,15 +443,18 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 fclose(fid);
             end
 
-            [b_url, uploadURL, resp_url, url_url] = ndi.cloud.api.files.getFileCollectionUploadURL(testCase.DatasetID);
-            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, uploadURL, resp_url, url_url);
+            [b_url, uploadInfo, resp_url, url_url] = ndi.cloud.api.files.getFileCollectionUploadURL(testCase.DatasetID);
+            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, uploadInfo, resp_url, url_url);
             testCase.fatalAssertTrue(b_url, "Failed to get bulk file upload URL. " + msg_url);
+            uploadURL = uploadInfo.url;
+            uploadJobId = uploadInfo.jobId;
 
             zipFileName = testCase.DatasetID + "." + string(did.ido.unique_id()) + ".zip";
             zipFilePath = fullfile(tempFolder.Folder, zipFileName);
             zip(zipFilePath, localFilePaths);
 
-            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath);
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath, ...
+                'jobId', uploadJobId);
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
             testCase.fatalAssertTrue(b_put, "Bulk file upload (PUT request) failed. " + msg_put);
             narrative(end+1) = "All files uploaded successfully in bulk.";
