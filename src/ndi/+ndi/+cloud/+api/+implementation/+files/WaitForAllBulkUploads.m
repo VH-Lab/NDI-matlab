@@ -144,8 +144,30 @@ classdef WaitForAllBulkUploads < ndi.cloud.api.call
                         return;
                     end
                 elseif verbose
-                    fprintf(['[waitForAllBulkUploads] poll #%d returned non-OK or ', ...
-                        'malformed status; will retry\n'], pollCount);
+                    reason = 'unknown';
+                    if ~ok
+                        reason = 'ok=false';
+                    elseif ~isstruct(status)
+                        reason = sprintf('status is %s, not a struct', class(status));
+                    elseif ~isfield(status, 'jobs')
+                        try
+                            fns = strjoin(string(fieldnames(status)), ',');
+                        catch
+                            fns = "<unreadable>";
+                        end
+                        reason = sprintf('struct has no ''jobs'' field (fields: %s)', fns);
+                    end
+                    fprintf(['[waitForAllBulkUploads] poll #%d malformed response (%s); ', ...
+                        'will retry. Body preview:\n'], pollCount, reason);
+                    try
+                        preview = jsonencode(status);
+                        if strlength(preview) > 500
+                            preview = char(extractBetween(preview, 1, 500)) + "...";
+                        end
+                        fprintf('[waitForAllBulkUploads]   %s\n', string(preview));
+                    catch
+                        fprintf('[waitForAllBulkUploads]   <unable to encode status>\n');
+                    end
                 end
 
                 elapsed = toc(deadline);
