@@ -35,12 +35,14 @@ function [b, errormsg] = uploadSingleFile(cloudDatasetID, cloudFileUID, filePath
         try
             zip(zip_file, filePath);
 
-            [b_url, url_or_error] = ndi.cloud.api.files.getFileCollectionUploadURL(cloudDatasetID);
+            [b_url, info_or_error] = ndi.cloud.api.files.getFileCollectionUploadURL(cloudDatasetID);
             if ~b_url
-                error(['Could not get file collection upload URL: ' url_or_error.message]);
+                error(['Could not get file collection upload URL: ' info_or_error.message]);
             end
 
-            [b_put, put_or_error] = ndi.cloud.api.files.putFiles(url_or_error, zip_file, 'useCurl', options.useCurl);
+            [b_put, put_or_error] = ndi.cloud.api.files.putFiles(info_or_error.url, zip_file, ...
+                'useCurl', options.useCurl, ...
+                'jobId', info_or_error.jobId);
             if ~b_put
                 error(['Could not upload zip file: ' put_or_error.message]);
             end

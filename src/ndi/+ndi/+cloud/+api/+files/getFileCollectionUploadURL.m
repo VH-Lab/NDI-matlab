@@ -11,14 +11,30 @@ function [b, answer, apiResponse, apiURL] = getFileCollectionUploadURL(cloudData
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
-%       answer       - The pre-signed upload URL (string) on success, or an error struct on failure.
+%       answer       - On success, a struct with fields:
+%                        url   - The pre-signed PUT URL for the zip archive.
+%                        jobId - Identifier of the server-side extraction job.
+%                                Pass it to ndi.cloud.api.files.waitForBulkUpload
+%                                (or to ndi.cloud.api.files.putFiles with
+%                                'waitForCompletion', true) to wait for the
+%                                server to finish extracting the zip before
+%                                attempting to download the extracted files.
+%                                Empty string if the server did not return a
+%                                job id (older server versions).
+%                      On failure, the server error payload.
 %       apiResponse  - The full matlab.net.http.ResponseMessage object.
 %       apiURL       - The URL that was called.
 %
 %   Example:
-%       [success, upload_url] = ndi.cloud.api.files.getFileCollectionUploadURL('d-12345');
+%       [success, info] = ndi.cloud.api.files.getFileCollectionUploadURL('d-12345');
+%       if success
+%           [ok] = ndi.cloud.api.files.putFiles(info.url, 'bundle.zip', ...
+%               'jobId', info.jobId, 'waitForCompletion', true);
+%       end
 %
-%   See also: ndi.cloud.api.implementation.files.GetFileCollectionUploadURL
+%   See also: ndi.cloud.api.implementation.files.GetFileCollectionUploadURL,
+%             ndi.cloud.api.files.putFiles,
+%             ndi.cloud.api.files.waitForBulkUpload
 
     arguments
         cloudDatasetID (1,1) string

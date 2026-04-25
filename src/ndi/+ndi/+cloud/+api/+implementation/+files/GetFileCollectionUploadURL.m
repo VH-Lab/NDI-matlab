@@ -50,7 +50,12 @@ classdef GetFileCollectionUploadURL < ndi.cloud.api.call
             
             if (apiResponse.StatusCode == 200 || apiResponse.StatusCode == 201)
                 b = true;
-                answer = apiResponse.Body.Data.url;
+                data = apiResponse.Body.Data;
+                jobId = "";
+                if isfield(data, 'jobId') && ~isempty(data.jobId)
+                    jobId = string(data.jobId);
+                end
+                answer = struct('url', string(data.url), 'jobId', jobId);
             else
                 if isprop(apiResponse.Body, 'Data')
                     answer = apiResponse.Body.Data;

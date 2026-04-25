@@ -209,10 +209,12 @@ function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id
         if options.Verbose, disp('Getting upload URL for zipped batch...'); end
 
         upload_url = '';
+        upload_jobId = "";
         for r=1:numberRetries
-            [success, upload_url_or_err] = ndi.cloud.api.files.getFileCollectionUploadURL(dataset_id);
+            [success, upload_info_or_err] = ndi.cloud.api.files.getFileCollectionUploadURL(dataset_id);
             if success
-                upload_url = upload_url_or_err;
+                upload_url = upload_info_or_err.url;
+                upload_jobId = upload_info_or_err.jobId;
                 break;
             else
                 if options.Verbose
@@ -223,13 +225,14 @@ function [success, msg, file_count] = zipAndUploadBatch(files_to_zip, dataset_id
         end
 
         if ~success
-            msg = sprintf('Failed to get upload URL after %d attempts: %s', numberRetries, upload_url_or_err.message);
+            msg = sprintf('Failed to get upload URL after %d attempts: %s', numberRetries, upload_info_or_err.message);
             error(msg);
         end
-        
+
         if options.Verbose, disp('Uploading zip archive...'); end
         for r=1:numberRetries
-            [success, err] = ndi.cloud.api.files.putFiles(upload_url, zip_file);
+            [success, err] = ndi.cloud.api.files.putFiles(upload_url, zip_file, ...
+                'jobId', upload_jobId);
             if success
                 break;
             else
