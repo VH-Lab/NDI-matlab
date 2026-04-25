@@ -59,21 +59,63 @@ classdef WaitForAllBulkUploads < ndi.cloud.api.call
             apiResponse = [];
             apiURL = [];
 
+            verbose = ndi.cloud.api.implementation.files.WaitForAllBulkUploads.debugEnabled();
+            if verbose
+                fprintf(['[waitForAllBulkUploads] START datasetID=%s timeout=%.1fs ', ...
+                    'initialInterval=%.2fs maxInterval=%.2fs backoffFactor=%.2f ', ...
+                    'requireAllComplete=%d\n'], ...
+                    this.cloudDatasetID, this.timeout, this.initialInterval, ...
+                    this.maxInterval, this.backoffFactor, this.requireAllComplete);
+            end
+
             deadline = tic;
             interval = this.initialInterval;
+            pollCount = 0;
 
             while true
+                pollCount = pollCount + 1;
+                pollT0 = tic;
                 [ok, status, apiResponse, apiURL] = ndi.cloud.api.files.listActiveBulkUploads(...
                     this.cloudDatasetID, 'state', 'active');
+                pollDur = toc(pollT0);
+
+                if verbose
+                    nJobs = NaN;
+                    if isstruct(status) && isfield(status, 'jobs')
+                        nJobs = numel(status.jobs);
+                    end
+                    fprintf(['[waitForAllBulkUploads] poll #%d ok=%d nActiveJobs=%g ', ...
+                        'apiCallTime=%.3fs elapsed=%.2fs url=%s\n'], ...
+                        pollCount, ok, nJobs, pollDur, toc(deadline), string(apiURL));
+                    if isstruct(status) && isfield(status, 'jobs') && ~isempty(status.jobs)
+                        ndi.cloud.api.implementation.files.WaitForAllBulkUploads.printJobs(status.jobs);
+                    end
+                end
 
                 if ok && isstruct(status) && isfield(status, 'jobs')
                     answer = status;
                     if isempty(status.jobs)
                         % Active set drained. Decide success based on
                         % whether any jobs ended in 'failed'.
+                        if verbose
+                            fprintf(['[waitForAllBulkUploads] active set drained after ', ...
+                                '%.2fs (poll #%d)\n'], toc(deadline), pollCount);
+                        end
                         if this.requireAllComplete
+                            if verbose
+                                fprintf('[waitForAllBulkUploads] checking failed-job list...\n');
+                            end
+                            failedT0 = tic;
                             [okF, failedList, respF, urlF] = ndi.cloud.api.files.listActiveBulkUploads(...
                                 this.cloudDatasetID, 'state', 'failed');
+                            if verbose
+                                nF = NaN;
+                                if isstruct(failedList) && isfield(failedList, 'jobs')
+                                    nF = numel(failedList.jobs);
+                                end
+                                fprintf(['[waitForAllBulkUploads] failed-list ok=%d nFailed=%g ', ...
+                                    'apiCallTime=%.3fs\n'], okF, nF, toc(failedT0));
+                            end
                             if okF
                                 apiResponse = respF;
                                 apiURL = urlF;
@@ -82,6 +124,11 @@ classdef WaitForAllBulkUploads < ndi.cloud.api.call
                                     answer = struct('state', 'failed', ...
                                                     'jobs', failedList.jobs, ...
                                                     'elapsed', toc(deadline));
+                                    if verbose
+                                        fprintf(['[waitForAllBulkUploads] RETURN state=failed ', ...
+                                            'elapsed=%.2fs nFailed=%d\n'], ...
+                                            answer.elapsed, numel(failedList.jobs));
+                                    end
                                     return;
                                 end
                             end
@@ -90,8 +137,15 @@ classdef WaitForAllBulkUploads < ndi.cloud.api.call
                         answer = struct('state', 'complete', ...
                                         'jobs', [], ...
                                         'elapsed', toc(deadline));
+                        if verbose
+                            fprintf(['[waitForAllBulkUploads] RETURN state=complete ', ...
+                                'elapsed=%.2fs polls=%d\n'], answer.elapsed, pollCount);
+                        end
                         return;
                     end
+                elseif verbose
+                    fprintf(['[waitForAllBulkUploads] poll #%d returned non-OK or ', ...
+                        'malformed status; will retry\n'], pollCount);
                 end
 
                 elapsed = toc(deadline);
@@ -103,15 +157,98 @@ classdef WaitForAllBulkUploads < ndi.cloud.api.call
                     else
                         answer = struct('state', 'timeout', 'elapsed', elapsed, 'jobs', []);
                     end
+                    if verbose
+                        nJobs = 0;
+                        if isstruct(answer) && isfield(answer, 'jobs') && ~isempty(answer.jobs)
+                            nJobs = numel(answer.jobs);
+                        end
+                        fprintf(['[waitForAllBulkUploads] RETURN state=timeout ', ...
+                            'elapsed=%.2fs polls=%d remainingActiveJobs=%d\n'], ...
+                            elapsed, pollCount, nJobs);
+                    end
                     return;
                 end
 
                 remaining = this.timeout - elapsed;
                 sleepFor = min([interval, this.maxInterval, remaining]);
+                if verbose
+                    fprintf(['[waitForAllBulkUploads] sleeping %.2fs (interval=%.2fs ', ...
+                        'maxInterval=%.2fs remaining=%.2fs)\n'], ...
+                        sleepFor, interval, this.maxInterval, remaining);
+                end
                 pause(sleepFor);
 
                 interval = min(interval * this.backoffFactor, this.maxInterval);
             end
+        end
+    end
+
+    methods (Static, Access = private)
+        function tf = debugEnabled()
+            %DEBUGENABLED Toggle verbose logging via env var or global.
+            %
+            %   Set NDI_DEBUG_WAITBULK=1 in the environment, or set the
+            %   global variable NDI_DEBUG_WAITBULK to true, to enable
+            %   per-poll verbose output. Defaults to true while we are
+            %   actively diagnosing slow sync tests.
+            tf = true;
+            envVal = getenv('NDI_DEBUG_WAITBULK');
+            if ~isempty(envVal)
+                tf = ~ismember(lower(string(envVal)), ["0","false","off","no",""]);
+                return;
+            end
+            try
+                global NDI_DEBUG_WAITBULK %#ok<GVMIS,TLEV>
+                if ~isempty(NDI_DEBUG_WAITBULK)
+                    tf = logical(NDI_DEBUG_WAITBULK);
+                end
+            catch
+            end
+        end
+
+        function printJobs(jobs)
+            %PRINTJOBS Best-effort one-line-per-job summary.
+            try
+                if iscell(jobs)
+                    for i = 1:numel(jobs)
+                        ndi.cloud.api.implementation.files.WaitForAllBulkUploads.printOneJob(i, jobs{i});
+                    end
+                elseif isstruct(jobs)
+                    for i = 1:numel(jobs)
+                        ndi.cloud.api.implementation.files.WaitForAllBulkUploads.printOneJob(i, jobs(i));
+                    end
+                else
+                    fprintf('[waitForAllBulkUploads]   <unrecognized jobs container: %s>\n', class(jobs));
+                end
+            catch ME
+                fprintf('[waitForAllBulkUploads]   <printJobs failed: %s>\n', ME.message);
+            end
+        end
+
+        function printOneJob(idx, job)
+            jobId = '?';
+            jobState = '?';
+            jobProgress = '';
+            if isstruct(job) || isobject(job)
+                fns = {};
+                try
+                    fns = fieldnames(job);
+                catch
+                end
+                if any(strcmp(fns, 'id')); jobId = string(job.id); end
+                if any(strcmp(fns, '_id')); jobId = string(job.('_id')); end
+                if any(strcmp(fns, 'jobId')); jobId = string(job.jobId); end
+                if any(strcmp(fns, 'state')); jobState = string(job.state); end
+                if any(strcmp(fns, 'status')); jobState = string(job.status); end
+                if any(strcmp(fns, 'progress'))
+                    try
+                        jobProgress = sprintf(' progress=%s', jsonencode(job.progress));
+                    catch
+                    end
+                end
+            end
+            fprintf('[waitForAllBulkUploads]   job[%d] id=%s state=%s%s\n', ...
+                idx, jobId, jobState, jobProgress);
         end
     end
 end
