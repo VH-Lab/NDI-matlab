@@ -119,15 +119,14 @@ classdef FilesDifficult < matlab.unittest.TestCase
             end
 
             [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath, ...
-                'jobId', uploadJobId);
+                'jobId', uploadJobId, ...
+                'waitForCompletion', true, ...
+                'timeout', 180);
             narrative(end+1) = "Attempted to upload zip file to " + string(url_put) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
-            testCase.verifyTrue(b_put, "Bulk file upload (PUT request) failed. " + msg_put);
+            testCase.verifyTrue(b_put, "Bulk file upload (PUT + extraction wait) failed. " + msg_put);
             if ~b_put, return; end
-            narrative(end+1) = "Bulk upload successful." + " at " + string(datetime('now','TimeZone','UTC'));
-
-            narrative(end+1) = "Pausing for 20 seconds to allow for server-side processing." + " at " + string(datetime('now','TimeZone','UTC'));
-            pause(20); % Give server time to process the zip file
+            narrative(end+1) = "Bulk upload + server-side extraction complete." + " at " + string(datetime('now','TimeZone','UTC'));
 
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file." + " at " + string(datetime('now','TimeZone','UTC'));

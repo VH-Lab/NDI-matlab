@@ -396,5 +396,123 @@ classdef bulkUploadsJobInfoTest < matlab.unittest.TestCase
 
             testCase.Narrative = narrative;
         end
+
+        function testWaitForAllBulkUploadsOnFreshDatasetReturnsImmediately(testCase)
+            % A dataset that has never had a bulk upload has no active jobs
+            % and no failed jobs. waitForAllBulkUploads must return b=true
+            % almost immediately rather than spending the timeout asleep.
+            testCase.Narrative = "Begin testWaitForAllBulkUploadsOnFreshDatasetReturnsImmediately";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "Calling waitForAllBulkUploads on a brand-new dataset (no uploads yet).";
+            t0 = tic;
+            [b, ans_wait, resp, url] = ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID, ...
+                'timeout', 30, 'initialInterval', 0.5, 'maxInterval', 2);
+            elapsed = toc(t0);
+            narrative(end+1) = "Wait returned after " + elapsed + "s. Last URL polled: " + string(url);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_wait, resp, url);
+
+            narrative(end+1) = "Testing: returns b=true (no active jobs, no failed jobs).";
+            testCase.verifyTrue(b, "waitForAllBulkUploads did not return success on a fresh dataset. " + msg);
+
+            narrative(end+1) = "Testing: returns quickly (<5s wall clock); fresh dataset must not consume the timeout.";
+            testCase.verifyLessThan(elapsed, 5, ...
+                "waitForAllBulkUploads spent too long on a fresh dataset. " + msg);
+
+            if isstruct(ans_wait) && isfield(ans_wait, 'state')
+                narrative(end+1) = "Testing: final state is 'complete'.";
+                testCase.verifyEqual(string(ans_wait.state), "complete", ...
+                    "waitForAllBulkUploads on a fresh dataset returned an unexpected state '" + string(ans_wait.state) + "'. " + msg);
+            end
+
+            testCase.Narrative = narrative;
+        end
+
+        function testWaitForAllBulkUploadsDrivesActiveJobToComplete(testCase)
+            % End-to-end happy path: provision a job, PUT a real zip,
+            % waitForAllBulkUploads must drive the active set to empty
+            % before the timeout and report state='complete'.
+            testCase.Narrative = "Begin testWaitForAllBulkUploadsDrivesActiveJobToComplete";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "STEP 1: Provisioning a bulk upload URL (creates a queued job).";
+            [info, ~] = testCase.createBulkJob(narrative);
+            narrative(end+1) = "Job created with jobId=" + info.jobId + ".";
+
+            narrative(end+1) = "STEP 2: Building a small zip and PUTting it (no per-call wait).";
+            [tempFolder, zipFilePath, ~] = testCase.makeSmallZip(2);
+            narrative(end+1) = "Zip archive created at " + zipFilePath + " inside " + tempFolder.Folder + ".";
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(info.url, zipFilePath, ...
+                'jobId', info.jobId);
+            msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
+            testCase.verifyTrue(b_put, "PUT of zip archive failed; cannot exercise waitForAllBulkUploads. " + msg_put);
+            if ~b_put, testCase.Narrative = narrative; return; end
+
+            narrative(end+1) = "STEP 3: Calling waitForAllBulkUploads with timeout=120, initialInterval=0.5, maxInterval=5.";
+            [b, ans_wait, resp, url] = ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID, ...
+                'timeout', 120, 'initialInterval', 0.5, 'maxInterval', 5);
+            narrative(end+1) = "Last poll URL was " + string(url);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_wait, resp, url);
+
+            testCase.verifyTrue(b, "waitForAllBulkUploads did not drive the active set to empty. " + msg);
+            if ~b, testCase.Narrative = narrative; return; end
+
+            narrative(end+1) = "Testing: final answer struct has state='complete'.";
+            testCase.verifyTrue(isstruct(ans_wait) && isfield(ans_wait, 'state'), ...
+                "waitForAllBulkUploads final answer is not a struct with 'state'. " + msg);
+            if isstruct(ans_wait) && isfield(ans_wait, 'state')
+                testCase.verifyEqual(string(ans_wait.state), "complete", ...
+                    "waitForAllBulkUploads returned b=true but final state was '" + string(ans_wait.state) + "'. " + msg);
+            end
+
+            narrative(end+1) = "STEP 4: Re-asking listActiveBulkUploads(state='active') to confirm the active set is empty.";
+            [b_chk, ans_chk, resp_chk, url_chk] = ndi.cloud.api.files.listActiveBulkUploads(testCase.DatasetID);
+            msg_chk = ndi.unittest.cloud.APIMessage(narrative, b_chk, ans_chk, resp_chk, url_chk);
+            testCase.verifyTrue(b_chk, "Follow-up listActiveBulkUploads call failed. " + msg_chk);
+            if b_chk && isstruct(ans_chk) && isfield(ans_chk, 'jobs')
+                testCase.verifyEmpty(ans_chk.jobs, ...
+                    "Active set was reportedly drained but the follow-up list is non-empty. " + msg_chk);
+            end
+
+            testCase.Narrative = narrative;
+        end
+
+        function testWaitForAllBulkUploadsTimesOutWhenJobNeverProgresses(testCase)
+            % A queued job that never receives a zip stays active forever.
+            % Pointing waitForAllBulkUploads at such a dataset must respect
+            % the timeout and return b=false within roughly the deadline,
+            % NOT loop forever.
+            testCase.Narrative = "Begin testWaitForAllBulkUploadsTimesOutWhenJobNeverProgresses";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "STEP 1: Provisioning a bulk upload URL but deliberately not PUTting any zip.";
+            [info, ~] = testCase.createBulkJob(narrative);
+            narrative(end+1) = "Job created with jobId=" + info.jobId + " and will remain queued.";
+
+            narrative(end+1) = "STEP 2: Calling waitForAllBulkUploads with timeout=4, initialInterval=0.5, maxInterval=2.";
+            t0 = tic;
+            [b, ans_wait, resp, url] = ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID, ...
+                'timeout', 4, 'initialInterval', 0.5, 'maxInterval', 2);
+            elapsed = toc(t0);
+            narrative(end+1) = "Wait returned after " + elapsed + "s. Last URL polled: " + string(url);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_wait, resp, url);
+
+            narrative(end+1) = "Testing: waitForAllBulkUploads returned b=false (active set never drained).";
+            testCase.verifyFalse(b, "waitForAllBulkUploads reported success while a queued job remains active. " + msg);
+
+            narrative(end+1) = "Testing: total elapsed time is at least the timeout (4s) and not absurdly long.";
+            testCase.verifyGreaterThanOrEqual(elapsed, 3.5, ...
+                "waitForAllBulkUploads returned before its timeout. " + msg);
+            testCase.verifyLessThan(elapsed, 30, ...
+                "waitForAllBulkUploads took an unreasonably long time to time out. " + msg);
+
+            if isstruct(ans_wait) && isfield(ans_wait, 'state')
+                narrative(end+1) = "Testing: final state is 'timeout'.";
+                testCase.verifyEqual(string(ans_wait.state), "timeout", ...
+                    "waitForAllBulkUploads timed out but reported state '" + string(ans_wait.state) + "'. " + msg);
+            end
+
+            testCase.Narrative = narrative;
+        end
     end
 end

@@ -58,6 +58,15 @@ function [success, errorMessage, report] = uploadNew(ndiDataset, syncOptions)
             fprintf('Using Cloud Dataset ID: %s\n', cloudDatasetId);
         end
 
+        % Wait for any in-flight bulk file extractions before inventorying
+        % so the remote document/file list we're about to read is stable.
+        if ~syncOptions.DryRun
+            if syncOptions.Verbose
+                fprintf('Waiting for any in-flight bulk file uploads to finish before inventorying...\n');
+            end
+            ndi.cloud.api.files.waitForAllBulkUploads(cloudDatasetId);
+        end
+
         % 1. Read sync index
         syncIndex = ndi.cloud.sync.internal.index.readSyncIndex(ndiDataset);
         if isempty(syncIndex) || isempty(syncIndex.remoteDocumentIdsLastSync)

@@ -71,7 +71,11 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             [success_upload] = ndi.cloud.uploadDataset(testCase.LocalDataset);
             testCase.fatalAssertTrue(success_upload, "Failed to upload test dataset to cloud.");
 
-            pause(10); % allow server to process
+            % Wait for server-side bulk extraction of the just-uploaded
+            % files to finish before any test reads them back. Without
+            % this, listFiles can report uploaded=true while the per-file
+            % objects in the upload bucket don't yet exist (issue #755).
+            ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
             testCase.addTeardown(@() testCase.cleanupCloudDataset());
         end
@@ -139,7 +143,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
 
             % Re-upload dataset to include doc3
             ndi.cloud.uploadDataset(testCase.LocalDataset);
-            pause(10);
+            ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
             destFolder = fullfile(testCase.LocalDataset.path, 'download_test_dep');
             mkdir(destFolder);

@@ -62,6 +62,17 @@ function [success, errorMessage, report] = mirrorToRemote(ndiDataset, syncOption
             fprintf('Using Cloud Dataset ID: %s\n', cloudDatasetId);
         end
 
+        % Wait for any in-flight bulk file extractions before inventorying.
+        % Without this, the inventory below can race the worker that
+        % populates per-file objects and skip files that look uploaded
+        % (uploaded=true) but whose extracted objects aren't there yet.
+        if ~syncOptions.DryRun
+            if syncOptions.Verbose
+                fprintf('Waiting for any in-flight bulk file uploads to finish before inventorying...\n');
+            end
+            ndi.cloud.api.files.waitForAllBulkUploads(cloudDatasetId);
+        end
+
         % --- Phase 1: Get Initial States ---
         [initialLocalDocuments, initialLocalDocumentIds] = ndi.cloud.sync.internal.listLocalDocuments(ndiDataset);
         initialRemoteDocumentIdMap = ndi.cloud.sync.internal.listRemoteDocumentIds(cloudDatasetId); % Nx2 table: ndiId, apiId
