@@ -347,11 +347,11 @@ classdef DatasetsTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_publish, publish_message);
             narrative(end+1) = "Dataset published successfully.";
 
-            % --- 3.5 Verify publication status ---
-            narrative(end+1) = "Preparing to get dataset info to verify publication status.";
-            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            % --- 3.5 Verify publication status by polling for isPublished=true ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.waitForPublished.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.waitForPublished(cloudDatasetID);
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status. " + msg_get_content);
+            testCase.verifyTrue(b_get, "Timed out waiting for isPublished=true. " + msg_get_content);
 
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
@@ -373,11 +373,11 @@ classdef DatasetsTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_unpublish, unpublish_message);
             narrative(end+1) = "Dataset unpublished successfully.";
 
-            % --- 4.5 Verify un-publication status ---
-            narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
-            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            % --- 4.5 Verify un-publication status by polling for isPublished=false ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.waitForUnpublished.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.waitForUnpublished(cloudDatasetID);
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status. " + msg_get_content);
+            testCase.verifyTrue(b_get, "Timed out waiting for isPublished=false. " + msg_get_content);
 
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
@@ -520,11 +520,11 @@ classdef DatasetsTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_publish, publish_message);
             narrative(end+1) = "Dataset published successfully.";
 
-            % --- 3.5 Verify publication status ---
-            narrative(end+1) = "Preparing to get dataset info to verify publication status.";
-            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            % --- 3.5 Verify publication status by polling for isPublished=true ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.waitForPublished.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.waitForPublished(cloudDatasetID);
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify publication status. " + msg_get_content);
+            testCase.verifyTrue(b_get, "Timed out waiting for isPublished=true. " + msg_get_content);
 
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is true.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
@@ -546,11 +546,11 @@ classdef DatasetsTest < matlab.unittest.TestCase
             testCase.verifyTrue(b_unpublish, unpublish_message);
             narrative(end+1) = "Dataset unpublished successfully.";
 
-            % --- 4.5 Verify un-publication status ---
-            narrative(end+1) = "Preparing to get dataset info to verify un-publication status.";
-            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
+            % --- 4.5 Verify un-publication status by polling for isPublished=false ---
+            narrative(end+1) = "Preparing to call ndi.cloud.api.datasets.waitForUnpublished.";
+            [b_get, answer_get, resp_get, url_get] = ndi.cloud.api.datasets.waitForUnpublished(cloudDatasetID);
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
-            testCase.verifyTrue(b_get, "Failed to get dataset to verify un-publication status. " + msg_get_content);
+            testCase.verifyTrue(b_get, "Timed out waiting for isPublished=false. " + msg_get_content);
 
             narrative(end+1) = "Testing: Verifying the 'isPublished' flag is false.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, answer_get, resp_get, url_get);
