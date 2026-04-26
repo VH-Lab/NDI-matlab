@@ -194,9 +194,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_pub, ans_pub, resp_pub, url_pub] = ndi.cloud.api.datasets.publishDataset(testCase.DatasetID);
             msg_pub = ndi.unittest.cloud.APIMessage(narrative, b_pub, ans_pub, resp_pub, url_pub);
             testCase.fatalAssertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
-            narrative(end+1) = "Dataset published. Waiting 30 seconds for processing...";
-
-            pause(30);
+            narrative(end+1) = "Dataset published. Waiting for isPublished flag to flip to true...";
+            [b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub] = ndi.cloud.api.datasets.waitForPublished(testCase.DatasetID);
+            msg_wait_pub = ndi.unittest.cloud.APIMessage(narrative, b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub);
+            testCase.fatalAssertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
+            narrative(end+1) = "Dataset isPublished is now true.";
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
             [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -244,7 +246,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_unpub, ans_unpub, resp_unpub, url_unpub] = ndi.cloud.api.datasets.unpublishDataset(testCase.DatasetID);
             msg_unpub = ndi.unittest.cloud.APIMessage(narrative, b_unpub, ans_unpub, resp_unpub, url_unpub);
             testCase.verifyTrue(b_unpub, "Failed to unpublish dataset. " + msg_unpub);
-            narrative(end+1) = "Dataset unpublished successfully.";
+            narrative(end+1) = "Unpublish accepted. Waiting for isPublished flag to flip to false...";
+            [b_wait_unpub, ans_wait_unpub, resp_wait_unpub, url_wait_unpub] = ndi.cloud.api.datasets.waitForUnpublished(testCase.DatasetID);
+            msg_wait_unpub = ndi.unittest.cloud.APIMessage(narrative, b_wait_unpub, ans_wait_unpub, resp_wait_unpub, url_wait_unpub);
+            testCase.verifyTrue(b_wait_unpub, "Timed out waiting for isPublished=false. " + msg_wait_unpub);
+            narrative(end+1) = "Dataset isPublished is now false.";
 
             testCase.Narrative = narrative;
         end
@@ -347,9 +353,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_pub, ans_pub, resp_pub, url_pub] = ndi.cloud.api.datasets.publishDataset(testCase.DatasetID);
             msg_pub = ndi.unittest.cloud.APIMessage(narrative, b_pub, ans_pub, resp_pub, url_pub);
             testCase.fatalAssertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
-            narrative(end+1) = "Dataset published. Waiting 30 seconds for processing...";
-
-            pause(30);
+            narrative(end+1) = "Dataset published. Waiting for isPublished flag to flip to true...";
+            [b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub] = ndi.cloud.api.datasets.waitForPublished(testCase.DatasetID);
+            msg_wait_pub = ndi.unittest.cloud.APIMessage(narrative, b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub);
+            testCase.fatalAssertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
+            narrative(end+1) = "Dataset isPublished is now true.";
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
             [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -397,7 +405,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_unpub, ans_unpub, resp_unpub, url_unpub] = ndi.cloud.api.datasets.unpublishDataset(testCase.DatasetID);
             msg_unpub = ndi.unittest.cloud.APIMessage(narrative, b_unpub, ans_unpub, resp_unpub, url_unpub);
             testCase.verifyTrue(b_unpub, "Failed to unpublish dataset. " + msg_unpub);
-            narrative(end+1) = "Dataset unpublished successfully.";
+            narrative(end+1) = "Unpublish accepted. Waiting for isPublished flag to flip to false...";
+            [b_wait_unpub, ans_wait_unpub, resp_wait_unpub, url_wait_unpub] = ndi.cloud.api.datasets.waitForUnpublished(testCase.DatasetID);
+            msg_wait_unpub = ndi.unittest.cloud.APIMessage(narrative, b_wait_unpub, ans_wait_unpub, resp_wait_unpub, url_wait_unpub);
+            testCase.verifyTrue(b_wait_unpub, "Timed out waiting for isPublished=false. " + msg_wait_unpub);
+            narrative(end+1) = "Dataset isPublished is now false.";
 
             testCase.Narrative = narrative;
         end
@@ -507,9 +519,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_pub, ans_pub, resp_pub, url_pub] = ndi.cloud.api.datasets.publishDataset(testCase.DatasetID);
             msg_pub = ndi.unittest.cloud.APIMessage(narrative, b_pub, ans_pub, resp_pub, url_pub);
             testCase.fatalAssertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
-            narrative(end+1) = "Dataset published. Waiting 30 seconds for processing...";
-
-            pause(30);
+            narrative(end+1) = "Dataset published. Waiting for isPublished flag to flip to true...";
+            [b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub] = ndi.cloud.api.datasets.waitForPublished(testCase.DatasetID);
+            msg_wait_pub = ndi.unittest.cloud.APIMessage(narrative, b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub);
+            testCase.fatalAssertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
+            narrative(end+1) = "Dataset isPublished is now true.";
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
             [b_docs, ans_docs, resp_docs, url_docs] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
@@ -557,7 +571,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             [b_unpub, ans_unpub, resp_unpub, url_unpub] = ndi.cloud.api.datasets.unpublishDataset(testCase.DatasetID);
             msg_unpub = ndi.unittest.cloud.APIMessage(narrative, b_unpub, ans_unpub, resp_unpub, url_unpub);
             testCase.verifyTrue(b_unpub, "Failed to unpublish dataset. " + msg_unpub);
-            narrative(end+1) = "Dataset unpublished successfully.";
+            narrative(end+1) = "Unpublish accepted. Waiting for isPublished flag to flip to false...";
+            [b_wait_unpub, ans_wait_unpub, resp_wait_unpub, url_wait_unpub] = ndi.cloud.api.datasets.waitForUnpublished(testCase.DatasetID);
+            msg_wait_unpub = ndi.unittest.cloud.APIMessage(narrative, b_wait_unpub, ans_wait_unpub, resp_wait_unpub, url_wait_unpub);
+            testCase.verifyTrue(b_wait_unpub, "Timed out waiting for isPublished=false. " + msg_wait_unpub);
+            narrative(end+1) = "Dataset isPublished is now false.";
 
             testCase.Narrative = narrative;
         end
