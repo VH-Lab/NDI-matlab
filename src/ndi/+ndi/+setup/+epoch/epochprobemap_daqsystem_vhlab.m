@@ -105,13 +105,13 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 if endsWith([localfile ext], trigger_suffix)
                     % A TSV stimulus trigger log is used by both vhtaste_bpod
                     % (intan-based) and vhajbpod_np (NI-DAQ on Neuropixels GLX).
-                    % Distinguish them by checking two directory levels above
+                    % Distinguish them by checking one directory level above
                     % the TSV: if any .rhd file is present, this is an Intan
                     % (vhtaste_bpod) recording; otherwise it is vhajbpod_np.
                     devicename = 'vhajbpod_np';
-                    two_up = fileparts(fileparts(filepath));
-                    if ~isempty(two_up) && isfolder(two_up)
-                        rhd_listing = dir(fullfile(two_up, '*.rhd'));
+                    one_up = fileparts(filepath);
+                    if ~isempty(one_up) && isfolder(one_up)
+                        rhd_listing = dir(fullfile(one_up, '*.rhd'));
                         if ~isempty(rhd_listing)
                             devicename = 'vhtaste_bpod';
                         end
