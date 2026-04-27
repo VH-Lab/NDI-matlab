@@ -39,13 +39,15 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %   See also: ndi.gui.profileEditor, ndi.preferences, ndi.ido,
 %             ndi.cloud.logout
 
-    properties (Constant, Access = private)
+    properties (Constant)
         % Filename - JSON file holding the profile list (no passwords).
         Filename = fullfile(prefdir, 'NDI_Cloud_Profiles.json')
 
         % SecretsFilename - AES backend's ciphertext file.
         SecretsFilename = fullfile(prefdir, 'NDI_Cloud_Secrets.json')
+    end
 
+    properties (Constant, Access = private)
         % SecretKeyPrefix - prefix used for every per-profile secret key.
         SecretKeyPrefix = 'NDI Cloud '
     end
@@ -511,6 +513,13 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         function path = filename()
         %NDI.CLOUD.PROFILE.FILENAME Return the JSON profile-list path.
             path = ndi.cloud.profile.getSingleton().Filename;
+        end
+
+        function path = secretsFilename()
+        %NDI.CLOUD.PROFILE.SECRETSFILENAME Return the AES secrets file path.
+        %   The vault and memory backends do not use this file; it is
+        %   exposed so admins and tests can inspect or back it up.
+            path = ndi.cloud.profile.getSingleton().SecretsFilename;
         end
 
         function name = backend()
