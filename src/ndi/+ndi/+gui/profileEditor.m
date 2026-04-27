@@ -3,10 +3,10 @@ function fig = profileEditor(options)
 %
 %   NDI.GUI.PROFILEEDITOR opens a window for managing the NDI Cloud
 %   login profiles held by ndi.cloud.profile. The editor exposes the
-%   common operations (Add, Set Current, Change Password, Remove) and
-%   refreshes from the singleton after every change. Stage is
-%   intentionally not shown — it is a developer-only field, set from
-%   the command line via ndi.cloud.profile.setStage.
+%   common operations and shows two selection markers: the active
+%   (per-session) Current profile and the persisted Default. Stage is
+%   intentionally not surfaced — it is a developer-only field, set
+%   from the command line via ndi.cloud.profile.setStage.
 %
 %   Syntax:
 %       ndi.gui.profileEditor()
@@ -15,7 +15,7 @@ function fig = profileEditor(options)
 %
 %   Name-value arguments:
 %       Position - 1x4 double, the figure Position in pixels.
-%                  Default [120 120 720 420].
+%                  Default [120 120 820 440].
 %
 %   Outputs:
 %       fig      - handle of the created uifigure (suppressed when
@@ -23,26 +23,34 @@ function fig = profileEditor(options)
 %
 %   Layout:
 %       * A uitable lists every profile with columns Current /
-%         Nickname / Email / UID. The current profile is marked with
-%         an asterisk in the Current column.
-%       * The bottom row holds Add..., Set Current, Change
-%         Password..., Remove, and Close buttons.
+%         Default / Nickname / Email / UID. The current profile is
+%         marked with an asterisk in the Current column; the
+%         persisted default is marked with an asterisk in the
+%         Default column. A row may carry both markers.
+%       * The bottom row holds Add..., Set Current, Set Default,
+%         Clear Default, Change Password..., Remove, and Close
+%         buttons.
 %
 %   Buttons:
 %       Add               - prompt for Nickname / Email / Password
 %                           and call ndi.cloud.profile.add.
 %       Set Current       - call ndi.cloud.profile.setCurrent for the
-%                           selected row.
+%                           selected row. Per-session only; not
+%                           written to disk.
+%       Set Default       - call ndi.cloud.profile.setDefault for the
+%                           selected row. Persisted to the JSON file
+%                           and applied as Current at the start of
+%                           every future MATLAB session.
+%       Clear Default     - call ndi.cloud.profile.clearDefault.
 %       Change Password   - prompt for a new password and call
 %                           ndi.cloud.profile.setPassword. The user
 %                           never sees the underlying secrets key.
 %       Remove            - confirm, then call
 %                           ndi.cloud.profile.remove (which also
 %                           deletes the secret from the active
-%                           backend).
-%       Close             - dispose the window. Pending edits go
-%                           through the API as they happen, so no
-%                           explicit Save step is needed here.
+%                           backend and clears Current/Default if
+%                           they pointed to the removed profile).
+%       Close             - dispose the window.
 %
 %   Implementation notes:
 %       Plain uifigure built imperatively from local functions, like
@@ -57,7 +65,7 @@ function fig = profileEditor(options)
 %   See also: ndi.cloud.profile, ndi.gui.preferencesEditor
 
     arguments
-        options.Position (1,4) double = [120 120 720 420]
+        options.Position (1,4) double = [120 120 820 440]
     end
 
     fig = uifigure('Name', 'NDI Cloud Profiles', ...
@@ -77,15 +85,15 @@ function fig = profileEditor(options)
 
     profileTable = uitable(tablePanelGrid, ...
         'Tag',                   'ndiProfileTable', ...
-        'ColumnName',            {'Current', 'Nickname', 'Email', 'UID'}, ...
-        'ColumnEditable',        [false false false false], ...
-        'ColumnWidth',           {60, 160, 220, 'auto'}, ...
+        'ColumnName',            {'Current', 'Default', 'Nickname', 'Email', 'UID'}, ...
+        'ColumnEditable',        [false false false false false], ...
+        'ColumnWidth',           {60, 60, 160, 220, 'auto'}, ...
         'CellSelectionCallback', @onSelectionChanged);
     fig.UserData.Table = profileTable;
     refreshTable(fig);
 
-    buttonRow = uigridlayout(rootGrid, [1 6]);
-    buttonRow.ColumnWidth   = {'1x', 90, 110, 150, 90, 90};
+    buttonRow = uigridlayout(rootGrid, [1 8]);
+    buttonRow.ColumnWidth   = {'1x', 80, 100, 100, 110, 150, 80, 70};
     buttonRow.RowHeight     = {'1x'};
     buttonRow.Padding       = [0 0 0 0];
     buttonRow.ColumnSpacing = 6;
@@ -93,6 +101,8 @@ function fig = profileEditor(options)
     uilabel(buttonRow, 'Text', '');   % left spacer
     uibutton(buttonRow, 'Text', 'Add...',             'ButtonPushedFcn', @onAdd);
     uibutton(buttonRow, 'Text', 'Set Current',        'ButtonPushedFcn', @onSetCurrent);
+    uibutton(buttonRow, 'Text', 'Set Default',        'ButtonPushedFcn', @onSetDefault);
+    uibutton(buttonRow, 'Text', 'Clear Default',      'ButtonPushedFcn', @onClearDefault);
     uibutton(buttonRow, 'Text', 'Change Password...', 'ButtonPushedFcn', @onChangePassword);
     uibutton(buttonRow, 'Text', 'Remove',             'ButtonPushedFcn', @onRemove);
     uibutton(buttonRow, 'Text', 'Close',              'ButtonPushedFcn', @onClose);
@@ -108,21 +118,17 @@ function refreshTable(fig)
     tbl      = fig.UserData.Table;
     profiles = ndi.cloud.profile.list();
     cur      = ndi.cloud.profile.getCurrent();
-    if isempty(cur)
-        currentUID = '';
-    else
-        currentUID = cur.UID;
-    end
-    rows = cell(numel(profiles), 4);
+    def      = ndi.cloud.profile.getDefault();
+    if isempty(cur);  curUID = ''; else; curUID = cur.UID; end
+    if isempty(def);  defUID = ''; else; defUID = def.UID; end
+
+    rows = cell(numel(profiles), 5);
     for i = 1:numel(profiles)
-        if strcmp(profiles(i).UID, currentUID)
-            rows{i, 1} = '*';
-        else
-            rows{i, 1} = '';
-        end
-        rows{i, 2} = profiles(i).Nickname;
-        rows{i, 3} = profiles(i).Email;
-        rows{i, 4} = profiles(i).UID;
+        if strcmp(profiles(i).UID, curUID); rows{i, 1} = '*'; else; rows{i, 1} = ''; end
+        if strcmp(profiles(i).UID, defUID); rows{i, 2} = '*'; else; rows{i, 2} = ''; end
+        rows{i, 3} = profiles(i).Nickname;
+        rows{i, 4} = profiles(i).Email;
+        rows{i, 5} = profiles(i).UID;
     end
     tbl.Data = rows;
 end
@@ -148,7 +154,7 @@ function uid = selectedUID(fig)
         uid = '';
         return;
     end
-    uid = tbl.Data{sel, 4};
+    uid = tbl.Data{sel, 5};
 end
 
 
@@ -191,6 +197,37 @@ function onSetCurrent(src, ~)
         ndi.cloud.profile.setCurrent(uid);
     catch ME
         uialert(fig, ME.message, 'Set Current failed');
+        return;
+    end
+    refreshTable(fig);
+end
+
+
+function onSetDefault(src, ~)
+%ONSETDEFAULT Set Default button: call ndi.cloud.profile.setDefault.
+    fig = ancestor(src, 'figure');
+    uid = selectedUID(fig);
+    if isempty(uid)
+        uialert(fig, 'Select a profile first.', 'No selection');
+        return;
+    end
+    try
+        ndi.cloud.profile.setDefault(uid);
+    catch ME
+        uialert(fig, ME.message, 'Set Default failed');
+        return;
+    end
+    refreshTable(fig);
+end
+
+
+function onClearDefault(src, ~)
+%ONCLEARDEFAULT Clear Default button: call ndi.cloud.profile.clearDefault.
+    fig = ancestor(src, 'figure');
+    try
+        ndi.cloud.profile.clearDefault();
+    catch ME
+        uialert(fig, ME.message, 'Clear Default failed');
         return;
     end
     refreshTable(fig);
