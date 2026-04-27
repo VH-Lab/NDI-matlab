@@ -18,7 +18,25 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %       memory - in-memory containers.Map. Reserved for tests; use
 %                ndi.cloud.profile.useBackend('memory') to opt in.
 %
-%   Profile metadata (everything except passwords) is persisted to:
+%   Current vs default profile
+%   --------------------------
+%   The class distinguishes between two notions of "selected":
+%
+%       CurrentUID  - the active profile for THIS MATLAB session.
+%                     Held in memory only; never persisted. This lets
+%                     two MATLAB instances run concurrently with
+%                     different active profiles without fighting each
+%                     other.
+%       DefaultUID  - the user's preferred profile, persisted to the
+%                     JSON file. At session start the constructor
+%                     copies a valid DefaultUID into CurrentUID, so
+%                     the next session opens with the same active
+%                     profile by default.
+%
+%   The on-disk file holds {Profiles, DefaultUID}; CurrentUID never
+%   touches disk.
+%
+%   Profile metadata is persisted to:
 %
 %       fullfile(prefdir, 'NDI_Cloud_Profiles.json')
 %
@@ -30,8 +48,9 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %   Typical usage:
 %
 %       uid = ndi.cloud.profile.add('Lab account', 'me@lab.org', 'pw1');
-%       ndi.cloud.profile.setCurrent(uid);
-%       ndi.cloud.profile.switchProfile(uid);   % logout + setenv
+%       ndi.cloud.profile.setCurrent(uid);          % session only
+%       ndi.cloud.profile.setDefault(uid);          % persisted
+%       ndi.cloud.profile.switchProfile(uid);       % logout + setenv
 %
 %       devUid = ndi.cloud.profile.add('Dev', 'me@lab.org', 'pw2');
 %       ndi.cloud.profile.setStage(devUid, 'dev');
@@ -40,7 +59,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %             ndi.cloud.logout
 
     properties (Constant)
-        % Filename - JSON file holding the profile list (no passwords).
+        % Filename - JSON file holding profile list and DefaultUID.
         Filename = fullfile(prefdir, 'NDI_Cloud_Profiles.json')
 
         % SecretsFilename - AES backend's ciphertext file.
@@ -57,8 +76,12 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         % Fields: UID, Nickname, Email, Stage, PasswordSecret.
         Profiles struct
 
-        % CurrentUID - UID of the active profile, '' if none.
+        % CurrentUID - active profile for this session (in-memory only).
         CurrentUID char
+
+        % DefaultUID - preferred profile, persisted to disk; copied
+        % into CurrentUID at session start.
+        DefaultUID char
 
         % Backend - 'vault', 'aes', or 'memory'.
         Backend char
@@ -73,19 +96,27 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function obj = profile()
         %PROFILE Construct the singleton (called only by getSingleton).
-        %
-        %   Initialises an empty profile array, picks the secrets
-        %   backend (vault if available, else aes), then loads any
-        %   on-disk profile list. A missing file is the first-run
-        %   case and is silently tolerated.
             obj.Profiles   = ndi.cloud.profile.emptyProfiles();
             obj.CurrentUID = '';
+            obj.DefaultUID = '';
             obj.Backend    = ndi.cloud.profile.detectBackend();
             obj.loadFromDisk();
+            obj.adoptDefaultAsCurrent();
+        end
+
+        function adoptDefaultAsCurrent(obj)
+        %ADOPTDEFAULTASCURRENT Copy DefaultUID into CurrentUID if valid.
+            if isempty(obj.DefaultUID) || isempty(obj.Profiles)
+                return
+            end
+            if any(strcmp({obj.Profiles.UID}, obj.DefaultUID))
+                obj.CurrentUID = obj.DefaultUID;
+            end
         end
 
         function loadFromDisk(obj)
-        %LOADFROMDISK Read the profile list and current UID from JSON.
+        %LOADFROMDISK Read profiles and DefaultUID from JSON. CurrentUID
+        %is intentionally not persisted (per-session state).
             if ~isfile(obj.Filename); return; end
             try
                 txt = fileread(obj.Filename);
@@ -94,8 +125,8 @@ classdef profile < matlab.mixin.CustomDisplay & handle
                 if isfield(S, 'Profiles') && ~isempty(S.Profiles)
                     obj.Profiles = ndi.cloud.profile.normalizeProfiles(S.Profiles);
                 end
-                if isfield(S, 'CurrentUID')
-                    obj.CurrentUID = char(S.CurrentUID);
+                if isfield(S, 'DefaultUID')
+                    obj.DefaultUID = char(S.DefaultUID);
                 end
             catch ME
                 warning('NDI:cloud:profile:loadFailed', ...
@@ -105,9 +136,9 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function saveToDisk(obj)
-        %SAVETODISK Write the profile list and current UID to JSON.
+        %SAVETODISK Write profiles and DefaultUID. CurrentUID is omitted.
             S = struct('Profiles', obj.Profiles, ...
-                       'CurrentUID', obj.CurrentUID);
+                       'DefaultUID', obj.DefaultUID);
             try
                 txt = jsonencode(S, 'PrettyPrint', true);
                 fid = fopen(obj.Filename, 'w');
@@ -135,7 +166,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function setSecretInternal(obj, key, value)
-        %SETSECRETINTERNAL Backend-dispatched secret writer.
             switch obj.Backend
                 case 'vault'
                     setSecret(key, value);
@@ -148,7 +178,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function value = getSecretInternal(obj, key)
-        %GETSECRETINTERNAL Backend-dispatched secret reader.
             switch obj.Backend
                 case 'vault'
                     value = char(getSecret(key));
@@ -166,7 +195,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function removeSecretInternal(obj, key)
-        %REMOVESECRETINTERNAL Backend-dispatched secret deleter.
             switch obj.Backend
                 case 'vault'
                     if isSecret(key)
@@ -186,14 +214,11 @@ classdef profile < matlab.mixin.CustomDisplay & handle
     methods (Static, Access = private)
 
         function p = emptyProfiles()
-        %EMPTYPROFILES Empty struct array with the canonical fields.
             p = struct('UID', {}, 'Nickname', {}, 'Email', {}, ...
                        'Stage', {}, 'PasswordSecret', {});
         end
 
         function out = normalizeProfiles(in)
-        %NORMALIZEPROFILES Coerce a JSON-decoded payload into the canonical
-        %struct-array shape, supplying defaults for any missing field.
             out = ndi.cloud.profile.emptyProfiles();
             if isstruct(in)
                 arr = in;
@@ -220,7 +245,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function backend = detectBackend()
-        %DETECTBACKEND 'vault' if setSecret is available, else 'aes'.
             if ~isempty(which('setSecret')) ...
                     && ~isempty(which('getSecret')) ...
                     && ~isempty(which('isSecret'))
@@ -231,7 +255,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function key = aesKeyBytes()
-        %AESKEYBYTES First 16 bytes of SHA-256([hostname username 'NDI Cloud']).
             try
                 host = char(java.net.InetAddress.getLocalHost().getHostName());
             catch
@@ -246,8 +269,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function aesWriteSecret(filename, key, value)
-        %AESWRITESECRET Encrypt value under the per-machine key and store
-        %it in the AES JSON file under the given key.
             keyBytes = ndi.cloud.profile.aesKeyBytes();
             keySpec  = javax.crypto.spec.SecretKeySpec(keyBytes, 'AES');
             cipher   = javax.crypto.Cipher.getInstance('AES/CBC/PKCS5Padding');
@@ -267,7 +288,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function value = aesReadSecret(filename, key)
-        %AESREADSECRET Decrypt and return the secret stored under key.
             S = ndi.cloud.profile.readSecretsFile(filename);
             f = ndi.cloud.profile.fieldFor(key);
             if ~isfield(S, f)
@@ -287,7 +307,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function aesRemoveSecret(filename, key)
-        %AESREMOVESECRET Remove the entry for the given key.
             S = ndi.cloud.profile.readSecretsFile(filename);
             f = ndi.cloud.profile.fieldFor(key);
             if isfield(S, f)
@@ -316,7 +335,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function f = fieldFor(key)
-        %FIELDFOR Convert a free-form key into a legal MATLAB field name.
             f = matlab.lang.makeValidName(key, 'ReplacementStyle', 'underscore');
         end
 
@@ -331,10 +349,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function bytes = randomBytes(n)
-        %RANDOMBYTES Return n random bytes as an int8 row vector.
-        %   Used to generate the AES initialisation vector. MATLAB's
-        %   randi is sufficient here: an IV need only be unpredictable
-        %   per encryption, not cryptographically strong.
             bytes = int8(randi([-128, 127], 1, n));
         end
     end
@@ -366,13 +380,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function uid = add(nickname, email, password)
         %NDI.CLOUD.PROFILE.ADD Create a new profile and store its password.
-        %
-        %   UID = ADD(NICKNAME, EMAIL, PASSWORD) generates a new UID
-        %   via ndi.ido, persists the profile metadata to disk, stores
-        %   PASSWORD in the active secrets backend under the key
-        %   ['NDI Cloud ' UID], and returns the new UID. NICKNAME and
-        %   EMAIL need not be unique across profiles. Stage defaults to
-        %   'prod'; use setStage to change it.
             arguments
                 nickname (1,:) char
                 email    (1,:) char
@@ -395,6 +402,8 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function remove(uid)
         %NDI.CLOUD.PROFILE.REMOVE Delete a profile and its stored secret.
+        %If the removed profile was the current and/or default, both
+        %selections are cleared.
             arguments
                 uid (1,:) char
             end
@@ -406,33 +415,58 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             if strcmp(obj.CurrentUID, uid)
                 obj.CurrentUID = '';
             end
+            if strcmp(obj.DefaultUID, uid)
+                obj.DefaultUID = '';
+            end
             obj.saveToDisk();
         end
 
         function p = getCurrent()
         %NDI.CLOUD.PROFILE.GETCURRENT Return the active profile or [].
             obj = ndi.cloud.profile.getSingleton();
-            if isempty(obj.CurrentUID)
-                p = ndi.cloud.profile.emptyProfiles();
-                return;
-            end
-            mask = strcmp({obj.Profiles.UID}, obj.CurrentUID);
-            idx  = find(mask, 1, 'first');
-            if isempty(idx)
-                p = ndi.cloud.profile.emptyProfiles();
-            else
-                p = obj.Profiles(idx);
-            end
+            p = ndi.cloud.profile.profileForUID(obj, obj.CurrentUID);
         end
 
         function setCurrent(uid)
-        %NDI.CLOUD.PROFILE.SETCURRENT Make UID the active profile.
+        %NDI.CLOUD.PROFILE.SETCURRENT Set the current profile (session only).
+        %
+        %   The change does NOT touch disk. CurrentUID is per-session
+        %   so two MATLAB instances can hold different active
+        %   profiles concurrently.
             arguments
                 uid (1,:) char
             end
             obj = ndi.cloud.profile.getSingleton();
             obj.findIndex(uid);   % validates existence
             obj.CurrentUID = uid;
+        end
+
+        function p = getDefault()
+        %NDI.CLOUD.PROFILE.GETDEFAULT Return the default profile or [].
+            obj = ndi.cloud.profile.getSingleton();
+            p = ndi.cloud.profile.profileForUID(obj, obj.DefaultUID);
+        end
+
+        function setDefault(uid)
+        %NDI.CLOUD.PROFILE.SETDEFAULT Persist UID as the default profile.
+        %
+        %   The constructor copies DefaultUID into CurrentUID at the
+        %   start of every MATLAB session. Setting a default does not
+        %   change CurrentUID for the current session; use setCurrent
+        %   for that, or switchProfile to also reconfigure env vars.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            obj.findIndex(uid);   % validates existence
+            obj.DefaultUID = uid;
+            obj.saveToDisk();
+        end
+
+        function clearDefault()
+        %NDI.CLOUD.PROFILE.CLEARDEFAULT Forget any persisted default.
+            obj = ndi.cloud.profile.getSingleton();
+            obj.DefaultUID = '';
             obj.saveToDisk();
         end
 
@@ -447,8 +481,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function setPassword(uid, password)
-        %NDI.CLOUD.PROFILE.SETPASSWORD Update a profile's password in
-        %the secrets backend. The profile JSON is unaffected.
+        %NDI.CLOUD.PROFILE.SETPASSWORD Update a profile's password.
             arguments
                 uid      (1,:) char
                 password (1,:) char
@@ -469,8 +502,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function setStage(uid, stage)
-        %NDI.CLOUD.PROFILE.SETSTAGE Set the profile's Stage. Hidden from
-        %the GUI editor; meant for developer use from the command line.
+        %NDI.CLOUD.PROFILE.SETSTAGE Set the profile's Stage.
             arguments
                 uid   (1,:) char
                 stage (1,:) char {mustBeMember(stage, {'prod','dev'})}
@@ -482,14 +514,14 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function switchProfile(uid)
-        %NDI.CLOUD.PROFILE.SWITCHPROFILE Make UID active and reconfigure
-        %the cloud session.
+        %NDI.CLOUD.PROFILE.SWITCHPROFILE Make UID active for this session.
         %
-        %   Calls ndi.cloud.logout, then sets the environment variables
+        %   Calls ndi.cloud.logout, sets the env vars
         %   CLOUD_API_ENVIRONMENT (= profile.Stage),
         %   NDI_CLOUD_USERNAME    (= profile.Email), and
         %   NDI_CLOUD_PASSWORD    (= getPassword(uid)),
-        %   and finally marks UID as the current profile.
+        %   then marks UID as the current profile (in memory only —
+        %   does not change DefaultUID).
             arguments
                 uid (1,:) char
             end
@@ -507,7 +539,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             setenv('NDI_CLOUD_USERNAME',    prof.Email);
             setenv('NDI_CLOUD_PASSWORD',    obj.getSecretInternal(prof.PasswordSecret));
             obj.CurrentUID = uid;
-            obj.saveToDisk();
         end
 
         function path = filename()
@@ -517,8 +548,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function path = secretsFilename()
         %NDI.CLOUD.PROFILE.SECRETSFILENAME Return the AES secrets file path.
-        %   The vault and memory backends do not use this file; it is
-        %   exposed so admins and tests can inspect or back it up.
             path = ndi.cloud.profile.getSingleton().SecretsFilename;
         end
 
@@ -529,11 +558,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function useBackend(name)
         %NDI.CLOUD.PROFILE.USEBACKEND Force a backend (test hook).
-        %
-        %   Reset the singleton, then point the next instance at the
-        %   given backend ('vault', 'aes', or 'memory'). Tests use
-        %   'memory' to avoid touching MATLAB's vault or the disk
-        %   ciphertext file.
             arguments
                 name (1,:) char {mustBeMember(name, {'vault','aes','memory'})}
             end
@@ -541,13 +565,46 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             obj.Backend = name;
         end
 
+        function reload()
+        %NDI.CLOUD.PROFILE.RELOAD Re-read profiles and DefaultUID from disk.
+        %
+        %   Clears the in-memory state and reloads from the JSON file,
+        %   then re-applies the default-as-current rule. Useful for
+        %   tests that simulate a fresh MATLAB session.
+            obj = ndi.cloud.profile.getSingleton();
+            obj.Profiles   = ndi.cloud.profile.emptyProfiles();
+            obj.CurrentUID = '';
+            obj.DefaultUID = '';
+            obj.loadFromDisk();
+            obj.adoptDefaultAsCurrent();
+        end
+
         function reset()
         %NDI.CLOUD.PROFILE.RESET Clear the in-memory singleton state.
-        %Used by tests; does not delete on-disk files.
             obj = ndi.cloud.profile.getSingleton();
             obj.Profiles    = ndi.cloud.profile.emptyProfiles();
             obj.CurrentUID  = '';
+            obj.DefaultUID  = '';
             obj.MemoryStore = containers.Map('KeyType','char','ValueType','char');
+        end
+    end
+
+    methods (Static, Access = private)
+
+        function p = profileForUID(obj, uid)
+        %PROFILEFORUID Return the profile struct for UID, or empty if
+        %UID is empty/unknown.
+            if isempty(uid) || isempty(obj.Profiles)
+                p = ndi.cloud.profile.emptyProfiles();
+                return;
+            end
+            mask = strcmp({obj.Profiles.UID}, uid);
+            idx  = find(mask, 1, 'first');
+            if isempty(idx)
+                p = ndi.cloud.profile.emptyProfiles();
+            else
+                p = obj.Profiles(idx);
+            end
         end
     end
 
@@ -562,6 +619,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             s = struct();
             s.NumProfiles = numel(obj.Profiles);
             s.CurrentUID  = obj.CurrentUID;
+            s.DefaultUID  = obj.DefaultUID;
             if ~isempty(obj.Profiles)
                 s.Nicknames = {obj.Profiles.Nickname};
                 s.Emails    = {obj.Profiles.Email};
