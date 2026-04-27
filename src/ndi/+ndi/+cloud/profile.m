@@ -1,0 +1,630 @@
+classdef profile < matlab.mixin.CustomDisplay & handle
+%NDI.CLOUD.PROFILE Singleton manager for NDI Cloud user profiles.
+%
+%   ndi.cloud.profile keeps a list of NDI Cloud login profiles for the
+%   current MATLAB user. Each profile carries a Nickname, an Email, a
+%   MATLAB-generated UID, and a Stage ('prod' or 'dev', hidden from the
+%   GUI editor). Passwords are not stored in the profile JSON; instead
+%   each profile points at a secret keyed by ['NDI Cloud ' UID] in a
+%   pluggable backend.
+%
+%   Backends, chosen automatically on first use:
+%
+%       vault  - MATLAB's setSecret/getSecret (R2024a+). Preferred.
+%       aes    - AES-128/CBC encrypted file in prefdir, used when the
+%                vault is not available. The key is derived from
+%                SHA-256([hostname username 'NDI Cloud']) so the file
+%                is reproducible only on the machine that wrote it.
+%       memory - in-memory containers.Map. Reserved for tests; use
+%                ndi.cloud.profile.useBackend('memory') to opt in.
+%
+%   Current vs default profile
+%   --------------------------
+%   The class distinguishes between two notions of "selected":
+%
+%       CurrentUID  - the active profile for THIS MATLAB session.
+%                     Held in memory only; never persisted. This lets
+%                     two MATLAB instances run concurrently with
+%                     different active profiles without fighting each
+%                     other.
+%       DefaultUID  - the user's preferred profile, persisted to the
+%                     JSON file. At session start the constructor
+%                     copies a valid DefaultUID into CurrentUID, so
+%                     the next session opens with the same active
+%                     profile by default.
+%
+%   The on-disk file holds {Profiles, DefaultUID}; CurrentUID never
+%   touches disk.
+%
+%   Profile metadata is persisted to:
+%
+%       fullfile(prefdir, 'NDI_Cloud_Profiles.json')
+%
+%   The vault never sees that file; the AES backend writes ciphertext
+%   to a sibling file:
+%
+%       fullfile(prefdir, 'NDI_Cloud_Secrets.json')
+%
+%   Typical usage:
+%
+%       uid = ndi.cloud.profile.add('Lab account', 'me@lab.org', 'pw1');
+%       ndi.cloud.profile.setCurrent(uid);          % session only
+%       ndi.cloud.profile.setDefault(uid);          % persisted
+%       ndi.cloud.profile.switchProfile(uid);       % logout + setenv
+%
+%       devUid = ndi.cloud.profile.add('Dev', 'me@lab.org', 'pw2');
+%       ndi.cloud.profile.setStage(devUid, 'dev');
+%
+%   See also: ndi.gui.profileEditor, ndi.preferences, ndi.ido,
+%             ndi.cloud.logout
+
+    properties (Constant)
+        % Filename - JSON file holding profile list and DefaultUID.
+        Filename = fullfile(prefdir, 'NDI_Cloud_Profiles.json')
+
+        % SecretsFilename - AES backend's ciphertext file.
+        SecretsFilename = fullfile(prefdir, 'NDI_Cloud_Secrets.json')
+    end
+
+    properties (Constant, Access = private)
+        % SecretKeyPrefix - prefix used for every per-profile secret key.
+        SecretKeyPrefix = 'NDI Cloud '
+    end
+
+    properties (SetAccess = private)
+        % Profiles - struct array of profiles.
+        % Fields: UID, Nickname, Email, Stage, PasswordSecret.
+        Profiles struct
+
+        % CurrentUID - active profile for this session (in-memory only).
+        CurrentUID char
+
+        % DefaultUID - preferred profile, persisted to disk; copied
+        % into CurrentUID at session start.
+        DefaultUID char
+
+        % Backend - 'vault', 'aes', or 'memory'.
+        Backend char
+    end
+
+    properties (Access = private)
+        % MemoryStore - per-instance map for the 'memory' backend.
+        MemoryStore = containers.Map('KeyType','char','ValueType','char')
+    end
+
+    methods (Access = private)
+
+        function obj = profile()
+        %PROFILE Construct the singleton (called only by getSingleton).
+            obj.Profiles   = ndi.cloud.profile.emptyProfiles();
+            obj.CurrentUID = '';
+            obj.DefaultUID = '';
+            obj.Backend    = ndi.cloud.profile.detectBackend();
+            obj.loadFromDisk();
+            obj.adoptDefaultAsCurrent();
+        end
+
+        function adoptDefaultAsCurrent(obj)
+        %ADOPTDEFAULTASCURRENT Copy DefaultUID into CurrentUID if valid.
+            if isempty(obj.DefaultUID) || isempty(obj.Profiles)
+                return
+            end
+            if any(strcmp({obj.Profiles.UID}, obj.DefaultUID))
+                obj.CurrentUID = obj.DefaultUID;
+            end
+        end
+
+        function loadFromDisk(obj)
+        %LOADFROMDISK Read profiles and DefaultUID from JSON. CurrentUID
+        %is intentionally not persisted (per-session state).
+            if ~isfile(obj.Filename); return; end
+            try
+                txt = fileread(obj.Filename);
+                if isempty(strtrim(txt)); return; end
+                S = jsondecode(txt);
+                if isfield(S, 'Profiles') && ~isempty(S.Profiles)
+                    obj.Profiles = ndi.cloud.profile.normalizeProfiles(S.Profiles);
+                end
+                if isfield(S, 'DefaultUID')
+                    obj.DefaultUID = char(S.DefaultUID);
+                end
+            catch ME
+                warning('NDI:cloud:profile:loadFailed', ...
+                    'Could not load cloud profiles from %s: %s', ...
+                    obj.Filename, ME.message);
+            end
+        end
+
+        function saveToDisk(obj)
+        %SAVETODISK Write profiles and DefaultUID. CurrentUID is omitted.
+            S = struct('Profiles', obj.Profiles, ...
+                       'DefaultUID', obj.DefaultUID);
+            try
+                txt = jsonencode(S, 'PrettyPrint', true);
+                fid = fopen(obj.Filename, 'w');
+                if fid < 0
+                    error('NDI:cloud:profile:saveFailed', ...
+                        'Could not open %s for writing.', obj.Filename);
+                end
+                cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+                fwrite(fid, txt, 'char');
+            catch ME
+                warning('NDI:cloud:profile:saveFailed', ...
+                    'Could not save cloud profiles to %s: %s', ...
+                    obj.Filename, ME.message);
+            end
+        end
+
+        function idx = findIndex(obj, uid)
+        %FINDINDEX Return the index of the profile with the given UID.
+            mask = strcmp({obj.Profiles.UID}, uid);
+            idx = find(mask, 1, 'first');
+            if isempty(idx)
+                error('NDI:cloud:profile:unknownProfile', ...
+                    'Unknown profile UID "%s".', uid);
+            end
+        end
+
+        function setSecretInternal(obj, key, value)
+            switch obj.Backend
+                case 'vault'
+                    setSecret(key, value);
+                case 'aes'
+                    ndi.cloud.profile.aesWriteSecret( ...
+                        obj.SecretsFilename, key, value);
+                case 'memory'
+                    obj.MemoryStore(key) = value;
+            end
+        end
+
+        function value = getSecretInternal(obj, key)
+            switch obj.Backend
+                case 'vault'
+                    value = char(getSecret(key));
+                case 'aes'
+                    value = ndi.cloud.profile.aesReadSecret( ...
+                        obj.SecretsFilename, key);
+                case 'memory'
+                    if isKey(obj.MemoryStore, key)
+                        value = obj.MemoryStore(key);
+                    else
+                        error('NDI:cloud:profile:secretMissing', ...
+                            'No secret stored for "%s".', key);
+                    end
+            end
+        end
+
+        function removeSecretInternal(obj, key)
+            switch obj.Backend
+                case 'vault'
+                    if isSecret(key)
+                        removeSecret(key);
+                    end
+                case 'aes'
+                    ndi.cloud.profile.aesRemoveSecret( ...
+                        obj.SecretsFilename, key);
+                case 'memory'
+                    if isKey(obj.MemoryStore, key)
+                        remove(obj.MemoryStore, key);
+                    end
+            end
+        end
+    end
+
+    methods (Static, Access = private)
+
+        function p = emptyProfiles()
+            p = struct('UID', {}, 'Nickname', {}, 'Email', {}, ...
+                       'Stage', {}, 'PasswordSecret', {});
+        end
+
+        function out = normalizeProfiles(in)
+            out = ndi.cloud.profile.emptyProfiles();
+            if isstruct(in)
+                arr = in;
+            elseif iscell(in)
+                arr = [in{:}];
+            else
+                return;
+            end
+            for k = 1:numel(arr)
+                a = arr(k);
+                item.UID            = char(getfieldOr(a, 'UID', ''));
+                item.Nickname       = char(getfieldOr(a, 'Nickname', ''));
+                item.Email          = char(getfieldOr(a, 'Email', ''));
+                item.Stage          = char(getfieldOr(a, 'Stage', 'prod'));
+                item.PasswordSecret = char(getfieldOr(a, 'PasswordSecret', ''));
+                if isempty(item.PasswordSecret) && ~isempty(item.UID)
+                    item.PasswordSecret = ['NDI Cloud ' item.UID];
+                end
+                out(end+1) = item; %#ok<AGROW>
+            end
+            function v = getfieldOr(s, f, d)
+                if isfield(s, f); v = s.(f); else; v = d; end
+            end
+        end
+
+        function backend = detectBackend()
+            if ~isempty(which('setSecret')) ...
+                    && ~isempty(which('getSecret')) ...
+                    && ~isempty(which('isSecret'))
+                backend = 'vault';
+            else
+                backend = 'aes';
+            end
+        end
+
+        function key = aesKeyBytes()
+            try
+                host = char(java.net.InetAddress.getLocalHost().getHostName());
+            catch
+                host = char(java.lang.System.getProperty('user.name'));
+            end
+            user = char(java.lang.System.getProperty('user.name'));
+            seed = [host ' ' user ' NDI Cloud'];
+            md   = java.security.MessageDigest.getInstance('SHA-256');
+            md.update(int8(unicode2native(seed, 'UTF-8')));
+            digest = typecast(md.digest(), 'int8');
+            key = digest(1:16);
+        end
+
+        function aesWriteSecret(filename, key, value)
+            keyBytes = ndi.cloud.profile.aesKeyBytes();
+            keySpec  = javax.crypto.spec.SecretKeySpec(keyBytes, 'AES');
+            cipher   = javax.crypto.Cipher.getInstance('AES/CBC/PKCS5Padding');
+            iv       = ndi.cloud.profile.randomBytes(16);
+            ivSpec   = javax.crypto.spec.IvParameterSpec(iv);
+            cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+            plain = int8(unicode2native(char(value), 'UTF-8'));
+            ct    = typecast(cipher.doFinal(plain), 'int8');
+
+            entry = struct( ...
+                'iv',         ndi.cloud.profile.b64Encode(iv), ...
+                'ciphertext', ndi.cloud.profile.b64Encode(ct));
+
+            S = ndi.cloud.profile.readSecretsFile(filename);
+            S.(ndi.cloud.profile.fieldFor(key)) = entry;
+            ndi.cloud.profile.writeSecretsFile(filename, S);
+        end
+
+        function value = aesReadSecret(filename, key)
+            S = ndi.cloud.profile.readSecretsFile(filename);
+            f = ndi.cloud.profile.fieldFor(key);
+            if ~isfield(S, f)
+                error('NDI:cloud:profile:secretMissing', ...
+                    'No secret stored for "%s".', key);
+            end
+            entry    = S.(f);
+            keyBytes = ndi.cloud.profile.aesKeyBytes();
+            keySpec  = javax.crypto.spec.SecretKeySpec(keyBytes, 'AES');
+            cipher   = javax.crypto.Cipher.getInstance('AES/CBC/PKCS5Padding');
+            iv       = ndi.cloud.profile.b64Decode(entry.iv);
+            ct       = ndi.cloud.profile.b64Decode(entry.ciphertext);
+            ivSpec   = javax.crypto.spec.IvParameterSpec(iv);
+            cipher.init(javax.crypto.Cipher.DECRYPT_MODE, keySpec, ivSpec);
+            plain = typecast(cipher.doFinal(ct), 'int8');
+            value = native2unicode(typecast(plain, 'uint8'), 'UTF-8');
+        end
+
+        function aesRemoveSecret(filename, key)
+            S = ndi.cloud.profile.readSecretsFile(filename);
+            f = ndi.cloud.profile.fieldFor(key);
+            if isfield(S, f)
+                S = rmfield(S, f);
+                ndi.cloud.profile.writeSecretsFile(filename, S);
+            end
+        end
+
+        function S = readSecretsFile(filename)
+            if ~isfile(filename); S = struct(); return; end
+            txt = fileread(filename);
+            if isempty(strtrim(txt)); S = struct(); return; end
+            S = jsondecode(txt);
+            if ~isstruct(S); S = struct(); end
+        end
+
+        function writeSecretsFile(filename, S)
+            txt = jsonencode(S, 'PrettyPrint', true);
+            fid = fopen(filename, 'w');
+            if fid < 0
+                error('NDI:cloud:profile:saveFailed', ...
+                    'Could not open %s for writing.', filename);
+            end
+            cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+            fwrite(fid, txt, 'char');
+        end
+
+        function f = fieldFor(key)
+            f = matlab.lang.makeValidName(key, 'ReplacementStyle', 'underscore');
+        end
+
+        function s = b64Encode(bytes)
+            enc = java.util.Base64.getEncoder();
+            s = char(enc.encodeToString(bytes));
+        end
+
+        function bytes = b64Decode(s)
+            dec   = java.util.Base64.getDecoder();
+            bytes = typecast(dec.decode(uint8(s)), 'int8');
+        end
+
+        function bytes = randomBytes(n)
+            bytes = int8(randi([-128, 127], 1, n));
+        end
+    end
+
+    methods (Static)
+
+        function obj = getSingleton()
+        %NDI.CLOUD.PROFILE.GETSINGLETON Return the shared profile manager.
+            persistent objStore
+            if isempty(objStore) || ~isvalid(objStore)
+                objStore = ndi.cloud.profile();
+            end
+            obj = objStore;
+        end
+
+        function profiles = list()
+        %NDI.CLOUD.PROFILE.LIST Return the profile struct array.
+            profiles = ndi.cloud.profile.getSingleton().Profiles;
+        end
+
+        function p = get(uid)
+        %NDI.CLOUD.PROFILE.GET Return the profile struct for UID.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            p = obj.Profiles(obj.findIndex(uid));
+        end
+
+        function uid = add(nickname, email, password)
+        %NDI.CLOUD.PROFILE.ADD Create a new profile and store its password.
+            arguments
+                nickname (1,:) char
+                email    (1,:) char
+                password (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            id  = ndi.ido();
+            uid = char(id.id());
+            secretKey = [obj.SecretKeyPrefix uid];
+            entry = struct( ...
+                'UID',            uid, ...
+                'Nickname',       nickname, ...
+                'Email',          email, ...
+                'Stage',          'prod', ...
+                'PasswordSecret', secretKey);
+            obj.Profiles(end+1) = entry;
+            obj.setSecretInternal(secretKey, password);
+            obj.saveToDisk();
+        end
+
+        function remove(uid)
+        %NDI.CLOUD.PROFILE.REMOVE Delete a profile and its stored secret.
+        %If the removed profile was the current and/or default, both
+        %selections are cleared.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            idx = obj.findIndex(uid);
+            secretKey = obj.Profiles(idx).PasswordSecret;
+            obj.removeSecretInternal(secretKey);
+            obj.Profiles(idx) = [];
+            if strcmp(obj.CurrentUID, uid)
+                obj.CurrentUID = '';
+            end
+            if strcmp(obj.DefaultUID, uid)
+                obj.DefaultUID = '';
+            end
+            obj.saveToDisk();
+        end
+
+        function p = getCurrent()
+        %NDI.CLOUD.PROFILE.GETCURRENT Return the active profile or [].
+            obj = ndi.cloud.profile.getSingleton();
+            p = ndi.cloud.profile.profileForUID(obj, obj.CurrentUID);
+        end
+
+        function setCurrent(uid)
+        %NDI.CLOUD.PROFILE.SETCURRENT Set the current profile (session only).
+        %
+        %   The change does NOT touch disk. CurrentUID is per-session
+        %   so two MATLAB instances can hold different active
+        %   profiles concurrently.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            obj.findIndex(uid);   % validates existence
+            obj.CurrentUID = uid;
+        end
+
+        function p = getDefault()
+        %NDI.CLOUD.PROFILE.GETDEFAULT Return the default profile or [].
+            obj = ndi.cloud.profile.getSingleton();
+            p = ndi.cloud.profile.profileForUID(obj, obj.DefaultUID);
+        end
+
+        function setDefault(uid)
+        %NDI.CLOUD.PROFILE.SETDEFAULT Persist UID as the default profile.
+        %
+        %   The constructor copies DefaultUID into CurrentUID at the
+        %   start of every MATLAB session. Setting a default does not
+        %   change CurrentUID for the current session; use setCurrent
+        %   for that, or switchProfile to also reconfigure env vars.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            obj.findIndex(uid);   % validates existence
+            obj.DefaultUID = uid;
+            obj.saveToDisk();
+        end
+
+        function clearDefault()
+        %NDI.CLOUD.PROFILE.CLEARDEFAULT Forget any persisted default.
+            obj = ndi.cloud.profile.getSingleton();
+            obj.DefaultUID = '';
+            obj.saveToDisk();
+        end
+
+        function pw = getPassword(uid)
+        %NDI.CLOUD.PROFILE.GETPASSWORD Retrieve the stored password.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            idx = obj.findIndex(uid);
+            pw = obj.getSecretInternal(obj.Profiles(idx).PasswordSecret);
+        end
+
+        function setPassword(uid, password)
+        %NDI.CLOUD.PROFILE.SETPASSWORD Update a profile's password.
+            arguments
+                uid      (1,:) char
+                password (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            idx = obj.findIndex(uid);
+            obj.setSecretInternal(obj.Profiles(idx).PasswordSecret, password);
+        end
+
+        function s = getStage(uid)
+        %NDI.CLOUD.PROFILE.GETSTAGE Return the profile's Stage.
+            arguments
+                uid (1,:) char
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            idx = obj.findIndex(uid);
+            s = obj.Profiles(idx).Stage;
+        end
+
+        function setStage(uid, stage)
+        %NDI.CLOUD.PROFILE.SETSTAGE Set the profile's Stage.
+            arguments
+                uid   (1,:) char
+                stage (1,:) char {mustBeMember(stage, {'prod','dev'})}
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            idx = obj.findIndex(uid);
+            obj.Profiles(idx).Stage = stage;
+            obj.saveToDisk();
+        end
+
+        function switchProfile(uid)
+        %NDI.CLOUD.PROFILE.SWITCHPROFILE Make UID active for this session.
+        %
+        %   Calls ndi.cloud.logout, sets the env vars
+        %   CLOUD_API_ENVIRONMENT (= profile.Stage),
+        %   NDI_CLOUD_USERNAME    (= profile.Email), and
+        %   NDI_CLOUD_PASSWORD    (= getPassword(uid)),
+        %   then marks UID as the current profile (in memory only —
+        %   does not change DefaultUID).
+            arguments
+                uid (1,:) char
+            end
+            obj  = ndi.cloud.profile.getSingleton();
+            idx  = obj.findIndex(uid);
+            prof = obj.Profiles(idx);
+            try
+                ndi.cloud.logout();
+            catch ME
+                warning('NDI:cloud:profile:logoutFailed', ...
+                    'ndi.cloud.logout failed during switchProfile: %s', ...
+                    ME.message);
+            end
+            setenv('CLOUD_API_ENVIRONMENT', prof.Stage);
+            setenv('NDI_CLOUD_USERNAME',    prof.Email);
+            setenv('NDI_CLOUD_PASSWORD',    obj.getSecretInternal(prof.PasswordSecret));
+            obj.CurrentUID = uid;
+        end
+
+        function path = filename()
+        %NDI.CLOUD.PROFILE.FILENAME Return the JSON profile-list path.
+            path = ndi.cloud.profile.getSingleton().Filename;
+        end
+
+        function path = secretsFilename()
+        %NDI.CLOUD.PROFILE.SECRETSFILENAME Return the AES secrets file path.
+            path = ndi.cloud.profile.getSingleton().SecretsFilename;
+        end
+
+        function name = backend()
+        %NDI.CLOUD.PROFILE.BACKEND Return the active secrets backend.
+            name = ndi.cloud.profile.getSingleton().Backend;
+        end
+
+        function useBackend(name)
+        %NDI.CLOUD.PROFILE.USEBACKEND Force a backend (test hook).
+            arguments
+                name (1,:) char {mustBeMember(name, {'vault','aes','memory'})}
+            end
+            obj = ndi.cloud.profile.getSingleton();
+            obj.Backend = name;
+        end
+
+        function reload()
+        %NDI.CLOUD.PROFILE.RELOAD Re-read profiles and DefaultUID from disk.
+        %
+        %   Clears the in-memory state and reloads from the JSON file,
+        %   then re-applies the default-as-current rule. Useful for
+        %   tests that simulate a fresh MATLAB session.
+            obj = ndi.cloud.profile.getSingleton();
+            obj.Profiles   = ndi.cloud.profile.emptyProfiles();
+            obj.CurrentUID = '';
+            obj.DefaultUID = '';
+            obj.loadFromDisk();
+            obj.adoptDefaultAsCurrent();
+        end
+
+        function reset()
+        %NDI.CLOUD.PROFILE.RESET Clear the in-memory singleton state.
+            obj = ndi.cloud.profile.getSingleton();
+            obj.Profiles    = ndi.cloud.profile.emptyProfiles();
+            obj.CurrentUID  = '';
+            obj.DefaultUID  = '';
+            obj.MemoryStore = containers.Map('KeyType','char','ValueType','char');
+        end
+    end
+
+    methods (Static, Access = private)
+
+        function p = profileForUID(obj, uid)
+        %PROFILEFORUID Return the profile struct for UID, or empty if
+        %UID is empty/unknown.
+            if isempty(uid) || isempty(obj.Profiles)
+                p = ndi.cloud.profile.emptyProfiles();
+                return;
+            end
+            mask = strcmp({obj.Profiles.UID}, uid);
+            idx  = find(mask, 1, 'first');
+            if isempty(idx)
+                p = ndi.cloud.profile.emptyProfiles();
+            else
+                p = obj.Profiles(idx);
+            end
+        end
+    end
+
+    methods (Access = protected)
+
+        function str = getHeader(obj)
+            link = sprintf('<a href="matlab:help ndi.cloud.profile" style="font-weight:bold">%s</a>', 'ndi.cloud.profile');
+            str = sprintf('NDI Cloud profiles (%s, backend=%s):\n', link, obj.Backend);
+        end
+
+        function groups = getPropertyGroups(obj)
+            s = struct();
+            s.NumProfiles = numel(obj.Profiles);
+            s.CurrentUID  = obj.CurrentUID;
+            s.DefaultUID  = obj.DefaultUID;
+            if ~isempty(obj.Profiles)
+                s.Nicknames = {obj.Profiles.Nickname};
+                s.Emails    = {obj.Profiles.Email};
+            end
+            groups = matlab.mixin.util.PropertyGroup(s);
+        end
+    end
+end
