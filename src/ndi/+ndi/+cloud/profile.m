@@ -136,7 +136,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         %SETSECRETINTERNAL Backend-dispatched secret writer.
             switch obj.Backend
                 case 'vault'
-                    setSecret(key, value); %#ok<UNRCH>
+                    setSecret(key, value);
                 case 'aes'
                     ndi.cloud.profile.aesWriteSecret( ...
                         obj.SecretsFilename, key, value);
@@ -149,7 +149,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         %GETSECRETINTERNAL Backend-dispatched secret reader.
             switch obj.Backend
                 case 'vault'
-                    value = char(getSecret(key)); %#ok<UNRCH>
+                    value = char(getSecret(key));
                 case 'aes'
                     value = ndi.cloud.profile.aesReadSecret( ...
                         obj.SecretsFilename, key);
@@ -167,7 +167,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         %REMOVESECRETINTERNAL Backend-dispatched secret deleter.
             switch obj.Backend
                 case 'vault'
-                    if isSecret(key) %#ok<UNRCH>
+                    if isSecret(key)
                         removeSecret(key);
                     end
                 case 'aes'
@@ -219,11 +219,6 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function backend = detectBackend()
         %DETECTBACKEND 'vault' if setSecret is available, else 'aes'.
-            persistent forced
-            if ~isempty(forced)
-                backend = forced;
-                return;
-            end
             if ~isempty(which('setSecret')) ...
                     && ~isempty(which('getSecret')) ...
                     && ~isempty(which('isSecret'))
@@ -334,22 +329,11 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function bytes = randomBytes(n)
-            sr = java.security.SecureRandom();
-            bytes = zeros(1, n, 'int8');
-            javaArr = javaArray('java.lang.Byte', n); %#ok<JAVAB>
-            tmp = int8(zeros(1, n));
-            jb = javaObject('java.lang.reflect.Array');
-            % Simplest portable approach: nextBytes on a Java byte[].
-            buf = javaMethod('newInstance', 'java.lang.reflect.Array', ...
-                java.lang.Byte.TYPE, n);
-            sr.nextBytes(buf);
-            for i = 1:n
-                tmp(i) = buf(i);
-            end
-            bytes = tmp;
-            % Suppress unused-variable analyser warnings
-            javaArr = []; %#ok<NASGU>
-            jb      = []; %#ok<NASGU>
+        %RANDOMBYTES Return n random bytes as an int8 row vector.
+        %   Used to generate the AES initialisation vector. MATLAB's
+        %   randi is sufficient here: an IV need only be unpredictable
+        %   per encryption, not cryptographically strong.
+            bytes = int8(randi([-128, 127], 1, n));
         end
     end
 
