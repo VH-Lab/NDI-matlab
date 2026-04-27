@@ -174,11 +174,21 @@ function organization_id = extractFirstOrganizationId(user)
     orgs = user.organizations;
     if isstruct(orgs) && numel(orgs) >= 1 && isfield(orgs, 'id')
         organization_id = orgs(1).id;
+        nOrgs = numel(orgs);
     elseif iscell(orgs) && ~isempty(orgs) && isstruct(orgs{1}) && isfield(orgs{1}, 'id')
         organization_id = orgs{1}.id;
+        nOrgs = numel(orgs);
     else
         error('NDI:Cloud:NoOrganizations', ...
             'Could not extract an organization id from the login response.');
+    end
+
+    % TODO: support selecting among multiple organizations explicitly.
+    if nOrgs > 1
+        warning('NDI:Cloud:MultipleOrganizations', ...
+            ['Login response contained %d organizations; using the first ', ...
+             '("%s"). Selection among multiple organizations is not yet ', ...
+             'supported.'], nOrgs, char(organization_id));
     end
 
     if isstring(organization_id)
