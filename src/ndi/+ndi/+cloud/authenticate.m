@@ -150,7 +150,7 @@ function isSuccess = login(userName, password)
     
     if b
         token = answer.token;
-        organization_id = answer.user.organizations.id;
+        organization_id = extractFirstOrganizationId(answer.user);
         setenv('NDI_CLOUD_TOKEN', token)
         setenv('NDI_CLOUD_ORGANIZATION_ID', organization_id)
         isSuccess = true;
@@ -159,8 +159,34 @@ function isSuccess = login(userName, password)
         error_message = sprintf('Failed to authenticate with NDI Cloud.\n');
         error_message = [error_message sprintf('  Status: %d %s\n', apiResponse.StatusCode, apiResponse.StatusLine.ReasonPhrase)];
         error_message = [error_message sprintf('  Response Body:\n%s', body_details)];
-        
+
         error('NDI:Cloud:AuthenticationFailed', error_message);
+    end
+end
+
+function organization_id = extractFirstOrganizationId(user)
+    % Accept 1x1 struct, 1xN struct array, or cell array of structs.
+    if ~isfield(user, 'organizations')
+        error('NDI:Cloud:NoOrganizations', ...
+            'Login response did not include an organizations field.');
+    end
+
+    orgs = user.organizations;
+    if isstruct(orgs) && numel(orgs) >= 1 && isfield(orgs, 'id')
+        organization_id = orgs(1).id;
+    elseif iscell(orgs) && ~isempty(orgs) && isstruct(orgs{1}) && isfield(orgs{1}, 'id')
+        organization_id = orgs{1}.id;
+    else
+        error('NDI:Cloud:NoOrganizations', ...
+            'Could not extract an organization id from the login response.');
+    end
+
+    if isstring(organization_id)
+        organization_id = char(organization_id);
+    end
+    if isempty(organization_id)
+        error('NDI:Cloud:NoOrganizations', ...
+            'Login response contained an empty organization id.');
     end
 end
 
