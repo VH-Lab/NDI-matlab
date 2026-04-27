@@ -25,7 +25,7 @@ classdef profileTests < matlab.unittest.TestCase
             else
                 testCase.ProfilesBackup = '';
             end
-            sf = ndi.cloud.profile.getSingleton().SecretsFilename;
+            sf = ndi.cloud.profile.secretsFilename();
             if isfile(sf)
                 testCase.SecretsBackup = fileread(sf);
             else
@@ -37,7 +37,7 @@ classdef profileTests < matlab.unittest.TestCase
     methods (TestClassTeardown)
         function restoreOnDisk(testCase)
             f  = ndi.cloud.profile.filename();
-            sf = ndi.cloud.profile.getSingleton().SecretsFilename;
+            sf = ndi.cloud.profile.secretsFilename();
             ndi.unittest.cloud.profileTests.writeOrDelete( ...
                 f,  testCase.ProfilesBackup);
             ndi.unittest.cloud.profileTests.writeOrDelete( ...
@@ -50,6 +50,9 @@ classdef profileTests < matlab.unittest.TestCase
         function configureForTest(~)
             ndi.cloud.profile.useBackend('memory');
             ndi.cloud.profile.reset();
+            % Wipe the on-disk file so reload() in tests starts clean.
+            f = ndi.cloud.profile.filename();
+            if isfile(f); delete(f); end
         end
     end
 
@@ -98,7 +101,6 @@ classdef profileTests < matlab.unittest.TestCase
             uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
             ndi.cloud.profile.remove(uid);
             testCase.verifyEmpty(ndi.cloud.profile.list());
-            % Once the profile is gone, the lookup itself fails first.
             testCase.verifyError( ...
                 @() ndi.cloud.profile.getPassword(uid), ...
                 'NDI:cloud:profile:unknownProfile');
@@ -134,6 +136,85 @@ classdef profileTests < matlab.unittest.TestCase
         function testGetCurrentEmptyWhenNoneSet(testCase)
             ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
             testCase.verifyEmpty(ndi.cloud.profile.getCurrent());
+        end
+
+        function testSetCurrentDoesNotPersist(testCase)
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setCurrent(uid);
+
+            % Writing to disk happens via add(); the JSON should hold
+            % the profile but no CurrentUID field.
+            f = ndi.cloud.profile.filename();
+            testCase.assertTrue(isfile(f), ...
+                'Expected the profile JSON to exist after add().');
+            S = jsondecode(fileread(f));
+            testCase.verifyFalse(isfield(S, 'CurrentUID'), ...
+                'CurrentUID must not be persisted to disk.');
+
+            % Confirm by simulating a fresh session: reload should
+            % NOT pick up the previous setCurrent.
+            ndi.cloud.profile.reload();
+            testCase.verifyEmpty(ndi.cloud.profile.getCurrent());
+        end
+
+        function testGetDefaultEmptyByDefault(testCase)
+            ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
+        end
+
+        function testSetDefaultPersistsAcrossReload(testCase)
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setDefault(uid);
+
+            % Simulate a fresh MATLAB session.
+            ndi.cloud.profile.reload();
+
+            def = ndi.cloud.profile.getDefault();
+            testCase.assertNotEmpty(def);
+            testCase.verifyEqual(def.UID, uid);
+
+            % Constructor should have copied DefaultUID into CurrentUID.
+            cur = ndi.cloud.profile.getCurrent();
+            testCase.assertNotEmpty(cur);
+            testCase.verifyEqual(cur.UID, uid);
+        end
+
+        function testSetDefaultRejectsUnknownUID(testCase)
+            testCase.verifyError( ...
+                @() ndi.cloud.profile.setDefault('NOPE'), ...
+                'NDI:cloud:profile:unknownProfile');
+        end
+
+        function testClearDefaultForgetsDefault(testCase)
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setDefault(uid);
+            ndi.cloud.profile.clearDefault();
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
+
+            ndi.cloud.profile.reload();
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
+            testCase.verifyEmpty(ndi.cloud.profile.getCurrent());
+        end
+
+        function testRemoveDefaultClearsDefault(testCase)
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setDefault(uid);
+            ndi.cloud.profile.remove(uid);
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
+
+            ndi.cloud.profile.reload();
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
+        end
+
+        function testSwitchProfileDoesNotChangeDefault(testCase)
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw1');
+            saved = ndi.unittest.cloud.profileTests.snapshotEnv();
+            cleanup = onCleanup(@() ...
+                ndi.unittest.cloud.profileTests.restoreEnv(saved)); %#ok<NASGU>
+
+            ndi.cloud.profile.switchProfile(uid);
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault(), ...
+                'switchProfile must not change DefaultUID.');
         end
 
         function testStageDefaultsToProd(testCase)
@@ -214,8 +295,9 @@ classdef profileTests < matlab.unittest.TestCase
             testCase.assertNotEmpty(tbl, ...
                 'Editor should expose a uitable tagged ndiProfileTable.');
             testCase.verifyEqual(size(tbl.Data, 1), 1);
-            testCase.verifyEqual(tbl.Data{1, 2}, 'Sample');
-            testCase.verifyEqual(tbl.Data{1, 3}, 'sample@lab.org');
+            % Columns: Current, Default, Nickname, Email, UID.
+            testCase.verifyEqual(tbl.Data{1, 3}, 'Sample');
+            testCase.verifyEqual(tbl.Data{1, 4}, 'sample@lab.org');
 
             delete(fig);
             testCase.verifyFalse(isvalid(fig));
