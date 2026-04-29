@@ -64,6 +64,11 @@ function result = isAuthenticated(username)
     [token, organization_id] = ndi.cloud.internal.getActiveToken();
     result = ~isempty(token) && ~isempty(organization_id);
 
+    if result && ndi.cloud.internal.isTokenExpired(token)
+        result = false;
+        return;
+    end
+
     if result && ~ismissing(username)
         decodedToken = ndi.cloud.internal.decodeJwt(token);
         if ~strcmp(decodedToken.email, username)
