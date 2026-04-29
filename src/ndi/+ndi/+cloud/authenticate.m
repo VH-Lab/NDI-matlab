@@ -64,7 +64,7 @@ function result = isAuthenticated(username)
     [token, organization_id] = ndi.cloud.internal.getActiveToken();
     result = ~isempty(token) && ~isempty(organization_id);
 
-    if result && isTokenExpired(token)
+    if result && ndi.cloud.internal.isTokenExpired(token)
         result = false;
         return;
     end
@@ -75,25 +75,6 @@ function result = isAuthenticated(username)
             result = false;
         end
     end
-end
-
-function expired = isTokenExpired(token)
-    % Local pre-check: decode the JWT and compare its `exp` claim to now,
-    % with a small skew so a token doesn't expire server-side mid-request.
-    % If the token is opaque (not a JWT) or has no exp claim, treat it as
-    % not-expired and let the server be the source of truth.
-    expired = false;
-    skewSeconds = 60;
-    try
-        expirationTime = ndi.cloud.internal.getTokenExpiration(token);
-    catch
-        return;
-    end
-    if isempty(expirationTime) || ~isa(expirationTime, 'datetime')
-        return;
-    end
-    nowLocal = datetime('now', 'TimeZone', 'local');
-    expired = nowLocal >= (expirationTime - seconds(skewSeconds));
 end
 
 function isSuccess = authenticatedWithSecret(userName, interactionEnabled)
