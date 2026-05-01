@@ -3,6 +3,12 @@ function isGood = testLogin(options)
 %
 %   ISGOOD = ndi.cloud.testLogin()
 %
+%   Returns true if and only if there is currently a valid login token in
+%   this process from which a username (the JWT 'email' claim) can be
+%   extracted, AND that token works against the server. If the user has
+%   not logged in, or the active token is missing/expired, or the token
+%   has no extractable username, the result is false.
+%
 %   Tests the current login by attempting to list datasets. If the first
 %   attempt fails, logs out and retries (which gives cached credentials in
 %   the MATLAB Vault or NDI_CLOUD_USERNAME / NDI_CLOUD_PASSWORD environment
@@ -127,7 +133,13 @@ function isGood = testLogin(options)
 end
 
 function ok = probe(userName, verbose)
+    % A login is "good" only if we currently hold a valid token from
+    % which a username (email) can be extracted, AND the token works
+    % against the server. Successfully calling listDatasets() is not
+    % sufficient on its own: silent re-authentication paths can make the
+    % API call succeed without leaving a usable token in this process.
     ok = false;
+
     if verbose
         fprintf('[testLogin]   probe: calling ndi.cloud.api.datasets.listDatasets().\n');
     end
@@ -149,50 +161,64 @@ function ok = probe(userName, verbose)
         end
         return;
     end
+
+    % listDatasets() succeeded; now require a currently valid local token
+    % with an extractable username.
+    if verbose
+        fprintf('[testLogin]   probe: verifying that a currently valid token with an extractable username exists.\n');
+    end
+    try
+        token = ndi.cloud.internal.getActiveToken();
+    catch ME
+        if verbose
+            fprintf('[testLogin]   probe: getActiveToken() threw: %s. probe = false.\n', ME.message);
+        end
+        return;
+    end
+    if isempty(token)
+        if verbose
+            fprintf('[testLogin]   probe: getActiveToken() returned empty (token missing or expired). probe = false.\n');
+        end
+        return;
+    end
+
+    try
+        decoded = ndi.cloud.internal.decodeJwt(token);
+    catch ME
+        if verbose
+            fprintf('[testLogin]   probe: decodeJwt() threw: %s. probe = false.\n', ME.message);
+        end
+        return;
+    end
+
+    if ~isfield(decoded, 'email') || isempty(decoded.email)
+        if verbose
+            fprintf('[testLogin]   probe: token has no extractable username (no ''email'' claim). probe = false.\n');
+        end
+        return;
+    end
+
+    if verbose
+        fprintf('[testLogin]   probe: token email = %s.\n', decoded.email);
+    end
+
     if ismissing(userName)
         if verbose
-            fprintf('[testLogin]   probe: listDatasets() succeeded; no UserName check requested. probe = true.\n');
+            fprintf('[testLogin]   probe: token is valid and username is extractable; no UserName check requested. probe = true.\n');
         end
         ok = true;
         return;
     end
-    % Verify the active token was issued to the requested user.
-    if verbose
-        fprintf('[testLogin]   probe: verifying active token belongs to %s.\n', userName);
-    end
-    try
-        token = ndi.cloud.internal.getActiveToken();
-        if isempty(token)
-            if verbose
-                fprintf('[testLogin]   probe: getActiveToken() returned empty (token missing or expired). probe = false.\n');
-            end
-            return;
-        end
-        decoded = ndi.cloud.internal.decodeJwt(token);
-        if isfield(decoded, 'email')
-            if verbose
-                fprintf('[testLogin]   probe: token email = %s.\n', decoded.email);
-            end
-            if strcmp(decoded.email, userName)
-                if verbose
-                    fprintf('[testLogin]   probe: token email matches UserName. probe = true.\n');
-                end
-                ok = true;
-            else
-                if verbose
-                    fprintf('[testLogin]   probe: token email does NOT match UserName. probe = false.\n');
-                end
-            end
-        else
-            if verbose
-                fprintf('[testLogin]   probe: decoded token has no ''email'' field. probe = false.\n');
-            end
-        end
-    catch ME
+
+    if strcmp(decoded.email, userName)
         if verbose
-            fprintf('[testLogin]   probe: error during token verification: %s\n', ME.message);
+            fprintf('[testLogin]   probe: token email matches UserName. probe = true.\n');
         end
-        ok = false;
+        ok = true;
+    else
+        if verbose
+            fprintf('[testLogin]   probe: token email does NOT match UserName. probe = false.\n');
+        end
     end
 end
 
