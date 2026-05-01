@@ -20,6 +20,16 @@ classdef dir < ndi.session
         %
         %  E = ndi.session.dir(PATHNAME)
         %
+        %  E = ndi.session.dir(REFERENCE, PATHNAME, SESSION_ID)
+        %
+        % Open the session whose identifier is SESSION_ID at PATHNAME, binding
+        % it to REFERENCE. Use this form when a dataset and a session share a
+        % directory (e.g. an ndi.dataset.dir whose default session sits at the
+        % dataset root): the two-argument form resolves to whichever session
+        % the directory's stored metadata names first, which may not be the
+        % session the caller intended. Passing SESSION_ID pins resolution and
+        % skips the database lookup that the two-argument form performs.
+        %
         % See also: ndi.session, ndi.session.dir/GETPATH
 
             if nargin<2
@@ -41,7 +51,7 @@ classdef dir < ndi.session
 
             should_we_try_to_read_from_database = 1;
 
-            if nargin>2 % we have the session_id % undocumented 3rd input argument
+            if nargin>2 % we have the session_id
                 ndi_session_dir_obj.identifier = session_id;
                 ndi_session_dir_obj.reference = reference;
                 should_we_try_to_read_from_database = 0;
