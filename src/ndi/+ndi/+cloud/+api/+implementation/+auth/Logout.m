@@ -17,7 +17,12 @@ classdef Logout < ndi.cloud.api.call
             b = false;
             answer = [];
 
-            token = ndi.cloud.authenticate();
+            % Log out should never pop a UI dialog (vault prompt or
+            % uilogin) just to acquire a token: if we are logging out
+            % and have no usable token, the API call will simply fail
+            % and the high-level wrapper ndi.cloud.logout will still
+            % clear local credentials. So request silent re-auth only.
+            token = ndi.cloud.authenticate('InteractionEnabled', 'off');
             
             apiURL = ndi.cloud.api.url(this.endpointName);
             
