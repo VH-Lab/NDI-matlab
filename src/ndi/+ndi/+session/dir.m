@@ -8,27 +8,57 @@ classdef dir < ndi.session
 
     methods
         function ndi_session_dir_obj = dir(reference, path, session_id)
-        % ndi.session.dir - Create a new ndi.session.dir ndi_session_dir_object
+        % ndi.session.dir - Create or open an ndi.session.dir object
+        %
+        % An ndi.session.dir is an ndi.session bound to a directory on disk.
+        % The constructor supports three calling forms.
+        %
+        % --- One-input form ---
+        %
+        %   E = ndi.session.dir(PATHNAME)
+        %
+        % Open an existing session that is already stored at PATHNAME. The
+        % session's REFERENCE and identifier are read from the database (or
+        % from the .ndi/reference.txt and .ndi/unique_reference.txt files if
+        % no database entry exists). It is an error to call this form on a
+        % directory that does not already contain a session.
+        %
+        % --- Two-input form ---
         %
         %   E = ndi.session.dir(REFERENCE, PATHNAME)
         %
-        % Creates an ndi.session.dir ndi_session_dir_object, or an session with an
-        % associated directory. REFERENCE should be a unique reference for the
-        % session and directory PATHNAME.
+        % Create a new ndi.session.dir at PATHNAME, or open an existing one
+        % there. REFERENCE is a human-readable label for the session.
         %
-        % One can also open an existing session by using
+        % If PATHNAME does not yet contain a session, a new session is
+        % created: a fresh identifier is generated, REFERENCE is recorded, an
+        % .ndi subdirectory and database are initialized, and a session
+        % document is added to the database.
         %
-        %  E = ndi.session.dir(PATHNAME)
+        % If PATHNAME already contains one or more sessions, the constructor
+        % searches the database for session documents and selects the oldest
+        % (the one with the earliest base.datestamp). The returned object's
+        % identifier and reference are taken from that document, and the
+        % REFERENCE argument supplied by the caller is effectively ignored.
+        % Because selection is driven by what the database returns first,
+        % this form is not suitable when more than one session lives at the
+        % same path and you need a specific one; use the three-input form
+        % below instead.
         %
-        %  E = ndi.session.dir(REFERENCE, PATHNAME, SESSION_ID)
+        % --- Three-input form ---
         %
-        % Open the session whose identifier is SESSION_ID at PATHNAME, binding
-        % it to REFERENCE. Use this form when a dataset and a session share a
-        % directory (e.g. an ndi.dataset.dir whose default session sits at the
-        % dataset root): the two-argument form resolves to whichever session
+        %   E = ndi.session.dir(REFERENCE, PATHNAME, SESSION_ID)
+        %
+        % Open the session whose identifier is SESSION_ID at PATHNAME, and
+        % bind it to REFERENCE. This form skips the database lookup that the
+        % two-input form uses to pick a session, so it pins resolution to
+        % exactly the session you name.
+        %
+        % Use this form when a dataset and a session share a directory (for
+        % example, an ndi.dataset.dir whose default session sits at the
+        % dataset root): the two-input form resolves to whichever session
         % the directory's stored metadata names first, which may not be the
-        % session the caller intended. Passing SESSION_ID pins resolution and
-        % skips the database lookup that the two-argument form performs.
+        % session the caller intended.
         %
         % See also: ndi.session, ndi.session.dir/GETPATH
 
