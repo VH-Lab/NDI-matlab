@@ -85,6 +85,13 @@ function url = url(endpointName, options)
         endpointMap("search_datasets")                = "/datasets/search";
         endpointMap("ndiquery")                       = "/ndiquery?page={page}&pageSize={pageSize}";
 
+        % MATLAB BYOL license endpoints (all share the /users/me/matlab-license path).
+        % The implementation classes append a ?release=... query when needed.
+        endpointMap("get_matlab_license")             = "/users/me/matlab-license";
+        endpointMap("set_matlab_license")             = "/users/me/matlab-license";
+        endpointMap("allocate_matlab_license_mac")    = "/users/me/matlab-license";
+        endpointMap("clear_matlab_license")           = "/users/me/matlab-license";
+
         % Compute endpoints
         endpointMap("start_compute_session")          = "/compute/start";
         endpointMap("get_compute_session")            = "/compute/{sessionId}";
