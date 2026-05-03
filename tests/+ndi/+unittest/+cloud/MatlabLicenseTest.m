@@ -5,13 +5,13 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
 %       - NDI_CLOUD_USERNAME, NDI_CLOUD_PASSWORD
 %
 %   Optional:
-%       - NDICloudTestUserHasMatlabLicense - When set to "true" (case
+%       - NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE - When set to "true" (case
 %         insensitive), the test user already has a registered MATLAB
 %         license that must be preserved. The destructive tests
 %         (allocate-then-clear lifecycle, invalid-file PUT) are skipped
 %         via assumeFail; only the read-only getMatlabLicense check runs.
 %
-%   When NDICloudTestUserHasMatlabLicense is not "true", the test user is
+%   When NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE is not "true", the test user is
 %   assumed to start with no registration. The lifecycle test allocates a
 %   dedicated MAC, exercises GET/PUT/DELETE against it, and tears down by
 %   calling clearMatlabLicense so a mid-test failure does not strand an
@@ -31,7 +31,7 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
             testCase.fatalAssertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: NDI_CLOUD_PASSWORD is not set.');
 
-            flag = string(getenv("NDICloudTestUserHasMatlabLicense"));
+            flag = string(getenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE"));
             testCase.UserHasExistingLicense = strcmpi(flag, "true") || flag == "1";
         end
     end
@@ -62,11 +62,11 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
             testCase.verifyTrue(b, msg);
 
             if testCase.UserHasExistingLicense
-                % NDICloudTestUserHasMatlabLicense=true asserts a
+                % NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE=true asserts a
                 % registration exists; reflect that in the assertion.
                 testCase.verifyTrue(isstruct(answer) && isfield(answer, 'files') ...
                     && ~isempty(answer.files), ...
-                    "NDICloudTestUserHasMatlabLicense=true but the user has no " + ...
+                    "NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE=true but the user has no " + ...
                     "registered files. " + msg);
             else
                 % No registration expected: server returns 200 with mode
@@ -75,7 +75,7 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
                     && ~isempty(answer.files);
                 testCase.verifyFalse(hasFiles, ...
                     "Expected an empty registration but the test user already has " + ...
-                    "MATLAB license files registered. Set NDICloudTestUserHasMatlabLicense=true " + ...
+                    "MATLAB license files registered. Set NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE=true " + ...
                     "to preserve them. " + msg);
             end
         end
@@ -86,7 +86,7 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
             % idempotent but verifying the post-state would be ambiguous).
             if testCase.UserHasExistingLicense
                 testCase.assumeFail(...
-                    "Skipped: NDICloudTestUserHasMatlabLicense=true. " + ...
+                    "Skipped: NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE=true. " + ...
                     "The allocate/clear lifecycle would mutate an existing " + ...
                     "registration we are required to preserve.");
             end
@@ -152,7 +152,7 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
             % registration we must not disturb.
             if testCase.UserHasExistingLicense
                 testCase.assumeFail(...
-                    "Skipped: NDICloudTestUserHasMatlabLicense=true. " + ...
+                    "Skipped: NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE=true. " + ...
                     "Even a 400-rejected PUT could disturb the existing " + ...
                     "registration if the server changes its semantics.");
             end
