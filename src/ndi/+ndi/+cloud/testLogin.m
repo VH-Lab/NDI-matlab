@@ -5,9 +5,18 @@ function isGood = testLogin(options)
 %
 %   Returns true if and only if there is currently a valid login token in
 %   this process from which a username (the JWT 'email' claim) can be
-%   extracted, AND that token works against the server. If the user has
-%   not logged in, or the active token is missing/expired, or the token
-%   has no extractable username, the result is false.
+%   extracted, AND that exact token is accepted by the server (via a
+%   direct GET /users/me with the token as the Bearer credential). If
+%   the user has not logged in, or the active token is missing /
+%   expired / malformed, or the token has no extractable username, or
+%   the server returns 401 for the token, the result is false.
+%
+%   The /users/me probe is deliberately issued as a raw HTTP request
+%   rather than via ndi.cloud.api.users.me or ndi.cloud.api.datasets.
+%   listDatasets, both of which would route through ndi.cloud.
+%   authenticate() and could silently re-authenticate as a different
+%   user mid-call -- which would defeat the purpose of probing the
+%   currently held token.
 %
 %   Order of operations:
 %       1. Probe the currently active token. If it is valid and the
@@ -52,7 +61,8 @@ function isGood = testLogin(options)
 %       isGood = ndi.cloud.testLogin('UserName', "alice@example.com");
 %       isGood = ndi.cloud.testLogin('Verbose', true);
 %
-%   See also: ndi.cloud.logout, ndi.cloud.uilogin, ndi.cloud.authenticate
+%   See also: ndi.cloud.logout, ndi.cloud.uilogin, ndi.cloud.authenticate,
+%   ndi.cloud.api.users.me
 
     arguments
         options.UseUILogin (1,1) logical = true
@@ -183,40 +193,56 @@ function isGood = testLogin(options)
 end
 
 function ok = probe(userName, verbose)
-    % A login is "good" only if we currently hold a valid token from
-    % which a username (email) can be extracted, AND the server accepts
-    % that token.
+    % A login is "good" only if the token currently in NDI_CLOUD_TOKEN
+    % is non-expired, decodable, has an extractable username, AND is
+    % accepted by the server right now.
     %
-    % We deliberately check the local token first (and bail out if it
-    % is missing or malformed) BEFORE calling listDatasets(). That call
-    % goes through ndi.cloud.authenticate(), which by default has
-    % InteractionEnabled='on' and would pop the UI login dialog if no
-    % silent credentials are available. probe() must never trigger the
-    % UI login on its own; the caller decides if/when to do that.
+    % We deliberately do NOT go through any wrapper that calls
+    % ndi.cloud.authenticate() (e.g. ndi.cloud.api.datasets.listDatasets,
+    % ndi.cloud.api.users.me): authenticate() can silently re-auth via
+    % vault/env credentials and replace NDI_CLOUD_TOKEN with a token
+    % for a *different* user. If that happens, the API call would
+    % succeed and probe would falsely report the original login as
+    % good. Instead, we read the raw token from the environment, do
+    % local JWT validity checks, and then send a GET /users/me
+    % directly with that exact token as the Bearer credential.
+    % /users/me requires authentication, so a missing or stale token
+    % yields a 401 and probe correctly returns false.
     ok = false;
 
-    try
-        token = ndi.cloud.internal.getActiveToken();
-    catch ME
+    rawToken = getenv('NDI_CLOUD_TOKEN');
+    if isempty(rawToken)
         if verbose
-            fprintf('[testLogin]   probe: getActiveToken() threw: %s. probe = false.\n', ME.message);
-        end
-        return;
-    end
-    if isempty(token)
-        if verbose
-            fprintf('[testLogin]   probe: no active token (missing or expired). probe = false.\n');
+            fprintf('[testLogin]   probe: NDI_CLOUD_TOKEN is empty (no token in env). probe = false.\n');
         end
         return;
     end
 
     try
-        decoded = ndi.cloud.internal.decodeJwt(token);
+        decoded = ndi.cloud.internal.decodeJwt(rawToken);
     catch ME
         if verbose
             fprintf('[testLogin]   probe: decodeJwt() threw: %s. probe = false.\n', ME.message);
         end
         return;
+    end
+
+    % Local expiration check.
+    if isfield(decoded, 'exp')
+        try
+            expTime = datetime(decoded.exp, 'ConvertFrom', 'posixtime', 'TimeZone', 'local');
+            if datetime('now', 'TimeZone', 'local') > expTime
+                if verbose
+                    fprintf('[testLogin]   probe: token expired at %s (local). probe = false.\n', char(expTime));
+                end
+                return;
+            end
+        catch ME
+            if verbose
+                fprintf('[testLogin]   probe: could not parse token exp claim: %s. probe = false.\n', ME.message);
+            end
+            return;
+        end
     end
 
     if ~isfield(decoded, 'email') || isempty(decoded.email)
@@ -237,30 +263,62 @@ function ok = probe(userName, verbose)
         return;
     end
 
-    % Token looks locally valid; confirm the server accepts it.
+    % Local checks pass; verify the server accepts this exact token.
+    % We send the request directly so no wrapper can silently re-auth
+    % as a different user mid-call.
     if verbose
-        fprintf('[testLogin]   probe: calling ndi.cloud.api.datasets.listDatasets() to verify the server accepts the token.\n');
+        fprintf('[testLogin]   probe: sending GET /users/me with the current token to verify the server accepts it.\n');
     end
     try
-        [b, ~] = ndi.cloud.api.datasets.listDatasets();
+        url = ndi.cloud.api.url('get_current_user');
+        accept = matlab.net.http.HeaderField('accept', 'application/json');
+        authHeader = matlab.net.http.HeaderField('Authorization', ['Bearer ' rawToken]);
+        request = matlab.net.http.RequestMessage( ...
+            matlab.net.http.RequestMethod.GET, [accept authHeader]);
+        response = send(request, url);
     catch ME
         if verbose
-            fprintf('[testLogin]   probe: listDatasets() threw an error: %s\n', ME.message);
+            fprintf('[testLogin]   probe: GET /users/me threw an error: %s\n', ME.message);
             fprintf('[testLogin]   probe: identifier = %s\n', ME.identifier);
         end
         return;
     end
-    if verbose
-        fprintf('[testLogin]   probe: listDatasets() returned status = %d.\n', b);
+
+    if response.StatusCode ~= matlab.net.http.StatusCode.OK
+        if verbose
+            fprintf('[testLogin]   probe: GET /users/me returned status %d (%s). probe = false.\n', ...
+                double(response.StatusCode), char(response.StatusCode));
+        end
+        return;
     end
-    ok = logical(b);
+
     if verbose
-        if ok
-            fprintf('[testLogin]   probe: server accepted token. probe = true.\n');
-        else
-            fprintf('[testLogin]   probe: server did NOT accept token. probe = false.\n');
+        fprintf('[testLogin]   probe: GET /users/me returned 200 OK.\n');
+    end
+
+    % Defense in depth: cross-check the server's reported email
+    % against the JWT's email. If they disagree, something has swapped
+    % the token underneath us; report false.
+    body = response.Body.Data;
+    if isstruct(body) && isfield(body, 'email') && ~isempty(body.email)
+        serverEmail = string(body.email);
+        if ~strcmpi(serverEmail, string(decoded.email))
+            if verbose
+                fprintf('[testLogin]   probe: server email (%s) does NOT match JWT email (%s). probe = false.\n', ...
+                    serverEmail, decoded.email);
+            end
+            return;
+        end
+        if verbose
+            fprintf('[testLogin]   probe: server email matches JWT email. probe = true.\n');
+        end
+    else
+        if verbose
+            fprintf('[testLogin]   probe: server response had no email field; trusting 200 status. probe = true.\n');
         end
     end
+
+    ok = true;
 end
 
 function reportApiEnvironment(verbose)
