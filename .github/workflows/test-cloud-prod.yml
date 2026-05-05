@@ -49,6 +49,7 @@ jobs:
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
             setenv("GITHUB_TOKEN", "${{ github.token }}")
+            setenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE", "false")
             addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));

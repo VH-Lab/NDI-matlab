@@ -3,19 +3,23 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
 %
 %   Requires the following environment variables:
 %       - NDI_CLOUD_USERNAME, NDI_CLOUD_PASSWORD
+%       - NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE - Must be explicitly set to
+%         "true" or "false" (case insensitive; "1"/"0" also accepted).
+%         Leaving this variable unset (empty) is a fatal configuration error
+%         so that an accidental omission can never silently destroy an
+%         existing license.
 %
-%   Optional:
-%       - NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE - When set to "true" (case
-%         insensitive), the test user already has a registered MATLAB
-%         license that must be preserved. The destructive tests
-%         (allocate-then-clear lifecycle, invalid-file PUT) are skipped
-%         via assumeFail; only the read-only getMatlabLicense check runs.
-%
-%   When NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE is not "true", the test user is
-%   assumed to start with no registration. The lifecycle test allocates a
-%   dedicated MAC, exercises GET/PUT/DELETE against it, and tears down by
-%   calling clearMatlabLicense so a mid-test failure does not strand an
-%   AWS ENI.
+%   NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE values:
+%       "true"  / "1" - The test user already has a registered MATLAB
+%                       license that must be preserved. Destructive tests
+%                       (allocate-then-clear lifecycle, invalid-file PUT)
+%                       are skipped via assumeFail; only the read-only
+%                       getMatlabLicense check runs.
+%       "false" / "0" - The test user is assumed to start with no
+%                       registration. The lifecycle test allocates a
+%                       dedicated MAC, exercises GET/PUT/DELETE against it,
+%                       and tears down by calling clearMatlabLicense so a
+%                       mid-test failure does not strand an AWS ENI.
 
     properties (Access = private)
         UserHasExistingLicense (1,1) logical = false
@@ -32,6 +36,11 @@ classdef MatlabLicenseTest < matlab.unittest.TestCase
                 'LOCAL CONFIGURATION ERROR: NDI_CLOUD_PASSWORD is not set.');
 
             flag = string(getenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE"));
+            testCase.fatalAssertNotEmpty(char(flag), ...
+                "LOCAL CONFIGURATION ERROR: NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE is not set. " + ...
+                "Set it to ""true"" if the test account already has a MATLAB license " + ...
+                "(destructive tests will be skipped), or ""false"" if it does not " + ...
+                "(destructive tests will run).");
             testCase.UserHasExistingLicense = strcmpi(flag, "true") || flag == "1";
         end
     end
