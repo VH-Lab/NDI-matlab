@@ -24,8 +24,12 @@ concurrency:
 
 jobs:
   run_tests:
-    name: Run cloud tests (prod)
+    name: Cloud CI ${{ matrix.part }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3]
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -54,7 +58,7 @@ jobs:
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
             ndi.cloud.authenticate("InteractionEnabled", "off")
-            testCloudApiProd()
+            testCloudApiProdPart(${{ matrix.part }}, 3)
 
       # Publish test results
       - name: Publish test results
@@ -62,6 +66,7 @@ jobs:
         if: always()
         with:
           report_paths: 'docs/reports/test-results.xml'
+          check_name: 'Cloud CI ${{ matrix.part }} test results'
 
       - name: Restore MATLAB Path
         uses: matlab-actions/run-command@v2
