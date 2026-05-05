@@ -2,7 +2,8 @@ classdef ComputeTest < matlab.unittest.TestCase
 % ComputeTest - Test suite for the ndi.cloud.api.compute namespace
 %
 %   This test class verifies the functionality of the compute-related API
-%   endpoints, including starting sessions, checking status, and listing sessions.
+%   endpoints, including starting sessions, checking status, listing
+%   sessions, and aborting a long-running session.
 %
     properties
         Narrative (1,:) string % Stores the narrative for each test
@@ -27,7 +28,7 @@ classdef ComputeTest < matlab.unittest.TestCase
             % 1. Start session
             % 2. Check status
             % 3. List sessions
-            % 4. Abort session (cleanup)
+            % 4. Wait for pipeline to complete (helloWorld self-cascades)
 
             testCase.Narrative = "Begin ComputeTest: testHelloWorldFlow";
             narrative = testCase.Narrative;
@@ -113,44 +114,53 @@ classdef ComputeTest < matlab.unittest.TestCase
                  testCase.verifyTrue(found, "Newly created session ID " + sessionId + " was not found in the session list.");
             end
 
-            % --- 4. Abort Session ---
-            if strlength(sessionId) > 0
-                narrative(end+1) = "Preparing to call ndi.cloud.api.compute.abortSession for session: " + sessionId;
-                [b_abort, answer_abort, apiResponse_abort, apiURL_abort] = ndi.cloud.api.compute.abortSession(sessionId);
-                narrative(end+1) = "Attempted to call API with URL " + string(apiURL_abort);
-
-                narrative(end+1) = "Testing: Verifying the abortSession API call was successful.";
-                abort_message = ndi.unittest.cloud.APIMessage(narrative, b_abort, answer_abort, apiResponse_abort, apiURL_abort);
-                % Note: If session already finished (hello world is fast), abort might fail or be no-op.
-                % We accept failure if status code implies it's already done/gone, but usually abort returns success or 4xx.
-                % For this test we expect success or specific error codes.
-                if ~b_abort && apiResponse_abort.StatusCode == 404
-                     narrative(end+1) = "Abort returned 404, likely session already finished/cleaned up.";
-                else
-                     testCase.verifyTrue(b_abort, abort_message);
+            % --- 4. Wait for pipeline to complete ---
+            % helloWorld auto-cascades initial-setup -> process -> cleanup with no
+            % manual triggers; verify it actually reaches COMPLETED rather than
+            % aborting it mid-flight.
+            narrative(end+1) = "Polling getSessionStatus until terminal (max 60s)";
+            deadline = tic;
+            finalStatus = "";
+            while toc(deadline) < 60
+                [b_poll, answer_poll, ~, ~] = ndi.cloud.api.compute.getSessionStatus(sessionId);
+                if b_poll && isstruct(answer_poll) && isfield(answer_poll, 'status')
+                    if any(strcmp(answer_poll.status, {'COMPLETED', 'ABORTED'}))
+                        finalStatus = string(answer_poll.status);
+                        break;
+                    end
                 end
+                pause(2);
             end
-
-            % --- 5. Test Trigger Stage (dummy call just to verify mechanics) ---
-            % Hello World might not have stages we can trigger, but we test the API invocation.
-            % We expect this to likely fail (400/404) if the session is gone or stage invalid,
-            % but we want to ensure the MATLAB code doesn't crash.
-            if strlength(sessionId) > 0
-                 narrative(end+1) = "Testing triggerStage (expecting potential API error, verifying function stability).";
-                 [b_trig, ~, ~, ~] = ndi.cloud.api.compute.triggerStage(sessionId, 'dummy-stage');
-                 % We don't verifyTrue(b_trig) because we don't know a valid stage.
-                 % We just want to ensure it runs without throwing MATLAB error.
-                 narrative(end+1) = "triggerStage call completed (Result: " + string(b_trig) + ")";
-            end
-
-             % --- 6. Test Finalize Session (dummy call) ---
-            if strlength(sessionId) > 0
-                 narrative(end+1) = "Testing finalizeSession (expecting potential API error, verifying function stability).";
-                 [b_fin, ~, ~, ~] = ndi.cloud.api.compute.finalizeSession(sessionId);
-                 narrative(end+1) = "finalizeSession call completed (Result: " + string(b_fin) + ")";
-            end
+            narrative(end+1) = "Final session status: " + finalStatus;
+            testCase.verifyEqual(finalStatus, "COMPLETED", ...
+                "helloWorld pipeline did not reach COMPLETED within 60s");
 
             testCase.Narrative = narrative;
+        end
+
+        function testAbortZombieFlow(testCase)
+            % zombie-test-v1's wait-and-die stage sleeps 10min; we abort it
+            % almost immediately so the abort always finds a runner that is
+            % actually running. This is the test we want for the abortSession
+            % API surface, not a race against helloWorld's fast self-completion.
+            pipelineId = "zombie-test-v1";
+            [b_start, answer_start, ~, ~] = ndi.cloud.api.compute.startSession(pipelineId);
+            testCase.verifyTrue(b_start, "startSession failed");
+            sessionId = string(answer_start.sessionId);
+
+            % Give the runner a couple seconds to land in RUNNING. Without
+            % this we race the auto-cascade in the other direction (abort
+            % arrives before initial-setup has even run).
+            pause(5);
+
+            [b_abort, ~, apiResponse_abort, ~] = ndi.cloud.api.compute.abortSession(sessionId);
+            testCase.verifyTrue(b_abort, "abortSession failed for zombie pipeline");
+
+            % Verify the session reached ABORTED.
+            pause(2);
+            [~, answer_status, ~, ~] = ndi.cloud.api.compute.getSessionStatus(sessionId);
+            testCase.verifyEqual(string(answer_status.status), "ABORTED", ...
+                "Session should be ABORTED after abortSession call");
         end
     end
 end
