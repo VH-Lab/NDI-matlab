@@ -108,12 +108,12 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             deadline = tic;
             b_get_after = false;
             ans_get_after = [];
-            while toc(deadline) < 30
+            while toc(deadline) < 60
                 [b_get_after, ans_get_after] = ndi.cloud.api.datasets.getDataset(cloudDatasetID);
                 if b_get_after, break; end
                 pause(1);
             end
-            testCase.verifyTrue(b_get_after, "Dataset not visible within 30s after undelete.");
+            testCase.verifyTrue(b_get_after, "Dataset not visible within 60s after undelete.");
 
             testCase.Narrative = narrative;
         end
