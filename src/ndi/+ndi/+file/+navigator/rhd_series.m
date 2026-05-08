@@ -32,10 +32,12 @@ classdef rhd_series < ndi.file.navigator
     %                     replaced by the literal (regex-escaped) prefix of
     %                     the current epoch and the result is matched as a
     %                     regular expression against the filenames in the
-    %                     session directory. The first matching file is
-    %                     appended to the epoch's file list. If any
-    %                     ancillary pattern produces no match the epoch is
-    %                     skipped.
+    %                     session directory. The lexicographically earliest
+    %                     match is appended to the epoch's file list (so
+    %                     when timestamps are zero-padded the chronologically
+    %                     earliest match is selected, matching the behavior
+    %                     of the series pattern). If any ancillary pattern
+    %                     produces no match the epoch is skipped.
     %
     %   The epoch identifier returned by EPOCHID is the prefix captured by
     %   the series pattern.
@@ -174,12 +176,12 @@ classdef rhd_series < ndi.file.navigator
                     rx = ['^' strrep(patterns{i}, '#', ...
                         regexptranslate('escape', p)) '$'];
                     hit = ~cellfun('isempty', regexp(names, rx, 'once'));
-                    j = find(hit, 1);
-                    if isempty(j)
+                    matched = sort(names(hit));
+                    if isempty(matched)
                         ok = false;
                         break;
                     end
-                    epoch{end+1,1} = fullfile(directory, names{j}); %#ok<AGROW>
+                    epoch{end+1,1} = fullfile(directory, matched{1}); %#ok<AGROW>
                 end
 
                 if ok

@@ -27,10 +27,10 @@ classdef rhd_series_epochdir < ndi.file.navigator.epochdir
     %                     literal (regex-escaped) prefix of the current
     %                     epoch and the result is matched as a regular
     %                     expression against filenames in the same
-    %                     subdirectory. The first match per pattern is
-    %                     appended to the epoch's file list. If any
-    %                     ancillary pattern produces no match the epoch is
-    %                     skipped.
+    %                     subdirectory. The lexicographically earliest
+    %                     match per pattern is appended to the epoch's
+    %                     file list. If any ancillary pattern produces no
+    %                     match the epoch is skipped.
     %
     %   The epoch identifier returned by EPOCHID is the name of the
     %   subdirectory that contains the epoch's files, matching the

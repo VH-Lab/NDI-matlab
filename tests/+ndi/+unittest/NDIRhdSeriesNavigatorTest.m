@@ -72,6 +72,31 @@ classdef NDIRhdSeriesNavigatorTest < matlab.unittest.TestCase
             end
         end
 
+        function testFlatAncillaryPicksEarliestWhenMultipleMatch(testCase)
+            sess = testCase.makeFlatSession();
+            % Two probemap files for the same prefix; we should get the
+            % earlier timestamp regardless of dir() ordering.
+            for stamp = ["20240101120100.000", "20240101120000.000"]
+                fid = fopen(fullfile(sess.path(), ...
+                    ['myExp_001_' char(stamp) '._epochprobemap.txt']), 'w');
+                fclose(fid);
+            end
+            fid = fopen(fullfile(sess.path(), ...
+                'myExp_002_20240102140000.000._epochprobemap.txt'), 'w');
+            fclose(fid);
+
+            fn = ndi.file.navigator.rhd_series(sess, ...
+                {'#_\d{14}\.\d+\.rhd\>', '#_\d{14}\.\d+\._epochprobemap\.txt\>'});
+
+            ids = arrayfun(@(k) string(epochid(fn, k)), 1:numepochs(fn));
+            files = getepochfiles(fn, find(ids == "myExp_001", 1));
+            testCase.verifyEqual(numel(files), 2);
+            [~, name, ext] = fileparts(files{2});
+            testCase.verifyEqual([name ext], ...
+                'myExp_001_20240101120000.000._epochprobemap.txt', ...
+                'Ancillary should select the earliest matching file.');
+        end
+
         function testFlatEpochSkippedIfAncillaryMissing(testCase)
             sess = testCase.makeFlatSession();
             fid = fopen(fullfile(sess.path(), 'myExp_001.epochprobemap.ndi'), 'w');
