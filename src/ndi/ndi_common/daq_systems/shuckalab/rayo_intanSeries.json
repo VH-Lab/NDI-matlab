@@ -2,7 +2,7 @@
   "Name": "rayo_intanSeries",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
   "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr",
-  "DaqReaderFileParameters": "RHD",
+  "DaqReaderFileParameters": "intan",
   "MetadataReaderClass": [],
   "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
   "FileParameters": [

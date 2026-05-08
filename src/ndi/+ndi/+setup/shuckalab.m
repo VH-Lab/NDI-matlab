@@ -12,8 +12,8 @@ function S = shuckalab(ref, dirname)
 %   which uses ndi.file.navigator.rhd_series to group recordings by
 %   filename prefix and select only the earliest file in each prefix
 %   group. The companion epochprobemap file is selected the same way.
-%   Acquisition is read by ndi.daq.reader.mfdaq.ndr (the NDR-matlab RHD
-%   reader).
+%   Acquisition is read by ndi.daq.reader.mfdaq.ndr configured with the
+%   NDR-matlab "intan" reader (an alias for ndr.reader.intan_rhd).
 %
 %   Inputs:
 %     ref     - Reference identifier for the session (char or string).
