@@ -97,6 +97,27 @@ classdef NDIRhdSeriesNavigatorTest < matlab.unittest.TestCase
                 'Ancillary should select the earliest matching file.');
         end
 
+        function testFlatIgnoresDotPrefixedFiles(testCase)
+            sess = testCase.makeFlatSession();
+            % macOS-style resource fork that would otherwise be picked as
+            % the earliest match by lex order.
+            fid = fopen(fullfile(sess.path(), ...
+                '._myExp_001_20240101000000.000.rhd'), 'w');
+            fclose(fid);
+            fid = fopen(fullfile(sess.path(), '.DS_Store'), 'w');
+            fclose(fid);
+
+            fn = ndi.file.navigator.rhd_series(sess, ...
+                {'#_\d{14}\.\d+\.rhd\>'});
+
+            ids = arrayfun(@(k) string(epochid(fn, k)), 1:numepochs(fn));
+            files = getepochfiles(fn, find(ids == "myExp_001", 1));
+            [~, name, ext] = fileparts(files{1});
+            testCase.verifyEqual([name ext], ...
+                'myExp_001_20240101120000.000.rhd', ...
+                'Dot-prefixed files must be ignored.');
+        end
+
         function testFlatEpochSkippedIfAncillaryMissing(testCase)
             sess = testCase.makeFlatSession();
             fid = fopen(fullfile(sess.path(), 'myExp_001.epochprobemap.ndi'), 'w');

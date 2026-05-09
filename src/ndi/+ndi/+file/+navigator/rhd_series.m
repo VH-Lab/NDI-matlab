@@ -146,6 +146,10 @@ classdef rhd_series < ndi.file.navigator
             %   returns a column cell array of epoch file lists. PATTERNS is
             %   a normalized cell array; PATTERNS{1} is the series pattern
             %   and PATTERNS{2:end} are ancillary patterns (see class help).
+            %
+            %   Files whose basename begins with '.' (e.g. macOS resource
+            %   forks like '._foo.rhd' or '.DS_Store') are ignored, matching
+            %   the convention used by the base ndi.file.navigator.
             groups = {};
             entries = dir(directory);
             entries = entries(~[entries.isdir]);
@@ -153,6 +157,10 @@ classdef rhd_series < ndi.file.navigator
                 return;
             end
             names = {entries.name};
+            names = names(~startsWith(names, '.'));
+            if isempty(names)
+                return;
+            end
 
             seriesRegex = ['^' strrep(patterns{1}, '#', '(.+?)') '$'];
             tok = regexp(names, seriesRegex, 'tokens', 'once');
