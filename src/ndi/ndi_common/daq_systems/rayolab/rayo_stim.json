@@ -1,5 +1,5 @@
 {
-  "Name": "rayo_visstim",
+  "Name": "rayo_stim",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
   "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.rayolab_intanseries",
   "DaqReaderFileParameters": "intan",

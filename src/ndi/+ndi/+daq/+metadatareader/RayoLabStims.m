@@ -1,7 +1,7 @@
 classdef RayoLabStims < ndi.daq.metadatareader
-    %NDI.DAQ.METADATAREADER.RAYOLABSTIMS Trivial metadata reader for the RayoLab visual stimulator.
+    %NDI.DAQ.METADATAREADER.RAYOLABSTIMS Trivial metadata reader for the RayoLab stimulator.
     %
-    %   The RayoLab visual stimulator emits a single stimulus type whose
+    %   The RayoLab stimulator emits a single stimulus type whose
     %   only parameter is its stimulus id, which is always 1. This
     %   metadata reader does not read any per-stimulus content from disk;
     %   it returns one parameter set:
