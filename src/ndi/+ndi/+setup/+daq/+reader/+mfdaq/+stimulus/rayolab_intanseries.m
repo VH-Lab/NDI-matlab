@@ -76,10 +76,13 @@ classdef rayolab_intanseries < ndi.daq.reader.mfdaq.ndr
             timeData = obj.readchannels_epochsamples('time', 1, ...
                 epochfiles, s0d, s1d);
 
-            % Stimulus onset = positive-to-negative (1 -> 0) edge.
-            % Stimulus offset = negative-to-positive (0 -> 1) edge.
-            stimontimes  = timeData(1 + find(digData(1:end-1) == 1 & digData(2:end) == 0));
-            stimofftimes = timeData(1 + find(digData(1:end-1) == 0 & digData(2:end) == 1));
+            % Stimulus onset = positive-to-negative (high -> low) edge.
+            % Stimulus offset = negative-to-positive (low -> high) edge.
+            % Threshold rather than equality: NDR's intan_rhd reader
+            % returns the raw uint16 with the digital line's bit set
+            % (e.g. 0 / 16) instead of 0 / 1.
+            stimontimes  = timeData(1 + find(digData(1:end-1) > 0.5 & digData(2:end) < 0.5));
+            stimofftimes = timeData(1 + find(digData(1:end-1) < 0.5 & digData(2:end) > 0.5));
 
             % mk1: alternating on/off markers (+1 / -1)
             time1 = [stimontimes(:)' ; stimofftimes(:)'];
