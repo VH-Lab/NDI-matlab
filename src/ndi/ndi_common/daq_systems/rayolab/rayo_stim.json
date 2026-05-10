@@ -1,0 +1,16 @@
+{
+  "Name": "rayo_stim",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.rayolab_intanseries",
+  "DaqReaderFileParameters": "intan",
+  "MetadataReaderClass": "ndi.daq.metadatareader.RayoLabStims",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#_\\d{6}_\\d{6}\\.rhd\\>",
+    "#_\\d{6}_\\d{6}\\._epochprobemap\\.txt\\>"
+  ],
+  "MetadataReaderFileParameters": "#_\\d{6}_\\d{6}\\._epochprobemap\\.txt\\>",
+  "EpochProbeMapFileParameters": "#_\\d{6}_\\d{6}\\._epochprobemap\\.txt\\>",
+  "HasEpochDirectories": false,
+  "FileNavigatorClass": "ndi.file.navigator.rhd_series"
+}
