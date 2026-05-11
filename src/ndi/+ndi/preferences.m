@@ -23,9 +23,13 @@ classdef preferences < matlab.mixin.CustomDisplay & handle
 %                      'logical', 'string', 'char', or 'any'.
 %
 %   PERSISTENCE
-%       Values are stored as JSON in MATLAB's preferences directory:
+%       Values are stored as JSON in the user's home directory:
 %
-%           fullfile(prefdir, 'NDI_Preferences.json')
+%           fullfile(home_dir, '.ndi', 'NDI_Preferences.json')
+%
+%       i.e. ~/.ndi/NDI_Preferences.json. The path is identical across
+%       Windows, macOS, and Linux so MATLAB and Python ports of NDI can
+%       share a single preferences file.
 %
 %       The file is read once on first access and rewritten by
 %       ndi.preferences.set and ndi.preferences.reset. A missing or
@@ -56,11 +60,11 @@ classdef preferences < matlab.mixin.CustomDisplay & handle
 %       call. The new preference becomes available after the next
 %       MATLAB session (or after `clear classes`).
 %
-%   See also: ndi.gui.preferencesEditor, prefdir, jsonencode, jsondecode
+%   See also: ndi.gui.preferencesEditor, jsonencode, jsondecode
 
     properties (Constant, Access = private)
         % Filename - absolute path of the JSON file used for persistence.
-        Filename = fullfile(prefdir, 'NDI_Preferences.json')
+        Filename = fullfile(char(java.lang.System.getProperty('user.home')), '.ndi', 'NDI_Preferences.json')
     end
 
     properties (SetAccess = private)
@@ -194,15 +198,25 @@ classdef preferences < matlab.mixin.CustomDisplay & handle
         %
         %   Builds a flat struct keyed by ndi.preferences.itemKey and
         %   writes it to obj.Filename using jsonencode with PrettyPrint.
-        %   Failures are reported via warning with identifier
-        %   'NDI:preferences:saveFailed'; the in-memory state is
-        %   unaffected.
+        %   The parent directory (~/.ndi) is created if it does not
+        %   already exist. Failures are reported via warning with
+        %   identifier 'NDI:preferences:saveFailed'; the in-memory
+        %   state is unaffected.
             S = struct();
             for i = 1:numel(obj.Items)
                 key = ndi.preferences.itemKey(obj.Items(i));
                 S.(key) = obj.Items(i).Value;
             end
             try
+                parentDir = fileparts(obj.Filename);
+                if ~isempty(parentDir) && ~exist(parentDir, 'dir')
+                    [ok, msg] = mkdir(parentDir);
+                    if ~ok
+                        warning('NDI:preferences:saveFailed', ...
+                            'Could not create directory %s: %s', parentDir, msg);
+                        return
+                    end
+                end
                 txt = jsonencode(S, 'PrettyPrint', true);
                 fid = fopen(obj.Filename, 'w');
                 if fid < 0
@@ -514,10 +528,13 @@ classdef preferences < matlab.mixin.CustomDisplay & handle
         %
         %   PATH = NDI.PREFERENCES.FILENAME() returns the absolute
         %   path of the JSON file used to persist the preferences,
-        %   typically fullfile(prefdir, 'NDI_Preferences.json').
-        %   The file may not yet exist on first run.
+        %   typically fullfile(home_dir, '.ndi', 'NDI_Preferences.json')
+        %   (i.e. ~/.ndi/NDI_Preferences.json). The path is identical
+        %   on Windows, macOS, and Linux so MATLAB and the Python port
+        %   of NDI share the same file. The file may not yet exist on
+        %   first run.
         %
-        %   See also: prefdir, ndi.preferences.getSingleton
+        %   See also: ndi.preferences.getSingleton
             path = ndi.preferences.getSingleton().Filename;
         end
 
