@@ -2,10 +2,10 @@ classdef TestPreferences < matlab.unittest.TestCase
     % TESTPREFERENCES - unit tests for ndi.preferences and a smoke test
     % for the ndi.gui.preferencesEditor.
     %
-    % The preferences singleton persists to a JSON file in MATLAB's
-    % prefdir, so each test snapshots the current values in
-    % TestMethodSetup and restores them in TestMethodTeardown to avoid
-    % clobbering whatever the developer had configured.
+    % The preferences singleton persists to a JSON file in ~/.ndi/, so
+    % each test snapshots the current values in TestMethodSetup and
+    % restores them in TestMethodTeardown to avoid clobbering whatever
+    % the developer had configured.
 
     properties
         Snapshot   % struct array with fields: path, value
@@ -131,12 +131,16 @@ classdef TestPreferences < matlab.unittest.TestCase
                 'NDI:preferences:invalidPath');
         end
 
-        function testFilenameLivesInPrefdir(testCase)
+        function testFilenameLivesInHomeNdiDir(testCase)
             f = ndi.preferences.filename();
             testCase.verifyClass(f, 'char');
-            testCase.verifyTrue(startsWith(f, prefdir), ...
-                sprintf('Expected filename to start with prefdir (%s) but got %s', ...
-                    prefdir, f));
+            homeDir = char(java.lang.System.getProperty('user.home'));
+            expectedDir = fullfile(homeDir, '.ndi');
+            testCase.verifyTrue(startsWith(f, expectedDir), ...
+                sprintf('Expected filename to start with %s but got %s', ...
+                    expectedDir, f));
+            testCase.verifyTrue(endsWith(f, 'NDI_Preferences.json'), ...
+                sprintf('Expected filename to end with NDI_Preferences.json but got %s', f));
         end
 
         function testSetPersistsToJsonFile(testCase)
