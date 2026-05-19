@@ -134,13 +134,16 @@ jobs:
           source_directory: 'src'
 
       - name: Install repo dependencies (pulls DID-matlab@V2)
+        # Only install the root requirements.txt — that is enough to
+        # bring in DID-matlab@V2 for the smoke test. The optional
+        # testToolboxNoCloud step below handles tests/requirements.txt
+        # via its own matbox.installRequirements call.
         uses: matlab-actions/run-command@v2
         with:
           command: |
             addpath(genpath("src"));
             addpath(genpath("tools"));
             matbox.installRequirements(nditools.projectdir());
-            matbox.installRequirements(fullfile(nditools.projectdir(), "tests"));
 
       - name: Smoke test - load every V_delta schema via did2.schema.cache
         uses: matlab-actions/run-command@v2
