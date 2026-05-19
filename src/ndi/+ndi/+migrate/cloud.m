@@ -152,19 +152,17 @@ function result = cloud(datasetId, options)
 
     runStateHolder = ndi.migrate.internal.runStateRef();
 
-    lockHolder = []; %#ok<NASGU>
     if ~options.DryRun
         lockInfo = client.acquireLock(datasetId, options.LockReason, ...
             options.LockTTLSeconds);
         result.lock.acquired = true;
         result.lock.info = lockInfo;
-        lockHolder = onCleanup(@() safeReleaseLock(client, datasetId, runStateHolder)); %#ok<NASGU>
+        lockHolder = onCleanup(@() safeReleaseLock(client, datasetId, runStateHolder));
     end
 
-    publishCleanup = []; %#ok<NASGU>
     if ~options.DryRun && wasPublished
         client.unpublishDataset(datasetId);
-        publishCleanup = onCleanup(@() safeRepublish(client, datasetId, runStateHolder)); %#ok<NASGU>
+        publishCleanup = onCleanup(@() safeRepublish(client, datasetId, runStateHolder));
     end
 
     summaries = client.listAllDocuments(datasetId, options.PageSize);

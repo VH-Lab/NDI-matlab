@@ -11,7 +11,6 @@ classdef GetWriteLock < ndi.cloud.api.call
 
         function [b, answer, apiResponse, apiURL] = execute(this)
             b = false;
-            answer = [];
 
             token = ndi.cloud.authenticate();
 

@@ -11,7 +11,6 @@ classdef RefreshWriteLock < ndi.cloud.api.call
 
         function [b, answer, apiResponse, apiURL] = execute(this)
             b = false;
-            answer = [];
 
             token = ndi.cloud.authenticate();
 
@@ -30,7 +29,7 @@ classdef RefreshWriteLock < ndi.cloud.api.call
             request = matlab.net.http.RequestMessage(method, headers, body);
 
             originalWarnState = warning('off', 'MATLAB:http:BodyExpectedFor');
-            warningResetObj = onCleanup(@() warning(originalWarnState)); %#ok<NASGU>
+            warningResetObj = onCleanup(@() warning(originalWarnState));
 
             apiResponse = send(request, apiURL);
 

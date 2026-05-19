@@ -71,11 +71,11 @@ function report = uploadVDeltaBodies(datasetId, vDeltaBodies, options)
                     'Bulk upload PUT failed for dataset "%s".', datasetId);
             end
 
-            report.manifest{end+1} = ids; %#ok<AGROW>
-            report.status{end+1}   = 'success'; %#ok<AGROW>
+            report.manifest{end+1} = ids;
+            report.status{end+1}   = 'success';
         catch err
-            report.manifest{end+1} = ids; %#ok<AGROW>
-            report.status{end+1}   = 'failure'; %#ok<AGROW>
+            report.manifest{end+1} = ids;
+            report.status{end+1}   = 'failure';
             if isfile(zipPath)
                 try delete(zipPath); catch, end
             end
