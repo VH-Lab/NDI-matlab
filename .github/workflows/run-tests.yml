@@ -3,13 +3,13 @@ name: Run NDI Test Suite No Cloud
 on:
   # Triggers the workflow on push or pull request events for the "main" branch
   push:
-    branches: [ "main" ]
+    branches: [ "main", "Vnext" ]
     paths-ignore:
       - '*.md'
       - '.github/**'
       - 'docs/reports/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "Vnext" ]
     paths-ignore:
       - '*.md'
       - '.github/workflows/**'

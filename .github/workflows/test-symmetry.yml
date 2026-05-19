@@ -2,9 +2,9 @@ name: Test NDI Symmetry
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "Vnext" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "Vnext" ]
   workflow_dispatch:
 
 concurrency:
