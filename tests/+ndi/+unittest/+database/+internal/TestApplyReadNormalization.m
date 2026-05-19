@@ -1,0 +1,106 @@
+classdef TestApplyReadNormalization < matlab.unittest.TestCase
+%TESTAPPLYREADNORMALIZATION Unit tests for the v1->V_delta read-time
+%   normaliser that concrete ndi.database subclasses call from do_read
+%   and do_search. The tests exercise both the v1->V_delta conversion
+%   path and the V_delta idempotency short-circuit on the same body
+%   shape that the synthetic-corpus tests under +ndi/+unittest/+migrate
+%   use, so an upstream change in did2.convert.v1_to_v2 surfaces here
+%   as well as in the migrate test suite.
+
+    methods (Test)
+
+        function testEmptyReturnsEmpty(testCase)
+            verifyEmpty(testCase, ...
+                ndi.database.internal.applyReadNormalization([]));
+            verifyEmpty(testCase, ...
+                ndi.database.internal.applyReadNormalization(struct([])));
+        end
+
+        function testV1StructConvertedToVDelta(testCase)
+            v1 = makeV1Body('alpha');
+            doc = ndi.database.internal.applyReadNormalization(v1);
+
+            verifyClass(testCase, doc, 'ndi.document');
+            % After v1->V_delta normalisation universalRenames stamps
+            % base.schema_version to 'V_delta'.
+            verifyTrue(testCase, isfield(doc.document_properties, 'base'));
+            verifyTrue(testCase, isfield(doc.document_properties.base, ...
+                'schema_version'));
+            verifyEqual(testCase, ...
+                char(doc.document_properties.base.schema_version), ...
+                'V_delta');
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.class_name), ...
+                'demo_a');
+        end
+
+        function testVDeltaBodyShortCircuits(testCase)
+            % An already-V_delta body should round-trip with no shape
+            % drift (the converter's idempotency check fires).
+            v1 = makeV1Body('beta');
+            firstPass = ndi.database.internal.applyReadNormalization(v1);
+            secondPass = ndi.database.internal.applyReadNormalization( ...
+                firstPass.document_properties);
+
+            verifyEqual(testCase, ...
+                secondPass.document_properties.base.name, ...
+                firstPass.document_properties.base.name);
+            verifyEqual(testCase, ...
+                char(secondPass.document_properties.base.schema_version), ...
+                'V_delta');
+        end
+
+        function testAcceptsNdiDocument(testCase)
+            v1 = makeV1Body('gamma');
+            wrapped = ndi.document(v1);
+            doc = ndi.database.internal.applyReadNormalization(wrapped);
+            verifyClass(testCase, doc, 'ndi.document');
+            verifyEqual(testCase, ...
+                char(doc.document_properties.base.schema_version), ...
+                'V_delta');
+        end
+
+        function testAcceptsDid2Document(testCase)
+            v1 = makeV1Body('delta');
+            d2 = did2.document(v1);
+            doc = ndi.database.internal.applyReadNormalization(d2);
+            verifyClass(testCase, doc, 'ndi.document');
+        end
+
+        function testBadInputErrors(testCase)
+            verifyError(testCase, ...
+                @() ndi.database.internal.applyReadNormalization(42), ...
+                'NDI:database:normalizeBadInput');
+            verifyError(testCase, ...
+                @() ndi.database.internal.applyReadNormalization("not a body"), ...
+                'NDI:database:normalizeBadInput');
+        end
+
+    end
+end
+
+% ---- helpers -------------------------------------------------------------
+
+function body = makeV1Body(name)
+body = struct();
+body.document_class = struct( ...
+    'class_name',    'demo_a', ...
+    'class_version', '1.0.0', ...
+    'superclasses',  struct( ...
+        'class_name',    'base', ...
+        'class_version', '1.0.0'));
+body.depends_on = struct('name', {}, 'value', {});
+body.base = struct( ...
+    'id',         ['aabb1122ccdd3344_' pad16(name)], ...
+    'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
+    'name',       name, ...
+    'datestamp',  '2024-06-01T12:00:00.000Z');
+body.demo_a = struct('marker', name);
+end
+
+function s = pad16(name)
+hex = lower(dec2hex(double(name)));
+joined = strjoin(cellstr(hex(:)'), '');
+joined = [joined repmat('0', 1, 16)];
+s = joined(1:16);
+end

@@ -58,11 +58,10 @@ classdef  matlabdumbjsondb2 < ndi.database
 
         function [ndi_document_obj] = do_read(ndi_matlabdumbjsondb_obj, ndi_document_id)
             [doc] = ndi_matlabdumbjsondb_obj.db.read(ndi_document_id,0); % all versions are 0
-            if isempty(doc)
-                ndi_document_obj = [];
-            else
-                ndi_document_obj = ndi.document(doc);
-            end
+            % Route raw bodies through the v1->V_delta normaliser so
+            % callers above the ndi.database abstraction only ever see
+            % V_delta-shaped ndi.document objects.
+            ndi_document_obj = ndi.database.internal.applyReadNormalization(doc);
         end % do_read
 
         function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id)
@@ -94,7 +93,7 @@ classdef  matlabdumbjsondb2 < ndi.database
             ndi_document_objs = {};
             [docs] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
             for i=1:numel(docs)
-                ndi_document_objs{i} = ndi.document(docs{i});
+                ndi_document_objs{i} = ndi.database.internal.applyReadNormalization(docs{i});
             end
         end % do_search()
 
