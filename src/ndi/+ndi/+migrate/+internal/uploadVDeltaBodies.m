@@ -74,8 +74,9 @@ function report = uploadVDeltaBodies(datasetId, vDeltaBodies, options)
             report.manifest{end+1} = ids;
             report.status{end+1}   = 'success';
         catch err
-            report.manifest{end+1} = ids;
-            report.status{end+1}   = 'failure';
+            % Partial uploads corrupt the migration — surface the
+            % error so the caller can release the lock and abort
+            % instead of silently leaving the dataset half-migrated.
             if isfile(zipPath)
                 try delete(zipPath); catch, end
             end
