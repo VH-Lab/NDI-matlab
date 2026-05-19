@@ -117,7 +117,7 @@ function result = local(path, options)
 
     lockFile = fullfile(ndiDir, '.migrate.lock');
     lockHandle = acquireLock(lockFile);
-    lockCleanup = onCleanup(@() releaseLock(lockHandle)); %#ok<NASGU>
+    lockCleanup = onCleanup(@() releaseLock(lockHandle));
 
     dstPath = fullfile(ndiDir, 'V_delta.sqlite');
     quarantineFile = fullfile(ndiDir, 'migrate_quarantine.json');
@@ -159,7 +159,7 @@ function result = local(path, options)
         end
         db = did2.database.sqlitedb(dstPath, ...
             'SchemaCache', options.SchemaCache);
-        dbCleanup = onCleanup(@() db.close()); %#ok<NASGU>
+        dbCleanup = onCleanup(@() db.close());
         if ~isempty(convertResult.migrated)
             db.add(convertResult.migrated, 'Validate', options.Validate);
         end
@@ -248,7 +248,7 @@ end
 function [bodies, srcInfo] = readBodiesFromVDelta(dstPath)
     srcInfo = struct('kind', 'none', 'path', dstPath);
     db = did2.database.sqlitedb(dstPath);
-    dbCleanup = onCleanup(@() db.close()); %#ok<NASGU>
+    dbCleanup = onCleanup(@() db.close());
     ids = db.allIds();
     bodies = cell(numel(ids), 1);
     for k = 1:numel(ids)
@@ -308,7 +308,7 @@ function writeQuarantineFile(quarantineFile, quarantineStructArray)
             'Failed to open quarantine file "%s" for writing.', ...
             quarantineFile);
     end
-    closer = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    closer = onCleanup(@() fclose(fid));
     fwrite(fid, text, 'char');
 end
 
