@@ -90,8 +90,8 @@ classdef  matlabdumbjsondb2 < ndi.database
                     end
                 end
             end
-            ndi_document_objs = {};
             [docs] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
+            ndi_document_objs = cell(1, numel(docs));
             for i=1:numel(docs)
                 ndi_document_objs{i} = ndi.database.internal.applyReadNormalization(docs{i});
             end
