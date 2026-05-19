@@ -1,0 +1,335 @@
+function result = local(path, options)
+%LOCAL Migrate a local NDI dataset/session to V_delta on disk.
+%
+%   RESULT = ndi.migrate.local(PATH) migrates the on-disk did_v1
+%   database under PATH/.ndi to the V_delta wire format by reading
+%   every document body via the did2 v1 readers, running
+%   did2.convert.v1_to_v2 per body, and writing the surviving docs
+%   into PATH/.ndi/V_delta.sqlite via did2.database.sqlitedb.
+%
+%   The function acquires an exclusive lock at PATH/.ndi/.migrate.lock
+%   for the duration of the run, so concurrent migrations of the same
+%   dataset fail fast instead of corrupting each other.
+%
+%   Options (name-value):
+%     DryRun           (1,1 logical, default false) - report what
+%                      would change without writing the V_delta
+%                      database, the quarantine sidecar, or the
+%                      backup directory. The result struct still
+%                      carries the migrated documents in-memory and
+%                      a populated references report so the caller
+%                      can preview the outcome.
+%     Backup           (1,1 logical, default true)  - copy the
+%                      entire .ndi directory to PATH/.v1-backup
+%                      before touching any files. No-op if the
+%                      backup directory already exists.
+%     ContinueOnError  (1,1 logical, default true)  - quarantine
+%                      per-document failures and keep going. When
+%                      false, the function raises after the pass
+%                      if any document failed.
+%     Verbose          (1,1 logical, default false) - print the
+%                      end-of-run summary to stdout.
+%     Validate         (1,1 logical, default true)  - validate each
+%                      migrated document against its V_delta schema
+%                      during conversion and again on insert into
+%                      the V_delta database. Tests with no schema
+%                      cache available may pass false; production
+%                      callers should leave this true.
+%     SchemaCache      ([] or a did2.schema.cache handle, default
+%                      []) - override the shared schema cache. Used
+%                      by tests; production callers should rely on
+%                      ndi.schemas.init having set the active cache.
+%
+%   RESULT is a struct with fields:
+%       path         - the input PATH (char).
+%       source       - struct describing the v1 source that was
+%                      read: `kind` ('sqlite', 'dumbjsondb', or
+%                      'none' when the function consumed the
+%                      existing V_delta file instead) and `path`
+%                      (char).
+%       destination  - absolute path of the V_delta sqlite file
+%                      this run wrote (or would write, when DryRun
+%                      is true).
+%       alreadyMigrated - logical; true when a V_delta sqlite file
+%                      already existed and the run did a fast
+%                      idempotent pass (read V_delta, re-validate).
+%       dryRun       - logical mirror of the DryRun option.
+%       backup       - struct with `enabled` (the option value),
+%                      `path` (target directory), and `created`
+%                      (logical, true iff this run wrote it).
+%       summary      - the `summary` field returned by
+%                      did2.convert.v1_to_v2 (`total`,
+%                      `migrated_count`, `quarantine_count`,
+%                      `by_class`).
+%       quarantine   - struct array of per-doc failures (see
+%                      did2.convert.v1_to_v2).
+%       quarantineFile - absolute path to the on-disk quarantine
+%                      sidecar, '' when nothing was written.
+%       references   - report from did2.validate.references over
+%                      the migrated documents.
+%
+%   Idempotency:
+%       Re-running on a dataset that already has a V_delta.sqlite
+%       under .ndi is a fast no-op modulo validation: the function
+%       loads every document from the existing V_delta file,
+%       re-runs did2.convert.v1_to_v2 (which short-circuits already-
+%       V_delta bodies), and re-validates references. Nothing is
+%       written when DryRun is true OR the V_delta file is
+%       byte-equivalent to what would have been produced. To force
+%       a full re-migration, delete PATH/.ndi/V_delta.sqlite first.
+%
+%   Errors:
+%       NDI:migrate:badPath         - PATH is not a directory.
+%       NDI:migrate:noNdiDir        - PATH/.ndi is missing; not
+%                                     an NDI session/dataset root.
+%       NDI:migrate:noV1Source      - .ndi exists but contains no
+%                                     recognised v1 store and no
+%                                     V_delta file.
+%       NDI:migrate:locked          - another migration is in
+%                                     flight (or left a stale lock).
+%       NDI:migrate:hadQuarantine   - ContinueOnError=false and at
+%                                     least one document failed.
+%
+%   See also: did2.convert.v1_to_v2, did2.convert.fromV1Database,
+%             did2.validate.references, did2.database.sqlitedb.
+
+    arguments
+        path (1,:) char
+        options.DryRun (1,1) logical = false
+        options.Backup (1,1) logical = true
+        options.ContinueOnError (1,1) logical = true
+        options.Verbose (1,1) logical = false
+        options.Validate (1,1) logical = true
+        options.SchemaCache = []
+    end
+
+    if ~isfolder(path)
+        error('NDI:migrate:badPath', ...
+            'Path "%s" is not a directory.', path);
+    end
+
+    ndiDir = fullfile(path, '.ndi');
+    if ~isfolder(ndiDir)
+        error('NDI:migrate:noNdiDir', ...
+            ['"%s" has no .ndi directory; not an NDI ' ...
+             'session/dataset root.'], path);
+    end
+
+    lockFile = fullfile(ndiDir, '.migrate.lock');
+    lockHandle = acquireLock(lockFile);
+    lockCleanup = onCleanup(@() releaseLock(lockHandle)); %#ok<NASGU>
+
+    dstPath = fullfile(ndiDir, 'V_delta.sqlite');
+    quarantineFile = fullfile(ndiDir, 'migrate_quarantine.json');
+    backupDir = fullfile(path, '.v1-backup');
+
+    alreadyMigrated = isfile(dstPath);
+    backupCreated = false;
+    if alreadyMigrated
+        [bodies, srcInfo] = readBodiesFromVDelta(dstPath);
+    else
+        [srcKind, srcPath] = detectV1Source(ndiDir);
+        srcInfo = struct('kind', srcKind, 'path', srcPath);
+        if strcmp(srcKind, 'sqlite')
+            bodies = did2.convert.readers.sqliteV1(srcPath);
+        elseif strcmp(srcKind, 'dumbjsondb')
+            bodies = did2.convert.readers.dumbJsonV1(srcPath);
+        else
+            error('NDI:migrate:noV1Source', ...
+                ['No recognised v1 database (did-sqlite.sqlite or ' ...
+                 'Object_id_*_v*.json) and no V_delta.sqlite found ' ...
+                 'under "%s".'], ndiDir);
+        end
+        if options.Backup && ~options.DryRun && ~isfolder(backupDir)
+            copyBackup(ndiDir, backupDir);
+            backupCreated = true;
+        end
+    end
+
+    convertResult = did2.convert.v1_to_v2(bodies, ...
+        'Validate', options.Validate, ...
+        'SchemaCache', options.SchemaCache, ...
+        'Verbose', false);
+
+    wroteDst = false;
+    wroteQuarantineFile = '';
+    if ~options.DryRun && ~alreadyMigrated
+        if isfile(dstPath)
+            delete(dstPath);
+        end
+        db = did2.database.sqlitedb(dstPath, ...
+            'SchemaCache', options.SchemaCache);
+        dbCleanup = onCleanup(@() db.close()); %#ok<NASGU>
+        if ~isempty(convertResult.migrated)
+            db.add(convertResult.migrated, 'Validate', options.Validate);
+        end
+        clear dbCleanup;
+        wroteDst = true;
+
+        if ~isempty(convertResult.quarantine)
+            writeQuarantineFile(quarantineFile, convertResult.quarantine);
+            wroteQuarantineFile = quarantineFile;
+        elseif isfile(quarantineFile)
+            delete(quarantineFile);
+        end
+    end
+
+    refReport = did2.validate.references(convertResult.migrated);
+
+    result = struct();
+    result.path = path;
+    result.source = srcInfo;
+    result.destination = dstPath;
+    result.alreadyMigrated = alreadyMigrated;
+    result.dryRun = options.DryRun;
+    result.wroteDestination = wroteDst;
+    result.backup = struct( ...
+        'enabled', options.Backup, ...
+        'path',    backupDir, ...
+        'created', backupCreated);
+    result.summary = convertResult.summary;
+    result.quarantine = convertResult.quarantine;
+    result.quarantineFile = wroteQuarantineFile;
+    result.references = refReport;
+
+    if options.Verbose
+        printSummary(result);
+    end
+
+    if ~options.ContinueOnError && ~isempty(convertResult.quarantine)
+        error('NDI:migrate:hadQuarantine', ...
+            ['Migration of "%s" quarantined %d document(s); ' ...
+             'ContinueOnError was false.'], ...
+             path, numel(convertResult.quarantine));
+    end
+end
+
+% ---- v1 source detection ---------------------------------------------------
+
+function [kind, srcPath] = detectV1Source(ndiDir)
+    kind = 'none';
+    srcPath = '';
+
+    didSqlite = fullfile(ndiDir, 'did-sqlite.sqlite');
+    if isfile(didSqlite)
+        kind = 'sqlite';
+        srcPath = didSqlite;
+        return;
+    end
+
+    sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
+    sqliteListing = sqliteListing(~[sqliteListing.isdir]);
+    sqliteListing = sqliteListing(~strcmpi({sqliteListing.name}, 'V_delta.sqlite'));
+    if ~isempty(sqliteListing)
+        kind = 'sqlite';
+        srcPath = fullfile(ndiDir, sqliteListing(1).name);
+        return;
+    end
+
+    dumbListing = dir(fullfile(ndiDir, 'Object_id_*_v*.json'));
+    if ~isempty(dumbListing)
+        kind = 'dumbjsondb';
+        srcPath = ndiDir;
+        return;
+    end
+    nested = {'.dumbjsondb', 'dumbjsondb'};
+    for k = 1:numel(nested)
+        cand = fullfile(ndiDir, nested{k});
+        if isfolder(cand) && ~isempty(dir(fullfile(cand, 'Object_id_*_v*.json')))
+            kind = 'dumbjsondb';
+            srcPath = ndiDir;
+            return;
+        end
+    end
+end
+
+% ---- read V_delta bodies (idempotent re-run path) --------------------------
+
+function [bodies, srcInfo] = readBodiesFromVDelta(dstPath)
+    srcInfo = struct('kind', 'none', 'path', dstPath);
+    db = did2.database.sqlitedb(dstPath);
+    dbCleanup = onCleanup(@() db.close()); %#ok<NASGU>
+    ids = db.allIds();
+    bodies = cell(numel(ids), 1);
+    for k = 1:numel(ids)
+        doc = db.get(ids{k});
+        bodies{k} = doc.toStruct();
+    end
+end
+
+% ---- backup ----------------------------------------------------------------
+
+function copyBackup(ndiDir, backupDir)
+    mkdir(backupDir);
+    [ok, msg, msgid] = copyfile(fullfile(ndiDir, '*'), backupDir, 'f');
+    if ~ok
+        error('NDI:migrate:backupFailed', ...
+            'Failed to copy "%s" to "%s": %s (%s)', ...
+            ndiDir, backupDir, msg, msgid);
+    end
+end
+
+% ---- lock helpers (atomic create via java.io.File) -------------------------
+
+function handle = acquireLock(lockFile)
+    f = java.io.File(lockFile);
+    try
+        created = f.createNewFile();
+    catch err
+        error('NDI:migrate:locked', ...
+            'Failed to create lock "%s": %s', lockFile, err.message);
+    end
+    if ~created
+        error('NDI:migrate:locked', ...
+            ['Migration lock "%s" already exists. Another migration ' ...
+             'may be running; delete the file if you are sure it is ' ...
+             'stale.'], lockFile);
+    end
+    handle = char(lockFile);
+end
+
+function releaseLock(lockFile)
+    try
+        if isfile(lockFile)
+            delete(lockFile);
+        end
+    catch
+        % Best-effort release; never raise from cleanup.
+    end
+end
+
+% ---- quarantine sidecar ----------------------------------------------------
+
+function writeQuarantineFile(quarantineFile, quarantineStructArray)
+    text = jsonencode(quarantineStructArray);
+    fid = fopen(quarantineFile, 'w');
+    if fid < 0
+        error('NDI:migrate:quarantineWriteFailed', ...
+            'Failed to open quarantine file "%s" for writing.', ...
+            quarantineFile);
+    end
+    closer = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    fwrite(fid, text, 'char');
+end
+
+% ---- summary printer -------------------------------------------------------
+
+function printSummary(result)
+    fprintf('ndi.migrate.local summary for "%s":\n', result.path);
+    if result.alreadyMigrated
+        fprintf('  already-migrated fast pass (V_delta.sqlite present).\n');
+    else
+        fprintf('  source:           %s (%s)\n', ...
+            result.source.kind, result.source.path);
+    end
+    fprintf('  destination:      %s\n', result.destination);
+    fprintf('  dry-run:          %d\n', result.dryRun);
+    fprintf('  wrote destination:%d\n', result.wroteDestination);
+    fprintf('  backup created:   %d (path: %s)\n', ...
+        result.backup.created, result.backup.path);
+    fprintf('  total docs:       %d\n', result.summary.total);
+    fprintf('  migrated:         %d\n', result.summary.migrated_count);
+    fprintf('  quarantined:      %d\n', result.summary.quarantine_count);
+    fprintf('  orphan refs:      %d (of %d edges)\n', ...
+        result.references.orphan_count, result.references.edges_examined);
+end
