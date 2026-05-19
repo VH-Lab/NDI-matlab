@@ -1,0 +1,209 @@
+name: Run NDI Test Suite (Vnext / did2)
+
+# Vnext-only workflow for the did2 migration line. This is the
+# foundational CI gate from issue #775: it pulls did-matlab at its
+# V_delta-ready branch (V2), pulls did-schema as a sibling so
+# did2.schema.cache resolves, runs a smoke test that parses every
+# V_delta schema and confirms the document_class block is present,
+# and then optionally runs the existing NDI unit suite so breakage
+# from issues #776+ surfaces early.
+#
+# Production CI for `main` (run-tests.yml, test-symmetry.yml, ...)
+# is intentionally unchanged.
+
+on:
+  push:
+    branches: [ "Vnext" ]
+    paths-ignore:
+      - '*.md'
+      - 'docs/reports/**'
+  pull_request:
+    branches: [ "Vnext" ]
+    paths-ignore:
+      - '*.md'
+      - 'docs/reports/**'
+  workflow_dispatch:
+    inputs:
+      did_matlab_ref:
+        description: 'DID-matlab branch / tag / sha'
+        required: false
+        default: 'V2'
+        type: string
+      did_schema_ref:
+        description: 'did-schema branch / tag / sha (holds schemas/V_delta/)'
+        required: false
+        default: 'main'
+        type: string
+      matlab_release:
+        description: 'MATLAB Release'
+        required: false
+        default: 'latest'
+        type: choice
+        options:
+          - 'latest'
+          - 'R2025a'
+          - 'R2024b'
+          - 'R2024a'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vnext_smoke:
+    name: Vnext smoke (did-matlab@${{ inputs.did_matlab_ref || 'V2' }}, did-schema@${{ inputs.did_schema_ref || 'main' }})
+    runs-on: ubuntu-latest
+    env:
+      DID_MATLAB_REF: ${{ inputs.did_matlab_ref || 'V2' }}
+      DID_SCHEMA_REF: ${{ inputs.did_schema_ref || 'main' }}
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Check out did-schema (for V_delta validation)
+        # We pin DID_SCHEMA_PATH explicitly via the env var below, so
+        # the V_delta schema dir does not need to live at
+        # did2.schema.cache.defaultSchemaPath() — checking it out
+        # inside the workspace is fine.
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_REF }}
+          path: did-schema
+
+      - name: Export DID_SCHEMA_PATH
+        run: |
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/did-schema/schemas/V_delta/stable" \
+            >> "$GITHUB_ENV"
+          ls "${GITHUB_WORKSPACE}/did-schema/schemas/V_delta/stable" | head
+
+      - name: Start virtual display server
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ inputs.matlab_release || 'latest' }}
+          cache: true
+          products: |
+            Communications_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Signal_Processing_Toolbox
+
+      - name: Clone NDIcalc-vis-matlab as sibling directory
+        run: git clone https://github.com/VH-Lab/NDIcalc-vis-matlab.git ../NDIcalc-vis-matlab
+
+      - name: Override DID-matlab ref for non-default dispatch
+        # requirements.txt on the Vnext branch already pins
+        # DID-matlab@V2. Only rewrite it when the workflow_dispatch
+        # input asks for a different ref.
+        if: env.DID_MATLAB_REF != 'V2'
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              text = p.read_text().splitlines()
+              out = []
+              for line in text:
+                  if "DID-matlab" in line:
+                      base = line.split("@", 1)[0]
+                      out.append(f"{base}@{ref}")
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+          grep -i did-matlab requirements.txt tests/requirements.txt
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Check code (static analysis)
+        # Order matters (carried over from DID-matlab/.github/workflows/test-code.yml):
+        # check-code must run immediately after install-matbox, before
+        # any other step touches the MATLAB path — otherwise
+        # codecheckToolbox fails with "Too many input arguments".
+        uses: ehennestad/matbox-actions/check-code@v1
+        with:
+          source_directory: 'src'
+
+      - name: Install repo dependencies (pulls DID-matlab@V2)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(nditools.projectdir(), "tests"));
+
+      - name: Smoke test - load every V_delta schema via did2.schema.cache
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            schemaPath = getenv("DID_SCHEMA_PATH");
+            assert(isfolder(schemaPath), ...
+                sprintf("DID_SCHEMA_PATH does not exist: %s", schemaPath));
+            fprintf("Loading V_delta schemas from: %s\n", schemaPath);
+
+            did2.schema.cache.resetSingleton();
+            did2.schema.cache.setSchemaPath(schemaPath);
+            c = did2.schema.cache.shared();
+            c.loadAllSchemas();
+
+            keys = c.loadedClasses.keys();
+            assert(~isempty(keys), "No V_delta schemas were loaded.");
+            fprintf("Loaded %d schema class(es).\n", numel(keys));
+
+            failures = strings(0, 1);
+            for k = 1:numel(keys)
+                name = keys{k};
+                s = c.loadedClasses(name);
+                ok = isstruct(s) ...
+                    && isfield(s, "document_class") ...
+                    && isstruct(s.document_class) ...
+                    && isfield(s.document_class, "class_name") ...
+                    && ~isempty(s.document_class.class_name);
+                if ok
+                    fprintf("  OK  %s\n", name);
+                else
+                    failures(end+1, 1) = string(name); %#ok<AGROW>
+                    fprintf("  BAD %s (missing/invalid document_class)\n", name);
+                end
+            end
+            assert(isempty(failures), ...
+                sprintf("%d schema(s) had no valid document_class block: %s", ...
+                    numel(failures), strjoin(failures, ", ")));
+
+      - name: Run NDI unit tests against V_delta-side did-matlab (optional)
+        # Issue #775 marks this as "Optional: run existing NDI unit
+        # tests against the V_delta-side did-matlab to detect breakage
+        # as issues 3-8 land." Breakage is expected before those issues
+        # ship, so a failure here does not fail the workflow yet.
+        # Flip continue-on-error back to false once the migration
+        # stabilises.
+        continue-on-error: true
+        uses: matlab-actions/run-command@v2
+        if: always()
+        with:
+          command: |
+            setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
+            setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
+            addpath(genpath("src"));
+            ndi.cloud.authenticate("InteractionEnabled", "off");
+            addpath(genpath("tests"));
+            addpath(genpath("tools"));
+            testToolboxNoCloud();
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: "Vnext NDI unit test results"
+          files: "docs/reports/test-results.xml"
