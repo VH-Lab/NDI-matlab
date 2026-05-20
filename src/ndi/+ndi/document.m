@@ -887,7 +887,13 @@ classdef document
                 options.session ndi.session = ndi.session.empty()
             end
 
-            jsonStr = jsonencode(ndi_document_obj.document_properties, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+            % Reconcile did_v1 legacy alias edits back into V_delta
+            % canonical and strip legacy fields so only V_delta lands
+            % in the JSON export. Mirrors the ndi.database/add hook;
+            % keeps the on-disk artefact canonical regardless of
+            % which path produced it.
+            reconciledBody = ndi.compat.reconcileWrite(ndi_document_obj.document_properties);
+            jsonStr = jsonencode(reconciledBody, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
 
             fid = fopen([filePrefix '.json'], 'w');
             if fid<0
@@ -965,6 +971,33 @@ classdef document
         end % validate()
 
     end % methods
+
+    methods (Static, Hidden)
+
+        function obj = fromBody(body)
+            % FROMBODY - wrap a document body without applying
+            % ndi.compat.augmentRead.
+            %
+            % OBJ = ndi.document.fromBody(BODY) is the bypass-augmentation
+            % factory used by the write path (see
+            % ndi.database.internal.applyWriteReconciliation). The
+            % regular constructor calls ndi.compat.augmentRead so the
+            % returned ndi.document carries the legacy did_v1 aliases
+            % that customer code still reads. When the caller has
+            % already reconciled and stripped those aliases via
+            % ndi.compat.reconcileWrite, re-augmenting would undo
+            % the strip — this factory provides the bypass.
+            %
+            % Internal use only. Hidden to keep it out of
+            % methods(ndi.document) listings.
+            arguments
+                body (1,1) struct
+            end
+            obj = ndi.document();
+            obj.document_properties = body;
+        end % fromBody
+
+    end % methods (Static, Hidden)
 
     methods (Static)
 
