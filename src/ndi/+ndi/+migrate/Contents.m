@@ -9,6 +9,9 @@
 %
 % Files:
 %   local   - migrate a local on-disk dataset/session to V_delta.
+%   cloud   - migrate a cloud-hosted dataset to V_delta (uses the
+%             cloud write-lock to quiesce other writers and the
+%             existing list/bulk-fetch/bulk-upload endpoints).
 %
 % See also: did2.convert.v1_to_v2, did2.validate.references,
 %           did2.database.sqlitedb, docs/v2/PLAN.md.
