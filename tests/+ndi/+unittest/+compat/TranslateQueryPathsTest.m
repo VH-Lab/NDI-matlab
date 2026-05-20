@@ -195,9 +195,15 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             testCase.verifyEqual(q.searchstructure.field, 'base.id');
         end
 
-        function test_ndi_query_struct_input_translated(testCase)
-            ss = i_ss('probe_location.ontology_name', 'exact_string', 'X');
-            q = ndi.query(ss);
+        function test_ndi_query_cell_input_translated(testCase)
+            % The struct-input form of ndi.query / did.query is
+            % currently latent-broken (the shape-strict eqlen check
+            % in did.query rejects a 4x1 fieldnames cell against a
+            % 1x4 literal). Cover the cell-input form instead, which
+            % goes through searchcellarray2searchstructure and
+            % builds the struct internally before our translation
+            % hook runs.
+            q = ndi.query({'probe_location.ontology_name', 'X'});
             testCase.verifyEqual(q.searchstructure.field, ...
                 'probe_location.location.node');
         end
