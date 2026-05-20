@@ -76,6 +76,16 @@ classdef document
                 end
             end
 
+            % Inject did_v1 legacy aliases into the V_delta body so
+            % callers that still read legacy paths (e.g.,
+            % document_properties.probe_location.ontology_name,
+            % depends_on(k).id) keep working after the database layer
+            % normalised the stored body to V_delta on read. Idempotent
+            % and a no-op on v1-shaped bodies and on classes without
+            % any aliased fields. See ndi.compat.fieldAliases for the
+            % alias table and issue #779 for the broader did2 plan.
+            document_properties = ndi.compat.augmentRead(document_properties);
+
             ndi_document_obj.document_properties = document_properties;
 
         end % ndi.document() creator
@@ -611,8 +621,15 @@ classdef document
                         ndi_document_obj_out.document_properties.depends_on(index) =  ...
                             ndi_document_obj_b.document_properties.depends_on(k);
                     else
-                        ndi_document_obj_out.document_properties.depends_on(end+1) = ...
-                            ndi_document_obj_b.document_properties.depends_on(k);
+                        % Use ndi.compat.dependsOnAppend so the legacy
+                        % `id` alias (added by ndi.compat.augmentRead)
+                        % doesn't trigger "heterogeneousStrucAssignment"
+                        % when the two depends_on arrays disagree on
+                        % whether the alias column is present.
+                        ndi_document_obj_out.document_properties.depends_on = ...
+                            ndi.compat.dependsOnAppend( ...
+                                ndi_document_obj_out.document_properties.depends_on, ...
+                                ndi_document_obj_b.document_properties.depends_on(k));
                     end
                 end
                 otherproperties = rmfield(otherproperties,'depends_on');
@@ -719,12 +736,24 @@ classdef document
                 if numel(matches)>0
                     notfound = 0;
                     ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
+                    % Re-mirror legacy depends_on aliases (e.g., .id)
+                    % so they stay consistent with the updated value.
+                    if isfield(ndi_document_obj.document_properties.depends_on, 'id')
+                        ndi_document_obj.document_properties.depends_on(matches(1)).id = value;
+                    end
                 elseif ~ErrorIfNotFound % add it
-                    ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
+                    % Use ndi.compat.dependsOnAppend so the legacy `id`
+                    % alias (added by ndi.compat.augmentRead) doesn't
+                    % trigger "heterogeneousStrucAssignment" when the
+                    % new entry lacks fields the array already carries.
+                    ndi_document_obj.document_properties.depends_on = ...
+                        ndi.compat.dependsOnAppend( ...
+                            ndi_document_obj.document_properties.depends_on, d_struct);
                     notfound = 0;
                 end
             elseif ~ErrorIfNotFound
-                ndi_document_obj.document_properties.depends_on = d_struct;
+                ndi_document_obj.document_properties.depends_on = ...
+                    ndi.compat.dependsOnAppend([], d_struct);
                 notfound = 0;
             end
 
@@ -858,7 +887,13 @@ classdef document
                 options.session ndi.session = ndi.session.empty()
             end
 
-            jsonStr = jsonencode(ndi_document_obj.document_properties, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
+            % Reconcile did_v1 legacy alias edits back into V_delta
+            % canonical and strip legacy fields so only V_delta lands
+            % in the JSON export. Mirrors the ndi.database/add hook;
+            % keeps the on-disk artefact canonical regardless of
+            % which path produced it.
+            reconciledBody = ndi.compat.reconcileWrite(ndi_document_obj.document_properties);
+            jsonStr = jsonencode(reconciledBody, 'ConvertInfAndNaN', true, 'PrettyPrint', true);
 
             fid = fopen([filePrefix '.json'], 'w');
             if fid<0
@@ -936,6 +971,33 @@ classdef document
         end % validate()
 
     end % methods
+
+    methods (Static, Hidden)
+
+        function obj = fromBody(body)
+            % FROMBODY - wrap a document body without applying
+            % ndi.compat.augmentRead.
+            %
+            % OBJ = ndi.document.fromBody(BODY) is the bypass-augmentation
+            % factory used by the write path (see
+            % ndi.database.internal.applyWriteReconciliation). The
+            % regular constructor calls ndi.compat.augmentRead so the
+            % returned ndi.document carries the legacy did_v1 aliases
+            % that customer code still reads. When the caller has
+            % already reconciled and stripped those aliases via
+            % ndi.compat.reconcileWrite, re-augmenting would undo
+            % the strip — this factory provides the bypass.
+            %
+            % Internal use only. Hidden to keep it out of
+            % methods(ndi.document) listings.
+            arguments
+                body (1,1) struct
+            end
+            obj = ndi.document();
+            obj.document_properties = body;
+        end % fromBody
+
+    end % methods (Static, Hidden)
 
     methods (Static)
 
