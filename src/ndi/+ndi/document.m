@@ -621,8 +621,15 @@ classdef document
                         ndi_document_obj_out.document_properties.depends_on(index) =  ...
                             ndi_document_obj_b.document_properties.depends_on(k);
                     else
-                        ndi_document_obj_out.document_properties.depends_on(end+1) = ...
-                            ndi_document_obj_b.document_properties.depends_on(k);
+                        % Use ndi.compat.dependsOnAppend so the legacy
+                        % `id` alias (added by ndi.compat.augmentRead)
+                        % doesn't trigger "heterogeneousStrucAssignment"
+                        % when the two depends_on arrays disagree on
+                        % whether the alias column is present.
+                        ndi_document_obj_out.document_properties.depends_on = ...
+                            ndi.compat.dependsOnAppend( ...
+                                ndi_document_obj_out.document_properties.depends_on, ...
+                                ndi_document_obj_b.document_properties.depends_on(k));
                     end
                 end
                 otherproperties = rmfield(otherproperties,'depends_on');
@@ -729,12 +736,24 @@ classdef document
                 if numel(matches)>0
                     notfound = 0;
                     ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
+                    % Re-mirror legacy depends_on aliases (e.g., .id)
+                    % so they stay consistent with the updated value.
+                    if isfield(ndi_document_obj.document_properties.depends_on, 'id')
+                        ndi_document_obj.document_properties.depends_on(matches(1)).id = value;
+                    end
                 elseif ~ErrorIfNotFound % add it
-                    ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
+                    % Use ndi.compat.dependsOnAppend so the legacy `id`
+                    % alias (added by ndi.compat.augmentRead) doesn't
+                    % trigger "heterogeneousStrucAssignment" when the
+                    % new entry lacks fields the array already carries.
+                    ndi_document_obj.document_properties.depends_on = ...
+                        ndi.compat.dependsOnAppend( ...
+                            ndi_document_obj.document_properties.depends_on, d_struct);
                     notfound = 0;
                 end
             elseif ~ErrorIfNotFound
-                ndi_document_obj.document_properties.depends_on = d_struct;
+                ndi_document_obj.document_properties.depends_on = ...
+                    ndi.compat.dependsOnAppend([], d_struct);
                 notfound = 0;
             end
 
