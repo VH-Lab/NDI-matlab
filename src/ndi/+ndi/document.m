@@ -76,6 +76,16 @@ classdef document
                 end
             end
 
+            % Inject did_v1 legacy aliases into the V_delta body so
+            % callers that still read legacy paths (e.g.,
+            % document_properties.probe_location.ontology_name,
+            % depends_on(k).id) keep working after the database layer
+            % normalised the stored body to V_delta on read. Idempotent
+            % and a no-op on v1-shaped bodies and on classes without
+            % any aliased fields. See ndi.compat.fieldAliases for the
+            % alias table and issue #779 for the broader did2 plan.
+            document_properties = ndi.compat.augmentRead(document_properties);
+
             ndi_document_obj.document_properties = document_properties;
 
         end % ndi.document() creator
