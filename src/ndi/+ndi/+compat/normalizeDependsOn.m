@@ -63,6 +63,19 @@ hasId    = isfield(deps, 'id');
 hasValue = isfield(deps, 'value');
 hasDocId = isfield(deps, 'document_id');
 
+n = numel(deps);
+
+if n == 0
+    % Empty struct array: canonicalise the field schema by
+    % rebuilding the 0x0 struct with exactly {name, document_id}.
+    % Legacy `id` / `value` keys (if any) are dropped from the
+    % schema; document_id is added. Avoids the asymmetry where
+    % rmfield('value') leaves the schema as {name} and the loop
+    % that adds document_id doesn't run for n=0.
+    deps = struct('name', {}, 'document_id', {});
+    return;
+end
+
 if ~hasId && ~hasValue
     if hasDocId
         return;
@@ -75,8 +88,6 @@ if ~hasId && ~hasValue
     end
     return;
 end
-
-n = numel(deps);
 docIds = cell(1, n);
 for k = 1:n
     if hasDocId && ~isempty(deps(k).document_id)
