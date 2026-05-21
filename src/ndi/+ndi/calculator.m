@@ -134,7 +134,13 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
             t_start = tic;
             fixed_input_parameters = parameters_specification.input_parameters;
-            if isfield(parameters_specification,'depends_on'), fixed_depends_on = parameters_specification.depends_on; else, fixed_depends_on = vlt.data.emptystruct('name','value'); end
+            if isfield(parameters_specification,'depends_on'), fixed_depends_on = parameters_specification.depends_on; else, fixed_depends_on = vlt.data.emptystruct('name','document_id'); end
+            % Normalise fixed_depends_on to the V_delta canonical key
+            % so it concatenates cleanly with `extra_depends` below.
+            % parameters_specification may arrive from older code paths
+            % that built depends_on with .value or .id.
+            tmpBody = ndi.compat.normalizeDependsOn(struct('depends_on', fixed_depends_on));
+            fixed_depends_on = tmpBody.depends_on;
             if ~isfield(parameters_specification,'query'), parameters_specification.query = ndi_calculator_obj.default_parameters_query(parameters_specification); end
             if numel(parameters_specification.query)==0
                 parameters.input_parameters = fixed_input_parameters; parameters.depends_on = fixed_depends_on; parameters = {parameters}; return;
@@ -146,15 +152,15 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end
             parameters = {};
             for n=1:prod(V)
-                is_valid = 1; g = vlt.math.group_enumeration(V,n); extra_depends = vlt.data.emptystruct('name','value');
+                is_valid = 1; g = vlt.math.group_enumeration(V,n); extra_depends = vlt.data.emptystruct('name','document_id');
                 for i=1:numel(parameters_specification.query)
                     if isfield(parameters_specification.query(i), 'name')
                         p_name = parameters_specification.query(i).name;
                     else
                         p_name = sprintf('input_%d', i);
                     end
-                    s = struct('name', p_name, 'value', doclist{i}{g(i)}.id());
-                    is_valid = is_valid & ndi_calculator_obj.is_valid_dependency_input(s.name,s.value);
+                    s = struct('name', p_name, 'document_id', doclist{i}{g(i)}.id());
+                    is_valid = is_valid & ndi_calculator_obj.is_valid_dependency_input(s.name,s.document_id);
                     extra_depends(end+1) = s; if ~is_valid, break; end
                 end
                 if is_valid
