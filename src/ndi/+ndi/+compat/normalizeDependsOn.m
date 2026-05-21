@@ -39,7 +39,7 @@ function body = normalizeDependsOn(body)
         body (1,1) struct
     end
 
-    if ~isfield(body, 'depends_on') || isempty(body.depends_on)
+    if ~isfield(body, 'depends_on')
         return;
     end
 
