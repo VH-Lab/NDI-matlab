@@ -124,7 +124,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 for k=1:numel(docs) % should be 1 only, but keep deleting even if not
                     for i=1:numel(docs{k}.document_properties.depends_on)
                         dochere = ndi_session_obj.database_search(...
-                            ndi.query('base.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
+                            ndi.query('base.id', 'exact_string', ndi.document.i_readDependencyTarget(docs{k}.document_properties.depends_on(i)), ''));
                         ndi_session_obj.database_rm(dochere);
                     end
                     ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)

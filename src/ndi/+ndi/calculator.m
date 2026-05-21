@@ -196,11 +196,12 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             query = vlt.data.emptystruct('name','query');
             if isfield(parameters_specification.input_parameters,'depends_on')
                 for i=1:numel(parameters_specification.input_parameters.depends_on)
-                    if ~isempty(parameters_specification.input_parameters.depends_on(i).value) & ...
+                    depTarget = ndi.document.i_readDependencyTarget(parameters_specification.input_parameters.depends_on(i));
+                    if ~isempty(depTarget) & ...
                             ~isempty(parameters_specification.input_parameters.depends_on(i).name)
                         query_here = struct('name',parameters_specification.input_parameters.depends_on(i).name,...
                             'query',...
-                            ndi.query('base.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
+                            ndi.query('base.id','exact_string',depTarget,''));
                         query(end+1) = query_here;
                     end
                 end
@@ -242,7 +243,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             [~,class_name,~] = fileparts(myemptydoc.document_properties.document_class.definition);
             q = ndi.query('','isa',class_name,'');
             if isfield(parameters,'depends_on')
-                for i=1:numel(parameters.depends_on), if ~isempty(parameters.depends_on(i).value), q = q & ndi.query('','depends_on',parameters.depends_on(i).name,parameters.depends_on(i).value); end; end
+                for i=1:numel(parameters.depends_on), depTarget = ndi.document.i_readDependencyTarget(parameters.depends_on(i)); if ~isempty(depTarget), q = q & ndi.query('','depends_on',parameters.depends_on(i).name,depTarget); end; end
             end
             docs = ndi_calculator_obj.session.database_search(q);
             matches = [];

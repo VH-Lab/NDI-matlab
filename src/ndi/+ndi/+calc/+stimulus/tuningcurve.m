@@ -522,7 +522,7 @@ classdef tuningcurve < ndi.calculator
                 % Run the calculator
                 calc_docs_this_test = {};
                 for k=1:numel(stim_response_doc)
-                    parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{k}.id());
+                    parameters.depends_on = struct('name','stimulus_response_scalar_id','document_id',stim_response_doc{k}.id());
 
                     % We use 'Replace' to ensure we get a fresh document (or replace the one from stimulus_response if it added one)
                     new_docs = ndi_calculator_obj.run('Replace',parameters);

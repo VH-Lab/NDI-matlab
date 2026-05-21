@@ -6,9 +6,11 @@ classdef FieldAliasesTest < matlab.unittest.TestCase
             aliases = ndi.compat.fieldAliases();
             testCase.verifyTrue(isstruct(aliases));
             testCase.verifyTrue(isfield(aliases, 'fields'));
-            testCase.verifyTrue(isfield(aliases, 'dependsOn'));
             testCase.verifyEqual(size(aliases.fields, 2), 3);
-            testCase.verifyEqual(size(aliases.dependsOn, 2), 3);
+            % dependsOn was removed in #801: depends_on entry-key
+            % compatibility now lives in ndi.document accessors +
+            % ndi.compat.translateQueryPaths, not in this table.
+            testCase.verifyFalse(isfield(aliases, 'dependsOn'));
         end
 
         function test_probe_location_rows_present_and_identity(testCase)
@@ -95,12 +97,12 @@ classdef FieldAliasesTest < matlab.unittest.TestCase
             testCase.verifyEqual(parts{2}, 0);
         end
 
-        function test_depends_on_value_id_rename(testCase)
+        function test_daqmetadatareader_reader_class_row(testCase)
             aliases = ndi.compat.fieldAliases();
-            testCase.verifyEqual(size(aliases.dependsOn, 1), 1);
-            testCase.verifyEqual(aliases.dependsOn{1, 1}, 'value');
-            testCase.verifyEqual(aliases.dependsOn{1, 2}, 'id');
-            testCase.verifyTrue(isempty(aliases.dependsOn{1, 3}));
+            row = i_findRow(aliases.fields, 'daqmetadatareader.reader_class');
+            testCase.verifyEqual(row{2}, ...
+                'daqmetadatareader.ndi_daqmetadatareader_class');
+            testCase.verifyTrue(isempty(row{3}));
         end
     end
 end

@@ -219,8 +219,9 @@ function documentList = checkSessionIds(subjectMap, documentList)
         documentList{idx} = studiedSpecimen_doc.set_session_id(char(session_id));
         doc = studiedSpecimen_doc;
         for j = 1:numel(doc.document_properties.depends_on)
-            if (~isempty(doc.document_properties.depends_on(j).value))
-                documentList = changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(j).value);
+            depTarget = ndi.document.i_readDependencyTarget(doc.document_properties.depends_on(j));
+            if ~isempty(depTarget)
+                documentList = changeDependenciesDoc(documentList, session_id, depTarget);
             end
         end
     end
@@ -231,8 +232,9 @@ function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
     documentList{idx} = doc.set_session_id(char(session_id));
     if numel(doc.document_properties.depends_on) > 0
         for i = 1: numel(doc.document_properties.depends_on)
-            if (~isempty(doc.document_properties.depends_on(i).value))
-                documentList = changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
+            depTarget = ndi.document.i_readDependencyTarget(doc.document_properties.depends_on(i));
+            if ~isempty(depTarget)
+                documentList = changeDependenciesDoc(documentList, session_id, depTarget);
             end
         end
     end
