@@ -78,13 +78,21 @@ classdef document
 
             % Inject did_v1 legacy aliases into the V_delta body so
             % callers that still read legacy paths (e.g.,
-            % document_properties.probe_location.ontology_name,
-            % depends_on(k).id) keep working after the database layer
-            % normalised the stored body to V_delta on read. Idempotent
-            % and a no-op on v1-shaped bodies and on classes without
-            % any aliased fields. See ndi.compat.fieldAliases for the
-            % alias table and issue #779 for the broader did2 plan.
+            % document_properties.probe_location.ontology_name) keep
+            % working after the database layer normalised the stored
+            % body to V_delta on read. Idempotent and a no-op on
+            % v1-shaped bodies and on classes without any aliased
+            % fields. See ndi.compat.fieldAliases for the alias table
+            % and issue #779 for the broader did2 plan.
             document_properties = ndi.compat.augmentRead(document_properties);
+
+            % Canonicalize depends_on entry keys to `document_id` so
+            % every dependency-accessor method on this class can rely
+            % on the invariant "the body's depends_on entries use
+            % document_id". did_v1 bodies carry `id`; an earlier
+            % V_delta draft used `value`; both are accepted on input
+            % and rewritten to `document_id` here. See #801.
+            document_properties = ndi.compat.normalizeDependsOn(document_properties);
 
             ndi_document_obj.document_properties = document_properties;
 
@@ -125,8 +133,8 @@ classdef document
             if ~hasdependencies & ErrorIfNotFound
                 error(['This document does not have any dependencies.']);
             else
-                d_struct = struct('name',[dependency_name '_' int2str(numel(d)+1)],'value',value);
-                ndi_document_obj = set_dependency_value(ndi_document_obj, d_struct.name, d_struct.value, 'ErrorIfNotFound', 0);
+                newName = [dependency_name '_' int2str(numel(d)+1)];
+                ndi_document_obj = set_dependency_value(ndi_document_obj, newName, value, 'ErrorIfNotFound', 0);
             end
         end %
 
@@ -335,7 +343,8 @@ classdef document
                 matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
                 if numel(matches)>0
                     notfound = 0;
-                    d = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
+                    d = ndi.document.i_readDependencyTarget( ...
+                        ndi_document_obj.document_properties.depends_on(matches(1)));
                 end
             end
 
@@ -382,7 +391,8 @@ classdef document
                         matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
                         % Skip if the matched dependency has an empty value (template placeholder)
                         if ~isempty(matches)
-                            val = ndi_document_obj.document_properties.depends_on(matches(1)).value;
+                            val = ndi.document.i_readDependencyTarget( ...
+                                ndi_document_obj.document_properties.depends_on(matches(1)));
                             if isempty(val)
                                 matches = [];
                             end
@@ -390,7 +400,8 @@ classdef document
                     end
                     if numel(matches)>0
                         notfound = 0;
-                        d{i} = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
+                        d{i} = ndi.document.i_readDependencyTarget( ...
+                            ndi_document_obj.document_properties.depends_on(matches(1)));
                     end
                     finished = numel(matches)==0;
                     i = i + 1;
@@ -621,15 +632,8 @@ classdef document
                         ndi_document_obj_out.document_properties.depends_on(index) =  ...
                             ndi_document_obj_b.document_properties.depends_on(k);
                     else
-                        % Use ndi.compat.dependsOnAppend so the legacy
-                        % `id` alias (added by ndi.compat.augmentRead)
-                        % doesn't trigger "heterogeneousStrucAssignment"
-                        % when the two depends_on arrays disagree on
-                        % whether the alias column is present.
-                        ndi_document_obj_out.document_properties.depends_on = ...
-                            ndi.compat.dependsOnAppend( ...
-                                ndi_document_obj_out.document_properties.depends_on, ...
-                                ndi_document_obj_b.document_properties.depends_on(k));
+                        ndi_document_obj_out.document_properties.depends_on(end+1) = ...
+                            ndi_document_obj_b.document_properties.depends_on(k);
                     end
                 end
                 otherproperties = rmfield(otherproperties,'depends_on');
@@ -729,31 +733,23 @@ classdef document
             if hasdependencies
                 hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
             end
-            d_struct = struct('name',dependency_name,'value',value);
+            % The constructor's ndi.compat.normalizeDependsOn pass
+            % guarantees the body's depends_on entries use the V_delta
+            % canonical key `document_id`. We build d_struct with the
+            % same key so struct-array assignment / append succeeds.
+            d_struct = struct('name', dependency_name, 'document_id', value);
 
             if hasdependencies
                 matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
                 if numel(matches)>0
                     notfound = 0;
-                    ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
-                    % Re-mirror legacy depends_on aliases (e.g., .id)
-                    % so they stay consistent with the updated value.
-                    if isfield(ndi_document_obj.document_properties.depends_on, 'id')
-                        ndi_document_obj.document_properties.depends_on(matches(1)).id = value;
-                    end
+                    ndi_document_obj.document_properties.depends_on(matches(1)).document_id = value;
                 elseif ~ErrorIfNotFound % add it
-                    % Use ndi.compat.dependsOnAppend so the legacy `id`
-                    % alias (added by ndi.compat.augmentRead) doesn't
-                    % trigger "heterogeneousStrucAssignment" when the
-                    % new entry lacks fields the array already carries.
-                    ndi_document_obj.document_properties.depends_on = ...
-                        ndi.compat.dependsOnAppend( ...
-                            ndi_document_obj.document_properties.depends_on, d_struct);
+                    ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
                     notfound = 0;
                 end
             elseif ~ErrorIfNotFound
-                ndi_document_obj.document_properties.depends_on = ...
-                    ndi.compat.dependsOnAppend([], d_struct);
+                ndi_document_obj.document_properties.depends_on = d_struct;
                 notfound = 0;
             end
 
@@ -996,6 +992,32 @@ classdef document
             obj = ndi.document();
             obj.document_properties = body;
         end % fromBody
+
+        function targetId = i_readDependencyTarget(entry)
+            % i_readDependencyTarget - read the cross-document target
+            % id from a single depends_on struct entry.
+            %
+            % The constructor's normalizeDependsOn pass guarantees
+            % entries carry `document_id` (V_delta canonical), but
+            % callers occasionally hand us hand-built structs that
+            % skip the constructor and still use `value` (earlier
+            % V_delta draft) or `id` (V_alpha legacy). This helper
+            % accepts all three with precedence
+            % document_id > value > id.
+            if ~isstruct(entry) || ~isscalar(entry)
+                targetId = '';
+                return;
+            end
+            if isfield(entry, 'document_id') && ~isempty(entry.document_id)
+                targetId = entry.document_id;
+            elseif isfield(entry, 'value') && ~isempty(entry.value)
+                targetId = entry.value;
+            elseif isfield(entry, 'id')
+                targetId = entry.id;
+            else
+                targetId = '';
+            end
+        end % i_readDependencyTarget
 
     end % methods (Static, Hidden)
 

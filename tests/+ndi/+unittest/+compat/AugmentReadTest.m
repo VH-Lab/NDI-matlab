@@ -1,14 +1,15 @@
 classdef AugmentReadTest < matlab.unittest.TestCase
 %AUGMENTREADTEST Unit tests for ndi.compat.augmentRead.
 %
-%   Covers the four collapsed-ontology classes (probe_location,
-%   treatment, ontology_image, ontology_label), the depends_on
-%   value -> id mirror, idempotency, and no-op behaviour on bodies
-%   that don't carry any aliased fields (including raw v1 bodies).
+%   Covers the field-level alias rows: the four collapsed-ontology
+%   classes (probe_location, treatment, ontology_image,
+%   ontology_label) plus the daqmetadatareader rename.
 %
-%   Also includes acceptance tests that route a V_delta body
-%   through the ndi.document constructor and verify the legacy
-%   paths are visible on document_properties.
+%   depends_on entry-key compatibility is NOT exercised here — see
+%   #801: that responsibility moved to
+%   ndi.compat.normalizeDependsOn (constructor-level) and to
+%   ndi.document's dependency-accessor methods. augmentRead does
+%   not touch depends_on at all.
 
     methods (Test)
 
@@ -50,11 +51,9 @@ classdef AugmentReadTest < matlab.unittest.TestCase
                 'term', struct('node', 'allen_ccf_v3:12345', ...
                                'name', 'primary visual area'));
             out = ndi.compat.augmentRead(body);
-            % term.node decomposes into ontology_name + label_id
             testCase.verifyEqual(out.ontology_label.ontology_name, ...
                 'allen_ccf_v3');
             testCase.verifyEqual(out.ontology_label.label_id, 12345);
-            % term.name maps identity to label
             testCase.verifyEqual(out.ontology_label.label, ...
                 'primary visual area');
         end
@@ -69,42 +68,27 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyEqual(out.ontology_label.label, '');
         end
 
-        function test_depends_on_value_mirrored_to_id(testCase)
-            body = i_baseBody('demo_a');
-            body.depends_on = struct( ...
-                'name',  {'parent', 'sibling'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677', ...
-                          'aabb1122ccdd3344_8899aabbccddeeff'});
+        function test_daqmetadatareader_reader_class_mirrored(testCase)
+            % New row added in #801: V_delta `reader_class` mirrors
+            % back to did_v1 `ndi_daqmetadatareader_class` so legacy
+            % callers (e.g., ndi.database.fun.ndi_document2ndi_object)
+            % still find the class string after normalisation.
+            body = i_baseBody('daqmetadatareader');
+            body.daqmetadatareader = struct( ...
+                'reader_class', 'ndi.daq.metadatareader');
             out = ndi.compat.augmentRead(body);
-            testCase.verifyTrue(isfield(out.depends_on, 'id'));
-            testCase.verifyEqual(out.depends_on(1).id, ...
-                'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyEqual(out.depends_on(2).id, ...
-                'aabb1122ccdd3344_8899aabbccddeeff');
-        end
-
-        function test_depends_on_empty_array_left_alone(testCase)
-            body = i_baseBody('demo_a');
-            body.depends_on = struct('name', {}, 'value', {});
-            out = ndi.compat.augmentRead(body);
-            testCase.verifyEqual(numel(out.depends_on), 0);
-        end
-
-        function test_depends_on_missing_field_does_not_crash(testCase)
-            body = i_baseBody('demo_a');
-            % No depends_on field at all — some document classes don't
-            % carry depends_on.
-            out = ndi.compat.augmentRead(body);
-            testCase.verifyFalse(isfield(out, 'depends_on'));
+            testCase.verifyEqual( ...
+                out.daqmetadatareader.ndi_daqmetadatareader_class, ...
+                'ndi.daq.metadatareader');
+            testCase.verifyEqual( ...
+                out.daqmetadatareader.reader_class, ...
+                'ndi.daq.metadatareader');
         end
 
         function test_idempotent_when_run_twice(testCase)
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
                 'location', struct('node', 'uberon:1234', 'name', 'V1'));
-            body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'});
             once  = ndi.compat.augmentRead(body);
             twice = ndi.compat.augmentRead(once);
             testCase.verifyEqual(twice, once);
@@ -122,7 +106,6 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyEqual(out.probe_location.ontology_name, ...
                 'uberon:1234');
             testCase.verifyEqual(out.probe_location.name, 'V1');
-            % V_delta canonical is preserved verbatim.
             testCase.verifyEqual(out.probe_location.location.node, ...
                 'uberon:1234');
         end
@@ -143,8 +126,8 @@ classdef AugmentReadTest < matlab.unittest.TestCase
         end
 
         function test_unaffected_class_passes_through(testCase)
-            % A document of a class that has no aliased fields is left
-            % structurally unchanged (modulo the depends_on .id mirror).
+            % A document of a class that has no aliased fields is
+            % left structurally unchanged.
             body = i_baseBody('demo_a');
             body.demo_a = struct('marker', 'hello');
             out = ndi.compat.augmentRead(body);
@@ -153,29 +136,22 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(out, 'treatment'));
             testCase.verifyFalse(isfield(out, 'ontology_image'));
             testCase.verifyFalse(isfield(out, 'ontology_label'));
+            testCase.verifyFalse(isfield(out, 'daqmetadatareader'));
         end
 
         function test_noop_on_v1_shaped_body(testCase)
             % A v1 body has no V_delta paths; every alias row is a
-            % no-op, so the body must come out byte-identical (modulo
-            % field ordering).
+            % no-op, so the body must come out structurally
+            % unchanged.
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
                 'ontology_name', 'uberon:1234', ...
                 'name',          'V1');
-            body.depends_on = struct( ...
-                'name', {'parent'}, ...
-                'id',   {'aabb1122ccdd3344_0011223344556677'});
             out = ndi.compat.augmentRead(body);
-            % V_delta paths were not present; legacy paths survive.
             testCase.verifyEqual(out.probe_location.ontology_name, ...
                 'uberon:1234');
             testCase.verifyEqual(out.probe_location.name, 'V1');
             testCase.verifyFalse(isfield(out.probe_location, 'location'));
-            % depends_on entries still have id; no .value was added.
-            testCase.verifyEqual(out.depends_on(1).id, ...
-                'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyFalse(isfield(out.depends_on, 'value'));
         end
 
         function test_partial_block_skips_missing_subfields(testCase)
@@ -190,6 +166,21 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(out.probe_location, 'name'));
         end
 
+        function test_does_not_touch_depends_on(testCase)
+            % Regression for #801: augmentRead must NOT inject .id
+            % onto depends_on entries (the old mirror that extended
+            % the struct-array schema). depends_on entry-key
+            % compatibility lives elsewhere now.
+            body = i_baseBody('demo_a');
+            body.depends_on = struct( ...
+                'name',         {'parent'}, ...
+                'document_id',  {'aabb1122ccdd3344_0011223344556677'});
+            out = ndi.compat.augmentRead(body);
+            testCase.verifyFalse(isfield(out.depends_on, 'id'));
+            testCase.verifyFalse(isfield(out.depends_on, 'value'));
+            testCase.verifyTrue(isfield(out.depends_on, 'document_id'));
+        end
+
         % ---- acceptance: hooked into ndi.document constructor ----
 
         function test_ndi_document_constructor_augments_probe_location(testCase)
@@ -202,19 +193,6 @@ classdef AugmentReadTest < matlab.unittest.TestCase
                 'uberon:1234');
             testCase.verifyEqual( ...
                 doc.document_properties.probe_location.name, 'V1');
-        end
-
-        function test_ndi_document_constructor_mirrors_depends_on(testCase)
-            body = i_baseBody('demo_a');
-            body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'});
-            doc = ndi.document(body);
-            testCase.verifyTrue( ...
-                isfield(doc.document_properties.depends_on, 'id'));
-            testCase.verifyEqual( ...
-                doc.document_properties.depends_on(1).id, ...
-                'aabb1122ccdd3344_0011223344556677');
         end
     end
 end

@@ -153,7 +153,7 @@ classdef validate
                 % might want to add this in the future
                 errormsgdependencies = "We cannot find the following necessary dependency from the database:" + newline;
                 for i = 1:numofdependencies
-                    searchquery = {'base.id', ndi_document_obj.document_properties.depends_on(i).value};
+                    searchquery = {'base.id', ndi.document.i_readDependencyTarget(ndi_document_obj.document_properties.depends_on(i))};
                     if numel(ndi_session_obj.database_search(searchquery)) < 1
                         ndi_validate_obj.reports.dependencies.(ndi_document_obj.document_properties.depends_on(i).name) = 'fail';
                         errormsgdependencies = errormsgdependencies + ndi_document_obj.document_properties.depends_on(i).name + newline;

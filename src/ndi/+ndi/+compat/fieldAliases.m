@@ -9,18 +9,25 @@ function aliases = fieldAliases()
 %     - ndi.query path translation (issue 8).
 %   This function returns data only; it performs no transformation itself.
 %
-%   The returned struct has two fields:
+%   The returned struct has one field:
 %
 %     aliases.fields    - cell N-by-3 of {vDeltaPath, legacyPath, transform}
 %                         describing dot-path field aliases inside the
 %                         document body (under the class-scoped property
 %                         blocks).
 %
-%     aliases.dependsOn - cell M-by-3 of {vDeltaKey, legacyKey, transform}
-%                         describing per-entry key renames inside each
-%                         element of the document's depends_on array.
+%   Note: depends_on entry-key compatibility (did_v1 `id` /
+%   `value` <-> V_delta `document_id`) is NOT in this table. It is
+%   handled instead by the ndi.document dependency accessors
+%   (set_dependency_value, dependency_value, etc.) which read
+%   tolerantly across all three key spellings and write the V_delta
+%   canonical, and by ndi.compat.translateQueryPaths which rewrites
+%   query paths. The body itself only ever carries `document_id`,
+%   so the depends_on struct-array schema never grows to include
+%   legacy keys (avoiding the heterogeneousStrucAssignment fragility
+%   class — see #801).
 %
-%   Row columns:
+%   Row columns (for `aliases.fields`):
 %     vDeltaPath / vDeltaKey - char, the canonical V_delta path or key.
 %     legacyPath  / legacyKey - char (single path) or cellstr (multi-path
 %                               composition). A cellstr indicates that the
@@ -60,12 +67,12 @@ function aliases = fieldAliases()
             {'ontology_label.ontology_name', 'ontology_label.label_id'}, ...
             {@i_labelNodeToVDelta, @i_labelNodeToLegacy}; ...
         'ontology_label.term.name', 'ontology_label.label', []; ...
-    };
-
-    aliases.dependsOn = { ...
-        % did_v1 stored the referenced document id under depends_on(k).id;
-        % V_delta renames the key to depends_on(k).value.
-        'value', 'id', []; ...
+        ...
+        % daqmetadatareader: V_delta renamed the MATLAB-class storage
+        % field. did2 migrator copies the v1 value verbatim; the alias
+        % keeps legacy reader/writer code working at runtime.
+        'daqmetadatareader.reader_class', ...
+            'daqmetadatareader.ndi_daqmetadatareader_class', []; ...
     };
 end
 

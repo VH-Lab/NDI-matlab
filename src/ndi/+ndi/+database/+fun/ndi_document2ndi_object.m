@@ -37,7 +37,41 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
         error(['NDI_DOCUMENT_OBJ does not have a ''' obj_parent_string  ''' field.']);
     else
         obj_struct = getfield(ndi_document_obj.document_properties, obj_parent_string);
-        obj_string = getfield(obj_struct,['ndi_' obj_parent_string '_class']);
+        obj_string = resolveReconstructorClass(obj_parent_string, obj_struct);
     end
 
     o = eval([obj_string '(ndi_session_obj, ndi_document_obj);']);
+
+function obj_string = resolveReconstructorClass(obj_parent_string, obj_struct)
+    % resolveReconstructorClass - determine the MATLAB class to
+    % `eval()` for the document's reconstruction.
+    %
+    % did_v1 stored this class name on the body under
+    % `<parent>.ndi_<parent>_class`. Most V_delta migrators pass
+    % the field through unchanged, but a few drop it on the
+    % grounds that the stored value was a constant across every
+    % instance of the class (so the migration loses no
+    % information). For those classes we know the class name from
+    % the document class itself and resolve it here.
+
+    % Override map: V_delta class name -> MATLAB constructor class.
+    % daqreader_ndr always reconstructs as ndi.daq.reader.mfdaq.ndr
+    % (verified: every v1 daqreader_ndr blank stored the same value;
+    % did-schema#50 / did-matlab#135 audit).
+    overrides = struct( ...
+        'daqreader_ndr', 'ndi.daq.reader.mfdaq.ndr');
+
+    legacyField = ['ndi_' obj_parent_string '_class'];
+    if isfield(obj_struct, legacyField) && ~isempty(obj_struct.(legacyField))
+        obj_string = obj_struct.(legacyField);
+        return;
+    end
+    if isfield(overrides, obj_parent_string)
+        obj_string = overrides.(obj_parent_string);
+        return;
+    end
+    error('NDI:database:fun:noReconstructorClass', ...
+        ['Cannot determine MATLAB reconstructor class for ' ...
+         'document class "%s": neither the legacy field "%s" ' ...
+         'nor a known override is available.'], ...
+        obj_parent_string, legacyField);

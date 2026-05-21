@@ -68,26 +68,34 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
         function test_depends_on_id_rewritten(testCase)
             ss = i_ss('depends_on.id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on.value');
+            testCase.verifyEqual(out.field, 'depends_on.document_id');
         end
 
         function test_depends_on_indexed_id_rewritten(testCase)
             ss = i_ss('depends_on(1).id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on(1).value');
+            testCase.verifyEqual(out.field, 'depends_on(1).document_id');
         end
 
         function test_depends_on_indexed_two_digit_id_rewritten(testCase)
             ss = i_ss('depends_on(42).id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on(42).value');
+            testCase.verifyEqual(out.field, 'depends_on(42).document_id');
         end
 
-        function test_depends_on_value_unchanged(testCase)
-            % Already V_delta canonical; identity.
+        function test_depends_on_value_rewritten(testCase)
+            % The earlier V_delta-draft key `value` also gets rewritten
+            % to the current canonical `document_id`.
             ss = i_ss('depends_on.value', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
             out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'depends_on.value');
+            testCase.verifyEqual(out.field, 'depends_on.document_id');
+        end
+
+        function test_depends_on_document_id_unchanged(testCase)
+            % Already V_delta canonical; identity.
+            ss = i_ss('depends_on.document_id', 'exact_string', 'aabb1122ccdd3344_0011223344556677');
+            out = ndi.compat.translateQueryPaths(ss);
+            testCase.verifyEqual(out.field, 'depends_on.document_id');
         end
 
         function test_depends_on_unrelated_subfield_unchanged(testCase)
@@ -187,7 +195,7 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
         function test_ndi_query_constructor_rewrites_depends_on_id(testCase)
             q = ndi.query('depends_on.id', 'exact_string', ...
                 'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyEqual(q.searchstructure.field, 'depends_on.value');
+            testCase.verifyEqual(q.searchstructure.field, 'depends_on.document_id');
         end
 
         function test_ndi_query_constructor_passes_unaliased_path(testCase)

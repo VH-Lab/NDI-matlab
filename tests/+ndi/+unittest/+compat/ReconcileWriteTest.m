@@ -133,84 +133,23 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(out, 'ontology_label'));
         end
 
-        % ---- depends_on rows ----
+        % ---- depends_on ----
 
-        function test_depends_on_id_copied_and_stripped(testCase)
+        function test_does_not_touch_depends_on(testCase)
+            % Regression for #801: reconcileWrite must NOT touch
+            % depends_on. Entry-key compatibility lives in
+            % ndi.document accessors + ndi.compat.normalizeDependsOn,
+            % not in the write-time reconciliation pass.
             body = i_baseBody('demo_a');
             body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'}, ...
-                'id',    {'aabb1122ccdd3344_0011223344556677'});
+                'name',        {'parent'}, ...
+                'document_id', {'aabb1122ccdd3344_0011223344556677'});
             out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(numel(out.depends_on), 1);
-            testCase.verifyEqual(out.depends_on(1).value, ...
+            testCase.verifyTrue(isfield(out.depends_on, 'document_id'));
+            testCase.verifyFalse(isfield(out.depends_on, 'value'));
+            testCase.verifyFalse(isfield(out.depends_on, 'id'));
+            testCase.verifyEqual(out.depends_on(1).document_id, ...
                 'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyFalse(isfield(out.depends_on, 'id'));
-        end
-
-        function test_depends_on_id_edit_wins_over_value(testCase)
-            % User edited the legacy `.id` after a read; the V_delta
-            % canonical .value carries the stale value.
-            body = i_baseBody('demo_a');
-            body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'}, ...
-                'id',    {'eeff5566eeff5566_8899aabbccddeeff'});
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(out.depends_on(1).value, ...
-                'eeff5566eeff5566_8899aabbccddeeff');
-            testCase.verifyFalse(isfield(out.depends_on, 'id'));
-        end
-
-        function test_depends_on_id_empty_does_not_overwrite_value(testCase)
-            % An empty legacy .id (the augmentation-of-empty case)
-            % must not blow away a real .value.
-            body = i_baseBody('demo_a');
-            body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'}, ...
-                'id',    {''});
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(out.depends_on(1).value, ...
-                'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyFalse(isfield(out.depends_on, 'id'));
-        end
-
-        function test_depends_on_no_legacy_field_no_op(testCase)
-            body = i_baseBody('demo_a');
-            body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'});
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(out.depends_on(1).value, ...
-                'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyFalse(isfield(out.depends_on, 'id'));
-        end
-
-        function test_depends_on_legacy_only(testCase)
-            % v1-shaped body has only .id, not .value. Reconciliation
-            % must move .id -> .value and strip .id.
-            body = i_baseBody('demo_a');
-            body.depends_on = struct( ...
-                'name', {'parent'}, ...
-                'id',   {'aabb1122ccdd3344_0011223344556677'});
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(out.depends_on(1).value, ...
-                'aabb1122ccdd3344_0011223344556677');
-            testCase.verifyFalse(isfield(out.depends_on, 'id'));
-        end
-
-        function test_depends_on_empty_array(testCase)
-            body = i_baseBody('demo_a');
-            body.depends_on = struct('name', {}, 'value', {});
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(numel(out.depends_on), 0);
-        end
-
-        function test_depends_on_missing(testCase)
-            body = i_baseBody('demo_a');
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyFalse(isfield(out, 'depends_on'));
         end
 
         % ---- idempotency + round-trip ----
@@ -222,9 +161,8 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
                 'ontology_name', 'uberon:1234', ...
                 'name',          'V1');
             body.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'}, ...
-                'id',    {'aabb1122ccdd3344_0011223344556677'});
+                'name',        {'parent'}, ...
+                'document_id', {'aabb1122ccdd3344_0011223344556677'});
             once  = ndi.compat.reconcileWrite(body);
             twice = ndi.compat.reconcileWrite(once);
             testCase.verifyEqual(twice, once);
@@ -237,8 +175,8 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
             pristine.probe_location = struct( ...
                 'location', struct('node', 'uberon:1234', 'name', 'V1'));
             pristine.depends_on = struct( ...
-                'name',  {'parent'}, ...
-                'value', {'aabb1122ccdd3344_0011223344556677'});
+                'name',        {'parent'}, ...
+                'document_id', {'aabb1122ccdd3344_0011223344556677'});
             augmented   = ndi.compat.augmentRead(pristine);
             reconciled  = ndi.compat.reconcileWrite(augmented);
             testCase.verifyEqual(reconciled, pristine);

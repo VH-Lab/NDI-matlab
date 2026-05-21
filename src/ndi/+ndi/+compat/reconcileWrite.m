@@ -13,9 +13,12 @@ function body = reconcileWrite(body)
 %     4. Strips the legacy field(s) from the body so only the V_delta
 %        canonical hits storage.
 %
-%   For depends_on, the function mirrors `depends_on(k).id` back into
-%   `depends_on(k).value` whenever .id is present and disagrees, then
-%   strips .id from every entry.
+%   Note: `depends_on` is NOT touched here. Cross-document references
+%   live on the body only in the V_delta canonical entry shape
+%   `{name, document_id}`. ndi.document's dependency accessors
+%   (set_dependency_value, dependency_value, etc.) read legacy
+%   keys tolerantly and always write `document_id`, so a write-time
+%   reconciliation pass for depends_on is not needed. See #801.
 %
 %   This is the function callers should run on a document body just
 %   before handing it to the database layer (or any other long-term
@@ -65,11 +68,6 @@ function body = reconcileWrite(body)
         legacyPath = aliases.fields{rowIdx, 2};
         transform  = aliases.fields{rowIdx, 3};
         body = i_reconcileFieldRow(body, vDeltaPath, legacyPath, transform);
-    end
-
-    if isfield(body, 'depends_on') && ~isempty(body.depends_on)
-        body.depends_on = i_reconcileDependsOn(body.depends_on, ...
-            aliases.dependsOn);
     end
 end
 
@@ -127,75 +125,6 @@ for j = 1:numel(legacyPaths)
     else
         values{j} = '';
     end
-end
-end
-
-function deps = i_reconcileDependsOn(deps, dependsOnRows)
-if iscell(deps)
-    for k = 1:numel(deps)
-        if isstruct(deps{k})
-            deps{k} = i_reconcileDependsOnEntry(deps{k}, dependsOnRows);
-        end
-    end
-    return;
-end
-if ~isstruct(deps)
-    return;
-end
-for rowIdx = 1:size(dependsOnRows, 1)
-    vKey = dependsOnRows{rowIdx, 1};
-    lKey = dependsOnRows{rowIdx, 2};
-    tx   = dependsOnRows{rowIdx, 3};
-    if ~isfield(deps, lKey)
-        continue;
-    end
-    for k = 1:numel(deps)
-        legacyValue = deps(k).(lKey);
-        if isempty(tx)
-            newCanonical = legacyValue;
-        else
-            toVDelta = tx{1};
-            newCanonical = toVDelta(legacyValue);
-        end
-        if isfield(deps, vKey)
-            currentCanonical = deps(k).(vKey);
-            if ~isequal(currentCanonical, newCanonical) ...
-                    && ~isempty(legacyValue)
-                deps(k).(vKey) = newCanonical;
-            end
-        else
-            deps(k).(vKey) = newCanonical;
-        end
-    end
-    deps = rmfield(deps, lKey);
-end
-end
-
-function entry = i_reconcileDependsOnEntry(entry, dependsOnRows)
-for rowIdx = 1:size(dependsOnRows, 1)
-    vKey = dependsOnRows{rowIdx, 1};
-    lKey = dependsOnRows{rowIdx, 2};
-    tx   = dependsOnRows{rowIdx, 3};
-    if ~isfield(entry, lKey)
-        continue;
-    end
-    legacyValue = entry.(lKey);
-    if isempty(tx)
-        newCanonical = legacyValue;
-    else
-        toVDelta = tx{1};
-        newCanonical = toVDelta(legacyValue);
-    end
-    if isfield(entry, vKey)
-        currentCanonical = entry.(vKey);
-        if ~isequal(currentCanonical, newCanonical) ...
-                && ~isempty(legacyValue)
-            entry.(vKey) = newCanonical;
-        end
-    else
-        entry.(vKey) = newCanonical;
-    end
-    entry = rmfield(entry, lKey);
 end
 end
 
