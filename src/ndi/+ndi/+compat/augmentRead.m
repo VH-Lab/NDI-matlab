@@ -18,8 +18,15 @@ function body = augmentRead(body)
 %   transform function in the alias table handles the decompose direction
 %   used here.
 %
-%   The dependsOn row mirrors V_delta `depends_on(k).value` into the
-%   did_v1 `depends_on(k).id` slot for every entry.
+%   Note: `depends_on` is NOT touched here. Cross-document references
+%   use only the V_delta canonical entry shape `{name, document_id}`
+%   on the body. Compatibility for callers that read or write
+%   legacy keys (`.id`, `.value`) is provided by the
+%   ndi.document dependency accessors (set_dependency_value,
+%   dependency_value, etc.) and by ndi.compat.translateQueryPaths
+%   on the query side. The body's depends_on struct array never
+%   grows to include legacy keys -- avoiding the
+%   heterogeneousStrucAssignment fragility class. See #801.
 %
 %   Behaviour notes:
 %     - Rows whose V_delta top-level block is absent in the body are
@@ -61,11 +68,6 @@ function body = augmentRead(body)
         transform  = aliases.fields{rowIdx, 3};
         body = i_augmentFieldRow(body, vDeltaPath, legacyPath, transform);
     end
-
-    if isfield(body, 'depends_on') && ~isempty(body.depends_on)
-        body.depends_on = i_augmentDependsOn(body.depends_on, ...
-            aliases.dependsOn);
-    end
 end
 
 function body = i_augmentFieldRow(body, vDeltaPath, legacyPath, transform)
@@ -104,56 +106,6 @@ else
         legacyValue = toLegacy(vValue);
     end
     body = i_setPath(body, legacyPath, legacyValue);
-end
-end
-
-function deps = i_augmentDependsOn(deps, dependsOnRows)
-if iscell(deps)
-    for k = 1:numel(deps)
-        if isstruct(deps{k})
-            deps{k} = i_augmentDependsOnEntry(deps{k}, dependsOnRows);
-        end
-    end
-    return;
-end
-if ~isstruct(deps)
-    return;
-end
-
-for rowIdx = 1:size(dependsOnRows, 1)
-    vKey = dependsOnRows{rowIdx, 1};
-    lKey = dependsOnRows{rowIdx, 2};
-    tx   = dependsOnRows{rowIdx, 3};
-    if ~isfield(deps, vKey)
-        continue;
-    end
-    for k = 1:numel(deps)
-        v = deps(k).(vKey);
-        if isempty(tx)
-            deps(k).(lKey) = v;
-        else
-            toLegacy = tx{2};
-            deps(k).(lKey) = toLegacy(v);
-        end
-    end
-end
-end
-
-function entry = i_augmentDependsOnEntry(entry, dependsOnRows)
-for rowIdx = 1:size(dependsOnRows, 1)
-    vKey = dependsOnRows{rowIdx, 1};
-    lKey = dependsOnRows{rowIdx, 2};
-    tx   = dependsOnRows{rowIdx, 3};
-    if ~isfield(entry, vKey)
-        continue;
-    end
-    v = entry.(vKey);
-    if isempty(tx)
-        entry.(lKey) = v;
-    else
-        toLegacy = tx{2};
-        entry.(lKey) = toLegacy(v);
-    end
 end
 end
 

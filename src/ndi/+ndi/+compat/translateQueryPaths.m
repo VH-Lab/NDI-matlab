@@ -17,12 +17,17 @@ function ss = translateQueryPaths(ss)
 %     - Field-level alias rows: exact-path match in `.field`. A legacy
 %       path that matches a row's second column is rewritten to the
 %       row's first column (the V_delta canonical path).
-%     - depends_on alias rows: the helper rewrites paths shaped
-%       `depends_on.<lKey>` and `depends_on(N).<lKey>` to the
-%       canonical key (currently `value`). Note that the high-level
-%       `depends_on` *operation* in did.query uses param1/param2 for
-%       name/value rather than the `.field` path, so it is unaffected
-%       by this rewrite; only field-based queries are translated.
+%     - depends_on entry keys: paths shaped `depends_on.id`,
+%       `depends_on.value`, `depends_on(N).id`, and
+%       `depends_on(N).value` rewrite to `depends_on[.N].document_id`
+%       (V_delta canonical). This rewrite is not driven by
+%       ndi.compat.fieldAliases — depends_on entry-key compatibility
+%       lives in code (here for queries; in ndi.document accessors
+%       for body reads/writes) rather than in the alias table, so
+%       the body's depends_on struct array never grows to include
+%       legacy keys. See #801. The high-level `depends_on`
+%       *operation* in did.query uses param1/param2 for name/value
+%       rather than the `.field` path, so it is unaffected.
 %     - 'or' operation: recurses into param1 / param2 (which hold
 %       nested searchstructures).
 %     - Paths not in the alias table pass through unchanged.
@@ -99,13 +104,16 @@ for r = 1:size(aliases.fields, 1)
     end
 end
 
-% depends_on substring rewrite: `depends_on.<lKey>` and
-% `depends_on(N).<lKey>` rewrite to the canonical key. The optional
-% capture group `(\(\d+\))?` preserves any `(N)` array index so the
-% rewrite is shape-preserving.
-for r = 1:size(aliases.dependsOn, 1)
-    vKey = aliases.dependsOn{r, 1};
-    lKey = aliases.dependsOn{r, 2};
+% depends_on entry-key rewrite: any of the legacy entry keys
+% (`id`, `value`) collapses to the V_delta canonical `document_id`.
+% The optional capture group `(\(\d+\))?` preserves any `(N)` array
+% index so the rewrite is shape-preserving. This is hardcoded rather
+% than data-driven because depends_on entry-key compatibility is
+% deliberately out of ndi.compat.fieldAliases (see the docstring on
+% that file and #801).
+legacyKeys = {'id', 'value'};
+for k = 1:numel(legacyKeys)
+    lKey = legacyKeys{k};
     pattern = ['^depends_on(\(\d+\))?\.', regexptranslate('escape', lKey), '$'];
     tokens = regexp(field, pattern, 'tokens', 'once');
     if isempty(tokens)
@@ -113,9 +121,9 @@ for r = 1:size(aliases.dependsOn, 1)
     end
     indexedPart = tokens{1};
     if isempty(indexedPart)
-        field = ['depends_on.', vKey];
+        field = 'depends_on.document_id';
     else
-        field = ['depends_on', indexedPart, '.', vKey];
+        field = ['depends_on', indexedPart, '.document_id'];
     end
     return;
 end

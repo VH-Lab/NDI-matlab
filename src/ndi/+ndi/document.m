@@ -78,13 +78,21 @@ classdef document
 
             % Inject did_v1 legacy aliases into the V_delta body so
             % callers that still read legacy paths (e.g.,
-            % document_properties.probe_location.ontology_name,
-            % depends_on(k).id) keep working after the database layer
-            % normalised the stored body to V_delta on read. Idempotent
-            % and a no-op on v1-shaped bodies and on classes without
-            % any aliased fields. See ndi.compat.fieldAliases for the
-            % alias table and issue #779 for the broader did2 plan.
+            % document_properties.probe_location.ontology_name) keep
+            % working after the database layer normalised the stored
+            % body to V_delta on read. Idempotent and a no-op on
+            % v1-shaped bodies and on classes without any aliased
+            % fields. See ndi.compat.fieldAliases for the alias table
+            % and issue #779 for the broader did2 plan.
             document_properties = ndi.compat.augmentRead(document_properties);
+
+            % Canonicalize depends_on entry keys to `document_id` so
+            % every dependency-accessor method on this class can rely
+            % on the invariant "the body's depends_on entries use
+            % document_id". did_v1 bodies carry `id`; an earlier
+            % V_delta draft used `value`; both are accepted on input
+            % and rewritten to `document_id` here. See #801.
+            document_properties = ndi.compat.normalizeDependsOn(document_properties);
 
             ndi_document_obj.document_properties = document_properties;
 
@@ -621,15 +629,8 @@ classdef document
                         ndi_document_obj_out.document_properties.depends_on(index) =  ...
                             ndi_document_obj_b.document_properties.depends_on(k);
                     else
-                        % Use ndi.compat.dependsOnAppend so the legacy
-                        % `id` alias (added by ndi.compat.augmentRead)
-                        % doesn't trigger "heterogeneousStrucAssignment"
-                        % when the two depends_on arrays disagree on
-                        % whether the alias column is present.
-                        ndi_document_obj_out.document_properties.depends_on = ...
-                            ndi.compat.dependsOnAppend( ...
-                                ndi_document_obj_out.document_properties.depends_on, ...
-                                ndi_document_obj_b.document_properties.depends_on(k));
+                        ndi_document_obj_out.document_properties.depends_on(end+1) = ...
+                            ndi_document_obj_b.document_properties.depends_on(k);
                     end
                 end
                 otherproperties = rmfield(otherproperties,'depends_on');
