@@ -29,8 +29,16 @@ classdef tuningcurve < ndi.calculator
             % Step 1: set up the output structure
             tuningcurve_calc = parameters;
 
-            stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id','exact_string',...
-                vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_response_scalar_id'),''));
+            % vlt.db.struct_name_value_search requires a `.value`
+            % field; depends_on is now V_delta-canonical `document_id`.
+            % Inline the name-based lookup via i_readDependencyTarget
+            % so all three spellings (document_id / value / id) work.
+            depMatch = find(strcmpi({parameters.depends_on.name}, 'stimulus_response_scalar_id'), 1);
+            if isempty(depMatch)
+                error('Could not find stimulus_response_scalar_id dependency on input parameters.');
+            end
+            stim_response_doc_id = ndi.document.i_readDependencyTarget(parameters.depends_on(depMatch));
+            stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id','exact_string', stim_response_doc_id, ''));
             if numel(stim_response_doc)~=1
                 error(['Could not find stimulus response doc..']);
             end
