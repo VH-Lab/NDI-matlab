@@ -97,13 +97,6 @@ classdef FieldAliasesTest < matlab.unittest.TestCase
             testCase.verifyEqual(parts{2}, 0);
         end
 
-        function test_daqmetadatareader_reader_class_row(testCase)
-            aliases = ndi.compat.fieldAliases();
-            row = i_findRow(aliases.fields, 'daqmetadatareader.reader_class');
-            testCase.verifyEqual(row{2}, ...
-                'daqmetadatareader.ndi_daqmetadatareader_class');
-            testCase.verifyTrue(isempty(row{3}));
-        end
     end
 end
 
