@@ -13,7 +13,7 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
 
             % Add a doc
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'test doc', 'demo_ndi.value', 1);
             S1.database_add(doc1);
 
             % Create S2 as a COPY of S1
@@ -57,7 +57,7 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
 
             % Add a document only to S1
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'doc in A only', 'demo_ndi.value', 1);
             S1.database_add(doc1);
 
             % Create S2 as a copy of S1 (initially identical)
@@ -102,7 +102,7 @@ classdef diffTest < matlab.unittest.TestCase
             S2 = ndi.session.dir('ref1', tempDir2);
 
             % Add a document only to S2
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'doc in B only', 'demoNDI.value', 1);
+            doc2 = S2.newdocument('demo_ndi', 'base.name', 'doc in B only', 'demo_ndi.value', 1);
             S2.database_add(doc2);
 
             % Call the diff function
@@ -133,13 +133,13 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'test doc', 'demo_ndi.value', 1);
             S1.database_add(doc1);
             fixed_id = doc1.id();
 
             % Add modified version to S2
             doc2_props = doc1.document_properties;
-            doc2_props.demoNDI.value = 2;
+            doc2_props.demo_ndi.value = 2;
             doc2 = ndi.document(doc2_props);
             % ID is preserved in properties
             S2.database_add(doc2);
@@ -177,7 +177,7 @@ classdef diffTest < matlab.unittest.TestCase
             S1 = ndi.session.dir('ref1', tempDir1);
             S2 = ndi.session.dir('ref1', tempDir2);
 
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'test doc', 'demo_ndi.value', 1);
             doc1 = doc1.add_file('filename1.ext', file1_path);
             S1.database_add(doc1);
             fixed_id = doc1.id();

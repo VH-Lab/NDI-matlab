@@ -96,16 +96,16 @@ classdef simple < ndi.calculator
             % 1. Create mock documents if they don't exist
 
             % Check/Create Doc for Test 1 (Value 5)
-            q1 = ndi.query('','isa','demoNDIMock','');
-            q2 = ndi.query('demoNDI.value','exact_number', 5, '');
+            q1 = ndi.query('','isa','demo_ndi_mock','');
+            q2 = ndi.query('demo_ndi.value','exact_number', 5, '');
             q_test1 = q1 & q2;
             docs_test1 = ndi_calculator_obj.session.database_search(q_test1);
 
             if isempty(docs_test1)
-                mock_doc1_struct.demoNDI.value = 5;
-                % demoNDIMock requires a file because it inherits from demoNDI
-                mock_doc1 = ndi.document('demoNDIMock', 'demoNDI', mock_doc1_struct.demoNDI) + ndi_calculator_obj.session.newdocument();
-                % We need to add a dummy file because demoNDI schema requires 'filename1.ext'
+                mock_doc1_struct.demo_ndi.value = 5;
+                % demo_ndi_mock requires a file because it inherits from demo_ndi
+                mock_doc1 = ndi.document('demo_ndi_mock', 'demo_ndi', mock_doc1_struct.demo_ndi) + ndi_calculator_obj.session.newdocument();
+                % We need to add a dummy file because demo_ndi schema requires 'filename1.ext'
                 % Ideally we create a dummy file on disk.
                 fname1 = [ndi_calculator_obj.session.path() filesep 'test1_dummy.txt'];
                 vlt.file.str2text(fname1, 'dummy content');
@@ -117,13 +117,13 @@ classdef simple < ndi.calculator
             end
 
             % Check/Create Doc for Test 2 (Value 10)
-            q3 = ndi.query('demoNDI.value','exact_number', 10, '');
+            q3 = ndi.query('demo_ndi.value','exact_number', 10, '');
             q_test2 = q1 & q3;
             docs_test2 = ndi_calculator_obj.session.database_search(q_test2);
 
             if isempty(docs_test2)
-                mock_doc2_struct.demoNDI.value = 10;
-                mock_doc2 = ndi.document('demoNDIMock', 'demoNDI', mock_doc2_struct.demoNDI) + ndi_calculator_obj.session.newdocument();;
+                mock_doc2_struct.demo_ndi.value = 10;
+                mock_doc2 = ndi.document('demo_ndi_mock', 'demo_ndi', mock_doc2_struct.demo_ndi) + ndi_calculator_obj.session.newdocument();;
                 fname2 = [ndi_calculator_obj.session.path() filesep 'test2_dummy.txt'];
                 vlt.file.str2text(fname2, 'dummy content');
                 mock_doc2 = mock_doc2.add_file('filename1.ext', fname2);
@@ -154,7 +154,7 @@ classdef simple < ndi.calculator
                 end
 
                 % Setup Query for this specific test
-                q_val = ndi.query('demoNDI.value', 'exact_number', target_value, '');
+                q_val = ndi.query('demo_ndi.value', 'exact_number', target_value, '');
                 q_combined = q1 & q_val;
 
                 search_params = struct('input_parameters', struct('answer', target_value), ...

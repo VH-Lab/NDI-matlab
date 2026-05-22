@@ -24,11 +24,11 @@ classdef testDatasetBuild < ndi.unittest.dataset.buildDataset
             testCase.verifyTrue(any(strcmp(testCase.Session.id(), id_list)), 'Session ID should be in dataset session list');
 
             % Check documents in dataset
-            % There should be 5 demoNDI documents
-            q = ndi.query('','isa','demoNDI');
+            % There should be 5 demo_ndi documents
+            q = ndi.query('','isa','demo_ndi');
             docs = testCase.Dataset.database_search(q);
 
-            testCase.verifyEqual(numel(docs), 5, 'Should find 5 demoNDI documents in the dataset');
+            testCase.verifyEqual(numel(docs), 5, 'Should find 5 demo_ndi documents in the dataset');
 
             % Verify content
             for i=1:5

@@ -28,7 +28,7 @@ classdef testDiff < matlab.unittest.TestCase
     methods (Test)
         function testIdenticalDocuments(testCase)
             % Create two identical documents
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
             doc2 = ndi.document(doc1.document_properties);
 
             [are_equal, report] = ndi.fun.doc.diff(doc1, doc2);
@@ -39,9 +39,9 @@ classdef testDiff < matlab.unittest.TestCase
         end
 
         function testPropertyMismatch(testCase)
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
             props = doc1.document_properties;
-            props.demoNDI.value = 20;
+            props.demo_ndi.value = 20;
             doc2 = ndi.document(props);
 
             [are_equal, report] = ndi.fun.doc.diff(doc1, doc2);
@@ -52,21 +52,21 @@ classdef testDiff < matlab.unittest.TestCase
         end
 
         function testIgnoreFields(testCase)
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
             props = doc1.document_properties;
-            props.demoNDI.value = 20; % Normally a mismatch
+            props.demo_ndi.value = 20; % Normally a mismatch
             doc2 = ndi.document(props);
 
             % Ignore the specific mismatching field
-            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id', 'demoNDI.value'});
+            [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2, 'ignoreFields', {'base.session_id', 'demo_ndi.value'});
 
             testCase.verifyTrue(are_equal, 'Documents should be equal when mismatching field is ignored.');
         end
 
         function testDifferentIDs(testCase)
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
             % Create doc2 completely fresh so it has a different ID
-            doc2 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc2 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
 
             % Default behavior: base.id is compared, so they should differ
             [are_equal, ~] = ndi.fun.doc.diff(doc1, doc2);
@@ -78,7 +78,7 @@ classdef testDiff < matlab.unittest.TestCase
         end
 
         function testDependenciesOrderIndependence(testCase)
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
 
             % Add dependencies manually to props structure
             props1 = doc1.document_properties;
@@ -105,7 +105,7 @@ classdef testDiff < matlab.unittest.TestCase
 
         function testFileListsOrderIndependence(testCase)
             % Note: this only tests the file LIST, not binary content
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
 
             % Mock up file structure since adding real files requires them to exist
             props1 = doc1.document_properties;
@@ -134,7 +134,7 @@ classdef testDiff < matlab.unittest.TestCase
 
         function testBinaryFileComparison(testCase)
             % Create documents with files
-            doc1 = testCase.Session.newdocument('demoNDI', 'base.name', 'MyDoc', 'demoNDI.value', 10);
+            doc1 = testCase.Session.newdocument('demo_ndi', 'base.name', 'MyDoc', 'demo_ndi.value', 10);
             file1_path = fullfile(testCase.TempDir, 'file1.bin');
             fid1 = fopen(file1_path, 'w');
             fwrite(fid1, 'content1', 'char');

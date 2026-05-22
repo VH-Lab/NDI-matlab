@@ -19,7 +19,7 @@ classdef diffTest < matlab.unittest.TestCase
             D1 = ndi.dataset.dir('dref1', tempDir1);
 
             % Add document
-            doc1_base = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1_base = S1.newdocument('demo_ndi', 'base.name', 'test doc', 'demo_ndi.value', 1);
             doc1 = doc1_base + S1.newdocument();
             S1.database_add(doc1);
 
@@ -62,7 +62,7 @@ classdef diffTest < matlab.unittest.TestCase
             D2 = ndi.dataset.dir(tempDir2);            
 
             % Add a document only to the first dataset
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'doc in A only', 'demo_ndi.value', 1);
             doc1 = doc1 + S1.newdocument();
             S1.database_add(doc1);
 
@@ -103,7 +103,7 @@ classdef diffTest < matlab.unittest.TestCase
 
             S2 = D2.open_session(sessions{1});
 
-            doc2 = S2.newdocument('demoNDI', 'base.name', 'doc in B only', 'demoNDI.value', 1);
+            doc2 = S2.newdocument('demo_ndi', 'base.name', 'doc in B only', 'demo_ndi.value', 1);
             doc2 = doc2 + S2.newdocument();
             S2.database_add(doc2);
 
@@ -140,12 +140,12 @@ classdef diffTest < matlab.unittest.TestCase
             copyfile(tempDir1,tempDir2);
 
             % Add documents with same ID but different properties
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'test doc', 'demo_ndi.value', 1);
             doc1 = doc1 + S1.newdocument();
             S1.database_add(doc1);
 
             doc2_structure = doc1.document_properties;
-            doc2_structure.demoNDI.value = 2;
+            doc2_structure.demo_ndi.value = 2;
             doc2_structure.base.session_id = S1.id();
 
             doc2 = ndi.document(doc2_structure);
@@ -189,7 +189,7 @@ classdef diffTest < matlab.unittest.TestCase
             copyfile(tempDir1,tempDir2);
 
             % Add documents with files that have different content
-            doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
+            doc1 = S1.newdocument('demo_ndi', 'base.name', 'test doc', 'demo_ndi.value', 1);
             file1_path = fullfile(tempDir1, 'file1.bin');
             fid1 = fopen(file1_path, 'w');
             fwrite(fid1, 'content1', 'char');
@@ -199,7 +199,7 @@ classdef diffTest < matlab.unittest.TestCase
             S1.database_add(doc1);
 
             doc2_structure = doc1.document_properties;
-            doc2_structure.demoNDI.value = 2;
+            doc2_structure.demo_ndi.value = 2;
             doc2_structure.base.session_id = S1.id();
 
             doc2 = ndi.document(doc2_structure);

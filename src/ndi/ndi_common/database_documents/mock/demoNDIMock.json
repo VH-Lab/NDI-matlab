@@ -2,14 +2,14 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/mock\/demoNDIMock.json",
 		"validation":						"$NDISCHEMAPATH\/mock\/demoNDIMock.json",
-		"class_name":						"demoNDIMock",
-		"property_list_name":					"demoNDIMock",
+		"class_name":						"demo_ndi_mock",
+		"property_list_name":					"demo_ndi_mock",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/mock.json" },
 			{ "definition":					"$NDIDOCUMENTPATH\/demoNDI.json" }
 		]
 	},
-	"demoNDIMock": {
+	"demo_ndi_mock": {
 	}
 }

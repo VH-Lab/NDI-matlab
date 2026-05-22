@@ -23,16 +23,16 @@ function test_ndi_document(dirname)
 
     % if we ran the demo before, delete the entry
 
-    doc = E.database_search(ndi.query('','isa','demoNDI',''));
+    doc = E.database_search(ndi.query('','isa','demo_ndi',''));
     if ~isempty(doc)
         for i=1:numel(doc)
             E.database_rm(id(doc{i}));
         end
     end
 
-    doc = E.newdocument('demoNDI',...
+    doc = E.newdocument('demo_ndi',...
         'base.name','Demo document',...
-        'demoNDI.value', 5);
+        'demo_ndi.value', 5);
 
     % add a binary file
 
@@ -54,15 +54,15 @@ function test_ndi_document(dirname)
 
     % now read the object back
 
-    doc = E.database_search(ndi.query('demoNDI.value','exact_number',5,''));
+    doc = E.database_search(ndi.query('demo_ndi.value','exact_number',5,''));
     if numel(doc)~=1
-        error(['Found <1 or >1 document with demoNDI.value of 5; this means there is a database problem.']);
+        error(['Found <1 or >1 document with demo_ndi.value of 5; this means there is a database problem.']);
     end
     doc = doc{1}, % should be only one match
 
-    doc = E.database_search(ndi.query('','isa','demoNDI',''));
+    doc = E.database_search(ndi.query('','isa','demo_ndi',''));
     if numel(doc)~=1
-        error(['Found <1 or >1 document of type demoNDI; this means there is a database problem.']);
+        error(['Found <1 or >1 document of type demo_ndi; this means there is a database problem.']);
     end
     doc = doc{1}, % should be only one match
 
@@ -78,7 +78,7 @@ function test_ndi_document(dirname)
 
     % remove the document
 
-    doc = E.database_search(ndi.query('','isa','demoNDI',''));
+    doc = E.database_search(ndi.query('','isa','demo_ndi',''));
     if ~isempty(doc)
         for i=1:numel(doc)
             E.database_rm(doc{i}.id());
