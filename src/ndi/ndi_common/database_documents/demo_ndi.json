@@ -1,7 +1,7 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/demoNDI.json",
-		"validation":						"$NDISCHEMAPATH\/demoNDI_schema.json",
+		"definition":						"$NDIDOCUMENTPATH\/demo_ndi.json",
+		"validation":						"$NDISCHEMAPATH\/demo_ndi_schema.json",
 		"class_name":						"demo_ndi",
 		"property_list_name":					"demo_ndi",
 		"class_version":					1,
