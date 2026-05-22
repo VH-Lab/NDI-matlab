@@ -8,7 +8,7 @@ function result = cloud(datasetId, options)
 %   did2.convert.v1_to_v2 (idempotent — already-V_delta docs are
 %   skipped cheaply), and the surviving bodies are pushed back via the
 %   existing bulk-upload endpoint. Because each successfully written
-%   doc carries `base.schema_version: 'V_delta'`, an interrupted run
+%   doc carries `document_class.schema_version: 'V_delta'`, an interrupted run
 %   can resume by re-running this command — already-migrated docs
 %   short-circuit through the conversion.
 %
