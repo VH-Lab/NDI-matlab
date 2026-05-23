@@ -270,8 +270,13 @@ classdef tuning_response < ndi.app
                     for ei = 1:min(2, numel(et_stim))
                         fprintf('    [%d] epoch_id=%s\n', ei, et_stim(ei).epoch_id);
                         for ci = 1:numel(et_stim(ei).epoch_clock)
-                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ...
-                                char(et_stim(ei).epoch_clock{ci}), mat2str(et_stim(ei).t0_t1{ci}));
+                            ck = et_stim(ei).epoch_clock{ci};
+                            if isa(ck, 'ndi.time.clocktype')
+                                ck_str = ck.type;
+                            else
+                                ck_str = class(ck);
+                            end
+                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ck_str, mat2str(et_stim(ei).t0_t1{ci}));
                         end
                     end
                 catch ME
@@ -283,8 +288,13 @@ classdef tuning_response < ndi.app
                     for ei = 1:min(2, numel(et_ts))
                         fprintf('    [%d] epoch_id=%s\n', ei, et_ts(ei).epoch_id);
                         for ci = 1:numel(et_ts(ei).epoch_clock)
-                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ...
-                                char(et_ts(ei).epoch_clock{ci}), mat2str(et_ts(ei).t0_t1{ci}));
+                            ck = et_ts(ei).epoch_clock{ci};
+                            if isa(ck, 'ndi.time.clocktype')
+                                ck_str = ck.type;
+                            else
+                                ck_str = class(ck);
+                            end
+                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ck_str, mat2str(et_ts(ei).t0_t1{ci}));
                         end
                     end
                 catch ME
@@ -295,6 +305,50 @@ classdef tuning_response < ndi.app
                     fprintf('  syncgraph rules count: %d\n', numel(sg.rules));
                     for ri = 1:numel(sg.rules)
                         fprintf('    rule[%d] class: %s\n', ri, class(sg.rules{ri}));
+                    end
+                    % Dump graph info to see edges/mappings even without rules
+                    try
+                        gi = graphinfo(sg);
+                        fprintf('  graphinfo: %d nodes\n', numel(gi.nodes));
+                        for ni = 1:min(8, numel(gi.nodes))
+                            n = gi.nodes(ni);
+                            ck = n.epoch_clock;
+                            if isa(ck, 'ndi.time.clocktype')
+                                ck_str = ck.type;
+                            else
+                                ck_str = class(ck);
+                            end
+                            fprintf('    node[%d] objname=%s clock=%s epoch=%s\n', ...
+                                ni, n.objectname, ck_str, n.epoch_id);
+                        end
+                        try
+                            [rows, cols] = find(~cellfun(@isempty, gi.mapping));
+                            fprintf('  mapping non-empty entries: %d\n', numel(rows));
+                            for mi = 1:min(12, numel(rows))
+                                m = gi.mapping{rows(mi), cols(mi)};
+                                cls = class(m);
+                                desc = '';
+                                if isobject(m)
+                                    try, desc = char(m); catch, end
+                                end
+                                fprintf('    mapping[%d->%d] class=%s %s\n', ...
+                                    rows(mi), cols(mi), cls, desc);
+                                % Test the map function at a known point
+                                try
+                                    if ismethod(m, 'map')
+                                        v0 = m.map(0);
+                                        v1 = m.map(1);
+                                        fprintf('      map(0)=%g, map(1)=%g (slope=%g, intercept=%g)\n', ...
+                                            v0, v1, v1-v0, v0);
+                                    end
+                                catch
+                                end
+                            end
+                        catch ME
+                            fprintf('  mapping dump ERRORED: %s\n', ME.message);
+                        end
+                    catch ME
+                        fprintf('  graphinfo ERRORED: %s\n', ME.message);
                     end
                 catch ME
                     fprintf('  syncgraph rules ERRORED: %s\n', ME.message);
