@@ -8,6 +8,15 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   short-circuit the converter's idempotency check, so re-reads of
 %   already-V_delta documents stay cheap.
 %
+%   The converter is called with RenameClassNames=false: NDI's on-disk
+%   schemas still spell classnames and property-block keys in
+%   camelCase (e.g., demoNDI), and the legacy v1 validator compares
+%   class_name strings exactly. Skipping the identifier snake_case
+%   sweep keeps legacy docs schema-compatible on read while still
+%   applying the V_delta shape transformations (schema_version
+%   stamping, base reconciliation, app block renames, depends_on
+%   rewrite).
+%
 %   The in-memory ndi.document then carries the did_v1 legacy alias
 %   paths injected by ndi.compat.augmentRead (issue #779) plus
 %   canonical `depends_on.document_id` entries via
@@ -71,7 +80,18 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
     % was written, and re-validating every read for every doc burns
     % time on production workloads. The migrate command and the write
     % path remain responsible for validation.
-    result = did2.convert.v1_to_v2(body, 'Validate', false);
+    %
+    % RenameClassNames=false preserves legacy (camelCase) identifiers
+    % on the body. NDI on-disk schemas (e.g., demoNDI, demoNDIMock)
+    % still spell classnames and block keys in camelCase, and the
+    % legacy v1 validator (did.database/validate_doc_vs_schema) compares
+    % body.document_class.class_name against schema.classname by exact
+    % string. Snake-casing here would trip ValidationClassname on every
+    % read of a legacy doc. Schema_version stamping, base reconciliation,
+    % app block renames, and depends_on rewrites still run — those are
+    % the V_delta shape transformations the read path actually needs.
+    result = did2.convert.v1_to_v2(body, 'Validate', false, ...
+        'RenameClassNames', false);
 
     if isempty(result.migrated)
         if ~isempty(result.quarantine)
