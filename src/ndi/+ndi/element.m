@@ -409,9 +409,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     % with fields {name, t0, t1}. Replaces the v1
                     % parallel (epoch_clock CSV + t0_t1 matrix) shape.
                     clocks_array = potential_epochdocs{i}.document_properties.element_epoch.clocks;
-                    ec = {};
-                    t0_t1 = {};
-                    for k=1:numel(clocks_array)
+                    nClocks = numel(clocks_array);
+                    ec = cell(1, nClocks);
+                    t0_t1 = cell(1, nClocks);
+                    for k=1:nClocks
                         ec{k} = ndi.time.clocktype(char(clocks_array(k).name));
                         t0_t1{k} = vlt.data.rowvec([clocks_array(k).t0, clocks_array(k).t1]);
                     end
