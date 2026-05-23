@@ -242,8 +242,86 @@ classdef tuning_response < ndi.app
                 ndi.time.clocktype(presentation_time(1).clocktype), ...
                 stim_doc.document_properties.epochid.epochid, 0);
 
+            % DIAGNOSTIC (#776): dump the stim onset/offset times BEFORE
+            % time_convert, and the epoch tables of both referents, so
+            % we can see whose t0_t1 (or syncrule mapping) is producing
+            % the negative timestamps in ts_stim_onsetoffsetid we
+            % observed in CI. Remove once root-caused.
+            try
+                fprintf('=== tuning_response: pre-time_convert diagnostic ===\n');
+                fprintf('  stim_doc.epochid: %s\n', stim_doc.document_properties.epochid.epochid);
+                fprintf('  presentation_time(1).clocktype: %s\n', char(presentation_time(1).clocktype));
+                fprintf('  stim_timeref.time: %g\n', stim_timeref.time);
+                if numel(presentation_time) >= 1
+                    fprintf('  presentation_time count: %d\n', numel(presentation_time));
+                    fprintf('  presentation_time(1).onset: %g, .offset: %g\n', ...
+                        presentation_time(1).onset, presentation_time(1).offset);
+                    if numel(presentation_time) >= 2
+                        fprintf('  presentation_time(2).onset: %g, .offset: %g\n', ...
+                            presentation_time(2).onset, presentation_time(2).offset);
+                    end
+                end
+                fprintf('  stim_stim_onsetoffsetid size=%s, first 3 rows:\n', mat2str(size(stim_stim_onsetoffsetid)));
+                disp(stim_stim_onsetoffsetid(1:min(3,size(stim_stim_onsetoffsetid,1)),:));
+                fprintf('  ndi_stim_obj class: %s, id: %s\n', class(ndi_stim_obj), ndi_stim_obj.id());
+                try
+                    et_stim = ndi_stim_obj.epochtable();
+                    fprintf('  ndi_stim_obj.epochtable: %d epochs\n', numel(et_stim));
+                    for ei = 1:min(2, numel(et_stim))
+                        fprintf('    [%d] epoch_id=%s\n', ei, et_stim(ei).epoch_id);
+                        for ci = 1:numel(et_stim(ei).epoch_clock)
+                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ...
+                                char(et_stim(ei).epoch_clock{ci}), mat2str(et_stim(ei).t0_t1{ci}));
+                        end
+                    end
+                catch ME
+                    fprintf('  ndi_stim_obj.epochtable ERRORED: %s\n', ME.message);
+                end
+                try
+                    et_ts = ndi_timeseries_obj.epochtable();
+                    fprintf('  ndi_timeseries_obj.epochtable: %d epochs\n', numel(et_ts));
+                    for ei = 1:min(2, numel(et_ts))
+                        fprintf('    [%d] epoch_id=%s\n', ei, et_ts(ei).epoch_id);
+                        for ci = 1:numel(et_ts(ei).epoch_clock)
+                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ...
+                                char(et_ts(ei).epoch_clock{ci}), mat2str(et_ts(ei).t0_t1{ci}));
+                        end
+                    end
+                catch ME
+                    fprintf('  ndi_timeseries_obj.epochtable ERRORED: %s\n', ME.message);
+                end
+                try
+                    sg = E.syncgraph;
+                    fprintf('  syncgraph rules count: %d\n', numel(sg.rules));
+                    for ri = 1:numel(sg.rules)
+                        fprintf('    rule[%d] class: %s\n', ri, class(sg.rules{ri}));
+                    end
+                catch ME
+                    fprintf('  syncgraph rules ERRORED: %s\n', ME.message);
+                end
+                fprintf('=== end pre-time_convert diagnostic ===\n');
+            catch ME
+                fprintf('=== pre-time_convert diagnostic ERRORED: %s ===\n', ME.message);
+            end
+
             [ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
                 vlt.data.colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi.time.clocktype('dev_local_time'));
+
+            % DIAGNOSTIC (#776): dump time_convert output to compare
+            % with stim_stim_onsetoffsetid above. Remove once root-caused.
+            try
+                fprintf('  time_convert msg: "%s"\n', msg);
+                fprintf('  ts_epoch_t0_out: class=%s size=%s\n', class(ts_epoch_t0_out), mat2str(size(ts_epoch_t0_out)));
+                if isnumeric(ts_epoch_t0_out) && ~isempty(ts_epoch_t0_out)
+                    n = min(6, numel(ts_epoch_t0_out));
+                    fprintf('    preview: %s\n', mat2str(ts_epoch_t0_out(1:n)));
+                    fprintf('    range: [%g, %g]\n', min(ts_epoch_t0_out(:)), max(ts_epoch_t0_out(:)));
+                end
+                fprintf('  ts_epoch_timeref.epoch: %s, .time=%g\n', ...
+                    char(string(ts_epoch_timeref.epoch)), ts_epoch_timeref.time);
+            catch ME
+                fprintf('  time_convert result diagnostic ERRORED: %s\n', ME.message);
+            end
 
             ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.stimulus_presentation.presentation_order),2) ...
                 stim_stim_onsetoffsetid(:,3)];
