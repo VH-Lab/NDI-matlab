@@ -35,7 +35,28 @@ classdef testCalcTuningCurve < ndi.unittest.session.buildSession
                                     fprintf('    report: %s\n', char(r));
                                 elseif isstruct(r)
                                     fprintf('    report (struct):\n');
-                                    disp(r);
+                                    for q = 1:numel(r)
+                                        if numel(r) > 1
+                                            fprintf('    [%d/%d]\n', q, numel(r));
+                                        end
+                                        disp(r(q));
+                                        if isfield(r(q), 'actualValue')
+                                            fprintf('      actualValue:\n');
+                                            disp(r(q).actualValue.');
+                                        end
+                                        if isfield(r(q), 'expectedValue')
+                                            fprintf('      expectedValue:\n');
+                                            disp(r(q).expectedValue.');
+                                        end
+                                        if isfield(r(q), 'actualValue') ...
+                                                && isfield(r(q), 'expectedValue') ...
+                                                && isnumeric(r(q).actualValue) ...
+                                                && isnumeric(r(q).expectedValue) ...
+                                                && numel(r(q).actualValue) == numel(r(q).expectedValue)
+                                            fprintf('      diff (actual - expected):\n');
+                                            disp((r(q).actualValue(:) - r(q).expectedValue(:)).');
+                                        end
+                                    end
                                 else
                                     fprintf('    report class: %s\n', class(r));
                                 end
