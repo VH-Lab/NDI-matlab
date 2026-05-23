@@ -255,6 +255,47 @@ classdef tuning_response < ndi.app
 
             [data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, interval(1,1), interval(1,2));
 
+            % DIAGNOSTIC (#776): dump shape/preview of the spike data
+            % readtimeseries returned and the windowing inputs that feed
+            % stimulus_response_scalar, so CI logs reveal whether the
+            % gate flip broke timeseries reads or stimulus windowing.
+            % Remove once root-caused.
+            try
+                fprintf('=== compute_stimulus_response_scalar diagnostic ===\n');
+                fprintf('  ndi_timeseries_obj class: %s\n', class(ndi_timeseries_obj));
+                try
+                    fprintf('  ndi_timeseries_obj.id: %s\n', ndi_timeseries_obj.id());
+                catch
+                    fprintf('  ndi_timeseries_obj.id: <unavailable>\n');
+                end
+                try
+                    fprintf('  ndi_timeseries_obj.type: %s\n', ndi_timeseries_obj.type);
+                catch
+                end
+                fprintf('  stim_doc.id: %s\n', stim_doc.id());
+                fprintf('  ts_epoch_timeref.epoch: %s\n', char(string(ts_epoch_timeref.epoch)));
+                fprintf('  readtimeseries data: class=%s size=%s\n', class(data), mat2str(size(data)));
+                if isnumeric(data) && ~isempty(data)
+                    n = min(8, numel(data));
+                    fprintf('    data preview (first %d): %s\n', n, mat2str(data(1:n)));
+                    fprintf('    data sum=%g, nnz=%d, all-zero=%d, any-NaN=%d\n', ...
+                        sum(data(:)), nnz(data), all(data(:)==0), any(isnan(data(:))));
+                end
+                fprintf('  t_raw: class=%s size=%s\n', class(t_raw), mat2str(size(t_raw)));
+                if isnumeric(t_raw) && ~isempty(t_raw)
+                    n = min(4, numel(t_raw));
+                    fprintf('    t_raw preview (first %d): %s ... last=%g\n', n, mat2str(t_raw(1:n)), t_raw(end));
+                end
+                fprintf('  ts_stim_onsetoffsetid: size=%s\n', mat2str(size(ts_stim_onsetoffsetid)));
+                if size(ts_stim_onsetoffsetid,1) >= 1
+                    fprintf('    first row: %s\n', mat2str(ts_stim_onsetoffsetid(1,:)));
+                end
+                fprintf('  interval (valid): %s\n', mat2str(interval));
+                fprintf('=== end compute_stimulus_response_scalar (pre-response) diagnostic ===\n');
+            catch ME
+                fprintf('=== pre-response diagnostic ERRORED: %s ===\n', ME.message);
+            end
+
             for f=1:numel(freq_response_commands)
 
                 freq_response = freq_response_commands(f);
@@ -305,6 +346,35 @@ classdef tuning_response < ndi.app
                     'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,...
                     'prestimulus_normalization',prestimulus_normalization,...
                     'isspike',isspike,'spiketrain_dt',spiketrain_dt);
+
+                % DIAGNOSTIC (#776): dump the computed response struct
+                % values so we can see whether vlt.neuro.stimulus took
+                % real data and produced zeros, or got empty input.
+                % Remove once root-caused.
+                try
+                    fprintf('  post-response: freq_response=%g, response_type=%s\n', freq_response, response_type);
+                    fprintf('    freq_mult: size=%s preview=%s\n', mat2str(size(freq_mult)), ...
+                        mat2str(freq_mult(1:min(6,numel(freq_mult)))));
+                    fprintf('    controlstimids: size=%s preview=%s\n', mat2str(size(controlstimids)), ...
+                        mat2str(controlstimids(1:min(6,numel(controlstimids)))));
+                    rr = [response.response];
+                    cr = [response.control_response];
+                    fprintf('    response.response: class=%s numel=%d\n', class(rr), numel(rr));
+                    if isnumeric(rr) && ~isempty(rr)
+                        n = min(6, numel(rr));
+                        fprintf('      preview real: %s\n', mat2str(real(rr(1:n))));
+                        fprintf('      sum(real)=%g, nnz(real)=%d, any-NaN-real=%d\n', ...
+                            sum(real(rr(:))), nnz(real(rr)), any(isnan(real(rr(:)))));
+                    end
+                    fprintf('    response.control_response: class=%s numel=%d\n', class(cr), numel(cr));
+                    if isnumeric(cr) && ~isempty(cr)
+                        n = min(6, numel(cr));
+                        fprintf('      preview real: %s\n', mat2str(real(cr(1:n))));
+                        fprintf('      all-NaN-real=%d\n', all(isnan(real(cr(:)))));
+                    end
+                catch ME
+                    fprintf('  post-response diagnostic ERRORED: %s\n', ME.message);
+                end
 
                 response_structure = struct('stimid',vlt.data.rowvec(ts_stim_onsetoffsetid(:,3)),...
                     'response_real', vlt.data.rowvec(real([response.response])), ...
