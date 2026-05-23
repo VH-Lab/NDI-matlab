@@ -66,9 +66,9 @@ classdef TestNDIDocument < matlab.unittest.TestCase
             E = ndi.session.dir('exp1', testCase.testDir);
 
             % 2. Create a new document object
-            doc = E.newdocument('demo_ndi', ...
+            doc = E.newdocument('demoNDI', ...
                 'base.name', 'Demo document', ...
-                'demo_ndi.value', 5);
+                'demoNDI.value', 5);
             
             % 3. Create a binary file with known data
             myfid = fopen(testCase.binaryFile, 'w', 'ieee-le');
@@ -86,11 +86,11 @@ classdef TestNDIDocument < matlab.unittest.TestCase
             testCase.log(matlab.unittest.Verbosity.Verbose, 'Verifying document searching...');
 
             % 5a. Search by a specific field value
-            doc_search1 = E.database_search(ndi.query('demo_ndi.value', 'exact_number', 5, ''));
+            doc_search1 = E.database_search(ndi.query('demoNDI.value', 'exact_number', 5, ''));
             testCase.verifyNumElements(doc_search1, 1, 'Did not find exactly one document when searching by value.');
             
             % 5b. Search by the document type ('isa')
-            doc_search2 = E.database_search(ndi.query('', 'isa', 'demo_ndi', ''));
+            doc_search2 = E.database_search(ndi.query('', 'isa', 'demoNDI', ''));
             testCase.verifyNumElements(doc_search2, 1, 'Did not find exactly one document when searching by type.');
             
             % 6. Verify reading binary data from the document
@@ -113,8 +113,8 @@ classdef TestNDIDocument < matlab.unittest.TestCase
         function cleanupDemoDocuments(testCase)
             E = ndi.session.dir('exp1', testCase.testDir);
             
-            % Search for any documents of type 'demo_ndi'
-            docs_to_remove = E.database_search(ndi.query('', 'isa', 'demo_ndi', ''));
+            % Search for any documents of type 'demoNDI'
+            docs_to_remove = E.database_search(ndi.query('', 'isa', 'demoNDI', ''));
             
             % If any are found, remove them
             if ~isempty(docs_to_remove)

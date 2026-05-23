@@ -90,7 +90,7 @@ classdef buildSessionNDRAxon < matlab.unittest.TestCase
             % SESSION = WITHDOCSANDFILES()
             %
             % Creates an NDI.SESSION.DIR object in a temporary directory
-            % with 5 NDI.DOCUMENTS of type 'demo_ndi'.
+            % with 5 NDI.DOCUMENTS of type 'demoNDI'.
             %
             % The documents have names 'doc_1', 'doc_2', ..., 'doc_5'.
             % The file content for each is 'doc_1', 'doc_2', etc.
@@ -113,7 +113,7 @@ classdef buildSessionNDRAxon < matlab.unittest.TestCase
             %
             % ADDDOCSWITHFILES(SESSION, DOCNUMBER)
             %
-            % Adds a document of type 'demo_ndi' to the session.
+            % Adds a document of type 'demoNDI' to the session.
             % The document has name 'doc_<DOCNUMBER>' and the file content is also 'doc_<DOCNUMBER>'.
 
             dirname = session.path();
@@ -127,12 +127,12 @@ classdef buildSessionNDRAxon < matlab.unittest.TestCase
 
             % Create document
             % Create a blank document first to get the structure
-            doc = ndi.document('demo_ndi') + session.newdocument();
+            doc = ndi.document('demoNDI') + session.newdocument();
 
             % Modify properties
             doc_props = doc.document_properties;
             doc_props.base.name = docname;
-            doc_props.demo_ndi.value = docNumber;
+            doc_props.demoNDI.value = docNumber;
 
             % Recreate document with modified properties
             doc = ndi.document(doc_props);
