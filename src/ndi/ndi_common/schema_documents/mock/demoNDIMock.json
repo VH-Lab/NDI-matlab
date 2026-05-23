@@ -1,7 +1,7 @@
 {
-	"classname": "demo_ndi_mock",
-	"superclasses":  [ "base", "mock", "demo_ndi" ],
+	"classname": "demoNDIMock",
+	"superclasses":  [ "base", "mock", "demoNDI" ],
 	"depends_on": [ ],
-	"demo_ndi_mock": [
+	"demoNDIMock": [
 	]
 }

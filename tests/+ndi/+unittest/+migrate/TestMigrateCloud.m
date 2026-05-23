@@ -255,7 +255,7 @@ end
 
 function body = makeVDeltaBody(name)
 body = makeV1Body(name);
-body.document_class.schema_version = 'V_delta';
+body.base.schema_version = 'V_delta';
 end
 
 function s = pad16(name)
