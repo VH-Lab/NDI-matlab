@@ -44,49 +44,6 @@ classdef tuningcurve < ndi.calculator
             end
             stim_response_doc = stim_response_doc{1};
 
-            % DIAGNOSTIC (#776): dump shape/preview of the gate-normalized
-            % stim_response_doc so CI logs show whether
-            % applyReadNormalization mangled the responses substruct that
-            % the tuning curve computation reads. Remove once root-caused.
-            try
-                srd_props = stim_response_doc.document_properties;
-                fprintf('=== tuningcurve.calculate: stim_response_doc diagnostic ===\n');
-                fprintf('  doc_id: %s\n', stim_response_doc_id);
-                fprintf('  top-level fields: %s\n', strjoin(fieldnames(srd_props)', ', '));
-                if isfield(srd_props, 'stimulus_response_scalar')
-                    srs = srd_props.stimulus_response_scalar;
-                    fprintf('  stimulus_response_scalar fields: %s\n', strjoin(fieldnames(srs)', ', '));
-                    if isfield(srs, 'responses')
-                        R = srs.responses;
-                        fprintf('  responses class: %s, size: %s, isstruct=%d, numel=%d\n', ...
-                            class(R), mat2str(size(R)), isstruct(R), numel(R));
-                        if isstruct(R)
-                            fprintf('  responses(1) fields: %s\n', strjoin(fieldnames(R)', ', '));
-                            previewFields = {'response_real','response_imaginary', ...
-                                'control_response_real','control_response_imaginary'};
-                            for pfi = 1:numel(previewFields)
-                                pf = previewFields{pfi};
-                                if isfield(R, pf)
-                                    val = R(1).(pf);
-                                    n = min(5, numel(val));
-                                    fprintf('    R(1).%s: class=%s size=%s preview=%s\n', ...
-                                        pf, class(val), mat2str(size(val)), mat2str(val(1:n)));
-                                end
-                            end
-                        end
-                    end
-                end
-                if isfield(srd_props, 'depends_on')
-                    do = srd_props.depends_on;
-                    if isstruct(do)
-                        fprintf('  depends_on names: %s\n', strjoin({do.name}, ', '));
-                    end
-                end
-                fprintf('=== end stim_response_doc diagnostic ===\n');
-            catch ME
-                fprintf('=== stim_response_doc diagnostic ERRORED: %s ===\n', ME.message);
-            end
-
             % Step 2: perform the calculator, which here creates a tuning curve from instructions
 
             % build input arguments for tuning curve app
@@ -757,43 +714,6 @@ classdef tuningcurve < ndi.calculator
                 error(['Could not find stimulus presentation doc for document ' stim_response_doc.id() '.']);
             end
             stim_pres_doc = stim_pres_doc{1};
-
-            % DIAGNOSTIC (#776): dump shape/preview of the gate-normalized
-            % stim_pres_doc so CI logs show whether applyReadNormalization
-            % mangled the stimuli struct-array or presentation_order
-            % vector. Remove once root-caused.
-            try
-                spd_props = stim_pres_doc.document_properties;
-                fprintf('=== tuningcurve.best_value_empirical: stim_pres_doc diagnostic ===\n');
-                fprintf('  doc_id: %s\n', stim_pres_doc.id());
-                fprintf('  top-level fields: %s\n', strjoin(fieldnames(spd_props)', ', '));
-                if isfield(spd_props, 'stimulus_presentation')
-                    sp = spd_props.stimulus_presentation;
-                    fprintf('  stimulus_presentation fields: %s\n', strjoin(fieldnames(sp)', ', '));
-                    if isfield(sp, 'stimuli')
-                        stms = sp.stimuli;
-                        fprintf('  stimuli class: %s, size: %s, numel=%d\n', ...
-                            class(stms), mat2str(size(stms)), numel(stms));
-                        if isstruct(stms) && ~isempty(stms)
-                            fprintf('  stimuli(1) fields: %s\n', strjoin(fieldnames(stms)', ', '));
-                            if isfield(stms, 'parameters') && isstruct(stms(1).parameters)
-                                fprintf('  stimuli(1).parameters fields: %s\n', ...
-                                    strjoin(fieldnames(stms(1).parameters)', ', '));
-                            end
-                        end
-                    end
-                    if isfield(sp, 'presentation_order')
-                        po = sp.presentation_order;
-                        n = min(8, numel(po));
-                        fprintf('  presentation_order: class=%s size=%s preview=%s\n', ...
-                            class(po), mat2str(size(po)), mat2str(po(1:n)));
-                    end
-                end
-                fprintf('  property arg: %s\n', char(property));
-                fprintf('=== end stim_pres_doc diagnostic ===\n');
-            catch ME
-                fprintf('=== stim_pres_doc diagnostic ERRORED: %s ===\n', ME.message);
-            end
 
             % see which stimuli to include
 

@@ -215,37 +215,6 @@ classdef ctest
                 actual_doc_struct = vlt.data.columnize_struct(actual_doc.document_properties, 'columnizeNumericVectors', true);
                 actual_doc_col = ndi.document(actual_doc_struct);
                 [b, report] = docCompare.compare(actual_doc_col, expected_doc);
-
-                % DIAGNOSTIC: when comparison fails, dump both docs as
-                % pretty JSON to stdout so CI logs show the full shape
-                % of actual vs expected (root-cause #776 gate-flip
-                % asymmetry). Remove once root-caused.
-                if ~b
-                    try
-                        actual_json = jsonencode(actual_doc_col.document_properties, 'PrettyPrint', true);
-                    catch
-                        actual_json = jsonencode(actual_doc_col.document_properties);
-                    end
-                    try
-                        expected_json = jsonencode(expected_doc.document_properties, 'PrettyPrint', true);
-                    catch
-                        expected_json = jsonencode(expected_doc.document_properties);
-                    end
-                    fprintf('=== compare_mock_docs diagnostic (b=0) ===\n');
-                    try
-                        cls = expected_doc.document_properties.document_class.class_name;
-                    catch
-                        cls = '<unknown>';
-                    end
-                    fprintf('class_name: %s\n', cls);
-                    fprintf('--- actual_doc top-level fields:\n');
-                    disp(fieldnames(actual_doc_col.document_properties));
-                    fprintf('--- expected_doc top-level fields:\n');
-                    disp(fieldnames(expected_doc.document_properties));
-                    fprintf('--- actual_doc.document_properties (JSON):\n%s\n', actual_json);
-                    fprintf('--- expected_doc.document_properties (JSON):\n%s\n', expected_json);
-                    fprintf('=== end compare_mock_docs diagnostic ===\n');
-                end
                 return;
             end
 
@@ -304,22 +273,8 @@ classdef ctest
             fname = ctest_obj.mock_expected_filename(number);
             if vlt.file.isfile(fname)
                 json_data = vlt.file.textfile2char(fname);
-                % Route the expected body through the same V_delta read
-                % normalization gate that the database backends apply
-                % to docs they return from disk. This keeps expected
-                % docs in the same shape as the calculator's
-                % gate-normalized inputs (issue #776). Falls back to a
-                % bare ndi.document wrap if the gate is unavailable
-                % (e.g., older NDI installs running this ctest harness).
                 body = jsondecode(json_data);
-                try
-                    doc = ndi.database.internal.applyReadNormalization(body);
-                catch ME
-                    warning('NDI:ctest:loadExpectedNormalize', ...
-                        ['applyReadNormalization failed for %s (%s); ' ...
-                         'falling back to raw ndi.document.'], fname, ME.message);
-                    doc = ndi.document(body);
-                end
+                doc = ndi.database.internal.applyReadNormalization(body);
             else
                 error(['File ' fname ' does not exist.']);
             end

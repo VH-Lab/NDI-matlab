@@ -36,8 +36,8 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
     if ~isfield(ndi_document_obj.document_properties, obj_parent_string)
         error(['NDI_DOCUMENT_OBJ does not have a ''' obj_parent_string  ''' field.']);
     else
-        obj_struct = getfield(ndi_document_obj.document_properties, obj_parent_string);
-        obj_string = getfield(obj_struct,['ndi_' obj_parent_string '_class']);
+        obj_struct = ndi_document_obj.document_properties.(obj_parent_string);
+        obj_string = obj_struct.(['ndi_' obj_parent_string '_class']);
     end
 
     o = eval([obj_string '(ndi_session_obj, ndi_document_obj);']);

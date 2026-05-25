@@ -242,140 +242,8 @@ classdef tuning_response < ndi.app
                 ndi.time.clocktype(presentation_time(1).clocktype), ...
                 stim_doc.document_properties.epochid.epochid, 0);
 
-            % DIAGNOSTIC (#776): dump the stim onset/offset times BEFORE
-            % time_convert, and the epoch tables of both referents, so
-            % we can see whose t0_t1 (or syncrule mapping) is producing
-            % the negative timestamps in ts_stim_onsetoffsetid we
-            % observed in CI. Remove once root-caused.
-            try
-                fprintf('=== tuning_response: pre-time_convert diagnostic ===\n');
-                fprintf('  stim_doc.epochid: %s\n', stim_doc.document_properties.epochid.epochid);
-                fprintf('  presentation_time(1).clocktype: %s\n', char(presentation_time(1).clocktype));
-                fprintf('  stim_timeref.time: %g\n', stim_timeref.time);
-                if numel(presentation_time) >= 1
-                    fprintf('  presentation_time count: %d\n', numel(presentation_time));
-                    fprintf('  presentation_time(1).onset: %g, .offset: %g\n', ...
-                        presentation_time(1).onset, presentation_time(1).offset);
-                    if numel(presentation_time) >= 2
-                        fprintf('  presentation_time(2).onset: %g, .offset: %g\n', ...
-                            presentation_time(2).onset, presentation_time(2).offset);
-                    end
-                end
-                fprintf('  stim_stim_onsetoffsetid size=%s, first 3 rows:\n', mat2str(size(stim_stim_onsetoffsetid)));
-                disp(stim_stim_onsetoffsetid(1:min(3,size(stim_stim_onsetoffsetid,1)),:));
-                fprintf('  ndi_stim_obj class: %s, id: %s\n', class(ndi_stim_obj), ndi_stim_obj.id());
-                try
-                    et_stim = ndi_stim_obj.epochtable();
-                    fprintf('  ndi_stim_obj.epochtable: %d epochs\n', numel(et_stim));
-                    for ei = 1:min(2, numel(et_stim))
-                        fprintf('    [%d] epoch_id=%s\n', ei, et_stim(ei).epoch_id);
-                        for ci = 1:numel(et_stim(ei).epoch_clock)
-                            ck = et_stim(ei).epoch_clock{ci};
-                            if isa(ck, 'ndi.time.clocktype')
-                                ck_str = ck.type;
-                            else
-                                ck_str = class(ck);
-                            end
-                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ck_str, mat2str(et_stim(ei).t0_t1{ci}));
-                        end
-                    end
-                catch ME
-                    fprintf('  ndi_stim_obj.epochtable ERRORED: %s\n', ME.message);
-                end
-                try
-                    et_ts = ndi_timeseries_obj.epochtable();
-                    fprintf('  ndi_timeseries_obj.epochtable: %d epochs\n', numel(et_ts));
-                    for ei = 1:min(2, numel(et_ts))
-                        fprintf('    [%d] epoch_id=%s\n', ei, et_ts(ei).epoch_id);
-                        for ci = 1:numel(et_ts(ei).epoch_clock)
-                            ck = et_ts(ei).epoch_clock{ci};
-                            if isa(ck, 'ndi.time.clocktype')
-                                ck_str = ck.type;
-                            else
-                                ck_str = class(ck);
-                            end
-                            fprintf('      clock[%d]=%s t0_t1=%s\n', ci, ck_str, mat2str(et_ts(ei).t0_t1{ci}));
-                        end
-                    end
-                catch ME
-                    fprintf('  ndi_timeseries_obj.epochtable ERRORED: %s\n', ME.message);
-                end
-                try
-                    sg = E.syncgraph;
-                    fprintf('  syncgraph rules count: %d\n', numel(sg.rules));
-                    for ri = 1:numel(sg.rules)
-                        fprintf('    rule[%d] class: %s\n', ri, class(sg.rules{ri}));
-                    end
-                    % Dump graph info to see edges/mappings even without rules
-                    try
-                        gi = graphinfo(sg);
-                        fprintf('  graphinfo: %d nodes\n', numel(gi.nodes));
-                        for ni = 1:min(8, numel(gi.nodes))
-                            n = gi.nodes(ni);
-                            ck = n.epoch_clock;
-                            if isa(ck, 'ndi.time.clocktype')
-                                ck_str = ck.type;
-                            else
-                                ck_str = class(ck);
-                            end
-                            fprintf('    node[%d] objname=%s clock=%s epoch=%s\n', ...
-                                ni, n.objectname, ck_str, n.epoch_id);
-                        end
-                        try
-                            [rows, cols] = find(~cellfun(@isempty, gi.mapping));
-                            fprintf('  mapping non-empty entries: %d\n', numel(rows));
-                            for mi = 1:min(12, numel(rows))
-                                m = gi.mapping{rows(mi), cols(mi)};
-                                cls = class(m);
-                                desc = '';
-                                if isobject(m)
-                                    try, desc = char(m); catch, end
-                                end
-                                fprintf('    mapping[%d->%d] class=%s %s\n', ...
-                                    rows(mi), cols(mi), cls, desc);
-                                % Test the map function at a known point
-                                try
-                                    if ismethod(m, 'map')
-                                        v0 = m.map(0);
-                                        v1 = m.map(1);
-                                        fprintf('      map(0)=%g, map(1)=%g (slope=%g, intercept=%g)\n', ...
-                                            v0, v1, v1-v0, v0);
-                                    end
-                                catch
-                                end
-                            end
-                        catch ME
-                            fprintf('  mapping dump ERRORED: %s\n', ME.message);
-                        end
-                    catch ME
-                        fprintf('  graphinfo ERRORED: %s\n', ME.message);
-                    end
-                catch ME
-                    fprintf('  syncgraph rules ERRORED: %s\n', ME.message);
-                end
-                fprintf('=== end pre-time_convert diagnostic ===\n');
-            catch ME
-                fprintf('=== pre-time_convert diagnostic ERRORED: %s ===\n', ME.message);
-            end
-
             [ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
                 vlt.data.colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi.time.clocktype('dev_local_time'));
-
-            % DIAGNOSTIC (#776): dump time_convert output to compare
-            % with stim_stim_onsetoffsetid above. Remove once root-caused.
-            try
-                fprintf('  time_convert msg: "%s"\n', msg);
-                fprintf('  ts_epoch_t0_out: class=%s size=%s\n', class(ts_epoch_t0_out), mat2str(size(ts_epoch_t0_out)));
-                if isnumeric(ts_epoch_t0_out) && ~isempty(ts_epoch_t0_out)
-                    n = min(6, numel(ts_epoch_t0_out));
-                    fprintf('    preview: %s\n', mat2str(ts_epoch_t0_out(1:n)));
-                    fprintf('    range: [%g, %g]\n', min(ts_epoch_t0_out(:)), max(ts_epoch_t0_out(:)));
-                end
-                fprintf('  ts_epoch_timeref.epoch: %s, .time=%g\n', ...
-                    char(string(ts_epoch_timeref.epoch)), ts_epoch_timeref.time);
-            catch ME
-                fprintf('  time_convert result diagnostic ERRORED: %s\n', ME.message);
-            end
 
             ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.stimulus_presentation.presentation_order),2) ...
                 stim_stim_onsetoffsetid(:,3)];
@@ -386,47 +254,6 @@ classdef tuning_response < ndi.app
             interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,0,Inf);
 
             [data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, interval(1,1), interval(1,2));
-
-            % DIAGNOSTIC (#776): dump shape/preview of the spike data
-            % readtimeseries returned and the windowing inputs that feed
-            % stimulus_response_scalar, so CI logs reveal whether the
-            % gate flip broke timeseries reads or stimulus windowing.
-            % Remove once root-caused.
-            try
-                fprintf('=== compute_stimulus_response_scalar diagnostic ===\n');
-                fprintf('  ndi_timeseries_obj class: %s\n', class(ndi_timeseries_obj));
-                try
-                    fprintf('  ndi_timeseries_obj.id: %s\n', ndi_timeseries_obj.id());
-                catch
-                    fprintf('  ndi_timeseries_obj.id: <unavailable>\n');
-                end
-                try
-                    fprintf('  ndi_timeseries_obj.type: %s\n', ndi_timeseries_obj.type);
-                catch
-                end
-                fprintf('  stim_doc.id: %s\n', stim_doc.id());
-                fprintf('  ts_epoch_timeref.epoch: %s\n', char(string(ts_epoch_timeref.epoch)));
-                fprintf('  readtimeseries data: class=%s size=%s\n', class(data), mat2str(size(data)));
-                if isnumeric(data) && ~isempty(data)
-                    n = min(8, numel(data));
-                    fprintf('    data preview (first %d): %s\n', n, mat2str(data(1:n)));
-                    fprintf('    data sum=%g, nnz=%d, all-zero=%d, any-NaN=%d\n', ...
-                        sum(data(:)), nnz(data), all(data(:)==0), any(isnan(data(:))));
-                end
-                fprintf('  t_raw: class=%s size=%s\n', class(t_raw), mat2str(size(t_raw)));
-                if isnumeric(t_raw) && ~isempty(t_raw)
-                    n = min(4, numel(t_raw));
-                    fprintf('    t_raw preview (first %d): %s ... last=%g\n', n, mat2str(t_raw(1:n)), t_raw(end));
-                end
-                fprintf('  ts_stim_onsetoffsetid: size=%s\n', mat2str(size(ts_stim_onsetoffsetid)));
-                if size(ts_stim_onsetoffsetid,1) >= 1
-                    fprintf('    first row: %s\n', mat2str(ts_stim_onsetoffsetid(1,:)));
-                end
-                fprintf('  interval (valid): %s\n', mat2str(interval));
-                fprintf('=== end compute_stimulus_response_scalar (pre-response) diagnostic ===\n');
-            catch ME
-                fprintf('=== pre-response diagnostic ERRORED: %s ===\n', ME.message);
-            end
 
             for f=1:numel(freq_response_commands)
 
@@ -478,35 +305,6 @@ classdef tuning_response < ndi.app
                     'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,...
                     'prestimulus_normalization',prestimulus_normalization,...
                     'isspike',isspike,'spiketrain_dt',spiketrain_dt);
-
-                % DIAGNOSTIC (#776): dump the computed response struct
-                % values so we can see whether vlt.neuro.stimulus took
-                % real data and produced zeros, or got empty input.
-                % Remove once root-caused.
-                try
-                    fprintf('  post-response: freq_response=%g, response_type=%s\n', freq_response, response_type);
-                    fprintf('    freq_mult: size=%s preview=%s\n', mat2str(size(freq_mult)), ...
-                        mat2str(freq_mult(1:min(6,numel(freq_mult)))));
-                    fprintf('    controlstimids: size=%s preview=%s\n', mat2str(size(controlstimids)), ...
-                        mat2str(controlstimids(1:min(6,numel(controlstimids)))));
-                    rr = [response.response];
-                    cr = [response.control_response];
-                    fprintf('    response.response: class=%s numel=%d\n', class(rr), numel(rr));
-                    if isnumeric(rr) && ~isempty(rr)
-                        n = min(6, numel(rr));
-                        fprintf('      preview real: %s\n', mat2str(real(rr(1:n))));
-                        fprintf('      sum(real)=%g, nnz(real)=%d, any-NaN-real=%d\n', ...
-                            sum(real(rr(:))), nnz(real(rr)), any(isnan(real(rr(:)))));
-                    end
-                    fprintf('    response.control_response: class=%s numel=%d\n', class(cr), numel(cr));
-                    if isnumeric(cr) && ~isempty(cr)
-                        n = min(6, numel(cr));
-                        fprintf('      preview real: %s\n', mat2str(real(cr(1:n))));
-                        fprintf('      all-NaN-real=%d\n', all(isnan(real(cr(:)))));
-                    end
-                catch ME
-                    fprintf('  post-response diagnostic ERRORED: %s\n', ME.message);
-                end
 
                 response_structure = struct('stimid',vlt.data.rowvec(ts_stim_onsetoffsetid(:,3)),...
                     'response_real', vlt.data.rowvec(real([response.response])), ...
