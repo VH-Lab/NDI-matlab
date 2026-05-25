@@ -3,32 +3,36 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %
 %   NDIDOCUMENTOBJ = ndi.database.internal.applyReadNormalization(RAWDOC)
 %   wraps a body read from a concrete ndi.database backend in an
-%   ndi.document. When the env var NDI_DID2_NORMALIZE_ON_READ is set to
-%   '1', RAWDOC is first routed through did2.convert.v1_to_v2 so v1
+%   ndi.document. RAWDOC is routed through did2.convert.v1_to_v2 so v1
 %   bodies are returned as V_delta-shaped documents. V_delta bodies
 %   short-circuit the converter's idempotency check, so re-reads of
 %   already-V_delta documents stay cheap.
 %
-%   The env-var gate is OFF by default so this PR can land ahead of the
-%   companion work that the issue body lists as dependencies:
-%     - "Issue 1": NDI schemas converted to V_delta (every blank doc
-%       under src/ndi/ndi_common/database_documents/ is still v1, and
-%       ndi.document.readblankdefinition reads from there).
-%     - #779: in-memory compat shim that injects legacy aliases on
-%       ndi.document read, so existing callers (e.g.,
-%       ndi.database.fun.ndi_document2ndi_object,
-%       ndi.daq.metadatareader) keep finding v1 field names like
-%       ndi_daqmetadatareader_class after V_delta normalisation
-%       renames them to reader_class.
-%   With the gate OFF the wiring + tests in this file are dormant; flip
-%   to ON via setenv('NDI_DID2_NORMALIZE_ON_READ','1') once #779 / issue
-%   1 ship to activate normalisation across every ndi.database backend.
+%   The converter is called with RenameClassNames=false: NDI's on-disk
+%   schemas still spell classnames and property-block keys in
+%   camelCase (e.g., demoNDI), and the legacy v1 validator compares
+%   class_name strings exactly. Skipping the identifier snake_case
+%   sweep keeps legacy docs schema-compatible on read while still
+%   applying the V_delta shape transformations (schema_version
+%   stamping, base reconciliation, app block renames, depends_on
+%   rewrite).
+%
+%   The in-memory ndi.document then carries the did_v1 legacy alias
+%   paths injected by ndi.compat.augmentRead (issue #779) plus
+%   canonical `depends_on.document_id` entries via
+%   ndi.compat.normalizeDependsOn (issue #801). Callers that still
+%   read legacy field names (e.g.,
+%   ndi.database.fun.ndi_document2ndi_object,
+%   ndi.daq.metadatareader, customer code reading
+%   document_properties.probe_location.ontology_name) keep working
+%   even though storage normalised to V_delta. The write-side mirror
+%   lives in ndi.compat.reconcileWrite (issue #780); query-side path
+%   translation lives in ndi.compat.translateQueryPaths (issue #781).
 %
 %   Concrete ndi.database subclasses call this helper from their
 %   do_read / do_search implementations so the abstract ndi.database
-%   API stays byte-identical regardless of the gate state: callers
-%   above the abstraction (session, dataset, queries) only ever see
-%   ndi.document objects.
+%   API stays byte-identical: callers above the abstraction (session,
+%   dataset, queries) only ever see ndi.document objects.
 %
 %   RAWDOC may be:
 %       - a struct                (the body itself),
@@ -40,12 +44,14 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
 %   Errors:
 %       NDI:database:normalizeBadInput  - RAWDOC is not a recognised
 %                                         document/body type.
-%       NDI:database:normalizeFailed    - the gate is ON and
-%                                         did2.convert.v1_to_v2
+%       NDI:database:normalizeFailed    - did2.convert.v1_to_v2
 %                                         quarantined the body so no
 %                                         migrated document was produced.
 %
-%   See also: did2.convert.v1_to_v2, ndi.database,
+%   See also: did2.convert.v1_to_v2, ndi.compat.augmentRead,
+%             ndi.compat.normalizeDependsOn,
+%             ndi.compat.reconcileWrite, ndi.compat.translateQueryPaths,
+%             ndi.database,
 %             ndi.database.implementations.database.didsqlite,
 %             ndi.database.implementations.database.matlabdumbjsondb2.
 
@@ -70,19 +76,22 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
              '(got "%s").'], class(rawDoc));
     end
 
-    if ~normalizationGateOn()
-        % Gate OFF: preserve the pre-#776 behaviour (just wrap the
-        % body) so the rest of the codebase keeps finding v1 field
-        % names until issue 1 / #779 land.
-        ndiDocumentObj = ndi.document(body);
-        return;
-    end
-
     % Validate=false on the read path: the body was validated when it
     % was written, and re-validating every read for every doc burns
     % time on production workloads. The migrate command and the write
     % path remain responsible for validation.
-    result = did2.convert.v1_to_v2(body, 'Validate', false);
+    %
+    % RenameClassNames=false preserves legacy (camelCase) identifiers
+    % on the body. NDI on-disk schemas (e.g., demoNDI, demoNDIMock)
+    % still spell classnames and block keys in camelCase, and the
+    % legacy v1 validator (did.database/validate_doc_vs_schema) compares
+    % body.document_class.class_name against schema.classname by exact
+    % string. Snake-casing here would trip ValidationClassname on every
+    % read of a legacy doc. Schema_version stamping, base reconciliation,
+    % app block renames, and depends_on rewrites still run — those are
+    % the V_delta shape transformations the read path actually needs.
+    result = did2.convert.v1_to_v2(body, 'Validate', false, ...
+        'RenameClassNames', false);
 
     if isempty(result.migrated)
         if ~isempty(result.quarantine)
@@ -98,15 +107,4 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
     end
 
     ndiDocumentObj = ndi.document(result.migrated{1}.toStruct());
-end
-
-function tf = normalizationGateOn()
-% Read NDI_DID2_NORMALIZE_ON_READ and treat '1', 'true', 'yes', 'on' as
-% ON (case-insensitive). Anything else (including unset) is OFF.
-raw = getenv('NDI_DID2_NORMALIZE_ON_READ');
-if isempty(raw)
-    tf = false;
-    return;
-end
-tf = any(strcmpi(strtrim(raw), {'1', 'true', 'yes', 'on'}));
 end

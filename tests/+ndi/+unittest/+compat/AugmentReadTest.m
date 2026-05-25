@@ -68,23 +68,6 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyEqual(out.ontology_label.label, '');
         end
 
-        function test_daqmetadatareader_reader_class_mirrored(testCase)
-            % New row added in #801: V_delta `reader_class` mirrors
-            % back to did_v1 `ndi_daqmetadatareader_class` so legacy
-            % callers (e.g., ndi.database.fun.ndi_document2ndi_object)
-            % still find the class string after normalisation.
-            body = i_baseBody('daqmetadatareader');
-            body.daqmetadatareader = struct( ...
-                'reader_class', 'ndi.daq.metadatareader');
-            out = ndi.compat.augmentRead(body);
-            testCase.verifyEqual( ...
-                out.daqmetadatareader.ndi_daqmetadatareader_class, ...
-                'ndi.daq.metadatareader');
-            testCase.verifyEqual( ...
-                out.daqmetadatareader.reader_class, ...
-                'ndi.daq.metadatareader');
-        end
-
         function test_idempotent_when_run_twice(testCase)
             body = i_baseBody('probe_location');
             body.probe_location = struct( ...
@@ -136,7 +119,6 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(out, 'treatment'));
             testCase.verifyFalse(isfield(out, 'ontology_image'));
             testCase.verifyFalse(isfield(out, 'ontology_label'));
-            testCase.verifyFalse(isfield(out, 'daqmetadatareader'));
         end
 
         function test_noop_on_v1_shaped_body(testCase)

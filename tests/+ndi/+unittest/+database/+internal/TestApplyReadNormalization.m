@@ -3,33 +3,9 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
 %   normaliser that concrete ndi.database subclasses call from do_read
 %   and do_search.
 %
-%   The normaliser is gated by the env var NDI_DID2_NORMALIZE_ON_READ
-%   (OFF by default; see applyReadNormalization.m). Every test below
-%   manages that env var explicitly via TestMethodSetup /
-%   TestMethodTeardown so the gate state never leaks between tests.
-%
 %   The active-gate tests use the same v1 body shape as the synthetic-
 %   corpus tests under +ndi/+unittest/+migrate, so an upstream change
 %   in did2.convert.v1_to_v2 surfaces here too.
-
-    properties (Access = private)
-        SavedGate
-    end
-
-    methods (TestMethodSetup)
-        function captureGate(testCase)
-            testCase.SavedGate = getenv('NDI_DID2_NORMALIZE_ON_READ');
-            % Default each test to the OFF gate; tests that need the
-            % converter wired up flip it on explicitly.
-            setenv('NDI_DID2_NORMALIZE_ON_READ', '');
-        end
-    end
-
-    methods (TestMethodTeardown)
-        function restoreGate(testCase)
-            setenv('NDI_DID2_NORMALIZE_ON_READ', testCase.SavedGate);
-        end
-    end
 
     methods (Test)
 
@@ -40,52 +16,26 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
                 ndi.database.internal.applyReadNormalization(struct([])));
         end
 
-        function testGateOffWrapsBodyUnchanged(testCase)
-            % With the gate OFF the v1 field names must survive
-            % verbatim so callers above the database layer (e.g.,
-            % ndi.database.fun.ndi_document2ndi_object,
-            % ndi.daq.metadatareader) still find them. This is the
-            % dormant-PR state pending issue 1 / #779.
-            v1 = makeV1Body('alpha');
-            doc = ndi.database.internal.applyReadNormalization(v1);
-
-            verifyClass(testCase, doc, 'ndi.document');
-            % document_class.class_name is not snake-cased while the
-            % gate is OFF.
-            verifyEqual(testCase, ...
-                char(doc.document_properties.document_class.class_name), ...
-                'demo_a');
-            % The original v1 demo_a block is preserved as-is.
-            verifyTrue(testCase, isfield(doc.document_properties, 'demo_a'));
-            verifyEqual(testCase, ...
-                char(doc.document_properties.demo_a.marker), 'alpha');
-            % universalRenames is NOT applied, so base.schema_version
-            % was not stamped by the converter.
-            verifyFalse(testCase, isfield( ...
-                doc.document_properties.base, 'schema_version'));
-        end
-
-        function testGateOnConvertsV1StructToVDelta(testCase)
-            setenv('NDI_DID2_NORMALIZE_ON_READ', '1');
+        function testConvertsV1StructToVDelta(testCase)
             v1 = makeV1Body('alpha');
             doc = ndi.database.internal.applyReadNormalization(v1);
 
             verifyClass(testCase, doc, 'ndi.document');
             % After v1->V_delta normalisation universalRenames stamps
-            % base.schema_version to 'V_delta'.
-            verifyTrue(testCase, isfield(doc.document_properties, 'base'));
-            verifyTrue(testCase, isfield(doc.document_properties.base, ...
-                'schema_version'));
+            % document_class.schema_version to 'V_delta'.
+            verifyTrue(testCase, isfield(doc.document_properties, ...
+                'document_class'));
+            verifyTrue(testCase, isfield( ...
+                doc.document_properties.document_class, 'schema_version'));
             verifyEqual(testCase, ...
-                char(doc.document_properties.base.schema_version), ...
+                char(doc.document_properties.document_class.schema_version), ...
                 'V_delta');
             verifyEqual(testCase, ...
                 char(doc.document_properties.document_class.class_name), ...
                 'demo_a');
         end
 
-        function testGateOnVDeltaBodyShortCircuits(testCase)
-            setenv('NDI_DID2_NORMALIZE_ON_READ', '1');
+        function testVDeltaBodyShortCircuits(testCase)
             % An already-V_delta body should round-trip with no shape
             % drift (the converter's idempotency check fires).
             v1 = makeV1Body('beta');
@@ -97,14 +47,39 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
                 secondPass.document_properties.base.name, ...
                 firstPass.document_properties.base.name);
             verifyEqual(testCase, ...
-                char(secondPass.document_properties.base.schema_version), ...
+                char(secondPass.document_properties.document_class.schema_version), ...
+                'V_delta');
+        end
+
+        function testLegacyCamelCaseClassNamePreserved(testCase)
+            % NDI's on-disk schemas (e.g. demoNDI) still spell their
+            % classnames in camelCase, and the legacy v1 validator
+            % compares class_name strings exactly. The read path
+            % MUST NOT snake_case identifiers, or every read of a
+            % legacy doc would trip ValidationClassname against the
+            % schema's camelCase classname declaration. Schema_version
+            % stamping still runs (that's the gate-flip's payload).
+            v1 = makeV1Body('alpha');
+            v1.document_class.class_name = 'demoNDI';
+            v1 = rmfield(v1, 'demo_a');
+            v1.demoNDI = struct('value', 5);
+
+            doc = ndi.database.internal.applyReadNormalization(v1);
+
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.class_name), ...
+                'demoNDI');
+            verifyTrue(testCase, isfield(doc.document_properties, 'demoNDI'));
+            verifyFalse(testCase, isfield(doc.document_properties, 'demo_ndi'));
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.schema_version), ...
                 'V_delta');
         end
 
         function testNdiDocumentPassThrough(testCase)
             % An ndi.document already lives at the abstraction layer
             % the helper is normalising into, so it is returned
-            % verbatim regardless of gate state.
+            % verbatim.
             v1 = makeV1Body('gamma');
             wrapped = ndi.document(v1);
             doc = ndi.database.internal.applyReadNormalization(wrapped);
@@ -113,8 +88,7 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
                 wrapped.document_properties);
         end
 
-        function testGateOnAcceptsDid2Document(testCase)
-            setenv('NDI_DID2_NORMALIZE_ON_READ', '1');
+        function testAcceptsDid2Document(testCase)
             v1 = makeV1Body('delta');
             d2 = did2.document(v1);
             doc = ndi.database.internal.applyReadNormalization(d2);
@@ -128,32 +102,6 @@ classdef TestApplyReadNormalization < matlab.unittest.TestCase
             verifyError(testCase, ...
                 @() ndi.database.internal.applyReadNormalization("not a body"), ...
                 'NDI:database:normalizeBadInput');
-        end
-
-        function testGateTruthyValues(testCase)
-            % '1', 'true', 'yes', 'on' (any case, with whitespace) all
-            % count as ON. Anything else is OFF.
-            v1 = makeV1Body('eta');
-            truthy = {'1', 'true', 'TRUE', 'yes', 'YES', 'on', '  1  '};
-            for k = 1:numel(truthy)
-                setenv('NDI_DID2_NORMALIZE_ON_READ', truthy{k});
-                doc = ndi.database.internal.applyReadNormalization(v1);
-                verifyEqual(testCase, ...
-                    char(doc.document_properties.base.schema_version), ...
-                    'V_delta', ...
-                    sprintf('Truthy gate value "%s" did not activate normalisation.', ...
-                        truthy{k}));
-            end
-
-            falsy = {'0', 'false', 'no', 'off', ''};
-            for k = 1:numel(falsy)
-                setenv('NDI_DID2_NORMALIZE_ON_READ', falsy{k});
-                doc = ndi.database.internal.applyReadNormalization(v1);
-                verifyFalse(testCase, isfield( ...
-                    doc.document_properties.base, 'schema_version'), ...
-                    sprintf('Falsy gate value "%s" unexpectedly activated normalisation.', ...
-                        falsy{k}));
-            end
         end
 
     end

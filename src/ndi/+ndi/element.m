@@ -405,12 +405,16 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     newet.epoch_number = i;
                     newet.epoch_id = potential_epochdocs{i}.document_properties.epochid.epochid;
                     newet.epochprobemap = '';
-                    clock_types = strtrim(split(potential_epochdocs{i}.document_properties.element_epoch.epoch_clock,','));
-                    ec = {};
-                    t0_t1 = {};
-                    for k=1:numel(clock_types)
-                        ec{k} = ndi.time.clocktype(clock_types{k});
-                        t0_t1{k} = vlt.data.rowvec(potential_epochdocs{i}.document_properties.element_epoch.t0_t1(:,k));
+                    % V_delta element_epoch.clocks: array-of-records
+                    % with fields {name, t0, t1}. Replaces the v1
+                    % parallel (epoch_clock CSV + t0_t1 matrix) shape.
+                    clocks_array = potential_epochdocs{i}.document_properties.element_epoch.clocks;
+                    nClocks = numel(clocks_array);
+                    ec = cell(1, nClocks);
+                    t0_t1 = cell(1, nClocks);
+                    for k=1:nClocks
+                        ec{k} = ndi.time.clocktype(char(clocks_array(k).name));
+                        t0_t1{k} = vlt.data.rowvec([clocks_array(k).t0, clocks_array(k).t1]);
                     end
                     newet.epoch_clock = ec;
                     newet.t0_t1 = t0_t1;
