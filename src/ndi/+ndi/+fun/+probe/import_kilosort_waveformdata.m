@@ -16,7 +16,7 @@ function [templates, spike_templates, amplitudes, winv] = import_kilosort_wavefo
 %
 % See also: NDI.FUN.PROBE.IMPORT_KILOSORT, NDI.FUN.PROBE.IMPORT_KILOSORT_MEANWAVEFORM
 
-    npyread = @(f) vlt.file.custom_file_formats.npy.readNPY(f);
+    npyread = @(f) ndi.fun.probe.import_kilosort_readNPY(f);
 
     tfile = fullfile(kdir,'templates.npy');
     stfile = fullfile(kdir,'spike_templates.npy');

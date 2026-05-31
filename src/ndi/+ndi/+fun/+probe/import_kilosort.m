@@ -100,7 +100,7 @@ function import_kilosort(S, probe, options)
 
     % Step 2: idempotency - has this curation already been imported?
 
-    md5_value = vlt.data.hash.DataHash(spike_clusters_file,'file','MD5','hex');
+    md5_value = ndi.fun.file.MD5(spike_clusters_file);
 
     q_existing = ndi.query('','isa','kilosort_clusters','') & ...
         ndi.query('','depends_on','element_id',probe.id());
@@ -126,7 +126,7 @@ function import_kilosort(S, probe, options)
 
     % Step 3: read the curated kilosort output
 
-    npyread = @(f) vlt.file.custom_file_formats.npy.readNPY(f);
+    npyread = @(f) ndi.fun.probe.import_kilosort_readNPY(f);
 
     spike_samples_global = double(npyread(spike_times_file)); % 0-based sample index into concatenated stream
     spike_clusters = double(npyread(spike_clusters_file));
