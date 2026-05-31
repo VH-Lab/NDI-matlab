@@ -126,7 +126,7 @@ function import_kilosort(S, probe, options)
 
     % Step 3: read the curated kilosort output
 
-    npyread = @(f) ndi.fun.probe.import_kilosort_readNPY(f);
+    npyread = @(f) ndi.util.readNPY(f);
 
     spike_samples_global = double(npyread(spike_times_file)); % 0-based sample index into concatenated stream
     spike_clusters = double(npyread(spike_clusters_file));
