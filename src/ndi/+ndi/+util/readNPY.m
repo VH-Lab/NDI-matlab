@@ -29,14 +29,14 @@ function [data, shape, dtype] = readNPY(filename)
 
     fid = fopen(filename,'r','l'); % open little-endian initially; re-opened below if needed
     if fid<0,
-        error(['Could not open ' filename ' for reading.']);
+        error('ndi:util:readNPY:cannotOpen',['Could not open ' filename ' for reading.']);
     end;
     cleanup = onCleanup(@() fclose(fid));
 
     % --- magic string and version ---
     magic = fread(fid, 6, '*char')';
     if ~strcmp(magic, sprintf('\x93NUMPY')),
-        error([filename ' is not a valid .npy file (bad magic string).']);
+        error('ndi:util:readNPY:badMagic',[filename ' is not a valid .npy file (bad magic string).']);
     end;
     major = fread(fid, 1, 'uint8=>double');
     fread(fid, 1, 'uint8=>double'); % minor version (unused)
@@ -91,7 +91,7 @@ function [data, shape, dtype] = readNPY(filename)
         case 'f8', precision = 'double';
         case 'b1', precision = 'uint8'; is_bool = true; % read bytes, convert to logical below
         otherwise,
-            error(['Unsupported .npy dtype ''' dtype ''' in ' filename '. ' ...
+            error('ndi:util:readNPY:unsupportedDtype',['Unsupported .npy dtype ''' dtype ''' in ' filename '. ' ...
                 'Only numeric and boolean arrays are supported.']);
     end;
 
