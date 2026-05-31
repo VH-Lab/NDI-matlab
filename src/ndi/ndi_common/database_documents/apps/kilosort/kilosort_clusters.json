@@ -1,0 +1,20 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/kilosort\/kilosort_clusters.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/kilosort\/kilosort_clusters_schema.json",
+		"class_name":						"kilosort_clusters",
+		"property_list_name":					"kilosort_clusters",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
+		]
+	},
+	"depends_on": [
+		{  "name": "element_id", "value": "" }
+	],
+	"kilosort_clusters": {
+		"kilosort_directory": "kilosort",
+		"curated_output_MD5_checksum": ""
+	}
+}
