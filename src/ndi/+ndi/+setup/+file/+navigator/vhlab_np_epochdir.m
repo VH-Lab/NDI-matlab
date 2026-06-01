@@ -123,7 +123,11 @@ classdef vhlab_np_epochdir < ndi.file.navigator.epochdir
                 stack(end) = [];
                 entries = dir(cur);
                 for i = 1:numel(entries)
-                    if strcmp(entries(i).name, '.') || strcmp(entries(i).name, '..')
+                    % Skip hidden entries (names beginning with '.'); this
+                    % also covers '.' and '..' and must not traverse
+                    % directories such as '.git' or other dot-directories
+                    % created by the OS or version control.
+                    if entries(i).name(1) == '.'
                         continue;
                     end
                     full = fullfile(cur, entries(i).name);
