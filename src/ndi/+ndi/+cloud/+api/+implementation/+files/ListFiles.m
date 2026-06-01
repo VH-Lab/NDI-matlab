@@ -45,16 +45,38 @@ classdef ListFiles < ndi.cloud.api.call
                     return;
                 end
 
-                % Check if the 'files' field exists and is not empty
+                % Check if the 'files' field exists and is not empty.
+                % jsondecode returns dsetInfo.files as a struct array when
+                % every entry has the same field set, and as a cell array of
+                % structs when entries have heterogeneous field sets. The
+                % loop tolerates both shapes; missing optional fields on a
+                % single entry (uploaded / sourceDatasetId / size) are
+                % filled with defaults so one weirdly-shaped server response
+                % cannot break the whole listing. See VH-Lab/NDI-matlab#807.
                 if ~isempty(dsetInfo) && isfield(dsetInfo, 'files') && ~isempty(dsetInfo.files)
                     for i = 1:numel(dsetInfo.files)
-                        file = dsetInfo.files(i);
+                        if iscell(dsetInfo.files)
+                            file = dsetInfo.files{i};
+                        else
+                            file = dsetInfo.files(i);
+                        end
+                        if ~isstruct(file) || ~isfield(file, 'uid') || isempty(file.uid)
+                            continue;
+                        end
                         if ~isKey(fileMap, file.uid)
-                            fileMap(file.uid) = struct(...
+                            entry = struct( ...
                                 'uid', file.uid, ...
-                                'uploaded', file.uploaded, ...
-                                'sourceDatasetId', file.sourceDatasetId, ...
-                                'size', file.size);
+                                'uploaded', [], ...
+                                'sourceDatasetId', '', ...
+                                'size', []);
+                            optionalFields = ["uploaded", "sourceDatasetId", "size"];
+                            for k = 1:numel(optionalFields)
+                                fname = char(optionalFields(k));
+                                if isfield(file, fname)
+                                    entry.(fname) = file.(fname);
+                                end
+                            end
+                            fileMap(file.uid) = entry;
                         end
                     end
                 end
