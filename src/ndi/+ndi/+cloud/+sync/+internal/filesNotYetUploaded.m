@@ -10,6 +10,12 @@ function [files_to_upload, message] = filesNotYetUploaded(fileManifest, cloudDat
 % A file is considered to need uploading if it is not present in the remote dataset's file list,
 % or if it is present but its 'uploaded' status is false.
 %
+% If a remote file entry is present but omits the 'uploaded' field, the upload
+% status cannot be confirmed. In that case the file is conservatively re-queued
+% for upload and a warning is issued, rather than being assumed uploaded. This
+% prevents binaries from being silently treated as present on the remote when
+% the API response lacks the field (see issue #805).
+%
 % Outputs:
 % | Name              | Description                                   |
 % |-------------------|-----------------------------------------------|
@@ -27,11 +33,25 @@ function [files_to_upload, message] = filesNotYetUploaded(fileManifest, cloudDat
         end
 
         for i=1:numel(fileManifest)
-            if ~isKey(remote_files, fileManifest(i).uid) || ...
-               (isKey(remote_files, fileManifest(i).uid) && ...
-                isfield(remote_files(fileManifest(i).uid), 'uploaded') && ...
-                remote_files(fileManifest(i).uid).uploaded == false)
+            needsUpload = false;
+            if ~isKey(remote_files, fileManifest(i).uid)
+                needsUpload = true;
+            else
+                remoteEntry = remote_files(fileManifest(i).uid);
+                if ~isfield(remoteEntry, 'uploaded')
+                    % The remote entry does not report an upload status. We
+                    % cannot confirm the binary is present, so re-queue it
+                    % conservatively rather than assume success.
+                    warning('ndi:cloud:sync:filesNotYetUploaded:MissingUploadedField', ...
+                        ['Remote file entry for UID %s lacks an ''uploaded'' field; ', ...
+                        'conservatively re-queuing it for upload.'], fileManifest(i).uid);
+                    needsUpload = true;
+                elseif remoteEntry.uploaded == false
+                    needsUpload = true;
+                end
+            end
 
+            if needsUpload
                 new_struct.uid = fileManifest(i).uid;
                 new_struct.bytes = fileManifest(i).bytes;
                 new_struct.file_path = fileManifest(i).file_path;
