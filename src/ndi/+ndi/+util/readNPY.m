@@ -34,8 +34,11 @@ function [data, shape, dtype] = readNPY(filename)
     cleanup = onCleanup(@() fclose(fid));
 
     % --- magic string and version ---
-    magic = fread(fid, 6, '*char')';
-    if ~strcmp(magic, sprintf('\x93NUMPY')),
+    % Read the 6-byte magic number as raw bytes. The first byte is 0x93, which is
+    % not valid ASCII/UTF-8, so it must not be read as '*char' (the character
+    % encoding on some platforms would corrupt it). Compare bytes directly.
+    magic = fread(fid, 6, 'uint8=>uint8')';
+    if ~isequal(magic, uint8([147 78 85 77 80 89])), % 0x93 'N' 'U' 'M' 'P' 'Y'
         error('ndi:util:readNPY:badMagic',[filename ' is not a valid .npy file (bad magic string).']);
     end;
     major = fread(fid, 1, 'uint8=>double');
@@ -47,7 +50,9 @@ function [data, shape, dtype] = readNPY(filename)
         header_len = fread(fid, 1, 'uint32=>double');
     end;
 
-    header = fread(fid, header_len, '*char')';
+    % The header dictionary is ASCII; read it as bytes and convert to char so the
+    % result is independent of the platform's default character encoding.
+    header = char(fread(fid, header_len, 'uint8=>uint8')');
 
     % --- parse the header dictionary ---
     descr = regexp(header, '''descr''\s*:\s*''([^'']+)''', 'tokens', 'once');
