@@ -315,11 +315,17 @@ classdef readNPYTest < matlab.unittest.TestCase
             nPad = padTo - totalUnpadded;
             fullHeader = [headerStr repmat(' ',1,nPad) char(10)];
 
+            % The header-length field is ALWAYS little-endian in the .npy format,
+            % regardless of the array's data byte order. Write it as explicit
+            % little-endian bytes so it is independent of how the file was opened.
+            hlen = numel(fullHeader);
             if version==1
-                fwrite(fid, numel(fullHeader), 'uint16');
+                lenBytes = uint8([bitand(hlen,255), bitand(bitshift(hlen,-8),255)]);
             else
-                fwrite(fid, numel(fullHeader), 'uint32');
+                lenBytes = uint8([bitand(hlen,255), bitand(bitshift(hlen,-8),255), ...
+                    bitand(bitshift(hlen,-16),255), bitand(bitshift(hlen,-24),255)]);
             end
+            fwrite(fid, lenBytes, 'uint8');
             fwrite(fid, fullHeader, 'char');
         end
 
