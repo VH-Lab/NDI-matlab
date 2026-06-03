@@ -30,6 +30,13 @@ function import_kilosort(S, probe, options)
 %       cluster_group.tsv    - (or cluster_KSLabel.tsv / cluster_info.tsv) curation labels
 %       whitening_mat_inv.npy - (optional) used to un-whiten template waveforms
 %
+% The spike sample indices in spike_times.npy are treated as positions in the
+% concatenated stream of the probe's epochs (in probe.epochtable() order), the same
+% ordering used by ndi.fun.probe.export_binary. The function checks that all spike
+% indices fall within the total sample count of the probe's epochs and errors
+% (ndi:fun:probe:import_kilosort:sampleOutOfRange) if any fall outside, which
+% indicates the sort does not correspond to this probe's epochs.
+%
 % A 'kilosort_clusters' ndi.document is created that depends on PROBE and stores the
 % MD5 checksum of spike_clusters.npy. This is used to detect whether the curation has
 % changed since a previous import: if the checksum is unchanged the function does
@@ -167,6 +174,33 @@ function import_kilosort(S, probe, options)
     end;
 
     bounds0 = [0; cumsum(epoch_counts)]; % 0-based, half-open boundaries per epoch
+    total_samples = bounds0(end);
+
+    % Step 4b: validate that the kilosort spike indices fit within the NDI epochs.
+    % The spike sample indices are positions in the concatenated stream that was
+    % (or would have been) exported. If the data were sorted externally (e.g. a
+    % SpikeGLX recording) without using ndi.fun.probe.export_all_binary, the
+    % concatenation may not match NDI's epochs and spikes can fall past the end of
+    % the last epoch. Catch that here rather than silently dropping spikes.
+    %
+    % total_samples equals sum(epoch_sample_counts) recorded in the '.metadata'
+    % sidecar written by ndi.fun.probe.export_binary; both are computed from the
+    % probe via times2samples, so the probe is the authoritative reference.
+    if ~isempty(spike_samples_global),
+        max_sample = max(spike_samples_global); % 0-based
+        n_overrun = sum(spike_samples_global >= total_samples | spike_samples_global < 0);
+        if n_overrun>0,
+            error('ndi:fun:probe:import_kilosort:sampleOutOfRange', ...
+                ['%d of %d spike sample indices fall outside the probe''s epochs ' ...
+                '[0, %d). The largest spike sample index is %d. This usually means ' ...
+                'the kilosort output was sorted on a recording whose concatenation ' ...
+                'does not match this probe''s epochs (epochtable order or sample ' ...
+                'rate). Verify that the sorted data correspond to this probe and ' ...
+                'that sum(epoch_sample_counts) in the .metadata sidecar matches the ' ...
+                'length of the sorted recording.'], ...
+                n_overrun, numel(spike_samples_global), total_samples, max_sample);
+        end;
+    end;
 
     % Step 5: precompute waveform data if requested
 
