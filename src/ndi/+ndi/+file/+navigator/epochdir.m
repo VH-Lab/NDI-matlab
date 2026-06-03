@@ -90,6 +90,10 @@ classdef epochdir < ndi.file.navigator
             exp_path = ndi_filenavigator_epochdir_obj.path();
             epochfiles_disk = findfilegroups(exp_path, ndi_filenavigator_epochdir_obj.fileparameters.filematch,...
                 'SearchParent',0,'SearchDepth',1);
+            % drop hidden files and macOS AppleDouble ('._') shadow files, which can
+            % otherwise be matched by '#'-style filematch patterns and produce
+            % spurious duplicate epochs sharing the same epoch_id
+            epochfiles_disk = ndi.util.removehiddenfilegroups(epochfiles_disk);
         end % selectfilegroups_disk
 
     end % methods
