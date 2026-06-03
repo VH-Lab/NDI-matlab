@@ -9,6 +9,24 @@ function all_binary(S, options)
 % A subdirectory with the name of each probe is created, and the raw data from
 % the probe in binary format is stored as 'kilosort.bin' (by default).
 %
+% Direction of the multiplier: the multiplier is applied in the ENCODE
+% direction, converting the physical data returned by the probe into the
+% int16 values written to disk:
+%
+%       int16_written = multiplier * physical_data
+%
+% so the multiplier is the RECIPROCAL of the scale factor that converts the
+% stored int16 back to physical units. The default (1/0.195) assumes Intan
+% data, whose int16 decode to microvolts via uV = int16 * 0.195.
+%
+% For SpikeGLX/Neuropixels data, the stored int16 decode to volts via
+%
+%       volts = double(int16) * 0.6 / (512 * 500)
+%
+% so the correct encode multiplier to pass is the reciprocal:
+%
+%       'multiplier', (512 * 500) / 0.6
+%
 % This function's parameters can be modified by passing name/value pairs:
 % --------------------------------------------------------------------------
 % | Parameter (default) | Description                                      |
@@ -19,7 +37,10 @@ function all_binary(S, options)
 % |  ('kilosort.bin')   |   subdirectory. (Kilosort/phy do not require a   |
 % |                     |   particular name.)                              |
 % | verbose (1)         | 0/1 Should we be verbose?                        |
-% | multiplier(1/0.195) | Multiplier..assume Intan data                    |
+% | multiplier(1/0.195) | Encode multiplier: int16 = multiplier*physical.  |
+% |                     |   = 1/(physical-per-int16 decode factor).        |
+% |                     |   Default 1/0.195 assumes Intan (uV) data. For   |
+% |                     |   SpikeGLX use (512*500)/0.6.                    |
 % | noBinary (false)    | If true, create the per-probe subdirectories and |
 % |                     |   write only the '.metadata' files; do not write |
 % |                     |   the binary files. Useful for setting up the    |

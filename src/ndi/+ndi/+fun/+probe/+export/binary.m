@@ -8,11 +8,23 @@ function binary(probe, outputfile, options)
 % are scaled by a multiplier (see below). A text metadata file is created
 % with the same filename as OUTPUTFILE with extension '.metadata'.
 %
+% Direction of the multiplier: the multiplier is applied in the ENCODE
+% direction, converting the physical data returned by the probe into the
+% int16 values that are written to disk:
+%
+%       int16_written = multiplier * physical_data
+%
+% It is therefore the RECIPROCAL of the scale factor that converts the stored
+% int16 values back to physical units. For example, for Intan data the stored
+% int16 decode to microvolts via uV = int16 * 0.195, so the encode multiplier
+% is 1/0.195 (the default in ndi.fun.probe.export.all_binary).
+%
 % This function's parameters can be modified by passing name/value pairs:
 % --------------------------------------------------------------------------
 % | Parameter (default) | Description                                      |
 % |---------------------|--------------------------------------------------|
-% | multiplier (1)      | Multiplier value                                 |
+% | multiplier (1)      | Encode multiplier: int16 = multiplier*physical.  |
+% |                     |   = 1/(physical-per-int16 decode factor).        |
 % | verbose (1)         | 0/1 Should we be verbose?                        |
 % | precision('int16')  | What output precision?                           |
 % | noBinary (false)    | If true, write only the '.metadata' file and do  |
