@@ -328,13 +328,18 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                     return;
                 end
                 fn = {};
+                isshadow = false(1,numel(epochfiles));
                 for i=1:length(epochfiles)
                     [pa,name,ext] = fileparts(epochfiles{i});
                     fn{i} = [name ext];
+                    % some file systems (e.g., macOS) create AppleDouble shadow
+                    % files that begin with '._'; never treat these as epochprobemap files
+                    isshadow(i) = startsWith(fn{i},'._');
                 end
                 for i=1:numel(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch)
                     tf = strcmp_substitution(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch{i}, fn);
                     indexes = find(tf);
+                    indexes = indexes(~isshadow(indexes)); % drop any matched shadow files
                     if numel(indexes)>0
                         ecfname = epochfiles{indexes(1)};
                         break;
