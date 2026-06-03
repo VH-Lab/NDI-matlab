@@ -12,10 +12,12 @@ classdef HelloMatlabTest < matlab.unittest.TestCase
 %
 %   The test is opt-in via the NDI_CLOUD_RUN_HELLO_MATLAB env var because
 %   it spins up a real EC2 instance (~2-4 min, billable) and depends on
-%   the BYOL setup above. Without it, the test is assumed-failed with a
-%   message explaining how to enable it, so the suite does not silently
-%   skip license-verification coverage but also does not break the
-%   default cloud-api run.
+%   the BYOL setup above. It only runs when NDI_CLOUD_RUN_HELLO_MATLAB is
+%   set to a truthy value ("1" or "true", case insensitive); any other
+%   value (including "0", "false", or unset) is treated as opt-out and the
+%   test is skipped via assumeFail with a message explaining how to enable
+%   it. This way the suite does not silently drop license-verification
+%   coverage but also does not break the default cloud-api run.
 
     methods (TestClassSetup)
         function checkCredentials(testCase)
@@ -32,11 +34,13 @@ classdef HelloMatlabTest < matlab.unittest.TestCase
         function testHelloMatlabFlow(testCase)
             narrative = "Begin HelloMatlabTest: testHelloMatlabFlow";
 
-            if isempty(getenv("NDI_CLOUD_RUN_HELLO_MATLAB"))
+            runFlag = string(getenv("NDI_CLOUD_RUN_HELLO_MATLAB"));
+            shouldRun = strcmpi(runFlag, "true") || runFlag == "1";
+            if ~shouldRun
                 testCase.assumeFail(...
                     "Set NDI_CLOUD_RUN_HELLO_MATLAB=1 to run the hello-matlab-v1 " + ...
                     "end-to-end test (it launches a real EC2 instance and requires " + ...
-                    "a registered MATLAB BYOL license).");
+                    "a registered MATLAB BYOL license). Current value: """ + runFlag + """.");
             end
 
             % --- 1. Sanity-check that a license is registered before we
