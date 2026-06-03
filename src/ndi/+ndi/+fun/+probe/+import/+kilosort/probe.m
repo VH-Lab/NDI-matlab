@@ -17,9 +17,12 @@ function probe(S, probe, options)
 % NDI.FUN.PROBE.EXPORT.BINARY: it expects the Kilosort output to live in the same
 % directory the binary was exported to, namely
 %
-%       [S.path]/[kilosort_dir]/[probe_elementstring]/
+%       [S.path]/[kilosort_dir]/[probe_elementstring]/[subdir]/
 %
 % (spaces in the element string are replaced by underscores, matching the export).
+% By default 'subdir' is empty, so the files are expected directly in the probe's
+% directory. Set 'subdir' (e.g. 'kilosort_output') if the curated files are kept
+% in a subfolder of the probe's directory.
 % That directory is expected to contain the curated Kilosort/Phy files:
 %
 %       spike_times.npy      - global (concatenated) sample index of each spike
@@ -48,6 +51,10 @@ function probe(S, probe, options)
 % | Parameter (default)      | Description                                         |
 % |--------------------------|-----------------------------------------------------|
 % | kilosort_dir ('kilosort')| Name of the directory holding the kilosort output   |
+% | subdir ('')              | Optional subfolder within the probe's directory     |
+% |                          |   that holds the curated files (e.g.                |
+% |                          |   'kilosort_output'). Empty means the probe's       |
+% |                          |   directory itself.                                 |
 % | quality_labels           | String array of curation labels to import. Labels   |
 % |   (["good" "mua"])        |   are matched case-insensitively. You may pass your  |
 % |                          |   own custom tags here.                             |
@@ -72,6 +79,7 @@ function probe(S, probe, options)
         S
         probe
         options.kilosort_dir (1,:) char = 'kilosort'
+        options.subdir (1,:) char = ''
         options.quality_labels (1,:) string = ["good" "mua"]
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
@@ -89,7 +97,7 @@ function probe(S, probe, options)
 
     elestr = probe.elementstring();
     elestr(elestr==' ') = '_';
-    kdir = fullfile(S.path, options.kilosort_dir, elestr);
+    kdir = fullfile(S.path, options.kilosort_dir, elestr, options.subdir);
 
     if ~isfolder(kdir),
         error(['Kilosort directory not found: ' kdir '. Was the data exported with ndi.fun.probe.export.all_binary?']);

@@ -21,8 +21,12 @@ function epochfiles_disk = removehiddenfilegroups(epochfiles_disk)
     hidden = [];
     for i=1:numel(epochfiles_disk)
         for j=1:numel(epochfiles_disk{i})
-            [~,fname] = fileparts(epochfiles_disk{i}{j});
-            if ~isempty(fname) && fname(1)=='.'
+            % Check the full basename (name + extension), not just the fileparts
+            % 'name': for a dotfile such as '.DS_Store', fileparts returns an empty
+            % name and ext='.DS_Store', so the name alone would miss it.
+            [~,fname,fext] = fileparts(epochfiles_disk{i}{j});
+            basename = [fname fext];
+            if ~isempty(basename) && basename(1)=='.'
                 hidden(end+1) = i; %#ok<AGROW>
             end
         end

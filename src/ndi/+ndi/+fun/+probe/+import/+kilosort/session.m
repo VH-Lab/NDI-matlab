@@ -36,6 +36,7 @@ function session(S, options)
     arguments
         S
         options.kilosort_dir (1,:) char = 'kilosort'
+        options.subdir (1,:) char = ''
         options.quality_labels (1,:) string = ["good" "mua"]
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
@@ -56,13 +57,14 @@ function session(S, options)
     for p=1:numel(probe_list),
         elestr = probe_list{p}.elementstring();
         elestr(elestr==' ') = '_';
-        kdir = fullfile(S.path, options.kilosort_dir, elestr);
+        kdir = fullfile(S.path, options.kilosort_dir, elestr, options.subdir);
         if ~isfolder(kdir) || ~isfile(fullfile(kdir,'spike_times.npy')),
             warning(['Skipping probe ' elestr ': no kilosort output found in ' kdir '.']);
             continue;
         end;
         ndi.fun.probe.import.kilosort.probe(S, probe_list{p}, ...
             'kilosort_dir', options.kilosort_dir, ...
+            'subdir', options.subdir, ...
             'quality_labels', options.quality_labels, ...
             'quality_values', options.quality_values, ...
             'waveform_source', options.waveform_source, ...

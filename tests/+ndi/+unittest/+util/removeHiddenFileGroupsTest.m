@@ -28,6 +28,17 @@ classdef removeHiddenFileGroupsTest < matlab.unittest.TestCase
             testCase.verifyEqual(out{1}{1}, '/d/real.bin', 'The real group should remain.');
         end
 
+        function testLeadingDotNoNameIsHidden(testCase)
+            % A dotfile with no stem (e.g. '.gitignore', '.DS_Store') is all
+            % "extension" to fileparts; the basename, not the fileparts name,
+            % must be checked so these are still recognized as hidden.
+            groups = { {'/d/.gitignore'}; {'/d/keep.bin'} };
+            out = ndi.util.removehiddenfilegroups(groups);
+            testCase.verifyEqual(numel(out), 1, ...
+                'A leading-dot file with no stem must be treated as hidden.');
+            testCase.verifyEqual(out{1}{1}, '/d/keep.bin', 'The real group should remain.');
+        end
+
         function testKeepsAllVisibleGroups(testCase)
             % Nothing is removed when no group contains a hidden file.
             groups = { {'/d/a.bin'}; {'/d/b.bin'}; {'/d/c.bin'} };
