@@ -5,12 +5,8 @@ function export_binary(probe, outputfile, options)
 %
 % Exports data from a PROBE (or ndi.element) of type n-trode to an
 % int16 binary file OUTPUTFILE.  Before converting to int16, the data
-% are scaled by a multiplier (see below). A tab-delimited text metadata file
-% is created with the same filename as OUTPUTFILE with extension '.metadata'
-% (written with ndi.util.saveStructArray, readable with ndi.util.loadStructArray).
-% The metadata file has one row per epoch with columns 'epoch',
-% 'epoch_sample_counts', and 'epoch_sample_rates', plus the scalar values
-% 'multiplier', 'num_channels', and 'probe_name' repeated on each row.
+% are scaled by a multiplier (see below). A text metadata file is created
+% with the same filename as OUTPUTFILE with extension '.metadata'.
 %
 % This function's parameters can be modified by passing name/value pairs:
 % --------------------------------------------------------------------------
@@ -99,17 +95,7 @@ function export_binary(probe, outputfile, options)
 
     probe_name = probe.elementstring;
 
-    % Write the metadata as a tab-delimited file with one row per epoch (the
-    % per-epoch sample counts and rates), with the scalar fields (multiplier,
-    % num_channels, probe_name) repeated on each row so the file round-trips
-    % cleanly through ndi.util.loadStructArray.
-    nE = numel(epoch_sample_counts);
-    metastructure = struct('epoch', num2cell(1:nE), ...
-        'epoch_sample_counts', num2cell(epoch_sample_counts), ...
-        'epoch_sample_rates', num2cell(epoch_sample_rates), ...
-        'multiplier', repmat({multiplier},1,nE), ...
-        'num_channels', repmat({num_channels},1,nE), ...
-        'probe_name', repmat({probe_name},1,nE));
+    metastructure = vlt.data.var2struct('epoch_sample_counts','epoch_sample_rates','multiplier','num_channels','probe_name');
 
-    ndi.util.saveStructArray(metafile, metastructure);
+    vlt.file.saveStructArray(metafile, metastructure);
 end
