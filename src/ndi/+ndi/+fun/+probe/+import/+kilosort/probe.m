@@ -66,6 +66,9 @@ function probe(S, probe, options)
 % | waveform_source          | 'templates' (amplitude-weighted average of the      |
 % |   ('templates')          |   contributing Kilosort templates) or 'none'.       |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
+% | dryRun (false)           | If true, report what would be imported (neurons,    |
+% |                          |   spike counts, documents that would be removed)    |
+% |                          |   without making any changes to the database.       |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
@@ -87,6 +90,7 @@ function probe(S, probe, options)
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
         options.force (1,1) double = 0
+        options.dryRun (1,1) logical = false
         options.verbose (1,1) double = 1
     end
 
@@ -95,6 +99,10 @@ function probe(S, probe, options)
     end;
 
     verbose = options.verbose;
+    dryRun = options.dryRun;
+    % In a dry run we always report the plan, regardless of the verbose setting.
+    report = verbose || dryRun;
+    if dryRun, pfx = '[dry run] '; else, pfx = ''; end;
 
     % Step 1: locate the kilosort output directory (mirror of the export layout)
 
@@ -116,8 +124,8 @@ function probe(S, probe, options)
         error(['Expected curated files spike_times.npy and spike_clusters.npy in ' kdir '.']);
     end;
 
-    if verbose,
-        disp(['Importing kilosort results for probe ' elestr ' from ' kdir '.']);
+    if report,
+        disp([pfx 'Importing kilosort results for probe ' elestr ' from ' kdir '.']);
     end;
 
     % Step 2: idempotency - has this curation already been imported?
@@ -132,17 +140,20 @@ function probe(S, probe, options)
         if numel(olddocs)==1 && ~options.force,
             existing_md5 = olddocs{1}.document_properties.kilosort_clusters.curated_output_MD5_checksum;
             if strcmp(existing_md5, md5_value),
-                if verbose,
-                    disp('Curation is unchanged since the last import; nothing to do (use ''force'',1 to re-import).');
+                if report,
+                    disp([pfx 'Curation is unchanged since the last import; nothing to do (use ''force'',1 to re-import).']);
                 end;
                 return;
             end;
         end;
-        if verbose,
-            disp('Removing previously imported kilosort neurons and documents...');
+        if report,
+            disp([pfx 'Would remove ' int2str(numel(olddocs)) ' previously imported kilosort cluster document(s) ' ...
+                'and their dependent neurons.']);
         end;
-        for i=1:numel(olddocs),
-            ndi.fun.probe.import.kilosort.removeold(S, olddocs{i});
+        if ~dryRun,
+            for i=1:numel(olddocs),
+                ndi.fun.probe.import.kilosort.removeold(S, olddocs{i});
+            end;
         end;
     end;
 
@@ -232,12 +243,14 @@ function probe(S, probe, options)
         'os', computer, 'os_version','', ...
         'interpreter','MATLAB','interpreter_version', matlab_ver.Version);
 
-    kc = ndi.document('kilosort_clusters','app',app_struct, ...
-        'base.session_id', S.id(), ...
-        'kilosort_clusters.kilosort_directory', [options.kilosort_dir filesep elestr], ...
-        'kilosort_clusters.curated_output_MD5_checksum', md5_value);
-    kc = kc.set_dependency_value('element_id', probe.id());
-    S.database_add(kc);
+    if ~dryRun,
+        kc = ndi.document('kilosort_clusters','app',app_struct, ...
+            'base.session_id', S.id(), ...
+            'kilosort_clusters.kilosort_directory', [options.kilosort_dir filesep elestr], ...
+            'kilosort_clusters.curated_output_MD5_checksum', md5_value);
+        kc = kc.set_dependency_value('element_id', probe.id());
+        S.database_add(kc);
+    end;
 
     % Step 7: import each cluster that passes the quality filter
 
@@ -249,12 +262,25 @@ function probe(S, probe, options)
         thislabel = lower(string(cluster_labels(ci)));
         match = find(want_labels==thislabel,1);
         if isempty(match),
-            if verbose,
-                disp(['  Cluster ' int2str(cid) ' (label ''' char(cluster_labels(ci)) ''') skipped.']);
+            if report,
+                disp([pfx '  Cluster ' int2str(cid) ' (label ''' char(cluster_labels(ci)) ''') skipped.']);
             end;
             continue;
         end;
         qnum = options.quality_values(match);
+
+        % count this cluster's spikes per epoch (read-only; needed for both the
+        % real import and the dry-run report)
+        I = find(spike_clusters==cid);
+        g0 = spike_samples_global(I); % 0-based global samples for this cluster
+        n_imported = n_imported + 1;
+
+        if dryRun,
+            disp([pfx '  Would import cluster ' int2str(cid) ' as neuron ' probe.name '_' int2str(cid) ...
+                ' (' char(cluster_labels(ci)) ', quality ' int2str(qnum) ', ' int2str(numel(I)) ' spikes), ' ...
+                'with a neuron_extracellular document and spike trains across ' int2str(nEpochs) ' epoch(s).']);
+            continue;
+        end;
 
         % 7a: the neuron element (underlying element is the probe)
         element_neuron = ndi.neuron(S, [probe.name '_' int2str(cid)], probe.reference, ...
@@ -289,8 +315,6 @@ function probe(S, probe, options)
         S.database_add(neuron_doc);
 
         % 7c: the spike trains, per epoch
-        I = find(spike_clusters==cid);
-        g0 = spike_samples_global(I); % 0-based global samples for this cluster
         for e=1:nEpochs,
             in_epoch = find(g0 >= bounds0(e) & g0 < bounds0(e+1));
             if isempty(in_epoch),
@@ -304,15 +328,19 @@ function probe(S, probe, options)
                 spike_times_local, ones(size(spike_times_local)));
         end;
 
-        n_imported = n_imported + 1;
         if verbose,
             disp(['  Imported cluster ' int2str(cid) ' as neuron ' probe.name '_' int2str(cid) ...
                 ' (' char(cluster_labels(ci)) ', ' int2str(numel(I)) ' spikes).']);
         end;
     end;
 
-    if verbose,
-        disp(['Done. Imported ' int2str(n_imported) ' neuron(s) for probe ' elestr '.']);
+    if report,
+        if dryRun,
+            disp([pfx 'Done. Would import ' int2str(n_imported) ' neuron(s) for probe ' elestr '. ' ...
+                'No changes were made to the database.']);
+        else,
+            disp(['Done. Imported ' int2str(n_imported) ' neuron(s) for probe ' elestr '.']);
+        end;
     end;
 
 end

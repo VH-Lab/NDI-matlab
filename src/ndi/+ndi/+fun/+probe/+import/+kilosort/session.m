@@ -28,6 +28,8 @@ function session(S, options)
 % | waveform_source          | 'templates' or 'none'                               |
 % |   ('templates')          |                                                     |
 % | force (0)                | Re-import even if the checksum is unchanged          |
+% | dryRun (false)           | Report what would be imported without changing the  |
+% |                          |   database                                          |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
@@ -47,6 +49,7 @@ function session(S, options)
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
         options.force (1,1) double = 0
+        options.dryRun (1,1) logical = false
         options.verbose (1,1) double = 1
     end
 
@@ -81,6 +84,7 @@ function session(S, options)
             'quality_values', options.quality_values, ...
             'waveform_source', options.waveform_source, ...
             'force', options.force, ...
+            'dryRun', options.dryRun, ...
             'verbose', options.verbose);
     end;
 
