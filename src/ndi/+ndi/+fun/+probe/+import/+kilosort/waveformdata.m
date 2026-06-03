@@ -1,8 +1,8 @@
-function [templates, spike_templates, amplitudes, winv] = import_kilosort_waveformdata(kdir)
-% NDI.FUN.PROBE.IMPORT_KILOSORT_WAVEFORMDATA - load kilosort template waveform data
+function [templates, spike_templates, amplitudes, winv] = waveformdata(kdir)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.WAVEFORMDATA - load kilosort template waveform data
 %
 % [TEMPLATES, SPIKE_TEMPLATES, AMPLITUDES, WINV] = ...
-%       NDI.FUN.PROBE.IMPORT_KILOSORT_WAVEFORMDATA(KDIR)
+%       NDI.FUN.PROBE.IMPORT.KILOSORT.WAVEFORMDATA(KDIR)
 %
 % Loads the kilosort files needed to reconstruct per-cluster mean waveforms from
 % the kilosort output directory KDIR:
@@ -14,7 +14,7 @@ function [templates, spike_templates, amplitudes, winv] = import_kilosort_wavefo
 %                     otherwise []. When present it is used to un-whiten the templates
 %                     so the waveforms are in (approximately) physical units.
 %
-% See also: NDI.FUN.PROBE.IMPORT_KILOSORT, NDI.FUN.PROBE.IMPORT_KILOSORT_MEANWAVEFORM
+% See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE, NDI.FUN.PROBE.IMPORT.KILOSORT.MEANWAVEFORM
 
     npyread = @(f) ndi.util.readNPY(f);
 

@@ -1,7 +1,7 @@
-function export_binary(probe, outputfile, options)
-% NDI.FUN.PROBE.EXPORT_BINARY - export data from a probe to an int16 binary file
+function binary(probe, outputfile, options)
+% NDI.FUN.PROBE.EXPORT.BINARY - export data from a probe to an int16 binary file
 %
-% NDI.FUN.PROBE.EXPORT_BINARY(PROBE, OUTPUTFILE, ...)
+% NDI.FUN.PROBE.EXPORT.BINARY(PROBE, OUTPUTFILE, ...)
 %
 % Exports data from a PROBE (or ndi.element) of type n-trode to an
 % int16 binary file OUTPUTFILE.  Before converting to int16, the data

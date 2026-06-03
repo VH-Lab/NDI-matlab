@@ -1,7 +1,7 @@
-function import_kilosort_removeold(S, kc_doc)
-% NDI.FUN.PROBE.IMPORT_KILOSORT_REMOVEOLD - remove a previous kilosort import
+function removeold(S, kc_doc)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.REMOVEOLD - remove a previous kilosort import
 %
-% NDI.FUN.PROBE.IMPORT_KILOSORT_REMOVEOLD(S, KC_DOC)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.REMOVEOLD(S, KC_DOC)
 %
 % Removes a previously imported set of kilosort neurons from the ndi.session S.
 % KC_DOC is a 'kilosort_clusters' ndi.document. This function finds every
@@ -9,7 +9,7 @@ function import_kilosort_removeold(S, kc_doc)
 % dependency), removes those documents, removes the underlying neuron elements
 % (including their epoch documents), and finally removes KC_DOC itself.
 %
-% See also: NDI.FUN.PROBE.IMPORT_KILOSORT
+% See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE
 
     % find neuron_extracellular docs that point at this cluster document
     q = ndi.query('','isa','neuron_extracellular','') & ...

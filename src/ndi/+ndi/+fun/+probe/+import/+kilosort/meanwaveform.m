@@ -1,7 +1,7 @@
-function meanWf = import_kilosort_meanwaveform(cid, spike_clusters, spike_templates, amplitudes, templates, winv)
-% NDI.FUN.PROBE.IMPORT_KILOSORT_MEANWAVEFORM - amplitude-weighted mean waveform for a cluster
+function meanWf = meanwaveform(cid, spike_clusters, spike_templates, amplitudes, templates, winv)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.MEANWAVEFORM - amplitude-weighted mean waveform for a cluster
 %
-% MEANWF = NDI.FUN.PROBE.IMPORT_KILOSORT_MEANWAVEFORM(CID, SPIKE_CLUSTERS, ...
+% MEANWF = NDI.FUN.PROBE.IMPORT.KILOSORT.MEANWAVEFORM(CID, SPIKE_CLUSTERS, ...
 %       SPIKE_TEMPLATES, AMPLITUDES, TEMPLATES, WINV)
 %
 % Computes the mean waveform (NumSamples x NumChannels) for curated cluster CID.
@@ -22,7 +22,7 @@ function meanWf = import_kilosort_meanwaveform(cid, spike_clusters, spike_templa
 %   TEMPLATES       - nTemplates x nSamples x nChannels template shapes
 %   WINV            - inverse whitening matrix (nChannels x nChannels) or []
 %
-% See also: NDI.FUN.PROBE.IMPORT_KILOSORT
+% See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE
 
     I = find(spike_clusters==cid);
     nSamples = size(templates,2);

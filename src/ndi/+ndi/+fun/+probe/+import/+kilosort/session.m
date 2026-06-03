@@ -1,18 +1,18 @@
-function import_all_kilosort(S, options)
-% NDI.FUN.PROBE.IMPORT_ALL_KILOSORT - import curated Kilosort results for all probes in a session
+function session(S, options)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.SESSION - import curated Kilosort results for all probes in a session
 %
-% NDI.FUN.PROBE.IMPORT_ALL_KILOSORT(S, ...)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.SESSION(S, ...)
 %
 % For each 'n-trode' probe in the ndi.session S, imports the curated Kilosort
-% spike sorting results by calling NDI.FUN.PROBE.IMPORT_KILOSORT. This is the
-% import-side analog of NDI.FUN.PROBE.EXPORT_ALL_BINARY.
+% spike sorting results by calling NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE. This is the
+% import-side analog of NDI.FUN.PROBE.EXPORT.ALL_BINARY.
 %
 % The Kilosort output for each probe is expected in
 %       [S.path]/[kilosort_dir]/[probe_elementstring]/
-% (the same layout produced by NDI.FUN.PROBE.EXPORT_ALL_BINARY). Probes whose
+% (the same layout produced by NDI.FUN.PROBE.EXPORT.ALL_BINARY). Probes whose
 % kilosort directory or curated files are missing are skipped with a warning.
 %
-% This function takes the same name/value pairs as NDI.FUN.PROBE.IMPORT_KILOSORT:
+% This function takes the same name/value pairs as NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE:
 % ---------------------------------------------------------------------------------
 % | Parameter (default)      | Description                                         |
 % |--------------------------|-----------------------------------------------------|
@@ -26,11 +26,11 @@ function import_all_kilosort(S, options)
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
-% See also: NDI.FUN.PROBE.IMPORT_KILOSORT, NDI.FUN.PROBE.EXPORT_ALL_BINARY
+% See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE, NDI.FUN.PROBE.EXPORT.ALL_BINARY
 %
 % Example:
 %    S = ndi.session.dir('/path/to/session');
-%    ndi.fun.probe.import_all_kilosort(S);
+%    ndi.fun.probe.import.kilosort.session(S);
 %
 
     arguments
@@ -61,7 +61,7 @@ function import_all_kilosort(S, options)
             warning(['Skipping probe ' elestr ': no kilosort output found in ' kdir '.']);
             continue;
         end;
-        ndi.fun.probe.import_kilosort(S, probe_list{p}, ...
+        ndi.fun.probe.import.kilosort.probe(S, probe_list{p}, ...
             'kilosort_dir', options.kilosort_dir, ...
             'quality_labels', options.quality_labels, ...
             'quality_values', options.quality_values, ...

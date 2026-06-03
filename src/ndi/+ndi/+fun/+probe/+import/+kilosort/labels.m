@@ -1,7 +1,7 @@
-function [cluster_ids, cluster_labels] = import_kilosort_labels(kdir)
-% NDI.FUN.PROBE.IMPORT_KILOSORT_LABELS - read curated cluster labels from kilosort/Phy output
+function [cluster_ids, cluster_labels] = labels(kdir)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.LABELS - read curated cluster labels from kilosort/Phy output
 %
-% [CLUSTER_IDS, CLUSTER_LABELS] = NDI.FUN.PROBE.IMPORT_KILOSORT_LABELS(KDIR)
+% [CLUSTER_IDS, CLUSTER_LABELS] = NDI.FUN.PROBE.IMPORT.KILOSORT.LABELS(KDIR)
 %
 % Reads the per-cluster curation labels from a kilosort/Phy output directory KDIR.
 % Looks for (in order of preference) 'cluster_group.tsv' (manual Phy curation),
@@ -11,7 +11,7 @@ function [cluster_ids, cluster_labels] = import_kilosort_labels(kdir)
 % string array of the corresponding labels (e.g. "good", "mua", "noise", or any
 % custom tag the user applied during curation).
 %
-% See also: NDI.FUN.PROBE.IMPORT_KILOSORT
+% See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE
 
     candidates = {'cluster_group.tsv', 'cluster_KSLabel.tsv', 'cluster_info.tsv'};
     label_columns = {'group', 'KSLabel', 'group'};

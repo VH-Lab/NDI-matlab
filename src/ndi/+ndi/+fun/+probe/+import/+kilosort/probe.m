@@ -1,7 +1,7 @@
-function import_kilosort(S, probe, options)
-% NDI.FUN.PROBE.IMPORT_KILOSORT - import curated Kilosort spike sorting results into NDI
+function probe(S, probe, options)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE - import curated Kilosort spike sorting results into NDI
 %
-% NDI.FUN.PROBE.IMPORT_KILOSORT(S, PROBE, ...)
+% NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE(S, PROBE, ...)
 %
 % Imports curated Kilosort/Phy output for an ndi.probe (or ndi.element) PROBE that
 % is part of the ndi.session S. For each curated cluster that passes the quality
@@ -13,8 +13,8 @@ function import_kilosort(S, probe, options)
 %   2) an 'neuron_extracellular' ndi.document holding the mean waveform, sample
 %      counts, cluster index, and quality (label/number) for that neuron.
 %
-% This function is the import-side analog of NDI.FUN.PROBE.EXPORT_ALL_BINARY /
-% NDI.FUN.PROBE.EXPORT_BINARY: it expects the Kilosort output to live in the same
+% This function is the import-side analog of NDI.FUN.PROBE.EXPORT.ALL_BINARY /
+% NDI.FUN.PROBE.EXPORT.BINARY: it expects the Kilosort output to live in the same
 % directory the binary was exported to, namely
 %
 %       [S.path]/[kilosort_dir]/[probe_elementstring]/
@@ -32,9 +32,9 @@ function import_kilosort(S, probe, options)
 %
 % The spike sample indices in spike_times.npy are treated as positions in the
 % concatenated stream of the probe's epochs (in probe.epochtable() order), the same
-% ordering used by ndi.fun.probe.export_binary. The function checks that all spike
+% ordering used by ndi.fun.probe.export.binary. The function checks that all spike
 % indices fall within the total sample count of the probe's epochs and errors
-% (ndi:fun:probe:import_kilosort:sampleOutOfRange) if any fall outside, which
+% (ndi:fun:probe:import:kilosort:probe:sampleOutOfRange) if any fall outside, which
 % indicates the sort does not correspond to this probe's epochs.
 %
 % A 'kilosort_clusters' ndi.document is created that depends on PROBE and stores the
@@ -60,12 +60,12 @@ function import_kilosort(S, probe, options)
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
-% See also: NDI.FUN.PROBE.IMPORT_ALL_KILOSORT, NDI.FUN.PROBE.EXPORT_ALL_BINARY
+% See also: NDI.FUN.PROBE.IMPORT.KILOSORT.SESSION, NDI.FUN.PROBE.EXPORT.ALL_BINARY
 %
 % Example:
 %    S = ndi.session.dir('/path/to/session');
 %    p = S.getprobes('type','n-trode');
-%    ndi.fun.probe.import_kilosort(S, p{1});
+%    ndi.fun.probe.import.kilosort.probe(S, p{1});
 %
 
     arguments
@@ -92,7 +92,7 @@ function import_kilosort(S, probe, options)
     kdir = fullfile(S.path, options.kilosort_dir, elestr);
 
     if ~isfolder(kdir),
-        error(['Kilosort directory not found: ' kdir '. Was the data exported with ndi.fun.probe.export_all_binary?']);
+        error(['Kilosort directory not found: ' kdir '. Was the data exported with ndi.fun.probe.export.all_binary?']);
     end;
 
     spike_times_file = fullfile(kdir,'spike_times.npy');
@@ -127,7 +127,7 @@ function import_kilosort(S, probe, options)
             disp('Removing previously imported kilosort neurons and documents...');
         end;
         for i=1:numel(olddocs),
-            ndi.fun.probe.import_kilosort_removeold(S, olddocs{i});
+            ndi.fun.probe.import.kilosort.removeold(S, olddocs{i});
         end;
     end;
 
@@ -138,10 +138,10 @@ function import_kilosort(S, probe, options)
     spike_samples_global = double(npyread(spike_times_file)); % 0-based sample index into concatenated stream
     spike_clusters = double(npyread(spike_clusters_file));
 
-    [cluster_ids, cluster_labels] = ndi.fun.probe.import_kilosort_labels(kdir);
+    [cluster_ids, cluster_labels] = ndi.fun.probe.import.kilosort.labels(kdir);
 
     % Step 4: build the sample <-> epoch map directly from the probe.
-    % This matches how ndi.fun.probe.export_binary concatenated the epochs (in
+    % This matches how ndi.fun.probe.export.binary concatenated the epochs (in
     % probe.epochtable() order), so the boundaries align with the exported binary.
 
     et = probe.epochtable();
@@ -154,7 +154,7 @@ function import_kilosort(S, probe, options)
 
     for e=1:nEpochs,
         epoch_ids{e} = et(e).epoch_id;
-        ss = probe.times2samples(et(e).epoch_id, et(e).t0_t1{1}); % same convention as export_binary
+        ss = probe.times2samples(et(e).epoch_id, et(e).t0_t1{1}); % same convention as export.binary
         epoch_counts(e) = ss(2) - ss(1) + 1;
         % find the dev_local_time clock for spike-time storage
         found = 0;
@@ -179,18 +179,18 @@ function import_kilosort(S, probe, options)
     % Step 4b: validate that the kilosort spike indices fit within the NDI epochs.
     % The spike sample indices are positions in the concatenated stream that was
     % (or would have been) exported. If the data were sorted externally (e.g. a
-    % SpikeGLX recording) without using ndi.fun.probe.export_all_binary, the
+    % SpikeGLX recording) without using ndi.fun.probe.export.all_binary, the
     % concatenation may not match NDI's epochs and spikes can fall past the end of
     % the last epoch. Catch that here rather than silently dropping spikes.
     %
     % total_samples equals sum(epoch_sample_counts) recorded in the '.metadata'
-    % sidecar written by ndi.fun.probe.export_binary; both are computed from the
+    % sidecar written by ndi.fun.probe.export.binary; both are computed from the
     % probe via times2samples, so the probe is the authoritative reference.
     if ~isempty(spike_samples_global),
         max_sample = max(spike_samples_global); % 0-based
         n_overrun = sum(spike_samples_global >= total_samples | spike_samples_global < 0);
         if n_overrun>0,
-            error('ndi:fun:probe:import_kilosort:sampleOutOfRange', ...
+            error('ndi:fun:probe:import:kilosort:probe:sampleOutOfRange', ...
                 ['%d of %d spike sample indices fall outside the probe''s epochs ' ...
                 '[0, %d). The largest spike sample index is %d. This usually means ' ...
                 'the kilosort output was sorted on a recording whose concatenation ' ...
@@ -205,13 +205,13 @@ function import_kilosort(S, probe, options)
     % Step 5: precompute waveform data if requested
 
     if strcmp(options.waveform_source,'templates'),
-        [templates, spike_templates, amplitudes, winv] = ndi.fun.probe.import_kilosort_waveformdata(kdir);
+        [templates, spike_templates, amplitudes, winv] = ndi.fun.probe.import.kilosort.waveformdata(kdir);
     end;
 
     % Step 6: create the provenance/cluster document (neurons will depend on it)
 
     matlab_ver = ver('MATLAB');
-    app_struct = struct('name','ndi.fun.probe.import_kilosort', ...
+    app_struct = struct('name','ndi.fun.probe.import.kilosort.probe', ...
         'version', ndi.version(), ...
         'url','https://github.com/VH-Lab/NDI-matlab', ...
         'os', computer, 'os_version','', ...
@@ -247,7 +247,7 @@ function import_kilosort(S, probe, options)
 
         % 7b: the mean waveform
         if strcmp(options.waveform_source,'templates'),
-            meanWf = ndi.fun.probe.import_kilosort_meanwaveform(cid, spike_clusters, ...
+            meanWf = ndi.fun.probe.import.kilosort.meanwaveform(cid, spike_clusters, ...
                 spike_templates, amplitudes, templates, winv);
             % build waveform_sample_times relative to the trough
             [~, troughchan] = min(min(meanWf,[],1));
