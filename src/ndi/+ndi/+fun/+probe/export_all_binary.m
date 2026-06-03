@@ -17,6 +17,14 @@ function export_all_binary(S, options)
 % |  ('kilosort')       |                                                  |
 % | verbose (1)         | 0/1 Should we be verbose?                        |
 % | multiplier(1/0.195) | Multiplier..assume Intan data                    |
+% | noBinary (false)    | If true, create the per-probe subdirectories and |
+% |                     |   write only the '.metadata' files; do not write |
+% |                     |   the 'kilosort.bin' binaries. Useful for setting|
+% |                     |   up the folder structure and epoch/sample       |
+% |                     |   metadata when the spike-sorted data already    |
+% |                     |   exist (e.g. from SpikeGLX) and you intend to   |
+% |                     |   drop your own kilosort/phy files into each     |
+% |                     |   probe subdirectory for import.                 |
 % |---------------------|--------------------------------------------------|
 %
 %
@@ -29,17 +37,22 @@ function export_all_binary(S, options)
 %    ndi.fun.probe.export_all_binary(S,'verbose',1);
 % end;
 %
+% Example (set up folders and metadata only, no binary):
+%    ndi.fun.probe.export_all_binary(S,'noBinary',true);
+%
 
     arguments
         S
         options.kilosort_dir (1,:) char = 'kilosort'
         options.verbose (1,1) double = 1
         options.multiplier (1,1) double = 1/0.195
+        options.noBinary (1,1) logical = false
     end
 
     kilosort_dir = options.kilosort_dir;
     verbose = options.verbose;
     multiplier = options.multiplier;
+    noBinary = options.noBinary;
 
     if verbose,
         disp(['About to look for probes in ' S.reference]);
@@ -66,7 +79,7 @@ function export_all_binary(S, options)
             mkdir(this_path);
         end;
         outfile = [this_path filesep 'kilosort.bin'];
-        ndi.fun.probe.export_binary(probe_list{p}, outfile, 'verbose',verbose,'multiplier',multiplier);
+        ndi.fun.probe.export_binary(probe_list{p}, outfile, 'verbose',verbose,'multiplier',multiplier,'noBinary',noBinary);
     end;
 
     if verbose,

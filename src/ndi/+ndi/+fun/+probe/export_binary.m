@@ -14,7 +14,12 @@ function export_binary(probe, outputfile, options)
 % |---------------------|--------------------------------------------------|
 % | multiplier (1)      | Multiplier value                                 |
 % | verbose (1)         | 0/1 Should we be verbose?                        |
-% | precision('int16')  | What output precision?
+% | precision('int16')  | What output precision?                           |
+% | noBinary (false)    | If true, write only the '.metadata' file and do  |
+% |                     |   not write the binary OUTPUTFILE. Useful when   |
+% |                     |   the spike-sorted data already exist (e.g. from |
+% |                     |   SpikeGLX) and only the epoch/sample metadata   |
+% |                     |   are needed to set up an import.                |
 % |---------------------|--------------------------------------------------|
 %
 
@@ -24,12 +29,14 @@ function export_binary(probe, outputfile, options)
         options.multiplier (1,1) double = 1
         options.verbose (1,1) double = 1
         options.precision (1,:) char = 'int16'
+        options.noBinary (1,1) logical = false
     end
 
     % set up parameters
     multiplier = options.multiplier;
     verbose = options.verbose;
     precision = options.precision;
+    noBinary = options.noBinary;
 
     % now begin
     et = probe.epochtable();
@@ -38,12 +45,15 @@ function export_binary(probe, outputfile, options)
 
     epoch_sample_counts = [];
     epoch_sample_rates = [];
+    num_channels = [];
 
     chunk_duration = 100; % read N second chunks
 
-    fid = fopen(outputfile,'w','ieee-le'); % little endian, assume is needed
-    if fid<0,
-        error(['Unable to open ' outputfile ' for writing.']);
+    if ~noBinary,
+        fid = fopen(outputfile,'w','ieee-le'); % little endian, assume is needed
+        if fid<0,
+            error(['Unable to open ' outputfile ' for writing.']);
+        end;
     end;
 
     for e=1:numel(et),
@@ -54,6 +64,17 @@ function export_binary(probe, outputfile, options)
         epoch_sample_counts(e) = samples_here(2) - samples_here(1) + 1; % total sample count for epoch e
         epoch_sample_rates(e) = probe.samplerate(et(e).epoch_id);
         single_sample_time_here = 1/epoch_sample_rates(e);
+
+        if noBinary,
+            % we still need the channel count for the metadata; read a single
+            % sample (cheap) rather than the whole epoch, and write no binary
+            if isempty(num_channels),
+                t0 = et(e).t0_t1{1}(1);
+                [data,t] = probe.readtimeseries(et(e).epoch_id, t0, t0);
+                num_channels = size(data,2);
+            end;
+            continue;
+        end;
 
         chunk_times = et(e).t0_t1{1}(1):chunk_duration:et(e).t0_t1{1}(2);
         for c = 1:numel(chunk_times),
@@ -68,7 +89,9 @@ function export_binary(probe, outputfile, options)
         end;
     end;
 
-    fclose(fid);
+    if ~noBinary,
+        fclose(fid);
+    end;
 
     probe_name = probe.elementstring;
 
