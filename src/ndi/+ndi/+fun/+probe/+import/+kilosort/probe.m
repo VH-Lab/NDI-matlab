@@ -20,10 +20,11 @@ function probe(S, probe, options)
 %       [S.path]/[kilosort_dir]/[probe_elementstring]/[subdir]/
 %
 % (spaces in the element string are replaced by underscores, matching the export).
-% By default 'subdir' is empty, so the files are expected directly in the probe's
-% directory. Set 'subdir' (e.g. 'kilosort_output') if the curated files are kept
-% in a subfolder of the probe's directory.
-% That directory is expected to contain the curated Kilosort/Phy files:
+% By default 'subdir' is 'kilosort_output', so the curated files are expected in
+% a 'kilosort_output' subfolder of the probe's directory. Set 'subdir' to a
+% different name to use a different subfolder, or pass 'noSubFolder',true to look
+% for the files directly in the probe's directory (no subfolder).
+% The chosen directory is expected to contain the curated Kilosort/Phy files:
 %
 %       spike_times.npy      - global (concatenated) sample index of each spike
 %       spike_clusters.npy   - curated cluster id of each spike
@@ -51,10 +52,11 @@ function probe(S, probe, options)
 % | Parameter (default)      | Description                                         |
 % |--------------------------|-----------------------------------------------------|
 % | kilosort_dir ('kilosort')| Name of the directory holding the kilosort output   |
-% | subdir ('')              | Optional subfolder within the probe's directory     |
-% |                          |   that holds the curated files (e.g.                |
-% |                          |   'kilosort_output'). Empty means the probe's       |
-% |                          |   directory itself.                                 |
+% | subdir                   | Subfolder within the probe's directory that holds   |
+% |  ('kilosort_output')     |   the curated files. Set to '' or use noSubFolder   |
+% |                          |   to read directly from the probe's directory.      |
+% | noSubFolder (false)      | If true, ignore 'subdir' and read the curated files |
+% |                          |   directly from the probe's directory.              |
 % | quality_labels           | String array of curation labels to import. Labels   |
 % |   (["good" "mua"])        |   are matched case-insensitively. You may pass your  |
 % |                          |   own custom tags here.                             |
@@ -79,7 +81,8 @@ function probe(S, probe, options)
         S
         probe
         options.kilosort_dir (1,:) char = 'kilosort'
-        options.subdir (1,:) char = ''
+        options.subdir (1,:) char = 'kilosort_output'
+        options.noSubFolder (1,1) logical = false
         options.quality_labels (1,:) string = ["good" "mua"]
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
@@ -97,7 +100,11 @@ function probe(S, probe, options)
 
     elestr = probe.elementstring();
     elestr(elestr==' ') = '_';
-    kdir = fullfile(S.path, options.kilosort_dir, elestr, options.subdir);
+    subdir = options.subdir;
+    if options.noSubFolder,
+        subdir = '';
+    end;
+    kdir = fullfile(S.path, options.kilosort_dir, elestr, subdir);
 
     if ~isfolder(kdir),
         error(['Kilosort directory not found: ' kdir '. Was the data exported with ndi.fun.probe.export.all_binary?']);

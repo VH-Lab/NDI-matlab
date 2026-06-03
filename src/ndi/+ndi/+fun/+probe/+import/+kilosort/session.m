@@ -17,6 +17,11 @@ function session(S, options)
 % | Parameter (default)      | Description                                         |
 % |--------------------------|-----------------------------------------------------|
 % | kilosort_dir ('kilosort')| Name of the directory holding the kilosort output   |
+% | subdir                   | Subfolder within each probe's directory holding the |
+% |  ('kilosort_output')     |   curated files. '' or noSubFolder reads directly   |
+% |                          |   from the probe's directory.                       |
+% | noSubFolder (false)      | If true, ignore 'subdir' and read directly from the |
+% |                          |   probe's directory.                                |
 % | quality_labels           | String array of curation labels to import           |
 % |   (["good" "mua"])        |                                                     |
 % | quality_values ([1 4])   | quality_number for each label (parallel array)      |
@@ -36,7 +41,8 @@ function session(S, options)
     arguments
         S
         options.kilosort_dir (1,:) char = 'kilosort'
-        options.subdir (1,:) char = ''
+        options.subdir (1,:) char = 'kilosort_output'
+        options.noSubFolder (1,1) logical = false
         options.quality_labels (1,:) string = ["good" "mua"]
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
@@ -54,10 +60,15 @@ function session(S, options)
         disp(['Found ' int2str(numel(probe_list)) ' probe(s) of type ''n-trode''.']);
     end;
 
+    subdir = options.subdir;
+    if options.noSubFolder,
+        subdir = '';
+    end;
+
     for p=1:numel(probe_list),
         elestr = probe_list{p}.elementstring();
         elestr(elestr==' ') = '_';
-        kdir = fullfile(S.path, options.kilosort_dir, elestr, options.subdir);
+        kdir = fullfile(S.path, options.kilosort_dir, elestr, subdir);
         if ~isfolder(kdir) || ~isfile(fullfile(kdir,'spike_times.npy')),
             warning(['Skipping probe ' elestr ': no kilosort output found in ' kdir '.']);
             continue;
@@ -65,6 +76,7 @@ function session(S, options)
         ndi.fun.probe.import.kilosort.probe(S, probe_list{p}, ...
             'kilosort_dir', options.kilosort_dir, ...
             'subdir', options.subdir, ...
+            'noSubFolder', options.noSubFolder, ...
             'quality_labels', options.quality_labels, ...
             'quality_values', options.quality_values, ...
             'waveform_source', options.waveform_source, ...
