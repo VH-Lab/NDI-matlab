@@ -45,6 +45,7 @@ classdef spikeSorterImporter < handle
         sessionList        % left listbox (imported neurons)
         pipelineList       % right listbox (detected clusters)
         tagList            % middle listbox (tags to import)
+        overwriteCheckbox  % "Overwrite existing" (force re-import)
         pipelineSelector   % right popup (pipeline, e.g. Kilosort 2.5)
         filterCheckbox     % "Filter by pipeline"
 
@@ -124,9 +125,9 @@ classdef spikeSorterImporter < handle
                 'ValueChangedFcn',@(s,e) obj.reloadSessionNeurons());
 
             % --- Middle column: tags + import ---
-            middle = uigridlayout(content,[5 1]);
+            middle = uigridlayout(content,[6 1]);
             middle.Layout.Column = 2;
-            middle.RowHeight = {'1x',22,100,30,'1x'};
+            middle.RowHeight = {'1x',22,100,30,24,'1x'};
             middle.Padding = [0 0 0 0];
             spacerTop = uilabel(middle,'Text',''); spacerTop.Layout.Row = 1;
             tl = uilabel(middle,'Text','Tags to import'); tl.Layout.Row = 2;
@@ -136,7 +137,10 @@ classdef spikeSorterImporter < handle
             ib = uibutton(middle,'Text','<- import <-', ...
                 'ButtonPushedFcn',@(s,e) obj.onImport());
             ib.Layout.Row = 4;
-            spacerBot = uilabel(middle,'Text',''); spacerBot.Layout.Row = 5;
+            obj.overwriteCheckbox = uicheckbox(middle,'Text','Overwrite existing', ...
+                'Tooltip','Re-import from disk, replacing any neurons already imported for this sort');
+            obj.overwriteCheckbox.Layout.Row = 5;
+            spacerBot = uilabel(middle,'Text',''); spacerBot.Layout.Row = 6;
 
             % --- Right column: Pipeline Neurons ---
             right = uigridlayout(content,[5 1]);
@@ -291,9 +295,14 @@ classdef spikeSorterImporter < handle
                 return;
             end;
             qv = obj.qualityValuesFor(tags);
+            overwrite = obj.overwriteCheckbox.Value;
             msg = sprintf(['Import the %s sort for probe "%s", keeping clusters ' ...
                 'tagged [%s]?'], obj.pipelineSelector.Value, p.elementstring(), ...
                 strjoin(tags,', '));
+            if overwrite,
+                msg = [msg char(10) char(10) 'Overwrite is on: any neurons already ' ...
+                    'imported for this sort will be removed and re-imported from disk.'];
+            end;
             choice = uiconfirm(obj.fig, msg, 'Confirm import', ...
                 'Options',{'Import','Cancel'},'DefaultOption',2,'CancelOption',2);
             if ~strcmp(choice,'Import'), return; end;
@@ -303,7 +312,7 @@ classdef spikeSorterImporter < handle
             try
                 ndi.fun.probe.import.kilosort.probe(obj.session, p, ...
                     'quality_labels', string(tags), 'quality_values', qv, ...
-                    'kilosort_version','2.5','verbose',0);
+                    'kilosort_version','2.5','force',double(overwrite),'verbose',0);
             catch ME
                 uialert(obj.fig, ME.message, 'Import failed');
                 return;
