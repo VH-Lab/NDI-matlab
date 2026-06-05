@@ -336,6 +336,11 @@ classdef spikeSorterImporter < handle
                 'Options',{'Delete','Cancel'},'DefaultOption',2,'CancelOption',2, ...
                 'Icon','warning');
             if ~strcmp(choice,'Delete'), return; end;
+            % "please wait" indicator (deletion can still take a moment)
+            dlg = uiprogressdlg(obj.fig,'Title','Please wait', ...
+                'Message',sprintf('Deleting %d neuron(s)...',numel(entries)), ...
+                'Indeterminate','on');
+            closeDlg = onCleanup(@() delete(dlg)); % always remove the dialog
             % element_id is captured when the list is loaded; deleting the
             % element documents cascades to their dependents (the
             % neuron_extracellular and epoch documents). One database_rm call
