@@ -139,10 +139,11 @@ classdef spikeSorterImporter < handle
             spacerBot = uilabel(middle,'Text',''); spacerBot.Layout.Row = 5;
 
             % --- Right column: Pipeline Neurons ---
-            right = uigridlayout(content,[4 1]);
+            right = uigridlayout(content,[5 1]);
             right.Layout.Column = 3;
-            right.RowHeight = {28,22,'1x',30};
+            right.RowHeight = {28,22,18,'1x',30};
             right.Padding = [0 0 0 0];
+            right.RowSpacing = 2;
             % pipeline selector row
             psel = uigridlayout(right,[1 2]);
             psel.Layout.Row = 1; psel.Padding = [0 0 0 0];
@@ -152,10 +153,14 @@ classdef spikeSorterImporter < handle
                 'ValueChangedFcn',@(s,e) obj.reloadPipeline());
             pl = uilabel(right,'Text','Pipeline Neurons','FontWeight','bold');
             pl.Layout.Row = 2;
+            % little column header right above the listbox
+            ph = uilabel(right,'Text',sprintf('%5s | %-8s | %7s','clust','tag','#spikes'), ...
+                'FontName',fixedFont,'FontWeight','bold');
+            ph.Layout.Row = 3;
             obj.pipelineList = uilistbox(right,'Items',{},'Multiselect','on', ...
                 'FontName',fixedFont);
-            obj.pipelineList.Layout.Row = 3;
-            % Row 4 deliberately left empty: reserved space for a future button.
+            obj.pipelineList.Layout.Row = 4;
+            % Row 5 deliberately left empty: reserved space for a future button.
         end % buildUI
 
         function p = sessionPath(obj)
