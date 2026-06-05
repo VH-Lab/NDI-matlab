@@ -69,6 +69,9 @@ classdef ExtracellularInfoTest < matlab.unittest.TestCase
             testCase.verifyEqual(info(2).quality_label, 'good');
             testCase.verifyEqual(info(2).quality_number, 1);
 
+            % pipeline string is read from the document's app.name provenance
+            testCase.verifyEqual(info(1).pipeline, 'test pipeline');
+
             % the full neuron_extracellular property struct and the document are present
             testCase.verifyEqual(info(1).neuron_extracellular.cluster_index, 2, ...
                 'neuron_extracellular sub-struct should be included.');

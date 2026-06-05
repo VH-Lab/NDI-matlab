@@ -23,6 +23,8 @@ function [info, summary] = extracellularInfo(S, probe, options)
 %   cluster_index        - cluster id the neuron came from (from the document)
 %   quality_label        - curation label (e.g. 'good', 'mua')
 %   quality_number       - numeric quality value
+%   pipeline             - the 'app.name' provenance string recorded on the
+%                            document (e.g. the spike-sorting pipeline), or ''
 %   number_of_channels   - number of channels in the mean waveform
 %   number_of_samples_per_channel - samples per channel in the mean waveform
 %   neuron_extracellular - the full 'neuron_extracellular' property structure
@@ -77,7 +79,7 @@ function [info, summary] = extracellularInfo(S, probe, options)
 
     % Step 3: assemble the result entries.
     entries = struct('element_name',{},'element_id',{},'cluster_index',{}, ...
-        'quality_label',{},'quality_number',{}, ...
+        'quality_label',{},'quality_number',{},'pipeline',{}, ...
         'number_of_channels',{},'number_of_samples_per_channel',{}, ...
         'neuron_extracellular',{},'document',{});
 
@@ -98,6 +100,13 @@ function [info, summary] = extracellularInfo(S, probe, options)
         e.cluster_index = ne.cluster_index;
         e.quality_label = ne.quality_label;
         e.quality_number = ne.quality_number;
+        % the pipeline/app provenance, if present (see app superclass)
+        if isfield(ne_docs{i}.document_properties,'app') && ...
+                isfield(ne_docs{i}.document_properties.app,'name'),
+            e.pipeline = ne_docs{i}.document_properties.app.name;
+        else,
+            e.pipeline = '';
+        end;
         e.number_of_channels = ne.number_of_channels;
         e.number_of_samples_per_channel = ne.number_of_samples_per_channel;
         e.neuron_extracellular = ne;
