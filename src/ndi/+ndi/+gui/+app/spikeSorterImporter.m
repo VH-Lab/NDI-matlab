@@ -323,19 +323,14 @@ classdef spikeSorterImporter < handle
                 'Options',{'Delete','Cancel'},'DefaultOption',2,'CancelOption',2, ...
                 'Icon','warning');
             if ~strcmp(choice,'Delete'), return; end;
-            docs = {};
-            for i=1:numel(entries),
-                eid = entries(i).element_id;
-                if isempty(eid), continue; end;
-                % the neuron element, anything depending on it (its epoch and
-                % neuron_extracellular documents)
-                q = ndi.query('base.id','exact_string',eid) | ...
-                    ndi.query('','depends_on','element_id',eid);
-                d = obj.session.database_search(q);
-                docs = cat(2, docs, reshape(d,1,[]));
-            end;
-            if ~isempty(docs),
-                obj.session.database_rm(docs);
+            % element_id is captured when the list is loaded; deleting the
+            % element documents cascades to their dependents (the
+            % neuron_extracellular and epoch documents). One database_rm call
+            % handles the whole batch (it does a single lookup internally).
+            ids = {entries.element_id};
+            ids = ids(~cellfun(@isempty,ids));
+            if ~isempty(ids),
+                obj.session.database_rm(ids);
             end;
             obj.reloadSessionNeurons();
         end % onDelete
