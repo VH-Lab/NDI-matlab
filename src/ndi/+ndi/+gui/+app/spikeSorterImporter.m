@@ -312,7 +312,8 @@ classdef spikeSorterImporter < handle
             try
                 ndi.fun.probe.import.kilosort.probe(obj.session, p, ...
                     'quality_labels', string(tags), 'quality_values', qv, ...
-                    'kilosort_version','2.5','force',double(overwrite),'verbose',0);
+                    'kilosort_version','2.5','force',double(overwrite), ...
+                    'progressbar',true,'verbose',0);
             catch ME
                 uialert(obj.fig, ME.message, 'Import failed');
                 return;

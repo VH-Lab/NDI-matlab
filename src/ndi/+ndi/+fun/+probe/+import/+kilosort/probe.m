@@ -74,6 +74,9 @@ function probe(S, probe, options)
 % | dryRun (false)           | If true, report what would be imported (neurons,    |
 % |                          |   spike counts, documents that would be removed)    |
 % |                          |   without making any changes to the database.       |
+% | progressbar (false)      | If true, show an ndi.gui.component.ProgressBarWindow |
+% |                          |   tracking the cluster import loop. Degrades quietly |
+% |                          |   if no display is available.                       |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
@@ -97,6 +100,7 @@ function probe(S, probe, options)
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
         options.force (1,1) double = 0
         options.dryRun (1,1) logical = false
+        options.progressbar (1,1) logical = false
         options.verbose (1,1) double = 1
     end
 
@@ -272,8 +276,25 @@ function probe(S, probe, options)
 
     want_labels = lower(string(options.quality_labels));
 
+    % optional progress bar (importing many clusters can take a while)
+    usebar = options.progressbar && ~dryRun;
+    baruuid = '';
+    if usebar,
+        try
+            progBar = ndi.gui.component.ProgressBarWindow('Import Kilosort','GrabMostRecent',true);
+            baruuid = did.ido.unique;
+            progBar.addBar('Label',['Importing ' probe.name ' (ref ' int2str(probe.reference) ') neurons'], ...
+                'Tag',baruuid,'Auto',true);
+        catch
+            usebar = false; % degrade gracefully if no display is available
+        end;
+    end;
+
     n_imported = 0;
     for ci=1:numel(cluster_ids),
+        if usebar,
+            progBar.updateBar(baruuid, ci/numel(cluster_ids));
+        end;
         cid = cluster_ids(ci);
         thislabel = lower(string(cluster_labels(ci)));
         match = find(want_labels==thislabel,1);
@@ -351,9 +372,13 @@ function probe(S, probe, options)
         end;
 
         if verbose,
-            disp(['  Imported cluster ' int2str(cid) ' as neuron ' probe.name '_' int2str(cid) ...
+            disp(['  Imported cluster ' int2str(cid) ' as neuron ' neuron_name ...
                 ' (' char(cluster_labels(ci)) ', ' int2str(numel(I)) ' spikes).']);
         end;
+    end;
+
+    if usebar,
+        progBar.updateBar(baruuid, 1); % complete (Auto bar will close itself)
     end;
 
     if report,
