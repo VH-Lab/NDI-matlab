@@ -297,6 +297,9 @@ classdef spikeSorterImporter < handle
             choice = uiconfirm(obj.fig, msg, 'Confirm import', ...
                 'Options',{'Import','Cancel'},'DefaultOption',2,'CancelOption',2);
             if ~strcmp(choice,'Import'), return; end;
+            % clear any orphaned provenance marker (e.g. left by a prior delete)
+            % so the importer's checksum guard does not refuse to re-import
+            obj.cleanupOrphanClusters(p);
             try
                 ndi.fun.probe.import.kilosort.probe(obj.session, p, ...
                     'quality_labels', string(tags), 'quality_values', qv, ...
@@ -332,8 +335,30 @@ classdef spikeSorterImporter < handle
             if ~isempty(ids),
                 obj.session.database_rm(ids);
             end;
+            % If a sort no longer has any neurons, remove its now-orphaned
+            % kilosort_clusters provenance document; otherwise the importer's
+            % checksum guard would consider the sort still imported and refuse
+            % to re-import it ("nothing to do").
+            obj.cleanupOrphanClusters(obj.selectedProbe());
             obj.reloadSessionNeurons();
         end % onDelete
+
+        function cleanupOrphanClusters(obj, p)
+            % remove kilosort_clusters documents for probe P that have no
+            % remaining dependent neuron_extracellular documents
+            if isempty(p), return; end;
+            q = ndi.query('','isa','kilosort_clusters','') & ...
+                ndi.query('','depends_on','element_id',p.id());
+            kcs = obj.session.database_search(q);
+            for i=1:numel(kcs),
+                qn = ndi.query('','isa','neuron_extracellular','') & ...
+                    ndi.query('','depends_on','spike_clusters_id',kcs{i}.id());
+                remaining = obj.session.database_search(qn);
+                if isempty(remaining),
+                    obj.session.database_rm(kcs{i});
+                end;
+            end;
+        end % cleanupOrphanClusters
 
         function key = pipelineKey(obj)
             % a substring used to match a stored pipeline string to the selected
