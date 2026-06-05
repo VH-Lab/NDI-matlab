@@ -157,8 +157,10 @@ classdef spikeSorterImporter < handle
             ph = uilabel(right,'Text',sprintf('%5s | %-8s | %7s','clust','tag','#spikes'), ...
                 'FontName',fixedFont,'FontWeight','bold');
             ph.Layout.Row = 3;
-            obj.pipelineList = uilistbox(right,'Items',{},'Multiselect','on', ...
-                'FontName',fixedFont);
+            % informational only: import is driven by the tag list, so the
+            % pipeline list is read-only (disabled to prevent selection)
+            obj.pipelineList = uilistbox(right,'Items',{}, ...
+                'FontName',fixedFont,'Enable','off');
             obj.pipelineList.Layout.Row = 4;
             % Row 5 deliberately left empty: reserved space for a future button.
         end % buildUI
@@ -266,7 +268,6 @@ classdef spikeSorterImporter < handle
                 obj.pipelineList.ItemsData = {};
             else,
                 obj.pipelineList.ItemsData = info.cluster_ids(:)';
-                obj.pipelineList.Value = obj.pipelineList.ItemsData([]);
             end;
             % populate the tags-to-import list
             tags = cellstr(info.unique_tags(:)');
