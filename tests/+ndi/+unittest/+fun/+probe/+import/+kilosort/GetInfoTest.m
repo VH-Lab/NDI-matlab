@@ -24,13 +24,14 @@ classdef GetInfoTest < matlab.unittest.TestCase
             % 3 clusters: ids 0,1,2 ; spikes: cluster 0 ->4, 1 ->2, 2 ->3
             spike_clusters = int32([0 0 0 0 1 1 2 2 2]');
             spike_times    = int64((1:9)');
-            GetInfoTest.writeNPY(fullfile(kdir,'spike_clusters.npy'), spike_clusters, 'int32');
-            GetInfoTest.writeNPY(fullfile(kdir,'spike_times.npy'), spike_times, 'int64');
+            writeNPY = @ndi.unittest.fun.probe.import.kilosort.GetInfoTest.writeNPY;
+            writeNPY(fullfile(kdir,'spike_clusters.npy'), spike_clusters, 'int32');
+            writeNPY(fullfile(kdir,'spike_times.npy'), spike_times, 'int64');
 
             % templates.npy: 3 templates x 5 samples x 4 channels
             templates = zeros(3,5,4);
             templates(:) = 1:numel(templates);
-            GetInfoTest.writeNPY(fullfile(kdir,'templates.npy'), templates, 'double');
+            writeNPY(fullfile(kdir,'templates.npy'), templates, 'double');
 
             % cluster_group.tsv with labels: good, mua, noise
             fid = fopen(fullfile(kdir,'cluster_group.tsv'),'w');
