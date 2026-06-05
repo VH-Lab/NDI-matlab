@@ -291,8 +291,13 @@ function probe(S, probe, options)
         g0 = spike_samples_global(I); % 0-based global samples for this cluster
         n_imported = n_imported + 1;
 
+        % neuron name includes the probe reference so neurons from probes that
+        % share a name (e.g. gust_ctx ref 1..6) are distinguishable:
+        % <probe name>_<probe reference>_<cluster id>
+        neuron_name = [probe.name '_' int2str(probe.reference) '_' int2str(cid)];
+
         if dryRun,
-            disp([pfx '  Would import cluster ' int2str(cid) ' as neuron ' probe.name '_' int2str(cid) ...
+            disp([pfx '  Would import cluster ' int2str(cid) ' as neuron ' neuron_name ...
                 ' (' char(cluster_labels(ci)) ', quality ' int2str(qnum) ', ' int2str(numel(I)) ' spikes), ' ...
                 'with a neuron_extracellular document and spike trains across ' int2str(nEpochs) ' epoch(s).']);
             continue;
@@ -300,7 +305,7 @@ function probe(S, probe, options)
 
         % 7a: the neuron element (underlying element is the probe, which
         % supplies the subject_id, so we do not pass a subject_id here)
-        element_neuron = ndi.neuron(S, [probe.name '_' int2str(cid)], probe.reference, ...
+        element_neuron = ndi.neuron(S, neuron_name, probe.reference, ...
             'spikes', probe, 0);
 
         % 7b: the mean waveform
