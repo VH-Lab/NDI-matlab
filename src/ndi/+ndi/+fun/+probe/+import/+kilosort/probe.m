@@ -272,29 +272,16 @@ function probe(S, probe, options)
         S.database_add(kc);
     end;
 
-    % Step 7: import each cluster that passes the quality filter
+    % Step 7: assemble each cluster that passes the quality filter, then commit
+    % them all in batched database writes via ndi.element.timeseries.addMultiple
+    % (constructing each neuron and adding each epoch one at a time is far slower
+    % because every epoch requires a separate database search and write).
 
     want_labels = lower(string(options.quality_labels));
 
-    % optional progress bar (importing many clusters can take a while)
-    usebar = options.progressbar && ~dryRun;
-    baruuid = '';
-    if usebar,
-        try
-            progBar = ndi.gui.component.ProgressBarWindow('Import Kilosort','GrabMostRecent',true);
-            baruuid = did.ido.unique_id();
-            progBar.addBar('Label',['Importing ' probe.name ' (ref ' int2str(probe.reference) ') neurons'], ...
-                'Tag',baruuid,'Auto',true);
-        catch
-            usebar = false; % degrade gracefully if no display is available
-        end;
-    end;
-
+    specs = struct('name',{},'reference',{},'type',{},'epochs',{},'extra_documents',{});
     n_imported = 0;
     for ci=1:numel(cluster_ids),
-        if usebar,
-            progBar.updateBar(baruuid, ci/numel(cluster_ids));
-        end;
         cid = cluster_ids(ci);
         thislabel = lower(string(cluster_labels(ci)));
         match = find(want_labels==thislabel,1);
@@ -306,10 +293,9 @@ function probe(S, probe, options)
         end;
         qnum = options.quality_values(match);
 
-        % count this cluster's spikes per epoch (read-only; needed for both the
-        % real import and the dry-run report)
+        % this cluster's spikes (0-based global samples)
         I = find(spike_clusters==cid);
-        g0 = spike_samples_global(I); % 0-based global samples for this cluster
+        g0 = spike_samples_global(I);
         n_imported = n_imported + 1;
 
         % neuron name includes the probe reference so neurons from probes that
@@ -324,12 +310,7 @@ function probe(S, probe, options)
             continue;
         end;
 
-        % 7a: the neuron element (underlying element is the probe, which
-        % supplies the subject_id, so we do not pass a subject_id here)
-        element_neuron = ndi.neuron(S, neuron_name, probe.reference, ...
-            'spikes', probe, 0);
-
-        % 7b: the mean waveform
+        % the mean waveform
         if strcmp(options.waveform_source,'templates'),
             meanWf = ndi.fun.probe.import.kilosort.meanwaveform(cid, spike_clusters, ...
                 spike_templates, amplitudes, templates, winv);
@@ -351,13 +332,13 @@ function probe(S, probe, options)
         ne.quality_number = qnum;
         ne.quality_label = char(cluster_labels(ci));
 
+        % the neuron_extracellular document (addMultiple sets its element_id)
         neuron_doc = ndi.document('neuron_extracellular','app',app_struct, ...
             'neuron_extracellular', ne, 'base.session_id', S.id());
-        neuron_doc = neuron_doc.set_dependency_value('element_id', element_neuron.id());
         neuron_doc = neuron_doc.set_dependency_value('spike_clusters_id', kc.id());
-        S.database_add(neuron_doc);
 
-        % 7c: the spike trains, per epoch
+        % the spike trains, one epoch entry per probe epoch (empty where no spikes)
+        clear epochs;
         for e=1:nEpochs,
             in_epoch = find(g0 >= bounds0(e) & g0 < bounds0(e+1));
             if isempty(in_epoch),
@@ -367,18 +348,28 @@ function probe(S, probe, options)
                 spike_times_local = probe.samples2times(epoch_ids{e}, double(local1));
                 spike_times_local = spike_times_local(:);
             end;
-            element_neuron.addepoch(epoch_ids{e}, epoch_clock{e}, epoch_t0t1{e}, ...
-                spike_times_local, ones(size(spike_times_local)));
+            % wrap array-valued fields in cells so struct() stores them as-is
+            % (rather than broadcasting to a struct array)
+            epochs(e) = struct('epoch_id', epoch_ids{e}, 'epoch_clock', epoch_clock(e), ...
+                't0_t1', {epoch_t0t1{e}}, 'timepoints', {spike_times_local}, ...
+                'datapoints', {ones(size(spike_times_local))}); %#ok<AGROW>
         end;
 
+        specs(end+1) = struct('name', neuron_name, 'reference', probe.reference, ...
+            'type', 'spikes', 'epochs', {epochs}, ...
+            'extra_documents', {{neuron_doc}}); %#ok<AGROW>
+
         if verbose,
-            disp(['  Imported cluster ' int2str(cid) ' as neuron ' neuron_name ...
+            disp(['  Prepared cluster ' int2str(cid) ' as neuron ' neuron_name ...
                 ' (' char(cluster_labels(ci)) ', ' int2str(numel(I)) ' spikes).']);
         end;
     end;
 
-    if usebar,
-        progBar.updateBar(baruuid, 1); % complete (Auto bar will close itself)
+    if ~dryRun && ~isempty(specs),
+        ndi.element.timeseries.addMultiple(S, probe, specs, ...
+            'element_class','ndi.neuron', ...
+            'progressbar', options.progressbar, ...
+            'verbose', logical(verbose));
     end;
 
     if report,
