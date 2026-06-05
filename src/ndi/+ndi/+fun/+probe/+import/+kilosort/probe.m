@@ -63,6 +63,11 @@ function probe(S, probe, options)
 % | quality_values ([1 4])   | Numeric quality_number assigned to each label in    |
 % |                          |   quality_labels (parallel array). Defaults follow  |
 % |                          |   the convention single=1, multi=4.                 |
+% | kilosort_version ('2.5') | Version of Kilosort that produced the sort. Recorded |
+% |                          |   in the 'app' provenance of the created documents   |
+% |                          |   (app.name = 'Kilosort<ver> to phy to              |
+% |                          |   ndi.fun.probe.import.kilosort', app.version=<ver>). |
+% |                          |   Defaults to '2.5' (the assumption for MATLAB data).|
 % | waveform_source          | 'templates' (amplitude-weighted average of the      |
 % |   ('templates')          |   contributing Kilosort templates) or 'none'.       |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
@@ -88,6 +93,7 @@ function probe(S, probe, options)
         options.noSubFolder (1,1) logical = false
         options.quality_labels (1,:) string = ["good" "mua"]
         options.quality_values (1,:) double = [1 4]
+        options.kilosort_version (1,:) char = '2.5'
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
         options.force (1,1) double = 0
         options.dryRun (1,1) logical = false
@@ -236,9 +242,19 @@ function probe(S, probe, options)
 
     % Step 6: create the provenance/cluster document (neurons will depend on it)
 
+    % These neurons are produced by an external, multi-stage pipeline (a
+    % spike sorter, then manual curation in Phy, then this importer) rather
+    % than a single program. The 'app' sub-document only describes one app, so
+    % as an interim measure we record the whole pipeline in 'app.name' and the
+    % Kilosort version in 'app.version'. Kilosort does not reliably write its
+    % version into the Phy output directory, so the version is taken from the
+    % 'kilosort_version' option (default '2.5', the assumption for MATLAB-origin
+    % data). See https://github.com/VH-Lab/NDI-matlab/issues for the proposal to
+    % let 'app' hold an array of external program entries.
     matlab_ver = ver('MATLAB');
-    app_struct = struct('name','ndi.fun.probe.import.kilosort.probe', ...
-        'version', ndi.version(), ...
+    ks_ver = options.kilosort_version;
+    app_struct = struct('name',['Kilosort' ks_ver ' to phy to ndi.fun.probe.import.kilosort'], ...
+        'version', ks_ver, ...
         'url','https://github.com/VH-Lab/NDI-matlab', ...
         'os', computer, 'os_version','', ...
         'interpreter','MATLAB','interpreter_version', matlab_ver.Version);
