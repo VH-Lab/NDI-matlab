@@ -298,9 +298,10 @@ function probe(S, probe, options)
             continue;
         end;
 
-        % 7a: the neuron element (underlying element is the probe)
+        % 7a: the neuron element (underlying element is the probe, which
+        % supplies the subject_id, so we do not pass a subject_id here)
         element_neuron = ndi.neuron(S, [probe.name '_' int2str(cid)], probe.reference, ...
-            'spikes', probe, 0, []);
+            'spikes', probe, 0);
 
         % 7b: the mean waveform
         if strcmp(options.waveform_source,'templates'),
