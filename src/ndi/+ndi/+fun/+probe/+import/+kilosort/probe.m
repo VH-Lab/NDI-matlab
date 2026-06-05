@@ -282,7 +282,7 @@ function probe(S, probe, options)
     if usebar,
         try
             progBar = ndi.gui.component.ProgressBarWindow('Import Kilosort','GrabMostRecent',true);
-            baruuid = did.ido.unique;
+            baruuid = did.ido.unique_id();
             progBar.addBar('Label',['Importing ' probe.name ' (ref ' int2str(probe.reference) ') neurons'], ...
                 'Tag',baruuid,'Auto',true);
         catch
