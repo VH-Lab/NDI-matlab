@@ -72,10 +72,22 @@ function [info, summary] = extracellularInfo(S, probe, options)
         elem_name_map(elem_docs{i}.id()) = elem_docs{i}.document_properties.element.name;
     end;
 
-    % Step 2: find every neuron_extracellular document and keep those whose
-    % element_id is one of the probe's neuron elements.
-    q_ne = ndi.query('','isa','neuron_extracellular','');
-    ne_docs = S.database_search(q_ne);
+    % Step 2: find this probe's neuron_extracellular documents. Rather than
+    % loading every neuron_extracellular document in the session and filtering in
+    % MATLAB, restrict the search to documents whose element_id is one of this
+    % probe's neuron elements, via a single OR'd dependency query. (In a session
+    % with several probes this avoids loading every other probe's neurons.)
+    elem_ids = keys(elem_name_map);
+    if isempty(elem_ids),
+        ne_docs = {};
+    else,
+        q_ne = ndi.query('','isa','neuron_extracellular','');
+        q_dep = ndi.query('','depends_on','element_id', elem_ids{1});
+        for i=2:numel(elem_ids),
+            q_dep = q_dep | ndi.query('','depends_on','element_id', elem_ids{i});
+        end;
+        ne_docs = S.database_search(q_ne & q_dep);
+    end;
 
     % Step 3: assemble the result entries.
     entries = struct('element_name',{},'element_id',{},'cluster_index',{}, ...

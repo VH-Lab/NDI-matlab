@@ -53,6 +53,7 @@ classdef spikeSorterImporter < handle
         probes = {};       % cell array of n-trode probe objects
         sessionEntries = []; % current (possibly filtered) extracellularInfo result
         pipelineInfo = [];   % current getInfo result
+        waitDlg = [];        % active "please wait" dialog (if any)
     end
 
     methods
@@ -62,7 +63,9 @@ classdef spikeSorterImporter < handle
             end
             obj.session = session;
             obj.buildUI();
-            obj.reloadProbes();
+            % loading the session's neurons can take a moment, so show a
+            % "please wait" indicator over the initial load
+            obj.withWait('Loading session neurons...', @() obj.reloadProbes());
         end % constructor
     end
 
@@ -100,7 +103,8 @@ classdef spikeSorterImporter < handle
             obj.probeDropdown = uidropdown(prow,'Items',{'(none)'},'ItemsData',{}, ...
                 'ValueChangedFcn',@(src,evt) obj.onProbeChanged());
             obj.probeDropdown.Layout.Column = 3;
-            rb = uibutton(prow,'Text','reload','ButtonPushedFcn',@(src,evt) obj.reloadProbes());
+            rb = uibutton(prow,'Text','reload','ButtonPushedFcn', ...
+                @(src,evt) obj.withWait('Loading probes...', @() obj.reloadProbes()));
             rb.Layout.Column = 4;
 
             % Row 4: the three-column content area
@@ -119,10 +123,11 @@ classdef spikeSorterImporter < handle
                 'FontName',fixedFont);
             lbtns = uigridlayout(left,[1 2]);
             lbtns.Padding = [0 0 0 0]; lbtns.ColumnWidth = {'1x','1x'};
-            uibutton(lbtns,'Text','Reload','ButtonPushedFcn',@(s,e) obj.reloadSessionNeurons());
+            uibutton(lbtns,'Text','Reload','ButtonPushedFcn', ...
+                @(s,e) obj.withWait('Loading neurons...', @() obj.reloadSessionNeurons()));
             uibutton(lbtns,'Text','Delete','ButtonPushedFcn',@(s,e) obj.onDelete());
             obj.filterCheckbox = uicheckbox(left,'Text','Filter by pipeline', ...
-                'ValueChangedFcn',@(s,e) obj.reloadSessionNeurons());
+                'ValueChangedFcn',@(s,e) obj.withWait('Loading neurons...', @() obj.reloadSessionNeurons()));
 
             % --- Middle column: tags + import ---
             middle = uigridlayout(content,[6 1]);
@@ -211,9 +216,33 @@ classdef spikeSorterImporter < handle
         end % reloadProbes
 
         function onProbeChanged(obj)
+            obj.withWait('Loading neurons...', @() obj.reloadProbeData());
+        end % onProbeChanged
+
+        function reloadProbeData(obj)
             obj.reloadPipeline();      % refresh tags first so a filter has them
             obj.reloadSessionNeurons();
-        end % onProbeChanged
+        end % reloadProbeData
+
+        function withWait(obj, msg, fn)
+            % run FN while showing an indeterminate "please wait" dialog. Safe to
+            % nest: an inner call reuses the dialog created by the outer call.
+            nested = ~isempty(obj.waitDlg) && isvalid(obj.waitDlg);
+            cleaner = []; %#ok<NASGU>
+            if ~nested && ~isempty(obj.fig) && isvalid(obj.fig),
+                obj.waitDlg = uiprogressdlg(obj.fig,'Title','Please wait', ...
+                    'Message',msg,'Indeterminate','on');
+                cleaner = onCleanup(@() obj.clearWait()); % always remove the dialog
+            end;
+            fn();
+        end % withWait
+
+        function clearWait(obj)
+            if ~isempty(obj.waitDlg) && isvalid(obj.waitDlg),
+                delete(obj.waitDlg);
+            end;
+            obj.waitDlg = [];
+        end % clearWait
 
         function reloadSessionNeurons(obj)
             p = obj.selectedProbe();
