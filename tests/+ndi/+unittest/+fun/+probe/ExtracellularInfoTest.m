@@ -23,14 +23,21 @@ classdef ExtracellularInfoTest < matlab.unittest.TestCase
             mkdir(testCase.TempDir);
             testCase.Session = ndi.session.dir('test_session', testCase.TempDir);
 
-            testCase.ProbeId = ndi.ido().id();
-            testCase.OtherId = ndi.ido().id();
-
-            % a subject for the neuron elements to depend on
+            % a subject for the neuron (and underlying) elements to depend on
             subject = ndi.subject('subject1@test', 'test_subject');
             subdoc = subject.newdocument();
             testCase.Session.database_add(subdoc);
             testCase.SubjectId = subdoc.id();
+
+            % Real underlying elements (stand-ins for probes). The neuron
+            % elements depend on these via underlying_element_id, so they must
+            % exist in the database for dependency validation to pass.
+            underlyingProbe = ndi.element(testCase.Session, 'mock_probe', 1, ...
+                'n-trode', [], 0, testCase.SubjectId);
+            testCase.ProbeId = underlyingProbe.id();
+            underlyingOther = ndi.element(testCase.Session, 'other_probe', 1, ...
+                'n-trode', [], 0, testCase.SubjectId);
+            testCase.OtherId = underlyingOther.id();
 
             % Two neurons that belong to the probe under test (clusters 5 and 2),
             % deliberately added out of cluster order to test sorting.
