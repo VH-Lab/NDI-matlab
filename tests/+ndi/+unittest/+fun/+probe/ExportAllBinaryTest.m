@@ -1,7 +1,7 @@
 classdef ExportAllBinaryTest < matlab.unittest.TestCase
     methods (Test)
         function testExportAllBinary(testCase)
-            disp('Testing ndi.fun.probe.export_all_binary');
+            disp('Testing ndi.fun.probe.export.all_binary');
 
             mockSession = ndi.unittest.fun.probe.MockSession();
 
@@ -11,7 +11,7 @@ classdef ExportAllBinaryTest < matlab.unittest.TestCase
                 rmdir(kilosort_path, 's');
             end
 
-            ndi.fun.probe.export_all_binary(mockSession, 'verbose', 0, 'kilosort_dir', 'kilosort');
+            ndi.fun.probe.export.all_binary(mockSession, 'verbose', 0, 'binary_dir', 'kilosort');
 
             % Verify the output structure
             expected_outfile = [kilosort_path, filesep, 'mock_probe', filesep, 'kilosort.bin'];

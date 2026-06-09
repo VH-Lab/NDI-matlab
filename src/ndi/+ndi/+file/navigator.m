@@ -468,19 +468,8 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             exp_path = ndi_filenavigator_obj.path();
             epochfiles_disk = memoizedFindFileGroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
-            % drop hidden files
-            hidden = [];
-            
-            for i=1:numel(epochfiles_disk)
-                for j=1:numel(epochfiles_disk{i})
-                    [par,fname] = fileparts(epochfiles_disk{i}{j});
-                    if fname(1)=='.'
-                        hidden(end+1) = i;
-                    end
-                end
-            end
-            incl = setdiff(1:numel(epochfiles_disk),hidden);
-            epochfiles_disk = epochfiles_disk(incl);
+            % drop hidden files and macOS AppleDouble ('._') shadow files
+            epochfiles_disk = ndi.util.removehiddenfilegroups(epochfiles_disk);
         end
 
         function [epochfiles, epochprobemaps] = selectfilegroups(ndi_filenavigator_obj)
