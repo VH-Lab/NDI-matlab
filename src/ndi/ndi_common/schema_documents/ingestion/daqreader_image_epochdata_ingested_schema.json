@@ -1,6 +1,6 @@
 {
 	"classname": "daqreader_image_epochdata_ingested",
-	"superclasses":  [ "base", "daqreader_epochdata_ingested" ],
+	"superclasses":  [ "base", "daqreader_epochdata_ingested", "epochid"],
 	"depends_on": [
 		{ "name": "daqreader_id", "mustbenotempty": 1}
 	],
