@@ -150,13 +150,14 @@ classdef image < ndi.daq.reader
             header.dimension_size = sz(:)';
             header.data_type = dtype;
             header.num_frames = n;
-            % store real frame times only; a clockless epoch stores [] (and
-            % reconstructs NaN on read) to avoid encoding NaN in the document
-            if isempty(ft) || all(isnan(ft))
-                header.frametimes = [];
-            else
-                header.frametimes = ft(:)';
+            % always store one time per frame as a 1xN row (NaN for clockless
+            % epochs). The frametimes field is a matrix in the schema, so it
+            % must be a 1-row vector; an empty [] (0x0) fails validation.
+            ftrow = ft(:)';
+            if isempty(ftrow)
+                ftrow = nan(1, max(n,1));
             end
+            header.frametimes = ftrow;
             if ~isempty(ec)
                 header.clocktype = ec{1}.ndi_clocktype2char();
             else
