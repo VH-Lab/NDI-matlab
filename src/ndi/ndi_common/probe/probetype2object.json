@@ -18,11 +18,11 @@
 	},{
 		"type":"sharp-Im","classname":"ndi.probe.timeseries.mfdaq"
 	},{
-		"type":"wide-field-imaging","classname":"ndi_probe.timage"
+		"type":"wide-field-imaging","classname":"ndi.probe.image"
 	},{
-		"type":"2-photon-imaging","classname":"ndi.probe.timage"
+		"type":"2-photon-imaging","classname":"ndi.probe.image"
 	},{
-		"type":"1-photon-imaging","classname":"ndi.probe.timage"
+		"type":"1-photon-imaging","classname":"ndi.probe.image"
 	},{
 		"type":"brightfield-imaging","classname":"ndi.probe.image"
 	},{

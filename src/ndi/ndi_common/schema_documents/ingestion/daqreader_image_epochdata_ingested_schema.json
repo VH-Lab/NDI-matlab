@@ -1,0 +1,60 @@
+{
+	"classname": "daqreader_image_epochdata_ingested",
+	"superclasses":  [ "base", "daqreader_epochdata_ingested" ],
+	"depends_on": [
+		{ "name": "daqreader_id", "mustbenotempty": 1}
+	],
+	"file": [
+		{ "name": "frames.bin", "mustbenotempty": 0 }
+	],
+	"daqreader_image_epochdata_ingested": [
+		{
+			"name": "dimension_order",
+			"type": "string",
+			"default_value": "YXCZT",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Dimension order of the stored frames, over {Y,X,C,Z,T}. Default 'YXCZT'."
+		},
+		{
+			"name": "dimension_size",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The [Y X C Z T] extent of the image data (height, width, channels, planes, timepoints)."
+		},
+		{
+			"name": "data_type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Underlying numeric class of the stored pixel data (e.g. 'uint16')."
+		},
+		{
+			"name": "num_frames",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Number of frames stored, along the ordering axes (T, and Z when present)."
+		},
+		{
+			"name": "frametimes",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 0,
+			"documentation": "Time of each frame in epoch-clock units; NaN for clockless epochs."
+		},
+		{
+			"name": "clocktype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epoch clock type (e.g. 'dev_local_time' for a movie, 'no_time' for a clockless stack)."
+		}
+	]
+}

@@ -1,0 +1,29 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/daqreader_image_epochdata_ingested.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/daqreader_image_epochdata_ingested_schema.json",
+		"class_name":						"daqreader_image_epochdata_ingested",
+		"property_list_name":					"daqreader_image_epochdata_ingested",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/ingestion\/daqreader_epochdata_ingested.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "daqreader_id",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [ "frames.bin" ]
+	},
+	"daqreader_image_epochdata_ingested": {
+		"dimension_order":	"YXCZT",
+		"dimension_size":	[],
+		"data_type":		"",
+		"num_frames":		0,
+		"frametimes":		[],
+		"clocktype":		""
+	}
+}
