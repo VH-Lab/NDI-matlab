@@ -36,7 +36,7 @@
 			"name": "num_frames",
 			"type": "integer",
 			"default_value": 0,
-			"parameters": "",
+			"parameters": [0,1000000000,0],
 			"queryable": 1,
 			"documentation": "Number of frames stored, along the ordering axes (T, and Z when present)."
 		},
