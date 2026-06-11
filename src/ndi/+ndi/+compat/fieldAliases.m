@@ -1,8 +1,17 @@
 function aliases = fieldAliases()
-%FIELDALIASES Static V_delta <-> did_v1 field-alias table.
+%FIELDALIASES Static canonical <-> did_v1 field-alias table.
+%
+%   The canonical side is the active schema set (V_epsilon). The
+%   non-deprecated rows below (probe_location, ontology_image,
+%   ontology_label, ...) carry over unchanged from V_delta to V_epsilon.
+%   The `treatment.*` rows are RETAINED ONLY for reading un-migrated
+%   did_v1 corpora that still carry a `treatment` block; in V_epsilon
+%   `treatment` is deprecated and actively split into the manipulation
+%   families (see DID-matlab +did2/+convert/+migrators/treatment.m), so
+%   these rows are inert once a corpus has been migrated.
 %
 %   ALIASES = NDI.COMPAT.FIELDALIASES() returns a struct describing every
-%   field whose path or shape differs between the V_delta canonical schema
+%   field whose path or shape differs between the canonical schema
 %   and the did_v1 legacy schema. The struct is consumed by:
 %     - ndi.document read-time augmentation (issue 6),
 %     - ndi.document write-time re-derivation (issue 7),

@@ -1,9 +1,13 @@
 function fetchSchemasAtRef(info, destDir)
-%FETCHSCHEMASATREF Download a DID-schema ref and extract the stable tree.
+%FETCHSCHEMASATREF Download a DID-schema ref and extract the schema set.
 %
 %   FETCHSCHEMASATREF(INFO, DESTDIR) downloads the GitHub tarball for
 %   INFO.repo at INFO.ref, extracts INFO.path inside it, and copies the
-%   resulting `*.json` files (plus any `index.json`) to DESTDIR.
+%   set-version tree to DESTDIR. For the index.json + tier-folder layout
+%   (V_epsilon), this copies index.json plus each stable/draft/deprecated
+%   tier's `*.json`, preserving the tier subfolders so the did2 cache
+%   resolves classes across tiers. A flat directory (pre-index layout)
+%   is copied verbatim.
 %
 %   The tarball mechanism is the lightest of the three options listed
 %   in issue #774 (submodule / tarball / shallow clone): a single HTTPS
@@ -77,14 +81,57 @@ function fetchSchemasAtRef(info, destDir)
     end
     mkdir(destDir);
 
-    copyJsonFiles(sourceDir, destDir);
+    copySchemaSet(sourceDir, destDir);
 end
 
-function copyJsonFiles(srcDir, destDir)
+function copySchemaSet(srcDir, destDir)
+    % Copy a set-version directory in the index.json + tier-folder
+    % layout (V_epsilon): the top-level *.json (index.json and any meta
+    % files at the root) plus each tier subfolder's *.json. Falls back
+    % to a flat copy (pre-index layout, e.g. a bare V_delta/stable pin)
+    % when no tier subfolders are present.
+    tiers = {'stable', 'draft', 'deprecated'};
+    tierDirsPresent = false;
+    for k = 1:numel(tiers)
+        if isfolder(fullfile(srcDir, tiers{k}))
+            tierDirsPresent = true;
+            break;
+        end
+    end
+
+    if ~tierDirsPresent
+        % Flat layout: copy the directory's *.json verbatim.
+        copyJsonFiles(srcDir, destDir, true);
+        return;
+    end
+
+    % Index layout. Top-level *.json must include index.json.
+    if ~isfile(fullfile(srcDir, 'index.json'))
+        error('NDI:schemas:FetchFailed', ...
+            'index.json not found at set-version root %s.', srcDir);
+    end
+    copyJsonFiles(srcDir, destDir, false);
+    for k = 1:numel(tiers)
+        tierSrc = fullfile(srcDir, tiers{k});
+        if ~isfolder(tierSrc)
+            continue;
+        end
+        tierDest = fullfile(destDir, tiers{k});
+        if ~isfolder(tierDest)
+            mkdir(tierDest);
+        end
+        copyJsonFiles(tierSrc, tierDest, false);
+    end
+end
+
+function copyJsonFiles(srcDir, destDir, requireNonEmpty)
     listing = dir(fullfile(srcDir, '*.json'));
     if isempty(listing)
-        error('NDI:schemas:FetchFailed', ...
-            'No *.json schemas found in %s.', srcDir);
+        if requireNonEmpty
+            error('NDI:schemas:FetchFailed', ...
+                'No *.json schemas found in %s.', srcDir);
+        end
+        return;
     end
     for k = 1:numel(listing)
         copyfile( ...

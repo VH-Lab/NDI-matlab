@@ -2,8 +2,9 @@ function p = refresh(options)
 %NDI.SCHEMAS.REFRESH Download schemas at the current pin into the cache.
 %
 %   P = NDI.SCHEMAS.REFRESH() fetches the DID-schema source tree at the
-%   currently pinned ref, extracts the V_delta stable schemas under the
-%   pinned path, and writes them to ndi.schemas.cacheDir(). Returns the
+%   currently pinned ref, extracts the pinned set-version tree (V_epsilon
+%   by default: index.json plus the stable/draft/deprecated tier
+%   folders), and writes it to ndi.schemas.cacheDir(). Returns the
 %   populated cache directory.
 %
 %   The fetch is idempotent: re-running at the same pin overwrites the

@@ -40,5 +40,13 @@ function tf = hasSchemas(p)
         tf = false;
         return;
     end
+    % Index-mode set-version root: populated when it carries an
+    % index.json (it resolves classes across tier subfolders). Also
+    % accept a bare directory of *.json files (flat / pre-index layout)
+    % for back-compat.
+    if isfile(fullfile(p, 'index.json'))
+        tf = true;
+        return;
+    end
     tf = ~isempty(dir(fullfile(p, '*.json')));
 end
