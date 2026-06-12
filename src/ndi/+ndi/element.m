@@ -99,7 +99,22 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         dependency_value(element_doc,'underlying_element_id'), element_session);
                 end
                 if ischar(element_doc.document_properties.element.direct)
-                    direct = logical(eval(element_doc.document_properties.element.direct));
+                    % Parse the stored boolean flag without eval: the value
+                    % comes from a document and must never be executed as code.
+                    directStr = strtrim(element_doc.document_properties.element.direct);
+                    switch lower(directStr)
+                        case {'1','true'}
+                            direct = true;
+                        case {'0','false'}
+                            direct = false;
+                        otherwise
+                            directNum = str2double(directStr);
+                            if isnan(directNum)
+                                error('ndi:element:invalidDirect', ...
+                                    'element.direct string "%s" is not a valid boolean.', directStr);
+                            end
+                            direct = logical(directNum);
+                    end
                 else
                     direct = logical(element_doc.document_properties.element.direct);
                 end

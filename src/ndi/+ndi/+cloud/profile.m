@@ -148,6 +148,9 @@ classdef profile < matlab.mixin.CustomDisplay & handle
                 end
                 cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
                 fwrite(fid, txt, 'char');
+                clear cleaner;   % flush + close before tightening permissions
+                % Profiles file holds account emails/UIDs; restrict to owner.
+                ndi.cloud.profile.restrictToOwner(obj.Filename);
             catch ME
                 warning('NDI:cloud:profile:saveFailed', ...
                     'Could not save cloud profiles to %s: %s', ...
@@ -332,6 +335,48 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             end
             cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
             fwrite(fid, txt, 'char');
+            clear cleaner;   % flush + close before tightening permissions
+            % The secrets file holds AES-encrypted passwords; restrict it to
+            % owner read/write so other local users cannot read the ciphertext.
+            ndi.cloud.profile.restrictToOwner(filename);
+        end
+
+        function restrictToOwner(filename)
+        %RESTRICTTOOWNER Best-effort chmod 600 (owner read/write only) on POSIX.
+        %   On Windows this is a no-op (NTFS ACL inheritance, no umask
+        %   equivalent). Failures are non-fatal (secrets are still AES-encrypted,
+        %   so this is defense in depth) but are surfaced as a warning rather
+        %   than swallowed, so a silent failure cannot leave the file
+        %   world-readable with no signal.
+            if ispc || ~isfile(filename)
+                return
+            end
+            try
+                jpath = java.io.File(filename).toPath();
+                perms = java.util.HashSet();
+                perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
+                perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
+                java.nio.file.Files.setPosixFilePermissions(jpath, perms);
+                % Confirm the restriction actually took effect (exactly rw-------).
+                actual = java.nio.file.Files.getPosixFilePermissions(jpath);
+                ok = actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_READ) ...
+                    && actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE) ...
+                    && actual.size() == 2;
+                if ~ok
+                    warning('NDI:cloud:profile:restrictToOwnerFailed', ...
+                        'Could not restrict %s to owner-only permissions; it may be readable by other users.', ...
+                        filename);
+                end
+            catch ME
+                % An UnsupportedOperationException means the platform/JVM has no
+                % POSIX permission view (e.g. a non-POSIX filesystem) -- an
+                % expected no-op. Anything else is a real failure worth warning.
+                if ~contains(ME.message, 'UnsupportedOperationException')
+                    warning('NDI:cloud:profile:restrictToOwnerFailed', ...
+                        'Could not restrict %s to owner-only permissions (%s); it may be readable by other users.', ...
+                        filename, ME.message);
+                end
+            end
         end
 
         function f = fieldFor(key)

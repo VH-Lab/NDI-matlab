@@ -77,8 +77,9 @@ classdef validate
             % ndi_document_obj.document_properties.ndi_document with fields 'id', 'session_id', etc.
             schema = ndi.validate.extract_schema(ndi_document_obj);
             doc_class = ndi_document_obj.document_properties.document_class;
-            % property_list = getfield(ndi_document_obj.document_properties, doc_class.property_list_name);
-            property_list = eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name));
+            % Resolve the property-list field by name without eval (the name
+            % is document-derived and must not be executed as code).
+            property_list = ndi.fun.getfieldpath(ndi_document_obj.document_properties, doc_class.property_list_name);
             if has_dependencies == 1
                 % pass depends_on here
                 property_list.depends_on = ndi_document_obj.document_properties.depends_on;
@@ -117,7 +118,7 @@ classdef validate
                 superclass_name = doc_class.superclasses(i).definition;
                 schema = ndi.validate.extract_schema(superclass_name);
                 superclassname_without_extension = ndi.validate.extractnamefromdefinition(superclass_name);
-                properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
+                properties = struct( ndi.fun.getfieldpath(ndi_document_obj.document_properties, superclassname_without_extension) );
                 % pass depends_on here
                 if has_dependencies == 1
                     properties.depends_on = ndi_document_obj.document_properties.depends_on;
