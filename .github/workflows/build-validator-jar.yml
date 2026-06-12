@@ -1,0 +1,55 @@
+name: Build NDI Validator JAR
+
+# Builds and tests the ndi-validator-java JAR from source with Maven, so the
+# committed binary is reproducible from the pom and dependency/version changes
+# are validated in CI instead of trusting a hand-built jar. The built JAR is
+# uploaded as an artifact; promoting it to the committed jar/ copy (or a release
+# asset) is a manual step until a release pipeline is added.
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'src/ndi/java/ndi-validator-java/source-code/**'
+      - '.github/workflows/build-validator-jar.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'src/ndi/java/ndi-validator-java/source-code/**'
+      - '.github/workflows/build-validator-jar.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build + test ndi-validator-java
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/ndi/java/ndi-validator-java/source-code
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up JDK 8 (Temurin)
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - name: Build and test (mvn package)
+        run: mvn -B -ntp package
+
+      - name: Upload built JAR
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ndi-validator-java-jar
+          path: src/ndi/java/ndi-validator-java/source-code/target/ndi-validator-java.jar
+          if-no-files-found: error
