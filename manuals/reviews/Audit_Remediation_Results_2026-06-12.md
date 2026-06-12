@@ -1,5 +1,14 @@
 # NDI-matlab Audit Remediation — Results (2026-06-12)
 
+> **Context for a reviewer / next agent.** This is one of **9 coordinated PRs** in the
+> 2026-06 NDI ecosystem audit (NDI-python, ndi-cloud-node, NDI-matlab, DID-python,
+> DID-matlab, NDR-python, NDI-compress-python, vhlab-toolbox-python, ndi-ontology-matlab);
+> **none are merged.** This repo's PR: **VH-Lab/NDI-matlab#827**.
+> **Author-not-run** — run the MATLAB suites + the Java validator build before merge.
+> The symmetry infra here (M6) is the fix for the red `Test Cross-Language Symmetry`
+> workflow on NDI-python #57. The biggest deferral is **rebuilding the validator JAR**
+> (see the warning at the bottom — the Java security fix is not live until then).
+
 This branch (`audit/ndi-matlab-2026-06`, off `origin/main` `84418b9a7`) implements the
 NDI-matlab findings from the 2026-06 NDI ecosystem audit, as one consolidated set of
 per-fix commits.
