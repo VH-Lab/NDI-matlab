@@ -97,7 +97,12 @@ function url = url(endpointName, options)
         endpointMap("get_compute_session")            = "/compute/{sessionId}";
         endpointMap("abort_compute_session")          = "/compute/{sessionId}";
         endpointMap("trigger_compute_stage")          = "/compute/{sessionId}/stage/{stageId}";
-        endpointMap("finalize_compute_session")       = "/compute/{sessionId}/finalize";
+        % The backend exposes the session-finalization action as 'advance'
+        % (POST /compute/{sessionId}/advance); there is no /finalize route, so
+        % the previous mapping 404'd. The user-facing wrapper keeps the
+        % 'finalize' name but must target /advance (matches the NDI-python
+        % cloud client).
+        endpointMap("finalize_compute_session")       = "/compute/{sessionId}/advance";
         endpointMap("list_compute_sessions")          = "/compute";
     end
 
