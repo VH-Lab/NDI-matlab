@@ -1002,6 +1002,32 @@ classdef document
             %
             % See also: DID.DOCUMENT.READJSONFILELOCATION
             %
+            % The parsed definitions are memoized per location string (they are
+            % static JSON resources read from disk, and this is called for every
+            % document and recursively for every superclass). Pass '--clear-cache'
+            % as the only argument to reset the memo (e.g. in tests that swap
+            % definition files).
+
+            persistent definitionCache
+            if isempty(definitionCache)
+                definitionCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            end
+
+            if nargin==1 && (ischar(jsonfilelocationstring) || isstring(jsonfilelocationstring)) ...
+                    && strcmp(char(jsonfilelocationstring), '--clear-cache')
+                definitionCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+                s = vlt.data.emptystruct;
+                return
+            end
+
+            cacheKey = char(jsonfilelocationstring);
+            if isKey(definitionCache, cacheKey)
+                % Structs are copy-on-write, so the cached definition cannot be
+                % mutated by callers that modify the returned struct.
+                s = definitionCache(cacheKey);
+                return
+            end
+
             s_is_empty = 0;
             if nargin<2
                 s_is_empty = 1;
@@ -1080,6 +1106,8 @@ classdef document
                 % now do the merge
                 s = vlt.data.structmerge(s,s_super{i});
             end
+
+            definitionCache(cacheKey) = s;
         end % readblankdefinition()
 
         function s = assignPropertyPath(s, propertyPath, value)
