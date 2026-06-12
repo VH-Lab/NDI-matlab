@@ -1020,6 +1020,13 @@ classdef document
                 return
             end
 
+            % Ensure the DID path constants include the NDI paths on every call
+            % (idempotent and cheap), independent of the memo, so a cache hit can
+            % never skip this initialization.
+            if ~contains('$NDISCHEMAPATH', did.common.PathConstants.definitions.keys)
+                ndi.common.PathConstants.updateDIDConstants()
+            end
+
             cacheKey = char(jsonfilelocationstring);
             if isKey(definitionCache, cacheKey)
                 % Structs are copy-on-write, so the cached definition cannot be
@@ -1032,11 +1039,6 @@ classdef document
             if nargin<2
                 s_is_empty = 1;
                 s = vlt.data.emptystruct;
-            end
-
-            % Make sure DID path constants contains NDI path constants
-            if ~contains('$NDISCHEMAPATH', did.common.PathConstants.definitions.keys)
-                ndi.common.PathConstants.updateDIDConstants()
             end
 
             % Step 1): read the information we have here

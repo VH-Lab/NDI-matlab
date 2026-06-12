@@ -344,8 +344,10 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         function restrictToOwner(filename)
         %RESTRICTTOOWNER Best-effort chmod 600 (owner read/write only) on POSIX.
         %   On Windows this is a no-op (NTFS ACL inheritance, no umask
-        %   equivalent). Failures are non-fatal: secrets are still
-        %   AES-encrypted, so tightening permissions is defense in depth.
+        %   equivalent). Failures are non-fatal (secrets are still AES-encrypted,
+        %   so this is defense in depth) but are surfaced as a warning rather
+        %   than swallowed, so a silent failure cannot leave the file
+        %   world-readable with no signal.
             if ispc || ~isfile(filename)
                 return
             end
@@ -355,8 +357,25 @@ classdef profile < matlab.mixin.CustomDisplay & handle
                 perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
                 perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
                 java.nio.file.Files.setPosixFilePermissions(jpath, perms);
-            catch
-                % Platform/JVM without POSIX permission support: leave as-is.
+                % Confirm the restriction actually took effect (exactly rw-------).
+                actual = java.nio.file.Files.getPosixFilePermissions(jpath);
+                ok = actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_READ) ...
+                    && actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE) ...
+                    && actual.size() == 2;
+                if ~ok
+                    warning('NDI:cloud:profile:restrictToOwnerFailed', ...
+                        'Could not restrict %s to owner-only permissions; it may be readable by other users.', ...
+                        filename);
+                end
+            catch ME
+                % An UnsupportedOperationException means the platform/JVM has no
+                % POSIX permission view (e.g. a non-POSIX filesystem) -- an
+                % expected no-op. Anything else is a real failure worth warning.
+                if ~contains(ME.message, 'UnsupportedOperationException')
+                    warning('NDI:cloud:profile:restrictToOwnerFailed', ...
+                        'Could not restrict %s to owner-only permissions (%s); it may be readable by other users.', ...
+                        filename, ME.message);
+                end
             end
         end
 
