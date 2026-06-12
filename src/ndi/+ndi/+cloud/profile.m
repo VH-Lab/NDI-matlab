@@ -148,6 +148,9 @@ classdef profile < matlab.mixin.CustomDisplay & handle
                 end
                 cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
                 fwrite(fid, txt, 'char');
+                clear cleaner;   % flush + close before tightening permissions
+                % Profiles file holds account emails/UIDs; restrict to owner.
+                ndi.cloud.profile.restrictToOwner(obj.Filename);
             catch ME
                 warning('NDI:cloud:profile:saveFailed', ...
                     'Could not save cloud profiles to %s: %s', ...
@@ -332,6 +335,29 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             end
             cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
             fwrite(fid, txt, 'char');
+            clear cleaner;   % flush + close before tightening permissions
+            % The secrets file holds AES-encrypted passwords; restrict it to
+            % owner read/write so other local users cannot read the ciphertext.
+            ndi.cloud.profile.restrictToOwner(filename);
+        end
+
+        function restrictToOwner(filename)
+        %RESTRICTTOOWNER Best-effort chmod 600 (owner read/write only) on POSIX.
+        %   On Windows this is a no-op (NTFS ACL inheritance, no umask
+        %   equivalent). Failures are non-fatal: secrets are still
+        %   AES-encrypted, so tightening permissions is defense in depth.
+            if ispc || ~isfile(filename)
+                return
+            end
+            try
+                jpath = java.io.File(filename).toPath();
+                perms = java.util.HashSet();
+                perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
+                perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
+                java.nio.file.Files.setPosixFilePermissions(jpath, perms);
+            catch
+                % Platform/JVM without POSIX permission support: leave as-is.
+            end
         end
 
         function f = fieldFor(key)
