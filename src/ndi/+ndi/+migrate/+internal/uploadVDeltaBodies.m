@@ -1,15 +1,15 @@
 function report = uploadVDeltaBodies(datasetId, vDeltaBodies, options)
-%UPLOADVDELTABODIES Bulk-upload V_delta document bodies to NDI Cloud.
+%UPLOADVDELTABODIES Bulk-upload V_epsilon document bodies to NDI Cloud.
 %
 %   REPORT = ndi.migrate.internal.uploadVDeltaBodies(DATASETID, BODIES)
-%   serialises the V_delta struct bodies (cell array of structs) to a
+%   serialises the V_epsilon struct bodies (cell array of structs) to a
 %   single JSON file, zips it, requests a bulk-upload URL via
 %   `ndi.cloud.api.documents.getBulkUploadURL`, and PUTs the zip there.
 %
 %   This mirrors the production bulk-upload flow used by
 %   `ndi.cloud.upload.uploadDocumentCollection` but bypasses the
 %   ndi.document wrapper because the migration command already holds
-%   raw V_delta structs from `did2.convert.v1_to_v2`.
+%   raw V_epsilon structs from `did2.convert.v1_to_v2`.
 %
 %   REPORT is a struct with fields:
 %       uploadType - 'batch' or 'none' when BODIES was empty.

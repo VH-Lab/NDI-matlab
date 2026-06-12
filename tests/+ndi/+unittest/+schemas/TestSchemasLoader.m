@@ -46,7 +46,7 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
             testCase.verifyTrue(isfield(info, 'repo'));
             testCase.verifyTrue(isfield(info, 'ref'));
             testCase.verifyTrue(isfield(info, 'path'));
-            testCase.verifyEqual(info.path, 'schemas/V_delta/stable');
+            testCase.verifyEqual(info.path, 'schemas/V_epsilon');
         end
 
         function testPinWriteRoundTrip(testCase)
@@ -65,9 +65,10 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
         function testCacheDirReflectsPin(testCase)
             ndi.schemas.pin('v1.2.3');
             p = ndi.schemas.cacheDir();
-            testCase.verifySubstring(p, 'V_delta');
+            testCase.verifySubstring(p, 'V_epsilon');
             testCase.verifySubstring(p, 'v1.2.3');
-            testCase.verifyTrue(endsWith(p, fullfile('v1.2.3', 'stable')));
+            % cacheDir is the set-version root (no 'stable' tier suffix).
+            testCase.verifyTrue(endsWith(p, 'v1.2.3'));
         end
 
         function testCacheDirSanitizesRef(testCase)
@@ -81,7 +82,7 @@ classdef TestSchemasLoader < matlab.unittest.TestCase
         function testCacheDirUnpinnedSegment(testCase)
             ndi.schemas.pin('');
             p = ndi.schemas.cacheDir();
-            testCase.verifySubstring(p, fullfile('V_delta', 'unpinned'));
+            testCase.verifySubstring(p, fullfile('V_epsilon', 'unpinned'));
         end
 
         function testFallbackDirExists(testCase)

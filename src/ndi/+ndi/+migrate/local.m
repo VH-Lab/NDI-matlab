@@ -1,11 +1,11 @@
 function result = local(path, options)
-%LOCAL Migrate a local NDI dataset/session to V_delta on disk.
+%LOCAL Migrate a local NDI dataset/session to V_epsilon on disk.
 %
 %   RESULT = ndi.migrate.local(PATH) migrates the on-disk did_v1
-%   database under PATH/.ndi to the V_delta wire format by reading
+%   database under PATH/.ndi to the V_epsilon wire format by reading
 %   every document body via the did2 v1 readers, running
 %   did2.convert.v1_to_v2 per body, and writing the surviving docs
-%   into PATH/.ndi/V_delta.sqlite via did2.database.sqlitedb.
+%   into PATH/.ndi/V_epsilon.sqlite via did2.database.sqlitedb.
 %
 %   The function acquires an exclusive lock at PATH/.ndi/.migrate.lock
 %   for the duration of the run, so concurrent migrations of the same
@@ -13,7 +13,7 @@ function result = local(path, options)
 %
 %   Options (name-value):
 %     DryRun           (1,1 logical, default false) - report what
-%                      would change without writing the V_delta
+%                      would change without writing the V_epsilon
 %                      database, the quarantine sidecar, or the
 %                      backup directory. The result struct still
 %                      carries the migrated documents in-memory and
@@ -30,9 +30,9 @@ function result = local(path, options)
 %     Verbose          (1,1 logical, default false) - print the
 %                      end-of-run summary to stdout.
 %     Validate         (1,1 logical, default true)  - validate each
-%                      migrated document against its V_delta schema
+%                      migrated document against its V_epsilon schema
 %                      during conversion and again on insert into
-%                      the V_delta database. Tests with no schema
+%                      the V_epsilon database. Tests with no schema
 %                      cache available may pass false; production
 %                      callers should leave this true.
 %     SchemaCache      ([] or a did2.schema.cache handle, default
@@ -45,14 +45,14 @@ function result = local(path, options)
 %       source       - struct describing the v1 source that was
 %                      read: `kind` ('sqlite', 'dumbjsondb', or
 %                      'none' when the function consumed the
-%                      existing V_delta file instead) and `path`
+%                      existing V_epsilon file instead) and `path`
 %                      (char).
-%       destination  - absolute path of the V_delta sqlite file
+%       destination  - absolute path of the V_epsilon sqlite file
 %                      this run wrote (or would write, when DryRun
 %                      is true).
-%       alreadyMigrated - logical; true when a V_delta sqlite file
+%       alreadyMigrated - logical; true when a V_epsilon sqlite file
 %                      already existed and the run did a fast
-%                      idempotent pass (read V_delta, re-validate).
+%                      idempotent pass (read V_epsilon, re-validate).
 %       dryRun       - logical mirror of the DryRun option.
 %       backup       - struct with `enabled` (the option value),
 %                      `path` (target directory), and `created`
@@ -69,14 +69,14 @@ function result = local(path, options)
 %                      the migrated documents.
 %
 %   Idempotency:
-%       Re-running on a dataset that already has a V_delta.sqlite
+%       Re-running on a dataset that already has a V_epsilon.sqlite
 %       under .ndi is a fast no-op modulo validation: the function
-%       loads every document from the existing V_delta file,
+%       loads every document from the existing V_epsilon file,
 %       re-runs did2.convert.v1_to_v2 (which short-circuits already-
-%       V_delta bodies), and re-validates references. Nothing is
-%       written when DryRun is true OR the V_delta file is
+%       V_epsilon bodies), and re-validates references. Nothing is
+%       written when DryRun is true OR the V_epsilon file is
 %       byte-equivalent to what would have been produced. To force
-%       a full re-migration, delete PATH/.ndi/V_delta.sqlite first.
+%       a full re-migration, delete PATH/.ndi/V_epsilon.sqlite first.
 %
 %   Errors:
 %       NDI:migrate:badPath         - PATH is not a directory.
@@ -84,7 +84,7 @@ function result = local(path, options)
 %                                     an NDI session/dataset root.
 %       NDI:migrate:noV1Source      - .ndi exists but contains no
 %                                     recognised v1 store and no
-%                                     V_delta file.
+%                                     V_epsilon file.
 %       NDI:migrate:locked          - another migration is in
 %                                     flight (or left a stale lock).
 %       NDI:migrate:hadQuarantine   - ContinueOnError=false and at
@@ -119,14 +119,14 @@ function result = local(path, options)
     lockHandle = acquireLock(lockFile);
     lockCleanup = onCleanup(@() releaseLock(lockHandle));
 
-    dstPath = fullfile(ndiDir, 'V_delta.sqlite');
+    dstPath = fullfile(ndiDir, 'V_epsilon.sqlite');
     quarantineFile = fullfile(ndiDir, 'migrate_quarantine.json');
     backupDir = fullfile(path, '.v1-backup');
 
     alreadyMigrated = isfile(dstPath);
     backupCreated = false;
     if alreadyMigrated
-        [bodies, srcInfo] = readBodiesFromVDelta(dstPath);
+        [bodies, srcInfo] = readBodiesFromTargetDb(dstPath);
     else
         [srcKind, srcPath] = detectV1Source(ndiDir);
         srcInfo = struct('kind', srcKind, 'path', srcPath);
@@ -137,7 +137,7 @@ function result = local(path, options)
         else
             error('NDI:migrate:noV1Source', ...
                 ['No recognised v1 database (did-sqlite.sqlite or ' ...
-                 'Object_id_*_v*.json) and no V_delta.sqlite found ' ...
+                 'Object_id_*_v*.json) and no V_epsilon.sqlite found ' ...
                  'under "%s".'], ndiDir);
         end
         if options.Backup && ~options.DryRun && ~isfolder(backupDir)
@@ -219,7 +219,7 @@ function [kind, srcPath] = detectV1Source(ndiDir)
 
     sqliteListing = dir(fullfile(ndiDir, '*.sqlite'));
     sqliteListing = sqliteListing(~[sqliteListing.isdir]);
-    sqliteListing = sqliteListing(~strcmpi({sqliteListing.name}, 'V_delta.sqlite'));
+    sqliteListing = sqliteListing(~strcmpi({sqliteListing.name}, 'V_epsilon.sqlite'));
     if ~isempty(sqliteListing)
         kind = 'sqlite';
         srcPath = fullfile(ndiDir, sqliteListing(1).name);
@@ -243,9 +243,9 @@ function [kind, srcPath] = detectV1Source(ndiDir)
     end
 end
 
-% ---- read V_delta bodies (idempotent re-run path) --------------------------
+% ---- read target-set bodies (idempotent re-run path) --------------------------
 
-function [bodies, srcInfo] = readBodiesFromVDelta(dstPath)
+function [bodies, srcInfo] = readBodiesFromTargetDb(dstPath)
     srcInfo = struct('kind', 'none', 'path', dstPath);
     db = did2.database.sqlitedb(dstPath);
     dbCleanup = onCleanup(@() db.close());
@@ -317,7 +317,7 @@ end
 function printSummary(result)
     fprintf('ndi.migrate.local summary for "%s":\n', result.path);
     if result.alreadyMigrated
-        fprintf('  already-migrated fast pass (V_delta.sqlite present).\n');
+        fprintf('  already-migrated fast pass (V_epsilon.sqlite present).\n');
     else
         fprintf('  source:           %s (%s)\n', ...
             result.source.kind, result.source.path);

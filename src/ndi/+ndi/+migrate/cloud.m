@@ -1,14 +1,14 @@
 function result = cloud(datasetId, options)
-%CLOUD Migrate a cloud-hosted NDI dataset to V_delta.
+%CLOUD Migrate a cloud-hosted NDI dataset to V_epsilon.
 %
 %   RESULT = ndi.migrate.cloud(DATASETID) migrates the cloud-hosted
-%   dataset DATASETID to the V_delta wire format. The migration runs
+%   dataset DATASETID to the V_epsilon wire format. The migration runs
 %   client-side: the documents are streamed down via the existing
 %   list/bulk-fetch endpoints, each is converted with
-%   did2.convert.v1_to_v2 (idempotent — already-V_delta docs are
+%   did2.convert.v1_to_v2 (idempotent — already-V_epsilon docs are
 %   skipped cheaply), and the surviving bodies are pushed back via the
 %   existing bulk-upload endpoint. Because each successfully written
-%   doc carries `base.schema_version: 'V_delta'`, an interrupted run
+%   doc carries `base.schema_version: 'V_epsilon'`, an interrupted run
 %   can resume by re-running this command — already-migrated docs
 %   short-circuit through the conversion.
 %
@@ -47,7 +47,7 @@ function result = cloud(datasetId, options)
 %                        unpublish/publish a currently-published
 %                        dataset around the migration.
 %       Validate         (1,1 logical, default true)  - validate
-%                        each converted document against its V_delta
+%                        each converted document against its V_epsilon
 %                        schema during conversion.
 %       SchemaCache      ([] or a did2.schema.cache handle, default
 %                        []) - override the shared schema cache.

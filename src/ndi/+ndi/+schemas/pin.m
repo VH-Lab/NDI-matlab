@@ -10,7 +10,10 @@ function info = pin(varargin)
 %
 %   INFO = NDI.SCHEMAS.PIN(REF, 'repo', REPO, 'path', PATH) also
 %   overrides the repository (e.g. 'waltham-data-science/did-schema')
-%   and/or source path (e.g. 'schemas/V_delta/stable').
+%   and/or source path. PATH is the set-version *root*
+%   (e.g. 'schemas/V_epsilon') — the directory holding index.json and
+%   the stable/draft/deprecated tier folders — so the did2 schema cache
+%   resolves classes across tiers via the index.
 %
 %   Updating the pin does not refresh the cache. Call
 %   NDI.SCHEMAS.REFRESH afterwards to fetch the new schemas.
@@ -47,14 +50,14 @@ function info = readPinFile(pinFile)
         info = struct( ...
             'repo', 'waltham-data-science/did-schema', ...
             'ref',  '', ...
-            'path', 'schemas/V_delta/stable');
+            'path', 'schemas/V_epsilon');
         return;
     end
     raw = jsondecode(fileread(pinFile));
     info = struct( ...
         'repo', getOr(raw, 'repo', 'waltham-data-science/did-schema'), ...
         'ref',  getOr(raw, 'ref',  ''), ...
-        'path', getOr(raw, 'path', 'schemas/V_delta/stable'));
+        'path', getOr(raw, 'path', 'schemas/V_epsilon'));
 end
 
 function writePinFile(pinFile, info)
