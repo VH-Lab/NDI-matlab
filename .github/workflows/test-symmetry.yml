@@ -59,10 +59,7 @@ jobs:
             ndi.cloud.authenticate("InteractionEnabled", "off")
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
-            % Single source of truth for symmetry deps, co-located with the
-            % symmetry tests; the NDI-python-driven cross-language workflow
-            % reads the same tests/+ndi/+symmetry/requirements.txt.
-            matbox.installRequirements(fullfile(pwd, 'tests', '+ndi', '+symmetry'))
+            matbox.installRequirements(fullfile(pwd, 'tests'))
 
             import matlab.unittest.TestSuite
             import matlab.unittest.TestRunner
