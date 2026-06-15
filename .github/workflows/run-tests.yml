@@ -42,6 +42,11 @@ jobs:
   run_tests:
     name: Run tests (MATLAB ${{ inputs.matlab_release || 'latest' }})
     runs-on: ubuntu-latest
+    # matbox dependency resolution calls the GitHub API; authenticate so the
+    # requests aren't unauthenticated-rate-limited (which surfaced as webread
+    # timeouts when several jobs install in parallel).
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:      
       - name: Check out repo
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
