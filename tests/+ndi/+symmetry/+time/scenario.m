@@ -11,10 +11,10 @@ classdef scenario
     %   time_convert resolves it from the referent's epochtable alone (the
     %   same-referent fast path) — no syncgraph construction, no DAQ readers.
     %
-    %   ⚠️ AUTHORED WITHOUT A MATLAB RUNTIME — VALIDATE BEFORE RELYING ON IT.
-    %   See ndi.symmetry.time.scenarioReferent for the referent-format notes;
-    %   the make test only writes the artifact if every case converts cleanly,
-    %   so an unvalidated referent cannot regress the rest of the symmetry suite.
+    %   The referent is a real ndi.element built by buildReferent (below), so it
+    %   carries the full ndi referent contract (eq, epochtable, ...). The make
+    %   test asserts each case converts to its expected value before writing the
+    %   artifact.
 
     methods (Static)
 
@@ -51,10 +51,30 @@ classdef scenario
         end
 
         function referent = buildReferent(session)
-            % BUILDREFERENT - construct the scenario referent on a live session.
+            % BUILDREFERENT - construct the scenario referent as a real ndi.element.
+            %
+            % Builds a genuine ndi.element.timeseries (not a bespoke epochset) so
+            % the referent has the full, correct contract (eq, epochtable, ...) -
+            % ndi.time.syncgraph/time_convert compares referents with '=='. Each
+            % scenario epoch is registered with addepoch using the comma-joined
+            % clock string + a [t0;t1]-by-clock matrix (the same multi-clock form
+            % ndi.element.oneepoch uses); the timepoints/datapoints are minimal
+            % placeholders in the local clock's units.
             s = ndi.symmetry.time.scenario.scenarioStruct();
             r = s.referents(1);
-            referent = ndi.symmetry.time.scenarioReferent(session, r.name, r.epochs);
+            referent = ndi.element.timeseries(session, r.name, 1, 'madeup', [], 0, ...
+                'subject@nosuchlab.org');
+            for i = 1:numel(r.epochs)
+                e = r.epochs(i);
+                nClk = numel(e.clocks);
+                t0t1 = zeros(2, nClk);   % row 1 = t0, row 2 = t1; columns parallel to e.clocks
+                for k = 1:nClk
+                    t0t1(1,k) = e.t0_t1{k}(1);
+                    t0t1(2,k) = e.t0_t1{k}(2);
+                end
+                tp = (e.t0_t1{1}(1):e.t0_t1{1}(2))';   % placeholder samples in the local clock
+                referent = referent.addepoch(e.epoch_id, strjoin(e.clocks, ','), t0t1, tp, tp);
+            end
         end
 
         function results = runCases(session)
