@@ -247,7 +247,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             docs = ndi_calculator_obj.session.database_search(q);
             matches = [];
             for i=1:numel(docs)
-                try, input_param = eval(['docs{i}.document_properties.' property_list_name '.input_parameters;']); catch, input_param = []; end
+                try, input_param = ndi.util.getfieldpath(docs{i}.document_properties, [property_list_name '.input_parameters']); catch, input_param = []; end
                 if ndi_calculator_obj.are_input_parameters_equivalent(input_param,parameters.input_parameters), matches(end+1) = i; end
             end
             docs = docs(matches);

@@ -97,7 +97,9 @@ function url = url(endpointName, options)
         endpointMap("get_compute_session")            = "/compute/{sessionId}";
         endpointMap("abort_compute_session")          = "/compute/{sessionId}";
         endpointMap("trigger_compute_stage")          = "/compute/{sessionId}/stage/{stageId}";
-        endpointMap("finalize_compute_session")       = "/compute/{sessionId}/finalize";
+        % Advance a compute session to the next stage; advancing past the
+        % last stage finalizes the session. There is no /finalize route.
+        endpointMap("advance_compute_session")        = "/compute/{sessionId}/advance";
         endpointMap("list_compute_sessions")          = "/compute";
     end
 

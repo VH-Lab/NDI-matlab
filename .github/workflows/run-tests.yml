@@ -42,9 +42,14 @@ jobs:
   run_tests:
     name: Run tests (MATLAB ${{ inputs.matlab_release || 'latest' }})
     runs-on: ubuntu-latest
+    # matbox dependency resolution calls the GitHub API; authenticate so the
+    # requests aren't unauthenticated-rate-limited (which surfaced as webread
+    # timeouts when several jobs install in parallel).
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:      
       - name: Check out repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Start virtual display server
         if: runner.os == 'Linux'
@@ -54,7 +59,7 @@ jobs:
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v2
+        uses: matlab-actions/setup-matlab@aa8bbc7b76daa63c5d456d1430cbd6cb5b626ab4 # v2
         with:
           release: ${{ inputs.matlab_release || 'latest' }}
           cache: true
@@ -68,15 +73,15 @@ jobs:
         run: git clone https://github.com/VH-Lab/NDIcalc-vis-matlab.git ../NDIcalc-vis-matlab
 
       - name: Install MatBox
-        uses: ehennestad/matbox-actions/install-matbox@v1
+        uses: ehennestad/matbox-actions/install-matbox@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
 
       - name: Check code and upload report
-        uses: ehennestad/matbox-actions/check-code@v1
+        uses: ehennestad/matbox-actions/check-code@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
         with:
           source_directory: 'src'
 
       - name: Run tests
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
         if: always()
         with:
           command: |
@@ -89,7 +94,7 @@ jobs:
             testToolboxNoCloud()
 
       - name: Restore MATLAB Path
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
         if: always()
         with:
           command: |
@@ -98,20 +103,20 @@ jobs:
 
       - name: Commit SVG badges if updated
         if: always() && ( github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository )
-        uses: ehennestad/matbox-actions/push-badges@v1
+        uses: ehennestad/matbox-actions/push-badges@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
         with:
           pr-ref: ${{ github.event.pull_request.head.ref }}
           pr-repo: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Upload code coverage report to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: docs/reports/codecoverage.xml
           
       # Publish test results
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040 # v2
         if: always()
         with:
           files: "docs/reports/test-results.xml"
