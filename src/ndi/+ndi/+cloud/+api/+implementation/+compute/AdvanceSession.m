@@ -1,18 +1,18 @@
-classdef FinalizeSession < ndi.cloud.api.call
-    %FINALIZESESSION Implementation class for finalizing a compute session.
+classdef AdvanceSession < ndi.cloud.api.call
+    %ADVANCESESSION Implementation class for advancing a compute session to the next stage.
 
     properties
         sessionId (1,1) string
     end
 
     methods
-        function this = FinalizeSession(args)
-            %FINALIZESESSION Creates a new FinalizeSession API call object.
+        function this = AdvanceSession(args)
+            %ADVANCESESSION Creates a new AdvanceSession API call object.
             %
-            %   THIS = ndi.cloud.api.implementation.compute.FinalizeSession('sessionId', ID)
+            %   THIS = ndi.cloud.api.implementation.compute.AdvanceSession('sessionId', ID)
             %
             %   Inputs:
-            %       'sessionId' - The ID of the session to finalize.
+            %       'sessionId' - The ID of the session to advance.
             %
             arguments
                 args.sessionId (1,1) string
@@ -22,7 +22,7 @@ classdef FinalizeSession < ndi.cloud.api.call
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
-            %EXECUTE Performs the API call to finalize the session.
+            %EXECUTE Performs the API call to advance the session to the next stage.
             %
             %   [B, ANSWER, APIRESPONSE, APIURL] = EXECUTE(THIS)
             %
@@ -33,7 +33,7 @@ classdef FinalizeSession < ndi.cloud.api.call
 
             token = ndi.cloud.authenticate();
 
-            apiURL = ndi.cloud.api.url('finalize_compute_session', 'session_id', this.sessionId);
+            apiURL = ndi.cloud.api.url('advance_compute_session', 'session_id', this.sessionId);
 
             method = matlab.net.http.RequestMethod.POST;
 
