@@ -33,6 +33,22 @@ classdef scenarioReferent < ndi.epoch.epochset & ndi.ido
             obj.ScenarioEpochs = scenarioEpochs;
         end
 
+        function b = eq(obj1, obj2)
+            % EQ - two scenario referents are equal iff they share an ndi.ido id.
+            %
+            % Defined explicitly because this lightweight epochset is not an
+            % ndi.element, and none of its superclasses (ndi.epoch.epochset,
+            % ndi.ido/did.ido) defines eq -- yet ndi.time.syncgraph/time_convert
+            % compares referents with '==' (the same-referent fast path). Real
+            % referents get this from ndi.element/eq; we mirror it by id here.
+            b = isa(obj2, 'ndi.symmetry.time.scenarioReferent') && ...
+                strcmp(obj1.id(), obj2.id());
+        end
+
+        function b = ne(obj1, obj2)
+            b = ~eq(obj1, obj2);
+        end
+
         function name = epochsetname(obj)
             name = obj.ScenarioName;
         end
