@@ -1,7 +1,7 @@
 function value = getfieldpath(s, propertyPath)
 % GETFIELDPATH - safely read a nested struct field named by a dotted path
 %
-%   VALUE = ndi.fun.getfieldpath(S, PROPERTYPATH)
+%   VALUE = ndi.util.getfieldpath(S, PROPERTYPATH)
 %
 %   Returns the value of the nested field of struct S named by the dotted
 %   PROPERTYPATH (e.g. 'document_class.property_list_name' returns
@@ -14,14 +14,14 @@ function value = getfieldpath(s, propertyPath)
 %   raised, and the read is performed with getfield, which cannot execute
 %   code.
 %
-%   See also: ndi.document.assignPropertyPath, getfield
+%   See also: ndi.util.assignPropertyPath, getfield, isvarname
 
     parts = strsplit(char(propertyPath), '.');
     for p = 1:numel(parts)
         if ~isvarname(parts{p})
-            error('ndi:fun:getfieldpath:invalidPropertyName', ...
+            error('ndi:util:getfieldpath:invalidPropertyName', ...
                 'Invalid property name "%s".', char(propertyPath));
         end
     end
     value = getfield(s, parts{:}); %#ok<GFLD>
-end
+end % getfieldpath()

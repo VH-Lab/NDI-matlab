@@ -69,7 +69,7 @@ classdef document
 
                 for i=1:2:numel(varargin) % assign variable arguments
                     try
-                        document_properties = ndi.document.assignPropertyPath( ...
+                        document_properties = ndi.util.assignPropertyPath( ...
                             document_properties, varargin{i}, varargin{i+1});
                     catch
                         error(['Could not assign document_properties.' varargin{i} '.']);
@@ -826,7 +826,7 @@ classdef document
             newproperties = ndi_document_obj.document_properties;
             for i=1:2:numel(varargin)
                 try
-                    newproperties = ndi.document.assignPropertyPath( ...
+                    newproperties = ndi.util.assignPropertyPath( ...
                         newproperties, varargin{i}, varargin{i+1});
                 catch
                     error(['Error in assigning ' varargin{i} '.']);
@@ -1111,33 +1111,6 @@ classdef document
 
             definitionCache(cacheKey) = s;
         end % readblankdefinition()
-
-        function s = assignPropertyPath(s, propertyPath, value)
-            % ASSIGNPROPERTYPATH - safely assign s.<propertyPath> = value
-            %
-            % S = ndi.document.ASSIGNPROPERTYPATH(S, PROPERTYPATH, VALUE)
-            %
-            % Assigns VALUE to the nested field of struct S named by the
-            % dotted PROPERTYPATH (e.g. 'base.name' sets S.base.name = VALUE).
-            %
-            % This replaces eval-based property assignment in the ndi.document
-            % constructor and setproperties. Building and evaluating a string
-            % like ['s.' name '=value'] let a crafted property name (read from
-            % a document or passed by a caller) execute arbitrary code. Here
-            % every path segment must be a valid field name (isvarname) or an
-            % error is raised, and the assignment is performed with subsasgn,
-            % which cannot execute code.
-            parts = strsplit(char(propertyPath), '.');
-            for p = 1:numel(parts)
-                if ~isvarname(parts{p})
-                    error('ndi:document:invalidPropertyName', ...
-                        'Invalid property name "%s".', char(propertyPath));
-                end
-            end
-            subs = struct('type', repmat({'.'}, 1, numel(parts)), ...
-                          'subs', parts);
-            s = subsasgn(s, subs, value);
-        end % assignPropertyPath()
 
     end % methods Static
 end % classdef
