@@ -98,6 +98,36 @@ classdef scenario
             end
         end
 
+        function exp = expected()
+            % EXPECTED - the MATLAB-authoritative correct outputs for caseDefs,
+            % in the same order. MATLAB is the symmetry reference; Python must
+            % match these. Derived from the NDI time model: within an epoch,
+            % time rescales linearly between the two clocks' [t0 t1] ranges, and
+            % same-clock conversions are the identity.
+            mk = @(t, e) struct('exp_time', t, 'exp_epoch', string(e));
+            exp = mk(5.0,   "ep1");          % dev_local ep1 t=5 -> dev_local (identity)
+            exp(end+1) = mk(105.0, "ep1");   % dev_local [0 10] -> exp_global [100 110]: 5 -> 105
+            exp(end+1) = mk(100.0, "ep1");   % 0 -> 100
+            exp(end+1) = mk(110.0, "ep1");   % 10 -> 110
+            exp(end+1) = mk(202.5, "ep2");   % ep2 [0 5] -> [200 205]: 2.5 -> 202.5
+            exp(end+1) = mk(105.0, "ep1");   % exp_global 105 (in ep1) -> exp_global (identity)
+            exp(end+1) = mk(202.5, "ep2");   % exp_global 202.5 (in ep2) -> exp_global (identity)
+        end
+
+        function verifyExpected(testCase, results)
+            % VERIFYEXPECTED - assert computed RESULTS match the expected
+            % (reference) outputs case-by-case.
+            exp = ndi.symmetry.time.scenario.expected();
+            testCase.verifyEqual(numel(results), numel(exp), ...
+                'Number of results does not match number of expected cases.');
+            for i = 1:numel(exp)
+                testCase.verifyEqual(double(results(i).out_time), exp(i).exp_time, ...
+                    'AbsTol', 1e-9, sprintf('Case %d out_time mismatch.', i));
+                testCase.verifyEqual(string(results(i).out_epoch), exp(i).exp_epoch, ...
+                    sprintf('Case %d out_epoch mismatch.', i));
+            end
+        end
+
         function artifactDir(sourceType)
             % ARTIFACTDIR - not used directly; the layout is documented in the
             % make/read tests:

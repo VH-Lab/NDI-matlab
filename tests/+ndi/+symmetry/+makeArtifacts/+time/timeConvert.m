@@ -12,14 +12,13 @@ classdef timeConvert < matlab.unittest.TestCase
     %   The Python counterpart writes the same structure under pythonArtifacts/;
     %   the readArtifacts tests on both sides compare them.
     %
-    %   ⚠️ AUTHORED WITHOUT A MATLAB RUNTIME. To avoid regressing the rest of
-    %   the symmetry suite while the synthetic referent integration is validated
-    %   on MATLAB, this test writes the artifact ONLY when every case converts
-    %   cleanly. If any case errors (referent/time_convert mismatch), the test
-    %   marks itself Incomplete (assumption failure, NOT a failure) and writes
-    %   nothing — so the Python read side simply skips the time comparison, as it
-    %   does when the artifact is absent. Once a MATLAB run confirms the cases
-    %   convert, the artifact is produced and full cross-language closure holds.
+    %   MATLAB is the reference side: this test ASSERTS that every scenario
+    %   case converts without error and equals the expected reference output
+    %   (ndi.symmetry.time.scenario.expected), then writes the artifact for the
+    %   Python suite to match. A time_convert regression fails here loudly
+    %   rather than skipping. (The earlier version used assumeTrue to mark
+    %   itself Incomplete and write nothing on any conversion error, which
+    %   silently masked a real time_convert bug; that skip has been removed.)
 
     methods (TestMethodTeardown)
         function persistArtifacts(testCase) %#ok<MANU>
@@ -41,12 +40,13 @@ classdef timeConvert < matlab.unittest.TestCase
 
             results = ndi.symmetry.time.scenario.runCases(session);
 
+            % MATLAB is the reference: assert every case converted without error
+            % AND produced the expected (reference) value, rather than skipping
+            % via assumeTrue (which silently masked time_convert failures).
             msgs = string({results.msg});
-            allClean = all(msgs == "");
-            testCase.assumeTrue(allClean, ...
-                ['time_convert produced error rows; the scenario referent needs ' ...
-                 'MATLAB validation (see ndi.symmetry.time.scenarioReferent). ' ...
-                 'No artifact written so the cross-language comparison is skipped.']);
+            testCase.verifyTrue(all(msgs == ""), ...
+                "time_convert produced error rows: " + strjoin(msgs(msgs ~= ""), "; "));
+            ndi.symmetry.time.scenario.verifyExpected(testCase, results);
 
             if isfolder(artifactDir)
                 rmdir(artifactDir, 's');
