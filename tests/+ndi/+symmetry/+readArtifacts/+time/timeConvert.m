@@ -122,11 +122,15 @@ classdef timeConvert < matlab.unittest.TestCase
         end
 
         function s = txt(v)
-            % Normalize a text/null field (char, string, or [] from JSON null).
-            if isempty(v) || (isstring(v) && all(ismissing(v)))
+            % Normalize a text/null field so an empty value compares equal
+            % regardless of how it is rendered. Across the JSON round-trip an
+            % empty msg/epoch can appear as '' (0x0 char), "" (empty string), a
+            % missing string, or [] (JSON null) -- collapse them all to one token.
+            str = string(v);
+            if isempty(str) || all(ismissing(str)) || all(strlength(str) == 0)
                 s = '<null>';
             else
-                s = char(string(v));
+                s = char(str);
             end
         end
 
