@@ -39,6 +39,15 @@ function result = local(path, options)
 %                      []) - override the shared schema cache. Used
 %                      by tests; production callers should rely on
 %                      ndi.schemas.init having set the active cache.
+%     TargetVersion    (1,:) char, default 'V_delta') - migration
+%                      target wire format. 'V_delta' preserves the
+%                      historical class-preserving behaviour and
+%                      writes V_delta.sqlite. 'V_epsilon' routes
+%                      split-eligible classes through the Brainstorm-E
+%                      migrators (1 -> N) and runs a second pass that
+%                      resolves session-context-dependent deferrals
+%                      (e.g. stimulus_bath -> bath) using the open
+%                      body set, writing V_epsilon.sqlite.
 %
 %   RESULT is a struct with fields:
 %       path         - the input PATH (char).
@@ -101,6 +110,7 @@ function result = local(path, options)
         options.Verbose (1,1) logical = false
         options.Validate (1,1) logical = true
         options.SchemaCache = []
+        options.TargetVersion (1,:) char = 'V_delta'
     end
 
     if ~isfolder(path)
@@ -119,7 +129,7 @@ function result = local(path, options)
     lockHandle = acquireLock(lockFile);
     lockCleanup = onCleanup(@() releaseLock(lockHandle));
 
-    dstPath = fullfile(ndiDir, 'V_delta.sqlite');
+    dstPath = fullfile(ndiDir, [options.TargetVersion '.sqlite']);
     quarantineFile = fullfile(ndiDir, 'migrate_quarantine.json');
     backupDir = fullfile(path, '.v1-backup');
 
@@ -149,7 +159,27 @@ function result = local(path, options)
     convertResult = did2.convert.v1_to_v2(bodies, ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
+        'TargetVersion', options.TargetVersion, ...
         'Verbose', false);
+
+    % --- second pass: context-dependent (session-aware) deferrals ----------
+    % Some V_epsilon classes cannot be migrated from a single document alone
+    % (e.g. stimulus_bath -> bath needs the stimulator element's subject and
+    % epoch). The per-document converter defers those with reason
+    % did2:convert:needsSessionContext; resolve them here, where the whole
+    % body set (the session/element graph) is in hand, then fold the
+    % assembled bodies back through v1_to_v2 (which short-circuits them as
+    % already-target) so they are padded/validated on the same footing.
+    if strcmp(options.TargetVersion, 'V_epsilon')
+        try
+            resolver = ndi.migrate.internal.bodyResolver(bodies);
+            convertResult = resolveDeferred(convertResult, resolver, options);
+        catch ME
+            warning('NDI:migrate:deferredResolveFailed', ...
+                ['Second-pass resolution of session-context deferrals ' ...
+                 'failed (%s); leaving them quarantined.'], ME.message);
+        end
+    end
 
     wroteDst = false;
     wroteQuarantineFile = '';
@@ -202,6 +232,101 @@ function result = local(path, options)
              'ContinueOnError was false.'], ...
              path, numel(convertResult.quarantine));
     end
+end
+
+% ---- second pass: session-context-dependent deferrals ---------------------
+
+function convertResult = resolveDeferred(convertResult, resolver, options)
+%RESOLVEDEFERRED Assemble the deferrals that need the session/element graph.
+%   The per-document converter quarantines context-dependent classes with
+%   reason did2:convert:needsSessionContext rather than emitting a partial
+%   (a manipulation must be emitted complete). Here -- with every body in
+%   hand via RESOLVER -- we re-assemble each such document, then fold the
+%   assembled V_epsilon bodies back through v1_to_v2. Because the assembled
+%   bodies are tagged schema_version 'V_epsilon', v1_to_v2 short-circuits
+%   them (isAlreadyTarget) to ensureClassBlocks + validate; it does not
+%   re-migrate. Successfully assembled+validated docs move from quarantine
+%   into migrated; anything that cannot be assembled or fails validation
+%   stays quarantined with a reason.
+    q = convertResult.quarantine;
+    if isempty(q)
+        return;
+    end
+    keep = true(1, numel(q));
+    assembled = {};
+    for k = 1:numel(q)
+        if ~isDeferredForContext(q(k))
+            continue;
+        end
+        try
+            v1Body = jsondecode(q(k).original_body);
+            bodies = assembleDeferred(q(k).class_name, v1Body, resolver);
+            assembled = [assembled, bodies]; %#ok<AGROW>
+            keep(k) = false;   % resolved -> drop the original deferral
+        catch
+            % leave it quarantined with its original (deferral) reason
+        end
+    end
+    if isempty(assembled)
+        return;
+    end
+    sub = did2.convert.v1_to_v2(assembled, ...
+        'Validate', options.Validate, ...
+        'SchemaCache', options.SchemaCache, ...
+        'TargetVersion', 'V_epsilon', ...
+        'Verbose', false);
+    convertResult.migrated = [convertResult.migrated, sub.migrated];
+    convertResult.quarantine = [q(keep), sub.quarantine];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function tf = isDeferredForContext(qEntry)
+% A quarantine entry is a session-context deferral when its reason carries
+% the needsSessionContext signature. The converter's deferral message names
+% the NDI layer; match defensively on either the identifier fragment or that
+% phrase so a future rephrasing of the message keeps routing here.
+    tf = false;
+    if ~isfield(qEntry, 'reason') || ~ischar(qEntry.reason)
+        return;
+    end
+    tf = contains(qEntry.reason, 'needsSessionContext') ...
+        || contains(qEntry.reason, 'NDI layer');
+end
+
+function bodies = assembleDeferred(className, v1Body, resolver)
+% Dispatch a deferred v1 body to its session-aware assembler. Returns a cell
+% array of V_epsilon bodies (so a 1 -> N assembly fits). Add new
+% context-dependent classes here as their assemblers land.
+    switch className
+        case 'stimulus_bath'
+            [bathBody, timeRefBody] = ...
+                ndi.migrate.internal.stimulusBathToBath(v1Body, resolver);
+            bodies = {timeRefBody, bathBody};
+        otherwise
+            error('NDI:migrate:noAssembler', ...
+                'No session-aware assembler for deferred class "%s".', ...
+                className);
+    end
+end
+
+function summary = recountSummary(convertResult)
+% Recompute the summary after the second pass folds assembled documents in.
+% `total` keeps its original meaning (count of source bodies read); only the
+% migrated/quarantine counts and the by_class table shift.
+    summary = convertResult.summary;
+    summary.migrated_count = numel(convertResult.migrated);
+    summary.quarantine_count = numel(convertResult.quarantine);
+    byClass = struct();
+    for k = 1:numel(convertResult.migrated)
+        name = convertResult.migrated{k}.className();
+        fieldName = matlab.lang.makeValidName(name);
+        if isfield(byClass, fieldName)
+            byClass.(fieldName) = byClass.(fieldName) + 1;
+        else
+            byClass.(fieldName) = 1;
+        end
+    end
+    summary.by_class = byClass;
 end
 
 % ---- v1 source detection ---------------------------------------------------
