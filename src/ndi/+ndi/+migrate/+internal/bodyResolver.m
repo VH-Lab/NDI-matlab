@@ -34,12 +34,37 @@ arguments
     bodies cell
 end
 
+% The v1 readers (did2.convert.readers.sqliteV1 / dumbJsonV1) return raw
+% JSON char bodies, while the idempotent re-run path passes decoded structs.
+% Normalise to a cell of scalar structs so the lookups below can index by
+% field regardless of which path produced the body set.
+bodies = normaliseBodies(bodies);
+
 byId = indexById(bodies);
 
 resolver = struct();
 resolver.subjectOfElement   = @(elementId) subjectOfElement(byId, elementId);
 resolver.epochClockOfElement = @(elementId, epochId) ...
     epochClockOfElement(bodies, elementId, epochId);
+end
+
+% ===================== normalisation ======================================
+
+function out = normaliseBodies(raw)
+out = {};
+for k = 1:numel(raw)
+    b = raw{k};
+    if ischar(b) || (isstring(b) && isscalar(b))
+        try
+            b = jsondecode(char(b));
+        catch
+            continue;   % unparseable body: not useful for resolution
+        end
+    end
+    if isstruct(b) && isscalar(b)
+        out{end+1} = b; %#ok<AGROW>
+    end
+end
 end
 
 % ===================== index ==============================================
