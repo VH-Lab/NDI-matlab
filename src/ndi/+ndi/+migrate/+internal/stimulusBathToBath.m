@@ -131,25 +131,31 @@ function mixture = parseMixture(body)
 %   Mirrors the per-chemical record shape pharmacological_manipulation.mixture
 %   wants: { chemical: ontology_term, amount: concentration }. Handles the
 %   CSV mixture_table form; the V_gamma solution_name/concentration form is a
-%   TODO extension.
+%   TODO extension. pharmacological_manipulation.mixture is mustBeNonEmpty,
+%   so this always returns >= 1 record -- a blank one when nothing parses,
+%   which is the curator's signal rather than a validation failure.
 mixture = struct('chemical', {}, 'amount', {});
-if ~isfield(body, 'stimulus_bath') || ~isstruct(body.stimulus_bath) ...
-        || ~isfield(body.stimulus_bath, 'mixture_table')
-    return;
-end
-raw = body.stimulus_bath.mixture_table;
-if ~ischar(raw) && ~(isstring(raw) && isscalar(raw))
-    return;
-end
-lines = strsplit(char(raw), newline);
-for i = 1:numel(lines)
-    cols = strsplit(strtrim(lines{i}), ',');
-    if numel(cols) < 5 || isempty(strtrim(cols{1}))
-        continue;   % header / blank / malformed row
+if isfield(body, 'stimulus_bath') && isstruct(body.stimulus_bath) ...
+        && isfield(body.stimulus_bath, 'mixture_table')
+    raw = body.stimulus_bath.mixture_table;
+    if ischar(raw) || (isstring(raw) && isscalar(raw))
+        lines = strsplit(char(raw), newline);
+        for i = 1:numel(lines)
+            cols = strsplit(strtrim(lines{i}), ',');
+            if numel(cols) < 5 || isempty(strtrim(cols{1}))
+                continue;   % header / blank / malformed row
+            end
+            chemical = struct('node', strtrim(cols{1}), 'name', strtrim(cols{2}));
+            amount = struct('source_value', str2double(cols{3}), ...
+                'source_unit', strtrim(cols{5}), 'approximate', false);
+            mixture(end+1) = struct('chemical', chemical, 'amount', amount); %#ok<AGROW>
+        end
     end
-    chemical = struct('node', strtrim(cols{1}), 'name', strtrim(cols{2}));
-    amount = struct('source_value', str2double(cols{3}), ...
-        'source_unit', strtrim(cols{5}), 'approximate', false);
-    mixture(end+1) = struct('chemical', chemical, 'amount', amount); %#ok<AGROW>
+end
+if isempty(mixture)
+    mixture(1) = struct( ...
+        'chemical', struct('node', '', 'name', ''), ...
+        'amount', struct('source_value', 0.0, 'source_unit', '', ...
+            'approximate', false));
 end
 end
