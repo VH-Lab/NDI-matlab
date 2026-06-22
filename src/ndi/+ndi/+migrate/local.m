@@ -156,11 +156,18 @@ function result = local(path, options)
         end
     end
 
-    convertResult = did2.convert.v1_to_v2(bodies, ...
-        'Validate', options.Validate, ...
+    % Build the converter args. Only forward TargetVersion when it is NOT
+    % the default 'V_delta': the default path must stay call-compatible with
+    % the stable released did-matlab (whose v1_to_v2 predates the
+    % TargetVersion option). A 'V_epsilon' run requires the newer did-matlab
+    % anyway, so adding the name-value there is safe.
+    v2args = {'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
-        'TargetVersion', options.TargetVersion, ...
-        'Verbose', false);
+        'Verbose', false};
+    if ~strcmp(options.TargetVersion, 'V_delta')
+        v2args = [v2args, {'TargetVersion', options.TargetVersion}];
+    end
+    convertResult = did2.convert.v1_to_v2(bodies, v2args{:});
 
     % --- second pass: context-dependent (session-aware) deferrals ----------
     % Some V_epsilon classes cannot be migrated from a single document alone
