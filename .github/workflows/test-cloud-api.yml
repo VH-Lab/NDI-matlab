@@ -16,6 +16,13 @@ jobs:
   run_tests:
     name: Test Cloud API (env - ${{ matrix.environment }})
     runs-on: ubuntu-latest
+    # matbox dependency resolution calls the GitHub API; authenticate so the
+    # requests aren't unauthenticated-rate-limited (which surfaced as a 429
+    # "Too Many Requests" from api.github.com during installRequirements).
+    # Set at the job level so the Install MatBox step is authenticated too,
+    # not just the in-MATLAB setenv below.
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
