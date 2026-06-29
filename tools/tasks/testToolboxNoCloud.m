@@ -15,7 +15,7 @@ function testToolboxNoCloud(varargin)
     options = parseOptions(varargin{:});
 
     projectRootDir = nditools.projectdir();
-    matbox.installRequirements(fullfile(projectRootDir, 'tests'))
+    nditools.installRequirements(fullfile(projectRootDir, 'tests'))
 
     testFolder = fullfile(projectRootDir, "tests");
     codeFolder = fullfile(projectRootDir, "src");

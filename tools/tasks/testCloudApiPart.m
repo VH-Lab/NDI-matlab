@@ -21,7 +21,7 @@ function testCloudApiPart(partIdx, numParts)
         'Invalid partIdx=%d for numParts=%d', partIdx, numParts);
 
     projectRootDir = nditools.projectdir();
-    matbox.installRequirements(fullfile(projectRootDir, 'tests'))
+    nditools.installRequirements(fullfile(projectRootDir, 'tests'))
 
     suite = TestSuite.fromPackage('ndi.unittest.cloud', ...
         'IncludingSubpackages', true);

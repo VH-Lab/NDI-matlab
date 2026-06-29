@@ -3,7 +3,7 @@ function testCloudApi(varargin)
     import matlab.unittest.TestRunner
      
     projectRootDir = nditools.projectdir();
-    matbox.installRequirements(fullfile(projectRootDir, 'tests'))
+    nditools.installRequirements(fullfile(projectRootDir, 'tests'))
 
     suite = TestSuite.fromPackage('ndi.unittest.cloud', ...
         'IncludingSubpackages', true);
