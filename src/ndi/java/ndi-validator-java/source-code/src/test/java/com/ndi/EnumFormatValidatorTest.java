@@ -338,9 +338,9 @@ class EnumFormatValidatorTest {
         assertEquals(test.validate("entry12"), Optional.of("Entered: " + "entry12" + ". Expected: any one of " + "[entry5]"));
         assertEquals(test.validate("entry11"), Optional.of("Entered: " + "entry11" + ". Expected: any one of " + "[entry6]"));
 
-        //test = test.unload();
+        test = (EnumFormatValidator) test.unload();
         assertNull(test.getTable());
-        //test = test.loadTable();
+        test = (EnumFormatValidator) test.loadTable();
         assertNotNull(test.getTable());
         assertEquals(test.validate("entry1"), Optional.empty());
         assertEquals(test.validate("entry5"), Optional.empty());
