@@ -445,8 +445,8 @@ classdef document
             % Returns the document superclasses of an ndi.document object. SC is a cell
             % array of strings.
             %
-            sc = {};
             supers = ndi_document_obj.document_properties.document_class.superclasses;
+            sc = cell(1, numel(supers));
             for i=1:numel(supers)
                 if isfield(supers(i), 'class_name') && ~isempty(supers(i).class_name)
                     % did2-form documents (V_delta / V_zeta) carry the bare
