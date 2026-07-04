@@ -42,12 +42,15 @@ function result = local(path, options)
 %     TargetVersion    (1,:) char, default 'V_delta') - migration
 %                      target wire format. 'V_delta' preserves the
 %                      historical class-preserving behaviour and
-%                      writes V_delta.sqlite. 'V_epsilon' routes
-%                      split-eligible classes through the Brainstorm-E
-%                      migrators (1 -> N) and runs a second pass that
-%                      resolves session-context-dependent deferrals
-%                      (e.g. stimulus_bath -> bath) using the open
-%                      body set, writing V_epsilon.sqlite.
+%                      writes V_delta.sqlite. 'V_epsilon' (Brainstorm E)
+%                      and 'V_zeta' (Brainstorm I) route split-eligible
+%                      classes through the matching migrators (1 -> N)
+%                      and run a second pass that resolves
+%                      session-context-dependent deferrals (e.g.
+%                      stimulus_bath -> bath) using the open body set,
+%                      writing <TargetVersion>.sqlite. V_zeta is the
+%                      current direction; V_epsilon is retained as an
+%                      archived reference.
 %
 %   RESULT is a struct with fields:
 %       path         - the input PATH (char).
@@ -177,7 +180,7 @@ function result = local(path, options)
     % body set (the session/element graph) is in hand, then fold the
     % assembled bodies back through v1_to_v2 (which short-circuits them as
     % already-target) so they are padded/validated on the same footing.
-    if strcmp(options.TargetVersion, 'V_epsilon')
+    if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
             convertResult = resolveDeferred(convertResult, resolver, options);
@@ -249,12 +252,12 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
 %   reason did2:convert:needsSessionContext rather than emitting a partial
 %   (a manipulation must be emitted complete). Here -- with every body in
 %   hand via RESOLVER -- we re-assemble each such document, then fold the
-%   assembled V_epsilon bodies back through v1_to_v2. Because the assembled
-%   bodies are tagged schema_version 'V_epsilon', v1_to_v2 short-circuits
-%   them (isAlreadyTarget) to ensureClassBlocks + validate; it does not
-%   re-migrate. Successfully assembled+validated docs move from quarantine
-%   into migrated; anything that cannot be assembled or fails validation
-%   stays quarantined with a reason.
+%   assembled bodies back through v1_to_v2 at the same TargetVersion. Because
+%   the assembled bodies are tagged schema_version == TargetVersion, v1_to_v2
+%   short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate; it
+%   does not re-migrate. Successfully assembled+validated docs move from
+%   quarantine into migrated; anything that cannot be assembled or fails
+%   validation stays quarantined with a reason.
     q = convertResult.quarantine;
     if isempty(q)
         return;
@@ -267,7 +270,8 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
         end
         try
             v1Body = jsondecode(q(k).original_body);
-            bodies = assembleDeferred(q(k).class_name, v1Body, resolver);
+            bodies = assembleDeferred(q(k).class_name, v1Body, resolver, ...
+                options.TargetVersion);
             assembled = [assembled, bodies]; %#ok<AGROW>
             keep(k) = false;   % resolved -> drop the original deferral
         catch
@@ -280,7 +284,7 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
     sub = did2.convert.v1_to_v2(assembled, ...
         'Validate', options.Validate, ...
         'SchemaCache', options.SchemaCache, ...
-        'TargetVersion', 'V_epsilon', ...
+        'TargetVersion', options.TargetVersion, ...
         'Verbose', false);
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [q(keep), sub.quarantine];
@@ -300,14 +304,15 @@ function tf = isDeferredForContext(qEntry)
         || contains(qEntry.reason, 'NDI layer');
 end
 
-function bodies = assembleDeferred(className, v1Body, resolver)
+function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
 % Dispatch a deferred v1 body to its session-aware assembler. Returns a cell
-% array of V_epsilon bodies (so a 1 -> N assembly fits). Add new
+% array of target-version bodies (so a 1 -> N assembly fits). Add new
 % context-dependent classes here as their assemblers land.
     switch className
         case 'stimulus_bath'
             [bathBody, timeRefBody] = ...
-                ndi.migrate.internal.stimulusBathToBath(v1Body, resolver);
+                ndi.migrate.internal.stimulusBathToBath(v1Body, resolver, ...
+                    targetVersion);
             bodies = {timeRefBody, bathBody};
         otherwise
             error('NDI:migrate:noAssembler', ...
