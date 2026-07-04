@@ -446,9 +446,20 @@ classdef document
             % array of strings.
             %
             sc = {};
-            for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses)
-                s = ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
-                sc{i} = s.doc_class();
+            supers = ndi_document_obj.document_properties.document_class.superclasses;
+            for i=1:numel(supers)
+                if isfield(supers(i), 'class_name') && ~isempty(supers(i).class_name)
+                    % did2-form documents (V_delta / V_zeta) carry the bare
+                    % superclass name directly in `.class_name` and have no
+                    % `.definition` path to load -- use it as-is (equivalent to
+                    % loading the definition and reading its doc_class()).
+                    sc{i} = supers(i).class_name;
+                else
+                    % did1-form: the superclass is a definition path; load the
+                    % blank document of that type and read its class name.
+                    s = ndi.document(supers(i).definition);
+                    sc{i} = s.doc_class();
+                end
             end
             sc = unique(sc); % alphabetize and remove any duplicates
         end % doc_superclass
