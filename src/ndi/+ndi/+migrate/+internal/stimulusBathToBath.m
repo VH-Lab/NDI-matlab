@@ -177,7 +177,7 @@ if isfield(body, 'stimulus_bath') && isstruct(body.stimulus_bath) ...
     if ischar(raw) || (isstring(raw) && isscalar(raw))
         lines = strsplit(char(raw), newline);
         for i = 1:numel(lines)
-            cols = strsplit(strtrim(lines{i}), ',');
+            cols = strsplit(strtrim(lines{i}), ',', 'CollapseDelimiters', false);
             if numel(cols) < 5 || isempty(strtrim(cols{1}))
                 continue;   % header / blank / malformed row
             end
