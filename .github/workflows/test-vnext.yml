@@ -51,10 +51,14 @@ concurrency:
 
 jobs:
   vnext_smoke:
-    name: Vnext smoke (did-matlab@${{ inputs.did_matlab_ref || 'V2' }}, did-schema@${{ inputs.did_schema_ref || 'main' }})
+    name: Vnext smoke (did-matlab@${{ inputs.did_matlab_ref || github.head_ref || 'V2' }}, did-schema@${{ inputs.did_schema_ref || 'main' }})
     runs-on: ubuntu-latest
     env:
-      DID_MATLAB_REF: ${{ inputs.did_matlab_ref || 'V2' }}
+      # Track the matching DID-matlab feature branch (github.head_ref) so the
+      # V_delta/V_zeta-ready did. sql layer (doc2sql superclass class_name
+      # fallback) is exercised; revert the fallback to 'V2' once that fix
+      # merges. did-schema stays on main so the gate still validates V_delta.
+      DID_MATLAB_REF: ${{ inputs.did_matlab_ref || github.head_ref || 'V2' }}
       DID_SCHEMA_REF: ${{ inputs.did_schema_ref || 'main' }}
     steps:
       - name: Check out NDI-matlab
@@ -97,10 +101,11 @@ jobs:
       - name: Clone NDIcalc-vis-matlab as sibling directory
         run: git clone https://github.com/VH-Lab/NDIcalc-vis-matlab.git ../NDIcalc-vis-matlab
 
-      - name: Override DID-matlab ref for non-default dispatch
-        # requirements.txt on the Vnext branch already pins
-        # DID-matlab@V2. Only rewrite it when the workflow_dispatch
-        # input asks for a different ref.
+      - name: Override DID-matlab ref when not V2
+        # requirements.txt on the Vnext branch pins DID-matlab@V2. Rewrite it
+        # whenever DID_MATLAB_REF resolves to something else -- either a
+        # workflow_dispatch input or, on a pull_request, the matching
+        # github.head_ref feature branch (which carries the doc2sql fix).
         if: env.DID_MATLAB_REF != 'V2'
         run: |
           set -eux
