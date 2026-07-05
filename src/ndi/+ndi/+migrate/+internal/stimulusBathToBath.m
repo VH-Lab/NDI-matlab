@@ -1,9 +1,10 @@
-function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver)
-%STIMULUSBATHTOBATH Assemble a V_epsilon `bath` (+ epoch time reference) from a
-%   legacy stimulus_bath, using session/element context.  *** SCAFFOLD ***
+function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver, targetVersion)
+%STIMULUSBATHTOBATH Assemble a `bath` (+ epoch time reference) from a legacy
+%   stimulus_bath, using session/element context.
 %
-%   The per-document converter (did2.convert.migrators_e.stimulus_bath) defers
-%   stimulus_bath with did2:convert:needsSessionContext, because a `bath`
+%   The per-document converter (did2.convert.migrators_i.stimulus_bath /
+%   migrators_e.stimulus_bath) defers stimulus_bath with
+%   did2:convert:needsSessionContext, because a `bath`
 %   (pharmacological_manipulation) must be emitted complete and two of its
 %   required parts can only be obtained by following the stimulator element:
 %
@@ -13,37 +14,48 @@ function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver)
 %   The stimulator is used ONLY as the time referent and the subject source; no
 %   other connection is kept (the result is a plain `bath`, not a
 %   `stimulus_bath`). This function does that session-aware assembly; it is
-%   intended to be called by ndi.migrate.local on each body that v1_to_v2
-%   deferred with reason did2:convert:needsSessionContext.
+%   called by ndi.migrate.local on each body that v1_to_v2 deferred with reason
+%   did2:convert:needsSessionContext.
 %
 %   Inputs:
-%     v1Body   - the legacy stimulus_bath document body (struct), carrying:
-%                  depends_on            : stimulus_element_id (the stimulator)
-%                  epochid.epochid       : the stimulator's epoch id
-%                  stimulus_bath.location, stimulus_bath.mixture_table
-%                  base.{id, session_id, datestamp}
-%     resolver - struct of session-aware lookups (provided by ndi.migrate.local
-%                from the open session's element graph):
-%                  .subjectOfElement(elementId)            -> subject_id (char)
-%                  .epochClockOfElement(elementId, epochId)-> clocktype (char)
+%     v1Body        - the legacy stimulus_bath document body (struct), carrying:
+%                       depends_on            : stimulus_element_id (stimulator)
+%                       epochid.epochid       : the stimulator's epoch id
+%                       stimulus_bath.location, stimulus_bath.mixture_table
+%                       base.{id, session_id, datestamp}
+%     resolver      - struct of session-aware lookups (from ndi.migrate.local):
+%                       .subjectOfElement(elementId)            -> subject_id
+%                       .epochClockOfElement(elementId, epochId)-> clocktype
+%     targetVersion - 'V_zeta' (default, Brainstorm I) or 'V_epsilon'
+%                     (Brainstorm E). Selects the wire shape: under V_zeta the
+%                     bath is a `subject_interaction`, so the assembled body
+%                     also carries the spine block (method / variable /
+%                     target_structure) and the manipulation `notes` block, and
+%                     `variable` is set to the primary mixture chemical (the
+%                     queryable "what"). Under V_epsilon the older block layout
+%                     (no spine block) is emitted.
 %
 %   Outputs:
-%     bathBody     - the V_epsilon `bath` document body.
+%     bathBody     - the `bath` document body (schema_version = targetVersion).
 %     timeRefBody  - the epoch_bounded_reference document the bath depends_on.
 %
-%   STATUS: scaffold. Authored without local MATLAB; the assembly shape is
-%   complete but the resolver wiring + ndi.migrate.local second pass are TODO,
-%   and it is verified only in NDI CI. See ndi-matlab issue #782.
+%   The bath preserves the source stimulus_bath's base.id, so inbound
+%   references to the legacy document resolve to the migrated bath.
+%
+%   See also: ndi.migrate.local, ndi.migrate.internal.bodyResolver,
+%   did2.convert.migrators_i.stimulus_bath.
 
 arguments
     v1Body   (1,1) struct
     resolver (1,1) struct
+    targetVersion (1,:) char = 'V_zeta'
 end
 
 stimulatorId = dependencyValue(v1Body, 'stimulus_element_id');
 epochId      = epochIdOf(v1Body);
 sessionId    = baseField(v1Body, 'session_id', '');
 datestamp    = baseField(v1Body, 'datestamp', '');
+bathId       = baseField(v1Body, 'id', did.ido.unique_id());
 
 % --- resolve the session/element context (the reason this is NDI-layer) -----
 subjectId  = resolver.subjectOfElement(stimulatorId);
@@ -57,7 +69,7 @@ timeRefBody.document_class = struct( ...
     'superclasses', [ ...
         struct('class_name', 'time_reference', 'class_version', '1.0.0'), ...
         struct('class_name', 'epochid',        'class_version', '1.0.0')], ...
-    'schema_version', 'V_epsilon');
+    'schema_version', targetVersion);
 timeRefBody.depends_on = struct('name', 'element_id', 'value', stimulatorId);
 timeRefBody.base = struct('id', timeRefId, 'session_id', sessionId, ...
     'name', 'migrated_stimulator_epoch_anchor', 'datestamp', datestamp);
@@ -66,22 +78,46 @@ timeRefBody.epochid = struct('epochid', epochId);
 timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
 
 % --- the bath --------------------------------------------------------------
+mixture = parseMixture(v1Body);
+
 bathBody = struct();
 bathBody.document_class = struct( ...
     'class_name', 'bath', 'class_version', '1.0.0', ...
     'superclasses', struct('class_name', 'pharmacological_manipulation', ...
         'class_version', '1.0.0'), ...
-    'schema_version', 'V_epsilon');
+    'schema_version', targetVersion);
 bathBody.depends_on = [ ...
     struct('name', 'subject_id',       'value', subjectId), ...
     struct('name', 'time_reference_1', 'value', timeRefId)];
-bathBody.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
+bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
     'name', 'migrated_bath', 'datestamp', datestamp);
+
+if strcmp(targetVersion, 'V_zeta')
+    % Brainstorm I: a bath is a subject_interaction. Identity is OFF the class
+    % on the spine -- the primary chemical is the `variable`; the verb (method)
+    % and locus (target_structure) are left blank/empty (the bath location
+    % lives in the bath block); `notes` prose on the manipulation base.
+    bathBody.subject_interaction = struct( ...
+        'method', struct('node', '', 'name', ''), ...
+        'variable', primaryChemical(mixture), ...
+        'target_structure', {struct('node', {}, 'name', {})});
+    bathBody.manipulation = struct('notes', '');
+end
+
 % mixture is declared on pharmacological_manipulation -> its block.
 bathBody.pharmacological_manipulation = struct();
-bathBody.pharmacological_manipulation.mixture = parseMixture(v1Body);
+bathBody.pharmacological_manipulation.mixture = mixture;
 % location/kind are declared on bath -> the bath block.
 bathBody.bath = struct('kind', 'drug', 'location', locationTerm(v1Body));
+end
+
+function variable = primaryChemical(mixture)
+%PRIMARYCHEMICAL The spine identity is the first (primary) mixture chemical;
+%   blank if the mixture parsed to nothing.
+variable = struct('node', '', 'name', '');
+if ~isempty(mixture) && isfield(mixture, 'chemical')
+    variable = mixture(1).chemical;
+end
 end
 
 % ===================== helpers =============================================
@@ -141,7 +177,7 @@ if isfield(body, 'stimulus_bath') && isstruct(body.stimulus_bath) ...
     if ischar(raw) || (isstring(raw) && isscalar(raw))
         lines = strsplit(char(raw), newline);
         for i = 1:numel(lines)
-            cols = strsplit(strtrim(lines{i}), ',');
+            cols = strsplit(strtrim(lines{i}), ',', 'CollapseDelimiters', false);
             if numel(cols) < 5 || isempty(strtrim(cols{1}))
                 continue;   % header / blank / malformed row
             end
