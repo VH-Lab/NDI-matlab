@@ -1,0 +1,26 @@
+{
+	"classname": "kiasort_clusters",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"kiasort_clusters": [
+		{
+			"name": "kiasort_directory",
+			"type": "string",
+			"default_value": "kiasort",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The relative path (within the ndi.session) to the KIASORT output directory that was imported."
+		},
+		{
+			"name": "curated_output_MD5_checksum",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The MD5 checksum of the KIASORT unifiedLabels.h5 file (the per-spike unit assignments). Used to detect whether the sort/curation has changed since a previous import."
+		}
+	]
+}
