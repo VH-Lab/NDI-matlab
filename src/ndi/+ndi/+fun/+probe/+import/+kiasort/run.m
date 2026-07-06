@@ -25,8 +25,11 @@ function outputFolder = run(S, probe, options)
 %
 % The channel count and sampling rate are read directly from the probe, so the
 % KIASORT config matches the exported data. If no channel-map file is supplied and
-% none exists next to the binary, a default Kilosort-style map is written with
-% NDI.FUN.PROBE.EXPORT.CHANNELMAP (pass 'channelMapFile' for the real geometry).
+% none exists next to the binary, this function first tries to build one from the
+% probe's real geometry (probe_geometry + site2channelmap) via
+% NDI.FUN.PROBE.EXPORT.GEOMETRY2CHANNELMAP; if the probe has no geometry on file it
+% falls back to a default single-column linear map (NDI.FUN.PROBE.EXPORT.CHANNELMAP,
+% which warns). Pass 'channelMapFile' to supply your own map explicitly.
 %
 % Name/value pairs:
 % ---------------------------------------------------------------------------------
@@ -36,8 +39,10 @@ function outputFolder = run(S, probe, options)
 % | binaryFileName           | Name of the exported binary in the probe's dir.     |
 % |  ('kiasort.bin')         |                                                     |
 % | subdir ('kiasort_output')| Subfolder for the KIASORT output.                   |
-% | channelMapFile ('')      | Kilosort-style channel map .mat. '' => use/create a |
-% |                          |   'channel_map.mat' next to the binary.             |
+% | channelMapFile ('')      | Kilosort-style channel map .mat. '' => use an       |
+% |                          |   existing 'channel_map.mat' next to the binary, or |
+% |                          |   build one from the probe's geometry, or (last     |
+% |                          |   resort) write a default linear map.               |
 % | cfg_overrides (struct()) | Extra KIASORT config overrides (merged last, so     |
 % |                          |   they win over numChannels/samplingFrequency).     |
 % | dataType ('int16')       | Data type of the exported binary.                   |
@@ -89,13 +94,20 @@ function outputFolder = run(S, probe, options)
     num_channels = size(d,2);
     sampling_frequency = probe.samplerate(et(1).epoch_id);
 
-    % channel map: use the given file, else use/create channel_map.mat by the binary
+    % channel map: use the given file, else use/create channel_map.mat by the binary.
+    % Prefer the probe's real geometry (probe_geometry + site2channelmap); only if
+    % none is on file do we fall back to a default single-column linear map.
     channelMapFile = options.channelMapFile;
     if isempty(channelMapFile),
         channelMapFile = fullfile(probedir, 'channel_map.mat');
         if ~isfile(channelMapFile),
-            ndi.fun.probe.export.channelmap(channelMapFile, 'num_channels', num_channels, ...
-                'verbose', options.verbose);
+            tf = ndi.fun.probe.export.geometry2channelmap(S, probe, channelMapFile, ...
+                'num_channels', num_channels, 'verbose', options.verbose);
+            if ~tf,
+                % no probe_geometry on file: default linear placeholder (warns)
+                ndi.fun.probe.export.channelmap(channelMapFile, 'num_channels', num_channels, ...
+                    'verbose', options.verbose);
+            end;
         end;
     end;
 
