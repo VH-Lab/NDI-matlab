@@ -75,6 +75,69 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 %   stim = S.getprobes('type','stimulator'); stim = stim{1};
 %   ndi.fun.export.blech_clust(stim, p, 't00001', '/tmp/mydata.h5');
 %
+% STRUCTURE OF THE OUTPUT FILE
+% --------------------------------------------------------------------------
+% There is no formal published specification of this layout; it is defined
+% by the blech_clust code (units_make_arrays.py, blech_setup_hmm.py,
+% blech_poisson_hmm.py). This function writes exactly what that code reads:
+%
+%   /spike_trains/dig_in_<N>/spike_array   uint8 (n_trials x n_units x
+%                                          duration_ms); 1 = spike in that
+%                                          ms. Delivery is at column preStim.
+%                                          One group per tastant; N encodes
+%                                          identity. Group attributes record
+%                                          the stimid, tastant name, n_trials,
+%                                          pre_stim_ms and post_stim_ms.
+%   /sorted_units/unit<NNN>/times          uint64 spike times in 30 kHz
+%                                          acquisition samples (per unit).
+%   /unit_descriptor                       compound table with Int32 columns
+%                                          single_unit, regular_spiking,
+%                                          fast_spiking (one row per unit).
+%
+% USING THE OUTPUT FILE WITH BLECH_CLUST
+% --------------------------------------------------------------------------
+% 1) Put the .h5 file in its own directory on a machine with blech_clust
+%    installed (https://github.com/vh-lab/blech_clust).
+%
+% 2) Configure the HMM. Either run the interactive setup, which lists the
+%    dig_in_<N> groups as the available tastes and /sorted_units as the
+%    selectable units:
+%
+%        python blech_setup_hmm.py
+%
+%    or write the three config files it produces by hand in that directory:
+%        blech.dir         one line: the full path to the data directory
+%        blech.hmm_units   the chosen unit indices, one per line (0-based)
+%        blech.hmm_params  min_states, max_states, max_iterations,
+%                          convergence threshold, seeds, transition inertia,
+%                          emission inertia, taste_num (the <N> of dig_in_<N>),
+%                          pre_stim, bin_size, pre_stim_hmm, post_stim_hmm,
+%                          hmm_type ('generic' or 'feedforward'), one per line.
+%
+%    IMPORTANT: set blech's pre_stim equal to the preStim (ms) used here, and
+%    keep pre_stim_hmm <= preStim and post_stim_hmm <= postStim so the HMM
+%    window stays inside the exported window. bin_size is typically 10 (ms).
+%
+% 3) Fit the HMM (the argument is the number of CPUs):
+%
+%        python blech_poisson_hmm.py 4          % Poisson (per-unit) emissions
+%        python blech_multinomial_hmm.py 4      % or collapsed multinomial
+%
+% 4) Read the results, written back into the SAME .h5 under
+%    /spike_trains/dig_in_<N>/<hmm_type>_poisson_hmm_results/states_<K>/ :
+%        emission_probs     per-state, per-unit firing rates
+%        transition_probs   state transition matrix
+%        posterior_proba    (n_trials x time_bins x n_states) state
+%                           probabilities over time
+%        log_likelihood, aic, bic, time
+%    In MATLAB, e.g.:
+%        pp = h5read('/tmp/mydata.h5', ...
+%             '/spike_trains/dig_in_0/generic_poisson_hmm_results/states_3/posterior_proba');
+%
+% The HMM is fit to one taste at a time (taste_num); repeat step 2-3 per
+% dig_in_<N> to analyze every tastant. The ensemble-state HMM methodology is
+% described in Jones, Fontanini, Sadacca, Miller & Katz (2007) PNAS 104:18772.
+%
 % See also: ndi.fun.probe.export.binary, ndi.app.stimulus.decoder,
 %   ndi.example.fun.probe2elements
 
