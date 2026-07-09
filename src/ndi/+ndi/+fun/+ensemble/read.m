@@ -1,9 +1,9 @@
 function [activity, neuron_ids, neuron_names, element_id, info] = read(S, ensemble_doc)
-% ndi.ensemble.read - read the contents of an 'ensemble' ndi.document
+% ndi.fun.ensemble.read - read the contents of an 'ensemble' ndi.document
 %
-% [ACTIVITY, NEURON_IDS, NEURON_NAMES, ELEMENT_ID, INFO] = ndi.ensemble.READ(S, ENSEMBLE_DOC)
+% [ACTIVITY, NEURON_IDS, NEURON_NAMES, ELEMENT_ID, INFO] = ndi.fun.ensemble.READ(S, ENSEMBLE_DOC)
 %
-% Reads back the data stored by ndi.ensemble.create in an 'ensemble'
+% Reads back the data stored by ndi.fun.ensemble.create in an 'ensemble'
 % ndi.document ENSEMBLE_DOC that belongs to the ndi.session or ndi.dataset S.
 %
 % =========================================================================
@@ -29,9 +29,9 @@ function [activity, neuron_ids, neuron_names, element_id, info] = read(S, ensemb
 % EXAMPLE
 % =========================================================================
 %   docs = S.database_search(ndi.query('','isa','ensemble',''));
-%   [E, neuron_ids, neuron_names, element_id, info] = ndi.ensemble.read(S, docs{1});
+%   [E, neuron_ids, neuron_names, element_id, info] = ndi.fun.ensemble.read(S, docs{1});
 %
-% See also: ndi.ensemble.create, ndi.util.readSparse
+% See also: ndi.fun.ensemble.create, ndi.util.readSparse
 
     arguments
         S

@@ -1,7 +1,7 @@
 function ensemble_doc = create(S, element, neuron_ids, neuron_names, activity, options)
-% ndi.ensemble.create - build an 'ensemble' ndi.document from ensemble activity
+% ndi.fun.ensemble.create - build an 'ensemble' ndi.document from ensemble activity
 %
-% ENSEMBLE_DOC = ndi.ensemble.CREATE(S, ELEMENT, NEURON_IDS, NEURON_NAMES, ACTIVITY, ...)
+% ENSEMBLE_DOC = ndi.fun.ensemble.CREATE(S, ELEMENT, NEURON_IDS, NEURON_NAMES, ACTIVITY, ...)
 %
 % Creates an 'ensemble' ndi.document that stores the activity of a group of
 % neurons (an "ensemble") recorded from a common element (usually a probe),
@@ -61,12 +61,12 @@ function ensemble_doc = create(S, element, neuron_ids, neuron_names, activity, o
 % EXAMPLE
 % =========================================================================
 %   % E is a sparse N-by-Smax matrix; neuron_ids and neuron_names are 1xN
-%   doc = ndi.ensemble.create(S, probe, neuron_ids, neuron_names, E, ...
+%   doc = ndi.fun.ensemble.create(S, probe, neuron_ids, neuron_names, E, ...
 %       'epochid', epochid, 'value_type', 'spiketimes', ...
 %       'value_description', 'time of n-th spike of neuron i', ...
 %       'clocktype', 'dev_local_time', 'add_to_database', true);
 %
-% See also: ndi.ensemble.read, ndi.util.writeSparse, ndi.util.readSparse
+% See also: ndi.fun.ensemble.read, ndi.util.writeSparse, ndi.util.readSparse
 
     arguments
         S
@@ -146,7 +146,7 @@ function ensemble_doc = create(S, element, neuron_ids, neuron_names, activity, o
         'ensemble.num_dimensions', num_dimensions, ...
         'ensemble.clocktype', options.clocktype, ...
         'epochid.epochid', options.epochid, ...
-        'app.name', 'ndi.ensemble', ...
+        'app.name', 'ndi.fun.ensemble', ...
         'app.version', app_version);
 
     % dependency on the owning element (the probe)
