@@ -1,0 +1,33 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ensemble\/ensemble.json",
+		"validation":						"$NDISCHEMAPATH\/ensemble\/ensemble_schema.json",
+		"class_name":						"ensemble",
+		"property_list_name":				"ensemble",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/app.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "element_id",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [
+			"ensemble_activity.ndisparse",
+			"neuron_names.txt"
+		]
+	},
+	"ensemble": {
+		"ensemble_name":		"",
+		"value_type":			"",
+		"value_description":	"",
+		"num_neurons":			0,
+		"num_dimensions":		0,
+		"clocktype":			""
+	}
+}

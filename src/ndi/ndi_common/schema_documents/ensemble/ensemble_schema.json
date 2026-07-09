@@ -1,0 +1,62 @@
+{
+	"classname": "ensemble",
+	"superclasses":  [ "base", "epochid", "app" ],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1},
+		{ "name": "neuron_id", "mustbenotempty": 0}
+	],
+	"file": [
+		{"name": "ensemble_activity.ndisparse", "mustbenotempty": 1},
+		{"name": "neuron_names.txt", "mustbenotempty": 1}
+	],
+	"ensemble": [
+		{
+			"name": "ensemble_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable name or label for this ensemble."
+		},
+		{
+			"name": "value_type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A short code describing what the stored values represent, e.g. 'spiketimes', 'firingrate', or 'binary'."
+		},
+		{
+			"name": "value_description",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Free text describing the meaning and units of each stored value (e.g. 'time of the n-th spike of neuron i, in the stimulator clock')."
+		},
+		{
+			"name": "num_neurons",
+			"type": "double",
+			"default_value": [0],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The number of neurons (elements) that make up the ensemble. Equal to the number of neuron_id_# dependencies and to the number of rows of the stored activity array."
+		},
+		{
+			"name": "num_dimensions",
+			"type": "double",
+			"default_value": [0],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The number of dimensions of the stored sparse activity array (2 for a neuron-by-sample matrix)."
+		},
+		{
+			"name": "clocktype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the ndi.time.clocktype in which the stored values are expressed, if the values are times (e.g. 'dev_local_time'). Empty if not applicable."
+		}
+	]
+}
