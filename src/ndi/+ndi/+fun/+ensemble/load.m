@@ -94,14 +94,22 @@ function [activity, neuron_ids, neuron_names, info, spike_rows] = load(S, elemen
             element_obj.elementstring(), epochid);
     end
     if isempty(options.clocktype)
-        clock_index = 1;
-        ref_clock = et(idx).epoch_clock{1};
+        % Prefer dev_local_time -- the clock that
+        % ndi.element.timeseries.readtimeseries resolves epochs through -- when
+        % the epoch has it, so the stored ensemble epoch can be read back. Fall
+        % back to the epoch's first clock otherwise (e.g. a global-clock-only
+        % epoch).
+        clock_index = local_clock_index(et(idx), ndi.time.clocktype('dev_local_time'), false);
+        if isempty(clock_index)
+            clock_index = 1;
+        end
+        ref_clock = et(idx).epoch_clock{clock_index};
         if ~isa(ref_clock, 'ndi.time.clocktype')
             ref_clock = ndi.time.clocktype(ref_clock);
         end
     else
         ref_clock = ndi.time.clocktype(options.clocktype);
-        clock_index = local_clock_index(et(idx), ref_clock);
+        clock_index = local_clock_index(et(idx), ref_clock, true);
     end
     ref_t0_t1 = et(idx).t0_t1{clock_index};
     clockname = ref_clock.type;
@@ -192,8 +200,9 @@ end % load()
 
 % -------------------------------------------------------------------------
 
-function ci = local_clock_index(et_entry, clk)
-% index, within an epochtable entry's epoch_clock list, of the clock CLK
+function ci = local_clock_index(et_entry, clk, errorIfMissing)
+% index, within an epochtable entry's epoch_clock list, of the clock CLK.
+% Returns [] if not found (unless errorIfMissing is true, then it errors).
     ci = [];
     for i = 1:numel(et_entry.epoch_clock)
         c = et_entry.epoch_clock{i};
@@ -203,7 +212,7 @@ function ci = local_clock_index(et_entry, clk)
             return;
         end
     end
-    if isempty(ci)
+    if isempty(ci) && errorIfMissing
         error('ndi:ensemble:load:noClock', ...
             'The epoch does not have a clock of type ''%s''.', clk.type);
     end

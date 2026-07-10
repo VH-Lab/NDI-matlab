@@ -133,9 +133,12 @@ classdef ensemble < ndi.element.timeseries
             if options.add_to_database
                 obj.session.database_add(epochdoc);
                 obj.session.database_add(mapdoc);
-                % a new epoch was added; clear the cached epochtable so that it is
-                % re-read from the database on the next epochtable/readtimeseries.
+                % A new epoch/element was added. Clear the cached epochtable and
+                % the cached syncgraph so both are rebuilt from the database on
+                % the next epochtable/readtimeseries; otherwise a read in the same
+                % session cannot find this newly added element's epoch.
                 obj = obj.resetepochtable();
+                obj.session.syncgraph.remove_cached_graphinfo();
             end
         end % addEnsembleEpoch()
 
