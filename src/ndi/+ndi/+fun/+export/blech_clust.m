@@ -57,12 +57,25 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % |                       |   ndi.fun.ensemble.read) for the activity,     |
 % |                       |   instead of loading it from PROBE. It must be |
 % |                       |   the ensemble built on PROBE.                 |
-% | MinQuality ([])       | If set, a neuron counts as a single unit (in   |
-% |                       |   /unit_descriptor) when its ensemble          |
-% |                       |   neuronQuality quality_number >= this value.  |
-% | singleUnitLabels      | Quality labels that mark a neuron as a single  |
-% |   ({'single','good',  |   unit in /unit_descriptor (matched against    |
-% |    'excellent'})      |   neuronQuality quality_label, case-insensitive)|
+% | Neuron filtering      | Select which neurons enter the export, using   |
+% |                       |   the same vocabulary as ndi.fun.ensemble.read |
+% |                       |   / filter. Quality is a hard filter (a neuron |
+% |                       |   failing it is always dropped):               |
+% | MinQuality ([])       |   keep only neurons whose neuronQuality         |
+% |                       |     quality_number >= this value.              |
+% | QualityLabel ('')     |   keep only neurons whose quality_label is in  |
+% |                       |     this char/cellstr list.                    |
+% | KeepUnrated (false)   |   keep neurons that have no neuron_extracellular|
+% |                       |     document when a quality filter is active.  |
+% | IncludeNames ({})     |   keep only neurons with these names.           |
+% | ExcludeNames ({})     |   drop neurons with these names.                |
+% | IncludeIds ({})       |   keep only neurons with these element ids.     |
+% | ExcludeIds ({})       |   drop neurons with these element ids.          |
+% | IncludeIndex ([])     |   keep only neurons at these 1-based positions. |
+% | ExcludeIndex ([])     |   drop neurons at these 1-based positions.      |
+% | singleUnitLabels      | Quality labels that mark a kept neuron as a    |
+% |   ({'single','good',  |   single unit in /unit_descriptor (matched     |
+% |    'excellent'})      |   against quality_label, case-insensitive).    |
 % | sampleRate (30000)    | Acquisition sample rate (Hz). blech_clust      |
 % |                       |   hard-codes 30 kHz; any value other than      |
 % |                       |   30000 exactly raises an error.               |
@@ -89,6 +102,10 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 %   p = S.getprobes('type','n-trode'); p = p{1};      % ensemble probe
 %   stim = S.getprobes('type','stimulator'); stim = stim{1};
 %   ndi.fun.export.blech_clust(stim, p, 't00001', '/tmp/mydata.h5');
+%
+%   % export only well-isolated neurons (quality_number >= 3):
+%   ndi.fun.export.blech_clust(stim, p, 't00001', '/tmp/good.h5', ...
+%       'MinQuality', 3);
 %
 % STRUCTURE OF THE OUTPUT FILE
 % --------------------------------------------------------------------------
@@ -167,6 +184,14 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
         options.postStim (1,1) double = 5000
         options.ensemble = []
         options.MinQuality double = []
+        options.QualityLabel = ''
+        options.KeepUnrated (1,1) logical = false
+        options.IncludeNames cell = {}
+        options.ExcludeNames cell = {}
+        options.IncludeIds cell = {}
+        options.ExcludeIds cell = {}
+        options.IncludeIndex double = []
+        options.ExcludeIndex double = []
         options.singleUnitLabels (1,:) cell = {'single','good','excellent'}
         options.stimulusOrder (1,:) double = []
         options.includeStimids (1,:) double = []
@@ -386,55 +411,84 @@ end
 % =========================================================================
 function [unit_spiketimes, unit_info, clocktype] = local_get_ensemble(S, probe, epochID, options)
     % Obtain the ensemble activity (a neuron-by-spike sparse matrix of spike
-    % times) for this epoch. Either read the caller-supplied ensemble element
-    % (ndi.element.ensemble object / document / id), or build the ensemble on
-    % the fly for the probe with ndi.fun.ensemble.load.
-    spike_rows = {};
+    % times) for this epoch as an ensemble structure E. Either read the
+    % caller-supplied ensemble element (ndi.element.ensemble object / document
+    % / id), or build the ensemble on the fly for the probe with
+    % ndi.fun.ensemble.load.
     if ~isempty(options.ensemble)
         E = ndi.fun.ensemble.read(S, options.ensemble, epochID);
-        activity     = E.activity;
-        neuron_ids   = E.neuron_ids;
-        neuron_names = E.neuron_names;
-        clocktype = local_field(E.info, 'clocktype', '');
     else
-        [activity, neuron_ids, neuron_names, info, spike_rows] = ...
-            ndi.fun.ensemble.load(S, probe, epochID);
-        clocktype = local_field(info, 'clocktype', '');
+        [activity, neuron_ids, neuron_names, info] = ndi.fun.ensemble.load(S, probe, epochID);
+        E = struct('activity', activity, 'neuron_ids', {neuron_ids}, ...
+            'neuron_names', {neuron_names}, 'epoch', epochID, 'info', info);
     end
+    clocktype = local_field(E.info, 'clocktype', '');
 
-    % Per-neuron spike-time vectors (ensemble clock, seconds). load() hands
-    % these back directly as spike_rows; the read() path unpacks the sparse
-    % activity matrix (dropping the zero right-padding).
-    if ~isempty(spike_rows)
-        unit_spiketimes = cellfun(@(r) r(:).', spike_rows, 'UniformOutput', false);
-    else
-        n_units = size(activity,1);
-        unit_spiketimes = cell(1,n_units);
-        for i = 1:n_units
-            row = full(activity(i,:));
-            unit_spiketimes{i} = row(row~=0);
-        end
+    % Filter the neurons that go into the export, by quality and/or by
+    % name/id/index, using the same vocabulary as ndi.fun.ensemble.read.
+    E = local_apply_filter(S, E, options);
+
+    % Per-neuron spike-time vectors (ensemble clock, seconds): unpack the
+    % (filtered) sparse activity matrix, dropping the zero right-padding.
+    n_units = size(E.activity,1);
+    unit_spiketimes = cell(1,n_units);
+    for i = 1:n_units
+        row = full(E.activity(i,:));
+        unit_spiketimes{i} = row(row~=0);
     end
 
     % Map ensemble neuron quality to blech's /unit_descriptor flags. The
     % regular_spiking / fast_spiking flags are not inferred (they only affect
-    % blech raster colors); single_unit is derived from the neuron quality.
-    [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, neuron_ids);
+    % blech raster colors); single_unit is set for neurons whose quality label
+    % is in singleUnitLabels.
+    [~, qlabel] = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
     su_labels = lower(options.singleUnitLabels);
     unit_info = vlt.data.emptystruct('name','single_unit','regular_spiking','fast_spiking');
     for i = 1:numel(unit_spiketimes)
         nm = '';
-        if i <= numel(neuron_names), nm = neuron_names{i}; end
+        if i <= numel(E.neuron_names), nm = E.neuron_names{i}; end
         su = 0;
         if i <= numel(qlabel) && ~isempty(qlabel{i}) && ismember(lower(qlabel{i}), su_labels)
-            su = 1;
-        end
-        if ~isempty(options.MinQuality) && i <= numel(qnum) && qnum(i) >= options.MinQuality
             su = 1;
         end
         unit_info(end+1) = struct('name', nm, 'single_unit', su, ...
             'regular_spiking', 0, 'fast_spiking', 0); %#ok<AGROW>
     end
+end
+
+function E = local_apply_filter(S, E, options)
+    % Select a subset of the ensemble's neurons, mirroring the quality +
+    % name/id/index filtering of ndi.fun.ensemble.read: quality-failing
+    % neurons become extra exclusions, then ndi.fun.ensemble.filter is applied.
+    useQuality = ~isempty(options.MinQuality) || ~isempty(options.QualityLabel);
+    anyFilter = useQuality ...
+        || ~isempty(options.IncludeNames) || ~isempty(options.ExcludeNames) ...
+        || ~isempty(options.IncludeIds)   || ~isempty(options.ExcludeIds) ...
+        || ~isempty(options.IncludeIndex) || ~isempty(options.ExcludeIndex);
+    if ~anyFilter
+        return;
+    end
+
+    exclude_ids = options.ExcludeIds(:).';
+    if useQuality
+        [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
+        qmask = true(1, numel(E.neuron_ids));
+        if ~isempty(options.MinQuality)
+            qmask = qmask & (qnum >= options.MinQuality);
+        end
+        if ~isempty(options.QualityLabel)
+            qmask = qmask & ismember(qlabel, cellstr(options.QualityLabel));
+        end
+        if options.KeepUnrated
+            qmask(isnan(qnum)) = true;
+        end
+        exclude_ids = [exclude_ids, E.neuron_ids(~qmask)];
+    end
+
+    E = ndi.fun.ensemble.filter(E, ...
+        'IncludeNames', options.IncludeNames, 'ExcludeNames', options.ExcludeNames, ...
+        'IncludeIndex', options.IncludeIndex, 'ExcludeIndex', options.ExcludeIndex, ...
+        'IncludeIds', options.IncludeIds, 'ExcludeIds', exclude_ids);
 end
 
 function v = local_field(s, f, default)
