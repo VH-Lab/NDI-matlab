@@ -121,10 +121,10 @@ classdef ensemble < ndi.element.timeseries
             [times, order] = sort(times);
             colindex = colindex(order);
 
-            % store the epoch data via the standard element-timeseries path
-            % (nargout>=2 => epochdoc is returned but NOT added to the database)
-            [obj, epochdoc] = addepoch@ndi.element.timeseries(obj, epochid, ...
-                epochclock, t0_t1, times(:), colindex(:));
+            % store the epoch data via the inherited element-timeseries addepoch
+            % (capturing epochdoc => it is returned but NOT added to the database)
+            [obj, epochdoc] = obj.addepoch(epochid, epochclock, t0_t1, ...
+                times(:), colindex(:));
 
             % build the per-epoch neuron map document
             mapdoc = obj.buildMapDoc(epochid, epochclock, epochdoc, ...
