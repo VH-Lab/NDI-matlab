@@ -30,24 +30,31 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % --------------------------------------------------------------------------
 % | blech_clust field   | NDI source                                       |
 % |---------------------|--------------------------------------------------|
-% | ensemble activity   | spike elements ('spikes') derived from PROBE,    |
-% |   (spike_array)     |   one per sorted unit, read per epoch.           |
+% | ensemble activity   | the neuron ensemble of PROBE for EPOCHID, read   |
+% |   (spike_array)     |   with ndi.fun.ensemble.load (a neuron-by-spike  |
+% |                     |   sparse matrix of spike times in a known clock).|
 % | stimulus identity   | the tastant / stimid parameter of each stimulus  |
 % |   (dig_in_<N>)      |   in the STIMULATOR's stimulus_presentation doc  |
 % |                     |   (e.g. ndi.daq.metadatareader.VHAudreyBPod).    |
 % | stimulus times      | presentation_time.onset of each trial, converted |
-% |   (trial alignment) |   into PROBE's clock via the session syncgraph.  |
+% |   (trial alignment) |   into the ensemble's clock via the syncgraph.   |
 % --------------------------------------------------------------------------
 %
-% The stimulus identity and delivery times are read from the NDI
-% 'stimulus_presentation' document that depends on STIMULATOR and matches
-% EPOCHID (built by ndi.app.stimulus.decoder). If no such document exists,
-% an error is thrown asking the caller to run the stimulus decoder first.
+% The ensemble activity is obtained with ndi.fun.ensemble.load(S, PROBE,
+% EPOCHID) (the spiking neurons built on PROBE, recorded during EPOCHID), or,
+% if the 'ensemble' option is given, read from a stored 'ensemble' document
+% with ndi.fun.ensemble.read. The stimulus identity and delivery times are
+% read from the NDI 'stimulus_presentation' document that depends on
+% STIMULATOR and matches EPOCHID (built by ndi.app.stimulus.decoder); if no
+% such document exists, an error asks the caller to run the decoder first.
 %
 % This function's parameters can be modified by passing name/value pairs:
 % --------------------------------------------------------------------------
 % | Parameter (default)   | Description                                    |
 % |-----------------------|------------------------------------------------|
+% | ensemble ([])         | An 'ensemble' ndi.document (or its id) to use  |
+% |                       |   for the activity, instead of loading it from |
+% |                       |   PROBE. Its element/neurons must match PROBE. |
 % | sampleRate (30000)    | Acquisition sample rate (Hz). blech_clust      |
 % |                       |   hard-codes 30 kHz; any value other than      |
 % |                       |   30000 exactly raises an error.               |
@@ -138,8 +145,8 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % dig_in_<N> to analyze every tastant. The ensemble-state HMM methodology is
 % described in Jones, Fontanini, Sadacca, Miller & Katz (2007) PNAS 104:18772.
 %
-% See also: ndi.fun.probe.export.binary, ndi.app.stimulus.decoder,
-%   ndi.example.fun.probe2elements
+% See also: ndi.fun.ensemble.load, ndi.fun.ensemble.read,
+%   ndi.fun.probe.export.binary, ndi.app.stimulus.decoder
 
     arguments
         stimulator
@@ -149,6 +156,7 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
         options.sampleRate (1,1) double = 30000
         options.preStim (1,1) double = 2000
         options.postStim (1,1) double = 5000
+        options.ensemble = []
         options.stimulusOrder (1,:) double = []
         options.includeStimids (1,:) double = []
         options.tastantField (1,:) char = 'tastant'
@@ -177,11 +185,27 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
     S = probe.session;
 
     % ---------------------------------------------------------------------
-    % 1) Pull the tastant stimulus identities and delivery times
+    % 1) Pull the ensemble spike times via the NDI ensemble tool. The
+    %    ensemble activity is a neuron-by-spike sparse matrix of spike times
+    %    in a known clock (info.clocktype); we bin it into a ms raster below.
+    % ---------------------------------------------------------------------
+    if verbose, disp('Reading ensemble spike times (ndi.fun.ensemble)...'); end
+    [unit_spiketimes, unit_info, ensemble_clocktype] = ...
+        local_get_ensemble(S, probe, epochID, options);
+    n_units = numel(unit_spiketimes);
+    if n_units == 0
+        error('ndi:fun:export:blech_clust:nounits', ...
+            'The ensemble for epoch %s contains no neurons.', epochID);
+    end
+
+    % ---------------------------------------------------------------------
+    % 2) Pull the tastant stimulus identities and delivery times, converting
+    %    the delivery times into the SAME clock as the ensemble activity.
     % ---------------------------------------------------------------------
     if verbose, disp('Reading stimulus presentation (identities and times)...'); end
     [onset_probe, offset_probe, trial_stimid, stimid_tastant] = ...
-        local_get_stimulus_presentation(S, stimulator, probe, epochID, options); %#ok<*NASGU>
+        local_get_stimulus_presentation(S, stimulator, probe, epochID, ...
+            ensemble_clocktype, options); %#ok<*NASGU>
 
     % Decide the tastant -> dig_in_<N> ordering
     if ~isempty(options.stimulusOrder)
@@ -195,17 +219,6 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
     if isempty(dig_in_stimids)
         error('ndi:fun:export:blech_clust:nostimuli', ...
             'No tastant stimuli were found to export for epoch %s.', epochID);
-    end
-
-    % ---------------------------------------------------------------------
-    % 2) Pull the ensemble spike times (one spike element per sorted unit)
-    % ---------------------------------------------------------------------
-    if verbose, disp('Reading ensemble spike times from probe...'); end
-    [unit_spiketimes, unit_info] = local_get_unit_spiketimes(probe, epochID);
-    n_units = numel(unit_spiketimes);
-    if n_units == 0
-        error('ndi:fun:export:blech_clust:nounits', ...
-            'No spike (sorted unit) elements were found on the probe for epoch %s.', epochID);
     end
 
     % ---------------------------------------------------------------------
@@ -290,7 +303,7 @@ end % blech_clust
 % Local helper: stimulus identities + delivery times (in the probe clock)
 % =========================================================================
 function [onset_probe, offset_probe, trial_stimid, stimid_tastant] = ...
-        local_get_stimulus_presentation(S, stimulator, probe, epochID, options)
+        local_get_stimulus_presentation(S, stimulator, probe, epochID, target_clocktype, options)
     % Find the stimulus_presentation document for this stimulator + epoch.
     q = ndi.query('','isa','stimulus_presentation') & ...
         ndi.query('','depends_on','stimulus_element_id', stimulator.id()) & ...
@@ -335,17 +348,22 @@ function [onset_probe, offset_probe, trial_stimid, stimid_tastant] = ...
     onset_stim  = vlt.data.colvec([presentation_time.onset]);
     offset_stim = vlt.data.colvec([presentation_time.offset]);
 
-    % Convert stimulus onset/offset times into the probe's (recording) clock
+    % Convert stimulus onset/offset times into the same clock the ensemble
+    % activity is expressed in (target_clocktype), on the probe, so the
+    % delivery times and the spike times are directly comparable.
+    if isempty(target_clocktype)
+        target_clocktype = 'dev_local_time';
+    end
     stim_timeref = ndi.time.timereference(stimulator, ...
         ndi.time.clocktype(presentation_time(1).clocktype), ...
         stim_doc.document_properties.epochid.epochid, 0);
 
     [t_probe, ~, msg] = S.syncgraph.time_convert(stim_timeref, ...
-        [onset_stim offset_stim], probe, ndi.time.clocktype('dev_local_time'));
+        [onset_stim offset_stim], probe, ndi.time.clocktype(target_clocktype));
     if isempty(t_probe)
         error('ndi:fun:export:blech_clust:sync', ...
-            ['Could not convert stimulus times into the probe clock via the ' ...
-             'session syncgraph: %s'], msg);
+            ['Could not convert stimulus times into the ensemble clock (%s) ' ...
+             'via the session syncgraph: %s'], target_clocktype, msg);
     end
     t_probe = reshape(t_probe, numel(onset_stim), 2);
     onset_probe  = t_probe(:,1);
@@ -353,43 +371,70 @@ function [onset_probe, offset_probe, trial_stimid, stimid_tastant] = ...
 end
 
 % =========================================================================
-% Local helper: per-unit spike times (probe clock, seconds) for the epoch
+% Local helper: ensemble spike times via the NDI ensemble tool
 % =========================================================================
-function [unit_spiketimes, unit_info] = local_get_unit_spiketimes(probe, epochID)
-    [ed, e] = ndi.example.fun.probe2elements(probe, 'type', 'spikes');
-    unit_spiketimes = {};
-    unit_info = vlt.data.emptystruct('name','single_unit','regular_spiking','fast_spiking');
-    for i = 1:numel(e)
-        % Only include this unit if it has data for the requested epoch
-        et = e{i}.epochtable();
-        has_epoch = false;
-        for j = 1:numel(et)
-            if strcmp(et(j).epoch_id, epochID)
-                has_epoch = true;
-                break;
+function [unit_spiketimes, unit_info, clocktype] = local_get_ensemble(S, probe, epochID, options)
+    % Obtain the ensemble activity (a neuron-by-spike sparse matrix of spike
+    % times) for this epoch. Either read a caller-supplied ensemble document,
+    % or build one on the fly for the probe with ndi.fun.ensemble.load.
+    if ~isempty(options.ensemble)
+        ens = options.ensemble;
+        if ischar(ens) || isstring(ens)
+            % treat as an ensemble document id
+            ens = S.database_search(ndi.query('base.id','exact_string',char(ens),''));
+            if isempty(ens)
+                error('ndi:fun:export:blech_clust:noensemble', ...
+                    'No ensemble document found with id %s.', char(options.ensemble));
             end
+            ens = ens{1};
         end
-        if ~has_epoch, continue; end
+        [activity, neuron_ids, neuron_names, ~, info] = ndi.fun.ensemble.read(S, ens);
+    else
+        [activity, neuron_ids, neuron_names, info] = ...
+            ndi.fun.ensemble.load(S, probe, epochID, 'value_type', 'spiketimes');
+    end
 
-        [~, st] = e{i}.readtimeseries(epochID, -inf, inf);
-        unit_spiketimes{end+1} = st(:); %#ok<AGROW>
+    clocktype = '';
+    if isfield(info,'clocktype'), clocktype = info.clocktype; end
 
-        % Derive unit-quality flags from the associated neuron_extracellular
-        % document if present (single unit vs multi-unit; RSU vs FS).
-        info = struct('name', ed{i}.document_properties.element.name, ...
-            'single_unit', 0, 'regular_spiking', 0, 'fast_spiking', 0);
-        info = local_fill_unit_quality(e{i}, info);
-        unit_info(end+1) = info; %#ok<AGROW>
+    % activity is an N-by-Smax sparse matrix (rows = neurons). Convert each
+    % row into a vector of spike times (dropping the zero right-padding).
+    if issparse(activity) || isnumeric(activity)
+        n_units = size(activity,1);
+        unit_spiketimes = cell(1,n_units);
+        for i = 1:n_units
+            row = full(activity(i,:));
+            unit_spiketimes{i} = row(row~=0).';
+        end
+    else
+        % N-dimensional struct form (subs/vals/size) - not expected for the
+        % 2-D spiketimes ensemble, but guard against it.
+        error('ndi:fun:export:blech_clust:ensembleshape', ...
+            'Expected a 2-D spiketimes ensemble; got a %d-D array.', ...
+            info.num_dimensions);
+    end
+
+    % Build per-unit descriptor info (name + quality flags).
+    unit_info = vlt.data.emptystruct('name','single_unit','regular_spiking','fast_spiking');
+    for i = 1:numel(unit_spiketimes)
+        nm = '';
+        if i <= numel(neuron_names), nm = neuron_names{i}; end
+        info_i = struct('name', nm, 'single_unit', 0, ...
+            'regular_spiking', 0, 'fast_spiking', 0);
+        if i <= numel(neuron_ids)
+            info_i = local_fill_unit_quality(S, neuron_ids{i}, info_i);
+        end
+        unit_info(end+1) = info_i; %#ok<AGROW>
     end
 end
 
-function info = local_fill_unit_quality(e, info)
-    % Look for a neuron_extracellular doc that depends on this element and,
-    % if found, set single_unit / regular_spiking / fast_spiking flags.
+function info = local_fill_unit_quality(S, neuron_id, info)
+    % Look for a neuron_extracellular doc that depends on this neuron element
+    % and, if found, set single_unit / regular_spiking / fast_spiking flags.
     try
-        q = ndi.query('','depends_on','element_id', e.id()) & ...
+        q = ndi.query('','depends_on','element_id', neuron_id) & ...
             ndi.query('','isa','neuron_extracellular');
-        nd = e.session.database_search(q);
+        nd = S.database_search(q);
         if ~isempty(nd)
             ne = nd{1}.document_properties.neuron_extracellular;
             if isfield(ne,'quality_number') && ne.quality_number <= 2
