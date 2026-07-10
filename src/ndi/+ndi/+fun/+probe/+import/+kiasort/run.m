@@ -27,8 +27,8 @@ function outputFolder = run(S, probe, options)
 % KIASORT config matches the exported data. If no channel-map file is supplied and
 % none exists next to the binary, this function first tries to build one from the
 % probe's real geometry (probe_geometry + site2channelmap) via
-% NDI.FUN.PROBE.EXPORT.GEOMETRY2CHANNELMAP; if the probe has no geometry on file it
-% falls back to a default single-column linear map (NDI.FUN.PROBE.EXPORT.CHANNELMAP,
+% NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP; if the probe has no geometry on file it
+% falls back to a default single-column linear map (NDI.FUN.PROBE.GEOMETRY.WRITEKILOSORTMAP,
 % which warns). Pass 'channelMapFile' to supply your own map explicitly.
 %
 % Name/value pairs:
@@ -50,7 +50,7 @@ function outputFolder = run(S, probe, options)
 % ---------------------------------------------------------------------------------
 %
 % See also: NDI.FUN.PROBE.IMPORT.KIASORT.PROBE, NDI.FUN.PROBE.EXPORT.ALL_BINARY,
-%   NDI.FUN.PROBE.EXPORT.CHANNELMAP
+%   NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP
 
     arguments
         S
@@ -101,11 +101,11 @@ function outputFolder = run(S, probe, options)
     if isempty(channelMapFile),
         channelMapFile = fullfile(probedir, 'channel_map.mat');
         if ~isfile(channelMapFile),
-            tf = ndi.fun.probe.export.geometry2channelmap(S, probe, channelMapFile, ...
+            tf = ndi.fun.probe.geometry.toKilosortMap(S, probe, channelMapFile, ...
                 'num_channels', num_channels, 'verbose', options.verbose);
             if ~tf,
                 % no probe_geometry on file: default linear placeholder (warns)
-                ndi.fun.probe.export.channelmap(channelMapFile, 'num_channels', num_channels, ...
+                ndi.fun.probe.geometry.writeKilosortMap(channelMapFile, 'num_channels', num_channels, ...
                     'verbose', options.verbose);
             end;
         end;

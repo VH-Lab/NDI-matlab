@@ -1,14 +1,14 @@
-function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
-% NDI.FUN.PROBE.EXPORT.GEOMETRY2CHANNELMAP - build a KIASORT/Kilosort channel map from an NDI probe_geometry
+function [tf, outputfile] = toKilosortMap(S, probe, outputfile, options)
+% NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP - build a Kilosort/KIASORT channel map from a probe's stored geometry
 %
-% [TF, OUTPUTFILE] = NDI.FUN.PROBE.EXPORT.GEOMETRY2CHANNELMAP(S, PROBE, OUTPUTFILE, ...)
+% [TF, OUTPUTFILE] = NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP(S, PROBE, OUTPUTFILE, ...)
 %
 % Reads the 'probe_geometry' (and 'site2channelmap') documents that describe the
 % electrode geometry of PROBE in the ndi.session S, and writes a Kilosort-style
-% channel-map .mat file OUTPUTFILE (via NDI.FUN.PROBE.EXPORT.CHANNELMAP) whose
-% xcoords/ycoords/kcoords/connected are aligned to the channel order of the binary
-% exported by NDI.FUN.PROBE.EXPORT.BINARY. KIASORT's load_channel_map accepts this
-% file directly, so a sort then uses the probe's real spatial layout.
+% channel-map .mat file OUTPUTFILE (via NDI.FUN.PROBE.GEOMETRY.WRITEKILOSORTMAP)
+% whose xcoords/ycoords/kcoords/connected are aligned to the channel order of the
+% binary exported by NDI.FUN.PROBE.EXPORT.BINARY. KIASORT's load_channel_map accepts
+% this file directly, so a sort then uses the probe's real spatial layout.
 %
 % Returns TF = true and writes OUTPUTFILE if a probe_geometry document was found;
 % TF = false and writes nothing if the probe has no geometry on file (so callers,
@@ -37,8 +37,8 @@ function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
-% See also: NDI.FUN.PROBE.EXPORT.CHANNELMAP, NDI.FUN.PROBE.IMPORT.KIASORT.RUN,
-%   NDI.FUN.PROBE.PLOTPROBEGEOMETRY
+% See also: NDI.FUN.PROBE.GEOMETRY.FROMKILOSORTMAP, NDI.FUN.PROBE.GEOMETRY.WRITEKILOSORTMAP,
+%   NDI.FUN.PROBE.GEOMETRY.GET, NDI.FUN.PROBE.IMPORT.KIASORT.RUN, NDI.FUN.PROBE.PLOTPROBEGEOMETRY
 
     arguments
         S
@@ -51,24 +51,15 @@ function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
 
     tf = false;
 
-    % Step 1: find the probe_geometry document for this probe
-    q_geom = ndi.query('','isa','probe_geometry','') & ...
-        ndi.query('','depends_on','probe_id',probe.id());
-    geomdocs = S.database_search(q_geom);
-
-    if isempty(geomdocs),
+    % Step 1: find the probe's geometry documents
+    G = ndi.fun.probe.geometry.get(S, probe, 'verbose', options.verbose);
+    if ~G.found,
         if options.verbose,
             disp(['No probe_geometry document found for probe ' probe.elementstring() '.']);
         end;
         return;
     end;
-    if numel(geomdocs)>1 && options.verbose,
-        warning('ndi:fun:probe:export:geometry2channelmap:multipleGeometry', ...
-            ['Found %d probe_geometry documents for probe %s; using the first.'], ...
-            numel(geomdocs), probe.elementstring());
-    end;
-    geomdoc = geomdocs{1};
-    pg = geomdoc.document_properties.probe_geometry;
+    pg = G.pg;
 
     % Step 2: number of channels in the exported binary
     num_channels = options.num_channels;
@@ -106,17 +97,12 @@ function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
     end;
 
     % Step 4: site -> channel map (map(i) is the channel index for site i)
-    q_s2c = ndi.query('','isa','site2channelmap','') & ...
-        ndi.query('','depends_on','probe_geometry_id',geomdoc.id());
-    s2cdocs = S.database_search(q_s2c);
-
-    if ~isempty(s2cdocs),
-        map = double(s2cdocs{1}.document_properties.site2channelmap.map(:));
-    else,
+    map = G.map;
+    if isempty(map),
         % no explicit map: assume site i -> channel i, but only if the counts agree
         if nSites~=num_channels,
             if options.verbose,
-                warning('ndi:fun:probe:export:geometry2channelmap:noMap', ...
+                warning('ndi:fun:probe:geometry:toKilosortMap:noMap', ...
                     ['No site2channelmap for probe %s and site count (%d) ~= num_channels (%d); ' ...
                     'cannot align geometry to channels. Falling back to no geometry.'], ...
                     probe.elementstring(), nSites, num_channels);
@@ -124,8 +110,8 @@ function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
             return;
         end;
         if options.verbose,
-            warning('ndi:fun:probe:export:geometry2channelmap:identityMap', ...
-                ['No site2channelmap for probe %s; assuming site i -> channel i.'], probe.elementstring());
+            warning('ndi:fun:probe:geometry:toKilosortMap:identityMap', ...
+                'No site2channelmap for probe %s; assuming site i -> channel i.', probe.elementstring());
         end;
         map = (1:nSites)';
     end;
@@ -160,7 +146,7 @@ function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
 
     if ~any(connected),
         if options.verbose,
-            warning('ndi:fun:probe:export:geometry2channelmap:noAlignment', ...
+            warning('ndi:fun:probe:geometry:toKilosortMap:noAlignment', ...
                 ['The site2channelmap for probe %s did not place any site on channels 1..%d; ' ...
                 'falling back to no geometry.'], probe.elementstring(), num_channels);
         end;
@@ -168,7 +154,7 @@ function [tf, outputfile] = geometry2channelmap(S, probe, outputfile, options)
     end;
 
     % Step 6: write the Kilosort-style map (real geometry -> no default-geometry warning)
-    ndi.fun.probe.export.channelmap(outputfile, 'num_channels', num_channels, ...
+    ndi.fun.probe.geometry.writeKilosortMap(outputfile, 'num_channels', num_channels, ...
         'chanMap', (1:num_channels)', 'connected', connected, ...
         'xcoords', xcoords, 'ycoords', ycoords, 'kcoords', kcoords, ...
         'verbose', options.verbose);

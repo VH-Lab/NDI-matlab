@@ -1,13 +1,17 @@
-function channelmap(outputfile, options)
-% NDI.FUN.PROBE.EXPORT.CHANNELMAP - write a Kilosort-style channel map for KIASORT
+function writeKilosortMap(outputfile, options)
+% NDI.FUN.PROBE.GEOMETRY.WRITEKILOSORTMAP - write a Kilosort/KIASORT channel map .mat from raw arrays
 %
-% NDI.FUN.PROBE.EXPORT.CHANNELMAP(OUTPUTFILE, ...)
+% NDI.FUN.PROBE.GEOMETRY.WRITEKILOSORTMAP(OUTPUTFILE, ...)
 %
 % Writes a channel-map .mat file OUTPUTFILE in the Kilosort convention. KIASORT's
 % load_channel_map accepts exactly this convention (chanMap / chanMap0ind,
 % connected, xcoords, ycoords, optional kcoords), so this file can be passed to
-% run_kiasort_nogui(..., channelMapFile, ...) or selected in the KIASORT GUI to
-% describe the geometry of an exported probe.
+% run_kiasort_nogui(..., channelMapFile, ...) or selected in the KIASORT GUI.
+%
+% This is the low-level writer used by NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP (which
+% supplies real coordinates from a probe's stored geometry). Call it directly when
+% you already have the coordinate arrays, or to write a placeholder map from just a
+% channel count.
 %
 % The number of channels is taken from OPTIONS.num_channels, or read from the
 % '.metadata' sidecar written by ndi.fun.probe.export.binary when
@@ -16,9 +20,10 @@ function channelmap(outputfile, options)
 %
 % By default a simple single-column linear geometry is written (xcoords all 0,
 % ycoords spaced by OPTIONS.spacing microns, all channels connected). This is a
-% reasonable placeholder that lets KIASORT run; for best sorting, pass the real
-% probe geometry via OPTIONS.xcoords / OPTIONS.ycoords (and OPTIONS.kcoords for
-% multi-shank probes). A warning is issued when the default linear geometry is used.
+% placeholder that lets KIASORT run; for real sorting, pass the true geometry via
+% OPTIONS.xcoords / OPTIONS.ycoords (and OPTIONS.kcoords for multi-shank probes), or
+% use NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP to build it from the probe's geometry
+% documents. A warning is issued when the default linear geometry is used.
 %
 % Name/value pairs:
 % ---------------------------------------------------------------------------------
@@ -40,14 +45,7 @@ function channelmap(outputfile, options)
 % | verbose (1)         | 0/1 Should we be verbose?                               |
 % ---------------------------------------------------------------------------------
 %
-% Example:
-%    % after ndi.fun.probe.export.all_binary(S,'binary_dir','kiasort',...)
-%    d = fullfile(S.path,'kiasort',elestr);
-%    ndi.fun.probe.export.channelmap(fullfile(d,'channel_map.mat'), ...
-%        'metadataFile', fullfile(d,'kiasort.bin.metadata'));
-%
-% See also: NDI.FUN.PROBE.EXPORT.ALL_BINARY, NDI.FUN.PROBE.EXPORT.BINARY,
-%   NDI.FUN.PROBE.IMPORT.KIASORT.PROBE
+% See also: NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP, NDI.FUN.PROBE.GEOMETRY.FROMKILOSORTMAP
 
     arguments
         outputfile (1,:) char
@@ -129,7 +127,7 @@ function channelmap(outputfile, options)
     end;
 
     if default_geometry && options.verbose,
-        warning('ndi:fun:probe:export:channelmap:defaultGeometry', ...
+        warning('ndi:fun:probe:geometry:writeKilosortMap:defaultGeometry', ...
             ['No probe geometry was provided; writing a default single-column linear ' ...
             'geometry (%d channels, %g um spacing). Pass ''xcoords''/''ycoords'' for the ' ...
             'real geometry for best KIASORT results.'], num_channels, options.spacing);
