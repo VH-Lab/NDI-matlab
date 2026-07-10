@@ -239,9 +239,9 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
     %    the delivery times into the SAME clock as the ensemble activity.
     % ---------------------------------------------------------------------
     if verbose, disp('Reading stimulus presentation (identities and times)...'); end
-    [onset_probe, offset_probe, trial_stimid, stimid_tastant] = ...
+    [onset_probe, ~, trial_stimid, stimid_tastant] = ...
         local_get_stimulus_presentation(S, stimulator, probe, epochID, ...
-            ensemble_clocktype, options); %#ok<*NASGU>
+            ensemble_clocktype, options);
 
     % Decide the tastant -> dig_in_<N> ordering
     if ~isempty(options.stimulusOrder)
