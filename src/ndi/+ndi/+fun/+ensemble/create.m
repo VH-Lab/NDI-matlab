@@ -39,6 +39,9 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
 %   value_description ('')       - free text describing the values.
 %   CheckExisting (true)         - if true, error when a matching ensemble
 %                                  document already exists.
+%   SkipIfEmpty (false)          - if true and no neurons are recorded in
+%                                  EPOCHID, return an empty ndi.document array
+%                                  without building or storing anything.
 %   add_to_database (false)      - if true, add the document to S's database.
 %   Verbose (false)              - print progress messages.
 %
@@ -48,7 +51,9 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
 %   ENSEMBLE_DOC - the created ndi.document (with the binary and text files
 %                  registered). If add_to_database is false, the files are in
 %                  temporary locations and are copied into the database when
-%                  the document is added with S.database_add.
+%                  the document is added with S.database_add. If SkipIfEmpty is
+%                  true and no neurons are recorded in EPOCHID, an empty
+%                  ndi.document array is returned.
 %   EXISTING     - a cell array of any pre-existing matching ensemble documents
 %                  that were found (empty if none). When CheckExisting is true
 %                  and this is non-empty, an error is raised instead of
@@ -73,11 +78,14 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
         options.value_type (1,:) char = 'spiketimes'
         options.value_description (1,:) char = ''
         options.CheckExisting (1,1) logical = true
+        options.SkipIfEmpty (1,1) logical = false
         options.add_to_database (1,1) logical = false
         options.Verbose (1,1) logical = false
     end
 
     vb = options.Verbose;
+    existing = {};
+    ensemble_doc = ndi.document.empty;
 
     element_id = local_id(element);
     local_v(vb, ['building ensemble for element ' element_id ', epoch ' epochid '...']);
@@ -90,13 +98,17 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
         'Verbose', options.Verbose);
 
     if isempty(neuron_ids)
+        if options.SkipIfEmpty
+            local_v(vb, ['no neurons recorded in epoch ' epochid '; skipping ' ...
+                '(SkipIfEmpty is true).']);
+            return; % ensemble_doc is an empty ndi.document array
+        end
         warning('ndi:ensemble:create:noNeurons', ...
             ['No neurons were found recorded in epoch ''%s'' of the element; ' ...
             'the ensemble will be empty.'], epochid);
     end
 
     % --- refuse to create a duplicate --------------------------------------
-    existing = {};
     if options.CheckExisting
         local_v(vb, ['checking for an existing ensemble with the same element, ' ...
             int2str(numel(neuron_ids)) ' neuron(s), and epoch ' epochid '...']);
