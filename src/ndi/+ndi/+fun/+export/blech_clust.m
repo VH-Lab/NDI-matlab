@@ -42,8 +42,8 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 %
 % The ensemble activity is obtained with ndi.fun.ensemble.load(S, PROBE,
 % EPOCHID) (the spiking neurons built on PROBE, recorded during EPOCHID), or,
-% if the 'ensemble' option is given, read from a stored 'ensemble' document
-% with ndi.fun.ensemble.read. The stimulus identity and delivery times are
+% if the 'ensemble' option is given, read from that ndi.element.ensemble for
+% EPOCHID with ndi.fun.ensemble.read. The stimulus identity and delivery times are
 % read from the NDI 'stimulus_presentation' document that depends on
 % STIMULATOR and matches EPOCHID (built by ndi.app.stimulus.decoder); if no
 % such document exists, an error asks the caller to run the decoder first.
@@ -52,9 +52,17 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % --------------------------------------------------------------------------
 % | Parameter (default)   | Description                                    |
 % |-----------------------|------------------------------------------------|
-% | ensemble ([])         | An 'ensemble' ndi.document (or its id) to use  |
-% |                       |   for the activity, instead of loading it from |
-% |                       |   PROBE. Its element/neurons must match PROBE. |
+% | ensemble ([])         | An ndi.element.ensemble (or its document / id) |
+% |                       |   whose EPOCHID is read (with                  |
+% |                       |   ndi.fun.ensemble.read) for the activity,     |
+% |                       |   instead of loading it from PROBE. It must be |
+% |                       |   the ensemble built on PROBE.                 |
+% | MinQuality ([])       | If set, a neuron counts as a single unit (in   |
+% |                       |   /unit_descriptor) when its ensemble          |
+% |                       |   neuronQuality quality_number >= this value.  |
+% | singleUnitLabels      | Quality labels that mark a neuron as a single  |
+% |   ({'single','good',  |   unit in /unit_descriptor (matched against    |
+% |    'excellent'})      |   neuronQuality quality_label, case-insensitive)|
 % | sampleRate (30000)    | Acquisition sample rate (Hz). blech_clust      |
 % |                       |   hard-codes 30 kHz; any value other than      |
 % |                       |   30000 exactly raises an error.               |
@@ -146,6 +154,7 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % described in Jones, Fontanini, Sadacca, Miller & Katz (2007) PNAS 104:18772.
 %
 % See also: ndi.fun.ensemble.load, ndi.fun.ensemble.read,
+%   ndi.fun.ensemble.neuronQuality, ndi.element.ensemble,
 %   ndi.fun.probe.export.binary, ndi.app.stimulus.decoder
 
     arguments
@@ -157,6 +166,8 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
         options.preStim (1,1) double = 2000
         options.postStim (1,1) double = 5000
         options.ensemble = []
+        options.MinQuality double = []
+        options.singleUnitLabels (1,:) cell = {'single','good','excellent'}
         options.stimulusOrder (1,:) double = []
         options.includeStimids (1,:) double = []
         options.tastantField (1,:) char = 'tastant'
@@ -375,84 +386,61 @@ end
 % =========================================================================
 function [unit_spiketimes, unit_info, clocktype] = local_get_ensemble(S, probe, epochID, options)
     % Obtain the ensemble activity (a neuron-by-spike sparse matrix of spike
-    % times) for this epoch. Either read a caller-supplied ensemble document,
-    % or build one on the fly for the probe with ndi.fun.ensemble.load.
+    % times) for this epoch. Either read the caller-supplied ensemble element
+    % (ndi.element.ensemble object / document / id), or build the ensemble on
+    % the fly for the probe with ndi.fun.ensemble.load.
+    spike_rows = {};
     if ~isempty(options.ensemble)
-        ens = options.ensemble;
-        if ischar(ens) || isstring(ens)
-            % treat as an ensemble document id
-            ens = S.database_search(ndi.query('base.id','exact_string',char(ens),''));
-            if isempty(ens)
-                error('ndi:fun:export:blech_clust:noensemble', ...
-                    'No ensemble document found with id %s.', char(options.ensemble));
-            end
-            ens = ens{1};
-        end
-        [activity, neuron_ids, neuron_names, ~, info] = ndi.fun.ensemble.read(S, ens);
+        E = ndi.fun.ensemble.read(S, options.ensemble, epochID);
+        activity     = E.activity;
+        neuron_ids   = E.neuron_ids;
+        neuron_names = E.neuron_names;
+        clocktype = local_field(E.info, 'clocktype', '');
     else
-        [activity, neuron_ids, neuron_names, info] = ...
-            ndi.fun.ensemble.load(S, probe, epochID, 'value_type', 'spiketimes');
+        [activity, neuron_ids, neuron_names, info, spike_rows] = ...
+            ndi.fun.ensemble.load(S, probe, epochID);
+        clocktype = local_field(info, 'clocktype', '');
     end
 
-    clocktype = '';
-    if isfield(info,'clocktype'), clocktype = info.clocktype; end
-
-    % activity is an N-by-Smax sparse matrix (rows = neurons). Convert each
-    % row into a vector of spike times (dropping the zero right-padding).
-    if issparse(activity) || isnumeric(activity)
+    % Per-neuron spike-time vectors (ensemble clock, seconds). load() hands
+    % these back directly as spike_rows; the read() path unpacks the sparse
+    % activity matrix (dropping the zero right-padding).
+    if ~isempty(spike_rows)
+        unit_spiketimes = cellfun(@(r) r(:).', spike_rows, 'UniformOutput', false);
+    else
         n_units = size(activity,1);
         unit_spiketimes = cell(1,n_units);
         for i = 1:n_units
             row = full(activity(i,:));
-            unit_spiketimes{i} = row(row~=0).';
+            unit_spiketimes{i} = row(row~=0);
         end
-    else
-        % N-dimensional struct form (subs/vals/size) - not expected for the
-        % 2-D spiketimes ensemble, but guard against it.
-        error('ndi:fun:export:blech_clust:ensembleshape', ...
-            'Expected a 2-D spiketimes ensemble; got a %d-D array.', ...
-            info.num_dimensions);
     end
 
-    % Build per-unit descriptor info (name + quality flags).
+    % Map ensemble neuron quality to blech's /unit_descriptor flags. The
+    % regular_spiking / fast_spiking flags are not inferred (they only affect
+    % blech raster colors); single_unit is derived from the neuron quality.
+    [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, neuron_ids);
+    su_labels = lower(options.singleUnitLabels);
     unit_info = vlt.data.emptystruct('name','single_unit','regular_spiking','fast_spiking');
     for i = 1:numel(unit_spiketimes)
         nm = '';
         if i <= numel(neuron_names), nm = neuron_names{i}; end
-        info_i = struct('name', nm, 'single_unit', 0, ...
-            'regular_spiking', 0, 'fast_spiking', 0);
-        if i <= numel(neuron_ids)
-            info_i = local_fill_unit_quality(S, neuron_ids{i}, info_i);
+        su = 0;
+        if i <= numel(qlabel) && ~isempty(qlabel{i}) && ismember(lower(qlabel{i}), su_labels)
+            su = 1;
         end
-        unit_info(end+1) = info_i; %#ok<AGROW>
+        if ~isempty(options.MinQuality) && i <= numel(qnum) && qnum(i) >= options.MinQuality
+            su = 1;
+        end
+        unit_info(end+1) = struct('name', nm, 'single_unit', su, ...
+            'regular_spiking', 0, 'fast_spiking', 0); %#ok<AGROW>
     end
 end
 
-function info = local_fill_unit_quality(S, neuron_id, info)
-    % Look for a neuron_extracellular doc that depends on this neuron element
-    % and, if found, set single_unit / regular_spiking / fast_spiking flags.
-    try
-        q = ndi.query('','depends_on','element_id', neuron_id) & ...
-            ndi.query('','isa','neuron_extracellular');
-        nd = S.database_search(q);
-        if ~isempty(nd)
-            ne = nd{1}.document_properties.neuron_extracellular;
-            if isfield(ne,'quality_number') && ne.quality_number <= 2
-                info.single_unit = 1;
-            elseif isfield(ne,'quality') && any(strcmpi(ne.quality,{'good','single'}))
-                info.single_unit = 1;
-            end
-            if isfield(ne,'cell_type')
-                if any(strcmpi(ne.cell_type,{'rsu','regular_spiking','pyramidal'}))
-                    info.regular_spiking = 1;
-                elseif any(strcmpi(ne.cell_type,{'fs','fast_spiking','interneuron'}))
-                    info.fast_spiking = 1;
-                end
-            end
-        end
-    catch
-        % leave defaults (treated as multi-unit) if anything is unavailable
-    end
+function v = local_field(s, f, default)
+    % return s.(f) if present, else default
+    v = default;
+    if isstruct(s) && isfield(s, f), v = s.(f); end
 end
 
 % =========================================================================
