@@ -75,7 +75,10 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
         options.Verbose (1,1) logical = false
     end
 
+    vb = options.Verbose;
+
     element_id = local_id(element);
+    local_v(vb, ['building ensemble for element ' element_id ', epoch ' epochid '...']);
 
     % --- look up the ensemble activity, neurons, and names -----------------
     [activity, neuron_ids, neuron_names, info] = ndi.fun.ensemble.load(S, element, epochid, ...
@@ -93,21 +96,30 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
     % --- refuse to create a duplicate --------------------------------------
     existing = {};
     if options.CheckExisting
+        local_v(vb, ['checking for an existing ensemble with the same element, ' ...
+            int2str(numel(neuron_ids)) ' neuron(s), and epoch ' epochid '...']);
         existing = ndi.fun.ensemble.findExisting(S, element_id, neuron_ids, ...
             neuron_names, 'epochid', epochid);
         if ~isempty(existing)
+            local_v(vb, ['found a matching ensemble (document id ' existing{1}.id() '); raising an error.']);
             error('ndi:ensemble:create:exists', ...
                 ['An ensemble document with the same element, neurons, and ' ...
                 'epoch already exists (document id %s). Pass ' ...
                 '''CheckExisting'', false to create it anyway.'], existing{1}.id());
         end
+        local_v(vb, 'no matching ensemble found; proceeding.');
+    else
+        local_v(vb, 'skipping the existing-ensemble check (CheckExisting is false).');
     end
 
     % --- write the activity to a temporary sparse file ---------------------
+    local_v(vb, ['writing activity (' int2str(info.num_neurons) ' neuron(s) x ' ...
+        int2str(size(activity,2)) ' column(s), ' int2str(nnz(activity)) ' nonzero(s)).']);
     activity_tempfile = [ndi.file.temp_name() '.ndisparse'];
     ndi.util.writeSparse(activity_tempfile, activity);
 
     % --- write the neuron names to a temporary text file -------------------
+    local_v(vb, ['writing ' int2str(numel(neuron_names)) ' neuron name(s) to a text file.']);
     names_tempfile = [ndi.file.temp_name() '.txt'];
     fid = fopen(names_tempfile, 'w');
     if fid<0
@@ -127,6 +139,7 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
     end
 
     % --- build the document ------------------------------------------------
+    local_v(vb, 'building the ensemble document and its dependencies.');
     ensemble_doc = S.newdocument('ensemble', ...
         'ensemble.ensemble_name', options.ensemble_name, ...
         'ensemble.value_type', info.value_type, ...
@@ -151,10 +164,23 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
     ensemble_doc = ensemble_doc.add_file('neuron_names.txt', names_tempfile);
 
     if options.add_to_database
+        local_v(vb, ['adding the ensemble document (id ' ensemble_doc.id() ') to the database.']);
         S.database_add(ensemble_doc);
+    else
+        local_v(vb, ['created ensemble document (id ' ensemble_doc.id() '); not added to ' ...
+            'the database (add_to_database is false).']);
     end
 
 end % create()
+
+% -------------------------------------------------------------------------
+
+function local_v(verbose, msg)
+% print a create() progress message when verbose
+    if verbose
+        disp(['ndi.fun.ensemble.create: ' msg]);
+    end
+end % local_v()
 
 % -------------------------------------------------------------------------
 

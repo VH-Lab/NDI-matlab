@@ -40,7 +40,8 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
 %   value_type ('spiketimes')     - stored in INFO.value_type.
 %   value_description ('')  - stored in INFO.value_description; a default
 %                             describing spike times is used if empty.
-%   Verbose (false)         - print progress/skip messages.
+%   Verbose (false)         - print cell-by-cell progress ('reading cell n of
+%                             m'), spike counts, skipped cells, and a summary.
 %
 % =========================================================================
 % OUTPUTS
@@ -103,11 +104,19 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
     end
 
     % --- read each neuron's spikes in ELEMENT's epoch ----------------------
+    if options.Verbose
+        disp(['ndi.fun.ensemble.load: considering ' int2str(numel(neurons)) ...
+            ' candidate cell(s) for epoch ' epochid '.']);
+    end
     spike_rows = {};
     neuron_ids = {};
     neuron_names = {};
     for j = 1:numel(neurons)
         e = local_element_object(neurons{j}, S);
+        if options.Verbose
+            disp(['ndi.fun.ensemble.load: reading cell ' int2str(j) ' of ' ...
+                int2str(numel(neurons)) ' (' e.elementstring() ')...']);
+        end
         try
             % readtimeseries with a timereference returns the spike times (2nd
             % output) in the reference clock and errors if this neuron was not
@@ -115,10 +124,13 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
             [~, st] = e.readtimeseries(timeref, -Inf, Inf);
         catch ME
             if options.Verbose
-                disp(['ndi.fun.ensemble.load: skipping ' e.elementstring() ...
+                disp(['ndi.fun.ensemble.load:   skipping ' e.elementstring() ...
                     ' (not recorded in epoch ' epochid '): ' ME.message]);
             end
             continue;
+        end
+        if options.Verbose
+            disp(['ndi.fun.ensemble.load:   ' int2str(numel(st)) ' spike(s).']);
         end
         spike_rows{end+1} = st(:).'; %#ok<AGROW>
         neuron_ids{end+1} = e.id(); %#ok<AGROW>
