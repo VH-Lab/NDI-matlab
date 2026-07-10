@@ -1,31 +1,31 @@
-function ensemble_docs = allNTrode(S, ntrode, options)
-% ndi.fun.ensemble.allNTrode - create ensemble documents for every epoch of an n-trode
+function ensemble_docs = allElement(S, element, options)
+% ndi.fun.ensemble.allElement - create ensemble documents for every epoch of an element
 %
-% ENSEMBLE_DOCS = ndi.fun.ensemble.ALLNTRODE(S, NTRODE, ...)
+% ENSEMBLE_DOCS = ndi.fun.ensemble.ALLELEMENT(S, ELEMENT, ...)
 %
-% For the n-trode NTRODE in the ndi.session (or ndi.dataset) S, finds every
-% epoch of NTRODE and, for each one, builds and adds to the database an
-% 'ensemble' ndi.document describing the spiking neurons recorded on NTRODE in
-% that epoch (see ndi.fun.ensemble.create). ENSEMBLE_DOCS is a cell array of the
-% ensemble documents that were created.
+% For the ELEMENT in the ndi.session (or ndi.dataset) S (usually a probe such as
+% an n-trode), finds every epoch of ELEMENT and, for each one, builds and adds
+% to the database an 'ensemble' ndi.document describing the spiking neurons
+% recorded on ELEMENT in that epoch (see ndi.fun.ensemble.create).
+% ENSEMBLE_DOCS is a cell array of the ensemble documents that were created.
 %
 % What happens for an epoch that already has an ensemble document (matched by
-% NTRODE and epoch) is controlled by the IfExists option.
+% ELEMENT and epoch) is controlled by the IfExists option.
 %
 % =========================================================================
 % INPUTS
 % =========================================================================
-%   S      - an ndi.session or ndi.dataset object.
-%   NTRODE - the n-trode to process: an ndi.probe/ndi.element object or an
-%            element document id string. Its epochs are read from its
-%            epochtable, and its spiking neurons are the elements that have it
-%            as their underlying element.
+%   S       - an ndi.session or ndi.dataset object.
+%   ELEMENT - the element to process (usually a probe / n-trode): an
+%             ndi.probe/ndi.element object or an element document id string. Its
+%             epochs are read from its epochtable, and its spiking neurons are
+%             the elements that have it as their underlying element.
 %
 % =========================================================================
 % OPTIONS (name/value pairs)
 % =========================================================================
 %   IfExists ('skip')  - what to do for an epoch that already has an ensemble
-%                        document for NTRODE:
+%                        document for ELEMENT:
 %                          'skip'    - leave the existing document and move on
 %                                      (default);
 %                          'error'   - raise an error;
@@ -46,26 +46,26 @@ function ensemble_docs = allNTrode(S, ntrode, options)
 % EXAMPLE
 % =========================================================================
 %   ntrodes = S.getprobes('type','n-trode');
-%   docs = ndi.fun.ensemble.allNTrode(S, ntrodes{1}, 'Verbose', true);
+%   docs = ndi.fun.ensemble.allElement(S, ntrodes{1}, 'Verbose', true);
 %
 % See also: ndi.fun.ensemble.allNTrodes, ndi.fun.ensemble.create
 
     arguments
         S
-        ntrode
+        element
         options.IfExists (1,:) char {mustBeMember(options.IfExists,{'skip','error','replace'})} = 'skip'
         options.Verbose (1,1) logical = false
     end
 
     vb = options.Verbose;
 
-    ntrode_obj = local_object(ntrode, S);
-    ntrode_id = ntrode_obj.id();
-    ntrode_name = local_name(ntrode_obj, ntrode_id);
+    element_obj = local_object(element, S);
+    element_id = element_obj.id();
+    element_name = local_name(element_obj, element_id);
 
-    et = ntrode_obj.epochtable();
+    et = element_obj.epochtable();
     epochids = {et.epoch_id};
-    local_v(vb, ['n-trode ' ntrode_name ' has ' int2str(numel(epochids)) ' epoch(s).']);
+    local_v(vb, ['element ' element_name ' has ' int2str(numel(epochids)) ' epoch(s).']);
 
     ensemble_docs = {};
     for i = 1:numel(epochids)
@@ -73,7 +73,7 @@ function ensemble_docs = allNTrode(S, ntrode, options)
 
         existing = S.database_search( ...
             ndi.query('','isa','ensemble','') & ...
-            ndi.query('','depends_on','element_id', ntrode_id) & ...
+            ndi.query('','depends_on','element_id', element_id) & ...
             ndi.query('epochid.epochid','exact_string', epochid, ''));
 
         if ~isempty(existing)
@@ -82,9 +82,9 @@ function ensemble_docs = allNTrode(S, ntrode, options)
                     local_v(vb, ['epoch ' epochid ': an ensemble already exists; skipping.']);
                     continue;
                 case 'error'
-                    error('ndi:ensemble:allNTrode:exists', ...
+                    error('ndi:ensemble:allElement:exists', ...
                         ['An ensemble document already exists for element %s, ' ...
-                        'epoch %s (document id %s).'], ntrode_id, epochid, existing{1}.id());
+                        'epoch %s (document id %s).'], element_id, epochid, existing{1}.id());
                 case 'replace'
                     local_v(vb, ['epoch ' epochid ': removing ' int2str(numel(existing)) ...
                         ' existing ensemble(s) and rebuilding.']);
@@ -93,7 +93,7 @@ function ensemble_docs = allNTrode(S, ntrode, options)
         end
 
         local_v(vb, ['epoch ' epochid ': building ensemble...']);
-        doc = ndi.fun.ensemble.create(S, ntrode_obj, epochid, ...
+        doc = ndi.fun.ensemble.create(S, element_obj, epochid, ...
             'add_to_database', true, 'CheckExisting', false, ...
             'SkipIfEmpty', true, 'Verbose', vb);
         if ~isempty(doc)
@@ -101,10 +101,10 @@ function ensemble_docs = allNTrode(S, ntrode, options)
         end
     end
 
-    local_v(vb, ['n-trode ' ntrode_name ': created ' int2str(numel(ensemble_docs)) ...
+    local_v(vb, ['element ' element_name ': created ' int2str(numel(ensemble_docs)) ...
         ' ensemble(s).']);
 
-end % allNTrode()
+end % allElement()
 
 % -------------------------------------------------------------------------
 
@@ -113,14 +113,14 @@ function obj = local_object(x, S)
     if ischar(x) || (isstring(x) && isscalar(x))
         obj = ndi.database.fun.ndi_document2ndi_object(char(x), S);
         if isempty(obj)
-            error('ndi:ensemble:allNTrode:badNtrode', ...
+            error('ndi:ensemble:allElement:badElement', ...
                 'Could not load an ndi.element for document id ''%s''.', char(x));
         end
     elseif isobject(x)
         obj = x;
     else
-        error('ndi:ensemble:allNTrode:badNtrode', ...
-            'NTRODE must be an ndi.probe/ndi.element object or a document id string.');
+        error('ndi:ensemble:allElement:badElement', ...
+            'ELEMENT must be an ndi.probe/ndi.element object or a document id string.');
     end
 end % local_object()
 
@@ -134,6 +134,6 @@ end % local_name()
 
 function local_v(verbose, msg)
     if verbose
-        disp(['ndi.fun.ensemble.allNTrode: ' msg]);
+        disp(['ndi.fun.ensemble.allElement: ' msg]);
     end
 end % local_v()

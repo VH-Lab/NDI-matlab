@@ -1,12 +1,13 @@
-classdef ensembleAllNTrodeTest < matlab.unittest.TestCase
-    % ENSEMBLEALLNTRODETEST - Tests for ndi.fun.ensemble.allNTrode / allNTrodes
+classdef ensembleAllElementTest < matlab.unittest.TestCase
+    % ENSEMBLEALLELEMENTTEST - Tests for ndi.fun.ensemble.allElement / allNTrodes
     %
-    % Builds an n-trode (ndi.element.timeseries) with one UTC epoch and several
-    % spiking neurons built on it, then checks that ndi.fun.ensemble.allNTrode
-    % creates an ensemble document for the epoch and honors the IfExists option
-    % (skip / error / replace). Also checks that allNTrodes runs over a session's
-    % n-trode probes. Like ensembleExtractTest, these exercise the extraction
-    % path (readtimeseries), so they depend on the session's time handling.
+    % Builds an element (an n-trode ndi.element.timeseries) with one UTC epoch and
+    % several spiking neurons built on it, then checks that
+    % ndi.fun.ensemble.allElement creates an ensemble document for the epoch and
+    % honors the IfExists option (skip / error / replace). Also checks that
+    % allNTrodes runs over a session's n-trode probes. Like ensembleExtractTest,
+    % these exercise the extraction path (readtimeseries), so they depend on the
+    % session's time handling.
 
     properties
         Session
@@ -54,7 +55,7 @@ classdef ensembleAllNTrodeTest < matlab.unittest.TestCase
 
         function testCreatesEnsemblePerEpoch(testCase)
             S = testCase.Session;
-            docs = ndi.fun.ensemble.allNTrode(S, testCase.Probe);
+            docs = ndi.fun.ensemble.allElement(S, testCase.Probe);
             testCase.verifyEqual(numel(docs), 1, 'One ensemble for the single epoch.');
             all = S.database_search(ndi.query('','isa','ensemble',''));
             testCase.verifyEqual(numel(all), 1);
@@ -64,8 +65,8 @@ classdef ensembleAllNTrodeTest < matlab.unittest.TestCase
 
         function testSkip(testCase)
             S = testCase.Session;
-            ndi.fun.ensemble.allNTrode(S, testCase.Probe);
-            docs2 = ndi.fun.ensemble.allNTrode(S, testCase.Probe); % default 'skip'
+            ndi.fun.ensemble.allElement(S, testCase.Probe);
+            docs2 = ndi.fun.ensemble.allElement(S, testCase.Probe); % default 'skip'
             testCase.verifyEmpty(docs2, 'A second run should create nothing (skip).');
             all = S.database_search(ndi.query('','isa','ensemble',''));
             testCase.verifyEqual(numel(all), 1, 'Still only one ensemble after skip.');
@@ -73,16 +74,16 @@ classdef ensembleAllNTrodeTest < matlab.unittest.TestCase
 
         function testError(testCase)
             S = testCase.Session;
-            ndi.fun.ensemble.allNTrode(S, testCase.Probe);
-            testCase.verifyError(@() ndi.fun.ensemble.allNTrode(S, testCase.Probe, ...
-                'IfExists', 'error'), 'ndi:ensemble:allNTrode:exists');
+            ndi.fun.ensemble.allElement(S, testCase.Probe);
+            testCase.verifyError(@() ndi.fun.ensemble.allElement(S, testCase.Probe, ...
+                'IfExists', 'error'), 'ndi:ensemble:allElement:exists');
         end
 
         function testReplace(testCase)
             S = testCase.Session;
-            d1 = ndi.fun.ensemble.allNTrode(S, testCase.Probe);
+            d1 = ndi.fun.ensemble.allElement(S, testCase.Probe);
             firstId = d1{1}.id();
-            d2 = ndi.fun.ensemble.allNTrode(S, testCase.Probe, 'IfExists', 'replace');
+            d2 = ndi.fun.ensemble.allElement(S, testCase.Probe, 'IfExists', 'replace');
             testCase.verifyEqual(numel(d2), 1, 'Replace should create a new ensemble.');
             all = S.database_search(ndi.query('','isa','ensemble',''));
             testCase.verifyEqual(numel(all), 1, 'Still only one ensemble after replace.');

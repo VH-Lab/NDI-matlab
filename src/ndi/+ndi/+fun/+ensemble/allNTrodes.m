@@ -5,7 +5,7 @@ function ensemble_docs = allNTrodes(S, options)
 %
 % Finds every probe of type 'n-trode' in the ndi.session (or ndi.dataset) S and,
 % for each one, builds and adds ensemble documents for all of its epochs by
-% calling ndi.fun.ensemble.allNTrode. ENSEMBLE_DOCS is a cell array of every
+% calling ndi.fun.ensemble.allElement. ENSEMBLE_DOCS is a cell array of every
 % ensemble ndi.document created across all of the n-trodes.
 %
 % =========================================================================
@@ -18,7 +18,7 @@ function ensemble_docs = allNTrodes(S, options)
 % =========================================================================
 %   IfExists ('skip')  - what to do for an epoch that already has an ensemble
 %                        document: 'skip' (default), 'error', or 'replace'.
-%                        Passed through to ndi.fun.ensemble.allNTrode.
+%                        Passed through to ndi.fun.ensemble.allElement.
 %   Verbose (false)    - print progress messages.
 %
 % =========================================================================
@@ -32,7 +32,7 @@ function ensemble_docs = allNTrodes(S, options)
 % =========================================================================
 %   docs = ndi.fun.ensemble.allNTrodes(S, 'Verbose', true);
 %
-% See also: ndi.fun.ensemble.allNTrode, ndi.fun.ensemble.create
+% See also: ndi.fun.ensemble.allElement, ndi.fun.ensemble.create
 
     arguments
         S
@@ -54,7 +54,7 @@ function ensemble_docs = allNTrodes(S, options)
             disp(['ndi.fun.ensemble.allNTrodes: n-trode ' int2str(i) ' of ' ...
                 int2str(numel(ntrodes)) '...']);
         end
-        docs_i = ndi.fun.ensemble.allNTrode(S, ntrodes{i}, ...
+        docs_i = ndi.fun.ensemble.allElement(S, ntrodes{i}, ...
             'IfExists', options.IfExists, 'Verbose', options.Verbose);
         ensemble_docs = [ensemble_docs, docs_i(:).']; %#ok<AGROW>
     end
