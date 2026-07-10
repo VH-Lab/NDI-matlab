@@ -170,8 +170,8 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % dig_in_<N> to analyze every tastant. The ensemble-state HMM methodology is
 % described in Jones, Fontanini, Sadacca, Miller & Katz (2007) PNAS 104:18772.
 %
-% See also: ndi.fun.ensemble.load, ndi.fun.ensemble.read,
-%   ndi.fun.ensemble.neuronQuality, ndi.element.ensemble,
+% See also: ndi.fun.export.blech_clust_write, ndi.fun.ensemble.load,
+%   ndi.fun.ensemble.read, ndi.fun.ensemble.neuronQuality, ndi.element.ensemble,
 %   ndi.fun.probe.export.binary, ndi.app.stimulus.decoder
 
     arguments
@@ -215,7 +215,6 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 
     preStim  = round(options.preStim);   % ms before delivery
     postStim = round(options.postStim);  % ms after delivery
-    trial_dur_ms = preStim + postStim;   % total ms per trial
     verbose = options.verbose;
 
     S = probe.session;
@@ -243,95 +242,16 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
         local_get_stimulus_presentation(S, stimulator, probe, epochID, ...
             ensemble_clocktype, options);
 
-    % Decide the tastant -> dig_in_<N> ordering
-    if ~isempty(options.stimulusOrder)
-        dig_in_stimids = options.stimulusOrder;
-    else
-        dig_in_stimids = unique(trial_stimid(:))';
-    end
-    if ~isempty(options.includeStimids)
-        dig_in_stimids = dig_in_stimids(ismember(dig_in_stimids, options.includeStimids));
-    end
-    if isempty(dig_in_stimids)
-        error('ndi:fun:export:blech_clust:nostimuli', ...
-            'No tastant stimuli were found to export for epoch %s.', epochID);
-    end
-
     % ---------------------------------------------------------------------
-    % 3) Build the binary millisecond spike_array for each tastant and
-    %    write the HDF5 file
+    % 3) Bin the ensemble activity into blech_clust's spike_array layout and
+    %    write the HDF5 file. This pure step is factored out so it can be
+    %    unit-tested without a session (see ndi.fun.export.blech_clust_write).
     % ---------------------------------------------------------------------
-    if exist(outputfile,'file')
-        delete(outputfile);
-    end
-
-    for n = 1:numel(dig_in_stimids)
-        this_stimid = dig_in_stimids(n);
-        trials = find(trial_stimid(:)' == this_stimid);
-        n_trials = numel(trials);
-
-        group = sprintf('/spike_trains/dig_in_%d', n-1); % blech is 0-indexed
-
-        if n_trials == 0
-            % HDF5 datasets cannot have a zero-length dimension; skip
-            % tastants that have no trials in this epoch.
-            warning('ndi:fun:export:blech_clust:emptytastant', ...
-                'stimid %d has no trials in epoch %s; skipping dig_in_%d.', ...
-                this_stimid, epochID, n-1);
-            continue;
-        end
-
-        spike_array = zeros(n_trials, n_units, trial_dur_ms, 'uint8');
-        for ti = 1:n_trials
-            t_onset = onset_probe(trials(ti)); % delivery time, probe clock (s)
-            win_start = t_onset - preStim/1000;  % seconds
-            for u = 1:n_units
-                st = unit_spiketimes{u};
-                % ms bin index: delivery -> column preStim (0-based -> +1)
-                idx = floor((st - win_start) * 1000) + 1;
-                idx = idx(idx >= 1 & idx <= trial_dur_ms);
-                spike_array(ti, u, idx) = 1;
-            end
-        end
-
-        % Write /spike_trains/dig_in_<N>/spike_array
-        ds = [group '/spike_array'];
-        h5create(outputfile, ds, [n_trials n_units trial_dur_ms], 'Datatype', 'uint8');
-        h5write(outputfile, ds, spike_array);
-
-        % Record the tastant label + stimid as attributes on the group
-        this_tastant = 'unknown';
-        if isKey(stimid_tastant, this_stimid) && ~isempty(stimid_tastant(this_stimid))
-            this_tastant = stimid_tastant(this_stimid);
-        end
-        h5writeatt(outputfile, group, 'stimid', this_stimid);
-        h5writeatt(outputfile, group, 'tastant', this_tastant);
-        h5writeatt(outputfile, group, 'n_trials', n_trials);
-        h5writeatt(outputfile, group, 'pre_stim_ms', preStim);
-        h5writeatt(outputfile, group, 'post_stim_ms', postStim);
-
-        if verbose
-            fprintf('  dig_in_%d: stimid %d (%s), %d trials, %d units, %d ms/trial.\n', ...
-                n-1, this_stimid, this_tastant, n_trials, n_units, trial_dur_ms);
-        end
-    end
-
-    % ---------------------------------------------------------------------
-    % 4) Write /sorted_units/unitNNN (spike times in 30 kHz samples) and
-    %    the /unit_descriptor compound table so blech unit selection and
-    %    raster plotting work.
-    % ---------------------------------------------------------------------
-    if verbose, disp('Writing /sorted_units and /unit_descriptor...'); end
-    local_write_units(outputfile, unit_spiketimes, unit_info, options.sampleRate);
-
-    % Top-level provenance attributes
-    h5writeatt(outputfile, '/', 'source', 'NDI-matlab ndi.fun.export.blech_clust');
-    h5writeatt(outputfile, '/', 'ndi_epochid', epochID);
-    h5writeatt(outputfile, '/', 'sample_rate_hz', options.sampleRate);
-
-    if verbose
-        fprintf('Wrote blech_clust HDF5 file: %s\n', outputfile);
-    end
+    ndi.fun.export.blech_clust_write(outputfile, unit_spiketimes, unit_info, ...
+        onset_probe, trial_stimid, stimid_tastant, ...
+        'preStim', preStim, 'postStim', postStim, 'sampleRate', options.sampleRate, ...
+        'stimulusOrder', options.stimulusOrder, 'includeStimids', options.includeStimids, ...
+        'epochID', epochID, 'verbose', verbose);
 
 end % blech_clust
 
@@ -497,66 +417,3 @@ function v = local_field(s, f, default)
     if isstruct(s) && isfield(s, f), v = s.(f); end
 end
 
-% =========================================================================
-% Local helper: write /sorted_units and the /unit_descriptor table
-% =========================================================================
-function local_write_units(outputfile, unit_spiketimes, unit_info, sampleRate)
-    n_units = numel(unit_spiketimes);
-    samples_per_sec = sampleRate; % 30000
-
-    for u = 1:n_units
-        % blech expects /sorted_units/unitNNN.times in acquisition samples
-        times_samples = round(unit_spiketimes{u} * samples_per_sec);
-        times_samples = uint64(times_samples(times_samples >= 0));
-        ds = sprintf('/sorted_units/unit%03d/times', u-1);
-        if isempty(times_samples)
-            h5create(outputfile, ds, 1, 'Datatype', 'uint64');
-            h5write(outputfile, ds, uint64(0));
-        else
-            h5create(outputfile, ds, numel(times_samples), 'Datatype', 'uint64');
-            h5write(outputfile, ds, times_samples(:));
-        end
-    end
-
-    % Write /unit_descriptor as an HDF5 compound (pytables-style) table with
-    % Int32 columns single_unit, regular_spiking, fast_spiking.
-    local_write_unit_descriptor(outputfile, unit_info);
-end
-
-function local_write_unit_descriptor(outputfile, unit_info)
-    n_units = numel(unit_info);
-    single_unit     = int32([unit_info.single_unit]');
-    regular_spiking = int32([unit_info.regular_spiking]');
-    fast_spiking    = int32([unit_info.fast_spiking]');
-    if n_units == 0
-        single_unit = int32([]); regular_spiking = int32([]); fast_spiking = int32([]);
-    end
-
-    fid = H5F.open(outputfile, 'H5F_ACC_RDWR', 'H5P_DEFAULT');
-
-    int32Type = H5T.copy('H5T_NATIVE_INT');
-    sz = H5T.get_size(int32Type);
-
-    % Build compound type: 3 Int32 fields
-    memtype = H5T.create('H5T_COMPOUND', 3*sz);
-    H5T.insert(memtype, 'single_unit',     0,    int32Type);
-    H5T.insert(memtype, 'regular_spiking', sz,   int32Type);
-    H5T.insert(memtype, 'fast_spiking',    2*sz, int32Type);
-
-    dims = max(n_units,1);
-    space = H5S.create_simple(1, dims, dims);
-    dset = H5D.create(fid, 'unit_descriptor', memtype, space, 'H5P_DEFAULT');
-
-    data = struct('single_unit', single_unit, ...
-                  'regular_spiking', regular_spiking, ...
-                  'fast_spiking', fast_spiking);
-    if n_units > 0
-        H5D.write(dset, memtype, 'H5S_ALL', 'H5S_ALL', 'H5P_DEFAULT', data);
-    end
-
-    H5D.close(dset);
-    H5S.close(space);
-    H5T.close(memtype);
-    H5T.close(int32Type);
-    H5F.close(fid);
-end
