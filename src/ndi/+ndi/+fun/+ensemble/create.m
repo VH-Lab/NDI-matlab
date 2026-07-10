@@ -29,7 +29,9 @@ function [ensemble_doc, existing] = create(S, element, epochid, options)
 % =========================================================================
 %   neurons ({})                 - restrict the ensemble to these neuron
 %                                  elements (objects or ids); default is every
-%                                  'spikes' element recorded in EPOCHID.
+%                                  'spikes' element built on ELEMENT (having
+%                                  ELEMENT as its underlying element) that is
+%                                  recorded in EPOCHID.
 %   clocktype ('')               - clock to express spike times in; default is
 %                                  ELEMENT's clock for EPOCHID.
 %   ensemble_name ('')           - a human-readable label for the ensemble.

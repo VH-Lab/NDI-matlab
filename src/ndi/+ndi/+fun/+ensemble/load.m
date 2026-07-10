@@ -4,10 +4,11 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
 % [ACTIVITY, NEURON_IDS, NEURON_NAMES, INFO] = ndi.fun.ensemble.LOAD(S, ELEMENT, EPOCHID, ...)
 %
 % Builds the spiking "ensemble" of all neurons recorded during epoch EPOCHID of
-% ELEMENT. It loops over the spiking-neuron elements of the ndi.session (or
-% ndi.dataset) S, reads each neuron's spike times relative to ELEMENT's epoch,
-% and packs them into a sparse matrix ACTIVITY where ACTIVITY(i,n) is the time
-% of the n-th spike of neuron i.
+% ELEMENT. It finds the spiking-neuron elements built on ELEMENT (the elements
+% of type 'spikes' that have ELEMENT as their underlying element), reads each
+% neuron's spike times relative to ELEMENT's epoch, and packs them into a
+% sparse matrix ACTIVITY where ACTIVITY(i,n) is the time of the n-th spike of
+% neuron i.
 %
 % Spike times are read with the element's readtimeseries method using a time
 % reference built on ELEMENT for EPOCHID, so every neuron's spikes are returned
@@ -31,9 +32,11 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
 % =========================================================================
 %   neurons ({})            - a cell array of the spiking-neuron elements
 %                             (ndi.element objects or id strings) to consider.
-%                             If empty (default), every element of type
-%                             'spikes' in S is considered, and those recorded
-%                             during EPOCHID are included.
+%                             If empty (default), the neurons are the elements
+%                             of type 'spikes' that have ELEMENT as their
+%                             underlying element (found with a depends_on query
+%                             on underlying_element_id); of those, the ones
+%                             recorded during EPOCHID are included.
 %   clocktype ('')          - the name of the ndi.time.clocktype to express the
 %                             spike times in. If empty, ELEMENT's clock for
 %                             EPOCHID (the first clock of that epoch) is used.
@@ -97,8 +100,19 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
     timeref = ndi.time.timereference(element_obj, ref_clock, epochid, 0);
 
     % --- the candidate neurons --------------------------------------------
+    % By default, the ensemble is made of the spiking-neuron elements that are
+    % built on ELEMENT (i.e. whose underlying_element_id is ELEMENT), not every
+    % 'spikes' element in the session. Of those, the loop below keeps the ones
+    % actually recorded during EPOCHID.
     if isempty(options.neurons)
-        neurons = S.getelements('element.type','spikes');
+        q = ndi.query('','isa','element','') & ...
+            ndi.query('element.type','exact_string','spikes','') & ...
+            ndi.query('','depends_on','underlying_element_id', element_obj.id());
+        neuron_docs = S.database_search(q);
+        neurons = cell(1, numel(neuron_docs));
+        for k = 1:numel(neuron_docs)
+            neurons{k} = ndi.database.fun.ndi_document2ndi_object(neuron_docs{k}, S);
+        end
     else
         neurons = options.neurons;
     end

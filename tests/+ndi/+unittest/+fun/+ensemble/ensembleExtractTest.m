@@ -2,8 +2,9 @@ classdef ensembleExtractTest < matlab.unittest.TestCase
     % ENSEMBLEEXTRACTTEST - End-to-end tests for ndi.fun.ensemble.load and .create
     %
     % Builds a session with a reference element (a probe) that has one epoch, and
-    % several spiking-neuron ndi.element.timeseries objects that carry spike
-    % times in that epoch (expressed in a shared global UTC clock). It then
+    % several spiking-neuron ndi.element.timeseries objects built on that probe
+    % (the probe is their underlying element) carrying spike times in that epoch
+    % (expressed in a shared global UTC clock). It then
     % verifies that:
     %   * ndi.fun.ensemble.load reads each neuron's spikes for the epoch and
     %     packs them into the correct N-by-Smax matrix, and
@@ -45,13 +46,14 @@ classdef ensembleExtractTest < matlab.unittest.TestCase
             probe = probe.addepoch('epoch_1', utc, [0 100], [], []);
             testCase.Probe = probe;
 
-            % spiking neurons carrying spike times in epoch_1 (UTC)
+            % spiking neurons built on the probe (probe is their underlying
+            % element), carrying spike times in epoch_1 (UTC)
             testCase.Spikes = { [10 50 90], [20 60], [30 70 80 95], [40] };
             n = numel(testCase.Spikes);
             objs = cell(1,n); ids = cell(1,n); names = cell(1,n);
             for i = 1:n
                 e = ndi.element.timeseries(S, sprintf('neuron_%d', i), i, 'spikes', ...
-                    [], 0, testCase.SubjectId);
+                    probe, 0, testCase.SubjectId);
                 t = testCase.Spikes{i}(:);
                 e = e.addepoch('epoch_1', utc, [0 100], t, ones(size(t)));
                 objs{i} = e;
