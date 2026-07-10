@@ -1,14 +1,14 @@
-function [activity, neuron_ids, neuron_names, info] = filter(activity, neuron_ids, neuron_names, info, options)
-% ndi.fun.ensemble.filter - select a subset of the neurons in an ensemble read
+function E = filter(E, options)
+% ndi.fun.ensemble.filter - select a subset of the neurons in an ensemble structure
 %
-% [ACTIVITY, NEURON_IDS, NEURON_NAMES, INFO] = ndi.fun.ensemble.FILTER(...
-%     ACTIVITY, NEURON_IDS, NEURON_NAMES, INFO, ...)
+% E = ndi.fun.ensemble.FILTER(E, ...)
 %
-% Takes the outputs of ndi.fun.ensemble.read and returns the same outputs with
-% only the kept neurons: rows of ACTIVITY, and the entries of NEURON_IDS and
-% NEURON_NAMES, are subset to the kept neurons; INFO.num_neurons is updated; and
-% any all-zero trailing columns of ACTIVITY are trimmed. This is a pure,
-% in-memory operation (no database access).
+% Takes an ensemble structure E (as returned by ndi.fun.ensemble.read) and
+% returns the same structure with only the kept neurons: the rows of E.activity
+% and the entries of E.neuron_ids and E.neuron_names are subset to the kept
+% neurons, E.info.num_neurons is updated, and any all-zero trailing columns of
+% E.activity are trimmed. This is a pure, in-memory operation (no database
+% access).
 %
 % The kept set is computed as follows. If any "include" criterion is given
 % (IncludeNames, IncludeIndex, IncludeIds, or Keep), the kept set starts as the
@@ -32,17 +32,18 @@ function [activity, neuron_ids, neuron_names, info] = filter(activity, neuron_id
 % =========================================================================
 % EXAMPLE
 % =========================================================================
-%   [A, ids, names, info] = ndi.fun.ensemble.read(S, ens, 'epoch_1');
-%   [A, ids, names, info] = ndi.fun.ensemble.filter(A, ids, names, info, ...
-%       'ExcludeNames', {'ctx_1_5'});
+%   E = ndi.fun.ensemble.read(S, ens, 'epoch_1');
+%   E = ndi.fun.ensemble.filter(E, 'ExcludeNames', {'ctx_1_5'});
 %
-% See also: ndi.fun.ensemble.read, ndi.fun.ensemble.neuronQuality
+%   % filter by a quality mask computed separately:
+%   qnum = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
+%   E = ndi.fun.ensemble.filter(E, 'Keep', qnum >= 2);
+%
+% See also: ndi.fun.ensemble.read, ndi.fun.ensemble.neuronQuality,
+%   ndi.fun.ensemble.plot
 
     arguments
-        activity
-        neuron_ids cell
-        neuron_names cell
-        info
+        E struct
         options.IncludeNames cell = {}
         options.ExcludeNames cell = {}
         options.IncludeIndex double = []
@@ -52,34 +53,33 @@ function [activity, neuron_ids, neuron_names, info] = filter(activity, neuron_id
         options.Keep = []
     end
 
-    N = numel(neuron_ids);
+    N = numel(E.neuron_ids);
 
     hasInclude = ~isempty(options.IncludeNames) || ~isempty(options.IncludeIndex) ...
         || ~isempty(options.IncludeIds) || ~isempty(options.Keep);
 
     if hasInclude
         keep = false(1, N);
-        keep = keep | local_member_mask(neuron_names, options.IncludeNames);
+        keep = keep | local_member_mask(E.neuron_names, options.IncludeNames);
         keep = keep | local_index_mask(N, options.IncludeIndex);
-        keep = keep | local_member_mask(neuron_ids, options.IncludeIds);
+        keep = keep | local_member_mask(E.neuron_ids, options.IncludeIds);
         keep = keep | local_keep_mask(N, options.Keep);
     else
         keep = true(1, N);
     end
 
     % excludes always remove from the kept set
-    keep = keep & ~local_member_mask(neuron_names, options.ExcludeNames);
+    keep = keep & ~local_member_mask(E.neuron_names, options.ExcludeNames);
     keep = keep & ~local_index_mask(N, options.ExcludeIndex);
-    keep = keep & ~local_member_mask(neuron_ids, options.ExcludeIds);
+    keep = keep & ~local_member_mask(E.neuron_ids, options.ExcludeIds);
 
     idx = find(keep);
 
-    activity = activity(idx, :);
-    activity = local_trim_columns(activity);
-    neuron_ids = neuron_ids(idx);
-    neuron_names = neuron_names(idx);
-    if isstruct(info) && isfield(info, 'num_neurons')
-        info.num_neurons = numel(idx);
+    E.activity = local_trim_columns(E.activity(idx, :));
+    E.neuron_ids = E.neuron_ids(idx);
+    E.neuron_names = E.neuron_names(idx);
+    if isfield(E, 'info') && isstruct(E.info) && isfield(E.info, 'num_neurons')
+        E.info.num_neurons = numel(idx);
     end
 
 end % filter()

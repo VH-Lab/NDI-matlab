@@ -20,9 +20,9 @@ function [quality_number, quality_label] = neuronQuality(S, neuron_ids)
 % =========================================================================
 % EXAMPLE
 % =========================================================================
-%   [~, ids] = ndi.fun.ensemble.read(S, ens, 'epoch_1');
-%   [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, ids);
-%   good = ids(qnum >= 2);   % neurons with quality_number at least 2
+%   E = ndi.fun.ensemble.read(S, ens, 'epoch_1');
+%   [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
+%   good = E.neuron_ids(qnum >= 2);   % neurons with quality_number at least 2
 %
 % See also: ndi.fun.ensemble.read, ndi.fun.ensemble.filter
 

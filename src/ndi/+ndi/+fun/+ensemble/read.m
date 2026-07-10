@@ -1,30 +1,32 @@
-function [activity, neuron_ids, neuron_names, info] = read(S, ensembleElement, epoch, options)
+function E = read(S, ensembleElement, epoch, options)
 % ndi.fun.ensemble.read - read one epoch of an ensemble element (with optional filtering)
 %
-% [ACTIVITY, NEURON_IDS, NEURON_NAMES, INFO] = ndi.fun.ensemble.READ(S, ENSEMBLEELEMENT, EPOCH, ...)
+% E = ndi.fun.ensemble.READ(S, ENSEMBLEELEMENT, EPOCH, ...)
 %
 % Reads the ensemble activity for epoch EPOCH from ENSEMBLEELEMENT, an
 % ndi.element.ensemble (or its document / id) belonging to the ndi.session (or
-% ndi.dataset) S. Optional name/value pairs filter the returned neurons (see
-% OPTIONS); this is the one-step equivalent of calling ndi.fun.ensemble.read
-% followed by ndi.fun.ensemble.filter (and, for the quality options,
-% ndi.fun.ensemble.neuronQuality).
+% ndi.dataset) S, and returns it as a single structure E. Optional name/value
+% pairs filter the returned neurons (see OPTIONS); this is the one-step
+% equivalent of ndi.fun.ensemble.read followed by ndi.fun.ensemble.filter (and,
+% for the quality options, ndi.fun.ensemble.neuronQuality).
 %
 % =========================================================================
-% OUTPUTS
+% OUTPUT STRUCTURE E
 % =========================================================================
-%   ACTIVITY     - an N-neurons-by-Smax sparse matrix; ACTIVITY(i,n) is the time
-%                  of the n-th spike of neuron i (reconstructed from the
-%                  element's stored marked point process; see
-%                  ndi.element.ensemble/spikeMatrix). For a windowed / streaming
-%                  read, call ENSEMBLEELEMENT.readtimeseries directly instead.
-%   NEURON_IDS   - a 1-by-N cell array of the neuron element document ids, in
-%                  the row order of ACTIVITY.
-%   NEURON_NAMES - a 1-by-N cell array of the neuron names, same order.
-%   INFO         - the 'ensemble' property structure of the epoch's map document
-%                  (num_neurons reflects the number of neurons returned).
+%   E.activity     - an N-neurons-by-Smax sparse matrix; E.activity(i,n) is the
+%                    time of the n-th spike of neuron i (reconstructed from the
+%                    element's stored marked point process; see
+%                    ndi.element.ensemble/spikeMatrix). For a windowed /
+%                    streaming read, call ENSEMBLEELEMENT.readtimeseries directly.
+%   E.neuron_ids   - a 1-by-N cell array of the neuron element document ids, in
+%                    the row order of E.activity.
+%   E.neuron_names - a 1-by-N cell array of the neuron names, same order.
+%   E.epoch        - the epoch id (char).
+%   E.info         - the 'ensemble' property structure of the epoch's map
+%                    document (E.info.num_neurons reflects the number returned).
 %
-% If any filter option is given, only the kept neurons are returned.
+% The structure E can be passed to ndi.fun.ensemble.filter (to select neurons)
+% and to ndi.fun.ensemble.plot (to draw the raster).
 %
 % EPOCH may be an epoch id (char) or an epoch index (number).
 %
@@ -54,8 +56,9 @@ function [activity, neuron_ids, neuron_names, info] = read(S, ensembleElement, e
 % =========================================================================
 % EXAMPLE
 % =========================================================================
-%   [E, ids, names, info] = ndi.fun.ensemble.read(S, ens, 'epoch_1', ...
-%       'MinQuality', 2, 'ExcludeNames', {'ctx_1_5'});
+%   E = ndi.fun.ensemble.read(S, ens, 'epoch_1', 'MinQuality', 2);
+%   E = ndi.fun.ensemble.filter(E, 'ExcludeNames', {'ctx_1_5'});
+%   figure; ndi.fun.ensemble.plot(E);
 %
 % See also: ndi.element.ensemble, ndi.fun.ensemble.create,
 %   ndi.fun.ensemble.filter, ndi.fun.ensemble.neuronQuality, ndi.fun.ensemble.plot
@@ -78,9 +81,14 @@ function [activity, neuron_ids, neuron_names, info] = read(S, ensembleElement, e
     ens = local_ensemble(ensembleElement, S);
 
     [activity, neuron_ids] = ens.spikeMatrix(epoch);
-    neuron_names = ens.neuronNames(epoch);
     mapdoc = ens.epochEnsembleDoc(epoch);
-    info = mapdoc.document_properties.ensemble;
+
+    E = struct();
+    E.activity = activity;
+    E.neuron_ids = neuron_ids;
+    E.neuron_names = ens.neuronNames(epoch);
+    E.epoch = ens.epochid(epoch);
+    E.info = mapdoc.document_properties.ensemble;
 
     useQuality = ~isempty(options.MinQuality) || ~isempty(options.QualityLabel);
     anyFilter = useQuality || ~isempty(options.IncludeNames) || ~isempty(options.ExcludeNames) ...
@@ -93,8 +101,8 @@ function [activity, neuron_ids, neuron_names, info] = read(S, ensembleElement, e
     % quality-failing neurons become extra exclusions (quality is a hard filter)
     exclude_ids = options.ExcludeIds(:).';
     if useQuality
-        [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, neuron_ids);
-        qmask = true(1, numel(neuron_ids));
+        [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
+        qmask = true(1, numel(E.neuron_ids));
         if ~isempty(options.MinQuality)
             qmask = qmask & (qnum >= options.MinQuality);
         end
@@ -104,11 +112,10 @@ function [activity, neuron_ids, neuron_names, info] = read(S, ensembleElement, e
         if options.KeepUnrated
             qmask(isnan(qnum)) = true;
         end
-        exclude_ids = [exclude_ids, neuron_ids(~qmask)];
+        exclude_ids = [exclude_ids, E.neuron_ids(~qmask)];
     end
 
-    [activity, neuron_ids, neuron_names, info] = ndi.fun.ensemble.filter( ...
-        activity, neuron_ids, neuron_names, info, ...
+    E = ndi.fun.ensemble.filter(E, ...
         'IncludeNames', options.IncludeNames, 'ExcludeNames', options.ExcludeNames, ...
         'IncludeIndex', options.IncludeIndex, 'ExcludeIndex', options.ExcludeIndex, ...
         'IncludeIds', options.IncludeIds, 'ExcludeIds', exclude_ids);

@@ -1,48 +1,39 @@
-function h = plot(S, ensembleElement, epoch, options)
-% ndi.fun.ensemble.plot - draw a spike raster of an ensemble element
+function h = plot(varargin)
+% ndi.fun.ensemble.plot - draw a spike raster of an ensemble
 %
+% H = ndi.fun.ensemble.PLOT(E, ...)
 % H = ndi.fun.ensemble.PLOT(S, ENSEMBLEELEMENT, EPOCH, ...)
 %
-% Reads epoch EPOCH of ENSEMBLEELEMENT (an ndi.element.ensemble, or its document
-% / id, belonging to the ndi.session/ndi.dataset S) and draws it as a spike
-% raster in the current axes (gca). Each neuron ("cell") of the ensemble is
-% drawn as a horizontal band of tick marks: every spike is a short vertical line
-% at the spike time (X axis) spanning a fixed vertical interval for that cell (Y
-% axis).
+% Draws an ensemble as a spike raster in the current axes (gca), as a single
+% line object. There are two ways to provide the data:
 %
-% Because it reads through ENSEMBLEELEMENT.readtimeseries, an optional [T0 T1]
-% window can be supplied to draw (and cheaply redraw) just part of the epoch.
+%   ndi.fun.ensemble.plot(E, ...)
+%       E is an ensemble structure from ndi.fun.ensemble.read (optionally passed
+%       through ndi.fun.ensemble.filter first). The raster is drawn from
+%       E.activity, so you can filter before plotting.
 %
-% For cell i (the 1-based neuron column index returned by readtimeseries) the
-% tick marks span the vertical interval
+%   ndi.fun.ensemble.plot(S, ENSEMBLEELEMENT, EPOCH, ...)
+%       Convenience form: reads EPOCH of ENSEMBLEELEMENT (an ndi.element.ensemble
+%       or its document / id) from session S and plots the whole (unfiltered)
+%       ensemble.
 %
-%       [ BottomEdge , TopEdge ] + i * Offset
-%
-% so with the defaults (0.1, 0.9, 1.0) cell 1 occupies 1.1 to 1.9, cell 2
+% Each neuron ("cell") i (the row index in E.activity) is drawn as a horizontal
+% band of tick marks: every spike is a short vertical line at the spike time (X
+% axis) spanning the vertical interval [BottomEdge, TopEdge] + i*Offset on the Y
+% axis. With the defaults (0.1, 0.9, 1.0), cell 1 occupies 1.1 to 1.9, cell 2
 % occupies 2.1 to 2.9, and so on.
 %
-% The entire raster is drawn as a SINGLE line object: the coordinates of every
-% tick are concatenated into one pair of X/Y vectors, with a NaN separating
-% successive ticks (a spike at time t of cell i contributes the points
-% (t, bottom_i), (t, top_i), (NaN, NaN)). One line makes the initial plot and
-% any later redraw (setting H.XData / H.YData) fast, even for large ensembles.
-%
-% =========================================================================
-% INPUTS
-% =========================================================================
-%   S               - the ndi.session/ndi.dataset that ENSEMBLEELEMENT belongs to.
-%   ENSEMBLEELEMENT - an ndi.element.ensemble (or its document / id).
-%   EPOCH           - the epoch to plot (an epoch id or index).
+% The entire raster is one line object: the tick coordinates are concatenated
+% with a NaN separating successive ticks (a spike at time t of cell i
+% contributes (t, bottom_i), (t, top_i), (NaN, NaN)). One line keeps the initial
+% plot and any redraw (setting H.XData / H.YData) fast for large ensembles.
 %
 % =========================================================================
 % OPTIONS (name/value pairs)
 % =========================================================================
-%   T0 (-Inf)          - start of the time window to read/draw (element clock).
-%   T1 (Inf)           - end of the time window to read/draw.
-%   BottomEdge (0.1)   - vertical distance from a cell's baseline to the bottom
-%                        of its tick marks.
-%   TopEdge (0.9)      - vertical distance from a cell's baseline to the top of
-%                        its tick marks.
+%   BottomEdge (0.1)   - distance from a cell's baseline to the bottom of its
+%                        tick marks.
+%   TopEdge (0.9)      - distance from a cell's baseline to the top of its ticks.
 %   Offset (1.0)       - spacing between successive cells along the Y axis.
 %   Color ([0 0 0])    - color of the tick marks (RGB triplet or color name).
 %   LineWidth (0.75)   - width of the tick-mark lines, in points.
@@ -57,17 +48,37 @@ function h = plot(S, ensembleElement, epoch, options)
 % =========================================================================
 % EXAMPLE
 % =========================================================================
-%   ens = ndi.fun.ensemble.create(S, probe, 'epoch_1');
-%   figure; ndi.fun.ensemble.plot(S, ens, 'epoch_1');
+%   E = ndi.fun.ensemble.read(S, ens, 'epoch_1', 'MinQuality', 2);
+%   figure; ndi.fun.ensemble.plot(E);
 %
-% See also: ndi.element.ensemble, ndi.fun.ensemble.read, LINE
+% See also: ndi.fun.ensemble.read, ndi.fun.ensemble.filter, LINE
 
+    if isempty(varargin)
+        error('ndi:ensemble:plot:badInput', ...
+            ['Call as ndi.fun.ensemble.plot(E, ...) with an ensemble structure, ' ...
+            'or ndi.fun.ensemble.plot(S, ENSEMBLEELEMENT, EPOCH, ...).']);
+    end
+    if isstruct(varargin{1})
+        E = varargin{1};
+        nvpairs = varargin(2:end);
+    elseif numel(varargin) >= 3
+        E = ndi.fun.ensemble.read(varargin{1}, varargin{2}, varargin{3});
+        nvpairs = varargin(4:end);
+    else
+        error('ndi:ensemble:plot:badInput', ...
+            ['Call as ndi.fun.ensemble.plot(E, ...) with an ensemble structure, ' ...
+            'or ndi.fun.ensemble.plot(S, ENSEMBLEELEMENT, EPOCH, ...).']);
+    end
+
+    h = local_draw(E, nvpairs{:});
+
+end % plot()
+
+% -------------------------------------------------------------------------
+
+function h = local_draw(E, options)
     arguments
-        S
-        ensembleElement
-        epoch
-        options.T0 (1,1) double = -Inf
-        options.T1 (1,1) double = Inf
+        E struct
         options.BottomEdge (1,1) double = 0.1
         options.TopEdge (1,1) double = 0.9
         options.Offset (1,1) double = 1.0
@@ -77,12 +88,10 @@ function h = plot(S, ensembleElement, epoch, options)
         options.YLabel (1,1) logical = true
     end
 
-    ens = local_ensemble(ensembleElement, S);
-
-    % read the spikes as a marked point process: data = neuron column index,
-    % t = spike time (windowed to [T0 T1]).
-    [cellIndex, spikeTime] = ens.readtimeseries(epoch, options.T0, options.T1);
-    cellIndex = round(cellIndex(:).');
+    % find() on the (sparse) activity matrix returns each spike's row (the
+    % cell/neuron index) and its value (the spike time).
+    [cellIndex, ~, spikeTime] = find(E.activity);
+    cellIndex = cellIndex(:).';
     spikeTime = spikeTime(:).';
     nSpikes = numel(spikeTime);
 
@@ -103,19 +112,4 @@ function h = plot(S, ensembleElement, epoch, options)
         ylabel(ax, 'Neuron #');
     end
 
-end % plot()
-
-% -------------------------------------------------------------------------
-
-function ens = local_ensemble(x, S)
-% return an ndi.element.ensemble from an object, a document, or an id
-    if isa(x, 'ndi.element.ensemble')
-        ens = x;
-    else
-        ens = ndi.database.fun.ndi_document2ndi_object(x, S);
-        if ~isa(ens, 'ndi.element.ensemble')
-            error('ndi:ensemble:plot:notEnsemble', ...
-                'The provided element is not an ndi.element.ensemble.');
-        end
-    end
-end % local_ensemble()
+end % local_draw()
