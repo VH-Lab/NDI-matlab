@@ -1,124 +1,113 @@
-function ensemble_doc = create(S, element, neuron_ids, neuron_names, activity, options)
-% ndi.fun.ensemble.create - build an 'ensemble' ndi.document from ensemble activity
+function [ensemble_doc, existing] = create(S, element, epochid, options)
+% ndi.fun.ensemble.create - build and store an 'ensemble' ndi.document for an epoch
 %
-% ENSEMBLE_DOC = ndi.fun.ensemble.CREATE(S, ELEMENT, NEURON_IDS, NEURON_NAMES, ACTIVITY, ...)
+% [ENSEMBLE_DOC, EXISTING] = ndi.fun.ensemble.CREATE(S, ELEMENT, EPOCHID, ...)
 %
-% Creates an 'ensemble' ndi.document that stores the activity of a group of
-% neurons (an "ensemble") recorded from a common element (usually a probe),
-% for one epoch. The activity is stored as a sparse array in a binary file
-% attached to the document, and the neuron element names are stored in a text
-% file attached to the document. The document depends on the owning ELEMENT
-% (dependency 'element_id') and on each neuron element (dependencies
-% 'neuron_id_1', 'neuron_id_2', ...).
+% Builds an 'ensemble' ndi.document for the spiking neurons recorded during
+% epoch EPOCHID of ELEMENT. The ensemble activity is looked up by this function
+% (with ndi.fun.ensemble.load), which reads the spike times of every neuron
+% recorded in that epoch; the neuron ids and names are discovered the same way.
+% The activity is stored as an attached '.ndisparse' binary file and the neuron
+% names in an attached text file. The document depends on ELEMENT (dependency
+% 'element_id') and on each neuron element ('neuron_id_1', 'neuron_id_2', ...).
+%
+% Before storing, CREATE checks whether an ensemble with the same element,
+% neurons, names, and epoch already exists and, if so, raises an error (unless
+% the 'CheckExisting' option is false). This prevents accidental duplicates.
 %
 % =========================================================================
 % INPUTS
 % =========================================================================
-%   S            - an ndi.session or ndi.dataset object.
-%   ELEMENT      - the element (usually an ndi.probe) that the ensemble
-%                  belongs to. May be an ndi.element/ndi.probe object (its
-%                  .id() is used) or a document id string.
-%   NEURON_IDS   - a cell array of the ndi.element document id strings of the
-%                  neurons that make up the ensemble. Each may also be an
-%                  object with an id() method. Row i of ACTIVITY corresponds
-%                  to NEURON_IDS{i}.
-%   NEURON_NAMES - a cell array of char, one human-readable name per neuron
-%                  (e.g. the element string). Must have the same number of
-%                  entries as NEURON_IDS. Written, one per line, to the
-%                  document's neuron_names.txt file.
-%   ACTIVITY     - the ensemble activity, in one of two forms:
-%                    * a 2-D MATLAB matrix (sparse or full), e.g. an
-%                      N-neurons-by-Smax matrix of spike times; or
-%                    * a struct with fields 'subs' (nnz-by-ndims, 1-based),
-%                      'vals' (nnz-by-1), and 'size' (1-by-ndims) describing a
-%                      sparse N-dimensional array.
-%                  It is written with ndi.util.writeSparse.
+%   S        - an ndi.session or ndi.dataset object.
+%   ELEMENT  - the element (usually a probe) that the ensemble belongs to and
+%              that provides the time reference. An ndi.element object or an
+%              element document id string.
+%   EPOCHID  - the epoch id (of ELEMENT) to build the ensemble for.
 %
 % =========================================================================
 % OPTIONS (name/value pairs)
 % =========================================================================
-%   epochid ('')            - the epoch id this ensemble corresponds to.
-%   ensemble_name ('')      - a human-readable label for the ensemble.
-%   value_type ('')         - short code for what the stored values mean,
-%                             e.g. 'spiketimes', 'firingrate', 'binary'.
-%   value_description ('')  - free text describing the meaning/units of the
-%                             stored values.
-%   clocktype ('')          - name of the ndi.time.clocktype the values are
-%                             expressed in, if the values are times.
-%   add_to_database (false) - if true, the document is added to S's database
-%                             (via S.database_add) before returning.
+%   neurons ({})                 - restrict the ensemble to these neuron
+%                                  elements (objects or ids); default is every
+%                                  'spikes' element recorded in EPOCHID.
+%   clocktype ('')               - clock to express spike times in; default is
+%                                  ELEMENT's clock for EPOCHID.
+%   ensemble_name ('')           - a human-readable label for the ensemble.
+%   value_type ('spiketimes')    - short code for what the stored values mean.
+%   value_description ('')       - free text describing the values.
+%   CheckExisting (true)         - if true, error when a matching ensemble
+%                                  document already exists.
+%   add_to_database (false)      - if true, add the document to S's database.
+%   Verbose (false)              - print progress messages.
 %
 % =========================================================================
-% OUTPUT
+% OUTPUTS
 % =========================================================================
-%   ENSEMBLE_DOC - the created ndi.document. If add_to_database is false, the
-%                  binary and text files have been written to temporary files
-%                  and registered with the document; they are copied into the
-%                  database (and the temporaries removed) when the document is
-%                  added with S.database_add.
+%   ENSEMBLE_DOC - the created ndi.document (with the binary and text files
+%                  registered). If add_to_database is false, the files are in
+%                  temporary locations and are copied into the database when
+%                  the document is added with S.database_add.
+%   EXISTING     - a cell array of any pre-existing matching ensemble documents
+%                  that were found (empty if none). When CheckExisting is true
+%                  and this is non-empty, an error is raised instead of
+%                  returning.
 %
 % =========================================================================
 % EXAMPLE
 % =========================================================================
-%   % E is a sparse N-by-Smax matrix; neuron_ids and neuron_names are 1xN
-%   doc = ndi.fun.ensemble.create(S, probe, neuron_ids, neuron_names, E, ...
-%       'epochid', epochid, 'value_type', 'spiketimes', ...
-%       'value_description', 'time of n-th spike of neuron i', ...
-%       'clocktype', 'dev_local_time', 'add_to_database', true);
+%   doc = ndi.fun.ensemble.create(S, probe, 'epoch_1', ...
+%       'ensemble_name', 'V1 ensemble', 'add_to_database', true);
 %
-% See also: ndi.fun.ensemble.read, ndi.util.writeSparse, ndi.util.readSparse
+% See also: ndi.fun.ensemble.load, ndi.fun.ensemble.read,
+%   ndi.fun.ensemble.findExisting
 
     arguments
         S
         element
-        neuron_ids cell
-        neuron_names cell
-        activity
-        options.epochid (1,:) char = ''
-        options.ensemble_name (1,:) char = ''
-        options.value_type (1,:) char = ''
-        options.value_description (1,:) char = ''
+        epochid (1,:) char
+        options.neurons cell = {}
         options.clocktype (1,:) char = ''
+        options.ensemble_name (1,:) char = ''
+        options.value_type (1,:) char = 'spiketimes'
+        options.value_description (1,:) char = ''
+        options.CheckExisting (1,1) logical = true
         options.add_to_database (1,1) logical = false
+        options.Verbose (1,1) logical = false
     end
 
-    % --- normalize identifiers -------------------------------------------
     element_id = local_id(element);
-    neuron_ids = local_ids(neuron_ids);
 
-    if numel(neuron_names)~=numel(neuron_ids)
-        error('ndi:ensemble:create:nameCountMismatch', ...
-            ['NEURON_NAMES has %d entries but NEURON_IDS has %d; there must ' ...
-            'be one name per neuron.'], numel(neuron_names), numel(neuron_ids));
+    % --- look up the ensemble activity, neurons, and names -----------------
+    [activity, neuron_ids, neuron_names, info] = ndi.fun.ensemble.load(S, element, epochid, ...
+        'neurons', options.neurons, 'clocktype', options.clocktype, ...
+        'value_type', options.value_type, ...
+        'value_description', options.value_description, ...
+        'Verbose', options.Verbose);
+
+    if isempty(neuron_ids)
+        warning('ndi:ensemble:create:noNeurons', ...
+            ['No neurons were found recorded in epoch ''%s'' of the element; ' ...
+            'the ensemble will be empty.'], epochid);
     end
 
-    % --- write the activity to a temporary sparse file -------------------
+    % --- refuse to create a duplicate --------------------------------------
+    existing = {};
+    if options.CheckExisting
+        existing = ndi.fun.ensemble.findExisting(S, element_id, neuron_ids, ...
+            neuron_names, 'epochid', epochid);
+        if ~isempty(existing)
+            error('ndi:ensemble:create:exists', ...
+                ['An ensemble document with the same element, neurons, and ' ...
+                'epoch already exists (document id %s). Pass ' ...
+                '''CheckExisting'', false to create it anyway.'], existing{1}.id());
+        end
+    end
+
+    % --- write the activity to a temporary sparse file ---------------------
     activity_tempfile = [ndi.file.temp_name() '.ndisparse'];
-    if isstruct(activity)
-        if ~all(isfield(activity, {'subs','vals','size'}))
-            error('ndi:ensemble:create:badActivityStruct', ...
-                ['When ACTIVITY is a struct it must have fields ''subs'', ' ...
-                '''vals'', and ''size''.']);
-        end
-        ndi.util.writeSparse(activity_tempfile, activity.subs, activity.vals, activity.size);
-        num_dimensions = numel(activity.size);
-    else
-        if ~ismatrix(activity) || (~isnumeric(activity) && ~islogical(activity))
-            error('ndi:ensemble:create:badActivity', ...
-                ['ACTIVITY must be a 2-D numeric/logical matrix or a struct ' ...
-                'with fields ''subs'', ''vals'', and ''size''.']);
-        end
-        if size(activity,1)~=numel(neuron_ids)
-            warning('ndi:ensemble:create:rowCountMismatch', ...
-                ['ACTIVITY has %d rows but there are %d neurons; row i is ' ...
-                'expected to correspond to neuron i.'], ...
-                size(activity,1), numel(neuron_ids));
-        end
-        ndi.util.writeSparse(activity_tempfile, activity);
-        num_dimensions = 2;
-    end
+    ndi.util.writeSparse(activity_tempfile, activity);
 
-    % --- write the neuron names to a temporary text file -----------------
+    % --- write the neuron names to a temporary text file -------------------
     names_tempfile = [ndi.file.temp_name() '.txt'];
     fid = fopen(names_tempfile, 'w');
     if fid<0
@@ -130,22 +119,22 @@ function ensemble_doc = create(S, element, neuron_ids, neuron_names, activity, o
     end
     fclose(fid);
 
-    % --- application provenance ------------------------------------------
+    % --- application provenance --------------------------------------------
     app_version = '';
     try
         app_version = ndi.version();
     catch
     end
 
-    % --- build the document ----------------------------------------------
+    % --- build the document ------------------------------------------------
     ensemble_doc = S.newdocument('ensemble', ...
         'ensemble.ensemble_name', options.ensemble_name, ...
-        'ensemble.value_type', options.value_type, ...
-        'ensemble.value_description', options.value_description, ...
-        'ensemble.num_neurons', numel(neuron_ids), ...
-        'ensemble.num_dimensions', num_dimensions, ...
-        'ensemble.clocktype', options.clocktype, ...
-        'epochid.epochid', options.epochid, ...
+        'ensemble.value_type', info.value_type, ...
+        'ensemble.value_description', info.value_description, ...
+        'ensemble.num_neurons', info.num_neurons, ...
+        'ensemble.num_dimensions', info.num_dimensions, ...
+        'ensemble.clocktype', info.clocktype, ...
+        'epochid.epochid', epochid, ...
         'app.name', 'ndi.fun.ensemble', ...
         'app.version', app_version);
 
@@ -181,11 +170,3 @@ function id = local_id(x)
             'object with an id() method.']);
     end
 end % local_id()
-
-function ids = local_ids(c)
-% map a cell array of ids/objects to a cell array of char ids
-    ids = cell(1, numel(c));
-    for i=1:numel(c)
-        ids{i} = local_id(c{i});
-    end
-end % local_ids()
