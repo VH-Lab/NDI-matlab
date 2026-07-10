@@ -262,10 +262,12 @@ classdef ensemble < ndi.element.timeseries
                 'ensemble.clocktype', clockname, ...
                 'epochid.epochid', epochid, ...
                 'app.name', 'ndi.element.ensemble');
-            % ErrorIfNotFound=0 so the dependency is added even if a stale cached
-            % blank definition is missing it (robust across a long-lived session)
-            mapdoc = mapdoc.set_dependency_value('element_id', obj.id(), 'ErrorIfNotFound', 0);
-            mapdoc = mapdoc.set_dependency_value('element_epoch_id', epochdoc.id(), 'ErrorIfNotFound', 0);
+            % These dependencies are declared in the 'ensemble' definition, so a
+            % missing one (default ErrorIfNotFound=1 raises) signals a genuine
+            % problem -- a wrong definition or a stale in-memory definition cache
+            % that must be cleared -- rather than something to paper over.
+            mapdoc = mapdoc.set_dependency_value('element_id', obj.id());
+            mapdoc = mapdoc.set_dependency_value('element_epoch_id', epochdoc.id());
             for i = 1:numel(neuron_ids)
                 mapdoc = mapdoc.add_dependency_value_n('neuron_id', neuron_ids{i});
             end
