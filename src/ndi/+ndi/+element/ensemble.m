@@ -25,7 +25,7 @@ classdef ensemble < ndi.element.timeseries
     % not read the document directly.
     %
     % Construction:
-    %    OBJ = ndi.element.ensemble(S, NAME, REFERENCE, PROBE, SUBJECT_ID) - build
+    %    OBJ = ndi.element.ensemble(S, NAME, REFERENCE, PROBE) - build
     %    OBJ = ndi.element.ensemble(S, DOC_OR_ID)                          - load
     %
     % See also: ndi.element.timeseries, ndi.fun.ensemble.create,
@@ -35,24 +35,24 @@ classdef ensemble < ndi.element.timeseries
         function obj = ensemble(varargin)
             % ENSEMBLE - create an ndi.element.ensemble object
             %
-            % OBJ = ndi.element.ensemble(S, NAME, REFERENCE, PROBE, SUBJECT_ID)
+            % OBJ = ndi.element.ensemble(S, NAME, REFERENCE, PROBE)
             %   builds an ensemble element of type 'ensemble' with PROBE as its
-            %   underlying element. If an element with the same name/reference
-            %   already exists in S it is loaded rather than duplicated.
+            %   underlying element (the subject is taken from PROBE). If an element
+            %   with the same name/reference already exists in S it is loaded
+            %   rather than duplicated.
             %
             % OBJ = ndi.element.ensemble(S, DOC_OR_ID)
             %   loads an existing ensemble element from its ndi.document (or id).
             %
-            if numel(varargin) >= 5
+            if numel(varargin) >= 4
                 S = varargin{1};
                 name = varargin{2};
                 reference = varargin{3};
                 underlying = varargin{4};
-                subject_id = varargin{5};
-                args = {S, name, reference, 'ensemble', underlying, 0, subject_id};
-                if numel(varargin) >= 6
-                    args{8} = varargin{6}; % optional extra dependencies
-                end
+                % The subject is derived from the underlying element; do NOT pass
+                % a subject_id (a 7th argument), or the base constructor warns
+                % that it is ignoring it.
+                args = {S, name, reference, 'ensemble', underlying, 0};
             else
                 args = varargin; % load form (S, doc/id) or pass-through
             end

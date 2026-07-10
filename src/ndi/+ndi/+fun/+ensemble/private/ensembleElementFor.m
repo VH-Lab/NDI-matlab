@@ -12,8 +12,8 @@ function ens = ensembleElementFor(S, probe)
 % This is a private helper for the ndi.fun.ensemble package.
 
     name = [probe.name '_ensemble'];
-    % subject is derived from the underlying probe; pass '' to avoid the
-    % "Ignoring input subject_id because underlying element is given" warning.
-    ens = ndi.element.ensemble(S, name, probe.reference, probe, '');
+    % The subject is derived from the underlying probe, so we do not pass a
+    % subject_id (which would trigger a warning from the element constructor).
+    ens = ndi.element.ensemble(S, name, probe.reference, probe);
 
 end % ensembleElementFor()
