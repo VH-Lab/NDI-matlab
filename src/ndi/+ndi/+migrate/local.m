@@ -43,14 +43,18 @@ function result = local(path, options)
 %                      target wire format. 'V_delta' preserves the
 %                      historical class-preserving behaviour and
 %                      writes V_delta.sqlite. 'V_epsilon' (Brainstorm E)
-%                      and 'V_zeta' (Brainstorm I) route split-eligible
-%                      classes through the matching migrators (1 -> N)
-%                      and run a second pass that resolves
-%                      session-context-dependent deferrals (e.g.
-%                      stimulus_bath -> bath) using the open body set,
-%                      writing <TargetVersion>.sqlite. V_zeta is the
-%                      current direction; V_epsilon is retained as an
-%                      archived reference.
+%                      'V_zeta' (Brainstorm I) and 'V_eta' (Brainstorm
+%                      J) route split-eligible classes through the
+%                      matching migrators (1 -> N) and run a second pass
+%                      using the open body set. For V_epsilon/V_zeta the
+%                      pass resolves session-context-dependent deferrals
+%                      (e.g. stimulus_bath -> bath); for V_eta it promotes
+%                      attributed anatomical loci to Path-S part-subjects
+%                      (a part-`subject` + `term_assertion` + `part_of`
+%                      relation, retargeting the co-anchored manipulation).
+%                      Writes <TargetVersion>.sqlite. V_eta (Brainstorm J)
+%                      is the current direction; V_zeta/V_epsilon are
+%                      retained as archived references.
 %
 %   RESULT is a struct with fields:
 %       path         - the input PATH (char).
@@ -188,6 +192,19 @@ function result = local(path, options)
             warning('NDI:migrate:deferredResolveFailed', ...
                 ['Second-pass resolution of session-context deferrals ' ...
                  'failed (%s); leaving them quarantined.'], ME.message);
+        end
+    elseif strcmp(options.TargetVersion, 'V_eta')
+        % V_eta's second pass is different in kind: the J migrators defer
+        % nothing (they emit complete bodies), but an attributed anatomical
+        % locus can only be promoted to a Path-S part-subject with the whole
+        % migrated body set in hand (the corpus-wide subject graph). Promote
+        % here; a failure leaves the located-by-default form intact.
+        try
+            convertResult = resolvePathS(convertResult, options);
+        catch ME
+            warning('NDI:migrate:pathSFailed', ...
+                ['Second-pass Path-S promotion failed (%s); leaving ' ...
+                 'anatomical loci located-by-default.'], ME.message);
         end
     end
 
@@ -339,6 +356,50 @@ function summary = recountSummary(convertResult)
         end
     end
     summary.by_class = byClass;
+end
+
+function convertResult = resolvePathS(convertResult, options)
+%RESOLVEPATHS V_eta second pass: promote attributed anatomical loci to Path-S
+%   part-subjects using the whole migrated body set. The pass-1 J migrators emit
+%   a located-by-default `term_observation` for every anatomical site (D3); here
+%   -- with the corpus-wide subject graph in hand -- a site that is an
+%   intervention target (co-anchored with a manipulation) becomes a part-subject
+%   + a `term_assertion` of its anatomical kind + a `part_of` `directed_relation`,
+%   and the co-anchored manipulation is retargeted onto the part. Merely-located
+%   sites (probe/label) are left untouched. See ndi.migrate.internal.pathSPromotion.
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [kept, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+    if ~changed
+        return;
+    end
+    % rewrap the surviving (possibly retargeted) bodies
+    keptDocs = cell(1, numel(kept));
+    for k = 1:numel(kept)
+        keptDocs{k} = did2.document(kept{k});
+    end
+    convertResult.migrated = keptDocs;
+    % fold the minted part-subject / term_assertion / part_of bodies through
+    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
+    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
+    % rather than re-migrating -- the same footing the deferred-resolution pass
+    % uses.
+    if ~isempty(minted)
+        sub = did2.convert.v1_to_v2(minted, ...
+            'Validate', options.Validate, ...
+            'SchemaCache', options.SchemaCache, ...
+            'TargetVersion', options.TargetVersion, ...
+            'Verbose', false);
+        convertResult.migrated = [convertResult.migrated, sub.migrated];
+        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    end
+    convertResult.summary = recountSummary(convertResult);
 end
 
 % ---- v1 source detection ---------------------------------------------------
