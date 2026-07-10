@@ -1,7 +1,7 @@
-function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, options)
+function [activity, neuron_ids, neuron_names, info, spike_rows] = load(S, element, epochid, options)
 % ndi.fun.ensemble.load - build a neuron ensemble by reading spikes for an epoch
 %
-% [ACTIVITY, NEURON_IDS, NEURON_NAMES, INFO] = ndi.fun.ensemble.LOAD(S, ELEMENT, EPOCHID, ...)
+% [ACTIVITY, NEURON_IDS, NEURON_NAMES, INFO, SPIKE_ROWS] = ndi.fun.ensemble.LOAD(S, ELEMENT, EPOCHID, ...)
 %
 % Builds the spiking "ensemble" of all neurons recorded during epoch EPOCHID of
 % ELEMENT. It finds the spiking-neuron elements built on ELEMENT (the elements
@@ -56,8 +56,13 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
 %                  the row order of ACTIVITY.
 %   NEURON_NAMES - a 1-by-N cell array of the neuron element strings, same order.
 %   INFO         - a struct with fields num_neurons, num_dimensions (2),
-%                  value_type, value_description, and clocktype (the name of
-%                  the clock the spike times are in).
+%                  value_type, value_description, clocktype (the name of the
+%                  clock the spike times are in), clock (the ndi.time.clocktype
+%                  object), and t0_t1 (the [t0 t1] extent of the epoch in that
+%                  clock).
+%   SPIKE_ROWS   - a 1-by-N cell array; SPIKE_ROWS{i} is the row vector of
+%                  spike times of neuron i (the same data as row i of ACTIVITY,
+%                  but without the zero padding).
 %
 % =========================================================================
 % EXAMPLE
@@ -80,22 +85,25 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
 
     element_obj = local_element_object(element, S);
 
-    % --- time reference for ELEMENT's epoch --------------------------------
+    % --- time reference and extent of ELEMENT's epoch ----------------------
+    et = element_obj.epochtable();
+    idx = find(strcmp(epochid, {et.epoch_id}), 1);
+    if isempty(idx)
+        error('ndi:ensemble:load:noEpoch', ...
+            'Element ''%s'' has no epoch ''%s''.', ...
+            element_obj.elementstring(), epochid);
+    end
     if isempty(options.clocktype)
-        et = element_obj.epochtable();
-        idx = find(strcmp(epochid, {et.epoch_id}), 1);
-        if isempty(idx)
-            error('ndi:ensemble:load:noEpoch', ...
-                'Element ''%s'' has no epoch ''%s''.', ...
-                element_obj.elementstring(), epochid);
-        end
+        clock_index = 1;
         ref_clock = et(idx).epoch_clock{1};
         if ~isa(ref_clock, 'ndi.time.clocktype')
             ref_clock = ndi.time.clocktype(ref_clock);
         end
     else
         ref_clock = ndi.time.clocktype(options.clocktype);
+        clock_index = local_clock_index(et(idx), ref_clock);
     end
+    ref_t0_t1 = et(idx).t0_t1{clock_index};
     clockname = ref_clock.type;
     timeref = ndi.time.timereference(element_obj, ref_clock, epochid, 0);
 
@@ -178,9 +186,28 @@ function [activity, neuron_ids, neuron_names, info] = load(S, element, epochid, 
     end
     info = struct('num_neurons', N, 'num_dimensions', 2, ...
         'value_type', options.value_type, 'value_description', vdesc, ...
-        'clocktype', clockname);
+        'clocktype', clockname, 'clock', ref_clock, 't0_t1', ref_t0_t1(:).');
 
 end % load()
+
+% -------------------------------------------------------------------------
+
+function ci = local_clock_index(et_entry, clk)
+% index, within an epochtable entry's epoch_clock list, of the clock CLK
+    ci = [];
+    for i = 1:numel(et_entry.epoch_clock)
+        c = et_entry.epoch_clock{i};
+        if ~isa(c,'ndi.time.clocktype'), c = ndi.time.clocktype(c); end
+        if strcmp(c.type, clk.type)
+            ci = i;
+            return;
+        end
+    end
+    if isempty(ci)
+        error('ndi:ensemble:load:noClock', ...
+            'The epoch does not have a clock of type ''%s''.', clk.type);
+    end
+end % local_clock_index()
 
 % -------------------------------------------------------------------------
 

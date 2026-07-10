@@ -1,54 +1,47 @@
-function ensemble_docs = allElement(S, element, options)
-% ndi.fun.ensemble.allElement - create ensemble documents for every epoch of an element
+function ensembleElement = allElement(S, element, options)
+% ndi.fun.ensemble.allElement - build an ensemble element for every epoch of an element
 %
-% ENSEMBLE_DOCS = ndi.fun.ensemble.ALLELEMENT(S, ELEMENT, ...)
+% ENSEMBLEELEMENT = ndi.fun.ensemble.ALLELEMENT(S, ELEMENT, ...)
 %
-% For the ELEMENT in the ndi.session (or ndi.dataset) S (usually a probe such as
-% an n-trode), finds every epoch of ELEMENT and, for each one, builds and adds
-% to the database an 'ensemble' ndi.document describing the spiking neurons
-% recorded on ELEMENT in that epoch (see ndi.fun.ensemble.create).
-% ENSEMBLE_DOCS is a cell array of the ensemble documents that were created.
+% Finds (or creates) the ndi.element.ensemble for ELEMENT (usually a probe such
+% as an n-trode) in the ndi.session (or ndi.dataset) S, and adds an ensemble for
+% each of ELEMENT's epochs (via ndi.fun.ensemble.create). ENSEMBLEELEMENT is the
+% ndi.element.ensemble, now carrying an epoch for every epoch of ELEMENT that had
+% recorded neurons.
 %
-% What happens for an epoch that already has an ensemble document (matched by
-% ELEMENT and epoch) is controlled by the IfExists option.
+% What happens for an epoch that already has an ensemble is controlled by the
+% IfExists option.
 %
 % =========================================================================
 % INPUTS
 % =========================================================================
 %   S       - an ndi.session or ndi.dataset object.
 %   ELEMENT - the element to process (usually a probe / n-trode): an
-%             ndi.probe/ndi.element object or an element document id string. Its
-%             epochs are read from its epochtable, and its spiking neurons are
-%             the elements that have it as their underlying element.
+%             ndi.probe/ndi.element object or an element document id string.
 %
 % =========================================================================
 % OPTIONS (name/value pairs)
 % =========================================================================
-%   IfExists ('skip')  - what to do for an epoch that already has an ensemble
-%                        document for ELEMENT:
-%                          'skip'    - leave the existing document and move on
-%                                      (default);
+%   IfExists ('skip')  - what to do for an epoch that already has an ensemble:
+%                          'skip'    - leave it and move on (default);
 %                          'error'   - raise an error;
-%                          'replace' - delete the existing document(s) and
-%                                      build a new one.
-%   Verbose (false)    - print progress messages (also passed to
-%                        ndi.fun.ensemble.create).
+%                          'replace' - delete the existing epoch (its map and
+%                                      element_epoch documents) and rebuild it.
+%   Verbose (false)    - print progress messages (also passed to create).
 %
 % =========================================================================
 % OUTPUT
 % =========================================================================
-%   ENSEMBLE_DOCS - a cell array of the ensemble ndi.documents created and
-%                   added to the database by this call (epochs that were
-%                   skipped, or that had no recorded neurons, are not
-%                   included).
+%   ENSEMBLEELEMENT - the ndi.element.ensemble built on ELEMENT.
 %
 % =========================================================================
 % EXAMPLE
 % =========================================================================
 %   ntrodes = S.getprobes('type','n-trode');
-%   docs = ndi.fun.ensemble.allElement(S, ntrodes{1}, 'Verbose', true);
+%   ens = ndi.fun.ensemble.allElement(S, ntrodes{1}, 'Verbose', true);
 %
-% See also: ndi.fun.ensemble.allNTrodes, ndi.fun.ensemble.create
+% See also: ndi.fun.ensemble.allNTrodes, ndi.fun.ensemble.create,
+%   ndi.element.ensemble
 
     arguments
         S
@@ -59,23 +52,18 @@ function ensemble_docs = allElement(S, element, options)
 
     vb = options.Verbose;
 
-    element_obj = local_object(element, S);
-    element_id = element_obj.id();
-    element_name = local_name(element_obj, element_id);
+    probe = local_object(element, S);
+    probe_name = local_name(probe);
+    ensembleElement = ensembleElementFor(S, probe);
 
-    et = element_obj.epochtable();
+    et = probe.epochtable();
     epochids = {et.epoch_id};
-    local_v(vb, ['element ' element_name ' has ' int2str(numel(epochids)) ' epoch(s).']);
+    local_v(vb, ['element ' probe_name ' has ' int2str(numel(epochids)) ' epoch(s).']);
 
-    ensemble_docs = {};
     for i = 1:numel(epochids)
         epochid = epochids{i};
 
-        existing = S.database_search( ...
-            ndi.query('','isa','ensemble','') & ...
-            ndi.query('','depends_on','element_id', element_id) & ...
-            ndi.query('epochid.epochid','exact_string', epochid, ''));
-
+        existing = ndi.fun.ensemble.findExisting(S, ensembleElement, 'epochid', epochid);
         if ~isempty(existing)
             switch options.IfExists
                 case 'skip'
@@ -83,52 +71,58 @@ function ensemble_docs = allElement(S, element, options)
                     continue;
                 case 'error'
                     error('ndi:ensemble:allElement:exists', ...
-                        ['An ensemble document already exists for element %s, ' ...
-                        'epoch %s (document id %s).'], element_id, epochid, existing{1}.id());
+                        ['An ensemble already exists for element %s, epoch %s ' ...
+                        '(map document id %s).'], ensembleElement.id(), epochid, existing{1}.id());
                 case 'replace'
-                    local_v(vb, ['epoch ' epochid ': removing ' int2str(numel(existing)) ...
-                        ' existing ensemble(s) and rebuilding.']);
-                    S.database_rm(existing);
+                    local_v(vb, ['epoch ' epochid ': removing existing ensemble and rebuilding.']);
+                    local_remove(S, existing);
             end
         end
 
         local_v(vb, ['epoch ' epochid ': building ensemble...']);
-        doc = ndi.fun.ensemble.create(S, element_obj, epochid, ...
-            'add_to_database', true, 'CheckExisting', false, ...
-            'SkipIfEmpty', true, 'Verbose', vb);
-        if ~isempty(doc)
-            ensemble_docs{end+1} = doc; %#ok<AGROW>
-        end
+        ndi.fun.ensemble.create(S, probe, epochid, ...
+            'CheckExisting', false, 'SkipIfEmpty', true, ...
+            'add_to_database', true, 'Verbose', vb);
     end
 
-    local_v(vb, ['element ' element_name ': created ' int2str(numel(ensemble_docs)) ...
-        ' ensemble(s).']);
+    local_v(vb, ['element ' probe_name ': done.']);
 
 end % allElement()
 
 % -------------------------------------------------------------------------
 
+function local_remove(S, mapdocs)
+% remove existing ensemble map documents and their element_epoch parents
+    for i = 1:numel(mapdocs)
+        md = mapdocs{i};
+        ee_id = md.dependency_value('element_epoch_id', 'ErrorIfNotFound', 0);
+        S.database_rm(md);           % remove the map doc first (it depends on the epoch)
+        if ~isempty(ee_id)
+            S.database_rm(ee_id);    % remove the element_epoch doc and its binary
+        end
+    end
+end % local_remove()
+
 function obj = local_object(x, S)
-% return an object (with id() and epochtable()) from an object or a doc id
-    if ischar(x) || (isstring(x) && isscalar(x))
+    if isa(x, 'ndi.element')
+        obj = x;
+    elseif ischar(x) || (isstring(x) && isscalar(x))
         obj = ndi.database.fun.ndi_document2ndi_object(char(x), S);
         if isempty(obj)
             error('ndi:ensemble:allElement:badElement', ...
                 'Could not load an ndi.element for document id ''%s''.', char(x));
         end
-    elseif isobject(x)
-        obj = x;
     else
         error('ndi:ensemble:allElement:badElement', ...
             'ELEMENT must be an ndi.probe/ndi.element object or a document id string.');
     end
 end % local_object()
 
-function name = local_name(obj, fallback)
+function name = local_name(obj)
     try
         name = obj.elementstring();
     catch
-        name = fallback;
+        name = obj.id();
     end
 end % local_name()
 

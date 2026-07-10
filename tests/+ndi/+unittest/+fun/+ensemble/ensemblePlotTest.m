@@ -1,56 +1,44 @@
 classdef ensemblePlotTest < matlab.unittest.TestCase
-    % ENSEMBLEPLOTTEST - Tests for ndi.fun.ensemble.plot
+    % ENSEMBLEPLOTTEST - Tests for ndi.fun.ensemble.plot (element-based)
     %
-    % Seeds an 'ensemble' document with a known activity matrix and verifies that
-    % ndi.fun.ensemble.plot draws it as a single line whose XData/YData encode the
-    % expected NaN-separated tick marks, that the BottomEdge/TopEdge/Offset
-    % options position the per-cell bands, and that the axis labels follow the
-    % XLabel/YLabel options. Graphics are drawn into an off-screen figure.
+    % Builds an ensemble element from a probe with spiking neurons, then verifies
+    % that ndi.fun.ensemble.plot draws it as a single line whose XData/YData
+    % encode the NaN-separated tick marks (spike time on X; [BottomEdge TopEdge]
+    % + column*Offset on Y), that a [T0 T1] window limits what is drawn, and that
+    % the axis labels follow the XLabel/YLabel options. Graphics are drawn into an
+    % off-screen figure. Like ensembleElementTest, these exercise readtimeseries.
 
     properties
         Session
         TempDir
-        ProbeId
-        NeuronIds
-        NeuronNames
+        Probe
     end
 
     methods (TestMethodSetup)
         function setupSession(testCase)
             testCase.TempDir = tempname;
             mkdir(testCase.TempDir);
-            testCase.Session = ndi.session.dir('ensemble_plot_test', testCase.TempDir);
-            S = testCase.Session;
+            S = ndi.session.dir('ensemble_plot_test', testCase.TempDir);
 
             subject = ndi.subject('subject1@test', 'test subject');
             subdoc = subject.newdocument();
             S.database_add(subdoc);
             subjectId = subdoc.id();
 
-            probe = ndi.document('element', 'base.session_id', S.id(), ...
-                'element.ndi_element_class', 'ndi.probe.timeseries.mfdaq', ...
-                'element.name', 'ctx_probe', 'element.reference', 1, ...
-                'element.type', 'n-trode', 'element.direct', 1);
-            probe = probe.set_dependency_value('subject_id', subjectId);
-            S.database_add(probe);
-            testCase.ProbeId = probe.id();
+            utc = ndi.time.clocktype('UTC');
+            probe = ndi.element.timeseries(S, 'ctx_probe', 1, 'n-trode', [], 0, subjectId);
+            probe = probe.addepoch('epoch_1', utc, [0 100], [], []);
 
-            n = 3;
-            ids = cell(1,n); names = cell(1,n);
-            for i = 1:n
-                nm = sprintf('ctx_probe_neuron_%d', i);
-                elem = ndi.document('element', 'base.session_id', S.id(), ...
-                    'element.ndi_element_class', 'ndi.neuron', ...
-                    'element.name', nm, 'element.reference', i, ...
-                    'element.type', 'spikes', 'element.direct', 0);
-                elem = elem.set_dependency_value('underlying_element_id', testCase.ProbeId);
-                elem = elem.set_dependency_value('subject_id', subjectId);
-                S.database_add(elem);
-                ids{i} = elem.id();
-                names{i} = nm;
+            spikes = { [10 50 90], [20 60], [30 70 80 95] };
+            for i = 1:numel(spikes)
+                e = ndi.element.timeseries(S, sprintf('neuron_%d', i), i, 'spikes', ...
+                    probe, 0, subjectId);
+                t = spikes{i}(:);
+                e = e.addepoch('epoch_1', utc, [0 100], t, ones(size(t))); %#ok<NASGU>
             end
-            testCase.NeuronIds = ids;
-            testCase.NeuronNames = names;
+
+            testCase.Probe = probe;
+            testCase.Session = S;
         end
     end
 
@@ -65,115 +53,75 @@ classdef ensemblePlotTest < matlab.unittest.TestCase
     methods (Test)
 
         function testHashMarkCoordinates(testCase)
-            % neuron 1 spikes at 0.1 and 0.2; neuron 2 at 0.5; neuron 3 silent.
-            E = sparse(3,2);
-            E(1,1:2) = [0.1 0.2];
-            E(2,1)   = 0.5;
-            doc = testCase.seedEnsemble(E);
+            S = testCase.Session;
+            ens = ndi.fun.ensemble.create(S, testCase.Probe, 'epoch_1');
+            [colindex, t] = ens.readtimeseries('epoch_1', -Inf, Inf);
+            colindex = round(colindex(:).');
+            t = t(:).';
+            n = numel(t);
 
             fig = figure('Visible','off');
             cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
             axes(fig);
-            h = ndi.fun.ensemble.plot(testCase.Session, doc, ...
+            h = ndi.fun.ensemble.plot(S, ens, 'epoch_1', ...
                 'BottomEdge', 0.1, 'TopEdge', 0.9, 'Offset', 1.0);
 
             testCase.verifyTrue(isvalid(h), 'Should return a valid line handle.');
-            % find() returns entries in column-major order:
-            %   (1,1)=0.1, (2,1)=0.5, (1,2)=0.2
-            expX = [0.1 0.1 NaN 0.5 0.5 NaN 0.2 0.2 NaN];
-            expY = [1.1 1.9 NaN 2.1 2.9 NaN 1.1 1.9 NaN];
-            testCase.verifyEqual(numel(h.XData), 9, 'Three ticks, three points each.');
-            testCase.verifyTrue(isequaln(h.XData(:).', expX), ...
-                'X ticks should sit at the spike times, with NaN gaps.');
-            testCase.verifyTrue(isequaln(h.YData(:).', expY), ...
-                'Y bands should be [BottomEdge TopEdge] + cell*Offset, with NaN gaps.');
+            testCase.verifyEqual(numel(h.XData), 3*n, 'Three points per spike.');
+            testCase.verifyEqual(h.XData(1:3:end), t, 'AbsTol', 1e-9, ...
+                'Tick X positions are the spike times.');
+            testCase.verifyEqual(h.XData(2:3:end), t, 'AbsTol', 1e-9);
+            testCase.verifyTrue(all(isnan(h.XData(3:3:end))), 'NaN gaps between ticks.');
+            testCase.verifyEqual(h.YData(1:3:end), 0.1 + colindex, 'AbsTol', 1e-9, ...
+                'Tick bottoms are BottomEdge + column*Offset.');
+            testCase.verifyEqual(h.YData(2:3:end), 0.9 + colindex, 'AbsTol', 1e-9, ...
+                'Tick tops are TopEdge + column*Offset.');
         end
 
-        function testOffsetAndEdges(testCase)
-            % Non-default edges and offset reposition the bands.
-            E = sparse([1 2],[1 1],[0.3 0.4],2,1);
-            doc = testCase.seedEnsemble(E);
-
+        function testWindowedRead(testCase)
+            S = testCase.Session;
+            ens = ndi.fun.ensemble.create(S, testCase.Probe, 'epoch_1');
             fig = figure('Visible','off');
             cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
             axes(fig);
-            h = ndi.fun.ensemble.plot(testCase.Session, doc, ...
-                'BottomEdge', 0.2, 'TopEdge', 0.8, 'Offset', 2.0);
-
-            % cell 1 -> [0.2 0.8]+2 = 2.2,2.8 ; cell 2 -> +4 = 4.2,4.8
-            expY = [2.2 2.8 NaN 4.2 4.8 NaN];
-            testCase.verifyTrue(isequaln(h.YData(:).', expY), ...
-                'Edges and offset should set the band positions.');
+            h = ndi.fun.ensemble.plot(S, ens, 'epoch_1', 'T0', 25, 'T1', 75);
+            x = h.XData(1:3:end);
+            testCase.verifyTrue(all(x>=25 & x<=75), ...
+                'Only spikes within the window should be drawn.');
         end
 
         function testLabelsOnByDefault(testCase)
-            E = sparse([1],[1],[0.3],3,1);
-            doc = testCase.seedEnsemble(E);
+            S = testCase.Session;
+            ens = ndi.fun.ensemble.create(S, testCase.Probe, 'epoch_1');
             fig = figure('Visible','off');
             cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
             ax = axes(fig);
-            ndi.fun.ensemble.plot(testCase.Session, doc);
+            ndi.fun.ensemble.plot(S, ens, 'epoch_1');
             testCase.verifyEqual(ax.XLabel.String, 'Time(s)');
             testCase.verifyEqual(ax.YLabel.String, 'Neuron #');
         end
 
         function testLabelsCanBeDisabled(testCase)
-            E = sparse([1],[1],[0.3],3,1);
-            doc = testCase.seedEnsemble(E);
+            S = testCase.Session;
+            ens = ndi.fun.ensemble.create(S, testCase.Probe, 'epoch_1');
             fig = figure('Visible','off');
             cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
             ax = axes(fig);
-            ndi.fun.ensemble.plot(testCase.Session, doc, 'XLabel', false, 'YLabel', false);
+            ndi.fun.ensemble.plot(S, ens, 'epoch_1', 'XLabel', false, 'YLabel', false);
             testCase.verifyEmpty(ax.XLabel.String);
             testCase.verifyEmpty(ax.YLabel.String);
         end
 
         function testColorAndLineWidth(testCase)
-            E = sparse([1],[1],[0.3],2,1);
-            doc = testCase.seedEnsemble(E);
+            S = testCase.Session;
+            ens = ndi.fun.ensemble.create(S, testCase.Probe, 'epoch_1');
             fig = figure('Visible','off');
             cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
             axes(fig);
-            h = ndi.fun.ensemble.plot(testCase.Session, doc, ...
-                'Color', [1 0 0], 'LineWidth', 2.5);
-            testCase.verifyEqual(h.Color, [1 0 0], 'Color option should be applied.');
-            testCase.verifyEqual(h.LineWidth, 2.5, 'LineWidth option should be applied.');
+            h = ndi.fun.ensemble.plot(S, ens, 'epoch_1', 'Color', [1 0 0], 'LineWidth', 2.5);
+            testCase.verifyEqual(h.Color, [1 0 0]);
+            testCase.verifyEqual(h.LineWidth, 2.5);
         end
 
-    end
-
-    methods % helpers
-        function doc = seedEnsemble(testCase, activity)
-            % Build and add an 'ensemble' document with a known activity matrix.
-            S = testCase.Session;
-            N = size(activity,1);
-            ids = testCase.NeuronIds(1:N);
-            names = testCase.NeuronNames(1:N);
-
-            af = [ndi.file.temp_name() '.ndisparse'];
-            ndi.util.writeSparse(af, activity);
-            nf = [ndi.file.temp_name() '.txt'];
-            fid = fopen(nf, 'w');
-            for i = 1:numel(names)
-                fprintf(fid, '%s\n', names{i});
-            end
-            fclose(fid);
-
-            doc = S.newdocument('ensemble', ...
-                'ensemble.ensemble_name', 'plot', ...
-                'ensemble.value_type', 'spiketimes', ...
-                'ensemble.value_description', 'seeded', ...
-                'ensemble.num_neurons', N, ...
-                'ensemble.num_dimensions', 2, ...
-                'ensemble.clocktype', 'dev_local_time', ...
-                'epochid.epochid', 'epoch_1');
-            doc = doc.set_dependency_value('element_id', testCase.ProbeId);
-            for i = 1:numel(ids)
-                doc = doc.add_dependency_value_n('neuron_id', ids{i});
-            end
-            doc = doc.add_file('ensemble_activity.ndisparse', af);
-            doc = doc.add_file('neuron_names.txt', nf);
-            S.database_add(doc);
-        end
     end
 end

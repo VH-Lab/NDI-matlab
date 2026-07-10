@@ -1,13 +1,11 @@
 classdef ensembleAllElementTest < matlab.unittest.TestCase
     % ENSEMBLEALLELEMENTTEST - Tests for ndi.fun.ensemble.allElement / allNTrodes
     %
-    % Builds an element (an n-trode ndi.element.timeseries) with one UTC epoch and
-    % several spiking neurons built on it, then checks that
-    % ndi.fun.ensemble.allElement creates an ensemble document for the epoch and
-    % honors the IfExists option (skip / error / replace). Also checks that
-    % allNTrodes runs over a session's n-trode probes. Like ensembleExtractTest,
-    % these exercise the extraction path (readtimeseries), so they depend on the
-    % session's time handling.
+    % Builds a probe (n-trode) with one UTC epoch and spiking neurons built on it,
+    % then checks that ndi.fun.ensemble.allElement builds an ndi.element.ensemble
+    % with an ensemble for the epoch and honors IfExists (skip / error / replace),
+    % and that allNTrodes runs. Like ensembleElementTest, these exercise the
+    % extraction path (readtimeseries).
 
     properties
         Session
@@ -19,7 +17,7 @@ classdef ensembleAllElementTest < matlab.unittest.TestCase
         function setupSession(testCase)
             testCase.TempDir = tempname;
             mkdir(testCase.TempDir);
-            S = ndi.session.dir('ensemble_allntrode_test', testCase.TempDir);
+            S = ndi.session.dir('ensemble_allelement_test', testCase.TempDir);
 
             subject = ndi.subject('subject1@test', 'test subject');
             subdoc = subject.newdocument();
@@ -53,23 +51,20 @@ classdef ensembleAllElementTest < matlab.unittest.TestCase
 
     methods (Test)
 
-        function testCreatesEnsemblePerEpoch(testCase)
+        function testBuildsEnsembleElement(testCase)
             S = testCase.Session;
-            docs = ndi.fun.ensemble.allElement(S, testCase.Probe);
-            testCase.verifyEqual(numel(docs), 1, 'One ensemble for the single epoch.');
-            all = S.database_search(ndi.query('','isa','ensemble',''));
-            testCase.verifyEqual(numel(all), 1);
-            testCase.verifyEqual(all{1}.dependency_value('element_id'), testCase.Probe.id());
-            testCase.verifyEqual(all{1}.document_properties.epochid.epochid, 'epoch_1');
+            ens = ndi.fun.ensemble.allElement(S, testCase.Probe);
+            testCase.verifyClass(ens, 'ndi.element.ensemble');
+            docs = ndi.fun.ensemble.findExisting(S, ens, 'epochid', 'epoch_1');
+            testCase.verifyEqual(numel(docs), 1, 'One ensemble map doc for the epoch.');
         end
 
         function testSkip(testCase)
             S = testCase.Session;
             ndi.fun.ensemble.allElement(S, testCase.Probe);
-            docs2 = ndi.fun.ensemble.allElement(S, testCase.Probe); % default 'skip'
-            testCase.verifyEmpty(docs2, 'A second run should create nothing (skip).');
+            ndi.fun.ensemble.allElement(S, testCase.Probe); % default 'skip'
             all = S.database_search(ndi.query('','isa','ensemble',''));
-            testCase.verifyEqual(numel(all), 1, 'Still only one ensemble after skip.');
+            testCase.verifyEqual(numel(all), 1, 'Skip should not duplicate the ensemble.');
         end
 
         function testError(testCase)
@@ -81,22 +76,26 @@ classdef ensembleAllElementTest < matlab.unittest.TestCase
 
         function testReplace(testCase)
             S = testCase.Session;
-            d1 = ndi.fun.ensemble.allElement(S, testCase.Probe);
+            ens = ndi.fun.ensemble.allElement(S, testCase.Probe);
+            d1 = ndi.fun.ensemble.findExisting(S, ens, 'epochid', 'epoch_1');
             firstId = d1{1}.id();
-            d2 = ndi.fun.ensemble.allElement(S, testCase.Probe, 'IfExists', 'replace');
-            testCase.verifyEqual(numel(d2), 1, 'Replace should create a new ensemble.');
+
+            ndi.fun.ensemble.allElement(S, testCase.Probe, 'IfExists', 'replace');
+            d2 = ndi.fun.ensemble.findExisting(S, ens, 'epochid', 'epoch_1');
+            testCase.verifyEqual(numel(d2), 1, 'Still exactly one ensemble after replace.');
+            testCase.verifyNotEqual(d2{1}.id(), firstId, ...
+                'Replace should produce a new map document.');
+
             all = S.database_search(ndi.query('','isa','ensemble',''));
-            testCase.verifyEqual(numel(all), 1, 'Still only one ensemble after replace.');
-            testCase.verifyNotEqual(all{1}.id(), firstId, ...
-                'The existing document should have been replaced by a new one.');
+            testCase.verifyEqual(numel(all), 1, 'No leftover ensemble documents.');
         end
 
         function testAllNTrodesRuns(testCase)
-            % The probe here is not registered through a daq system, so getprobes
-            % returns no n-trodes; allNTrodes should simply return empty.
+            % The probe is not registered through a daq system, so getprobes
+            % returns no n-trodes; allNTrodes should return empty.
             S = testCase.Session;
-            docs = ndi.fun.ensemble.allNTrodes(S);
-            testCase.verifyEmpty(docs, 'With no getprobes n-trodes, the result is empty.');
+            ens = ndi.fun.ensemble.allNTrodes(S);
+            testCase.verifyEmpty(ens, 'With no getprobes n-trodes, the result is empty.');
         end
 
     end

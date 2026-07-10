@@ -14,11 +14,13 @@
 	"depends_on": [
 		{	"name": "element_id",
 			"value": ""
+		},
+		{	"name": "element_epoch_id",
+			"value": ""
 		}
 	],
 	"files": {
 		"file_list": [
-			"ensemble_activity.ndisparse",
 			"neuron_names.txt"
 		]
 	},
@@ -27,7 +29,6 @@
 		"value_type":			"",
 		"value_description":	"",
 		"num_neurons":			0,
-		"num_dimensions":		0,
 		"clocktype":			""
 	}
 }
