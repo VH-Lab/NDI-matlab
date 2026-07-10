@@ -1,0 +1,54 @@
+{
+	"classname": "ensemble",
+	"superclasses":  [ "base", "epochid", "app" ],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1},
+		{ "name": "element_epoch_id", "mustbenotempty": 1},
+		{ "name": "neuron_id", "mustbenotempty": 0}
+	],
+	"file": [
+		{"name": "neuron_names.txt", "mustbenotempty": 1}
+	],
+	"ensemble": [
+		{
+			"name": "ensemble_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable name or label for this ensemble."
+		},
+		{
+			"name": "value_type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A short code describing what the stored values represent, e.g. 'spiketimes'."
+		},
+		{
+			"name": "value_description",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Free text describing the meaning and units of the values stored for this ensemble epoch."
+		},
+		{
+			"name": "num_neurons",
+			"type": "double",
+			"default_value": [0],
+			"parameters": [0,10000000,1],
+			"queryable": 1,
+			"documentation": "The number of neurons (elements) that make up the ensemble for this epoch. Equal to the number of neuron_id_# dependencies and to the number of columns in the epoch's stored data."
+		},
+		{
+			"name": "clocktype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the ndi.time.clocktype in which the stored spike times are expressed (e.g. 'dev_local_time')."
+		}
+	]
+}
