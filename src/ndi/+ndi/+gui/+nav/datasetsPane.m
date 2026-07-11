@@ -71,15 +71,30 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function buildHeaderRight(obj, parent)
-            btn = uibutton(parent, ...
+            % Two buttons sit close together on the right: Paths | Refresh.
+            group = uigridlayout(parent, [1 2]);
+            group.Layout.Row    = 1;
+            group.Layout.Column = 3;
+            group.ColumnWidth   = {'1x', '1x'};
+            group.RowHeight     = {'1x'};
+            group.Padding       = [0 0 0 0];
+            group.ColumnSpacing = 4;
+
+            paths = uibutton(group, ...
                 'Text',            'Paths', ...
                 'ButtonPushedFcn', @(~,~) obj.openPathsEditor());
-            btn.Layout.Row    = 1;
-            btn.Layout.Column = 3;
+            paths.Layout.Row    = 1;
+            paths.Layout.Column = 1;
+
+            refresh = uibutton(group, ...
+                'Text',            'Refresh', ...
+                'ButtonPushedFcn', @(~,~) obj.refresh());
+            refresh.Layout.Row    = 1;
+            refresh.Layout.Column = 2;
         end
 
         function w = rightWidth(~)
-            w = 60;
+            w = 128;
         end
     end
 

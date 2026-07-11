@@ -99,7 +99,7 @@ classdef pane < handle
             %   BUILD(OBJ, PARENTGRID, ROW) creates OBJ.Panel as the ROW-th
             %   child of PARENTGRID (the navigator root grid), lays out the
             %   header, and, for panes with a body, the body container.
-            obj.Panel = uipanel(parentGrid, 'BorderType', 'none');
+            obj.Panel = uipanel(parentGrid, 'BorderType', 'line');
             obj.Panel.Layout.Row    = row;
             obj.Panel.Layout.Column = 1;
 
