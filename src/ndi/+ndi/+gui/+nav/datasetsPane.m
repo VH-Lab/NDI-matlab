@@ -29,12 +29,10 @@ classdef datasetsPane < ndi.gui.nav.pane
         Resizable (1,1) logical = true   % navigator honours drag-to-resize
         Tree                             % uitree in the body
         Grip                             % thin panel marking the draggable edge
-        AppsMenu                         % uicontextmenu shown on tree nodes
-        AppsRoot                         % the "Apps" submenu inside AppsMenu
     end
 
     properties (Access = private)
-        ContextTargetNode                % session node the context menu acts on
+        NodeMenus = {}                   % per-session-node uicontextmenu handles
     end
 
     properties (Constant, Access = private)
@@ -77,7 +75,6 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.Grip.Layout.Row    = 2;
             obj.Grip.Layout.Column = 1;
 
-            obj.buildContextMenu();
             obj.populateTree();
         end
 
@@ -116,6 +113,7 @@ classdef datasetsPane < ndi.gui.nav.pane
                 return;
             end
             delete(obj.Tree.Children);
+            obj.clearNodeMenus();
 
             % --- Unaffiliated: ndi.session objects in the base workspace ---
             unaffiliated = uitreenode(obj.Tree, ...
@@ -126,7 +124,7 @@ classdef datasetsPane < ndi.gui.nav.pane
                 node = uitreenode(unaffiliated, ...
                     'Text',     obj.sessionLabel(sessions{i}), ...
                     'NodeData', obj.sessionNodeData(sessions{i}, [], ''));
-                node.ContextMenu = obj.AppsMenu;
+                obj.attachSessionMenu(node);
             end
 
             % --- Datasets: ndi.dataset objects on the search path + workspace ---
@@ -158,45 +156,41 @@ classdef datasetsPane < ndi.gui.nav.pane
                 child = uitreenode(node, ...
                     'Text',     char(ref), ...
                     'NodeData', obj.sessionNodeData([], ds, id));
-                child.ContextMenu = obj.AppsMenu;
+                obj.attachSessionMenu(child);
             end
         end
 
-        function buildContextMenu(obj)
-            %BUILDCONTEXTMENU Create the "Apps" context menu for session nodes.
-            %   A single uicontextmenu is shared by every session node (it is
-            %   assigned to each node as the tree is populated). Its "Apps"
-            %   submenu is filled from the sessionApps registry; selecting an
-            %   app resolves the right-clicked session and launches it.
-            obj.AppsMenu = uicontextmenu(obj.Navigator.Figure);
-            obj.AppsMenu.ContextMenuOpeningFcn = @(~,~) obj.onContextOpening();
-
-            obj.AppsRoot = uimenu(obj.AppsMenu, 'Text', 'Apps');
-            apps = obj.sessionApps();
+        function attachSessionMenu(obj, node)
+            %ATTACHSESSIONMENU Give one session node its own "Apps" menu.
+            %   Each menu item captures NODE directly, so launching does not
+            %   depend on the tree selection (a right-click does not reliably
+            %   commit a selection before the menu opens).
+            cm       = uicontextmenu(obj.Navigator.Figure);
+            appsRoot = uimenu(cm, 'Text', 'Apps');
+            apps     = obj.sessionApps();
             for i = 1:numel(apps)
                 app = apps(i);
-                uimenu(obj.AppsRoot, ...
-                    'Text',           app.Label, ...
-                    'MenuSelectedFcn', @(~,~) obj.launchApp(app));
+                uimenu(appsRoot, ...
+                    'Text',            app.Label, ...
+                    'MenuSelectedFcn', @(~,~) obj.launchApp(app, node));
             end
+            node.ContextMenu       = cm;
+            obj.NodeMenus{end + 1} = cm;
         end
 
-        function onContextOpening(obj)
-            %ONCONTEXTOPENING Record which session node the menu will act on.
-            %   Right-clicking a node selects it, so the current selection is
-            %   the node under the pointer.
-            obj.ContextTargetNode = [];
-            sel = obj.Tree.SelectedNodes;
-            if isempty(sel); return; end
-            nd = sel(1).NodeData;
-            if isstruct(nd) && isfield(nd, 'kind') && strcmp(nd.kind, 'session')
-                obj.ContextTargetNode = sel(1);
+        function clearNodeMenus(obj)
+            %CLEARNODEMENUS Delete per-node context menus from a prior build.
+            for i = 1:numel(obj.NodeMenus)
+                cm = obj.NodeMenus{i};
+                if ~isempty(cm) && isvalid(cm)
+                    delete(cm);
+                end
             end
+            obj.NodeMenus = {};
         end
 
-        function launchApp(obj, app)
-            %LAUNCHAPP Resolve the target session and start the chosen app.
-            node = obj.ContextTargetNode;
+        function launchApp(obj, app, node)
+            %LAUNCHAPP Resolve NODE's session and start the chosen app.
             if isempty(node) || ~isvalid(node)
                 return;
             end
