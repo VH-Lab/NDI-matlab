@@ -29,8 +29,9 @@ classdef progressPane < ndi.gui.nav.pane
 
     properties (Constant, Access = private)
         BodyHeight  = 50    % pixels of body content when idle
-        RowUnitPx   = 25    % pixels per grid "x" unit (mirrors ProgressBarWindow)
-        MaxBodyPx   = 200   % cap on body pixels; taller cascades scroll
+        RowUnitPx   = 32    % pixels per grid "x" unit; tall enough that label
+                            %   descenders (p, g, y) are not clipped
+        MaxBodyPx   = 240   % cap on body pixels; taller cascades scroll
     end
 
     methods
