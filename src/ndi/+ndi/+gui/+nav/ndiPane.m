@@ -29,6 +29,7 @@ classdef ndiPane < ndi.gui.nav.pane
                 'ButtonPushedFcn', @(~,~) obj.Navigator.openPreferences());
             btn.Layout.Row    = 1;
             btn.Layout.Column = 3;
+            obj.accentButton(btn);
         end
 
         function w = rightWidth(~)
