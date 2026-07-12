@@ -4,7 +4,7 @@ classdef pyraview < ndi.gui.app.sessionApp
 %   OBJ = ndi.gui.app.pyraview(SESSION)
 %
 %   Opens a signal viewer for the ndi.session SESSION. The window shows the
-%   continuous data for a chosen n-trode probe, epoch and filter band, with
+%   continuous data for a chosen probe, epoch and filter band, with
 %   pan/zoom scrollbars and an optional spiking-units panel that overlays
 %   spike ticks on the traces and shows unit waveforms on the side.
 %
@@ -23,7 +23,7 @@ classdef pyraview < ndi.gui.app.sessionApp
         fig                        % the figure
         mainAxes                   % main trace axes
         spikingAxes                % spiking waveform axes
-        probes = {}                % cell array of n-trode probes
+        probes = {}                % cell array of ndi.probe.timeseries.mfdaq probes
 
         current_doc = []           % pyraview document for the current view
         epoch_t0 = 0               % epoch start time (s)
@@ -86,7 +86,12 @@ classdef pyraview < ndi.gui.app.sessionApp
                 'HorizontalAlignment', 'left', 'Tag', 'ProbeText', ...
                 'FontWeight', 'bold', 'FontSize', 14);
 
-            probes = session.getprobes('type', 'n-trode');
+            % Show every multifunction-DAQ timeseries probe (n-trode, patch,
+            % sharp, ecg, eeg, ppg, accelerometer, etc.), i.e. anything that
+            % is an ndi.probe.timeseries.mfdaq. A single class-name argument to
+            % getprobes performs an isa() match, which excludes stimulator and
+            % image probes (siblings of mfdaq under ndi.probe.timeseries).
+            probes = session.getprobes('ndi.probe.timeseries.mfdaq');
             probe_strings = {};
             for i = 1:numel(probes)
                 probe_strings{end+1} = probes{i}.elementstring(); %#ok<AGROW>
