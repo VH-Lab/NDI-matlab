@@ -115,6 +115,9 @@ classdef datasetsPane < ndi.gui.nav.pane
             delete(obj.Tree.Children);
             obj.clearNodeMenus();
 
+            % Discover the session apps once and reuse for every node.
+            apps = obj.sessionApps();
+
             % --- Unaffiliated: ndi.session objects in the base workspace ---
             unaffiliated = uitreenode(obj.Tree, ...
                 'Text',     'Unaffiliated', ...
@@ -124,7 +127,7 @@ classdef datasetsPane < ndi.gui.nav.pane
                 node = uitreenode(unaffiliated, ...
                     'Text',     obj.sessionLabel(sessions{i}), ...
                     'NodeData', obj.sessionNodeData(sessions{i}, [], ''));
-                obj.attachSessionMenu(node);
+                obj.attachSessionMenu(node, apps);
             end
 
             % --- Datasets: ndi.dataset objects on the search path + workspace ---
@@ -134,11 +137,11 @@ classdef datasetsPane < ndi.gui.nav.pane
                 node = uitreenode(obj.Tree, ...
                     'Text',     obj.datasetLabel(ds), ...
                     'NodeData', struct('kind', 'dataset'));
-                obj.addSessionChildren(node, ds);
+                obj.addSessionChildren(node, ds, apps);
             end
         end
 
-        function addSessionChildren(obj, node, ds)
+        function addSessionChildren(obj, node, ds, apps)
             %ADDSESSIONCHILDREN Add one child node per session in a dataset.
             %   Each child stores the parent dataset and the session id so
             %   the session object can be opened on demand (for the Apps
@@ -156,18 +159,18 @@ classdef datasetsPane < ndi.gui.nav.pane
                 child = uitreenode(node, ...
                     'Text',     char(ref), ...
                     'NodeData', obj.sessionNodeData([], ds, id));
-                obj.attachSessionMenu(child);
+                obj.attachSessionMenu(child, apps);
             end
         end
 
-        function attachSessionMenu(obj, node)
+        function attachSessionMenu(obj, node, apps)
             %ATTACHSESSIONMENU Give one session node its own "Apps" menu.
             %   Each menu item captures NODE directly, so launching does not
             %   depend on the tree selection (a right-click does not reliably
-            %   commit a selection before the menu opens).
+            %   commit a selection before the menu opens). APPS is the app
+            %   list from sessionApps, discovered once per tree build.
             cm       = uicontextmenu(obj.Navigator.Figure);
             appsRoot = uimenu(cm, 'Text', 'Apps');
-            apps     = obj.sessionApps();
             for i = 1:numel(apps)
                 app = apps(i);
                 uimenu(appsRoot, ...
@@ -288,18 +291,26 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function apps = sessionApps()
-            %SESSIONAPPS Registry of apps offered for a session.
+            %SESSIONAPPS Apps offered for a session, discovered dynamically.
             %   Returns a struct array with fields:
             %       Label  - menu text
             %       Launch - function handle taking an ndi.session
-            %   Add an entry here to grow the Apps menu.
+            %   The list is discovered from ndi.gui.app.sessionApp.list, so
+            %   any class that adopts the ndi.gui.app.sessionApp interface
+            %   (and is on the path) appears automatically. No entries are
+            %   hardcoded here.
             apps = struct('Label', {}, 'Launch', {});
-            apps(end+1) = struct( ...
-                'Label',  'pyraview', ...
-                'Launch', @(s) ndi.app.pyraview('session', s));
-            apps(end+1) = struct( ...
-                'Label',  'spikeSorterImporter', ...
-                'Launch', @(s) ndi.gui.app.spikeSorterImporter(s));
+            try
+                found = ndi.gui.app.sessionApp.list();
+            catch
+                found = struct('Name', {}, 'Class', {});
+            end
+            for i = 1:numel(found)
+                cls = char(found(i).Class);
+                apps(end+1) = struct( ...
+                    'Label',  char(found(i).Name), ...
+                    'Launch', @(s) ndi.gui.app.sessionApp.launch(cls, s)); %#ok<AGROW>
+            end
         end
 
         function label = datasetLabel(ds)
