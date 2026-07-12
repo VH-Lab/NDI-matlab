@@ -182,7 +182,9 @@ classdef pane < handle
             obj.HeaderGrid.Layout.Column    = 1;
             obj.HeaderGrid.ColumnWidth      = {leftWidth, '1x', obj.rightWidth()};
             obj.HeaderGrid.RowHeight        = {'1x'};
-            obj.HeaderGrid.Padding          = [5 0 5 0];
+            % 3px top/bottom padding insets the header controls so the
+            % buttons don't fill the full header height edge-to-edge.
+            obj.HeaderGrid.Padding          = [5 3 5 3];
             obj.HeaderGrid.ColumnSpacing    = 4;
             obj.HeaderGrid.BackgroundColor  = c.darkBlue;
 
