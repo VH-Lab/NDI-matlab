@@ -29,12 +29,15 @@ classdef sessionApp < handle
 %       end
 %
 %   Discovery:
-%       ndi.gui.app.sessionApp.list() scans the ndi.gui.app and ndi.app
-%       packages (recursively) for concrete subclasses of this interface
-%       and returns their Name and class. The navigator uses this to
-%       build the Apps menu, so a new app appears automatically once it
-%       adopts the interface and is on the MATLAB path - no changes to
-%       the navigator are needed.
+%       ndi.gui.app.sessionApp.list() scans a set of packages (recursively)
+%       for concrete subclasses of this interface and returns their Name
+%       and class. By default it scans the built-in ndi.gui.app and ndi.app
+%       packages plus any packages the user has registered in the
+%       preference GUI.Navigator.SessionAppPackages (a semicolon- or
+%       comma-separated list, editable in the Prefs window). So a user can
+%       add their own app by putting a sessionApp subclass in one of their
+%       packages, on the MATLAB path, and listing that package name in the
+%       preference - no changes to NDI are needed.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.datasetsPane,
 %             ndi.gui.app.spikeSorterImporter
@@ -57,7 +60,7 @@ classdef sessionApp < handle
             %   APPS = NDI.GUI.APP.SESSIONAPP.LIST(PACKAGES) scans the given
             %   packages (string array) instead of the defaults.
             arguments
-                packages (1,:) string = ["ndi.gui.app", "ndi.app"]
+                packages (1,:) string = ndi.gui.app.sessionApp.defaultPackages()
             end
 
             apps  = struct('Name', {}, 'Class', {});
@@ -77,6 +80,23 @@ classdef sessionApp < handle
             end
         end
 
+        function pkgs = defaultPackages()
+            %DEFAULTPACKAGES Packages scanned for session apps by default.
+            %
+            %   The built-in ndi.gui.app and ndi.app packages plus any user
+            %   packages registered in the preference
+            %   GUI.Navigator.SessionAppPackages.
+            pkgs = ["ndi.gui.app", "ndi.app"];
+            extra = "";
+            try
+                extra = ndi.preferences.get('GUI.Navigator.SessionAppPackages');
+            catch
+                % Preference not registered / unreadable: use the built-ins.
+            end
+            pkgs = unique([pkgs, ndi.gui.app.sessionApp.parsePackageList(extra)], ...
+                'stable');
+        end
+
         function obj = launch(className, session)
             %LAUNCH Construct a session GUI app uniformly from its name.
             %
@@ -90,6 +110,20 @@ classdef sessionApp < handle
     end
 
     methods (Static, Access = private)
+        function pkgs = parsePackageList(value)
+            %PARSEPACKAGELIST Split a user package-list preference into names.
+            %   VALUE is a string/char that may hold several package names
+            %   separated by semicolons or commas. Returns a (possibly empty)
+            %   string row vector of trimmed, non-empty names.
+            pkgs = string.empty(1, 0);
+            if isempty(value)
+                return;
+            end
+            parts = split(string(value), [";", ","]);
+            parts = strtrim(parts(:).');
+            pkgs = parts(strlength(parts) > 0);
+        end
+
         function names = classesInPackages(packages)
             %CLASSESINPACKAGES Class names in PACKAGES and their subpackages.
             names = string.empty(1, 0);
