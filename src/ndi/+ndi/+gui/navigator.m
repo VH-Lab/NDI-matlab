@@ -74,7 +74,7 @@ classdef navigator < handle
             obj.Figure = uifigure('Name', 'NDI Navigator', ...
                 'Position',         pos, ...
                 'Tag',              'ndiNavigator', ...
-                'Color',            c.offWhite, ...
+                'Color',            c.darkBlue, ...
                 'AutoResizeChildren', 'on');
             obj.Figure.SizeChangedFcn        = @(~,~) obj.enforceMinSize();
             obj.Figure.WindowButtonDownFcn   = @(~,~) obj.onButtonDown();
@@ -123,7 +123,7 @@ classdef navigator < handle
             obj.RootGrid.ColumnWidth     = {'1x'};
             obj.RootGrid.Padding         = [obj.Pad obj.Pad obj.Pad obj.Pad];
             obj.RootGrid.RowSpacing      = obj.Spacing;
-            obj.RootGrid.BackgroundColor = ndi.gui.cloudColors().offWhite;
+            obj.RootGrid.BackgroundColor = ndi.gui.cloudColors().darkBlue;
 
             for i = 1:n
                 obj.Panes{i}.build(obj.RootGrid, i);
