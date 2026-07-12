@@ -19,12 +19,22 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   pane is never shorter than MinHeight (100 px) and can be resized by
 %   dragging its lower edge (see ndi.gui.navigator).
 %
+%   Right-clicking a session node opens a context menu with an "Apps"
+%   submenu listing the apps that can run on a session (see sessionApps).
+%   Choosing one resolves the underlying ndi.session and launches the app.
+%
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.dataset, ndi.session
 
     properties (SetAccess = protected)
         Resizable (1,1) logical = true   % navigator honours drag-to-resize
         Tree                             % uitree in the body
         Grip                             % thin panel marking the draggable edge
+        AppsMenu                         % uicontextmenu shown on tree nodes
+        AppsRoot                         % the "Apps" submenu inside AppsMenu
+    end
+
+    properties (Access = private)
+        ContextTargetNode                % session node the context menu acts on
     end
 
     properties (Constant, Access = private)
@@ -67,6 +77,7 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.Grip.Layout.Row    = 2;
             obj.Grip.Layout.Column = 1;
 
+            obj.buildContextMenu();
             obj.populateTree();
         end
 
@@ -109,12 +120,13 @@ classdef datasetsPane < ndi.gui.nav.pane
             % --- Unaffiliated: ndi.session objects in the base workspace ---
             unaffiliated = uitreenode(obj.Tree, ...
                 'Text',     'Unaffiliated', ...
-                'NodeData', struct('kind', 'dataset', 'name', 'Unaffiliated'));
+                'NodeData', struct('kind', 'dataset'));
             sessions = obj.scanWorkspace('ndi.session');
             for i = 1:numel(sessions)
-                uitreenode(unaffiliated, ...
+                node = uitreenode(unaffiliated, ...
                     'Text',     obj.sessionLabel(sessions{i}), ...
-                    'NodeData', struct('kind', 'session'));
+                    'NodeData', obj.sessionNodeData(sessions{i}, [], ''));
+                node.ContextMenu = obj.AppsMenu;
             end
 
             % --- Datasets: ndi.dataset objects on the search path + workspace ---
@@ -128,19 +140,95 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
         end
 
-        function addSessionChildren(~, node, ds)
+        function addSessionChildren(obj, node, ds)
             %ADDSESSIONCHILDREN Add one child node per session in a dataset.
+            %   Each child stores the parent dataset and the session id so
+            %   the session object can be opened on demand (for the Apps
+            %   context menu) via ds.open_session.
             try
-                refList = ds.session_list();
+                [refList, idList] = ds.session_list();
             catch
                 refList = {};
+                idList  = {};
             end
             for k = 1:numel(refList)
                 ref = refList{k};
                 if isempty(ref); ref = '(unnamed session)'; end
-                uitreenode(node, ...
+                if k <= numel(idList); id = idList{k}; else; id = ''; end
+                child = uitreenode(node, ...
                     'Text',     char(ref), ...
-                    'NodeData', struct('kind', 'session'));
+                    'NodeData', obj.sessionNodeData([], ds, id));
+                child.ContextMenu = obj.AppsMenu;
+            end
+        end
+
+        function buildContextMenu(obj)
+            %BUILDCONTEXTMENU Create the "Apps" context menu for session nodes.
+            %   A single uicontextmenu is shared by every session node (it is
+            %   assigned to each node as the tree is populated). Its "Apps"
+            %   submenu is filled from the sessionApps registry; selecting an
+            %   app resolves the right-clicked session and launches it.
+            obj.AppsMenu = uicontextmenu(obj.Navigator.Figure);
+            obj.AppsMenu.ContextMenuOpeningFcn = @(~,~) obj.onContextOpening();
+
+            obj.AppsRoot = uimenu(obj.AppsMenu, 'Text', 'Apps');
+            apps = obj.sessionApps();
+            for i = 1:numel(apps)
+                app = apps(i);
+                uimenu(obj.AppsRoot, ...
+                    'Text',           app.Label, ...
+                    'MenuSelectedFcn', @(~,~) obj.launchApp(app));
+            end
+        end
+
+        function onContextOpening(obj)
+            %ONCONTEXTOPENING Record which session node the menu will act on.
+            %   Right-clicking a node selects it, so the current selection is
+            %   the node under the pointer.
+            obj.ContextTargetNode = [];
+            sel = obj.Tree.SelectedNodes;
+            if isempty(sel); return; end
+            nd = sel(1).NodeData;
+            if isstruct(nd) && isfield(nd, 'kind') && strcmp(nd.kind, 'session')
+                obj.ContextTargetNode = sel(1);
+            end
+        end
+
+        function launchApp(obj, app)
+            %LAUNCHAPP Resolve the target session and start the chosen app.
+            node = obj.ContextTargetNode;
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', app.Label);
+                return;
+            end
+            try
+                app.Launch(s);
+            catch ME
+                uialert(obj.Navigator.Figure, ME.message, app.Label);
+            end
+        end
+
+        function s = resolveSession(~, nd)
+            %RESOLVESESSION Return the ndi.session for a session node's data.
+            %   Uses the stored ndi.session directly (Unaffiliated nodes) or
+            %   opens it from the parent dataset by id (dataset children).
+            s = [];
+            if isfield(nd, 'session') && ~isempty(nd.session)
+                s = nd.session;
+                return;
+            end
+            if isfield(nd, 'dataset') && ~isempty(nd.dataset) ...
+                    && isfield(nd, 'sessionId') && ~isempty(nd.sessionId)
+                try
+                    s = nd.dataset.open_session(nd.sessionId);
+                catch
+                    s = [];
+                end
             end
         end
 
@@ -191,6 +279,33 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   Paths editor (a placeholder today), so nothing is returned
             %   yet. Kept as a seam for later implementation.
             datasets = {};
+        end
+
+        function nd = sessionNodeData(sessionObj, ds, sessionId)
+            %SESSIONNODEDATA NodeData for a session node.
+            %   Carries the resolved ndi.session (SESSIONOBJ) when known, or
+            %   the parent dataset DS and SESSIONID so it can be opened on
+            %   demand. Fields are kept uniform so resolveSession can read
+            %   any session node the same way.
+            nd = struct('kind',      'session', ...
+                        'session',   sessionObj, ...
+                        'dataset',   ds, ...
+                        'sessionId', char(sessionId));
+        end
+
+        function apps = sessionApps()
+            %SESSIONAPPS Registry of apps offered for a session.
+            %   Returns a struct array with fields:
+            %       Label  - menu text
+            %       Launch - function handle taking an ndi.session
+            %   Add an entry here to grow the Apps menu.
+            apps = struct('Label', {}, 'Launch', {});
+            apps(end+1) = struct( ...
+                'Label',  'pyraview', ...
+                'Launch', @(s) ndi.app.pyraview('session', s));
+            apps(end+1) = struct( ...
+                'Label',  'spikeSorterImporter', ...
+                'Launch', @(s) ndi.gui.app.spikeSorterImporter(s));
         end
 
         function label = datasetLabel(ds)
