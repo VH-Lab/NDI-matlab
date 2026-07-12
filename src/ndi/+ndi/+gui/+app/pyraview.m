@@ -1172,11 +1172,11 @@ classdef pyraview < ndi.gui.app.sessionApp
             current_x = margin + 50 + 200 + margin;
             et = findobj(fig, 'Tag', 'EpochText');
             em = findobj(fig, 'Tag', 'EpochMenu');
-            set(et, 'Position', [current_x, top_y, 60, control_height]);
-            set(em, 'Position', [current_x + 60, top_y, 200, control_height]);
+            set(et, 'Position', [current_x, top_y, 80, control_height]);
+            set(em, 'Position', [current_x + 80, top_y, 200, control_height]);
 
             % Row 1 continued: Band | Spacing
-            current_x = current_x + 60 + 200 + margin;
+            current_x = current_x + 80 + 200 + margin;
             bt = findobj(fig, 'Tag', 'BandText');
             bm = findobj(fig, 'Tag', 'BandMenu');
             set(bt, 'Position', [current_x, top_y, 40, control_height]);
@@ -1185,16 +1185,16 @@ classdef pyraview < ndi.gui.app.sessionApp
             current_x = current_x + 40 + 80 + margin;
             st = findobj(fig, 'Tag', 'SpacingText');
             se = findobj(fig, 'Tag', 'SpacingEdit');
-            set(st, 'Position', [current_x, top_y, 60, control_height]);
-            set(se, 'Position', [current_x + 60, top_y, 50, control_height]);
+            set(st, 'Position', [current_x, top_y, 75, control_height]);
+            set(se, 'Position', [current_x + 75, top_y, 50, control_height]);
 
-            current_x = current_x + 60 + 50 + margin;
+            current_x = current_x + 75 + 50 + margin;
             mt = findobj(fig, 'Tag', 'MappingText');
             mm = findobj(fig, 'Tag', 'MappingMenu');
-            set(mt, 'Position', [current_x, top_y, 60, control_height]);
-            set(mm, 'Position', [current_x + 60, top_y, 100, control_height]);
+            set(mt, 'Position', [current_x, top_y, 75, control_height]);
+            set(mm, 'Position', [current_x + 75, top_y, 100, control_height]);
 
-            current_x = current_x + 60 + 100 + margin;
+            current_x = current_x + 75 + 100 + margin;
             sc = findobj(fig, 'Tag', 'SpikingCheckbox');
             set(sc, 'Position', [current_x, top_y, 200, control_height]);
 
