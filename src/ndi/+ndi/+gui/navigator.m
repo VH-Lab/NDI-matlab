@@ -13,6 +13,8 @@ classdef navigator < handle
 %   Name-value arguments:
 %       Position - 1x4 double, the figure Position in pixels.
 %                  Default [100 100 300 500].
+%       Visible  - 'on' (default) or 'off'. Create the window hidden when
+%                  'off' (used by headless tests).
 %
 %   Panes (top to bottom):
 %       NDI        - uncollapsible; 12-point bold "NDI" label and a
@@ -64,6 +66,7 @@ classdef navigator < handle
         function obj = navigator(options)
             arguments
                 options.Position (1,4) double = [100 100 300 500]
+                options.Visible (1,1) matlab.lang.OnOffSwitchState = "on"
             end
 
             pos = options.Position;
@@ -73,6 +76,7 @@ classdef navigator < handle
             obj.Figure = uifigure('Name', 'NDI Navigator', ...
                 'Position',         pos, ...
                 'Tag',              'ndiNavigator', ...
+                'Visible',          options.Visible, ...
                 'AutoResizeChildren', 'on');
             obj.Figure.SizeChangedFcn        = @(~,~) obj.enforceMinSize();
             obj.Figure.WindowButtonDownFcn   = @(~,~) obj.onButtonDown();
@@ -81,8 +85,52 @@ classdef navigator < handle
 
             obj.buildPanes();
             obj.layout();
+
+            % Store a back-reference on the figure so the navigator object
+            % can be recovered from its figure handle (see findOpen). This
+            % is how ndi.gui.component.ProgressBarWindow discovers an open
+            % navigator to dock progress bars into.
+            guidata(obj.Figure, obj);
         end
 
+        function p = progressPaneHandle(obj)
+            %PROGRESSPANEHANDLE Return the navigator's progress pane, if any.
+            %
+            %   P = PROGRESSPANEHANDLE(OBJ) returns the
+            %   ndi.gui.nav.progressPane in this navigator's pane stack, or
+            %   an empty ndi.gui.nav.progressPane array if none is present.
+            p = ndi.gui.nav.progressPane.empty;
+            for i = 1:numel(obj.Panes)
+                if isa(obj.Panes{i}, 'ndi.gui.nav.progressPane')
+                    p = obj.Panes{i};
+                    return;
+                end
+            end
+        end
+    end
+
+    methods (Static)
+        function nav = findOpen()
+            %FINDOPEN Return open ndi.gui.navigator instances, newest last.
+            %
+            %   NAV = NDI.GUI.NAVIGATOR.FINDOPEN() searches the open figures
+            %   for NDI navigator windows and returns their navigator
+            %   objects. The result is an ndi.gui.navigator array (empty if
+            %   no navigator is open); when several are open they are
+            %   returned in figure-stacking order, so NAV(end) is the most
+            %   recently created.
+            nav = ndi.gui.navigator.empty;
+            figs = findall(groot, 'Type', 'figure', 'Tag', 'ndiNavigator');
+            for i = 1:numel(figs)
+                g = guidata(figs(i));
+                if isa(g, 'ndi.gui.navigator') && isvalid(g)
+                    nav(end+1) = g; %#ok<AGROW>
+                end
+            end
+        end
+    end
+
+    methods
         function layout(obj)
             %LAYOUT Update the root grid row heights from the panes.
             n = numel(obj.Panes);
