@@ -88,10 +88,11 @@ classdef pyraview < ndi.gui.app.sessionApp
 
             % Show every multifunction-DAQ timeseries probe (n-trode, patch,
             % sharp, ecg, eeg, ppg, accelerometer, etc.), i.e. anything that
-            % is an ndi.probe.timeseries.mfdaq. A single class-name argument to
-            % getprobes performs an isa() match, which excludes stimulator and
-            % image probes (siblings of mfdaq under ndi.probe.timeseries).
-            probes = session.getprobes('ndi.probe.timeseries.mfdaq');
+            % is an ndi.probe.timeseries.mfdaq. Stimulator and image probes are
+            % siblings of mfdaq under ndi.probe.timeseries and are excluded by
+            % the isa() test.
+            allprobes = session.getprobes();
+            probes = allprobes(cellfun(@(p) isa(p, 'ndi.probe.timeseries.mfdaq'), allprobes));
             probe_strings = {};
             for i = 1:numel(probes)
                 probe_strings{end+1} = probes{i}.elementstring(); %#ok<AGROW>
