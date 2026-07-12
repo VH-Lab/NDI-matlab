@@ -16,13 +16,6 @@ classdef ndiPane < ndi.gui.nav.pane
     end
 
     methods (Access = protected)
-        function buildHeader(obj)
-            buildHeader@ndi.gui.nav.pane(obj);
-            % The NDI wordmark is drawn 12-point bold per the spec.
-            obj.TitleLabel.FontSize   = 12;
-            obj.TitleLabel.FontWeight = 'bold';
-        end
-
         function buildHeaderRight(obj, parent)
             btn = uibutton(parent, ...
                 'Text',            'Prefs', ...

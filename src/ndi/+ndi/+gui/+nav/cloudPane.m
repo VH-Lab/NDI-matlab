@@ -17,11 +17,6 @@ classdef cloudPane < ndi.gui.nav.pane
     end
 
     methods (Access = protected)
-        function buildHeader(obj)
-            buildHeader@ndi.gui.nav.pane(obj);
-            obj.TitleLabel.FontWeight = 'bold';
-        end
-
         function buildHeaderRight(obj, parent)
             btn = uibutton(parent, ...
                 'Text',            'Profile', ...
