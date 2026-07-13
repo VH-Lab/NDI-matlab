@@ -19,10 +19,21 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
 % describes physical sites; the site->channel wiring is a property of a particular
 % recording/headstage, so it is only stored when known.)
 %
+% Before creating the document, the number of sites in GEOM is compared against the
+% number of channels the probe's epochprobemap assigns to it (from its first epoch).
+% If they do not match exactly, a warning is printed (this catches the common case
+% of assigning a geometry meant for a differently-sized probe). Set 'check_channels'
+% to false to skip this.
+%
 % Name/value pairs:
-%   map ([])      - site->channel column; when non-empty, also create site2channelmap.
-%   add (true)    - add the created documents to S's database.
-%   verbose (1)   - 0/1 report what was created.
+%   map ([])              - site->channel column; when non-empty, also create site2channelmap.
+%   add (true)            - add the created documents to S's database.
+%   replace (false)       - before adding, remove any existing probe_geometry (and its
+%                            site2channelmap) for this probe, so re-assigning replaces
+%                            rather than stacking a second geometry. Only acts when 'add'.
+%   check_channels (true) - warn if the site count differs from the probe's
+%                            epochprobemap channel count.
+%   verbose (1)           - 0/1 report what was created.
 %
 % See also: NDI.FUN.PROBE.GEOMETRY.FROMKILOSORTMAP, NDI.FUN.PROBE.GEOMETRY.FROMLIBRARY,
 %   NDI.FUN.PROBE.GEOMETRY.GET
@@ -33,6 +44,8 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
         geom (1,1) struct
         options.map double = []
         options.add (1,1) logical = true
+        options.replace (1,1) logical = false
+        options.check_channels (1,1) logical = true
         options.verbose (1,1) double = 1
     end
 
@@ -85,11 +98,39 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
         pg.shank_id = double(pg.shank_id(:));
     end;
 
-    % Step 4: create the probe_geometry document
+    % Step 3b: sanity-check the site count against the probe's epochprobemap channels
+    if options.check_channels,
+        nchan = probeChannelCount(probe);
+        if ~isempty(nchan) && nchan~=n,
+            warning('ndi:fun:probe:geometry:fromStruct:channelCountMismatch', ...
+                ['Electrode geometry has %d site(s) but the epochprobemap for probe %s has ' ...
+                '%d channel(s); they do not match exactly.'], n, probe.elementstring(), nchan);
+        end;
+    end;
+
+    % Step 4: optionally remove an existing geometry for this probe (replace)
+    if options.add && options.replace,
+        q_old = ndi.query('','isa','probe_geometry','') & ...
+            ndi.query('','depends_on','probe_id',probe.id());
+        oldgeom = S.database_search(q_old);
+        for i=1:numel(oldgeom),
+            q_s2c = ndi.query('','isa','site2channelmap','') & ...
+                ndi.query('','depends_on','probe_geometry_id',oldgeom{i}.id());
+            olds2c = S.database_search(q_s2c);
+            if ~isempty(olds2c),
+                S.database_rm(olds2c);
+            end;
+        end;
+        if ~isempty(oldgeom),
+            S.database_rm(oldgeom);
+        end;
+    end;
+
+    % Step 5: create the probe_geometry document
     pg_doc = ndi.document('probe_geometry','probe_geometry',pg,'base.session_id',S.id());
     pg_doc = pg_doc.set_dependency_value('probe_id', probe.id());
 
-    % Step 5: optionally create the site2channelmap document
+    % Step 6: optionally create the site2channelmap document
     s2c_doc = [];
     if ~isempty(options.map),
         map = double(options.map(:));
@@ -102,7 +143,7 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
         s2c_doc = s2c_doc.set_dependency_value('probe_geometry_id', pg_doc.id());
     end;
 
-    % Step 6: commit
+    % Step 7: commit
     if options.add,
         S.database_add(pg_doc);
         if ~isempty(s2c_doc),
@@ -118,4 +159,19 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
             ' for probe ' probe.elementstring() '.']);
     end;
 
+end
+
+function nchan = probeChannelCount(probe)
+% Number of channels the probe's epochprobemap assigns to it (first epoch), or []
+% if it cannot be determined (e.g. the probe has no epochs or does not expose
+% getchanneldevinfo).
+    nchan = [];
+    try
+        et = probe.epochtable();
+        if isempty(et), return; end;
+        [~,~,~,~,channellist] = probe.getchanneldevinfo(et(1).epoch_id);
+        nchan = numel(channellist);
+    catch
+        nchan = [];
+    end
 end

@@ -15,9 +15,11 @@ function [pg_doc, s2c_doc] = fromLibrary(S, probe, name, options)
 % NAME may be 'group/model' or a bare 'model' (searched across groups).
 %
 % Name/value pairs:
-%   map ([])      - site->channel column; when non-empty, also create site2channelmap.
-%   add (true)    - add the created documents to S's database.
-%   verbose (1)   - 0/1 report what was created.
+%   map ([])       - site->channel column; when non-empty, also create site2channelmap.
+%   add (true)     - add the created documents to S's database.
+%   replace (false)- before adding, remove any existing probe_geometry for this probe
+%                     (so re-assigning replaces rather than stacks a second geometry).
+%   verbose (1)    - 0/1 report what was created.
 %
 % Example:
 %    p = S.getprobes('type','n-trode');
@@ -32,12 +34,14 @@ function [pg_doc, s2c_doc] = fromLibrary(S, probe, name, options)
         name (1,:) char
         options.map double = []
         options.add (1,1) logical = true
+        options.replace (1,1) logical = false
         options.verbose (1,1) double = 1
     end
 
     geom = ndi.fun.probe.geometry.readLibrary(name);
 
     [pg_doc, s2c_doc] = ndi.fun.probe.geometry.fromStruct(S, probe, geom, ...
-        'map', options.map, 'add', options.add, 'verbose', options.verbose);
+        'map', options.map, 'add', options.add, 'replace', options.replace, ...
+        'verbose', options.verbose);
 
 end
