@@ -1,4 +1,4 @@
-classdef spikeSorterImporter < handle
+classdef spikeSorterImporter < ndi.gui.app.sessionApp
 % NDI.GUI.APP.SPIKESORTERIMPORTER - GUI to import spike-sorter output into NDI
 %
 %   OBJ = NDI.GUI.APP.SPIKESORTERIMPORTER(S)
@@ -35,6 +35,10 @@ classdef spikeSorterImporter < handle
 %
 %   See also: NDI.FUN.PROBE.EXTRACELLULARINFO,
 %   NDI.FUN.PROBE.IMPORT.KILOSORT.GETINFO, NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE
+
+    properties (Constant)
+        Name = "spikeSorterImporter"   % ndi.gui.app.sessionApp menu label
+    end
 
     properties
         session            % the ndi.session being browsed
