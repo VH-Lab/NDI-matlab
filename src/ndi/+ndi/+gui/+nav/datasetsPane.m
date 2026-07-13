@@ -16,8 +16,9 @@ classdef datasetsPane < ndi.gui.nav.pane
 %
 %   Each dataset node carries the uitree's native disclosure triangle, so
 %   the user can expand a dataset to reveal its sessions. When engaged the
-%   pane is never shorter than MinHeight (100 px) and can be resized by
-%   dragging its lower edge (see ndi.gui.navigator).
+%   pane is never shorter than MinHeight (100 px). It is the navigator's
+%   elastic pane: it grows and shrinks to fill the window as the window is
+%   resized or other panes are collapsed/expanded (see ndi.gui.navigator).
 %
 %   Right-clicking a session node opens a context menu with an "Apps"
 %   submenu listing the apps that can run on a session (see sessionApps).
@@ -60,8 +61,8 @@ classdef datasetsPane < ndi.gui.nav.pane
 
     methods (Access = protected)
         function buildBody(obj, container)
-            % A scrollable tree fills the body; a thin grip at the bottom
-            % marks the edge the user drags to resize the pane.
+            % A scrollable tree fills the body; a thin divider sits at the
+            % bottom. The pane is resized via the window edge, not this grip.
             container.RowHeight  = {'1x', obj.GripHeight};
             container.RowSpacing = 0;
 

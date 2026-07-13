@@ -53,6 +53,7 @@ classdef pane < handle
         DisclosureButton          % uibutton showing the collapse triangle
         TitleLabel                % uilabel showing Title
         BodyContainer             % uigridlayout that holds the pane body
+        RenderedHeight (1,1) double = NaN  % pixel height last assigned by the navigator layout
     end
 
     properties (Constant)
@@ -144,21 +145,45 @@ classdef pane < handle
 
         function toggle(obj)
             %TOGGLE Flip a collapsible pane between engaged and collapsed.
+            %   This is the user-driven path (the disclosure triangle); it is
+            %   a structural action, so the navigator resizes the window to
+            %   match (collapse shrinks it, expand grows it).
             if ~obj.Collapsible
                 return;
             end
             obj.Engaged = ~obj.Engaged;
             obj.updateDisclosure();
             obj.applyEngagedState();
-            obj.Navigator.layout();
+            obj.Navigator.paneToggled(obj);
         end
 
         function setEngaged(obj, tf)
             %SETENGAGED Force the engaged state of a collapsible pane.
+            %   Structural (resizes the window); use setEngagedQuietly for
+            %   content-driven engages that should not resize the window.
             if ~obj.Collapsible || logical(tf) == obj.Engaged
                 return;
             end
             obj.toggle();
+        end
+
+        function setEngagedQuietly(obj, tf)
+            %SETENGAGEDQUIETLY Engage/collapse without resizing the window.
+            %   Used when content (e.g. an arriving progress bar) needs the
+            %   pane open: the elastic panes absorb the change instead of the
+            %   window growing. A no-op if the state already matches.
+            if ~obj.Collapsible || logical(tf) == obj.Engaged
+                return;
+            end
+            obj.Engaged = logical(tf);
+            obj.updateDisclosure();
+            obj.applyEngagedState();
+            obj.Navigator.layout();
+        end
+
+        function setRenderedHeight(obj, h)
+            %SETRENDEREDHEIGHT Record the pixel height the navigator assigned.
+            obj.RenderedHeight = h;
         end
 
         function refresh(~)

@@ -30,6 +30,8 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         ProgressBarListener % Listens for changes to the progress bar data.
         Timeout duration = minutes(1) % Time after last update before a bar times out.
         AutoDelete logical = true % Flag to automatically delete the ProgressBarWindow if all bars are closed.
+        IsDocked logical = false % True when the bars are hosted inside an open navigator's progress pane instead of a standalone window.
+        HostPane = [] % Handle to the ndi.gui.nav.progressPane hosting the bars when IsDocked is true.
     end
 
     properties (SetObservable)
@@ -80,6 +82,21 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 options.IgnoreTitle logical = false
                 options.AutoDelete logical = true
                 options.Visible (1,1) matlab.lang.OnOffSwitchState = "on"
+                options.Dock logical = true
+            end
+
+            % --- Dock into an open navigator, if there is one -------------
+            %   When a navigator is open its progress pane hosts the bars
+            %   (this takes priority over a standalone window). Only when no
+            %   navigator is open do we fall through to the standalone
+            %   window path below. Callers do not change: the same
+            %   constructor they already use routes automatically.
+            if options.Dock
+                dockedApp = app.tryDock(options);
+                if ~isempty(dockedApp)
+                    app = dockedApp;
+                    return
+                end
             end
 
 
@@ -485,6 +502,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 totalRowHeight (1,1) {mustBeNumeric}
             end
 
+            % When docked, grow the host pane instead of a figure.
+            if app.IsDocked
+                if ~isempty(app.HostPane) && isvalid(app.HostPane)
+                    app.HostPane.fitToBars(totalRowHeight);
+                end
+                return
+            end
+
             % Define figure size
             vpad = sum(app.ProgressGrid.Padding([2,4]));
             height = app.ScreenFrac * (totalRowHeight * 25 + vpad)/25;
@@ -515,6 +540,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             arguments
                 app
                 titleName (1,:) {mustBeTextScalar}
+            end
+
+            % When docked there is no window title; the pane keeps its own
+            % 'Progress' header, so this is a no-op.
+            if app.IsDocked
+                return
             end
 
             % Assign figure title
@@ -724,6 +755,13 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %handleAppChange Listener callback for property changes.
             %   Ensures guidata is saved and the figure is redrawn.
 
+            % When docked there is no owning figure; the pane holds the
+            % reference to this app, so just redraw.
+            if app.IsDocked
+                drawnow
+                return
+            end
+
             % Save guidata to figure
             guidata(app.ProgressFigure,app);
 
@@ -744,14 +782,107 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             end
 
             if doDelete
-                close(app.ProgressFigure);
-                delete(app);
+                if app.IsDocked
+                    % Never delete the navigator; just return the pane to
+                    % its idle state and drop this app.
+                    if ~isempty(app.HostPane) && isvalid(app.HostPane)
+                        app.HostPane.releaseBars();
+                    end
+                    delete(app);
+                else
+                    close(app.ProgressFigure);
+                    delete(app);
+                end
             end
         end
     end
 
     methods (Access = private)
+        function dockedApp = tryDock(app, options)
+            %tryDock Attempt to host the bars in an open navigator's pane.
+            %
+            %   DOCKEDAPP = TRYDOCK(APP, OPTIONS) returns the app that should
+            %   be used when a navigator is open (either APP configured to
+            %   render into the navigator's progress pane, or the pane's
+            %   already-active docked app when one exists and Overwrite is
+            %   false). It returns an empty ProgressBarWindow when no
+            %   navigator is open, signalling the caller to fall back to a
+            %   standalone window.
+
+            dockedApp = ndi.gui.component.ProgressBarWindow.empty;
+
+            % Any failure here must fall back to a standalone window rather
+            % than break the caller, so the whole detection is guarded.
+            try
+                % Is a navigator open? (Most recent wins if several.)
+                nav = ndi.gui.navigator.findOpen();
+                if isempty(nav)
+                    return
+                end
+                pane = nav(end).progressPaneHandle();
+                if isempty(pane) || ~isvalid(pane)
+                    return
+                end
+
+                % Reuse the pane's active docked app so that nested/cascading
+                % tasks share one pane, unless the caller asked to overwrite.
+                existing = pane.ActiveApp;
+                haveExisting = ~isempty(existing) && isvalid(existing);
+                if haveExisting && ~options.Overwrite
+                    dockedApp = existing;
+                    dockedApp.bringToFront();
+                    return
+                end
+                if haveExisting && options.Overwrite
+                    existing.forceReleaseDocked();
+                end
+
+                % Configure THIS app to render into the pane.
+                app.IsDocked   = true;
+                app.HostPane   = pane;
+                app.AutoDelete = options.AutoDelete;
+
+                app.ProgressFigureListener = addlistener(app,'ProgressFigure','PostSet',@app.handleAppChange);
+                app.ProgressGridListener   = addlistener(app,'ProgressGrid','PostSet',@app.handleAppChange);
+                app.ProgressBarListener    = addlistener(app,'ProgressBars','PostSet',@app.handleAppChange);
+
+                % Adopt the pane's grid as our ProgressGrid; the bar-management
+                % code (addBar/updateBar/removeBar) is otherwise unchanged.
+                app.ProgressGrid = pane.adoptBarGrid();
+
+                app.ProgressBars = struct('Tag',{},'Progress',{},'State',{},...
+                    'Auto',{},'Axes',{},'Patch',{},'Percent',{},'Button',{},...
+                    'Label',{},'Clock',{},'Timer',{});
+
+                pane.registerApp(app);
+                pane.setEngagedQuietly(true);
+
+                dockedApp = app;
+            catch
+                % Detection/setup failed: undo any partial docked state and
+                % signal the caller to build a standalone window instead.
+                app.IsDocked = false;
+                app.HostPane = [];
+                dockedApp = ndi.gui.component.ProgressBarWindow.empty;
+            end
+        end
+
+        function forceReleaseDocked(app)
+            %forceReleaseDocked Clear the host pane and delete this app.
+            %   Used when Overwrite replaces an existing docked app.
+            if ~isempty(app.HostPane) && isvalid(app.HostPane)
+                app.HostPane.releaseBars();
+            end
+            delete(app);
+        end
+
         function bringToFront(app)
+            if app.IsDocked
+                if ~isempty(app.HostPane) && isvalid(app.HostPane)
+                    app.HostPane.setEngagedQuietly(true);
+                end
+                return
+            end
             if app.Visible
                 try
                     figure(app.ProgressFigure);
