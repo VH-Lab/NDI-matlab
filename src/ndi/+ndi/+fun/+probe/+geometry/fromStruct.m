@@ -105,6 +105,22 @@ function [pg_doc, s2c_doc, info] = fromStruct(S, probe, geom, options)
         pg.shank_id = double(pg.shank_id(:));
     end;
 
+    % Every matrix-valued probe_geometry field must be a column vector. An empty
+    % optional field (e.g. contact_shape_radius on a square-contact probe, or an
+    % absent contour) must be 0x1, NOT 0x0: document validation rejects a 0x0 [] as
+    % "Invalid sub-field ... size 0x0" because the schema shape is [N x 1].
+    matrix_fields = {'site_locations_leftright','site_locations_frontback', ...
+        'site_locations_depth','shank_id','contact_shape_width', ...
+        'contact_shape_height','contact_shape_radius','contour_x','contour_y'};
+    for i=1:numel(matrix_fields),
+        f = matrix_fields{i};
+        if isempty(pg.(f)),
+            pg.(f) = zeros(0,1);
+        else,
+            pg.(f) = double(pg.(f)(:));
+        end;
+    end;
+
     % Step 3b: sanity-check the site count against the probe's epochprobemap channels.
     % The result is both warned (for scripts / the command window) and returned in INFO
     % so a GUI caller can surface it (e.g. as a uialert) without scraping lastwarn.
