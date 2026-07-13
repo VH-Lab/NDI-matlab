@@ -99,7 +99,11 @@ classdef pane < handle
             %   BUILD(OBJ, PARENTGRID, ROW) creates OBJ.Panel as the ROW-th
             %   child of PARENTGRID (the navigator root grid), lays out the
             %   header, and, for panes with a body, the body container.
-            obj.Panel = uipanel(parentGrid, 'BorderType', 'line');
+            c = ndi.gui.cloudColors();
+
+            obj.Panel = uipanel(parentGrid, ...
+                'BorderType',      'line', ...
+                'BackgroundColor', c.white);
             obj.Panel.Layout.Row    = row;
             obj.Panel.Layout.Column = 1;
 
@@ -110,17 +114,19 @@ classdef pane < handle
                 obj.Grid = uigridlayout(obj.Panel, [1 1]);
                 obj.Grid.RowHeight = {'1x'};
             end
-            obj.Grid.ColumnWidth = {'1x'};
-            obj.Grid.Padding     = [0 0 0 0];
-            obj.Grid.RowSpacing  = 0;
+            obj.Grid.ColumnWidth     = {'1x'};
+            obj.Grid.Padding         = [0 0 0 0];
+            obj.Grid.RowSpacing      = 0;
+            obj.Grid.BackgroundColor = c.white;
 
             obj.buildHeader();
 
             if obj.HasBody()
                 obj.BodyContainer = uigridlayout(obj.Grid, [1 1]);
-                obj.BodyContainer.Layout.Row    = 2;
-                obj.BodyContainer.Layout.Column = 1;
-                obj.BodyContainer.Padding       = [0 0 0 0];
+                obj.BodyContainer.Layout.Row     = 2;
+                obj.BodyContainer.Layout.Column  = 1;
+                obj.BodyContainer.Padding        = [0 0 0 0];
+                obj.BodyContainer.BackgroundColor = c.white;
                 obj.buildBody(obj.BodyContainer);
                 obj.applyEngagedState();
             end
@@ -163,23 +169,32 @@ classdef pane < handle
     methods (Access = protected)
         function buildHeader(obj)
             %BUILDHEADER Lay out the always-visible header row.
+            c = ndi.gui.cloudColors();
+
             leftWidth = 0;
             if obj.Collapsible
                 leftWidth = 22;
             end
 
+            % The header row is a navy NDI Cloud bar with white text.
             obj.HeaderGrid = uigridlayout(obj.Grid, [1 3]);
-            obj.HeaderGrid.Layout.Row    = 1;
-            obj.HeaderGrid.Layout.Column = 1;
-            obj.HeaderGrid.ColumnWidth   = {leftWidth, '1x', obj.rightWidth()};
-            obj.HeaderGrid.RowHeight     = {'1x'};
-            obj.HeaderGrid.Padding       = [5 0 5 0];
-            obj.HeaderGrid.ColumnSpacing = 4;
+            obj.HeaderGrid.Layout.Row       = 1;
+            obj.HeaderGrid.Layout.Column    = 1;
+            obj.HeaderGrid.ColumnWidth      = {leftWidth, '1x', obj.rightWidth()};
+            obj.HeaderGrid.RowHeight        = {'1x'};
+            % 3px top/bottom padding insets the header controls so the
+            % buttons don't fill the full header height edge-to-edge.
+            obj.HeaderGrid.Padding          = [5 3 5 3];
+            obj.HeaderGrid.ColumnSpacing    = 4;
+            obj.HeaderGrid.BackgroundColor  = c.darkBlue;
 
             if obj.Collapsible
+                % The disclosure triangle blends into the navy header bar.
                 obj.DisclosureButton = uibutton(obj.HeaderGrid, ...
                     'Text',            obj.disclosureGlyph(), ...
                     'FontSize',        10, ...
+                    'BackgroundColor', c.darkBlue, ...
+                    'FontColor',       c.white, ...
                     'ButtonPushedFcn', @(~,~) obj.toggle());
                 obj.DisclosureButton.Layout.Row    = 1;
                 obj.DisclosureButton.Layout.Column = 1;
@@ -193,6 +208,8 @@ classdef pane < handle
             obj.TitleLabel = uilabel(obj.HeaderGrid, ...
                 'Text',                char(obj.Title), ...
                 'FontSize',            12, ...
+                'FontWeight',          'bold', ...
+                'FontColor',           c.white, ...
                 'VerticalAlignment',   'center', ...
                 'HorizontalAlignment', 'left');
             obj.TitleLabel.Layout.Row    = 1;
@@ -203,6 +220,20 @@ classdef pane < handle
 
         function buildHeaderRight(~, ~)
             %BUILDHEADERRIGHT Add the right-hand header control. Default none.
+        end
+
+        function accentButton(~, btn)
+            %ACCENTBUTTON Style a header uibutton in the NDI Cloud accent.
+            %   ACCENTBUTTON(OBJ, BTN) gives BTN a light-blue fill with bold
+            %   navy text so the header buttons read as one family against
+            %   the navy header bar.
+            if isempty(btn) || ~isvalid(btn)
+                return;
+            end
+            c = ndi.gui.cloudColors();
+            btn.BackgroundColor = c.lightBlue;
+            btn.FontColor       = c.darkBlue;
+            btn.FontWeight      = 'bold';
         end
 
         function buildBody(~, ~)
