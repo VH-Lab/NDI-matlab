@@ -214,19 +214,30 @@ classdef ElectrodeDataExport < ndi.gui.app.sessionApp
                 end
             end
 
-            % Export each selected probe.
+            % Export each selected probe, showing a progress bar. Each probe's own
+            % write progress (from ndi.fun.probe.export.binary's progressfcn) maps
+            % into its slice of an overall bar across the selected probes.
             obj.ExportButton.Enable = 'off';
             drawnow;
+            nSel = numel(sel);
+            [pb, pbfig] = i_makeBar();
+            cleanupObj = onCleanup(@() i_closeBar(pbfig)); %#ok<NASGU>
             errs = {};
-            for k = 1:numel(sel)
+            for k = 1:nSel
                 p = obj.probes{sel(k)};
+                lbl = char(p.elementstring());
+                base = (k-1)/nSel;
+                cb = @(pct,msg) i_updateBar(pb, base + pct/nSel, ...
+                    sprintf('%s (%d/%d): %s', lbl, k, nSel, msg));
                 try
                     ndi.fun.probe.export.oneProbe(obj.session, p, ...
-                        'binary_dir', ex.dir, 'binaryFileName', ex.bin, 'verbose', 0);
+                        'binary_dir', ex.dir, 'binaryFileName', ex.bin, ...
+                        'verbose', 0, 'progressfcn', cb);
                 catch e
-                    errs{end+1} = sprintf('%s: %s', char(p.elementstring()), e.message); %#ok<AGROW>
+                    errs{end+1} = sprintf('%s: %s', lbl, e.message); %#ok<AGROW>
                 end
             end
+            i_closeBar(pbfig);
             obj.ExportButton.Enable = 'on';
 
             obj.refreshProbeList();
@@ -243,4 +254,38 @@ end
 
 function s = onOff(tf)
     if tf, s = 'on'; else, s = 'off'; end
+end
+
+function [pb, pbfig] = i_makeBar()
+    pb = []; pbfig = [];
+    try
+        pbfig = figure('Name', 'Exporting electrode data', 'NumberTitle', 'off', ...
+            'MenuBar', 'none', 'ToolBar', 'none', 'Resize', 'off', ...
+            'Position', [500 500 560 90]);
+        pb = ndi.gui.component.NDIProgressBar('Parent', pbfig, ...
+            'Message', 'Starting...', 'Text', 'Exporting...');
+    catch
+        pb = [];
+        if ~isempty(pbfig) && isvalid(pbfig), close(pbfig); end
+        pbfig = [];
+    end
+end
+
+function i_updateBar(pb, frac, msg)
+    try
+        if ~isempty(pb),
+            pb.Value = max(0, min(1, frac));
+            if nargin>=3 && ~isempty(msg),
+                pb.Message = char(msg);
+            end;
+            drawnow limitrate;
+        end;
+    catch
+    end
+end
+
+function i_closeBar(pbfig)
+    if ~isempty(pbfig) && isvalid(pbfig),
+        close(pbfig);
+    end;
 end

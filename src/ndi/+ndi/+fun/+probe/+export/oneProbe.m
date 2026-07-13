@@ -50,6 +50,7 @@ function status = oneProbe(S, probe, options)
         options.binaryFileName (1,:) char = 'kiasort.bin'
         options.multiplier double = []
         options.channelMap (1,1) logical = true
+        options.progressfcn = []
         options.verbose (1,1) double = 1
     end
 
@@ -66,7 +67,8 @@ function status = oneProbe(S, probe, options)
         mult = ndi.fun.probe.export.autoMultiplier(probe);
     end;
 
-    ndi.fun.probe.export.binary(probe, binaryfile, 'multiplier', mult, 'verbose', options.verbose);
+    ndi.fun.probe.export.binary(probe, binaryfile, 'multiplier', mult, ...
+        'verbose', options.verbose, 'progressfcn', options.progressfcn);
 
     status = struct('binaryFile', binaryfile, 'multiplier', mult, ...
         'channelMapFile', '', 'hadGeometry', false);

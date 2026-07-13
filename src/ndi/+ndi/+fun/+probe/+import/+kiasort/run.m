@@ -128,12 +128,30 @@ function outputFolder = run(S, probe, options)
             num2str(sampling_frequency) ' Hz); output -> ' outputFolder '.']);
     end;
 
-    if options.progressbar && have_stages,
+    % Prefer run_kiasort_nogui's own progressfcn passthrough when the (fork) version
+    % supports it (declared varargin -> nargin < 0); this keeps NDI decoupled from
+    % KIASORT's internal stage sequence. Fall back to driving the stages directly
+    % (run_stages_with_progress) on an older KIASORT that lacks the passthrough.
+    have_nogui = exist('run_kiasort_nogui','file')==2;
+    nogui_supports_progress = false;
+    if have_nogui,
+        try, nogui_supports_progress = nargin('run_kiasort_nogui') < 0; catch, end
+    end;
+
+    if options.progressbar && nogui_supports_progress,
+        [pb, pbfig] = i_makeBar(elestr);
+        cleanupObj = onCleanup(@() i_closeBar(pbfig)); %#ok<NASGU>
+        cb = @(pct,msg) i_updateBar(pb, pct, msg);
+        run_kiasort_nogui(binaryfile, outputFolder, channelMapFile, ovr, ...
+            'progressfcn', cb, 'verbose', logical(options.verbose));
+    elseif options.progressbar && have_stages,
         ndi.fun.probe.import.kiasort.run_stages_with_progress(binaryfile, outputFolder, ...
             channelMapFile, ovr, elestr, options.verbose);
+    elseif have_nogui,
+        run_kiasort_nogui(binaryfile, outputFolder, channelMapFile, ovr);
     else,
-        cfg = ovr;
-        run_kiasort_nogui(binaryfile, outputFolder, channelMapFile, cfg);
+        ndi.fun.probe.import.kiasort.run_stages_with_progress(binaryfile, outputFolder, ...
+            channelMapFile, ovr, elestr, options.verbose);
     end;
 
     if options.verbose,
@@ -145,5 +163,39 @@ end
 function s = setDefault(s, field, value)
     if ~isfield(s, field) || isempty(s.(field)),
         s.(field) = value;
+    end;
+end
+
+function [pb, pbfig] = i_makeBar(label)
+    pb = []; pbfig = [];
+    try
+        pbfig = figure('Name', ['KIASORT: ' label], 'NumberTitle', 'off', ...
+            'MenuBar', 'none', 'ToolBar', 'none', 'Resize', 'off', ...
+            'Position', [500 500 560 90]);
+        pb = ndi.gui.component.NDIProgressBar('Parent', pbfig, ...
+            'Message', 'Starting...', 'Text', ['Sorting ' label '...']);
+    catch
+        pb = [];
+        if ~isempty(pbfig) && isvalid(pbfig), close(pbfig); end
+        pbfig = [];
+    end
+end
+
+function i_updateBar(pb, frac, msg)
+    try
+        if ~isempty(pb),
+            pb.Value = max(0, min(1, frac));
+            if nargin>=3 && ~isempty(msg),
+                pb.Message = char(msg);
+            end;
+            drawnow limitrate;
+        end;
+    catch
+    end
+end
+
+function i_closeBar(pbfig)
+    if ~isempty(pbfig) && isvalid(pbfig),
+        close(pbfig);
     end;
 end
