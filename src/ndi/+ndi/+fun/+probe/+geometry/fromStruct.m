@@ -126,7 +126,7 @@ function [pg_doc, s2c_doc, info] = fromStruct(S, probe, geom, options)
     % so a GUI caller can surface it (e.g. as a uialert) without scraping lastwarn.
     info = struct('n_sites', n, 'n_channels', [], 'channel_mismatch', false, 'message', '');
     if options.check_channels,
-        nchan = probeChannelCount(probe);
+        nchan = ndi.fun.probe.channelCount(probe);
         info.n_channels = nchan;
         if ~isempty(nchan) && nchan~=n,
             info.channel_mismatch = true;
@@ -188,19 +188,4 @@ function [pg_doc, s2c_doc, info] = fromStruct(S, probe, geom, options)
             ' for probe ' probe.elementstring() '.']);
     end;
 
-end
-
-function nchan = probeChannelCount(probe)
-% Number of channels the probe's epochprobemap assigns to it (first epoch), or []
-% if it cannot be determined (e.g. the probe has no epochs or does not expose
-% getchanneldevinfo).
-    nchan = [];
-    try
-        et = probe.epochtable();
-        if isempty(et), return; end;
-        [~,~,~,~,channellist] = probe.getchanneldevinfo(et(1).epoch_id);
-        nchan = numel(channellist);
-    catch
-        nchan = [];
-    end
 end

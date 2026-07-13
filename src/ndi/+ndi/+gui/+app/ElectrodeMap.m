@@ -8,19 +8,24 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
 %   ndi.session SESSION.
 %
 %   The window (in the NDI Cloud colour scheme) has a title at the top and,
-%   below it, two lists: on the left the available electrode geometries, on
-%   the right the session's n-trode probes with their currently-assigned
-%   geometry shown in parentheses (blank if none). A button between the two,
-%   with a left-to-right arrow, is enabled when both a geometry and a probe
-%   are selected; clicking it assigns the selected geometry to the selected
-%   probe and saves the probe_geometry document to the database.
+%   below it, two lists. On the left are the available electrode geometries,
+%   each with its site count in parentheses, and a "Plot geometry" button
+%   that opens a plot of the selected geometry. On the right are the
+%   session's n-trode probes, each with its channel count in parentheses and
+%   its currently-assigned geometry in *asterisks* (blank if none). A button
+%   between the two, with a left-to-right arrow, is enabled when both a
+%   geometry and a probe are selected; clicking it assigns the geometry to
+%   the probe and saves the probe_geometry document.
+%
+%   Selecting a probe that already has a geometry highlights the matching
+%   geometry in the left list.
 %
 %   This is a session GUI app (see ndi.gui.app.sessionApp): its constructor
 %   takes the ndi.session as its first argument, so it can be launched from
 %   the ndi.gui.navigator "Apps" menu.
 %
 %   See also: ndi.gui.app.sessionApp, ndi.fun.probe.geometry.fromLibrary,
-%             ndi.fun.probe.geometry.listLibrary, ndi.fun.probe.geometry.get
+%             ndi.fun.probe.geometry.listLibrary, ndi.fun.probe.geometry.plot
 
     properties (Constant)
         Name = "Electrode Map"   % ndi.gui.app.sessionApp menu label
@@ -32,8 +37,10 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
         GeometryList            % uilistbox of electrode geometries (left)
         ProbeList               % uilistbox of n-trode probes (right)
         AssignButton            % the assign (->) button
+        PlotButton              % the "Plot geometry" button
         probes = {}             % cell array of the session's n-trode probes
-        geometryNames = {}      % cell array of library geometry names
+        geometryNames = {}      % library geometry names (ItemsData of GeometryList)
+        geometryModels = {}     % parallel probe_model of each library geometry
     end
 
     methods
@@ -51,7 +58,7 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
             c = ndi.gui.cloudColors();
 
             obj.fig = uifigure('Name', ['Electrode Map: ' obj.session.reference], ...
-                'Position', [100 100 640 460], ...
+                'Position', [100 100 680 480], ...
                 'Color', c.darkBlue, ...
                 'Tag', 'ndi.gui.app.ElectrodeMap');
 
@@ -66,7 +73,7 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
                 'HorizontalAlignment', 'center');
             title.Layout.Row = 1; title.Layout.Column = 1;
 
-            % Body: [geometries] [ -> ] [probes]
+            % Body: [geometries + plot] [ -> ] [probes]
             body = uigridlayout(root, [2 3], ...
                 'RowHeight', {22, '1x'}, 'ColumnWidth', {'1x', 90, '1x'}, ...
                 'RowSpacing', 6, 'ColumnSpacing', 8, 'Padding', [0 0 0 0], ...
@@ -81,10 +88,22 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
                 'FontWeight', 'bold', 'FontColor', c.white);
             rightHeader.Layout.Row = 1; rightHeader.Layout.Column = 3;
 
-            obj.GeometryList = uilistbox(body, 'Items', {}, ...
+            % Left column: geometry list on top, "Plot geometry" button below
+            leftG = uigridlayout(body, [2 1], ...
+                'RowHeight', {'1x', 30}, 'ColumnWidth', {'1x'}, ...
+                'RowSpacing', 6, 'Padding', [0 0 0 0], 'BackgroundColor', c.darkBlue);
+            leftG.Layout.Row = 2; leftG.Layout.Column = 1;
+
+            obj.GeometryList = uilistbox(leftG, 'Items', {}, ...
                 'BackgroundColor', c.white, 'FontColor', c.darkBlue, ...
                 'ValueChangedFcn', @(~,~) obj.updateButtonState());
-            obj.GeometryList.Layout.Row = 2; obj.GeometryList.Layout.Column = 1;
+            obj.GeometryList.Layout.Row = 1; obj.GeometryList.Layout.Column = 1;
+
+            obj.PlotButton = uibutton(leftG, 'push', 'Text', 'Plot geometry', ...
+                'BackgroundColor', c.lightBlue, 'FontColor', c.darkBlue, ...
+                'Tooltip', 'Plot the selected electrode geometry', ...
+                'ButtonPushedFcn', @(~,~) obj.plotSelectedGeometry());
+            obj.PlotButton.Layout.Row = 2; obj.PlotButton.Layout.Column = 1;
 
             % Center column: arrow button, vertically centered
             centerG = uigridlayout(body, [3 1], ...
@@ -102,7 +121,7 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
 
             obj.ProbeList = uilistbox(body, 'Items', {}, ...
                 'BackgroundColor', c.white, 'FontColor', c.darkBlue, ...
-                'ValueChangedFcn', @(~,~) obj.updateButtonState());
+                'ValueChangedFcn', @(~,~) obj.onProbeSelected());
             obj.ProbeList.Layout.Row = 2; obj.ProbeList.Layout.Column = 3;
 
             % Populate
@@ -113,16 +132,43 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
         end
 
         function loadGeometries(obj)
-            % Fill the left list from the electrode-layout library.
+            % Fill the left list from the electrode-layout library, showing each
+            % geometry's site count in parentheses. ItemsData is the raw library
+            % name (used for assignment/plotting); a parallel probe_model list is
+            % cached so a probe's assigned geometry can be matched back to the list.
             try
                 names = ndi.fun.probe.geometry.listLibrary();
             catch
                 names = {};
             end
-            obj.geometryNames = names;
-            obj.GeometryList.Items = names;
+            if ~iscell(names), names = {}; end
+
+            items  = cell(1, numel(names));
+            models = cell(1, numel(names));
+            for i = 1:numel(names)
+                label = names{i};
+                models{i} = '';
+                try
+                    g = ndi.fun.probe.geometry.readLibrary(names{i});
+                    if isfield(g, 'site_locations_leftright')
+                        label = sprintf('%s (%d)', names{i}, numel(g.site_locations_leftright));
+                    end
+                    if isfield(g, 'probe_model') && ~isempty(g.probe_model)
+                        models{i} = char(g.probe_model);
+                    end
+                catch
+                end
+                items{i} = label;
+            end
+
+            obj.geometryNames  = names;
+            obj.geometryModels = models;
             if isempty(names)
                 obj.GeometryList.Items = {};
+                obj.GeometryList.ItemsData = {};
+            else
+                obj.GeometryList.Items = items;
+                obj.GeometryList.ItemsData = names;
             end
         end
 
@@ -139,17 +185,21 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
         end
 
         function refreshProbeList(obj)
-            % Rebuild the right list, showing each probe's assigned geometry in
-            % parentheses (blank if none). ItemsData is the probe index so the
-            % selection maps back to obj.probes.
+            % Rebuild the right list: "<probe> (<channels>) *<assigned geometry>*",
+            % with the geometry part blank if none. ItemsData is the probe index so
+            % the selection maps back to obj.probes.
             n = numel(obj.probes);
             items = cell(1, n);
             for i = 1:n
                 p = obj.probes{i};
                 label = char(p.elementstring());
-                suffix = obj.assignedGeometryLabel(p);
-                if ~isempty(suffix)
-                    label = [label ' (' suffix ')']; %#ok<AGROW>
+                nch = ndi.fun.probe.channelCount(p);
+                if ~isempty(nch)
+                    label = [label ' (' int2str(nch) ')']; %#ok<AGROW>
+                end
+                model = obj.assignedGeometryLabel(p);
+                if ~isempty(model)
+                    label = [label ' *' model '*']; %#ok<AGROW>
                 end
                 items{i} = label;
             end
@@ -168,40 +218,66 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
             obj.updateButtonState();
         end
 
-        function suffix = assignedGeometryLabel(obj, probe)
-            % The model name of the geometry currently assigned to PROBE, or '' if
-            % none. Uses probe_model when set, otherwise a generic 'assigned' tag.
-            suffix = '';
+        function model = assignedGeometryLabel(obj, probe)
+            % The probe_model of the geometry currently assigned to PROBE, or '' if
+            % none. Falls back to 'assigned' when a geometry exists without a model.
+            model = '';
             try
                 G = ndi.fun.probe.geometry.get(obj.session, probe);
                 if G.found
                     if isfield(G.pg, 'probe_model') && ~isempty(G.pg.probe_model)
-                        suffix = char(G.pg.probe_model);
+                        model = char(G.pg.probe_model);
                     else
-                        suffix = 'assigned';
+                        model = 'assigned';
                     end
                 end
             catch
-                suffix = '';
+                model = '';
             end
         end
 
+        function onProbeSelected(obj)
+            % When a probe with an assigned geometry is selected, highlight the
+            % matching geometry in the left list (matched by probe_model).
+            pidx = obj.ProbeList.Value;
+            if ~isempty(pidx) && isnumeric(pidx) && pidx <= numel(obj.probes)
+                model = obj.assignedGeometryLabel(obj.probes{pidx});
+                if ~isempty(model) && ~isempty(obj.geometryModels)
+                    idx = find(strcmp(obj.geometryModels, model), 1);
+                    if ~isempty(idx) && ~isempty(obj.geometryNames)
+                        obj.GeometryList.Value = obj.geometryNames{idx};
+                    end
+                end
+            end
+            obj.updateButtonState();
+        end
+
         function updateButtonState(obj)
-            % Enable the assign button only when both a geometry and a probe are
-            % selected (i.e. both lists are non-empty and have a current value).
+            % Assign enabled only when both a geometry and a probe are selected;
+            % Plot enabled when a geometry is selected.
             hasGeom = ~isempty(obj.GeometryList.Items) && ~isempty(obj.GeometryList.Value);
             hasProbe = ~isempty(obj.ProbeList.Items) && ~isempty(obj.ProbeList.Value);
-            if hasGeom && hasProbe
-                obj.AssignButton.Enable = 'on';
-            else
-                obj.AssignButton.Enable = 'off';
+            obj.AssignButton.Enable = onOff(hasGeom && hasProbe);
+            obj.PlotButton.Enable = onOff(hasGeom);
+        end
+
+        function plotSelectedGeometry(obj)
+            % Open a plot of the selected electrode geometry in a new window.
+            gname = obj.GeometryList.Value;
+            if isempty(gname)
+                return;
+            end
+            try
+                ndi.fun.probe.geometry.plot(gname);
+            catch e
+                uialert(obj.fig, e.message, 'Plot failed');
             end
         end
 
         function assignSelected(obj)
             % Assign the selected geometry to the selected probe and save it.
-            gname = obj.GeometryList.Value;   % geometry name (char)
-            pidx  = obj.ProbeList.Value;       % probe index (from ItemsData)
+            gname = obj.GeometryList.Value;   % library name (ItemsData)
+            pidx  = obj.ProbeList.Value;       % probe index (ItemsData)
             if isempty(gname) || isempty(pidx) || pidx > numel(obj.probes)
                 return;
             end
@@ -226,4 +302,8 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
             end
         end
     end
+end
+
+function s = onOff(tf)
+    if tf, s = 'on'; else, s = 'off'; end
 end
