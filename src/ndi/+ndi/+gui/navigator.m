@@ -60,16 +60,20 @@ classdef navigator < handle
 
     properties (Constant)
         MinWidth  = 250   % minimum figure width, in pixels
-        MinHeight = 300   % absolute minimum figure height, in pixels
+        MinHeight = 300   % initial figure height floor; at run time the
+                          %   height follows the panes (see minFigureHeight)
     end
 
     properties (Constant, Access = private)
-        Pad       = 6     % root-grid padding, in pixels
-        Spacing   = 4     % root-grid row spacing, in pixels
+        Pad        = 6    % root-grid padding, in pixels
+        Spacing    = 4    % root-grid row spacing, in pixels
+        GripPixels = 6    % drag hit-test tolerance around the resizable edge
     end
 
     properties (Access = private)
-        Busy (1,1) logical = false   % guards against re-entrant resizing
+        Busy      (1,1) logical = false  % guards against re-entrant resizing
+        Dragging  (1,1) logical = false  % a grip resize is in progress
+        DragLastY (1,1) double  = 0      % last pointer Y (screen px) during a drag
     end
 
     methods
@@ -84,13 +88,20 @@ classdef navigator < handle
             pos(4) = max(pos(4), obj.MinHeight);
 
             c = ndi.gui.cloudColors();
+            % AutoResizeChildren must be 'off' or SizeChangedFcn is ignored
+            % (MATLAB disables the callback while auto-resize is on). The
+            % root uigridlayout still fills the figure on its own; we use the
+            % callback to redistribute the pane heights on a user resize.
             obj.Figure = uifigure('Name', 'NDI Navigator', ...
                 'Position',         pos, ...
                 'Tag',              'ndiNavigator', ...
                 'Visible',          options.Visible, ...
                 'Color',            c.darkBlue, ...
-                'AutoResizeChildren', 'on');
-            obj.Figure.SizeChangedFcn = @(~,~) obj.onFigureResized();
+                'AutoResizeChildren', 'off');
+            obj.Figure.SizeChangedFcn        = @(~,~) obj.onFigureResized();
+            obj.Figure.WindowButtonDownFcn   = @(~,~) obj.onButtonDown();
+            obj.Figure.WindowButtonMotionFcn = @(~,~) obj.onMouseMotion();
+            obj.Figure.WindowButtonUpFcn     = @(~,~) obj.onButtonUp();
 
             obj.buildPanes();
             obj.layout();
@@ -278,7 +289,86 @@ classdef navigator < handle
                     s = s + p.currentHeight();
                 end
             end
-            h = max(s + 2 * obj.Pad + (n - 1) * obj.Spacing, obj.MinHeight);
+            % Purely content-driven: when every collapsible pane is
+            % collapsed the window shrinks to the stack of headers rather
+            % than being held open at a fixed floor.
+            h = s + 2 * obj.Pad + (n - 1) * obj.Spacing;
+        end
+
+        function idx = resizablePaneIndex(obj)
+            %RESIZABLEPANEINDEX Index of the first elastic (grip) pane, or 0.
+            idx = find(obj.elasticMask(), 1, 'first');
+            if isempty(idx)
+                idx = 0;
+            end
+        end
+
+        function y = paneBottomEdge(obj, idx)
+            %PANEBOTTOMEDGE Y (from figure bottom, px) of pane IDX's lower edge.
+            figH    = obj.Figure.Position(4);
+            fromTop = obj.Pad;
+            for i = 1:idx
+                h = obj.Panes{i}.RenderedHeight;
+                if isnan(h)
+                    h = obj.Panes{i}.currentHeight();
+                end
+                fromTop = fromTop + h;
+                if i < idx
+                    fromTop = fromTop + obj.Spacing;
+                end
+            end
+            y = figH - fromTop;
+        end
+
+        function onButtonDown(obj)
+            %ONBUTTONDOWN Begin a grip resize if the click is on the edge.
+            if obj.Dragging
+                return;
+            end
+            idx = obj.resizablePaneIndex();
+            if idx == 0
+                return;
+            end
+            cp = obj.Figure.CurrentPoint;
+            if abs(cp(2) - obj.paneBottomEdge(idx)) <= obj.GripPixels
+                obj.Dragging  = true;
+                pl            = get(groot, 'PointerLocation');
+                obj.DragLastY = pl(2);
+            end
+        end
+
+        function onMouseMotion(obj)
+            %ONMOUSEMOTION Drive a grip drag, or show the edge cursor.
+            if obj.Dragging
+                pl = get(groot, 'PointerLocation');
+                dy = pl(2) - obj.DragLastY;   % screen coords: up is positive
+                obj.DragLastY = pl(2);
+                if dy ~= 0
+                    % Dragging the grip down (dy < 0) grows the window; the
+                    % elastic pane absorbs the change (Progress hugs bottom).
+                    obj.resizeFigureBy(-dy);
+                    obj.layout();
+                end
+                return;
+            end
+            idx = obj.resizablePaneIndex();
+            if idx == 0
+                return;
+            end
+            cp = obj.Figure.CurrentPoint;
+            if abs(cp(2) - obj.paneBottomEdge(idx)) <= obj.GripPixels
+                obj.Figure.Pointer = 'hand';
+            else
+                obj.Figure.Pointer = 'arrow';
+            end
+        end
+
+        function onButtonUp(obj)
+            %ONBUTTONUP End a grip drag.
+            if obj.Dragging
+                obj.Dragging       = false;
+                obj.Figure.Pointer = 'arrow';
+            end
         end
 
         function onFigureResized(obj)

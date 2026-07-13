@@ -78,6 +78,21 @@ classdef TestNavigatorLayout < matlab.unittest.TestCase
             testCase.verifyLessThan(testCase.Nav.Figure.Position(4), h0, ...
                 'Collapsing Datasets should shrink the window.');
         end
+
+        function testCollapseAllShrinksBelowFloor(testCase)
+            % Collapsing every collapsible pane should shrink the window to
+            % the collapsed pane stack, not stop at the initial 300px floor.
+            testCase.datasetsPane().toggle();
+            testCase.progressPane().toggle();
+            drawnow;
+
+            rows = cell2mat(testCase.Nav.RootGrid.RowHeight);
+            figH = testCase.Nav.Figure.Position(4);
+            testCase.verifyLessThan(figH, 300, ...
+                'Fully collapsed window should shrink below the 300px floor.');
+            testCase.verifyLessThanOrEqual(sum(rows), figH, ...
+                'Pane rows should still fit within the window.');
+        end
     end
 
     methods (Access = private)
