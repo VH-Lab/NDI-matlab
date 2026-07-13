@@ -59,18 +59,37 @@ function run_stages_with_progress(binaryfile, outputFolder, channelMapFile, cfg_
     cbSort    = @(pct,msg) i_updateBar(pbw, pbtag, 1/3 + pct/3);
     cbData    = @(pct,msg) i_updateBar(pbw, pbtag, 2/3 + pct/3);
 
+    % Only pass 'progressfcn' to a stage whose version actually accepts extra
+    % name-value pairs (has varargin, i.e. nargin < 0). Older KIASORT stages
+    % without it would otherwise error with "too many input arguments".
+    ex_extra = i_progArg('kiaSort_main_extract_sample_data', cbExtract);
+    so_extra = i_progArg('kiaSort_main_sort_samples',        cbSort);
+    sd_extra = i_progArg('kiaSort_main_sortData',            cbData);
+
     kiaSort_main_extract_sample_data(cfg.fullFilePath, cfg.outputFolder, cfg, ...
         'channel_mapping',   channel_mapping, ...
         'channel_inclusion', channel_inclusion, ...
         'channel_locations', channel_locations, ...
-        'progressfcn',       cbExtract);
+        ex_extra{:});
 
     if ~cfg.sort_only,
-        kiaSort_main_sort_samples(cfg.outputFolder, cfg, hp, 'progressfcn', cbSort);
+        kiaSort_main_sort_samples(cfg.outputFolder, cfg, hp, so_extra{:});
     end;
 
-    kiaSort_main_sortData(cfg.fullFilePath, cfg.outputFolder, cfg, 'progressfcn', cbData);
+    kiaSort_main_sortData(cfg.fullFilePath, cfg.outputFolder, cfg, sd_extra{:});
 
+end
+
+function extra = i_progArg(fnname, cb)
+    % {'progressfcn', cb} if the function accepts varargin, else {}.
+    extra = {};
+    try
+        if nargin(fnname) < 0,
+            extra = {'progressfcn', cb};
+        end;
+    catch
+        extra = {};
+    end
 end
 
 function pbw = i_makeBar(titleStr, labelStr, tag)
