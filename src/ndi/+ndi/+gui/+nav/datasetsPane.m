@@ -72,7 +72,7 @@ classdef datasetsPane < ndi.gui.nav.pane
 
             obj.Grip = uipanel(container, ...
                 'BorderType',      'none', ...
-                'BackgroundColor', [0.80 0.80 0.80]);
+                'BackgroundColor', ndi.gui.cloudColors().lightBlue);
             obj.Grip.Layout.Row    = 2;
             obj.Grip.Layout.Column = 1;
 
@@ -82,24 +82,27 @@ classdef datasetsPane < ndi.gui.nav.pane
         function buildHeaderRight(obj, parent)
             % Two buttons sit close together on the right: Paths | Refresh.
             group = uigridlayout(parent, [1 2]);
-            group.Layout.Row    = 1;
-            group.Layout.Column = 3;
-            group.ColumnWidth   = {'1x', '1x'};
-            group.RowHeight     = {'1x'};
-            group.Padding       = [0 0 0 0];
-            group.ColumnSpacing = 4;
+            group.Layout.Row      = 1;
+            group.Layout.Column   = 3;
+            group.ColumnWidth     = {'1x', '1x'};
+            group.RowHeight       = {'1x'};
+            group.Padding         = [0 0 0 0];
+            group.ColumnSpacing   = 4;
+            group.BackgroundColor = ndi.gui.cloudColors().darkBlue;
 
             paths = uibutton(group, ...
                 'Text',            'Paths', ...
                 'ButtonPushedFcn', @(~,~) obj.openPathsEditor());
             paths.Layout.Row    = 1;
             paths.Layout.Column = 1;
+            obj.accentButton(paths);
 
             refresh = uibutton(group, ...
                 'Text',            'Refresh', ...
                 'ButtonPushedFcn', @(~,~) obj.refresh());
             refresh.Layout.Row    = 1;
             refresh.Layout.Column = 2;
+            obj.accentButton(refresh);
         end
 
         function w = rightWidth(~)
@@ -234,6 +237,7 @@ classdef datasetsPane < ndi.gui.nav.pane
             %OPENPATHSEDITOR Placeholder window for editing search paths.
             f = uifigure('Name', 'Dataset Search Paths', ...
                 'Position', [150 150 380 160], ...
+                'Color',    ndi.gui.cloudColors().offWhite, ...
                 'Tag',      'ndiNavigatorDatasetPaths');
             g = uigridlayout(f, [1 1]);
             uilabel(g, ...

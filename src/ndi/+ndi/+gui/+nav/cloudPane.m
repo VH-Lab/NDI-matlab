@@ -17,17 +17,13 @@ classdef cloudPane < ndi.gui.nav.pane
     end
 
     methods (Access = protected)
-        function buildHeader(obj)
-            buildHeader@ndi.gui.nav.pane(obj);
-            obj.TitleLabel.FontWeight = 'bold';
-        end
-
-        function buildHeaderRight(~, parent)
+        function buildHeaderRight(obj, parent)
             btn = uibutton(parent, ...
                 'Text',            'Profile', ...
                 'ButtonPushedFcn', @(~,~) ndi.gui.profileEditor());
             btn.Layout.Row    = 1;
             btn.Layout.Column = 3;
+            obj.accentButton(btn);
         end
 
         function w = rightWidth(~)
