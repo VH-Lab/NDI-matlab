@@ -121,47 +121,24 @@ function [pg_doc, s2c_doc] = fromKilosortMap(S, probe, source, options)
         probe_model = char(m.name);
     end;
 
-    % Step 2: build and create the probe_geometry document
-    pg = struct();
-    pg.site_locations_leftright = xcoords;
-    pg.site_locations_frontback = zeros(n,1);
-    pg.site_locations_depth = ycoords;
-    pg.shank_id = kcoords;
-    pg.contact_shape = '';
-    pg.contact_shape_width = [];
-    pg.contact_shape_height = [];
-    pg.contact_shape_radius = [];
-    pg.probe_model = probe_model;
-    pg.manufacturer = options.manufacturer;
-    pg.ndim = 2;
-    pg.unit = options.unit;
-    pg.has_planar_contour = 0;
-    pg.contour_x = [];
-    pg.contour_y = [];
+    % Step 2: assemble a probe_geometry struct and the site->channel map, then build
+    % the documents via the shared builder (ndi.fun.probe.geometry.fromStruct).
+    geom = struct();
+    geom.site_locations_leftright = xcoords;
+    geom.site_locations_frontback = zeros(n,1);
+    geom.site_locations_depth = ycoords;
+    geom.shank_id = kcoords;
+    geom.probe_model = probe_model;
+    geom.manufacturer = options.manufacturer;
+    geom.ndim = 2;
+    geom.unit = options.unit;
 
-    pg_doc = ndi.document('probe_geometry','probe_geometry',pg,'base.session_id',S.id());
-    pg_doc = pg_doc.set_dependency_value('probe_id', probe.id());
-
-    % Step 3: build the site->channel map (site i -> channel i; NaN if not connected)
+    % Kilosort xcoords/ycoords are in recording-channel order, so site i is recorded
+    % on channel i; NaN marks channels flagged not-connected.
     map = (1:n)';
     map(~connected) = NaN;
 
-    s2c = struct('map', map);
-    s2c_doc = ndi.document('site2channelmap','site2channelmap',s2c,'base.session_id',S.id());
-    s2c_doc = s2c_doc.set_dependency_value('probe_id', probe.id());
-    s2c_doc = s2c_doc.set_dependency_value('probe_geometry_id', pg_doc.id());
-
-    % Step 4: commit
-    if options.add,
-        S.database_add(pg_doc);
-        S.database_add(s2c_doc);
-    end;
-
-    if options.verbose,
-        modelstr = probe_model; if isempty(modelstr), modelstr = '(unnamed)'; end;
-        action = 'Created'; if options.add, action = 'Added'; end;
-        disp([action ' probe_geometry (' modelstr ', ' int2str(n) ' sites, ' ...
-            int2str(sum(connected)) ' connected) and site2channelmap for probe ' probe.elementstring() '.']);
-    end;
+    [pg_doc, s2c_doc] = ndi.fun.probe.geometry.fromStruct(S, probe, geom, ...
+        'map', map, 'add', options.add, 'verbose', options.verbose);
 
 end

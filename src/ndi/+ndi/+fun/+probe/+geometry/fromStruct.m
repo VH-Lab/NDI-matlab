@@ -1,0 +1,121 @@
+function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
+% NDI.FUN.PROBE.GEOMETRY.FROMSTRUCT - create NDI geometry documents from a probe_geometry struct
+%
+% [PG_DOC, S2C_DOC] = NDI.FUN.PROBE.GEOMETRY.FROMSTRUCT(S, PROBE, GEOM, ...)
+%
+% Creates a 'probe_geometry' ndi.document for PROBE in the ndi.session S from GEOM,
+% a struct whose fields are (a subset of) the probe_geometry fields. Missing fields
+% are filled with sensible defaults: site_locations_frontback -> zeros, shank_id ->
+% ones, ndim -> 2, unit -> 'um'. At minimum GEOM must contain
+% site_locations_leftright and site_locations_depth.
+%
+% This is the shared document-builder used by NDI.FUN.PROBE.GEOMETRY.FROMKILOSORTMAP
+% and NDI.FUN.PROBE.GEOMETRY.FROMLIBRARY.
+%
+% If a site->channel map is supplied via the 'map' option (map(i) = recording
+% channel of site i; NaN for a site that is not recorded), a 'site2channelmap'
+% document is also created and returned as S2C_DOC. With no map, only the
+% probe_geometry document is created and S2C_DOC is []. (An electrode layout
+% describes physical sites; the site->channel wiring is a property of a particular
+% recording/headstage, so it is only stored when known.)
+%
+% Name/value pairs:
+%   map ([])      - site->channel column; when non-empty, also create site2channelmap.
+%   add (true)    - add the created documents to S's database.
+%   verbose (1)   - 0/1 report what was created.
+%
+% See also: NDI.FUN.PROBE.GEOMETRY.FROMKILOSORTMAP, NDI.FUN.PROBE.GEOMETRY.FROMLIBRARY,
+%   NDI.FUN.PROBE.GEOMETRY.GET
+
+    arguments
+        S
+        probe
+        geom (1,1) struct
+        options.map double = []
+        options.add (1,1) logical = true
+        options.verbose (1,1) double = 1
+    end
+
+    % Step 1: start from the full default set of probe_geometry fields
+    pg = struct();
+    pg.site_locations_leftright = [];
+    pg.site_locations_frontback = [];
+    pg.site_locations_depth = [];
+    pg.shank_id = [];
+    pg.contact_shape = '';
+    pg.contact_shape_width = [];
+    pg.contact_shape_height = [];
+    pg.contact_shape_radius = [];
+    pg.probe_model = '';
+    pg.manufacturer = '';
+    pg.ndim = 2;
+    pg.unit = 'um';
+    pg.has_planar_contour = 0;
+    pg.contour_x = [];
+    pg.contour_y = [];
+
+    % Step 2: overlay recognized fields from GEOM
+    recognized = fieldnames(pg);
+    for i=1:numel(recognized),
+        f = recognized{i};
+        if isfield(geom,f) && ~isempty(geom.(f)),
+            pg.(f) = geom.(f);
+        end;
+    end;
+
+    % Step 3: normalize and fill site-location defaults
+    if isempty(pg.site_locations_leftright) || isempty(pg.site_locations_depth),
+        error('GEOM must contain non-empty site_locations_leftright and site_locations_depth.');
+    end;
+    pg.site_locations_leftright = double(pg.site_locations_leftright(:));
+    pg.site_locations_depth = double(pg.site_locations_depth(:));
+    n = numel(pg.site_locations_leftright);
+    if numel(pg.site_locations_depth)~=n,
+        error('site_locations_leftright and site_locations_depth must have the same number of elements.');
+    end;
+
+    if isempty(pg.site_locations_frontback),
+        pg.site_locations_frontback = zeros(n,1);
+    else,
+        pg.site_locations_frontback = double(pg.site_locations_frontback(:));
+    end;
+    if isempty(pg.shank_id),
+        pg.shank_id = ones(n,1);
+    else,
+        pg.shank_id = double(pg.shank_id(:));
+    end;
+
+    % Step 4: create the probe_geometry document
+    pg_doc = ndi.document('probe_geometry','probe_geometry',pg,'base.session_id',S.id());
+    pg_doc = pg_doc.set_dependency_value('probe_id', probe.id());
+
+    % Step 5: optionally create the site2channelmap document
+    s2c_doc = [];
+    if ~isempty(options.map),
+        map = double(options.map(:));
+        if numel(map)~=n,
+            error('map must have one element per site (%d).', n);
+        end;
+        s2c = struct('map', map);
+        s2c_doc = ndi.document('site2channelmap','site2channelmap',s2c,'base.session_id',S.id());
+        s2c_doc = s2c_doc.set_dependency_value('probe_id', probe.id());
+        s2c_doc = s2c_doc.set_dependency_value('probe_geometry_id', pg_doc.id());
+    end;
+
+    % Step 6: commit
+    if options.add,
+        S.database_add(pg_doc);
+        if ~isempty(s2c_doc),
+            S.database_add(s2c_doc);
+        end;
+    end;
+
+    if options.verbose,
+        modelstr = pg.probe_model; if isempty(modelstr), modelstr = '(unnamed)'; end;
+        action = 'Created'; if options.add, action = 'Added'; end;
+        extra = ''; if ~isempty(s2c_doc), extra = ' and site2channelmap'; end;
+        disp([action ' probe_geometry (' modelstr ', ' int2str(n) ' sites)' extra ...
+            ' for probe ' probe.elementstring() '.']);
+    end;
+
+end
