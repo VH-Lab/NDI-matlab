@@ -49,9 +49,13 @@ classdef TestNavigatorLayout < matlab.unittest.TestCase
             ds = testCase.datasetsPane();
             h0 = ds.RenderedHeight;
 
-            % Grow the window; the elastic Datasets pane should take the space.
+            % Grow the window; the elastic Datasets pane should take the
+            % space. A hidden figure does not fire SizeChangedFcn, so drive
+            % the re-layout explicitly (this is what the callback does on a
+            % live resize).
             pos = testCase.Nav.Figure.Position;
             testCase.Nav.Figure.Position = [pos(1) pos(2) pos(3) pos(4)+120];
+            testCase.Nav.layout();
             drawnow;
 
             testCase.verifyGreaterThan(ds.RenderedHeight, h0 + 100, ...
