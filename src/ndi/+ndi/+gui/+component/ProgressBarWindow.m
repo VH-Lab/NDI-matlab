@@ -855,7 +855,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                     'Label',{},'Clock',{},'Timer',{});
 
                 pane.registerApp(app);
-                pane.setEngaged(true);
+                pane.setEngagedQuietly(true);
 
                 dockedApp = app;
             catch
@@ -879,7 +879,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         function bringToFront(app)
             if app.IsDocked
                 if ~isempty(app.HostPane) && isvalid(app.HostPane)
-                    app.HostPane.setEngaged(true);
+                    app.HostPane.setEngagedQuietly(true);
                 end
                 return
             end

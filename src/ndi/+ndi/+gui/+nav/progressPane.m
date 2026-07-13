@@ -24,7 +24,8 @@ classdef progressPane < ndi.gui.nav.pane
     end
 
     properties (Access = private)
-        Placeholder % idle-state label shown when no bars are docked
+        Placeholder    % idle-state label shown when no bars are docked
+        DesiredBodyPx  % pixel height the pane body currently wants
     end
 
     properties (Constant, Access = private)
@@ -43,10 +44,22 @@ classdef progressPane < ndi.gui.nav.pane
                 'Engaged',     true, ...
                 'MinHeight',   h, ...
                 'Height',      h);
+            obj.DesiredBodyPx = obj.BodyHeight;
         end
 
         function tf = HasBody(~)
             tf = true;
+        end
+
+        function h = currentHeight(obj)
+            %CURRENTHEIGHT Header height when collapsed, else header + body.
+            %   The body is content-driven (see fitToBars) and capped, so a
+            %   tall cascade scrolls rather than making the pane unbounded.
+            if obj.Collapsible && ~obj.Engaged
+                h = obj.HeaderHeight;
+            else
+                h = obj.HeaderHeight + obj.DesiredBodyPx;
+            end
         end
 
         function g = adoptBarGrid(obj)
@@ -98,11 +111,11 @@ classdef progressPane < ndi.gui.nav.pane
                 obj.BodyContainer.RowHeight = {bodyPx};
             end
 
-            visibleBody = min(bodyPx, obj.MaxBodyPx);
-            newHeight   = ndi.gui.nav.pane.HeaderHeight + visibleBody;
-            obj.MinHeight = ndi.gui.nav.pane.HeaderHeight + obj.BodyHeight;
-            obj.Height    = newHeight;
-            obj.setEngaged(true);
+            % Content-driven: request a (capped) body height and let the
+            % navigator shrink the elastic panes to make room. This never
+            % grows the window, so a background task cannot resize it.
+            obj.DesiredBodyPx = min(bodyPx, obj.MaxBodyPx);
+            obj.setEngagedQuietly(true);
             obj.Navigator.layout();
         end
 
@@ -116,8 +129,9 @@ classdef progressPane < ndi.gui.nav.pane
             obj.clearBody();
             obj.showPlaceholder();
 
-            obj.MinHeight = ndi.gui.nav.pane.HeaderHeight + obj.BodyHeight;
-            obj.Height    = obj.MinHeight;
+            % Back to the idle body height; the elastic panes reclaim the
+            % space the bars had taken (window size unchanged).
+            obj.DesiredBodyPx = obj.BodyHeight;
             if ~isempty(obj.Navigator) && isvalid(obj.Navigator)
                 obj.Navigator.layout();
             end
