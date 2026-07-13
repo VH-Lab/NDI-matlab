@@ -47,25 +47,17 @@ function run_stages_with_progress(binaryfile, outputFolder, channelMapFile, cfg_
     cfg.num_channel_extract = derive_num_channel_extract(channel_locations, ...
         cfg.waveform_radius, cfg.num_channel_extract);
 
-    % progress bar (best-effort; a failure to create it must not stop the sort)
-    pb = []; pbfig = [];
-    try
-        pbfig = figure('Name', ['KIASORT: ' label], 'NumberTitle', 'off', ...
-            'MenuBar', 'none', 'ToolBar', 'none', 'Resize', 'off', ...
-            'Position', [500 500 560 90]);
-        pb = ndi.gui.component.NDIProgressBar('Parent', pbfig, ...
-            'Message', 'Starting...', 'Text', ['Sorting ' label '...']);
-    catch
-        pb = [];
-        if ~isempty(pbfig) && isvalid(pbfig), close(pbfig); end
-        pbfig = [];
-    end
-    cleanupObj = onCleanup(@() i_closeBar(pbfig)); %#ok<NASGU>
+    % progress bar (best-effort; a failure to create it must not stop the sort).
+    % ndi.gui.component.ProgressBarWindow docks into an open navigator's Progress
+    % pane, or opens a standalone window if no navigator is open.
+    pbtag = ['kiasort:' label];
+    pbw = i_makeBar(['KIASORT: ' label], ['Sorting ' label], pbtag);
+    cleanupObj = onCleanup(@() i_closeBar(pbw, pbtag)); %#ok<NASGU>
 
     % Three stages, each mapped to a third of the overall bar.
-    cbExtract = @(pct,msg) i_updateBar(pb, 0/3 + pct/3, msg);
-    cbSort    = @(pct,msg) i_updateBar(pb, 1/3 + pct/3, msg);
-    cbData    = @(pct,msg) i_updateBar(pb, 2/3 + pct/3, msg);
+    cbExtract = @(pct,msg) i_updateBar(pbw, pbtag, 0/3 + pct/3);
+    cbSort    = @(pct,msg) i_updateBar(pbw, pbtag, 1/3 + pct/3);
+    cbData    = @(pct,msg) i_updateBar(pbw, pbtag, 2/3 + pct/3);
 
     kiaSort_main_extract_sample_data(cfg.fullFilePath, cfg.outputFolder, cfg, ...
         'channel_mapping',   channel_mapping, ...
@@ -81,13 +73,20 @@ function run_stages_with_progress(binaryfile, outputFolder, channelMapFile, cfg_
 
 end
 
-function i_updateBar(pb, frac, msg)
+function pbw = i_makeBar(titleStr, labelStr, tag)
+    pbw = [];
     try
-        if ~isempty(pb),
-            pb.Value = max(0, min(1, frac));
-            if nargin>=3 && ~isempty(msg),
-                pb.Message = char(msg);
-            end;
+        pbw = ndi.gui.component.ProgressBarWindow(titleStr);
+        pbw.addBar('Label', labelStr, 'Tag', tag, 'Auto', false);
+    catch
+        pbw = [];
+    end
+end
+
+function i_updateBar(pbw, tag, frac)
+    try
+        if ~isempty(pbw) && isvalid(pbw),
+            pbw.updateBar(tag, max(0, min(1, frac)));
             drawnow limitrate;
         end;
     catch
@@ -95,8 +94,11 @@ function i_updateBar(pb, frac, msg)
     end
 end
 
-function i_closeBar(pbfig)
-    if ~isempty(pbfig) && isvalid(pbfig),
-        close(pbfig);
-    end;
+function i_closeBar(pbw, tag)
+    try
+        if ~isempty(pbw) && isvalid(pbw),
+            pbw.removeBar(tag);
+        end;
+    catch
+    end
 end

@@ -139,9 +139,10 @@ function outputFolder = run(S, probe, options)
     end;
 
     if options.progressbar && nogui_supports_progress,
-        [pb, pbfig] = i_makeBar(elestr);
-        cleanupObj = onCleanup(@() i_closeBar(pbfig)); %#ok<NASGU>
-        cb = @(pct,msg) i_updateBar(pb, pct, msg);
+        pbtag = ['kiasort:' elestr];
+        pbw = i_makeBar(['KIASORT: ' elestr], ['Sorting ' elestr], pbtag);
+        cleanupObj = onCleanup(@() i_closeBar(pbw, pbtag)); %#ok<NASGU>
+        cb = @(pct,msg) i_updateBar(pbw, pbtag, pct);
         run_kiasort_nogui(binaryfile, outputFolder, channelMapFile, ovr, ...
             'progressfcn', cb, 'verbose', logical(options.verbose));
     elseif options.progressbar && have_stages,
@@ -166,36 +167,33 @@ function s = setDefault(s, field, value)
     end;
 end
 
-function [pb, pbfig] = i_makeBar(label)
-    pb = []; pbfig = [];
+function pbw = i_makeBar(titleStr, labelStr, tag)
+    % An ndi.gui.component.ProgressBarWindow docks into an open ndi.gui.navigator's
+    % Progress pane (and falls back to a standalone window when none is open).
+    pbw = [];
     try
-        pbfig = figure('Name', ['KIASORT: ' label], 'NumberTitle', 'off', ...
-            'MenuBar', 'none', 'ToolBar', 'none', 'Resize', 'off', ...
-            'Position', [500 500 560 90]);
-        pb = ndi.gui.component.NDIProgressBar('Parent', pbfig, ...
-            'Message', 'Starting...', 'Text', ['Sorting ' label '...']);
+        pbw = ndi.gui.component.ProgressBarWindow(titleStr);
+        pbw.addBar('Label', labelStr, 'Tag', tag, 'Auto', false);
     catch
-        pb = [];
-        if ~isempty(pbfig) && isvalid(pbfig), close(pbfig); end
-        pbfig = [];
+        pbw = [];
     end
 end
 
-function i_updateBar(pb, frac, msg)
+function i_updateBar(pbw, tag, frac)
     try
-        if ~isempty(pb),
-            pb.Value = max(0, min(1, frac));
-            if nargin>=3 && ~isempty(msg),
-                pb.Message = char(msg);
-            end;
+        if ~isempty(pbw) && isvalid(pbw),
+            pbw.updateBar(tag, max(0, min(1, frac)));
             drawnow limitrate;
         end;
     catch
     end
 end
 
-function i_closeBar(pbfig)
-    if ~isempty(pbfig) && isvalid(pbfig),
-        close(pbfig);
-    end;
+function i_closeBar(pbw, tag)
+    try
+        if ~isempty(pbw) && isvalid(pbw),
+            pbw.removeBar(tag);
+        end;
+    catch
+    end
 end
