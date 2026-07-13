@@ -210,14 +210,20 @@ classdef ElectrodeMap < ndi.gui.app.sessionApp
             try
                 % replace: re-assigning overwrites the probe's geometry rather than
                 % stacking a second probe_geometry document.
-                ndi.fun.probe.geometry.fromLibrary(obj.session, probe, gname, ...
-                    'replace', true);
+                [~, ~, info] = ndi.fun.probe.geometry.fromLibrary(obj.session, probe, ...
+                    gname, 'replace', true);
             catch e
                 uialert(obj.fig, e.message, 'Assignment failed');
                 return;
             end
 
             obj.refreshProbeList();
+
+            % Surface a channel-count mismatch in the GUI (it is also printed as a
+            % warning). The assignment still succeeds; this is advisory.
+            if isstruct(info) && isfield(info, 'channel_mismatch') && info.channel_mismatch
+                uialert(obj.fig, info.message, 'Channel count mismatch', 'Icon', 'warning');
+            end
         end
     end
 end

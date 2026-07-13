@@ -1,4 +1,4 @@
-function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
+function [pg_doc, s2c_doc, info] = fromStruct(S, probe, geom, options)
 % NDI.FUN.PROBE.GEOMETRY.FROMSTRUCT - create NDI geometry documents from a probe_geometry struct
 %
 % [PG_DOC, S2C_DOC] = NDI.FUN.PROBE.GEOMETRY.FROMSTRUCT(S, PROBE, GEOM, ...)
@@ -24,6 +24,13 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
 % If they do not match exactly, a warning is printed (this catches the common case
 % of assigning a geometry meant for a differently-sized probe). Set 'check_channels'
 % to false to skip this.
+%
+% The optional third output INFO is a struct describing that check, so a GUI caller
+% can surface it (e.g. as a uialert) rather than relying on the printed warning:
+%   INFO.n_sites          - number of sites in GEOM
+%   INFO.n_channels       - the probe's epochprobemap channel count ([] if unknown)
+%   INFO.channel_mismatch - true if n_sites and n_channels differ
+%   INFO.message          - the mismatch message ('' when there is no mismatch)
 %
 % Name/value pairs:
 %   map ([])              - site->channel column; when non-empty, also create site2channelmap.
@@ -98,13 +105,19 @@ function [pg_doc, s2c_doc] = fromStruct(S, probe, geom, options)
         pg.shank_id = double(pg.shank_id(:));
     end;
 
-    % Step 3b: sanity-check the site count against the probe's epochprobemap channels
+    % Step 3b: sanity-check the site count against the probe's epochprobemap channels.
+    % The result is both warned (for scripts / the command window) and returned in INFO
+    % so a GUI caller can surface it (e.g. as a uialert) without scraping lastwarn.
+    info = struct('n_sites', n, 'n_channels', [], 'channel_mismatch', false, 'message', '');
     if options.check_channels,
         nchan = probeChannelCount(probe);
+        info.n_channels = nchan;
         if ~isempty(nchan) && nchan~=n,
-            warning('ndi:fun:probe:geometry:fromStruct:channelCountMismatch', ...
-                ['Electrode geometry has %d site(s) but the epochprobemap for probe %s has ' ...
-                '%d channel(s); they do not match exactly.'], n, probe.elementstring(), nchan);
+            info.channel_mismatch = true;
+            info.message = sprintf(['Electrode geometry has %d site(s) but the epochprobemap ' ...
+                'for probe %s has %d channel(s); they do not match exactly.'], ...
+                n, probe.elementstring(), nchan);
+            warning('ndi:fun:probe:geometry:fromStruct:channelCountMismatch', '%s', info.message);
         end;
     end;
 

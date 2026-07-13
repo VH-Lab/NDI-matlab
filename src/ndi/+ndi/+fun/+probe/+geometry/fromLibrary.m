@@ -1,4 +1,4 @@
-function [pg_doc, s2c_doc] = fromLibrary(S, probe, name, options)
+function [pg_doc, s2c_doc, info] = fromLibrary(S, probe, name, options)
 % NDI.FUN.PROBE.GEOMETRY.FROMLIBRARY - attach a library electrode layout to a probe
 %
 % [PG_DOC, S2C_DOC] = NDI.FUN.PROBE.GEOMETRY.FROMLIBRARY(S, PROBE, NAME, ...)
@@ -40,7 +40,7 @@ function [pg_doc, s2c_doc] = fromLibrary(S, probe, name, options)
 
     geom = ndi.fun.probe.geometry.readLibrary(name);
 
-    [pg_doc, s2c_doc] = ndi.fun.probe.geometry.fromStruct(S, probe, geom, ...
+    [pg_doc, s2c_doc, info] = ndi.fun.probe.geometry.fromStruct(S, probe, geom, ...
         'map', options.map, 'add', options.add, 'replace', options.replace, ...
         'verbose', options.verbose);
 
