@@ -79,6 +79,9 @@ function outputFolder = run(S, probe, options)
             'addpath(genpath(''/path/to/KIASORT''))) before calling this function.']);
     end;
 
+    % Fail fast if a non-toolbox pca.m is shadowing the Statistics Toolbox pca.
+    i_checkPca();
+
     elestr = probe.elementstring();
     elestr(elestr==' ') = '_';
     probedir = fullfile(S.path, options.kiasort_dir, elestr);
@@ -165,6 +168,33 @@ function s = setDefault(s, field, value)
     if ~isfield(s, field) || isempty(s.(field)),
         s.(field) = value;
     end;
+end
+
+function i_checkPca()
+    % Ensure the Statistics Toolbox pca is the one on the path, not a shadowing
+    % pca.m earlier on the path. KIASORT's kiaSort_cluster_classify_Temp calls
+    % pca(X,'Algorithm','svd','NumComponents',N); a shadowing pca that ignores
+    % those name-value options fails there with "Too many input arguments" once
+    % per channel, deep into the run. Test the actual call signature up front so
+    % the failure is a single clear error instead of hundreds of buried ones.
+    ok = false;
+    try
+        pca([1 2; 3 4; 5 7], 'Algorithm', 'svd', 'NumComponents', 1);
+        ok = true;
+    catch
+        ok = false;
+    end
+    if ~ok,
+        w = which('pca');
+        if isempty(w), w = '(none found on path)'; end
+        error('KIASORT:shadowedPca', ...
+            ['The ''pca'' on your MATLAB path does not accept the name-value ' ...
+             'options KIASORT requires (''Algorithm''/''NumComponents''). A ' ...
+             'non-Statistics-Toolbox pca.m is shadowing the toolbox version ' ...
+             '(the pca being used is: %s). Run "which -all pca", then remove ' ...
+             'or rename the shadowing file (or fix the path order) so the ' ...
+             'Statistics Toolbox pca wins, and retry.'], w);
+    end
 end
 
 function pbw = i_makeBar(titleStr, labelStr, tag)
