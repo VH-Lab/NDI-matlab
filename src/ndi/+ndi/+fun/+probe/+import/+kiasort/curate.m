@@ -38,6 +38,7 @@ function fig = curate(S, probe, options)
                 '(e.g. addpath(genpath(''/path/to/KIASORT''))) before curating.'], needed{i});
         end;
     end;
+    have_standalone = exist('kiaSort_curate_standalone','file')==2;
 
     elestr = probe.elementstring();
     elestr(elestr==' ') = '_';
@@ -70,11 +71,18 @@ function fig = curate(S, probe, options)
     cfg.outputFolder = outputFolder;
     cfg.altResFolder = ''; % curation checks this; ensure it exists and is empty
 
-    c = ndi.gui.cloudColors();
-    fig = uifigure('Name', ['KIASORT curation: ' elestr], ...
-        'Position', [100 100 1150 720], 'Color', c.offWhite, ...
-        'Tag', 'ndi.fun.probe.import.kiasort.curate');
-    panel = uigridlayout(fig, [1 1], 'Padding', [0 0 0 0]);
-
-    kiaSort_curate_results(cfg, panel, c.offWhite, fig);
+    % Prefer KIASORT's standalone curation entry point (kiaSort_curate_standalone)
+    % when the fork provides it: it owns building the window/panel, so NDI does not
+    % have to track the embedding details of kiaSort_curate_results. Fall back to
+    % embedding it ourselves otherwise.
+    if have_standalone,
+        fig = kiaSort_curate_standalone(outputFolder, cfg);
+    else,
+        c = ndi.gui.cloudColors();
+        fig = uifigure('Name', ['KIASORT curation: ' elestr], ...
+            'Position', [100 100 1150 720], 'Color', c.offWhite, ...
+            'Tag', 'ndi.fun.probe.import.kiasort.curate');
+        panel = uigridlayout(fig, [1 1], 'Padding', [0 0 0 0]);
+        kiaSort_curate_results(cfg, panel, c.offWhite, fig);
+    end;
 end

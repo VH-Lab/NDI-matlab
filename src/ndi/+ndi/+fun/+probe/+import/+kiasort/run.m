@@ -3,33 +3,38 @@ function outputFolder = run(S, probe, options)
 %
 % OUTPUTFOLDER = NDI.FUN.PROBE.IMPORT.KIASORT.RUN(S, PROBE, ...)
 %
-% Runs KIASORT (via its headless entry point run_kiasort_nogui) on the binary that
-% NDI.FUN.PROBE.EXPORT.ALL_BINARY / .BINARY exported for the probe PROBE of the
-% ndi.session S, then returns the KIASORT OUTPUTFOLDER. Because both NDI and KIASORT
-% are MATLAB, this lets the whole export -> sort -> import loop run in one MATLAB
-% session:
+% Runs KIASORT on the binary that NDI.FUN.PROBE.EXPORT.ALL_BINARY / .BINARY (or the
+% Electrode Data Export app) exported for the probe PROBE of the ndi.session S, then
+% returns the KIASORT OUTPUTFOLDER. Because both NDI and KIASORT are MATLAB, this
+% lets the whole export -> sort -> import loop run in one MATLAB session:
 %
 %    ndi.fun.probe.export.all_binary(S,'binary_dir','kiasort','binaryFileName','kiasort.bin');
 %    ndi.fun.probe.import.kiasort.run(S, p);        % this function
 %    ndi.fun.probe.import.kiasort.probe(S, p);      % import the results
 %
-% KIASORT must be on the MATLAB path (its run_kiasort_nogui function must be
-% visible). This function does NOT modify KIASORT; it only calls its public
-% headless entry point, so students can keep using KIASORT untouched.
+% KIASORT must be on the MATLAB path. This function does NOT modify KIASORT; it only
+% calls its public functions, so students can keep using KIASORT untouched.
+%
+% PROGRESS: when 'progressbar' is true (the default) and KIASORT's stage functions
+% are available, this function runs the three KIASORT stages
+% (kiaSort_main_extract_sample_data, kiaSort_main_sort_samples, kiaSort_main_sortData)
+% directly and passes each a 'progressfcn' callback that drives an NDI progress bar
+% (KIASORT's run_kiasort_nogui does not surface progress). Otherwise it calls
+% run_kiasort_nogui. Either way KIASORT also writes a detailed log to
+% [outputFolder]/KIASort_log.txt.
+%
+% KIASORT uses UMAP, so MATLAB must have a Python environment (pyenv) with
+% umap-learn installed; otherwise the sort errors in pythonUMAP.
 %
 % The exported binary is expected at
 %       [S.path]/[kiasort_dir]/[probe_elementstring]/[binaryFileName]
-% and KIASORT writes its output into the [subdir] subfolder of that directory
-% (default 'kiasort_output'), which is exactly where NDI.FUN.PROBE.IMPORT.KIASORT.PROBE
-% looks for it.
+% and KIASORT writes its output into the [subdir] subfolder (default
+% 'kiasort_output'), which is where NDI.FUN.PROBE.IMPORT.KIASORT.PROBE looks for it.
 %
-% The channel count and sampling rate are read directly from the probe, so the
-% KIASORT config matches the exported data. If no channel-map file is supplied and
-% none exists next to the binary, this function first tries to build one from the
-% probe's real geometry (probe_geometry + site2channelmap) via
-% NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP; if the probe has no geometry on file it
-% falls back to a default single-column linear map (NDI.FUN.PROBE.GEOMETRY.WRITEKILOSORTMAP,
-% which warns). Pass 'channelMapFile' to supply your own map explicitly.
+% The channel count and sampling rate are read directly from the probe. If no
+% channel-map file is supplied and none exists next to the binary, this function
+% builds one from the probe's geometry (NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP), or a
+% default linear map if the probe has no geometry.
 %
 % Name/value pairs:
 % ---------------------------------------------------------------------------------
@@ -39,18 +44,16 @@ function outputFolder = run(S, probe, options)
 % | binaryFileName           | Name of the exported binary in the probe's dir.     |
 % |  ('kiasort.bin')         |                                                     |
 % | subdir ('kiasort_output')| Subfolder for the KIASORT output.                   |
-% | channelMapFile ('')      | Kilosort-style channel map .mat. '' => use an       |
-% |                          |   existing 'channel_map.mat' next to the binary, or |
-% |                          |   build one from the probe's geometry, or (last     |
-% |                          |   resort) write a default linear map.               |
-% | cfg_overrides (struct()) | Extra KIASORT config overrides (merged last, so     |
-% |                          |   they win over numChannels/samplingFrequency).     |
+% | channelMapFile ('')      | Kilosort-style channel map .mat. '' => use/build.   |
+% | cfg_overrides (struct()) | Extra KIASORT config overrides (win over defaults). |
 % | dataType ('int16')       | Data type of the exported binary.                   |
+% | progressbar (true)       | Show an NDI progress bar driven by KIASORT's        |
+% |                          |   per-stage progressfcn (runs the stages directly). |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
 %
-% See also: NDI.FUN.PROBE.IMPORT.KIASORT.PROBE, NDI.FUN.PROBE.EXPORT.ALL_BINARY,
-%   NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP
+% See also: NDI.FUN.PROBE.IMPORT.KIASORT.PROBE, NDI.FUN.PROBE.IMPORT.KIASORT.CURATE,
+%   NDI.FUN.PROBE.EXPORT.ALL_BINARY, NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP
 
     arguments
         S
@@ -61,12 +64,19 @@ function outputFolder = run(S, probe, options)
         options.channelMapFile (1,:) char = ''
         options.cfg_overrides (1,1) struct = struct()
         options.dataType (1,:) char = 'int16'
+        options.progressbar (1,1) logical = true
         options.verbose (1,1) double = 1
     end
 
-    if exist('run_kiasort_nogui','file')~=2,
-        error(['run_kiasort_nogui was not found on the MATLAB path. Add KIASORT to the ' ...
-            'path (e.g. addpath(genpath(''/path/to/KIASORT''))) before calling this function.']);
+    % KIASORT must be present. The granular (progress) path needs the stage
+    % functions; the fallback needs run_kiasort_nogui.
+    stage_fns = {'kiaSort_main_configs','kiaSort_extended_configs','kiaSort_hidden_configs', ...
+        'sorting_hyperparameters_in','load_channel_map','derive_num_channel_extract', ...
+        'kiaSort_main_extract_sample_data','kiaSort_main_sort_samples','kiaSort_main_sortData'};
+    have_stages = all(cellfun(@(f) exist(f,'file')==2, stage_fns));
+    if ~have_stages && exist('run_kiasort_nogui','file')~=2,
+        error(['KIASORT was not found on the MATLAB path. Add it (e.g. ' ...
+            'addpath(genpath(''/path/to/KIASORT''))) before calling this function.']);
     end;
 
     elestr = probe.elementstring();
@@ -74,9 +84,8 @@ function outputFolder = run(S, probe, options)
     probedir = fullfile(S.path, options.kiasort_dir, elestr);
     binaryfile = fullfile(probedir, options.binaryFileName);
     if ~isfile(binaryfile),
-        error(['Exported binary not found: ' binaryfile '. Run ndi.fun.probe.export.all_binary ' ...
-            '(with ''binary_dir'',''' options.kiasort_dir ''' and ''binaryFileName'',''' ...
-            options.binaryFileName ''') first.']);
+        error(['Exported binary not found: ' binaryfile '. Export the probe first ' ...
+            '(ndi.fun.probe.export.all_binary or the Electrode Data Export app).']);
     end;
 
     outputFolder = fullfile(probedir, options.subdir);
@@ -94,9 +103,7 @@ function outputFolder = run(S, probe, options)
     num_channels = size(d,2);
     sampling_frequency = probe.samplerate(et(1).epoch_id);
 
-    % channel map: use the given file, else use/create channel_map.mat by the binary.
-    % Prefer the probe's real geometry (probe_geometry + site2channelmap); only if
-    % none is on file do we fall back to a default single-column linear map.
+    % channel map: given file, else use/build channel_map.mat next to the binary
     channelMapFile = options.channelMapFile;
     if isempty(channelMapFile),
         channelMapFile = fullfile(probedir, 'channel_map.mat');
@@ -104,7 +111,6 @@ function outputFolder = run(S, probe, options)
             tf = ndi.fun.probe.geometry.toKilosortMap(S, probe, channelMapFile, ...
                 'num_channels', num_channels, 'verbose', options.verbose);
             if ~tf,
-                % no probe_geometry on file: default linear placeholder (warns)
                 ndi.fun.probe.geometry.writeKilosortMap(channelMapFile, 'num_channels', num_channels, ...
                     'verbose', options.verbose);
             end;
@@ -112,17 +118,23 @@ function outputFolder = run(S, probe, options)
     end;
 
     % build the KIASORT config: sensible defaults from the probe, then user overrides
-    cfg = options.cfg_overrides;
-    cfg = setDefault(cfg, 'numChannels', num_channels);
-    cfg = setDefault(cfg, 'samplingFrequency', sampling_frequency);
-    cfg = setDefault(cfg, 'dataType', options.dataType);
+    ovr = options.cfg_overrides;
+    ovr = setDefault(ovr, 'numChannels', num_channels);
+    ovr = setDefault(ovr, 'samplingFrequency', sampling_frequency);
+    ovr = setDefault(ovr, 'dataType', options.dataType);
 
     if options.verbose,
         disp(['Running KIASORT on ' binaryfile ' (' int2str(num_channels) ' channels, ' ...
             num2str(sampling_frequency) ' Hz); output -> ' outputFolder '.']);
     end;
 
-    run_kiasort_nogui(binaryfile, outputFolder, channelMapFile, cfg);
+    if options.progressbar && have_stages,
+        ndi.fun.probe.import.kiasort.run_stages_with_progress(binaryfile, outputFolder, ...
+            channelMapFile, ovr, elestr, options.verbose);
+    else,
+        cfg = ovr;
+        run_kiasort_nogui(binaryfile, outputFolder, channelMapFile, cfg);
+    end;
 
     if options.verbose,
         disp(['KIASORT finished for probe ' elestr '. Import with ndi.fun.probe.import.kiasort.probe(S, probe).']);
