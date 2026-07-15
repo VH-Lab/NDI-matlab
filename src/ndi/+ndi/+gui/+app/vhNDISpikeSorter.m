@@ -86,9 +86,12 @@ classdef vhNDISpikeSorter < ndi.gui.app.sessionApp
 
         function tf = isAvailable(~)
             % True if the vhNDISpikeSorter package (vhlab-library-matlab) is on
-            % the path. The string is resolved globally, so it finds the
-            % top-level package function, not this class.
-            tf = exist(ndi.gui.app.vhNDISpikeSorter.LauncherFcn, 'file') == 2;
+            % the path. Use which(), not exist(): exist('pkg.func','file')
+            % returns 0 for functions inside a package even when they are on the
+            % path, whereas which() resolves package-qualified names correctly.
+            % The name is resolved globally, so it finds the top-level package
+            % function, not this class (which has no spikesorting method).
+            tf = ~isempty(which(ndi.gui.app.vhNDISpikeSorter.LauncherFcn));
         end
 
         function refreshAvailability(obj)
