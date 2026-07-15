@@ -32,6 +32,8 @@ function binary(probe, outputfile, options)
 % |                     |   the spike-sorted data already exist (e.g. from |
 % |                     |   SpikeGLX) and only the epoch/sample metadata   |
 % |                     |   are needed to set up an import.                |
+% | progressfcn ([])    | Optional handle f(pct,msg) called after each     |
+% |                     |   chunk is written; pct in [0,1] over all epochs.|
 % |---------------------|--------------------------------------------------|
 %
 
@@ -42,6 +44,7 @@ function binary(probe, outputfile, options)
         options.verbose (1,1) double = 1
         options.precision (1,:) char = 'int16'
         options.noBinary (1,1) logical = false
+        options.progressfcn = []
     end
 
     % set up parameters
@@ -49,6 +52,7 @@ function binary(probe, outputfile, options)
     verbose = options.verbose;
     precision = options.precision;
     noBinary = options.noBinary;
+    progressfcn = options.progressfcn;
 
     % now begin
     et = probe.epochtable();
@@ -60,6 +64,17 @@ function binary(probe, outputfile, options)
     num_channels = [];
 
     chunk_duration = 100; % read N second chunks
+
+    % total chunk count across all epochs, for the progress fraction
+    total_chunks = 0;
+    if ~noBinary && ~isempty(progressfcn),
+        for e=1:numel(et),
+            ct = et(e).t0_t1{1}(1):chunk_duration:et(e).t0_t1{1}(2);
+            total_chunks = total_chunks + numel(ct);
+        end;
+        if total_chunks<1, total_chunks = 1; end;
+    end;
+    done_chunks = 0;
 
     if ~noBinary,
         fid = fopen(outputfile,'w','ieee-le'); % little endian, assume is needed
@@ -98,6 +113,11 @@ function binary(probe, outputfile, options)
             [data,t] = probe.readtimeseries(et(e).epoch_id, start_time, end_time);
             num_channels = size(data,2);
             fwrite(fid, multiplier*data', precision);
+            done_chunks = done_chunks + 1;
+            if ~isempty(progressfcn),
+                progressfcn(done_chunks/total_chunks, ...
+                    sprintf('epoch %d/%d, chunk %d/%d', e, numel(et), c, numel(chunk_times)));
+            end;
         end;
     end;
 

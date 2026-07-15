@@ -52,8 +52,12 @@ classdef sessionApp < handle
             %
             %   APPS = NDI.GUI.APP.SESSIONAPP.LIST() returns a struct array
             %   with fields:
-            %       Name  - the app's display label (string)
-            %       Class - the fully-qualified class name (string)
+            %       Name     - the app's display label (string)
+            %       Class    - the fully-qualified class name (string)
+            %       Category - an optional grouping label (string, "" if the
+            %                    app declares no Category constant). The
+            %                    navigator groups apps that share a non-empty
+            %                    Category into a submenu of the same name.
             %   for every concrete subclass of ndi.gui.app.sessionApp found
             %   in the default packages.
             %
@@ -63,7 +67,7 @@ classdef sessionApp < handle
                 packages (1,:) string = ndi.gui.app.sessionApp.defaultPackages()
             end
 
-            apps  = struct('Name', {}, 'Class', {});
+            apps  = struct('Name', {}, 'Class', {}, 'Category', {});
             names = ndi.gui.app.sessionApp.classesInPackages(packages);
             for i = 1:numel(names)
                 cls = names(i);
@@ -75,8 +79,9 @@ classdef sessionApp < handle
                     continue;
                 end
                 apps(end+1) = struct( ...
-                    'Name',  ndi.gui.app.sessionApp.readName(mc, cls), ...
-                    'Class', cls); %#ok<AGROW>
+                    'Name',     ndi.gui.app.sessionApp.readName(mc, cls), ...
+                    'Class',    cls, ...
+                    'Category', ndi.gui.app.sessionApp.readCategory(mc)); %#ok<AGROW>
             end
         end
 
@@ -173,6 +178,25 @@ classdef sessionApp < handle
                         name = string(props(i).DefaultValue);
                     catch
                         name = cls;
+                    end
+                    return;
+                end
+            end
+        end
+
+        function cat = readCategory(mc)
+            %READCATEGORY Read an optional constant Category default, "" if none.
+            %   Apps opt into a submenu grouping by declaring a constant
+            %   Category property (e.g. Category = "Spike Sorters"); apps that
+            %   do not stay at the top level of the Apps menu.
+            cat = "";
+            props = mc.PropertyList;
+            for i = 1:numel(props)
+                if strcmp(props(i).Name, 'Category') && props(i).HasDefault
+                    try
+                        cat = string(props(i).DefaultValue);
+                    catch
+                        cat = "";
                     end
                     return;
                 end

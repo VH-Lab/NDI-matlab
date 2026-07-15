@@ -124,7 +124,7 @@ classdef datasetsPane < ndi.gui.nav.pane
 
             % --- Unaffiliated: ndi.session objects in the base workspace ---
             unaffiliated = uitreenode(obj.Tree, ...
-                'Text',     'Unaffiliated', ...
+                'Text',     'Unaffiliated sessions', ...
                 'NodeData', struct('kind', 'dataset'));
             sessions = obj.scanWorkspace('ndi.session');
             for i = 1:numel(sessions)
@@ -175,9 +175,23 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   list from sessionApps, discovered once per tree build.
             cm       = uicontextmenu(obj.Navigator.Figure);
             appsRoot = uimenu(cm, 'Text', 'Apps');
+            % Apps that declare a Category are grouped under a submenu of that
+            % name; the rest stay at the top level of the Apps menu.
+            catMenus = containers.Map('KeyType', 'char', 'ValueType', 'any');
             for i = 1:numel(apps)
                 app = apps(i);
-                uimenu(appsRoot, ...
+                parent = appsRoot;
+                cat = '';
+                if isfield(app, 'Category')
+                    cat = char(app.Category);
+                end
+                if ~isempty(cat)
+                    if ~isKey(catMenus, cat)
+                        catMenus(cat) = uimenu(appsRoot, 'Text', cat);
+                    end
+                    parent = catMenus(cat);
+                end
+                uimenu(parent, ...
                     'Text',            app.Label, ...
                     'MenuSelectedFcn', @(~,~) obj.launchApp(app, node));
             end
@@ -304,17 +318,22 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   any class that adopts the ndi.gui.app.sessionApp interface
             %   (and is on the path) appears automatically. No entries are
             %   hardcoded here.
-            apps = struct('Label', {}, 'Launch', {});
+            apps = struct('Label', {}, 'Launch', {}, 'Category', {});
             try
                 found = ndi.gui.app.sessionApp.list();
             catch
-                found = struct('Name', {}, 'Class', {});
+                found = struct('Name', {}, 'Class', {}, 'Category', {});
             end
             for i = 1:numel(found)
                 cls = char(found(i).Class);
+                cat = '';
+                if isfield(found, 'Category')
+                    cat = char(found(i).Category);
+                end
                 apps(end+1) = struct( ...
-                    'Label',  char(found(i).Name), ...
-                    'Launch', @(s) ndi.gui.app.sessionApp.launch(cls, s)); %#ok<AGROW>
+                    'Label',    char(found(i).Name), ...
+                    'Launch',   @(s) ndi.gui.app.sessionApp.launch(cls, s), ...
+                    'Category', cat); %#ok<AGROW>
             end
         end
 
