@@ -44,6 +44,16 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyTrue(any(classes == "ndi.gui.app.spikeSorterImporter"));
         end
 
+        function testVHNDISpikeSorterDiscoveredUnderSpikeSorters(testCase)
+            % The VH Lab spike sorter wrapper is discovered and grouped under
+            % the "Spike Sorters" category so it appears in that Apps submenu.
+            apps = ndi.gui.app.sessionApp.list();
+            idx  = find(string({apps.Class}) == "ndi.gui.app.vhNDISpikeSorter", 1);
+            testCase.verifyNotEmpty(idx, ...
+                'ndi.gui.app.vhNDISpikeSorter was not discovered');
+            testCase.verifyEqual(string(apps(idx).Category), "Spike Sorters");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));
