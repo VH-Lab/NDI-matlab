@@ -40,6 +40,17 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             assertion = TestPathSPromotion.firstOfClass(minted, 'term_assertion');
             testCase.verifyEqual(assertion.term_assertion.value.node, 'uberon:0002436');
             testCase.verifyEqual(TestPathSPromotion.depValue(assertion, 'subject_id'), partId);
+            % regression: subject_relation was renamed to `relation` in V_eta. The
+            % relation must carry NO stale subject_relation block (an undeclared
+            % top-level block quarantines -- the JH 163k-orphan regression) and must
+            % descend from `relation`, not `subject_relation`.
+            testCase.verifyFalse(isfield(rel, 'subject_relation'));
+            supers = {rel.document_class.superclasses.class_name};
+            testCase.verifyTrue(any(strcmp(supers, 'relation')));
+            testCase.verifyFalse(any(strcmp(supers, 'subject_relation')));
+            % the part-subject carries a non-empty (required) local_identifier
+            part = TestPathSPromotion.firstOfClass(minted, 'subject');
+            testCase.verifyNotEmpty(part.subject.local_identifier);
         end
 
         function testMerelyLocatedSiteUntouched(testCase)

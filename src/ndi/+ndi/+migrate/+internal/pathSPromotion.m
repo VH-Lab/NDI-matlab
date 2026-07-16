@@ -137,7 +137,13 @@ subj.document_class = classBlock('subject', {'base'});
 subj.depends_on = struct('name', {}, 'value', {});
 subj.base = struct('id', partId, 'session_id', sessionId, ...
     'name', ['migrated_part_' partName], 'datestamp', ds);
-subj.subject = struct('local_identifier', [shortId(animalId) '_' partName]);
+% local_identifier is REQUIRED on a V_eta subject. Compose animal+part; trim any
+% degenerate leading/trailing underscores (an empty animalId would leave one), and
+% fall back to the document id if somehow empty -- the same guarantee the DID-side
+% jEnsureLocalId gives.
+lid = regexprep([shortId(animalId) '_' partName], '^_+|_+$', '');
+if isempty(lid); lid = partId; end
+subj.subject = struct('local_identifier', lid);
 
 assertion = struct();
 assertion.document_class = classBlock('term_assertion', {'subject_assertion'});
@@ -150,13 +156,16 @@ assertion.subject_assertion = struct();
 assertion.term_assertion = struct('value', siteTerm);
 
 relation = struct();
-relation.document_class = classBlock('directed_relation', {'subject_relation'});
+% subject_relation was renamed to `relation` (abstract) in V_eta. Use the current
+% superclass and emit NO subject_relation block -- a stale block is an undeclared
+% top-level block that quarantines (the JH 163k-orphan regression). ensureClassBlocks
+% (via the v1_to_v2 re-fold) rebuilds the chain and any needed empty blocks.
+relation.document_class = classBlock('directed_relation', {'relation'});
 relation.depends_on = [ ...
     struct('name', 'child',  'value', partId), ...     % the part
     struct('name', 'parent', 'value', animalId)];      % the whole animal
 relation.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', 'migrated_part_of', 'datestamp', ds);
-relation.subject_relation = struct();
 relation.directed_relation = struct('relation', ...
     struct('node', 'BFO:0000050', 'name', 'part_of'));
 
