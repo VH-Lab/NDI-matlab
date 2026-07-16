@@ -12,6 +12,9 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
 %       least one epoch) is marked with a leading "*".
 %     * Select one or more probes and click "Make Ensemble" to build (or extend)
 %       their ensembles - one epoch per recorded epoch of each probe.
+%     * Plot an ensemble: select a single probe that already has an ensemble,
+%       choose one of its epochs, and click "Plot Ensemble" to draw that epoch's
+%       spike raster (via ndi.fun.ensemble.plot) in a new figure.
 %
 %   By default an epoch that already has an ensemble is left untouched. Tick
 %   "Rebuild existing (replace)" to delete and rebuild the selected probes'
@@ -29,7 +32,8 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
 %       ndi.gui.app.ensembleMaker(S);
 %
 %   See also: ndi.gui.app.sessionApp, ndi.fun.ensemble.allElement,
-%             ndi.fun.ensemble.create, ndi.element.ensemble,
+%             ndi.fun.ensemble.create, ndi.fun.ensemble.read,
+%             ndi.fun.ensemble.plot, ndi.element.ensemble,
 %             ndi.gui.app.katzExporter
 
     properties (Constant)
@@ -43,12 +47,15 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
 
         % widgets
         probeList               % multi-select listbox of n-trode probes
+        epochDropdown           % popup of a single selected probe's ensemble epochs
+        plotButton              % the "Plot Ensemble" button
         rebuildCheckbox         % "Rebuild existing (replace)"
         makeButton              % the "Make Ensemble" button
 
         % state
         probes = {}             % cell array of the session's n-trode probes
         haveEnsemble = {}       % element ids of probes that already have an ensemble
+        ensembleMap = []        % containers.Map: probe id -> its ndi.element.ensemble
         waitDlg = []            % active "please wait" dialog (if any)
     end
 
@@ -75,8 +82,8 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
                 'Color', c.darkBlue, ...
                 'Tag', 'ndi.gui.app.ensembleMaker');
 
-            root = uigridlayout(obj.fig, [5 1], ...
-                'RowHeight', {30, 20, 22, '1x', 44}, ...
+            root = uigridlayout(obj.fig, [6 1], ...
+                'RowHeight', {30, 20, 22, '1x', 32, 44}, ...
                 'ColumnWidth', {'1x'}, ...
                 'RowSpacing', 8, 'Padding', [12 12 12 12], ...
                 'BackgroundColor', c.darkBlue);
@@ -102,15 +109,36 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
             obj.probeList = uilistbox(root, 'Items', {}, 'Multiselect', 'on', ...
                 'BackgroundColor', c.white, 'FontColor', c.darkBlue, ...
                 'FontName', get(groot, 'FixedWidthFontName'), ...
-                'ValueChangedFcn', @(~,~) obj.updateButtonState());
+                'ValueChangedFcn', @(~,~) obj.onSelectionChanged());
             obj.probeList.Layout.Row = 4; obj.probeList.Layout.Column = 1;
 
-            % Row 5: rebuild checkbox + make button + reload
+            % Row 5: plot controls (act on a single selected probe's ensemble)
+            plotRow = uigridlayout(root, [1 4], ...
+                'ColumnWidth', {45, '1x', 8, 150}, 'RowHeight', {'1x'}, ...
+                'ColumnSpacing', 8, 'Padding', [0 0 0 0], ...
+                'BackgroundColor', c.darkBlue);
+            plotRow.Layout.Row = 5; plotRow.Layout.Column = 1;
+            eplbl = uilabel(plotRow, 'Text', 'Epoch:', 'FontWeight', 'bold', ...
+                'FontColor', c.white, 'HorizontalAlignment', 'right', ...
+                'VerticalAlignment', 'center');
+            eplbl.Layout.Column = 1;
+            obj.epochDropdown = uidropdown(plotRow, ...
+                'Items', {'(select one probe with an ensemble)'}, 'ItemsData', {}, ...
+                'Enable', 'off', ...
+                'BackgroundColor', c.white, 'FontColor', c.darkBlue);
+            obj.epochDropdown.Layout.Column = 2;
+            obj.plotButton = uibutton(plotRow, 'push', 'Text', 'Plot Ensemble', ...
+                'FontWeight', 'bold', 'BackgroundColor', c.lightBlue, ...
+                'FontColor', c.darkBlue, 'Enable', 'off', ...
+                'ButtonPushedFcn', @(~,~) obj.plotEnsemble());
+            obj.plotButton.Layout.Column = 4;
+
+            % Row 6: rebuild checkbox + make button + reload
             brow = uigridlayout(root, [1 4], ...
                 'ColumnWidth', {'fit', '1x', 90, 150}, 'RowHeight', {'1x'}, ...
                 'ColumnSpacing', 12, 'Padding', [0 0 0 0], ...
                 'BackgroundColor', c.darkBlue);
-            brow.Layout.Row = 5; brow.Layout.Column = 1;
+            brow.Layout.Row = 6; brow.Layout.Column = 1;
             obj.rebuildCheckbox = uicheckbox(brow, ...
                 'Text', 'Rebuild existing (replace)', 'FontColor', c.white, ...
                 'Value', false, ...
@@ -155,13 +183,14 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
                 obj.probes = {};
             end
             if ~iscell(obj.probes), obj.probes = {}; end
-            obj.haveEnsemble = obj.probesWithEnsemble();
+            obj.ensembleMap  = obj.buildEnsembleMap();
+            obj.haveEnsemble = obj.ensembleMap.keys;
 
             n = numel(obj.probes);
             if n == 0
                 obj.probeList.Items = {'(no n-trode probes)'};
                 obj.probeList.ItemsData = [];
-                obj.updateButtonState();
+                obj.onSelectionChanged();
                 return;
             end
             items = cell(1, n);
@@ -177,40 +206,46 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
             if ~isempty(prevSel) && isnumeric(prevSel)
                 obj.probeList.Value = prevSel(prevSel >= 1 & prevSel <= n);
             end
-            obj.updateButtonState();
+            obj.onSelectionChanged();
         end % reloadProbes
 
-        function ids = probesWithEnsemble(obj)
-            % element ids of the probes that already have an ensemble element
-            % carrying at least one epoch (a single search over the session's
-            % ensemble elements, matched by their underlying element)
-            ids = {};
+        function m = buildEnsembleMap(obj)
+            % Map from a probe's element id to its ndi.element.ensemble, for
+            % probes whose ensemble has at least one epoch built. Ensembles are
+            % found via their 'ensemble' map documents (which exist only once an
+            % epoch is built) rather than via getelements, then walked back to
+            % the underlying probe.
+            m = containers.Map('KeyType', 'char', 'ValueType', 'any');
             try
-                allEns = obj.session.getelements('element.type', 'ensemble');
+                mapdocs = obj.session.database_search(ndi.query('','isa','ensemble',''));
             catch
-                allEns = {};
+                mapdocs = {};
             end
-            for k = 1:numel(allEns)
-                e = allEns{k};
+            ensIds = {};
+            for i = 1:numel(mapdocs)
+                eid = mapdocs{i}.dependency_value('element_id', 'ErrorIfNotFound', 0);
+                if ~isempty(eid)
+                    ensIds{end+1} = eid; %#ok<AGROW>
+                end
+            end
+            ensIds = unique(ensIds);
+            for i = 1:numel(ensIds)
+                try
+                    ens = ndi.database.fun.ndi_document2ndi_object(ensIds{i}, obj.session);
+                catch
+                    ens = [];
+                end
+                if isempty(ens) || ~isa(ens, 'ndi.element'), continue; end
                 u = [];
                 try
-                    u = e.underlying_element;
+                    u = ens.underlying_element;
                 catch
                     u = [];
                 end
                 if isempty(u), continue; end
-                % only count probes whose ensemble has at least one epoch built
-                try
-                    hasEpoch = ~isempty(ndi.fun.ensemble.findExisting(obj.session, e));
-                catch
-                    hasEpoch = false;
-                end
-                if hasEpoch
-                    ids{end+1} = u.id(); %#ok<AGROW>
-                end
+                m(u.id()) = ens;   % probe id -> ensemble element (with >= 1 epoch)
             end
-            ids = unique(ids);
-        end % probesWithEnsemble
+        end % buildEnsembleMap
 
         function sel = selectedProbes(obj)
             % the probe objects currently selected in the listbox
@@ -224,9 +259,62 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
             sel = obj.probes(idx);
         end % selectedProbes
 
+        function [probe, ens] = singlePlottableProbe(obj)
+            % if exactly one probe is selected and it has an ensemble, return
+            % that probe and its ensemble element; otherwise return []'s
+            probe = []; ens = [];
+            sel = obj.selectedProbes();
+            if numel(sel) ~= 1, return; end
+            p = sel{1};
+            if ~isempty(obj.ensembleMap) && isKey(obj.ensembleMap, p.id())
+                probe = p;
+                ens   = obj.ensembleMap(p.id());
+            end
+        end % singlePlottableProbe
+
+        function onSelectionChanged(obj)
+            obj.updateButtonState();
+            obj.updateEpochChoices();
+        end % onSelectionChanged
+
         function updateButtonState(obj)
             obj.makeButton.Enable = onOff(~isempty(obj.selectedProbes()));
         end % updateButtonState
+
+        function updateEpochChoices(obj)
+            % the epoch dropdown and Plot button are active only when a single
+            % ensemble-bearing probe is selected; the dropdown then lists that
+            % ensemble's epochs
+            prev = obj.epochDropdown.Value;
+            [~, ens] = obj.singlePlottableProbe();
+            if isempty(ens)
+                obj.epochDropdown.Items = {'(select one probe with an ensemble)'};
+                obj.epochDropdown.ItemsData = {};
+                obj.epochDropdown.Enable = 'off';
+                obj.plotButton.Enable = 'off';
+                return;
+            end
+            try
+                et  = ens.epochtable();
+                ids = {et.epoch_id};
+            catch
+                ids = {};
+            end
+            if isempty(ids)
+                obj.epochDropdown.Items = {'(no epochs)'};
+                obj.epochDropdown.ItemsData = {};
+                obj.epochDropdown.Enable = 'off';
+                obj.plotButton.Enable = 'off';
+                return;
+            end
+            obj.epochDropdown.Items = ids;
+            obj.epochDropdown.ItemsData = ids;
+            obj.epochDropdown.Enable = 'on';
+            if ischar(prev) && ismember(prev, ids)
+                obj.epochDropdown.Value = prev;   % keep the prior epoch if still valid
+            end
+            obj.plotButton.Enable = 'on';
+        end % updateEpochChoices
 
         % ---- ensemble building ----------------------------------------------
 
@@ -285,6 +373,49 @@ classdef ensembleMaker < ndi.gui.app.sessionApp
                 obj.updateButtonState();
             end
         end % finishMake
+
+        % ---- plotting -------------------------------------------------------
+
+        function plotEnsemble(obj)
+            [probe, ens] = obj.singlePlottableProbe();
+            if isempty(ens)
+                uialert(obj.fig, ['Select a single n-trode probe that has an ' ...
+                    'ensemble (marked with *).'], 'Cannot plot');
+                return;
+            end
+            epoch = obj.epochDropdown.Value;
+            if isempty(epoch) || ~ischar(epoch)
+                uialert(obj.fig, 'Choose an epoch to plot.', 'No epoch');
+                return;
+            end
+            obj.withWait('Reading ensemble...', @() obj.doPlot(probe, ens, epoch));
+        end % plotEnsemble
+
+        function doPlot(obj, probe, ens, epoch)
+            % read the ensemble for this epoch and draw its spike raster in a new
+            % figure, using ndi.fun.ensemble.plot
+            try
+                E = ndi.fun.ensemble.read(obj.session, ens, epoch);
+            catch ME
+                uialert(obj.fig, ME.message, 'Could not read ensemble', 'Icon', 'error');
+                return;
+            end
+            nN = size(E.activity, 1);
+            if nN == 0
+                uialert(obj.fig, sprintf(['The ensemble for %s, epoch %s has no ' ...
+                    'neurons to plot.'], char(probe.elementstring()), epoch), ...
+                    'Empty ensemble');
+                return;
+            end
+            c = ndi.gui.cloudColors();
+            f = figure('Name', ['Ensemble raster: ' char(probe.elementstring()) ...
+                '  epoch ' epoch], 'Color', 'w', 'NumberTitle', 'off');
+            ax = axes('Parent', f);
+            axes(ax); %#ok<LAXES> % make current so ndi.fun.ensemble.plot draws here
+            ndi.fun.ensemble.plot(E, 'Color', c.darkBlue);
+            title(ax, sprintf('%s  -  epoch %s  (%d neuron(s))', ...
+                char(probe.elementstring()), epoch, nN), 'Interpreter', 'none');
+        end % doPlot
 
         % ---- shared "please wait" helper (nestable) -------------------------
 
