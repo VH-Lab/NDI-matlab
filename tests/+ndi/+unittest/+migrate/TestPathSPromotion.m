@@ -103,7 +103,9 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
 
     % ===================== fixtures + accessors (test-only) ================
 
-    methods (Static, Access = private)
+    methods (Static)   % public: class-qualified static calls (TestPathSPromotion.x)
+                       % from the Test methods must resolve; Access=private left them
+                       % unresolvable, so these fixtures never ran (pre-existing).
 
         function s = treatmentWithSite(anchorId, animalId, siteNode, siteName)
             manip = struct();
