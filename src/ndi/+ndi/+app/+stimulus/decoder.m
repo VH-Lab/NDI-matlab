@@ -23,10 +23,10 @@ classdef decoder < ndi.app
 
         end % ndi_app_stimulus_decoder() creator
 
-        function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_element_stim, reset)
-            % PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus probe
+        function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_element_stim, reset, epochids)
+            % PARSE_STIMULI - write stimulus records for stimulus epochs of an ndi.element stimulus probe
             %
-            % [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
+            % [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET], [EPOCHIDS])
             %
             % Examines a the ndi.session associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
             % probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
@@ -35,14 +35,26 @@ classdef decoder < ndi.app
             % If NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE documents already exist for a given
             % stimulus run, then they are returned in EXISTINGDOCS. Any new documents are returned in NEWDOCS.
             %
-            % If the input argument RESET is given and is 1, then all existing documents for this probe are
-            % removed and all documents are recalculated. The default for RESET is 0 (if it is not provided).
+            % If the input argument RESET is given and is 1, then existing documents are removed and
+            % recalculated. The default for RESET is 0 (if it is not provided).
+            %
+            % By default, all stimulus epochs of the probe are examined. If the optional argument EPOCHIDS
+            % is given (a char epoch id or a cell array of epoch ids), then only those epochs are examined
+            % (and, when RESET is 1, only those epochs' existing documents are removed). An empty EPOCHIDS
+            % (the default) means all epochs.
             %
             % Note that this function DOES add the new documents to the database.
             %
             if nargin<3
                 reset = 0;
             end
+            if nargin<4
+                epochids = {};
+            end
+            if ischar(epochids) || (isstring(epochids) && isscalar(epochids))
+                epochids = cellstr(epochids);
+            end
+            epochids = epochids(:).';   % row cell array (empty means "all epochs")
             newdocs = {};
             existingdocs = {};
 
@@ -54,24 +66,35 @@ classdef decoder < ndi.app
 
             existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
 
+            % the epoch id of each existing stimulus_presentation document
+            existing_epoch_ids = cell(1,numel(existing_doc_stim));
+            for i=1:numel(existing_doc_stim)
+                existing_epoch_ids{i} = existing_doc_stim{i}.document_properties.epochid.epochid;
+            end
+
+            % the set of epochs this call operates on (all, or the requested subset)
+            et = ndi_element_stim.epochtable();
+            target_epochs = {et.epoch_id};
+            if ~isempty(epochids)
+                target_epochs = intersect(target_epochs, epochids);
+            end
+
             if reset
-                % delete existing documents
-                E.database_rm(existing_doc_stim);
-                existing_doc_stim = {};
+                % delete only the existing documents belonging to the target epochs
+                rmmask = ismember(existing_epoch_ids, target_epochs);
+                if any(rmmask)
+                    E.database_rm(existing_doc_stim(rmmask));
+                end
+                existing_doc_stim = existing_doc_stim(~rmmask);
+                existing_epoch_ids = existing_epoch_ids(~rmmask);
             end
 
             existingdocs = cat(1,existing_doc_stim(:));
 
-            % determine epochs that are finished
-            epoch_finished = {};
+            % epochs that already have a stimulus_presentation document are finished
+            epoch_finished = unique(existing_epoch_ids);
 
-            for i=1:numel(existing_doc_stim)
-                epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
-            end
-
-            et = ndi_element_stim.epochtable();
-
-            epochsremaining = setdiff({et.epoch_id}, epoch_finished);
+            epochsremaining = setdiff(target_epochs, epoch_finished);
 
             for j=1:numel(epochsremaining)
                 % decode stimuli

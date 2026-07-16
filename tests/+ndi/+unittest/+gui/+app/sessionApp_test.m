@@ -55,6 +55,17 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyEqual(string(apps(idx).Category), "Exporters");
         end
 
+        function testStimulusDecoderDiscovered(testCase)
+            % The stimulus decoder app is discovered and grouped under its
+            % "Stimulus" category.
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.stimulusDecoder", 1);
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyEqual(string(apps(idx).Name), "Stimulus Decoder");
+            testCase.verifyEqual(string(apps(idx).Category), "Stimulus");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));
