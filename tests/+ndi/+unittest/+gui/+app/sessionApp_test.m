@@ -44,6 +44,39 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyTrue(any(classes == "ndi.gui.app.spikeSorterImporter"));
         end
 
+        function testKatzExporterDiscovered(testCase)
+            % The Katz-lab blech_clust exporter app is discovered and grouped
+            % under its "Exporters" category.
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.katzExporter", 1);
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyEqual(string(apps(idx).Name), "Katz Lab Exporter");
+            testCase.verifyEqual(string(apps(idx).Category), "Exporters");
+        end
+
+        function testStimulusDecoderDiscovered(testCase)
+            % The stimulus decoder app is discovered and grouped under its
+            % "Stimulus" category.
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.stimulusDecoder", 1);
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyEqual(string(apps(idx).Name), "Stimulus Decoder");
+            testCase.verifyEqual(string(apps(idx).Category), "Stimulus");
+        end
+
+        function testEnsembleMakerDiscovered(testCase)
+            % The ensemble maker app is discovered and grouped under its
+            % "Ensembles" category.
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.ensembleMaker", 1);
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyEqual(string(apps(idx).Name), "Ensemble Maker");
+            testCase.verifyEqual(string(apps(idx).Category), "Ensembles");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));

@@ -176,24 +176,29 @@ classdef datasetsPane < ndi.gui.nav.pane
             cm       = uicontextmenu(obj.Navigator.Figure);
             appsRoot = uimenu(cm, 'Text', 'Apps');
             % Apps that declare a Category are grouped under a submenu of that
-            % name; the rest stay at the top level of the Apps menu.
-            catMenus = containers.Map('KeyType', 'char', 'ValueType', 'any');
-            for i = 1:numel(apps)
-                app = apps(i);
-                parent = appsRoot;
-                cat = '';
-                if isfield(app, 'Category')
-                    cat = char(app.Category);
-                end
-                if ~isempty(cat)
-                    if ~isKey(catMenus, cat)
-                        catMenus(cat) = uimenu(appsRoot, 'Text', cat);
+            % name; the rest stay at the top level of the Apps menu. The top
+            % level is ordered alphabetically, interleaving uncategorized app
+            % labels and category names; apps within a category are alphabetical
+            % too. ndi.gui.nav.datasetsPane.orderAppMenu computes that order;
+            % here we just create the uimenus in it (uimenu items appear in
+            % creation order).
+            entries = ndi.gui.nav.datasetsPane.orderAppMenu(apps);
+            for i = 1:numel(entries)
+                entry = entries(i);
+                if strcmp(entry.Kind, 'app')
+                    a = entry.Apps;
+                    uimenu(appsRoot, ...
+                        'Text',            a.Label, ...
+                        'MenuSelectedFcn', @(~,~) obj.launchApp(a, node));
+                else
+                    catMenu = uimenu(appsRoot, 'Text', entry.Label);
+                    for j = 1:numel(entry.Apps)
+                        a = entry.Apps(j);
+                        uimenu(catMenu, ...
+                            'Text',            a.Label, ...
+                            'MenuSelectedFcn', @(~,~) obj.launchApp(a, node));
                     end
-                    parent = catMenus(cat);
                 end
-                uimenu(parent, ...
-                    'Text',            app.Label, ...
-                    'MenuSelectedFcn', @(~,~) obj.launchApp(app, node));
             end
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
@@ -263,6 +268,80 @@ classdef datasetsPane < ndi.gui.nav.pane
             % Reference obj so future versions can push paths back into the
             % pane; unused today but keeps the callback signature stable.
             f.UserData = obj;
+        end
+    end
+
+    methods (Static)
+        function entries = orderAppMenu(apps)
+            %ORDERAPPMENU Alphabetical layout of the session "Apps" menu.
+            %
+            %   ENTRIES = ndi.gui.nav.datasetsPane.orderAppMenu(APPS)
+            %
+            %   Given APPS (a struct array with fields Label and, optionally,
+            %   Category - as produced by sessionApps), returns the top-level
+            %   menu layout as a struct array ENTRIES, in the order the items
+            %   should appear:
+            %       Kind  - 'app' for an uncategorized top-level app, or
+            %               'category' for a category submenu.
+            %       Label - the menu text ('app': the app label; 'category':
+            %               the category name).
+            %       Apps  - for 'app', the 1x1 app struct; for 'category', the
+            %               category's app structs in alphabetical order.
+            %
+            %   The top level is ordered alphabetically (case-insensitively),
+            %   interleaving uncategorized app labels and category names. Apps
+            %   within each category are ordered alphabetically too. This is the
+            %   pure ordering used by attachSessionMenu to build the uimenus.
+            entries = struct('Kind', {}, 'Label', {}, 'Apps', {});
+            if isempty(apps)
+                return;
+            end
+
+            % partition into uncategorized apps and category groups (preserving
+            % discovery order within a category, before the alphabetical sort)
+            catApps  = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            catOrder = {};   % category names, first-seen order
+            topKeys  = {};   % sort key of each top-level entry
+            topKind  = {};   % 'app' or 'category'
+            topApp   = {};   % app struct for an 'app' entry ([] for a category)
+            for i = 1:numel(apps)
+                app = apps(i);
+                cat = '';
+                if isfield(app, 'Category')
+                    cat = char(app.Category);
+                end
+                if isempty(cat)
+                    topKeys{end+1} = char(app.Label); %#ok<AGROW>
+                    topKind{end+1} = 'app';           %#ok<AGROW>
+                    topApp{end+1}  = app;             %#ok<AGROW>
+                else
+                    if ~isKey(catApps, cat)
+                        catApps(cat)   = app;
+                        catOrder{end+1} = cat;        %#ok<AGROW>
+                        topKeys{end+1} = cat;         %#ok<AGROW>
+                        topKind{end+1} = 'category';  %#ok<AGROW>
+                        topApp{end+1}  = [];          %#ok<AGROW>
+                    else
+                        catApps(cat) = [catApps(cat), app];
+                    end
+                end
+            end
+
+            [~, order] = sort(lower(topKeys));
+            for k = order(:).'
+                if strcmp(topKind{k}, 'app')
+                    entries(end+1) = struct('Kind', 'app', ...
+                        'Label', char(topApp{k}.Label), ...
+                        'Apps',  topApp{k}); %#ok<AGROW>
+                else
+                    catName   = topKeys{k};
+                    theseApps = catApps(catName);
+                    [~, o2]   = sort(lower({theseApps.Label}));
+                    entries(end+1) = struct('Kind', 'category', ...
+                        'Label', catName, ...
+                        'Apps',  theseApps(o2)); %#ok<AGROW>
+                end
+            end
         end
     end
 
