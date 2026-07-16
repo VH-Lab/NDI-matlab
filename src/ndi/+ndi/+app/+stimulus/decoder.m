@@ -51,7 +51,7 @@ classdef decoder < ndi.app
             if nargin<4
                 epochids = {};
             end
-            if ischar(epochids) || (isstring(epochids) && isscalar(epochids))
+            if ischar(epochids) || isstring(epochids)
                 epochids = cellstr(epochids);
             end
             epochids = epochids(:).';   % row cell array (empty means "all epochs")

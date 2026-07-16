@@ -66,6 +66,17 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyEqual(string(apps(idx).Category), "Stimulus");
         end
 
+        function testEnsembleMakerDiscovered(testCase)
+            % The ensemble maker app is discovered and grouped under its
+            % "Ensembles" category.
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.ensembleMaker", 1);
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyEqual(string(apps(idx).Name), "Ensemble Maker");
+            testCase.verifyEqual(string(apps(idx).Category), "Ensembles");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));
