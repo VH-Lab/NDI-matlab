@@ -93,8 +93,12 @@ jobs:
             addpath(genpath( "tools" ));
             testToolboxNoCloud()
 
+      # Only commit badges on pull requests from the same repository. The action
+      # pushes to the PR head branch, which is not protected. Pushing on `push`
+      # events would target the protected `main` branch and be rejected
+      # (GH006: "Changes must be made through a pull request"), failing the job.
       - name: Commit SVG badges if updated
-        if: always() && ( github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository )
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: ehennestad/matbox-actions/push-badges@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
         with:
           pr-ref: ${{ github.event.pull_request.head.ref }}
