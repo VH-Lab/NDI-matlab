@@ -1,4 +1,4 @@
-classdef image < ndi.probe
+classdef image < ndi.probe & ndi.time.timeseries
     % ndi.probe.image - an imaging probe backed by an ndi.daq.system.image
     %
     % ndi.probe.image is the imaging counterpart of the ndi.probe.timeseries /
@@ -23,8 +23,22 @@ classdef image < ndi.probe
     %     exactly the path ndi.probe.timeseries/readtimeseries uses, so an
     %     imageseries movie participates in the syncgraph like any timeseries.
     %
-    % See also: ndi.probe, ndi.probe.timeseries, ndi.daq.system.image,
-    %   ndi.element.image
+    % ndi.time.timeseries interface:
+    %   ndi.probe.image implements ndi.time.timeseries, so it can be consumed
+    %   by generic timeseries code. READTIMESERIES returns image frames as the
+    %   data together with each frame's time, using the same syncgraph machinery
+    %   as READFRAMES. Because image frames are not (in general) regularly
+    %   sampled, SAMPLERATE returns -1 and the "sample <-> time" conversions
+    %   TIMES2SAMPLES / SAMPLES2TIMES map between frame indices and frame times
+    %   directly, via FRAMETIMES, rather than assuming a constant rate.
+    %
+    %   READTIMESERIES requires a real clock: on a clockless ('no_time') epoch,
+    %   where there is no time <-> frame mapping, it ERRORS and directs the
+    %   caller to READFRAMES with frame indices. (READFRAMES itself remains
+    %   dual-mode: time for a movie, frame indices for a clockless stack.)
+    %
+    % See also: ndi.probe, ndi.probe.timeseries, ndi.time.timeseries,
+    %   ndi.daq.system.image, ndi.element.image
 
     properties (GetAccess=public, SetAccess=protected)
     end
@@ -185,6 +199,132 @@ classdef image < ndi.probe
             sz = dev{1}.framesize(devepoch{1});
         end % framesize()
 
+        %% ndi.time.timeseries interface
+
+        function [data, t, timeref] = readtimeseries(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+            % READTIMESERIES - read image frames as a time series
+            %
+            % [DATA, T, TIMEREF] = READTIMESERIES(NDI_PROBE_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            %
+            % Implements the ndi.time.timeseries interface for an imaging probe.
+            % Returns image frames as DATA (a [Y X C Z nframes] array) together
+            % with the time T of each frame and the TIMEREF describing T.
+            %
+            % TIMEREF_OR_EPOCH is either an ndi.time.timereference (then T0,T1
+            % are times in that reference and the request is mapped through the
+            % syncgraph) or an epoch number/id (then T0,T1 are times in the
+            % epoch's own clock). Only frames whose times fall within [T0,T1]
+            % are returned.
+            %
+            % Unlike READFRAMES, this method requires a real clock: reading a
+            % clockless ('no_time') epoch raises an error (there is no
+            % time <-> frame mapping). Use READFRAMES with frame indices for
+            % clockless epochs. See READTIMESERIESEPOCH.
+            %
+            if nargin<3, t0 = -Inf; end
+            if nargin<4, t1 = Inf; end
+            if isa(timeref_or_epoch,'ndi.time.timereference')
+                % time-reference path: the syncgraph maps the request into the
+                % epoch clock. A clockless epoch has no 'dev_local_time' and so
+                % never falls within a time range; READFRAMES handles the rest.
+                [data, t, timeref] = ndi_probe_image_obj.readframes(timeref_or_epoch, t0, t1);
+            else
+                [data, t, timeref] = ndi_probe_image_obj.readtimeseriesepoch(timeref_or_epoch, t0, t1);
+            end
+        end % readtimeseries()
+
+        function [data, t, timeref] = readtimeseriesepoch(ndi_probe_image_obj, epoch, t0, t1)
+            % READTIMESERIESEPOCH - read image frames from one epoch as a time series
+            %
+            % [DATA, T, TIMEREF] = READTIMESERIESEPOCH(NDI_PROBE_IMAGE_OBJ, EPOCH, T0, T1)
+            %
+            % Returns the frames of EPOCH whose times (in the epoch's clock) fall
+            % within [T0,T1], as DATA, with the frame times T and the epoch
+            % TIMEREF. EPOCH is an epoch number or id.
+            %
+            % If EPOCH is clockless (its clock is 'no_time') this method errors,
+            % because a time series has no meaning without a clock; use
+            % ndi.probe.image/readframes with frame indices instead.
+            %
+            if nargin<3, t0 = -Inf; end
+            if nargin<4, t1 = Inf; end
+            [~, ~, isclockless] = ndi_probe_image_obj.imageepochinfo(epoch);
+            if isclockless
+                eid = ndi_probe_image_obj.epochid(epoch);
+                error('ndi:probe:image:notimeseries', ...
+                    ['Epoch ''' eid ''' has clock ''no_time''; it has no ' ...
+                     'time <-> frame mapping and cannot be read as a time series. ' ...
+                     'Use readframes(epoch, frameind) with frame indices instead.']);
+            end
+            [data, t, timeref] = ndi_probe_image_obj.readframesepoch(epoch, t0, t1);
+        end % readtimeseriesepoch()
+
+        function sr = samplerate(ndi_probe_image_obj, epoch)
+            % SAMPLERATE - image frames are not regularly sampled; returns -1
+            %
+            % SR = SAMPLERATE(NDI_PROBE_IMAGE_OBJ, EPOCH)
+            %
+            % Image frames may be irregularly timed (e.g. PrairieView per-frame
+            % timestamps, dropped frames), so no single sample rate applies and
+            % -1 is returned, per the ndi.time.timeseries convention. Use
+            % FRAMETIMES / TIMES2SAMPLES / SAMPLES2TIMES for the frame<->time
+            % mapping.
+            %
+            sr = -1;
+        end % samplerate()
+
+        function samples = times2samples(ndi_probe_image_obj, epoch, times)
+            % TIMES2SAMPLES - map epoch-clock times to frame indices
+            %
+            % SAMPLES = TIMES2SAMPLES(NDI_PROBE_IMAGE_OBJ, EPOCH, TIMES)
+            %
+            % For image data a "sample" is a frame. Returns, for each requested
+            % time in TIMES (in the epoch's clock units), the index of the
+            % nearest frame, found from FRAMETIMES. +Inf maps to the last frame
+            % and -Inf to the first. Errors on a clockless ('no_time') epoch.
+            %
+            [~, ~, isclockless, ft] = ndi_probe_image_obj.imageepochinfo(epoch);
+            if isclockless
+                eid = ndi_probe_image_obj.epochid(epoch);
+                error('ndi:probe:image:notimeseries', ...
+                    ['Epoch ''' eid ''' has clock ''no_time''; frames are ' ...
+                     'addressed by index, not time.']);
+            end
+            n = numel(ft);
+            samples = zeros(size(times));
+            for i=1:numel(times)
+                if isinf(times(i)) && times(i)<0
+                    samples(i) = 1;
+                elseif isinf(times(i)) && times(i)>0
+                    samples(i) = n;
+                else
+                    [~,samples(i)] = min(abs(ft - times(i)));
+                end
+            end
+        end % times2samples()
+
+        function times = samples2times(ndi_probe_image_obj, epoch, samples)
+            % SAMPLES2TIMES - map frame indices to epoch-clock times
+            %
+            % TIMES = SAMPLES2TIMES(NDI_PROBE_IMAGE_OBJ, EPOCH, SAMPLES)
+            %
+            % For image data a "sample" is a frame. Returns the time (from
+            % FRAMETIMES, in the epoch's clock units) of each frame index in
+            % SAMPLES; out-of-range indices return NaN. Errors on a clockless
+            % ('no_time') epoch.
+            %
+            [~, ~, isclockless, ft] = ndi_probe_image_obj.imageepochinfo(epoch);
+            if isclockless
+                eid = ndi_probe_image_obj.epochid(epoch);
+                error('ndi:probe:image:notimeseries', ...
+                    ['Epoch ''' eid ''' has clock ''no_time''; frames are ' ...
+                     'addressed by index, not time.']);
+            end
+            times = nan(size(samples));
+            valid = samples>=1 & samples<=numel(ft);
+            times(valid) = ft(samples(valid));
+        end % samples2times()
+
         function ndi_document_obj = newdocument(ndi_probe_image_obj, varargin)
             ndi_document_obj = newdocument@ndi.probe(ndi_probe_image_obj, varargin{:});
         end % newdocument
@@ -194,4 +334,35 @@ classdef image < ndi.probe
         end % searchquery
 
     end % methods
+
+    methods (Access=protected)
+        function [dsys, devepoch, isclockless, ft] = imageepochinfo(ndi_probe_image_obj, epoch)
+            % IMAGEEPOCHINFO - resolve the backing image daq.system and epoch timing
+            %
+            % [DSYS, DEVEPOCH, ISCLOCKLESS, FT] = IMAGEEPOCHINFO(OBJ, EPOCH)
+            %
+            % Helper for the ndi.time.timeseries methods. Returns the backing
+            % ndi.daq.system.image DSYS and its epoch file list DEVEPOCH for
+            % EPOCH, whether the epoch is clockless (ISCLOCKLESS), and, when a
+            % fourth output is requested, the per-frame times FT (column vector)
+            % in the epoch's clock. Mirrors the device resolution done in
+            % READFRAMESEPOCH.
+            %
+            [dev,~,devepoch] = ndi_probe_image_obj.getchanneldevinfo(epoch);
+            if numel(vlt.data.equnique(dev))>1
+                error('ndi:probe:image:mixeddevices','Do not know how to mix devices for an image probe.');
+            end
+            dsys = dev{1};
+            if ~isa(dsys,'ndi.daq.system.image')
+                error('ndi:probe:image:notimagedaq','ndi.probe.image must be backed by an ndi.daq.system.image.');
+            end
+            ec = dsys.epochclock(devepoch{1});
+            isclockless = ~isempty(ec) && strcmp(ec{1}.type,'no_time');
+            if nargout>=4
+                n = dsys.numframes(devepoch{1});
+                ft = dsys.frametimes(devepoch{1}, 1:n);
+                ft = ft(:);
+            end
+        end % imageepochinfo()
+    end % methods (Access=protected)
 end % classdef
