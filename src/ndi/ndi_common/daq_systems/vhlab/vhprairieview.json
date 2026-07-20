@@ -3,14 +3,13 @@
   "DaqSystemClass": "ndi.daq.system.image",
   "DaqReaderClass": "ndi.daq.reader.image.ndr",
   "MetadataReaderClass": [],
-  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
   "FileNavigatorClass": "ndi.setup.file.navigator.vhPrairie2p",
   "FileParameters": [
-    "reference.txt",
-    ".*\\.epochprobemap\\.ndi\\>"
+    "reference.txt"
   ],
   "DaqReaderFileParameters": "prairieview",
   "MetadataReaderFileParameters": [],
-  "EpochProbeMapFileParameters": ".*\\.epochprobemap\\.ndi\\>",
+  "EpochProbeMapFileParameters": "reference.txt",
   "HasEpochDirectories": false
 }
