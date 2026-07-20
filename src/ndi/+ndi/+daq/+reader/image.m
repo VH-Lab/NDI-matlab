@@ -117,6 +117,38 @@ classdef image < ndi.daq.reader
             channels(1).time_channel = [];
         end % getchannelsepoch()
 
+        function m = metadata(ndi_daqreader_image_obj, epochfiles)
+            % METADATA - standardized image-acquisition metadata for an epoch
+            %
+            % M = METADATA(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES)
+            %
+            % Returns a struct of standardized image-acquisition metadata for
+            % the epoch: the raster-scan timing and geometry that let a caller
+            % reconstruct when each line/pixel was sampled, separately from the
+            % pixel data. ALL TIME FIELDS ARE IN SECONDS. The struct fields are:
+            %
+            %   israster        - logical; true if this epoch is a raster scan
+            %                     with known line/frame timing
+            %   frame_period    - time to acquire one frame (s)
+            %   line_period     - time to acquire one scanned line/row (s)
+            %   dwell_time      - per-pixel dwell time (s)
+            %   lines_per_frame - number of scanned lines (rows) per frame
+            %   pixels_per_line - number of pixels (columns) per line
+            %   bidirectional   - logical; true if alternate lines are scanned
+            %                     in the reverse direction
+            %
+            % The default returns the "empty" struct (israster=false, NaN
+            % timing) from ndi.daq.reader.image.emptymetadata. Concrete readers
+            % that can supply acquisition metadata (e.g. ndi.daq.reader.image.ndr
+            % forwarding a raster reader) override this. Not every image epoch is
+            % a raster scan, and not every raster scan preserves this timing, so
+            % callers should check ISRASTER / for NaN fields.
+            %
+            % See also: ndi.daq.reader.image.emptymetadata,
+            %   ndi.daq.reader.image.ndr/metadata, ndi.probe.image/linetimes
+            m = ndi.daq.reader.image.emptymetadata();
+        end % metadata()
+
         %% ingestion
 
         function d = ingest_epochfiles(ndi_daqreader_image_obj, epochfiles, epoch_id)
@@ -270,6 +302,50 @@ classdef image < ndi.daq.reader
             channels = ndi_daqreader_image_obj.getchannelsepoch(epochfiles);
         end % getchannelsepoch_ingested()
 
+        function m = metadata_ingested(ndi_daqreader_image_obj, epochfiles, S)
+            % METADATA_INGESTED - image-acquisition metadata for an ingested image epoch
+            %
+            % M = METADATA_INGESTED(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES, S)
+            %
+            % Returns the standardized image-acquisition metadata (see
+            % ndi.daq.reader.image/metadata) recorded in the ingested epoch
+            % document header. Documents ingested before the metadata field
+            % existed do not carry it; in that case the default "empty" struct
+            % (ndi.daq.reader.image.emptymetadata) is returned.
+            %
+            % See also: ndi.daq.reader.image/metadata, ndi.daq.reader.image/ingest_epochfiles
+            header = ndi_daqreader_image_obj.ingested_header(epochfiles, S);
+            if isfield(header,'metadata') && isstruct(header.metadata)
+                m = header.metadata;
+            else
+                m = ndi.daq.reader.image.emptymetadata();
+            end
+        end % metadata_ingested()
+
     end % methods
+
+    methods (Static)
+        function m = emptymetadata()
+            % EMPTYMETADATA - the standardized image-metadata struct with default (unknown) values
+            %
+            % M = ndi.daq.reader.image.emptymetadata()
+            %
+            % Returns the standardized image-acquisition metadata struct used by
+            % ndi.daq.reader.image/metadata, with every field at its "unknown"
+            % default: israster=false, bidirectional=false, and NaN for each
+            % timing/geometry value. This mirrors ndr.reader.base.emptyimagemetadata
+            % on the NDR side, so the NDI and NDR structs share the same fields.
+            % ALL TIME FIELDS ARE IN SECONDS.
+            %
+            % See also: ndi.daq.reader.image/metadata
+            m = struct('israster', false, ...
+                'frame_period', NaN, ...
+                'line_period', NaN, ...
+                'dwell_time', NaN, ...
+                'lines_per_frame', NaN, ...
+                'pixels_per_line', NaN, ...
+                'bidirectional', false);
+        end % emptymetadata()
+    end % methods (Static)
 
 end % classdef

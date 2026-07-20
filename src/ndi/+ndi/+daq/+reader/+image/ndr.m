@@ -398,6 +398,31 @@ classdef ndr < ndi.daq.reader.image
             t0t1 = ndr_reader.t0_t1(epochfiles,1);
         end % t0_t1()
 
+        function m = metadata(ndi_daqreader_image_ndr_obj, epochfiles)
+            % METADATA - standardized image-acquisition metadata for an epoch (via NDR)
+            %
+            %   M = METADATA(OBJ, EPOCHFILES)
+            %
+            %   Returns the standardized image-acquisition metadata struct for
+            %   the epoch (raster line/frame timing, geometry, scan direction),
+            %   with all time fields in SECONDS. See ndi.daq.reader.image/metadata
+            %   for the field list.
+            %
+            %   Inputs:
+            %     OBJ        - an ndi.daq.reader.image.ndr object.
+            %     EPOCHFILES - cell array of file paths making up one epoch.
+            %
+            %   Outputs:
+            %     M - standardized image-metadata struct (empty/NaN fields when
+            %         the underlying NDR reader is not a raster imager).
+            %
+            %   Forwards to ndr.reader/metadata (epoch_select fixed at 1).
+            %
+            %   See also: ndi.daq.reader.image/metadata, ndr.reader/metadata
+            ndr_reader = ndr.reader(ndi_daqreader_image_ndr_obj.ndr_reader_string);
+            m = ndr_reader.metadata(epochfiles,1);
+        end % metadata()
+
         %% documentservice
 
         function ndi_document_obj = newdocument(ndi_daqreader_obj)

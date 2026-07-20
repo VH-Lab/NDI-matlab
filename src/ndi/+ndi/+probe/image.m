@@ -325,6 +325,140 @@ classdef image < ndi.probe & ndi.time.timeseries
             times(valid) = ft(samples(valid));
         end % samples2times()
 
+        %% raster acquisition metadata and sub-frame timing
+
+        function m = imagemetadata(ndi_probe_image_obj, epoch)
+            % IMAGEMETADATA - standardized image-acquisition metadata for an epoch
+            %
+            % M = IMAGEMETADATA(NDI_PROBE_IMAGE_OBJ, EPOCH)
+            %
+            % Returns the standardized image-acquisition metadata struct for
+            % EPOCH from the backing ndi.daq.system.image: raster line/frame
+            % timing, geometry, and scan direction, with all time fields in
+            % SECONDS. See ndi.daq.reader.image/metadata for the field list.
+            % Fields that are unknown (e.g. for a non-raster stack) are NaN, and
+            % M.israster is false.
+            %
+            % See also: ndi.daq.reader.image/metadata, linetimes, pixeltimes
+            [dsys, devepoch] = ndi_probe_image_obj.imageepochinfo(epoch);
+            m = dsys.metadata(devepoch{1});
+        end % imagemetadata()
+
+        function tl = linetimes(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+            % LINETIMES - acquisition time of each line (row) of the selected frames
+            %
+            % TL = LINETIMES(NDI_PROBE_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            %
+            % A raster scan builds a frame line by line, so at slow frame rates
+            % the top of a frame is acquired well before the bottom. LINETIMES
+            % returns the time each line (row) was scanned, so you can ask which
+            % rows had been acquired at a given moment.
+            %
+            % The frames are selected exactly as by READFRAMES with the same
+            % arguments (TIMEREF_OR_EPOCH is an ndi.time.timereference, then
+            % T0,T1 are times in that reference; or an epoch number/id, then
+            % T0,T1 are times in the epoch's clock). TL is returned in the SAME
+            % time units as those frames.
+            %
+            % TL is [Lines_per_frame x Nframes]: TL(r,k) is the time the r-th
+            % line of the k-th selected frame was scanned, computed as
+            %   TL(r,k) = frametime(k) + (r-1) * line_period
+            % so TL(1,k) equals that frame's time and each column steps down by
+            % line_period. (Scan direction does not change a line's start time,
+            % so BIDIRECTIONAL does not affect LINETIMES; it only matters for
+            % PIXELTIMES.)
+            %
+            % Requires a raster epoch with a known line_period (see
+            % IMAGEMETADATA); otherwise an error is raised. Clockless ('no_time')
+            % epochs also error, as they have no frame times. This assumes
+            % FRAMETIMES reports each frame's START time.
+            %
+            % Only a single epoch per call is supported; a TIMEREF interval that
+            % spans multiple epochs raises an error.
+            %
+            % See also: pixeltimes, imagemetadata, ndi.probe.image/readframes
+            if nargin<3, t0 = -Inf; end
+            if nargin<4, t1 = Inf; end
+            [t, epoch, Y] = ndi_probe_image_obj.frameselect(timeref_or_epoch, t0, t1);
+            m = ndi_probe_image_obj.imagemetadata(epoch);
+            if isnan(m.line_period)
+                error('ndi:probe:image:noraster', ...
+                    ['No raster line timing (line_period) is available for this ' ...
+                     'epoch, so line times cannot be computed. Check imagemetadata(epoch).']);
+            end
+            tl = (0:Y-1)' * m.line_period + t(:)';   % [Y x Nframes]
+        end % linetimes()
+
+        function tp = pixeltimes(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+            % PIXELTIMES - acquisition time of every pixel of the selected frames
+            %
+            % TP = PIXELTIMES(NDI_PROBE_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            %
+            % Like LINETIMES, but resolved to the individual pixel: the time each
+            % pixel was sampled within a raster scan. Frame selection and time
+            % units follow READFRAMES with the same arguments (see LINETIMES).
+            %
+            %   TP(r,c,1,1,k) = frametime(k) + (r-1)*line_period + (c-1)*dwell_time
+            %
+            % (For a BIDIRECTIONAL scan, alternate lines are traversed in reverse,
+            % so the within-line dwell offset is mirrored on those rows.)
+            %
+            % COMPACT SHAPE (and why): TP is [Y X 1 1 Nframes]. A pixel's sample
+            % time depends on its row (line), its column (pixel-in-line) and the
+            % frame, but NOT on the color channel C (all detectors sample a given
+            % beam position simultaneously) and, in v1, not on the plane Z.
+            % Keeping C and Z as SINGLETON dimensions lets TP BROADCAST
+            % elementwise against the full data array [Y X C Z Nframes] via
+            % implicit expansion, at a fraction of the memory: times are double
+            % (8 bytes) versus 2 bytes for typical uint16 pixels, so a full-size
+            % time map would be ~4x the size of the image data itself.
+            %
+            % Example - which pixels had been scanned at an event time:
+            %   [data,t,tr] = p.readframes(myref, 0, 100);
+            %   tp   = p.pixeltimes(myref, 0, 100);          % [Y X 1 1 nframes]
+            %   mask = tp >= eventTime;                      % [Y X 1 1 nframes]
+            %   seen = data .* cast(mask, class(data));      % broadcasts over C,Z
+            %
+            % Example - build the FULL [Y X C Z nframes] matrix if you must:
+            %   sz     = size(data);
+            %   tpfull = repmat(tp, [1 1 sz(3) sz(4) 1]);    % replicate across C,Z
+            % (The compact form is the default precisely so you rarely need this.)
+            %
+            % Requires a raster epoch with known line_period AND dwell_time;
+            % otherwise an error is raised (use LINETIMES for line-level timing
+            % when dwell_time is unavailable). Assumes FRAMETIMES reports each
+            % frame's START time. Single epoch per call.
+            %
+            % See also: linetimes, imagemetadata, ndi.probe.image/readframes
+            if nargin<3, t0 = -Inf; end
+            if nargin<4, t1 = Inf; end
+            [t, epoch, Y, X] = ndi_probe_image_obj.frameselect(timeref_or_epoch, t0, t1);
+            m = ndi_probe_image_obj.imagemetadata(epoch);
+            if isnan(m.line_period)
+                error('ndi:probe:image:noraster', ...
+                    ['No raster line timing (line_period) is available for this ' ...
+                     'epoch, so pixel times cannot be computed. Check imagemetadata(epoch).']);
+            end
+            if isnan(m.dwell_time)
+                error('ndi:probe:image:nodwell', ...
+                    ['No per-pixel dwell_time is available for this epoch; ' ...
+                     'per-pixel times cannot be computed. Use linetimes for line-level timing.']);
+            end
+            N = numel(t);
+            lineoff = (0:Y-1)' * m.line_period;      % Y x 1 (line start offsets)
+            if m.bidirectional
+                fwd = (0:X-1) * m.dwell_time;        % 1 x X (forward line)
+                rev = (X-1:-1:0) * m.dwell_time;     % 1 x X (reverse line)
+                offYX = lineoff + fwd;               % Y x X, forward default
+                evenrows = mod((1:Y)'-1, 2) == 1;    % rows 2,4,... traversed in reverse
+                offYX(evenrows,:) = lineoff(evenrows) + rev;
+            else
+                offYX = lineoff + (0:X-1) * m.dwell_time;   % Y x X
+            end
+            % compact [Y X 1 1 N]: add each frame's start time via implicit expansion
+            tp = offYX + reshape(t(:), [1 1 1 1 N]);
+        end % pixeltimes()
+
         function ndi_document_obj = newdocument(ndi_probe_image_obj, varargin)
             ndi_document_obj = newdocument@ndi.probe(ndi_probe_image_obj, varargin{:});
         end % newdocument
@@ -364,5 +498,73 @@ classdef image < ndi.probe & ndi.time.timeseries
                 ft = ft(:);
             end
         end % imageepochinfo()
+
+        function [t, epoch, Y, X] = frameselect(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+            % FRAMESELECT - select frames in [t0,t1] and return their times and geometry
+            %
+            % [T, EPOCH, Y, X] = FRAMESELECT(OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            %
+            % Helper for LINETIMES / PIXELTIMES. Chooses the frames of a single
+            % image epoch whose times fall within [T0,T1] and returns their
+            % times T (a column vector, in the same units as READFRAMES would
+            % return: the requested timereference's units, or the epoch's clock
+            % when an epoch is passed), the resolved EPOCH id/number, and the
+            % frame geometry Y (rows/lines) and X (columns/pixels). It reads
+            % frame times and geometry only -- it does NOT read pixel data.
+            %
+            % TIMEREF_OR_EPOCH follows the READFRAMES convention. Only a single
+            % epoch per call is supported; a timereference interval spanning more
+            % than one epoch, or one with no time mapping, raises an error, as
+            % does a clockless ('no_time') epoch.
+            %
+            if ~isa(timeref_or_epoch,'ndi.time.timereference')
+                epoch = timeref_or_epoch;
+                [dsys, devepoch, isclockless] = ndi_probe_image_obj.imageepochinfo(epoch);
+                if isclockless
+                    eid = ndi_probe_image_obj.epochid(epoch);
+                    error('ndi:probe:image:notimeseries', ...
+                        ['Epoch ''' eid ''' has clock ''no_time''; it has no frame times.']);
+                end
+                n = dsys.numframes(devepoch{1});
+                ft = dsys.frametimes(devepoch{1}, 1:n); ft = ft(:);
+                frameind = find(ft>=t0 & ft<=t1);
+                t = ft(frameind);
+            else
+                timeref = timeref_or_epoch;
+                dlt = ndi.time.clocktype('dev_local_time');
+                [t0c, e0] = ndi_probe_image_obj.session.syncgraph.time_convert(timeref, t0, ndi_probe_image_obj, dlt);
+                [t1c, e1] = ndi_probe_image_obj.session.syncgraph.time_convert(timeref, t1, ndi_probe_image_obj, dlt);
+                if isempty(e0) || isempty(e1)
+                    error('ndi:probe:image:notimemapping','Could not find a time mapping (maybe a wrong epoch name?).');
+                end
+                if ~isequal(e0.epoch, e1.epoch)
+                    error('ndi:probe:image:multiepoch', ...
+                        ['linetimes/pixeltimes support a single epoch per call; the requested ' ...
+                         '[t0,t1] spans more than one epoch. Call per epoch.']);
+                end
+                epoch = e0.epoch;
+                [dsys, devepoch, isclockless] = ndi_probe_image_obj.imageepochinfo(epoch);
+                if isclockless
+                    error('ndi:probe:image:notimeseries', ...
+                        ['Epoch ''' ndi_probe_image_obj.epochid(epoch) ''' has clock ''no_time''; it has no frame times.']);
+                end
+                n = dsys.numframes(devepoch{1});
+                ft = dsys.frametimes(devepoch{1}, 1:n); ft = ft(:);   % epoch (dev_local) clock
+                frameind = find(ft>=t0c & ft<=t1c);
+                ftsel = ft(frameind);
+                % convert the selected frame times back into the requested reference
+                epoch_here_timeref = ndi.time.timereference(ndi_probe_image_obj, dlt, e0.epoch, 0);
+                if ~isempty(ftsel)
+                    t = ndi_probe_image_obj.session.syncgraph.time_convert(epoch_here_timeref, ftsel, ...
+                        timeref.referent, timeref.clocktype);
+                    t = t(:);
+                else
+                    t = ftsel;
+                end
+            end
+            sz = dsys.framesize(devepoch{1});
+            Y = sz(1);
+            X = sz(2);
+        end % frameselect()
     end % methods (Access=protected)
 end % classdef

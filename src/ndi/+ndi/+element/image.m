@@ -148,6 +148,72 @@ classdef image < ndi.element & ndi.time.timeseries
             end
         end % samples2times()
 
+        %% raster acquisition metadata and sub-frame timing
+
+        function m = imagemetadata(ndi_element_image_obj, epoch)
+            % IMAGEMETADATA - standardized image-acquisition metadata for an epoch
+            %
+            % M = IMAGEMETADATA(NDI_ELEMENT_IMAGE_OBJ, EPOCH)
+            %
+            % Returns the standardized image-acquisition metadata struct (raster
+            % line/frame timing, geometry, scan direction; time fields in
+            % SECONDS) for EPOCH. See ndi.daq.reader.image/metadata for the
+            % field list. Delegated to the underlying ndi.probe.image for a
+            % 'direct' element.
+            %
+            % See also: ndi.probe.image/imagemetadata, linetimes, pixeltimes
+            if ndi_element_image_obj.direct
+                m = ndi_element_image_obj.underlying_element.imagemetadata(epoch);
+            else
+                error('ndi:element:image:notdirect',...
+                    'Only ''direct'' ndi.element.image objects are supported in v1.');
+            end
+        end % imagemetadata()
+
+        function tl = linetimes(ndi_element_image_obj, timeref_or_epoch, t0, t1)
+            % LINETIMES - acquisition time of each line (row) of the selected frames
+            %
+            % TL = LINETIMES(NDI_ELEMENT_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            %
+            % Returns TL [Lines_per_frame x Nframes], the time each line of each
+            % selected frame was scanned. Frame selection and time units follow
+            % READFRAMES. Delegated to the underlying ndi.probe.image for a
+            % 'direct' element. See ndi.probe.image/linetimes for details.
+            %
+            % See also: pixeltimes, imagemetadata, ndi.probe.image/linetimes
+            if nargin<3, t0 = -Inf; end
+            if nargin<4, t1 = Inf; end
+            if ndi_element_image_obj.direct
+                tl = ndi_element_image_obj.underlying_element.linetimes(timeref_or_epoch, t0, t1);
+            else
+                error('ndi:element:image:notdirect',...
+                    'Only ''direct'' ndi.element.image objects are supported in v1.');
+            end
+        end % linetimes()
+
+        function tp = pixeltimes(ndi_element_image_obj, timeref_or_epoch, t0, t1)
+            % PIXELTIMES - acquisition time of every pixel of the selected frames
+            %
+            % TP = PIXELTIMES(NDI_ELEMENT_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            %
+            % Returns the compact per-pixel time map TP [Y X 1 1 Nframes], which
+            % broadcasts against the full data array [Y X C Z Nframes]. Frame
+            % selection and time units follow READFRAMES. Delegated to the
+            % underlying ndi.probe.image for a 'direct' element. See
+            % ndi.probe.image/pixeltimes for the full contract and examples
+            % (including how to build the full-size matrix if you need it).
+            %
+            % See also: linetimes, imagemetadata, ndi.probe.image/pixeltimes
+            if nargin<3, t0 = -Inf; end
+            if nargin<4, t1 = Inf; end
+            if ndi_element_image_obj.direct
+                tp = ndi_element_image_obj.underlying_element.pixeltimes(timeref_or_epoch, t0, t1);
+            else
+                error('ndi:element:image:notdirect',...
+                    'Only ''direct'' ndi.element.image objects are supported in v1.');
+            end
+        end % pixeltimes()
+
         function ndi_document_obj = newdocument(ndi_element_image_obj, varargin)
             ndi_document_obj = newdocument@ndi.element(ndi_element_image_obj, varargin{:});
         end % newdocument

@@ -139,6 +139,25 @@ classdef image < ndi.daq.system
             end
         end % framesize()
 
+        function m = metadata(ndi_daqsystem_image_obj, epoch)
+            % METADATA - standardized image-acquisition metadata for an epoch
+            %
+            % M = METADATA(NDI_DAQSYSTEM_IMAGE_OBJ, EPOCH)
+            %
+            % Returns the standardized image-acquisition metadata struct for the
+            % epoch (raster line/frame timing, geometry, scan direction), with
+            % all time fields in SECONDS. See ndi.daq.reader.image/metadata for
+            % the field list. Read from the live files, or from the ingested
+            % epoch document when the epoch has been ingested.
+            %
+            epochfiles = getepochfiles(ndi_daqsystem_image_obj.filenavigator, epoch);
+            if ~ndi.file.navigator.isingested(epochfiles)
+                m = ndi_daqsystem_image_obj.daqreader.metadata(epochfiles);
+            else
+                m = ndi_daqsystem_image_obj.daqreader.metadata_ingested(epochfiles, ndi_daqsystem_image_obj.session());
+            end
+        end % metadata()
+
         function order = dimensionorder(ndi_daqsystem_image_obj, epoch)
             % DIMENSIONORDER - dimension order of returned frames for an epoch
             epochfiles = getepochfiles(ndi_daqsystem_image_obj.filenavigator, epoch);
