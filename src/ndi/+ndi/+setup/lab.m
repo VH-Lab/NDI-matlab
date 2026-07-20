@@ -42,7 +42,8 @@ function S = lab(labName, ref, dirname)
 %       % Initialize the session with lab-specific devices
 %       mySession = ndi.setup.lab(labId, sessionRef, sessionPath);
 %
-%   See also: ndi.session.dir, ndi.setup.daq.addDaqSystems, ndi.path.commonpath
+%   See also: ndi.session.dir, ndi.setup.daq.addDaqSystems,
+%             ndi.setup.sync.addSyncRules, ndi.path.commonpath
 
     % Input argument validation block
     arguments
@@ -61,5 +62,10 @@ function S = lab(labName, ref, dirname)
     % by default, include syncrule for same file names
     nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
     S.syncgraph_addrule(nsf);
+
+    % Add any lab-specific synchronization rules. These are defined in
+    % ndi_common/sync_rules/<labName> and are the syncgraph counterpart to the
+    % DAQ systems added above. Labs without extra rules are left unchanged.
+    S = ndi.setup.sync.addSyncRules(S, labName);
 
 end % function lab

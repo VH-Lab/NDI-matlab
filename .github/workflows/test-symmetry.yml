@@ -95,11 +95,3 @@ jobs:
             disp(table(results));
 
             assert(all(~[results.Failed]), "Some symmetry tests failed")
-
-      - name: Restore MATLAB Path
-        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
-        if: always()
-        with:
-          command: |
-            restoredefaultpath()
-            savepath()

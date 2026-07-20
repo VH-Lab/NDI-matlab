@@ -64,11 +64,3 @@ jobs:
         uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe # v4
         with:
           report_paths: 'docs/reports/test-results.xml'
-
-      - name: Restore MATLAB Path
-        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
-        if: always()
-        with:
-          command: |
-            restoredefaultpath()
-            savepath()
