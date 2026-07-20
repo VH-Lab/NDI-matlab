@@ -55,6 +55,14 @@
 			"parameters": "",
 			"queryable": 1,
 			"documentation": "The epoch clock type (e.g. 'dev_local_time' for a movie, 'no_time' for a clockless stack)."
+		},
+		{
+			"name": "metadata",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Standardized image-acquisition metadata for this epoch. Fields (all time values in SECONDS): israster (logical), frame_period, line_period, dwell_time, lines_per_frame, pixels_per_line, bidirectional (logical). Timing fields are NaN when unavailable (e.g. a non-raster stack). Used to reconstruct per-line/per-pixel acquisition times."
 		}
 	]
 }

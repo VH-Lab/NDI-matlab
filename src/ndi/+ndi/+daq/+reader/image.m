@@ -196,6 +196,11 @@ classdef image < ndi.daq.reader
                 header.clocktype = 'no_time';
             end
 
+            % standardized image-acquisition metadata (raster line/frame timing
+            % etc., in seconds), so it rides along with the ingested frames and
+            % can be read back by metadata_ingested.
+            header.metadata = ndi_daqreader_image_obj.metadata(epochfiles);
+
             epochid_struct.epochid = epoch_id;
 
             d = ndi.document('daqreader_image_epochdata_ingested', ...
