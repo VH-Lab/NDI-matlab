@@ -144,7 +144,10 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     end
                     probeTypeMap = ndi.probe.fun.getProbeTypeMap();
                     for i=1:numel(ref_struct)
-                        ec_type = ref_struct(i).type;
+                        % reference.txt is often written by hand, so tolerate
+                        % stray surrounding whitespace; matching below is also
+                        % case-insensitive (strcmpi).
+                        ec_type = strtrim(ref_struct(i).type);
                         if ~isKey(probeTypeMap, ec_type)
                             % translate vhlab shorthand to a canonical NDI probe
                             % type (compare singleEC/ntrode -> n-trode below).
