@@ -149,7 +149,10 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                         % of the known vhlab shorthand.
                         ec_type = strtrim(ref_struct(i).type);
                         if strcmpi(ec_type,'prairieTP')
-                            ec_type = 'prairieTP'; % canonical capitalization
+                            % vhlab shorthand for prairie two-photon imaging ->
+                            % canonical NDI probe type (compare singleEC/ntrode
+                            % -> n-trode in the channelgrouping branch below).
+                            ec_type = 'two-photon-imaging';
                         end
                         if ~isKey(probeTypeMap, ec_type)
                             error(['Unknown probe type ''' ec_type ''' in reference.txt.']);
