@@ -145,17 +145,14 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     probeTypeMap = ndi.probe.fun.getProbeTypeMap();
                     for i=1:numel(ref_struct)
                         % reference.txt is often written by hand, so tolerate
-                        % stray surrounding whitespace; matching below is also
-                        % case-insensitive (strcmpi).
+                        % stray surrounding whitespace and any capitalization
+                        % of the known vhlab shorthand.
                         ec_type = strtrim(ref_struct(i).type);
+                        if strcmpi(ec_type,'prairieTP')
+                            ec_type = 'prairieTP'; % canonical capitalization
+                        end
                         if ~isKey(probeTypeMap, ec_type)
-                            % translate vhlab shorthand to a canonical NDI probe
-                            % type (compare singleEC/ntrode -> n-trode below).
-                            if strcmpi(ec_type,'prairieTP')
-                                ec_type = '2-photon-imaging';
-                            else
-                                error(['Unknown type ' ec_type ' in reference.txt.']);
-                            end
+                            error(['Unknown probe type ''' ec_type ''' in reference.txt.']);
                         end
                         nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab(ref_struct(i).name,...
                             ref_struct(i).ref,...

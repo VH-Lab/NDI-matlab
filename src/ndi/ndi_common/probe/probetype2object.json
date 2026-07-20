@@ -26,6 +26,8 @@
 	},{
 		"type":"brightfield-imaging","classname":"ndi.probe.image"
 	},{
+		"type":"prairieTP","classname":"ndi.probe.image"
+	},{
 		"type":"lick-spout","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"intraoral-cannula","classname":"ndi.probe.timeseries.stimulator"
