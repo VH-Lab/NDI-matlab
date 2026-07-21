@@ -20,9 +20,9 @@
 	},{
 		"type":"wide-field-imaging","classname":"ndi.probe.image"
 	},{
-		"type":"2-photon-imaging","classname":"ndi.probe.image"
+		"type":"two-photon-imaging","classname":"ndi.probe.image"
 	},{
-		"type":"1-photon-imaging","classname":"ndi.probe.image"
+		"type":"one-photon-imaging","classname":"ndi.probe.image"
 	},{
 		"type":"brightfield-imaging","classname":"ndi.probe.image"
 	},{

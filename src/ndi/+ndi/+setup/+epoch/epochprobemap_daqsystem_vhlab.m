@@ -129,6 +129,44 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                     return;
                 end
 
+                if strcmp([localfile ext],'reference.txt')
+                    % vhlab PrairieView 2-photon (image-series) epochs have no
+                    % channel-grouping file; the imaging probe is described
+                    % directly in reference.txt as name<tab>ref<tab>type, e.g.
+                    %   tp    1    prairieTP
+                    % Each row is one imaging probe read out by the
+                    % vhprairieview image DAQ system (single channel 'image1').
+                    ref_struct = vlt.file.loadStructArray(filename);
+                    fn = fieldnames(ref_struct);
+                    if ~vlt.data.eqlen(fn,{'name','ref','type'}')
+                        fn,
+                        error(['reference.txt fields must be (case-sensitive match): name, ref, type.']);
+                    end
+                    probeTypeMap = ndi.probe.fun.getProbeTypeMap();
+                    for i=1:numel(ref_struct)
+                        % reference.txt is often written by hand, so tolerate
+                        % stray surrounding whitespace and any capitalization
+                        % of the known vhlab shorthand.
+                        ec_type = strtrim(ref_struct(i).type);
+                        if strcmpi(ec_type,'prairieTP')
+                            % vhlab shorthand for prairie two-photon imaging ->
+                            % canonical NDI probe type (compare singleEC/ntrode
+                            % -> n-trode in the channelgrouping branch below).
+                            ec_type = 'two-photon-imaging';
+                        end
+                        if ~isKey(probeTypeMap, ec_type)
+                            error(['Unknown probe type ''' ec_type ''' in reference.txt.']);
+                        end
+                        nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab(ref_struct(i).name,...
+                            ref_struct(i).ref,...
+                            ec_type, ...  % type
+                            'vhprairieview:image1', ...  % device string
+                            subject_id);
+                        obj(i) = nextentry;
+                    end
+                    return;
+                end
+
                 if ~contains([localfile],'channelgrouping')
                     error(['Expected file ' [localfile ] ' to include the string channelgrouping. Maybe unintended files in epoch?']);
                 end

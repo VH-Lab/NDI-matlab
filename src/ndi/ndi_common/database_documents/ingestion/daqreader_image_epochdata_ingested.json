@@ -24,6 +24,7 @@
 		"data_type":		"",
 		"num_frames":		0,
 		"frametimes":		[],
-		"clocktype":		""
+		"clocktype":		"",
+		"metadata":		[]
 	}
 }

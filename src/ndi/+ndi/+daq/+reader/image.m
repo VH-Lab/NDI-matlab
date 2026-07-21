@@ -91,16 +91,26 @@ classdef image < ndi.daq.reader
             error('ndi:daq:reader:image:abstract','frametimes must be overridden by a concrete ndi.daq.reader.image subclass.');
         end % frametimes()
 
-        function frames = readframes(ndi_daqreader_image_obj, epochfiles, frameind)
+        function frames = readframes(ndi_daqreader_image_obj, epochfiles, frameind, options)
             % READFRAMES - read image frames from an epoch
             %
             % FRAMES = READFRAMES(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES, FRAMEIND)
+            % FRAMES = READFRAMES(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Returns an array in DIMENSIONORDER (default 'YXCZT') with the
-            % ordering axes selected by FRAMEIND collapsed to the trailing
-            % dimension: size [Y X C 1 numel(FRAMEIND)].
+            % timepoints FRAMEIND collapsed to the trailing dimension:
+            % [Y X numel(C) numel(Z) numel(FRAMEIND)]. The name/value options
+            % 'SelectC' / 'SelectZ' select a subset of the channel / plane axes
+            % (default [] = all).
             %
             % Abstract. Adapted from nansen.stack.ImageStack/getFrameSet.
+            arguments
+                ndi_daqreader_image_obj
+                epochfiles
+                frameind = []
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             error('ndi:daq:reader:image:abstract','readframes must be overridden by a concrete ndi.daq.reader.image subclass.');
         end % readframes()
 
@@ -116,6 +126,38 @@ classdef image < ndi.daq.reader
             channels(1).type = 'image';
             channels(1).time_channel = [];
         end % getchannelsepoch()
+
+        function m = metadata(ndi_daqreader_image_obj, epochfiles)
+            % METADATA - standardized image-acquisition metadata for an epoch
+            %
+            % M = METADATA(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES)
+            %
+            % Returns a struct of standardized image-acquisition metadata for
+            % the epoch: the raster-scan timing and geometry that let a caller
+            % reconstruct when each line/pixel was sampled, separately from the
+            % pixel data. ALL TIME FIELDS ARE IN SECONDS. The struct fields are:
+            %
+            %   israster        - logical; true if this epoch is a raster scan
+            %                     with known line/frame timing
+            %   frame_period    - time to acquire one frame (s)
+            %   line_period     - time to acquire one scanned line/row (s)
+            %   dwell_time      - per-pixel dwell time (s)
+            %   lines_per_frame - number of scanned lines (rows) per frame
+            %   pixels_per_line - number of pixels (columns) per line
+            %   bidirectional   - logical; true if alternate lines are scanned
+            %                     in the reverse direction
+            %
+            % The default returns the "empty" struct (israster=false, NaN
+            % timing) from ndi.daq.reader.image.emptymetadata. Concrete readers
+            % that can supply acquisition metadata (e.g. ndi.daq.reader.image.ndr
+            % forwarding a raster reader) override this. Not every image epoch is
+            % a raster scan, and not every raster scan preserves this timing, so
+            % callers should check ISRASTER / for NaN fields.
+            %
+            % See also: ndi.daq.reader.image.emptymetadata,
+            %   ndi.daq.reader.image.ndr/metadata, ndi.probe.image/linetimes
+            m = ndi.daq.reader.image.emptymetadata();
+        end % metadata()
 
         %% ingestion
 
@@ -163,6 +205,11 @@ classdef image < ndi.daq.reader
             else
                 header.clocktype = 'no_time';
             end
+
+            % standardized image-acquisition metadata (raster line/frame timing
+            % etc., in seconds), so it rides along with the ingested frames and
+            % can be read back by metadata_ingested.
+            header.metadata = ndi_daqreader_image_obj.metadata(epochfiles);
 
             epochid_struct.epochid = epoch_id;
 
@@ -233,15 +280,26 @@ classdef image < ndi.daq.reader
             end
         end % frametimes_ingested()
 
-        function frames = readframes_ingested(ndi_daqreader_image_obj, epochfiles, frameind, S)
+        function frames = readframes_ingested(ndi_daqreader_image_obj, epochfiles, frameind, S, options)
             % READFRAMES_INGESTED - read frames for an ingested image epoch
             %
             % FRAMES = READFRAMES_INGESTED(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES, FRAMEIND, S)
+            % FRAMES = READFRAMES_INGESTED(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Reads the requested frames back from the 'frames.bin' binary of
             % the ingested document and returns them in 'YXCZT' order with the
-            % ordering axes collapsed to the trailing dimension.
+            % timepoints collapsed to the trailing dimension. The 'SelectC' /
+            % 'SelectZ' options subset the channel / plane axes (default [] =
+            % all) by post-selection.
             %
+            arguments
+                ndi_daqreader_image_obj
+                epochfiles
+                frameind = []
+                S = []
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             d = ndi_daqreader_image_obj.getingesteddocument(epochfiles, S);
             header = d.document_properties.daqreader_image_epochdata_ingested;
             sz = header.dimension_size(:)';
@@ -263,6 +321,12 @@ classdef image < ndi.daq.reader
             S.database_closebinarydoc(binobj);
             allframes = reshape(raw, [Y X C 1 n]);
             frames = allframes(:,:,:,1,frameind);
+            if ~isempty(options.SelectC)
+                frames = frames(:,:,options.SelectC,:,:);
+            end
+            if ~isempty(options.SelectZ)
+                frames = frames(:,:,:,options.SelectZ,:);
+            end
         end % readframes_ingested()
 
         function channels = getchannelsepoch_ingested(ndi_daqreader_image_obj, epochfiles, S)
@@ -270,6 +334,50 @@ classdef image < ndi.daq.reader
             channels = ndi_daqreader_image_obj.getchannelsepoch(epochfiles);
         end % getchannelsepoch_ingested()
 
+        function m = metadata_ingested(ndi_daqreader_image_obj, epochfiles, S)
+            % METADATA_INGESTED - image-acquisition metadata for an ingested image epoch
+            %
+            % M = METADATA_INGESTED(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES, S)
+            %
+            % Returns the standardized image-acquisition metadata (see
+            % ndi.daq.reader.image/metadata) recorded in the ingested epoch
+            % document header. Documents ingested before the metadata field
+            % existed do not carry it; in that case the default "empty" struct
+            % (ndi.daq.reader.image.emptymetadata) is returned.
+            %
+            % See also: ndi.daq.reader.image/metadata, ndi.daq.reader.image/ingest_epochfiles
+            header = ndi_daqreader_image_obj.ingested_header(epochfiles, S);
+            if isfield(header,'metadata') && isstruct(header.metadata)
+                m = header.metadata;
+            else
+                m = ndi.daq.reader.image.emptymetadata();
+            end
+        end % metadata_ingested()
+
     end % methods
+
+    methods (Static)
+        function m = emptymetadata()
+            % EMPTYMETADATA - the standardized image-metadata struct with default (unknown) values
+            %
+            % M = ndi.daq.reader.image.emptymetadata()
+            %
+            % Returns the standardized image-acquisition metadata struct used by
+            % ndi.daq.reader.image/metadata, with every field at its "unknown"
+            % default: israster=false, bidirectional=false, and NaN for each
+            % timing/geometry value. This mirrors ndr.reader.base.emptyimagemetadata
+            % on the NDR side, so the NDI and NDR structs share the same fields.
+            % ALL TIME FIELDS ARE IN SECONDS.
+            %
+            % See also: ndi.daq.reader.image/metadata
+            m = struct('israster', false, ...
+                'frame_period', NaN, ...
+                'line_period', NaN, ...
+                'dwell_time', NaN, ...
+                'lines_per_frame', NaN, ...
+                'pixels_per_line', NaN, ...
+                'bidirectional', false);
+        end % emptymetadata()
+    end % methods (Static)
 
 end % classdef

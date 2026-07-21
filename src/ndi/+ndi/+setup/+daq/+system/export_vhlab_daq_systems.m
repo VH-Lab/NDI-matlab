@@ -84,6 +84,29 @@ daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
 
 daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
 
+% Export "vhprairieview" DAQ System
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+% vhlab PrairieView 2-photon imaging. This is an image-series DAQ system:
+% the frames are read through NDR-matlab's 'prairieview' reader by way of the
+% imageseries bridge ndi.daq.reader.image.ndr, and each epoch (a <BASE> /
+% <BASE>-NNN acquisition directory pair) is assembled by the vhPrairie2p file
+% navigator. The navigator's discovery rule is fixed, so FileParameters are
+% used only for the epoch probe map: each epoch's imaging probe is described
+% by its 'reference.txt' (name<tab>ref<tab>type, e.g. 'tp 1 prairieTP'),
+% parsed by the vhlab epoch probe map class.
+daqSystemName = 'vhprairieview';
+daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
+    'DaqSystemClass', 'ndi.daq.system.image', ...
+    'DaqReaderClass', 'ndi.daq.reader.image.ndr', ...
+    'DaqReaderFileParameters', 'prairieview', ...
+    'EpochProbeMapClass', 'ndi.setup.epoch.epochprobemap_daqsystem_vhlab', ...
+    'FileNavigatorClass', 'ndi.setup.file.navigator.vhPrairie2p', ...
+    'FileParameters', {'reference.txt'}, ...
+    'EpochProbeMapFileParameters', 'reference.txt', ...
+    'HasEpochDirectories', false);
+
+daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
+
 % Export "vhajbpod_np" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % The vhajbpod_np stimulator is the AJBPod analog to vhtaste_bpod but with
