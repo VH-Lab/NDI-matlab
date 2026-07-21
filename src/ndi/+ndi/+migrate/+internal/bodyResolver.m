@@ -19,6 +19,14 @@ function resolver = bodyResolver(bodies)
 %         epochid), then any `epochclocktimes` document for the epoch
 %         (favouring 'dev_local_time'), then defaults to 'dev_local_time'.
 %
+%     resolver.subjectsForPresentation(presentationId)
+%         The animal subject_id(s) a stimulus_presentation was shown to,
+%         reached through the response link (stimulus_response carries both
+%         stimulus_presentation_id and the responding element_id -> its
+%         subject). A stimulus_presentation only names the stimulator, so
+%         this is how the second pass puts the stimulus manipulation on the
+%         animal. Returns a de-duplicated cell of subject_ids.
+%
 %   This lives in the NDI layer because only here is the whole body set
 %   (the session/element graph) available; the per-document DID converter
 %   defers anything that needs it (see
@@ -46,6 +54,8 @@ resolver = struct();
 resolver.subjectOfElement   = @(elementId) subjectOfElement(byId, elementId);
 resolver.epochClockOfElement = @(elementId, epochId) ...
     epochClockOfElement(bodies, elementId, epochId);
+resolver.subjectsForPresentation = @(presentationId) ...
+    subjectsForPresentation(bodies, byId, presentationId);
 end
 
 % ===================== normalisation ======================================
@@ -102,6 +112,40 @@ while ~isempty(cur) && ~isKey(visited, cur)
 end
 error('NDI:migrate:noSubjectForElement', ...
     'Could not resolve a subject_id for element "%s".', char(elementId));
+end
+
+% ===================== stimulus animal resolution ========================
+
+function subs = subjectsForPresentation(bodies, byId, presentationId)
+% The animal subject(s) a stimulus_presentation was shown to. A presentation only
+% names the STIMULATOR, so the animal is reached through the response link:
+% stimulus_response carries both stimulus_presentation_id and element_id (the
+% responding element), so presentation <- stimulus_response -> element ->
+% subjectOfElement -> the animal. Returns a de-duplicated cell of subject_ids
+% (usually one; empty if nothing responded / no element resolves).
+presentationId = char(presentationId);
+subs = {};
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if ~strcmp(classNameOf(b), 'stimulus_response') ...
+            || ~strcmp(dependencyValue(b, 'stimulus_presentation_id'), presentationId)
+        continue;
+    end
+    elementId = dependencyValue(b, 'element_id');
+    if isempty(elementId)
+        continue;
+    end
+    try
+        sid = subjectOfElement(byId, elementId);
+    catch
+        continue;   % element does not resolve to a subject -> skip
+    end
+    if ~isempty(sid) && ~isKey(seen, sid)
+        seen(sid) = true;
+        subs{end+1} = sid; %#ok<AGROW>
+    end
+end
 end
 
 % ===================== epoch clock resolution ============================
