@@ -91,16 +91,26 @@ classdef image < ndi.daq.reader
             error('ndi:daq:reader:image:abstract','frametimes must be overridden by a concrete ndi.daq.reader.image subclass.');
         end % frametimes()
 
-        function frames = readframes(ndi_daqreader_image_obj, epochfiles, frameind)
+        function frames = readframes(ndi_daqreader_image_obj, epochfiles, frameind, options)
             % READFRAMES - read image frames from an epoch
             %
             % FRAMES = READFRAMES(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES, FRAMEIND)
+            % FRAMES = READFRAMES(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Returns an array in DIMENSIONORDER (default 'YXCZT') with the
-            % ordering axes selected by FRAMEIND collapsed to the trailing
-            % dimension: size [Y X C 1 numel(FRAMEIND)].
+            % timepoints FRAMEIND collapsed to the trailing dimension:
+            % [Y X numel(C) numel(Z) numel(FRAMEIND)]. The name/value options
+            % 'SelectC' / 'SelectZ' select a subset of the channel / plane axes
+            % (default [] = all).
             %
             % Abstract. Adapted from nansen.stack.ImageStack/getFrameSet.
+            arguments
+                ndi_daqreader_image_obj
+                epochfiles
+                frameind = []
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             error('ndi:daq:reader:image:abstract','readframes must be overridden by a concrete ndi.daq.reader.image subclass.');
         end % readframes()
 
@@ -270,15 +280,26 @@ classdef image < ndi.daq.reader
             end
         end % frametimes_ingested()
 
-        function frames = readframes_ingested(ndi_daqreader_image_obj, epochfiles, frameind, S)
+        function frames = readframes_ingested(ndi_daqreader_image_obj, epochfiles, frameind, S, options)
             % READFRAMES_INGESTED - read frames for an ingested image epoch
             %
             % FRAMES = READFRAMES_INGESTED(NDI_DAQREADER_IMAGE_OBJ, EPOCHFILES, FRAMEIND, S)
+            % FRAMES = READFRAMES_INGESTED(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Reads the requested frames back from the 'frames.bin' binary of
             % the ingested document and returns them in 'YXCZT' order with the
-            % ordering axes collapsed to the trailing dimension.
+            % timepoints collapsed to the trailing dimension. The 'SelectC' /
+            % 'SelectZ' options subset the channel / plane axes (default [] =
+            % all) by post-selection.
             %
+            arguments
+                ndi_daqreader_image_obj
+                epochfiles
+                frameind = []
+                S = []
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             d = ndi_daqreader_image_obj.getingesteddocument(epochfiles, S);
             header = d.document_properties.daqreader_image_epochdata_ingested;
             sz = header.dimension_size(:)';
@@ -300,6 +321,12 @@ classdef image < ndi.daq.reader
             S.database_closebinarydoc(binobj);
             allframes = reshape(raw, [Y X C 1 n]);
             frames = allframes(:,:,:,1,frameind);
+            if ~isempty(options.SelectC)
+                frames = frames(:,:,options.SelectC,:,:);
+            end
+            if ~isempty(options.SelectZ)
+                frames = frames(:,:,:,options.SelectZ,:);
+            end
         end % readframes_ingested()
 
         function channels = getchannelsepoch_ingested(ndi_daqreader_image_obj, epochfiles, S)

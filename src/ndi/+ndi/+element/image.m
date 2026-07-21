@@ -32,10 +32,11 @@ classdef image < ndi.element & ndi.time.timeseries
             [ndi_element_image_obj] = ndi_element_image_obj@ndi.element(varargin{:});
         end % ndi.element.image()
 
-        function [images, t, timeref] = readframes(ndi_element_image_obj, timeref_or_epoch, t0, t1)
+        function [images, t, timeref] = readframes(ndi_element_image_obj, timeref_or_epoch, t0, t1, options)
             % READFRAMES - read image frames from an element, with frame times via the epoch clock system
             %
             % [IMAGES, T, TIMEREF] = READFRAMES(NDI_ELEMENT_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            % [IMAGES, T, TIMEREF] = READFRAMES(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Reads image frames from an ndi.element.image object. TIMEREF_OR_EPOCH
             % is either an ndi.time.timereference (then T0,T1 are times in that
@@ -47,10 +48,17 @@ classdef image < ndi.element & ndi.time.timeseries
             % returned. For a clockless ('no_time') epoch, T0,T1 are interpreted
             % as inclusive frame-index bounds and T is the frame indices.
             %
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
+            arguments
+                ndi_element_image_obj
+                timeref_or_epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             if ndi_element_image_obj.direct
-                [images,t,timeref] = ndi_element_image_obj.underlying_element.readframes(timeref_or_epoch, t0, t1);
+                [images,t,timeref] = ndi_element_image_obj.underlying_element.readframes(timeref_or_epoch, t0, t1, ...
+                    'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
             else
                 error('ndi:element:image:notdirect',...
                     ['Reading frames from a non-direct ndi.element.image is not supported in v1. ' ...
@@ -59,37 +67,55 @@ classdef image < ndi.element & ndi.time.timeseries
             end
         end % readframes()
 
-        function [images, t, timeref] = readimages(ndi_element_image_obj, timeref_or_epoch, t0, t1)
+        function [images, t, timeref] = readimages(ndi_element_image_obj, timeref_or_epoch, t0, t1, options)
             % READIMAGES - alias of READFRAMES
             %
             % [IMAGES, T, TIMEREF] = READIMAGES(NDI_ELEMENT_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            % [IMAGES, T, TIMEREF] = READIMAGES(..., 'SelectC', C, 'SelectZ', Z)
             %
             % See also: ndi.element.image/readframes
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
-            [images,t,timeref] = ndi_element_image_obj.readframes(timeref_or_epoch, t0, t1);
+            arguments
+                ndi_element_image_obj
+                timeref_or_epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
+            [images,t,timeref] = ndi_element_image_obj.readframes(timeref_or_epoch, t0, t1, ...
+                'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
         end % readimages()
 
         %% ndi.time.timeseries interface
 
-        function [data, t, timeref] = readtimeseries(ndi_element_image_obj, timeref_or_epoch, t0, t1)
+        function [data, t, timeref] = readtimeseries(ndi_element_image_obj, timeref_or_epoch, t0, t1, options)
             % READTIMESERIES - read image frames as a time series
             %
             % [DATA, T, TIMEREF] = READTIMESERIES(NDI_ELEMENT_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            % [DATA, T, TIMEREF] = READTIMESERIES(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Implements the ndi.time.timeseries interface. Returns image frames
             % as DATA together with each frame's time T and the TIMEREF, using
             % the epoch clock / syncgraph system. TIMEREF_OR_EPOCH is either an
             % ndi.time.timereference or an epoch number/id. Errors on a clockless
-            % ('no_time') epoch (use READFRAMES with frame indices there).
+            % ('no_time') epoch (use READFRAMES with frame indices there). The
+            % 'SelectC' / 'SelectZ' options subset the channel / plane axes
+            % (default [] = all).
             %
             % For a 'direct' element the call is delegated to the underlying
             % ndi.probe.image.
             %
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
+            arguments
+                ndi_element_image_obj
+                timeref_or_epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             if ndi_element_image_obj.direct
-                [data,t,timeref] = ndi_element_image_obj.underlying_element.readtimeseries(timeref_or_epoch, t0, t1);
+                [data,t,timeref] = ndi_element_image_obj.underlying_element.readtimeseries(timeref_or_epoch, t0, t1, ...
+                    'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
             else
                 error('ndi:element:image:notdirect',...
                     ['Reading from a non-direct ndi.element.image is not supported in v1. ' ...

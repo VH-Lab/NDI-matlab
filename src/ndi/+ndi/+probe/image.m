@@ -52,10 +52,11 @@ classdef image < ndi.probe & ndi.time.timeseries
             obj = obj@ndi.probe(varargin{:});
         end % ndi.probe.image
 
-        function [images, t, timeref_out] = readframesepoch(ndi_probe_image_obj, epoch, t0, t1)
+        function [images, t, timeref_out] = readframesepoch(ndi_probe_image_obj, epoch, t0, t1, options)
             % READFRAMESEPOCH - read image frames from a single epoch
             %
             % [IMAGES, T, TIMEREF_OUT] = READFRAMESEPOCH(NDI_PROBE_IMAGE_OBJ, EPOCH, T0, T1)
+            % [IMAGES, T, TIMEREF_OUT] = READFRAMESEPOCH(..., 'SelectC', C, 'SelectZ', Z)
             %
             % EPOCH is the epoch number or id. For a movie, returns the frames
             % whose times (in the epoch's clock) fall within [T0,T1] and T is
@@ -63,8 +64,17 @@ classdef image < ndi.probe & ndi.time.timeseries
             % ('no_time') epoch, T0,T1 are inclusive frame-index bounds and T
             % is the frame indices. TIMEREF_OUT describes the epoch.
             %
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
+            % The 'SelectC' / 'SelectZ' options subset the returned channel /
+            % plane axes (default [] = all).
+            %
+            arguments
+                ndi_probe_image_obj
+                epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
 
             [dev,devname,devepoch,channeltype,channel] = ndi_probe_image_obj.getchanneldevinfo(epoch);
             eid = ndi_probe_image_obj.epochid(epoch);
@@ -98,7 +108,8 @@ classdef image < ndi.probe & ndi.time.timeseries
                 t = ft(frameind);
             end
 
-            images = dsys.readframes(devepoch{1}, frameind);
+            images = dsys.readframes(devepoch{1}, frameind, ...
+                'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
 
             if nargout>=3
                 if isclockless
@@ -109,10 +120,11 @@ classdef image < ndi.probe & ndi.time.timeseries
             end
         end % readframesepoch()
 
-        function [images, t, timeref] = readframes(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+        function [images, t, timeref] = readframes(ndi_probe_image_obj, timeref_or_epoch, t0, t1, options)
             % READFRAMES - read image frames with frame times via the epoch clock system
             %
             % [IMAGES, T, TIMEREF] = READFRAMES(NDI_PROBE_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
+            % [IMAGES, T, TIMEREF] = READFRAMES(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Reads image frames from the backing ndi.daq.system.image. If
             % TIMEREF_OR_EPOCH is an ndi.time.timereference, T0,T1 are times in
@@ -123,12 +135,22 @@ classdef image < ndi.probe & ndi.time.timeseries
             % clock (T0,T1 are times for a movie, or frame indices for a
             % clockless epoch).
             %
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
+            % The 'SelectC' / 'SelectZ' options subset the returned channel /
+            % plane axes (default [] = all).
+            %
+            arguments
+                ndi_probe_image_obj
+                timeref_or_epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
 
             if ~isa(timeref_or_epoch,'ndi.time.timereference')
                 % direct epoch read, in the epoch's own clock
-                [images,t,timeref] = ndi_probe_image_obj.readframesepoch(timeref_or_epoch, t0, t1);
+                [images,t,timeref] = ndi_probe_image_obj.readframesepoch(timeref_or_epoch, t0, t1, ...
+                    'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
                 return;
             end
 
@@ -162,7 +184,8 @@ classdef image < ndi.probe & ndi.time.timeseries
                     stopTime = gt0_t1(i,2);
                     if isnan(stopTime), stopTime = Inf; end
                 end
-                [images_here, t_here] = ndi_probe_image_obj.readframesepoch(er{i}, startTime, stopTime);
+                [images_here, t_here] = ndi_probe_image_obj.readframesepoch(er{i}, startTime, stopTime, ...
+                    'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
                 t_here = t_here(:);
                 images = cat(5, images, images_here);
                 % convert frame times back into the requested timeref units
@@ -175,13 +198,20 @@ classdef image < ndi.probe & ndi.time.timeseries
             end
         end % readframes()
 
-        function [images, t, timeref] = readimages(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+        function [images, t, timeref] = readimages(ndi_probe_image_obj, timeref_or_epoch, t0, t1, options)
             % READIMAGES - alias of READFRAMES
             %
             % See also: ndi.probe.image/readframes
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
-            [images,t,timeref] = ndi_probe_image_obj.readframes(timeref_or_epoch, t0, t1);
+            arguments
+                ndi_probe_image_obj
+                timeref_or_epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
+            [images,t,timeref] = ndi_probe_image_obj.readframes(timeref_or_epoch, t0, t1, ...
+                'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
         end % readimages()
 
         function n = numframes(ndi_probe_image_obj, epoch)
@@ -201,7 +231,7 @@ classdef image < ndi.probe & ndi.time.timeseries
 
         %% ndi.time.timeseries interface
 
-        function [data, t, timeref] = readtimeseries(ndi_probe_image_obj, timeref_or_epoch, t0, t1)
+        function [data, t, timeref] = readtimeseries(ndi_probe_image_obj, timeref_or_epoch, t0, t1, options)
             % READTIMESERIES - read image frames as a time series
             %
             % [DATA, T, TIMEREF] = READTIMESERIES(NDI_PROBE_IMAGE_OBJ, TIMEREF_OR_EPOCH, T0, T1)
@@ -221,33 +251,49 @@ classdef image < ndi.probe & ndi.time.timeseries
             % time <-> frame mapping). Use READFRAMES with frame indices for
             % clockless epochs. See READTIMESERIESEPOCH.
             %
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
+            arguments
+                ndi_probe_image_obj
+                timeref_or_epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             if isa(timeref_or_epoch,'ndi.time.timereference')
                 % time-reference path: the syncgraph maps the request into the
                 % epoch clock. A clockless epoch has no 'dev_local_time' and so
                 % never falls within a time range; READFRAMES handles the rest.
-                [data, t, timeref] = ndi_probe_image_obj.readframes(timeref_or_epoch, t0, t1);
+                [data, t, timeref] = ndi_probe_image_obj.readframes(timeref_or_epoch, t0, t1, ...
+                    'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
             else
-                [data, t, timeref] = ndi_probe_image_obj.readtimeseriesepoch(timeref_or_epoch, t0, t1);
+                [data, t, timeref] = ndi_probe_image_obj.readtimeseriesepoch(timeref_or_epoch, t0, t1, ...
+                    'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
             end
         end % readtimeseries()
 
-        function [data, t, timeref] = readtimeseriesepoch(ndi_probe_image_obj, epoch, t0, t1)
+        function [data, t, timeref] = readtimeseriesepoch(ndi_probe_image_obj, epoch, t0, t1, options)
             % READTIMESERIESEPOCH - read image frames from one epoch as a time series
             %
             % [DATA, T, TIMEREF] = READTIMESERIESEPOCH(NDI_PROBE_IMAGE_OBJ, EPOCH, T0, T1)
+            % [DATA, T, TIMEREF] = READTIMESERIESEPOCH(..., 'SelectC', C, 'SelectZ', Z)
             %
             % Returns the frames of EPOCH whose times (in the epoch's clock) fall
             % within [T0,T1], as DATA, with the frame times T and the epoch
-            % TIMEREF. EPOCH is an epoch number or id.
+            % TIMEREF. EPOCH is an epoch number or id. The 'SelectC' / 'SelectZ'
+            % options subset the returned channel / plane axes (default [] = all).
             %
             % If EPOCH is clockless (its clock is 'no_time') this method errors,
             % because a time series has no meaning without a clock; use
             % ndi.probe.image/readframes with frame indices instead.
             %
-            if nargin<3, t0 = -Inf; end
-            if nargin<4, t1 = Inf; end
+            arguments
+                ndi_probe_image_obj
+                epoch
+                t0 = -Inf
+                t1 = Inf
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
+            end
             [~, ~, isclockless] = ndi_probe_image_obj.imageepochinfo(epoch);
             if isclockless
                 eid = ndi_probe_image_obj.epochid(epoch);
@@ -256,7 +302,8 @@ classdef image < ndi.probe & ndi.time.timeseries
                      'time <-> frame mapping and cannot be read as a time series. ' ...
                      'Use readframes(epoch, frameind) with frame indices instead.']);
             end
-            [data, t, timeref] = ndi_probe_image_obj.readframesepoch(epoch, t0, t1);
+            [data, t, timeref] = ndi_probe_image_obj.readframesepoch(epoch, t0, t1, ...
+                'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
         end % readtimeseriesepoch()
 
         function sr = samplerate(ndi_probe_image_obj, epoch)

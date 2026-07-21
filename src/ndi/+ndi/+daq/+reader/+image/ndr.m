@@ -279,39 +279,49 @@ classdef ndr < ndi.daq.reader.image
             end
         end % frametimes()
 
-        function frames = readframes(ndi_daqreader_image_ndr_obj, epochfiles, frameind)
+        function frames = readframes(ndi_daqreader_image_ndr_obj, epochfiles, frameind, options)
             % READFRAMES - read image frames (pixel data) from an epoch
             %
             %   FRAMES = READFRAMES(OBJ, EPOCHFILES)
             %   FRAMES = READFRAMES(OBJ, EPOCHFILES, FRAMEIND)
+            %   FRAMES = READFRAMES(..., 'SelectC', C, 'SelectZ', Z)
             %
-            %   Reads pixel data for the requested frames and returns them as a
-            %   numeric array whose axis order is given by DIMENSIONORDER
+            %   Reads pixel data for the requested timepoints and returns them
+            %   as a numeric array whose axis order is given by DIMENSIONORDER
             %   (default 'YXCZT') and whose class is given by DATATYPE. With the
-            %   default order the result is sized [Y X C Z numel(FRAMEIND)];
-            %   multi-channel (e.g. multi-color) data occupy the C axis.
+            %   default order the result is sized
+            %   [Y X numel(C) numel(Z) numel(FRAMEIND)]; multi-channel (e.g.
+            %   multi-color) data occupy the C axis.
             %
             %   Inputs:
             %     OBJ        - an ndi.daq.reader.image.ndr object.
             %     EPOCHFILES - cell array of file paths making up one epoch.
             %     FRAMEIND   - (optional) vector of 1-based frame (timepoint)
             %                  indices to read. If omitted, all frames are read.
+            %     'SelectC'  - (optional) vector of channel indices to return
+            %                  (default [] = all channels).
+            %     'SelectZ'  - (optional) vector of Z-plane indices to return
+            %                  (default [] = all planes).
             %
             %   Outputs:
             %     FRAMES - numeric array of pixel data (see DIMENSIONORDER and
             %              DATATYPE for its shape and class).
             %
-            %   Forwards to ndr.reader/readframes (epoch_select fixed at 1).
-            %   Adapted from nansen.stack.ImageStack/getFrameSet.
+            %   Forwards to ndr.reader/readframes (epoch_select fixed at 1),
+            %   which lets a reader avoid reading unselected channels/planes.
             %
             %   See also: framesize, dimensionorder, datatype, frametimes,
             %     numframes, ndi.probe.image/readframes
-            ndr_reader = ndr.reader(ndi_daqreader_image_ndr_obj.ndr_reader_string);
-            if nargin<3
-                frames = ndr_reader.readframes(epochfiles,1);
-            else
-                frames = ndr_reader.readframes(epochfiles,1,frameind);
+            arguments
+                ndi_daqreader_image_ndr_obj
+                epochfiles
+                frameind = []
+                options.SelectC (1,:) double = []
+                options.SelectZ (1,:) double = []
             end
+            ndr_reader = ndr.reader(ndi_daqreader_image_ndr_obj.ndr_reader_string);
+            frames = ndr_reader.readframes(epochfiles, 1, frameind, ...
+                'SelectC', options.SelectC, 'SelectZ', options.SelectZ);
         end % readframes()
 
         function channels = getchannelsepoch(ndi_daqreader_image_ndr_obj, epochfiles)
