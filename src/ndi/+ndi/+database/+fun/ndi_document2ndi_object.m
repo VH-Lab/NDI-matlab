@@ -40,4 +40,11 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
         obj_string = getfield(obj_struct,['ndi_' obj_parent_string '_class']);
     end
 
-    o = eval([obj_string '(ndi_session_obj, ndi_document_obj);']);
+    % obj_string is read verbatim from the document's own JSON payload, which
+    % can arrive from an untrusted source (e.g. a dataset downloaded from NDI
+    % Cloud). Validate it and instantiate with feval instead of eval so a
+    % crafted *_class field cannot execute arbitrary MATLAB/shell code when a
+    % downloaded session is opened.
+    obj_string = ndi.fun.validateClassName(obj_string, ...
+        'ndi:database:fun:ndi_document2ndi_object:invalidClassName');
+    o = feval(obj_string, ndi_session_obj, ndi_document_obj);
