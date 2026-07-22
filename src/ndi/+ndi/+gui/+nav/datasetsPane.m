@@ -317,7 +317,7 @@ classdef datasetsPane < ndi.gui.nav.pane
             dlg = uiprogressdlg(obj.Navigator.Figure, ...
                 'Title', 'Ingest session', ...
                 'Message', 'Ingesting raw data...', 'Indeterminate', 'on');
-            cleanup = onCleanup(@() delete(dlg)); %#ok<NASGU>
+            cleanup = onCleanup(@() delete(dlg));
             try
                 [b, errmsg] = s.ingest();
                 if ~b

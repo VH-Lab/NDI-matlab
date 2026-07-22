@@ -105,7 +105,7 @@ classdef sessionInfo < handle
             end
         end
 
-        function addEpochChildren(obj, daqNode, d)
+        function addEpochChildren(~, daqNode, d)
             %ADDEPOCHCHILDREN List a DAQ system's epochs as "#N - <id>".
             try
                 et = d.epochtable();
