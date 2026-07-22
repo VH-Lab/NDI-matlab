@@ -157,6 +157,8 @@ classdef dir < ndi.session
             vlt.file.str2text([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
                 ndi_session_dir_obj.id());
 
+            ndi_session_dir_obj.updateObjectTypeMarker();
+
             st = ndi.session.sessiontable();
             st.addtableentry(ndi_session_dir_obj.id(), ndi_session_dir_obj.path);
         end
@@ -276,6 +278,82 @@ classdef dir < ndi.session
                 obj_out = ndi_session_dir_obj;
             end
         end
+
+        function updateObjectTypeMarker(ndi_session_dir_obj)
+            % UPDATEOBJECTTYPEMARKER - write/refresh the .ndi object-type marker file
+            %
+            % UPDATEOBJECTTYPEMARKER(NDI_SESSION_DIR_OBJ)
+            %
+            % Writes a small marker file in the session's .ndi directory that records
+            % whether this directory holds a plain session or a dataset. The marker
+            % lets a directory's type be determined quickly (for example, by a file
+            % open dialog) without fully instantiating the object; see
+            % ndi.session.dir.directorytype.
+            %
+            % A directory that already contains dataset bookkeeping documents
+            % ('session_in_a_dataset' or the legacy 'dataset_session_info'), or that
+            % has already been marked as a dataset, is (kept) marked as a dataset.
+            % This prevents a session object from mislabeling a dataset directory as a
+            % plain session -- important because an ndi.dataset.dir keeps an underlying
+            % ndi.session.dir at the same path, and ingesting a session into a dataset
+            % builds a temporary ndi.session.dir at the dataset's path.
+            %
+            % See also: ndi.session.dir/setObjectTypeMarker, ndi.session.dir.directorytype
+
+            markerfile = [ndi_session_dir_obj.ndipathname() filesep ...
+                ndi.session.dir.objecttypemarkerfilename()];
+
+            existing_type = '';
+            if isfile(markerfile)
+                existing_type = lower(strtrim(vlt.file.textfile2char(markerfile)));
+            end
+            if strcmp(existing_type,'dataset')
+                return; % never downgrade a directory already known to be a dataset
+            end
+
+            % Does this directory actually host a dataset? Datasets store
+            % 'session_in_a_dataset' (current) or 'dataset_session_info' (legacy)
+            % bookkeeping documents; standalone sessions never do. An empty dataset
+            % has neither yet, so it will be marked 'session' here and corrected to
+            % 'dataset' by the ndi.dataset.dir constructor.
+            is_dataset = false;
+            try
+                d = ndi_session_dir_obj.database_search(ndi.query('','isa','session_in_a_dataset'));
+                if isempty(d)
+                    d = ndi_session_dir_obj.database_search(ndi.query('','isa','dataset_session_info'));
+                end
+                is_dataset = ~isempty(d);
+            catch
+                is_dataset = false;
+            end
+
+            if is_dataset
+                ndi_session_dir_obj.setObjectTypeMarker('dataset');
+            else
+                ndi_session_dir_obj.setObjectTypeMarker('session');
+            end
+        end % updateObjectTypeMarker()
+
+        function setObjectTypeMarker(ndi_session_dir_obj, typestr)
+            % SETOBJECTTYPEMARKER - write the .ndi object-type marker file directly
+            %
+            % SETOBJECTTYPEMARKER(NDI_SESSION_DIR_OBJ, TYPESTR)
+            %
+            % Writes TYPESTR ('session' or 'dataset') to the object-type marker file
+            % in the session's .ndi directory, unconditionally. Use this to force a
+            % directory's recorded type; ndi.dataset.dir uses it to mark its directory
+            % as a dataset. Most callers should use UPDATEOBJECTTYPEMARKER instead,
+            % which chooses the type safely.
+            %
+            % See also: ndi.session.dir/updateObjectTypeMarker, ndi.session.dir.directorytype
+            arguments
+                ndi_session_dir_obj (1,1) ndi.session.dir
+                typestr (1,:) char {mustBeMember(typestr,{'session','dataset'})}
+            end
+            markerfile = [ndi_session_dir_obj.ndipathname() filesep ...
+                ndi.session.dir.objecttypemarkerfilename()];
+            vlt.file.str2text(markerfile, typestr);
+        end % setObjectTypeMarker()
     end % methods
 
     methods (Static)
@@ -289,6 +367,53 @@ classdef dir < ndi.session
                 end
             end
         end % exists
+
+        function fname = objecttypemarkerfilename()
+            % OBJECTTYPEMARKERFILENAME - filename of the .ndi object-type marker
+            %
+            % FNAME = ndi.session.dir.objecttypemarkerfilename()
+            %
+            % Returns the name of the marker file (within a directory's .ndi folder)
+            % that records whether the directory holds a session or a dataset.
+            %
+            fname = 'ndi_object_type.txt';
+        end % objecttypemarkerfilename()
+
+        function t = directorytype(path)
+            % DIRECTORYTYPE - quickly determine the NDI object type stored in a directory
+            %
+            % T = ndi.session.dir.directorytype(PATH)
+            %
+            % Inspects the .ndi folder of PATH and returns what kind of NDI object is
+            % stored there, WITHOUT fully opening (instantiating) the object. This is
+            % useful, for example, for a file-open dialog that must distinguish
+            % datasets from sessions cheaply. T is one of:
+            %
+            %   'session' - PATH holds a standalone ndi.session
+            %   'dataset' - PATH holds an ndi.dataset
+            %   'unknown' - PATH is an NDI directory created before object-type markers
+            %               existed; open it once with ndi.session.dir or
+            %               ndi.dataset.dir to record its type. (An empty dataset that
+            %               has never been opened since markers were introduced cannot
+            %               be distinguished from a session without opening it.)
+            %   ''        - PATH is not an NDI session or dataset directory
+            %
+            % See also: ndi.session.dir.exists, ndi.dataset.dir.exists,
+            %   ndi.session.dir/updateObjectTypeMarker
+            t = '';
+            if ~ndi.session.dir.exists(path)
+                return;
+            end
+            markerfile = fullfile(char(path),'.ndi',ndi.session.dir.objecttypemarkerfilename());
+            if isfile(markerfile)
+                t = lower(strtrim(vlt.file.textfile2char(markerfile)));
+                if ~any(strcmp(t,{'session','dataset'}))
+                    t = 'unknown';
+                end
+                return;
+            end
+            t = 'unknown';
+        end % directorytype
 
         function database_erase(ndi_session_dir_obj, areyousure)
             % DATABASE_ERASE - deletes the entire session database folder
