@@ -112,7 +112,7 @@ classdef syncgraph < ndi.ido
             % Removes the NDI_SYNCGRAPH_OBJ.rules entry at the INDEX (or indexes) indicated.
             %
             n = numel(ndi_syncgraph_obj.rules);
-            ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
+            ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n, index));
             ndi_syncgraph_obj.remove_cached_graphinfo();
 
         end % removerule()
@@ -560,7 +560,10 @@ classdef syncgraph < ndi.ido
 
             tf = find(strcmp(ndi_daqsystem_obj.name,{ginfo.nodes.objectname}));
 
-            keep = setdiff(1:numel(ginfo.nodes));
+            % Keep every node except those contributed by this daq system (tf,
+            % computed just above). The previous setdiff(1:numel(...)) call had
+            % only one argument and always errored, so this method never ran.
+            keep = setdiff(1:numel(ginfo.nodes), tf);
 
             ginfo.G = ginfo.G(keep,keep);
             ginfo.mapping = ginfo.mapping(keep,keep);
