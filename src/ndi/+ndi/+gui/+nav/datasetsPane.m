@@ -345,18 +345,26 @@ classdef datasetsPane < ndi.gui.nav.pane
                     'Could not open the session for this node.', 'Ingestion Status');
                 return;
             end
-            status = obj.computeSessionStatus(s, node.NodeData);
+            [status, err] = obj.computeSessionStatus(s, node.NodeData);
             obj.applyNodeStatus(node, status);
+            if ~isempty(err)
+                uialert(obj.Navigator.Figure, ...
+                    ['Could not determine the ingestion status of this ' ...
+                     'session: ' err.message], 'Ingestion Status');
+            end
         end
 
-        function status = computeSessionStatus(~, s, nd)
+        function [status, err] = computeSessionStatus(~, s, nd)
             %COMPUTESESSIONSTATUS Ingestion state for a session node.
             %   For a session inside a dataset the state is ingested vs
             %   linked (is_linked in the session_in_a_dataset document); for
             %   a stand-alone on-disk session it is ingested vs none (are
             %   there file navigators left to ingest?). Any failure leaves
-            %   the state 'unknown', which draws no badge.
+            %   the state 'unknown', which draws no badge, and returns the
+            %   caught MException as ERR so the caller can report it rather
+            %   than failing silently.
             status = struct('ingestion', 'unknown');
+            err = [];
             inDataset = isfield(nd, 'dataset') && ~isempty(nd.dataset);
             try
                 if inDataset
@@ -372,8 +380,9 @@ classdef datasetsPane < ndi.gui.nav.pane
                         status.ingestion = 'none';
                     end
                 end
-            catch
+            catch ME
                 status.ingestion = 'unknown';
+                err = ME;
             end
         end
 
