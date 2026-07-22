@@ -1,0 +1,77 @@
+name: V_eta migrate assemblers (fast)
+
+# Fast, focused gate for the V_eta second-pass assemblers
+# (ndi.migrate.internal.*): the pure struct-assembly unit tests only -- no
+# database, no schema cache, no cloud, no full toolbox suite -- so a change to
+# stimulusBathToBath / stimulusPresentationToManipulation / bodyResolver /
+# pathSPromotion is validated in a couple of minutes instead of the full
+# run-tests.yml. The full suite stays the milestone gate.
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    # NOTE: GitHub filter patterns treat '+' as a quantifier (one-or-more of the
+    # preceding char), so a literal '+ndi'/'+migrate' in a paths glob never
+    # matches the real MATLAB-package path -- the '*'-prefixed segments below
+    # match the '+' as an ordinary character instead.
+    paths:
+      - 'src/ndi/*ndi/*migrate/**'
+      - 'tests/*ndi/*unittest/*migrate/**'
+      - '.github/workflows/test-eta-migrate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eta-migrate:
+    name: V_eta migrate assemblers (fast)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Install repo requirements (did, deps)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(fullfile(nditools.projectdir(), "tests"));
+
+      - name: Run V_eta migrate assembler tests (self-contained)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % Parse-check local.m: its second-pass wiring (resolveDeferred /
+            % resolveStimulusPresentations / resolvePathS) is NOT exercised by the
+            % struct-assembly unit tests below, so force MATLAB to parse the whole
+            % file (local functions included) to catch syntax / undefined-reference
+            % errors cheaply. nargin() on the entry point does this.
+            try
+                nargin('ndi.migrate.local');
+            catch ME
+                error('ndi.migrate.local failed to parse: %s', ME.message);
+            end
+            results = runtests([ ...
+                "ndi.unittest.migrate.TestBathAssembly", ...
+                "ndi.unittest.migrate.TestStimulusPresentation", ...
+                "ndi.unittest.migrate.TestBodyResolver", ...
+                "ndi.unittest.migrate.TestGratingValue", ...
+                "ndi.unittest.migrate.TestPathSPromotion"]);
+            disp(table(results));
+            assert(sum([results.Failed]) == 0, ...
+                sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));
