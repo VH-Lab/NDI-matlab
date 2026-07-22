@@ -17,10 +17,14 @@ name: V_eta migrate (end-to-end)
 on:
   push:
     branches: ['claude/**']
+    # NOTE: GitHub filter patterns treat '+' as a quantifier (one-or-more of the
+    # preceding char), so a literal '+ndi'/'+migrate' in a paths glob never
+    # matches the real MATLAB-package path -- the '*'-prefixed segments below
+    # match the '+' as an ordinary character instead.
     paths:
       - '.github/workflows/test-eta-migrate-e2e.yml'
-      - 'tests/+ndi/+unittest/+migrate/TestMigrateLocalEta.m'
-      - 'src/ndi/+ndi/+migrate/**'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta.m'
+      - 'src/ndi/*ndi/*migrate/**'
   workflow_dispatch:
     inputs:
       ref:
