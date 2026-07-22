@@ -251,7 +251,6 @@ end
 % Total sample count for an epoch (for metadata), via the probe's clock
 % =========================================================================
 function n = local_epoch_sample_count(probe, epoch_id)
-    n = [];
     try
         et = probe.epochtable();
         idx = find(strcmp({et.epoch_id}, epoch_id), 1);

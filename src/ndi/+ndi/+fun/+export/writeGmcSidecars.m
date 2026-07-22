@@ -97,7 +97,7 @@ function writeGmcSidecars(outputFolder, baseName, channelPositions, options)
     fclose(fid);
 
     % --- channel_map.mat --------------------------------------------------
-    ch_map = channelPositions; %#ok<NASGU> (n_channels x 2 = [x y])
+    ch_map = channelPositions; % n_channels x 2 = [x y]
     save(fullfile(outputFolder, 'channel_map.mat'), 'xcoords', 'ycoords', 'ch_map', '-v7');
 
     % --- [baseName].metadata (same writer as ndi.fun.probe.export.binary) -
