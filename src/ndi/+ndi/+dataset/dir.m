@@ -82,10 +82,37 @@ classdef dir < ndi.dataset
                     ndi_dataset_dir_obj.repairDatasetSessionInfo(ndi_dataset_dir_obj,dataset_session_info_docs2);
                 end
             end
+
+            % Record on disk that this directory holds a dataset, so it can be
+            % quickly distinguished from a plain session (for example, by an open
+            % dialog) without opening it. Written unconditionally so that even an
+            % empty dataset -- which has no session_in_a_dataset documents yet -- is
+            % correctly marked, and so that older datasets are migrated the next time
+            % they are opened. See ndi.session.dir.directorytype.
+            ndi_dataset_dir_obj.session.setObjectTypeMarker('dataset');
         end % dir(), creator
     end % methods
 
     methods (Static)
+        function b = exists(path)
+            % EXISTS - does an ndi.dataset exist at a given path?
+            %
+            % B = ndi.dataset.dir.exists(PATH)
+            %
+            % Returns true if PATH holds an ndi.dataset directory, as determined by
+            % ndi.session.dir.directorytype (which inspects the .ndi folder without
+            % fully opening the object). Returns false for a plain session, for a
+            % non-NDI directory, and for a legacy NDI directory whose type has not
+            % yet been recorded (directorytype returns 'unknown'); open such a
+            % directory once to record its type.
+            %
+            % See also: ndi.session.dir.exists, ndi.session.dir.directorytype
+            arguments
+                path {mustBeTextScalar}
+            end
+            b = strcmp(ndi.session.dir.directorytype(path),'dataset');
+        end % exists()
+
         function dataset_erase(ndi_dataset_dir_obj, areyousure)
             % DATABASE_ERASE - deletes the entire session database folder
             %
