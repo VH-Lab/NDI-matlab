@@ -1,26 +1,27 @@
 name: Run NDI Test Suite Cloud Prod
 
 on:
-  # Triggers the workflow on push or pull request events for the "main" branch
-  push:
-    branches: [ "main" ]
-    paths-ignore:
-      - '*.md'
-      - '.github/**'
-      - 'docs/reports/**'
-  pull_request:
-    branches: [ "main" ]
-    paths-ignore:
-      - '*.md'
-      - '.github/workflows/**'
-      - 'docs/reports/**'
-
-  # Allows for manually running this workflow from the Actions tab
+  # This suite creates, uploads files to, publishes, unpublishes and deletes
+  # datasets against the PRODUCTION NDI Cloud API (api.ndi-cloud.com). It must
+  # NOT run on every push / pull_request: a cancelled or SIGKILLed runner skips
+  # MATLAB teardown and can orphan synthetic (possibly published) datasets in
+  # the public commons. Restrict it to manual dispatch and a nightly schedule
+  # so writes happen on a predictable, low-contention cadence.
+  #
+  # push/pull_request gating for the dev stage lives in test-cloud-api.yml.
+  # NOTE for Steve: main's branch protection / required checks must be updated
+  # to stop requiring this workflow before it can be retargeted off main.
   workflow_dispatch:
+  schedule:
+    # 07:00 UTC nightly (off-peak for US/EU contributors).
+    - cron: '0 7 * * *'
 
 concurrency:
+  # Do NOT cancel in progress: a cancelled runner is SIGKILLed before MATLAB
+  # teardown (addTeardown/deleteDatasetAfterTest) runs, orphaning prod datasets.
+  # Serialize instead so a new run waits for the current one to finish cleanly.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run_tests:
