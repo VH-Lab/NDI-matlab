@@ -101,6 +101,13 @@ classdef PutFiles
             % as a non-zero exit. Pin Content-Type to application/octet-stream
             % and Accept-Encoding to identity so the object metadata stored in
             % S3 is predictable regardless of the client's environment.
+
+            % preSignedURL is server-supplied and interpolated inside double
+            % quotes below; validate both interpolated values before building
+            % the shell command so neither can inject commands.
+            ndi.cloud.api.implementation.files.assertSafeCurlArgs(...
+                this.preSignedURL, this.filePath);
+
             % Reset LD_LIBRARY_PATH for the subprocess so the OS curl loads
             % the OS libraries instead of MATLAB's bundled ones (a MATLAB
             % upgrade can otherwise break this system call). See
