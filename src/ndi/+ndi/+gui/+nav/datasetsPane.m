@@ -535,7 +535,9 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
 
             % 2. Let the user pick one (readable 14-point modal picker).
-            [sel, ok] = obj.pickDatasetDialog(titleStr, labels);
+            [sel, ok] = ndi.util.ListDialog.choose(labels, ...
+                'Title', titleStr, 'Prompt', 'Select a dataset to open:', ...
+                'FontSize', 14, 'Parent', fig);
             if ~ok
                 return;   % cancelled
             end
@@ -560,77 +562,6 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
             delete(dlg);
             obj.addUserDataset(ds);
-        end
-
-        function [sel, ok] = pickDatasetDialog(obj, titleStr, labels)
-            %PICKDATASETDIALOG Modal list picker with a readable 14-pt font.
-            %   Replaces listdlg (whose font is tiny and not configurable)
-            %   with a uilistbox in the NDI Cloud colours. Returns the 1-based
-            %   index SEL of the chosen label and OK = true, or OK = false if
-            %   the user cancels or closes the window.
-            sel = [];
-            ok  = false;
-            c   = ndi.gui.cloudColors();
-
-            % Centre the picker over the navigator window.
-            w = 480; h = 420;
-            ppos = obj.Navigator.Figure.Position;
-            x = ppos(1) + (ppos(3) - w) / 2;
-            y = ppos(2) + (ppos(4) - h) / 2;
-
-            dlg = uifigure('Name', titleStr, 'Position', [x y w h], ...
-                'Color', c.offWhite, 'WindowStyle', 'modal', ...
-                'Tag', 'ndiCloudDatasetPicker');
-
-            g = uigridlayout(dlg, [3 1]);
-            g.RowHeight       = {28, '1x', 38};
-            g.ColumnWidth     = {'1x'};
-            g.Padding         = [8 8 8 8];
-            g.RowSpacing      = 6;
-            g.BackgroundColor = c.offWhite;
-
-            hb = uigridlayout(g, [1 1]);
-            hb.Padding         = [8 0 8 0];
-            hb.BackgroundColor = c.darkBlue;
-            uilabel(hb, 'Text', 'Select a dataset to open:', ...
-                'FontColor', c.white, 'FontWeight', 'bold', ...
-                'FontSize', 14, 'VerticalAlignment', 'center');
-
-            lb = uilistbox(g, 'Items', labels, 'Multiselect', 'off', ...
-                'FontSize', 14);
-            if ~isempty(labels)
-                lb.Value = labels{1};
-            end
-
-            br = uigridlayout(g, [1 3]);
-            br.ColumnWidth     = {'1x', 90, 90};
-            br.RowHeight       = {'1x'};
-            br.Padding         = [0 0 0 0];
-            br.ColumnSpacing   = 6;
-            br.BackgroundColor = c.offWhite;
-            uilabel(br, 'Text', '');   % left spacer
-            okBtn     = uibutton(br, 'Text', 'Open',   'ButtonPushedFcn', @onOk);
-            cancelBtn = uibutton(br, 'Text', 'Cancel', 'ButtonPushedFcn', @onCancel);
-            obj.accentButton(okBtn);
-            obj.accentButton(cancelBtn);
-
-            dlg.CloseRequestFcn = @onCancel;
-            uiwait(dlg);
-            if isvalid(dlg)
-                delete(dlg);
-            end
-
-            function onOk(~, ~)
-                sel = find(strcmp(labels, lb.Value), 1);
-                ok  = ~isempty(sel);
-                uiresume(dlg);
-            end
-
-            function onCancel(~, ~)
-                sel = [];
-                ok  = false;
-                uiresume(dlg);
-            end
         end
 
         function addUserDataset(obj, ds)
