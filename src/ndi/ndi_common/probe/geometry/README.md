@@ -13,11 +13,19 @@ probe/geometry/<group>/<model>.json
 
 ## What a layout describes
 
-A layout describes the **physical electrode sites only** — their coordinates,
-shanks, and contact shapes. It intentionally does **not** describe how sites are
-wired to recording channels: that mapping (`site2channelmap`) depends on the
-headstage/adapter/recording, not on the electrode, so it is created per-probe when
-the wiring is known.
+A layout primarily describes the **physical electrode sites** — their coordinates,
+shanks, and contact shapes. In general the site-to-recording-channel wiring
+(`site2channelmap`) depends on the headstage/adapter/recording, not on the
+electrode, so it is created per-probe when the wiring is known and is **not**
+required in a layout.
+
+Some **fixed-headstage** probes, however, have a single canonical wiring that ships
+with the electrode (e.g. a NeuroNexus probe on its matched adapter, or a
+Neuropixels default configuration). Such a layout may include an optional `map`
+field giving that default site→channel wiring; when present,
+`ndi.fun.probe.geometry.fromLibrary` uses it to create the `site2channelmap`
+document automatically (unless the caller passes their own `map`, which always
+overrides).
 
 ## File format
 
@@ -37,6 +45,7 @@ Each `.json` file is an object whose fields mirror the `probe_geometry` document
 | `shank_id` | N×1 integer shank id per site |
 | `contact_shape` | contact shape name(s), e.g. `"circle"` |
 | `contact_shape_radius` / `_width` / `_height` | per-contact shape parameters |
+| `map` | *(optional)* default site→channel wiring: `map(i)` is the recording channel of site `i` (`NaN` if a site is not recorded). Only for fixed-headstage probes; consumed by `fromLibrary` to build a `site2channelmap`. |
 
 See `generic/tetrode.json` and `generic/linear16_25um.json` for minimal examples.
 
