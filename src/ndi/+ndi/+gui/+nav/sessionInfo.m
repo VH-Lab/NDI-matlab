@@ -11,9 +11,10 @@ classdef sessionInfo < handle
 %       obj = ndi.gui.nav.sessionInfo(session)
 %
 %   Layout (top to bottom):
-%       DAQ systems - a uitree; each DAQ system is a top node carrying the
-%                     native disclosure triangle. Expanding one lists its
-%                     epochs as "#N - <epoch_id>" children.
+%       DAQ systems - a three-column table: DAQ system | epoch number |
+%                     epoch id. Each epoch of a DAQ system is one row. A
+%                     DAQ system with no epochs occupies a single row with
+%                     blank epoch number and epoch id entries.
 %       Elements    - a two-column table: element name | element type.
 %       Subjects    - a table of the session's subjects (local identifier
 %                     and description).
@@ -48,7 +49,7 @@ classdef sessionInfo < handle
 
             obj.Figure = uifigure('Name', ['Session: ' ref], ...
                 'Position', [180 160 460 520], ...
-                'Color',    c.offWhite, ...
+                'Color',    c.darkBlue, ...
                 'Tag',      'ndiNavigatorSessionInfo');
 
             g = uigridlayout(obj.Figure, [6 1]);
@@ -56,12 +57,16 @@ classdef sessionInfo < handle
             g.ColumnWidth   = {'1x'};
             g.RowSpacing    = 6;
             g.Padding       = [10 10 10 10];
-            g.BackgroundColor = c.offWhite;
+            g.BackgroundColor = c.darkBlue;
 
             obj.sectionLabel(g, 1, 'DAQ systems');
-            tree = uitree(g);
-            tree.Layout.Row = 2;
-            obj.populateDaqTree(tree);
+            daqTable = uitable(g);
+            daqTable.Layout.Row      = 2;
+            daqTable.ColumnName      = {'DAQ system', 'Epoch number', 'Epoch id'};
+            daqTable.ColumnWidth     = {'1x', 'fit', '1x'};
+            daqTable.RowName         = {};
+            daqTable.Data            = obj.daqRows();
+            obj.styleTable(daqTable);
 
             obj.sectionLabel(g, 3, 'Elements');
             elemTable = uitable(g);
@@ -70,6 +75,7 @@ classdef sessionInfo < handle
             elemTable.ColumnWidth     = {'1x', '1x'};
             elemTable.RowName         = {};
             elemTable.Data            = obj.elementRows();
+            obj.styleTable(elemTable);
 
             obj.sectionLabel(g, 5, 'Subjects');
             subjTable = uitable(g);
@@ -78,6 +84,16 @@ classdef sessionInfo < handle
             subjTable.ColumnWidth     = {'1x', '1x'};
             subjTable.RowName         = {};
             subjTable.Data            = obj.subjectRows();
+            obj.styleTable(subjTable);
+        end
+
+        function styleTable(~, t)
+            %STYLETABLE White table body with dark-blue text, per the NDI
+            %   Cloud palette (a white object background carrying dark-navy
+            %   text, matching the navigator's panes).
+            c = ndi.gui.cloudColors();
+            t.BackgroundColor = c.white;
+            t.FontColor       = c.darkBlue;
         end
 
         function sectionLabel(~, parent, row, text)
@@ -86,48 +102,45 @@ classdef sessionInfo < handle
             lbl = uilabel(parent, ...
                 'Text',       text, ...
                 'FontWeight', 'bold', ...
-                'FontColor',  c.darkBlue);
+                'FontColor',  c.white);
             lbl.Layout.Row = row;
         end
 
-        function populateDaqTree(obj, tree)
-            %POPULATEDAQTREE One top node per DAQ system, epochs as children.
+        function rows = daqRows(obj)
+            %DAQROWS Nx3 cell of {daq name, epoch number, epoch id}.
+            %   Each epoch is one row. A DAQ system with no epochs is a
+            %   single row with blank epoch number and epoch id entries.
+            rows = cell(0, 3);
             daqs = obj.daqSystems();
             if isempty(daqs)
-                uitreenode(tree, 'Text', '(no DAQ systems)');
+                rows = {'(no DAQ systems)', '', ''};
                 return;
             end
             for i = 1:numel(daqs)
                 d = daqs{i};
                 name = obj.daqName(d);
-                dn = uitreenode(tree, 'Text', name);
-                obj.addEpochChildren(dn, d);
-            end
-        end
-
-        function addEpochChildren(~, daqNode, d)
-            %ADDEPOCHCHILDREN List a DAQ system's epochs as "#N - <id>".
-            try
-                et = d.epochtable();
-            catch
-                et = [];
-            end
-            if isempty(et)
-                uitreenode(daqNode, 'Text', '(no epochs)');
-                return;
-            end
-            for k = 1:numel(et)
-                if isfield(et, 'epoch_number') && ~isempty(et(k).epoch_number)
-                    num = et(k).epoch_number;
-                else
-                    num = k;
+                try
+                    et = d.epochtable();
+                catch
+                    et = [];
                 end
-                if isfield(et, 'epoch_id') && ~isempty(et(k).epoch_id)
-                    eid = char(et(k).epoch_id);
-                else
-                    eid = '(no id)';
+                if isempty(et)
+                    rows(end+1, :) = {name, '', ''}; %#ok<AGROW>
+                    continue;
                 end
-                uitreenode(daqNode, 'Text', sprintf('#%d - %s', num, eid));
+                for k = 1:numel(et)
+                    if isfield(et, 'epoch_number') && ~isempty(et(k).epoch_number)
+                        num = et(k).epoch_number;
+                    else
+                        num = k;
+                    end
+                    if isfield(et, 'epoch_id') && ~isempty(et(k).epoch_id)
+                        eid = char(et(k).epoch_id);
+                    else
+                        eid = '(no id)';
+                    end
+                    rows(end+1, :) = {name, num, eid}; %#ok<AGROW>
+                end
             end
         end
 
