@@ -3,8 +3,7 @@ classdef datasetsPane < ndi.gui.nav.pane
 %
 %   The Datasets pane can be collapsed to its header row via the header
 %   disclosure triangle. Its header also carries, right-justified, a "+"
-%   button, a "Paths" button (for editing the dataset search path, a
-%   placeholder in v1), and a "Refresh" button.
+%   button and a "Refresh" button.
 %
 %   The "+" button opens an add-dataset menu (a uicontextmenu popped
 %   beneath the button) with:
@@ -117,13 +116,13 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function buildHeaderRight(obj, parent)
-            % Three controls sit on the right: [+] | Paths | Refresh. The
-            % "+" opens the add-dataset menu; it is a compact fixed-width
-            % square, the other two share the remaining width.
-            group = uigridlayout(parent, [1 3]);
+            % Two controls sit on the right: [+] | Refresh. The "+" opens the
+            % add-dataset menu; it is a compact fixed-width square and Refresh
+            % takes the remaining width.
+            group = uigridlayout(parent, [1 2]);
             group.Layout.Row      = 1;
             group.Layout.Column   = 3;
-            group.ColumnWidth     = {26, '1x', '1x'};
+            group.ColumnWidth     = {26, '1x'};
             group.RowHeight       = {'1x'};
             group.Padding         = [0 0 0 0];
             group.ColumnSpacing   = 4;
@@ -138,23 +137,16 @@ classdef datasetsPane < ndi.gui.nav.pane
             plus.Layout.Column = 1;
             obj.accentButton(plus);
 
-            paths = uibutton(group, ...
-                'Text',            'Paths', ...
-                'ButtonPushedFcn', @(~,~) obj.openPathsEditor());
-            paths.Layout.Row    = 1;
-            paths.Layout.Column = 2;
-            obj.accentButton(paths);
-
             refresh = uibutton(group, ...
                 'Text',            'Refresh', ...
                 'ButtonPushedFcn', @(~,~) obj.refresh());
             refresh.Layout.Row    = 1;
-            refresh.Layout.Column = 3;
+            refresh.Layout.Column = 2;
             obj.accentButton(refresh);
         end
 
         function w = rightWidth(~)
-            w = 158;
+            w = 108;
         end
     end
 
@@ -441,24 +433,6 @@ classdef datasetsPane < ndi.gui.nav.pane
                     s = [];
                 end
             end
-        end
-
-        function openPathsEditor(obj)
-            %OPENPATHSEDITOR Placeholder window for editing search paths.
-            f = uifigure('Name', 'Dataset Search Paths', ...
-                'Position', [150 150 380 160], ...
-                'Color',    ndi.gui.cloudColors().offWhite, ...
-                'Tag',      'ndiNavigatorDatasetPaths');
-            g = uigridlayout(f, [1 1]);
-            uilabel(g, ...
-                'Text', ['Dataset search-path editor (placeholder).' newline ...
-                         'This will let you set where the navigator looks' newline ...
-                         'for datasets.'], ...
-                'HorizontalAlignment', 'center', ...
-                'VerticalAlignment',   'center');
-            % Reference obj so future versions can push paths back into the
-            % pane; unused today but keeps the callback signature stable.
-            f.UserData = obj;
         end
 
         %% "+" add-dataset menu and its actions
@@ -799,9 +773,8 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         function datasets = searchPathDatasets()
             %SEARCHPATHDATASETS Datasets discovered on the search path.
-            %   v1 stub: search-path discovery is configured through the
-            %   Paths editor (a placeholder today), so nothing is returned
-            %   yet. Kept as a seam for later implementation.
+            %   v1 stub: search-path discovery is not configured yet, so
+            %   nothing is returned. Kept as a seam for later implementation.
             datasets = {};
         end
 
