@@ -73,12 +73,12 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
             % the bath became a dose_manipulation (NOT the retired `bath`)
             verifyTrue(testCase, isfield(result.summary.by_class, 'dose_manipulation'), ...
-                'no dose_manipulation produced from stimulus_bath');
+                ['no dose_manipulation produced from stimulus_bath. ' resultDiag(result)]);
             verifyFalse(testCase, isfield(result.summary.by_class, 'bath'), ...
                 'retired `bath` class leaked onto the V_eta path');
 
             dose = findByClass(result.destination, 'dose_manipulation');
-            verifyNotEmpty(testCase, dose);
+            verifyNotEmpty(testCase, dose, resultDiag(result));
             verifyEqual(testCase, depValue(dose, 'subject_id'), subjId);
             verifyNotEmpty(testCase, depValue(dose, 'time_reference_1'));
             % primary mixture chemical is the spine identity
@@ -102,12 +102,13 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % the presentation became a body-backed visual_grating_manipulation
             verifyTrue(testCase, ...
                 isfield(result.summary.by_class, 'visual_grating_manipulation'), ...
-                'no visual_grating_manipulation produced from stimulus_presentation');
+                ['no visual_grating_manipulation produced from stimulus_presentation. ' ...
+                 resultDiag(result)]);
             verifyTrue(testCase, isfield(result.summary.by_class, 'sampled_body'), ...
-                'no sampled_body produced for the grating series');
+                ['no sampled_body produced for the grating series. ' resultDiag(result)]);
 
             manip = findByClass(result.destination, 'visual_grating_manipulation');
-            verifyNotEmpty(testCase, manip);
+            verifyNotEmpty(testCase, manip, resultDiag(result));
             verifyEqual(testCase, manip.base.id, presId);            % id preserved
             verifyEqual(testCase, depValue(manip, 'subject_id'), subjId);
             verifyEqual(testCase, manip.subject_statement.storage_mode, 'body');
@@ -294,4 +295,29 @@ end
 function tf = etaEnabled()
 raw = lower(strtrim(getenv('NDI_TEST_ETA')));
 tf = ismember(raw, {'1', 'true', 'yes', 'y', 'on'});
+end
+
+function s = resultDiag(result)
+% Compact dump of what the migration actually produced, so a missing-doc
+% failure names the migrated classes and every quarantine reason instead of
+% just reporting `[]`.
+byClass = '(none)';
+if isfield(result, 'summary') && isfield(result.summary, 'by_class') ...
+        && isstruct(result.summary.by_class)
+    fns = fieldnames(result.summary.by_class);
+    if ~isempty(fns); byClass = strjoin(fns(:)', ', '); end
+end
+reasons = {};
+if isfield(result, 'quarantine')
+    for k = 1:numel(result.quarantine)
+        q = result.quarantine(k);
+        cn = ''; rs = '';
+        if isfield(q, 'class_name'); cn = char(q.class_name); end
+        if isfield(q, 'reason');     rs = char(q.reason);     end
+        reasons{end+1} = sprintf('[%s] %s', cn, rs); %#ok<AGROW>
+    end
+end
+quar = '(none)';
+if ~isempty(reasons); quar = strjoin(reasons, ' | '); end
+s = sprintf('migrated by_class = {%s}; quarantine = {%s}', byClass, quar);
 end

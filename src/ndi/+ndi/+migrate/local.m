@@ -330,16 +330,31 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
 end
 
 function tf = isDeferredForContext(qEntry)
-% A quarantine entry is a session-context deferral when its reason carries
-% the needsSessionContext signature. The converter's deferral message names
-% the NDI layer; match defensively on either the identifier fragment or that
-% phrase so a future rephrasing of the message keeps routing here.
+% A quarantine entry is a session-context deferral we can re-assemble here.
+% Match on class_name FIRST -- the authoritative signal, since assembleDeferred
+% dispatches on it -- so detection stays correct even when a migrator rephrases
+% its deferral message. (The migrators_j stimulus_bath deferral, for instance,
+% says "require the session/element graph" and carries neither the
+% needsSessionContext identifier nor the "NDI layer" phrase in its message.)
+% This mirrors did2.convert.resolveDeferredBaths.isDeferredBath, the coarse
+% corpus counterpart. The reason-string match is kept as a defensive fallback.
     tf = false;
+    if isfield(qEntry, 'class_name') ...
+            && any(strcmp(qEntry.class_name, deferredAssemblerClasses()))
+        tf = true;
+        return;
+    end
     if ~isfield(qEntry, 'reason') || ~ischar(qEntry.reason)
         return;
     end
     tf = contains(qEntry.reason, 'needsSessionContext') ...
         || contains(qEntry.reason, 'NDI layer');
+end
+
+function classes = deferredAssemblerClasses()
+% The v1 classes assembleDeferred knows how to re-assemble with the
+% session/element graph. Keep in sync with assembleDeferred's switch.
+    classes = {'stimulus_bath'};
 end
 
 function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
@@ -434,6 +449,12 @@ function convertResult = resolveStimulusPresentations(convertResult, bodies, opt
 %   passthrough (nothing to place the manipulation on). The manipulation preserves
 %   the presentation's id, so inbound references resolve to it.
     resolver = ndi.migrate.internal.bodyResolver(bodies);
+    % The first-run v1 readers (did2.convert.readers.sqliteV1 / dumbJsonV1)
+    % return raw JSON char bodies -- nothing is decoded there. isPresentationBody
+    % (and stimulusPresentationToManipulation's struct-typed argument) need
+    % decoded structs, so normalise here; the idempotent re-run path already
+    % passes structs, which this leaves untouched.
+    bodies = decodeBodies(bodies);
     minted = {};
     consumed = {};   % presentation ids that became a manipulation
     for k = 1:numel(bodies)
@@ -476,6 +497,26 @@ function convertResult = resolveStimulusPresentations(convertResult, bodies, opt
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     convertResult.summary = recountSummary(convertResult);
+end
+
+function out = decodeBodies(bodies)
+% Normalise a body set to a cell of scalar structs: jsondecode any raw JSON
+% char body (the first-run reader output); pass decoded structs through
+% unchanged. Unparseable entries are dropped (not useful for assembly).
+    out = {};
+    for k = 1:numel(bodies)
+        b = bodies{k};
+        if ischar(b) || (isstring(b) && isscalar(b))
+            try
+                b = jsondecode(char(b));
+            catch
+                continue;
+            end
+        end
+        if isstruct(b) && isscalar(b)
+            out{end+1} = b; %#ok<AGROW>
+        end
+    end
 end
 
 function tf = isPresentationBody(b)
