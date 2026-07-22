@@ -15,6 +15,12 @@ name: V_eta migrate (end-to-end)
 # workflow_dispatch input if needed.
 
 on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - '.github/workflows/test-eta-migrate-e2e.yml'
+      - 'tests/+ndi/+unittest/+migrate/TestMigrateLocalEta.m'
+      - 'src/ndi/+ndi/+migrate/**'
   workflow_dispatch:
     inputs:
       ref:
