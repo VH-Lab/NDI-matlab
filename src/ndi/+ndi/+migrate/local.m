@@ -214,6 +214,13 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
         try
+            convertResult = resolveStimulusPresentations(convertResult, bodies, options);
+        catch ME
+            warning('NDI:migrate:presentationResolveFailed', ...
+                ['Second-pass stimulus_presentation assembly failed (%s); ' ...
+                 'leaving presentations as passthrough.'], ME.message);
+        end
+        try
             convertResult = resolvePathS(convertResult, options);
         catch ME
             warning('NDI:migrate:pathSFailed', ...
@@ -414,6 +421,74 @@ function convertResult = resolvePathS(convertResult, options)
         convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     end
     convertResult.summary = recountSummary(convertResult);
+end
+
+function convertResult = resolveStimulusPresentations(convertResult, bodies, options)
+%RESOLVESTIMULUSPRESENTATIONS V_eta second pass: assemble each legacy
+%   stimulus_presentation into a body-backed visual_grating_manipulation on the
+%   animal (+ its sampled_body), using the recording graph. The pass-1 converter
+%   has no per-document migrator for stimulus_presentation (the animal and the
+%   trial series are only knowable from the whole body set -- the
+%   stimulus_response -> element -> subject link), so it passes through; here it
+%   becomes the manipulation. A presentation with no responding animal is left as
+%   passthrough (nothing to place the manipulation on). The manipulation preserves
+%   the presentation's id, so inbound references resolve to it.
+    resolver = ndi.migrate.internal.bodyResolver(bodies);
+    minted = {};
+    consumed = {};   % presentation ids that became a manipulation
+    for k = 1:numel(bodies)
+        b = bodies{k};
+        if ~isPresentationBody(b)
+            continue;
+        end
+        [manip, bodyDoc, ~] = ndi.migrate.internal.stimulusPresentationToManipulation( ...
+            b, resolver, options.TargetVersion);
+        if isempty(manip)
+            continue;   % no animal responded -> leave the presentation as-is
+        end
+        minted{end+1} = manip;   %#ok<AGROW>
+        minted{end+1} = bodyDoc; %#ok<AGROW>
+        consumed{end+1} = bodyBaseId(b); %#ok<AGROW>
+    end
+    if isempty(minted)
+        return;
+    end
+    % drop the passthrough stimulus_presentation docs that were assembled away
+    kept = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if strcmp(d.className(), 'stimulus_presentation') ...
+                && any(strcmp(d.get('base.id'), consumed))
+            continue;
+        end
+        kept{end+1} = d; %#ok<AGROW>
+    end
+    convertResult.migrated = kept;
+    % fold the minted manipulation + sampled_body through v1_to_v2: they are
+    % tagged schema_version == TargetVersion, so the converter short-circuits them
+    % (isAlreadyTarget) to ensureClassBlocks + validate -- the same footing the
+    % deferred-resolution and Path-S passes use.
+    sub = did2.convert.v1_to_v2(minted, ...
+        'Validate', options.Validate, ...
+        'SchemaCache', options.SchemaCache, ...
+        'TargetVersion', options.TargetVersion, ...
+        'Verbose', false);
+    convertResult.migrated = [convertResult.migrated, sub.migrated];
+    convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function tf = isPresentationBody(b)
+    tf = isstruct(b) && isfield(b, 'document_class') ...
+        && isfield(b.document_class, 'class_name') ...
+        && strcmp(b.document_class.class_name, 'stimulus_presentation');
+end
+
+function id = bodyBaseId(b)
+    id = '';
+    if isfield(b, 'base') && isstruct(b.base) && isfield(b.base, 'id')
+        id = b.base.id;
+    end
 end
 
 % ---- v1 source detection ---------------------------------------------------

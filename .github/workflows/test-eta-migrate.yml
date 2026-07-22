@@ -52,6 +52,16 @@ jobs:
           command: |
             addpath(genpath("src"));
             addpath(genpath("tests"));
+            % Parse-check local.m: its second-pass wiring (resolveDeferred /
+            % resolveStimulusPresentations / resolvePathS) is NOT exercised by the
+            % struct-assembly unit tests below, so force MATLAB to parse the whole
+            % file (local functions included) to catch syntax / undefined-reference
+            % errors cheaply. nargin() on the entry point does this.
+            try
+                nargin('ndi.migrate.local');
+            catch ME
+                error('ndi.migrate.local failed to parse: %s', ME.message);
+            end
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestStimulusPresentation", ...
