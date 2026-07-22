@@ -49,7 +49,7 @@ classdef sessionInfo < handle
 
             obj.Figure = uifigure('Name', ['Session: ' ref], ...
                 'Position', [180 160 460 520], ...
-                'Color',    c.offWhite, ...
+                'Color',    c.darkBlue, ...
                 'Tag',      'ndiNavigatorSessionInfo');
 
             g = uigridlayout(obj.Figure, [6 1]);
@@ -57,7 +57,7 @@ classdef sessionInfo < handle
             g.ColumnWidth   = {'1x'};
             g.RowSpacing    = 6;
             g.Padding       = [10 10 10 10];
-            g.BackgroundColor = c.offWhite;
+            g.BackgroundColor = c.darkBlue;
 
             obj.sectionLabel(g, 1, 'DAQ systems');
             daqTable = uitable(g);
@@ -66,6 +66,7 @@ classdef sessionInfo < handle
             daqTable.ColumnWidth     = {'1x', 'fit', '1x'};
             daqTable.RowName         = {};
             daqTable.Data            = obj.daqRows();
+            obj.styleTable(daqTable);
 
             obj.sectionLabel(g, 3, 'Elements');
             elemTable = uitable(g);
@@ -74,6 +75,7 @@ classdef sessionInfo < handle
             elemTable.ColumnWidth     = {'1x', '1x'};
             elemTable.RowName         = {};
             elemTable.Data            = obj.elementRows();
+            obj.styleTable(elemTable);
 
             obj.sectionLabel(g, 5, 'Subjects');
             subjTable = uitable(g);
@@ -82,6 +84,16 @@ classdef sessionInfo < handle
             subjTable.ColumnWidth     = {'1x', '1x'};
             subjTable.RowName         = {};
             subjTable.Data            = obj.subjectRows();
+            obj.styleTable(subjTable);
+        end
+
+        function styleTable(~, t)
+            %STYLETABLE White table body with dark-blue text, per the NDI
+            %   Cloud palette (a white object background carrying dark-navy
+            %   text, matching the navigator's panes).
+            c = ndi.gui.cloudColors();
+            t.BackgroundColor = c.white;
+            t.FontColor       = c.darkBlue;
         end
 
         function sectionLabel(~, parent, row, text)
@@ -90,7 +102,7 @@ classdef sessionInfo < handle
             lbl = uilabel(parent, ...
                 'Text',       text, ...
                 'FontWeight', 'bold', ...
-                'FontColor',  c.darkBlue);
+                'FontColor',  c.white);
             lbl.Layout.Row = row;
         end
 
