@@ -20,11 +20,30 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   elastic pane: it grows and shrinks to fill the window as the window is
 %   resized or other panes are collapsed/expanded (see ndi.gui.navigator).
 %
-%   Right-clicking a session node opens a context menu with an "Apps"
-%   submenu listing the apps that can run on a session (see sessionApps).
-%   Choosing one resolves the underlying ndi.session and launches the app.
+%   Right-clicking a session node opens a context menu with two submenus,
+%   in alphabetical order:
+%       Apps    - the apps that can run on a session (see sessionApps).
+%                 Choosing one resolves the underlying ndi.session and
+%                 launches the app.
+%       Session - actions and information about the session itself:
+%                   Info...           opens ndi.gui.nav.sessionInfo, a
+%                                     vital-statistics window (DAQ systems,
+%                                     elements, subjects).
+%                   Ingest            ingests the session's raw data into
+%                                     the database (ndi.session.ingest),
+%                                     then refreshes the node's badge.
+%                   Ingestion Status  computes the session's ingestion state
+%                                     and shows it as a node badge.
 %
-%   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.dataset, ndi.session
+%   Ingestion status is shown as a small icon badge on the session node
+%   (see ndi.gui.nav.statusIcon): a green "i" for ingested, amber for a
+%   linked-but-not-ingested dataset session, grey for an on-disk session
+%   that is not ingested, and no badge until the status is computed. Status
+%   is computed only on the Ingest / Ingestion Status commands, never during
+%   a tree build, so listing sessions stays fast.
+%
+%   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.nav.sessionInfo,
+%             ndi.gui.nav.statusIcon, ndi.dataset, ndi.session
 
     properties (SetAccess = protected)
         Resizable (1,1) logical = true   % navigator honours drag-to-resize
@@ -173,7 +192,11 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   depend on the tree selection (a right-click does not reliably
             %   commit a selection before the menu opens). APPS is the app
             %   list from sessionApps, discovered once per tree build.
-            cm       = uicontextmenu(obj.Navigator.Figure);
+            cm = uicontextmenu(obj.Navigator.Figure);
+
+            % Top-level submenus appear in alphabetical order: "Apps" then
+            % "Session" (uimenu items appear in creation order, so we create
+            % them in that order).
             appsRoot = uimenu(cm, 'Text', 'Apps');
             % Apps that declare a Category are grouped under a submenu of that
             % name; the rest stay at the top level of the Apps menu. The top
@@ -200,6 +223,18 @@ classdef datasetsPane < ndi.gui.nav.pane
                     end
                 end
             end
+
+            % "Session" groups actions and information about the session
+            % itself. Its items are alphabetical: Info..., Ingest, Ingestion
+            % Status.
+            sessionRoot = uimenu(cm, 'Text', 'Session');
+            uimenu(sessionRoot, 'Text', 'Info...', ...
+                'MenuSelectedFcn', @(~,~) obj.showSessionInfo(node));
+            uimenu(sessionRoot, 'Text', 'Ingest', ...
+                'MenuSelectedFcn', @(~,~) obj.ingestSessionNode(node));
+            uimenu(sessionRoot, 'Text', 'Ingestion Status', ...
+                'MenuSelectedFcn', @(~,~) obj.updateSessionStatus(node));
+
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
         end
@@ -231,6 +266,123 @@ classdef datasetsPane < ndi.gui.nav.pane
             catch ME
                 uialert(obj.Navigator.Figure, ME.message, app.Label);
             end
+        end
+
+        function showSessionInfo(obj, node)
+            %SHOWSESSIONINFO Open the vital-statistics window for NODE's session.
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', 'Session Info');
+                return;
+            end
+            try
+                ndi.gui.nav.sessionInfo(s);
+            catch ME
+                uialert(obj.Navigator.Figure, ME.message, 'Session Info');
+            end
+        end
+
+        function ingestSessionNode(obj, node)
+            %INGESTSESSIONNODE Ingest NODE's session raw data into the database.
+            %   Confirms, runs ndi.session.ingest (with an indeterminate
+            %   progress dialog), then refreshes the node's status badge.
+            %
+            %   Scope note: this performs session-level ingestion
+            %   (raw data -> database). The distinct dataset operation of
+            %   converting a *linked* session to an *ingested* one inside a
+            %   dataset (ndi.dataset.convertLinkedSessionToIngested) has its
+            %   own confirmation and disk-space caveats and is intentionally
+            %   not triggered from this menu item.
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', 'Ingest');
+                return;
+            end
+            sel = uiconfirm(obj.Navigator.Figure, ...
+                ['Ingest this session''s raw data into the database? ' ...
+                 'This may take a while.'], 'Ingest session', ...
+                'Options', {'Ingest', 'Cancel'}, ...
+                'DefaultOption', 2, 'CancelOption', 2);
+            if ~strcmp(sel, 'Ingest')
+                return;
+            end
+            dlg = uiprogressdlg(obj.Navigator.Figure, ...
+                'Title', 'Ingest session', ...
+                'Message', 'Ingesting raw data...', 'Indeterminate', 'on');
+            cleanup = onCleanup(@() delete(dlg));
+            try
+                [b, errmsg] = s.ingest();
+                if ~b
+                    uialert(obj.Navigator.Figure, ...
+                        ['Ingestion did not complete: ' char(errmsg)], 'Ingest session');
+                end
+            catch ME
+                uialert(obj.Navigator.Figure, ME.message, 'Ingest session');
+            end
+            obj.updateSessionStatus(node);
+        end
+
+        function updateSessionStatus(obj, node)
+            %UPDATESESSIONSTATUS Recompute NODE's ingestion badge on demand.
+            %   This is the "Ingestion Status" menu command. Status is only
+            %   ever computed here (never during a tree build), so listing
+            %   sessions stays cheap; a node shows a badge only after the
+            %   user asks for its status or ingests it.
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', 'Ingestion Status');
+                return;
+            end
+            status = obj.computeSessionStatus(s, node.NodeData);
+            obj.applyNodeStatus(node, status);
+        end
+
+        function status = computeSessionStatus(~, s, nd)
+            %COMPUTESESSIONSTATUS Ingestion state for a session node.
+            %   For a session inside a dataset the state is ingested vs
+            %   linked (is_linked in the session_in_a_dataset document); for
+            %   a stand-alone on-disk session it is ingested vs none (are
+            %   there file navigators left to ingest?). Any failure leaves
+            %   the state 'unknown', which draws no badge.
+            status = struct('ingestion', 'unknown');
+            inDataset = isfield(nd, 'dataset') && ~isempty(nd.dataset);
+            try
+                if inDataset
+                    if s.isIngestedInDataset()
+                        status.ingestion = 'ingested';
+                    else
+                        status.ingestion = 'linked';
+                    end
+                else
+                    if s.isIngested()
+                        status.ingestion = 'ingested';
+                    else
+                        status.ingestion = 'none';
+                    end
+                end
+            catch
+                status.ingestion = 'unknown';
+            end
+        end
+
+        function applyNodeStatus(~, node, status)
+            %APPLYNODESTATUS Store STATUS on NODE and set its badge icon.
+            nd = node.NodeData;
+            nd.status = status;
+            node.NodeData = nd;
+            node.Icon = ndi.gui.nav.statusIcon(status);
         end
 
         function s = resolveSession(~, nd)
@@ -381,11 +533,14 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   Carries the resolved ndi.session (SESSIONOBJ) when known, or
             %   the parent dataset DS and SESSIONID so it can be opened on
             %   demand. Fields are kept uniform so resolveSession can read
-            %   any session node the same way.
+            %   any session node the same way. The status field starts
+            %   'unknown' (so the node shows no badge) and is filled in by
+            %   the "Ingestion Status" / "Ingest" commands.
             nd = struct('kind',      'session', ...
                         'session',   sessionObj, ...
                         'dataset',   ds, ...
-                        'sessionId', char(sessionId));
+                        'sessionId', char(sessionId), ...
+                        'status',    struct('ingestion', 'unknown'));
         end
 
         function apps = sessionApps()
