@@ -42,11 +42,11 @@ classdef testDirectoryType < matlab.unittest.TestCase
             testCase.verifyTrue(ndi.session.dir.exists(p)); % any NDI dir
         end
 
-        function testNonNDIDirectoryIsEmptyType(testCase)
+        function testNonNDIDirectoryIsNone(testCase)
             % A directory with no .ndi content is not an NDI directory.
             p = fullfile(testCase.TempDir, 'not_ndi');
             mkdir(p);
-            testCase.verifyEqual(ndi.session.dir.directorytype(p), '');
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'none');
             testCase.verifyFalse(ndi.dataset.dir.exists(p));
         end
 

@@ -396,11 +396,11 @@ classdef dir < ndi.session
             %               ndi.dataset.dir to record its type. (An empty dataset that
             %               has never been opened since markers were introduced cannot
             %               be distinguished from a session without opening it.)
-            %   ''        - PATH is not an NDI session or dataset directory
+            %   'none'    - PATH is not an NDI session or dataset directory
             %
             % See also: ndi.session.dir.exists, ndi.dataset.dir.exists,
             %   ndi.session.dir/updateObjectTypeMarker
-            t = '';
+            t = 'none';
             if ~ndi.session.dir.exists(path)
                 return;
             end
