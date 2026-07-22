@@ -93,7 +93,7 @@ classdef sessionInfo < handle
             %   text, matching the navigator's panes).
             c = ndi.gui.cloudColors();
             t.BackgroundColor = c.white;
-            t.FontColor       = c.darkBlue;
+            t.ForegroundColor = c.darkBlue;   % uitable uses ForegroundColor, not FontColor
         end
 
         function sectionLabel(~, parent, row, text)
