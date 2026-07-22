@@ -68,20 +68,35 @@ function fig = profileEditor(options)
         options.Position (1,4) double = [120 120 820 440]
     end
 
+    c = ndi.gui.cloudColors();
     fig = uifigure('Name', 'NDI Cloud Profiles', ...
         'Position', options.Position, ...
+        'Color',    c.offWhite, ...
         'Tag',      'ndiProfileEditor');
     fig.UserData = struct('SelectedRow', []);
 
-    rootGrid = uigridlayout(fig, [2 1]);
-    rootGrid.RowHeight   = {'1x', 38};
-    rootGrid.ColumnWidth = {'1x'};
-    rootGrid.Padding     = [8 8 8 8];
-    rootGrid.RowSpacing  = 6;
+    rootGrid = uigridlayout(fig, [3 1]);
+    rootGrid.RowHeight       = {28, '1x', 38};
+    rootGrid.ColumnWidth     = {'1x'};
+    rootGrid.Padding         = [8 8 8 8];
+    rootGrid.RowSpacing      = 6;
+    rootGrid.BackgroundColor = c.offWhite;
 
-    tablePanel = uipanel(rootGrid, 'BorderType', 'none');
+    % Navy NDI Cloud header bar with white title text.
+    headerBar = uigridlayout(rootGrid, [1 1]);
+    headerBar.Padding         = [8 0 8 0];
+    headerBar.BackgroundColor = c.darkBlue;
+    uilabel(headerBar, 'Text', 'NDI Cloud Profiles', ...
+        'FontColor',           c.white, ...
+        'FontWeight',          'bold', ...
+        'FontSize',            14, ...
+        'VerticalAlignment',   'center');
+
+    tablePanel = uipanel(rootGrid, 'BorderType', 'none', ...
+        'BackgroundColor', c.white);
     tablePanelGrid = uigridlayout(tablePanel, [1 1]);
-    tablePanelGrid.Padding = [0 0 0 0];
+    tablePanelGrid.Padding         = [0 0 0 0];
+    tablePanelGrid.BackgroundColor = c.white;
 
     profileTable = uitable(tablePanelGrid, ...
         'Tag',                   'ndiProfileTable', ...
@@ -93,22 +108,39 @@ function fig = profileEditor(options)
     refreshTable(fig);
 
     buttonRow = uigridlayout(rootGrid, [1 8]);
-    buttonRow.ColumnWidth   = {'1x', 80, 100, 100, 110, 150, 80, 70};
-    buttonRow.RowHeight     = {'1x'};
-    buttonRow.Padding       = [0 0 0 0];
-    buttonRow.ColumnSpacing = 6;
+    buttonRow.ColumnWidth     = {'1x', 80, 100, 100, 110, 150, 80, 70};
+    buttonRow.RowHeight       = {'1x'};
+    buttonRow.Padding         = [0 0 0 0];
+    buttonRow.ColumnSpacing   = 6;
+    buttonRow.BackgroundColor = c.offWhite;
 
     uilabel(buttonRow, 'Text', '');   % left spacer
-    uibutton(buttonRow, 'Text', 'Add...',             'ButtonPushedFcn', @onAdd);
-    uibutton(buttonRow, 'Text', 'Set Current',        'ButtonPushedFcn', @onSetCurrent);
-    uibutton(buttonRow, 'Text', 'Set Default',        'ButtonPushedFcn', @onSetDefault);
-    uibutton(buttonRow, 'Text', 'Clear Default',      'ButtonPushedFcn', @onClearDefault);
-    uibutton(buttonRow, 'Text', 'Change Password...', 'ButtonPushedFcn', @onChangePassword);
-    uibutton(buttonRow, 'Text', 'Remove',             'ButtonPushedFcn', @onRemove);
-    uibutton(buttonRow, 'Text', 'Close',              'ButtonPushedFcn', @onClose);
+    btns = [ ...
+        uibutton(buttonRow, 'Text', 'Add...',             'ButtonPushedFcn', @onAdd), ...
+        uibutton(buttonRow, 'Text', 'Set Current',        'ButtonPushedFcn', @onSetCurrent), ...
+        uibutton(buttonRow, 'Text', 'Set Default',        'ButtonPushedFcn', @onSetDefault), ...
+        uibutton(buttonRow, 'Text', 'Clear Default',      'ButtonPushedFcn', @onClearDefault), ...
+        uibutton(buttonRow, 'Text', 'Change Password...', 'ButtonPushedFcn', @onChangePassword), ...
+        uibutton(buttonRow, 'Text', 'Remove',             'ButtonPushedFcn', @onRemove), ...
+        uibutton(buttonRow, 'Text', 'Close',              'ButtonPushedFcn', @onClose)];
+    accentButtons(btns, c);
 
     if nargout == 0
         clear fig
+    end
+end
+
+
+function accentButtons(btns, c)
+%ACCENTBUTTONS Style buttons in the NDI Cloud accent (light-blue on navy text).
+    for i = 1:numel(btns)
+        b = btns(i);
+        if isempty(b) || ~isvalid(b)
+            continue;
+        end
+        b.BackgroundColor = c.lightBlue;
+        b.FontColor       = c.darkBlue;
+        b.FontWeight      = 'bold';
     end
 end
 
