@@ -194,11 +194,25 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass is different in kind: the J migrators defer
-        % nothing (they emit complete bodies), but an attributed anatomical
-        % locus can only be promoted to a Path-S part-subject with the whole
-        % migrated body set in hand (the corpus-wide subject graph). Promote
-        % here; a failure leaves the located-by-default form intact.
+        % V_eta's second pass has two kinds of work, both needing the whole
+        % migrated body set (the corpus-wide session/element graph):
+        %   (1) DEFERRALS: some J migrators still defer a document that needs
+        %       session context -- stimulus_bath (-> dose_manipulation, D8
+        %       retired the bath family). Resolve them the same way the older
+        %       targets do (assembleDeferred), just at TargetVersion V_eta.
+        %   (2) PATH-S: an attributed anatomical locus is promoted to a
+        %       part-subject. Run AFTER the deferrals so a manipulation the
+        %       deferral emits can be a Path-S retarget candidate.
+        % Each step is independent; a failure leaves the affected documents in
+        % their pass-1 form.
+        try
+            resolver = ndi.migrate.internal.bodyResolver(bodies);
+            convertResult = resolveDeferred(convertResult, resolver, options);
+        catch ME
+            warning('NDI:migrate:deferredResolveFailed', ...
+                ['Second-pass resolution of session-context deferrals ' ...
+                 'failed (%s); leaving them quarantined.'], ME.message);
+        end
         try
             convertResult = resolvePathS(convertResult, options);
         catch ME
