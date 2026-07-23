@@ -364,9 +364,9 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         %RESTRICTTOOWNER Best-effort chmod 600 (owner read/write only) on POSIX.
         %   On Windows this is a no-op (NTFS ACL inheritance, no umask
         %   equivalent). Failures are non-fatal (secrets are still AES-encrypted,
-        %   so this is defense in depth) but are surfaced as a warning rather
-        %   than swallowed, so a silent failure cannot leave the file
-        %   world-readable with no signal.
+        %   so this is defense in depth) but a real failure is surfaced as a
+        %   warning rather than swallowed, so it cannot silently leave the file
+        %   world-readable.
             if ispc || ~isfile(filename)
                 return
             end
@@ -375,17 +375,14 @@ classdef profile < matlab.mixin.CustomDisplay & handle
                 perms = java.util.HashSet();
                 perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
                 perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
+                % setPosixFilePermissions throws if it cannot apply the mode, so
+                % reaching the next line means the restriction took effect. We do
+                % NOT read it back to confirm: getPosixFilePermissions is a Java
+                % varargs method (Path, LinkOption...), which MATLAB's Java bridge
+                % cannot resolve when the trailing array is omitted -- that
+                % readback threw and produced a misleading "may be readable"
+                % warning even though the file had just been restricted.
                 java.nio.file.Files.setPosixFilePermissions(jpath, perms);
-                % Confirm the restriction actually took effect (exactly rw-------).
-                actual = java.nio.file.Files.getPosixFilePermissions(jpath);
-                ok = actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_READ) ...
-                    && actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE) ...
-                    && actual.size() == 2;
-                if ~ok
-                    warning('NDI:cloud:profile:restrictToOwnerFailed', ...
-                        'Could not restrict %s to owner-only permissions; it may be readable by other users.', ...
-                        filename);
-                end
             catch ME
                 % An UnsupportedOperationException means the platform/JVM has no
                 % POSIX permission view (e.g. a non-POSIX filesystem) -- an
