@@ -8,13 +8,20 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %   each profile points at a secret keyed by ['NDI Cloud ' UID] in a
 %   pluggable backend.
 %
-%   Backends, chosen automatically on first use:
+%   Backends:
 %
-%       vault  - MATLAB's setSecret/getSecret (R2024a+). Preferred.
-%       aes    - AES-128/CBC encrypted file in prefdir, used when the
-%                vault is not available. The key is derived from
-%                SHA-256([hostname username 'NDI Cloud']) so the file
-%                is reproducible only on the machine that wrote it.
+%       aes    - AES-128/CBC encrypted file in prefdir. This is the
+%                default. The key is derived from
+%                SHA-256([hostname username 'NDI Cloud']) so the file is
+%                reproducible only on the machine and user that wrote it
+%                (and, being a standard AES-128-CBC/PKCS7 + JSON format,
+%                is readable from other languages such as ndi-python on
+%                that same host+user).
+%       vault  - MATLAB's setSecret/getSecret (R2024a+). Read-only here:
+%                MATLAB's setSecret is interactive and takes only a secret
+%                name, so it cannot persist a password supplied in code.
+%                Not auto-selected; forcing it via useBackend errors on
+%                write. Kept as a seam only.
 %       memory - in-memory containers.Map. Reserved for tests; use
 %                ndi.cloud.profile.useBackend('memory') to opt in.
 %
@@ -171,7 +178,18 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         function setSecretInternal(obj, key, value)
             switch obj.Backend
                 case 'vault'
-                    setSecret(key, value);
+                    % MATLAB's setSecret is interactive: it accepts only the
+                    % secret NAME and prompts the user for the value, so it
+                    % cannot persist a value supplied in code. The profile
+                    % system always has the password in hand, so the vault is
+                    % unsupported for writing here; the default backend is
+                    % 'aes'. (Fail clearly rather than with the opaque
+                    % "requires exactly 1 positional input" from setSecret.)
+                    error('NDI:cloud:profile:vaultWriteUnsupported', ...
+                        ['The MATLAB vault backend cannot store a secret ' ...
+                         'value supplied in code (its setSecret prompts ' ...
+                         'interactively). Use the ''aes'' backend, which is ' ...
+                         'the default.']);
                 case 'aes'
                     ndi.cloud.profile.aesWriteSecret( ...
                         obj.SecretsFilename, key, value);
@@ -248,13 +266,14 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function backend = detectBackend()
-            if ~isempty(which('setSecret')) ...
-                    && ~isempty(which('getSecret')) ...
-                    && ~isempty(which('isSecret'))
-                backend = 'vault';
-            else
-                backend = 'aes';
-            end
+            % The AES encrypted-file backend is the default. MATLAB's vault
+            % setSecret is interactive and accepts only a secret NAME (it
+            % prompts for the value), so it cannot persist a password the
+            % caller already holds -- which is exactly what the profile
+            % system does. The AES file also has a documented, standard
+            % format (AES-128-CBC/PKCS7 + JSON) that is reproducible from
+            % other languages (e.g. ndi-python) on the same host and user.
+            backend = 'aes';
         end
 
         function key = aesKeyBytes()

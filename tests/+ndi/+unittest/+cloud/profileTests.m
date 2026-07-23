@@ -303,6 +303,41 @@ classdef profileTests < matlab.unittest.TestCase
             testCase.verifyFalse(isvalid(fig));
         end
 
+        function testVaultBackendWriteErrorsClearly(testCase)
+            % Regression: MATLAB's vault setSecret is interactive and takes
+            % only a name, so it cannot store a supplied password. Forcing
+            % the vault backend must fail with a clear, specific error
+            % rather than the opaque "requires exactly 1 positional input".
+            ndi.cloud.profile.useBackend('vault');
+            testCase.addTeardown(@() ndi.cloud.profile.useBackend('memory'));
+            testCase.verifyError( ...
+                @() ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw'), ...
+                'NDI:cloud:profile:vaultWriteUnsupported');
+        end
+
+        function testAesBackendRoundTripAndFormat(testCase)
+            % The AES backend is the default. It must round-trip the
+            % password, and the on-disk secrets file must be standard JSON
+            % with base64 iv/ciphertext per secret, so other languages
+            % (e.g. ndi-python) can read it on the same host+user.
+            ndi.cloud.profile.useBackend('aes');
+            testCase.addTeardown(@() ndi.cloud.profile.useBackend('memory'));
+
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'sekret');
+            testCase.verifyEqual(ndi.cloud.profile.getPassword(uid), 'sekret');
+
+            sf = ndi.cloud.profile.secretsFilename();
+            testCase.assertTrue(isfile(sf), 'AES secrets file should exist.');
+            S  = jsondecode(fileread(sf));
+            fn = fieldnames(S);
+            testCase.assertNotEmpty(fn, 'Secrets file should hold an entry.');
+            entry = S.(fn{1});
+            testCase.verifyTrue(isfield(entry, 'iv'), ...
+                'Each secret should carry a base64 iv.');
+            testCase.verifyTrue(isfield(entry, 'ciphertext'), ...
+                'Each secret should carry a base64 ciphertext.');
+        end
+
     end
 
     methods (Static, Access = private)
