@@ -19,8 +19,10 @@ classdef dir < ndi.dataset
             %
             if nargin==1
                 path_name = reference;
+                ndi.dataset.dir.mustNotBeSession(path_name);
                 ndi_dataset_dir_obj.session = ndi.session.dir(path_name);
             elseif nargin==2
+                ndi.dataset.dir.mustNotBeSession(path_name);
                 ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
             elseif nargin==3 % hidden third option
                 if iscell(docs) && isempty(docs)
@@ -92,6 +94,34 @@ classdef dir < ndi.dataset
             ndi_dataset_dir_obj.session.setObjectTypeMarker('dataset');
         end % dir(), creator
     end % methods
+
+    methods (Static, Access = protected)
+        function mustNotBeSession(path)
+            % MUSTNOTBESESSION - error if PATH holds a plain session, not a dataset
+            %
+            % ndi.dataset.dir.mustNotBeSession(PATH)
+            %
+            % Throws an error if PATH is a directory that holds a standalone
+            % ndi.session rather than an ndi.dataset, as determined by the fast
+            % on-disk marker inspected by ndi.session.dir.directorytype. This guards
+            % the ndi.dataset.dir constructor against silently opening a session as a
+            % dataset (which would otherwise succeed by falling back to the session's
+            % own 'session' document and would relabel the directory as a dataset).
+            %
+            % Only a directory explicitly marked 'session' is rejected. A directory
+            % marked 'dataset', a legacy directory whose type has not yet been
+            % recorded ('unknown'), and a not-yet-created directory ('none') are all
+            % allowed, so this never blocks opening a real (including empty or legacy)
+            % dataset or creating a new one.
+            %
+            % See also: ndi.session.dir.directorytype
+            if strcmp(ndi.session.dir.directorytype(path),'session')
+                error('NDI:dataset:dir:NotADataset', ...
+                    ['The directory ''' char(path) ''' holds an ndi.session, not an ' ...
+                    'ndi.dataset. Open it with ndi.session.dir instead.']);
+            end
+        end % mustNotBeSession()
+    end % methods (Static, Access = protected)
 
     methods (Static)
         function b = exists(path)
