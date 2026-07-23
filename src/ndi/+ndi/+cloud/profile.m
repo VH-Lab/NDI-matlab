@@ -326,6 +326,11 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             cipher.init(javax.crypto.Cipher.DECRYPT_MODE, keySpec, ivSpec);
             plain = typecast(cipher.doFinal(ct), 'int8');
             value = native2unicode(typecast(plain, 'uint8'), 'UTF-8');
+            % cipher.doFinal returns a Java byte[], which MATLAB imports as a
+            % COLUMN vector, so native2unicode yields a column char. Force a
+            % row so the AES backend returns a password with the same shape
+            % (1xN char) as the memory and vault backends.
+            value = reshape(value, 1, []);
         end
 
         function aesRemoveSecret(filename, key)
