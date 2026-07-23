@@ -612,7 +612,6 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         function p = datasetPath(~, ds)
             %DATASETPATH Best-effort local path of a dataset, '' if none.
-            p = '';
             try
                 p = char(ds.path);
             catch
