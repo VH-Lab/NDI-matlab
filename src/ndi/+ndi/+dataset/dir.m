@@ -102,20 +102,55 @@ classdef dir < ndi.dataset
             % ndi.dataset.dir.mustNotBeSession(PATH)
             %
             % Throws an error if PATH is a directory that holds a standalone
-            % ndi.session rather than an ndi.dataset, as determined by the fast
-            % on-disk marker inspected by ndi.session.dir.directorytype. This guards
-            % the ndi.dataset.dir constructor against silently opening a session as a
+            % ndi.session rather than an ndi.dataset. This guards the
+            % ndi.dataset.dir constructor against silently opening a session as a
             % dataset (which would otherwise succeed by falling back to the session's
-            % own 'session' document and would relabel the directory as a dataset).
+            % own 'session' document and would then relabel the directory as a
+            % dataset).
             %
-            % Only a directory explicitly marked 'session' is rejected. A directory
-            % marked 'dataset', a legacy directory whose type has not yet been
-            % recorded ('unknown'), and a not-yet-created directory ('none') are all
-            % allowed, so this never blocks opening a real (including empty or legacy)
-            % dataset or creating a new one.
+            % The check uses the fast on-disk marker inspected by
+            % ndi.session.dir.directorytype:
             %
-            % See also: ndi.session.dir.directorytype
-            if strcmp(ndi.session.dir.directorytype(path),'session')
+            %   'dataset' - allowed (this is a dataset).
+            %   'none'    - allowed (not yet an NDI directory; a new dataset can be
+            %               created here).
+            %   'session' - rejected.
+            %   'unknown' - a legacy NDI directory whose type was never recorded.
+            %               Because a marked session is caught but an *unmarked* one
+            %               would slip through and be mislabeled, an 'unknown'
+            %               directory is investigated before deciding: it is opened
+            %               once as an ndi.session.dir, whose
+            %               updateObjectTypeMarker inspects the directory's documents
+            %               for dataset bookkeeping ('session_in_a_dataset' or the
+            %               legacy 'dataset_session_info') and records 'dataset' when
+            %               present, otherwise 'session'. The recorded type is then
+            %               re-read and applied. A populated legacy dataset is thus
+            %               correctly identified and allowed; an unmarked plain
+            %               session is caught here rather than mislabeled.
+            %
+            % Fundamental limitation: an empty dataset stores no bookkeeping
+            % documents and so is indistinguishable on disk from a plain session.
+            % An empty *legacy* dataset (created empty before markers existed and
+            % never opened since) is therefore recorded as a session and rejected;
+            % open it once with ndi.session.dir, or re-create it, to record its
+            % type. Empty datasets created normally are marked 'dataset' by the
+            % ndi.dataset.dir constructor and are unaffected.
+            %
+            % See also: ndi.session.dir.directorytype,
+            %   ndi.session.dir/updateObjectTypeMarker
+            t = ndi.session.dir.directorytype(path);
+            if strcmp(t,'unknown')
+                % Migrate the marker by opening the directory once as a session,
+                % then re-read the now-recorded type. If it cannot be opened to be
+                % investigated, stay lenient (leave it 'unknown', i.e. allowed).
+                try
+                    ndi.session.dir(path);
+                    t = ndi.session.dir.directorytype(path);
+                catch
+                    t = 'unknown';
+                end
+            end
+            if strcmp(t,'session')
                 error('NDI:dataset:dir:NotADataset', ...
                     ['The directory ''' char(path) ''' holds an ndi.session, not an ' ...
                     'ndi.dataset. Open it with ndi.session.dir instead.']);
