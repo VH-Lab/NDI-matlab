@@ -125,10 +125,10 @@ classdef pyraview < ndi.gui.app.sessionApp
                 'HorizontalAlignment', 'left', 'Tag', 'BandText', ...
                 'FontWeight', 'bold', 'FontSize', 14);
 
-            uicontrol(fig, 'Style', 'popupmenu', 'String', {'low', 'high'}, ...
+            uicontrol(fig, 'Style', 'popupmenu', 'String', {'low', 'high', 'all'}, ...
                 'Units', 'pixels', 'Position', [10 10 80 20], ...
                 'Tag', 'BandMenu', 'Callback', callback, 'Value', 2, ...
-                'FontSize', 14); % Default high
+                'FontSize', 14); % Default high ('all' passes unfiltered data)
 
             % Edit: Channel Spacing
             uicontrol(fig, 'Style', 'text', 'String', 'Spacing:', ...
@@ -465,8 +465,12 @@ classdef pyraview < ndi.gui.app.sessionApp
                 try
                     doc_props = obj.current_doc.document_properties;
                     match_epoch = strcmp(doc_props.epochid.epochid, epoch_str);
-                    if isfield(doc_props, 'filter') && isfield(doc_props.filter, 'type')
-                        match_band = strcmp(doc_props.filter.type, band_str);
+                    % Match on the filter label, which carries the user-facing
+                    % band ('low', 'high', 'all') for every band; filter.type is
+                    % the schema vocabulary ('low', 'high', 'none') and is 'none'
+                    % for the unfiltered 'all' band.
+                    if isfield(doc_props, 'filter') && isfield(doc_props.filter, 'label')
+                        match_band = strcmp(doc_props.filter.label, band_str);
                     else
                         match_band = false;
                     end
@@ -485,7 +489,7 @@ classdef pyraview < ndi.gui.app.sessionApp
                 q1 = ndi.query('', 'isa', 'pyraview');
                 q2 = ndi.query('', 'depends_on', 'element_id', probe.id());
                 q3 = ndi.query('epochid.epochid', 'exact_string', epoch_str);
-                q4 = ndi.query('filter.type', 'exact_string', band_str);
+                q4 = ndi.query('filter.label', 'exact_string', band_str);
                 q = q1 & q2 & q3 & q4;
                 docs = session.database_search(q);
 
