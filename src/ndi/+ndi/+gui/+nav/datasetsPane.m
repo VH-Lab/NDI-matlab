@@ -21,8 +21,10 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   they survive a Refresh.
 %
 %   The body is a scrollable uitree. Its top-level nodes are datasets:
-%       * The first node is always "Unaffiliated"; its children are the
-%         ndi.session objects found in the user's base workspace.
+%       * The first node is always "Unaffiliated sessions"; its children
+%         are the sessions the user has created or opened via the node's
+%         own context menu (see below) plus the ndi.session objects found
+%         in the user's base workspace.
 %       * The remaining nodes are the ndi.dataset objects found in the
 %         base workspace plus any datasets discovered on the dataset
 %         search path (path discovery is a v1 stub). Each is labelled by
@@ -34,6 +36,16 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   pane is never shorter than MinHeight (100 px). It is the navigator's
 %   elastic pane: it grows and shrinks to fill the window as the window is
 %   resized or other panes are collapsed/expanded (see ndi.gui.navigator).
+%
+%   Right-clicking the "Unaffiliated sessions" node opens a context menu:
+%       Create new session... prompts for a reference and a folder and
+%                             creates an ndi.session.dir there, after
+%                             checking the folder does not already hold an
+%                             NDI session or dataset.
+%       Open session...       picks an existing NDI session directory (via
+%                             ndi.util.chooseSession) and opens it.
+%   Either way the session is added to the Unaffiliated list and survives a
+%   Refresh.
 %
 %   Right-clicking a session node opens a context menu with two submenus,
 %   in alphabetical order:
@@ -70,6 +82,8 @@ classdef datasetsPane < ndi.gui.nav.pane
         NodeMenus = {}                   % per-session-node uicontextmenu handles
         AddMenu                          % "+" add-dataset uicontextmenu (lazy)
         UserDatasets = {}                % datasets the user added via "+"
+        UserSessions = {}                % sessions the user created/opened via
+                                         %   the "Unaffiliated sessions" menu
     end
 
     properties (Constant, Access = private)
@@ -162,11 +176,14 @@ classdef datasetsPane < ndi.gui.nav.pane
             % Discover the session apps once and reuse for every node.
             apps = obj.sessionApps();
 
-            % --- Unaffiliated: ndi.session objects in the base workspace ---
+            % --- Unaffiliated: ndi.session objects the user has created or
+            %     opened here, plus those found in the base workspace. The
+            %     node carries its own context menu (Create/Open session). ---
             unaffiliated = uitreenode(obj.Tree, ...
                 'Text',     'Unaffiliated sessions', ...
                 'NodeData', struct('kind', 'dataset'));
-            sessions = obj.scanWorkspace('ndi.session');
+            obj.attachUnaffiliatedMenu(unaffiliated);
+            sessions = obj.unaffiliatedSessions();
             for i = 1:numel(sessions)
                 node = uitreenode(unaffiliated, ...
                     'Text',     obj.sessionLabel(sessions{i}), ...
@@ -270,6 +287,46 @@ classdef datasetsPane < ndi.gui.nav.pane
                 end
             end
             obj.NodeMenus = {};
+        end
+
+        function attachUnaffiliatedMenu(obj, node)
+            %ATTACHUNAFFILIATEDMENU Context menu for the "Unaffiliated sessions" node.
+            %   Lets the user create a brand-new session (reference + folder)
+            %   or open an existing NDI session directory; either is added to
+            %   the unaffiliated list. Registered in NodeMenus so it is cleaned
+            %   up on the next tree build alongside the per-session menus.
+            cm = uicontextmenu(obj.Navigator.Figure);
+            uimenu(cm, 'Text', 'Create new session...', ...
+                'MenuSelectedFcn', @(~,~) obj.newSession());
+            uimenu(cm, 'Text', 'Open session...', ...
+                'MenuSelectedFcn', @(~,~) obj.openSession());
+            node.ContextMenu       = cm;
+            obj.NodeMenus{end + 1} = cm;
+        end
+
+        function sessions = unaffiliatedSessions(obj)
+            %UNAFFILIATEDSESSIONS Sessions shown under "Unaffiliated sessions".
+            %   The user-added sessions (created/opened via the node's menu)
+            %   plus the ndi.session objects found in the base workspace, with
+            %   workspace duplicates of an already-listed path removed so a
+            %   session is not shown twice.
+            sessions = obj.UserSessions;
+            ws = obj.scanWorkspace('ndi.session');
+            for i = 1:numel(ws)
+                p = obj.sessionPath(ws{i});
+                isDup = false;
+                if ~isempty(p)
+                    for j = 1:numel(sessions)
+                        if strcmp(obj.sessionPath(sessions{j}), p)
+                            isDup = true;
+                            break;
+                        end
+                    end
+                end
+                if ~isDup
+                    sessions{end + 1} = ws{i}; %#ok<AGROW>
+                end
+            end
         end
 
         function launchApp(obj, app, node)
@@ -580,6 +637,90 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.refresh();
         end
 
+        %% "Unaffiliated sessions" node menu and its actions
+
+        function newSession(obj)
+            %NEWSESSION Create a new ndi.session.dir from a reference + folder.
+            %   Refuses to create on top of a folder that already holds an NDI
+            %   session or dataset (or an NDI directory of unrecorded type), so
+            %   an existing object is never clobbered.
+            fig = obj.Navigator.Figure;
+            answer = inputdlg('Reference (name) for the new session:', ...
+                'Create new session', [1 60]);
+            if isempty(answer)
+                return;   % cancelled
+            end
+            reference = strtrim(answer{1});
+            if isempty(reference)
+                uialert(fig, 'A session reference is required.', 'Create new session');
+                return;
+            end
+            folder = uigetdir('', 'Choose a folder for the new session');
+            if isequal(folder, 0)
+                return;   % cancelled
+            end
+            t = ndi.session.dir.directorytype(folder);
+            if ~strcmp(t, 'none')
+                uialert(fig, ...
+                    ndi.gui.nav.datasetsPane.occupiedFolderMessage(t), ...
+                    'Create new session');
+                return;
+            end
+            try
+                s = ndi.session.dir(reference, folder);
+            catch ME
+                uialert(fig, ['Could not create the session: ' ME.message], ...
+                    'Create new session');
+                return;
+            end
+            obj.addUserSession(s);
+        end
+
+        function openSession(obj)
+            %OPENSESSION Open an existing NDI session directory and list it.
+            %   Uses ndi.util.chooseSession, which only returns a folder once
+            %   it is confirmed to be an NDI session (not a dataset).
+            fig = obj.Navigator.Figure;
+            pathname = ndi.util.chooseSession( ...
+                'Title', 'Open an NDI session directory');
+            if isempty(pathname)
+                return;   % cancelled
+            end
+            try
+                s = ndi.session.dir(pathname);
+            catch ME
+                uialert(fig, ['Could not open the session: ' ME.message], ...
+                    'Open session');
+                return;
+            end
+            obj.addUserSession(s);
+        end
+
+        function addUserSession(obj, s)
+            %ADDUSERSESSION Add S to the user session list (dedup by path), refresh.
+            if isempty(s)
+                return;
+            end
+            newPath = obj.sessionPath(s);
+            for i = 1:numel(obj.UserSessions)
+                if ~isempty(newPath) && ...
+                        strcmp(obj.sessionPath(obj.UserSessions{i}), newPath)
+                    return;   % already in the list
+                end
+            end
+            obj.UserSessions{end+1} = s;
+            obj.refresh();
+        end
+
+        function p = sessionPath(~, s)
+            %SESSIONPATH Best-effort local path of a session, '' if none.
+            try
+                p = char(s.path);
+            catch
+                p = '';
+            end
+        end
+
         function [labels, ids] = fetchCloudDatasets(~, isPublic)
             %FETCHCLOUDDATASETS Cloud dataset display labels and their ids.
             %   Public uses the published catalogue; private authenticates to
@@ -621,6 +762,22 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static, Access = private)
+        function msg = occupiedFolderMessage(t)
+            %OCCUPIEDFOLDERMESSAGE Explain why a folder cannot host a new session.
+            %   T is the ndi.session.dir.directorytype of the chosen folder,
+            %   which the caller has already determined is not 'none'.
+            switch t
+                case 'session'
+                    what = 'an NDI session';
+                case 'dataset'
+                    what = 'an NDI dataset';
+                otherwise   % 'unknown' -- an NDI directory of unrecorded type
+                    what = 'an NDI directory';
+            end
+            msg = ['That folder already contains ' what '. Please choose an ' ...
+                   'empty folder for the new session.'];
+        end
+
         function list = normalizeCloudList(answer)
             %NORMALIZECLOUDLIST Cloud response -> cell array of dataset structs.
             %   Accepts the modern wrapper shape (answer.datasets) or an
