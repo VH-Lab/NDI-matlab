@@ -2,8 +2,23 @@ classdef datasetsPane < ndi.gui.nav.pane
 %NDI.GUI.NAV.DATASETSPANE Collapsible, resizable "Datasets" pane.
 %
 %   The Datasets pane can be collapsed to its header row via the header
-%   disclosure triangle. Its header also carries a right-justified "Paths"
-%   button for editing the dataset search path (a placeholder in v1).
+%   disclosure triangle. Its header also carries, right-justified, a "+"
+%   button and a "Refresh" button.
+%
+%   The "+" button opens an add-dataset menu (a uicontextmenu popped
+%   beneath the button) with:
+%       New blank dataset...          prompts for a reference and a folder
+%                                     and creates an ndi.dataset.dir there.
+%       Open dataset...               prompts for a folder and opens the
+%                                     ndi.dataset.dir it contains.
+%       Open Public Cloud dataset...  lists the NDI Cloud published
+%                                     catalogue; the chosen dataset's
+%                                     documents are downloaded to a folder.
+%       Open Private Cloud dataset... authenticates, lists the user's own
+%                                     NDI Cloud datasets, and downloads the
+%                                     chosen dataset's documents to a folder.
+%   Added datasets are held for the session and merged into the tree, so
+%   they survive a Refresh.
 %
 %   The body is a scrollable uitree. Its top-level nodes are datasets:
 %       * The first node is always "Unaffiliated"; its children are the
@@ -53,6 +68,8 @@ classdef datasetsPane < ndi.gui.nav.pane
 
     properties (Access = private)
         NodeMenus = {}                   % per-session-node uicontextmenu handles
+        AddMenu                          % "+" add-dataset uicontextmenu (lazy)
+        UserDatasets = {}                % datasets the user added via "+"
     end
 
     properties (Constant, Access = private)
@@ -99,22 +116,26 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function buildHeaderRight(obj, parent)
-            % Two buttons sit close together on the right: Paths | Refresh.
+            % Two controls sit on the right: [+] | Refresh. The "+" opens the
+            % add-dataset menu; it is a compact fixed-width square and Refresh
+            % takes the remaining width.
             group = uigridlayout(parent, [1 2]);
             group.Layout.Row      = 1;
             group.Layout.Column   = 3;
-            group.ColumnWidth     = {'1x', '1x'};
+            group.ColumnWidth     = {26, '1x'};
             group.RowHeight       = {'1x'};
             group.Padding         = [0 0 0 0];
             group.ColumnSpacing   = 4;
             group.BackgroundColor = ndi.gui.cloudColors().darkBlue;
 
-            paths = uibutton(group, ...
-                'Text',            'Paths', ...
-                'ButtonPushedFcn', @(~,~) obj.openPathsEditor());
-            paths.Layout.Row    = 1;
-            paths.Layout.Column = 1;
-            obj.accentButton(paths);
+            plus = uibutton(group, ...
+                'Text',            '+', ...
+                'FontWeight',      'bold', ...
+                'Tooltip',         'Add a dataset to the list', ...
+                'ButtonPushedFcn', @(~,~) obj.onAddButton());
+            plus.Layout.Row    = 1;
+            plus.Layout.Column = 1;
+            obj.accentButton(plus);
 
             refresh = uibutton(group, ...
                 'Text',            'Refresh', ...
@@ -125,7 +146,7 @@ classdef datasetsPane < ndi.gui.nav.pane
         end
 
         function w = rightWidth(~)
-            w = 128;
+            w = 108;
         end
     end
 
@@ -153,8 +174,9 @@ classdef datasetsPane < ndi.gui.nav.pane
                 obj.attachSessionMenu(node, apps);
             end
 
-            % --- Datasets: ndi.dataset objects on the search path + workspace ---
-            datasets = [obj.searchPathDatasets(), obj.scanWorkspace('ndi.dataset')];
+            % --- Datasets: user-added ("+") + search path + workspace ---
+            datasets = [obj.UserDatasets, obj.searchPathDatasets(), ...
+                obj.scanWorkspace('ndi.dataset')];
             for i = 1:numel(datasets)
                 ds       = datasets{i};
                 node = uitreenode(obj.Tree, ...
@@ -345,18 +367,26 @@ classdef datasetsPane < ndi.gui.nav.pane
                     'Could not open the session for this node.', 'Ingestion Status');
                 return;
             end
-            status = obj.computeSessionStatus(s, node.NodeData);
+            [status, err] = obj.computeSessionStatus(s, node.NodeData);
             obj.applyNodeStatus(node, status);
+            if ~isempty(err)
+                uialert(obj.Navigator.Figure, ...
+                    ['Could not determine the ingestion status of this ' ...
+                     'session: ' err.message], 'Ingestion Status');
+            end
         end
 
-        function status = computeSessionStatus(~, s, nd)
+        function [status, err] = computeSessionStatus(~, s, nd)
             %COMPUTESESSIONSTATUS Ingestion state for a session node.
             %   For a session inside a dataset the state is ingested vs
             %   linked (is_linked in the session_in_a_dataset document); for
             %   a stand-alone on-disk session it is ingested vs none (are
             %   there file navigators left to ingest?). Any failure leaves
-            %   the state 'unknown', which draws no badge.
+            %   the state 'unknown', which draws no badge, and returns the
+            %   caught MException as ERR so the caller can report it rather
+            %   than failing silently.
             status = struct('ingestion', 'unknown');
+            err = [];
             inDataset = isfield(nd, 'dataset') && ~isempty(nd.dataset);
             try
                 if inDataset
@@ -372,8 +402,9 @@ classdef datasetsPane < ndi.gui.nav.pane
                         status.ingestion = 'none';
                     end
                 end
-            catch
+            catch ME
                 status.ingestion = 'unknown';
+                err = ME;
             end
         end
 
@@ -404,22 +435,241 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
         end
 
-        function openPathsEditor(obj)
-            %OPENPATHSEDITOR Placeholder window for editing search paths.
-            f = uifigure('Name', 'Dataset Search Paths', ...
-                'Position', [150 150 380 160], ...
-                'Color',    ndi.gui.cloudColors().offWhite, ...
-                'Tag',      'ndiNavigatorDatasetPaths');
-            g = uigridlayout(f, [1 1]);
-            uilabel(g, ...
-                'Text', ['Dataset search-path editor (placeholder).' newline ...
-                         'This will let you set where the navigator looks' newline ...
-                         'for datasets.'], ...
-                'HorizontalAlignment', 'center', ...
-                'VerticalAlignment',   'center');
-            % Reference obj so future versions can push paths back into the
-            % pane; unused today but keeps the callback signature stable.
-            f.UserData = obj;
+        %% "+" add-dataset menu and its actions
+
+        function onAddButton(obj)
+            %ONADDBUTTON Pop the add-dataset menu beneath the "+" button.
+            %   The menu is built once and reused; it opens at the current
+            %   pointer location so it emerges from the "+" that was clicked.
+            if isempty(obj.AddMenu) || ~isvalid(obj.AddMenu)
+                obj.AddMenu = obj.buildAddMenu();
+            end
+            cp = obj.Navigator.Figure.CurrentPoint;
+            open(obj.AddMenu, cp(1), cp(2));
+        end
+
+        function cm = buildAddMenu(obj)
+            %BUILDADDMENU Construct the "+" context menu (local then cloud).
+            cm = uicontextmenu(obj.Navigator.Figure);
+            uimenu(cm, 'Text', 'New blank dataset...', ...
+                'MenuSelectedFcn', @(~,~) obj.newBlankDataset());
+            uimenu(cm, 'Text', 'Open dataset...', ...
+                'MenuSelectedFcn', @(~,~) obj.openDataset());
+            uimenu(cm, 'Text', 'Open Public Cloud dataset...', ...
+                'Separator', 'on', ...
+                'MenuSelectedFcn', @(~,~) obj.openCloudDataset(true));
+            uimenu(cm, 'Text', 'Open Private Cloud dataset...', ...
+                'MenuSelectedFcn', @(~,~) obj.openCloudDataset(false));
+        end
+
+        function newBlankDataset(obj)
+            %NEWBLANKDATASET Create a new ndi.dataset.dir from a reference + folder.
+            fig = obj.Navigator.Figure;
+            answer = inputdlg('Reference (name) for the new dataset:', ...
+                'New blank dataset', [1 60]);
+            if isempty(answer)
+                return;   % cancelled
+            end
+            reference = strtrim(answer{1});
+            if isempty(reference)
+                uialert(fig, 'A dataset reference is required.', 'New blank dataset');
+                return;
+            end
+            folder = uigetdir('', 'Choose a folder for the new dataset');
+            if isequal(folder, 0)
+                return;   % cancelled
+            end
+            try
+                ds = ndi.dataset.dir(reference, folder);
+            catch ME
+                uialert(fig, ['Could not create the dataset: ' ME.message], ...
+                    'New blank dataset');
+                return;
+            end
+            obj.addUserDataset(ds);
+        end
+
+        function openDataset(obj)
+            %OPENDATASET Open an existing ndi.dataset.dir from a folder.
+            fig = obj.Navigator.Figure;
+            folder = uigetdir('', 'Open an existing dataset folder');
+            if isequal(folder, 0)
+                return;   % cancelled
+            end
+            try
+                ds = ndi.dataset.dir(folder);
+            catch ME
+                uialert(fig, ['Could not open the dataset: ' ME.message], ...
+                    'Open dataset');
+                return;
+            end
+            obj.addUserDataset(ds);
+        end
+
+        function openCloudDataset(obj, isPublic)
+            %OPENCLOUDDATASET Browse NDI Cloud, download (documents-only), and add.
+            %   ISPUBLIC selects the published catalogue; otherwise the
+            %   user's own (private) datasets are listed after authenticating.
+            fig = obj.Navigator.Figure;
+            if isPublic
+                titleStr = 'Open Public Cloud dataset';
+            else
+                titleStr = 'Open Private Cloud dataset';
+            end
+
+            % 1. Fetch the list of datasets under an indeterminate progress dialog.
+            dlg = uiprogressdlg(fig, 'Title', titleStr, ...
+                'Message', 'Contacting NDI Cloud...', 'Indeterminate', 'on');
+            try
+                [labels, ids] = obj.fetchCloudDatasets(isPublic);
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, titleStr);
+                return;
+            end
+            delete(dlg);
+
+            if isempty(labels)
+                uialert(fig, 'No datasets were found.', titleStr);
+                return;
+            end
+
+            % 2. Let the user pick one (readable 14-point modal picker).
+            [sel, ok] = ndi.util.ListDialog.choose(labels, ...
+                'Title', titleStr, 'Prompt', 'Select a dataset to open:', ...
+                'FontSize', 14, 'Parent', fig);
+            if ~ok
+                return;   % cancelled
+            end
+            cloudId = ids{sel};
+
+            % 3. Choose a local folder to download into.
+            folder = uigetdir('', 'Choose a folder to download the dataset into');
+            if isequal(folder, 0)
+                return;   % cancelled
+            end
+
+            % 4. Download documents only (SyncFiles=false) under a progress dialog.
+            dlg = uiprogressdlg(fig, 'Title', titleStr, ...
+                'Message', 'Downloading dataset documents...', 'Indeterminate', 'on');
+            try
+                ds = ndi.cloud.downloadDataset(cloudId, folder, ...
+                    'SyncFiles', false, 'Verbose', false);
+            catch ME
+                delete(dlg);
+                uialert(fig, ['Download failed: ' ME.message], titleStr);
+                return;
+            end
+            delete(dlg);
+            obj.addUserDataset(ds);
+        end
+
+        function addUserDataset(obj, ds)
+            %ADDUSERDATASET Add DS to the user list (dedup by path) and refresh.
+            if isempty(ds)
+                return;
+            end
+            newPath = obj.datasetPath(ds);
+            for i = 1:numel(obj.UserDatasets)
+                if ~isempty(newPath) && ...
+                        strcmp(obj.datasetPath(obj.UserDatasets{i}), newPath)
+                    return;   % already in the list
+                end
+            end
+            obj.UserDatasets{end+1} = ds;
+            obj.refresh();
+        end
+
+        function [labels, ids] = fetchCloudDatasets(~, isPublic)
+            %FETCHCLOUDDATASETS Cloud dataset display labels and their ids.
+            %   Public uses the published catalogue; private authenticates to
+            %   obtain the organization id, then lists that org's datasets.
+            if isPublic
+                [b, answer] = ndi.cloud.api.datasets.getPublished();
+                if ~b
+                    error('Could not retrieve published datasets from NDI Cloud.');
+                end
+            else
+                [~, orgID] = ndi.cloud.authenticate();
+                [b, answer] = ndi.cloud.api.datasets.listDatasets( ...
+                    'cloudOrganizationID', orgID);
+                if ~b
+                    error('Could not retrieve your NDI Cloud datasets.');
+                end
+            end
+            list = ndi.gui.nav.datasetsPane.normalizeCloudList(answer);
+            labels = cell(1, numel(list));
+            ids    = cell(1, numel(list));
+            for i = 1:numel(list)
+                [ids{i}, labels{i}] = ...
+                    ndi.gui.nav.datasetsPane.cloudDatasetIdLabel(list{i});
+            end
+            % Drop any entries we could not extract an id for.
+            keep   = ~cellfun(@isempty, ids);
+            labels = labels(keep);
+            ids    = ids(keep);
+        end
+
+        function p = datasetPath(~, ds)
+            %DATASETPATH Best-effort local path of a dataset, '' if none.
+            try
+                p = char(ds.path);
+            catch
+                p = '';
+            end
+        end
+    end
+
+    methods (Static, Access = private)
+        function list = normalizeCloudList(answer)
+            %NORMALIZECLOUDLIST Cloud response -> cell array of dataset structs.
+            %   Accepts the modern wrapper shape (answer.datasets) or an
+            %   answer that is itself the array, and normalizes struct arrays
+            %   or cell arrays into a cell array of scalar structs.
+            list = {};
+            payload = answer;
+            if isstruct(answer) && isscalar(answer) && isfield(answer, 'datasets')
+                payload = answer.datasets;
+            end
+            if iscell(payload)
+                list = payload;
+            elseif isstruct(payload)
+                for i = 1:numel(payload)
+                    list{end+1} = payload(i); %#ok<AGROW>
+                end
+            end
+        end
+
+        function [id, label] = cloudDatasetIdLabel(d)
+            %CLOUDDATASETIDLABEL Extract (id, display label) from a dataset struct.
+            %   Field names vary across API versions ('id' vs '_id'/'x_id'),
+            %   so try several candidates; the label prefers a human name and
+            %   falls back to the id.
+            id    = ndi.gui.nav.datasetsPane.firstField(d, {'id', 'x_id', 'x_id_', 'datasetId'});
+            name  = ndi.gui.nav.datasetsPane.firstField(d, {'name', 'datasetName', 'branchName', 'reference'});
+            id    = char(id);
+            name  = char(name);
+            if isempty(name)
+                label = id;
+            elseif isempty(id)
+                label = name;
+            else
+                label = [name '  (' id ')'];
+            end
+        end
+
+        function v = firstField(d, names)
+            %FIRSTFIELD First non-empty value among candidate field NAMES.
+            v = '';
+            if ~isstruct(d)
+                return;
+            end
+            for i = 1:numel(names)
+                if isfield(d, names{i}) && ~isempty(d.(names{i}))
+                    v = d.(names{i});
+                    return;
+                end
+            end
         end
     end
 
@@ -522,9 +772,8 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         function datasets = searchPathDatasets()
             %SEARCHPATHDATASETS Datasets discovered on the search path.
-            %   v1 stub: search-path discovery is configured through the
-            %   Paths editor (a placeholder today), so nothing is returned
-            %   yet. Kept as a seam for later implementation.
+            %   v1 stub: search-path discovery is not configured yet, so
+            %   nothing is returned. Kept as a seam for later implementation.
             datasets = {};
         end
 

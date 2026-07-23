@@ -698,7 +698,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                     if isempty(ndi_filenavigator_obj.getepochingesteddoc(files)) % make sure we don't have one already
                         epochfiles_ingested_struct = struct;
                         epochfiles_ingested_struct.epoch_id = et(i).epoch_id;
-                        files = cat(1,{['epochid://' et(i).epoch_id]},files);
+                        files = cat(1,{['epochid://' et(i).epoch_id]},files(:));
                         epochfiles_ingested_struct.files = files;
                         epochfiles_ingested_struct.epochprobemap = et(i).epochprobemap.serialize();
                         docs_out{end+1} = ndi.document('epochfiles_ingested',...

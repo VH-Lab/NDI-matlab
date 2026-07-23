@@ -8,13 +8,20 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %   each profile points at a secret keyed by ['NDI Cloud ' UID] in a
 %   pluggable backend.
 %
-%   Backends, chosen automatically on first use:
+%   Backends:
 %
-%       vault  - MATLAB's setSecret/getSecret (R2024a+). Preferred.
-%       aes    - AES-128/CBC encrypted file in prefdir, used when the
-%                vault is not available. The key is derived from
-%                SHA-256([hostname username 'NDI Cloud']) so the file
-%                is reproducible only on the machine that wrote it.
+%       aes    - AES-128/CBC encrypted file in prefdir. This is the
+%                default. The key is derived from
+%                SHA-256([hostname username 'NDI Cloud']) so the file is
+%                reproducible only on the machine and user that wrote it
+%                (and, being a standard AES-128-CBC/PKCS7 + JSON format,
+%                is readable from other languages such as ndi-python on
+%                that same host+user).
+%       vault  - MATLAB's setSecret/getSecret (R2024a+). Read-only here:
+%                MATLAB's setSecret is interactive and takes only a secret
+%                name, so it cannot persist a password supplied in code.
+%                Not auto-selected; forcing it via useBackend errors on
+%                write. Kept as a seam only.
 %       memory - in-memory containers.Map. Reserved for tests; use
 %                ndi.cloud.profile.useBackend('memory') to opt in.
 %
@@ -171,7 +178,18 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         function setSecretInternal(obj, key, value)
             switch obj.Backend
                 case 'vault'
-                    setSecret(key, value);
+                    % MATLAB's setSecret is interactive: it accepts only the
+                    % secret NAME and prompts the user for the value, so it
+                    % cannot persist a value supplied in code. The profile
+                    % system always has the password in hand, so the vault is
+                    % unsupported for writing here; the default backend is
+                    % 'aes'. (Fail clearly rather than with the opaque
+                    % "requires exactly 1 positional input" from setSecret.)
+                    error('NDI:cloud:profile:vaultWriteUnsupported', ...
+                        ['The MATLAB vault backend cannot store a secret ' ...
+                         'value supplied in code (its setSecret prompts ' ...
+                         'interactively). Use the ''aes'' backend, which is ' ...
+                         'the default.']);
                 case 'aes'
                     ndi.cloud.profile.aesWriteSecret( ...
                         obj.SecretsFilename, key, value);
@@ -248,13 +266,14 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function backend = detectBackend()
-            if ~isempty(which('setSecret')) ...
-                    && ~isempty(which('getSecret')) ...
-                    && ~isempty(which('isSecret'))
-                backend = 'vault';
-            else
-                backend = 'aes';
-            end
+            % The AES encrypted-file backend is the default. MATLAB's vault
+            % setSecret is interactive and accepts only a secret NAME (it
+            % prompts for the value), so it cannot persist a password the
+            % caller already holds -- which is exactly what the profile
+            % system does. The AES file also has a documented, standard
+            % format (AES-128-CBC/PKCS7 + JSON) that is reproducible from
+            % other languages (e.g. ndi-python) on the same host and user.
+            backend = 'aes';
         end
 
         function key = aesKeyBytes()
@@ -307,6 +326,11 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             cipher.init(javax.crypto.Cipher.DECRYPT_MODE, keySpec, ivSpec);
             plain = typecast(cipher.doFinal(ct), 'int8');
             value = native2unicode(typecast(plain, 'uint8'), 'UTF-8');
+            % cipher.doFinal returns a Java byte[], which MATLAB imports as a
+            % COLUMN vector, so native2unicode yields a column char. Force a
+            % row so the AES backend returns a password with the same shape
+            % (1xN char) as the memory and vault backends.
+            value = reshape(value, 1, []);
         end
 
         function aesRemoveSecret(filename, key)
@@ -345,9 +369,9 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         %RESTRICTTOOWNER Best-effort chmod 600 (owner read/write only) on POSIX.
         %   On Windows this is a no-op (NTFS ACL inheritance, no umask
         %   equivalent). Failures are non-fatal (secrets are still AES-encrypted,
-        %   so this is defense in depth) but are surfaced as a warning rather
-        %   than swallowed, so a silent failure cannot leave the file
-        %   world-readable with no signal.
+        %   so this is defense in depth) but a real failure is surfaced as a
+        %   warning rather than swallowed, so it cannot silently leave the file
+        %   world-readable.
             if ispc || ~isfile(filename)
                 return
             end
@@ -356,17 +380,14 @@ classdef profile < matlab.mixin.CustomDisplay & handle
                 perms = java.util.HashSet();
                 perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_READ);
                 perms.add(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE);
+                % setPosixFilePermissions throws if it cannot apply the mode, so
+                % reaching the next line means the restriction took effect. We do
+                % NOT read it back to confirm: getPosixFilePermissions is a Java
+                % varargs method (Path, LinkOption...), which MATLAB's Java bridge
+                % cannot resolve when the trailing array is omitted -- that
+                % readback threw and produced a misleading "may be readable"
+                % warning even though the file had just been restricted.
                 java.nio.file.Files.setPosixFilePermissions(jpath, perms);
-                % Confirm the restriction actually took effect (exactly rw-------).
-                actual = java.nio.file.Files.getPosixFilePermissions(jpath);
-                ok = actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_READ) ...
-                    && actual.contains(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE) ...
-                    && actual.size() == 2;
-                if ~ok
-                    warning('NDI:cloud:profile:restrictToOwnerFailed', ...
-                        'Could not restrict %s to owner-only permissions; it may be readable by other users.', ...
-                        filename);
-                end
             catch ME
                 % An UnsupportedOperationException means the platform/JVM has no
                 % POSIX permission view (e.g. a non-POSIX filesystem) -- an

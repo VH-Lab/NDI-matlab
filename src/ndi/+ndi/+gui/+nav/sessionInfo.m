@@ -15,7 +15,8 @@ classdef sessionInfo < handle
 %                     epoch id. Each epoch of a DAQ system is one row. A
 %                     DAQ system with no epochs occupies a single row with
 %                     blank epoch number and epoch id entries.
-%       Elements    - a two-column table: element name | element type.
+%       Elements    - a two-column table: element string (name and
+%                     reference, from ndi.element/elementstring) | type.
 %       Subjects    - a table of the session's subjects (local identifier
 %                     and description).
 %
@@ -71,7 +72,7 @@ classdef sessionInfo < handle
             obj.sectionLabel(g, 3, 'Elements');
             elemTable = uitable(g);
             elemTable.Layout.Row      = 4;
-            elemTable.ColumnName      = {'Element name', 'Element type'};
+            elemTable.ColumnName      = {'Element', 'Element type'};
             elemTable.ColumnWidth     = {'1x', '1x'};
             elemTable.RowName         = {};
             elemTable.Data            = obj.elementRows();
@@ -93,7 +94,7 @@ classdef sessionInfo < handle
             %   text, matching the navigator's panes).
             c = ndi.gui.cloudColors();
             t.BackgroundColor = c.white;
-            t.FontColor       = c.darkBlue;
+            t.ForegroundColor = c.darkBlue;   % uitable uses ForegroundColor, not FontColor
         end
 
         function sectionLabel(~, parent, row, text)
@@ -145,7 +146,10 @@ classdef sessionInfo < handle
         end
 
         function rows = elementRows(obj)
-            %ELEMENTROWS Nx2 cell of {name, type} for the session elements.
+            %ELEMENTROWS Nx2 cell of {element string, type} for the elements.
+            %   The first column uses ndi.element/elementstring ("name |
+            %   reference") so the element reference is shown, not just the
+            %   name.
             rows = cell(0, 2);
             try
                 elements = obj.Session.getelements();
@@ -157,7 +161,14 @@ classdef sessionInfo < handle
                 nm = '';
                 ty = '';
                 try
-                    nm = char(e.name);
+                    nm = char(e.elementstring());
+                catch
+                    try
+                        nm = char(e.name);   % fallback if elementstring fails
+                    catch
+                    end
+                end
+                try
                     ty = char(e.type);
                 catch
                 end
