@@ -70,6 +70,22 @@ function probe(S, probe, options)
 % |                          |   Defaults to '2.5' (the assumption for MATLAB data).|
 % | waveform_source          | 'templates' (amplitude-weighted average of the      |
 % |   ('templates')          |   contributing Kilosort templates) or 'none'.       |
+% | RecalculateMeanWaveforms | If true (and waveform_source is 'templates'),       |
+% |   (true)                 |   recompute each mean waveform by reading a wide    |
+% |                          |   window directly from the raw binary recording     |
+% |                          |   instead of using the (~2 ms) Kilosort templates.  |
+% |                          |   Falls back to templates (with a warning) if the   |
+% |                          |   binary cannot be located.                         |
+% | RecalculateMeanWaveformT0| Window start relative to each spike, in seconds,    |
+% |   (-0.005)               |   used when recalculating from the binary.          |
+% | RecalculateMeanWaveformT1| Window end relative to each spike, in seconds,      |
+% |   (+0.005)               |   used when recalculating from the binary.          |
+% | RecalculateMeanWaveform- | Maximum number of spikes averaged per cluster when  |
+% |   MaxSpikes (1000)       |   recalculating (an evenly spaced subset is used    |
+% |                          |   beyond this; Inf uses every spike).               |
+% | binary_file ('')         | Explicit path to the raw binary recording. When     |
+% |                          |   empty, it is located automatically (from the      |
+% |                          |   export '.metadata' sidecar or Phy params.py).     |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
 % | dryRun (false)           | If true, report what would be imported (neurons,    |
 % |                          |   spike counts, documents that would be removed)    |
@@ -98,6 +114,11 @@ function probe(S, probe, options)
         options.quality_values (1,:) double = [1 4]
         options.kilosort_version (1,:) char = '2.5'
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
+        options.RecalculateMeanWaveforms (1,1) logical = true
+        options.RecalculateMeanWaveformT0 (1,1) double = -0.005
+        options.RecalculateMeanWaveformT1 (1,1) double = 0.005
+        options.RecalculateMeanWaveformMaxSpikes (1,1) double = 1000
+        options.binary_file (1,:) char = ''
         options.force (1,1) double = 0
         options.dryRun (1,1) logical = false
         options.progressbar (1,1) logical = false
@@ -238,10 +259,35 @@ function probe(S, probe, options)
         end;
     end;
 
-    % Step 5: precompute waveform data if requested
+    % Step 5: precompute waveform data if requested.
+    % When RecalculateMeanWaveforms is set we read wide mean waveforms straight from
+    % the raw binary (the Kilosort templates are only ~2 ms wide); locate the binary
+    % once here and fall back to the template method if it cannot be found.
 
+    use_recalc = false;
+    bininfo = [];
     if strcmp(options.waveform_source,'templates'),
-        [templates, spike_templates, amplitudes, winv] = ndi.fun.probe.import.kilosort.waveformdata(kdir);
+        if options.RecalculateMeanWaveforms,
+            bininfo = ndi.fun.probe.import.kilosort.binaryinfo(kdir, 'binary_file', options.binary_file);
+            if bininfo.found,
+                use_recalc = true;
+                if report,
+                    disp([pfx 'Recalculating mean waveforms from binary ' bininfo.file ...
+                        ' over [' num2str(options.RecalculateMeanWaveformT0) ', ' ...
+                        num2str(options.RecalculateMeanWaveformT1) '] s.']);
+                end;
+            else,
+                warning('ndi:fun:probe:import:kilosort:probe:noBinary', ...
+                    ['RecalculateMeanWaveforms is true but no raw binary (or .metadata ' ...
+                    'sidecar / params.py) could be located near ' kdir '. Falling back to ' ...
+                    'the (narrow) template-based mean waveforms. Pass ''binary_file'' to ' ...
+                    'specify the recording, or set ''RecalculateMeanWaveforms'',false to ' ...
+                    'silence this warning.']);
+            end;
+        end;
+        if ~use_recalc,
+            [templates, spike_templates, amplitudes, winv] = ndi.fun.probe.import.kilosort.waveformdata(kdir);
+        end;
     end;
 
     % Step 6: create the provenance/cluster document (neurons will depend on it)
@@ -312,12 +358,25 @@ function probe(S, probe, options)
 
         % the mean waveform
         if strcmp(options.waveform_source,'templates'),
-            meanWf = ndi.fun.probe.import.kilosort.meanwaveform(cid, spike_clusters, ...
-                spike_templates, amplitudes, templates, winv);
-            % build waveform_sample_times relative to the trough
-            [~, troughchan] = min(min(meanWf,[],1));
-            [~, troughsamp] = min(meanWf(:,troughchan));
-            wst = ((0:size(meanWf,1)-1)' - (troughsamp-1)) / sample_rate;
+            if use_recalc,
+                % read a wide window straight from the raw binary; the spike sample
+                % is (approximately) the trough, so waveform_sample_times run from
+                % T0 to T1 with 0 at the spike.
+                [meanWf, wst] = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                    bininfo.file, bininfo.num_channels, g0, sample_rate, ...
+                    options.RecalculateMeanWaveformT0, options.RecalculateMeanWaveformT1, ...
+                    'dtype', bininfo.dtype, 'byteOrder', bininfo.byteOrder, ...
+                    'headerOffsetBytes', bininfo.headerOffsetBytes, ...
+                    'multiplier', bininfo.multiplier, ...
+                    'maxSpikes', options.RecalculateMeanWaveformMaxSpikes);
+            else,
+                meanWf = ndi.fun.probe.import.kilosort.meanwaveform(cid, spike_clusters, ...
+                    spike_templates, amplitudes, templates, winv);
+                % build waveform_sample_times relative to the trough
+                [~, troughchan] = min(min(meanWf,[],1));
+                [~, troughsamp] = min(meanWf(:,troughchan));
+                wst = ((0:size(meanWf,1)-1)' - (troughsamp-1)) / sample_rate;
+            end;
         else,
             meanWf = [];
             wst = [];

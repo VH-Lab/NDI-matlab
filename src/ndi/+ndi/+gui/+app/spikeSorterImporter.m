@@ -50,6 +50,9 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
         pipelineList       % right listbox (detected clusters)
         tagList            % middle listbox (tags to import)
         overwriteCheckbox  % "Overwrite existing" (force re-import)
+        recalcCheckbox     % "Recalculate mean waveforms" (wide window from binary)
+        waveformT0Field    % window start (ms) for recalculated mean waveforms
+        waveformT1Field    % window end (ms) for recalculated mean waveforms
         pipelineSelector   % right popup (pipeline, e.g. Kilosort 2.5)
         filterCheckbox     % "Filter by pipeline"
 
@@ -134,9 +137,10 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
                 'ValueChangedFcn',@(s,e) obj.withWait('Loading neurons...', @() obj.reloadSessionNeurons()));
 
             % --- Middle column: tags + import ---
-            middle = uigridlayout(content,[6 1]);
+            middle = uigridlayout(content,[8 1]);
             middle.Layout.Column = 2;
-            middle.RowHeight = {'1x',22,100,30,24,'1x'};
+            middle.RowHeight = {'1x',22,100,30,24,24,26,'1x'};
+            middle.RowSpacing = 4;
             middle.Padding = [0 0 0 0];
             spacerTop = uilabel(middle,'Text',''); spacerTop.Layout.Row = 1;
             tl = uilabel(middle,'Text','Tags to import'); tl.Layout.Row = 2;
@@ -149,7 +153,29 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
             obj.overwriteCheckbox = uicheckbox(middle,'Text','Overwrite existing', ...
                 'Tooltip','Re-import from disk, replacing any neurons already imported for this sort');
             obj.overwriteCheckbox.Layout.Row = 5;
-            spacerBot = uilabel(middle,'Text',''); spacerBot.Layout.Row = 6;
+            % Recalculate wide mean waveforms directly from the raw binary
+            % (the Kilosort templates are only ~2 ms wide).
+            obj.recalcCheckbox = uicheckbox(middle,'Text','Recalc mean waveforms', ...
+                'Value',true, ...
+                'Tooltip',['Recompute mean spike waveforms over a wider window by reading ' ...
+                    'the raw binary recording, instead of the narrow (~2 ms) Kilosort templates.'], ...
+                'ValueChangedFcn',@(s,e) obj.onRecalcToggled());
+            obj.recalcCheckbox.Layout.Row = 6;
+            % window (ms): T0 .. T1
+            wrow = uigridlayout(middle,[1 4]);
+            wrow.Layout.Row = 7; wrow.Padding = [0 0 0 0];
+            wrow.ColumnWidth = {'fit','1x','fit','1x'}; wrow.ColumnSpacing = 3;
+            wl = uilabel(wrow,'Text','Window (ms):','HorizontalAlignment','left');
+            wl.Layout.Column = 1;
+            obj.waveformT0Field = uieditfield(wrow,'numeric','Value',-5, ...
+                'Tooltip','Window start relative to each spike, in milliseconds');
+            obj.waveformT0Field.Layout.Column = 2;
+            tolbl = uilabel(wrow,'Text','to','HorizontalAlignment','center');
+            tolbl.Layout.Column = 3;
+            obj.waveformT1Field = uieditfield(wrow,'numeric','Value',5, ...
+                'Tooltip','Window end relative to each spike, in milliseconds');
+            obj.waveformT1Field.Layout.Column = 4;
+            spacerBot = uilabel(middle,'Text',''); spacerBot.Layout.Row = 8;
 
             % --- Right column: Pipeline Neurons ---
             right = uigridlayout(content,[5 1]);
@@ -329,9 +355,24 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
             end;
             qv = obj.qualityValuesFor(tags);
             overwrite = obj.overwriteCheckbox.Value;
+            recalc = obj.recalcCheckbox.Value;
+            % window fields are in milliseconds; the importer takes seconds
+            t0 = obj.waveformT0Field.Value/1000;
+            t1 = obj.waveformT1Field.Value/1000;
+            if recalc && ~(t1 > t0),
+                uialert(obj.fig, ...
+                    'The waveform window end must be greater than the window start.', ...
+                    'Invalid window');
+                return;
+            end;
             msg = sprintf(['Import the %s sort for probe "%s", keeping clusters ' ...
                 'tagged [%s]?'], obj.pipelineSelector.Value, p.elementstring(), ...
                 strjoin(tags,', '));
+            if recalc,
+                msg = [msg char(10) char(10) sprintf(['Mean waveforms will be recalculated ' ...
+                    'from the raw binary over [%g, %g] ms.'], obj.waveformT0Field.Value, ...
+                    obj.waveformT1Field.Value)];
+            end;
             if overwrite,
                 msg = [msg char(10) char(10) 'Overwrite is on: any neurons already ' ...
                     'imported for this sort will be removed and re-imported from disk.'];
@@ -346,6 +387,9 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
                 ndi.fun.probe.import.kilosort.probe(obj.session, p, ...
                     'quality_labels', string(tags), 'quality_values', qv, ...
                     'kilosort_version','2.5','force',double(overwrite), ...
+                    'RecalculateMeanWaveforms', recalc, ...
+                    'RecalculateMeanWaveformT0', t0, ...
+                    'RecalculateMeanWaveformT1', t1, ...
                     'progressbar',true,'verbose',0);
             catch ME
                 uialert(obj.fig, ME.message, 'Import failed');
@@ -354,6 +398,14 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
             uialert(obj.fig,'Import complete.','Done','Icon','success');
             obj.reloadSessionNeurons();
         end % onImport
+
+        function onRecalcToggled(obj)
+            % enable the window edit fields only when recalculation is on
+            state = 'off';
+            if obj.recalcCheckbox.Value, state = 'on'; end;
+            obj.waveformT0Field.Enable = state;
+            obj.waveformT1Field.Enable = state;
+        end % onRecalcToggled
 
         function onDelete(obj)
             sel = obj.sessionList.Value;
