@@ -33,6 +33,12 @@ function probe(S, probe, options)
 %       amplitudes.npy       - per-spike template scaling amplitude
 %       cluster_group.tsv    - (or cluster_KSLabel.tsv / cluster_info.tsv) curation labels
 %       whitening_mat_inv.npy - (optional) used to un-whiten template waveforms
+%       params.py            - (optional) Phy parameters; its 'dat_path' names the
+%                              raw binary and is used to locate it when
+%                              recalculating wide mean waveforms (see below)
+%
+% Note: the raw recording's file name is NOT stored in any of the .npy files
+% (they hold only numeric arrays). Phy records it in params.py as 'dat_path'.
 %
 % The spike sample indices in spike_times.npy are treated as positions in the
 % concatenated stream of the probe's epochs (in probe.epochtable() order), the same
@@ -46,6 +52,25 @@ function probe(S, probe, options)
 % changed since a previous import: if the checksum is unchanged the function does
 % nothing (unless 'force' is 1); if it has changed, the previously imported neurons
 % and documents are removed and the import is repeated.
+%
+% MEAN WAVEFORMS AND THE RAW BINARY
+% By default ('RecalculateMeanWaveforms' true) each neuron's mean waveform is
+% recomputed over a wide window ('RecalculateMeanWaveformT0' to
+% 'RecalculateMeanWaveformT1', default -5 ms to +5 ms) by reading the raw binary
+% recording directly, because the Kilosort templates are only ~2 ms wide. The raw
+% binary is located automatically, in this order:
+%   1) an explicit 'binary_file' option, if given;
+%   2) the '.metadata' sidecar written next to the binary by
+%      ndi.fun.probe.export.binary (present when the data were exported from NDI);
+%   3) the 'dat_path' entry in a Phy 'params.py' in the curated directory.
+% For data sorted OUTSIDE NDI there is no '.metadata' sidecar, so 'dat_path' in
+% params.py is what points at the recording. If a sort was moved from where it was
+% created (so 'dat_path' now points to the wrong place), either edit 'dat_path' in
+% params.py to the binary's current location (relative to the curated directory, or
+% an absolute path) - this is the route to use from ndi.gui.app.spikeSorterImporter,
+% which does not expose 'binary_file' - or, from the command line, pass
+% 'binary_file' explicitly. If the binary cannot be found, the mean waveforms fall
+% back to the narrow Kilosort templates and a warning is issued.
 %
 % This function takes name/value pairs that modify its operation:
 % ---------------------------------------------------------------------------------

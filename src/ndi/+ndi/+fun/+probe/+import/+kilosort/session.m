@@ -12,6 +12,12 @@ function session(S, options)
 % (the same layout produced by NDI.FUN.PROBE.EXPORT.ALL_BINARY). Probes whose
 % kilosort directory or curated files are missing are skipped with a warning.
 %
+% As in NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE, mean waveforms are recomputed over a
+% wide window from the raw binary by default. For data sorted outside NDI (no
+% '.metadata' sidecar), the binary is located from 'dat_path' in each probe's Phy
+% params.py; edit that (or pass 'binary_file') if a sort was moved. See the PROBE
+% help for details.
+%
 % This function takes the same name/value pairs as NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE:
 % ---------------------------------------------------------------------------------
 % | Parameter (default)      | Description                                         |
