@@ -55,6 +55,7 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
         waveformT1Field    % window end (ms) for recalculated mean waveforms
         pipelineSelector   % right popup (pipeline, e.g. Kilosort 2.5)
         filterCheckbox     % "Filter by pipeline"
+        binaryStatusLabel  % right column: raw-binary found/not-found status
 
         % state
         probes = {};       % cell array of n-trode probe objects
@@ -183,7 +184,7 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
             % --- Right column: Pipeline Neurons ---
             right = uigridlayout(content,[5 1]);
             right.Layout.Column = 3;
-            right.RowHeight = {28,22,18,'1x',30};
+            right.RowHeight = {28,22,18,'1x',46};
             right.Padding = [0 0 0 0];
             right.RowSpacing = 2;
             % pipeline selector row
@@ -202,7 +203,11 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
             obj.pipelineList = uilistbox(right,'Items',{},'Multiselect','on', ...
                 'FontName',fixedFont);
             obj.pipelineList.Layout.Row = 4;
-            % Row 5 deliberately left empty: reserved space for a future button.
+            % Row 5: raw-binary status (whether the recording used for wide
+            % mean-waveform recalculation can be located for this sort).
+            obj.binaryStatusLabel = uilabel(right,'Text','','WordWrap','on', ...
+                'VerticalAlignment','top','FontSize',11);
+            obj.binaryStatusLabel.Layout.Row = 5;
         end % buildUI
 
         function p = sessionPath(obj)
@@ -318,9 +323,11 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
                 obj.pipelineList.ItemsData = {};
                 obj.tagList.Items = {};
                 obj.tagList.ItemsData = {};
+                obj.updateBinaryStatus([]);
                 return;
             end;
             obj.pipelineInfo = info;
+            obj.updateBinaryStatus(info);
             n = info.num_clusters;
             items = cell(1,n);
             for i=1:n,
@@ -482,7 +489,44 @@ classdef spikeSorterImporter < ndi.gui.app.sessionApp
             obj.pipelineList.ItemsData = {};
             obj.tagList.Items = {};
             obj.tagList.ItemsData = {};
+            obj.updateBinaryStatus([]);
         end % clearPipelineList
+
+        function updateBinaryStatus(obj, info)
+            % show whether the raw binary (used to recalculate wide mean
+            % waveforms) can be located for the selected sort
+            if isempty(obj.binaryStatusLabel) || ~isvalid(obj.binaryStatusLabel),
+                return;
+            end;
+            if isempty(info) || ~isfield(info,'binary_found'),
+                obj.binaryStatusLabel.Text = '';
+                obj.binaryStatusLabel.Tooltip = '';
+                return;
+            end;
+            if info.binary_found,
+                [~,nm,ext] = fileparts(info.binary_file);
+                nchStr = '';
+                if isfield(info,'binary_num_channels') && ~isnan(info.binary_num_channels),
+                    nchStr = [', ' num2str(info.binary_num_channels) ' ch'];
+                end;
+                obj.binaryStatusLabel.Text = ['Raw binary: found (' nm ext nchStr ')'];
+                obj.binaryStatusLabel.FontColor = [0 0.5 0];
+                obj.binaryStatusLabel.Tooltip = info.binary_file;
+            else,
+                if ~isempty(info.binary_dat_path),
+                    obj.binaryStatusLabel.Text = ['Raw binary NOT FOUND; params.py dat_path: ' ...
+                        info.binary_dat_path '. Wide waveforms will fall back to templates - ' ...
+                        'edit dat_path if the recording was moved.'];
+                    obj.binaryStatusLabel.Tooltip = ['params.py dat_path points to: ' ...
+                        info.binary_dat_path];
+                else,
+                    obj.binaryStatusLabel.Text = ['Raw binary NOT FOUND (no .metadata / no ' ...
+                        'params.py dat_path). Wide waveforms will fall back to templates.'];
+                    obj.binaryStatusLabel.Tooltip = '';
+                end;
+                obj.binaryStatusLabel.FontColor = [0.7 0 0];
+            end;
+        end % updateBinaryStatus
 
     end
 

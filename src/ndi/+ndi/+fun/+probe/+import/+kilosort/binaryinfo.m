@@ -26,6 +26,9 @@ function info = binaryinfo(kdir, options)
 %   headerOffsetBytes - bytes to skip at the start of the file (Phy 'offset', 0)
 %   multiplier        - encode multiplier int16 = multiplier*physical (1 if unknown)
 %   sample_rate       - sampling rate if it could be determined, else NaN
+%   dat_path          - the raw, unresolved 'dat_path' string from params.py, if
+%                        any ('' otherwise). Useful for reporting what a moved sort
+%                        still points at even when the file can no longer be found.
 %
 % Name/value pairs:
 % ---------------------------------------------------------------------------------
@@ -46,7 +49,7 @@ function info = binaryinfo(kdir, options)
 
     info = struct('found', false, 'file', '', 'num_channels', NaN, ...
         'dtype', 'int16', 'byteOrder', 'ieee-le', 'headerOffsetBytes', 0, ...
-        'multiplier', 1, 'sample_rate', NaN);
+        'multiplier', 1, 'sample_rate', NaN, 'dat_path', '');
 
     searchdirs = {kdir};
     parentdir = fileparts(kdir);
@@ -122,14 +125,17 @@ function info = binaryinfo(kdir, options)
         if isnan(info.sample_rate) && isfield(p,'sample_rate'),
             info.sample_rate = p.sample_rate;
         end;
-        if isempty(binfile) && isfield(p,'dat_path') && ~isempty(p.dat_path),
-            if isAbsolutePath(p.dat_path),
-                cand = p.dat_path;
-            else,
-                cand = fullfile(kdir, p.dat_path);
-            end;
-            if isfile(cand),
-                binfile = cand;
+        if isfield(p,'dat_path') && ~isempty(p.dat_path),
+            info.dat_path = p.dat_path; % raw string, for reporting even if unresolved
+            if isempty(binfile),
+                if isAbsolutePath(p.dat_path),
+                    cand = p.dat_path;
+                else,
+                    cand = fullfile(kdir, p.dat_path);
+                end;
+                if isfile(cand),
+                    binfile = cand;
+                end;
             end;
         end;
     end;
