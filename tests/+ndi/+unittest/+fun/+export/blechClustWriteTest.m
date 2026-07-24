@@ -70,7 +70,11 @@ classdef blechClustWriteTest < matlab.unittest.TestCase
             a1 = h5read(testCase.OutFile, '/spike_trains/dig_in_1/spike_array');
 
             testCase.verifyEqual(size(a0), [200 2 2], 'dig_in_0 shape ms x n_units x n_trials');
-            testCase.verifyEqual(size(a1), [200 2 1], 'dig_in_1 shape');
+            % dig_in_1 has a single trial, so the trailing (n_trials) dimension
+            % is 1; MATLAB's size() drops trailing singletons, reporting
+            % [200 2]. The on-disk dataset is still rank 3, so blech_clust's
+            % h5py reader sees (1, 2, 200) = (n_trials, n_units, ms).
+            testCase.verifyEqual(size(a1), [200 2], 'dig_in_1 shape (trailing singleton dropped)');
 
             % unit 1 lands at column 103 in both trials of dig_in_0.
             testCase.verifyEqual(a0(103,1,1), uint8(1));
