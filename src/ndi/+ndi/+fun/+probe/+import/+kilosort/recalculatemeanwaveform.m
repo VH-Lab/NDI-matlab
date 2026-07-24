@@ -43,6 +43,13 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
 % |                          |   used (the mean of a large random-ish subset is    |
 % |                          |   indistinguishable from the full mean but far      |
 % |                          |   cheaper to read). Inf uses every spike.           |
+% | epochBounds ([])         | 0-based half-open epoch boundaries into the         |
+% |                          |   concatenated stream ([0; cumsum(epoch_counts)]).  |
+% |                          |   When given, a spike is used only if its whole     |
+% |                          |   window stays within the single epoch it belongs   |
+% |                          |   to, so no window straddles the artificial seam    |
+% |                          |   between two concatenated epochs. When empty, only |
+% |                          |   the file's own start/end are honored.             |
 % ---------------------------------------------------------------------------------
 %
 % See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE, NDI.FUN.PROBE.IMPORT.KILOSORT.BINARYINFO,
@@ -60,6 +67,7 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
         options.headerOffsetBytes (1,1) double = 0
         options.multiplier (1,1) double = 1
         options.maxSpikes (1,1) double = 1000
+        options.epochBounds double = []
     end
 
     if t1 < t0,
@@ -102,8 +110,23 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
 
     ss = double(spike_samples_global(:));
 
-    % keep only spikes whose full window lies inside the recording
+    % keep only spikes whose full window lies inside the recording (file ends)
     valid = (ss + off0) >= 0 & (ss + off1) <= (nTotalSamples-1);
+
+    % if epoch boundaries were provided, additionally require each spike's whole
+    % window to stay within the single epoch it belongs to, so a window never
+    % straddles the artificial seam where two concatenated epochs meet (the far
+    % side of such a seam is unrelated data from a different recording).
+    eb = options.epochBounds(:);
+    if numel(eb) >= 2,
+        % epoch index of each spike = number of left edges it is at or past
+        e = sum(ss >= eb(1:end-1).', 2);
+        e = max(min(e, numel(eb)-1), 1); % clamp (spikes are expected in range)
+        lo = eb(e);        % first sample of the spike's epoch (0-based)
+        hi = eb(e+1) - 1;  % last sample of the spike's epoch (0-based)
+        valid = valid & (ss + off0) >= lo & (ss + off1) <= hi;
+    end;
+
     ss = ss(valid);
     if isempty(ss),
         return;

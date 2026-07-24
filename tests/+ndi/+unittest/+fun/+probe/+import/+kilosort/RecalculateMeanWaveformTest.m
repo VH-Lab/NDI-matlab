@@ -99,6 +99,36 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             testCase.verifyEqual(meanWf, expected, 'AbsTol', 1e-9);
         end
 
+        function testEpochSeamSpikesExcluded(testCase)
+            % two epochs concatenated at sample 40: epoch 1 = 0..39, epoch 2 = 40..99.
+            % A spike at 38 has window 33..43, which straddles the seam and must be
+            % dropped when epoch bounds are supplied; 20 and 60 stay within an epoch.
+            epochBounds = [0; 40; 100];
+            spikes = [20 38 60];
+            [meanWf, ~, nUsed] = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                testCase.binFile, testCase.numChannels, spikes, testCase.sampleRate, ...
+                -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf, ...
+                'epochBounds', epochBounds);
+            testCase.verifyEqual(nUsed, 2, 'The seam-straddling spike should be dropped.');
+            % expected mean of windows at 20 and 60: ch*1000 + (k-1) + mean([20 60]) + off0
+            % = ch*1000 + (k-1) + 40 - 5 = ch*1000 + (k-1) + 35
+            expected = zeros(11, testCase.numChannels);
+            for ch=1:testCase.numChannels,
+                expected(:,ch) = ch*1000 + (0:10)' + 35;
+            end;
+            testCase.verifyEqual(meanWf, expected, 'AbsTol', 1e-9);
+        end
+
+        function testWithoutEpochBoundsSeamSpikeKept(testCase)
+            % same spikes, but with no epoch bounds only the file ends constrain,
+            % so the sample-38 spike (window well inside the file) is kept.
+            spikes = [20 38 60];
+            [~, ~, nUsed] = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                testCase.binFile, testCase.numChannels, spikes, testCase.sampleRate, ...
+                -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf);
+            testCase.verifyEqual(nUsed, 3, 'Without epoch bounds all three spikes are in range.');
+        end
+
         function testEmptySpikesReturnsZeros(testCase)
             [meanWf, wst, nUsed] = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
                 testCase.binFile, testCase.numChannels, [], testCase.sampleRate, ...
