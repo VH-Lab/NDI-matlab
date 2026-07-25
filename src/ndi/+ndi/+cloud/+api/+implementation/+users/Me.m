@@ -38,39 +38,49 @@ classdef Me < ndi.cloud.api.call
                     answer.id = char(answer.id);
                 end
 
-                % Process organizations to create organizationID cell array
-                if isfield(answer, 'organizations')
-                    % Initialize as empty cell array
-                    answer.organizationID = {};
+                % Process the organizations list into parallel convenience
+                % arrays. Each organization is an OrganizationListItem with
+                % fields 'id', 'name' and 'canUploadDataset' (see the NDI Cloud
+                % API definition of UserWithOrganizations). The raw
+                % 'organizations' field is left untouched for callers that want
+                % the full structs.
+                asChar = @(v) char(string(v));
 
+                answer.organizationID = {};
+                answer.organizationName = {};
+                answer.organizationCanUploadDataset = {};
+
+                if isfield(answer, 'organizations')
                     orgs = answer.organizations;
+
+                    % Normalize to a cell array of scalar structs so that a
+                    % struct array (typical) and a cell array of structs (as
+                    % jsondecode sometimes returns) are handled identically.
+                    orgList = {};
                     if isstruct(orgs)
-                        % If it's a struct array
-                        if isfield(orgs, 'id')
-                            % Extract IDs
-                            for i = 1:numel(orgs)
-                                val = orgs(i).id;
-                                if isstring(val)
-                                    val = char(val);
-                                end
-                                answer.organizationID{end+1} = val;
-                            end
+                        for i = 1:numel(orgs)
+                            orgList{end+1} = orgs(i); %#ok<AGROW>
                         end
                     elseif iscell(orgs)
-                        % If it's a cell array of structs (e.g. from jsondecode sometimes)
-                        for i = 1:numel(orgs)
-                            if isfield(orgs{i}, 'id')
-                                val = orgs{i}.id;
-                                if isstring(val)
-                                    val = char(val);
-                                end
-                                answer.organizationID{end+1} = val;
-                            end
+                        orgList = orgs;
+                    end
+
+                    for i = 1:numel(orgList)
+                        org = orgList{i};
+                        if ~isstruct(org)
+                            continue;
+                        end
+                        if isfield(org, 'id')
+                            answer.organizationID{end+1} = asChar(org.id);
+                        end
+                        if isfield(org, 'name')
+                            answer.organizationName{end+1} = asChar(org.name);
+                        end
+                        if isfield(org, 'canUploadDataset')
+                            answer.organizationCanUploadDataset{end+1} = ...
+                                logical(org.canUploadDataset);
                         end
                     end
-                else
-                    % If no organizations field, ensure organizationID exists as empty cell
-                    answer.organizationID = {};
                 end
             else
                 if isprop(apiResponse.Body, 'Data')

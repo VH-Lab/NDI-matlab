@@ -56,6 +56,27 @@ classdef UserTest < matlab.unittest.TestCase
                     end
                 end
 
+                % Verify organizationName is a cell array of chars, parallel
+                % to organizationID
+                testCase.verifyTrue(isfield(answer_me, 'organizationName'), me_message);
+                if isfield(answer_me, 'organizationName')
+                    testCase.verifyClass(answer_me.organizationName, 'cell', me_message);
+                    testCase.verifyEqual(numel(answer_me.organizationName), ...
+                        numel(answer_me.organizationID), me_message);
+                    for i = 1:numel(answer_me.organizationName)
+                        testCase.verifyClass(answer_me.organizationName{i}, 'char', me_message);
+                    end
+                end
+
+                % Verify organizationCanUploadDataset is a cell array parallel
+                % to organizationID
+                testCase.verifyTrue(isfield(answer_me, 'organizationCanUploadDataset'), me_message);
+                if isfield(answer_me, 'organizationCanUploadDataset')
+                    testCase.verifyClass(answer_me.organizationCanUploadDataset, 'cell', me_message);
+                    testCase.verifyEqual(numel(answer_me.organizationCanUploadDataset), ...
+                        numel(answer_me.organizationID), me_message);
+                end
+
                 % Verify other fields exist as per new spec
                  testCase.verifyTrue(isfield(answer_me, 'email'), me_message);
                  testCase.verifyTrue(isfield(answer_me, 'name'), me_message);
