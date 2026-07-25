@@ -85,5 +85,53 @@ classdef UserTest < matlab.unittest.TestCase
 
             narrative(end+1) = "UserTest: testMe complete.";
         end
+
+        function testParseOrganizationsStructArray(testCase)
+            % Offline test of the organization-parsing helper used by the
+            % me() endpoint. Uses a struct array, the typical shape returned
+            % by the API. Requires no network access or credentials.
+            orgs = struct( ...
+                'id', {'org-1', 'org-2'}, ...
+                'name', {'Alpha Lab', 'Beta Institute'}, ...
+                'canUploadDataset', {true, false});
+
+            [orgID, orgName, orgCanUpload] = ...
+                ndi.cloud.api.implementation.users.Me.parseOrganizations(orgs);
+
+            testCase.verifyEqual(orgID, {'org-1', 'org-2'});
+            testCase.verifyEqual(orgName, {'Alpha Lab', 'Beta Institute'});
+            testCase.verifyEqual(orgCanUpload, {true, false});
+            % IDs and names must be char, not string
+            testCase.verifyClass(orgID{1}, 'char');
+            testCase.verifyClass(orgName{1}, 'char');
+        end
+
+        function testParseOrganizationsCellArray(testCase)
+            % Offline test of the organization-parsing helper with a cell
+            % array of scalar structs (the shape jsondecode sometimes returns)
+            % and string-typed values that must be coerced to char.
+            orgs = {struct('id', "org-9", 'name', "Gamma Center", ...
+                'canUploadDataset', true)};
+
+            [orgID, orgName, orgCanUpload] = ...
+                ndi.cloud.api.implementation.users.Me.parseOrganizations(orgs);
+
+            testCase.verifyEqual(orgID, {'org-9'});
+            testCase.verifyEqual(orgName, {'Gamma Center'});
+            testCase.verifyEqual(orgCanUpload, {true});
+            testCase.verifyClass(orgID{1}, 'char');
+            testCase.verifyClass(orgName{1}, 'char');
+        end
+
+        function testParseOrganizationsEmpty(testCase)
+            % Offline test that an empty organizations list yields empty
+            % parallel cell arrays.
+            [orgID, orgName, orgCanUpload] = ...
+                ndi.cloud.api.implementation.users.Me.parseOrganizations(struct([]));
+
+            testCase.verifyEqual(orgID, {});
+            testCase.verifyEqual(orgName, {});
+            testCase.verifyEqual(orgCanUpload, {});
+        end
     end
 end
