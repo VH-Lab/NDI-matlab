@@ -62,6 +62,28 @@ classdef datasetsPane < ndi.gui.nav.pane
 %                   Ingestion Status  computes the session's ingestion state
 %                                     and shows it as a node badge.
 %
+%   Right-clicking a dataset node opens a context menu whose actions are
+%   grouped by topic. The one topic at present is "Cloud", which gathers the
+%   NDI Cloud synchronisation actions for that dataset:
+%       Upload to Cloud         creates (on first upload) and uploads the
+%                               dataset's documents and files to NDI Cloud.
+%       Check Cloud for New     reports how many cloud documents are not yet
+%                               present locally (read-only status; no changes).
+%       Check Local for New     reports how many local documents are not yet
+%                               on the cloud (read-only status; no changes).
+%       Download New from Cloud adds remote-only documents to the local dataset.
+%       Upload New to Cloud     adds local-only documents to the cloud dataset.
+%       Two Way Sync            additive sync in both directions (no deletions).
+%       Mirror from Cloud       makes the local dataset match the cloud,
+%                               DELETING local-only documents; because this is
+%                               destructive the user must confirm a warning.
+%       Mirror to Cloud         makes the cloud dataset match the local one,
+%                               DELETING remote-only documents; because this is
+%                               destructive the user must confirm a warning.
+%   The check and sync actions are backed by ndi.cloud (uploadDataset,
+%   sync.documentDifference, sync.downloadNew, sync.uploadNew, sync.twoWaySync,
+%   sync.mirrorFromRemote, sync.mirrorToRemote).
+%
 %   Ingestion status is shown as a small icon badge on the session node
 %   (see ndi.gui.nav.statusIcon): a green "i" for ingested, amber for a
 %   linked-but-not-ingested dataset session, grey for an on-disk session
@@ -199,6 +221,7 @@ classdef datasetsPane < ndi.gui.nav.pane
                 node = uitreenode(obj.Tree, ...
                     'Text',     obj.datasetLabel(ds), ...
                     'NodeData', struct('kind', 'dataset'));
+                obj.attachDatasetMenu(node, ds);
                 obj.addSessionChildren(node, ds, apps);
             end
         end
@@ -302,6 +325,188 @@ classdef datasetsPane < ndi.gui.nav.pane
                 'MenuSelectedFcn', @(~,~) obj.openSession());
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
+        end
+
+        function attachDatasetMenu(obj, node, ds)
+            %ATTACHDATASETMENU Context menu for a top-level dataset node.
+            %   The menu is organised by topic; currently the only topic is
+            %   "Cloud", which groups the NDI Cloud synchronisation actions for
+            %   the dataset DS. Each item captures DS directly, so the action
+            %   does not depend on the tree selection (a right-click does not
+            %   reliably commit a selection before the menu opens). The menu is
+            %   registered in NodeMenus so it is deleted on the next tree build
+            %   alongside the per-session menus.
+            %
+            %   The Cloud items, in order:
+            %       Upload to Cloud          - create/refresh the remote dataset
+            %                                  and upload all documents and files.
+            %       Check Cloud for New      - report how many cloud documents are
+            %                                  not present locally (no changes).
+            %       Check Local for New      - report how many local documents are
+            %                                  not present on the cloud (no changes).
+            %       Download New from Cloud  - add remote-only documents locally.
+            %       Upload New to Cloud      - add local-only documents remotely.
+            %       Two Way Sync             - additive sync in both directions.
+            %       Mirror from Cloud        - make local match remote, DELETING
+            %                                  local-only documents (destructive).
+            %       Mirror to Cloud          - make remote match local, DELETING
+            %                                  remote-only documents (destructive).
+            cm    = uicontextmenu(obj.Navigator.Figure);
+            cloud = uimenu(cm, 'Text', 'Cloud');
+
+            uimenu(cloud, 'Text', 'Upload to Cloud', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudUploadDataset(ds));
+
+            uimenu(cloud, 'Text', 'Check Cloud for New', 'Separator', 'on', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudCheckForNew(ds, 'remote'));
+            uimenu(cloud, 'Text', 'Check Local for New', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudCheckForNew(ds, 'local'));
+
+            uimenu(cloud, 'Text', 'Download New from Cloud', 'Separator', 'on', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'downloadNew', 'Download New from Cloud'));
+            uimenu(cloud, 'Text', 'Upload New to Cloud', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'uploadNew', 'Upload New to Cloud'));
+            uimenu(cloud, 'Text', 'Two Way Sync', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'twoWaySync', 'Two Way Sync'));
+
+            uimenu(cloud, 'Text', 'Mirror from Cloud', 'Separator', 'on', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudMirror(ds, 'fromRemote'));
+            uimenu(cloud, 'Text', 'Mirror to Cloud', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudMirror(ds, 'toRemote'));
+
+            node.ContextMenu       = cm;
+            obj.NodeMenus{end + 1} = cm;
+        end
+
+        %% Cloud context-menu actions
+
+        function cloudUploadDataset(obj, ds)
+            %CLOUDUPLOADDATASET Upload DS (documents and files) to NDI Cloud.
+            %   Creates the remote dataset on first upload and otherwise syncs
+            %   any missing documents/files to the existing remote dataset.
+            fig = obj.Navigator.Figure;
+            title = 'Upload to Cloud';
+            dlg = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Uploading dataset to NDI Cloud...', 'Indeterminate', 'on');
+            try
+                [success, ~, message] = ndi.cloud.uploadDataset(ds, 'Verbose', false);
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            delete(dlg);
+            if success
+                uialert(fig, 'The dataset was uploaded to NDI Cloud.', title, ...
+                    'Icon', 'success');
+            else
+                uialert(fig, ['Upload did not complete: ' char(message)], title);
+            end
+        end
+
+        function cloudCheckForNew(obj, ds, side)
+            %CLOUDCHECKFORNEW Report how many documents are new on one side.
+            %   SIDE is 'remote' (count cloud documents missing locally) or
+            %   'local' (count local documents missing on the cloud). This only
+            %   reads document ids; it never changes either dataset.
+            fig = obj.Navigator.Figure;
+            if strcmp(side, 'remote')
+                title = 'Check Cloud for New';
+            else
+                title = 'Check Local for New';
+            end
+            dlg = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Comparing local and cloud documents...', 'Indeterminate', 'on');
+            try
+                report = ndi.cloud.sync.documentDifference(ds);
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            delete(dlg);
+            if strcmp(side, 'remote')
+                count = report.num_remote_only;
+            else
+                count = report.num_local_only;
+            end
+            uialert(fig, ...
+                ndi.gui.nav.datasetsPane.cloudCheckMessage(side, count), ...
+                title, 'Icon', 'info');
+        end
+
+        function cloudSync(obj, ds, mode, title)
+            %CLOUDSYNC Run an additive sync MODE and report what changed.
+            %   MODE is 'downloadNew', 'uploadNew' or 'twoWaySync'. None of
+            %   these delete documents, so no confirmation is required. TITLE
+            %   is the dialog title shown to the user.
+            fig = obj.Navigator.Figure;
+            dlg = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Synchronizing with NDI Cloud...', 'Indeterminate', 'on');
+            try
+                [success, errorMessage, report] = ...
+                    feval(['ndi.cloud.sync.' mode], ds, 'Verbose', false);
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            delete(dlg);
+            if success
+                uialert(fig, ndi.gui.nav.datasetsPane.syncResultMessage(report), ...
+                    title, 'Icon', 'success');
+            else
+                uialert(fig, ['Sync did not complete: ' char(errorMessage)], title);
+            end
+        end
+
+        function cloudMirror(obj, ds, direction)
+            %CLOUDMIRROR Mirror one dataset onto the other after confirmation.
+            %   DIRECTION is 'fromRemote' (make the local dataset match the
+            %   cloud, deleting local-only documents) or 'toRemote' (make the
+            %   cloud match the local dataset, deleting remote-only documents).
+            %   Both delete documents, so the user must confirm a warning first.
+            fig = obj.Navigator.Figure;
+            if strcmp(direction, 'fromRemote')
+                title  = 'Mirror from Cloud';
+                mode   = 'mirrorFromRemote';
+                prompt = ['Mirror from Cloud will make this local dataset an ' ...
+                    'exact copy of the cloud dataset. Any local documents that ' ...
+                    'are not on the cloud will be permanently DELETED from the ' ...
+                    'local dataset. This cannot be undone. Are you sure?'];
+            else
+                title  = 'Mirror to Cloud';
+                mode   = 'mirrorToRemote';
+                prompt = ['Mirror to Cloud will make the cloud dataset an exact ' ...
+                    'copy of this local dataset. Any cloud documents that are ' ...
+                    'not present locally will be permanently DELETED from the ' ...
+                    'cloud dataset. This cannot be undone. Are you sure?'];
+            end
+
+            sel = uiconfirm(fig, prompt, title, ...
+                'Options', {'Continue', 'Cancel'}, ...
+                'DefaultOption', 2, 'CancelOption', 2, 'Icon', 'warning');
+            if ~strcmp(sel, 'Continue')
+                return;
+            end
+
+            dlg = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Mirroring with NDI Cloud...', 'Indeterminate', 'on');
+            try
+                [success, errorMessage, report] = ...
+                    feval(['ndi.cloud.sync.' mode], ds, 'Verbose', false);
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            delete(dlg);
+            if success
+                uialert(fig, ndi.gui.nav.datasetsPane.syncResultMessage(report), ...
+                    title, 'Icon', 'success');
+            else
+                uialert(fig, ['Mirror did not complete: ' char(errorMessage)], title);
+            end
         end
 
         function sessions = unaffiliatedSessions(obj)
@@ -762,6 +967,21 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static, Access = private)
+        function phrases = appendCountPhrase(phrases, report, field, singular, plural)
+            %APPENDCOUNTPHRASE Append "N <noun>" for a report count field.
+            %   If REPORT has FIELD, append "count singular/plural" to the
+            %   PHRASES cell array (1 uses SINGULAR, every other count PLURAL).
+            %   Absent fields contribute nothing.
+            if isstruct(report) && isfield(report, field)
+                n = numel(report.(field));
+                if n == 1
+                    phrases{end+1} = ['1 ' singular];
+                else
+                    phrases{end+1} = sprintf('%d %s', n, plural);
+                end
+            end
+        end
+
         function msg = occupiedFolderMessage(t)
             %OCCUPIEDFOLDERMESSAGE Explain why a folder cannot host a new session.
             %   T is the ndi.session.dir.directorytype of the chosen folder,
@@ -831,6 +1051,79 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static)
+        function msg = cloudCheckMessage(side, count)
+            %CLOUDCHECKMESSAGE Status text for a "Check ... for New" command.
+            %
+            %   MSG = ndi.gui.nav.datasetsPane.cloudCheckMessage(SIDE, COUNT)
+            %
+            %   SIDE is 'remote' (COUNT cloud documents are missing locally) or
+            %   'local' (COUNT local documents are missing on the cloud). MSG is
+            %   a human-readable char sentence, pluralised for COUNT.
+            arguments
+                side (1,:) char
+                count (1,1) double
+            end
+            switch side
+                case 'remote'
+                    switch count
+                        case 0
+                            msg = ['There are no new documents on the cloud. ' ...
+                                'Your local dataset already has every cloud document.'];
+                        case 1
+                            msg = ['There is 1 document on the cloud that is not ' ...
+                                'in your local dataset.'];
+                        otherwise
+                            msg = sprintf(['There are %d documents on the cloud ' ...
+                                'that are not in your local dataset.'], count);
+                    end
+                case 'local'
+                    switch count
+                        case 0
+                            msg = ['There are no new local documents. Every local ' ...
+                                'document is already on the cloud.'];
+                        case 1
+                            msg = ['There is 1 local document that is not on the ' ...
+                                'cloud.'];
+                        otherwise
+                            msg = sprintf(['There are %d local documents that are ' ...
+                                'not on the cloud.'], count);
+                    end
+                otherwise
+                    error('NDI:datasetsPane:BadSide', ...
+                        'SIDE must be ''remote'' or ''local''.');
+            end
+        end
+
+        function msg = syncResultMessage(report)
+            %SYNCRESULTMESSAGE One-line-per-change summary of a sync report.
+            %
+            %   MSG = ndi.gui.nav.datasetsPane.syncResultMessage(REPORT)
+            %
+            %   REPORT is a sync report struct as returned by the
+            %   ndi.cloud.sync operations. Whichever of the count-bearing
+            %   fields are present is summarised, one phrase per line:
+            %       uploaded_document_ids       -> "N document(s) uploaded"
+            %       downloaded_document_ids     -> "N document(s) downloaded"
+            %       deleted_local_document_ids  -> "N local document(s) deleted"
+            %       deleted_remote_document_ids -> "N remote document(s) deleted"
+            %   When no change is reported, MSG says nothing changed. The result
+            %   is mode-agnostic, so it works for every sync operation.
+            phrases = {};
+            phrases = ndi.gui.nav.datasetsPane.appendCountPhrase(phrases, ...
+                report, 'uploaded_document_ids', 'document uploaded', 'documents uploaded');
+            phrases = ndi.gui.nav.datasetsPane.appendCountPhrase(phrases, ...
+                report, 'downloaded_document_ids', 'document downloaded', 'documents downloaded');
+            phrases = ndi.gui.nav.datasetsPane.appendCountPhrase(phrases, ...
+                report, 'deleted_local_document_ids', 'local document deleted', 'local documents deleted');
+            phrases = ndi.gui.nav.datasetsPane.appendCountPhrase(phrases, ...
+                report, 'deleted_remote_document_ids', 'remote document deleted', 'remote documents deleted');
+            if isempty(phrases)
+                msg = 'Done. No changes were needed.';
+            else
+                msg = ['Done. ' strjoin(phrases, sprintf('\n'))];
+            end
+        end
+
         function entries = orderAppMenu(apps)
             %ORDERAPPMENU Alphabetical layout of the session "Apps" menu.
             %
