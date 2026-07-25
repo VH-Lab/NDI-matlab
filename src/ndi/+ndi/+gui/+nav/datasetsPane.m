@@ -84,12 +84,27 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   sync.documentDifference, sync.downloadNew, sync.uploadNew, sync.twoWaySync,
 %   sync.mirrorFromRemote, sync.mirrorToRemote).
 %
+%   The Cloud items are enabled or greyed out to match the dataset's current
+%   cloud-link state, recomputed each time the menu opens: "Upload to Cloud"
+%   is available only for a dataset that is not yet in the cloud, and every
+%   other Cloud action (which requires an existing link) is available only for
+%   a dataset that already is.
+%
 %   Ingestion status is shown as a small icon badge on the session node
 %   (see ndi.gui.nav.statusIcon): a green "i" for ingested, amber for a
 %   linked-but-not-ingested dataset session, grey for an on-disk session
 %   that is not ingested, and no badge until the status is computed. Status
 %   is computed only on the Ingest / Ingestion Status commands, never during
 %   a tree build, so listing sessions stays fast.
+%
+%   Cloud status is shown as a badge on the dataset node: a light-blue "C"
+%   when the dataset is linked to NDI Cloud, and no badge when it is not.
+%   Unlike session ingestion status, this is computed for every dataset
+%   during the tree build, because ndi.dataset.isInCloud is a cheap, local,
+%   network-free check (it looks for a 'dataset_remote' document in the
+%   dataset's own database and does not open the dataset's sessions). The
+%   badge is refreshed after a successful "Upload to Cloud", which is what
+%   first links the dataset to the cloud.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.nav.sessionInfo,
 %             ndi.gui.nav.statusIcon, ndi.dataset, ndi.session
@@ -222,6 +237,7 @@ classdef datasetsPane < ndi.gui.nav.pane
                     'Text',     obj.datasetLabel(ds), ...
                     'NodeData', struct('kind', 'dataset'));
                 obj.attachDatasetMenu(node, ds);
+                obj.applyDatasetCloudStatus(node, ds);
                 obj.addSessionChildren(node, ds, apps);
             end
         end
@@ -354,36 +370,99 @@ classdef datasetsPane < ndi.gui.nav.pane
             cm    = uicontextmenu(obj.Navigator.Figure);
             cloud = uimenu(cm, 'Text', 'Cloud');
 
-            uimenu(cloud, 'Text', 'Upload to Cloud', ...
-                'MenuSelectedFcn', @(~,~) obj.cloudUploadDataset(ds));
+            % "Upload to Cloud" applies only before the dataset is linked to
+            % NDI Cloud; every other cloud action requires an existing link.
+            uploadItem = uimenu(cloud, 'Text', 'Upload to Cloud', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudUploadDataset(ds, node));
 
-            uimenu(cloud, 'Text', 'Check Cloud for New', 'Separator', 'on', ...
+            checkRemote = uimenu(cloud, 'Text', 'Check Cloud for New', 'Separator', 'on', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudCheckForNew(ds, 'remote'));
-            uimenu(cloud, 'Text', 'Check Local for New', ...
+            checkLocal = uimenu(cloud, 'Text', 'Check Local for New', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudCheckForNew(ds, 'local'));
 
-            uimenu(cloud, 'Text', 'Download New from Cloud', 'Separator', 'on', ...
+            downloadItem = uimenu(cloud, 'Text', 'Download New from Cloud', 'Separator', 'on', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'downloadNew', 'Download New from Cloud'));
-            uimenu(cloud, 'Text', 'Upload New to Cloud', ...
+            uploadNewItem = uimenu(cloud, 'Text', 'Upload New to Cloud', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'uploadNew', 'Upload New to Cloud'));
-            uimenu(cloud, 'Text', 'Two Way Sync', ...
+            twoWayItem = uimenu(cloud, 'Text', 'Two Way Sync', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudSync(ds, 'twoWaySync', 'Two Way Sync'));
 
-            uimenu(cloud, 'Text', 'Mirror from Cloud', 'Separator', 'on', ...
+            mirrorFromItem = uimenu(cloud, 'Text', 'Mirror from Cloud', 'Separator', 'on', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudMirror(ds, 'fromRemote'));
-            uimenu(cloud, 'Text', 'Mirror to Cloud', ...
+            mirrorToItem = uimenu(cloud, 'Text', 'Mirror to Cloud', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudMirror(ds, 'toRemote'));
+
+            % The actions that require an existing cloud link.
+            linkedItems = [checkRemote, checkLocal, downloadItem, uploadNewItem, ...
+                twoWayItem, mirrorFromItem, mirrorToItem];
+
+            % Enable exactly the applicable items each time the menu opens,
+            % from the dataset's current cloud-link state, so the choices stay
+            % correct (e.g. immediately after a first upload creates the link).
+            cm.ContextMenuOpeningFcn = @(~,~) ...
+                obj.updateDatasetMenuEnable(ds, uploadItem, linkedItems);
 
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
         end
 
+        function updateDatasetMenuEnable(~, ds, uploadItem, linkedItems)
+            %UPDATEDATASETMENUENABLE Enable only the cloud actions that apply now.
+            %   "Upload to Cloud" (UPLOADITEM) is enabled only when the dataset
+            %   is not yet linked to NDI Cloud; the LINKEDITEMS (check, sync and
+            %   mirror actions) are enabled only when it is linked. The state is
+            %   recomputed on each menu open via ds.isInCloud, a cheap local
+            %   check. Disabled items are greyed out and unselectable. Any
+            %   failure falls back to "not in cloud" (upload enabled, the rest
+            %   disabled), which is the safe state for an unlinked dataset.
+            inCloud = false;
+            try
+                inCloud = ds.isInCloud();
+            catch
+                inCloud = false;
+            end
+            if inCloud
+                uploadItem.Enable = 'off';
+                set(linkedItems, 'Enable', 'on');
+            else
+                uploadItem.Enable = 'on';
+                set(linkedItems, 'Enable', 'off');
+            end
+        end
+
+        function applyDatasetCloudStatus(obj, node, ds)
+            %APPLYDATASETCLOUDSTATUS Set NODE's cloud badge from DS's cloud link.
+            %   Computes whether DS is linked to NDI Cloud (ds.isInCloud, a
+            %   cheap local, network-free check) and stores the resulting
+            %   'incloud'/'notincloud' state on the node, then sets the node's
+            %   badge icon via ndi.gui.nav.statusIcon. A dataset that is not in
+            %   the cloud shows no cloud glyph. Any failure leaves the state
+            %   'notincloud' so a tree build is never broken by this check.
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            state = 'notincloud';
+            try
+                if ds.isInCloud()
+                    state = 'incloud';
+                end
+            catch
+                state = 'notincloud';
+            end
+            nd = node.NodeData;
+            nd.cloud = state;
+            node.NodeData = nd;
+            node.Icon = ndi.gui.nav.statusIcon(struct('cloud', state));
+        end
+
         %% Cloud context-menu actions
 
-        function cloudUploadDataset(obj, ds)
+        function cloudUploadDataset(obj, ds, node)
             %CLOUDUPLOADDATASET Upload DS (documents and files) to NDI Cloud.
             %   Creates the remote dataset on first upload and otherwise syncs
-            %   any missing documents/files to the existing remote dataset.
+            %   any missing documents/files to the existing remote dataset. On
+            %   success the dataset node's cloud badge is refreshed, since the
+            %   first upload is what links the dataset to the cloud.
             fig = obj.Navigator.Figure;
             title = 'Upload to Cloud';
             dlg = uiprogressdlg(fig, 'Title', title, ...
@@ -397,6 +476,7 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
             delete(dlg);
             if success
+                obj.applyDatasetCloudStatus(node, ds);
                 uialert(fig, 'The dataset was uploaded to NDI Cloud.', title, ...
                     'Icon', 'success');
             else

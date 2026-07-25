@@ -71,5 +71,40 @@ classdef TestStatusIcon < matlab.unittest.TestCase
             testCase.verifyNotEqual(pIngested, pNone);
             testCase.verifyNotEqual(pLinked, pNone);
         end
+
+        function testInCloudProducesLightBlueBadge(testCase)
+            % The cloud dimension's 'incloud' state draws a light-blue glyph.
+            c = ndi.gui.cloudColors();
+            want = uint8(round(c.lightBlue * 255));
+            p = ndi.gui.nav.statusIcon(struct('cloud', 'incloud'));
+            testCase.verifyTrue(isfile(p), 'The cloud badge file should exist.');
+
+            [rgb, ~, alpha] = imread(p);
+            opaque = alpha == 255;
+            R = rgb(:, :, 1); G = rgb(:, :, 2); B = rgb(:, :, 3);
+            testCase.verifyTrue(any(opaque(:)), 'Expected some painted pixels.');
+            testCase.verifyEqual(unique(R(opaque)), want(1));
+            testCase.verifyEqual(unique(G(opaque)), want(2));
+            testCase.verifyEqual(unique(B(opaque)), want(3));
+        end
+
+        function testNotInCloudDrawsNothing(testCase)
+            % A dataset that is not in the cloud carries no cloud glyph.
+            p = ndi.gui.nav.statusIcon(struct('cloud', 'notincloud'));
+            testCase.verifyEqual(p, '', ...
+                'A not-in-cloud state should produce no icon.');
+        end
+
+        function testCloudAndIngestionComposite(testCase)
+            % A status carrying both dimensions composites into one badge that
+            % differs from either single-dimension badge.
+            pBoth  = ndi.gui.nav.statusIcon( ...
+                struct('ingestion', 'ingested', 'cloud', 'incloud'));
+            pCloud = ndi.gui.nav.statusIcon(struct('cloud', 'incloud'));
+            pIng   = ndi.gui.nav.statusIcon(struct('ingestion', 'ingested'));
+            testCase.verifyTrue(isfile(pBoth));
+            testCase.verifyNotEqual(pBoth, pCloud);
+            testCase.verifyNotEqual(pBoth, pIng);
+        end
     end
 end

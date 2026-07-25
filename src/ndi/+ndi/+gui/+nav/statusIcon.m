@@ -7,17 +7,24 @@ function iconPath = statusIcon(status)
 %
 %   Badge grammar ("letter names the check, colour names the state"):
 %       * Each status dimension is drawn as one letter glyph:
-%             ingestion -> 'i'   (more can be added; see DIMS below)
+%             ingestion -> 'i'   (session ingestion state)
+%             cloud     -> 'c'   (whether a dataset is linked to NDI Cloud)
+%         (more can be added; see DIMS below)
 %       * The glyph colour encodes that dimension's state, from the shared
 %         palette in ndi.gui.cloudColors:
 %             'ingested' -> okGreen      (good / complete)
 %             'linked'   -> warnAmber    (partial / attention)
 %             'none'     -> neutralGrey  (not yet / absent)
+%             'incloud'  -> lightBlue    (linked to NDI Cloud)
 %             'unknown'  -> not drawn    (the default; nothing is known yet)
 %       * The completed ingestion state is additionally double-coded by
 %         shape: 'ingested' is drawn as a capital 'I' (green), while the
 %         other states use a lowercase 'i', so ingested vs not-ingested is
-%         distinguishable without relying on colour alone.
+%         distinguishable without relying on colour alone. Likewise the cloud
+%         dimension draws a capital 'C' (light blue) for the 'incloud' state.
+%       * The cloud dimension has only one drawn state: a dataset that is not
+%         in the cloud (state 'notincloud', or unknown) draws no cloud glyph,
+%         so a local-only dataset carries no cloud badge.
 %       * Dimensions whose state is 'unknown' (or missing) contribute no
 %         glyph. When every dimension is unknown the badge is empty and ''
 %         is returned, so a freshly-listed node carries no icon until a
@@ -49,8 +56,8 @@ function iconPath = statusIcon(status)
     % Add a row to extend the badge (e.g. metadata completeness as 'm');
     % the glyph letter must be defined in glyphMask below.
     DIMS = struct( ...
-        'field',  {'ingestion'}, ...
-        'letter', {'i'});
+        'field',  {'ingestion', 'cloud'}, ...
+        'letter', {'i',         'c'});
 
     % Collect the active (non-unknown) dimensions, in DIMS order, and build
     % a stable cache key from them.
@@ -107,7 +114,9 @@ function col = stateColor(state)
             col = c.warnAmber;
         case 'none'
             col = c.neutralGrey;
-        otherwise           % 'unknown', '', or anything unrecognised
+        case 'incloud'
+            col = c.lightBlue;
+        otherwise           % 'unknown', 'notincloud', '', or unrecognised
             col = [];
     end
 end
@@ -122,6 +131,8 @@ function letter = glyphLetter(field, defaultLetter, state)
     letter = defaultLetter;
     if strcmpi(field, 'ingestion') && strcmpi(char(state), 'ingested')
         letter = 'I';
+    elseif strcmpi(field, 'cloud') && strcmpi(char(state), 'incloud')
+        letter = 'C';
     end
 end
 
@@ -197,6 +208,29 @@ function m = glyphMask(letter)
                 '..#..'; ...
                 '..#..'; ...
                 '#####'};
+        case 'c'
+            % Lowercase 'c' (not currently drawn - the cloud dimension only
+            % draws its 'incloud' state as a capital 'C' - but defined so a
+            % future secondary cloud state can use it).
+            art = { ...
+                '.....'; ...
+                '.....'; ...
+                '.####'; ...
+                '#....'; ...
+                '#....'; ...
+                '#....'; ...
+                '.####'};
+        case 'C'
+            % Capital 'C' for the 'incloud' state (light blue), double-coding
+            % cloud presence by shape as well as colour.
+            art = { ...
+                '.###.'; ...
+                '#...#'; ...
+                '#....'; ...
+                '#....'; ...
+                '#....'; ...
+                '#...#'; ...
+                '.###.'};
         case 'm'
             art = { ...
                 '.....'; ...
