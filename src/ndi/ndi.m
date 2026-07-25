@@ -26,15 +26,10 @@ function ndi(varargin)
 %
 %   See also: ndi.gui.navigator, ndi.gui.navigator.findOpen
 
-% feval by name references the ndi.gui.navigator class unambiguously: inside
-% a function file named 'ndi', a token such as 'ndi.gui.navigator' would
-% otherwise be mis-parsed as field access on this function's name rather than
-% the +ndi package path.
-
 % If a navigator is already open, raise and reuse it instead of opening a
 % duplicate window. findOpen returns the open navigators newest last, so the
 % most recently created one is brought to the front.
-existing = feval('ndi.gui.navigator.findOpen');
+existing = ndi.gui.navigator.findOpen();
 if ~isempty(existing)
     nav = existing(end);
     if isvalid(nav) && ~isempty(nav.Figure) && isvalid(nav.Figure)
@@ -44,7 +39,7 @@ if ~isempty(existing)
     end
 end
 
-% The trailing semicolon (and requesting no output) suppresses the returned
-% object so it is neither displayed nor available.
-feval('ndi.gui.navigator', varargin{:});
+% No navigator is open: create one. The trailing semicolon and requesting no
+% output suppress the returned object so it is neither displayed nor available.
+ndi.gui.navigator(varargin{:});
 end
