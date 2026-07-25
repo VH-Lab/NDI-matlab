@@ -110,9 +110,18 @@ function blech_clust_write(outputfile, unit_spiketimes, unit_info, onset_times, 
             end
         end
 
-        % Write /spike_trains/dig_in_<N>/spike_array
+        % Write /spike_trains/dig_in_<N>/spike_array.
+        %
+        % blech_clust reads this with h5py/numpy, whose row-major (C) index
+        % order is the reverse of MATLAB's column-major order: a dataset that
+        % MATLAB writes with dimensions [d1 d2 d3] is reported by h5py as shape
+        % (d3, d2, d1). blech_clust expects a numpy shape of
+        % (n_trials, n_units, trial_dur_ms). We therefore permute spike_array
+        % to [trial_dur_ms n_units n_trials] on disk so that Python reads it
+        % back as (n_trials, n_units, trial_dur_ms). (Issue #855.)
+        spike_array = permute(spike_array, [3 2 1]);
         ds = [group '/spike_array'];
-        h5create(outputfile, ds, [n_trials n_units trial_dur_ms], 'Datatype', 'uint8');
+        h5create(outputfile, ds, [trial_dur_ms n_units n_trials], 'Datatype', 'uint8');
         h5write(outputfile, ds, spike_array);
 
         % Record the tastant label + stimid as attributes on the group

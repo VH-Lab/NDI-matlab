@@ -12,6 +12,12 @@ function session(S, options)
 % (the same layout produced by NDI.FUN.PROBE.EXPORT.ALL_BINARY). Probes whose
 % kilosort directory or curated files are missing are skipped with a warning.
 %
+% As in NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE, mean waveforms are recomputed over a
+% wide window from the raw binary by default. For data sorted outside NDI (no
+% '.metadata' sidecar), the binary is located from 'dat_path' in each probe's Phy
+% params.py; edit that (or pass 'binary_file') if a sort was moved. See the PROBE
+% help for details.
+%
 % This function takes the same name/value pairs as NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE:
 % ---------------------------------------------------------------------------------
 % | Parameter (default)      | Description                                         |
@@ -27,6 +33,10 @@ function session(S, options)
 % | quality_values ([1 4])   | quality_number for each label (parallel array)      |
 % | waveform_source          | 'templates' or 'none'                               |
 % |   ('templates')          |                                                     |
+% | RecalculateMeanWaveforms | Recompute wide mean waveforms from the raw binary   |
+% |   (true)                 |   instead of the (~2 ms) Kilosort templates         |
+% | RecalculateMeanWaveformT0| Window start relative to each spike (s, -0.005)     |
+% | RecalculateMeanWaveformT1| Window end relative to each spike (s, +0.005)       |
 % | force (0)                | Re-import even if the checksum is unchanged          |
 % | dryRun (false)           | Report what would be imported without changing the  |
 % |                          |   database                                          |
@@ -48,6 +58,11 @@ function session(S, options)
         options.quality_labels (1,:) string = ["good" "mua"]
         options.quality_values (1,:) double = [1 4]
         options.waveform_source (1,:) char {mustBeMember(options.waveform_source,{'templates','none'})} = 'templates'
+        options.RecalculateMeanWaveforms (1,1) logical = true
+        options.RecalculateMeanWaveformT0 (1,1) double = -0.005
+        options.RecalculateMeanWaveformT1 (1,1) double = 0.005
+        options.RecalculateMeanWaveformMaxSpikes (1,1) double = 1000
+        options.binary_file (1,:) char = ''
         options.force (1,1) double = 0
         options.dryRun (1,1) logical = false
         options.verbose (1,1) double = 1
@@ -83,6 +98,11 @@ function session(S, options)
             'quality_labels', options.quality_labels, ...
             'quality_values', options.quality_values, ...
             'waveform_source', options.waveform_source, ...
+            'RecalculateMeanWaveforms', options.RecalculateMeanWaveforms, ...
+            'RecalculateMeanWaveformT0', options.RecalculateMeanWaveformT0, ...
+            'RecalculateMeanWaveformT1', options.RecalculateMeanWaveformT1, ...
+            'RecalculateMeanWaveformMaxSpikes', options.RecalculateMeanWaveformMaxSpikes, ...
+            'binary_file', options.binary_file, ...
             'force', options.force, ...
             'dryRun', options.dryRun, ...
             'verbose', options.verbose);

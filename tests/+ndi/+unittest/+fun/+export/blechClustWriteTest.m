@@ -60,19 +60,29 @@ classdef blechClustWriteTest < matlab.unittest.TestCase
                 'epochID', 'test_epoch', 'verbose', 0);
 
             % dig_in_0 = stimid 1 (trials 1 and 3), dig_in_1 = stimid 2 (trial 2)
+            %
+            % The dataset is written on disk as [trial_dur_ms n_units n_trials]
+            % so that blech_clust's h5py/numpy reader (row-major, reversed
+            % index order) sees the required (n_trials, n_units, trial_dur_ms)
+            % shape. MATLAB's h5read therefore reads it back in that on-disk
+            % [ms x units x trials] order. (Issue #855.)
             a0 = h5read(testCase.OutFile, '/spike_trains/dig_in_0/spike_array');
             a1 = h5read(testCase.OutFile, '/spike_trains/dig_in_1/spike_array');
 
-            testCase.verifyEqual(size(a0), [2 2 200], 'dig_in_0 shape n_trials x n_units x ms');
-            testCase.verifyEqual(size(a1), [1 2 200], 'dig_in_1 shape');
+            testCase.verifyEqual(size(a0), [200 2 2], 'dig_in_0 shape ms x n_units x n_trials');
+            % dig_in_1 has a single trial, so the trailing (n_trials) dimension
+            % is 1; MATLAB's size() drops trailing singletons, reporting
+            % [200 2]. The on-disk dataset is still rank 3, so blech_clust's
+            % h5py reader sees (1, 2, 200) = (n_trials, n_units, ms).
+            testCase.verifyEqual(size(a1), [200 2], 'dig_in_1 shape (trailing singleton dropped)');
 
             % unit 1 lands at column 103 in both trials of dig_in_0.
-            testCase.verifyEqual(a0(1,1,103), uint8(1));
-            testCase.verifyEqual(a0(2,1,103), uint8(1));
+            testCase.verifyEqual(a0(103,1,1), uint8(1));
+            testCase.verifyEqual(a0(103,1,2), uint8(1));
             testCase.verifyEqual(nnz(a0), 2, 'exactly two spikes land in dig_in_0');
 
             % unit 2 spike (trial 2, onset 2.0) -> col 105.
-            testCase.verifyEqual(a1(1,2,105), uint8(1));
+            testCase.verifyEqual(a1(105,2,1), uint8(1));
             testCase.verifyEqual(nnz(a1), 1, 'exactly one spike lands in dig_in_1');
         end
 
