@@ -1048,15 +1048,17 @@ classdef datasetsPane < ndi.gui.nav.pane
 
     methods (Static, Access = private)
         function phrases = appendCountPhrase(phrases, report, field, singular, plural)
-            %APPENDCOUNTPHRASE Append "N <noun>" for a report count field.
-            %   If REPORT has FIELD, append "count singular/plural" to the
-            %   PHRASES cell array (1 uses SINGULAR, every other count PLURAL).
-            %   Absent fields contribute nothing.
+            %APPENDCOUNTPHRASE Append "N <noun>" for a non-zero report count.
+            %   If REPORT has FIELD with a non-zero count, append "count
+            %   singular/plural" to the PHRASES cell array (1 uses SINGULAR,
+            %   more use PLURAL). Absent fields and zero counts contribute
+            %   nothing, so a report in which nothing changed yields no phrases
+            %   (and syncResultMessage then reports "no changes").
             if isstruct(report) && isfield(report, field)
                 n = numel(report.(field));
                 if n == 1
                     phrases{end+1} = ['1 ' singular];
-                else
+                elseif n > 1
                     phrases{end+1} = sprintf('%d %s', n, plural);
                 end
             end

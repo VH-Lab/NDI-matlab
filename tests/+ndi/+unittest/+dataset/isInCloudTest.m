@@ -41,12 +41,16 @@ classdef isInCloudTest < matlab.unittest.TestCase
 
             % Add a dataset_remote document by hand (this is what an upload
             % would create), then confirm the dataset reports it is in the cloud.
-            remoteId = 'test-cloud-dataset-id-12345';
+            % The dataset_id and organization_id fields are fixed-length (24
+            % char) NDI Cloud ids per the dataset_remote schema, so use values
+            % of that length here.
+            remoteId = '0123456789abcdef01234567';        % 24 chars
+            orgId    = '0123456789abcdef0123abcd';        % 24 chars
             doc = ndi.document('dataset_remote', ...
                 'base.session_id', ds.id, ...
                 'dataset_remote', struct( ...
                     'dataset_id', remoteId, ...
-                    'organization_id', 'test-org-id'));
+                    'organization_id', orgId));
             ds.database_add(doc);
 
             [b, cloudId] = ds.isInCloud();
