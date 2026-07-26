@@ -101,6 +101,82 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             testCase.verifySubstring(msg, '1 document downloaded');
         end
 
+        %% Cloud menu enable/disable from cached status
+
+        function testDatasetMenuEnableInCloud(testCase)
+            % When the dataset is in the cloud, upload is disabled and the
+            % link-requiring actions are enabled.
+            [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable('incloud');
+            testCase.verifyEqual(up, 'off');
+            testCase.verifyEqual(linked, 'on');
+        end
+
+        function testDatasetMenuEnableNotInCloud(testCase)
+            % When the dataset is not in the cloud, upload is enabled and the
+            % link-requiring actions are disabled.
+            [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable('notincloud');
+            testCase.verifyEqual(up, 'on');
+            testCase.verifyEqual(linked, 'off');
+        end
+
+        function testDatasetMenuEnableUnknownEnablesAll(testCase)
+            % Before the status is checked, nothing is blocked.
+            for state = ["unknown", "", "something else"]
+                [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable(char(state));
+                testCase.verifyEqual(up, 'on');
+                testCase.verifyEqual(linked, 'on');
+            end
+        end
+
+        %% Bulk cloud-status summary message
+
+        function testCloudSummaryMessageNoDatasets(testCase)
+            r = struct('total', 0, 'inCloud', 0, 'notInCloud', 0, 'errors', 0);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifySubstring(msg, 'no datasets to check');
+        end
+
+        function testCloudSummaryMessageCountsAndPluralisation(testCase)
+            r = struct('total', 5, 'inCloud', 3, 'notInCloud', 2, 'errors', 0);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifyEqual(msg, '3 of 5 datasets are in NDI Cloud.');
+
+            % Singular total uses "dataset is".
+            r1 = struct('total', 1, 'inCloud', 1, 'notInCloud', 0, 'errors', 0);
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.cloudSummaryMessage(r1), ...
+                '1 of 1 dataset is in NDI Cloud.');
+        end
+
+        function testCloudSummaryMessageReportsErrors(testCase)
+            r = struct('total', 4, 'inCloud', 1, 'notInCloud', 2, 'errors', 1);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifySubstring(msg, '1 of 4 datasets are in NDI Cloud.');
+            testCase.verifySubstring(msg, '1 dataset could not be checked.');
+        end
+
+        %% Workspace-variable annotation of node labels
+
+        function testAppendWorkspaceVarNamesNoneLeavesLabel(testCase)
+            % A node with no workspace variable is shown by reference alone.
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('myref', {}), ...
+                'myref');
+        end
+
+        function testAppendWorkspaceVarNamesSingle(testCase)
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('myref', {'S'}), ...
+                'myref "S"');
+        end
+
+        function testAppendWorkspaceVarNamesMultiple(testCase)
+            % Several variables holding the same object are all listed.
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('ds', {'D', 'D2'}), ...
+                'ds "D", "D2"');
+        end
+
         function testSyncResultMessageReportsDeletions(testCase)
             % Mirror-shaped reports surface the deletion counts.
             fromRemote = struct( ...

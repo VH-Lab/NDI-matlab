@@ -127,6 +127,23 @@ classdef navigator < handle
                 end
             end
         end
+
+        function p = datasetsPaneHandle(obj)
+            %DATASETSPANEHANDLE Return the navigator's datasets pane, if any.
+            %
+            %   P = DATASETSPANEHANDLE(OBJ) returns the
+            %   ndi.gui.nav.datasetsPane in this navigator's pane stack, or an
+            %   empty ndi.gui.nav.datasetsPane array if none is present. This
+            %   lets other panes (e.g. the NDI Cloud pane) reach the dataset
+            %   tree to act on all datasets at once.
+            p = ndi.gui.nav.datasetsPane.empty;
+            for i = 1:numel(obj.Panes)
+                if isa(obj.Panes{i}, 'ndi.gui.nav.datasetsPane')
+                    p = obj.Panes{i};
+                    return;
+                end
+            end
+        end
     end
 
     methods (Static)

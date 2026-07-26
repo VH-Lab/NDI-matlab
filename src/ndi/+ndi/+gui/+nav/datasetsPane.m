@@ -31,6 +31,14 @@ classdef datasetsPane < ndi.gui.nav.pane
 %         its reference; expanding it lists the sessions returned by the
 %         dataset's session_list method.
 %
+%   When a session or dataset shown in the tree is also held by one or more
+%   variables in the user's base workspace, those variable names are appended
+%   to the node label in double quotes, e.g. a dataset with reference
+%   "mydataset" bound to workspace variable D appears as: mydataset "D".
+%   Nodes with no corresponding workspace variable are shown by reference
+%   alone. Matching is by object id, so a distinct instance of the same
+%   session/dataset in the workspace is still recognised.
+%
 %   Each dataset node carries the uitree's native disclosure triangle, so
 %   the user can expand a dataset to reveal its sessions. When engaged the
 %   pane is never shorter than MinHeight (100 px). It is the navigator's
@@ -84,11 +92,11 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   sync.documentDifference, sync.downloadNew, sync.uploadNew, sync.twoWaySync,
 %   sync.mirrorFromRemote, sync.mirrorToRemote).
 %
-%   The Cloud items are enabled or greyed out to match the dataset's current
-%   cloud-link state, recomputed each time the menu opens: "Upload to Cloud"
-%   is available only for a dataset that is not yet in the cloud, and every
-%   other Cloud action (which requires an existing link) is available only for
-%   a dataset that already is.
+%   The Cloud items are enabled or greyed out to match the dataset's cached
+%   cloud-link state: once the status is known, "Upload to Cloud" is available
+%   only for a dataset that is not yet in the cloud, and every other Cloud
+%   action (which requires an existing link) is available only for a dataset
+%   that already is. Until the status has been checked, all items are enabled.
 %
 %   Ingestion status is shown as a small icon badge on the session node
 %   (see ndi.gui.nav.statusIcon): a green "i" for ingested, amber for a
@@ -98,13 +106,14 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   a tree build, so listing sessions stays fast.
 %
 %   Cloud status is shown as a badge on the dataset node: a light-blue "C"
-%   when the dataset is linked to NDI Cloud, and no badge when it is not.
-%   Unlike session ingestion status, this is computed for every dataset
-%   during the tree build, because ndi.dataset.isInCloud is a cheap, local,
-%   network-free check (it looks for a 'dataset_remote' document in the
-%   dataset's own database and does not open the dataset's sessions). The
-%   badge is refreshed after a successful "Upload to Cloud", which is what
-%   first links the dataset to the cloud.
+%   when the dataset is linked to NDI Cloud, and no badge when it is not
+%   (or has not been checked). Like session ingestion status, it is computed
+%   only on demand - by the "Check Cloud status" Cloud menu command, or
+%   implicitly after a successful "Upload to Cloud" - never during a tree
+%   build, so listing datasets stays fast. ndi.dataset.isInCloud is a local,
+%   network-free check, but even so it is not run for every dataset on every
+%   refresh; the computed state is cached on the node and drives both the
+%   badge and the enable/disable of the Cloud menu items.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.nav.sessionInfo,
 %             ndi.gui.nav.statusIcon, ndi.dataset, ndi.session
@@ -121,6 +130,11 @@ classdef datasetsPane < ndi.gui.nav.pane
         UserDatasets = {}                % datasets the user added via "+"
         UserSessions = {}                % sessions the user created/opened via
                                          %   the "Unaffiliated sessions" menu
+        WsVarIndex                       % containers.Map: object id (char) ->
+                                         %   cellstr of base workspace variable
+                                         %   names that hold that session/dataset
+                                         %   (rebuilt each tree build; used to
+                                         %   annotate node labels)
     end
 
     properties (Constant, Access = private)
@@ -143,6 +157,66 @@ classdef datasetsPane < ndi.gui.nav.pane
 
         function refresh(obj)
             obj.populateTree();
+        end
+
+        function report = checkAllCloudStatus(obj, progressDlg)
+            %CHECKALLCLOUDSTATUS Check the NDI Cloud status of every dataset.
+            %
+            %   REPORT = CHECKALLCLOUDSTATUS(OBJ) determines, for each dataset
+            %   node in the tree, whether the dataset is linked to NDI Cloud
+            %   (ndi.dataset.isInCloud), then caches the result on the node and
+            %   updates its badge - the same effect as running "Check Cloud
+            %   status" on every dataset in turn. It is the bulk action behind
+            %   the NDI Cloud pane's "C" button.
+            %
+            %   REPORT = CHECKALLCLOUDSTATUS(OBJ, PROGRESSDLG) additionally
+            %   drives a uiprogressdlg PROGRESSDLG (its Value and Message are
+            %   updated per dataset). Pass [] (the default) to run with no
+            %   progress reporting.
+            %
+            %   REPORT is a struct with fields:
+            %       total      - number of datasets checked
+            %       inCloud    - how many are linked to NDI Cloud
+            %       notInCloud - how many are not
+            %       errors     - how many could not be checked (isInCloud threw)
+            arguments
+                obj
+                progressDlg = []
+            end
+            report = struct('total', 0, 'inCloud', 0, 'notInCloud', 0, 'errors', 0);
+            if isempty(obj.Tree) || ~isvalid(obj.Tree)
+                return;
+            end
+
+            kids = obj.Tree.Children;
+            idx  = [];   % indices of the top-level nodes that are datasets
+            for i = 1:numel(kids)
+                nd = kids(i).NodeData;
+                if isfield(nd, 'dataset') && ~isempty(nd.dataset)
+                    idx(end+1) = i; %#ok<AGROW>
+                end
+            end
+
+            report.total = numel(idx);
+            for k = 1:numel(idx)
+                node = kids(idx(k));
+                if ~isempty(progressDlg) && isvalid(progressDlg)
+                    progressDlg.Value   = k / numel(idx);
+                    progressDlg.Message = sprintf('Checking dataset %d of %d...', ...
+                        k, numel(idx));
+                end
+                try
+                    if node.NodeData.dataset.isInCloud()
+                        obj.setDatasetCloudState(node, 'incloud');
+                        report.inCloud = report.inCloud + 1;
+                    else
+                        obj.setDatasetCloudState(node, 'notincloud');
+                        report.notInCloud = report.notInCloud + 1;
+                    end
+                catch
+                    report.errors = report.errors + 1;
+                end
+            end
         end
     end
 
@@ -190,6 +264,7 @@ classdef datasetsPane < ndi.gui.nav.pane
 
             refresh = uibutton(group, ...
                 'Text',            'Refresh', ...
+                'Tooltip',         'Rebuild the list of datasets and sessions', ...
                 'ButtonPushedFcn', @(~,~) obj.refresh());
             refresh.Layout.Row    = 1;
             refresh.Layout.Column = 2;
@@ -213,6 +288,10 @@ classdef datasetsPane < ndi.gui.nav.pane
             % Discover the session apps once and reuse for every node.
             apps = obj.sessionApps();
 
+            % Index the base workspace once so each node label can show the
+            % variable name(s) that refer to that session/dataset, if any.
+            obj.WsVarIndex = obj.buildWorkspaceVarIndex();
+
             % --- Unaffiliated: ndi.session objects the user has created or
             %     opened here, plus those found in the base workspace. The
             %     node carries its own context menu (Create/Open session). ---
@@ -222,8 +301,10 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.attachUnaffiliatedMenu(unaffiliated);
             sessions = obj.unaffiliatedSessions();
             for i = 1:numel(sessions)
+                label = obj.decorateWithWorkspaceVars( ...
+                    obj.sessionLabel(sessions{i}), obj.objId(sessions{i}));
                 node = uitreenode(unaffiliated, ...
-                    'Text',     obj.sessionLabel(sessions{i}), ...
+                    'Text',     label, ...
                     'NodeData', obj.sessionNodeData(sessions{i}, [], ''));
                 obj.attachSessionMenu(node, apps);
             end
@@ -233,11 +314,16 @@ classdef datasetsPane < ndi.gui.nav.pane
                 obj.scanWorkspace('ndi.dataset')];
             for i = 1:numel(datasets)
                 ds       = datasets{i};
+                % Store the dataset handle on the node so a bulk action (see
+                % checkAllCloudStatus) can act on every dataset without
+                % re-deriving the list; the per-item menu callbacks capture ds
+                % directly and do not rely on this.
+                label = obj.decorateWithWorkspaceVars( ...
+                    obj.datasetLabel(ds), obj.objId(ds));
                 node = uitreenode(obj.Tree, ...
-                    'Text',     obj.datasetLabel(ds), ...
-                    'NodeData', struct('kind', 'dataset'));
+                    'Text',     label, ...
+                    'NodeData', struct('kind', 'dataset', 'dataset', ds));
                 obj.attachDatasetMenu(node, ds);
-                obj.applyDatasetCloudStatus(node, ds);
                 obj.addSessionChildren(node, ds, apps);
             end
         end
@@ -257,11 +343,75 @@ classdef datasetsPane < ndi.gui.nav.pane
                 ref = refList{k};
                 if isempty(ref); ref = '(unnamed session)'; end
                 if k <= numel(idList); id = idList{k}; else; id = ''; end
+                % The session id is known here, so a workspace variable holding
+                % this same session can be shown without opening the session.
+                label = obj.decorateWithWorkspaceVars(char(ref), id);
                 child = uitreenode(node, ...
-                    'Text',     char(ref), ...
+                    'Text',     label, ...
                     'NodeData', obj.sessionNodeData([], ds, id));
                 obj.attachSessionMenu(child, apps);
             end
+        end
+
+        function idx = buildWorkspaceVarIndex(~)
+            %BUILDWORKSPACEVARINDEX Map object id -> base workspace variable names.
+            %   Scans the MATLAB base workspace for scalar ndi.session and
+            %   ndi.dataset variables and returns a containers.Map from each
+            %   object's id (char) to a cell array of the variable name(s) that
+            %   hold it. Matching node objects to this map by id (rather than by
+            %   handle identity) also catches a distinct instance of the same
+            %   session/dataset. Never errors: a workspace that cannot be read,
+            %   or a variable that cannot be evaluated, simply contributes
+            %   nothing.
+            idx = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            try
+                vars = evalin('base', 'whos');
+            catch
+                return;
+            end
+            for i = 1:numel(vars)
+                % Skip non-scalars without evaluating them (avoids realising
+                % large arrays just to reject them); membership is then
+                % confirmed by isa, so any ndi.session / ndi.dataset subclass
+                % is caught regardless of its class name.
+                if ~isequal(vars(i).size, [1 1])
+                    continue;
+                end
+                try
+                    value = evalin('base', vars(i).name);
+                catch
+                    continue;
+                end
+                if ~isscalar(value) || ...
+                        ~(isa(value, 'ndi.session') || isa(value, 'ndi.dataset'))
+                    continue;
+                end
+                key = ndi.gui.nav.datasetsPane.objId(value);
+                if isempty(key)
+                    continue;
+                end
+                if isKey(idx, key)
+                    idx(key) = [idx(key), {vars(i).name}];
+                else
+                    idx(key) = {vars(i).name};
+                end
+            end
+        end
+
+        function label = decorateWithWorkspaceVars(obj, label, id)
+            %DECORATEWITHWORKSPACEVARS Append quoted workspace var names to a label.
+            %   If the base workspace holds one or more variables that refer to
+            %   the object with id ID (per WsVarIndex), append them in quotes
+            %   after LABEL, e.g. 'myref' -> 'myref "S", "S2"'. Objects with no
+            %   workspace variable (the common case) are returned unchanged.
+            label = char(label);
+            id = char(id);
+            if isempty(id) || ~isa(obj.WsVarIndex, 'containers.Map') ...
+                    || ~isKey(obj.WsVarIndex, id)
+                return;
+            end
+            label = ndi.gui.nav.datasetsPane.appendWorkspaceVarNames( ...
+                label, obj.WsVarIndex(id));
         end
 
         function attachSessionMenu(obj, node, apps)
@@ -354,6 +504,10 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   alongside the per-session menus.
             %
             %   The Cloud items, in order:
+            %       Check Cloud status       - determine whether the dataset is
+            %                                  linked to NDI Cloud and badge the
+            %                                  node accordingly (the only item
+            %                                  that queries the dataset database).
             %       Upload to Cloud          - create/refresh the remote dataset
             %                                  and upload all documents and files.
             %       Check Cloud for New      - report how many cloud documents are
@@ -367,12 +521,24 @@ classdef datasetsPane < ndi.gui.nav.pane
             %                                  local-only documents (destructive).
             %       Mirror to Cloud          - make remote match local, DELETING
             %                                  remote-only documents (destructive).
+            %
+            %   Cloud status is computed only on demand (via "Check Cloud
+            %   status", or implicitly after a successful "Upload to Cloud"),
+            %   never during a tree build, so listing datasets stays fast. The
+            %   enable/disable state below reads the last-known status cached on
+            %   the node; it does not query the database on menu open.
             cm    = uicontextmenu(obj.Navigator.Figure);
             cloud = uimenu(cm, 'Text', 'Cloud');
 
+            % "Check Cloud status" is the only item that queries the dataset; it
+            % records the result on the node so the rest of the menu can gray
+            % out the inapplicable actions without re-querying.
+            uimenu(cloud, 'Text', 'Check Cloud status', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudCheckStatus(ds, node));
+
             % "Upload to Cloud" applies only before the dataset is linked to
             % NDI Cloud; every other cloud action requires an existing link.
-            uploadItem = uimenu(cloud, 'Text', 'Upload to Cloud', ...
+            uploadItem = uimenu(cloud, 'Text', 'Upload to Cloud', 'Separator', 'on', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudUploadDataset(ds, node));
 
             checkRemote = uimenu(cloud, 'Text', 'Check Cloud for New', 'Separator', 'on', ...
@@ -396,66 +562,88 @@ classdef datasetsPane < ndi.gui.nav.pane
             linkedItems = [checkRemote, checkLocal, downloadItem, uploadNewItem, ...
                 twoWayItem, mirrorFromItem, mirrorToItem];
 
-            % Enable exactly the applicable items each time the menu opens,
-            % from the dataset's current cloud-link state, so the choices stay
-            % correct (e.g. immediately after a first upload creates the link).
+            % Gray out the inapplicable items each time the menu opens, from the
+            % status last recorded on the node ('unknown' until "Check Cloud
+            % status" or an upload runs). This reads a cached field only - it
+            % never queries the dataset database - so opening the menu is fast.
             cm.ContextMenuOpeningFcn = @(~,~) ...
-                obj.updateDatasetMenuEnable(ds, uploadItem, linkedItems);
+                obj.updateDatasetMenuEnable(node, uploadItem, linkedItems);
 
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
         end
 
-        function updateDatasetMenuEnable(~, ds, uploadItem, linkedItems)
-            %UPDATEDATASETMENUENABLE Enable only the cloud actions that apply now.
-            %   "Upload to Cloud" (UPLOADITEM) is enabled only when the dataset
-            %   is not yet linked to NDI Cloud; the LINKEDITEMS (check, sync and
-            %   mirror actions) are enabled only when it is linked. The state is
-            %   recomputed on each menu open via ds.isInCloud, a cheap local
-            %   check. Disabled items are greyed out and unselectable. Any
-            %   failure falls back to "not in cloud" (upload enabled, the rest
-            %   disabled), which is the safe state for an unlinked dataset.
-            inCloud = false;
-            try
-                inCloud = ds.isInCloud();
-            catch
-                inCloud = false;
-            end
-            if inCloud
-                uploadItem.Enable = 'off';
-                set(linkedItems, 'Enable', 'on');
-            else
-                uploadItem.Enable = 'on';
-                set(linkedItems, 'Enable', 'off');
-            end
-        end
-
-        function applyDatasetCloudStatus(obj, node, ds)
-            %APPLYDATASETCLOUDSTATUS Set NODE's cloud badge from DS's cloud link.
-            %   Computes whether DS is linked to NDI Cloud (ds.isInCloud, a
-            %   cheap local, network-free check) and stores the resulting
-            %   'incloud'/'notincloud' state on the node, then sets the node's
-            %   badge icon via ndi.gui.nav.statusIcon. A dataset that is not in
-            %   the cloud shows no cloud glyph. Any failure leaves the state
-            %   'notincloud' so a tree build is never broken by this check.
+        function updateDatasetMenuEnable(~, node, uploadItem, linkedItems)
+            %UPDATEDATASETMENUENABLE Enable the applicable cloud actions.
+            %   Reads the cloud state cached on NODE (set by "Check Cloud
+            %   status" or a successful upload) and enables items accordingly:
+            %   when the dataset is in the cloud, "Upload to Cloud" (UPLOADITEM)
+            %   is greyed out and the LINKEDITEMS (check, sync, mirror) are
+            %   enabled; when it is not, the reverse. Until the status has been
+            %   checked ('unknown'), everything is enabled so the user is never
+            %   blocked from acting or from checking. This performs no database
+            %   query, so it is cheap on every menu open.
             if isempty(node) || ~isvalid(node)
                 return;
             end
-            state = 'notincloud';
-            try
-                if ds.isInCloud()
-                    state = 'incloud';
-                end
-            catch
-                state = 'notincloud';
+            state = 'unknown';
+            if isfield(node.NodeData, 'cloud')
+                state = node.NodeData.cloud;
+            end
+            [uploadEnable, linkedEnable] = ...
+                ndi.gui.nav.datasetsPane.datasetMenuEnable(state);
+            uploadItem.Enable = uploadEnable;
+            set(linkedItems, 'Enable', linkedEnable);
+        end
+
+        function setDatasetCloudState(~, node, state)
+            %SETDATASETCLOUDSTATE Cache STATE on NODE and set its cloud badge.
+            %   STATE is 'incloud' or 'notincloud'. The state is stored in the
+            %   node's NodeData (so the menu enable/disable can read it without
+            %   a database query) and drawn as a badge via ndi.gui.nav.statusIcon
+            %   (a light-blue 'C' for 'incloud', no glyph otherwise). This does
+            %   no computation itself; callers decide the state.
+            if isempty(node) || ~isvalid(node)
+                return;
             end
             nd = node.NodeData;
             nd.cloud = state;
             node.NodeData = nd;
-            node.Icon = ndi.gui.nav.statusIcon(struct('cloud', state));
+            node.Icon = ndi.gui.nav.statusIcon(struct('cloud', char(state)));
         end
 
         %% Cloud context-menu actions
+
+        function cloudCheckStatus(obj, ds, node)
+            %CLOUDCHECKSTATUS Determine and show whether DS is in NDI Cloud.
+            %   This is the "Check Cloud status" command. It is the only cloud
+            %   action that queries the dataset (ds.isInCloud, a local,
+            %   network-free check for the 'dataset_remote' document); the
+            %   result is cached on the node (badging it and enabling the right
+            %   menu items) and reported to the user. Because it is on demand,
+            %   the cost is paid only when the user asks, not on every refresh.
+            fig = obj.Navigator.Figure;
+            title = 'Check Cloud Status';
+            dlg = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Checking NDI Cloud status...', 'Indeterminate', 'on');
+            try
+                inCloud = ds.isInCloud();
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            delete(dlg);
+            if inCloud
+                obj.setDatasetCloudState(node, 'incloud');
+                uialert(fig, 'This dataset is linked to NDI Cloud.', title, ...
+                    'Icon', 'success');
+            else
+                obj.setDatasetCloudState(node, 'notincloud');
+                uialert(fig, ['This dataset is not in NDI Cloud. Use ' ...
+                    '"Upload to Cloud" to add it.'], title, 'Icon', 'info');
+            end
+        end
 
         function cloudUploadDataset(obj, ds, node)
             %CLOUDUPLOADDATASET Upload DS (documents and files) to NDI Cloud.
@@ -476,7 +664,9 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
             delete(dlg);
             if success
-                obj.applyDatasetCloudStatus(node, ds);
+                % A successful upload links the dataset to the cloud, so the
+                % status is known without another query.
+                obj.setDatasetCloudState(node, 'incloud');
                 uialert(fig, 'The dataset was uploaded to NDI Cloud.', title, ...
                     'Icon', 'success');
             else
@@ -1133,6 +1323,85 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static)
+        function label = appendWorkspaceVarNames(label, names)
+            %APPENDWORKSPACEVARNAMES Append quoted variable names to a label.
+            %
+            %   LABEL = appendWorkspaceVarNames(LABEL, NAMES)
+            %
+            %   NAMES is a cell array of base workspace variable names that hold
+            %   the object LABEL describes. Each is appended in double quotes,
+            %   comma-separated, after LABEL - e.g. appendWorkspaceVarNames(
+            %   'myref', {'S','S2'}) returns 'myref "S", "S2"'. An empty NAMES
+            %   leaves LABEL unchanged, so nodes with no workspace variable are
+            %   not decorated.
+            label = char(label);
+            if isempty(names)
+                return;
+            end
+            quoted = cell(1, numel(names));
+            for i = 1:numel(names)
+                quoted{i} = ['"' char(names{i}) '"'];
+            end
+            label = [label ' ' strjoin(quoted, ', ')];
+        end
+
+        function [uploadEnable, linkedEnable] = datasetMenuEnable(state)
+            %DATASETMENUENABLE Enable flags for the dataset Cloud menu items.
+            %
+            %   [UPLOADENABLE, LINKEDENABLE] = datasetMenuEnable(STATE)
+            %
+            %   Maps a dataset's cached cloud STATE to the 'on'/'off' Enable
+            %   values for the two groups of Cloud menu items:
+            %       'incloud'    -> upload off, linked (check/sync/mirror) on
+            %       'notincloud' -> upload on,  linked off
+            %       anything else ('unknown', unset) -> both on, so the user is
+            %                       never blocked before checking the status
+            %   UPLOADENABLE governs "Upload to Cloud"; LINKEDENABLE governs the
+            %   actions that require an existing cloud link.
+            switch char(state)
+                case 'incloud'
+                    uploadEnable = 'off';
+                    linkedEnable = 'on';
+                case 'notincloud'
+                    uploadEnable = 'on';
+                    linkedEnable = 'off';
+                otherwise   % 'unknown' or unset: do not block anything yet
+                    uploadEnable = 'on';
+                    linkedEnable = 'on';
+            end
+        end
+
+        function msg = cloudSummaryMessage(report)
+            %CLOUDSUMMARYMESSAGE Summary text for a bulk cloud-status check.
+            %
+            %   MSG = cloudSummaryMessage(REPORT)
+            %
+            %   REPORT is the struct returned by
+            %   ndi.gui.nav.datasetsPane.checkAllCloudStatus (fields total,
+            %   inCloud, notInCloud, errors). MSG is a human-readable summary,
+            %   e.g. "3 of 5 datasets are in NDI Cloud." When some datasets
+            %   could not be checked, a trailing note reports how many.
+            if report.total == 0
+                msg = 'There are no datasets to check.';
+                return;
+            end
+            if report.total == 1
+                noun = 'dataset is';
+            else
+                noun = 'datasets are';
+            end
+            msg = sprintf('%d of %d %s in NDI Cloud.', ...
+                report.inCloud, report.total, noun);
+            if isfield(report, 'errors') && report.errors > 0
+                if report.errors == 1
+                    msg = [msg ' 1 dataset could not be checked.'];
+                else
+                    msg = [msg sprintf(' %d datasets could not be checked.', ...
+                        report.errors)];
+                end
+            end
+        end
+
         function msg = cloudCheckMessage(side, count)
             %CLOUDCHECKMESSAGE Status text for a "Check ... for New" command.
             %
@@ -1280,6 +1549,16 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Access = private, Static)
+        function id = objId(o)
+            %OBJID Best-effort char id of a session/dataset object, '' on failure.
+            id = '';
+            try
+                id = char(o.id());
+            catch
+                id = '';
+            end
+        end
+
         function objs = scanWorkspace(className)
             %SCANWORKSPACE Objects in the base workspace that isa CLASSNAME.
             %   Returns a cell array of the matching variable values from
