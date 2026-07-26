@@ -31,6 +31,14 @@ classdef datasetsPane < ndi.gui.nav.pane
 %         its reference; expanding it lists the sessions returned by the
 %         dataset's session_list method.
 %
+%   When a session or dataset shown in the tree is also held by one or more
+%   variables in the user's base workspace, those variable names are appended
+%   to the node label in double quotes, e.g. a dataset with reference
+%   "mydataset" bound to workspace variable D appears as: mydataset "D".
+%   Nodes with no corresponding workspace variable are shown by reference
+%   alone. Matching is by object id, so a distinct instance of the same
+%   session/dataset in the workspace is still recognised.
+%
 %   Each dataset node carries the uitree's native disclosure triangle, so
 %   the user can expand a dataset to reveal its sessions. When engaged the
 %   pane is never shorter than MinHeight (100 px). It is the navigator's
@@ -122,6 +130,11 @@ classdef datasetsPane < ndi.gui.nav.pane
         UserDatasets = {}                % datasets the user added via "+"
         UserSessions = {}                % sessions the user created/opened via
                                          %   the "Unaffiliated sessions" menu
+        WsVarIndex                       % containers.Map: object id (char) ->
+                                         %   cellstr of base workspace variable
+                                         %   names that hold that session/dataset
+                                         %   (rebuilt each tree build; used to
+                                         %   annotate node labels)
     end
 
     properties (Constant, Access = private)
@@ -274,6 +287,10 @@ classdef datasetsPane < ndi.gui.nav.pane
             % Discover the session apps once and reuse for every node.
             apps = obj.sessionApps();
 
+            % Index the base workspace once so each node label can show the
+            % variable name(s) that refer to that session/dataset, if any.
+            obj.WsVarIndex = obj.buildWorkspaceVarIndex();
+
             % --- Unaffiliated: ndi.session objects the user has created or
             %     opened here, plus those found in the base workspace. The
             %     node carries its own context menu (Create/Open session). ---
@@ -283,8 +300,10 @@ classdef datasetsPane < ndi.gui.nav.pane
             obj.attachUnaffiliatedMenu(unaffiliated);
             sessions = obj.unaffiliatedSessions();
             for i = 1:numel(sessions)
+                label = obj.decorateWithWorkspaceVars( ...
+                    obj.sessionLabel(sessions{i}), obj.objId(sessions{i}));
                 node = uitreenode(unaffiliated, ...
-                    'Text',     obj.sessionLabel(sessions{i}), ...
+                    'Text',     label, ...
                     'NodeData', obj.sessionNodeData(sessions{i}, [], ''));
                 obj.attachSessionMenu(node, apps);
             end
@@ -298,8 +317,10 @@ classdef datasetsPane < ndi.gui.nav.pane
                 % checkAllCloudStatus) can act on every dataset without
                 % re-deriving the list; the per-item menu callbacks capture ds
                 % directly and do not rely on this.
+                label = obj.decorateWithWorkspaceVars( ...
+                    obj.datasetLabel(ds), obj.objId(ds));
                 node = uitreenode(obj.Tree, ...
-                    'Text',     obj.datasetLabel(ds), ...
+                    'Text',     label, ...
                     'NodeData', struct('kind', 'dataset', 'dataset', ds));
                 obj.attachDatasetMenu(node, ds);
                 obj.addSessionChildren(node, ds, apps);
@@ -321,11 +342,75 @@ classdef datasetsPane < ndi.gui.nav.pane
                 ref = refList{k};
                 if isempty(ref); ref = '(unnamed session)'; end
                 if k <= numel(idList); id = idList{k}; else; id = ''; end
+                % The session id is known here, so a workspace variable holding
+                % this same session can be shown without opening the session.
+                label = obj.decorateWithWorkspaceVars(char(ref), id);
                 child = uitreenode(node, ...
-                    'Text',     char(ref), ...
+                    'Text',     label, ...
                     'NodeData', obj.sessionNodeData([], ds, id));
                 obj.attachSessionMenu(child, apps);
             end
+        end
+
+        function idx = buildWorkspaceVarIndex(~)
+            %BUILDWORKSPACEVARINDEX Map object id -> base workspace variable names.
+            %   Scans the MATLAB base workspace for scalar ndi.session and
+            %   ndi.dataset variables and returns a containers.Map from each
+            %   object's id (char) to a cell array of the variable name(s) that
+            %   hold it. Matching node objects to this map by id (rather than by
+            %   handle identity) also catches a distinct instance of the same
+            %   session/dataset. Never errors: a workspace that cannot be read,
+            %   or a variable that cannot be evaluated, simply contributes
+            %   nothing.
+            idx = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            try
+                vars = evalin('base', 'whos');
+            catch
+                return;
+            end
+            for i = 1:numel(vars)
+                % Skip non-scalars without evaluating them (avoids realising
+                % large arrays just to reject them); membership is then
+                % confirmed by isa, so any ndi.session / ndi.dataset subclass
+                % is caught regardless of its class name.
+                if ~isequal(vars(i).size, [1 1])
+                    continue;
+                end
+                try
+                    value = evalin('base', vars(i).name);
+                catch
+                    continue;
+                end
+                if ~isscalar(value) || ...
+                        ~(isa(value, 'ndi.session') || isa(value, 'ndi.dataset'))
+                    continue;
+                end
+                key = ndi.gui.nav.datasetsPane.objId(value);
+                if isempty(key)
+                    continue;
+                end
+                if isKey(idx, key)
+                    idx(key) = [idx(key), {vars(i).name}];
+                else
+                    idx(key) = {vars(i).name};
+                end
+            end
+        end
+
+        function label = decorateWithWorkspaceVars(obj, label, id)
+            %DECORATEWITHWORKSPACEVARS Append quoted workspace var names to a label.
+            %   If the base workspace holds one or more variables that refer to
+            %   the object with id ID (per WsVarIndex), append them in quotes
+            %   after LABEL, e.g. 'myref' -> 'myref "S", "S2"'. Objects with no
+            %   workspace variable (the common case) are returned unchanged.
+            label = char(label);
+            id = char(id);
+            if isempty(id) || ~isa(obj.WsVarIndex, 'containers.Map') ...
+                    || ~isKey(obj.WsVarIndex, id)
+                return;
+            end
+            label = ndi.gui.nav.datasetsPane.appendWorkspaceVarNames( ...
+                label, obj.WsVarIndex(id));
         end
 
         function attachSessionMenu(obj, node, apps)
@@ -1237,6 +1322,28 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static)
+        function label = appendWorkspaceVarNames(label, names)
+            %APPENDWORKSPACEVARNAMES Append quoted variable names to a label.
+            %
+            %   LABEL = appendWorkspaceVarNames(LABEL, NAMES)
+            %
+            %   NAMES is a cell array of base workspace variable names that hold
+            %   the object LABEL describes. Each is appended in double quotes,
+            %   comma-separated, after LABEL - e.g. appendWorkspaceVarNames(
+            %   'myref', {'S','S2'}) returns 'myref "S", "S2"'. An empty NAMES
+            %   leaves LABEL unchanged, so nodes with no workspace variable are
+            %   not decorated.
+            label = char(label);
+            if isempty(names)
+                return;
+            end
+            quoted = cell(1, numel(names));
+            for i = 1:numel(names)
+                quoted{i} = ['"' char(names{i}) '"'];
+            end
+            label = [label ' ' strjoin(quoted, ', ')];
+        end
+
         function [uploadEnable, linkedEnable] = datasetMenuEnable(state)
             %DATASETMENUENABLE Enable flags for the dataset Cloud menu items.
             %
@@ -1441,6 +1548,16 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Access = private, Static)
+        function id = objId(o)
+            %OBJID Best-effort char id of a session/dataset object, '' on failure.
+            id = '';
+            try
+                id = char(o.id());
+            catch
+                id = '';
+            end
+        end
+
         function objs = scanWorkspace(className)
             %SCANWORKSPACE Objects in the base workspace that isa CLASSNAME.
             %   Returns a cell array of the matching variable values from

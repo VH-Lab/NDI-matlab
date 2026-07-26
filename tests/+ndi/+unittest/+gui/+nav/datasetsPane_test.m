@@ -155,6 +155,28 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             testCase.verifySubstring(msg, '1 dataset could not be checked.');
         end
 
+        %% Workspace-variable annotation of node labels
+
+        function testAppendWorkspaceVarNamesNoneLeavesLabel(testCase)
+            % A node with no workspace variable is shown by reference alone.
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('myref', {}), ...
+                'myref');
+        end
+
+        function testAppendWorkspaceVarNamesSingle(testCase)
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('myref', {'S'}), ...
+                'myref "S"');
+        end
+
+        function testAppendWorkspaceVarNamesMultiple(testCase)
+            % Several variables holding the same object are all listed.
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('ds', {'D', 'D2'}), ...
+                'ds "D", "D2"');
+        end
+
         function testSyncResultMessageReportsDeletions(testCase)
             % Mirror-shaped reports surface the deletion counts.
             fromRemote = struct( ...
