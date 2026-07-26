@@ -101,6 +101,33 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             testCase.verifySubstring(msg, '1 document downloaded');
         end
 
+        %% Cloud menu enable/disable from cached status
+
+        function testDatasetMenuEnableInCloud(testCase)
+            % When the dataset is in the cloud, upload is disabled and the
+            % link-requiring actions are enabled.
+            [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable('incloud');
+            testCase.verifyEqual(up, 'off');
+            testCase.verifyEqual(linked, 'on');
+        end
+
+        function testDatasetMenuEnableNotInCloud(testCase)
+            % When the dataset is not in the cloud, upload is enabled and the
+            % link-requiring actions are disabled.
+            [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable('notincloud');
+            testCase.verifyEqual(up, 'on');
+            testCase.verifyEqual(linked, 'off');
+        end
+
+        function testDatasetMenuEnableUnknownEnablesAll(testCase)
+            % Before the status is checked, nothing is blocked.
+            for state = ["unknown", "", "something else"]
+                [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable(char(state));
+                testCase.verifyEqual(up, 'on');
+                testCase.verifyEqual(linked, 'on');
+            end
+        end
+
         function testSyncResultMessageReportsDeletions(testCase)
             % Mirror-shaped reports surface the deletion counts.
             fromRemote = struct( ...

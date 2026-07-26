@@ -84,11 +84,11 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   sync.documentDifference, sync.downloadNew, sync.uploadNew, sync.twoWaySync,
 %   sync.mirrorFromRemote, sync.mirrorToRemote).
 %
-%   The Cloud items are enabled or greyed out to match the dataset's current
-%   cloud-link state, recomputed each time the menu opens: "Upload to Cloud"
-%   is available only for a dataset that is not yet in the cloud, and every
-%   other Cloud action (which requires an existing link) is available only for
-%   a dataset that already is.
+%   The Cloud items are enabled or greyed out to match the dataset's cached
+%   cloud-link state: once the status is known, "Upload to Cloud" is available
+%   only for a dataset that is not yet in the cloud, and every other Cloud
+%   action (which requires an existing link) is available only for a dataset
+%   that already is. Until the status has been checked, all items are enabled.
 %
 %   Ingestion status is shown as a small icon badge on the session node
 %   (see ndi.gui.nav.statusIcon): a green "i" for ingested, amber for a
@@ -98,13 +98,14 @@ classdef datasetsPane < ndi.gui.nav.pane
 %   a tree build, so listing sessions stays fast.
 %
 %   Cloud status is shown as a badge on the dataset node: a light-blue "C"
-%   when the dataset is linked to NDI Cloud, and no badge when it is not.
-%   Unlike session ingestion status, this is computed for every dataset
-%   during the tree build, because ndi.dataset.isInCloud is a cheap, local,
-%   network-free check (it looks for a 'dataset_remote' document in the
-%   dataset's own database and does not open the dataset's sessions). The
-%   badge is refreshed after a successful "Upload to Cloud", which is what
-%   first links the dataset to the cloud.
+%   when the dataset is linked to NDI Cloud, and no badge when it is not
+%   (or has not been checked). Like session ingestion status, it is computed
+%   only on demand - by the "Check Cloud status" Cloud menu command, or
+%   implicitly after a successful "Upload to Cloud" - never during a tree
+%   build, so listing datasets stays fast. ndi.dataset.isInCloud is a local,
+%   network-free check, but even so it is not run for every dataset on every
+%   refresh; the computed state is cached on the node and drives both the
+%   badge and the enable/disable of the Cloud menu items.
 %
 %   See also: ndi.gui.navigator, ndi.gui.nav.pane, ndi.gui.nav.sessionInfo,
 %             ndi.gui.nav.statusIcon, ndi.dataset, ndi.session
@@ -237,7 +238,6 @@ classdef datasetsPane < ndi.gui.nav.pane
                     'Text',     obj.datasetLabel(ds), ...
                     'NodeData', struct('kind', 'dataset'));
                 obj.attachDatasetMenu(node, ds);
-                obj.applyDatasetCloudStatus(node, ds);
                 obj.addSessionChildren(node, ds, apps);
             end
         end
@@ -354,6 +354,10 @@ classdef datasetsPane < ndi.gui.nav.pane
             %   alongside the per-session menus.
             %
             %   The Cloud items, in order:
+            %       Check Cloud status       - determine whether the dataset is
+            %                                  linked to NDI Cloud and badge the
+            %                                  node accordingly (the only item
+            %                                  that queries the dataset database).
             %       Upload to Cloud          - create/refresh the remote dataset
             %                                  and upload all documents and files.
             %       Check Cloud for New      - report how many cloud documents are
@@ -367,12 +371,24 @@ classdef datasetsPane < ndi.gui.nav.pane
             %                                  local-only documents (destructive).
             %       Mirror to Cloud          - make remote match local, DELETING
             %                                  remote-only documents (destructive).
+            %
+            %   Cloud status is computed only on demand (via "Check Cloud
+            %   status", or implicitly after a successful "Upload to Cloud"),
+            %   never during a tree build, so listing datasets stays fast. The
+            %   enable/disable state below reads the last-known status cached on
+            %   the node; it does not query the database on menu open.
             cm    = uicontextmenu(obj.Navigator.Figure);
             cloud = uimenu(cm, 'Text', 'Cloud');
 
+            % "Check Cloud status" is the only item that queries the dataset; it
+            % records the result on the node so the rest of the menu can gray
+            % out the inapplicable actions without re-querying.
+            uimenu(cloud, 'Text', 'Check Cloud status', ...
+                'MenuSelectedFcn', @(~,~) obj.cloudCheckStatus(ds, node));
+
             % "Upload to Cloud" applies only before the dataset is linked to
             % NDI Cloud; every other cloud action requires an existing link.
-            uploadItem = uimenu(cloud, 'Text', 'Upload to Cloud', ...
+            uploadItem = uimenu(cloud, 'Text', 'Upload to Cloud', 'Separator', 'on', ...
                 'MenuSelectedFcn', @(~,~) obj.cloudUploadDataset(ds, node));
 
             checkRemote = uimenu(cloud, 'Text', 'Check Cloud for New', 'Separator', 'on', ...
@@ -396,66 +412,88 @@ classdef datasetsPane < ndi.gui.nav.pane
             linkedItems = [checkRemote, checkLocal, downloadItem, uploadNewItem, ...
                 twoWayItem, mirrorFromItem, mirrorToItem];
 
-            % Enable exactly the applicable items each time the menu opens,
-            % from the dataset's current cloud-link state, so the choices stay
-            % correct (e.g. immediately after a first upload creates the link).
+            % Gray out the inapplicable items each time the menu opens, from the
+            % status last recorded on the node ('unknown' until "Check Cloud
+            % status" or an upload runs). This reads a cached field only - it
+            % never queries the dataset database - so opening the menu is fast.
             cm.ContextMenuOpeningFcn = @(~,~) ...
-                obj.updateDatasetMenuEnable(ds, uploadItem, linkedItems);
+                obj.updateDatasetMenuEnable(node, uploadItem, linkedItems);
 
             node.ContextMenu       = cm;
             obj.NodeMenus{end + 1} = cm;
         end
 
-        function updateDatasetMenuEnable(~, ds, uploadItem, linkedItems)
-            %UPDATEDATASETMENUENABLE Enable only the cloud actions that apply now.
-            %   "Upload to Cloud" (UPLOADITEM) is enabled only when the dataset
-            %   is not yet linked to NDI Cloud; the LINKEDITEMS (check, sync and
-            %   mirror actions) are enabled only when it is linked. The state is
-            %   recomputed on each menu open via ds.isInCloud, a cheap local
-            %   check. Disabled items are greyed out and unselectable. Any
-            %   failure falls back to "not in cloud" (upload enabled, the rest
-            %   disabled), which is the safe state for an unlinked dataset.
-            inCloud = false;
-            try
-                inCloud = ds.isInCloud();
-            catch
-                inCloud = false;
-            end
-            if inCloud
-                uploadItem.Enable = 'off';
-                set(linkedItems, 'Enable', 'on');
-            else
-                uploadItem.Enable = 'on';
-                set(linkedItems, 'Enable', 'off');
-            end
-        end
-
-        function applyDatasetCloudStatus(obj, node, ds)
-            %APPLYDATASETCLOUDSTATUS Set NODE's cloud badge from DS's cloud link.
-            %   Computes whether DS is linked to NDI Cloud (ds.isInCloud, a
-            %   cheap local, network-free check) and stores the resulting
-            %   'incloud'/'notincloud' state on the node, then sets the node's
-            %   badge icon via ndi.gui.nav.statusIcon. A dataset that is not in
-            %   the cloud shows no cloud glyph. Any failure leaves the state
-            %   'notincloud' so a tree build is never broken by this check.
+        function updateDatasetMenuEnable(~, node, uploadItem, linkedItems)
+            %UPDATEDATASETMENUENABLE Enable the applicable cloud actions.
+            %   Reads the cloud state cached on NODE (set by "Check Cloud
+            %   status" or a successful upload) and enables items accordingly:
+            %   when the dataset is in the cloud, "Upload to Cloud" (UPLOADITEM)
+            %   is greyed out and the LINKEDITEMS (check, sync, mirror) are
+            %   enabled; when it is not, the reverse. Until the status has been
+            %   checked ('unknown'), everything is enabled so the user is never
+            %   blocked from acting or from checking. This performs no database
+            %   query, so it is cheap on every menu open.
             if isempty(node) || ~isvalid(node)
                 return;
             end
-            state = 'notincloud';
-            try
-                if ds.isInCloud()
-                    state = 'incloud';
-                end
-            catch
-                state = 'notincloud';
+            state = 'unknown';
+            if isfield(node.NodeData, 'cloud')
+                state = node.NodeData.cloud;
+            end
+            [uploadEnable, linkedEnable] = ...
+                ndi.gui.nav.datasetsPane.datasetMenuEnable(state);
+            uploadItem.Enable = uploadEnable;
+            set(linkedItems, 'Enable', linkedEnable);
+        end
+
+        function setDatasetCloudState(~, node, state)
+            %SETDATASETCLOUDSTATE Cache STATE on NODE and set its cloud badge.
+            %   STATE is 'incloud' or 'notincloud'. The state is stored in the
+            %   node's NodeData (so the menu enable/disable can read it without
+            %   a database query) and drawn as a badge via ndi.gui.nav.statusIcon
+            %   (a light-blue 'C' for 'incloud', no glyph otherwise). This does
+            %   no computation itself; callers decide the state.
+            if isempty(node) || ~isvalid(node)
+                return;
             end
             nd = node.NodeData;
             nd.cloud = state;
             node.NodeData = nd;
-            node.Icon = ndi.gui.nav.statusIcon(struct('cloud', state));
+            node.Icon = ndi.gui.nav.statusIcon(struct('cloud', char(state)));
         end
 
         %% Cloud context-menu actions
+
+        function cloudCheckStatus(obj, ds, node)
+            %CLOUDCHECKSTATUS Determine and show whether DS is in NDI Cloud.
+            %   This is the "Check Cloud status" command. It is the only cloud
+            %   action that queries the dataset (ds.isInCloud, a local,
+            %   network-free check for the 'dataset_remote' document); the
+            %   result is cached on the node (badging it and enabling the right
+            %   menu items) and reported to the user. Because it is on demand,
+            %   the cost is paid only when the user asks, not on every refresh.
+            fig = obj.Navigator.Figure;
+            title = 'Check Cloud Status';
+            dlg = uiprogressdlg(fig, 'Title', title, ...
+                'Message', 'Checking NDI Cloud status...', 'Indeterminate', 'on');
+            try
+                inCloud = ds.isInCloud();
+            catch ME
+                delete(dlg);
+                uialert(fig, ME.message, title);
+                return;
+            end
+            delete(dlg);
+            if inCloud
+                obj.setDatasetCloudState(node, 'incloud');
+                uialert(fig, 'This dataset is linked to NDI Cloud.', title, ...
+                    'Icon', 'success');
+            else
+                obj.setDatasetCloudState(node, 'notincloud');
+                uialert(fig, ['This dataset is not in NDI Cloud. Use ' ...
+                    '"Upload to Cloud" to add it.'], title, 'Icon', 'info');
+            end
+        end
 
         function cloudUploadDataset(obj, ds, node)
             %CLOUDUPLOADDATASET Upload DS (documents and files) to NDI Cloud.
@@ -476,7 +514,9 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
             delete(dlg);
             if success
-                obj.applyDatasetCloudStatus(node, ds);
+                % A successful upload links the dataset to the cloud, so the
+                % status is known without another query.
+                obj.setDatasetCloudState(node, 'incloud');
                 uialert(fig, 'The dataset was uploaded to NDI Cloud.', title, ...
                     'Icon', 'success');
             else
@@ -1133,6 +1173,32 @@ classdef datasetsPane < ndi.gui.nav.pane
     end
 
     methods (Static)
+        function [uploadEnable, linkedEnable] = datasetMenuEnable(state)
+            %DATASETMENUENABLE Enable flags for the dataset Cloud menu items.
+            %
+            %   [UPLOADENABLE, LINKEDENABLE] = datasetMenuEnable(STATE)
+            %
+            %   Maps a dataset's cached cloud STATE to the 'on'/'off' Enable
+            %   values for the two groups of Cloud menu items:
+            %       'incloud'    -> upload off, linked (check/sync/mirror) on
+            %       'notincloud' -> upload on,  linked off
+            %       anything else ('unknown', unset) -> both on, so the user is
+            %                       never blocked before checking the status
+            %   UPLOADENABLE governs "Upload to Cloud"; LINKEDENABLE governs the
+            %   actions that require an existing cloud link.
+            switch char(state)
+                case 'incloud'
+                    uploadEnable = 'off';
+                    linkedEnable = 'on';
+                case 'notincloud'
+                    uploadEnable = 'on';
+                    linkedEnable = 'off';
+                otherwise   % 'unknown' or unset: do not block anything yet
+                    uploadEnable = 'on';
+                    linkedEnable = 'on';
+            end
+        end
+
         function msg = cloudCheckMessage(side, count)
             %CLOUDCHECKMESSAGE Status text for a "Check ... for New" command.
             %
