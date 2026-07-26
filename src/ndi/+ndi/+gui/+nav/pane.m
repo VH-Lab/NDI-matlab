@@ -220,6 +220,7 @@ classdef pane < handle
                     'FontSize',        10, ...
                     'BackgroundColor', c.darkBlue, ...
                     'FontColor',       c.white, ...
+                    'Tooltip',         obj.disclosureTooltip(), ...
                     'ButtonPushedFcn', @(~,~) obj.toggle());
                 obj.DisclosureButton.Layout.Row    = 1;
                 obj.DisclosureButton.Layout.Column = 1;
@@ -279,10 +280,29 @@ classdef pane < handle
             end
         end
 
+        function t = disclosureTooltip(obj)
+            %DISCLOSURETOOLTIP Hover text for the disclosure triangle.
+            %   Names the action (opposite of the current state) and the
+            %   section, e.g. "Collapse the Datasets section" when engaged, or
+            %   "Expand the Progress section" when collapsed. Falls back to
+            %   "this section" for a pane with no title.
+            if strlength(obj.Title) > 0
+                what = sprintf('the %s section', char(obj.Title));
+            else
+                what = 'this section';
+            end
+            if obj.Engaged
+                t = ['Collapse ' what];
+            else
+                t = ['Expand ' what];
+            end
+        end
+
         function updateDisclosure(obj)
-            %UPDATEDISCLOSURE Refresh the disclosure triangle glyph.
+            %UPDATEDISCLOSURE Refresh the disclosure triangle glyph and tooltip.
             if ~isempty(obj.DisclosureButton) && isvalid(obj.DisclosureButton)
-                obj.DisclosureButton.Text = obj.disclosureGlyph();
+                obj.DisclosureButton.Text    = obj.disclosureGlyph();
+                obj.DisclosureButton.Tooltip = obj.disclosureTooltip();
             end
         end
 

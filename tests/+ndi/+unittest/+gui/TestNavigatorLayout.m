@@ -106,6 +106,20 @@ classdef TestNavigatorLayout < matlab.unittest.TestCase
             testCase.verifyClass(p, 'ndi.gui.nav.datasetsPane');
             testCase.verifySameHandle(p, testCase.datasetsPane());
         end
+
+        function testDisclosureTooltipNamesActionAndSection(testCase)
+            % The disclosure triangle's hover text names the action and the
+            % section, flipping between Collapse and Expand as the pane toggles.
+            dp = testCase.datasetsPane();
+            testCase.verifyTrue(dp.Engaged);
+            testCase.verifySubstring(dp.DisclosureButton.Tooltip, 'Collapse');
+            testCase.verifySubstring(dp.DisclosureButton.Tooltip, 'Datasets');
+
+            dp.toggle();
+            drawnow;
+            testCase.verifySubstring(dp.DisclosureButton.Tooltip, 'Expand');
+            testCase.verifySubstring(dp.DisclosureButton.Tooltip, 'Datasets');
+        end
     end
 
     methods (Access = private)
