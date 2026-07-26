@@ -97,6 +97,15 @@ classdef TestNavigatorLayout < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(sum(rows), figH, ...
                 'Pane rows should still fit within the window.');
         end
+
+        function testDatasetsPaneHandleFindsThePane(testCase)
+            % datasetsPaneHandle should return the navigator's datasets pane,
+            % the same one found by scanning Panes (used by the NDI Cloud
+            % pane's check-all-cloud-status button).
+            p = testCase.Nav.datasetsPaneHandle();
+            testCase.verifyClass(p, 'ndi.gui.nav.datasetsPane');
+            testCase.verifySameHandle(p, testCase.datasetsPane());
+        end
     end
 
     methods (Access = private)

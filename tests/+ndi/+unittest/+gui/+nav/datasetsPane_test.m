@@ -128,6 +128,33 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             end
         end
 
+        %% Bulk cloud-status summary message
+
+        function testCloudSummaryMessageNoDatasets(testCase)
+            r = struct('total', 0, 'inCloud', 0, 'notInCloud', 0, 'errors', 0);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifySubstring(msg, 'no datasets to check');
+        end
+
+        function testCloudSummaryMessageCountsAndPluralisation(testCase)
+            r = struct('total', 5, 'inCloud', 3, 'notInCloud', 2, 'errors', 0);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifyEqual(msg, '3 of 5 datasets are in NDI Cloud.');
+
+            % Singular total uses "dataset is".
+            r1 = struct('total', 1, 'inCloud', 1, 'notInCloud', 0, 'errors', 0);
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.cloudSummaryMessage(r1), ...
+                '1 of 1 dataset is in NDI Cloud.');
+        end
+
+        function testCloudSummaryMessageReportsErrors(testCase)
+            r = struct('total', 4, 'inCloud', 1, 'notInCloud', 2, 'errors', 1);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifySubstring(msg, '1 of 4 datasets are in NDI Cloud.');
+            testCase.verifySubstring(msg, '1 dataset could not be checked.');
+        end
+
         function testSyncResultMessageReportsDeletions(testCase)
             % Mirror-shaped reports surface the deletion counts.
             fromRemote = struct( ...

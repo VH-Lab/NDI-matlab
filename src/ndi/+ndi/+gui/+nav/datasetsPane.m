@@ -145,6 +145,66 @@ classdef datasetsPane < ndi.gui.nav.pane
         function refresh(obj)
             obj.populateTree();
         end
+
+        function report = checkAllCloudStatus(obj, progressDlg)
+            %CHECKALLCLOUDSTATUS Check the NDI Cloud status of every dataset.
+            %
+            %   REPORT = CHECKALLCLOUDSTATUS(OBJ) determines, for each dataset
+            %   node in the tree, whether the dataset is linked to NDI Cloud
+            %   (ndi.dataset.isInCloud), then caches the result on the node and
+            %   updates its badge - the same effect as running "Check Cloud
+            %   status" on every dataset in turn. It is the bulk action behind
+            %   the NDI Cloud pane's "C" button.
+            %
+            %   REPORT = CHECKALLCLOUDSTATUS(OBJ, PROGRESSDLG) additionally
+            %   drives a uiprogressdlg PROGRESSDLG (its Value and Message are
+            %   updated per dataset). Pass [] (the default) to run with no
+            %   progress reporting.
+            %
+            %   REPORT is a struct with fields:
+            %       total      - number of datasets checked
+            %       inCloud    - how many are linked to NDI Cloud
+            %       notInCloud - how many are not
+            %       errors     - how many could not be checked (isInCloud threw)
+            arguments
+                obj
+                progressDlg = []
+            end
+            report = struct('total', 0, 'inCloud', 0, 'notInCloud', 0, 'errors', 0);
+            if isempty(obj.Tree) || ~isvalid(obj.Tree)
+                return;
+            end
+
+            kids = obj.Tree.Children;
+            idx  = [];   % indices of the top-level nodes that are datasets
+            for i = 1:numel(kids)
+                nd = kids(i).NodeData;
+                if isfield(nd, 'dataset') && ~isempty(nd.dataset)
+                    idx(end+1) = i; %#ok<AGROW>
+                end
+            end
+
+            report.total = numel(idx);
+            for k = 1:numel(idx)
+                node = kids(idx(k));
+                if ~isempty(progressDlg) && isvalid(progressDlg)
+                    progressDlg.Value   = k / numel(idx);
+                    progressDlg.Message = sprintf('Checking dataset %d of %d...', ...
+                        k, numel(idx));
+                end
+                try
+                    if node.NodeData.dataset.isInCloud()
+                        obj.setDatasetCloudState(node, 'incloud');
+                        report.inCloud = report.inCloud + 1;
+                    else
+                        obj.setDatasetCloudState(node, 'notincloud');
+                        report.notInCloud = report.notInCloud + 1;
+                    end
+                catch
+                    report.errors = report.errors + 1;
+                end
+            end
+        end
     end
 
     methods (Access = protected)
@@ -234,9 +294,13 @@ classdef datasetsPane < ndi.gui.nav.pane
                 obj.scanWorkspace('ndi.dataset')];
             for i = 1:numel(datasets)
                 ds       = datasets{i};
+                % Store the dataset handle on the node so a bulk action (see
+                % checkAllCloudStatus) can act on every dataset without
+                % re-deriving the list; the per-item menu callbacks capture ds
+                % directly and do not rely on this.
                 node = uitreenode(obj.Tree, ...
                     'Text',     obj.datasetLabel(ds), ...
-                    'NodeData', struct('kind', 'dataset'));
+                    'NodeData', struct('kind', 'dataset', 'dataset', ds));
                 obj.attachDatasetMenu(node, ds);
                 obj.addSessionChildren(node, ds, apps);
             end
@@ -1196,6 +1260,37 @@ classdef datasetsPane < ndi.gui.nav.pane
                 otherwise   % 'unknown' or unset: do not block anything yet
                     uploadEnable = 'on';
                     linkedEnable = 'on';
+            end
+        end
+
+        function msg = cloudSummaryMessage(report)
+            %CLOUDSUMMARYMESSAGE Summary text for a bulk cloud-status check.
+            %
+            %   MSG = cloudSummaryMessage(REPORT)
+            %
+            %   REPORT is the struct returned by
+            %   ndi.gui.nav.datasetsPane.checkAllCloudStatus (fields total,
+            %   inCloud, notInCloud, errors). MSG is a human-readable summary,
+            %   e.g. "3 of 5 datasets are in NDI Cloud." When some datasets
+            %   could not be checked, a trailing note reports how many.
+            if report.total == 0
+                msg = 'There are no datasets to check.';
+                return;
+            end
+            if report.total == 1
+                noun = 'dataset is';
+            else
+                noun = 'datasets are';
+            end
+            msg = sprintf('%d of %d %s in NDI Cloud.', ...
+                report.inCloud, report.total, noun);
+            if isfield(report, 'errors') && report.errors > 0
+                if report.errors == 1
+                    msg = [msg ' 1 dataset could not be checked.'];
+                else
+                    msg = [msg sprintf(' %d datasets could not be checked.', ...
+                        report.errors)];
+                end
             end
         end
 
