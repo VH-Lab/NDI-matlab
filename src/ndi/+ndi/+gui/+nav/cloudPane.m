@@ -3,7 +3,7 @@ classdef cloudPane < ndi.gui.nav.pane
 %
 %   A single-row pane with a bold "NDI Cloud" label on the left and, on the
 %   right, three controls:
-%       * a reload button (hover text "Refresh NDI Cloud login") that clears
+%       * a reload button (hover text "Refresh NDI Cloud login (logout)") that clears
 %         the current NDI Cloud login by calling ndi.cloud.logout, so the
 %         next NDI Cloud action re-authenticates with the default NDI Cloud
 %         profile. This is a quick recovery when a cloud token has expired
@@ -47,7 +47,7 @@ classdef cloudPane < ndi.gui.nav.pane
                 'Text',            '', ...
                 'Icon',            ndi.gui.nav.cloudPane.reloadIconFile(), ...
                 'IconAlignment',   'center', ...
-                'Tooltip',         'Refresh NDI Cloud login', ...
+                'Tooltip',         'Refresh NDI Cloud login (logout)', ...
                 'ButtonPushedFcn', @(~,~) obj.refreshLogin());
             reload.Layout.Row    = 1;
             reload.Layout.Column = 1;

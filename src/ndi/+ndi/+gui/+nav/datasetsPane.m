@@ -453,9 +453,11 @@ classdef datasetsPane < ndi.gui.nav.pane
             end
 
             % "Session" groups actions and information about the session
-            % itself. Its items are alphabetical: Info..., Ingest, Ingestion
-            % Status.
+            % itself. Its items are alphabetical: Clear Cache, Info...,
+            % Ingest, Ingestion Status.
             sessionRoot = uimenu(cm, 'Text', 'Session');
+            uimenu(sessionRoot, 'Text', 'Clear Cache', ...
+                'MenuSelectedFcn', @(~,~) obj.clearSessionCache(node));
             uimenu(sessionRoot, 'Text', 'Info...', ...
                 'MenuSelectedFcn', @(~,~) obj.showSessionInfo(node));
             uimenu(sessionRoot, 'Text', 'Ingest', ...
@@ -820,6 +822,31 @@ classdef datasetsPane < ndi.gui.nav.pane
             catch ME
                 uialert(obj.Navigator.Figure, ME.message, app.Label);
             end
+        end
+
+        function clearSessionCache(obj, node)
+            %CLEARSESSIONCACHE Clear the ndi.cache of NODE's session.
+            %   Resolves the session and calls S.cache.clear(). Note that
+            %   ndi.cache.clear also clears the global memoized-function caches
+            %   (see ndi.cache.clear), so this frees session-scoped cached data
+            %   (e.g. epoch tables) as well.
+            if isempty(node) || ~isvalid(node)
+                return;
+            end
+            s = obj.resolveSession(node.NodeData);
+            if isempty(s)
+                uialert(obj.Navigator.Figure, ...
+                    'Could not open the session for this node.', 'Clear Cache');
+                return;
+            end
+            try
+                s.cache.clear();
+            catch ME
+                uialert(obj.Navigator.Figure, ME.message, 'Clear Cache');
+                return;
+            end
+            uialert(obj.Navigator.Figure, 'The session cache was cleared.', ...
+                'Clear Cache', 'Icon', 'success');
         end
 
         function showSessionInfo(obj, node)
