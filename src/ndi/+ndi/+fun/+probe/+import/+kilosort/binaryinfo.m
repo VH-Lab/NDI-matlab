@@ -8,14 +8,22 @@ function info = binaryinfo(kdir, options)
 % This is used by NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE when 'RecalculateMeanWaveforms'
 % is true to read wide mean waveforms directly from the binary.
 %
-% The binary and its parameters are located from (in order):
+% The binary itself is located from (in order):
 %
 %   1) an explicit 'binary_file' name/value option, if given;
 %   2) the NDI export '.metadata' sidecar (written by NDI.FUN.PROBE.EXPORT.BINARY)
 %      in KDIR or its parent directory - this gives num_channels and the encode
-%      multiplier and names the binary (the sidecar is '<binary>.metadata');
-%   3) the Phy 'params.py' file in KDIR - this gives n_channels_dat, dtype, offset,
-%      sample_rate, and dat_path (used for externally sorted data such as SpikeGLX).
+%      multiplier and names the binary (the sidecar is '<binary>.metadata').
+%
+% The binary is deliberately NOT located from the Phy 'params.py' 'dat_path' entry:
+% for externally sorted data that path frequently points at Kilosort's whitened,
+% filtered temporary file (e.g. 'temp_wh.dat') rather than the true raw recording,
+% and that temp file cannot be relied on to exist. When the binary cannot be found
+% from (1) or (2), the caller (NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE) instead prompts
+% the user to select the raw recording. The Phy 'params.py' file, if present, is
+% still parsed for its acquisition parameters (n_channels_dat, dtype, offset,
+% sample_rate) and its 'dat_path' string is returned for reporting - but 'dat_path'
+% is never used to open a binary.
 %
 % INFO is a structure with fields:
 %   found             - true if a usable binary and channel count were located
@@ -126,17 +134,9 @@ function info = binaryinfo(kdir, options)
             info.sample_rate = p.sample_rate;
         end;
         if isfield(p,'dat_path') && ~isempty(p.dat_path),
-            info.dat_path = p.dat_path; % raw string, for reporting even if unresolved
-            if isempty(binfile),
-                if isAbsolutePath(p.dat_path),
-                    cand = p.dat_path;
-                else,
-                    cand = fullfile(kdir, p.dat_path);
-                end;
-                if isfile(cand),
-                    binfile = cand;
-                end;
-            end;
+            % keep the raw string for reporting, but do NOT use it to locate a
+            % binary: it often names Kilosort's whitened/filtered temp file.
+            info.dat_path = p.dat_path;
         end;
     end;
 
@@ -209,14 +209,3 @@ function s = stripPyString(val)
         s = s(2:end-1);
     end;
 end % stripPyString
-
-function tf = isAbsolutePath(pth)
-% cross-platform absolute path test (POSIX '/...' or Windows 'C:\...' / UNC)
-    tf = false;
-    if isempty(pth), return; end;
-    if pth(1)=='/' || pth(1)=='\',
-        tf = true;
-    elseif numel(pth)>=2 && isletter(pth(1)) && pth(2)==':',
-        tf = true;
-    end;
-end % isAbsolutePath

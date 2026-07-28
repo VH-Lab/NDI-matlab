@@ -50,6 +50,19 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
 % |                          |   to, so no window straddles the artificial seam    |
 % |                          |   between two concatenated epochs. When empty, only |
 % |                          |   the file's own start/end are honored.             |
+% | highpass (false)         | If true, high-pass filter the raw data before       |
+% |                          |   extracting each spike window. Raw recordings are  |
+% |                          |   unfiltered (DC offset + LFP + spikes); filtering  |
+% |                          |   recovers spike shapes comparable to Kilosort's    |
+% |                          |   filtered data. A zero-phase Chebyshev type I high-|
+% |                          |   pass (filtfilt) is used so the trough stays at 0. |
+% |                          |   Each spike's window is read with padding on both  |
+% |                          |   sides, filtered, then trimmed. Requires the Signal|
+% |                          |   Processing Toolbox; if unavailable a warning is   |
+% |                          |   issued and the data are left unfiltered.          |
+% | hp_cutoff (300)          | High-pass cutoff frequency in Hz (when highpass).   |
+% | hp_order (4)             | Chebyshev type I filter order (when highpass).      |
+% | hp_ripple (0.8)          | Passband ripple Rp in dB (when highpass).           |
 % ---------------------------------------------------------------------------------
 %
 % See also: NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE, NDI.FUN.PROBE.IMPORT.KILOSORT.BINARYINFO,
@@ -68,6 +81,10 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
         options.multiplier (1,1) double = 1
         options.maxSpikes (1,1) double = 1000
         options.epochBounds double = []
+        options.highpass (1,1) logical = false
+        options.hp_cutoff (1,1) double {mustBePositive} = 300
+        options.hp_order (1,1) double {mustBePositive} = 4
+        options.hp_ripple (1,1) double {mustBePositive} = 0.8
     end
 
     if t1 < t0,
@@ -93,6 +110,41 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
     nWin = off1 - off0 + 1;
     wst = ((off0:off1).') / sample_rate;
 
+    % design the high-pass filter once (if requested and the toolbox is present).
+    % Each spike window is read with 'pad' extra samples on either side, filtered
+    % with zero-phase filtfilt, then trimmed back to nWin, so the filter has settled
+    % across the window and the trough alignment is preserved.
+    doFilter = false;
+    pad = 0;
+    bcoef = [];
+    acoef = [];
+    if options.highpass,
+        nyq = 0.5 * sample_rate;
+        Wn = options.hp_cutoff / nyq;
+        if ~(Wn > 0 && Wn < 1),
+            warning('ndi:fun:probe:import:kilosort:recalculatemeanwaveform:badCutoff', ...
+                ['High-pass cutoff %g Hz is not valid for sample rate %g Hz ' ...
+                '(must be 0 < cutoff < Nyquist = %g Hz); leaving the data unfiltered.'], ...
+                options.hp_cutoff, sample_rate, nyq);
+        elseif ~(exist('cheby1','file') || exist('cheby1','builtin')) || ...
+                ~(exist('filtfilt','file') || exist('filtfilt','builtin')),
+            warning('ndi:fun:probe:import:kilosort:recalculatemeanwaveform:noSignalToolbox', ...
+                ['highpass is true but the Signal Processing Toolbox (cheby1/filtfilt) ' ...
+                'is not available; leaving the data unfiltered.']);
+        else,
+            [bcoef, acoef] = cheby1(options.hp_order, options.hp_ripple, Wn, 'high');
+            doFilter = true;
+            % pad enough for the filter to settle: a few cutoff periods, and at least
+            % filtfilt's minimum-length requirement (3*(filter order)).
+            pad = max(ceil(3*sample_rate/options.hp_cutoff), 3*(options.hp_order+1));
+        end;
+    end;
+
+    % offsets of the (possibly padded) block actually read from the file
+    readOff0 = off0 - pad;
+    readOff1 = off1 + pad;
+    nRead = readOff1 - readOff0 + 1;
+
     % total number of complete multi-channel samples available in the file
     d = dir(binfile);
     if isempty(d),
@@ -110,13 +162,15 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
 
     ss = double(spike_samples_global(:));
 
-    % keep only spikes whose full window lies inside the recording (file ends)
-    valid = (ss + off0) >= 0 & (ss + off1) <= (nTotalSamples-1);
+    % keep only spikes whose full (padded) read block lies inside the recording.
+    % When highpass filtering, the padding is included so the filter has real data
+    % to settle on rather than falling off the file end.
+    valid = (ss + readOff0) >= 0 & (ss + readOff1) <= (nTotalSamples-1);
 
     % if epoch boundaries were provided, additionally require each spike's whole
-    % window to stay within the single epoch it belongs to, so a window never
-    % straddles the artificial seam where two concatenated epochs meet (the far
-    % side of such a seam is unrelated data from a different recording).
+    % (padded) block to stay within the single epoch it belongs to, so a window
+    % never straddles the artificial seam where two concatenated epochs meet (the
+    % far side of such a seam is unrelated data from a different recording).
     eb = options.epochBounds(:);
     if numel(eb) >= 2,
         % epoch index of each spike = number of left edges it is at or past
@@ -124,7 +178,7 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
         e = max(min(e, numel(eb)-1), 1); % clamp (spikes are expected in range)
         lo = eb(e);        % first sample of the spike's epoch (0-based)
         hi = eb(e+1) - 1;  % last sample of the spike's epoch (0-based)
-        valid = valid & (ss + off0) >= lo & (ss + off1) <= hi;
+        valid = valid & (ss + readOff0) >= lo & (ss + readOff1) <= hi;
     end;
 
     ss = ss(valid);
@@ -147,17 +201,23 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveform(binfile, num_channels, s
 
     acc = zeros(nWin, num_channels);
     for i=1:numel(ss),
-        startSample = ss(i) + off0; % 0-based sample index of the first sample in the window
+        startSample = ss(i) + readOff0; % 0-based index of the first sample read
         byteOffset = options.headerOffsetBytes + startSample*num_channels*bytesPer;
         if fseek(fid, byteOffset, 'bof') ~= 0,
             continue;
         end;
-        raw = fread(fid, num_channels*nWin, [prec '=>double']);
-        if numel(raw) < num_channels*nWin,
+        raw = fread(fid, num_channels*nRead, [prec '=>double']);
+        if numel(raw) < num_channels*nRead,
             continue; % short read (should not happen given the validity check)
         end;
         % binary is channel-interleaved per sample: [ch1 ch2 ... chN] for each sample
-        w = reshape(raw, num_channels, nWin).'; % -> (nWin x num_channels)
+        w = reshape(raw, num_channels, nRead).'; % -> (nRead x num_channels)
+        if doFilter,
+            w = filtfilt(bcoef, acoef, w); % zero-phase high-pass, per channel (column)
+        end;
+        if pad > 0,
+            w = w(pad+1:pad+nWin, :); % trim padding back to the requested window
+        end;
         acc = acc + w;
         nUsed = nUsed + 1;
     end;

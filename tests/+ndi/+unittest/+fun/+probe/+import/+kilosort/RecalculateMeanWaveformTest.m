@@ -164,8 +164,10 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             testCase.verifyEqual(info.sample_rate, testCase.sampleRate, 'AbsTol', 1e-9);
         end
 
-        function testBinaryInfoFromParamsPy(testCase)
-            % Phy-style layout: params.py next to the binary, no sidecar.
+        function testBinaryInfoParamsPyParsedButNotLocated(testCase)
+            % Phy-style layout: params.py next to the binary, no sidecar. binaryinfo
+            % PARSES the acquisition parameters but must NOT open the binary via
+            % dat_path (which frequently names a whitened/filtered temp file).
             kdir = fullfile(testCase.workDir,'phy');
             mkdir(kdir);
             binp = fullfile(kdir,'recording.dat');
@@ -180,11 +182,156 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             fclose(fid);
 
             info = ndi.fun.probe.import.kilosort.binaryinfo(kdir);
-            testCase.verifyTrue(info.found, 'Binary should be located from params.py.');
-            testCase.verifyEqual(info.file, binp, 'Wrong binary file from dat_path.');
-            testCase.verifyEqual(info.num_channels, testCase.numChannels);
+            testCase.verifyFalse(info.found, ...
+                'binaryinfo must not locate a binary from params.py dat_path.');
+            testCase.verifyEqual(info.file, '', 'No binary file should be resolved.');
+            testCase.verifyEqual(info.num_channels, testCase.numChannels, ...
+                'n_channels_dat should still be parsed.');
             testCase.verifyEqual(info.dtype, 'int16');
             testCase.verifyEqual(info.sample_rate, testCase.sampleRate, 'AbsTol', 1e-9);
+            testCase.verifyEqual(info.dat_path, 'recording.dat', ...
+                'dat_path string should be kept for reporting.');
+        end
+
+        function testNeuropixelsMultiplier(testCase)
+            % NP1/NP2 encode multipliers and aliases.
+            np1 = (512*500)/0.6;
+            np2 = (8192*80)/0.5;
+            testCase.verifyEqual(ndi.fun.probe.import.kilosort.neuropixelsmultiplier('NP1'), ...
+                np1, 'AbsTol', 1e-6);
+            testCase.verifyEqual(ndi.fun.probe.import.kilosort.neuropixelsmultiplier('NP2'), ...
+                np2, 'AbsTol', 1e-6);
+            testCase.verifyEqual(ndi.fun.probe.import.kilosort.neuropixelsmultiplier('Neuropixels 1.0'), ...
+                np1, 'AbsTol', 1e-6);
+            testCase.verifyEqual(ndi.fun.probe.import.kilosort.neuropixelsmultiplier('np2.0'), ...
+                np2, 'AbsTol', 1e-6);
+            [~, info] = ndi.fun.probe.import.kilosort.neuropixelsmultiplier('NP1');
+            testCase.verifyEqual(info.name, 'NP1');
+            testCase.verifyEqual(info.uV_per_bit, 1e6*0.6/(512*500), 'AbsTol', 1e-6);
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.neuropixelsmultiplier('NP3'), ...
+                'ndi:fun:probe:import:kilosort:neuropixelsmultiplier:badType');
+        end
+
+        function testPromptRawBinaryHeadless(testCase)
+            % headless resolution: RawFile + ProbeType supplied (no dialogs), with
+            % the channel count taken from params.py via the base binaryinfo struct.
+            kdir = fullfile(testCase.workDir,'phy2');
+            mkdir(kdir);
+            fid = fopen(fullfile(kdir,'params.py'),'w');
+            fprintf(fid,'n_channels_dat = %d\n', testCase.numChannels);
+            fprintf(fid,"dtype = 'int16'\n");
+            fprintf(fid,'offset = 0\n');
+            fprintf(fid,'sample_rate = %g\n', testCase.sampleRate);
+            fclose(fid);
+            baseinfo = ndi.fun.probe.import.kilosort.binaryinfo(kdir);
+            testCase.verifyFalse(baseinfo.found);
+
+            info = ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false);
+            testCase.verifyTrue(info.found);
+            testCase.verifyEqual(info.file, testCase.binFile);
+            testCase.verifyEqual(info.num_channels, testCase.numChannels);
+            testCase.verifyEqual(info.multiplier, (512*500)/0.6, 'AbsTol', 1e-6);
+            testCase.verifyEqual(info.probe_type, 'NP1');
+
+            info2 = ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP2', 'PromptForRawFile', false);
+            testCase.verifyEqual(info2.multiplier, (8192*80)/0.5, 'AbsTol', 1e-6);
+
+            % headless mode with no ProbeType must error rather than block on a dialog
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
+                'RawFile', testCase.binFile, 'PromptForRawFile', false), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:noProbeType');
+
+            % a missing RawFile path errors
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
+                'RawFile', fullfile(testCase.workDir,'does_not_exist.bin'), ...
+                'ProbeType', 'NP1', 'PromptForRawFile', false), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:noFile');
+        end
+
+        function testPromptRawBinaryChannelCount(testCase)
+            % when no params.py/.metadata gives a channel count, it must be supplied.
+            nochan = fullfile(testCase.workDir,'nochan');
+            mkdir(nochan);
+            emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(nochan);
+            testCase.verifyTrue(isnan(emptyinfo.num_channels), ...
+                'Fixture dir has no channel-count source.');
+
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:noChannelCount');
+
+            info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels);
+            testCase.verifyTrue(info.found);
+            testCase.verifyEqual(info.num_channels, testCase.numChannels);
+        end
+
+        function testHighPassFilterApplied(testCase)
+            % Verify the high-pass path matches an independent filtfilt reference and
+            % removes the DC/slow-drift baseline. Skipped without the Signal Toolbox.
+            haveSPT = (logical(exist('cheby1','file')) || logical(exist('cheby1','builtin'))) && ...
+                (logical(exist('filtfilt','file')) || logical(exist('filtfilt','builtin')));
+            testCase.assumeTrue(haveSPT, ...
+                'Signal Processing Toolbox (cheby1/filtfilt) not available; skipping.');
+
+            nCh = 2; nS = 4000; fs = 30000;
+            tt = 0:nS-1;
+            A = zeros(nCh, nS);
+            for ch=1:nCh,
+                % DC offset + slow drift (removed by high-pass) + a 1 kHz tone (kept)
+                A(ch,:) = ch*500 + 0.01*tt + 50*sin(2*pi*1000*tt/fs);
+            end;
+            Aint = double(int16(round(A))); % values as they are stored/read back
+            bf = fullfile(testCase.workDir,'hp.bin');
+            ndi.unittest.fun.probe.import.kilosort.RecalculateMeanWaveformTest.writeBinary(...
+                bf, int16(round(A)));
+
+            spikes = [1000 2000 3000];
+            t0 = -0.005; t1 = 0.005; order = 4; ripple = 0.8; cutoff = 300;
+
+            meanWf = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                bf, nCh, spikes, fs, t0, t1, 'multiplier', 1, 'maxSpikes', Inf, ...
+                'highpass', true, 'hp_cutoff', cutoff, 'hp_order', order, 'hp_ripple', ripple);
+
+            % independent reference: read padded windows, filtfilt, trim, average
+            off0 = round(t0*fs); off1 = round(t1*fs); nWin = off1-off0+1;
+            pad = max(ceil(3*fs/cutoff), 3*(order+1));
+            [b,a] = cheby1(order, ripple, cutoff/(fs/2), 'high');
+            acc = zeros(nWin, nCh);
+            for s = spikes,
+                r0 = s + off0 - pad; r1 = s + off1 + pad; % 0-based sample indices
+                seg = Aint(:, (r0+1):(r1+1)).'; % (nRead x nCh)
+                segf = filtfilt(b, a, seg);
+                acc = acc + segf(pad+1:pad+nWin, :);
+            end;
+            refWf = acc / numel(spikes);
+
+            testCase.verifyEqual(meanWf, refWf, 'AbsTol', 1e-6, ...
+                'High-pass filtered mean waveform does not match the reference.');
+            % DC offsets of 500 and 1000 must be gone; a small margin avoids flakiness
+            % from the residual of the (kept) 1 kHz tone averaged over the window.
+            testCase.verifyLessThan(max(abs(mean(meanWf,1))), 5, ...
+                'High-pass should remove the DC/slow-drift baseline (near-zero channel means).');
+        end
+
+        function testHighPassBadCutoffWarnsAndPassesThrough(testCase)
+            % a cutoff at/above Nyquist cannot be realized: warn and leave unfiltered,
+            % so the result equals the plain (unfiltered) average.
+            spikes = [20 50];
+            warnID = 'ndi:fun:probe:import:kilosort:recalculatemeanwaveform:badCutoff';
+            meanWf = testCase.verifyWarning(@() ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                testCase.binFile, testCase.numChannels, spikes, testCase.sampleRate, ...
+                -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf, ...
+                'highpass', true, 'hp_cutoff', testCase.sampleRate), warnID);
+            expected = zeros(11, testCase.numChannels);
+            for ch=1:testCase.numChannels,
+                expected(:,ch) = ch*1000 + (0:10)' + 30;
+            end;
+            testCase.verifyEqual(meanWf, expected, 'AbsTol', 1e-9, ...
+                'When the cutoff is invalid the data must be left unfiltered.');
         end
 
         function testBinaryInfoNotFound(testCase)

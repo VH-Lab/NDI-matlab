@@ -45,8 +45,8 @@ function [info, summary] = getInfo(S, probe, options)
 % | noSubFolder (false)            | If true, read directly from the probe's dir   |
 % | quality_labels (["good" "mua"])| Labels that would be imported (for would_import)|
 % | binary_file ('')               | Explicit path to the raw binary; when empty it|
-% |                                |   is located automatically (.metadata sidecar |
-% |                                |   or params.py dat_path), for reporting.      |
+% |                                |   is located from the .metadata sidecar (not  |
+% |                                |   params.py dat_path), for reporting.         |
 % ---------------------------------------------------------------------------------
 %
 % Example:
@@ -178,16 +178,15 @@ function [info, summary] = getInfo(S, probe, options)
         end;
         lines{end+1} = ['  Raw binary:       found: ' info.binary_file nchStr];
     else,
+        lines{end+1} = '  Raw binary:       NOT FOUND automatically (no .metadata sidecar).';
+        lines{end+1} = '                      The importer will PROMPT for the raw recording and';
+        lines{end+1} = '                      its Neuropixels generation, then high-pass filter it';
+        lines{end+1} = '                      to recalculate wide mean waveforms. Pass binary_file /';
+        lines{end+1} = '                      RawFile to skip the prompt.';
         if ~isempty(info.binary_dat_path),
-            lines{end+1} = ['  Raw binary:       NOT FOUND. params.py dat_path points to: ' ...
-                info.binary_dat_path];
-            lines{end+1} = '                      -> wide mean waveforms will fall back to the';
-            lines{end+1} = '                         narrow (~2 ms) templates. Edit dat_path in';
-            lines{end+1} = '                         params.py, or pass binary_file, to fix this.';
-        else,
-            lines{end+1} = '  Raw binary:       NOT FOUND (no .metadata sidecar and no params.py';
-            lines{end+1} = '                      dat_path). Wide mean waveforms will fall back to';
-            lines{end+1} = '                      the narrow (~2 ms) templates.';
+            lines{end+1} = ['                      (params.py dat_path names ' ...
+                info.binary_dat_path ' - not used; it often names a'];
+            lines{end+1} = '                       whitened/filtered temp file.)';
         end;
     end;
 
