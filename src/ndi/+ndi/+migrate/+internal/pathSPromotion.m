@@ -146,14 +146,16 @@ if isempty(lid); lid = partId; end
 subj.subject = struct('local_identifier', lid);
 
 assertion = struct();
-assertion.document_class = classBlock('term_assertion', {'subject_assertion'});
+assertion.document_class = classBlock('term_assertion', {'subject_assertion', 'term'});
 assertion.depends_on = struct('name', {'subject_id'}, 'value', {partId});
 assertion.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
     'name', 'migrated_part_kind', 'datestamp', ds);
 assertion.subject_statement = struct('variable', ...
     struct('node', '', 'name', 'anatomical structure'), 'storage_mode', 'inline');
 assertion.subject_assertion = struct();
-assertion.term_assertion = struct('value', siteTerm);
+% the value now rides the `term` composite block (term_assertion pairs
+% subject_assertion x term); the CLASS name is unchanged.
+assertion.term = struct('value', siteTerm);
 
 relation = struct();
 % subject_relation was renamed to `relation` (abstract) in V_eta. Use the current
@@ -203,7 +205,13 @@ end
 
 function t = siteValue(s)
 t = struct('node', '', 'name', '');
-if isfield(s, 'term_observation') && isstruct(s.term_observation) ...
+% term_observation's value lives on the inherited `term` block (it pairs
+% subject_observation x term). Accept the pre-composite shape too, so a body
+% migrated before that change still resolves.
+if isfield(s, 'term') && isstruct(s.term) ...
+        && isfield(s.term, 'value') && isstruct(s.term.value)
+    t = s.term.value;
+elseif isfield(s, 'term_observation') && isstruct(s.term_observation) ...
         && isfield(s.term_observation, 'value') && isstruct(s.term_observation.value)
     t = s.term_observation.value;
 end
