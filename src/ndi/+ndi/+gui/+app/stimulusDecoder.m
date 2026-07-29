@@ -43,6 +43,8 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
         % widgets
         probeDropdown           % popup of the session's stimulator probes
         epochList               % multi-select listbox of stimulus epochs
+        variesText              % text area: parameters that vary + their values
+        constantTable           % table: parameters held constant + their value
         overwriteCheckbox       % "Re-decode selected (overwrite)"
         runButton               % the "Run decoder" button
 
@@ -50,6 +52,7 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
         stimulators = {}        % cell array of the session's stimulator probes
         epochIds = {}           % epoch ids of the selected probe, in list order
         decodedEpochs = {}      % epoch ids that already have a stimulus_presentation
+        presDocs = {}           % stimulus_presentation docs (parallel to decodedEpochs)
         waitDlg = []            % active "please wait" dialog (if any)
     end
 
@@ -72,7 +75,7 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             c = ndi.gui.cloudColors();
 
             obj.fig = uifigure('Name', ['Stimulus Decoder: ' char(obj.session.reference)], ...
-                'Position', [100 100 560 520], ...
+                'Position', [100 100 880 540], ...
                 'Color', c.darkBlue, ...
                 'Tag', 'ndi.gui.app.stimulusDecoder');
 
@@ -114,18 +117,64 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                     @() obj.reloadProbes()));
             rb.Layout.Column = 3;
 
-            % Row 4: list header
-            header = uilabel(root, ...
+            % the epoch list (left, ~40%) and the stimulus-parameter panels
+            % (right, ~60%) share the same 2-column split so their headers and
+            % bodies line up
+            splitCols = {'2x', '3x'};    % 40% / 60%
+
+            % Row 4: headers for the two halves
+            hrow = uigridlayout(root, [1 2], ...
+                'ColumnWidth', splitCols, 'RowHeight', {'1x'}, ...
+                'ColumnSpacing', 8, 'Padding', [0 0 0 0], ...
+                'BackgroundColor', c.darkBlue);
+            hrow.Layout.Row = 4; hrow.Layout.Column = 1;
+            lhdr = uilabel(hrow, ...
                 'Text', 'Stimulus epochs (* = has stimulus_presentation):', ...
                 'FontWeight', 'bold', 'FontColor', c.white);
-            header.Layout.Row = 4; header.Layout.Column = 1;
+            lhdr.Layout.Column = 1;
+            rhdr = uilabel(hrow, ...
+                'Text', 'Stimulus parameters (selected epoch(s)):', ...
+                'FontWeight', 'bold', 'FontColor', c.white);
+            rhdr.Layout.Column = 2;
 
-            % Row 5: multi-select epoch list
-            obj.epochList = uilistbox(root, 'Items', {}, 'Multiselect', 'on', ...
+            % Row 5: split - epoch list on the left, parameter panels on the right
+            srow = uigridlayout(root, [1 2], ...
+                'ColumnWidth', splitCols, 'RowHeight', {'1x'}, ...
+                'ColumnSpacing', 8, 'Padding', [0 0 0 0], ...
+                'BackgroundColor', c.darkBlue);
+            srow.Layout.Row = 5; srow.Layout.Column = 1;
+
+            % left: multi-select epoch list
+            obj.epochList = uilistbox(srow, 'Items', {}, 'Multiselect', 'on', ...
                 'BackgroundColor', c.white, 'FontColor', c.darkBlue, ...
                 'FontName', get(groot, 'FixedWidthFontName'), ...
-                'ValueChangedFcn', @(~,~) obj.updateButtonState());
-            obj.epochList.Layout.Row = 5; obj.epochList.Layout.Column = 1;
+                'ValueChangedFcn', @(~,~) obj.onEpochSelectionChanged());
+            obj.epochList.Layout.Column = 1;
+
+            % right: "What varies" (top) and "What is constant" (bottom)
+            pcol = uigridlayout(srow, [4 1], ...
+                'RowHeight', {18, '1x', 18, '1x'}, 'ColumnWidth', {'1x'}, ...
+                'RowSpacing', 4, 'Padding', [0 0 0 0], ...
+                'BackgroundColor', c.darkBlue);
+            pcol.Layout.Column = 2;
+
+            vlbl = uilabel(pcol, 'Text', 'What varies (among non-blank stimuli)', ...
+                'FontWeight', 'bold', 'FontColor', c.white);
+            vlbl.Layout.Row = 1; vlbl.Layout.Column = 1;
+            obj.variesText = uitextarea(pcol, 'Editable', 'off', ...
+                'BackgroundColor', c.white, 'FontColor', c.darkBlue, ...
+                'FontName', get(groot, 'FixedWidthFontName'), ...
+                'Value', {''});
+            obj.variesText.Layout.Row = 2; obj.variesText.Layout.Column = 1;
+
+            clbl = uilabel(pcol, 'Text', 'What is constant (among non-blank stimuli)', ...
+                'FontWeight', 'bold', 'FontColor', c.white);
+            clbl.Layout.Row = 3; clbl.Layout.Column = 1;
+            obj.constantTable = uitable(pcol, ...
+                'ColumnName', {'Parameter', 'Value'}, ...
+                'ColumnWidth', {'1x', '1x'}, 'RowName', {}, ...
+                'Data', cell(0, 2));
+            obj.constantTable.Layout.Row = 4; obj.constantTable.Layout.Column = 1;
 
             % Row 6: overwrite checkbox + run button
             brow = uigridlayout(root, [1 3], ...
@@ -215,7 +264,9 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 obj.epochList.Items = {['(could not read epochs: ' ME.message ')']};
                 obj.epochList.ItemsData = {};
                 obj.decodedEpochs = {};
+                obj.presDocs = {};
                 obj.updateButtonState();
+                obj.updateStimulusInfo();
                 return;
             end
             obj.decodedEpochs = obj.decodedEpochIds(p);
@@ -239,12 +290,17 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 obj.epochList.Value = keep;
             end
             obj.updateButtonState();
+            obj.updateStimulusInfo();
         end % reloadEpochs
 
         function ids = decodedEpochIds(obj, probe)
             % epoch ids that already have a stimulus_presentation document for
-            % PROBE (a single database search, matched by the epochid field)
+            % PROBE (a single database search, matched by the epochid field).
+            % Also caches the documents (obj.presDocs, parallel to the returned
+            % ids) so the "what varies / what is constant" panels can be filled
+            % without another database read on every selection change.
             ids = {};
+            obj.presDocs = {};
             try
                 q = ndi.query('','isa','stimulus_presentation','') & ...
                     ndi.query('','depends_on','stimulus_element_id', probe.id());
@@ -254,20 +310,37 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             end
             for i = 1:numel(docs)
                 try
-                    ids{end+1} = docs{i}.document_properties.epochid.epochid; %#ok<AGROW>
+                    thisId = docs{i}.document_properties.epochid.epochid;
                 catch
                     % a stimulus_presentation without a readable epochid: skip
+                    continue;
+                end
+                if ~ismember(thisId, ids)
+                    ids{end+1} = thisId;          %#ok<AGROW>
+                    obj.presDocs{end+1} = docs{i};
                 end
             end
-            ids = unique(ids);
         end % decodedEpochIds
+
+        function docs = presDocsForEpochs(obj, epochIds)
+            % the cached stimulus_presentation documents whose epoch id is in
+            % EPOCHIDS (a cell array), as a cell array of ndi.document
+            docs = {};
+            for i = 1:numel(obj.decodedEpochs)
+                if ismember(obj.decodedEpochs{i}, epochIds)
+                    docs{end+1} = obj.presDocs{i}; %#ok<AGROW>
+                end
+            end
+        end % presDocsForEpochs
 
         function clearEpochList(obj)
             obj.epochIds = {};
             obj.decodedEpochs = {};
+            obj.presDocs = {};
             obj.epochList.Items = {};
             obj.epochList.ItemsData = {};
             obj.updateButtonState();
+            obj.updateStimulusInfo();
         end % clearEpochList
 
         function sel = selectedEpochIds(obj)
@@ -291,6 +364,93 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             ok = ~isempty(obj.selectedProbe()) && ~isempty(obj.selectedEpochIds());
             obj.runButton.Enable = onOff(ok);
         end % updateButtonState
+
+        function onEpochSelectionChanged(obj)
+            obj.updateButtonState();
+            obj.updateStimulusInfo();
+        end % onEpochSelectionChanged
+
+        % ---- "what varies / what is constant" panels ------------------------
+
+        function updateStimulusInfo(obj)
+            % fill the "What varies" text area and the "What is constant" table
+            % from the stimulus_presentation documents of the selected epochs
+            if isempty(obj.variesText) || ~isvalid(obj.variesText)
+                return;   % panels not built yet (called during construction)
+            end
+
+            sel = obj.selectedEpochIds();
+            docs = obj.presDocsForEpochs(sel);
+
+            if isempty(sel)
+                obj.setInfoMessage('(select one or more epochs)');
+                return;
+            end
+            if isempty(docs)
+                obj.setInfoMessage(['(no stimulus_presentation for the ' ...
+                    'selected epoch(s) - run the decoder first)']);
+                return;
+            end
+
+            try
+                [varies, constant] = ndi.fun.stimulus.whatVaries(docs);
+            catch ME
+                obj.setInfoMessage(['(could not read stimuli: ' ME.message ')']);
+                return;
+            end
+
+            % "What varies": one line per parameter, "name = <values>"
+            if isempty(varies)
+                lines = {'(nothing varies across these stimuli)'};
+            else
+                lines = cell(1, numel(varies));
+                for i = 1:numel(varies)
+                    lines{i} = [varies(i).parameter ' = ' ...
+                        obj.valueToText(varies(i).values)];
+                end
+            end
+            obj.variesText.Value = lines;
+
+            % "What is constant": a Parameter / Value table
+            if isempty(constant)
+                obj.constantTable.Data = cell(0, 2);
+            else
+                data = cell(numel(constant), 2);
+                for i = 1:numel(constant)
+                    data{i, 1} = constant(i).parameter;
+                    data{i, 2} = obj.valueToText(constant(i).value);
+                end
+                obj.constantTable.Data = data;
+            end
+        end % updateStimulusInfo
+
+        function setInfoMessage(obj, msg)
+            % show a single status line in both panels (nothing to report)
+            obj.variesText.Value = {msg};
+            obj.constantTable.Data = cell(0, 2);
+        end % setInfoMessage
+
+        function s = valueToText(obj, v)
+            % a compact one-line text for a parameter value, as produced by
+            % ndi.fun.stimulus.whatVaries. Numeric/logical values (including the
+            % arrays of varying values) use mat2str; cells and strings are
+            % formatted element by element.
+            if isnumeric(v) || islogical(v)
+                s = mat2str(v);
+            elseif ischar(v)
+                s = v;
+            elseif isstring(v)
+                s = char(strjoin(v(:).', ', '));
+            elseif iscell(v)
+                parts = cell(1, numel(v));
+                for i = 1:numel(v)
+                    parts{i} = obj.valueToText(v{i});
+                end
+                s = ['{' strjoin(parts, ', ') '}'];
+            else
+                s = ['<' class(v) '>'];
+            end
+        end % valueToText
 
         % ---- decoding -------------------------------------------------------
 
