@@ -90,9 +90,12 @@ classdef whatVariesTest < matlab.unittest.TestCase
         end
 
         function testFieldPresentInSomeStimuli(testCase)
-            % a parameter present in some stimuli but not all is "varying"
-            p(1) = struct('angle',0,'contrast',1);
-            p(2).angle = 0; p(2).contrast = 1; p(2).isblank = 1;
+            % a parameter present in some stimuli but not all is "varying". A
+            % cell array is used (rather than a struct array) so the two
+            % parameter structs can genuinely differ in their fields - a struct
+            % array would force 'isblank' onto every element.
+            p = { struct('angle',0,'contrast',1), ...
+                  struct('angle',0,'contrast',1,'isblank',1) };
             [varies, constant] = ndi.fun.stimulus.whatVaries(p);
             testCase.verifyEqual(varies.parameter, 'isblank');
             testCase.verifyEqual(varies.values, 1);

@@ -317,7 +317,7 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 end
                 if ~ismember(thisId, ids)
                     ids{end+1} = thisId;          %#ok<AGROW>
-                    obj.presDocs{end+1} = docs{i}; %#ok<AGROW>
+                    obj.presDocs{end+1} = docs{i};
                 end
             end
         end % decodedEpochIds
