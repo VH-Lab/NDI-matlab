@@ -93,13 +93,46 @@ classdef whatVariesTest < matlab.unittest.TestCase
             % a parameter present in some stimuli but not all is "varying". A
             % cell array is used (rather than a struct array) so the two
             % parameter structs can genuinely differ in their fields - a struct
-            % array would force 'isblank' onto every element.
+            % array would force the extra field onto every element.
             p = { struct('angle',0,'contrast',1), ...
-                  struct('angle',0,'contrast',1,'isblank',1) };
+                  struct('angle',0,'contrast',1,'phase',5) };
             [varies, constant] = ndi.fun.stimulus.whatVaries(p);
-            testCase.verifyEqual(varies.parameter, 'isblank');
-            testCase.verifyEqual(varies.values, 1);
+            testCase.verifyEqual(varies.parameter, 'phase');
+            testCase.verifyEqual(varies.values, 5);
             testCase.verifyEqual({constant.parameter}, {'angle','contrast'});
+        end
+
+        function testBlankStimuliExcludedByDefault(testCase)
+            % a blank stimulus (isblank==1) is dropped before the comparison,
+            % so its presence does not turn otherwise-constant parameters into
+            % varying ones, and 'isblank' never appears in the results
+            p = { struct('angle',0, 'contrast',1), ...
+                  struct('angle',90,'contrast',1), ...
+                  struct('angle',0, 'contrast',1,'isblank',1) };
+            [varies, constant] = ndi.fun.stimulus.whatVaries(p);
+            testCase.verifyEqual(varies.parameter, 'angle');
+            testCase.verifyEqual(varies.values, [0 90]);
+            testCase.verifyEqual({constant.parameter}, {'contrast'});
+            testCase.verifyFalse(ismember('isblank', {varies.parameter}));
+        end
+
+        function testBlankStimuliIncludedWhenOptionFalse(testCase)
+            % with 'excludeBlank' false the blank stimulus participates, so
+            % 'isblank' shows up as a varying parameter
+            p = { struct('angle',0, 'contrast',1), ...
+                  struct('angle',90,'contrast',1), ...
+                  struct('angle',0, 'contrast',1,'isblank',1) };
+            varies = ndi.fun.stimulus.whatVaries(p, 'excludeBlank', false);
+            testCase.verifyTrue(ismember('isblank', {varies.parameter}));
+        end
+
+        function testAllBlankStimuliGivesEmpty(testCase)
+            % if every stimulus is blank, there is nothing left to compare
+            p = { struct('angle',0,'isblank',1), ...
+                  struct('angle',90,'isblank',1) };
+            [varies, constant] = ndi.fun.stimulus.whatVaries(p);
+            testCase.verifyEmpty(varies);
+            testCase.verifyEmpty(constant);
         end
 
         function testNonNumericValuesReturnedAsCell(testCase)

@@ -1,7 +1,8 @@
-function [varies, constant] = whatVaries(stimuli)
+function [varies, constant] = whatVaries(stimuli, options)
 % WHATVARIES - which stimulus parameters vary across a set of stimuli, and which are constant
 %
 %   [VARIES, CONSTANT] = ndi.fun.stimulus.whatVaries(STIMULI)
+%   [VARIES, CONSTANT] = ndi.fun.stimulus.whatVaries(..., 'excludeBlank', TF)
 %
 %   Examines a collection of stimuli and reports which of their parameters
 %   vary across the collection and which are held constant.
@@ -17,10 +18,14 @@ function [varies, constant] = whatVaries(stimuli)
 %       of stimulus_presentation.stimuli);
 %     * a struct array of parameter structs directly.
 %
+%   By default, blank (control) stimuli are excluded from the comparison: a
+%   stimulus is treated as blank when its parameters have an 'isblank' field
+%   whose value is true (1). Pass 'excludeBlank', false to include them.
+%
 %   The determination of which parameters vary is made by
 %   vlt.data.structwhatvaries: a parameter is CONSTANT when it is present in
-%   every stimulus and takes the same value in each; every other parameter
-%   (including one present in some stimuli but not all) is VARYING.
+%   every (considered) stimulus and takes the same value in each; every other
+%   parameter (including one present in some stimuli but not all) is VARYING.
 %
 %   VARIES is a struct array (possibly empty) with fields:
 %       parameter - the name of the parameter (a char row vector)
@@ -48,7 +53,20 @@ function [varies, constant] = whatVaries(stimuli)
 %             ndi.fun.stimulus.whatVaries_parameterList,
 %             vlt.data.structwhatvaries, mat2str
 
+    arguments
+        stimuli
+        options.excludeBlank (1,1) logical = true
+    end
+
     params = ndi.fun.stimulus.whatVaries_parameterList(stimuli);
+
+    if options.excludeBlank
+        keep = true(1, numel(params));
+        for i = 1:numel(params)
+            keep(i) = ~local_isBlank(params{i});
+        end
+        params = params(keep);
+    end
 
     varies   = struct('parameter', {}, 'values', {});
     constant = struct('parameter', {}, 'value',  {});
@@ -89,6 +107,16 @@ function [varies, constant] = whatVaries(stimuli)
         end
     end
 end % whatVaries
+
+function tf = local_isBlank(p)
+% a stimulus is blank when its parameters have an 'isblank' field that is
+% true (e.g. the numeric 1 written by the stimulus decoder for control stimuli)
+    tf = false;
+    if isfield(p, 'isblank')
+        v = p.isblank;
+        tf = ~isempty(v) && all(logical(v(:)));
+    end
+end % local_isBlank
 
 function uv = local_uniqueValues(vals)
 % the distinct values in VALS (a cell array). A sorted numeric/logical row
