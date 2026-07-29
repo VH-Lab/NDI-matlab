@@ -33,12 +33,17 @@ function probe(S, probe, options)
 %       amplitudes.npy       - per-spike template scaling amplitude
 %       cluster_group.tsv    - (or cluster_KSLabel.tsv / cluster_info.tsv) curation labels
 %       whitening_mat_inv.npy - (optional) used to un-whiten template waveforms
-%       params.py            - (optional) Phy parameters; its 'dat_path' names the
-%                              raw binary and is used to locate it when
-%                              recalculating wide mean waveforms (see below)
+%       params.py            - (optional) Phy parameters; its 'n_channels_dat',
+%                              'dtype' and 'offset' describe the raw recording's
+%                              layout (used when recalculating wide mean waveforms,
+%                              see below). Its 'dat_path' is NOT used to open a
+%                              binary (see the note below).
 %
 % Note: the raw recording's file name is NOT stored in any of the .npy files
-% (they hold only numeric arrays). Phy records it in params.py as 'dat_path'.
+% (they hold only numeric arrays). Phy records a 'dat_path' in params.py, but for
+% externally sorted data that path frequently points at Kilosort's whitened,
+% filtered temporary file (e.g. 'temp_wh.dat') rather than the true raw recording,
+% and cannot be relied on to exist - so this importer never opens it.
 %
 % The spike sample indices in spike_times.npy are treated as positions in the
 % concatenated stream of the probe's epochs (in probe.epochtable() order), the same
@@ -61,15 +66,30 @@ function probe(S, probe, options)
 % binary is located automatically, in this order:
 %   1) an explicit 'binary_file' option, if given;
 %   2) the '.metadata' sidecar written next to the binary by
-%      ndi.fun.probe.export.binary (present when the data were exported from NDI);
-%   3) the 'dat_path' entry in a Phy 'params.py' in the curated directory.
-% For data sorted OUTSIDE NDI there is no '.metadata' sidecar, so 'dat_path' in
-% params.py is what points at the recording. If a sort was moved from where it was
-% created (so 'dat_path' now points to the wrong place), either edit 'dat_path' in
-% params.py to the binary's current location (relative to the curated directory, or
-% an absolute path) - this is the route to use from ndi.gui.app.spikeSorterImporter,
-% which does not expose 'binary_file' - or, from the command line, pass
-% 'binary_file' explicitly. If the binary cannot be found, the mean waveforms fall
+%      ndi.fun.probe.export.binary (present when the data were exported from NDI).
+% If neither is available (e.g. data sorted OUTSIDE NDI, so there is no '.metadata'
+% sidecar), the importer PROMPTS you to select the raw recording and its Neuropixels
+% generation. It deliberately does NOT read Kilosort's params.py 'dat_path', because
+% for external sorts that often points at Kilosort's whitened, filtered temporary
+% file (e.g. 'temp_wh.dat') - which is not the raw data and may not exist. On a
+% headless/automated run pass 'RawFile' and 'ProbeType' to supply these without a
+% dialog (and 'PromptForRawFile',false to fail rather than block on a dialog).
+%
+% Because a hand-selected raw recording is UNFILTERED (it carries the DC offset and
+% LFP band that Kilosort's temp file had already removed), the raw data are high-pass
+% filtered before the spike shapes are extracted ('HighPassFilter' true by default:
+% a zero-phase Chebyshev type I filter, 'HighPassCutoff' 300 Hz, 'HighPassOrder' 4,
+% 'HighPassRipple' 0.8 dB). The same filtering is applied when reading the NDI
+% '.metadata' binary (also raw), so both routes yield comparably conditioned shapes.
+%
+% NEUROPIXELS UNITS: a raw SpikeGLX recording stores int16 ADC counts; the decode to
+% volts is fixed by the probe generation ('ProbeType'): 'NP1' (Neuropixels 1.0) uses
+% volts = int16 * 0.6/(512*500); 'NP2' (Neuropixels 2.0) uses volts = int16 *
+% 0.5/(8192*80). See ndi.fun.probe.import.kilosort.neuropixelsmultiplier. The channel
+% count of the raw file is taken from n_channels_dat in a params.py (or num_channels
+% in a '.metadata' sidecar) in the curated directory, or from 'RawNumChannels'.
+%
+% If the binary cannot be found and no raw file is selected, the mean waveforms fall
 % back to the narrow Kilosort templates and a warning is issued.
 %
 % This function takes name/value pairs that modify its operation:
@@ -109,8 +129,25 @@ function probe(S, probe, options)
 % |   MaxSpikes (1000)       |   recalculating (an evenly spaced subset is used    |
 % |                          |   beyond this; Inf uses every spike).               |
 % | binary_file ('')         | Explicit path to the raw binary recording. When     |
-% |                          |   empty, it is located automatically (from the      |
-% |                          |   export '.metadata' sidecar or Phy params.py).     |
+% |                          |   empty, it is located from the export '.metadata'  |
+% |                          |   sidecar, else the user is prompted (see below).   |
+% | HighPassFilter (true)    | High-pass filter the raw data before extracting     |
+% |                          |   spike shapes (raw recordings are unfiltered). Uses |
+% |                          |   a zero-phase Chebyshev type I filter.             |
+% | HighPassCutoff (300)     | High-pass cutoff frequency, Hz.                     |
+% | HighPassOrder (4)        | Chebyshev type I filter order.                      |
+% | HighPassRipple (0.8)     | Passband ripple Rp, dB.                             |
+% | PromptForRawFile (true)  | If the binary is not found automatically, prompt    |
+% |                          |   (uigetfile + probe generation) for the raw file.  |
+% |                          |   Set false for headless runs (then RawFile and     |
+% |                          |   ProbeType must be supplied).                       |
+% | RawFile ('')             | Path to the raw recording to use when the binary is |
+% |                          |   not found automatically (skips the file dialog).  |
+% | ProbeType ('')           | 'NP1' or 'NP2': the Neuropixels generation of a     |
+% |                          |   selected raw file, fixing the int16->volts units  |
+% |                          |   (skips the probe-generation dialog).              |
+% | RawNumChannels (NaN)     | Override the raw file's channel count. When NaN it  |
+% |                          |   is taken from n_channels_dat / .metadata.         |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
 % | dryRun (false)           | If true, report what would be imported (neurons,    |
 % |                          |   spike counts, documents that would be removed)    |
@@ -144,6 +181,14 @@ function probe(S, probe, options)
         options.RecalculateMeanWaveformT1 (1,1) double = 0.005
         options.RecalculateMeanWaveformMaxSpikes (1,1) double = 1000
         options.binary_file (1,:) char = ''
+        options.HighPassFilter (1,1) logical = true
+        options.HighPassCutoff (1,1) double {mustBePositive} = 300
+        options.HighPassOrder (1,1) double {mustBePositive} = 4
+        options.HighPassRipple (1,1) double {mustBePositive} = 0.8
+        options.PromptForRawFile (1,1) logical = true
+        options.RawFile (1,:) char = ''
+        options.ProbeType (1,:) char = ''
+        options.RawNumChannels (1,1) double = NaN
         options.force (1,1) double = 0
         options.dryRun (1,1) logical = false
         options.progressbar (1,1) logical = false
@@ -294,18 +339,43 @@ function probe(S, probe, options)
     if strcmp(options.waveform_source,'templates'),
         if options.RecalculateMeanWaveforms,
             bininfo = ndi.fun.probe.import.kilosort.binaryinfo(kdir, 'binary_file', options.binary_file);
+            if ~bininfo.found,
+                % The NDI binary (explicit file or '.metadata' sidecar) is not
+                % available. We deliberately do NOT read Kilosort's params.py
+                % 'dat_path' (it often names a whitened/filtered temp file that may
+                % not exist); instead prompt the user to select the true raw
+                % recording and its Neuropixels generation (which sets the units
+                % multiplier). Honors RawFile/ProbeType for headless runs.
+                try
+                    bininfo = ndi.fun.probe.import.kilosort.promptrawbinary(bininfo, ...
+                        'RawFile', options.RawFile, 'ProbeType', options.ProbeType, ...
+                        'PromptForRawFile', options.PromptForRawFile, ...
+                        'num_channels', options.RawNumChannels);
+                catch ME
+                    warning('ndi:fun:probe:import:kilosort:probe:rawFileFailed', ...
+                        ['Could not obtain a raw recording for waveform recalculation: %s ' ...
+                        'Falling back to the (narrow) template-based mean waveforms.'], ...
+                        ME.message);
+                    bininfo.found = false;
+                end
+            end;
             if bininfo.found,
                 use_recalc = true;
                 if report,
+                    hpmsg = '';
+                    if options.HighPassFilter,
+                        hpmsg = [', high-pass ' num2str(options.HighPassCutoff) ' Hz ' ...
+                            '(Chebyshev-I order ' num2str(options.HighPassOrder) ')'];
+                    end;
                     disp([pfx 'Recalculating mean waveforms from binary ' bininfo.file ...
                         ' over [' num2str(options.RecalculateMeanWaveformT0) ', ' ...
-                        num2str(options.RecalculateMeanWaveformT1) '] s.']);
+                        num2str(options.RecalculateMeanWaveformT1) '] s' hpmsg '.']);
                 end;
             else,
                 warning('ndi:fun:probe:import:kilosort:probe:noBinary', ...
-                    ['RecalculateMeanWaveforms is true but no raw binary (or .metadata ' ...
-                    'sidecar / params.py) could be located near ' kdir '. Falling back to ' ...
-                    'the (narrow) template-based mean waveforms. Pass ''binary_file'' to ' ...
+                    ['RecalculateMeanWaveforms is true but no raw binary could be located ' ...
+                    'near ' kdir ' and none was selected. Falling back to the (narrow) ' ...
+                    'template-based mean waveforms. Pass ''binary_file'' or ''RawFile'' to ' ...
                     'specify the recording, or set ''RecalculateMeanWaveforms'',false to ' ...
                     'silence this warning.']);
             end;
@@ -394,7 +464,11 @@ function probe(S, probe, options)
                     'headerOffsetBytes', bininfo.headerOffsetBytes, ...
                     'multiplier', bininfo.multiplier, ...
                     'maxSpikes', options.RecalculateMeanWaveformMaxSpikes, ...
-                    'epochBounds', bounds0);
+                    'epochBounds', bounds0, ...
+                    'highpass', options.HighPassFilter, ...
+                    'hp_cutoff', options.HighPassCutoff, ...
+                    'hp_order', options.HighPassOrder, ...
+                    'hp_ripple', options.HighPassRipple);
             else,
                 meanWf = ndi.fun.probe.import.kilosort.meanwaveform(cid, spike_clusters, ...
                     spike_templates, amplitudes, templates, winv);
