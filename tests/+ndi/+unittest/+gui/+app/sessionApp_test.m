@@ -87,6 +87,18 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyEqual(string(apps(idx).Category), "Ensembles");
         end
 
+        function testPipelineEditorDiscovered(testCase)
+            % The graphical pipeline editor wrapper is discovered and stays at
+            % the top level of the Apps menu (it declares no Category).
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.pipelineEditor", 1);
+            testCase.verifyNotEmpty(idx, ...
+                'ndi.gui.app.pipelineEditor was not discovered');
+            testCase.verifyEqual(string(apps(idx).Name), "Pipeline Editor");
+            testCase.verifyEqual(string(apps(idx).Category), "");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));
