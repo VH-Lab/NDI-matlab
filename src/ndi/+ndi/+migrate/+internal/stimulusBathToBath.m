@@ -36,8 +36,11 @@ function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver, targetVe
 %                     (no spine block) is emitted.
 %
 %   Outputs:
-%     bathBody     - the `bath` document body (schema_version = targetVersion).
-%     timeRefBody  - the epoch_bounded_reference document the bath depends_on.
+%     bathBody     - the manipulation document body (schema_version =
+%                    targetVersion): a `bath` under V_zeta/V_epsilon, or a
+%                    `dose_manipulation` under V_eta (D8 retired the bath family).
+%     timeRefBody  - the epoch_bounded_reference document the manipulation
+%                    depends_on.
 %
 %   The bath preserves the source stimulus_bath's base.id, so inbound
 %   references to the legacy document resolve to the migrated bath.
@@ -79,6 +82,49 @@ timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
 
 % --- the bath --------------------------------------------------------------
 mixture = parseMixture(v1Body);
+
+if strcmp(targetVersion, 'V_eta')
+    % Strict J (D8) retired the bath / pharmacological_manipulation family: a
+    % bath is a delivered substance -> a `dose_manipulation` on the resolved
+    % subject over the stimulator's epoch. This is the LIVE-session counterpart
+    % of the coarse did2.convert.resolveDeferredBaths.makeBathVeta (and shares
+    % migrators_j.treatment's dose shape): the primary chemical is the spine
+    % identity (subject_statement.variable), the whole mixture becomes the dose
+    % formulation's chemicals. Unlike the coarse path it keeps the epoch-precise
+    % time anchor built above (epoch_bounded_reference), not a session-relative
+    % one. The bath `location` (the chamber, not a subject site) has no strict-J
+    % home on the subject and is dropped.
+    chemicals = struct('substance', {}, 'amount', {});
+    for i = 1:numel(mixture)
+        chem = mixture(i).chemical;
+        if isempty(chem.node) && isempty(chem.name)
+            continue;   % skip parseMixture's blank fallback (invalid chemical)
+        end
+        chemicals(end+1) = struct('substance', chem, ...
+            'amount', mixture(i).amount); %#ok<AGROW>
+    end
+    bathBody = struct();
+    bathBody.document_class = struct('class_name', 'dose_manipulation', ...
+        'class_version', '1.0.0', 'superclasses', [ ...
+            struct('class_name', 'subject_manipulation', 'class_version', '1.0.0'), ...
+            struct('class_name', 'dose',                 'class_version', '1.0.0')], ...
+        'schema_version', targetVersion);
+    bathBody.depends_on = [ ...
+        struct('name', 'subject_id',       'value', subjectId), ...
+        struct('name', 'time_reference_1', 'value', timeRefId)];
+    bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
+        'name', 'migrated_bath', 'datestamp', datestamp);
+    bathBody.subject_statement = struct('variable', primaryChemical(mixture), ...
+        'storage_mode', 'inline');
+    bathBody.subject_interaction = struct('method', struct('node', '', 'name', ''), ...
+        'sample_time', struct('kind', 'point'));
+    bathBody.subject_manipulation = struct('notes', '');
+    bathBody.dose = struct('value', struct('formulation', ...
+        struct('chemicals', chemicals), ...
+        'volume', struct('source_unit', '', 'source_value', 0.0, 'approximate', false), ...
+        'route', struct('node', '', 'name', '')));
+    return;
+end
 
 bathBody = struct();
 bathBody.document_class = struct( ...

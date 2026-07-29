@@ -43,14 +43,18 @@ function result = local(path, options)
 %                      target wire format. 'V_delta' preserves the
 %                      historical class-preserving behaviour and
 %                      writes V_delta.sqlite. 'V_epsilon' (Brainstorm E)
-%                      and 'V_zeta' (Brainstorm I) route split-eligible
-%                      classes through the matching migrators (1 -> N)
-%                      and run a second pass that resolves
-%                      session-context-dependent deferrals (e.g.
-%                      stimulus_bath -> bath) using the open body set,
-%                      writing <TargetVersion>.sqlite. V_zeta is the
-%                      current direction; V_epsilon is retained as an
-%                      archived reference.
+%                      'V_zeta' (Brainstorm I) and 'V_eta' (Brainstorm
+%                      J) route split-eligible classes through the
+%                      matching migrators (1 -> N) and run a second pass
+%                      using the open body set. For V_epsilon/V_zeta the
+%                      pass resolves session-context-dependent deferrals
+%                      (e.g. stimulus_bath -> bath); for V_eta it promotes
+%                      attributed anatomical loci to Path-S part-subjects
+%                      (a part-`subject` + `term_assertion` + `part_of`
+%                      relation, retargeting the co-anchored manipulation).
+%                      Writes <TargetVersion>.sqlite. V_eta (Brainstorm J)
+%                      is the current direction; V_zeta/V_epsilon are
+%                      retained as archived references.
 %
 %   RESULT is a struct with fields:
 %       path         - the input PATH (char).
@@ -189,6 +193,40 @@ function result = local(path, options)
                 ['Second-pass resolution of session-context deferrals ' ...
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
+    elseif strcmp(options.TargetVersion, 'V_eta')
+        % V_eta's second pass has two kinds of work, both needing the whole
+        % migrated body set (the corpus-wide session/element graph):
+        %   (1) DEFERRALS: some J migrators still defer a document that needs
+        %       session context -- stimulus_bath (-> dose_manipulation, D8
+        %       retired the bath family). Resolve them the same way the older
+        %       targets do (assembleDeferred), just at TargetVersion V_eta.
+        %   (2) PATH-S: an attributed anatomical locus is promoted to a
+        %       part-subject. Run AFTER the deferrals so a manipulation the
+        %       deferral emits can be a Path-S retarget candidate.
+        % Each step is independent; a failure leaves the affected documents in
+        % their pass-1 form.
+        try
+            resolver = ndi.migrate.internal.bodyResolver(bodies);
+            convertResult = resolveDeferred(convertResult, resolver, options);
+        catch ME
+            warning('NDI:migrate:deferredResolveFailed', ...
+                ['Second-pass resolution of session-context deferrals ' ...
+                 'failed (%s); leaving them quarantined.'], ME.message);
+        end
+        try
+            convertResult = resolveStimulusPresentations(convertResult, bodies, options);
+        catch ME
+            warning('NDI:migrate:presentationResolveFailed', ...
+                ['Second-pass stimulus_presentation assembly failed (%s); ' ...
+                 'leaving presentations as passthrough.'], ME.message);
+        end
+        try
+            convertResult = resolvePathS(convertResult, options);
+        catch ME
+            warning('NDI:migrate:pathSFailed', ...
+                ['Second-pass Path-S promotion failed (%s); leaving ' ...
+                 'anatomical loci located-by-default.'], ME.message);
+        end
     end
 
     wroteDst = false;
@@ -292,16 +330,31 @@ function convertResult = resolveDeferred(convertResult, resolver, options)
 end
 
 function tf = isDeferredForContext(qEntry)
-% A quarantine entry is a session-context deferral when its reason carries
-% the needsSessionContext signature. The converter's deferral message names
-% the NDI layer; match defensively on either the identifier fragment or that
-% phrase so a future rephrasing of the message keeps routing here.
+% A quarantine entry is a session-context deferral we can re-assemble here.
+% Match on class_name FIRST -- the authoritative signal, since assembleDeferred
+% dispatches on it -- so detection stays correct even when a migrator rephrases
+% its deferral message. (The migrators_j stimulus_bath deferral, for instance,
+% says "require the session/element graph" and carries neither the
+% needsSessionContext identifier nor the "NDI layer" phrase in its message.)
+% This mirrors did2.convert.resolveDeferredBaths.isDeferredBath, the coarse
+% corpus counterpart. The reason-string match is kept as a defensive fallback.
     tf = false;
+    if isfield(qEntry, 'class_name') ...
+            && any(strcmp(qEntry.class_name, deferredAssemblerClasses()))
+        tf = true;
+        return;
+    end
     if ~isfield(qEntry, 'reason') || ~ischar(qEntry.reason)
         return;
     end
     tf = contains(qEntry.reason, 'needsSessionContext') ...
         || contains(qEntry.reason, 'NDI layer');
+end
+
+function classes = deferredAssemblerClasses()
+% The v1 classes assembleDeferred knows how to re-assemble with the
+% session/element graph. Keep in sync with assembleDeferred's switch.
+    classes = {'stimulus_bath'};
 end
 
 function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
@@ -339,6 +392,144 @@ function summary = recountSummary(convertResult)
         end
     end
     summary.by_class = byClass;
+end
+
+function convertResult = resolvePathS(convertResult, options)
+%RESOLVEPATHS V_eta second pass: promote attributed anatomical loci to Path-S
+%   part-subjects using the whole migrated body set. The pass-1 J migrators emit
+%   a located-by-default `term_observation` for every anatomical site (D3); here
+%   -- with the corpus-wide subject graph in hand -- a site that is an
+%   intervention target (co-anchored with a manipulation) becomes a part-subject
+%   + a `term_assertion` of its anatomical kind + a `part_of` `directed_relation`,
+%   and the co-anchored manipulation is retargeted onto the part. Merely-located
+%   sites (probe/label) are left untouched. See ndi.migrate.internal.pathSPromotion.
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [kept, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+    if ~changed
+        return;
+    end
+    % rewrap the surviving (possibly retargeted) bodies
+    keptDocs = cell(1, numel(kept));
+    for k = 1:numel(kept)
+        keptDocs{k} = did2.document(kept{k});
+    end
+    convertResult.migrated = keptDocs;
+    % fold the minted part-subject / term_assertion / part_of bodies through
+    % v1_to_v2: they are tagged schema_version 'V_eta', so the converter
+    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate
+    % rather than re-migrating -- the same footing the deferred-resolution pass
+    % uses.
+    if ~isempty(minted)
+        sub = did2.convert.v1_to_v2(minted, ...
+            'Validate', options.Validate, ...
+            'SchemaCache', options.SchemaCache, ...
+            'TargetVersion', options.TargetVersion, ...
+            'Verbose', false);
+        convertResult.migrated = [convertResult.migrated, sub.migrated];
+        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    end
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function convertResult = resolveStimulusPresentations(convertResult, bodies, options)
+%RESOLVESTIMULUSPRESENTATIONS V_eta second pass: assemble each legacy
+%   stimulus_presentation into a body-backed visual_grating_manipulation on the
+%   animal (+ its sampled_body), using the recording graph. The pass-1 converter
+%   has no per-document migrator for stimulus_presentation (the animal and the
+%   trial series are only knowable from the whole body set -- the
+%   stimulus_response -> element -> subject link), so it passes through; here it
+%   becomes the manipulation. A presentation with no responding animal is left as
+%   passthrough (nothing to place the manipulation on). The manipulation preserves
+%   the presentation's id, so inbound references resolve to it.
+    resolver = ndi.migrate.internal.bodyResolver(bodies);
+    % The first-run v1 readers (did2.convert.readers.sqliteV1 / dumbJsonV1)
+    % return raw JSON char bodies -- nothing is decoded there. isPresentationBody
+    % (and stimulusPresentationToManipulation's struct-typed argument) need
+    % decoded structs, so normalise here; the idempotent re-run path already
+    % passes structs, which this leaves untouched.
+    bodies = decodeBodies(bodies);
+    minted = {};
+    consumed = {};   % presentation ids that became a manipulation
+    for k = 1:numel(bodies)
+        b = bodies{k};
+        if ~isPresentationBody(b)
+            continue;
+        end
+        [manip, bodyDoc, ~] = ndi.migrate.internal.stimulusPresentationToManipulation( ...
+            b, resolver, options.TargetVersion);
+        if isempty(manip)
+            continue;   % no animal responded -> leave the presentation as-is
+        end
+        minted{end+1} = manip;   %#ok<AGROW>
+        minted{end+1} = bodyDoc; %#ok<AGROW>
+        consumed{end+1} = bodyBaseId(b); %#ok<AGROW>
+    end
+    if isempty(minted)
+        return;
+    end
+    % drop the passthrough stimulus_presentation docs that were assembled away
+    kept = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if strcmp(d.className(), 'stimulus_presentation') ...
+                && any(strcmp(d.get('base.id'), consumed))
+            continue;
+        end
+        kept{end+1} = d; %#ok<AGROW>
+    end
+    convertResult.migrated = kept;
+    % fold the minted manipulation + sampled_body through v1_to_v2: they are
+    % tagged schema_version == TargetVersion, so the converter short-circuits them
+    % (isAlreadyTarget) to ensureClassBlocks + validate -- the same footing the
+    % deferred-resolution and Path-S passes use.
+    sub = did2.convert.v1_to_v2(minted, ...
+        'Validate', options.Validate, ...
+        'SchemaCache', options.SchemaCache, ...
+        'TargetVersion', options.TargetVersion, ...
+        'Verbose', false);
+    convertResult.migrated = [convertResult.migrated, sub.migrated];
+    convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function out = decodeBodies(bodies)
+% Normalise a body set to a cell of scalar structs: jsondecode any raw JSON
+% char body (the first-run reader output); pass decoded structs through
+% unchanged. Unparseable entries are dropped (not useful for assembly).
+    out = {};
+    for k = 1:numel(bodies)
+        b = bodies{k};
+        if ischar(b) || (isstring(b) && isscalar(b))
+            try
+                b = jsondecode(char(b));
+            catch
+                continue;
+            end
+        end
+        if isstruct(b) && isscalar(b)
+            out{end+1} = b; %#ok<AGROW>
+        end
+    end
+end
+
+function tf = isPresentationBody(b)
+    tf = isstruct(b) && isfield(b, 'document_class') ...
+        && isfield(b.document_class, 'class_name') ...
+        && strcmp(b.document_class.class_name, 'stimulus_presentation');
+end
+
+function id = bodyBaseId(b)
+    id = '';
+    if isfield(b, 'base') && isstruct(b.base) && isfield(b.base, 'id')
+        id = b.base.id;
+    end
 end
 
 % ---- v1 source detection ---------------------------------------------------
