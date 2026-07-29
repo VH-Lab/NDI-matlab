@@ -35,66 +35,28 @@ classdef FieldAliasesTest < matlab.unittest.TestCase
             testCase.verifyTrue(isempty(row{3}));
         end
 
-        function test_ontology_image_rows_present_and_identity(testCase)
+
+
+
+
+
+        function test_fabricated_ontology_rows_are_absent(testCase)
+            % The ontologyImage and ontologyLabel templates have only ever
+            % carried `ontologyNode`. Rows claiming `ontology_name`,
+            % `ontology_region`, `label_id` or `label` described documents
+            % that do not exist and were removed. Guard against them coming
+            % back -- the old tests asserted their PRESENCE, which is how the
+            % fabrication survived review.
             aliases = ndi.compat.fieldAliases();
-            row = i_findRow(aliases.fields, 'ontology_image.region.node');
-            testCase.verifyEqual(row{2}, 'ontology_image.ontology_name');
-            testCase.verifyTrue(isempty(row{3}));
-
-            row = i_findRow(aliases.fields, 'ontology_image.region.name');
-            testCase.verifyEqual(row{2}, 'ontology_image.ontology_region');
-            testCase.verifyTrue(isempty(row{3}));
-        end
-
-        function test_ontology_label_name_row_identity(testCase)
-            aliases = ndi.compat.fieldAliases();
-            row = i_findRow(aliases.fields, 'ontology_label.term.name');
-            testCase.verifyEqual(row{2}, 'ontology_label.label');
-            testCase.verifyTrue(isempty(row{3}));
-        end
-
-        function test_ontology_label_node_is_composite(testCase)
-            aliases = ndi.compat.fieldAliases();
-            row = i_findRow(aliases.fields, 'ontology_label.term.node');
-            legacyPath = row{2};
-            transform  = row{3};
-
-            testCase.verifyTrue(iscellstr(legacyPath)); %#ok<ISCLSTR>
-            testCase.verifyEqual(numel(legacyPath), 2);
-            testCase.verifyEqual(legacyPath{1}, 'ontology_label.ontology_name');
-            testCase.verifyEqual(legacyPath{2}, 'ontology_label.label_id');
-
-            testCase.verifyTrue(iscell(transform));
-            testCase.verifyEqual(numel(transform), 2);
-            testCase.verifyTrue(isa(transform{1}, 'function_handle'));
-            testCase.verifyTrue(isa(transform{2}, 'function_handle'));
-        end
-
-        function test_ontology_label_node_compose_roundtrip(testCase)
-            aliases = ndi.compat.fieldAliases();
-            row = i_findRow(aliases.fields, 'ontology_label.term.node');
-            toVDelta = row{3}{1};
-            toLegacy = row{3}{2};
-
-            node = toVDelta({'allen_ccf_v3', 12345});
-            testCase.verifyEqual(node, 'allen_ccf_v3:12345');
-
-            parts = toLegacy('allen_ccf_v3:12345');
-            testCase.verifyEqual(parts{1}, 'allen_ccf_v3');
-            testCase.verifyEqual(parts{2}, 12345);
-        end
-
-        function test_ontology_label_node_empty_inputs(testCase)
-            aliases = ndi.compat.fieldAliases();
-            row = i_findRow(aliases.fields, 'ontology_label.term.node');
-            toVDelta = row{3}{1};
-            toLegacy = row{3}{2};
-
-            testCase.verifyEqual(toVDelta({'', 0}), '');
-
-            parts = toLegacy('');
-            testCase.verifyEqual(parts{1}, '');
-            testCase.verifyEqual(parts{2}, 0);
+            for k = 1:size(aliases.fields, 1)
+                legacyPath = aliases.fields{k, 2};
+                if ~iscell(legacyPath); legacyPath = {legacyPath}; end
+                for j = 1:numel(legacyPath)
+                    testCase.verifyEmpty( ...
+                        regexp(legacyPath{j}, '^ontology_(image|label)\.', 'once'), ...
+                        sprintf('fabricated alias row reintroduced: %s', legacyPath{j}));
+                end
+            end
         end
 
     end

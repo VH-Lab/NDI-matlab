@@ -33,8 +33,7 @@ function ss = translateQueryPaths(ss)
 %     - Paths not in the alias table pass through unchanged.
 %
 %   Composite limitation: alias rows whose legacy side is a cell-array
-%   composition (e.g., `ontology_label.term.node` is composed from
-%   `ontology_name` + `label_id`) collapse multiple legacy paths onto
+%   composition collapse multiple legacy paths onto
 %   a single V_delta path. The rewritten query reaches the right field
 %   but the value semantics differ — the V_delta canonical for that
 %   row is a CURIE like `<ontology_name>:<label_id>`, so an

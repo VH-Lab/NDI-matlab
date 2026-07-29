@@ -2,8 +2,9 @@ classdef AugmentReadTest < matlab.unittest.TestCase
 %AUGMENTREADTEST Unit tests for ndi.compat.augmentRead.
 %
 %   Covers the field-level alias rows: the four collapsed-ontology
-%   classes (probe_location, treatment, ontology_image,
-%   ontology_label) plus the daqmetadatareader rename.
+%   classes (probe_location, treatment) plus the daqmetadatareader rename.
+%   The ontology_image / ontology_label rows were removed: they described
+%   fields no NDI template has ever had (both are {ontologyNode}).
 %
 %   depends_on entry-key compatibility is NOT exercised here — see
 %   #801: that responsibility moved to
@@ -33,40 +34,8 @@ classdef AugmentReadTest < matlab.unittest.TestCase
             testCase.verifyEqual(out.treatment.name, 'tetrodotoxin');
         end
 
-        function test_ontology_image_region_mirrored(testCase)
-            body = i_baseBody('ontology_image');
-            body.ontology_image = struct( ...
-                'region', struct('node', 'uberon:0002435', ...
-                                 'name', 'striatum'));
-            out = ndi.compat.augmentRead(body);
-            testCase.verifyEqual(out.ontology_image.ontology_name, ...
-                'uberon:0002435');
-            testCase.verifyEqual(out.ontology_image.ontology_region, ...
-                'striatum');
-        end
 
-        function test_ontology_label_composite_decomposed(testCase)
-            body = i_baseBody('ontology_label');
-            body.ontology_label = struct( ...
-                'term', struct('node', 'allen_ccf_v3:12345', ...
-                               'name', 'primary visual area'));
-            out = ndi.compat.augmentRead(body);
-            testCase.verifyEqual(out.ontology_label.ontology_name, ...
-                'allen_ccf_v3');
-            testCase.verifyEqual(out.ontology_label.label_id, 12345);
-            testCase.verifyEqual(out.ontology_label.label, ...
-                'primary visual area');
-        end
 
-        function test_ontology_label_composite_empty_node(testCase)
-            body = i_baseBody('ontology_label');
-            body.ontology_label = struct( ...
-                'term', struct('node', '', 'name', ''));
-            out = ndi.compat.augmentRead(body);
-            testCase.verifyEqual(out.ontology_label.ontology_name, '');
-            testCase.verifyEqual(out.ontology_label.label_id, 0);
-            testCase.verifyEqual(out.ontology_label.label, '');
-        end
 
         function test_idempotent_when_run_twice(testCase)
             body = i_baseBody('probe_location');
