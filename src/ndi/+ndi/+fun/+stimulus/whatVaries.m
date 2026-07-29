@@ -101,9 +101,11 @@ function [varies, constant] = whatVaries(stimuli, options)
             varies(end+1) = struct('parameter', thisField, ...
                 'values', {uv}); %#ok<AGROW>
         else
-            % constant: present in every stimulus with the same value
+            % constant: present in every stimulus with the same value. The
+            % value is wrapped in a cell so that a cell-array-valued parameter
+            % does not make struct() build a struct array.
             constant(end+1) = struct('parameter', thisField, ...
-                'value', params{1}.(thisField)); %#ok<AGROW>
+                'value', {params{1}.(thisField)}); %#ok<AGROW>
         end
     end
 end % whatVaries

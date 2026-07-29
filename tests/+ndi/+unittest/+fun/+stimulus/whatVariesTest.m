@@ -126,6 +126,29 @@ classdef whatVariesTest < matlab.unittest.TestCase
             testCase.verifyTrue(ismember('isblank', {varies.parameter}));
         end
 
+        function testCellValuedConstantParameter(testCase)
+            % a parameter whose (constant) value is a cell array must not break
+            % struct assembly - struct() would otherwise expand the cell into a
+            % struct array and the assignment would fail
+            p = { struct('color',{{'r','g','b'}},'angle',0), ...
+                  struct('color',{{'r','g','b'}},'angle',90) };
+            [varies, constant] = ndi.fun.stimulus.whatVaries(p);
+            testCase.verifyEqual(varies.parameter, 'angle');
+            testCase.verifyEqual(varies.values, [0 90]);
+            testCase.verifyEqual(constant.parameter, 'color');
+            testCase.verifyEqual(constant.value, {'r','g','b'});
+        end
+
+        function testVectorValuedVaryingParameter(testCase)
+            % a non-scalar (vector) parameter that varies is returned as a cell
+            % of its distinct values, not concatenated into a numeric array
+            p = { struct('rect',[0 0 100 100]), ...
+                  struct('rect',[0 0 200 200]) };
+            varies = ndi.fun.stimulus.whatVaries(p);
+            testCase.verifyEqual(varies.parameter, 'rect');
+            testCase.verifyEqual(varies.values, {[0 0 100 100], [0 0 200 200]});
+        end
+
         function testAllBlankStimuliGivesEmpty(testCase)
             % if every stimulus is blank, there is nothing left to compare
             p = { struct('angle',0,'isblank',1), ...
