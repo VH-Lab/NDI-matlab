@@ -22,10 +22,10 @@ function [varies, constant] = whatVaries(stimuli, options)
 %   stimulus is treated as blank when its parameters have an 'isblank' field
 %   whose value is true (1). Pass 'excludeBlank', false to include them.
 %
-%   The determination of which parameters vary is made by
-%   vlt.data.structwhatvaries: a parameter is CONSTANT when it is present in
-%   every (considered) stimulus and takes the same value in each; every other
-%   parameter (including one present in some stimuli but not all) is VARYING.
+%   A parameter is CONSTANT when it is present in every (considered) stimulus
+%   and takes the same value in each; every other parameter (including one
+%   present in some stimuli but not all) is VARYING. Value equality is tested
+%   with vlt.data.eqlen, matching the semantics of vlt.data.structwhatvaries.
 %
 %   VARIES is a struct array (possibly empty) with fields:
 %       parameter - the name of the parameter (a char row vector)
@@ -81,8 +81,13 @@ function [varies, constant] = whatVaries(stimuli, options)
         fields = union(fields, fieldnames(params{i}), 'stable');
     end
 
-    % which fields vary (uses the shared vlt helper, as elsewhere in NDI)
-    varyingNames = vlt.data.structwhatvaries(params);
+    % which fields vary. This mirrors the semantics of vlt.data.structwhatvaries
+    % (a field varies if it is absent from some stimulus, or its value differs
+    % from the first stimulus's), but is implemented locally: structwhatvaries
+    % concatenates a char field name onto its accumulator (cat(1,descr,bothfn{j}))
+    % and throws when the set of stimuli reduces to a single common field, which
+    % can happen with real stimulus data.
+    varyingNames = local_varyingFields(params);
 
     n = numel(params);
 
@@ -109,6 +114,33 @@ function [varies, constant] = whatVaries(stimuli, options)
         end
     end
 end % whatVaries
+
+function names = local_varyingFields(params)
+% the parameter names that vary across the cell list of parameter structs
+% PARAMS. Mirrors vlt.data.structwhatvaries: each struct is compared to the
+% first, and a field is "varying" if it is present in only one of the two, or
+% present in both but with unequal values (compared with vlt.data.eqlen). Unlike
+% structwhatvaries, names are accumulated as cells, so a lone common field does
+% not trigger a char/cell concatenation error.
+    names = {};
+    if isempty(params)
+        return;
+    end
+    ref = params{1};
+    refFields = fieldnames(ref);
+    for i = 2:numel(params)
+        theseFields = fieldnames(params{i});
+        names = [names; setdiff(theseFields, refFields); ...
+            setdiff(refFields, theseFields)]; %#ok<AGROW>
+        common = intersect(refFields, theseFields);
+        for j = 1:numel(common)
+            if ~vlt.data.eqlen(ref.(common{j}), params{i}.(common{j}))
+                names = [names; common(j)]; %#ok<AGROW>
+            end
+        end
+    end
+    names = unique(names);
+end % local_varyingFields
 
 function tf = local_isBlank(p)
 % a stimulus is blank when its parameters have an 'isblank' field that is
