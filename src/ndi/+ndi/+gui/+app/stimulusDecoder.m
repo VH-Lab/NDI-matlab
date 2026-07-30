@@ -10,15 +10,22 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
 %       'stimulator'-type probes.
 %     * See that probe's stimulus epochs in a multi-select listbox. An epoch
 %       that already has an associated 'stimulus_presentation' document (i.e.
-%       it has been decoded) is marked with a leading "*".
+%       it has been decoded) is marked with a leading "*". If its control
+%       stimuli have also been labeled (a 'control_stimulus_ids' document
+%       exists), a "c" follows the asterisk, so the marker reads "*c".
 %     * Select one or more epochs and click "Run decoder" to parse their
 %       stimuli (ndi.app.stimulus.decoder.parse_stimuli), writing the
 %       stimulus_presentation documents that downstream tools - such as
 %       ndi.fun.export.blech_clust and ndi.gui.app.katzExporter - require.
+%     * Click "Label Control Stims" to label the control (blank) stimuli of the
+%       probe's decoded epochs (ndi.app.stimulus.tuning_response.label_control_stimuli),
+%       writing the 'control_stimulus_ids' documents that the stimulus-response
+%       tools require. Labeling operates on all of the probe's decoded epochs.
 %
 %   By default an already-decoded epoch is left untouched (its "*" stays). Tick
 %   "Re-decode selected (overwrite)" to remove and rebuild the selected epochs'
-%   documents.
+%   documents; the same tick makes "Label Control Stims" remove and rebuild the
+%   existing control_stimulus_ids documents.
 %
 %   This is a session GUI app (see ndi.gui.app.sessionApp): its constructor
 %   takes the ndi.session as its first argument, so it can be launched from the
@@ -47,12 +54,14 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
         constantTable           % table: parameters held constant + their value
         overwriteCheckbox       % "Re-decode selected (overwrite)"
         runButton               % the "Run decoder" button
+        controlButton           % the "Label Control Stims" button
 
         % state
         stimulators = {}        % cell array of the session's stimulator probes
         epochIds = {}           % epoch ids of the selected probe, in list order
         decodedEpochs = {}      % epoch ids that already have a stimulus_presentation
         presDocs = {}           % stimulus_presentation docs (parallel to decodedEpochs)
+        controlLabeledEpochs = {} % epoch ids that already have control_stimulus_ids
         waitDlg = []            % active "please wait" dialog (if any)
     end
 
@@ -129,7 +138,7 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 'BackgroundColor', c.darkBlue);
             hrow.Layout.Row = 4; hrow.Layout.Column = 1;
             lhdr = uilabel(hrow, ...
-                'Text', 'Stimulus epochs (* = has stimulus_presentation):', ...
+                'Text', 'Stimulus epochs (* = decoded, *c = control stimuli labeled):', ...
                 'FontWeight', 'bold', 'FontColor', c.white);
             lhdr.Layout.Column = 1;
             rhdr = uilabel(hrow, ...
@@ -176,9 +185,9 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 'Data', cell(0, 2));
             obj.constantTable.Layout.Row = 4; obj.constantTable.Layout.Column = 1;
 
-            % Row 6: overwrite checkbox + run button
-            brow = uigridlayout(root, [1 3], ...
-                'ColumnWidth', {'1x', 'fit', 150}, 'RowHeight', {'1x'}, ...
+            % Row 6: overwrite checkbox + "Label Control Stims" + "Run decoder"
+            brow = uigridlayout(root, [1 4], ...
+                'ColumnWidth', {'fit', '1x', 170, 150}, 'RowHeight', {'1x'}, ...
                 'ColumnSpacing', 12, 'Padding', [0 0 0 0], ...
                 'BackgroundColor', c.darkBlue);
             brow.Layout.Row = 6; brow.Layout.Column = 1;
@@ -186,13 +195,21 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 'Text', 'Re-decode selected (overwrite)', 'FontColor', c.white, ...
                 'Value', false, ...
                 'Tooltip', ['Remove and rebuild the stimulus_presentation documents ' ...
-                    'of the selected epochs, even if they already exist']);
-            obj.overwriteCheckbox.Layout.Column = 2;
+                    'of the selected epochs (and, for "Label Control Stims", the ' ...
+                    'control_stimulus_ids documents), even if they already exist']);
+            obj.overwriteCheckbox.Layout.Column = 1;
+            obj.controlButton = uibutton(brow, 'push', 'Text', 'Label Control Stims', ...
+                'FontWeight', 'bold', 'BackgroundColor', c.lightBlue, ...
+                'FontColor', c.darkBlue, 'Enable', 'off', ...
+                'Tooltip', ['Label the control (blank) stimuli of the probe''s ' ...
+                    'decoded epochs, writing control_stimulus_ids documents'], ...
+                'ButtonPushedFcn', @(~,~) obj.runControlLabels());
+            obj.controlButton.Layout.Column = 3;
             obj.runButton = uibutton(brow, 'push', 'Text', 'Run decoder', ...
                 'FontWeight', 'bold', 'BackgroundColor', c.lightBlue, ...
                 'FontColor', c.darkBlue, 'Enable', 'off', ...
                 'ButtonPushedFcn', @(~,~) obj.runDecoder());
-            obj.runButton.Layout.Column = 3;
+            obj.runButton.Layout.Column = 4;
         end % build
 
         function p = sessionPath(obj)
@@ -265,19 +282,25 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
                 obj.epochList.ItemsData = {};
                 obj.decodedEpochs = {};
                 obj.presDocs = {};
+                obj.controlLabeledEpochs = {};
                 obj.updateButtonState();
                 obj.updateStimulusInfo();
                 return;
             end
             obj.decodedEpochs = obj.decodedEpochIds(p);
+            obj.controlLabeledEpochs = obj.controlLabeledEpochIds(p);
 
             items = cell(1, numel(obj.epochIds));
             for i = 1:numel(obj.epochIds)
                 mark = '  ';
                 if ismember(obj.epochIds{i}, obj.decodedEpochs)
-                    mark = '* ';
+                    if ismember(obj.epochIds{i}, obj.controlLabeledEpochs)
+                        mark = '*c';   % decoded and control stimuli labeled
+                    else
+                        mark = '* ';   % decoded only
+                    end
                 end
-                items{i} = [mark obj.epochIds{i}];
+                items{i} = [mark ' ' obj.epochIds{i}];
             end
             if isempty(items)
                 obj.epochList.Items = {'(no stimulus epochs)'};
@@ -322,6 +345,47 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             end
         end % decodedEpochIds
 
+        function ids = controlLabeledEpochIds(obj, probe)
+            % epoch ids that already have a 'control_stimulus_ids' document,
+            % i.e. whose control (blank) stimuli have been labeled. A
+            % control_stimulus_ids document depends on a stimulus_presentation
+            % document (not on the probe directly), so map back to epochs
+            % through the stimulus_presentation documents cached for PROBE by
+            % decodedEpochIds (obj.presDocs, parallel to obj.decodedEpochs).
+            ids = {};
+            if isempty(obj.presDocs)
+                return;   % nothing decoded, so nothing can be labeled
+            end
+            % stimulus_presentation doc id -> epoch id (this probe only)
+            presId2epoch = containers.Map('KeyType', 'char', 'ValueType', 'char');
+            for i = 1:numel(obj.presDocs)
+                try
+                    presId2epoch(obj.presDocs{i}.id()) = obj.decodedEpochs{i};
+                catch
+                    % unreadable id: skip
+                end
+            end
+            try
+                docs = obj.session.database_search( ...
+                    ndi.query('','isa','control_stimulus_ids',''));
+            catch
+                docs = {};
+            end
+            for i = 1:numel(docs)
+                try
+                    presId = docs{i}.dependency_value('stimulus_presentation_id');
+                catch
+                    continue;   % no readable dependency: skip
+                end
+                if isKey(presId2epoch, presId)
+                    e = presId2epoch(presId);
+                    if ~ismember(e, ids)
+                        ids{end+1} = e;           %#ok<AGROW>
+                    end
+                end
+            end
+        end % controlLabeledEpochIds
+
         function docs = presDocsForEpochs(obj, epochIds)
             % the cached stimulus_presentation documents whose epoch id is in
             % EPOCHIDS (a cell array), as a cell array of ndi.document
@@ -337,6 +401,7 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             obj.epochIds = {};
             obj.decodedEpochs = {};
             obj.presDocs = {};
+            obj.controlLabeledEpochs = {};
             obj.epochList.Items = {};
             obj.epochList.ItemsData = {};
             obj.updateButtonState();
@@ -359,10 +424,15 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
         end % selectedEpochIds
 
         function updateButtonState(obj)
-            % Run is enabled when a probe is chosen and at least one epoch is
-            % selected
-            ok = ~isempty(obj.selectedProbe()) && ~isempty(obj.selectedEpochIds());
-            obj.runButton.Enable = onOff(ok);
+            % "Run decoder" is enabled when a probe is chosen and at least one
+            % epoch is selected. "Label Control Stims" is enabled when a probe
+            % is chosen and it has at least one decoded epoch (labeling operates
+            % on all of the probe's stimulus_presentation documents).
+            haveProbe = ~isempty(obj.selectedProbe());
+            obj.runButton.Enable = onOff(haveProbe && ~isempty(obj.selectedEpochIds()));
+            if ~isempty(obj.controlButton) && isvalid(obj.controlButton)
+                obj.controlButton.Enable = onOff(haveProbe && ~isempty(obj.decodedEpochs));
+            end
         end % updateButtonState
 
         function onEpochSelectionChanged(obj)
@@ -475,6 +545,7 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             end
 
             obj.runButton.Enable = 'off';
+            obj.controlButton.Enable = 'off';
             dlg = uiprogressdlg(obj.fig, 'Title', 'Please wait', ...
                 'Message', sprintf('Decoding %d epoch(s)...', numel(sel)), ...
                 'Indeterminate', 'on');
@@ -492,6 +563,55 @@ classdef stimulusDecoder < ndi.gui.app.sessionApp
             uialert(obj.fig, sprintf('Decoded %d epoch(s); wrote %d document(s).', ...
                 numel(sel), numel(newdocs)), 'Done', 'Icon', 'success');
         end % runDecoder
+
+        function runControlLabels(obj)
+            % Label the control (blank) stimuli of the selected probe's decoded
+            % epochs. This operates on all of the probe's stimulus_presentation
+            % documents (label_control_stimuli has no per-epoch filter), writing
+            % one control_stimulus_ids document per stimulus_presentation.
+            p = obj.selectedProbe();
+            if isempty(p)
+                uialert(obj.fig, 'Choose a stimulator probe.', 'No probe selected');
+                return;
+            end
+            if isempty(obj.decodedEpochs)
+                uialert(obj.fig, ['This probe has no decoded epochs. Run the ' ...
+                    'decoder first, then label the control stimuli.'], ...
+                    'Nothing to label');
+                return;
+            end
+            overwrite = obj.overwriteCheckbox.Value;
+
+            % without overwrite, if every decoded epoch is already labeled there
+            % is nothing to do; say so rather than appear to do nothing
+            if ~overwrite && ...
+                    numel(intersect(obj.decodedEpochs, obj.controlLabeledEpochs)) == ...
+                    numel(obj.decodedEpochs)
+                uialert(obj.fig, ['Every decoded epoch already has its control ' ...
+                    'stimuli labeled. Tick "Re-decode selected (overwrite)" to ' ...
+                    'rebuild them.'], 'Already labeled');
+                return;
+            end
+
+            obj.runButton.Enable = 'off';
+            obj.controlButton.Enable = 'off';
+            dlg = uiprogressdlg(obj.fig, 'Title', 'Please wait', ...
+                'Message', 'Labeling control stimuli...', 'Indeterminate', 'on');
+            restore = onCleanup(@() obj.finishRun(dlg)); %#ok<NASGU>
+
+            try
+                rapp = ndi.app.stimulus.tuning_response(obj.session);
+                cs_doc = rapp.label_control_stimuli(p, double(overwrite));
+            catch ME
+                uialert(obj.fig, ME.message, 'Labeling failed', 'Icon', 'error');
+                return;
+            end
+
+            obj.reloadEpochs();   % refresh the "*c" markers
+            uialert(obj.fig, sprintf(['Labeled control stimuli; wrote %d ' ...
+                'control_stimulus_ids document(s).'], numel(cs_doc)), ...
+                'Done', 'Icon', 'success');
+        end % runControlLabels
 
         function finishRun(obj, dlg)
             if ~isempty(dlg) && isvalid(dlg), delete(dlg); end
