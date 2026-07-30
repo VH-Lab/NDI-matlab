@@ -99,6 +99,17 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyEqual(string(apps(idx).Category), "");
         end
 
+        function testStimulusResponseDiscovered(testCase)
+            % The stimulus response app is discovered and grouped under the
+            % "Stimulus" category, alongside the stimulus decoder.
+            apps    = ndi.gui.app.sessionApp.list();
+            classes = string({apps.Class});
+            idx     = find(classes == "ndi.gui.app.stimulusResponse", 1);
+            testCase.verifyNotEmpty(idx);
+            testCase.verifyEqual(string(apps(idx).Name), "Stimulus Response");
+            testCase.verifyEqual(string(apps(idx).Category), "Stimulus");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));
