@@ -213,8 +213,10 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
         end
 
         function testPromptRawBinaryHeadless(testCase)
-            % headless resolution: RawFile + ProbeType supplied (no dialogs), with
-            % the channel count taken from params.py via the base binaryinfo struct.
+            % headless resolution: RawFile + ProbeType + RawNumChannels supplied (no
+            % dialogs). The channel count is the stride of the SELECTED raw file and
+            % is NOT taken from params.py n_channels_dat (that describes the missing
+            % sorted file); it must come from an override or a SpikeGLX .meta sidecar.
             kdir = fullfile(testCase.workDir,'phy2');
             mkdir(kdir);
             fid = fopen(fullfile(kdir,'params.py'),'w');
@@ -226,8 +228,16 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             baseinfo = ndi.fun.probe.import.kilosort.binaryinfo(kdir);
             testCase.verifyFalse(baseinfo.found);
 
+            % n_channels_dat alone must NOT satisfy the stride: headless with no
+            % override and no .meta sidecar must error rather than reuse it.
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:noChannelCount');
+
+            % with an explicit RawNumChannels override it resolves.
             info = ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
-                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false);
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels);
             testCase.verifyTrue(info.found);
             testCase.verifyEqual(info.file, testCase.binFile);
             testCase.verifyEqual(info.num_channels, testCase.numChannels);
@@ -235,12 +245,15 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             testCase.verifyEqual(info.probe_type, 'NP1');
 
             info2 = ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
-                'RawFile', testCase.binFile, 'ProbeType', 'NP2', 'PromptForRawFile', false);
+                'RawFile', testCase.binFile, 'ProbeType', 'NP2', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels);
             testCase.verifyEqual(info2.multiplier, (8192*80)/0.5, 'AbsTol', 1e-6);
 
             % headless mode with no ProbeType must error rather than block on a dialog
+            % (the probe generation is resolved before the channel count).
             testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
-                'RawFile', testCase.binFile, 'PromptForRawFile', false), ...
+                'RawFile', testCase.binFile, 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels), ...
                 'ndi:fun:probe:import:kilosort:promptrawbinary:noProbeType');
 
             % a missing RawFile path errors
@@ -251,7 +264,8 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
         end
 
         function testPromptRawBinaryChannelCount(testCase)
-            % when no params.py/.metadata gives a channel count, it must be supplied.
+            % when no override and no .meta sidecar give a channel count, it must be
+            % supplied explicitly; otherwise headless resolution errors.
             nochan = fullfile(testCase.workDir,'nochan');
             mkdir(nochan);
             emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(nochan);
@@ -265,6 +279,85 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
                 'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
                 'num_channels', testCase.numChannels);
+            testCase.verifyTrue(info.found);
+            testCase.verifyEqual(info.num_channels, testCase.numChannels);
+        end
+
+        function testReadSpikeGLXMeta(testCase)
+            % the SpikeGLX '.meta' reader: parses key=value, numeric where possible,
+            % strips the '~' prefix on multi-valued keys, and returns [] when absent.
+            bf = fullfile(testCase.workDir,'run_g0_t0.imec0.ap.bin');
+            ndi.unittest.fun.probe.import.kilosort.RecalculateMeanWaveformTest.writeBinary(...
+                bf, zeros(385, 10)); % shape only; contents irrelevant here
+            mf = fullfile(testCase.workDir,'run_g0_t0.imec0.ap.meta');
+            fid = fopen(mf,'w');
+            fprintf(fid,'nSavedChans=385\n');
+            fprintf(fid,'imSampRate=30000.5\n');
+            fprintf(fid,'fileName=D:\\data\\run_g0_t0.imec0.ap.bin\n');
+            fprintf(fid,'~snsChanMap=(384,384,1)(AP0;0:0)\n');
+            fclose(fid);
+
+            [meta, metafile] = ndi.fun.probe.import.kilosort.readspikeglxmeta(bf);
+            testCase.verifyEqual(metafile, mf, 'Should find the sibling .meta file.');
+            testCase.verifyEqual(meta.nSavedChans, 385, ...
+                'nSavedChans should be parsed as a number.');
+            testCase.verifyEqual(meta.imSampRate, 30000.5, 'AbsTol', 1e-9);
+            testCase.verifyEqual(meta.fileName, 'D:\data\run_g0_t0.imec0.ap.bin', ...
+                'Non-numeric values should be kept as char.');
+            testCase.verifyTrue(isfield(meta,'snsChanMap'), ...
+                'The ~ prefix should be stripped to a valid field name.');
+
+            % no sidecar -> empty
+            [meta2, metafile2] = ndi.fun.probe.import.kilosort.readspikeglxmeta(...
+                testCase.binFile);
+            testCase.verifyEmpty(meta2);
+            testCase.verifyEqual(metafile2, '');
+        end
+
+        function testPromptRawBinaryUsesMetaChannelCount(testCase)
+            % with no override, the read stride comes from the SpikeGLX .meta sidecar.
+            nc = 5; nS = 40;
+            A = zeros(nc, nS);
+            for ch=1:nc, A(ch,:) = ch*100 + (0:nS-1); end;
+            bf = fullfile(testCase.workDir,'meta_case.imec0.ap.bin');
+            ndi.unittest.fun.probe.import.kilosort.RecalculateMeanWaveformTest.writeBinary(bf, A);
+            mf = fullfile(testCase.workDir,'meta_case.imec0.ap.meta');
+            fid = fopen(mf,'w'); fprintf(fid,'nSavedChans=%d\n', nc); fclose(fid);
+
+            emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(...
+                fullfile(testCase.workDir,'nochan2'));
+            info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', bf, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'expectedSamples', nS);
+            testCase.verifyTrue(info.found);
+            testCase.verifyEqual(info.num_channels, nc, ...
+                'Channel count should come from the .meta nSavedChans.');
+        end
+
+        function testPromptRawBinaryStrideGuards(testCase)
+            % a wrong channel count must be a hard error, not silent noise. The
+            % fixture binFile is 3 ch x 100 samples of int16 (600 bytes).
+            emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(...
+                fullfile(testCase.workDir,'nochan3'));
+
+            % (a) non-divisible stride: 600 bytes is not a multiple of 7 ch x 2 bytes
+            % (600 = 14*42 + 12), so reading as 7 channels cannot be a whole recording.
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', 7), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:strideMismatch');
+
+            % (b) divisible but wrong count vs expectedSamples: reading 3-ch data as
+            % 2 ch divides evenly (600/4 = 150) but implies 150 samples, not 100.
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', 2, 'expectedSamples', testCase.numSamples), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:durationMismatch');
+
+            % (c) the correct count passes the guards.
+            info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels, 'expectedSamples', testCase.numSamples);
             testCase.verifyTrue(info.found);
             testCase.verifyEqual(info.num_channels, testCase.numChannels);
         end

@@ -85,9 +85,11 @@ function probe(S, probe, options)
 % NEUROPIXELS UNITS: a raw SpikeGLX recording stores int16 ADC counts; the decode to
 % volts is fixed by the probe generation ('ProbeType'): 'NP1' (Neuropixels 1.0) uses
 % volts = int16 * 0.6/(512*500); 'NP2' (Neuropixels 2.0) uses volts = int16 *
-% 0.5/(8192*80). See ndi.fun.probe.import.kilosort.neuropixelsmultiplier. The channel
-% count of the raw file is taken from n_channels_dat in a params.py (or num_channels
-% in a '.metadata' sidecar) in the curated directory, or from 'RawNumChannels'.
+% 0.5/(8192*80). See ndi.fun.probe.import.kilosort.neuropixelsmultiplier. The read
+% stride (channel count) of a user-selected raw file is taken from its SpikeGLX
+% '.meta' sidecar (nSavedChans), else 'RawNumChannels', else a prompt - NOT from
+% n_channels_dat, which is the count of the (missing) sorted file and usually differs
+% (raw AP band 385 = 384 electrodes + 1 sync, vs an NDI export's 384 electrodes).
 %
 % If the binary cannot be found and no raw file is selected, the mean waveforms fall
 % back to the narrow Kilosort templates and a warning is issued.
@@ -146,8 +148,11 @@ function probe(S, probe, options)
 % | ProbeType ('')           | 'NP1' or 'NP2': the Neuropixels generation of a     |
 % |                          |   selected raw file, fixing the int16->volts units  |
 % |                          |   (skips the probe-generation dialog).              |
-% | RawNumChannels (NaN)     | Override the raw file's channel count. When NaN it  |
-% |                          |   is taken from n_channels_dat / .metadata.         |
+% | RawNumChannels (NaN)     | Override the read stride (channel count) of a       |
+% |                          |   selected raw file. When NaN it is read from the   |
+% |                          |   SpikeGLX .meta sidecar (nSavedChans), else the    |
+% |                          |   user is prompted. NOT n_channels_dat (the count   |
+% |                          |   of the sorted file, usually 384 vs raw 385).      |
 % | force (0)                | Re-import even if the checksum is unchanged.        |
 % | dryRun (false)           | If true, report what would be imported (neurons,    |
 % |                          |   spike counts, documents that would be removed)    |
@@ -350,7 +355,8 @@ function probe(S, probe, options)
                     bininfo = ndi.fun.probe.import.kilosort.promptrawbinary(bininfo, ...
                         'RawFile', options.RawFile, 'ProbeType', options.ProbeType, ...
                         'PromptForRawFile', options.PromptForRawFile, ...
-                        'num_channels', options.RawNumChannels);
+                        'num_channels', options.RawNumChannels, ...
+                        'expectedSamples', total_samples);
                 catch ME
                     warning('ndi:fun:probe:import:kilosort:probe:rawFileFailed', ...
                         ['Could not obtain a raw recording for waveform recalculation: %s ' ...
