@@ -41,11 +41,16 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveforms(binfile, num_channels, 
 % | multiplier (1), maxSpikes (1000), epochBounds ([]), highpass (false),          |
 % | hp_cutoff (300), hp_order (4), hp_ripple (0.8)  - see RECALCULATEMEANWAVEFORM.  |
 % |--------------------------|------------------------------------------------------|
-% | chunkSamples (1e5)       | Target number of samples/channel to read and filter  |
-% |                          |   per chunk. Larger is faster but uses more memory   |
-% |                          |   (a chunk holds up to chunkSamples x num_channels   |
-% |                          |   doubles). The read span of a chunk is bounded by   |
-% |                          |   this plus the window/pad width.                    |
+% | maxChunkBytes (2e9)      | Peak-memory ceiling (bytes) for the whole pass. The  |
+% |                          |   chunk size is derived from it so the per-cluster   |
+% |                          |   accumulators plus one chunk's read+filter buffers  |
+% |                          |   stay under this. Filtering multiplies a chunk's    |
+% |                          |   footprint (filtfilt temporaries), which is         |
+% |                          |   accounted for, so raise this only if you have the  |
+% |                          |   RAM. Ignored when chunkSamples is given.           |
+% | chunkSamples (NaN=auto)  | Explicit target samples/channel per chunk, overrid-  |
+% |                          |   ing maxChunkBytes. Mainly for testing; a chunk     |
+% |                          |   holds ~chunkSamples x num_channels doubles.        |
 % | progressfcn ([])         | Optional handle f(fraction, message) called after    |
 % |                          |   each chunk, with fraction the share of spikes done.|
 % | verbose (false)          | If true, print a progress line every ~10%.           |
@@ -73,7 +78,8 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveforms(binfile, num_channels, 
         options.hp_cutoff (1,1) double {mustBePositive} = 300
         options.hp_order (1,1) double {mustBePositive} = 4
         options.hp_ripple (1,1) double {mustBePositive} = 0.8
-        options.chunkSamples (1,1) double {mustBePositive} = 1e5
+        options.maxChunkBytes (1,1) double {mustBePositive} = 2e9
+        options.chunkSamples (1,1) double = NaN
         options.progressfcn = []
         options.verbose (1,1) logical = false
     end
@@ -199,6 +205,27 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveforms(binfile, num_channels, 
     allK = allK(ord);
     N = numel(allSamp);
 
+    % choose the chunk size from the memory budget unless one was given explicitly.
+    % The peak working set is (a) the per-cluster accumulators - acc{} plus the
+    % returned meanWf{}, held for the whole pass - and (b) one chunk's transient
+    % buffers. A double chunk block is num_channels*chunkSamples*8 bytes; while
+    % filtering, filtfilt also needs the read vector and its own reflected/forward/
+    % backward temporaries, so the block is counted memFactor times. maxChunkBytes
+    % caps their sum, so the whole recalculation stays under it.
+    if isnan(options.chunkSamples),
+        if doFilter, memFactor = 6; else, memFactor = 2.5; end;
+        accBytes = 2 * K * nWin * num_channels * 8;        % acc{} + meanWf{}
+        floorBytes = memFactor * 4 * nWin * num_channels * 8; % at least a few windows
+        chunkBudget = max(floorBytes, options.maxChunkBytes - accBytes);
+        chunkSamples = max(nWin, floor(chunkBudget / (memFactor * num_channels * 8)));
+    else,
+        if options.chunkSamples < 1,
+            error('ndi:fun:probe:import:kilosort:recalculatemeanwaveforms:badChunk', ...
+                'chunkSamples must be >= 1 (got %g).', options.chunkSamples);
+        end;
+        chunkSamples = options.chunkSamples;
+    end;
+
     % per-cluster accumulators
     acc = cell(1, K);
     for k=1:K, acc{k} = zeros(nWin, num_channels); end;
@@ -215,7 +242,7 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveforms(binfile, num_channels, 
     while i <= N,
         % greedily grow a chunk whose spikes span at most chunkSamples, so the read
         % block (spike span + padding) stays bounded regardless of spike density
-        spanLimit = allSamp(i) + options.chunkSamples;
+        spanLimit = allSamp(i) + chunkSamples;
         j = i;
         while j < N && allSamp(j+1) <= spanLimit,
             j = j + 1;
@@ -239,6 +266,7 @@ function [meanWf, wst, nUsed] = recalculatemeanwaveforms(binfile, num_channels, 
             continue; % short read (should not happen given the validity check)
         end;
         block = reshape(raw, num_channels, nBlock).'; % (nBlock x num_channels)
+        raw = []; %#ok<NASGU> % free the read vector before filtfilt allocates its own
         if doFilter,
             block = filtfilt(bcoef, acoef, block); % zero-phase high-pass per channel
         end;

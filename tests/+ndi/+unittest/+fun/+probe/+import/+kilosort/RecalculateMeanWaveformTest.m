@@ -472,6 +472,25 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             testCase.verifyEqual(small{2}, big{2}, 'AbsTol', 1e-9);
         end
 
+        function testStreamingMemoryBudgetSizing(testCase)
+            % the memory-budget path (maxChunkBytes, chunkSamples auto) must produce
+            % the same result as an explicit chunk size, and a tiny budget (forced to
+            % the internal floor, hence several chunks) must still be correct.
+            spikes   = [20 50 30 60 78];
+            clusters = [ 1  2  1  2  1];
+            cids     = [1 2];
+            args = {testCase.binFile, testCase.numChannels, spikes, clusters, cids, ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf};
+            ref  = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}, 'chunkSamples', 1e6);
+            auto = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}); % default budget
+            tight = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}, 'maxChunkBytes', 1);
+            testCase.verifyEqual(auto{1}, ref{1}, 'AbsTol', 1e-9);
+            testCase.verifyEqual(auto{2}, ref{2}, 'AbsTol', 1e-9);
+            testCase.verifyEqual(tight{1}, ref{1}, 'AbsTol', 1e-9, ...
+                'A tiny memory budget must still give the correct mean.');
+            testCase.verifyEqual(tight{2}, ref{2}, 'AbsTol', 1e-9);
+        end
+
         function testStreamingRespectsMaxSpikesAndEpochBounds(testCase)
             % maxSpikes cap and epoch-seam exclusion must match the per-cluster function.
             spikes   = [20 38 60 25 55];

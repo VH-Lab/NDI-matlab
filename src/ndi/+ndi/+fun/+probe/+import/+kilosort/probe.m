@@ -134,6 +134,11 @@ function probe(S, probe, options)
 % | RecalculateMeanWaveform- | Maximum number of spikes averaged per cluster when  |
 % |   MaxSpikes (1000)       |   recalculating (an evenly spaced subset is used    |
 % |                          |   beyond this; Inf uses every spike).               |
+% | RecalculateChunkMemory-  | Peak-memory ceiling (bytes) for the single-pass     |
+% |   Bytes (2e9)            |   recalculation. The streaming chunk size is derived |
+% |                          |   from it (accounting for the filtfilt overhead), so |
+% |                          |   the whole pass stays under it. Raise it if the     |
+% |                          |   machine has spare RAM.                             |
 % | binary_file ('')         | Explicit path to the raw binary recording. When     |
 % |                          |   empty, it is located from the export '.metadata'  |
 % |                          |   sidecar, else the user is prompted (see below).   |
@@ -190,6 +195,7 @@ function probe(S, probe, options)
         options.RecalculateMeanWaveformT0 (1,1) double = -0.005
         options.RecalculateMeanWaveformT1 (1,1) double = 0.005
         options.RecalculateMeanWaveformMaxSpikes (1,1) double = 1000
+        options.RecalculateChunkMemoryBytes (1,1) double {mustBePositive} = 2e9
         options.binary_file (1,:) char = ''
         options.HighPassFilter (1,1) logical = true
         options.HighPassCutoff (1,1) double {mustBePositive} = 300
@@ -432,6 +438,7 @@ function probe(S, probe, options)
                 'multiplier', bininfo.multiplier, ...
                 'maxSpikes', options.RecalculateMeanWaveformMaxSpikes, ...
                 'epochBounds', bounds0, ...
+                'maxChunkBytes', options.RecalculateChunkMemoryBytes, ...
                 'highpass', options.HighPassFilter, ...
                 'hp_cutoff', options.HighPassCutoff, ...
                 'hp_order', options.HighPassOrder, ...
