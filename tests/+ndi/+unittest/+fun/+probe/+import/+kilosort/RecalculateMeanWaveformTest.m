@@ -213,8 +213,10 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
         end
 
         function testPromptRawBinaryHeadless(testCase)
-            % headless resolution: RawFile + ProbeType supplied (no dialogs), with
-            % the channel count taken from params.py via the base binaryinfo struct.
+            % headless resolution: RawFile + ProbeType + RawNumChannels supplied (no
+            % dialogs). The channel count is the stride of the SELECTED raw file and
+            % is NOT taken from params.py n_channels_dat (that describes the missing
+            % sorted file); it must come from an override or a SpikeGLX .meta sidecar.
             kdir = fullfile(testCase.workDir,'phy2');
             mkdir(kdir);
             fid = fopen(fullfile(kdir,'params.py'),'w');
@@ -226,8 +228,16 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             baseinfo = ndi.fun.probe.import.kilosort.binaryinfo(kdir);
             testCase.verifyFalse(baseinfo.found);
 
+            % n_channels_dat alone must NOT satisfy the stride: headless with no
+            % override and no .meta sidecar must error rather than reuse it.
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:noChannelCount');
+
+            % with an explicit RawNumChannels override it resolves.
             info = ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
-                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false);
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels);
             testCase.verifyTrue(info.found);
             testCase.verifyEqual(info.file, testCase.binFile);
             testCase.verifyEqual(info.num_channels, testCase.numChannels);
@@ -235,12 +245,15 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             testCase.verifyEqual(info.probe_type, 'NP1');
 
             info2 = ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
-                'RawFile', testCase.binFile, 'ProbeType', 'NP2', 'PromptForRawFile', false);
+                'RawFile', testCase.binFile, 'ProbeType', 'NP2', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels);
             testCase.verifyEqual(info2.multiplier, (8192*80)/0.5, 'AbsTol', 1e-6);
 
             % headless mode with no ProbeType must error rather than block on a dialog
+            % (the probe generation is resolved before the channel count).
             testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(baseinfo, ...
-                'RawFile', testCase.binFile, 'PromptForRawFile', false), ...
+                'RawFile', testCase.binFile, 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels), ...
                 'ndi:fun:probe:import:kilosort:promptrawbinary:noProbeType');
 
             % a missing RawFile path errors
@@ -251,7 +264,8 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
         end
 
         function testPromptRawBinaryChannelCount(testCase)
-            % when no params.py/.metadata gives a channel count, it must be supplied.
+            % when no override and no .meta sidecar give a channel count, it must be
+            % supplied explicitly; otherwise headless resolution errors.
             nochan = fullfile(testCase.workDir,'nochan');
             mkdir(nochan);
             emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(nochan);
@@ -265,6 +279,85 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
                 'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
                 'num_channels', testCase.numChannels);
+            testCase.verifyTrue(info.found);
+            testCase.verifyEqual(info.num_channels, testCase.numChannels);
+        end
+
+        function testReadSpikeGLXMeta(testCase)
+            % the SpikeGLX '.meta' reader: parses key=value, numeric where possible,
+            % strips the '~' prefix on multi-valued keys, and returns [] when absent.
+            bf = fullfile(testCase.workDir,'run_g0_t0.imec0.ap.bin');
+            ndi.unittest.fun.probe.import.kilosort.RecalculateMeanWaveformTest.writeBinary(...
+                bf, zeros(385, 10)); % shape only; contents irrelevant here
+            mf = fullfile(testCase.workDir,'run_g0_t0.imec0.ap.meta');
+            fid = fopen(mf,'w');
+            fprintf(fid,'nSavedChans=385\n');
+            fprintf(fid,'imSampRate=30000.5\n');
+            fprintf(fid,'fileName=D:\\data\\run_g0_t0.imec0.ap.bin\n');
+            fprintf(fid,'~snsChanMap=(384,384,1)(AP0;0:0)\n');
+            fclose(fid);
+
+            [meta, metafile] = ndi.fun.probe.import.kilosort.readspikeglxmeta(bf);
+            testCase.verifyEqual(metafile, mf, 'Should find the sibling .meta file.');
+            testCase.verifyEqual(meta.nSavedChans, 385, ...
+                'nSavedChans should be parsed as a number.');
+            testCase.verifyEqual(meta.imSampRate, 30000.5, 'AbsTol', 1e-9);
+            testCase.verifyEqual(meta.fileName, 'D:\data\run_g0_t0.imec0.ap.bin', ...
+                'Non-numeric values should be kept as char.');
+            testCase.verifyTrue(isfield(meta,'snsChanMap'), ...
+                'The ~ prefix should be stripped to a valid field name.');
+
+            % no sidecar -> empty
+            [meta2, metafile2] = ndi.fun.probe.import.kilosort.readspikeglxmeta(...
+                testCase.binFile);
+            testCase.verifyEmpty(meta2);
+            testCase.verifyEqual(metafile2, '');
+        end
+
+        function testPromptRawBinaryUsesMetaChannelCount(testCase)
+            % with no override, the read stride comes from the SpikeGLX .meta sidecar.
+            nc = 5; nS = 40;
+            A = zeros(nc, nS);
+            for ch=1:nc, A(ch,:) = ch*100 + (0:nS-1); end;
+            bf = fullfile(testCase.workDir,'meta_case.imec0.ap.bin');
+            ndi.unittest.fun.probe.import.kilosort.RecalculateMeanWaveformTest.writeBinary(bf, A);
+            mf = fullfile(testCase.workDir,'meta_case.imec0.ap.meta');
+            fid = fopen(mf,'w'); fprintf(fid,'nSavedChans=%d\n', nc); fclose(fid);
+
+            emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(...
+                fullfile(testCase.workDir,'nochan2'));
+            info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', bf, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'expectedSamples', nS);
+            testCase.verifyTrue(info.found);
+            testCase.verifyEqual(info.num_channels, nc, ...
+                'Channel count should come from the .meta nSavedChans.');
+        end
+
+        function testPromptRawBinaryStrideGuards(testCase)
+            % a wrong channel count must be a hard error, not silent noise. The
+            % fixture binFile is 3 ch x 100 samples of int16 (600 bytes).
+            emptyinfo = ndi.fun.probe.import.kilosort.binaryinfo(...
+                fullfile(testCase.workDir,'nochan3'));
+
+            % (a) non-divisible stride: 600 bytes is not a multiple of 7 ch x 2 bytes
+            % (600 = 14*42 + 12), so reading as 7 channels cannot be a whole recording.
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', 7), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:strideMismatch');
+
+            % (b) divisible but wrong count vs expectedSamples: reading 3-ch data as
+            % 2 ch divides evenly (600/4 = 150) but implies 150 samples, not 100.
+            testCase.verifyError(@() ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', 2, 'expectedSamples', testCase.numSamples), ...
+                'ndi:fun:probe:import:kilosort:promptrawbinary:durationMismatch');
+
+            % (c) the correct count passes the guards.
+            info = ndi.fun.probe.import.kilosort.promptrawbinary(emptyinfo, ...
+                'RawFile', testCase.binFile, 'ProbeType', 'NP1', 'PromptForRawFile', false, ...
+                'num_channels', testCase.numChannels, 'expectedSamples', testCase.numSamples);
             testCase.verifyTrue(info.found);
             testCase.verifyEqual(info.num_channels, testCase.numChannels);
         end
@@ -339,6 +432,170 @@ classdef RecalculateMeanWaveformTest < matlab.unittest.TestCase
             mkdir(kdir);
             info = ndi.fun.probe.import.kilosort.binaryinfo(kdir);
             testCase.verifyFalse(info.found, 'Nothing should be found in an empty directory.');
+        end
+
+        function testStreamingMatchesPerClusterNoFilter(testCase)
+            % the single-pass, many-cluster function must return, for each cluster,
+            % exactly what the per-cluster function returns (same selection, same mean).
+            spikes   = [20 50 30 60 80];
+            clusters = [ 1  1  2  2  2];
+            cids     = [1 2];
+            [mw, wst, nUsed] = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                testCase.binFile, testCase.numChannels, spikes, clusters, cids, ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf);
+
+            testCase.verifyEqual(numel(mw), 2, 'One mean per cluster id.');
+            testCase.verifyEqual(nUsed, [2;3], 'Per-cluster spike counts.');
+            testCase.verifyEqual(numel(wst), 11);
+
+            mw1 = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                testCase.binFile, testCase.numChannels, spikes(clusters==1), ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf);
+            mw2 = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                testCase.binFile, testCase.numChannels, spikes(clusters==2), ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf);
+            testCase.verifyEqual(mw{1}, mw1, 'AbsTol', 1e-9, 'Cluster 1 mismatch.');
+            testCase.verifyEqual(mw{2}, mw2, 'AbsTol', 1e-9, 'Cluster 2 mismatch.');
+        end
+
+        function testStreamingChunkInvarianceNoFilter(testCase)
+            % the result must not depend on chunkSamples: a tiny chunk (one spike per
+            % chunk, many file seeks) and a huge chunk (all spikes in one block) agree.
+            spikes   = [20 50 30 60 78];
+            clusters = [ 1  2  1  2  1];
+            cids     = [1 2];
+            args = {testCase.binFile, testCase.numChannels, spikes, clusters, cids, ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf};
+            small = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}, 'chunkSamples', 3);
+            big   = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}, 'chunkSamples', 1e6);
+            testCase.verifyEqual(small{1}, big{1}, 'AbsTol', 1e-9);
+            testCase.verifyEqual(small{2}, big{2}, 'AbsTol', 1e-9);
+        end
+
+        function testStreamingMemoryBudgetSizing(testCase)
+            % the memory-budget path (maxChunkBytes, chunkSamples auto) must produce
+            % the same result as an explicit chunk size, and a tiny budget (forced to
+            % the internal floor, hence several chunks) must still be correct.
+            spikes   = [20 50 30 60 78];
+            clusters = [ 1  2  1  2  1];
+            cids     = [1 2];
+            args = {testCase.binFile, testCase.numChannels, spikes, clusters, cids, ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf};
+            ref  = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}, 'chunkSamples', 1e6);
+            auto = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}); % default budget
+            tight = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(args{:}, 'maxChunkBytes', 1);
+            testCase.verifyEqual(auto{1}, ref{1}, 'AbsTol', 1e-9);
+            testCase.verifyEqual(auto{2}, ref{2}, 'AbsTol', 1e-9);
+            testCase.verifyEqual(tight{1}, ref{1}, 'AbsTol', 1e-9, ...
+                'A tiny memory budget must still give the correct mean.');
+            testCase.verifyEqual(tight{2}, ref{2}, 'AbsTol', 1e-9);
+        end
+
+        function testStreamingRespectsMaxSpikesAndEpochBounds(testCase)
+            % maxSpikes cap and epoch-seam exclusion must match the per-cluster function.
+            spikes   = [20 38 60 25 55];
+            clusters = [ 1  1  1  2  2];
+            cids     = [1 2];
+            epochBounds = [0; 40; 100]; % spike 38 straddles the seam -> dropped
+            [mw, ~, nUsed] = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                testCase.binFile, testCase.numChannels, spikes, clusters, cids, ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf, ...
+                'epochBounds', epochBounds);
+            testCase.verifyEqual(nUsed, [2;2], 'Seam-straddling spike 38 should be dropped.');
+
+            mw1 = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                testCase.binFile, testCase.numChannels, spikes(clusters==1), ...
+                testCase.sampleRate, -0.005, 0.005, 'multiplier', 1, 'maxSpikes', Inf, ...
+                'epochBounds', epochBounds);
+            testCase.verifyEqual(mw{1}, mw1, 'AbsTol', 1e-9);
+        end
+
+        function testStreamingHighPassMatchesPerCluster(testCase)
+            % with high-pass on and a tiny chunk (one spike per chunk), each chunk is
+            % filtered over the same padded window the per-cluster function uses, so
+            % the streaming result must match it. Skipped without the Signal Toolbox.
+            haveSPT = (logical(exist('cheby1','file')) || logical(exist('cheby1','builtin'))) && ...
+                (logical(exist('filtfilt','file')) || logical(exist('filtfilt','builtin')));
+            testCase.assumeTrue(haveSPT, 'Signal Processing Toolbox not available; skipping.');
+
+            nCh = 2; nS = 8000; fs = 30000;
+            tt = 0:nS-1;
+            A = zeros(nCh, nS);
+            for ch=1:nCh,
+                A(ch,:) = ch*500 + 0.01*tt + 50*sin(2*pi*1000*tt/fs);
+            end;
+            bf = fullfile(testCase.workDir,'hp_stream.bin');
+            ndi.unittest.fun.probe.import.kilosort.RecalculateMeanWaveformTest.writeBinary(...
+                bf, int16(round(A)));
+
+            spikes   = [1000 3000 5000 7000];
+            clusters = [   1    2    1    2];
+            cids     = [1 2];
+            hp = {'highpass', true, 'hp_cutoff', 300, 'hp_order', 4, 'hp_ripple', 0.8};
+
+            % tiny chunk -> one spike per chunk (spikes are 2000 samples apart)
+            mw = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                bf, nCh, spikes, clusters, cids, fs, -0.005, 0.005, ...
+                'multiplier', 1, 'maxSpikes', Inf, 'chunkSamples', 5, hp{:});
+
+            mw1 = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                bf, nCh, spikes(clusters==1), fs, -0.005, 0.005, ...
+                'multiplier', 1, 'maxSpikes', Inf, hp{:});
+            mw2 = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
+                bf, nCh, spikes(clusters==2), fs, -0.005, 0.005, ...
+                'multiplier', 1, 'maxSpikes', Inf, hp{:});
+            testCase.verifyEqual(mw{1}, mw1, 'AbsTol', 1e-6, 'HP cluster 1 mismatch.');
+            testCase.verifyEqual(mw{2}, mw2, 'AbsTol', 1e-6, 'HP cluster 2 mismatch.');
+
+            % a big chunk filters both spikes' region together; the DC baseline must
+            % still be removed (near-zero channel means).
+            mwbig = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                bf, nCh, spikes, clusters, cids, fs, -0.005, 0.005, ...
+                'multiplier', 1, 'maxSpikes', Inf, 'chunkSamples', 1e6, hp{:});
+            testCase.verifyLessThan(max(abs(mean(mwbig{1},1))), 5, ...
+                'High-pass should remove the DC baseline in the streaming result.');
+        end
+
+        function testStreamingProgressCallback(testCase)
+            % the progressfcn is called with non-decreasing fractions in [0,1], ending
+            % at exactly 1; a tiny chunk forces several callbacks. The nested function
+            % 'record' accumulates the fractions in this method's workspace.
+            fracs = [];
+            spikes   = [20 30 50 60 78];
+            clusters = [ 1  1  2  2  2];
+            ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                testCase.binFile, testCase.numChannels, spikes, clusters, [1 2], ...
+                testCase.sampleRate, -0.005, 0.005, 'maxSpikes', Inf, ...
+                'chunkSamples', 3, 'progressfcn', @record);
+
+            testCase.verifyNotEmpty(fracs, 'progressfcn should be called.');
+            testCase.verifyGreaterThanOrEqual(min(fracs), 0);
+            testCase.verifyLessThanOrEqual(max(fracs), 1);
+            testCase.verifyTrue(all(diff(fracs) >= -1e-12), 'Fractions must be non-decreasing.');
+            testCase.verifyEqual(fracs(end), 1, 'AbsTol', 1e-12, 'Should end at 100%.');
+
+            function record(f, ~)
+                fracs(end+1) = f; %#ok<AGROW>
+            end
+        end
+
+        function testStreamingEmptyAndMissingCluster(testCase)
+            % no spikes -> zeros for every requested cluster; a requested cluster id
+            % that has no spikes -> zeros with nUsed 0.
+            [mw, wst, nUsed] = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                testCase.binFile, testCase.numChannels, [], [], [1 2], ...
+                testCase.sampleRate, -0.005, 0.005);
+            testCase.verifyEqual(nUsed, [0;0]);
+            testCase.verifyEqual(mw{1}, zeros(11, testCase.numChannels));
+            testCase.verifyEqual(numel(wst), 11);
+
+            % cluster 3 requested but has no spikes -> zeros, nUsed 0
+            spikes = [20 50]; clusters = [1 1];
+            [mw2, ~, nUsed2] = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                testCase.binFile, testCase.numChannels, spikes, clusters, [1 3], ...
+                testCase.sampleRate, -0.005, 0.005, 'maxSpikes', Inf);
+            testCase.verifyEqual(nUsed2, [2;0]);
+            testCase.verifyEqual(mw2{2}, zeros(11, testCase.numChannels));
         end
 
     end
