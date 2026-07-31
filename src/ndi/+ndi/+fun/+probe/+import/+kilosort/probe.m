@@ -62,8 +62,12 @@ function probe(S, probe, options)
 % By default ('RecalculateMeanWaveforms' true) each neuron's mean waveform is
 % recomputed over a wide window ('RecalculateMeanWaveformT0' to
 % 'RecalculateMeanWaveformT1', default -5 ms to +5 ms) by reading the raw binary
-% recording directly, because the Kilosort templates are only ~2 ms wide. The raw
-% binary is located automatically, in this order:
+% recording directly, because the Kilosort templates are only ~2 ms wide. All
+% clusters are recomputed together in a single streaming pass over the binary (see
+% ndi.fun.probe.import.kilosort.recalculatemeanwaveforms), so the file is read - and,
+% when high-pass filtering, filtered - once rather than once per cluster; pass
+% 'progressbar',true to watch its progress. The raw binary is located automatically,
+% in this order:
 %   1) an explicit 'binary_file' option, if given;
 %   2) the '.metadata' sidecar written next to the binary by
 %      ndi.fun.probe.export.binary (present when the data were exported from NDI).
@@ -158,7 +162,8 @@ function probe(S, probe, options)
 % |                          |   spike counts, documents that would be removed)    |
 % |                          |   without making any changes to the database.       |
 % | progressbar (false)      | If true, show an ndi.gui.component.ProgressBarWindow |
-% |                          |   tracking the cluster import loop. Degrades quietly |
+% |                          |   tracking the single-pass mean-waveform recalcula-  |
+% |                          |   tion and the cluster import loop. Degrades quietly |
 % |                          |   if no display is available.                       |
 % | verbose (1)              | 0/1 Should we be verbose?                           |
 % ---------------------------------------------------------------------------------
@@ -391,6 +396,53 @@ function probe(S, probe, options)
         end;
     end;
 
+    % Step 5b: when recalculating, compute the wide mean waveform for every cluster
+    % that will be imported in a SINGLE streaming pass over the binary - reading (and,
+    % when filtering, filtering) the file once for all clusters rather than once per
+    % cluster. The per-cluster results are looked up by cluster id in the loop below.
+    recalc_cids = [];
+    recalcWf = {};
+    recalcWst = [];
+    if use_recalc && ~dryRun,
+        recalc_want = lower(string(options.quality_labels));
+        keepmask = false(1, numel(cluster_ids));
+        for ci=1:numel(cluster_ids),
+            keepmask(ci) = any(recalc_want == lower(string(cluster_labels(ci))));
+        end;
+        recalc_cids = cluster_ids(keepmask);
+        if ~isempty(recalc_cids),
+            recalc_cb = [];
+            recalc_pbw = [];
+            if options.progressbar,
+                recalc_pbw = ndi.gui.component.ProgressBarWindow(['NDI kilosort import: ' elestr]);
+                recalc_pbw.addBar('Label',['Recalculating mean waveforms (' elestr ')'], ...
+                    'Tag','recalc_waveforms');
+                recalc_cb = @(frac,msg) recalc_pbw.updateBar('recalc_waveforms', max(0,min(1,frac)));
+            end;
+            if report,
+                disp([pfx 'Recalculating mean waveforms for ' int2str(numel(recalc_cids)) ...
+                    ' cluster(s) in a single pass over ' bininfo.file '.']);
+            end;
+            [recalcWf, recalcWst] = ndi.fun.probe.import.kilosort.recalculatemeanwaveforms(...
+                bininfo.file, bininfo.num_channels, spike_samples_global, spike_clusters, ...
+                recalc_cids, sample_rate, ...
+                options.RecalculateMeanWaveformT0, options.RecalculateMeanWaveformT1, ...
+                'dtype', bininfo.dtype, 'byteOrder', bininfo.byteOrder, ...
+                'headerOffsetBytes', bininfo.headerOffsetBytes, ...
+                'multiplier', bininfo.multiplier, ...
+                'maxSpikes', options.RecalculateMeanWaveformMaxSpikes, ...
+                'epochBounds', bounds0, ...
+                'highpass', options.HighPassFilter, ...
+                'hp_cutoff', options.HighPassCutoff, ...
+                'hp_order', options.HighPassOrder, ...
+                'hp_ripple', options.HighPassRipple, ...
+                'progressfcn', recalc_cb, 'verbose', logical(verbose));
+            if ~isempty(recalc_pbw),
+                try, recalc_pbw.removeBar('recalc_waveforms'); catch, end; %#ok<CTCH>
+            end;
+        end;
+    end;
+
     % Step 6: create the provenance/cluster document (neurons will depend on it)
 
     % These neurons are produced by an external, multi-stage pipeline (a
@@ -460,21 +512,16 @@ function probe(S, probe, options)
         % the mean waveform
         if strcmp(options.waveform_source,'templates'),
             if use_recalc,
-                % read a wide window straight from the raw binary; the spike sample
-                % is (approximately) the trough, so waveform_sample_times run from
-                % T0 to T1 with 0 at the spike.
-                [meanWf, wst] = ndi.fun.probe.import.kilosort.recalculatemeanwaveform(...
-                    bininfo.file, bininfo.num_channels, g0, sample_rate, ...
-                    options.RecalculateMeanWaveformT0, options.RecalculateMeanWaveformT1, ...
-                    'dtype', bininfo.dtype, 'byteOrder', bininfo.byteOrder, ...
-                    'headerOffsetBytes', bininfo.headerOffsetBytes, ...
-                    'multiplier', bininfo.multiplier, ...
-                    'maxSpikes', options.RecalculateMeanWaveformMaxSpikes, ...
-                    'epochBounds', bounds0, ...
-                    'highpass', options.HighPassFilter, ...
-                    'hp_cutoff', options.HighPassCutoff, ...
-                    'hp_order', options.HighPassOrder, ...
-                    'hp_ripple', options.HighPassRipple);
+                % look up this cluster's wide mean waveform from the single-pass
+                % result computed in Step 5b; the spike sample is (approximately) the
+                % trough, so waveform_sample_times run from T0 to T1 with 0 at the spike.
+                pos = find(recalc_cids==cid, 1);
+                if isempty(pos),
+                    meanWf = zeros(max(numel(recalcWst),1), bininfo.num_channels);
+                else,
+                    meanWf = recalcWf{pos};
+                end;
+                wst = recalcWst;
             else,
                 meanWf = ndi.fun.probe.import.kilosort.meanwaveform(cid, spike_clusters, ...
                     spike_templates, amplitudes, templates, winv);
