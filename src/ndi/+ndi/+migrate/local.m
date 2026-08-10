@@ -194,6 +194,7 @@ function result = local(path, options)
     epochMintReport = [];
     softwareDedupReport = [];
     ontologyRowReport = [];
+    ontologyLabelReport = [];
     if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
@@ -220,6 +221,16 @@ function result = local(path, options)
         %       re-folded through v1_to_v2, where the pass-1 fan-out runs.
         %       Runs BEFORE Path-S so the statements it emits are Path-S
         %       candidates. See ndi.migrate.internal.ontologyRowSubjects.
+        %   (1c) ONTOLOGY LABEL SUBJECTS: an `ontologyLabel` names the document
+        %       it labels (`document_id`), never a subject, so pass 1 passes it
+        %       through (~7,007 documents in JH). Here the referent is followed
+        %       one hop -- imageStack -> image_observation -> subject_id -- and
+        %       the label becomes a `term_observation` about that subject with
+        %       `derived_from_1` still naming the labelled statement, id
+        %       PRESERVED. The E. coli half of the JH corpus has no subject to
+        %       inherit (doImport.m:789,811,827 set `document_id` only); those
+        %       are COUNTED and left passing through, pending a team call.
+        %       See ndi.migrate.internal.ontologyLabelSubjects.
         %   (2) PATH-S: an attributed anatomical locus is promoted to a
         %       part-subject. Run AFTER the deferrals so a manipulation the
         %       deferral emits can be a Path-S retarget candidate.
@@ -265,6 +276,14 @@ function result = local(path, options)
             warning('NDI:migrate:ontologyRowSubjectsFailed', ...
                 ['Second-pass ontology_table_row subject resolution failed ' ...
                  '(%s); leaving the rows as passthrough.'], ME.message);
+        end
+        try
+            [convertResult, ontologyLabelReport] = ...
+                resolveOntologyLabelSubjects(convertResult, options);
+        catch ME
+            warning('NDI:migrate:ontologyLabelSubjectsFailed', ...
+                ['Second-pass ontology_label subject resolution failed ' ...
+                 '(%s); leaving the labels as passthrough.'], ME.message);
         end
         try
             convertResult = resolveStimulusPresentations(convertResult, bodies, options);
@@ -361,6 +380,7 @@ function result = local(path, options)
         'ensembleMembership',  ensembleReport, ...
         'strainAssembly',      strainReport, ...
         'ontologyRowSubjects', ontologyRowReport, ...
+        'ontologyLabelSubjects', ontologyLabelReport, ...
         'epochMint',           epochMintReport, ...
         'softwareDedup',       softwareDedupReport);
 
@@ -672,6 +692,101 @@ function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bod
         if strcmp(d.className(), 'ontology_table_row') ...
                 && any(strcmp(d.get('base.id'), replacedIds))
             continue;   % superseded by the re-folded statements
+        end
+        kept{end+1} = d; %#ok<AGROW>
+    end
+    convertResult.migrated = [kept, newDocs];
+    convertResult.summary = recountSummary(convertResult);
+    report.changed = true;
+end
+
+function [convertResult, report] = resolveOntologyLabelSubjects(convertResult, options)
+%RESOLVEONTOLOGYLABELSUBJECTS V_eta second pass: give each passed-through
+%   `ontology_label` the subject it is about, as a `term_observation` whose
+%   `derived_from_1` still names the document that was labelled.
+%
+%   ndi.migrate.internal.ontologyLabelSubjects does the RESOLUTION (pure struct
+%   logic, no converter, no schema) and returns a plan carrying a ready V_eta
+%   body per resolvable label. This function does the FOLD, one label at a time,
+%   through did2.convert.v1_to_v2 at TargetVersion V_eta -- where the body is
+%   tagged schema_version 'V_eta' and is therefore short-circuited
+%   (isAlreadyTarget) to ensureClassBlocks + validate, the same footing Path-S
+%   and ensembleMembership use for minted bodies.
+%
+%   THE LABEL'S id IS PRESERVED, so the replacement supersedes the passthrough
+%   rather than joining it: two documents with one id is not a state this
+%   database has a meaning for. The passthrough is removed only for labels whose
+%   replacement actually came back out of the re-fold.
+%
+%   ONE AT A TIME, AND REVERTIBLE, ON PURPOSE -- the rule
+%   resolveOntologyRowSubjects states and the reason is the same: a re-fold that
+%   QUARANTINES must not replace a passthrough that validated. Trading a
+%   non-gating passthrough for a gating quarantine is the `epochfiles_ingested`
+%   regression (2,484 documents) and the reverted distance_metadata endpoint
+%   relation (a quarantine turned into 4,156 orphans).
+%
+%   WHAT IT WILL NOT DO: attribute the E. coli half. Three of the seven
+%   `ndi.document('imageStack'...)` sites in +setup/+conv/+haley/doImport.m
+%   (:789 :811 :827) set `document_id` only -- those images are of bacterial
+%   patches on plates and the session has no subject -- so their labels resolve
+%   to a referent with nothing to inherit. They are COUNTED
+%   (`blocked_target_has_no_subject`, split by referent class) and left passing
+%   through. Whether such a document ever gets a subject is a team modelling
+%   call, not a migration operation.
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [plan, report] = ndi.migrate.internal.ontologyLabelSubjects(structs);
+
+    % Fold outcomes belong to the same instrument, so they are initialised
+    % unconditionally -- a field that appears only on the success path is a
+    % counter that cannot report a zero.
+    report.labels_planned      = numel(plan);
+    report.labels_replaced     = 0;
+    report.refold_quarantined  = 0;
+    report.changed             = false;
+    if isempty(plan)
+        return;
+    end
+
+    replacedIds = {};
+    newDocs = {};
+    for k = 1:numel(plan)
+        try
+            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, ...
+                'Verbose',       false);
+        catch
+            report.refold_quarantined = report.refold_quarantined + 1;
+            continue;   % REVERT: keep the passthrough
+        end
+        if ~isempty(sub.quarantine) || isempty(sub.migrated)
+            report.refold_quarantined = report.refold_quarantined + 1;
+            continue;   % REVERT
+        end
+        replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
+        newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
+        report.labels_replaced = report.labels_replaced + 1;
+    end
+
+    if isempty(replacedIds)
+        return;
+    end
+
+    kept = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if strcmp(d.className(), 'ontology_label') ...
+                && any(strcmp(d.get('base.id'), replacedIds))
+            continue;   % superseded by the term_observation carrying its id
         end
         kept{end+1} = d; %#ok<AGROW>
     end
