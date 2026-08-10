@@ -192,6 +192,8 @@ function result = local(path, options)
     ensembleReport = [];
     strainReport = [];
     epochMintReport = [];
+    softwareDedupReport = [];
+    ontologyRowReport = [];
     if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
@@ -202,12 +204,22 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass has five kinds of work, all needing the whole
+        % V_eta's second pass has six kinds of work, all needing the whole
         % migrated body set (the corpus-wide session/element graph):
         %   (1) DEFERRALS: some J migrators still defer a document that needs
         %       session context -- stimulus_bath (-> dose_manipulation, D8
         %       retired the bath family). Resolve them the same way the older
         %       targets do (assembleDeferred), just at TargetVersion V_eta.
+        %   (1b) ONTOLOGY ROW SUBJECTS (#53): an `ontologyTableRow` names its
+        %       subject in a way a single document cannot follow -- a
+        %       `document_id` edge, or a plain table cell holding a subject
+        %       document id or local identifier. Pass 1 therefore guards and
+        %       passes the row through (20,583 documents in the last measured
+        %       census: JH 14,378 + Dab 6,205, run 31415147934). Here the
+        %       subject is resolved against the migrated set and the row is
+        %       re-folded through v1_to_v2, where the pass-1 fan-out runs.
+        %       Runs BEFORE Path-S so the statements it emits are Path-S
+        %       candidates. See ndi.migrate.internal.ontologyRowSubjects.
         %   (2) PATH-S: an attributed anatomical locus is promoted to a
         %       part-subject. Run AFTER the deferrals so a manipulation the
         %       deferral emits can be a Path-S retarget candidate.
@@ -227,6 +239,15 @@ function result = local(path, options)
         %       would fuse epochs from different sessions. Lives DID-side
         %       (did2.convert.epochMint) beside resolveDatasetEntities, so the
         %       corpus discovery harness runs the same code this does.
+        %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
+        %       consuming document, because a single-document migrator cannot
+        %       know another document already minted the same program. Merge
+        %       them on (session_id, name, version) and retarget every inbound
+        %       edge BY TARGET ID -- one of the seven edges that must_refer to
+        %       `software` is called `reader_id`, not `software_id`. Runs LAST
+        %       so it also sees any software minted by a body the deferral pass
+        %       re-folded through v1_to_v2.
+        %       See ndi.migrate.internal.softwareDedup.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
         try
@@ -236,6 +257,14 @@ function result = local(path, options)
             warning('NDI:migrate:deferredResolveFailed', ...
                 ['Second-pass resolution of session-context deferrals ' ...
                  'failed (%s); leaving them quarantined.'], ME.message);
+        end
+        try
+            [convertResult, ontologyRowReport] = ...
+                resolveOntologyRowSubjects(convertResult, bodies, options);
+        catch ME
+            warning('NDI:migrate:ontologyRowSubjectsFailed', ...
+                ['Second-pass ontology_table_row subject resolution failed ' ...
+                 '(%s); leaving the rows as passthrough.'], ME.message);
         end
         try
             convertResult = resolveStimulusPresentations(convertResult, bodies, options);
@@ -277,6 +306,14 @@ function result = local(path, options)
             warning('NDI:migrate:epochMintFailed', ...
                 ['Second-pass epoch mint failed (%s); leaving the epoch ' ...
                  'association as the did_v1 `epochid` string.'], ME.message);
+        end
+        try
+            [convertResult, softwareDedupReport] = ...
+                resolveSoftwareDedup(convertResult);
+        catch ME
+            warning('NDI:migrate:softwareDedupFailed', ...
+                ['Second-pass software dedup failed (%s); leaving one ' ...
+                 '`software` entity per consuming document.'], ME.message);
         end
     end
 
@@ -321,9 +358,11 @@ function result = local(path, options)
     result.quarantineFile = wroteQuarantineFile;
     result.references = refReport;
     result.secondPass = struct( ...
-        'ensembleMembership', ensembleReport, ...
-        'strainAssembly',     strainReport, ...
-        'epochMint',          epochMintReport);
+        'ensembleMembership',  ensembleReport, ...
+        'strainAssembly',      strainReport, ...
+        'ontologyRowSubjects', ontologyRowReport, ...
+        'epochMint',           epochMintReport, ...
+        'softwareDedup',       softwareDedupReport);
 
     if options.Verbose
         printSummary(result);
@@ -542,6 +581,105 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, opti
     convertResult.summary = recountSummary(convertResult);
 end
 
+function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bodies, options)
+%RESOLVEONTOLOGYROWSUBJECTS V_eta second pass (#53): give each passed-through
+%   `ontology_table_row` the subject it names, then re-fold it so the pass-1
+%   per-column fan-out runs.
+%
+%   ndi.migrate.internal.ontologyRowSubjects does the RESOLUTION (pure struct
+%   logic, no converter, no schema) and returns a plan: for every row whose
+%   subject it could resolve against the migrated set, a copy of the did_v1
+%   body with a `subject_id` dependency added. This function does the FOLD, one
+%   row at a time, through did2.convert.v1_to_v2 at TargetVersion V_eta --
+%   where did2.convert.migrators_j.ontology_table_row's guard now passes.
+%
+%   ONE ROW AT A TIME, AND REVERTIBLE, ON PURPOSE. Two outcomes must not be
+%   allowed to make anything worse than the passthrough they replace:
+%
+%     * the re-fold QUARANTINES -> keep the passthrough. A quarantine is a
+%       gating failure; a passthrough is not. Trading the second for the first
+%       is the `epochfiles_ingested` regression, and it is what happened when
+%       distance_metadata's endpoint relation was minted (a non-gating
+%       quarantine became a GATING orphan failure).
+%     * the re-fold produces ONLY the row again (every column was an identity
+%       column, so migrateRow skipped them all and the migrator returned
+%       `{preBody}`) -> keep the ORIGINAL passthrough. Writing the re-folded
+%       copy would add a `subject_id` edge to a tombstone and nothing else:
+%       a document that looks converted and says exactly what it said before.
+%       Haley's plateSubjectTable is `{subject_id, plate_id}` and lands here.
+%
+%   REPORT carries the resolver's denominators plus the fold outcomes;
+%   REPORT.changed is true only when a row was actually REPLACED.
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [plan, report] = ndi.migrate.internal.ontologyRowSubjects(bodies, structs);
+
+    % Fold outcomes are part of the same instrument, so they are initialised
+    % unconditionally -- a field that appears only on the success path is a
+    % counter that cannot report a zero.
+    report.rows_planned          = numel(plan);
+    report.rows_replaced         = 0;
+    report.refold_no_statements  = 0;
+    report.refold_quarantined    = 0;
+    report.statements_emitted    = 0;
+    report.changed               = false;
+    if isempty(plan)
+        return;
+    end
+
+    replacedIds = {};
+    newDocs = {};
+    for k = 1:numel(plan)
+        try
+            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, ...
+                'Verbose',       false);
+        catch
+            report.refold_quarantined = report.refold_quarantined + 1;
+            continue;   % REVERT: keep the passthrough
+        end
+        if ~isempty(sub.quarantine) || isempty(sub.migrated)
+            report.refold_quarantined = report.refold_quarantined + 1;
+            continue;   % REVERT
+        end
+        if isscalar(sub.migrated) ...
+                && strcmp(sub.migrated{1}.className(), 'ontology_table_row')
+            report.refold_no_statements = report.refold_no_statements + 1;
+            continue;   % REVERT
+        end
+        replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
+        newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
+        report.rows_replaced = report.rows_replaced + 1;
+        report.statements_emitted = report.statements_emitted + numel(sub.migrated);
+    end
+
+    if isempty(replacedIds)
+        return;
+    end
+
+    kept = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if strcmp(d.className(), 'ontology_table_row') ...
+                && any(strcmp(d.get('base.id'), replacedIds))
+            continue;   % superseded by the re-folded statements
+        end
+        kept{end+1} = d; %#ok<AGROW>
+    end
+    convertResult.migrated = [kept, newDocs];
+    convertResult.summary = recountSummary(convertResult);
+    report.changed = true;
+end
+
 function [convertResult, report] = resolveStrainAssembly(convertResult, options)
 %RESOLVESTRAINASSEMBLY V_eta second pass: assemble the unattached `openminds`
 %   Strain documents into `strain` entities with their ids PRESERVED, consuming
@@ -581,6 +719,51 @@ function [convertResult, report] = resolveStrainAssembly(convertResult, options)
         'Verbose', false);
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function [convertResult, report] = resolveSoftwareDedup(convertResult)
+%RESOLVESOFTWAREDEDUP V_eta second pass: merge the duplicate `software` entities
+%   pass 1 could not avoid minting, and retarget the edges of the ones removed.
+%
+%   The signed model says the entity is "deduplicated by name+version"
+%   (DID-schema V_eta_tenet_audit.md:10). A single-document migrator cannot do
+%   that half -- it sees one source document and cannot know another already
+%   minted the same program -- so every consuming document mints its own and
+%   this pass merges them with the whole body set in hand, the same shape as
+%   ndi.migrate.internal.pathSPromotion's find-or-create + edge retarget.
+%
+%   NOTHING IS MINTED here, so unlike the other sub-passes there is no
+%   v1_to_v2 re-fold -- and therefore no OPTIONS argument, which is why this
+%   signature is one shorter than its siblings'. Every surviving body was
+%   already in convertResult and already validated; the bodies whose edges were
+%   retargeted are simply rewrapped, exactly as resolvePathS rewraps its own
+%   retargeted survivors.
+%
+%   REPORT is [] when the pass did not run (no documents), and otherwise
+%   carries its denominators first -- documents_inspected and edges_examined --
+%   so a zero merge count is distinguishable from a pass that read nothing.
+%   See ndi.migrate.internal.softwareDedup for the merge key, the pinning rule
+%   that protects id-preserved entities, and the cross-session merge it
+%   MEASURES but deliberately does not perform.
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [kept, report] = ndi.migrate.internal.softwareDedup(structs);
+    if ~report.changed
+        return;
+    end
+    keptDocs = cell(1, numel(kept));
+    for k = 1:numel(kept)
+        keptDocs{k} = did2.document(kept{k});
+    end
+    convertResult.migrated = keptDocs;
     convertResult.summary = recountSummary(convertResult);
 end
 
