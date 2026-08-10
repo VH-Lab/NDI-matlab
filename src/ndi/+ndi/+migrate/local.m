@@ -191,6 +191,7 @@ function result = local(path, options)
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
     strainReport = [];
+    epochMintReport = [];
     if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
@@ -201,7 +202,7 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass has four kinds of work, all needing the whole
+        % V_eta's second pass has five kinds of work, all needing the whole
         % migrated body set (the corpus-wide session/element graph):
         %   (1) DEFERRALS: some J migrators still defer a document that needs
         %       session context -- stimulus_bath (-> dose_manipulation, D8
@@ -219,6 +220,13 @@ function result = local(path, options)
         %       become `strain` entities (ids preserved), consuming their
         %       Species / GeneticStrainType fragments. See
         %       ndi.migrate.internal.strainAssembly.
+        %   (5) EPOCH MINT (#60): one `epoch` entity per distinct
+        %       (base.session_id, epoch-id string). The KEY IS THE PAIR --
+        %       an `epochid.epochid` string is reused across sessions (142 of
+        %       corpus B's 149 distinct ids), so keying on the string alone
+        %       would fuse epochs from different sessions. Lives DID-side
+        %       (did2.convert.epochMint) beside resolveDatasetEntities, so the
+        %       corpus discovery harness runs the same code this does.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
         try
@@ -258,6 +266,17 @@ function result = local(path, options)
             warning('NDI:migrate:strainAssemblyFailed', ...
                 ['Second-pass strain assembly failed (%s); leaving the ' ...
                  'openminds Strain documents as passthrough.'], ME.message);
+        end
+        try
+            [convertResult, epochMintReport] = did2.convert.epochMint( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:epochMintFailed', ...
+                ['Second-pass epoch mint failed (%s); leaving the epoch ' ...
+                 'association as the did_v1 `epochid` string.'], ME.message);
         end
     end
 
@@ -303,7 +322,8 @@ function result = local(path, options)
     result.references = refReport;
     result.secondPass = struct( ...
         'ensembleMembership', ensembleReport, ...
-        'strainAssembly',     strainReport);
+        'strainAssembly',     strainReport, ...
+        'epochMint',          epochMintReport);
 
     if options.Verbose
         printSummary(result);
