@@ -11,6 +11,12 @@ function result = local(path, options)
 %   for the duration of the run, so concurrent migrations of the same
 %   dataset fail fast instead of corrupting each other.
 %
+%   STATUS of the 2026-08-10 edit (V_eta second-pass step (7),
+%   did2.convert.resolveSessionAnchors): WRITTEN WITHOUT MATLAB and NOT
+%   EXECUTED. The pass itself has never been run anywhere. It is wired in its
+%   OWN try/catch like every sibling, so a failure leaves the time references
+%   in pass-1 form and the rest of the migration proceeds.
+%
 %   Options (name-value):
 %     DryRun           (1,1 logical, default false) - report what
 %                      would change without writing the V_delta
@@ -192,6 +198,7 @@ function result = local(path, options)
     ensembleReport = [];
     strainReport = [];
     epochMintReport = [];
+    sessionAnchorReport = [];
     softwareDedupReport = [];
     ontologyRowReport = [];
     ontologyLabelReport = [];
@@ -259,6 +266,26 @@ function result = local(path, options)
         %       so it also sees any software minted by a body the deferral pass
         %       re-folded through v1_to_v2.
         %       See ndi.migrate.internal.softwareDedup.
+        %   (7) SESSION ANCHOR FOLD (#65): `session_relative_reference`
+        %       (107,308 documents) + `session_bounded_reference` (20,411)
+        %       become `relative_reference` with base.id PRESERVED, anchored to
+        %       the SESSION DOCUMENT. Pass 1 cannot do it: a migrator holds
+        %       `base.session_id`, while the REQUIRED `relative_to` edge needs
+        %       the session document's `base.id` -- two independently minted
+        %       strings (+ndi/document.m:57-58 vs +ndi/session.m:215), so the
+        %       mapping is a corpus-wide index. Lives DID-side
+        %       (did2.convert.resolveSessionAnchors) beside epochMint, so the
+        %       corpus discovery harness runs the same code this does.
+        %
+        %       ORDER: immediately after (5), matching runCorpusDiscovery,
+        %       testCorpusPRED and testFixtureCorpus exactly. Stated plainly --
+        %       NO DEPENDENCY FORCES IT. Both (5) and (7) index `session`
+        %       documents by (base.session_id -> base.id); neither writes what
+        %       the other reads; and no sub-pass in this block removes a
+        %       `session` document, so (7)'s new edge cannot be orphaned by a
+        %       later step whatever the order (softwareDedup removes only
+        %       duplicate `software` entities). The order is pinned so the DID
+        %       corpus gate and this production path cannot silently diverge.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
         try
@@ -327,6 +354,19 @@ function result = local(path, options)
                  'association as the did_v1 `epochid` string.'], ME.message);
         end
         try
+            [convertResult, sessionAnchorReport] = ...
+                did2.convert.resolveSessionAnchors( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:sessionAnchorFoldFailed', ...
+                ['Second-pass session anchor fold failed (%s); leaving the ' ...
+                 'time references as pass-1 session_relative_reference / ' ...
+                 'session_bounded_reference documents.'], ME.message);
+        end
+        try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
         catch ME
@@ -382,6 +422,7 @@ function result = local(path, options)
         'ontologyRowSubjects', ontologyRowReport, ...
         'ontologyLabelSubjects', ontologyLabelReport, ...
         'epochMint',           epochMintReport, ...
+        'sessionAnchorFold',   sessionAnchorReport, ...
         'softwareDedup',       softwareDedupReport);
 
     if options.Verbose
