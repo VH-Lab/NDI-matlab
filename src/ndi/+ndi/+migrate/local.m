@@ -184,6 +184,13 @@ function result = local(path, options)
     % body set (the session/element graph) is in hand, then fold the
     % assembled bodies back through v1_to_v2 (which short-circuits them as
     % already-target) so they are padded/validated on the same footing.
+    %
+    % Sub-passes that are INSTRUMENTS as well as builders return a report and
+    % it is carried onto RESULT.secondPass, denominator included, whether or
+    % not they changed anything -- a count with no denominator is not evidence.
+    % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
+    ensembleReport = [];
+    strainReport = [];
     if any(strcmp(options.TargetVersion, {'V_epsilon', 'V_zeta'}))
         try
             resolver = ndi.migrate.internal.bodyResolver(bodies);
@@ -194,7 +201,7 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass has two kinds of work, both needing the whole
+        % V_eta's second pass has four kinds of work, all needing the whole
         % migrated body set (the corpus-wide session/element graph):
         %   (1) DEFERRALS: some J migrators still defer a document that needs
         %       session context -- stimulus_bath (-> dose_manipulation, D8
@@ -203,6 +210,15 @@ function result = local(path, options)
         %   (2) PATH-S: an attributed anatomical locus is promoted to a
         %       part-subject. Run AFTER the deferrals so a manipulation the
         %       deferral emits can be a Path-S retarget candidate.
+        %   (3) ENSEMBLE MEMBERSHIP: each `ensemble` map document becomes
+        %       `member_of` edges (neuron-subject -> ensemble group-subject)
+        %       plus `derived_from` provenance for the combined-binary cache.
+        %       Adds only; drops nothing (the verify-before-delete gate has not
+        %       run). See ndi.migrate.internal.ensembleMembership.
+        %   (4) STRAIN ASSEMBLY: the unattached `openminds` Strain documents
+        %       become `strain` entities (ids preserved), consuming their
+        %       Species / GeneticStrainType fragments. See
+        %       ndi.migrate.internal.strainAssembly.
         % Each step is independent; a failure leaves the affected documents in
         % their pass-1 form.
         try
@@ -226,6 +242,22 @@ function result = local(path, options)
             warning('NDI:migrate:pathSFailed', ...
                 ['Second-pass Path-S promotion failed (%s); leaving ' ...
                  'anatomical loci located-by-default.'], ME.message);
+        end
+        try
+            [convertResult, ensembleReport] = ...
+                resolveEnsembleMembership(convertResult, options);
+        catch ME
+            warning('NDI:migrate:ensembleMembershipFailed', ...
+                ['Second-pass ensemble membership failed (%s); leaving the ' ...
+                 'ensemble map documents as passthrough.'], ME.message);
+        end
+        try
+            [convertResult, strainReport] = ...
+                resolveStrainAssembly(convertResult, options);
+        catch ME
+            warning('NDI:migrate:strainAssemblyFailed', ...
+                ['Second-pass strain assembly failed (%s); leaving the ' ...
+                 'openminds Strain documents as passthrough.'], ME.message);
         end
     end
 
@@ -269,6 +301,9 @@ function result = local(path, options)
     result.quarantine = convertResult.quarantine;
     result.quarantineFile = wroteQuarantineFile;
     result.references = refReport;
+    result.secondPass = struct( ...
+        'ensembleMembership', ensembleReport, ...
+        'strainAssembly',     strainReport);
 
     if options.Verbose
         printSummary(result);
@@ -435,6 +470,97 @@ function convertResult = resolvePathS(convertResult, options)
         convertResult.migrated = [convertResult.migrated, sub.migrated];
         convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     end
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function [convertResult, report] = resolveEnsembleMembership(convertResult, options)
+%RESOLVEENSEMBLEMEMBERSHIP V_eta second pass: turn each `ensemble` map document
+%   into `member_of` edges (each neuron-subject -> the ensemble group-subject,
+%   carrying its column order) plus `derived_from` provenance recording that the
+%   combined marked-point-process binary is a REBUILDABLE CACHE of those same
+%   neurons. The neuron ids are `depends_on` edges on the map document
+%   (`neuron_id_1..n`, written in column order by
+%   +ndi/+element/ensemble.m:274-276), so no file bytes are read -- but the
+%   neuron ids must RESOLVE to migrated subjects, which only the whole body set
+%   can answer, hence a second pass.
+%
+%   THIS PASS ONLY ADDS. The map document, the `acquisition_epoch` and its
+%   binary are all left in place: dropping them is gated on a corpus
+%   verify-before-delete (0 stranded per-neuron trains) that has not run. The
+%   pass MEASURES that gate -- REPORT.neuron_edges_stranded and
+%   REPORT.stranded_neuron_ids -- and reports its denominator first.
+%   See ndi.migrate.internal.ensembleMembership for what is deliberately not
+%   built yet (epoch-scoping the edges, and the `sampled_body` cache document).
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [kept, minted, report] = ndi.migrate.internal.ensembleMembership(structs);
+    if ~report.changed
+        return;
+    end
+    keptDocs = cell(1, numel(kept));
+    for k = 1:numel(kept)
+        keptDocs{k} = did2.document(kept{k});
+    end
+    convertResult.migrated = keptDocs;
+    % The minted relations are tagged schema_version 'V_eta', so v1_to_v2
+    % short-circuits them (isAlreadyTarget) to ensureClassBlocks + validate --
+    % the same footing the deferred-resolution and Path-S passes use.
+    sub = did2.convert.v1_to_v2(minted, ...
+        'Validate', options.Validate, ...
+        'SchemaCache', options.SchemaCache, ...
+        'TargetVersion', options.TargetVersion, ...
+        'Verbose', false);
+    convertResult.migrated = [convertResult.migrated, sub.migrated];
+    convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    convertResult.summary = recountSummary(convertResult);
+end
+
+function [convertResult, report] = resolveStrainAssembly(convertResult, options)
+%RESOLVESTRAINASSEMBLY V_eta second pass: assemble the unattached `openminds`
+%   Strain documents into `strain` entities with their ids PRESERVED, consuming
+%   the Species / GeneticStrainType fragment documents they reference into the
+%   strain's `species` / `genetic_strain_type` fields and wiring
+%   `backgroundStrain` into `background_strain_#`. A second pass because those
+%   values live in OTHER documents, reachable only through the `ndi://` /
+%   `openminds_#` links a single-document migrator cannot follow.
+%
+%   Id preservation is load-bearing rather than tidy: `ontologyTableRow`'s
+%   `bacteriaStrain` column holds the strain document's id as a plain string
+%   (haley/doImport.m:164,734), so nothing would flag a re-mint. The
+%   `strain_id` edge itself is NOT attached here -- it rides with the pass that
+%   mints subjects from `ontologyTableRow` (#53), which does not exist yet.
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [kept, minted, report] = ndi.migrate.internal.strainAssembly(structs);
+    if ~report.changed
+        return;
+    end
+    keptDocs = cell(1, numel(kept));
+    for k = 1:numel(kept)
+        keptDocs{k} = did2.document(kept{k});
+    end
+    convertResult.migrated = keptDocs;
+    sub = did2.convert.v1_to_v2(minted, ...
+        'Validate', options.Validate, ...
+        'SchemaCache', options.SchemaCache, ...
+        'TargetVersion', options.TargetVersion, ...
+        'Verbose', false);
+    convertResult.migrated = [convertResult.migrated, sub.migrated];
+    convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     convertResult.summary = recountSummary(convertResult);
 end
 
