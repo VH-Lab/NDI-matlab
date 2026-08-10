@@ -17,6 +17,21 @@ function result = local(path, options)
 %   OWN try/catch like every sibling, so a failure leaves the time references
 %   in pass-1 form and the rest of the migration proceeds.
 %
+%   STATUS of the SECOND 2026-08-10 edit (V_eta second-pass step (4b),
+%   did2.convert.resolveDatasetEntities): WRITTEN WITHOUT MATLAB AND NOT
+%   EXECUTED -- there is no MATLAB in the container this was written in, so
+%   nothing below has been run, here or anywhere. What it fixes is a
+%   GATE/PRODUCTION DIVERGENCE, not a bug in the pass: all three DID-side
+%   call sites (did2.unittest.helpers.runCorpusDiscovery:79,
+%   testCorpusPRED:93, testFixtureCorpus:279) have always run this pass, and
+%   this file never did, so every green corpus run has been green on a
+%   `dataset` dedup + membership prune that the real migration path did not
+%   perform. Wired in its OWN try/catch like every sibling, so a failure
+%   leaves the dataset entity layer in pass-1 form (duplicate `dataset`
+%   entities sharing one base.id, and `migrated_session_membership` edges
+%   whose member session is in another database) and the rest of the
+%   migration proceeds -- which is exactly today's state.
+%
 %   Options (name-value):
 %     DryRun           (1,1 logical, default false) - report what
 %                      would change without writing the V_delta
@@ -197,6 +212,7 @@ function result = local(path, options)
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
     strainReport = [];
+    datasetEntitiesReport = [];
     epochMintReport = [];
     sessionAnchorReport = [];
     softwareDedupReport = [];
@@ -212,7 +228,7 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass has seven kinds of work, all needing the whole
+        % V_eta's second pass has eight kinds of work, all needing the whole
         % migrated body set (the corpus-wide session/element graph):
         %   (1) DEFERRALS: some J migrators still defer a document that needs
         %       session context -- stimulus_bath (-> dose_manipulation, D8
@@ -250,6 +266,68 @@ function result = local(path, options)
         %       become `strain` entities (ids preserved), consuming their
         %       Species / GeneticStrainType fragments. See
         %       ndi.migrate.internal.strainAssembly.
+        %   (4b) DATASET ENTITY LAYER: dedup the `dataset` entities and prune
+        %       the unresolvable `session -part_of-> dataset` edges. FOUR
+        %       dataset-level v1 sources (metadata_editor / dataset_remote /
+        %       session_in_a_dataset / dataset_session_info) each mint a
+        %       `dataset` entity keyed on the SAME dataset id, so a dataset with
+        %       several of them ends up with several entities sharing ONE
+        %       base.id; and the membership edge is emitted best-effort, so a
+        %       LINKED member session (documents in a separate database, not
+        %       this batch) leaves the edge's child dangling. Keep the richest
+        %       entity per id, drop the dangling edges. Lives DID-side
+        %       (did2.convert.resolveDatasetEntities) beside epochMint and
+        %       resolveSessionAnchors, so the corpus discovery harness runs the
+        %       same code this does.
+        %
+        %       WHY IT IS ONLY BEING WIRED NOW, stated plainly: it was NEVER
+        %       wired here. All three DID-side call sites have run it since it
+        %       was written; this file has not, so the corpus gate and this
+        %       production path were structurally different pipelines and every
+        %       green run was green on work production skipped. The absence was
+        %       flagged by did2.unittest.testBatchPassWiring, which prints the
+        %       four-pass x four-site matrix, and its own header refused to call
+        %       the absence a finding ("THAT IS AN ABSENCE, NOT A FINDING").
+        %       So it was CHECKED, not assumed: the whole +migrate tree (16 .m
+        %       files) never names the `dataset` or `session` class, in any
+        %       spelling; `migrated_session_membership` -- the base.name
+        %       sentinel the prune keys on (jEntityRelation.m:3, written by
+        %       jMembershipBodies.m:15-16) -- has ZERO occurrences in NDI-matlab
+        %       in ANY file type, on this branch and on origin/main; and the
+        %       only NDI-side code that touches session_in_a_dataset /
+        %       dataset_session_info (ndi.dataset.repairDatasetSessionInfo,
+        %       ndi.dataset.dir, +cloud/+sync) operates on LIVE did_v1
+        %       documents in a live session object and does something else
+        %       entirely -- it breaks a nested aggregate into per-session
+        %       documents. It does not, and cannot, dedup a V_eta `dataset`
+        %       entity: that class does not exist in did_v1. So there is no
+        %       equivalent under another name, and this is NOT the deliberate
+        %       omission that did2.convert.resolveDeferredBaths is (that one is
+        %       superseded by a precise replacement which says so in its own
+        %       words, ndi.migrate.internal.stimulusBathToBath:90).
+        %
+        %       ORDER: after (4), before (5). NO DEPENDENCY FORCES IT, and that
+        %       is said rather than dressed up. It must land between the
+        %       deferrals and (5) to keep the relative order the three DID call
+        %       sites use, and within that gap the position is a judgement:
+        %       the prune decides an edge's fate from an index of the ids
+        %       PRESENT, so it should see the most complete document set it can,
+        %       and every sub-pass here that ADDS documents runs before this
+        %       point. Nothing today makes that load-bearing -- no sub-pass in
+        %       this block mints or removes a `session` or a `dataset` document
+        %       (the classes they mint are bath, dose, dose_manipulation,
+        %       pharmacological_manipulation, time_reference,
+        %       epoch_bounded_reference, subject_manipulation, visual_grating,
+        %       visual_grating_manipulation, sampled_body, data_body, term,
+        %       term_observation, subject_observation, strain,
+        %       directed_relation, entity, epoch, relative_reference), and
+        %       (5)/(7) index `session` documents by an exact class-name match
+        %       (epochMint.m:282, resolveSessionAnchors.m:206) so a duplicate
+        %       `dataset` entity cannot pollute either index whichever way round
+        %       they run. Dropping a duplicate cannot dangle an inbound edge
+        %       either, because the duplicates SHARE the surviving id.
+        %       See ndi.migrate.internal -- deliberately NOT there: the pass is
+        %       DID-side so the gate and production run the same code.
         %   (5) EPOCH MINT (#60): one `epoch` entity per distinct
         %       (base.session_id, epoch-id string). The KEY IS THE PAIR --
         %       an `epochid.epochid` string is reused across sessions (142 of
@@ -343,6 +421,15 @@ function result = local(path, options)
                  'openminds Strain documents as passthrough.'], ME.message);
         end
         try
+            [convertResult, datasetEntitiesReport] = ...
+                resolveDatasetEntitiesPass(convertResult, options);
+        catch ME
+            warning('NDI:migrate:datasetEntitiesFailed', ...
+                ['Second-pass dataset entity resolution failed (%s); leaving ' ...
+                 'the duplicate `dataset` entities and the unresolvable ' ...
+                 '`migrated_session_membership` edges in place.'], ME.message);
+        end
+        try
             [convertResult, epochMintReport] = did2.convert.epochMint( ...
                 convertResult, ...
                 'Validate',      options.Validate, ...
@@ -421,6 +508,7 @@ function result = local(path, options)
         'strainAssembly',      strainReport, ...
         'ontologyRowSubjects', ontologyRowReport, ...
         'ontologyLabelSubjects', ontologyLabelReport, ...
+        'datasetEntities',     datasetEntitiesReport, ...
         'epochMint',           epochMintReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'softwareDedup',       softwareDedupReport);
@@ -876,6 +964,103 @@ function [convertResult, report] = resolveStrainAssembly(convertResult, options)
     convertResult.migrated = [convertResult.migrated, sub.migrated];
     convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
     convertResult.summary = recountSummary(convertResult);
+end
+
+function [convertResult, report] = resolveDatasetEntitiesPass(convertResult, options)
+%RESOLVEDATASETENTITIESPASS V_eta second pass: finalize the dataset entity
+%   layer -- ONE canonical `dataset` per dataset id, and no
+%   `migrated_session_membership` edge pointing at a session that is not here.
+%
+%   STATUS: WIRED 2026-08-10, NEVER EXECUTED (no MATLAB in the container this
+%   was written in). Read the divergence it closes in this file's header.
+%
+%   THE PASS ITSELF IS DID-SIDE and unchanged --
+%   did2.convert.resolveDatasetEntities, the same function the three DID call
+%   sites call. That is the point: a second implementation here would be the
+%   divergence again, one layer down. This wrapper exists only to (a) put the
+%   call in its own try/catch like every sibling and (b) MEASURE it, because
+%   the DID pass returns no report and a pass with no report is the defect
+%   this whole exercise is about -- work that looks done because nothing
+%   measures it.
+%
+%   REPORT is [] when the pass did not run (no documents), and otherwise
+%   carries its denominator FIRST (documents_inspected) followed by the
+%   before/after census of the only two things the pass can change. Both sides
+%   are counted here rather than inside the pass, so a zero drop is
+%   distinguishable from a pass that read nothing: `dataset_entities_before`
+%   equal to `distinct_dataset_ids` means there was nothing to dedup, while
+%   both being 0 means this dataset has no dataset-level source documents at
+%   all. Those are different facts and a single "dropped: 0" cannot tell them
+%   apart.
+%
+%   NOTHING IS MINTED, so unlike the minting sub-passes there is no v1_to_v2
+%   re-fold: the pass only removes documents, and the survivors were validated
+%   on the way in. did2.convert.resolveDatasetEntities recounts
+%   `result.summary` itself.
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+    before = datasetLayerCensus(docs);
+    convertResult = did2.convert.resolveDatasetEntities(convertResult, ...
+        'Validate',      options.Validate, ...
+        'SchemaCache',   options.SchemaCache, ...
+        'TargetVersion', options.TargetVersion);
+    after = datasetLayerCensus(convertResult.migrated);
+
+    report = struct();
+    report.documents_inspected        = before.documents;   % denominator first
+    report.documents_kept             = after.documents;
+    report.dataset_entities_before    = before.dataset_entities;
+    report.distinct_dataset_ids       = before.distinct_dataset_ids;
+    report.dataset_entities_after     = after.dataset_entities;
+    report.membership_edges_before    = before.membership_edges;
+    report.membership_edges_after     = after.membership_edges;
+    report.duplicate_datasets_dropped = ...
+        before.dataset_entities - after.dataset_entities;
+    report.membership_edges_dropped   = ...
+        before.membership_edges - after.membership_edges;
+    report.changed = report.documents_kept ~= report.documents_inspected;
+end
+
+function c = datasetLayerCensus(docs)
+%DATASETLAYERCENSUS The two things did2.convert.resolveDatasetEntities can
+%   change, counted over a document set: `dataset` entities (with how many
+%   DISTINCT ids they carry, which is what a clean layer would leave one each
+%   of) and `migrated_session_membership` relations.
+%
+%   `migrated_session_membership` is a base.name SENTINEL, not a class --
+%   the edge's class is `directed_relation` and the name is what
+%   did2.convert.migrators_j.private.jEntityRelation stamps on it
+%   (jEntityRelation.m:3,22) so this pass can find it. Matching on the class
+%   alone would count every entity-layer edge in the batch.
+    c = struct('documents', numel(docs), 'dataset_entities', 0, ...
+        'distinct_dataset_ids', 0, 'membership_edges', 0);
+    seenIds = {};
+    for k = 1:numel(docs)
+        cls = docs{k}.className();
+        if strcmp(cls, 'dataset')
+            c.dataset_entities = c.dataset_entities + 1;
+            id = safeDocGet(docs{k}, 'base.id');
+            if ~isempty(id) && ~any(strcmp(id, seenIds))
+                seenIds{end+1} = id; %#ok<AGROW>
+            end
+        elseif strcmp(cls, 'directed_relation') && strcmp( ...
+                safeDocGet(docs{k}, 'base.name'), 'migrated_session_membership')
+            c.membership_edges = c.membership_edges + 1;
+        end
+    end
+    c.distinct_dataset_ids = numel(seenIds);
+end
+
+function v = safeDocGet(doc, path)
+%SAFEDOCGET doc.get(PATH) as char, '' when the field is absent.
+    v = '';
+    try
+        v = char(doc.get(path));
+    catch
+    end
 end
 
 function [convertResult, report] = resolveSoftwareDedup(convertResult)
