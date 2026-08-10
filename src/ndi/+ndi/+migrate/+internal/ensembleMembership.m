@@ -83,6 +83,15 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   cache carrier its parents name exactly the per-neuron trains that must
 %   exist before those bytes may be dropped.
 %
+%   ONE DECLARATIVE MISMATCH, STATED RATHER THAN HIDDEN: `directed_relation`
+%   declares `child` and `parent` as `must_refer_to_document_class: "entity"`,
+%   and the cache carrier (`acquisition_epoch`, superclasses base + epochid) is
+%   NOT an entity. It validates -- must_refer is existence-only, never
+%   type-checked -- and the registry row for `derived_from` constrains neither
+%   end (`child_types: []`, `parent_types: []`). It is recorded here because
+%   the right long-term child is the `sampled_body` cache document of item 3,
+%   which does not exist yet; when it does, this edge moves to it.
+%
 %   The relation terms are taken from the built registry, not invented:
 %       schemas/V_eta/stable/binding_registry_meta.json  relation_bindings
 %         { "relation": {"node":"RO:0002350","name":"member_of"},
@@ -151,6 +160,18 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      migrated set is an ORPHAN, and orphans are the corpus gate (the
 %      11,448-orphan dissolution failure). Stranded ids are COUNTED and
 %      RETURNED instead.
+%
+%   5. OPEN, FOR THE TEAM: the registry row for `member_of` currently declares
+%      `"timed": false, "ordered": false`. The signed model requires the edge
+%      to be BOTH -- it carries an epoch and a column order. `sequence` is
+%      emitted here because `directed_relation` declares it ("Optional ordinal
+%      for ordered relations") and the sign-off asks for column order, but the
+%      registry row and the signed model disagree and only one of them can be
+%      right. Nothing enforces `binding` yet, so this costs nothing today and
+%      gets expensive once a validator reads it.
+%
+%   STATUS: authored without local MATLAB. The unit tests
+%   (tests/+ndi/+unittest/+migrate/TestEnsembleMembership.m) have NOT been run.
 %
 %   See also: ndi.migrate.local, ndi.migrate.internal.pathSPromotion,
 %     ndi.migrate.internal.strainAssembly,

@@ -112,6 +112,9 @@ function [kept, minted, report] = strainAssembly(structs)
 %   Bare `openminds` documents that are not Strain/Species/GeneticStrainType
 %   are left untouched and counted (REPORT.openminds_other).
 %
+%   STATUS: authored without local MATLAB. The unit tests
+%   (tests/+ndi/+unittest/+migrate/TestStrainAssembly.m) have NOT been run.
+%
 %   See also: ndi.migrate.local, ndi.migrate.internal.pathSPromotion,
 %     ndi.migrate.internal.ensembleMembership,
 %     DID-schema schemas/V_eta_openminds_family_record.md Part 7.
