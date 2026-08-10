@@ -21,6 +21,14 @@
 %     bodyResolver       - session/element graph over the whole body set.
 %     stimulusBathToBath - V_epsilon/V_zeta stimulus_bath assembler.
 %     pathSPromotion     - V_eta attributed-locus -> Path-S promotion.
+%     softwareDedup      - V_eta `software` merge on (session, name, version),
+%                          retargeting inbound edges BY TARGET ID (one of the
+%                          seven edges that must_refer to `software` is called
+%                          `reader_id`, not `software_id`). Pass 1 mints one
+%                          entity per consuming document because a
+%                          single-document migrator cannot see the batch; this
+%                          is the "deduplicated by name+version" half of the
+%                          signed R1 model. Runs LAST of the V_eta sub-passes.
 %
 % See also: did2.convert.v1_to_v2, did2.convert.migrators_j,
 %           did2.validate.references, did2.database.sqlitedb.

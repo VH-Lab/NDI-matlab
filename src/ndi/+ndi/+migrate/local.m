@@ -204,7 +204,7 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass has six kinds of work, all needing the whole
+        % V_eta's second pass has seven kinds of work, all needing the whole
         % migrated body set (the corpus-wide session/element graph):
         %   (1) DEFERRALS: some J migrators still defer a document that needs
         %       session context -- stimulus_bath (-> dose_manipulation, D8

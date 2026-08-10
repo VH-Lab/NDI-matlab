@@ -153,9 +153,6 @@ for i = 1:n
     versOf{i} = blockField(structs{i}, 'software', 'version', '');
 end
 report.software_seen = sum(isSoftware);
-if report.software_seen == 0
-    return;
-end
 
 softwareIdx = containers.Map('KeyType', 'char', 'ValueType', 'double');
 for i = find(isSoftware)
@@ -167,7 +164,11 @@ end
 % ------------------------------------------------------- pin what is pointed
 % at by anything other than a `software_id` edge. This walk is also the
 % edges_examined denominator, so it runs over EVERY document, not just the
-% ones that happen to carry a software edge.
+% ones that happen to carry a software edge -- AND IT RUNS BEFORE THE
+% no-software EARLY RETURN. A body set with no `software` in it still has
+% edges, and reporting `edges_examined = 0` for it would be the silentLoss
+% defect in miniature: a denominator that reads as "nothing to look at" when
+% what happened is "looked at everything, matched nothing".
 pinned = false(1, n);
 for j = 1:n
     deps = depsOf(structs{j});
@@ -183,6 +184,10 @@ for j = 1:n
     end
 end
 report.software_pinned = sum(pinned);
+
+if report.software_seen == 0
+    return;     % denominators are populated; there is simply nothing to merge
+end
 
 % --------------------------------------------------------------- group them
 % Key = session_id | name | version. An entity with no name is excluded from
@@ -397,6 +402,7 @@ if ~isfield(s, 'depends_on') || ~isstruct(s.depends_on) || isempty(s.depends_on)
 end
 for k = 1:numel(s.depends_on)
     d = s.depends_on(k);
+    moved = false;
     for key = {'value', 'document_id'}
         f = key{1};
         if ~isfield(d, f) || isempty(d.(f))
@@ -405,8 +411,11 @@ for k = 1:numel(s.depends_on)
         tgt = char(d.(f));
         if isKey(survivorOf, tgt)
             s.depends_on(k).(f) = survivorOf(tgt);
-            nFixed = nFixed + 1;
-        end
+            moved = true;   % both keys are rewritten when both are populated,
+        end                 % but the COUNT is per edge, not per spelling --
+    end                     % edges_retargeted has to be comparable with
+    if moved                % edges_examined, which counts edges.
+        nFixed = nFixed + 1;
     end
 end
 end
