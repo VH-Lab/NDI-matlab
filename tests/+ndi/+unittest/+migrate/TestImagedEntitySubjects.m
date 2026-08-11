@@ -30,8 +30,11 @@ classdef TestImagedEntitySubjects < matlab.unittest.TestCase
 %                                          {'plateID','imageID'},...)
 %                    NO `dependencyVariable` is passed, so the row's
 %                    `depends_on` is empty and `plateID` stays an ordinary
-%                    `data` cell (tableDocMaker.m:170-172 removes ONLY the
-%                    dependency columns).
+%                    `data` cell. (tableDocMaker used to remove the dependency
+%                    columns from the descriptive fields; it no longer does, but
+%                    that repair does not touch this fixture -- +haley names no
+%                    dependency variable at any of its nine call sites, so there
+%                    was never a column to remove here.)
 %
 %     THE PLATE      did2.convert.resolveLawnPlateSubjects/makeSubject +
 %     SUBJECT        plateHandle -- a bare `subject` whose local_identifier is
@@ -309,11 +312,20 @@ classdef TestImagedEntitySubjects < matlab.unittest.TestCase
         end
 
         function testPluralDocumentIdIsRefusedBecauseTheDataCannotDecideIt(testCase)
-            % tableDocMaker.m:170-172 deletes the dependency columns from
-            % varNames BEFORE names / variableNames / ontologyNodes / data are
-            % built (:174-219), so `document_id_1..n` are ANONYMOUS: the row
-            % keeps no record of which column produced which edge. The kinds
-            % genuinely differ between writers, so picking one is a guess.
+            % tableDocMaker USED TO delete the dependency columns from varNames
+            % BEFORE names / variableNames / ontologyNodes / data were built, so
+            % `document_id_1..n` are ANONYMOUS in every document written that
+            % way: the row keeps no record of which column produced which edge.
+            % The kinds genuinely differ between writers, so picking one is a
+            % guess.
+            %
+            % THE WRITER IS REPAIRED AND THIS TEST STILL ASSERTS THE REFUSAL,
+            % deliberately. The repair reaches documents written AFTER it; this
+            % pass migrates documents written BEFORE it, and the fixture below
+            % is one of those -- a plural edge with no `data` cell carrying
+            % either id. Accepting it would be a guess for exactly as long as
+            % the corpora hold pre-repair rows, which is indefinitely.
+            % `makeRowEdgePlural` builds the pre-repair shape on purpose.
             [v1, mig] = rowEdgeToSubject();
             mig = makeRowEdgePlural(mig, {'REALSUBJ', 'OTHERSUBJ'});
             mig{end+1} = plainSubject('OTHERSUBJ', 'S_X');
@@ -412,7 +424,7 @@ classdef TestImagedEntitySubjects < matlab.unittest.TestCase
             % The ontology short name is NEVER guessed: the EMPTY table is not in
             % this repository, and a disposition that turns on an unverified
             % spelling is how `demo_ndi` went wrong. `names` and `variableNames`
-            % are positionally paired by the writer (tableDocMaker.m:196,
+            % are positionally paired by the writer (tableDocMaker's ndi.ontology.lookup call +
             % :212-215) and `data`'s keys ARE the short names (:208), so the row
             % supplies its own mapping. Here the data key is deliberately NOT a
             % normalised form of the term, so only the pairing can find it.
@@ -584,7 +596,8 @@ function s = imageRow(id, sessionId, plateId, imageId)
 %       "plateID": "EMPTY:bacterial plate identifier"
 %       "imageID": "EMPTY:microscopy image identifier"
 %   -- and carrying NO depends_on, because doImport.m:757 passes no
-%   `dependencyVariable` (tableDocMaker.m:225 therefore never runs).
+%   `dependencyVariable` (tableDocMaker's edge-adding block therefore never
+%   runs).
 s = struct();
 s.document_class = struct('class_name', 'ontology_table_row', ...
     'class_version', '1.0.0');

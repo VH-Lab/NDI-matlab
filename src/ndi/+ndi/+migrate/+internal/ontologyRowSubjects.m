@@ -50,19 +50,34 @@ function [plan, report] = ontologyRowSubjects(v1Bodies, migratedStructs, options
 %   It has TWO ways of recording a referent, and which one a dataset uses is a
 %   property of the CONVERTER that called it, not of the class:
 %
-%     git show origin/main:src/ndi/+ndi/+setup/+NDIMaker/tableDocMaker.m
-%         varNames(ismember(varNames,dependencyVariable)) = [];
-%         ...
+%     src/ndi/+ndi/+setup/+NDIMaker/tableDocMaker.m
 %         if isscalar(values)
 %             doc = doc.set_dependency_value('document_id',value);
 %         else
 %             doc = doc.add_dependency_value_n('document_id',value);
 %         end
 %
-%   Note the first line: a column named as `dependencyVariable` is REMOVED from
-%   `data` and becomes the `document_id` EDGE. A column that is not named there
-%   stays in `data` as an ordinary cell -- including, in three of the four
-%   production converters, the cell holding a subject document's id.
+%   A column named as `dependencyVariable` becomes the `document_id` EDGE. A
+%   column that is not named there stays in `data` as an ordinary cell --
+%   including, in three of the four production converters, the cell holding a
+%   subject document's id.
+%
+%   THE WRITER ALSO USED TO DELETE THE DEPENDENCY COLUMN, one line above:
+%
+%     git show <pre-repair>:src/ndi/+ndi/+setup/+NDIMaker/tableDocMaker.m
+%         varNames(ismember(varNames,dependencyVariable)) = [];
+%
+%   so route 1 and route 2 were MUTUALLY EXCLUSIVE for a given column: the edge
+%   existed OR the `data` cell did, never both. THAT DELETION IS GONE -- a
+%   dependency column is now kept as an ordinary column as well as becoming an
+%   edge, so a Babu row written after the repair satisfies routes 1 AND 2 with
+%   the SAME id. That is not a conflict: `resolveRowSubject` collects hits from
+%   every route and only refuses when they name DIFFERENT documents
+%   (`unique(ids)` below), so agreement resolves exactly as a single route did.
+%
+%   ROWS ALREADY WRITTEN ARE UNAFFECTED BY THAT REPAIR and still carry the edge
+%   alone. Both shapes must keep working, which is why neither route is
+%   preferred over the other here.
 %
 %   ROUTE 1 -- the `document_id` edge (`document_id`, or `document_id_1..n`
 %   when the writer used add_dependency_value_n).

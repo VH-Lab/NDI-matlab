@@ -105,15 +105,39 @@ function [plan, report] = imagedEntitySubjects(v1Bodies, migratedStructs, option
 %       section runs 691-857. These are the 4,563 documents of the
 %       `image_observation.subject_id` row of the empty-required-edge census.
 %
-%   (c) THE ROW'S `document_id` IS NOT POPULATED ON THAT PATH. Its only writer
-%       is tableDocMaker.m:231/233, reachable only through the
-%       `dependencyVariable` option, and NO converter in the tree passes it:
+%   (c) THE ROW'S `document_id` IS NOT POPULATED ON THE HALEY PATH. Its only
+%       writer is tableDocMaker's `dependencyVariable` option, and +haley never
+%       passes it: doImport.m has NINE table2ontologyTableRowDocs call sites
+%       (:200 :234 :295 :351 :533 :688 :741 :757 :855) and none of the nine
+%       names the option under any spelling.
+%
+%       THE SENTENCE HERE USED TO READ "NO converter in the tree passes it" AND
+%       WAS FALSE. It was supported by this grep:
 %
 %         $ grep -rn "dependencyVariable" --include=*.m src/ | grep -v tableDocMaker.m
 %         (3 hits, all PROSE inside +migrate/+internal/ontologyRowSubjects.m)
 %
-%       Route 1 below is built anyway: the option exists, the class declares the
-%       edge, and a dataset that used it must not be silently mishandled.
+%       The option is SPELLED `DependencyVariable` at every call site, so the
+%       case-sensitive grep could not have matched them. Re-run it with -i and
+%       four real call sites appear:
+%
+%         $ grep -rni "dependencyVariable" --include=*.m src/ | grep -v tableDocMaker.m
+%         src/ndi/+ndi/+setup/+conv/+babu/import.m:380: 'DependencyVariable','SubjectDocumentIdentifier',...
+%         src/ndi/+ndi/+setup/+conv/+babu/import.m:383: 'DependencyVariable','SubjectDocumentIdentifier',...
+%         src/ndi/+ndi/+setup/+conv/+babu/import.m:386: 'DependencyVariable','SubjectDocumentIdentifier',...
+%         src/ndi/+ndi/+setup/+conv/+babu/import.m:389: 'DependencyVariable','SubjectDocumentIdentifier',...
+%         ... plus the prose hits
+%
+%       +babu is therefore a real user of the edge -- which is what
+%       ontologyRowSubjects.m's route 1 says in its own header, and the two
+%       files contradicted each other until this was re-measured. This is the
+%       V_eta record's standing failure mode (a grep that could not have
+%       matched, reported as absence -- cf. `demo_ndi` vs `demoNDI`), and the
+%       lesson is the same: an ABSENCE claim must use the spelling the tree
+%       actually uses.
+%
+%       Route 1 below is built anyway, and now has a named consumer rather than
+%       a hypothetical one.
 %
 %   ---------------------------------------------------------------------
 %   THE TWO ROUTES
@@ -168,7 +192,7 @@ function [plan, report] = imagedEntitySubjects(v1Bodies, migratedStructs, option
 %   ---------------------------------------------------------------------
 %   THE PLURAL `document_id`: THE DATA DOES NOT DETERMINE IT
 %   ---------------------------------------------------------------------
-%   A row may name MANY referents. tableDocMaker.m:225-236:
+%   A row may name MANY referents. tableDocMaker's edge-adding block:
 %
 %       values = tableRow{:,dependencyVariable};
 %       for d = 1:numel(values)
@@ -181,21 +205,42 @@ function [plan, report] = imagedEntitySubjects(v1Bodies, migratedStructs, option
 %       end
 %
 %   THIS PASS REFUSES EVERY PLURAL ROW AND COUNTS IT
-%   (`blocked_plural_document_id`). That is not caution; it is the only
-%   available answer, and the writer proves it. tableDocMaker.m:170-172, sitting
-%   immediately above the block that builds every descriptive field:
+%   (`blocked_plural_document_id`). That is not caution; for a document written
+%   BEFORE the writer repair described next, it is the only available answer.
+%
+%   THE WRITER USED TO DELETE THE EVIDENCE, AND NO LONGER DOES. Immediately
+%   above the block that builds every descriptive field, tableDocMaker had:
 %
 %       varNames = tableRow.Properties.VariableNames;
 %       varNames(ismember(varNames,dependencyVariable)) = [];
 %
 %   `names`, `variableNames`, `ontologyNodes` and `data` are ALL built from
-%   `varNames` AFTER that deletion (tableDocMaker.m:174-219). So a plural row
-%   stores `document_id_1..n` in column order with NO surviving record of which
-%   column produced which edge -- not in `data`, not in `variableNames`, not in
-%   `ontologyNodes`. The edges are anonymous BY CONSTRUCTION, and the kinds
-%   really do differ between writers: the same generic `document_id` slot is
-%   pointed at a subject GROUP at +setup/+conv/+babu/import.m:531 and at a
-%   SUBJECT at :580.
+%   `varNames` after that point, so a plural row stored `document_id_1..n` in
+%   column order with NO surviving record of which column produced which edge --
+%   not in `data`, not in `variableNames`, not in `ontologyNodes`. The edges
+%   were anonymous BY CONSTRUCTION.
+%
+%   That deletion is GONE (team directive: "repair the converter so the columns
+%   survive"). A dependency column is now kept like any other, so the referent's
+%   id appears in `data` under the column's ontology short name and an edge
+%   value identifies its column by VALUE, without an ordering assumption.
+%
+%   THE REFUSAL STAYS, AND THE REASON IS RETROACTIVITY, NOT MECHANISM.
+%   Repairing a writer reaches no document already written, and this pass exists
+%   to migrate documents that already exist. So a plural row still arrives with
+%   nothing to disambiguate it unless it was written after the repair. A future
+%   change may accept a plural row WHEN every edge value is found among the
+%   `data` cells; until something measures how many rows carry that shape, the
+%   refusal is what the evidence supports. `blocked_plural_document_id` is the
+%   counter that would size it, and NOTHING HAS RUN IT ON A CORPUS -- this pass
+%   is NDI-side and the DID corpus harness does not invoke it
+%   (tests/+did2/+unittest/testBatchPassWiring.m lists it as 'NDI' with the cost
+%   spelled out). A zero from this counter today means "not measured", not
+%   "none".
+%
+%   The kinds really do differ between writers: the same generic `document_id`
+%   slot is pointed at a subject GROUP at +setup/+conv/+babu/import.m:531 and at
+%   a SUBJECT at :580.
 %
 %   (Those two babu lines are cited elsewhere as evidence about
 %   `ontologyTableRow`. THEY ARE NOT. Both sit on `generic_file` documents,
@@ -306,7 +351,7 @@ end
 %     that turns on an unverified spelling is exactly how `demo_ndi` went wrong.
 %     Instead the short name is READ OUT OF THE DOCUMENT: `names` and
 %     `variableNames` are built index-by-index from one lookup and joined in the
-%     same order (tableDocMaker.m:196, :212-215), and `data`'s keys ARE those
+%     same order (tableDocMaker's ndi.ontology.lookup call + the three join(...,',') lines), and `data`'s keys ARE those
 %     short names (:208). So the row supplies its own term-name -> data-key
 %     mapping; rowDataKeyFor() below uses it, normalises the comparison
 %     (lowercase, non-alphanumerics stripped) and falls back to matching the data
@@ -620,7 +665,7 @@ function [key, value] = rowDataKeyFor(row, termName)
 %
 %   The short name is never guessed: `names` and `variableNames` are built
 %   index-by-index from one lookup and joined in the same order
-%   (tableDocMaker.m:196, :212-215), and `data`'s field names ARE those short
+%   (tableDocMaker's ndi.ontology.lookup call + the three join(...,',') lines), and `data`'s field names ARE those short
 %   names (:208), so the row supplies its own term-name -> data-key mapping. A
 %   direct normalised match on the data key is accepted as a FALLBACK, so a row
 %   with an empty `names` (or an ontology whose short name differs from the
