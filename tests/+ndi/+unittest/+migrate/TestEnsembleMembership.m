@@ -18,9 +18,19 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
 %
 %   The pass ADDS ONLY. Nothing is dropped -- the map document, the
 %   `acquisition_epoch` and its bytes all survive, because the
-%   verify-before-delete gate (0 stranded per-neuron trains) has not run on a
-%   corpus. testNothingIsEverDropped pins that, and testStrandedNeuronIsCounted
-%   pins the instrument that measures the gate.
+%   verify-before-delete gate has not run on a corpus. testNothingIsEverDropped
+%   pins that.
+%
+%   THE GATE MEASURES TRAINS, NOT SUBJECTS. `neuron_edges_stranded` asks only
+%   whether the neuron SUBJECT is present, and migrators_j.element turns an
+%   element into a bare `subject` with no data -- so it can read 0 while every
+%   spike train is absent, which would license destroying the only copy.
+%   testSubjectPresentButTrainAbsentIsNotAClearance pins exactly that case.
+%   A train is an acquisition_epoch owned by the neuron and carrying
+%   `epoch_binary_data.vhsb`, which is the triple NDI's own readtimeseries
+%   searches for (origin/main:+ndi/+element/timeseries.m:56-70); the fixtures
+%   below are built to the did_v1 `element_epoch.json` template, not to a
+%   V_eta schema.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestEnsembleMembership')
 %
@@ -222,6 +232,150 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
                 report.neuron_edges_resolved + report.neuron_edges_stranded);
         end
 
+        % ============ verify-before-delete: TRAINS, not subjects ============
+        % The gate that licenses dropping the combined marked-point-process
+        % bytes. A neuron SUBJECT existing proves nothing about its spike
+        % times: migrators_j.element turns an element into a bare `subject`
+        % with no data, and the train is a separate acquisition_epoch. These
+        % tests pin that the gate asks the data question.
+
+        function testSubjectPresentButTrainAbsentIsNotAClearance(testCase)
+            % THE DEFECT THIS BUCKET EXISTS FOR. Both neuron-subjects are
+            % present, so neuron_edges_stranded is 0 -- and there is not one
+            % per-neuron train in the batch. Dropping the combined binary here
+            % would destroy the only copy of every spike time.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+
+            testCase.verifyEqual(report.neuron_edges_stranded, 0);
+            testCase.verifyEqual(report.neuron_trains_missing_entirely, 2);
+            testCase.verifyEqual(sort(report.neurons_missing_train_ids), ...
+                {'nrn_1', 'nrn_2'});
+            testCase.verifyFalse(report.verify_before_delete_clear);
+        end
+
+        function testGateClearsOnlyWhenEveryTrainIsPresent(testCase)
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs{end+1} = trainBody('nrn_2', 'epoch_a');
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.neuron_trains_present_this_epoch, 2);
+            testCase.verifyEqual(report.neuron_trains_missing_entirely, 0);
+            testCase.verifyEqual(report.neuron_trains_other_epoch_only, 0);
+            testCase.verifyEmpty(report.neurons_missing_train_ids);
+            testCase.verifyTrue(report.verify_before_delete_clear);
+        end
+
+        function testOnePartialTrainBlocksTheGate(testCase)
+            % One of two neurons has a train. The gate must NOT clear.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.neuron_trains_present_this_epoch, 1);
+            testCase.verifyEqual(report.neuron_trains_missing_entirely, 1);
+            testCase.verifyEqual(report.neurons_missing_train_ids, {'nrn_2'});
+            testCase.verifyFalse(report.verify_before_delete_clear);
+        end
+
+        function testTrainUnderAnotherEpochIsItsOwnBucket(testCase)
+            % NDI reaches a neuron's epoch through syncgraph.time_convert, so
+            % an ensemble's epochid and a neuron's epochid need not be the
+            % same string. "has data, filed elsewhere" must not be reported as
+            % "has no data" -- nor silently accepted as a clearance.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            structs{end+1} = trainBody('nrn_1', 'a_different_epoch');
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.neuron_trains_missing_entirely, 0);
+            testCase.verifyEqual(report.neuron_trains_present_this_epoch, 0);
+            testCase.verifyEqual(report.neuron_trains_other_epoch_only, 1);
+            testCase.verifyFalse(report.verify_before_delete_clear);
+        end
+
+        function testEpochDocumentWithNoBytesIsNotATrain(testCase)
+            % An acquisition_epoch naming the neuron's epoch but carrying no
+            % binary holds no spike times. It is counted as a document seen,
+            % NOT as a train.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            structs{end+1} = trainBodyWithoutBytes('nrn_1', 'epoch_a');
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.neuron_trains_missing_entirely, 1);
+            testCase.verifyFalse(report.verify_before_delete_clear);
+            % the ensemble's own carrier has bytes; the neuron's does not
+            testCase.verifyEqual(report.train_documents_seen, 2);
+            testCase.verifyEqual(report.train_documents_with_binary, 1);
+        end
+
+        function testInstrumentReportsItsOwnDenominator(testCase)
+            % If train_documents_with_binary were 0 while train_documents_seen
+            % was large, every "missing train" would be an artefact of this
+            % pass reading the wrong field. Both numbers are published so the
+            % two situations are distinguishable from the report alone.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.train_documents_seen, 2);
+            testCase.verifyEqual(report.train_documents_with_binary, 2);
+        end
+
+        function testStrandedSubjectAlsoBlocksTheGate(testCase)
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs = dropId(structs, 'nrn_2');
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.neuron_edges_stranded, 1);
+            testCase.verifyFalse(report.verify_before_delete_clear);
+        end
+
+        function testEmptyBatchNeverReadsAsAClearance(testCase)
+            % A gate that clears when nothing was inspected is the "all-zero
+            % counts read as clean" failure. Absence of findings is not a pass.
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership({});
+            testCase.verifyFalse(report.verify_before_delete_clear);
+
+            structs = {subjectBody('nrn_1')};
+            [~, ~, r2] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyFalse(r2.verify_before_delete_clear);
+        end
+
+        % ==================== the other denominators ========================
+
+        function testDistinctEnsemblesAndEpochsAreCountedSeparately(testCase)
+            % A map document is PER EPOCH, so ensemble_maps_seen over-counts
+            % ensembles. Two epochs of ONE ensemble = 2 maps, 1 ensemble,
+            % 2 epochs.
+            a = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            b = mapOnly('ens_1', 'epoch_b', {'nrn_1'});
+            structs = [a, b];
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.ensemble_maps_seen, 2);
+            testCase.verifyEqual(report.distinct_ensembles_seen, 1);
+            testCase.verifyEqual(report.distinct_epochs_seen, 2);
+        end
+
+        function testMapWithNoNeuronEdgesIsCountedNotSilentlySkipped(testCase)
+            % "Fell through" must be a named number, never something you have
+            % to infer by subtracting two others.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            map = firstOfClass(structs, 'ensemble');
+            map.depends_on = [dep('element_id', 'ens_1'), ...
+                dep('element_epoch_id', 'aepoch_epoch_a')];
+            structs = replaceClass(structs, 'ensemble', map);
+
+            [~, minted, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.ensemble_maps_seen, 1);
+            testCase.verifyEqual(report.ensemble_maps_used, 0);
+            testCase.verifyEqual(report.ensemble_maps_no_neurons, 1);
+            testCase.verifyEmpty(minted);
+            testCase.verifyFalse(report.verify_before_delete_clear);
+        end
+
         function testEmptyCorpusIsInertAndStillReports(testCase)
             [kept, minted, report] = ndi.migrate.internal.ensembleMembership({});
             testCase.verifyEmpty(kept);
@@ -289,6 +443,12 @@ b.subject = struct('local_identifier', id, 'description', '');
 end
 
 function b = acquisitionEpochBody(id, epochId, elementId)
+% The migrated `element_epoch`: element_id + epochid.epochid + the binary.
+% Shape taken from the did_v1 template
+% (origin/main:src/ndi/ndi_common/database_documents/element_epoch.json --
+% depends_on element_id, files.file_list ["epoch_binary_data.vhsb"],
+% superclasses base + epochid), which is the document NDI's readtimeseries
+% path searches for at +ndi/+element/timeseries.m:56-70.
 b = struct();
 b.document_class = dc('acquisition_epoch', {'base', 'epochid'});
 b.depends_on = dep('element_id', elementId);
@@ -296,6 +456,24 @@ b.base = base(id);
 b.epochid = struct('epochid', epochId);
 b.acquisition_epoch = struct('clocks', struct('clock', 'dev_local_time'));
 b.files = struct('file_list', {{'epoch_binary_data.vhsb'}});
+end
+
+function b = trainBody(neuronId, epochId)
+% A PER-NEURON SPIKE TRAIN: the same acquisition_epoch shape, but owned by
+% the neuron rather than by the ensemble. This is the thing the
+% verify-before-delete gate must find before the combined bytes may go.
+b = acquisitionEpochBody(['train_' neuronId '_' epochId], epochId, neuronId);
+end
+
+function b = trainBodyWithoutBytes(neuronId, epochId)
+% An epoch document for the neuron that carries NO binary -- it names an
+% epoch but holds no spike times, so it is not a train.
+b = trainBody(neuronId, epochId);
+% NOTE: `struct('file_list', {{}})` would build a 0x0 STRUCT ARRAY -- struct()
+% distributes over cell values, and {} has zero elements. Assign the field
+% instead, which is the only way to get a 1x1 struct with an empty cell field.
+b.files = struct();
+b.files.file_list = {};
 end
 
 function x = dc(name, supers)

@@ -161,6 +161,65 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      11,448-orphan dissolution failure). Stranded ids are COUNTED and
 %      RETURNED instead.
 %
+%   ---------------------------------------------------------------------
+%   THE VERIFY-BEFORE-DELETE GATE MEASURES TRAINS, NOT SUBJECTS
+%   ---------------------------------------------------------------------
+%   An earlier revision of this pass offered `neuron_edges_stranded` as the
+%   verify-before-delete instrument. IT MEASURES THE WRONG THING, in the
+%   reassuring direction. `neuron_edges_stranded` asks whether the neuron
+%   SUBJECT is in the migrated set -- but `migrators_j.element` turns every
+%   element into a bare `subject` carrying NO data:
+%
+%       DID-matlab +did2/+convert/+migrators_j/element.m:89-95
+%           subjectDoc.document_class = struct('class_name','subject', ...
+%           subjectDoc.subject = struct('local_identifier', localId, ...
+%
+%   The spike times live in a SEPARATE document. So every neuron-subject can
+%   be present, `neuron_edges_stranded` can read 0, and the per-neuron trains
+%   can be absent to the last byte -- and dropping the combined binary on that
+%   zero would destroy the only surviving copy. That is this project's
+%   standing failure mode (a counter that reads clean while inspecting
+%   something other than the question) applied to a DATA-LOSS gate.
+%
+%   WHAT A PER-NEURON TRAIN ACTUALLY IS, taken from NDI's own READER rather
+%   than from a template or a schema (origin/main
+%   +ndi/+element/timeseries.m:56-70, the readtimeseries path):
+%
+%       sq = ndi.query('depends_on','depends_on','element_id',element_doc.id()) & ...
+%            ndi.query('','isa','element_epoch','') & ...
+%            ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
+%       epochdoc = E.database_search(sq);
+%       f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
+%
+%   i.e. a train is an `element_epoch` whose `element_id` is the neuron, whose
+%   `epochid.epochid` is the epoch, carrying the binary. `element_epoch` is
+%   RENAMED to `acquisition_epoch` in V_eta (base.id preserved), and
+%   `universalRenames.m` skips the structural keys `file`/`files`, so the file
+%   block survives verbatim. The writer agrees with the reader:
+%   +ndi/element.m:382-393 mints `element_epoch` and sets `element_id`, and
+%   +ndi/+element/timeseries.m:114-116 attaches `epoch_binary_data.vhsb`.
+%
+%   TRAIN PRESENCE IS THEREFORE REPORTED IN THREE BUCKETS, because "no train
+%   anywhere" and "trains exist but not under this epoch id" are different
+%   findings and must not be summed:
+%     neuron_trains_present_this_epoch   train for THIS map's epochid
+%     neuron_trains_other_epoch_only     neuron has train(s), none this epochid
+%     neuron_trains_missing_entirely     neuron has no train document at all
+%   The middle bucket is expected to be non-zero in principle: the reader
+%   reaches its epoch through `syncgraph.time_convert`, so an ensemble's
+%   epochid and a constituent neuron's epochid need not be the same string.
+%   It is reported, never silently folded into either neighbour.
+%
+%   THE INSTRUMENT REPORTS ITS OWN DENOMINATOR TOO -- `train_documents_seen`
+%   and `train_documents_with_binary`. If the second is 0 while the first is
+%   large, this pass is looking at the wrong field and every "missing train"
+%   is an artefact of the instrument, not a fact about the corpus. That
+%   distinction is visible from the report alone.
+%
+%   NOTHING IS DELETED HERE AND NO SWITCH ENABLES DELETION. The gate is
+%   MEASURED and reported (`verify_before_delete_clear`); acting on it is a
+%   separate, team-gated build.
+%
 %   5. OPEN, FOR THE TEAM: the registry row for `member_of` currently declares
 %      `"timed": false, "ordered": false`. The signed model requires the edge
 %      to be BOTH -- it carries an epoch and a column order. `sequence` is
@@ -170,8 +229,12 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      right. Nothing enforces `binding` yet, so this costs nothing today and
 %      gets expensive once a validator reads it.
 %
-%   STATUS: authored without local MATLAB. The unit tests
-%   (tests/+ndi/+unittest/+migrate/TestEnsembleMembership.m) have NOT been run.
+%   STATUS: authored without local MATLAB -- CI is the first execution of
+%   every line here. The membership/cache half first ran GREEN in
+%   test-eta-migrate.yml run 31463051482 (13/13). The train-verification half
+%   added afterwards has its own tests in the same class; read a green run as
+%   proving the pair is self-consistent, not as proving either matches NDI
+%   ground truth -- the corpus gate remains the real check.
 %
 %   See also: ndi.migrate.local, ndi.migrate.internal.pathSPromotion,
 %     ndi.migrate.internal.strainAssembly,
@@ -193,10 +256,21 @@ report.documents_inspected      = numel(structs);
 report.ensemble_maps_seen       = 0;
 report.ensemble_maps_used       = 0;
 report.ensemble_maps_no_group   = 0;   % element_id missing or not a migrated subject
+report.ensemble_maps_no_neurons = 0;   % map carries no usable neuron_id_# edge
+report.distinct_ensembles_seen  = 0;   % distinct group ids (a map is PER EPOCH)
+report.distinct_epochs_seen     = 0;   % distinct epochid.epochid strings
 report.neuron_edges_seen        = 0;
 report.neuron_edges_resolved    = 0;
 report.neuron_edges_stranded    = 0;
 report.stranded_neuron_ids      = {};
+% --- verify-before-delete: TRAINS, not subjects (see header) --------------
+report.train_documents_seen         = 0;  % acquisition_epoch docs in the batch
+report.train_documents_with_binary  = 0;  % ... carrying epoch_binary_data.vhsb
+report.neuron_trains_present_this_epoch = 0;
+report.neuron_trains_other_epoch_only   = 0;
+report.neuron_trains_missing_entirely   = 0;
+report.neurons_missing_train_ids        = {};
+report.verify_before_delete_clear       = false;
 report.cache_carriers_seen      = 0;   % distinct element_epoch_id values
 report.cache_carriers_resolved  = 0;   % ... that are present in the migrated set
 report.member_of_minted         = 0;
@@ -218,9 +292,37 @@ for i = 1:numel(structs)
     end
 end
 
-seenEdge     = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-seenCarrier  = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-seenStranded = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+% index every per-neuron TRAIN in the batch: elementId -> the epochid strings
+% it carries data for. Mirrors NDI's own readtimeseries triple (header) --
+% an acquisition_epoch, its `element_id`, and a binary payload.
+trainEpochs = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for i = 1:numel(structs)
+    if ~isTrainCarrier(structs{i})
+        continue;
+    end
+    report.train_documents_seen = report.train_documents_seen + 1;
+    if ~hasBinaryPayload(structs{i})
+        continue;   % an epoch document with no bytes is not a train
+    end
+    report.train_documents_with_binary = report.train_documents_with_binary + 1;
+    ownerId = depVal(structs{i}, 'element_id');
+    if isempty(ownerId)
+        continue;
+    end
+    ep = epochIdString(structs{i});
+    if isKey(trainEpochs, ownerId)
+        trainEpochs(ownerId) = [trainEpochs(ownerId), {ep}];
+    else
+        trainEpochs(ownerId) = {ep};
+    end
+end
+
+seenEdge      = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+seenCarrier   = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+seenStranded  = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+seenGroup     = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+seenEpoch     = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+seenNoTrain   = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 
 for i = 1:numel(structs)
     s = structs{i};
@@ -236,6 +338,18 @@ for i = 1:numel(structs)
     if isempty(groupId) || ~isSubject(idClass, groupId)
         report.ensemble_maps_no_group = report.ensemble_maps_no_group + 1;
         continue;
+    end
+
+    % A map document is PER EPOCH, so ensemble_maps_seen over-counts ensembles.
+    % Both denominators are reported rather than one standing in for the other.
+    if ~isKey(seenGroup, groupId)
+        seenGroup(groupId) = true;
+        report.distinct_ensembles_seen = report.distinct_ensembles_seen + 1;
+    end
+    mapEpochStr = epochIdString(s);
+    if ~isempty(mapEpochStr) && ~isKey(seenEpoch, mapEpochStr)
+        seenEpoch(mapEpochStr) = true;
+        report.distinct_epochs_seen = report.distinct_epochs_seen + 1;
     end
 
     sessionId = baseField(s, 'session_id', '');
@@ -260,6 +374,10 @@ for i = 1:numel(structs)
 
     neurons = neuronEdges(s);
     if isempty(neurons)
+        % counted rather than silently skipped: this map contributes no
+        % membership at all, and "fell through" must never be inferable only
+        % by subtracting two other counters.
+        report.ensemble_maps_no_neurons = report.ensemble_maps_no_neurons + 1;
         continue;
     end
     report.ensemble_maps_used = report.ensemble_maps_used + 1;
@@ -282,6 +400,26 @@ for i = 1:numel(structs)
             continue;
         end
         report.neuron_edges_resolved = report.neuron_edges_resolved + 1;
+
+        % VERIFY-BEFORE-DELETE. The subject exists; does its TRAIN? Three
+        % buckets, never summed -- see the header.
+        if ~isKey(trainEpochs, neuronId)
+            report.neuron_trains_missing_entirely = ...
+                report.neuron_trains_missing_entirely + 1;
+            if ~isKey(seenNoTrain, neuronId)
+                seenNoTrain(neuronId) = true;
+                report.neurons_missing_train_ids{end+1} = neuronId; %#ok<AGROW>
+            end
+        elseif ~isempty(mapEpochStr) && any(strcmp(trainEpochs(neuronId), mapEpochStr))
+            report.neuron_trains_present_this_epoch = ...
+                report.neuron_trains_present_this_epoch + 1;
+        else
+            % the neuron has data, but not filed under this map's epochid.
+            % NDI reaches a neuron's epoch through syncgraph.time_convert, so
+            % the two strings need not agree; this is reported, not folded in.
+            report.neuron_trains_other_epoch_only = ...
+                report.neuron_trains_other_epoch_only + 1;
+        end
 
         mKey = ['m|' groupId '|' neuronId '|' int2str(column) '|' epochKey];
         if ~isKey(seenEdge, mKey)
@@ -308,6 +446,16 @@ for i = 1:numel(structs)
         end
     end
 end
+
+% The verify-before-delete verdict. It is a MEASUREMENT -- nothing in this
+% file deletes anything, and no option enables deletion. `false` when nothing
+% was inspected, so an empty batch can never read as a clearance.
+report.verify_before_delete_clear = ...
+    report.ensemble_maps_used > 0 && ...
+    report.neuron_edges_resolved > 0 && ...
+    report.neuron_edges_stranded == 0 && ...
+    report.neuron_trains_missing_entirely == 0 && ...
+    report.neuron_trains_other_epoch_only == 0;
 
 report.changed = ~isempty(minted);
 end
@@ -357,10 +505,7 @@ key = '';
 if isempty(resolverFcn)
     return;
 end
-epochStr = '';
-if isfield(s, 'epochid') && isstruct(s.epochid) && isfield(s.epochid, 'epochid')
-    epochStr = char(s.epochid.epochid);
-end
+epochStr = epochIdString(s);
 if isempty(epochStr)
     return;
 end
@@ -391,6 +536,46 @@ end
 if ~isempty(out)
     [~, order] = sort([out.column]);
     out = out(order);
+end
+end
+
+function tf = isTrainCarrier(s)
+%ISTRAINCARRIER True for a document that can hold an element's epoch data.
+%   `element_epoch` is RENAMED to `acquisition_epoch` in V_eta with base.id
+%   preserved. Pass-1 output carries the V_eta name; the did_v1 name is
+%   accepted too so this instrument cannot silently read zero if it is ever
+%   pointed at an unmigrated batch -- a false "no trains" would block a
+%   deletion, never permit one.
+c = classNameOf(s);
+tf = strcmp(c, 'acquisition_epoch') || strcmp(c, 'element_epoch');
+end
+
+function tf = hasBinaryPayload(s)
+%HASBINARYPAYLOAD True when the epoch document actually carries bytes.
+%   NDI attaches `epoch_binary_data.vhsb`
+%   (+ndi/+element/timeseries.m:114-116) and the template declares it under
+%   `files.file_list`. `universalRenames.m` skips the structural keys
+%   `file`/`files`, so the block survives migration verbatim -- both
+%   spellings are accepted because the restated-tombstone defect showed the
+%   two are not reliably distinguished across the tree.
+tf = false;
+for blk = {'files', 'file'}
+    name = blk{1};
+    if isfield(s, name) && isstruct(s.(name)) && isfield(s.(name), 'file_list')
+        fl = s.(name).file_list;
+        if ~isempty(fl)
+            tf = true; return;
+        end
+    end
+end
+end
+
+function e = epochIdString(s)
+%EPOCHIDSTRING The `epochid.epochid` join key, or '' when absent.
+e = '';
+if isfield(s, 'epochid') && isstruct(s.epochid) && isfield(s.epochid, 'epochid') ...
+        && ~isempty(s.epochid.epochid)
+    e = char(s.epochid.epochid);
 end
 end
 

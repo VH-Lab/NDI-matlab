@@ -1034,9 +1034,21 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, opti
 %
 %   THIS PASS ONLY ADDS. The map document, the `acquisition_epoch` and its
 %   binary are all left in place: dropping them is gated on a corpus
-%   verify-before-delete (0 stranded per-neuron trains) that has not run. The
-%   pass MEASURES that gate -- REPORT.neuron_edges_stranded and
-%   REPORT.stranded_neuron_ids -- and reports its denominator first.
+%   verify-before-delete that has not run. The pass MEASURES that gate and
+%   reports its denominator first; NOTHING here deletes anything and no option
+%   enables deletion.
+%
+%   THE GATE IS `REPORT.verify_before_delete_clear`, AND IT IS NOT
+%   `neuron_edges_stranded`. This docstring named that field until it was
+%   corrected: it asks whether the neuron SUBJECT is in the migrated set, and
+%   migrators_j.element turns an element into a bare `subject` carrying NO
+%   data, so every subject can be present, that counter can read 0, and the
+%   per-neuron trains can be absent entirely. The train fields --
+%   REPORT.neuron_trains_present_this_epoch / _other_epoch_only /
+%   _missing_entirely, REPORT.neurons_missing_train_ids -- ask the data
+%   question, mirroring NDI's own readtimeseries lookup
+%   (+ndi/+element/timeseries.m:56-70).
+%
 %   See ndi.migrate.internal.ensembleMembership for what is deliberately not
 %   built yet (epoch-scoping the edges, and the `sampled_body` cache document).
     report = [];
