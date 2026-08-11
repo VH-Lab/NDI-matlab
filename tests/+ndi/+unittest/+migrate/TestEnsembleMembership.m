@@ -489,6 +489,136 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyEqual(report.ensemble_maps_seen, 0);
         end
 
+        % ============ the gate must REACH a log ============================
+        % ndi.migrate.internal.ensembleGateReport is the renderer. Before it
+        % existed the gate was computed on every run and printed by nothing:
+        % local.m stored it at result.secondPass.ensembleMembership and
+        % printSummary printed five lines, none from any second pass. These
+        % tests pin the three properties that make the rendering safe rather
+        % than decorative -- absent is not zero, the buckets are never summed,
+        % and NOT CLEAR always carries its reason.
+
+        function testGateRenderStatesItsDenominatorFirst(testCase)
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            testCase.verifyNotEmpty(lines);
+            % Rule 5: the denominator is first and unconditional.
+            testCase.verifyNotEmpty(strfind(lines{1}, 'DENOMINATOR:'));
+            testCase.verifyNotEmpty(strfind(lines{1}, ...
+                sprintf('%d document(s) inspected', numel(structs))));
+        end
+
+        function testNoReportRendersNotMeasuredAndNotAClearance(testCase)
+            % A pass that did not run must be distinguishable from a corpus
+            % that was inspected and found clean. Both the empty-report path
+            % and the never-set path go through it.
+            for r = {[], ''}
+                lines = ndi.migrate.internal.ensembleGateReport(r{1});
+                joined = strjoin(lines, ' ');
+                testCase.verifyNotEmpty(strfind(joined, 'DENOMINATOR: NONE'));
+                testCase.verifyNotEmpty(strfind(joined, 'NOT MEASURED'));
+                testCase.verifyEmpty(strfind(joined, 'CLEAR'), ...
+                    'a missing report must never render the word CLEAR');
+            end
+        end
+
+        function testAbsentCounterRendersABSENTNeverZero(testCase)
+            % THE SUBSTITUTION THIS GUARDS AGAINST: a report whose shape
+            % drifted rendering as a corpus full of clean zeroes.
+            report = struct('documents_inspected', 7);
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            joined = strjoin(lines, ' ');
+            testCase.verifyNotEmpty(strfind(joined, 'ABSENT'));
+            % and the verdict itself, when absent, is not a clearance
+            testCase.verifyNotEmpty(strfind(joined, ...
+                'ABSENT -- no verdict was computed, which is NOT a clearance'));
+        end
+
+        function testEmptyCorpusRendersNotClearBecauseNothingWasInspected(testCase)
+            % An untested zero must say so. The assembler already returns
+            % false here; the renderer must give the REASON, so a run with no
+            % ensembles cannot read as a quiet pass.
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership({});
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            joined = strjoin(lines, ' ');
+            testCase.verifyNotEmpty(strfind(joined, 'NOT CLEAR'));
+            testCase.verifyNotEmpty(strfind(joined, 'nothing was inspected'));
+            testCase.verifyNotEmpty(strfind(joined, 'UNTESTED, not clean'));
+        end
+
+        function testMissingTrainsAreRenderedAsTheReasonNotClear(testCase)
+            % The defect the gate exists for: both subjects present, zero
+            % stranded, and not one spike train in the batch.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            joined = strjoin(lines, ' ');
+            testCase.verifyNotEmpty(strfind(joined, 'NOT CLEAR'));
+            testCase.verifyNotEmpty(strfind(joined, ...
+                '2 neuron(s) have NO train document at all'));
+            testCase.verifyNotEmpty(strfind(joined, 'only surviving copy'));
+        end
+
+        function testThreeTrainBucketsAreRenderedSeparatelyAndNeverSummed(testCase)
+            % Buckets: 1 present here, 1 other-epoch-only, 1 missing. Their
+            % separation IS the safety property, so no total may be offered.
+            structs = ensembleCorpus('ens_1', 'epoch_a', ...
+                {'nrn_1', 'nrn_2', 'nrn_3'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs{end+1} = trainBody('nrn_2', 'epoch_zzz');
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.neuron_trains_present_this_epoch, 1);
+            testCase.verifyEqual(report.neuron_trains_other_epoch_only, 1);
+            testCase.verifyEqual(report.neuron_trains_missing_entirely, 1);
+
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            joined = strjoin(lines, ' ');
+            testCase.verifyNotEmpty(strfind(joined, 'DELIBERATELY NOT SUMMED'));
+            testCase.verifyEmpty(strfind(joined, 'trains_total'));
+            testCase.verifyEmpty(strfind(lower(joined), 'total trains'));
+            % all three reasons present, none folded into a neighbour
+            testCase.verifyNotEmpty(strfind(joined, 'NO train document at all'));
+            testCase.verifyNotEmpty(strfind(joined, 'DIFFERENT epochid'));
+        end
+
+        function testClearVerdictRendersWithNoReasonsAndNoDeletionClaim(testCase)
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            structs{end+1} = trainBody('nrn_1', 'epoch_a');
+            structs{end+1} = trainBody('nrn_2', 'epoch_a');
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyTrue(report.verify_before_delete_clear);
+
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            joined = strjoin(lines, ' ');
+            testCase.verifyNotEmpty(strfind(joined, ...
+                'VERIFY-BEFORE-DELETE: CLEAR'));
+            testCase.verifyEmpty(strfind(joined, 'because:'));
+            % CLEAR is a measurement, never an authorisation
+            testCase.verifyNotEmpty(strfind(joined, 'Nothing here deletes bytes'));
+        end
+
+        function testInstrumentWarningFiresWhenNoEpochDocumentCarriesBytes(testCase)
+            % If every epoch document in reach carries no binary, the train
+            % counts describe the query, not the corpus. The header asks for
+            % that distinction to be visible from the output alone.
+            report = struct( ...
+                'documents_inspected',              10, ...
+                'ensemble_maps_used',               1, ...
+                'neuron_edges_resolved',            2, ...
+                'neuron_edges_stranded',            0, ...
+                'neuron_trains_missing_entirely',   2, ...
+                'neuron_trains_other_epoch_only',   0, ...
+                'train_documents_seen',             40, ...
+                'train_documents_with_binary',      0, ...
+                'verify_before_delete_clear',       false);
+            lines = ndi.migrate.internal.ensembleGateReport(report);
+            joined = strjoin(lines, ' ');
+            testCase.verifyNotEmpty(strfind(joined, 'INSTRUMENT WARNING'));
+            testCase.verifyNotEmpty(strfind(joined, ...
+                'a property of the query, not of the corpus'));
+        end
+
     end
 end
 

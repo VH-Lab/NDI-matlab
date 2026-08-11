@@ -551,9 +551,17 @@ deps = [struct('name', 'child',  'value', childId), ...
         struct('name', 'parent', 'value', parentId)];
 if ~isempty(epochDocId)
     % Only reachable when OPTIONS.EpochDocumentIdFor supplied a real id; see
-    % item 2 of the header. `epoch_id` is V_eta's declared name for this edge
-    % (acquisition_metadata_file), but directed_relation does not declare the
-    % slot yet -- that is the DID-schema change this hook waits on.
+    % item 2 of the header. THIS COMMENT SAID "directed_relation does not
+    % declare the slot yet -- that is the DID-schema change this hook waits
+    % on", contradicting item 2(a) of this file's own header. STALE: the slot
+    % is declared, and OPTIONAL, so an unscoped edge cannot quarantine under
+    % #37 RequiredDependencies.
+    %
+    %   $ python3 -c "import json;print([(x['name'],x['mustBeNonEmpty']) for x
+    %         in json.load(open('schemas/V_eta/stable/directed_relation.json')
+    %       )['depends_on']])"
+    %   [('child', True), ('parent', True), ('time_reference_#', False),
+    %    ('epoch_id', False)]
     deps(end+1) = struct('name', 'epoch_id', 'value', epochDocId);
 end
 body.depends_on = deps;
@@ -563,8 +571,13 @@ block = struct('relation', relTerm);
 if ~isempty(sequence)
     % `sequence` is directed_relation's declared "ordinal for ordered
     % relations" -- the column index of this neuron in the epoch's combined
-    % binary. NOTE the registry row for member_of currently says
-    % "ordered": false; see the report returned to the caller.
+    % binary. THIS COMMENT SAID "NOTE the registry row for member_of
+    % currently says 'ordered': false", contradicting item 5 of this file's
+    % own header, which records the disagreement as CLOSED. STALE: the row
+    % reads `'timed': True, 'ordered': True` (DENOMINATOR: 26
+    % relation_bindings rows read from
+    % schemas/V_eta/stable/binding_registry_meta.json), so `ordered: true`
+    % licenses this ordinal and `timed: true` licenses the epoch scoping.
     block.sequence = sequence;
 end
 body.directed_relation = block;

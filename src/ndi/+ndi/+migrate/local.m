@@ -2014,6 +2014,22 @@ function printSummary(result)
     fprintf('  quarantined:      %d\n', result.summary.quarantine_count);
     fprintf('  orphan refs:      %d (of %d edges)\n', ...
         result.references.orphan_count, result.references.edges_examined);
+    % The ensemble verify-before-delete gate. It is a DATA-LOSS gate
+    % (V_eta_ensemble_plan.md deferred task 4) and until this line it was
+    % computed on every run and rendered by nothing -- stored at
+    % result.secondPass.ensembleMembership and read by no printer, no
+    % workflow and no digest in any of the three repositories. The other 14
+    % second-pass reports are in the same position; only this one is claimed
+    % here, because only this one is the ensemble family's own gate.
+    ensembleReport = [];
+    if isfield(result, 'secondPass') && isstruct(result.secondPass) ...
+            && isfield(result.secondPass, 'ensembleMembership')
+        ensembleReport = result.secondPass.ensembleMembership;
+    end
+    gateLines = ndi.migrate.internal.ensembleGateReport(ensembleReport);
+    for k = 1:numel(gateLines)
+        fprintf('%s\n', gateLines{k});
+    end
 end
 
 function v = charOrEmpty(s, name)
