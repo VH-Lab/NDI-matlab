@@ -32,6 +32,30 @@ function result = local(path, options)
 %   whose member session is in another database) and the rest of the
 %   migration proceeds -- which is exactly today's state.
 %
+%   STATUS of the 2026-08-11 edit (V_eta second-pass steps (7b) and (7c),
+%   did2.convert.resolveResponseParameters and
+%   did2.convert.resolveLawnPlateSubjects): WRITTEN IN A CONTAINER WITH NO
+%   MATLAB AND NO OCTAVE, so NOT ONE LINE OF IT HAS BEEN EXECUTED, here or
+%   anywhere. Same shape as the two edits above and found the same way, but by
+%   an instrument this time rather than by accident: did2.unittest.
+%   testBatchPassWiring now ASSERTS the cross-repo matrix against a checked-in
+%   divergence table, and these two were the rows with no reason to be in it.
+%   Both are wired in their OWN try/catch like every sibling, so a failure
+%   leaves the affected documents in pass-1 form.
+%
+%   THE MEASUREMENT THAT PROMPTED IT, so the next reader does not have to
+%   re-take it. BEFORE this edit: this file called 13 passes (10
+%   ndi.migrate.internal.* + 3 did2.convert batch passes), each DID-side call
+%   site called 6, and they OVERLAPPED IN 3 -- epochMint,
+%   resolveSessionAnchors, resolveDatasetEntities. Ten divergent rows is
+%   enough noise to hide an eleventh, which is precisely how
+%   resolveDatasetEntities came to sit unwired. AFTER it: 15 here, 6 there,
+%   overlapping in 5. ONE DID-side pass remains unrun here on purpose --
+%   did2.convert.resolveDeferredBaths, which
+%   ndi.migrate.internal.stimulusBathToBath supersedes in that file's own
+%   words ("the LIVE-session counterpart of the coarse
+%   did2.convert.resolveDeferredBaths.makeBathVeta", :157).
+%
 %   Options (name-value):
 %     DryRun           (1,1 logical, default false) - report what
 %                      would change without writing the V_delta
@@ -216,6 +240,8 @@ function result = local(path, options)
     epochMintReport = [];
     epochAnchorReport = [];
     sessionAnchorReport = [];
+    responseParametersReport = [];
+    lawnPlateReport = [];
     softwareDedupReport = [];
     ontologyRowReport = [];
     ontologyLabelReport = [];
@@ -229,8 +255,17 @@ function result = local(path, options)
                  'failed (%s); leaving them quarantined.'], ME.message);
         end
     elseif strcmp(options.TargetVersion, 'V_eta')
-        % V_eta's second pass has eight kinds of work, all needing the whole
-        % migrated body set (the corpus-wide session/element graph):
+        % V_eta's second pass has the kinds of work enumerated below, all
+        % needing the whole migrated body set (the corpus-wide session/element
+        % graph).
+        %
+        % (This line used to say "eight kinds of work" while the list beneath
+        % it had thirteen entries -- a hand-kept count sitting beside the thing
+        % it counts, drifting one further every time an entry was added, and
+        % always in the direction of less work than is really here. The count
+        % is DELETED rather than corrected: the list is its own denominator.
+        % did2.unittest.testBatchPassWiring is the instrument that now compares
+        % this file's CALLS against the DID-side call sites.)
         %   (1) DEFERRALS: some J migrators still defer a document that needs
         %       session context -- stimulus_bath (-> dose_manipulation, D8
         %       retired the bath family). Resolve them the same way the older
@@ -373,6 +408,51 @@ function result = local(path, options)
         %       Lives NDI-side because the class it folds is minted NDI-side;
         %       the DID gate has nothing to fold.
         %       See ndi.migrate.internal.epochAnchorFold.
+        %   (7b) RESPONSE PARAMETER FOLD (#61, second half): inline the five
+        %       stimulus-response run knobs from
+        %       `stimulus_response_scalar_parameters_basic` onto the leaf and
+        %       REMOVE the edge, because subject_interaction.json says a
+        %       statement carries the inline `method_parameters` field OR the
+        %       edge, NEVER BOTH (team, 2026-08-09). Deletes nothing: the
+        %       parameters documents stay put and the pass instead MEASURES
+        %       what the verify-before-delete gate needs
+        %       (`parameters_documents_unreferenced_after`). Lives DID-side
+        %       (did2.convert.resolveResponseParameters) beside epochMint,
+        %       resolveSessionAnchors and resolveDatasetEntities, so the corpus
+        %       discovery harness runs the same code this does.
+        %   (7c) LAWN / PLATE SUBJECTS: mint the bacterial LAWN and PLATE
+        %       subject tiers from Haley's E. coli tables, join them with
+        %       `member_of`, and give every patch subject the
+        %       (experiment, plate, patch) `local_identifier`. The patch row
+        %       keys on `imageID` and carries neither `plateID` nor `expID`
+        %       (+setup/+conv/+haley/doImport.m:714-723), so both the
+        %       membership and the identifier come off the same two-hop chain
+        %       patch -> image row -> plate row, which no single-document
+        %       migrator can walk. Lives DID-side
+        %       (did2.convert.resolveLawnPlateSubjects).
+        %
+        %       THIS IS THE MODELLING CALL THE TWO ONTOLOGY PASSES DEFERRED,
+        %       now made. ndi.migrate.internal.ontologyLabelSubjects says in
+        %       its own words: "Whether a bacterial patch ever gets a subject
+        %       -- a plate? a lawn? nothing? -- is a modelling call, and
+        %       modelling calls are the team's"; step (1c)'s note above and
+        %       ontologyRowSubjects' "A ROW WITH NO SUBJECT COLUMN IS NOT A
+        %       DEFECT" say the same thing from the other side. The team
+        %       answered on 2026-08-11 ("each lawn can be a subject and a plate
+        %       of lawns is another subject where each lawn is a member of
+        %       it"), so those two passes' `blocked_target_has_no_subject` and
+        %       `unresolved_no_candidate` counts now have somewhere to go. They
+        %       are NOT changed here -- this pass adds the subject tier; it
+        %       does not re-run them.
+        %
+        %       ORDER: (7b) then (7c), after (7) and before (6), which is the
+        %       relative order all three DID call sites use
+        %       (runCorpusDiscovery.m:70/88/108/145/178/211). Within that,
+        %       (7c) commutes with everything above it -- it reads
+        %       `ontology_table_row` and `subject` documents, which no other
+        %       sub-pass in this block writes -- and (6) stays LAST so it still
+        %       sees any `software` minted by a re-folded body, which is the
+        %       reason its own note gives for running there.
         %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
         %       consuming document, because a single-document migrator cannot
         %       know another document already minted the same program. Merge
@@ -501,6 +581,33 @@ function result = local(path, options)
                  'session_bounded_reference documents.'], ME.message);
         end
         try
+            [convertResult, responseParametersReport] = ...
+                did2.convert.resolveResponseParameters( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:responseParametersFoldFailed', ...
+                ['Second-pass stimulus-response parameter fold failed (%s); ' ...
+                 'leaving the run knobs in their own ' ...
+                 '`stimulus_response_scalar_parameters_basic` documents with ' ...
+                 'the leaf still carrying the edge.'], ME.message);
+        end
+        try
+            [convertResult, lawnPlateReport] = ...
+                did2.convert.resolveLawnPlateSubjects( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:lawnPlateSubjectsFailed', ...
+                ['Second-pass lawn/plate subject mint failed (%s); leaving ' ...
+                 'the E. coli patch and plate rows as passthroughs.'], ...
+                ME.message);
+        end
+        try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
         catch ME
@@ -559,6 +666,8 @@ function result = local(path, options)
         'epochMint',           epochMintReport, ...
         'epochAnchorFold',     epochAnchorReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
+        'responseParametersFold', responseParametersReport, ...
+        'lawnPlateSubjects',   lawnPlateReport, ...
         'softwareDedup',       softwareDedupReport);
 
     if options.Verbose
