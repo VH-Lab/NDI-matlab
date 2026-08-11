@@ -32,6 +32,17 @@ function result = local(path, options)
 %   whose member session is in another database) and the rest of the
 %   migration proceeds -- which is exactly today's state.
 %
+%   STATUS of the SECOND 2026-08-11 edit (V_eta second-pass step (7d),
+%   did2.convert.foldGenericFiles): WRITTEN IN A CONTAINER WITH NEITHER MATLAB
+%   NOR OCTAVE -- `command -v matlab octave octave-cli` returns nothing -- so
+%   it has NOT been executed here, and this file is not covered by the DID
+%   corpus gate either. did2.unittest.testBatchPassWiring prints, REPORT-ONLY,
+%   whether this call site names every batch post-pass; that print is the only
+%   thing anywhere that compares this wiring against the DID one.
+%
+%   THIS FILE IS NOT READ-ONLY, and an earlier session recorded that it was.
+%   Corrected in DID-matlab `b9bce5b`; the gap was not someone else's.
+%
 %   STATUS of the 2026-08-11 edit (V_eta second-pass steps (7b) and (7c),
 %   did2.convert.resolveResponseParameters and
 %   did2.convert.resolveLawnPlateSubjects): WRITTEN IN A CONTAINER WITH NO
@@ -242,6 +253,7 @@ function result = local(path, options)
     sessionAnchorReport = [];
     responseParametersReport = [];
     lawnPlateReport = [];
+    genericFileFoldReport = [];
     softwareDedupReport = [];
     ontologyRowReport = [];
     ontologyLabelReport = [];
@@ -453,6 +465,34 @@ function result = local(path, options)
         %       sub-pass in this block writes -- and (6) stays LAST so it still
         %       sees any `software` minted by a re-folded body, which is the
         %       reason its own note gives for running there.
+        %  (7d) GENERIC FILE FOLD (team decision, 2026-08-11): a did_v1
+        %       `generic_file` becomes a `term_observation` (base.id
+        %       PRESERVED) whose `variable` is the SIBLING ontologyLabel's
+        %       `ontologyNode`, plus an `opaque_body` carrying the filename,
+        %       the format CURIE, the MD5 in `content_hash` and the attached
+        %       bytes' manifest. Pass 1 cannot do it and the reason is not
+        %       incidental: the `variable` lives in a DIFFERENT DOCUMENT, and
+        %       `subject_statement.variable` is mustBeNonEmpty, so a
+        %       single-document migrator could only emit a document that
+        %       quarantines. Lives DID-side (did2.convert.foldGenericFiles)
+        %       beside its four siblings, so the corpus discovery harness runs
+        %       the same code this does.
+        %
+        %       WHY IT IS SAFE TO RUN IN PRODUCTION WHERE NO CORPUS EXERCISES
+        %       IT: all six gate corpora hold ZERO `generic_file` documents
+        %       (run 31327383671), so this path is UNTESTED ON REAL DATA and
+        %       the fixture corpus is the only thing that runs it. The pass is
+        %       built to refuse rather than guess -- no label, two labels, an
+        %       empty node, no document_id, or a referent absent from the
+        %       batch each leave the document exactly as pass 1 produced it --
+        %       and the catch below downgrades any throw to that same state.
+        %
+        %       ORDER: after (7c) and before (6), the same relative order the
+        %       three DID call sites use. It commutes with everything above:
+        %       it reads only `generic_file` and `ontology_label` documents,
+        %       which no other sub-pass in this block writes, and it removes
+        %       nothing any of them points at (the statement keeps the source
+        %       id). (6) still runs LAST; this pass mints no `software`.
         %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
         %       consuming document, because a single-document migrator cannot
         %       know another document already minted the same program. Merge
@@ -608,6 +648,19 @@ function result = local(path, options)
                 ME.message);
         end
         try
+            [convertResult, genericFileFoldReport] = ...
+                did2.convert.foldGenericFiles( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:genericFileFoldFailed', ...
+                ['Second-pass generic_file fold failed (%s); leaving every ' ...
+                 '`generic_file` document as a passthrough, which is the ' ...
+                 'state it is in without this pass.'], ME.message);
+        end
+        try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
         catch ME
@@ -668,6 +721,7 @@ function result = local(path, options)
         'sessionAnchorFold',   sessionAnchorReport, ...
         'responseParametersFold', responseParametersReport, ...
         'lawnPlateSubjects',   lawnPlateReport, ...
+        'genericFileFold',     genericFileFoldReport, ...
         'softwareDedup',       softwareDedupReport);
 
     if options.Verbose
