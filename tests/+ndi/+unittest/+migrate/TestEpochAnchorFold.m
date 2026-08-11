@@ -31,8 +31,13 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
 %
 %   STATUS 2026-08-11: FIRST EXECUTION DONE. Authored without local MATLAB, and
 %   the header below this one said "THESE TESTS HAVE NOT BEEN RUN" until
-%   test-eta-migrate.yml run 31463051482 (af840428f) ran them. 21 of 22 passed;
-%   ONE failed, and it was the TEST that was wrong, not the fold:
+%   test-eta-migrate.yml run 31463051482 (af840428f) ran them.
+%
+%       DENOMINATOR: 27 Test methods in this file (`grep -c "function test"`,
+%                    and the run's own dots agree: 3 + 7 + 10 + 7 = 27).
+%                    26 passed, 1 failed, 0 incomplete, 0 filtered.
+%
+%   The one failure was the TEST being wrong, not the fold:
 %
 %       Verification failed in
 %         TestEpochAnchorFold/testNonAnchorDocumentsAreInspectedButNot...
@@ -49,10 +54,14 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
 %   protect (inspected > anchors_seen; non-anchors land in the denominator and
 %   in no anchor bucket) is asserted MORE tightly than before, not relaxed.
 %
-%   The other 21 assertions ran green on that first execution. Read that
-%   narrowly: this file and epochAnchorFold.m were written by the same author in
-%   the same session, so green proves the pair is self-consistent and free of
-%   load/arity faults -- not that the fold matches NDI ground truth.
+%   The other 26 methods ran green on that first execution. Read that narrowly:
+%   this file and epochAnchorFold.m were written by the same author in the same
+%   session, so green proves the pair is self-consistent and free of load/arity
+%   faults -- not that the fold matches NDI ground truth. (This paragraph said
+%   "21 of 22" when it was first written, counted from memory rather than from
+%   the file. The correction is recorded rather than quietly overwritten because
+%   the direction was the usual one: a made-up denominator that reads as
+%   measured.)
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestEpochAnchorFold')
 
