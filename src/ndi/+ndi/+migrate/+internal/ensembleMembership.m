@@ -115,33 +115,55 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      same: "until then it stays a green passthrough -- do NOT phase-8-delete
 %      early."
 %
-%   2. THE EDGES ARE NOT EPOCH-SCOPED BY DEFAULT, because there is nowhere
-%      declared to put the epoch and nothing to point at:
+%   2. THE EDGES ARE NOT EPOCH-SCOPED AS WIRED TODAY -- and this item's OWN
+%      account of why was STALE. Both blockers it named are gone; the reason
+%      the edges are still unscoped is now PASS ORDER, which is a smaller and
+%      different problem. Corrected here with positive evidence, because this
+%      file's prose about itself is exactly the thing that goes stale in the
+%      direction of "less is possible than really is".
 %
-%        (a) `directed_relation` declares exactly three dependencies --
-%            `child`, `parent`, `time_reference_#`
-%            (schemas/V_eta/stable/directed_relation.json). There is no
-%            `epoch_id`. V_eta's declared epoch edge exists elsewhere
-%            (`acquisition_metadata_file.epoch_id -> epoch`, REQUIRED), so the
-%            NAME is established; the SLOT on directed_relation is not.
-%        (b) No `epoch` document exists to point at. From
-%            did2.convert.migrators_j.private.jEpochDocId: "NO MIGRATOR MINTS
-%            AN `epoch` DOCUMENT ... Open item #60 records the correct shape --
-%            mint one `epoch` per distinct `epochid.epochid` by GROUPING (a
-%            second pass)". That mint is a different family and is not built.
+%        (a) SAID: "`directed_relation` declares exactly three dependencies --
+%            `child`, `parent`, `time_reference_#`. There is no `epoch_id`."
+%            FALSE NOW. The slot is declared:
 %
-%      Emitting an undeclared `epoch_id` dependency would validate silently
-%      (did2/+schema/cache.m:598 allows `depends_on` wholesale and never checks
-%      individual dependency names), which is precisely the standing defect
-%      this project already tracks as "the `openminds_#` deps are declared by
-%      nobody". So it is not done here.
+%              $ python3 -c "import json;print([x['name'] for x in json.load(
+%                    open('schemas/V_eta/stable/directed_relation.json')
+%                  )['depends_on']])"
+%              ['child', 'parent', 'time_reference_#', 'epoch_id']
 %
-%      HOOK, so this is a one-line change when #60 lands: pass
-%      OPTIONS.EpochDocumentIdFor, a function handle
-%      `docId = f(epochidString, sessionId)` returning '' when unknown. When it
-%      returns a non-empty id an `epoch_id` dependency is added to both edge
-%      kinds and the dedupe key separates epochs. Nothing empty is ever emitted
-%      (rule: never emit an empty edge).
+%        (b) SAID: "No `epoch` document exists to point at ... that mint is a
+%            different family and is not built." FALSE NOW.
+%            `did2.convert.epochMint` mints one `epoch` per distinct
+%            (base.session_id, epoch-id string) and PUBLISHES the index this
+%            hook needs -- `report.epoch_index` rows are
+%            (session_id, local_identifier, epoch_document_id), where
+%            `local_identifier` IS the epoch string (epochMint.m:196,317,526).
+%            ndi.migrate.local already calls it and already feeds that index to
+%            resolveEpochAnchorFold (local.m:675, 1447-1453).
+%
+%      WHAT ACTUALLY BLOCKS IT: `resolveEnsembleMembership` runs at
+%      local.m:638, and `epochMint` runs at local.m:675 -- this pass runs
+%      BEFORE the epochs it would point at exist. The fix is to order it after
+%      epochMint and pass the resolver, exactly as sub-pass (7e) valid
+%      intervals is ordered ("ORDER: after (7) FOR A REAL REASON, not for
+%      symmetry. It reads the `epoch` documents epochMint appends; run before
+%      them it refuses every interval and changes nothing"). NOT DONE HERE:
+%      it changes emitted edge COUNTS on real corpora (one roster per epoch
+%      instead of one collapsed roster), epochMint's own header still reads
+%      "WRITTEN 2026-08-10, NEVER EXECUTED", and no MATLAB exists in this
+%      container to test the reorder. It is reported rather than attempted.
+%
+%      Note the key must stay the PAIR (session_id, epoch string): epochMint
+%      measured `epochid.epochid` strings REUSED ACROSS SESSIONS in 142 of
+%      corpus B's 149 distinct ids, so grouping on the string alone would fuse
+%      epochs from different animals. OPTIONS.EpochDocumentIdFor already takes
+%      both arguments.
+%
+%      HOOK, unchanged and ready: pass OPTIONS.EpochDocumentIdFor, a function
+%      handle `docId = f(epochidString, sessionId)` returning '' when unknown.
+%      When it returns a non-empty id an `epoch_id` dependency is added to both
+%      edge kinds and the dedupe key separates epochs. Nothing empty is ever
+%      emitted (rule: never emit an empty edge).
 %
 %   3. NO `sampled_body` CACHE DOCUMENT IS MATERIALISED. The signed model marks
 %      the cache with the T6 `is_cache` marker on a `sampled_body`; neither
@@ -220,14 +242,21 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   MEASURED and reported (`verify_before_delete_clear`); acting on it is a
 %   separate, team-gated build.
 %
-%   5. OPEN, FOR THE TEAM: the registry row for `member_of` currently declares
-%      `"timed": false, "ordered": false`. The signed model requires the edge
-%      to be BOTH -- it carries an epoch and a column order. `sequence` is
-%      emitted here because `directed_relation` declares it ("Optional ordinal
-%      for ordered relations") and the sign-off asks for column order, but the
-%      registry row and the signed model disagree and only one of them can be
-%      right. Nothing enforces `binding` yet, so this costs nothing today and
-%      gets expensive once a validator reads it.
+%   5. RESOLVED, NOT OPEN -- this item said the registry row for `member_of`
+%      declares `"timed": false, "ordered": false` and disagreed with the
+%      signed model. IT NOW AGREES, and the disagreement is closed:
+%
+%        $ python3 -c "import json;[print(r) for r in json.load(open(
+%              'schemas/V_eta/stable/binding_registry_meta.json'))
+%              ['relation_bindings'] if r['relation']['name']=='member_of']"
+%        {'relation': {'node': 'RO:0002350', 'name': 'member_of'},
+%         'class': 'directed_relation', 'child_role': 'the member',
+%         'parent_role': 'the group', 'child_types': ['subject'],
+%         'parent_types': ['subject'], 'timed': True, 'ordered': True}
+%
+%      (DENOMINATOR: 26 relation_bindings rows read.) So `ordered: true`
+%      licenses the `sequence` this pass emits, and `timed: true` licenses the
+%      epoch scoping item 2 describes. Nothing here needs a team call.
 %
 %   STATUS: authored without local MATLAB -- CI is the first execution of
 %   every line here. The membership/cache half first ran GREEN in
