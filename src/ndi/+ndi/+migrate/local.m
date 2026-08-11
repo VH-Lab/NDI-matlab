@@ -247,6 +247,7 @@ function result = local(path, options)
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
     strainReport = [];
+    openmindsCitationsReport = [];
     datasetEntitiesReport = [];
     epochMintReport = [];
     epochAnchorReport = [];
@@ -254,6 +255,7 @@ function result = local(path, options)
     responseParametersReport = [];
     lawnPlateReport = [];
     genericFileFoldReport = [];
+    validIntervalReport = [];
     softwareDedupReport = [];
     ontologyRowReport = [];
     ontologyLabelReport = [];
@@ -314,6 +316,36 @@ function result = local(path, options)
         %       become `strain` entities (ids preserved), consuming their
         %       Species / GeneticStrainType fragments. See
         %       ndi.migrate.internal.strainAssembly.
+        %   (4a) OPENMINDS CITATION GRAPH (TEAM DECISION 2026-08-11, "Do B"):
+        %       the OTHER thing that lands in the bare `openminds` class. Where
+        %       (4) assembles the Haley strain family, this assembles the
+        %       dataset CITATION graph the metadata app writes -- Dataset ->
+        %       DatasetVersion -> Person / Affiliation / Organization / ORCID /
+        %       ContactInformation / Funding / Contribution / DOI /
+        %       WebResource / License -- into the same six entity classes
+        %       `metadata_editor` emits, ids preserved wherever the model
+        %       allows. Lives DID-side (did2.convert.resolveOpenmindsCitations)
+        %       beside its siblings, so the corpus discovery harness runs the
+        %       same code this does.
+        %
+        %       IT IS ADDITIVE, NOT A REPLACEMENT. The graph holds only a DOI
+        %       for a related publication -- no title, no PMID, no PMCID;
+        %       ndi.database.metadata_app.fun.resolveRelatedPublication
+        %       recovers those over the NETWORK -- while the editor blob
+        %       carries all four. Neither store dominates and 0 of 6 corpora
+        %       carry both, so the `metadata_editor` route stays exactly as it
+        %       is and this pass fabricates nothing to close the gap.
+        %
+        %       ORDER: after (4) and BEFORE (4b), which is the order all three
+        %       DID call sites use. Before (4b) is load-bearing: that pass
+        %       keeps the RICHEST `dataset` entity per id, and the entity
+        %       minted here is keyed on the same dataset id as the
+        %       `dataset_remote` stubs, so it must exist when the ranking runs.
+        %       It commutes with (4): a citation component is disjoint from a
+        %       strain component (this pass touches only components holding a
+        %       DatasetVersion, and withholds any that plans a subject-side
+        %       openMINDS type), and consumption is all-or-none per connected
+        %       component so neither pass can strand the other's edges.
         %   (4b) DATASET ENTITY LAYER: dedup the `dataset` entities and prune
         %       the unresolvable `session -part_of-> dataset` edges. FOUR
         %       dataset-level v1 sources (metadata_editor / dataset_remote /
@@ -493,6 +525,44 @@ function result = local(path, options)
         %       which no other sub-pass in this block writes, and it removes
         %       nothing any of them points at (the statement keeps the source
         %       id). (6) still runs LAST; this pass mints no `software`.
+        %  (7e) VALID INTERVAL DECOMPOSE (team decision, 2026-08-11): a
+        %       did_v1 `valid_interval` document holds an ARRAY of intervals,
+        %       each with a start, an end and two independent time anchors.
+        %       Each interval becomes ONE `validity_observation` -- a BOOLEAN
+        %       statement about the element-subject named by `element_id`
+        %       (elements are promoted to subjects with ids PRESERVED) --
+        %       plus the `relative_reference` it is anchored to (start = t0,
+        %       duration = t1 - t0). Pass 1 cannot do it: the anchor names an
+        %       epoch by STRING, `relative_reference.relative_to` is REQUIRED
+        %       and points at the epoch DOCUMENT, and those ids exist only
+        %       after (7). Lives DID-side
+        %       (did2.convert.resolveValidIntervals) beside its five siblings.
+        %
+        %       ORDER: after (7) FOR A REAL REASON, not for symmetry. It reads
+        %       the `epoch` documents epochMint appends; run before them it
+        %       refuses every interval and changes nothing.
+        %
+        %       IT ADDS AND NEVER REMOVES, so it cannot lose anything it
+        %       misreads: the `valid_interval` document stays, validating
+        %       against its own tombstone. `sources_fully_decomposed` measures
+        %       the deletion gate rather than pre-empting it.
+        %
+        %       WHY IT IS SAFE WHERE NO CORPUS EXERCISES IT: all six gate
+        %       corpora hold ZERO `valid_interval` documents (run
+        %       31327383671), so this path is UNTESTED ON REAL DATA. AND THAT
+        %       ZERO IS ALSO THE POINT OF THE DESIGN -- `ndi.app.markgarbage`
+        %       is OPT-IN, so no document means the whole epoch is good data,
+        %       and a dataset without markgarbage must migrate to ZERO
+        %       validity statements rather than to "every epoch unknown".
+        %       Nothing is minted for an element with no source document.
+        %  (7f) THE OPEN SUB-QUESTION (7e) DELIBERATELY DOES NOT ANSWER:
+        %       `loadvalidinterval` inherits a derived element's validity from
+        %       its `underlying_element` (markgarbage.m:146-155), a QUERY-TIME
+        %       rule. Whether V_eta re-derives that through `derived_from` or
+        %       MATERIALISES copies is a TEAM call. (7e) forecloses neither --
+        %       it writes the statement against the element the source named,
+        %       leaves `derived_from_#` empty, and REPORTS
+        %       `inheritance_candidates` so the decision has a size attached.
         %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
         %       consuming document, because a single-document migrator cannot
         %       know another document already minted the same program. Merge
@@ -579,6 +649,19 @@ function result = local(path, options)
                  'openminds Strain documents as passthrough.'], ME.message);
         end
         try
+            [convertResult, openmindsCitationsReport] = ...
+                did2.convert.resolveOpenmindsCitations( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:openmindsCitationsFailed', ...
+                ['Second-pass openMINDS citation assembly failed (%s); ' ...
+                 'leaving the `openminds` documents as passthroughs, which ' ...
+                 'is the state they are in without this pass.'], ME.message);
+        end
+        try
             [convertResult, datasetEntitiesReport] = ...
                 resolveDatasetEntitiesPass(convertResult, options);
         catch ME
@@ -661,6 +744,39 @@ function result = local(path, options)
                  'state it is in without this pass.'], ME.message);
         end
         try
+            % TEAM DECISION 2026-08-11: `valid_interval` becomes a
+            % boolean-valued `subject_statement`. One `validity_observation`
+            % per interval (the element-subject as `subject_id`, the v1 array
+            % position as `sequence`) plus the `relative_reference` it is
+            % anchored to. THE SAME FUNCTION the three DID-side call sites run,
+            % in the same order, which is what keeps the two pipelines one.
+            %
+            % ORDER: after did2.convert.epochMint, and that dependence is REAL
+            % rather than conventional -- the anchor is an `epoch` DOCUMENT and
+            % those are minted there. Run earlier it would refuse every interval
+            % with `refused_no_epoch_document` and change nothing.
+            %
+            % IT ADDS AND NEVER REMOVES. The `valid_interval` document stays,
+            % validating against its own tombstone, so a failure here leaves the
+            % dataset exactly as this pass found it -- which is the state
+            % production is in today.
+            [convertResult, validIntervalReport] = ...
+                did2.convert.resolveValidIntervals( ...
+                convertResult, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion);
+        catch ME
+            warning('NDI:migrate:validIntervalDecomposeFailed', ...
+                ['Second-pass valid_interval decompose failed (%s); leaving ' ...
+                 'every `valid_interval` document as a passthrough, which is ' ...
+                 'the state it is in without this pass. NOTE what this does ' ...
+                 'NOT mean: absence of a validity statement still means the ' ...
+                 'data is VALID (ndi.app.markgarbage is opt-in), so a failure ' ...
+                 'here loses the go-forward representation, not the meaning.'], ...
+                ME.message);
+        end
+        try
             [convertResult, softwareDedupReport] = ...
                 resolveSoftwareDedup(convertResult);
         catch ME
@@ -715,6 +831,7 @@ function result = local(path, options)
         'strainAssembly',      strainReport, ...
         'ontologyRowSubjects', ontologyRowReport, ...
         'ontologyLabelSubjects', ontologyLabelReport, ...
+        'openmindsCitations',  openmindsCitationsReport, ...
         'datasetEntities',     datasetEntitiesReport, ...
         'epochMint',           epochMintReport, ...
         'epochAnchorFold',     epochAnchorReport, ...
@@ -722,6 +839,7 @@ function result = local(path, options)
         'responseParametersFold', responseParametersReport, ...
         'lawnPlateSubjects',   lawnPlateReport, ...
         'genericFileFold',     genericFileFoldReport, ...
+        'validIntervalDecompose', validIntervalReport, ...
         'softwareDedup',       softwareDedupReport);
 
     if options.Verbose
