@@ -78,26 +78,43 @@ jobs:
             % a claude/** branch. run-tests.yml sweeps the whole package
             % (testToolboxNoCloud -> TestSuite.fromFolder("tests",
             % "IncludingSubfolders", true)), but it triggers only on
-            % branches: ["main", "Vnext"], so it never fires here. Measured
-            % 2026-08-11:
+            % branches: ["main", "Vnext"], so it never fires here.
             %
-            %   DENOMINATOR: 11 workflow files; 16 .m in
-            %                tests/+ndi/+unittest/+migrate, of which 15 are
-            %                matlab.unittest.TestCase (FakeCloudClient is a
-            %                stub, not a test).
-            %   BEFORE:      6 of 15 ran on claude/** -- the 5 below plus
-            %                TestMigrateLocalEta (test-eta-migrate-e2e.yml).
-            %                TestOntologyRowSubjects and
-            %                TestOntologyLabelSubjects were written, reviewed,
-            %                and executed by NOTHING.
-            %   STILL UNRUN on claude/**: TestEnsembleMembership,
-            %                TestSoftwareDedup, TestStrainAssembly (same
-            %                second-pass assembler shape as the ones here, and
-            %                the same defect -- reported, not silently fixed),
-            %                plus TestMigrateLocal / TestMigrateCloud /
-            %                TestMigrateLocalZeta / TestMigrateLocalEpsilon,
-            %                which need a database or another target's
-            %                environment and belong to their own workflows.
+            % RE-MEASURED 2026-08-11 (mechanically: every workflow file read,
+            % every classdef line read, exact word-boundary match of each class
+            % name against non-comment workflow lines). The previous
+            % DENOMINATOR here said "16 .m / 15 TestCase" and was written in the
+            % same commit that added the 17th file (TestEpochAnchorFold), so it
+            % undercounted by one from the moment it was written:
+            %
+            %   DENOMINATOR: 11 workflow files, 11 read; 17 .m in
+            %                tests/+ndi/+unittest/+migrate, of which 16 are
+            %                matlab.unittest.TestCase (FakeCloudClient extends
+            %                ndi.migrate.internal.cloudClient -- a stub, not a
+            %                test).
+            %   BEFORE this commit: 9 of 16 ran on a claude/** push -- the 8
+            %                previously listed here plus TestMigrateLocalEta
+            %                (test-eta-migrate-e2e.yml, also claude/**).
+            %   ADDED here:  TestEnsembleMembership, TestSoftwareDedup,
+            %                TestStrainAssembly. All three are pure struct
+            %                assembly over ndi.migrate.internal.{ensembleMembership,
+            %                softwareDedup,strainAssembly} -- no database, no
+            %                schema cache, no cloud -- so they belong in this
+            %                gate. They had never executed anywhere.
+            %   NOW:         12 of 16 on a claude/** push.
+            %   STILL NOT RUN on claude/**, each for a stated reason, none
+            %                silently omitted:
+            %     TestMigrateLocal        needs an on-disk v1 session + database
+            %     TestMigrateCloud        needs the cloud client / FakeCloudClient
+            %                             harness, and is swept by run-tests.yml
+            %     TestMigrateLocalZeta    V_zeta target env; test-zeta-migrate.yml
+            %                             (pull_request -> Vnext only)
+            %     TestMigrateLocalEpsilon V_epsilon target env;
+            %                             test-epsilon-migrate.yml
+            %                             (pull_request -> Vnext only)
+            %   NOTE a naive substring grep reports TestMigrateLocal as covered:
+            %   "TestMigrateLocal" is a prefix of TestMigrateLocalEta/Zeta/
+            %   Epsilon. It is named by NO workflow. Match on word boundaries.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestStimulusPresentation", ...
@@ -106,7 +123,10 @@ jobs:
                 "ndi.unittest.migrate.TestPathSPromotion", ...
                 "ndi.unittest.migrate.TestEpochAnchorFold", ...
                 "ndi.unittest.migrate.TestOntologyRowSubjects", ...
-                "ndi.unittest.migrate.TestOntologyLabelSubjects"]);
+                "ndi.unittest.migrate.TestOntologyLabelSubjects", ...
+                "ndi.unittest.migrate.TestEnsembleMembership", ...
+                "ndi.unittest.migrate.TestSoftwareDedup", ...
+                "ndi.unittest.migrate.TestStrainAssembly"]);
             disp(table(results));
             assert(sum([results.Failed]) == 0, ...
                 sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));
