@@ -115,9 +115,20 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %   the stimulus_response edge that names it resolves too. THAT IS A DERIVATION,
 %   NOT A MEASUREMENT: nothing in this container can run it.
 %
-%   STATUS: NOT RUN. `command -v matlab octave octave-cli` returns nothing in
-%   the container these changes were written in. CI is the first execution, and
-%   the count above is what it will confirm or refute.
+%   STATUS: WRITTEN WITHOUT RUNNING. `command -v matlab octave octave-cli`
+%   returns nothing in the container these changes were written in, so CI was
+%   their first execution.
+%
+%   CONFIRMED. test-eta-migrate-e2e.yml run 31509068344 (b7dfa47d4):
+%       "Running ndi.unittest.migrate.TestMigrateLocalEta
+%        ....
+%        Done ndi.unittest.migrate.TestMigrateLocalEta
+%        Totals:
+%           4 Passed, 0 Failed, 0 Incomplete.
+%           7.5842 seconds testing time."
+%   DENOMINATOR: 4 Test methods in this file, 4 collected, 4 run, and all four
+%   now assert orphan_count == 0. Read it narrowly, as before: it says the graph
+%   closes on 4- and 5-document fixtures, not on a corpus.
 %
 %   Gated three ways, skips cleanly otherwise:
 %     - mksqlite present (the v1 store is sqlite),
