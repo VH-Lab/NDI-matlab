@@ -12,6 +12,20 @@ function [plan, report] = epochAnchorFold(migratedStructs, epochIndex)
 %   said 4 documents over a 3-document fixture), not a defect here. NO LINE OF
 %   THIS FILE WAS CHANGED IN RESPONSE. Still unexecuted against a real corpus:
 %   green here means self-consistent with a test by the same author, nothing more.
+%
+%   AND THAT LAST SENTENCE WAS THE HOLE. Every one of TestEpochAnchorFold's 27
+%   methods drives this function from a HAND-BUILT body (its `anchorDoc`
+%   fixture, which its own docstring calls a transcription of the emitter), so
+%   the emitter could move -- rename the `epochid` block, relocate
+%   `epoch_clock`, change the class version -- and all 27 would stay green while
+%   production stopped folding. Two end-to-end tests now drive the REAL emitter
+%   through the REAL pipeline (v1 sqlite -> deferral -> stimulusBathToBath ->
+%   v1_to_v2 -> epochMint -> here -> the V_eta database), one per branch of the
+%   conditional below:
+%     tests/+ndi/+unittest/+migrate/TestMigrateLocalEta.m
+%       testEpochAnchorFoldsToRelativeReferenceWithItsIdPreserved
+%       testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase
+%   Written in a container with NO MATLAB; CI is their first execution.
 %   ---------------------------------------------------------------------
 %
 %   WHY THIS EXISTS
@@ -35,16 +49,51 @@ function [plan, report] = epochAnchorFold(migratedStructs, epochIndex)
 %                    sub-structure's `kind` field -- a field value, not a class.
 %                    The rest are comments.
 %
+%   RE-MEASURED 2026-08-11, tracked files only (`git grep`, so the counts cannot
+%   be inflated by a build directory), AFTER the commit that added this file and
+%   after the end-to-end tests below. The two figures above are kept as the
+%   BEFORE reading rather than overwritten -- the point of that measurement was
+%   the state at the moment the gap was found -- but do not quote them as
+%   current, because both have moved:
+%
+%       $ git -C NDI-matlab grep -c "epoch_bounded_reference" | wc -l   -> 11 files
+%       $ git -C NDI-matlab grep -n  "epoch_bounded_reference" | wc -l  -> 62 lines
+%       $ git -C DID-matlab grep -c "epoch_bounded_reference" | wc -l   -> 10 files
+%       $ git -C DID-matlab grep -n  "epoch_bounded_reference" | wc -l  -> 18 lines
+%
+%   THE LOAD-BEARING PART IS UNCHANGED, and it is the only part that was ever a
+%   claim about behaviour rather than about text. Mint sites, re-derived by
+%   searching for the construction itself rather than for the name:
+%
+%       $ git -C NDI-matlab grep -n "'class_name', 'epoch_bounded_reference'"
+%       src/ndi/+ndi/+migrate/+internal/stimulusBathToBath.m:166:   <- the emitter
+%       tests/+ndi/+unittest/+migrate/TestEpochAnchorFold.m:437:    <- this pass's
+%                                                                     OWN hand-built
+%                                                                     fixture, not a
+%                                                                     production site
+%
+%       $ git -C DID-matlab grep -n "'class_name', 'epoch_bounded_reference'"
+%       (no output)
+%
+%   So: still exactly ONE production mint site, still ZERO in DID-matlab. The
+%   growth in the line counts is comments and the new tests.
+%
 %   And nothing folded it. `did2.convert.resolveSessionAnchors` -- the batch pass
 %   that collapses the retiring reference family -- matches exactly two class
 %   names and neither is this one:
 %
 %       $ grep -n "strcmp(anchorClass{k}, 'session_" resolveSessionAnchors.m
-%       244:    isRelative = strcmp(anchorClass{k}, 'session_relative_reference');
-%       245:    isBounded  = strcmp(anchorClass{k}, 'session_bounded_reference');
+%       284:    isRelative = strcmp(anchorClass{k}, 'session_relative_reference');
+%       285:    isBounded  = strcmp(anchorClass{k}, 'session_bounded_reference');
 %
-%   That file's own header already names this gap in its own words
-%   (resolveSessionAnchors.m:30-33). It survived because the DID corpus gate does
+%   (Those two lines read 244/245 when this header was written; the numbers
+%   moved when that file's own header was corrected, the code did not. Re-derive
+%   with the grep above rather than trusting either number.)
+%
+%   That file's own header already named this gap in its own words -- and now
+%   names the CLOSING of it, corrected on this branch (DID-matlab 5a39dde),
+%   because the sentence it carried, "that nothing folds", stopped being true
+%   the moment this file was wired in. It survived because the DID corpus gate does
 %   not run the NDI assembler at all: it runs the coarse
 %   `did2.convert.resolveDeferredBaths`, which NDI deliberately replaces
 %   (stimulusBathToBath: "the LIVE-session counterpart of the coarse

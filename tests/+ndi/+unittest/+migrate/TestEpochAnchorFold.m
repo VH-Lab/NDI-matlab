@@ -12,7 +12,9 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
 %     [time_reference], 2026-08-08; migration table line 195), and until this
 %     fold existed the NDI path minted it fully populated with nothing to
 %     consume it -- `did2.convert.resolveSessionAnchors` matches exactly two
-%     class names and neither is this one (resolveSessionAnchors.m:244-245).
+%     class names and neither is this one (resolveSessionAnchors.m, its two
+%     `strcmp(anchorClass{k}, 'session_...')` lines -- cited by content, not by
+%     number, because that file's header grew and the numbers moved).
 %
 %   * THE KEY IS THE PAIR (base.session_id, epoch-id string), never the string.
 %     `testSameEpochStringInAnotherSessionDoesNotResolve` is the whole point:

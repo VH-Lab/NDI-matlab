@@ -46,6 +46,35 @@ function [bathBody, timeRefBody] = stimulusBathToBath(v1Body, resolver, targetVe
 %   CONSUMED THIS CLASS -- it was minted, fully populated, and carried straight
 %   into migrated output. (Written, not yet run: see STATUS above.)
 %
+%   THE FOLD IS NOT UNCONDITIONAL, SO THE RETIREMENT IS NOT UNCONDITIONAL.
+%   ---------------------------------------------------------------------
+%   Recorded here so the next person does not re-derive it. What this function
+%   mints CAN reach a database as the retired class, and the path is short:
+%
+%       epochMint refuses to mint an `epoch` for a session id with no `session`
+%       DOCUMENT in the batch (DID-matlab +did2/+convert/epochMint.m:349-353,
+%       counted as `skipped_no_session_document`)
+%         -> epochAnchorFold cannot resolve the (session, epoch-string) pair,
+%            refuses (`refused_no_epoch_document`) and LEAVES THE BODY ALONE
+%         -> ndi.migrate.local writes it to <target>.sqlite with every other
+%            migrated document (local.m, `db.add(convertResult.migrated, ...)`).
+%
+%   That refusal is CORRECT -- DISCOVERY MODE: a subset batch need not carry the
+%   `session` document, absence is not evidence, and a guessed `relative_to`
+%   would be a blank required edge and therefore a quarantine. Production is the
+%   resolving case: `ndi.session.dir` creates and PERSISTS a `session` document
+%   on first open, so a real session directory has one.
+%
+%   BOTH BRANCHES ARE PINNED FROM THIS EMITTER, THROUGH THE REAL PIPELINE, in
+%   tests/+ndi/+unittest/+migrate/TestMigrateLocalEta.m --
+%   `testEpochAnchorFoldsToRelativeReferenceWithItsIdPreserved` (folds; base.id
+%   preserved; 0 orphans) and
+%   `testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase` (refuses;
+%   the retired class is in the database and its id still resolves). Those are
+%   the tests to read before changing anything in the `if mintReference` block
+%   below: TestEpochAnchorFold's 27 methods all run on a HAND-BUILT
+%   transcription of that block and cannot see it move.
+%
 %   The stimulator is used ONLY as the time referent and the subject source; no
 %   other connection is kept (the result is a plain `bath`, not a
 %   `stimulus_bath`). This function does that session-aware assembly; it is

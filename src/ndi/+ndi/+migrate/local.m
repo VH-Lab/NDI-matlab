@@ -428,7 +428,8 @@ function result = local(path, options)
         %       and did2.convert.resolveSessionAnchors -- the pass that collapses
         %       the retiring reference family -- matches exactly two class names,
         %       `session_relative_reference` and `session_bounded_reference`
-        %       (resolveSessionAnchors.m:244-245). So a class the signed
+        %       (resolveSessionAnchors.m, the two `strcmp(anchorClass{k}, 'session_...')`
+        %       lines). So a class the signed
         %       time-reference decision RETIRES
         %       (V_eta_time_reference_model_plan.md, TEAM-SIGN-OFF
         %       [time_reference] 2026-08-08, migration table line 195) was being
