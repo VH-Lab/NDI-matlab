@@ -17,6 +17,39 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
 %   as `TestPathSPromotion.helper(...)`, but that class-qualified reference failed
 %   to resolve in the packaged class ("Unable to resolve the name ..."), so the
 %   tests never actually ran. Local functions need no class-name resolution.
+%
+%   STATUS 2026-08-11: `testAttributedSitePromoted` ERRORED on its first real
+%   execution (test-eta-migrate.yml run 31463051482, af840428f, and identically
+%   on the parent run 31460488423 / e3795c2f7):
+%
+%       Error ID: 'MATLAB:nonExistentField'
+%       Unrecognized field name "term_assertion".
+%       Error in .../testAttributedSitePromoted (line 47)
+%           testCase.verifyEqual(assertion.term_assertion.value.node, ...
+%
+%   THE TEST WAS STALE, NOT THE CODE, and it is INVERTED here rather than
+%   deleted. `term_assertion` is `subject_assertion` x `term` and declares NO
+%   fields of its own -- `value` is inherited from `term`, so it rides the
+%   `term` BLOCK. Positive evidence, three ways:
+%
+%     DID-schema/schemas/V_eta/stable/term_assertion.json
+%         superclasses = [subject_assertion, term];  "fields": []
+%     DID-schema/schemas/V_eta/stable/term.json
+%         declares the `value` (ontology_term) field
+%     DID-matlab, every migrator under src/:
+%         16 sites write `<body>.term = struct('value', ...)`
+%          0 sites write a `term_assertion` block
+%         -- including probe_geometry.m:124, which mints a term_assertion
+%            document and puts its value on `.term`.
+%
+%   NDI-matlab commit d03a42bdf ("pathSPromotion: term_assertion pairs with the
+%   `term` composite", 2026-07-28) made that move in pathSPromotion.m; this file
+%   was written at 6108689dc, before it, and the two commits that touched it
+%   since were about static-method resolution. The assertion below now reads
+%   `.term.value`, additionally pins the superclass chain the same commit
+%   changed, and pins the ABSENCE of a stale `term_assertion` block (an
+%   undeclared top-level block quarantines -- the same regression the
+%   `subject_relation` assertion further down exists for).
 
     methods (Test)
 
@@ -42,10 +75,21 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             testCase.verifyEqual(depValue(rel, 'child'), partId);
             testCase.verifyEqual(depValue(rel, 'parent'), 'animal_1');
             testCase.verifyEqual(rel.directed_relation.relation.name, 'part_of');
-            % the part carries the site term as its anatomical kind
+            % the part carries the site term as its anatomical kind. The value
+            % rides the inherited `term` block (term_assertion = subject_assertion
+            % x term, and term_assertion declares no fields of its own), NOT a
+            % `term_assertion` block -- see the header for the evidence.
             assertion = firstOfClass(minted, 'term_assertion');
-            testCase.verifyEqual(assertion.term_assertion.value.node, 'uberon:0002436');
+            testCase.verifyEqual(assertion.term.value.node, 'uberon:0002436');
             testCase.verifyEqual(depValue(assertion, 'subject_id'), partId);
+            % the stale block must be GONE, not merely unused: an undeclared
+            % top-level block quarantines the document.
+            testCase.verifyFalse(isfield(assertion, 'term_assertion'));
+            % ... and the declared chain must match the schema, class name by
+            % class name (did2:validation:superclassesChainMismatch).
+            aSupers = {assertion.document_class.superclasses.class_name};
+            testCase.verifyTrue(any(strcmp(aSupers, 'subject_assertion')));
+            testCase.verifyTrue(any(strcmp(aSupers, 'term')));
             % regression: subject_relation was renamed to `relation` in V_eta. The
             % relation must carry NO stale subject_relation block (an undeclared
             % top-level block quarantines -- the JH 163k-orphan regression) and must
@@ -57,6 +101,25 @@ classdef TestPathSPromotion < matlab.unittest.TestCase
             % the part-subject carries a non-empty (required) local_identifier
             part = firstOfClass(minted, 'subject');
             testCase.verifyNotEmpty(part.subject.local_identifier);
+        end
+
+        function testLegacyTermObservationShapeStillResolves(testCase)
+            % pathSPromotion/siteValue PREFERS the `term` block and FALLS BACK to
+            % the pre-composite `term_observation` block, deliberately
+            % (d03a42bdf: "so a body migrated before this change still
+            % resolves"). The main fixture now carries the writer's current
+            % shape, so this test is what keeps that fallback branch covered --
+            % flipping the fixture must not silently retire a live branch.
+            structs = withPreCompositeSite(treatmentWithSite('anch_1', ...
+                'animal_1', 'uberon:0002436', 'primary visual cortex'));
+            [~, minted, changed] = ndi.migrate.internal.pathSPromotion(structs);
+
+            testCase.verifyTrue(changed);
+            assertion = firstOfClass(minted, 'term_assertion');
+            % read from the OLD block, emitted onto the NEW one
+            testCase.verifyEqual(assertion.term.value.node, 'uberon:0002436');
+            testCase.verifyEqual(assertion.term.value.name, ...
+                'primary visual cortex');
         end
 
         function testMerelyLocatedSiteUntouched(testCase)
@@ -147,7 +210,27 @@ site.subject_statement = struct('variable', ...
 site.subject_interaction = struct('method', term('', ''), ...
     'sample_time', struct('kind', 'point'));
 site.subject_observation = struct();
-site.term_observation = struct('value', term(siteNode, siteName));
+% THE WRITER'S SHAPE, not a DID-side schema's: did2.convert.migrators_j
+% .probe_location:28-30 mints exactly this document -- class term_observation,
+% variable 'anatomical location' -- and puts the value on `obs.term`. This
+% fixture said `site.term_observation` until 2026-08-11, i.e. it exercised only
+% pathSPromotion/siteValue's LEGACY fallback branch and never the branch
+% production takes. testLegacyTermObservationShapeStillResolves keeps the
+% fallback covered.
+site.term = struct('value', term(siteNode, siteName));
+end
+
+function structs = withPreCompositeSite(structs)
+%WITHPRECOMPOSITESITE Rewrite the site observation to the shape a
+%   term_observation had BEFORE NDI-matlab d03a42bdf moved the value onto the
+%   inherited `term` block. Bodies migrated before that change still look like
+%   this, which is why siteValue() still reads it.
+for k = 1:numel(structs)
+    if strcmp(structs{k}.document_class.class_name, 'term_observation')
+        structs{k}.term_observation = struct('value', structs{k}.term.value);
+        structs{k} = rmfield(structs{k}, 'term');
+    end
+end
 end
 
 function anchor = makeAnchor(anchorId)

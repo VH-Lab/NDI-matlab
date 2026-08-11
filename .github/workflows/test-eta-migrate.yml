@@ -128,15 +128,45 @@ jobs:
             %   "a test written from the same premise as the code cannot catch
             %   the code" warns about. The corpus gate remains the real check.
             %
-            %   The job is still RED, and both failures PREDATE this commit --
-            %   they reproduce identically on the parent (run 31460488423,
+            %   The job was RED on that run, and both failures PREDATED it --
+            %   they reproduced identically on the parent (run 31460488423,
             %   e3795c2f7, also "2 migrate-assembler test(s) failed"):
             %     TestPathSPromotion/testAttributedSitePromoted        Errored.
             %     TestEpochAnchorFold/
             %       testNonAnchorDocumentsAreInspectedButNotCountedAsAnchors
             %                                          Failed by verification.
-            %   Neither was touched here; adding three classes did not cause
-            %   them and did not fix them.
+            %   Neither was touched by that commit; adding three classes did not
+            %   cause them and did not fix them.
+            %
+            %   DIAGNOSED + FIXED 2026-08-11. DENOMINATOR: 2 failures, 2
+            %   diagnosed, 2 TEST fixes, 0 code fixes, 0 tests weakened/skipped.
+            %   BOTH were stale tests, and in both the CODE was right:
+            %     * testAttributedSitePromoted read
+            %       `assertion.term_assertion.value` ('MATLAB:nonExistentField').
+            %       `term_assertion` is subject_assertion x `term` and declares
+            %       NO fields of its own, so `value` rides the `term` block --
+            %       V_eta/stable/term_assertion.json ("fields": []),
+            %       V_eta/stable/term.json (declares `value`), and 16 DID-matlab
+            %       migrator sites writing `.term` against 0 writing a
+            %       `term_assertion` block. NDI d03a42bdf moved the emitter on
+            %       2026-07-28; the test predates it (6108689dc) and was never
+            %       updated. INVERTED, not deleted, and it now also pins the
+            %       superclass chain and the ABSENCE of the stale block.
+            %     * testNonAnchorDocumentsAreInspectedButNotCountedAsAnchors
+            %       expected documents_inspected == 4 over a 3-document fixture
+            %       (a 1-document `oneFoldableAnchor` plus two non-anchors).
+            %       Actual 3 was correct: epochAnchorFold.m:219 sets the
+            %       denominator to numel(migratedStructs) unconditionally,
+            %       before any body is read. The expectation is now tied to
+            %       numel(docs) AND to anchors_seen, so the property it exists
+            %       to protect -- "looked at nothing" and "looked and found no
+            %       anchors" are different numbers -- is asserted more tightly
+            %       than before, not relaxed.
+            %   One test was ADDED with the first fix, not to make anything
+            %   pass: the stale fixture had been exercising only pathSPromotion
+            %   siteValue's LEGACY fallback branch, so flipping it to the
+            %   writer's shape would have silently retired that branch's only
+            %   coverage. testLegacyTermObservationShapeStillResolves keeps it.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestStimulusPresentation", ...

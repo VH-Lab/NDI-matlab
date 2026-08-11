@@ -4,10 +4,14 @@ function [plan, report] = epochAnchorFold(migratedStructs, epochIndex)
 %   minted for the SAME (session, epoch-id string) PAIR.
 %
 %   ---------------------------------------------------------------------
-%   STATUS: WRITTEN 2026-08-11 IN A CONTAINER WITH NO MATLAB. NOTHING IN THIS
-%   FILE HAS BEEN EXECUTED. Not one line has been run, not by me and not by any
-%   gate I can see from here. test-eta-migrate.yml is the first thing that will
-%   have an opinion about it.
+%   STATUS: written 2026-08-11 in a container with no MATLAB. FIRST EXECUTED the
+%   same day by test-eta-migrate.yml run 31463051482 (af840428f), which is where
+%   the line above this one -- "NOTHING IN THIS FILE HAS BEEN EXECUTED" -- stopped
+%   being true. TestEpochAnchorFold drove it 22 times: 21 assertions green, and
+%   the single red one was an off-by-one in the TEST's expected denominator (it
+%   said 4 documents over a 3-document fixture), not a defect here. NO LINE OF
+%   THIS FILE WAS CHANGED IN RESPONSE. Still unexecuted against a real corpus:
+%   green here means self-consistent with a test by the same author, nothing more.
 %   ---------------------------------------------------------------------
 %
 %   WHY THIS EXISTS

@@ -29,8 +29,30 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
 %     mustBeNonEmpty and the RequiredDependencies strict check is armed; the
 %     fold only ever emits an edge it resolved from epochMint's index.
 %
-%   STATUS: authored WITHOUT local MATLAB. THESE TESTS HAVE NOT BEEN RUN. Not
-%   one assertion below has been executed.
+%   STATUS 2026-08-11: FIRST EXECUTION DONE. Authored without local MATLAB, and
+%   the header below this one said "THESE TESTS HAVE NOT BEEN RUN" until
+%   test-eta-migrate.yml run 31463051482 (af840428f) ran them. 21 of 22 passed;
+%   ONE failed, and it was the TEST that was wrong, not the fold:
+%
+%       Verification failed in
+%         TestEpochAnchorFold/testNonAnchorDocumentsAreInspectedButNot...
+%       verifyEqual failed.  Actual 3, Expected 4.
+%       ... TestEpochAnchorFold.m ... at 82
+%
+%   `oneFoldableAnchor` returns ONE document; the test adds two more and then
+%   asserted a denominator of FOUR. Three is right. epochAnchorFold.m:219 sets
+%   `documents_inspected = numel(migratedStructs)` unconditionally, before a
+%   single body is read, which is what the denominator rule asks for -- no code
+%   change was warranted and none was made. The literal is now tied to
+%   numel(docs) and to `anchors_seen`, so an off-by-one in the fixture cannot
+%   masquerade as a counter defect again. The distinction the test exists to
+%   protect (inspected > anchors_seen; non-anchors land in the denominator and
+%   in no anchor bucket) is asserted MORE tightly than before, not relaxed.
+%
+%   The other 21 assertions ran green on that first execution. Read that
+%   narrowly: this file and epochAnchorFold.m were written by the same author in
+%   the same session, so green proves the pair is self-consistent and free of
+%   load/arity faults -- not that the fold matches NDI ground truth.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestEpochAnchorFold')
 
@@ -75,12 +97,25 @@ classdef TestEpochAnchorFold < matlab.unittest.TestCase
         end
 
         function testNonAnchorDocumentsAreInspectedButNotCountedAsAnchors(testCase)
-            [docs, idx] = oneFoldableAnchor();
+            % THE PROPERTY: "looked at nothing" and "looked and found no
+            % anchors" must be DIFFERENT numbers, so the denominator has to
+            % count documents this pass will not touch. It is asserted here as
+            % a RELATION between the two counters, not as a bare literal --
+            % the literal is what broke (see the correction note below).
+            [docs, idx] = oneFoldableAnchor();      % one anchor, by its name
+            nonAnchors = 2;
             docs{end+1} = migratedDoc('other_1', 'sess_09', 'dose_manipulation');
             docs{end+1} = migratedDoc('other_2', 'sess_09', 'subject');
             [plan, report] = ndi.migrate.internal.epochAnchorFold(docs, idx);
-            testCase.verifyEqual(report.documents_inspected, 4);
+
+            % DENOMINATOR: 1 anchor + 2 non-anchors = 3 documents in.
+            testCase.verifyEqual(numel(docs), 1 + nonAnchors);
+            testCase.verifyEqual(report.documents_inspected, numel(docs));
             testCase.verifyEqual(report.anchors_seen, 1);
+            % the whole point: the 2 non-anchors are in the denominator and in
+            % NEITHER anchor bucket.
+            testCase.verifyEqual( ...
+                report.documents_inspected - report.anchors_seen, nonAnchors);
             testCase.verifyEqual(numel(plan), 1);
         end
 

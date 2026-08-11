@@ -155,6 +155,13 @@ assertion.subject_statement = struct('variable', ...
 assertion.subject_assertion = struct();
 % the value now rides the `term` composite block (term_assertion pairs
 % subject_assertion x term); the CLASS name is unchanged.
+% STATUS 2026-08-11: DO NOT REVERT THIS TO `assertion.term_assertion`.
+% TestPathSPromotion/testAttributedSitePromoted errored on its first real
+% execution (run 31463051482, "Unrecognized field name term_assertion") reading
+% the OLD block; the test was stale and was corrected, this line was not.
+% V_eta/stable/term_assertion.json declares no fields of its own -- `value` is
+% inherited from `term` -- and 16 migrator sites in DID-matlab write `.term`
+% while 0 write a `term_assertion` block.
 assertion.term = struct('value', siteTerm);
 
 relation = struct();
