@@ -64,6 +64,16 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %        bodies in, 6 documents out, the `element` migrator contributing the
 %        first three).
 %
+%        CONFIRMED. test-eta-migrate-e2e.yml run 31505752419 (21254481c):
+%        "Running ndi.unittest.migrate.TestMigrateLocalEta ... Totals:
+%        4 Passed, 0 Failed, 0 Incomplete. 5.5637 seconds testing time."
+%        DENOMINATOR: 4 Test methods in this file, 4 collected, 4 run. The
+%        derivation above is therefore load-bearing rather than plausible: the
+%        only change between the 2-Failed run and this one is the animal
+%        `subject` in the two bath fixtures. Read the green narrowly all the
+%        same -- it says the graph closes on a 5-document fixture, not on a
+%        corpus.
+%
 %        NOTE, AND IT IS A FINDING RATHER THAN A CHANGE:
 %        `testStimulusBathResolvesToDose` still uses the subject-less fixture
 %        and is GREEN, in the same run, with those same 2 orphans present. It
