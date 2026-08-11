@@ -214,6 +214,7 @@ function result = local(path, options)
     strainReport = [];
     datasetEntitiesReport = [];
     epochMintReport = [];
+    epochAnchorReport = [];
     sessionAnchorReport = [];
     softwareDedupReport = [];
     ontologyRowReport = [];
@@ -304,7 +305,9 @@ function result = local(path, options)
         %       equivalent under another name, and this is NOT the deliberate
         %       omission that did2.convert.resolveDeferredBaths is (that one is
         %       superseded by a precise replacement which says so in its own
-        %       words, ndi.migrate.internal.stimulusBathToBath:90).
+        %       words -- ndi.migrate.internal.stimulusBathToBath, the comment
+        %       beginning "This is the LIVE-session counterpart of the coarse
+        %       did2.convert.resolveDeferredBaths.makeBathVeta").
         %
         %       ORDER: after (4), before (5). NO DEPENDENCY FORCES IT, and that
         %       is said rather than dressed up. It must land between the
@@ -335,6 +338,41 @@ function result = local(path, options)
         %       would fuse epochs from different sessions. Lives DID-side
         %       (did2.convert.epochMint) beside resolveDatasetEntities, so the
         %       corpus discovery harness runs the same code this does.
+        %   (5b) EPOCH ANCHOR FOLD: the `epoch_bounded_reference` documents
+        %       step (1) minted become `relative_reference`, base.id PRESERVED,
+        %       anchored to the `epoch` document step (5) just created for the
+        %       SAME (base.session_id, epoch-id string) PAIR.
+        %
+        %       WHY IT EXISTS AT ALL, stated plainly because it is a gap this
+        %       pipeline carried silently: stimulusBathToBath is the ONLY site
+        %       in either repo that mints an `epoch_bounded_reference` DOCUMENT,
+        %       and did2.convert.resolveSessionAnchors -- the pass that collapses
+        %       the retiring reference family -- matches exactly two class names,
+        %       `session_relative_reference` and `session_bounded_reference`
+        %       (resolveSessionAnchors.m:244-245). So a class the signed
+        %       time-reference decision RETIRES
+        %       (V_eta_time_reference_model_plan.md, TEAM-SIGN-OFF
+        %       [time_reference] 2026-08-08, migration table line 195) was being
+        %       minted, fully populated, and carried into migrated output with
+        %       nothing to consume it. It was invisible to the DID corpus gate
+        %       because that gate runs the coarse
+        %       did2.convert.resolveDeferredBaths instead, which NDI
+        %       deliberately substitutes this assembler for
+        %       (stimulusBathToBath, "the LIVE-session counterpart of the coarse
+        %       did2.convert.resolveDeferredBaths.makeBathVeta") -- two
+        %       pipelines emitting different
+        %       classes for one concept, and nothing comparing them.
+        %
+        %       ORDER: immediately after (5), and here the dependency IS real
+        %       rather than a judgement -- it consumes
+        %       `convertResult.epoch_mint.epoch_index`, which does not exist
+        %       until (5) has run. It reads that index rather than re-deriving
+        %       the mapping: the key is the PAIR (an `epochid.epochid` string is
+        %       reused across sessions), and a second implementation of a key
+        %       whose failure mode is a silent merge is not worth having.
+        %       Lives NDI-side because the class it folds is minted NDI-side;
+        %       the DID gate has nothing to fold.
+        %       See ndi.migrate.internal.epochAnchorFold.
         %   (6) SOFTWARE DEDUP (#25): pass 1 mints one `software` entity per
         %       consuming document, because a single-document migrator cannot
         %       know another document already minted the same program. Merge
@@ -441,6 +479,15 @@ function result = local(path, options)
                  'association as the did_v1 `epochid` string.'], ME.message);
         end
         try
+            [convertResult, epochAnchorReport] = ...
+                resolveEpochAnchorFold(convertResult, epochMintReport, options);
+        catch ME
+            warning('NDI:migrate:epochAnchorFoldFailed', ...
+                ['Second-pass epoch anchor fold failed (%s); leaving the ' ...
+                 'stimulator anchors as pass-1 epoch_bounded_reference ' ...
+                 'documents.'], ME.message);
+        end
+        try
             [convertResult, sessionAnchorReport] = ...
                 did2.convert.resolveSessionAnchors( ...
                 convertResult, ...
@@ -510,6 +557,7 @@ function result = local(path, options)
         'ontologyLabelSubjects', ontologyLabelReport, ...
         'datasetEntities',     datasetEntitiesReport, ...
         'epochMint',           epochMintReport, ...
+        'epochAnchorFold',     epochAnchorReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'softwareDedup',       softwareDedupReport);
 
@@ -609,7 +657,17 @@ function bodies = assembleDeferred(className, v1Body, resolver, targetVersion)
             [bathBody, timeRefBody] = ...
                 ndi.migrate.internal.stimulusBathToBath(v1Body, resolver, ...
                     targetVersion);
-            bodies = {timeRefBody, bathBody};
+            % timeRefBody is [] when V_eta declines to anchor (no epoch string,
+            % or a 'no_time' clock -- NO TIMES => NO REFERENCE). Passing an
+            % empty body on would quarantine it, which is exactly the hollow
+            % document the refusal exists to avoid, so it is dropped here and
+            % the manipulation simply carries no time_reference_1 (an OPTIONAL
+            % dependency).
+            if isempty(timeRefBody)
+                bodies = {bathBody};
+            else
+                bodies = {timeRefBody, bathBody};
+            end
         otherwise
             error('NDI:migrate:noAssembler', ...
                 'No session-aware assembler for deferred class "%s".', ...
@@ -1061,6 +1119,100 @@ function v = safeDocGet(doc, path)
         v = char(doc.get(path));
     catch
     end
+end
+
+function [convertResult, report] = resolveEpochAnchorFold(convertResult, ...
+    epochMintReport, options)
+%RESOLVEEPOCHANCHORFOLD V_eta second pass: fold the pass-1
+%   `epoch_bounded_reference` placeholders into the signed `relative_reference`,
+%   anchored to the `epoch` documents did2.convert.epochMint just minted.
+%
+%   ndi.migrate.internal.epochAnchorFold does the RESOLUTION (pure struct logic,
+%   no converter, no schema, no database) and returns a plan carrying a ready
+%   V_eta body per foldable anchor. This function does the FOLD, ONE AT A TIME
+%   and REVERTIBLY, through did2.convert.v1_to_v2 -- the same footing
+%   resolveOntologyLabelSubjects, Path-S and ensembleMembership use, and for the
+%   same reason: a re-fold that QUARANTINES must not replace a document that
+%   validated. Trading a non-gating passthrough for a gating quarantine is the
+%   `epochfiles_ingested` regression (2,484 documents) all over again.
+%
+%   THE base.id IS PRESERVED, so the `time_reference_1` edge the manipulation
+%   carries keeps resolving to the same document across the fold. The
+%   replacement supersedes the placeholder rather than joining it.
+%
+%   STATUS: WRITTEN 2026-08-11 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED.
+    report = [];
+    if ~strcmp(options.TargetVersion, 'V_eta')
+        return;     % `relative_reference` exists only in V_eta.
+    end
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+
+    % The index is epochMint's, not a re-derivation. If epochMint did not run,
+    % or ran and minted nothing, the fold refuses everything and says so with a
+    % denominator rather than silently doing nothing.
+    epochIndex = struct('session_id', {}, 'local_identifier', {}, ...
+                        'epoch_document_id', {});
+    if isstruct(epochMintReport) && isfield(epochMintReport, 'epoch_index')
+        epochIndex = epochMintReport.epoch_index;
+    end
+
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [plan, report] = ndi.migrate.internal.epochAnchorFold(structs, epochIndex);
+
+    % Fold outcomes belong to the same instrument, so they are initialised
+    % unconditionally -- a field that appears only on the success path is a
+    % counter that cannot report a zero.
+    report.anchors_refolded   = 0;
+    report.refold_quarantined = 0;
+    report.folded             = false;
+    if isempty(plan)
+        return;
+    end
+
+    replacedIds = {};
+    newDocs = {};
+    for k = 1:numel(plan)
+        try
+            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, ...
+                'Verbose',       false);
+        catch
+            report.refold_quarantined = report.refold_quarantined + 1;
+            continue;   % REVERT: keep the pass-1 placeholder
+        end
+        if ~isempty(sub.quarantine) || isempty(sub.migrated)
+            report.refold_quarantined = report.refold_quarantined + 1;
+            continue;   % REVERT
+        end
+        replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
+        newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
+        report.anchors_refolded = report.anchors_refolded + 1;
+    end
+
+    if isempty(replacedIds)
+        return;
+    end
+
+    kept = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if strcmp(d.className(), 'epoch_bounded_reference') ...
+                && any(strcmp(d.get('base.id'), replacedIds))
+            continue;   % superseded by the relative_reference carrying its id
+        end
+        kept{end+1} = d; %#ok<AGROW>
+    end
+    convertResult.migrated = [kept, newDocs];
+    convertResult.summary = recountSummary(convertResult);
+    report.folded = true;
 end
 
 function [convertResult, report] = resolveSoftwareDedup(convertResult)

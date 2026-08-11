@@ -46,6 +46,65 @@ classdef TestBathAssembly < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(dose, 'pharmacological_manipulation'));
         end
 
+        function testVetaCarriesTheStimulatorAsInstrument(testCase)
+            % T7: the instrument of an interaction is an edge on the
+            % interaction. This is what keeps the stimulator's identity when
+            % ndi.migrate.internal.epochAnchorFold drops the anchor's
+            % `element_id` -- `relative_reference` declares only `relative_to`,
+            % so without this edge the fold would LOSE which element's epoch the
+            % bath sat in. The stimulator is an element, and migrators_j.element
+            % promotes an element to a `subject` with its id PRESERVED.
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            r  = mockResolver('animal_1', 'dev_local_time');
+            dose = ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            testCase.verifyEqual(depValue(dose, 'instrument_id'), 'stim_1');
+        end
+
+        % ---- NO TIMES => NO REFERENCE (V_eta only) ----------------------
+        % The signed plan's rule. A reference that cannot name a time is a
+        % hollow document: it validates, it is counted, and it says nothing.
+
+        function testVetaEmitsNoAnchorForANoTimeClock(testCase)
+            % 'no_time' is NDI's assertion that a thing keeps no time at all
+            % (+file/navigator.m:185), never a timeline a time is expressed on.
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            r  = mockResolver('animal_1', 'no_time');
+            [dose, timeRef] = ...
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            testCase.verifyEmpty(timeRef);
+            % time_reference_# is an OPTIONAL dependency, so the absence costs
+            % nothing and asserts nothing.
+            testCase.verifyEmpty(depValue(dose, 'time_reference_1'));
+            testCase.verifyEqual(depValue(dose, 'subject_id'), 'animal_1');
+        end
+
+        function testVetaEmitsNoAnchorWhenThereIsNoEpochString(testCase)
+            % `epochid.epochid` is mustBeNonEmpty on the V_eta schema, so an
+            % empty one is a QUARANTINE today. Declining to mint turns a
+            % quarantined document into an honest absence.
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            v1.epochid = struct('epochid', '');
+            r  = mockResolver('animal_1', 'dev_local_time');
+            [dose, timeRef] = ...
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_eta');
+            testCase.verifyEmpty(timeRef);
+            testCase.verifyEmpty(depValue(dose, 'time_reference_1'));
+        end
+
+        function testTheGuardIsVetaOnlyAndOlderTargetsAreUntouched(testCase)
+            % The retirement is a V_eta decision. V_zeta/V_epsilon keep the
+            % behaviour they are green with, no_time clock included.
+            v1 = stimulusBathDoc('stim_1', 't00001');
+            r  = mockResolver('animal_1', 'no_time');
+            [bath, timeRef] = ...
+                ndi.migrate.internal.stimulusBathToBath(v1, r, 'V_zeta');
+            testCase.verifyNotEmpty(timeRef);
+            testCase.verifyEqual(timeRef.document_class.class_name, ...
+                'epoch_bounded_reference');
+            testCase.verifyEqual(depValue(bath, 'time_reference_1'), ...
+                timeRef.base.id);
+        end
+
         function testZetaStillEmitsBath(testCase)
             % the older target is unchanged: a `bath` (pharmacological_manipulation)
             v1 = stimulusBathDoc('stim_1', 't00001');

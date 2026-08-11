@@ -4,8 +4,16 @@ name: V_eta migrate assemblers (fast)
 # (ndi.migrate.internal.*): the pure struct-assembly unit tests only -- no
 # database, no schema cache, no cloud, no full toolbox suite -- so a change to
 # stimulusBathToBath / stimulusPresentationToManipulation / bodyResolver /
-# pathSPromotion is validated in a couple of minutes instead of the full
-# run-tests.yml. The full suite stays the milestone gate.
+# pathSPromotion / epochAnchorFold / ontologyRowSubjects / ontologyLabelSubjects
+# is validated in a couple of minutes instead of the full run-tests.yml. The
+# full suite stays the milestone gate.
+#
+# THE runtests LIST BELOW IS EXPLICIT, SO IT IS ALSO A PLACE WORK CAN HIDE: a
+# test file that exists but is not named here does not run on a claude/**
+# branch, because run-tests.yml (which would sweep the whole package) triggers
+# only on main and Vnext. Two files sat in that gap. Add new
+# tests/+ndi/+unittest/+migrate/Test*.m to the list in the same commit that
+# adds the file.
 
 on:
   push:
@@ -66,12 +74,39 @@ jobs:
             catch ME
                 error('ndi.migrate.local failed to parse: %s', ME.message);
             end
+            % THIS LIST IS THE GATE, AND A TEST NOT IN IT IS NOT RUN AT ALL ON
+            % a claude/** branch. run-tests.yml sweeps the whole package
+            % (testToolboxNoCloud -> TestSuite.fromFolder("tests",
+            % "IncludingSubfolders", true)), but it triggers only on
+            % branches: ["main", "Vnext"], so it never fires here. Measured
+            % 2026-08-11:
+            %
+            %   DENOMINATOR: 11 workflow files; 16 .m in
+            %                tests/+ndi/+unittest/+migrate, of which 15 are
+            %                matlab.unittest.TestCase (FakeCloudClient is a
+            %                stub, not a test).
+            %   BEFORE:      6 of 15 ran on claude/** -- the 5 below plus
+            %                TestMigrateLocalEta (test-eta-migrate-e2e.yml).
+            %                TestOntologyRowSubjects and
+            %                TestOntologyLabelSubjects were written, reviewed,
+            %                and executed by NOTHING.
+            %   STILL UNRUN on claude/**: TestEnsembleMembership,
+            %                TestSoftwareDedup, TestStrainAssembly (same
+            %                second-pass assembler shape as the ones here, and
+            %                the same defect -- reported, not silently fixed),
+            %                plus TestMigrateLocal / TestMigrateCloud /
+            %                TestMigrateLocalZeta / TestMigrateLocalEpsilon,
+            %                which need a database or another target's
+            %                environment and belong to their own workflows.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestStimulusPresentation", ...
                 "ndi.unittest.migrate.TestBodyResolver", ...
                 "ndi.unittest.migrate.TestGratingValue", ...
-                "ndi.unittest.migrate.TestPathSPromotion"]);
+                "ndi.unittest.migrate.TestPathSPromotion", ...
+                "ndi.unittest.migrate.TestEpochAnchorFold", ...
+                "ndi.unittest.migrate.TestOntologyRowSubjects", ...
+                "ndi.unittest.migrate.TestOntologyLabelSubjects"]);
             disp(table(results));
             assert(sum([results.Failed]) == 0, ...
                 sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));
