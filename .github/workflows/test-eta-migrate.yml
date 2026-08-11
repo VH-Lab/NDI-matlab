@@ -115,6 +115,28 @@ jobs:
             %   NOTE a naive substring grep reports TestMigrateLocal as covered:
             %   "TestMigrateLocal" is a prefix of TestMigrateLocalEta/Zeta/
             %   Epsilon. It is named by NO workflow. Match on word boundaries.
+            %
+            %   RESULT OF THE FIRST EXECUTION (run 31463051482, af840428f):
+            %   all three PASSED on their first ever run -- 13/13
+            %   TestEnsembleMembership, 15/15 TestSoftwareDedup, 17/17
+            %   TestStrainAssembly, every declared Test method collected, all
+            %   with non-zero durations. READ THAT NARROWLY. These tests were
+            %   written by the same author as the assemblers, in the same
+            %   session, with no MATLAB available -- so green proves the pair is
+            %   SELF-CONSISTENT and free of load/parse/arity faults. It is not
+            %   evidence the assemblers match NDI ground truth, which is what
+            %   "a test written from the same premise as the code cannot catch
+            %   the code" warns about. The corpus gate remains the real check.
+            %
+            %   The job is still RED, and both failures PREDATE this commit --
+            %   they reproduce identically on the parent (run 31460488423,
+            %   e3795c2f7, also "2 migrate-assembler test(s) failed"):
+            %     TestPathSPromotion/testAttributedSitePromoted        Errored.
+            %     TestEpochAnchorFold/
+            %       testNonAnchorDocumentsAreInspectedButNotCountedAsAnchors
+            %                                          Failed by verification.
+            %   Neither was touched here; adding three classes did not cause
+            %   them and did not fix them.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestStimulusPresentation", ...
