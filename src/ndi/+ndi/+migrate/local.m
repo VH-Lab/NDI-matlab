@@ -308,10 +308,23 @@ function result = local(path, options)
         %       part-subject. Run AFTER the deferrals so a manipulation the
         %       deferral emits can be a Path-S retarget candidate.
         %   (3) ENSEMBLE MEMBERSHIP: each `ensemble` map document becomes
-        %       `member_of` edges (neuron-subject -> ensemble group-subject)
-        %       plus `derived_from` provenance for the combined-binary cache.
+        %       `member_of` edges (neuron-subject -> ensemble group-subject,
+        %       EPOCH-SCOPED, carrying column order in `sequence`) plus
+        %       `derived_from` provenance for the combined-binary cache.
         %       Adds only; drops nothing (the verify-before-delete gate has not
         %       run). See ndi.migrate.internal.ensembleMembership.
+        %
+        %       ORDER: MOVED to after (7)/epochMint, FOR A REAL REASON, and it
+        %       is the same reason (7e) states. The signed model requires the
+        %       edges to be epoch-scoped -- the recorded neuron set changes
+        %       epoch to epoch, so an unscoped roster flattens a per-epoch
+        %       fact -- and the `epoch` documents those edges point at exist
+        %       only after epochMint. Run before it, this pass could emit
+        %       nothing but unscoped edges, which is what it did.
+        %
+        %       AN EPOCH THAT DOES NOT RESOLVE still gets its edge, UNSCOPED,
+        %       counted in its own field. Membership is preserved; only the
+        %       per-epoch fact is missing, and it is never missing silently.
         %   (4) STRAIN ASSEMBLY: the unattached `openminds` Strain documents
         %       become `strain` entities (ids preserved), consuming their
         %       Species / GeneticStrainType fragments. See
@@ -634,14 +647,6 @@ function result = local(path, options)
                  'anatomical loci located-by-default.'], ME.message);
         end
         try
-            [convertResult, ensembleReport] = ...
-                resolveEnsembleMembership(convertResult, options);
-        catch ME
-            warning('NDI:migrate:ensembleMembershipFailed', ...
-                ['Second-pass ensemble membership failed (%s); leaving the ' ...
-                 'ensemble map documents as passthrough.'], ME.message);
-        end
-        try
             [convertResult, strainReport] = ...
                 resolveStrainAssembly(convertResult, options);
         catch ME
@@ -681,6 +686,14 @@ function result = local(path, options)
             warning('NDI:migrate:epochMintFailed', ...
                 ['Second-pass epoch mint failed (%s); leaving the epoch ' ...
                  'association as the did_v1 `epochid` string.'], ME.message);
+        end
+        try
+            [convertResult, ensembleReport] = resolveEnsembleMembership( ...
+                convertResult, epochMintReport, options);
+        catch ME
+            warning('NDI:migrate:ensembleMembershipFailed', ...
+                ['Second-pass ensemble membership failed (%s); leaving the ' ...
+                 'ensemble map documents as passthrough.'], ME.message);
         end
         try
             [convertResult, epochAnchorReport] = ...
@@ -1021,7 +1034,8 @@ function convertResult = resolvePathS(convertResult, options)
     convertResult.summary = recountSummary(convertResult);
 end
 
-function [convertResult, report] = resolveEnsembleMembership(convertResult, options)
+function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
+    epochMintReport, options)
 %RESOLVEENSEMBLEMEMBERSHIP V_eta second pass: turn each `ensemble` map document
 %   into `member_of` edges (each neuron-subject -> the ensemble group-subject,
 %   carrying its column order) plus `derived_from` provenance recording that the
@@ -1049,8 +1063,28 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, opti
 %   question, mirroring NDI's own readtimeseries lookup
 %   (+ndi/+element/timeseries.m:56-70).
 %
+%   ORDER: AFTER did2.convert.epochMint, FOR A REAL REASON -- the same reason
+%   sub-pass (7e) states. The signed model requires the `member_of` edges to be
+%   EPOCH-SCOPED, because the recorded neuron set changes epoch to epoch; an
+%   unscoped roster silently flattens a per-epoch fact. The epoch DOCUMENT ids
+%   those edges point at exist only after epochMint runs, so this pass placed
+%   before it can only emit unscoped edges. It used to run before it.
+%
+%   The resolver below is built from epochMint's OWN index rows, keyed on the
+%   PAIR (base.session_id, epoch string) exactly as epochAnchorFold keys them
+%   -- never on the string alone, because epochMint measured `epochid.epochid`
+%   REUSED ACROSS SESSIONS in 142 of corpus B's 149 distinct ids, and grouping
+%   on the string would fuse epochs from different animals.
+%
+%   WHEN AN EPOCH DOES NOT RESOLVE the edge is still emitted, UNSCOPED, and
+%   counted in its own named field -- membership is preserved (dropping it
+%   would lose the roster outright) while the per-epoch fact is not. The three
+%   reasons are counted separately (REPORT.maps_unscoped_no_resolver /
+%   _no_epoch_string / _epoch_unresolved) because they have different remedies.
+%
 %   See ndi.migrate.internal.ensembleMembership for what is deliberately not
-%   built yet (epoch-scoping the edges, and the `sampled_body` cache document).
+%   built yet (the `sampled_body` cache document and its T6 `is_cache` marker,
+%   neither of which exists in the built schema set).
     report = [];
     docs = convertResult.migrated;
     if isempty(docs)
@@ -1060,7 +1094,35 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, opti
     for k = 1:numel(docs)
         structs{k} = docs{k}.toStruct();
     end
-    [kept, minted, report] = ndi.migrate.internal.ensembleMembership(structs);
+    % Index epochMint's own rows by the PAIR. Built here rather than inside the
+    % assembler so the assembler stays pure struct logic with no knowledge of
+    % epochMint's report shape -- the same split epochAnchorFold uses.
+    epochIndex = struct('session_id', {}, 'local_identifier', {}, ...
+                        'epoch_document_id', {});
+    if isstruct(epochMintReport) && isfield(epochMintReport, 'epoch_index')
+        epochIndex = epochMintReport.epoch_index;
+    end
+    epochByPair = containers.Map('KeyType', 'char', 'ValueType', 'char');
+    for k = 1:numel(epochIndex)
+        sid = charOrEmpty(epochIndex(k), 'session_id');
+        lid = charOrEmpty(epochIndex(k), 'local_identifier');
+        did_ = charOrEmpty(epochIndex(k), 'epoch_document_id');
+        if isempty(sid) || isempty(lid) || isempty(did_)
+            continue;   % half a key names no epoch
+        end
+        key = [sid '|' lid];
+        if ~isKey(epochByPair, key)
+            epochByPair(key) = did_;
+        end
+    end
+    % '' for anything that does not resolve -- the assembler then emits the
+    % edge UNSCOPED and counts it, and never emits an empty `epoch_id`.
+    resolver = @(epochStr, sessionId) lookupEpochDoc(epochByPair, epochStr, sessionId);
+
+    [kept, minted, report] = ndi.migrate.internal.ensembleMembership( ...
+        structs, 'EpochDocumentIdFor', resolver);
+    report.epoch_index_rows       = numel(epochIndex);
+    report.epoch_index_pairs_usable = double(epochByPair.Count);
     if ~report.changed
         return;
     end
@@ -1776,4 +1838,31 @@ function printSummary(result)
     fprintf('  quarantined:      %d\n', result.summary.quarantine_count);
     fprintf('  orphan refs:      %d (of %d edges)\n', ...
         result.references.orphan_count, result.references.edges_examined);
+end
+
+function v = charOrEmpty(s, name)
+%CHAROREMPTY The named field of S as char, or '' when absent or empty.
+v = '';
+if isstruct(s) && isscalar(s) && isfield(s, name) && ~isempty(s.(name))
+    v = char(s.(name));
+end
+end
+
+function docId = lookupEpochDoc(epochByPair, epochStr, sessionId)
+%LOOKUPEPOCHDOC The `epoch` document id for (SESSIONID, EPOCHSTR), or ''.
+%   THE KEY IS THE PAIR, NEVER THE STRING. epochMint measured
+%   `epochid.epochid` reused across sessions in 142 of corpus B's 149 distinct
+%   ids, so a string-only lookup would hand back an epoch from another
+%   session's recording. Half a key is not a key: a missing session id
+%   resolves to nothing rather than to a guess.
+docId = '';
+epochStr  = char(epochStr);
+sessionId = char(sessionId);
+if isempty(epochStr) || isempty(sessionId)
+    return;
+end
+key = [sessionId '|' epochStr];
+if isKey(epochByPair, key)
+    docId = epochByPair(key);
+end
 end

@@ -376,6 +376,102 @@ classdef TestEnsembleMembership < matlab.unittest.TestCase
             testCase.verifyFalse(report.verify_before_delete_clear);
         end
 
+        % ============ epoch scoping: WHY an edge is unscoped ================
+        % The signed model requires EPOCH-SCOPED member_of edges. When the
+        % epoch does not resolve the edge is still emitted (dropping it would
+        % lose the roster) but it is never unscoped SILENTLY -- and the three
+        % reasons are counted apart, because they have different remedies.
+
+        function testUnresolvedEpochStillMintsButIsCountedApart(testCase)
+            % A resolver that knows no epochs: the edges must survive, carry
+            % NO epoch_id, and land in the `epoch_unresolved` bucket -- not in
+            % `no_epoch_string`, because the document HAS an epoch string.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            resolver = @(epochStr, sessionId) '';
+
+            [~, minted, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', resolver);
+
+            testCase.verifyEqual(report.member_of_minted, 1);
+            testCase.verifyEqual(report.epoch_scoped_edges, 0);
+            testCase.verifyEqual(report.unscoped_edges, ...
+                report.member_of_minted + report.derived_from_minted);
+            testCase.verifyEqual(report.maps_unscoped_epoch_unresolved, 1);
+            testCase.verifyEqual(report.maps_unscoped_no_epoch_string, 0);
+            testCase.verifyEqual(report.maps_unscoped_no_resolver, 0);
+            testCase.verifyEqual(report.maps_epoch_scoped, 0);
+            for k = 1:numel(minted)
+                names = {minted{k}.depends_on.name};
+                testCase.verifyFalse(any(strcmp(names, 'epoch_id')));
+            end
+        end
+
+        function testMapWithNoEpochStringIsItsOwnReason(testCase)
+            % No epochid on the document at all: a source-data fact, distinct
+            % from a resolver that failed.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            map = firstOfClass(structs, 'ensemble');
+            map.epochid = struct('epochid', '');
+            structs = replaceClass(structs, 'ensemble', map);
+            resolver = @(epochStr, sessionId) ['epochdoc_' epochStr];
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', resolver);
+            testCase.verifyEqual(report.maps_unscoped_no_epoch_string, 1);
+            testCase.verifyEqual(report.maps_unscoped_epoch_unresolved, 0);
+            testCase.verifyEqual(report.member_of_minted, 1);
+            testCase.verifyEqual(report.unscoped_edges, ...
+                report.member_of_minted + report.derived_from_minted);
+        end
+
+        function testNoResolverIsItsOwnReasonNotAFailedLookup(testCase)
+            % Nothing wired: a caller/order problem, and it must not be
+            % reported as though an epoch failed to resolve.
+            structs = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership(structs);
+            testCase.verifyEqual(report.maps_unscoped_no_resolver, 1);
+            testCase.verifyEqual(report.maps_unscoped_epoch_unresolved, 0);
+            testCase.verifyEqual(report.maps_unscoped_no_epoch_string, 0);
+            testCase.verifyFalse(report.epoch_scope_available);
+        end
+
+        function testScopedAndUnscopedEdgesAccountForEveryEdge(testCase)
+            % One epoch resolves, one does not. Every emitted edge lands in
+            % exactly one of the two buckets -- no edge is uncounted.
+            a = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1'});
+            b = mapOnly('ens_1', 'epoch_b', {'nrn_1'});
+            structs = [a, b];
+            resolver = @resolveOnlyA;
+
+            [~, ~, report] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', resolver);
+            testCase.verifyEqual(report.maps_epoch_scoped, 1);
+            testCase.verifyEqual(report.maps_unscoped_epoch_unresolved, 1);
+            testCase.verifyEqual( ...
+                report.epoch_scoped_edges + report.unscoped_edges, ...
+                report.member_of_minted + report.derived_from_minted);
+        end
+
+        function testScopingSeparatesRostersThatWouldOtherwiseCollapse(testCase)
+            % THE POINT OF THE REORDER. Two epochs, same roster: unscoped they
+            % dedupe to one set of edges and the per-epoch fact is lost;
+            % scoped they stay two. This pins the behaviour the signed model
+            % asks for, and the count change the corpus should show.
+            a = ensembleCorpus('ens_1', 'epoch_a', {'nrn_1', 'nrn_2'});
+            b = mapOnly('ens_1', 'epoch_b', {'nrn_1', 'nrn_2'});
+            structs = [a, b];
+
+            [~, ~, unscoped] = ndi.migrate.internal.ensembleMembership(structs);
+            resolver = @(epochStr, sessionId) ['epochdoc_' epochStr];
+            [~, ~, scoped] = ndi.migrate.internal.ensembleMembership( ...
+                structs, 'EpochDocumentIdFor', resolver);
+
+            testCase.verifyEqual(unscoped.member_of_minted, 2);
+            testCase.verifyEqual(scoped.member_of_minted, 4);
+            testCase.verifyEqual(scoped.maps_epoch_scoped, 2);
+            testCase.verifyEqual(scoped.unscoped_edges, 0);
+        end
+
         function testEmptyCorpusIsInertAndStillReports(testCase)
             [kept, minted, report] = ndi.migrate.internal.ensembleMembership({});
             testCase.verifyEmpty(kept);
@@ -539,6 +635,16 @@ for k = 1:numel(bodies)
     out{end+1} = bodies{k}; %#ok<AGROW>
 end
 bodies = out;
+end
+
+function docId = resolveOnlyA(epochStr, sessionId) %#ok<INUSD>
+% A resolver that knows 'epoch_a' and nothing else. Matches the hook's
+% signature f(epochidString, sessionId) so it can be passed as @resolveOnlyA
+% rather than wrapped in an anonymous function.
+docId = '';
+if strcmp(epochStr, 'epoch_a')
+    docId = 'epochdoc_epoch_a';
+end
 end
 
 function v = depValue(s, name)

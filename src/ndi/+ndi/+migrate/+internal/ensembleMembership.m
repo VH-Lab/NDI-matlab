@@ -141,17 +141,26 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %            ndi.migrate.local already calls it and already feeds that index to
 %            resolveEpochAnchorFold (local.m:675, 1447-1453).
 %
-%      WHAT ACTUALLY BLOCKS IT: `resolveEnsembleMembership` runs at
-%      local.m:638, and `epochMint` runs at local.m:675 -- this pass runs
-%      BEFORE the epochs it would point at exist. The fix is to order it after
-%      epochMint and pass the resolver, exactly as sub-pass (7e) valid
-%      intervals is ordered ("ORDER: after (7) FOR A REAL REASON, not for
-%      symmetry. It reads the `epoch` documents epochMint appends; run before
-%      them it refuses every interval and changes nothing"). NOT DONE HERE:
-%      it changes emitted edge COUNTS on real corpora (one roster per epoch
-%      instead of one collapsed roster), epochMint's own header still reads
-%      "WRITTEN 2026-08-10, NEVER EXECUTED", and no MATLAB exists in this
-%      container to test the reorder. It is reported rather than attempted.
+%      WHAT ACTUALLY BLOCKED IT WAS PASS ORDER, AND THAT IS NOW FIXED (team
+%      decision, 2026-08-11). `resolveEnsembleMembership` ran at local.m:638
+%      while `epochMint` ran at local.m:675, so this pass ran BEFORE the
+%      epochs it points at existed and could emit nothing but unscoped edges.
+%      It is now ordered AFTER epochMint and receives a resolver built from
+%      epochMint's own `epoch_index`, exactly as sub-pass (7e) valid intervals
+%      is ordered ("ORDER: after (7) FOR A REAL REASON, not for symmetry. It
+%      reads the `epoch` documents epochMint appends; run before them it
+%      refuses every interval and changes nothing").
+%
+%      THE EDGE COUNTS MOVE, AND THE EXPECTED MOVEMENT IS A PREDICTION, NOT A
+%      MEASUREMENT. Scoping separates the dedupe key, so an ensemble recorded
+%      over N epochs with the same roster now yields N rosters of edges where
+%      it previously yielded one -- which is the point (the per-epoch roster
+%      is the fact the signed model exists to preserve). NO CORPUS HAS RUN
+%      THIS. epochMint's own header still reads "WRITTEN 2026-08-10, NEVER
+%      EXECUTED", so the next corpus run is the FIRST measurement of the two
+%      passes together, and the numbers may move for reasons neither this
+%      comment nor its author anticipated. Read any figure quoted for this
+%      pass as a prediction until a corpus prints one.
 %
 %      Note the key must stay the PAIR (session_id, epoch string): epochMint
 %      measured `epochid.epochid` strings REUSED ACROSS SESSIONS in 142 of
@@ -220,6 +229,15 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %   block survives verbatim. The writer agrees with the reader:
 %   +ndi/element.m:382-393 mints `element_epoch` and sets `element_id`, and
 %   +ndi/+element/timeseries.m:114-116 attaches `epoch_binary_data.vhsb`.
+%
+%   DO NOT RE-SIMPLIFY THE THREE BUCKETS BELOW INTO ONE. The whole failure
+%   this guards against is a gate that reads a clean zero on a corpus where
+%   every spike train is missing, and then AUTHORISES DROPPING THE ONLY COPY
+%   of the combined binary. Any collapse of these buckets -- into a single
+%   "trains_missing", into a boolean, into "stranded" -- reintroduces exactly
+%   that, because it makes "the data is not there" indistinguishable from
+%   "the data is there and I looked in the wrong place". The buckets are the
+%   instrument; their separation IS the safety property, not presentation.
 %
 %   TRAIN PRESENCE IS THEREFORE REPORTED IN THREE BUCKETS, because "no train
 %   anywhere" and "trains exist but not under this epoch id" are different
@@ -305,6 +323,12 @@ report.cache_carriers_resolved  = 0;   % ... that are present in the migrated se
 report.member_of_minted         = 0;
 report.derived_from_minted      = 0;
 report.epoch_scoped_edges       = 0;
+report.unscoped_edges           = 0;   % emitted, but NOT epoch-scoped
+% Why a map could not be scoped -- three distinct facts, never summed.
+report.maps_epoch_scoped              = 0;
+report.maps_unscoped_no_resolver      = 0;  % caller wired no resolver
+report.maps_unscoped_no_epoch_string  = 0;  % document carries no epochid
+report.maps_unscoped_epoch_unresolved = 0;  % epochid named no minted epoch
 report.epoch_scope_available    = ~isempty(options.EpochDocumentIdFor);
 report.changed                  = false;
 
@@ -383,7 +407,20 @@ for i = 1:numel(structs)
 
     sessionId = baseField(s, 'session_id', '');
     ds        = baseField(s, 'datestamp', '2024-01-01T00:00:00.000Z');
-    epochKey  = epochScope(s, sessionId, options.EpochDocumentIdFor);
+    [epochKey, epochStatus] = epochScope(s, sessionId, options.EpochDocumentIdFor);
+    switch epochStatus
+        case 'scoped'
+            report.maps_epoch_scoped = report.maps_epoch_scoped + 1;
+        case 'no_resolver'
+            report.maps_unscoped_no_resolver = ...
+                report.maps_unscoped_no_resolver + 1;
+        case 'no_epoch_string'
+            report.maps_unscoped_no_epoch_string = ...
+                report.maps_unscoped_no_epoch_string + 1;
+        case 'unresolved'
+            report.maps_unscoped_epoch_unresolved = ...
+                report.maps_unscoped_epoch_unresolved + 1;
+    end
 
     % the cache carrier: the migrated acquisition_epoch that holds the combined
     % marked-point-process binary (element_epoch -> acquisition_epoch is a
@@ -458,6 +495,11 @@ for i = 1:numel(structs)
             report.member_of_minted = report.member_of_minted + 1;
             if ~isempty(epochKey)
                 report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
+            else
+                % Emitted, but carrying no epoch: membership is preserved
+                % (dropping it would lose the roster outright) while the
+                % per-epoch fact is NOT. Counted, never silent.
+                report.unscoped_edges = report.unscoped_edges + 1;
             end
         end
 
@@ -470,6 +512,8 @@ for i = 1:numel(structs)
                 report.derived_from_minted = report.derived_from_minted + 1;
                 if ~isempty(epochKey)
                     report.epoch_scoped_edges = report.epoch_scoped_edges + 1;
+                else
+                    report.unscoped_edges = report.unscoped_edges + 1;
                 end
             end
         end
@@ -528,20 +572,33 @@ end
 
 % ===================== struct accessors ================================
 
-function key = epochScope(s, sessionId, resolverFcn)
-%EPOCHSCOPE The epoch DOCUMENT id for this map, or '' when unavailable.
+function [key, status] = epochScope(s, sessionId, resolverFcn)
+%EPOCHSCOPE The epoch DOCUMENT id for this map, and WHY when there is none.
+%   An unscoped edge is not one fact but three, and they have different
+%   remedies: no resolver wired (a caller/order problem), no epoch string on
+%   the document (a source-data fact), or a string that named no minted epoch
+%   (an epochMint coverage gap). Collapsing them into one empty string is how
+%   "it did not resolve" becomes indistinguishable from "there was nothing to
+%   resolve".
 key = '';
+epochStr = epochIdString(s);
 if isempty(resolverFcn)
+    status = 'no_resolver';
     return;
 end
-epochStr = epochIdString(s);
 if isempty(epochStr)
+    status = 'no_epoch_string';
     return;
 end
 try
     key = char(resolverFcn(epochStr, sessionId));
 catch
-    key = '';
+    key = '';   % a resolver that throws is a resolver that did not resolve
+end
+if isempty(key)
+    status = 'unresolved';
+else
+    status = 'scoped';
 end
 end
 
