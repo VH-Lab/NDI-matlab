@@ -330,9 +330,7 @@ for i = 1:numel(structs)
         continue;
     end
     report.train_documents_seen = report.train_documents_seen + 1;
-    if ~hasBinaryPayload(structs{i})
-        continue;   % an epoch document with no bytes is not a train
-    end
+    % MUTANT M1: binary-payload gate removed
     report.train_documents_with_binary = report.train_documents_with_binary + 1;
     ownerId = depVal(structs{i}, 'element_id');
     if isempty(ownerId)
@@ -371,10 +369,7 @@ for i = 1:numel(structs)
 
     % A map document is PER EPOCH, so ensemble_maps_seen over-counts ensembles.
     % Both denominators are reported rather than one standing in for the other.
-    if ~isKey(seenGroup, groupId)
-        seenGroup(groupId) = true;
-        report.distinct_ensembles_seen = report.distinct_ensembles_seen + 1;
-    end
+    report.distinct_ensembles_seen = report.distinct_ensembles_seen + 1;  % MUTANT M5
     mapEpochStr = epochIdString(s);
     if ~isempty(mapEpochStr) && ~isKey(seenEpoch, mapEpochStr)
         seenEpoch(mapEpochStr) = true;
@@ -406,7 +401,7 @@ for i = 1:numel(structs)
         % counted rather than silently skipped: this map contributes no
         % membership at all, and "fell through" must never be inferable only
         % by subtracting two other counters.
-        report.ensemble_maps_no_neurons = report.ensemble_maps_no_neurons + 1;
+        % MUTANT M4: no-neuron maps no longer counted
         continue;
     end
     report.ensemble_maps_used = report.ensemble_maps_used + 1;
@@ -439,7 +434,7 @@ for i = 1:numel(structs)
                 seenNoTrain(neuronId) = true;
                 report.neurons_missing_train_ids{end+1} = neuronId; %#ok<AGROW>
             end
-        elseif ~isempty(mapEpochStr) && any(strcmp(trainEpochs(neuronId), mapEpochStr))
+            elseif true  % MUTANT M2: epoch match ignored
             report.neuron_trains_present_this_epoch = ...
                 report.neuron_trains_present_this_epoch + 1;
         else
