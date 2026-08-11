@@ -188,7 +188,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
             % and the whole graph still closes
             verifyEqual(testCase, result.references.orphan_count, 0, ...
-                'the fold produced orphans');
+                ['the graph does not close. ' resultDiag(result)]);
 
             % --- `relative_to` names the epoch epochMint actually minted ----
             epochDoc = findByClass(result.destination, 'epoch');
@@ -547,5 +547,54 @@ if isfield(result, 'quarantine')
 end
 quar = '(none)';
 if ~isempty(reasons); quar = strjoin(reasons, ' | '); end
-s = sprintf('migrated by_class = {%s}; quarantine = {%s}', byClass, quar);
+% ORPHANS BY NAME, not by count. A bare `orphan_count = 2` says the graph does
+% not close and nothing else; the three fields did2.validate.references already
+% records -- which document, which edge, which missing target -- are what turns
+% that into something actionable, and they were being thrown away at the point
+% of failure. Printed unconditionally so a PASSING diagnostic (0 orphans) and a
+% failing one are the same shape.
+orph = '(none)';
+if isfield(result, 'references') && isstruct(result.references) ...
+        && isfield(result.references, 'orphans')
+    rows = {};
+    for k = 1:numel(result.references.orphans)
+        o = result.references.orphans(k);
+        rows{end+1} = sprintf('%s(%s).%s -> %s', ...
+            charField(o, 'doc_class'), charField(o, 'doc_id'), ...
+            charField(o, 'edge_name'), charField(o, 'edge_document_id')); %#ok<AGROW>
+    end
+    if ~isempty(rows); orph = strjoin(rows, ' | '); end
+end
+s = sprintf(['migrated by_class = {%s}; quarantine = {%s}; ' ...
+    'orphans (%d of %d edges examined over %d docs) = {%s}'], ...
+    byClass, quar, orphanCount(result), edgesExamined(result), ...
+    totalDocs(result), orph);
+end
+
+function n = orphanCount(result)
+n = -1;
+if isfield(result, 'references') && isfield(result.references, 'orphan_count')
+    n = result.references.orphan_count;
+end
+end
+
+function n = edgesExamined(result)
+n = -1;
+if isfield(result, 'references') && isfield(result.references, 'edges_examined')
+    n = result.references.edges_examined;
+end
+end
+
+function n = totalDocs(result)
+n = -1;
+if isfield(result, 'references') && isfield(result.references, 'total_docs')
+    n = result.references.total_docs;
+end
+end
+
+function v = charField(s, name)
+v = '';
+if isstruct(s) && isfield(s, name) && (ischar(s.(name)) || isstring(s.(name)))
+    v = char(s.(name));
+end
 end
