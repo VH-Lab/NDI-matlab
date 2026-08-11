@@ -81,6 +81,44 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %        the point is that the corpus gate's headline condition (0 quarantine
 %        AND 0 orphans) had no representation at all in this file until now.
 %
+%   ---------------------------------------------------------------------
+%   CLOSED 2026-08-11: EVERY Test METHOD IN THIS FILE NOW ASKS ABOUT ORPHANS.
+%   ---------------------------------------------------------------------
+%   The note above records a gap and then leaves it open, and a partially
+%   represented invariant is the shape this project keeps paying for: two tests
+%   asserting `orphan_count == 0` while two others run the same pipeline and
+%   never ask reads, from the outside, as "the file checks orphans".
+%
+%       DENOMINATOR: 4 Test methods in this file.
+%         2 already asserted result.references.orphan_count == 0
+%             (testEpochAnchorFoldsToRelativeReferenceWithItsIdPreserved,
+%              testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase)
+%         2 did not, and both now do:
+%             testStimulusBathResolvesToDose            -- FIXTURE REPAIRED
+%             testStimulusPresentationBecomesGratingManipulation -- fixture
+%                                                          already complete
+%
+%   testStimulusBathResolvesToDose is repaired THE SAME WAY its siblings were,
+%   by adding the animal `subject` the two dangling edges name -- NOT by
+%   lowering the assertion. Its fixture is now exactly the fixture
+%   testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase already runs
+%   ({subject, stimulator element, element_epoch, stimulus_bath}, no `session`
+%   document), and that test asserted 0 orphans and passed in run 31505752419.
+%   So the expected count is derived from a green sibling on the same four
+%   bodies, not predicted.
+%
+%   testStimulusPresentationBecomesGratingManipulation already carried
+%   `makeSubject(subjId)` and needed no fixture change -- only the question. Its
+%   two elements both name that subject, so `element.m`'s lineageRelation
+%   `parent` resolves; the presentation's id is PRESERVED onto the
+%   visual_grating_manipulation (asserted three lines above the new check), so
+%   the stimulus_response edge that names it resolves too. THAT IS A DERIVATION,
+%   NOT A MEASUREMENT: nothing in this container can run it.
+%
+%   STATUS: NOT RUN. `command -v matlab octave octave-cli` returns nothing in
+%   the container these changes were written in. CI is the first execution, and
+%   the count above is what it will confirm or refute.
+%
 %   Gated three ways, skips cleanly otherwise:
 %     - mksqlite present (the v1 store is sqlite),
 %     - NDI_TEST_ETA truthy, and
@@ -131,7 +169,17 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             stimId  = 'aabb1122ccdd3344_5500000000000002';
             subjId  = 'aabb1122ccdd3344_5500000000000001';
             epochId = 'epoch_t00001';
+            % THE ANIMAL `subject` IS NOT DECORATION. Without it this fixture
+            % produces exactly 2 dangling edges, both naming `subjId`:
+            %   did2.convert.migrators_j.element.m  lineageRelation writes
+            %       depends_on {child, PARENT}, parent = the specimen id
+            %   ndi.migrate.internal.stimulusBathToBath  dose_manipulation
+            %       subject_id = resolver.subjectOfElement(stimulator), same id
+            % They were present and unseen for as long as this test has existed,
+            % because it never asked. Adding the document is the same repair the
+            % two anchor tests took, and it leaves every assertion below intact.
             bodies = { ...
+                jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeStimulatorElement(stimId, subjId)), ...
                 jsonencode(makeElementEpoch(stimId, epochId, 'dev_local_time')), ...
                 jsonencode(makeStimulusBath(stimId, epochId))};
@@ -139,6 +187,12 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 
             % no needsSessionContext deferral left behind
             assertNoDeferral(testCase, result);
+
+            % THE CORPUS GATE'S HEADLINE CONDITION, asked here for the first
+            % time. `0 quarantine AND 0 orphans` is the gate; this test drove a
+            % real pipeline end to end and only ever asked the first half.
+            verifyEqual(testCase, result.references.orphan_count, 0, ...
+                ['the graph does not close. ' resultDiag(result)]);
 
             % the bath became a dose_manipulation (NOT the retired `bath`)
             verifyTrue(testCase, isfield(result.summary.by_class, 'dose_manipulation'), ...
@@ -353,6 +407,18 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             % the presentation itself is consumed (assembled away)
             verifyFalse(testCase, isfield(result.summary.by_class, 'stimulus_presentation'), ...
                 'stimulus_presentation was not consumed by the second pass');
+
+            % THE CORPUS GATE'S HEADLINE CONDITION. This test was the file's
+            % other silent one: it runs the presentation assembler end to end
+            % and never asked whether the graph it rebuilt still closes. That
+            % matters most HERE, because this is the one path that CONSUMES a
+            % document other documents point at -- the stimulus_presentation is
+            % gone from by_class two lines above, and the only thing standing
+            % between that and a dangling `stimulus_presentation_id` is the id
+            % preservation asserted on manip.base.id. This turns that from an
+            % argument into a check.
+            verifyEqual(testCase, result.references.orphan_count, 0, ...
+                ['the graph does not close. ' resultDiag(result)]);
         end
 
     end
