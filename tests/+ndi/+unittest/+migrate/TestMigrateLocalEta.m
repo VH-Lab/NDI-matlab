@@ -43,6 +43,34 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
 %              `epoch_bounded_reference` was reaching a database on every run of
 %              this file.
 %
+%        BOTH bath fixtures here also carry the animal `subject`, and that is
+%        not decoration -- it is a REPAIR the orphan assertion forced. The two
+%        new tests assert `result.references.orphan_count == 0`, and on their
+%        first execution (run 31504881214, c9eb31266) both reported ACTUAL 2,
+%        in BOTH branches, i.e. invariant under the fold. Derived from the
+%        migrators rather than guessed: `makeStimulatorElement` names
+%        `subject_id = subjId`, and NO document with that id was in the batch,
+%        so the two edges that carry it dangled --
+%
+%          did2.convert.migrators_j.element.m:164-166  lineageRelation writes
+%              depends_on {child, PARENT}, parent = the specimen id
+%          ndi.migrate.internal.stimulusBathToBath   dose_manipulation
+%              subject_id = resolver.subjectOfElement(stimulator) = the same
+%              specimen id
+%
+%        -- which is exactly 2, matches the count, and matches that run's
+%        by_class {subject, term_assertion, directed_relation,
+%        acquisition_epoch, epoch_bounded_reference, dose_manipulation} (3 v1
+%        bodies in, 6 documents out, the `element` migrator contributing the
+%        first three).
+%
+%        NOTE, AND IT IS A FINDING RATHER THAN A CHANGE:
+%        `testStimulusBathResolvesToDose` still uses the subject-less fixture
+%        and is GREEN, in the same run, with those same 2 orphans present. It
+%        never asks about orphans. That test is deliberately left alone here --
+%        the point is that the corpus gate's headline condition (0 quarantine
+%        AND 0 orphans) had no representation at all in this file until now.
+%
 %   Gated three ways, skips cleanly otherwise:
 %     - mksqlite present (the v1 store is sqlite),
 %     - NDI_TEST_ETA truthy, and
@@ -128,6 +156,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             epochId = 'epoch_t00001';
             bodies = { ...
                 jsonencode(makeSessionDoc(sessId)), ...
+                jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeStimulatorElement(stimId, subjId)), ...
                 jsonencode(makeElementEpoch(stimId, epochId, 'dev_local_time')), ...
                 jsonencode(makeStimulusBath(stimId, epochId))};
@@ -233,6 +262,7 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             subjId  = 'aabb1122ccdd3344_5500000000000001';
             epochId = 'epoch_t00001';
             bodies = { ...
+                jsonencode(makeSubject(subjId)), ...
                 jsonencode(makeStimulatorElement(stimId, subjId)), ...
                 jsonencode(makeElementEpoch(stimId, epochId, 'dev_local_time')), ...
                 jsonencode(makeStimulusBath(stimId, epochId))};
