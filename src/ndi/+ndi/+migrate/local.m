@@ -247,6 +247,7 @@ function result = local(path, options)
     % Empty means "did not run" (a non-V_eta target, or the sub-pass threw).
     ensembleReport = [];
     strainReport = [];
+    subjectStrainReport = [];
     openmindsCitationsReport = [];
     datasetEntitiesReport = [];
     epochMintReport = [];
@@ -424,6 +425,53 @@ function result = local(path, options)
         %       either, because the duplicates SHARE the surviving id.
         %       See ndi.migrate.internal -- deliberately NOT there: the pass is
         %       DID-side so the gate and production run the same code.
+        %   (4c) SUBJECT-ATTACHED STRAIN ASSEMBLY (#78): the OTHER half of the
+        %       strain family, and the half with the volume in it. Where (4)
+        %       assembles the handful of UNATTACHED `openminds` Strain
+        %       documents, this one handles `openminds_subject` -- the Strain
+        %       objects the four SubjectInformationCreators build per table
+        %       row. Pass 1 migrates each 1->1 into a `term_assertion` and
+        %       drops the `openminds_#` links
+        %       (openminds_subject.m:52 `body.depends_on =
+        %       jCarrySubject(preBody, {'subject_id'})`, an ASSIGNMENT), so
+        %       after pass 1 the pedigree, the genetic strain type and the
+        %       species child are unreachable from the migrated set. This pass
+        %       mints one DEDUPLICATED `strain` entity per distinct strain,
+        %       puts `strain_id` back on the assertion, wires
+        %       `background_strain_#`, moves the `genetic strain type`
+        %       assertion onto the strain and drops the duplicate `species`
+        %       assertion the Strain's own Species child produces -- the four
+        %       "Migration consequences" of the signed model
+        %       (V_eta_openminds_family_record.md Part 6, TEAM-SIGN-OFF jess
+        %       2026-08-05).
+        %       See ndi.migrate.internal.subjectStrainAssembly.
+        %
+        %       IDS ARE NOT PRESERVED HERE and that is FORCED, not chosen --
+        %       the assertion already carries the source id (pass 1 keeps
+        %       `base` verbatim), and dedup collapses hundreds of documents to
+        %       one entity so at most one id could survive anyway. Safe here
+        %       and NOT safe for (4): the only place a strain document's id is
+        %       captured into ordinary data is `bacteriaStrain`
+        %       (haley/doImport.m:164,734), and the `strainDoc` there is the
+        %       return of the BARE call at :87/:706 -- (4)'s documents, not
+        %       these. Checked before it was written, not assumed.
+        %
+        %       ORDER: after (4b), before (5). NO DEPENDENCY FORCES IT and that
+        %       is said rather than dressed up. It commutes with (4), (4a) and
+        %       (4b): (4) reads only the bare `openminds` class and this one
+        %       only ever touches a v1 body whose MIGRATED counterpart is a
+        %       `term_assertion`, so neither can see the other's documents;
+        %       (4a) touches the citation graph, (4b) the `dataset` layer, and
+        %       neither reads or writes a `term_assertion` or a `strain`. It
+        %       is placed after (4b) rather than beside (4) so the relative
+        %       order of the two DID-side passes -- which is pinned to the
+        %       three DID call sites -- is not disturbed by an NDI-only
+        %       insertion.
+        %
+        %       IT NEEDS THE did_v1 BODIES, which is what makes it NDI-side
+        %       (the same contract fact as ontologyRowSubjects and
+        %       imagedEntitySubjects: every DID-side pass is f(result,
+        %       options) and `result` never carries the bodies).
         %   (5) EPOCH MINT (#60): one `epoch` entity per distinct
         %       (base.session_id, epoch-id string). The KEY IS THE PAIR --
         %       an `epochid.epochid` string is reused across sessions (142 of
@@ -707,6 +755,20 @@ function result = local(path, options)
                  '`migrated_session_membership` edges in place.'], ME.message);
         end
         try
+            [convertResult, subjectStrainReport] = ...
+                resolveSubjectStrainAssembly(convertResult, bodies, options);
+        catch ME
+            warning('NDI:migrate:subjectStrainAssemblyFailed', ...
+                ['Second-pass subject-attached strain assembly failed (%s); ' ...
+                 'leaving every openMINDS strain assertion exactly as pass 1 ' ...
+                 'emitted it -- no `strain` entity, no `strain_id`, no ' ...
+                 'pedigree, and both the genetic-strain-type and the ' ...
+                 'duplicate species assertions still on the subject. That is ' ...
+                 'the state production is in without this pass, so a failure ' ...
+                 'here loses the go-forward representation and no fact.'], ...
+                ME.message);
+        end
+        try
             [convertResult, epochMintReport] = did2.convert.epochMint( ...
                 convertResult, ...
                 'Validate',      options.Validate, ...
@@ -882,6 +944,7 @@ function result = local(path, options)
     result.secondPass = struct( ...
         'ensembleMembership',  ensembleReport, ...
         'strainAssembly',      strainReport, ...
+        'subjectStrainAssembly', subjectStrainReport, ...
         'ontologyRowSubjects', ontologyRowReport, ...
         'ontologyLabelSubjects', ontologyLabelReport, ...
         'openmindsCitations',  openmindsCitationsReport, ...
@@ -1556,6 +1619,75 @@ function [convertResult, report] = resolveStrainAssembly(convertResult, options)
     convertResult.summary = recountSummary(convertResult);
 end
 
+function [convertResult, report] = resolveSubjectStrainAssembly(convertResult, bodies, options)
+%RESOLVESUBJECTSTRAINASSEMBLY V_eta second pass (#78): the openminds_subject
+%   half of the strain family -- one deduplicated `strain` entity per distinct
+%   strain, `strain_id` back on the assertion, the `background_strain_#`
+%   pedigree, the `genetic strain type` assertion moved onto the strain, and
+%   the duplicate `species` assertion dropped.
+%
+%   IT TAKES `bodies`, and that argument is why the pass is NDI-side rather
+%   than a preference. Pass 1 keeps only `subject_id` on the emitted
+%   `term_assertion` (did2.convert.migrators_j.openminds_subject:52), so the
+%   `openminds_#` links, the `backgroundStrain` strings and the fragment
+%   documents' contents are ALL unreachable from convertResult.migrated. Every
+%   DID-side pass is f(result, options) and `result` carries migrated /
+%   quarantine / summary and never the did_v1 bodies -- the same contract fact
+%   ndi.migrate.internal.ontologyRowSubjects and imagedEntitySubjects are
+%   NDI-side for.
+%
+%   ndi.migrate.internal.subjectStrainAssembly does the whole decision (pure
+%   struct logic, no converter, no schema). This wrapper does the two things
+%   that need the converter: rewrap the survivors (whose edges changed) and
+%   fold the minted `strain` bodies through did2.convert.v1_to_v2 at
+%   TargetVersion V_eta, where they are tagged schema_version 'V_eta' and are
+%   therefore short-circuited (isAlreadyTarget) to ensureClassBlocks +
+%   validate, the same footing Path-S, ensembleMembership and (4) use.
+%
+%   REPORT is [] when the pass did not run (no documents, or no bodies to read
+%   -- the already-migrated fast path hands back migrated bodies, in which case
+%   the report's own `v1_openminds_subject_bodies` is 0 and says so). Otherwise
+%   it carries its denominators first. REPORT.changed gates the rebuild.
+%
+%   A MINTED `strain` THAT QUARANTINES DOES NOT UNDO THE EDGES, and that is
+%   deliberate rather than overlooked: the `strain_id` values are minted here,
+%   so a quarantined strain leaves an edge naming a document that is not in
+%   the migrated set -- an ORPHAN, which the gate at the end of ndi.migrate.local
+%   counts and which is exactly the loud failure wanted. The alternative,
+%   silently dropping the edges, would leave a green run with the work
+%   undone. did2.convert.v1_to_v2's quarantine list is carried onto
+%   convertResult so the reason travels with it.
+    report = [];
+    docs = convertResult.migrated;
+    if isempty(docs) || isempty(bodies)
+        return;
+    end
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [kept, minted, report] = ...
+        ndi.migrate.internal.subjectStrainAssembly(bodies, structs);
+    if ~report.changed
+        return;
+    end
+    keptDocs = cell(1, numel(kept));
+    for k = 1:numel(kept)
+        keptDocs{k} = did2.document(kept{k});
+    end
+    convertResult.migrated = keptDocs;
+    if ~isempty(minted)
+        sub = did2.convert.v1_to_v2(minted, ...
+            'Validate',      options.Validate, ...
+            'SchemaCache',   options.SchemaCache, ...
+            'TargetVersion', options.TargetVersion, ...
+            'Verbose',       false);
+        convertResult.migrated = [convertResult.migrated, sub.migrated];
+        convertResult.quarantine = [convertResult.quarantine, sub.quarantine];
+    end
+    convertResult.summary = recountSummary(convertResult);
+end
+
 function [convertResult, report] = resolveDatasetEntitiesPass(convertResult, options)
 %RESOLVEDATASETENTITIESPASS V_eta second pass: finalize the dataset entity
 %   layer -- ONE canonical `dataset` per dataset id, and no
@@ -2018,9 +2150,20 @@ function printSummary(result)
     % (V_eta_ensemble_plan.md deferred task 4) and until this line it was
     % computed on every run and rendered by nothing -- stored at
     % result.secondPass.ensembleMembership and read by no printer, no
-    % workflow and no digest in any of the three repositories. The other 14
-    % second-pass reports are in the same position; only this one is claimed
-    % here, because only this one is the ensemble family's own gate.
+    % workflow and no digest in any of the three repositories.
+    %
+    % (This sentence used to continue "The other 14 second-pass reports are in
+    % the same position". THE NUMBER IS DELETED RATHER THAN CORRECTED: it is a
+    % hand-kept count sitting beside the thing it counts, it drifts one
+    % further every time a sub-pass is added, and it drifts in the reassuring
+    % direction -- fewer unrendered reports than there really are. The
+    % `result.secondPass` struct built above is its own denominator, and the
+    % standing fact is unchanged: MOST second-pass reports are still stored
+    % and rendered by nothing. Exactly two are rendered, and both for the same
+    % stated reason -- they are the sub-passes that can LOSE A DOCUMENT: this
+    % one, the ensemble verify-before-delete gate, and printSubjectStrainSummary
+    % below, which removes the moved genetic-strain-type and duplicate species
+    % assertions.)
     ensembleReport = [];
     if isfield(result, 'secondPass') && isstruct(result.secondPass) ...
             && isfield(result.secondPass, 'ensembleMembership')
@@ -2030,6 +2173,87 @@ function printSummary(result)
     for k = 1:numel(gateLines)
         fprintf('%s\n', gateLines{k});
     end
+    printSubjectStrainSummary(result);
+end
+
+function printSubjectStrainSummary(result)
+%PRINTSUBJECTSTRAINSUMMARY Render the #78 subject-strain report.
+%
+%   RENDERED, not merely stored, because this pass REMOVES DOCUMENTS -- the
+%   genetic-strain-type assertion and the duplicate species assertion. A pass
+%   that deletes and is measured by nothing is the defect this whole exercise
+%   is about (did2.convert.resolveSessionAnchors ran over 127,719 documents
+%   called from nothing for a day, and nothing was missing from any log
+%   because a pass that produces no output produces no missing output). The
+%   note above this function says the other 13 reports are still in that
+%   position; this one is claimed here for the same reason the ensemble gate
+%   is -- it is the only other sub-pass that can lose a document.
+    r = [];
+    if isfield(result, 'secondPass') && isstruct(result.secondPass) ...
+            && isfield(result.secondPass, 'subjectStrainAssembly')
+        r = result.secondPass.subjectStrainAssembly;
+    end
+    fprintf('  subject-strain assembly (#78):\n');
+    if isempty(r) || ~isstruct(r)
+        % NOT "nothing to do". Three different things produce this and none of
+        % them is a clean run: a non-V_eta target, an empty document set, or
+        % the pass threw and its warning is above.
+        fprintf(['    DID NOT RUN -- non-V_eta target, no documents, or the ' ...
+                 'pass threw (see the warning above). This is NOT "nothing ' ...
+                 'to assemble".\n']);
+        return;
+    end
+    fprintf(['    DENOMINATOR: %d did_v1 body(ies) read, %d migrated ' ...
+             'document(s) indexed (%d term_assertion, %d reference edge).\n'], ...
+        r.v1_bodies_inspected, r.documents_inspected, ...
+        r.term_assertions_indexed, r.reference_edges_indexed);
+    fprintf(['    openMINDS: %d body(ies), %d openminds_subject, %d of them ' ...
+             'Strain (%d Strain under another openminds class, untouched).\n'], ...
+        r.v1_openminds_bodies, r.v1_openminds_subject_bodies, ...
+        r.strain_docs_seen, r.strain_under_other_openminds_class);
+    if r.strain_docs_seen == 0
+        % The two zeroes that must never print the same. A batch with no
+        % openminds_subject bodies at all and a batch full of them that
+        % happens to carry no Strain are different facts.
+        fprintf(['    NO STRAIN DOCUMENT IN REACH -- nothing to assemble. ' ...
+                 'Read the openMINDS line above before reading this as ' ...
+                 'clean: 0 of 0 and 0 of many are different results.\n']);
+        return;
+    end
+    fprintf(['    strains: %d candidate(s) -> %d distinct (%d document(s) ' ...
+             'collapsed), %d incomplete, %d not in the migrated set, ' ...
+             '%d not a term_assertion.\n'], ...
+        r.strains_candidate, r.distinct_strains, r.strain_docs_collapsed, ...
+        r.strains_incomplete, r.strain_docs_not_in_migrated_set, ...
+        r.strain_docs_not_a_term_assertion);
+    fprintf(['    pedigree: %d reference(s) -> %d background_strain edge(s), ' ...
+             '%d unresolved, %d over max_count 2, %d cycle(s), ' ...
+             '%d not corroborated by an openminds_# edge.\n'], ...
+        r.background_refs_seen, r.background_edges, r.background_unresolved, ...
+        r.background_over_max, r.pedigree_cycles, ...
+        r.background_refs_not_in_openminds_edges);
+    fprintf('    strain_id: %d edge(s) attached, %d assertion(s) already had one.\n', ...
+        r.strain_id_edges_attached, r.strain_id_assertion_already_had_one);
+    fprintf(['    moved onto the strain: %d of %d genetic-strain-type ' ...
+             'assertion(s) removed; KEPT -- %d value not on the strain, ' ...
+             '%d shared with an unassembled strain, %d wrong/absent subject, ' ...
+             '%d pinned by an inbound edge, %d not a term_assertion.\n'], ...
+        r.gst_assertions_removed, r.gst_fragments_seen, ...
+        r.gst_kept_value_not_on_strain, r.gst_kept_shared_with_unassembled, ...
+        r.gst_kept_wrong_subject, r.gst_kept_pinned, ...
+        r.gst_kept_not_a_term_assertion);
+    fprintf(['    species: %d fragment(s), %d duplicate group(s) in scope, ' ...
+             '%d assertion(s) removed, %d pinned and kept.\n'], ...
+        r.species_fragments_seen, r.species_duplicate_groups, ...
+        r.species_assertions_removed, r.species_kept_pinned);
+    fprintf(['    MEASURED, NOT ACTED ON: %d ancestor strain assertion(s) ' ...
+             'still on their subject (a modelling call, and modelling calls ' ...
+             'are the team''s); %d duplicate species group(s) this family ' ...
+             'did not cause; %d further entit(ies) a dataset-scoped key ' ...
+             'would merge, across %d cross-session group(s).\n'], ...
+        r.background_strain_assertions_on_subject, ...
+        r.duplicate_species_groups_out_of_scope, ...
+        r.cross_session_collapsible, r.cross_session_groups);
 end
 
 function v = charOrEmpty(s, name)
