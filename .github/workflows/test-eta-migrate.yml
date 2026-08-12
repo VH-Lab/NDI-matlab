@@ -134,6 +134,25 @@ jobs:
             %   The "12 of 16" line above is left as written rather than
             %   edited: it was true when it was measured, and a count that is
             %   silently updated in place stops being evidence of anything.
+            %
+            %   RESULT OF THE FIRST EXECUTION (run 31567993862, 8b5996a8a):
+            %   the job was GREEN and every declared Test method of
+            %   TestSubjectStrainAssembly ran with a non-zero duration --
+            %   34/34, not the 29 its own commit message claimed. THE COUNT IN
+            %   THAT MESSAGE WAS WRONG, and it is corrected here rather than
+            %   left standing: 34 is what the file declares
+            %   (`grep -c '^        function test'`) and what the runner's
+            %   table printed. The direction was the harmless one -- fewer
+            %   tests claimed than exist -- but a hand-counted number that
+            %   nobody re-derived is the same defect whichever way it points.
+            %
+            %   READ THE GREEN NARROWLY, for the reason the paragraph above
+            %   already gives: the assembler and its tests were written by the
+            %   same author in the same session with no MATLAB available, so
+            %   green proves the PAIR is self-consistent and free of
+            %   load/parse/arity faults. It is not evidence that
+            %   ndi.migrate.internal.subjectStrainAssembly matches NDI ground
+            %   truth, and no corpus has ever exercised it.
             %   STILL NOT RUN on claude/**, each for a stated reason, none
             %                silently omitted:
             %     TestMigrateLocal        needs an on-disk v1 session + database
