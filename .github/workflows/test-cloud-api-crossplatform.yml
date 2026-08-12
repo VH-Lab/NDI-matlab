@@ -5,6 +5,11 @@ name: Test NDI Cloud Api (Cross-Platform)
 # macOS, and Windows on demand (e.g. after changes to code paths that shell
 # out to the operating system, such as the curl-based upload/download).
 on:
+  # TEMPORARY (remove before merge): run on this PR so macOS/Windows can be
+  # verified before the workflow lands on the default branch. Revert to
+  # workflow_dispatch-only once verification is complete.
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
     inputs:
       environment:
@@ -21,7 +26,7 @@ concurrency:
 
 jobs:
   run_tests:
-    name: Test Cloud API (${{ matrix.os }}, env - ${{ inputs.environment }})
+    name: Test Cloud API (${{ matrix.os }}, env - ${{ inputs.environment || 'prod' }})
     runs-on: ${{ matrix.os }}
     # matbox dependency resolution calls the GitHub API; authenticate so the
     # requests aren't unauthenticated-rate-limited.
@@ -58,7 +63,7 @@ jobs:
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
             setenv("GITHUB_TOKEN", "${{ github.token }}")
-            setenv("CLOUD_API_ENVIRONMENT", "${{ inputs.environment }}")
+            setenv("CLOUD_API_ENVIRONMENT", "${{ inputs.environment || 'prod' }}")
             setenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE", "false")
             addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
