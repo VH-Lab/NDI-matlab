@@ -383,7 +383,18 @@ end
 % ---- read each Strain document ------------------------------------------
 % Every candidate is read BEFORE any is minted: the dedup key of a strain
 % depends on the keys of its parents, so the whole set has to be in hand.
+%
+% PREALLOCATED, and that is a real concern rather than tidiness: the corpus
+% this runs on is measured in thousands of Strain documents per dataset (they
+% are written once per subject ROW -- that is the duplication this pass
+% collapses), and `cand(end+1) = e` copies the whole struct array on every
+% append. The same reasoning applies to the containers.Map lookups used below
+% in place of `any(strcmp(list, x))`.
 cand = emptyCandidate();
+if ~isempty(strainIdx)
+    cand(numel(strainIdx)).group = 0;   % trimmed to nCand below
+end
+nCand = 0;
 candById = containers.Map('KeyType', 'char', 'ValueType', 'double');
 for k = 1:numel(strainIdx)
     b = v1Bodies{strainIdx(k)};
@@ -452,9 +463,11 @@ for k = 1:numel(strainIdx)
         continue;
     end
 
-    cand(end+1) = e; %#ok<AGROW>
-    candById(srcId) = numel(cand);
+    nCand = nCand + 1;
+    cand(nCand) = e;
+    candById(srcId) = nCand;
 end
+cand = cand(1:nCand);
 
 report.strains_candidate = numel(cand);
 if isempty(cand)
@@ -579,18 +592,28 @@ end
 % An ancestor of another candidate is still asserted OF THE SUBJECT, because
 % the writer sets `subject_id` on every document of the flattened graph.
 % MEASURED, NOT ACTED ON -- see the header.
-for c = 1:numel(cand)
-    isAncestor = false;
-    for d = 1:numel(cand)
-        if d == c; continue; end
-        if any(strcmp(cand(d).parents, cand(c).source_id)) ...
-                && strcmp(cand(d).subject_id, cand(c).subject_id) ...
-                && ~isempty(cand(c).subject_id)
-            isAncestor = true;
-            break;
-        end
+%
+% Indexed on (parent document id, referring document's subject) rather than
+% compared pairwise: the pairwise form is numel(cand)^2 and numel(cand) is in
+% the thousands on a real dataset. A self-loop is skipped at BUILD time, which
+% is the `d ~= c` the pairwise form spelled out.
+ancestorOf = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for d = 1:numel(cand)
+    if isempty(cand(d).subject_id)
+        continue;
     end
-    if isAncestor
+    for p = 1:numel(cand(d).parents)
+        if strcmp(cand(d).parents{p}, cand(d).source_id)
+            continue;   % a strain that is its own background
+        end
+        ancestorOf([cand(d).parents{p} '|' cand(d).subject_id]) = true;
+    end
+end
+for c = 1:numel(cand)
+    if isempty(cand(c).subject_id)
+        continue;
+    end
+    if isKey(ancestorOf, [cand(c).source_id '|' cand(c).subject_id])
         report.background_strain_assertions_on_subject = ...
             report.background_strain_assertions_on_subject + 1;
     end
@@ -610,18 +633,21 @@ for k = 1:numel(strainIdx)
         addUse(fragReferrers, refs{r}, srcId);
     end
 end
-assembledIds = {cand.source_id};
+assembled = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for c = 1:numel(cand)
+    assembled(cand(c).source_id) = true;
+end
 
-seenGstFrag = {};
+seenGstFrag = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for c = 1:numel(cand)
     fragId = cand(c).gst_frag;
     if isempty(fragId)
         continue;      % inline char: no fragment document, so no assertion
     end
-    if any(strcmp(seenGstFrag, fragId))
+    if isKey(seenGstFrag, fragId)
         continue;      % one fragment shared by several strains: decide once
     end
-    seenGstFrag{end+1} = fragId; %#ok<AGROW>
+    seenGstFrag(fragId) = true;
     report.gst_fragments_seen = report.gst_fragments_seen + 1;
 
     if ~isKey(migratedPos, fragId)
@@ -637,7 +663,14 @@ for c = 1:numel(cand)
     end
     who = {};
     if isKey(fragReferrers, fragId); who = fragReferrers(fragId); end
-    if ~all(ismember(who, assembledIds))
+    everyReferrerAssembled = true;
+    for r = 1:numel(who)
+        if ~isKey(assembled, who{r})
+            everyReferrerAssembled = false;
+            break;
+        end
+    end
+    if ~everyReferrerAssembled
         report.gst_kept_shared_with_unassembled = ...
             report.gst_kept_shared_with_unassembled + 1;
         continue;
@@ -674,11 +707,11 @@ end
 % In scope ONLY where a Strain's own Species child produced one of the
 % duplicates. `species` and `strain` stay sibling assertions, so a species
 % assertion that is not a duplicate is never touched.
-speciesFragIds = {};
+speciesFragIds = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for c = 1:numel(cand)
     if ~isempty(cand(c).species_frag) ...
-            && ~any(strcmp(speciesFragIds, cand(c).species_frag))
-        speciesFragIds{end+1} = cand(c).species_frag; %#ok<AGROW>
+            && ~isKey(speciesFragIds, cand(c).species_frag)
+        speciesFragIds(cand(c).species_frag) = true;
         report.species_fragments_seen = report.species_fragments_seen + 1;
     end
 end
@@ -713,8 +746,8 @@ for u = 1:numel(uniqGroups)
     end
     fromStrain = false(1, numel(members));
     for m = 1:numel(members)
-        fromStrain(m) = any(strcmp(speciesFragIds, ...
-            baseField(kept{members(m)}, 'id', '')));
+        idHere = baseField(kept{members(m)}, 'id', '');
+        fromStrain(m) = ~isempty(idHere) && isKey(speciesFragIds, idHere);
     end
     if ~any(fromStrain)
         report.duplicate_species_groups_out_of_scope = ...
