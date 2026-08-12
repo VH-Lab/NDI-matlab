@@ -68,10 +68,10 @@ classdef GetFile < ndi.cloud.api.call
             % Reset LD_LIBRARY_PATH for the subprocess so the OS curl loads
             % the OS libraries instead of MATLAB's bundled ones (a MATLAB
             % upgrade can otherwise break this system call). See
-            % ndi.cloud.internal.systemCurlEnvPrefix. The prefix is prepended
-            % outside sprintf so a '%' in the library path cannot corrupt the
-            % format string.
-            envPrefix = ndi.cloud.internal.systemCurlEnvPrefix();
+            % ndi.common.systemCurlEnvPrefix. The prefix is prepended outside
+            % sprintf so a '%' in the library path cannot corrupt the format
+            % string.
+            envPrefix = ndi.common.systemCurlEnvPrefix();
             command = [envPrefix sprintf('curl -fsSL -H "Accept-Encoding: identity" -o "%s" "%s"', ...
                 this.downloadedFile, this.downloadURL)];
 

@@ -1,7 +1,7 @@
 function rorid = getRorId(name)
 
     baseUrl = "curl 'https://api.ror.org/organizations?query='";
-    cmd = sprintf('%s%s', baseUrl, name);
+    cmd = [ndi.common.systemCurlEnvPrefix() sprintf('%s%s', baseUrl, name)];
     [~, response] = system(cmd);
     response = jsondecode(response);
     if isfield(response, "errors")
