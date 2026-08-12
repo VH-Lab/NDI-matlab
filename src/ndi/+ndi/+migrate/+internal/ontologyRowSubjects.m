@@ -20,11 +20,25 @@ function [plan, report] = ontologyRowSubjects(v1Bodies, migratedStructs, options
 %
 %   REPORT states its denominators FIRST and unconditionally, and `[]` from the
 %   caller means "did not run" -- so a silent zero and a real zero are
-%   distinguishable from the output alone.
+%   distinguishable from the output alone. It is RENDERED, not merely stored:
+%   ndi.migrate.local/printOntologyRowSummary prints it, because this pass
+%   REMOVES the `ontology_table_row` documents it re-folds and a pass that
+%   deletes while reporting to nothing is the defect this project has twice.
+%
+%   TWO REPORT FIELDS ANSWER QUESTIONS THAT WERE OPEN RATHER THAN MEASURED:
+%   `rows_with_plural_document_id` is the arity counter V_eta_OPEN_WORK.md row
+%   #105 records as missing from all three repositories, and
+%   `data_cells_on_unresolved_rows` is the quantity comparable in scale to the
+%   76,766 hollow statements this defect was first measured at -- as an UPPER
+%   BOUND, for the reason given beside the counters below. Neither changes
+%   what the pass DOES; both remove an "unmeasured" from the record.
 %
 %   STATUS: authored WITHOUT local MATLAB. Neither this function nor its unit
 %   tests (tests/+ndi/+unittest/+migrate/TestOntologyRowSubjects.m) have been
-%   run. Nothing here has been exercised against a corpus.
+%   run. Nothing here has been exercised against a corpus. The 76,766 and the
+%   20,583 quoted below are CARRIED FROM THE RECORD, not re-derived here --
+%   this container has no MATLAB and no corpus. The counters above are what
+%   will re-derive them on the first production run.
 %
 %   ---------------------------------------------------------------------
 %   WHY THIS IS A SECOND PASS
@@ -209,6 +223,38 @@ report.subjects_indexed         = 0;   % migrated documents that ARE a subject
 report.subject_local_ids_unique = 0;   % (session_id, local_identifier) keys with ONE subject
 report.local_identifier_join_enabled = options.LocalIdentifierJoin;
 
+% ---- ARITY AND SCALE: the two things this instrument could not report ----
+% (a) PLURAL `document_id`. V_eta_OPEN_WORK.md row #105 records that no
+%     counter in any of the three repositories can answer "how many rows
+%     ALREADY WRITTEN carry document_id_1..n":
+%     imagedEntitySubjects.blocked_plural_document_id is NDI-side and never
+%     runs in the DID corpus harness, silentLoss.docs_multi_member is gated on
+%     `referent_unique_by` and `ontology_table_row` is not one of its three
+%     entries, and THIS report had no arity counter at all
+%     (`resolved_via_document_id_edge` counts resolutions, not arity). The
+%     in-tree population is zero BY CONSTRUCTION -- on origin/main
+%     'DependencyVariable' is passed at exactly four sites, all
+%     +setup/+conv/+babu/import.m:380,383,386,389, each naming ONE column --
+%     so a NON-ZERO count here means an OUT-OF-TREE writer, which is exactly
+%     the unmeasured population #105 names. COUNTING IS NOT DECIDING: the
+%     refuse-and-count behaviour below is unchanged, and what rule a plural
+%     row should follow stays a team question.
+% (b) DATA CELLS. `rows_passthrough` counts ROWS; the 76,766 recorded for this
+%     defect counts STATEMENTS, and the two differ by roughly the column
+%     count -- so neither number can be read off the other. A cell is an
+%     UPPER BOUND on statements and never an estimate:
+%     did2.convert.migrators_j.ontology_table_row's migrateRow is documented
+%     "One column -> one statement" and then SKIPS identity and empty columns.
+%     That skip rule belongs to the migrator and is deliberately NOT
+%     re-implemented here -- two copies of one rule drift, and the copy that
+%     drifts is the one nobody runs.
+report.document_id_edges_seen        = 0;
+report.rows_with_document_id_edge    = 0;
+report.rows_with_plural_document_id  = 0;
+report.data_cells_seen               = 0;
+report.data_cells_on_resolved_rows   = 0;
+report.data_cells_on_unresolved_rows = 0;
+
 report.resolved                            = 0;
 report.resolved_via_document_id_edge       = 0;
 report.resolved_via_subject_column         = 0;
@@ -289,6 +335,24 @@ for i = 1:numel(v1Bodies)
         continue;
     end
 
+    % Arity and scale are counted for EVERY row in scope, before the
+    % resolution decides anything. A counter that runs only on one branch
+    % cannot report that branch's zero, which is the defect these two exist
+    % to remove.
+    edgeVals = nonEmptyDependencyValues(b, 'document_id');
+    report.document_id_edges_seen = ...
+        report.document_id_edges_seen + numel(edgeVals);
+    if ~isempty(edgeVals)
+        report.rows_with_document_id_edge = ...
+            report.rows_with_document_id_edge + 1;
+    end
+    if numel(edgeVals) > 1
+        report.rows_with_plural_document_id = ...
+            report.rows_with_plural_document_id + 1;
+    end
+    nCells = dataCellCount(b);
+    report.data_cells_seen = report.data_cells_seen + nCells;
+
     [subjectId, route, reason] = resolveRowSubject(b, byId, localIdIndex, ...
         options.LocalIdentifierJoin);
 
@@ -296,10 +360,14 @@ for i = 1:numel(v1Bodies)
         report.unresolved = report.unresolved + 1;
         field = ['unresolved_' reason];
         report.(field) = report.(field) + 1;
+        report.data_cells_on_unresolved_rows = ...
+            report.data_cells_on_unresolved_rows + nCells;
         continue;
     end
 
     report.resolved = report.resolved + 1;
+    report.data_cells_on_resolved_rows = ...
+        report.data_cells_on_resolved_rows + nCells;
     switch route
         case 'document_id_edge'
             report.resolved_via_document_id_edge = ...
@@ -543,6 +611,37 @@ for k = 1:numel(deps)
     end
     vals{end+1} = dependencyValueOf(d); %#ok<AGROW>
 end
+end
+
+function vals = nonEmptyDependencyValues(b, baseName)
+%NONEMPTYDEPENDENCYVALUES DEPENDENCYVALUESMATCHING with the empty values
+%   dropped.
+%
+%   The template ships `document_id` with value "" on EVERY row
+%   (ndi_common/database_documents/data/ontologyTableRow.json), so an empty
+%   edge is the norm rather than a referent. Counting it would make every row
+%   in every corpus look like it names something.
+vals = dependencyValuesMatching(b, baseName);
+keep = false(1, numel(vals));
+for k = 1:numel(vals)
+    keep(k) = ~isempty(vals{k});
+end
+vals = vals(keep);
+end
+
+function n = dataCellCount(b)
+%DATACELLCOUNT How many `data` columns this row carries.
+%
+%   An UPPER BOUND on the statements the row would fan out to, never an
+%   estimate. migrateRow skips identity columns and empty values, and this
+%   function does not model that -- see the report block at the top for why
+%   the rule is not copied here.
+n = 0;
+blk = rowBlock(b);
+if ~isfield(blk, 'data') || ~isstruct(blk.data) || ~isscalar(blk.data)
+    return;
+end
+n = numel(fieldnames(blk.data));
 end
 
 function v = dependencyValueOf(d)
