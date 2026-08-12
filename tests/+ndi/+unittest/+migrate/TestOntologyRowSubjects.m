@@ -10,11 +10,24 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
 %   The fixtures reproduce the real writers, one per route:
 %
 %     ROUTE 1  `document_id` edge
-%              +setup/+conv/+babu/import.m:379-390 passes
-%              'DependencyVariable','SubjectDocumentIdentifier', and
+%              +setup/+conv/+babu/import.m:380,383,386,389 pass
+%              'DependencyVariable','SubjectDocumentIdentifier' (the only four
+%              sites in the tree, each naming ONE column), and
 %              +setup/+NDIMaker/tableDocMaker.m turns that column into
-%              set_dependency_value('document_id', value) -- REMOVING it from
-%              `data` (`varNames(ismember(varNames,dependencyVariable)) = []`).
+%              set_dependency_value('document_id', value).
+%
+%              THE FIXTURE IS BUILT AGAINST origin/main, DELIBERATELY, AND THE
+%              TWO REFS DISAGREE. On origin/main the column is REMOVED from
+%              `data` first (`tableDocMaker.m:172`,
+%              `varNames(ismember(varNames,dependencyVariable)) = []`), so a
+%              Babu row carries its subject as the EDGE ALONE -- and that is
+%              the shape of every row already written. On this feature branch
+%              `40dc9aa86` keeps the column, so a row written after it
+%              satisfies routes 1 AND 2 with the same id. Do not "correct"
+%              this comment against the working tree: grepping the branch for
+%              the deleted line finds nothing, and the did_v1 truth ref is
+%              origin/main. testAgreementBetweenRoutesResolves below covers
+%              the post-repair shape.
 %
 %     ROUTE 2  a `SubjectDocumentIdentifier` cell in `data`
 %              +setup/+conv/+haley/doImport.m:351 builds
@@ -38,7 +51,17 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
 %   counted -- because `did2/+validate/references.m:90` skips empty edges, so a
 %   guessed edge would validate clean and mean nothing.
 %
-%   STATUS: authored WITHOUT local MATLAB. These tests have NOT been run.
+%   AND the two counters that answer questions which were UNMEASURED rather
+%   than zero: `rows_with_plural_document_id` (the arity counter
+%   V_eta_OPEN_WORK.md row #105 records as missing from all three
+%   repositories) and the `data_cells_*` scale figures, which are the quantity
+%   comparable to the 76,766 hollow statements this defect was first measured
+%   at. Both are asserted to run for EVERY row in scope, resolved or not,
+%   because a counter that only runs on one branch cannot report that
+%   branch's zero.
+%
+%   STATUS: authored WITHOUT local MATLAB. These tests have NOT been run --
+%   including the ones added with the counters.
 %
 %   Run with:  runtests('ndi.unittest.migrate.TestOntologyRowSubjects')
 %
@@ -283,6 +306,160 @@ classdef TestOntologyRowSubjects < matlab.unittest.TestCase
             testCase.verifyEqual(report.rows_converted_in_pass_1, 1);
             testCase.verifyEqual(report.rows_passthrough, 0);
             testCase.verifyEqual(report.v1_ontology_rows, 1);
+        end
+
+        function testAgreementBetweenRoutesResolves(testCase)
+            % THE POST-REPAIR SHAPE. NDI `40dc9aa86` stopped tableDocMaker
+            % deleting the dependency columns, so a Babu row written after it
+            % carries the subject id BOTH as the `document_id` edge (route 1)
+            % and as a `SubjectDocumentIdentifier` cell (route 2). Rows
+            % already written carry the edge alone, so both shapes must keep
+            % working -- which is why neither route is preferred.
+            %
+            % Two routes agreeing is NOT a conflict: resolveRowSubject
+            % collects hits from every route and refuses only on
+            % `unique(ids) > 1`.
+            [v1, mig] = babuRow();
+            v1{1}.ontologyTableRow.data.SubjectDocumentIdentifier = 'subj_babu';
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(numel(plan), 1);
+            testCase.verifyEqual(plan(1).subject_id, 'subj_babu');
+            testCase.verifyEqual(report.resolved, 1);
+            testCase.verifyEqual(report.unresolved_conflicting_candidates, 0);
+            % The edge is singular; agreement across routes must not be read
+            % as arity.
+            testCase.verifyEqual(report.rows_with_plural_document_id, 0);
+            testCase.verifyEqual(report.document_id_edges_seen, 1);
+        end
+
+        % ---------------- arity and scale (the #105 counters) -------------
+
+        function testArityAndScaleCountersExistOnAnEmptyBatch(testCase)
+            % A counter that appears only when there is something to count
+            % cannot report a zero. These must be present on 0 of 0.
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects({}, {});
+            testCase.verifyEqual(report.document_id_edges_seen, 0);
+            testCase.verifyEqual(report.rows_with_document_id_edge, 0);
+            testCase.verifyEqual(report.rows_with_plural_document_id, 0);
+            testCase.verifyEqual(report.data_cells_seen, 0);
+            testCase.verifyEqual(report.data_cells_on_resolved_rows, 0);
+            testCase.verifyEqual(report.data_cells_on_unresolved_rows, 0);
+        end
+
+        function testTheEmptyTemplateEdgeIsNotCountedAsAReferent(testCase)
+            % ontologyTableRow.json ships depends_on document_id with value ""
+            % on EVERY row, so counting empty edges would make every row in
+            % every corpus look like it names something -- and the arity
+            % counter would report the corpus size.
+            [v1, mig] = haleyWorm();
+            testCase.verifyEqual(depValue(v1{1}, 'document_id'), '');
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(report.document_id_edges_seen, 0);
+            testCase.verifyEqual(report.rows_with_document_id_edge, 0);
+            testCase.verifyEqual(report.rows_with_plural_document_id, 0);
+        end
+
+        function testASingleDocumentIdEdgeIsNotPlural(testCase)
+            [v1, mig] = babuRow();
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(report.document_id_edges_seen, 1);
+            testCase.verifyEqual(report.rows_with_document_id_edge, 1);
+            testCase.verifyEqual(report.rows_with_plural_document_id, 0);
+        end
+
+        function testPluralDocumentIdIsCountedEvenWhenTheRowIsRefused(testCase)
+            % THE COUNTER V_eta_OPEN_WORK.md row #105 records as missing from
+            % all three repositories. Arity is a property of the ROW, not of
+            % the outcome -- and a refused row is precisely the one whose
+            % arity nobody could measure before, because
+            % `resolved_via_document_id_edge` counts resolutions.
+            %
+            % No in-tree converter can write this shape: on origin/main
+            % 'DependencyVariable' is passed at exactly four sites, all
+            % +setup/+conv/+babu/import.m, each naming ONE column. So a
+            % non-zero count in production means an OUT-OF-TREE writer, which
+            % is the unmeasured population #105 names.
+            [v1, mig] = babuRow();
+            v1{1}.depends_on = struct( ...
+                'name',  {'document_id_1', 'document_id_2'}, ...
+                'value', {'subj_babu',     'plate_doc'});
+            mig{end+1} = migratedDoc('plate_doc', 'sess_babu', 'ontology_table_row');
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEmpty(plan);
+            testCase.verifyEqual(report.unresolved_edge_would_be_dropped, 1);
+            testCase.verifyEqual(report.document_id_edges_seen, 2);
+            testCase.verifyEqual(report.rows_with_plural_document_id, 1);
+        end
+
+        function testPluralDocumentIdIsCountedWhenTheRowResolves(testCase)
+            % Two edges naming the SAME subject resolve (unique(ids) is 1) and
+            % the arity is still 2. Deriving arity from the resolution would
+            % report this row as singular.
+            [v1, mig] = babuRow();
+            v1{1}.depends_on = struct( ...
+                'name',  {'document_id_1', 'document_id_2'}, ...
+                'value', {'subj_babu',     'subj_babu'});
+            [plan, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(numel(plan), 1);
+            testCase.verifyEqual(report.resolved_via_document_id_edge, 1);
+            testCase.verifyEqual(report.document_id_edges_seen, 2);
+            testCase.verifyEqual(report.rows_with_plural_document_id, 1);
+        end
+
+        function testDataCellsAccountForEveryRowInScope(testCase)
+            % The scale invariant, the sibling of
+            % testResolvedPlusUnresolvedEqualsRowsInspected: every cell counted
+            % sits on a row that was either resolved or explained. No third
+            % bucket.
+            [v1, mig] = mixedCorpus();
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual( ...
+                report.data_cells_on_resolved_rows ...
+                + report.data_cells_on_unresolved_rows, ...
+                report.data_cells_seen);
+            testCase.verifyGreaterThan(report.data_cells_seen, 0);
+        end
+
+        function testUnresolvedRowsStillContributeTheirCells(testCase)
+            % The point of the counter: the cells still NOT recovered. A plate
+            % row resolves to nothing, and its columns must show up as
+            % unresolved scale rather than vanishing from the instrument.
+            [v1, mig] = haleyPlate();
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(report.unresolved_no_candidate, 1);
+            testCase.verifyEqual(report.data_cells_seen, 4);
+            testCase.verifyEqual(report.data_cells_on_unresolved_rows, 4);
+            testCase.verifyEqual(report.data_cells_on_resolved_rows, 0);
+        end
+
+        function testDataCellCountIsColumnsNotStatements(testCase)
+            % A cell is an UPPER BOUND on statements, never an estimate. This
+            % counts COLUMNS; how many of them become statements is
+            % did2.convert.migrators_j.ontology_table_row's migrateRow rule
+            % ("One column -> one statement", then identity and empty columns
+            % skipped), and that rule is deliberately NOT re-implemented here.
+            % haleyWorm has three columns, so the counter says three whatever
+            % the migrator would go on to emit.
+            [v1, mig] = haleyWorm();
+            testCase.verifyEqual( ...
+                numel(fieldnames(v1{1}.ontologyTableRow.data)), 3);
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(report.data_cells_seen, 3);
+            testCase.verifyEqual(report.data_cells_on_resolved_rows, 3);
+        end
+
+        function testRowsConvertedInPassOneContributeNoArityOrScale(testCase)
+            % Both counters are scoped to the rows this pass can act on. A row
+            % pass 1 already converted is out of scope and must not inflate
+            % either denominator -- otherwise the scale figure would grow with
+            % work already done.
+            [v1, mig] = babuRow();
+            mig{1} = migratedDoc('row_babu', 'sess_babu', 'velocity_observation');
+            [~, report] = ndi.migrate.internal.ontologyRowSubjects(v1, mig);
+            testCase.verifyEqual(report.rows_converted_in_pass_1, 1);
+            testCase.verifyEqual(report.rows_passthrough, 0);
+            testCase.verifyEqual(report.document_id_edges_seen, 0);
+            testCase.verifyEqual(report.data_cells_seen, 0);
         end
 
         % ---------------- the injected dependency ------------------------
