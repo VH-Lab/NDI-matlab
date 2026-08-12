@@ -102,6 +102,38 @@ jobs:
             %                schema cache, no cloud -- so they belong in this
             %                gate. They had never executed anywhere.
             %   NOW:         12 of 16 on a claude/** push.
+            %
+            %   RE-MEASURED 2026-08-12, adding TestSubjectStrainAssembly (#78,
+            %   the openminds_subject half of the strain family). The same
+            %   mechanical sweep, re-run rather than incremented: every
+            %   workflow file read, every classdef line read, word-boundary
+            %   match of each class name against non-MATLAB-comment workflow
+            %   lines. NOTE the lookbehind has to ADMIT a preceding '.' -- the
+            %   names appear as `ndi.unittest.migrate.TestX`, and a sweep that
+            %   excluded a leading dot reported all 18 as run by nothing.
+            %
+            %     DENOMINATOR: 11 workflow files, 11 read; 19 .m in
+            %                  tests/+ndi/+unittest/+migrate, 18 of them
+            %                  matlab.unittest.TestCase (FakeCloudClient is a
+            %                  stub, not a test).
+            %     BEFORE this commit: 13 of 18 ran on a claude/** push -- the
+            %                  12 listed below plus TestMigrateLocalEta
+            %                  (test-eta-migrate-e2e.yml, branches
+            %                  ['claude/**']).
+            %     ADDED here:  TestSubjectStrainAssembly. Pure struct assembly
+            %                  over ndi.migrate.internal.subjectStrainAssembly
+            %                  -- no database, no schema cache, no cloud -- so
+            %                  it belongs in this gate. It has never executed.
+            %     NOW:         14 of 18 on a claude/** push.
+            %     STILL NOT RUN, unchanged and each for its stated reason:
+            %                  TestMigrateLocal, TestMigrateCloud (named by NO
+            %                  workflow), TestMigrateLocalZeta and
+            %                  TestMigrateLocalEpsilon (their workflows are
+            %                  pull_request -> Vnext only).
+            %
+            %   The "12 of 16" line above is left as written rather than
+            %   edited: it was true when it was measured, and a count that is
+            %   silently updated in place stops being evidence of anything.
             %   STILL NOT RUN on claude/**, each for a stated reason, none
             %                silently omitted:
             %     TestMigrateLocal        needs an on-disk v1 session + database
@@ -179,7 +211,8 @@ jobs:
                 "ndi.unittest.migrate.TestImagedEntitySubjects", ...
                 "ndi.unittest.migrate.TestEnsembleMembership", ...
                 "ndi.unittest.migrate.TestSoftwareDedup", ...
-                "ndi.unittest.migrate.TestStrainAssembly"]);
+                "ndi.unittest.migrate.TestStrainAssembly", ...
+                "ndi.unittest.migrate.TestSubjectStrainAssembly"]);
             disp(table(results));
             assert(sum([results.Failed]) == 0, ...
                 sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));
