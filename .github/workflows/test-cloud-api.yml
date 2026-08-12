@@ -56,7 +56,6 @@ jobs:
             addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
-            system('printf "[curl-diag] WITH MATLAB LD_LIBRARY_PATH: "; curl --version >/tmp/curldiag1 2>&1; echo "exit=$?"; head -1 /tmp/curldiag1; printf "[curl-diag] WITH LD_LIBRARY_PATH reset: "; LD_LIBRARY_PATH="$MW_ORIG_LD_LIBRARY_PATH" curl --version >/tmp/curldiag2 2>&1; echo "exit=$?"; head -1 /tmp/curldiag2');
             ndi.cloud.authenticate("InteractionEnabled", "off")
             testCloudApi()
 
