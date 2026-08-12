@@ -35,10 +35,12 @@ function [plan, report] = ontologyRowSubjects(v1Bodies, migratedStructs, options
 %
 %   STATUS: authored WITHOUT local MATLAB. Neither this function nor its unit
 %   tests (tests/+ndi/+unittest/+migrate/TestOntologyRowSubjects.m) have been
-%   run. Nothing here has been exercised against a corpus. The 76,766 and the
-%   20,583 quoted below are CARRIED FROM THE RECORD, not re-derived here --
-%   this container has no MATLAB and no corpus. The counters above are what
-%   will re-derive them on the first production run.
+%   run. Nothing here has been exercised against a corpus. The 76,766 quoted
+%   below -- and the 20,583 passthrough rows quoted by the caller at
+%   ndi.migrate.local:293 -- are CARRIED FROM THE RECORD, not re-derived
+%   here: this container has no MATLAB and no corpus artifacts. The counters
+%   above are what will re-derive them on the first production run, which is
+%   why they are counters and not a number written into a comment.
 %
 %   ---------------------------------------------------------------------
 %   WHY THIS IS A SECOND PASS
