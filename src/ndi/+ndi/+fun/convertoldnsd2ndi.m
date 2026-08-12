@@ -15,6 +15,19 @@ function convertoldnsd2ndi(pathname)
     %
     % This function is deprecated and should be irrelevant shortly as everyone uses 'NDI' instead of 'NSD'
 
+    arguments
+        pathname (1,:) char {mustBeFolder}
+    end
+
+    % PATHNAME is interpolated into the shell commands below. Quote it (so
+    % directories with spaces work) and reject embedded double quotes so a
+    % crafted path cannot terminate the quoting and inject shell commands.
+    if contains(pathname, '"')
+        error('ndi:fun:convertoldnsd2ndi:invalidPath', ...
+            'PATHNAME must not contain double-quote (") characters.');
+    end
+    qpath = ['"' pathname '"'];
+
     done = 0;
 
     while ~done
@@ -31,18 +44,18 @@ function convertoldnsd2ndi(pathname)
         end
     end
 
-    str{1} = ['find ' pathname  ' -type f -name ''*nsd*'' -exec bash -c ''mv "$1" "${1/nsd/ndi}"'' -- {} \;'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*NDI*'' -exec bash -c ''mv "$1" "${1/NSD/NDI}"'' -- {} \;'];
+    str{1} = ['find ' qpath ' -type f -name ''*nsd*'' -exec bash -c ''mv "$1" "${1/nsd/ndi}"'' -- {} \;'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*NDI*'' -exec bash -c ''mv "$1" "${1/NSD/NDI}"'' -- {} \;'];
 
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.txt'' -exec sed -i '''' s/nsd/ndi/g {} +'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.m'' -exec sed -i '''' s/nsd/ndi/g {} +'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.json'' -exec sed -i '''' s/nsd/ndi/g {} +'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*object_*'' -exec bash -c ''LC_ALL=C sed -i "" s:nsd:ndi:g "$1"'' -- {} \;'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.ndi''  -exec sed -i '''' s/nsd/ndi/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.txt'' -exec sed -i '''' s/nsd/ndi/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.m'' -exec sed -i '''' s/nsd/ndi/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.json'' -exec sed -i '''' s/nsd/ndi/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*object_*'' -exec bash -c ''LC_ALL=C sed -i "" s:nsd:ndi:g "$1"'' -- {} \;'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.ndi''  -exec sed -i '''' s/nsd/ndi/g {} +'];
 
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.txt'' -exec sed -i '''' s/NSD/NDI/g {} +'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.m'' -exec sed -i '''' s/NSD/NDI/g {} +'];
-    str{end+1} = ['find ' pathname  ' -type f -name ''*.json'' -exec sed -i '''' s/NSD/NDI/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.txt'' -exec sed -i '''' s/NSD/NDI/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.m'' -exec sed -i '''' s/NSD/NDI/g {} +'];
+    str{end+1} = ['find ' qpath ' -type f -name ''*.json'' -exec sed -i '''' s/NSD/NDI/g {} +'];
 
     for i=1:numel(str)
         system(str{i});

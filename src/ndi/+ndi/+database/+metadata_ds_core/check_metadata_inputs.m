@@ -59,7 +59,7 @@ function [submit, errorStep] = check_metadata_inputs(app)
                     continue;
                 end
                 institutes = ud.institutes{i};
-                cmd = sprintf("curl https://api.ror.org/organizations/%s", institutes{1});
+                cmd = [ndi.common.systemCurlEnvPrefix() sprintf("curl https://api.ror.org/organizations/%s", institutes{1})];
                 [~, response] = system(cmd);
                 response = jsondecode(response);
                 if isfield(response, "errors")

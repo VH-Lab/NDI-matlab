@@ -35,7 +35,12 @@ classdef SyncMode
                 ndiDataset
                 syncOptions ndi.cloud.sync.SyncOptions
             end
-            obj.Function(ndiDataset, syncOptions.nvpairs())
+            % SyncOptions exposes its name-value pairs via toCell() (there is
+            % no nvpairs method); the returned 1-by-2N cell must be expanded
+            % with {:} so the sync function receives them as name-value
+            % arguments rather than a single cell positional argument.
+            nvPairs = syncOptions.toCell();
+            obj.Function(ndiDataset, nvPairs{:})
         end
     end
 end

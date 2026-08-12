@@ -1,7 +1,7 @@
 function [name, formattedID] = checkValidRORID(rorid)
     formattedID = {};
     name = {};
-    cmd = sprintf("curl https://api.ror.org/organizations/%s", rorid);
+    cmd = [ndi.common.systemCurlEnvPrefix() sprintf("curl https://api.ror.org/organizations/%s", rorid)];
     [~, response] = system(cmd);
     response = jsondecode(response);
     if ~isfield(response, "errors")

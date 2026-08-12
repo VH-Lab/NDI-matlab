@@ -257,6 +257,43 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end
         end % isIngested()
 
+        function [b, cloudDatasetId] = isInCloud(ndi_dataset_obj)
+            % ISINCLOUD - is this dataset linked to a dataset on NDI Cloud?
+            %
+            % [B, CLOUDDATASETID] = ISINCLOUD(NDI_DATASET_OBJ)
+            %
+            % Returns true if the dataset is linked to a remote dataset on
+            % NDI Cloud, and false otherwise. A dataset is considered to be
+            % "in the cloud" if its database contains a 'dataset_remote'
+            % document. That document is created and stored locally the first
+            % time the dataset is uploaded (see ndi.cloud.uploadDataset).
+            %
+            % This is a purely local check: it inspects only the dataset's own
+            % database and performs NO network communication, so it does not
+            % verify that the remote dataset still exists or is up to date. It
+            % also does not open the dataset's linked sessions (the
+            % 'dataset_remote' document lives in the dataset's own database, as
+            % its base.session_id is the dataset id), so the check is cheap
+            % enough to call while listing datasets.
+            %
+            % B is a logical scalar. CLOUDDATASETID is the remote NDI Cloud
+            % dataset id (char) when B is true, or '' when B is false. If more
+            % than one 'dataset_remote' document is present - which indicates a
+            % misconfiguration - the id of the first is returned rather than
+            % raising an error, so this status check never throws.
+            %
+            % See also: ndi.dataset/isIngested, ndi.cloud.uploadDataset,
+            %   ndi.cloud.internal.getCloudDatasetIdForLocalDataset
+            cloudDatasetId = '';
+            q = ndi.query('', 'isa', 'dataset_remote');
+            docs = ndi_dataset_obj.session.database.search(q);
+            b = ~isempty(docs);
+            if b
+                cloudDatasetId = char(string( ...
+                    docs{1}.document_properties.dataset_remote.dataset_id));
+            end
+        end % isInCloud()
+
         function unlink_session(ndi_dataset_obj, ndi_session_id, options)
             % UNLINK_SESSION - unlink a session from an ndi.dataset
             %

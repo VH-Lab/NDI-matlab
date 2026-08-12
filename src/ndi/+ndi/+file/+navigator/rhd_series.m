@@ -109,6 +109,8 @@ classdef rhd_series < ndi.file.navigator
             end
             epochfiles_disk = ndi.file.navigator.rhd_series.groupDirectory(...
                 sess, patterns);
+            % drop hidden files and macOS AppleDouble ('._') shadow files
+            epochfiles_disk = ndi.util.removehiddenfilegroups(epochfiles_disk);
         end
     end % methods
 

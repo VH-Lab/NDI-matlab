@@ -24,6 +24,13 @@ function h = plotProbeGeometry(pg, varargin)
 %  contour_color ([0.6     | Color of body contour
 %    0.6 0.6])             |
 %  contour_linewidth (1.5) | Line width of body contour
+%  show_labels (true)      | Draw a number centered on each site
+%  labels ([])             | Per-site label vector/cell; [] uses the site
+%                          |   index 1..N (== channel for identity maps)
+%  label_font_size (7)     | Font size of the site labels
+%  label_color ([0 0 0])   | Color of the site labels
+%
+%  H additionally contains H.labels, the array of site-label text handles.
 %
 
     % parse name-value pairs
@@ -31,6 +38,10 @@ function h = plotProbeGeometry(pg, varargin)
     marker_size = 60;
     contour_color = [0.6 0.6 0.6];
     contour_linewidth = 1.5;
+    show_labels = true;        % draw a number centered on each site
+    labels = [];               % per-site label; [] => the site index 1..N
+    label_font_size = 7;
+    label_color = [0 0 0];
 
     vlt.data.assign(varargin{:});
 
@@ -65,6 +76,29 @@ function h = plotProbeGeometry(pg, varargin)
     % plot sites
     hold(ax, 'on');
     h.sites = scatter(ax, x, y, marker_size, c, 'filled', 'MarkerEdgeColor', 'k');
+
+    % draw the channel/site number centered on each site
+    h.labels = gobjects(0, 1);
+    if show_labels
+        if isempty(labels)
+            site_labels = (1:numel(x))';   % default: the site index (== channel for identity maps)
+        else
+            site_labels = labels;
+        end
+        h.labels = gobjects(numel(x), 1);
+        for i = 1:numel(x)
+            if isnumeric(site_labels)
+                str = num2str(site_labels(i));
+            elseif iscell(site_labels)
+                str = char(string(site_labels{i}));
+            else
+                str = char(string(site_labels(i)));
+            end
+            h.labels(i) = text(ax, x(i), y(i), str, ...
+                'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
+                'FontSize', label_font_size, 'Color', label_color, 'Clipping', 'on');
+        end
+    end
 
     % labels
     unit_str = 'um';
