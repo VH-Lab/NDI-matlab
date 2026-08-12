@@ -101,10 +101,17 @@ classdef PutFiles
             % as a non-zero exit. Pin Content-Type to application/octet-stream
             % and Accept-Encoding to identity so the object metadata stored in
             % S3 is predictable regardless of the client's environment.
-            command = sprintf(['curl -fsSL -X PUT --upload-file "%s" ' ...
+            % Reset LD_LIBRARY_PATH for the subprocess so the OS curl loads
+            % the OS libraries instead of MATLAB's bundled ones (a MATLAB
+            % upgrade can otherwise break this system call). See
+            % ndi.cloud.internal.systemCurlEnvPrefix. The prefix is prepended
+            % outside sprintf so a '%' in the library path cannot corrupt the
+            % format string.
+            envPrefix = ndi.cloud.internal.systemCurlEnvPrefix();
+            command = [envPrefix sprintf(['curl -fsSL -X PUT --upload-file "%s" ' ...
                 '-H "Content-Type: application/octet-stream" ' ...
                 '-H "Accept-Encoding: identity" ' ...
-                '"%s"'], this.filePath, this.preSignedURL);
+                '"%s"'], this.filePath, this.preSignedURL)];
 
             [status, result] = system(command);
 
