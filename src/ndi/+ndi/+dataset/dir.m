@@ -193,9 +193,11 @@ classdef dir < ndi.dataset
             end
 
             if strcmpi(areyousure,'yes')
-                % Close any open SQLite handle first so Windows will allow the
-                % did-sqlite.sqlite file to be deleted (issue #870).
-                mksqlite('close');
+                % Close all open SQLite handles first so Windows will allow the
+                % did-sqlite.sqlite file to be deleted. dbid 0 closes every
+                % connection (mksqlite('close') closes only dbid 1); DID
+                % reopens lazily on the next operation (issue #870).
+                mksqlite(0, 'close');
                 rmdir(fullfile(ndi_dataset_dir_obj.path,'.ndi'),'s'); % remove database folder
             else
                 disp('Not erasing session directory folder because user did not indicate they sure.');

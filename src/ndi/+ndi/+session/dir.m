@@ -266,10 +266,13 @@ classdef dir < ndi.session
             if passed
                 p = fullfile(ndi_session_dir_obj.path, '.ndi');
                 if isfolder(p)
-                    % Close any open SQLite handle first so Windows will
+                    % Close all open SQLite handles first so Windows will
                     % allow the did-sqlite.sqlite file to be deleted; an
-                    % open file cannot be removed on Windows (issue #870).
-                    mksqlite('close');
+                    % open file cannot be removed on Windows. dbid 0 closes
+                    % every connection (mksqlite('close') closes only dbid 1,
+                    % which may not be this session's); DID reopens lazily on
+                    % the next operation (issue #870).
+                    mksqlite(0, 'close');
                     rmdir(p, 's');
                 end
                 obj_out = ndi.session.dir.empty();
@@ -434,9 +437,11 @@ classdef dir < ndi.session
             end
 
             if strcmpi(areyousure,'yes')
-                % Close any open SQLite handle first so Windows will allow the
-                % did-sqlite.sqlite file to be deleted (issue #870).
-                mksqlite('close');
+                % Close all open SQLite handles first so Windows will allow the
+                % did-sqlite.sqlite file to be deleted. dbid 0 closes every
+                % connection (mksqlite('close') closes only dbid 1); DID
+                % reopens lazily on the next operation (issue #870).
+                mksqlite(0, 'close');
                 rmdir(fullfile(ndi_session_dir_obj.path,'.ndi'),'s'); % remove database folder
             else
                 disp('Not erasing session directory folder because user did not indicate they sure.');

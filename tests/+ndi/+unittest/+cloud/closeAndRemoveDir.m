@@ -23,13 +23,18 @@ function closeAndRemoveDir(directoryPath)
         directoryPath (1,1) string
     end
 
-    % Release any open SQLite database handles so that Windows will permit
-    % the underlying did-sqlite.sqlite file to be deleted. mksqlite('close')
-    % closes all open connections and is a no-op when none are open. It is
-    % guarded because mksqlite may not have been loaded if no SQLite-backed
-    % dataset was opened during the test.
+    % Release ALL open SQLite database handles so that Windows will permit
+    % the underlying did-sqlite.sqlite file to be deleted. We must pass
+    % dbid 0 here: mksqlite('close') defaults to dbid 1 and closes only the
+    % first connection, but these tests keep several datasets/sessions open
+    % at once (the local dataset plus datasets that sync downloads), so the
+    % connection locking the directory being removed is often not dbid 1.
+    % mksqlite(0, 'close') closes every open connection; DID reopens lazily
+    % on the next operation, so this is safe (issue #870). The call is
+    % guarded because mksqlite may not be loaded if no SQLite-backed dataset
+    % was opened during the test.
     try
-        mksqlite('close');
+        mksqlite(0, 'close');
     catch
         % Nothing to close (mksqlite not loaded / no open connections).
     end
