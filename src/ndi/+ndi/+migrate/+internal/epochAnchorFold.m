@@ -418,6 +418,18 @@ if hadClock
     value.clock = struct('node', '', 'name', clockName);
 end
 
+% CAPTURED BEFORE THE rmfield BELOW DESTROYS IT. The extent copy further down
+% reads this local, not the body: the class block is removed a few lines from
+% here, so reading `b.epoch_bounded_reference` after that point is a silent
+% no-op -- which is exactly what the first version of this edit did.
+carriedExtent = struct();
+if isfield(b, 'epoch_bounded_reference') ...
+        && isstruct(b.epoch_bounded_reference) ...
+        && isfield(b.epoch_bounded_reference, 'value') ...
+        && isstruct(b.epoch_bounded_reference.value)
+    carriedExtent = b.epoch_bounded_reference.value;
+end
+
 % The old class block and the `epochid` mixin both go: the string was the pass-1
 % handle and the edge is its resolution, so keeping both would store one fact
 % twice with nothing saying which is authoritative.
@@ -436,6 +448,26 @@ if toleranceSeconds > 0
     % Back onto the ROOT, carrying only what the source actually stated.
     b.time_reference = struct('clock_tolerance', ...
         struct('seconds', toleranceSeconds));
+end
+
+% ---- CARRY THE EXTENT, IF THE HANDLE STATED ONE -------------------------
+% STEP 2 OF THE SIGNED [epoch extent] BUILD. Until 2026-08-13 this function
+% built `value` entirely from scratch -- relation, and a clock when one was
+% named -- and the handle had nothing else to give: `epoch_bounded_reference`
+% declared only `epoch_clock`. It now carries a `value` copied verbatim from
+% relative_reference's own (did-schema 1cfa3f0), so pyraview's epoch extent
+% finally has transport, and WITHOUT THESE LINES THE FOLD WOULD SILENTLY
+% DISCARD IT -- the numbers would arrive and be dropped one step short.
+%
+% START AND DURATION ONLY. `relation` and `clock` are decided HERE, from the
+% did_v1 clocktype vocabulary (clockTerm/1 above), and the handle must not be
+% able to override that: it is a transport, not an authority. Copying its
+% relation would let a pass-1 body dictate an OWL-Time term the signed model
+% assigns.
+for fn = {'start', 'duration'}
+    if isfield(carriedExtent, fn{1}) && isstruct(carriedExtent.(fn{1}))
+        value.(fn{1}) = carriedExtent.(fn{1});
+    end
 end
 
 b.relative_reference = struct('value', value);
