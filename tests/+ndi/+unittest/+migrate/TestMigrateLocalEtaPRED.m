@@ -249,6 +249,92 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                  resultDiag(result)]);
         end
 
+        function testTheMigratedSessionOpensAndReadsBackThroughNDI(testCase)
+        %TESTTHEMIGRATEDSESSIONOPENSANDREADSBACKTHROUGHNDI The READ path.
+        %   Everything else in this file proves the documents MIGRATE and
+        %   VALIDATE. None of it proves MATLAB can still USE them: no job opens
+        %   a migrated database through NDI's object API, so "the documents are
+        %   correct" and "NDI can read them" have been two claims with only the
+        %   first one tested. Asked by the team 2026-08-13, with this exact
+        %   case: can `ndi.session.dir` still turn a migrated session into an
+        %   object?
+        %
+        %   WHY THE DATABASE FILE IS COPIED, AND WHY THAT IS NOT CHEATING.
+        %   `ndi.migrate.local` writes `<TargetVersion>.sqlite` BESIDE the
+        %   original (`local.m:195`), while NDI opens a hard-coded filename:
+        %
+        %       +ndi/+database/+implementations/+database/didsqlite.m:24
+        %           database_filename = fullfile(..., 'did-sqlite.sqlite');
+        %
+        %   So NDI cannot open a migrated database AT ALL today -- not because
+        %   of anything about V_eta, but because nothing tells it where the
+        %   migrated file is. That is a product decision (does migration
+        %   replace the database, or does NDI learn to select one?) and not
+        %   this test's to make. Copying V_eta.sqlite over the hard-coded name
+        %   in a THROWAWAY COPY of the session isolates the question this test
+        %   is actually for -- can NDI read V_eta DOCUMENTS -- from the
+        %   separate question of where the file lives. The copy is deliberate
+        %   and is the reason this test cannot go green by accident.
+        %
+        %   SCOPE IS PRED, DELIBERATELY. PRED holds 10 v1 classes and none of
+        %   the analysis tier, so this covers session/subject/element/daq and
+        %   says nothing about `stimulus_tuningcurve` (64 by-path reads) or
+        %   `openminds` (59). Those need a stimulus corpus; claiming otherwise
+        %   from a green run here would be the "corpora are a sample" rule
+        %   broken in the read path.
+            result = runPredMigrate(testCase);
+
+            readRoot = fullfile(tempname, 'pred-readback');
+            mkdir(readRoot);
+            copyfile(testCase.SessionRoot, readRoot);
+            % The migrated file is taken from the MIGRATOR'S OWN ANSWER rather
+            % than reconstructed from a filename this test guesses -- if
+            % `<TargetVersion>.sqlite` ever changes, this follows it instead of
+            % failing on a stale assumption.
+            assertTrue(testCase, isfile(result.destination), sprintf( ...
+                'ndi.migrate.local reported destination %s and no file is there', ...
+                result.destination));
+            copyfile(result.destination, ...
+                fullfile(readRoot, '.ndi', 'did-sqlite.sqlite'));
+
+            % THE HEADLINE. If this errors, NDI cannot open a migrated session
+            % and every assertion below is moot.
+            s = ndi.session.dir(readRoot);
+            assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
+                'ndi.session.dir did not return a session object');
+
+            % The session's own identity, read back off a MIGRATED document --
+            % `session.reference` is `local_identifier` in V_eta, and this is
+            % the read the team named.
+            assertNotEmpty(testCase, s.reference, ...
+                ['the session opened but carries no reference -- ' ...
+                 '+ndi/+session/dir.m reads session.reference / ' ...
+                 'local_identifier by path, so an empty value here means the ' ...
+                 'both-vintage read stopped working']);
+            assertNotEmpty(testCase, s.id(), 'the session has no identifier');
+
+            % Documents come back through the ordinary query API, not by
+            % reading the file: this is the path a user actually takes.
+            subs = s.database_search(ndi.query('','isa','subject'));
+            assertNotEmpty(testCase, subs, ...
+                'no subject document came back from a migrated database');
+
+            % PROVE THESE ARE V_eta DOCUMENTS AND NOT v1 ONES. Without this the
+            % test would pass just as well against the unmigrated database --
+            % it would be reading did-sqlite.sqlite either way, and the copy
+            % above would be the only thing that made it meaningful.
+            sub = subs{1}.document_properties;
+            assertTrue(testCase, isfield(sub, 'subject') ...
+                && isfield(sub.subject, 'local_identifier'), ...
+                ['the subject read back has no subject.local_identifier -- ' ...
+                 'either the V_eta database was not the one opened, or the ' ...
+                 'signed rename did not survive the round trip']);
+            assertTrue(testCase, isfield(sub.base, 'creation_timestamp'), ...
+                ['base.creation_timestamp is absent on a document read back ' ...
+                 'through NDI -- V_eta renamed base.datestamp, and 3 NDI ' ...
+                 'read sites still name the old spelling']);
+        end
+
         function testTheTimeReferenceFamilyIsTheFirstOfSizeTwoAndIsLegal(testCase)
             % `referent_unique_by` declares a `time_reference_#` family unique
             % by `value.clock`, and until PRED nothing in reach carried two
