@@ -9,5 +9,6 @@ function d = find_ingested_docs(S)
     q_i1 = ndi.query('','isa','daqreader_mfdaq_epochdata_ingested');
     q_i2 = ndi.query('','isa','daqmetadatareader_epochdata_ingested');
     q_i3 = ndi.query('','isa','epochfiles_ingested');
+    q_i4 = ndi.query('','isa','daqreader_image_epochdata_ingested');
 
-    d = S.database_search( q_i1 | q_i2 | q_i3 );
+    d = S.database_search( q_i1 | q_i2 | q_i3 | q_i4 );

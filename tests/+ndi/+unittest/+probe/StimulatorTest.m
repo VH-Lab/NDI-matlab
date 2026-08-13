@@ -50,6 +50,56 @@ classdef StimulatorTest < matlab.unittest.TestCase
     end
 
     methods (Test)
+        function testPairOnOffMatched(testCase)
+            t = [1; 2; 3; 4];
+            s = [1; -1; 1; -1];
+            [on, off] = ndi.probe.timeseries.stimulator.pairOnOff(t, s);
+            testCase.verifyEqual(on,  [1;3]);
+            testCase.verifyEqual(off, [2;4]);
+        end
+
+        function testPairOnOffTrailingOn(testCase)
+            % stim still on when window closes: trailing on with no off
+            t = [1; 2; 3];
+            s = [1; -1; 1];
+            [on, off] = ndi.probe.timeseries.stimulator.pairOnOff(t, s);
+            testCase.verifyEqual(on,  [1;3]);
+            testCase.verifyEqual(off, [2;NaN]);
+        end
+
+        function testPairOnOffLeadingOff(testCase)
+            % stim already on when window opens: leading off with no on
+            t = [1; 2; 3];
+            s = [-1; 1; -1];
+            [on, off] = ndi.probe.timeseries.stimulator.pairOnOff(t, s);
+            testCase.verifyEqual(on,  [NaN;2]);
+            testCase.verifyEqual(off, [1;3]);
+        end
+
+        function testPairOnOffBothClipped(testCase)
+            t = [1; 2; 3; 4; 5];
+            s = [-1; 1; -1; 1; -1];
+            [on, off] = ndi.probe.timeseries.stimulator.pairOnOff(t, s);
+            testCase.verifyEqual(on,  [NaN;2;4]);
+            testCase.verifyEqual(off, [1;3;5]);
+        end
+
+        function testPairOnOffEmpty(testCase)
+            [on, off] = ndi.probe.timeseries.stimulator.pairOnOff(...
+                zeros(0,1), zeros(0,1));
+            testCase.verifyEmpty(on);
+            testCase.verifyEmpty(off);
+            testCase.verifyEqual(numel(on), numel(off));
+        end
+
+        function testPairOnOffUnsorted(testCase)
+            t = [3; 1; 4; 2];
+            s = [1; 1; -1; -1];
+            [on, off] = ndi.probe.timeseries.stimulator.pairOnOff(t, s);
+            testCase.verifyEqual(on,  [1;3]);
+            testCase.verifyEqual(off, [2;4]);
+        end
+
         function testReadTimeSeries(testCase)
             % Get the probe
             p = testCase.Session.getprobes();

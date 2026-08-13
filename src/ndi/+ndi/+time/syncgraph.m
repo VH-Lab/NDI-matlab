@@ -687,8 +687,8 @@ classdef syncgraph < ndi.ido
                     if isempty(id_match)
                         error('ndi.time.syncgraph error: unexpected missing epoch, thought this could not happen.');
                     end
-                    j1 = find(et(id_match).epoch_clock==timeref_in.clocktype);
-                    j2 = find(et(id_match).epoch_clock==clocktype_out);
+                    j1 = find(cellfun(@(x) eq(x,timeref_in.clocktype), et(id_match).epoch_clock));
+                    j2 = find(cellfun(@(x) eq(x,clocktype_out), et(id_match).epoch_clock));
                     if isempty(j2)
                         error(['No clock type ' clocktype_out.type ' for requested referent.']);
                     end

@@ -137,4 +137,178 @@ classdef timeseries < ndi.element & ndi.time.timeseries
         end % searchquery
 
     end % methods
+
+    methods (Static)
+        function neurons = addMultiple(S, underlying_element, specs, options)
+            % ADDMULTIPLE - create many timeseries elements with epochs in batched database writes
+            %
+            % NEURONS = ndi.element.timeseries.addMultiple(S, UNDERLYING_ELEMENT, SPECS, ...)
+            %
+            % Creates many ndi.element.timeseries elements (by default ndi.neuron) that share a
+            % common UNDERLYING_ELEMENT (e.g. a probe), each with one or more epochs of time series
+            % data, while minimizing the number of database round-trips. This is much faster than
+            % constructing each element and calling ADDEPOCH per epoch, which performs a database
+            % search and a separate database write for every epoch of every element.
+            %
+            % Inputs:
+            %   S                 - the ndi.session
+            %   UNDERLYING_ELEMENT- the ndi.element (e.g. probe) the new elements are built on; it
+            %                         supplies the subject and underlying_element dependencies
+            %   SPECS             - a struct array, one entry per element to create, with fields:
+            %       .name             (char)   the element name
+            %       .reference        (double) the element reference number
+            %       .type             (char)   the element type (optional; default 'spikes')
+            %       .epochs           a struct array (one per epoch) with fields:
+            %                            .epoch_id    (char) the epoch id
+            %                            .epoch_clock (char or ndi.time.clocktype) the epoch clock
+            %                            .t0_t1       [t0 t1] interval in the epoch clock's units
+            %                            .timepoints  (Tx1) the time points (e.g. spike times)
+            %                            .datapoints  (TxXx...) data accompanying each time point
+            %       .extra_documents  (optional) a cell array of ndi.document objects to commit in
+            %                            the same batch as this element's epochs; each one's
+            %                            'element_id' dependency is set to the new element. Use this
+            %                            for e.g. a 'neuron_extracellular' document per neuron.
+            %
+            % This function takes name/value pairs that modify its operation:
+            % ---------------------------------------------------------------------------------
+            % | Parameter (default)        | Description                                        |
+            % |----------------------------|----------------------------------------------------|
+            % | element_class ('ndi.neuron')| Class of element to create. Must accept the        |
+            % |                            |   (SESSION, DOCUMENT) constructor form.            |
+            % | chunksize (100)            | Number of elements to build and commit per batch.  |
+            % |                            |   Bounds peak memory and temporary .vhsb files.    |
+            % | progressbar (false)        | Show an ndi.gui.component.ProgressBarWindow.       |
+            % | verbose (false)            | 0/1 report progress to the command line.          |
+            % ---------------------------------------------------------------------------------
+            %
+            % Output (optional): NEURONS is an array of the created element objects (class
+            % element_class). It is only constructed if an output is requested; the importer calls
+            % this as a statement to avoid the per-element construction cost.
+            %
+            % See also: NDI.ELEMENT.TIMESERIES/ADDEPOCH, NDI.FUN.PROBE.IMPORT.KILOSORT.PROBE
+            arguments
+                S (1,1) ndi.session
+                underlying_element (1,1) ndi.element
+                specs struct
+                options.element_class (1,:) char = 'ndi.neuron'
+                options.chunksize (1,1) double {mustBePositive} = 100
+                options.progressbar (1,1) logical = false
+                options.verbose (1,1) logical = false
+            end
+
+            neurons = [];
+            n = numel(specs);
+            if n==0, return; end;
+
+            subject_id = underlying_element.subject_id;
+            underlying_id = underlying_element.id();
+            tempfolder = ndi.common.PathConstants.TempFolder;
+            session_id = S.id();
+
+            % optional progress bar
+            usebar = options.progressbar;
+            baruuid = '';
+            if usebar,
+                try
+                    progBar = ndi.gui.component.ProgressBarWindow('Import Kilosort','GrabMostRecent',true);
+                    baruuid = did.ido.unique_id();
+                    progBar.addBar('Label','Creating neurons','Tag',baruuid,'Auto',true);
+                catch
+                    usebar = false;
+                end;
+            end;
+
+            buildObjects = nargout>=1;
+            neuron_cell = cell(1,n);
+
+            idx = 0;
+            while idx < n,
+                chunk = (idx+1):min(idx+options.chunksize, n);
+                elemdocs = cell(1,numel(chunk));
+                depdocs = {}; % epoch + extra documents for this chunk (depend on the elements)
+
+                for k=1:numel(chunk),
+                    i = chunk(k);
+                    sp = specs(i);
+                    etype = 'spikes';
+                    if isfield(sp,'type') && ~isempty(sp.type), etype = sp.type; end;
+
+                    edoc = ndi.document('element','base.session_id', session_id, ...
+                        'element.ndi_element_class', options.element_class, ...
+                        'element.name', sp.name, ...
+                        'element.reference', sp.reference, ...
+                        'element.type', etype, ...
+                        'element.direct', 0);
+                    edoc = edoc.set_dependency_value('underlying_element_id', underlying_id);
+                    edoc = edoc.set_dependency_value('subject_id', subject_id);
+                    elem_id = edoc.id();
+                    elemdocs{k} = edoc;
+
+                    % epoch documents (mirror ndi.element.timeseries/addepoch, but without the
+                    % per-epoch database search: we already know the element id)
+                    if isfield(sp,'epochs') && ~isempty(sp.epochs),
+                        eps = sp.epochs;
+                        for j=1:numel(eps),
+                            ep = eps(j);
+                            if isa(ep.epoch_clock,'ndi.time.clocktype'),
+                                clkstr = ep.epoch_clock.ndi_clocktype2char();
+                            else,
+                                clkstr = ep.epoch_clock;
+                            end;
+                            t0t1 = ep.t0_t1;
+                            if numel(t0t1)==2, t0t1 = vlt.data.colvec(t0t1); end;
+                            epdoc = ndi.document('element_epoch','base.session_id', session_id, ...
+                                'element_epoch.epoch_clock', clkstr, ...
+                                'element_epoch.t0_t1', t0t1, ...
+                                'epochid.epochid', ep.epoch_id);
+                            epdoc = epdoc.set_dependency_value('element_id', elem_id);
+                            fname = [tempfolder filesep epdoc.id() '.vhsb'];
+                            vlt.file.custom_file_formats.vhsb_write(fname, ...
+                                vlt.data.colvec(ep.timepoints), ep.datapoints, 'use_filelock',0);
+                            epdoc = epdoc.add_file('epoch_binary_data.vhsb', fname);
+                            depdocs{end+1} = epdoc; %#ok<AGROW>
+                        end;
+                    end;
+
+                    % extra documents (e.g. neuron_extracellular); stamp element_id
+                    if isfield(sp,'extra_documents') && ~isempty(sp.extra_documents),
+                        ex = sp.extra_documents;
+                        if ~iscell(ex), ex = {ex}; end;
+                        for j=1:numel(ex),
+                            depdocs{end+1} = ex{j}.set_dependency_value('element_id', elem_id); %#ok<AGROW>
+                        end;
+                    end;
+
+                    if buildObjects,
+                        neuron_cell{i} = feval(options.element_class, S, edoc);
+                    end;
+                    if options.verbose,
+                        disp(['  Built ' sp.name '.']);
+                    end;
+                end;
+
+                % commit: the elements first, then everything that depends on them
+                S.database_add(elemdocs);
+                if ~isempty(depdocs),
+                    S.database_add(depdocs);
+                end;
+
+                idx = chunk(end);
+                if usebar,
+                    progBar.updateBar(baruuid, idx/n);
+                end;
+            end;
+
+            if usebar,
+                progBar.updateBar(baruuid, 1);
+            end;
+
+            if buildObjects,
+                neurons = neuron_cell{1};
+                for i=2:n,
+                    neurons(i) = neuron_cell{i};
+                end;
+            end;
+        end % addMultiple()
+    end % methods (Static)
 end % classdef

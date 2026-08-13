@@ -121,8 +121,9 @@ classdef stimulator < ndi.probe.timeseries
                             mk_ = mk_ + 1;
                             switch mk_
                                 case 1 % stimonoff
-                                    t.stimon = timestamps{i}(find(edata{i}(:,1)>0),1);
-                                    t.stimoff = timestamps{i}(find(edata{i}(:,1)==-1),1);
+                                    [t.stimon, t.stimoff] = ...
+                                        ndi.probe.timeseries.stimulator.pairOnOff(...
+                                            timestamps{i}(:,1), edata{i}(:,1));
                                 case 2 % stimid
                                     for dd=1:size(edata{i},1)
                                         if strcmp(channeltype{i},'text')
@@ -132,14 +133,12 @@ classdef stimulator < ndi.probe.timeseries
                                         end
                                     end
                                 case 3 % stimopenclose
-                                    on_ = timestamps{i}( find(edata{i}(:,1)>0) , 1);
-                                    off_ = timestamps{i}( find(edata{i}(:,1)==-1) , 1);
-                                    if numel(on_)>0
-                                        t.stimopenclose(1:numel(on_),1) = on_;
-                                    end
-                                    if numel(off_)>0
-                                        t.stimopenclose(1:numel(off_),2) = off_;
-                                        if isempty(t.stimoff), t.stimoff = off_; end
+                                    [open_, close_] = ...
+                                        ndi.probe.timeseries.stimulator.pairOnOff(...
+                                            timestamps{i}(:,1), edata{i}(:,1));
+                                    t.stimopenclose = [open_ close_];
+                                    if isempty(t.stimoff)
+                                        t.stimoff = close_;
                                     end
                                 otherwise
                                     error(['Got more mark channels than expected.']);
@@ -162,9 +161,11 @@ classdef stimulator < ndi.probe.timeseries
                 for i=1:numel(edata)
                     if ~isempty(intersect(channeltype(i),{'dimp','dimn'}))
                         counter = counter + 1;
-                        t.stimon = [t.stimon(:); vlt.data.colvec(timestamps{i}(find(edata{i}(:,1)>0),1))];
-                        t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,1)==-1),1))];
-                        data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,1)==1)),1)];
+                        [on_i, off_i] = ndi.probe.timeseries.stimulator.pairOnOff(...
+                            timestamps{i}(:,1), edata{i}(:,1));
+                        t.stimon  = [t.stimon(:);  on_i];
+                        t.stimoff = [t.stimoff(:); off_i];
+                        data.stimid = [data.stimid(:); counter*ones(numel(on_i),1)];
                     end
                     if strcmp(channeltype(i),'md')
                         data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
@@ -173,7 +174,12 @@ classdef stimulator < ndi.probe.timeseries
                         event_data{end+1} = timestamps{i};
                     end
                 end
-                [dummy,order] = sort(t.stimon);
+                % NaN-on entries represent stims that began before the window;
+                % sort them by their off-time so they stay in temporal order.
+                sort_key = t.stimon;
+                nan_on = isnan(sort_key);
+                sort_key(nan_on) = t.stimoff(nan_on);
+                [~,order] = sort(sort_key);
                 t.stimon = t.stimon(order(:));
                 t.stimoff = t.stimoff(order(:));
                 data.stimid = data.stimid(order(:));
@@ -185,4 +191,49 @@ classdef stimulator < ndi.probe.timeseries
         end %readtimeseriesepoch()
 
     end % methods
+
+    methods (Static, Access=public)
+        function [on, off] = pairOnOff(times, signs)
+            % PAIRONOFF - Pair stimulus on/off events, NaN-filling orphans.
+            %
+            % [ON, OFF] = pairOnOff(TIMES, SIGNS) takes a column of event
+            % times TIMES and a column of marker values SIGNS (>0 means
+            % stim-on, <0 means stim-off) and returns equal-length column
+            % vectors ON and OFF of paired times.
+            %
+            % Events are walked in time order. A stim-on is paired with the
+            % next stim-off; a stim-on with no following off (clipped by the
+            % read window) gets OFF=NaN, and a stim-off with no preceding on
+            % gets ON=NaN. This lets callers read partial intervals without
+            % erroring on mismatched event counts (issue #248).
+            times = times(:);
+            signs = sign(signs(:));
+            [times, ord] = sort(times);
+            signs = signs(ord);
+
+            n = numel(signs);
+            on  = nan(n,1);
+            off = nan(n,1);
+            p = 0;
+            k = 1;
+            while k <= n
+                if signs(k) > 0
+                    p = p + 1;
+                    on(p) = times(k);
+                    if k+1 <= n && signs(k+1) < 0
+                        off(p) = times(k+1);
+                        k = k + 2;
+                    else
+                        k = k + 1;
+                    end
+                else
+                    p = p + 1;
+                    off(p) = times(k);
+                    k = k + 1;
+                end
+            end
+            on  = on(1:p);
+            off = off(1:p);
+        end
+    end % static methods
 end

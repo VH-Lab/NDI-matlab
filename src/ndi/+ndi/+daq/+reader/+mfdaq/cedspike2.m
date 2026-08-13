@@ -48,7 +48,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             %   add it to the list
             filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 
-            header = read_CED_SOMSMR_header(filename);
+            % Route through NDR so 64-bit son64/.smrx files dispatch to sonpipe
+            % and 32-bit son32/.smr/.son files use the built-in sigTOOL reader.
+            header = ndr.format.ced.read_SOMSMR_header(filename);
 
             if isempty(header.channelinfo)
                 channels = vlt.data.emptystruct('name','type','time_channel');
@@ -143,9 +145,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 
             for i=1:length(channel) % can only read 1 channel at a time
                 if strcmpi(channeltype,'time')
-                    [dummy,dummy,dummy,dummy,data(:,i)] = read_CED_SOMSMR_datafile(filename,'',channel(i),t0,t1);
+                    [dummy,dummy,dummy,dummy,data(:,i)] = ndr.format.ced.read_SOMSMR_datafile(filename,'',channel(i),t0,t1);
                 else
-                    [data(:,i)] = read_CED_SOMSMR_datafile(filename,'',channel(i),t0,t1);
+                    [data(:,i)] = ndr.format.ced.read_SOMSMR_datafile(filename,'',channel(i),t0,t1);
                 end
             end
 
@@ -163,7 +165,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
             filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
-            header = read_CED_SOMSMR_header(filename);
+            % Route through NDR so 64-bit son64/.smrx files dispatch to sonpipe
+            % and 32-bit son32/.smr/.son files use the built-in sigTOOL reader.
+            header = ndr.format.ced.read_SOMSMR_header(filename);
 
             t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
             t1 = header.fileinfo.dTimeBase * header.fileinfo.maxFTime * header.fileinfo.usPerTime;
@@ -227,7 +231,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 
             sr = [];
             for i=1:numel(channel)
-                sr(i) = 1/read_CED_SOMSMR_sampleinterval(filename,[],channel(i));
+                sr(i) = 1/ndr.format.ced.read_SOMSMR_sampleinterval(filename,[],channel(i));
             end
 
         end % samplerate()
@@ -254,17 +258,29 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             switch(channeltype)
                 case {'analog_in','analog_out'}
                     filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
-                    fid = fopen(filename,'r');
+                    datatype = 'int16';
+                    datasize = 16;
                     p = [];
-                    for i=1:numel(channel)
-                        Info=SONChannelInfo(fid,channel(i));
-                        datatype = 'int16';
-                        datasize = 16;
-                        s2 = Info.scale/6553.6;
-                        o2 = Info.offset;
-                        p = [p ; [-o2/s2 s2]];
+                    if ndr.format.ced.isSON64(filename)
+                        % 64-bit son64/.smrx: scale/offset come from the NDR/sonpipe
+                        % header rather than sigTOOL's SONChannelInfo.
+                        header = ndr.format.ced.read_SOMSMR_header(filename);
+                        for i=1:numel(channel)
+                            ci = ndr.format.ced.sonpipe.channelinfo(header,channel(i));
+                            s2 = ci.scale/6553.6;
+                            o2 = ci.offset;
+                            p = [p ; [-o2/s2 s2]];
+                        end
+                    else % 32-bit son32/.smr/.son via sigTOOL
+                        fid = fopen(filename,'r');
+                        for i=1:numel(channel)
+                            Info=SONChannelInfo(fid,channel(i));
+                            s2 = Info.scale/6553.6;
+                            o2 = Info.offset;
+                            p = [p ; [-o2/s2 s2]];
+                        end
+                        fclose(fid);
                     end
-                    fclose(fid);
                 case {'auxiliary_in'}
                     datatype = 'uint16';
                     datasize = 16;
@@ -296,16 +312,19 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             % FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
             %
             % Given a cell array of strings FILELIST with full-path file names,
-            % this function identifies the first file with an extension '.smr' (case insensitive)
-            % and returns the result in FILENAME (full-path file name).
+            % this function identifies the first file with a CED Spike2 extension
+            % ('.smr', '.smrx', or '.son'; case insensitive) and returns the result
+            % in FILENAME (full-path file name). Note the son64 format normally uses
+            % '.smrx', but a son64 file may carry a '.smr' name; the reader dispatches
+            % on file content (ndr.format.ced.isSON64), not the extension.
             for k=1:numel(filelist)
                 [pathpart,filenamepart,extpart] = fileparts(filelist{k});
-                if strcmpi(extpart,'.smr')
+                if any(strcmpi(extpart,{'.smr','.smrx','.son'}))
                     smrfile = filelist{k}; % assume only 1 file
                     return;
-                end % got the .smr file
+                end % got the CED Spike2 file
             end
-            error(['Could not find any .smr file in the file list.']);
+            error(['Could not find any .smr/.smrx/.son file in the file list.']);
         end
 
         function channeltype = cedspike2headertype2mfdaqchanneltype(cedspike2channeltype)

@@ -16,24 +16,15 @@ function S = vhlab(ref, dirname, force)
     S = ndi.setup.daq.addDaqSystems(S, 'vhlab', force);
 
     % update SYNCGRAPH
+    % Default rule: match epochs whose underlying files share the same name.
     nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
-    n_intan2spike2 = ndi.time.syncrule.filefind(struct('number_fullpath_matches',1, ...
-        'syncfilename','vhintan_intan2spike2time.txt',...
-        'daqsystem1','vhintan','daqsystem2','vhvis_spike2'));
-
     S.syncgraph_addrule(nsf);
-    S.syncgraph_addrule(n_intan2spike2);
 
-    asyncrule = ndi.time.syncrule.commonTriggersOverlappingEpochs(struct(...
-        'daqsystem1_name','vhtaste_sync',...
-        'daqsystem2_name','vhtaste_bpod',...
-        'daqsystem_ch1','dep1',...
-        'daqsystem_ch2','mk1',...
-        'epochclocktype','dev_local_time',...
-        'minEmbeddedFileOverlap',2,...
-        'errorOnFailure',true));
-
-    S.syncgraph_addrule(asyncrule);
+    % Add the vhlab-specific synchronization rules (vhintan<->vhvis_spike2 and
+    % vhtaste_sync<->vhtaste_bpod). These are defined declaratively in
+    % ndi_common/sync_rules/vhlab so that ndi.setup.lab('vhlab',...) and
+    % ndi.setup.vhlab(...) stay in sync from a single source of truth.
+    S = ndi.setup.sync.addSyncRules(S, 'vhlab');
 
     % Synchronize vhneuropixelsGLX and vhajbpod_np. Both DAQ readers inherit
     % from the NDR neuropixelsGLX reader and share the per-epoch .nidq.meta

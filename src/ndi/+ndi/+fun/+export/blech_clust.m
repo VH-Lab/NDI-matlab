@@ -1,0 +1,419 @@
+function blech_clust(stimulator, probe, epochID, outputfile, options)
+% NDI.FUN.EXPORT.BLECH_CLUST - export an NDI ensemble + tastant stimulus epoch to a blech_clust HMM-ready HDF5 file
+%
+% NDI.FUN.EXPORT.BLECH_CLUST(STIMULATOR, PROBE, EPOCHID, OUTPUTFILE, ...)
+%
+% Exports the sorted-unit ensemble recorded on PROBE, together with the
+% tastant stimulus identities and delivery times reported by STIMULATOR,
+% for a single epoch EPOCHID, into an HDF5 file OUTPUTFILE structured so
+% that the blech_clust Hidden Markov Model (HMM) code can consume it
+% directly (see https://github.com/vh-lab/blech_clust).
+%
+% The blech_clust HMM scripts (blech_poisson_hmm.py / blech_multinomial_hmm.py,
+% via blech_hmm.py) read a single HDF5 file and, for each tastant, use the
+% node:
+%
+%       /spike_trains/dig_in_<N>/spike_array
+%
+% a binary (0/1) millisecond raster of shape (n_trials x n_units x
+% trial_duration_ms), aligned so that stimulus delivery falls at column
+% PRESTIM (in ms). Each tastant is written to its own dig_in_<N> group;
+% the group index encodes the stimulus identity. Blech's unit selection
+% and raster plotting additionally read /sorted_units and a /unit_descriptor
+% table; those are written here as well.
+%
+% This function produces exactly that structure, using MATLAB's built-in
+% HDF5 writer (h5create/h5write and the low-level HDF5 library for the
+% compound /unit_descriptor table).
+%
+% Where the information comes from:
+% --------------------------------------------------------------------------
+% | blech_clust field   | NDI source                                       |
+% |---------------------|--------------------------------------------------|
+% | ensemble activity   | the neuron ensemble of PROBE for EPOCHID, read   |
+% |   (spike_array)     |   with ndi.fun.ensemble.load (a neuron-by-spike  |
+% |                     |   sparse matrix of spike times in a known clock).|
+% | stimulus identity   | the tastant / stimid parameter of each stimulus  |
+% |   (dig_in_<N>)      |   in the STIMULATOR's stimulus_presentation doc  |
+% |                     |   (e.g. ndi.daq.metadatareader.VHAudreyBPod).    |
+% | stimulus times      | presentation_time.onset of each trial, converted |
+% |   (trial alignment) |   into the ensemble's clock via the syncgraph.   |
+% --------------------------------------------------------------------------
+%
+% The ensemble activity is obtained with ndi.fun.ensemble.load(S, PROBE,
+% EPOCHID) (the spiking neurons built on PROBE, recorded during EPOCHID), or,
+% if the 'ensemble' option is given, read from that ndi.element.ensemble for
+% EPOCHID with ndi.fun.ensemble.read. The stimulus identity and delivery times are
+% read from the NDI 'stimulus_presentation' document that depends on
+% STIMULATOR and matches EPOCHID (built by ndi.app.stimulus.decoder); if no
+% such document exists, an error asks the caller to run the decoder first.
+%
+% This function's parameters can be modified by passing name/value pairs:
+% --------------------------------------------------------------------------
+% | Parameter (default)   | Description                                    |
+% |-----------------------|------------------------------------------------|
+% | ensemble ([])         | An ndi.element.ensemble (or its document / id) |
+% |                       |   whose EPOCHID is read (with                  |
+% |                       |   ndi.fun.ensemble.read) for the activity,     |
+% |                       |   instead of loading it from PROBE. It must be |
+% |                       |   the ensemble built on PROBE.                 |
+% | Neuron filtering      | Select which neurons enter the export, using   |
+% |                       |   the same vocabulary as ndi.fun.ensemble.read |
+% |                       |   / filter. Quality is a hard filter (a neuron |
+% |                       |   failing it is always dropped):               |
+% | MinQuality ([])       |   keep only neurons whose neuronQuality         |
+% |                       |     quality_number >= this value.              |
+% | QualityLabel ('')     |   keep only neurons whose quality_label is in  |
+% |                       |     this char/cellstr list.                    |
+% | KeepUnrated (false)   |   keep neurons that have no neuron_extracellular|
+% |                       |     document when a quality filter is active.  |
+% | IncludeNames ({})     |   keep only neurons with these names.           |
+% | ExcludeNames ({})     |   drop neurons with these names.                |
+% | IncludeIds ({})       |   keep only neurons with these element ids.     |
+% | ExcludeIds ({})       |   drop neurons with these element ids.          |
+% | IncludeIndex ([])     |   keep only neurons at these 1-based positions. |
+% | ExcludeIndex ([])     |   drop neurons at these 1-based positions.      |
+% | singleUnitLabels      | Quality labels that mark a kept neuron as a    |
+% |   ({'single','good',  |   single unit in /unit_descriptor (matched     |
+% |    'excellent'})      |   against quality_label, case-insensitive).    |
+% | sampleRate (30000)    | Acquisition sample rate (Hz). blech_clust      |
+% |                       |   hard-codes 30 kHz; any value other than      |
+% |                       |   30000 exactly raises an error.               |
+% | preStim (2000)        | Milliseconds retained BEFORE each stimulus     |
+% |                       |   delivery. Delivery is placed at column       |
+% |                       |   preStim of spike_array. (blech 'pre_stim'.)  |
+% | postStim (5000)       | Milliseconds retained AFTER each stimulus      |
+% |                       |   delivery.                                    |
+% | stimulusOrder ([])    | Optional vector of stimids giving the order in |
+% |                       |   which tastants map to dig_in_0, dig_in_1,... |
+% |                       |   If empty, the unique stimids present are used|
+% |                       |   in ascending order.                          |
+% | includeStimids ([])   | Optional vector of stimids to export. If empty,|
+% |                       |   all stimids present in the epoch are used.   |
+% | tastantField          | Name of the stimulus parameter field holding   |
+% |   ('tastant')         |   the tastant label (for reporting/attrs).     |
+% | stimidField ('stimid')| Name of the stimulus parameter field holding   |
+% |                       |   the integer stimulus identity.               |
+% | verbose (1)           | 0/1 Should we be verbose?                      |
+% |-----------------------|------------------------------------------------|
+%
+% Example:
+%   S = ndi.session.dir('/path/to/session');
+%   p = S.getprobes('type','n-trode'); p = p{1};      % ensemble probe
+%   stim = S.getprobes('type','stimulator'); stim = stim{1};
+%   ndi.fun.export.blech_clust(stim, p, 't00001', '/tmp/mydata.h5');
+%
+%   % export only well-isolated neurons (quality_number >= 3):
+%   ndi.fun.export.blech_clust(stim, p, 't00001', '/tmp/good.h5', ...
+%       'MinQuality', 3);
+%
+% STRUCTURE OF THE OUTPUT FILE
+% --------------------------------------------------------------------------
+% There is no formal published specification of this layout; it is defined
+% by the blech_clust code (units_make_arrays.py, blech_setup_hmm.py,
+% blech_poisson_hmm.py). This function writes exactly what that code reads:
+%
+%   /spike_trains/dig_in_<N>/spike_array   uint8 (n_trials x n_units x
+%                                          duration_ms); 1 = spike in that
+%                                          ms. Delivery is at column preStim.
+%                                          One group per tastant; N encodes
+%                                          identity. Group attributes record
+%                                          the stimid, tastant name, n_trials,
+%                                          pre_stim_ms and post_stim_ms.
+%   /sorted_units/unit<NNN>/times          uint64 spike times in 30 kHz
+%                                          acquisition samples (per unit).
+%   /unit_descriptor                       compound table with Int32 columns
+%                                          single_unit, regular_spiking,
+%                                          fast_spiking (one row per unit).
+%
+% USING THE OUTPUT FILE WITH BLECH_CLUST
+% --------------------------------------------------------------------------
+% 1) Put the .h5 file in its own directory on a machine with blech_clust
+%    installed (https://github.com/vh-lab/blech_clust).
+%
+% 2) Configure the HMM. Either run the interactive setup, which lists the
+%    dig_in_<N> groups as the available tastes and /sorted_units as the
+%    selectable units:
+%
+%        python blech_setup_hmm.py
+%
+%    or write the three config files it produces by hand in that directory:
+%        blech.dir         one line: the full path to the data directory
+%        blech.hmm_units   the chosen unit indices, one per line (0-based)
+%        blech.hmm_params  min_states, max_states, max_iterations,
+%                          convergence threshold, seeds, transition inertia,
+%                          emission inertia, taste_num (the <N> of dig_in_<N>),
+%                          pre_stim, bin_size, pre_stim_hmm, post_stim_hmm,
+%                          hmm_type ('generic' or 'feedforward'), one per line.
+%
+%    IMPORTANT: set blech's pre_stim equal to the preStim (ms) used here, and
+%    keep pre_stim_hmm <= preStim and post_stim_hmm <= postStim so the HMM
+%    window stays inside the exported window. bin_size is typically 10 (ms).
+%
+% 3) Fit the HMM (the argument is the number of CPUs):
+%
+%        python blech_poisson_hmm.py 4          % Poisson (per-unit) emissions
+%        python blech_multinomial_hmm.py 4      % or collapsed multinomial
+%
+% 4) Read the results, written back into the SAME .h5 under
+%    /spike_trains/dig_in_<N>/<hmm_type>_poisson_hmm_results/states_<K>/ :
+%        emission_probs     per-state, per-unit firing rates
+%        transition_probs   state transition matrix
+%        posterior_proba    (n_trials x time_bins x n_states) state
+%                           probabilities over time
+%        log_likelihood, aic, bic, time
+%    In MATLAB, e.g.:
+%        pp = h5read('/tmp/mydata.h5', ...
+%             '/spike_trains/dig_in_0/generic_poisson_hmm_results/states_3/posterior_proba');
+%
+% The HMM is fit to one taste at a time (taste_num); repeat step 2-3 per
+% dig_in_<N> to analyze every tastant. The ensemble-state HMM methodology is
+% described in Jones, Fontanini, Sadacca, Miller & Katz (2007) PNAS 104:18772.
+%
+% See also: ndi.fun.export.blech_clust_write, ndi.fun.ensemble.load,
+%   ndi.fun.ensemble.read, ndi.fun.ensemble.neuronQuality, ndi.element.ensemble,
+%   ndi.fun.probe.export.binary, ndi.app.stimulus.decoder
+
+    arguments
+        stimulator
+        probe
+        epochID (1,:) char
+        outputfile (1,:) char
+        options.sampleRate (1,1) double = 30000
+        options.preStim (1,1) double = 2000
+        options.postStim (1,1) double = 5000
+        options.ensemble = []
+        options.MinQuality double = []
+        options.QualityLabel = ''
+        options.KeepUnrated (1,1) logical = false
+        options.IncludeNames cell = {}
+        options.ExcludeNames cell = {}
+        options.IncludeIds cell = {}
+        options.ExcludeIds cell = {}
+        options.IncludeIndex double = []
+        options.ExcludeIndex double = []
+        options.singleUnitLabels (1,:) cell = {'single','good','excellent'}
+        options.stimulusOrder (1,:) double = []
+        options.includeStimids (1,:) double = []
+        options.tastantField (1,:) char = 'tastant'
+        options.stimidField (1,:) char = 'stimid'
+        options.verbose (1,1) double = 1
+    end
+
+    % --- blech_clust hard-codes a 30 kHz acquisition rate (30 samples/ms) ---
+    if options.sampleRate ~= 30000
+        error('ndi:fun:export:blech_clust:sampleRate', ...
+            ['blech_clust requires an acquisition sample rate of exactly ' ...
+             '30000 Hz (30 samples/ms); received %g Hz. Resample the data ' ...
+             'or supply data recorded at 30 kHz.'], options.sampleRate);
+    end
+
+    if options.preStim < 0 || options.postStim <= 0
+        error('ndi:fun:export:blech_clust:window', ...
+            'preStim must be >= 0 and postStim must be > 0 (milliseconds).');
+    end
+
+    preStim  = round(options.preStim);   % ms before delivery
+    postStim = round(options.postStim);  % ms after delivery
+    verbose = options.verbose;
+
+    S = probe.session;
+
+    % ---------------------------------------------------------------------
+    % 1) Pull the ensemble spike times via the NDI ensemble tool. The
+    %    ensemble activity is a neuron-by-spike sparse matrix of spike times
+    %    in a known clock (info.clocktype); we bin it into a ms raster below.
+    % ---------------------------------------------------------------------
+    if verbose, disp('Reading ensemble spike times (ndi.fun.ensemble)...'); end
+    [unit_spiketimes, unit_info, ensemble_clocktype] = ...
+        local_get_ensemble(S, probe, epochID, options);
+    n_units = numel(unit_spiketimes);
+    if n_units == 0
+        error('ndi:fun:export:blech_clust:nounits', ...
+            'The ensemble for epoch %s contains no neurons.', epochID);
+    end
+
+    % ---------------------------------------------------------------------
+    % 2) Pull the tastant stimulus identities and delivery times, converting
+    %    the delivery times into the SAME clock as the ensemble activity.
+    % ---------------------------------------------------------------------
+    if verbose, disp('Reading stimulus presentation (identities and times)...'); end
+    [onset_probe, ~, trial_stimid, stimid_tastant] = ...
+        local_get_stimulus_presentation(S, stimulator, probe, epochID, ...
+            ensemble_clocktype, options);
+
+    % ---------------------------------------------------------------------
+    % 3) Bin the ensemble activity into blech_clust's spike_array layout and
+    %    write the HDF5 file. This pure step is factored out so it can be
+    %    unit-tested without a session (see ndi.fun.export.blech_clust_write).
+    % ---------------------------------------------------------------------
+    ndi.fun.export.blech_clust_write(outputfile, unit_spiketimes, unit_info, ...
+        onset_probe, trial_stimid, stimid_tastant, ...
+        'preStim', preStim, 'postStim', postStim, 'sampleRate', options.sampleRate, ...
+        'stimulusOrder', options.stimulusOrder, 'includeStimids', options.includeStimids, ...
+        'epochID', epochID, 'verbose', verbose);
+
+end % blech_clust
+
+% =========================================================================
+% Local helper: stimulus identities + delivery times (in the probe clock)
+% =========================================================================
+function [onset_probe, offset_probe, trial_stimid, stimid_tastant] = ...
+        local_get_stimulus_presentation(S, stimulator, probe, epochID, target_clocktype, options)
+    % Find the stimulus_presentation document for this stimulator + epoch.
+    q = ndi.query('','isa','stimulus_presentation') & ...
+        ndi.query('','depends_on','stimulus_element_id', stimulator.id()) & ...
+        ndi.query('epochid.epochid','exact_string', epochID,'');
+    stim_docs = S.database_search(q);
+
+    if isempty(stim_docs)
+        error('ndi:fun:export:blech_clust:nopresentation', ...
+            ['No stimulus_presentation document was found for stimulator %s, ' ...
+             'epoch %s. Run ndi.app.stimulus.decoder on this session first.'], ...
+            stimulator.elementstring, epochID);
+    end
+    stim_doc = stim_docs{1};
+
+    sp = stim_doc.document_properties.stimulus_presentation;
+    presentation_order = vlt.data.colvec([sp.presentation_order]); % 1 x n_trials -> unique stim index per trial
+
+    % Map each unique stimulus index -> its stimid, and stimid -> tastant name
+    n_stims = numel(sp.stimuli);
+    unique_stimid = nan(n_stims,1);
+    stimid_tastant = containers.Map('KeyType','double','ValueType','char');
+    for k = 1:n_stims
+        p = sp.stimuli(k).parameters;
+        if isfield(p, options.stimidField)
+            unique_stimid(k) = double(p.(options.stimidField));
+        else
+            unique_stimid(k) = k; % fall back to index if no stimid field
+        end
+        tastant_name = '';
+        if isfield(p, options.tastantField)
+            tastant_name = char(string(p.(options.tastantField)));
+        end
+        stimid_tastant(unique_stimid(k)) = tastant_name;
+    end
+
+    % Per-trial stimid
+    trial_stimid = unique_stimid(presentation_order);
+
+    % Load per-trial presentation times (onset/offset) in the stimulus clock
+    ndi_decoder = ndi.app.stimulus.decoder(S);
+    presentation_time = ndi_decoder.load_presentation_time(stim_doc);
+    onset_stim  = vlt.data.colvec([presentation_time.onset]);
+    offset_stim = vlt.data.colvec([presentation_time.offset]);
+
+    % Convert stimulus onset/offset times into the same clock the ensemble
+    % activity is expressed in (target_clocktype), on the probe, so the
+    % delivery times and the spike times are directly comparable.
+    if isempty(target_clocktype)
+        target_clocktype = 'dev_local_time';
+    end
+    stim_timeref = ndi.time.timereference(stimulator, ...
+        ndi.time.clocktype(presentation_time(1).clocktype), ...
+        stim_doc.document_properties.epochid.epochid, 0);
+
+    [t_probe, ~, msg] = S.syncgraph.time_convert(stim_timeref, ...
+        [onset_stim offset_stim], probe, ndi.time.clocktype(target_clocktype));
+    if isempty(t_probe)
+        error('ndi:fun:export:blech_clust:sync', ...
+            ['Could not convert stimulus times into the ensemble clock (%s) ' ...
+             'via the session syncgraph: %s'], target_clocktype, msg);
+    end
+    t_probe = reshape(t_probe, numel(onset_stim), 2);
+    onset_probe  = t_probe(:,1);
+    offset_probe = t_probe(:,2);
+end
+
+% =========================================================================
+% Local helper: ensemble spike times via the NDI ensemble tool
+% =========================================================================
+function [unit_spiketimes, unit_info, clocktype] = local_get_ensemble(S, probe, epochID, options)
+    % Obtain the ensemble activity (a neuron-by-spike sparse matrix of spike
+    % times) for this epoch as an ensemble structure E. Either read the
+    % caller-supplied ensemble element (ndi.element.ensemble object / document
+    % / id), or build the ensemble on the fly for the probe with
+    % ndi.fun.ensemble.load.
+    if ~isempty(options.ensemble)
+        E = ndi.fun.ensemble.read(S, options.ensemble, epochID);
+    else
+        [activity, neuron_ids, neuron_names, info] = ndi.fun.ensemble.load(S, probe, epochID);
+        E = struct('activity', activity, 'neuron_ids', {neuron_ids}, ...
+            'neuron_names', {neuron_names}, 'epoch', epochID, 'info', info);
+    end
+    clocktype = local_field(E.info, 'clocktype', '');
+
+    % Filter the neurons that go into the export, by quality and/or by
+    % name/id/index, using the same vocabulary as ndi.fun.ensemble.read.
+    E = local_apply_filter(S, E, options);
+
+    % Per-neuron spike-time vectors (ensemble clock, seconds): unpack the
+    % (filtered) sparse activity matrix, dropping the zero right-padding.
+    n_units = size(E.activity,1);
+    unit_spiketimes = cell(1,n_units);
+    for i = 1:n_units
+        row = full(E.activity(i,:));
+        unit_spiketimes{i} = row(row~=0);
+    end
+
+    % Map ensemble neuron quality to blech's /unit_descriptor flags. The
+    % regular_spiking / fast_spiking flags are not inferred (they only affect
+    % blech raster colors); single_unit is set for neurons whose quality label
+    % is in singleUnitLabels.
+    [~, qlabel] = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
+    su_labels = lower(options.singleUnitLabels);
+    unit_info = vlt.data.emptystruct('name','single_unit','regular_spiking','fast_spiking');
+    for i = 1:numel(unit_spiketimes)
+        nm = '';
+        if i <= numel(E.neuron_names), nm = E.neuron_names{i}; end
+        su = 0;
+        if i <= numel(qlabel) && ~isempty(qlabel{i}) && ismember(lower(qlabel{i}), su_labels)
+            su = 1;
+        end
+        unit_info(end+1) = struct('name', nm, 'single_unit', su, ...
+            'regular_spiking', 0, 'fast_spiking', 0); %#ok<AGROW>
+    end
+end
+
+function E = local_apply_filter(S, E, options)
+    % Select a subset of the ensemble's neurons, mirroring the quality +
+    % name/id/index filtering of ndi.fun.ensemble.read: quality-failing
+    % neurons become extra exclusions, then ndi.fun.ensemble.filter is applied.
+    useQuality = ~isempty(options.MinQuality) || ~isempty(options.QualityLabel);
+    anyFilter = useQuality ...
+        || ~isempty(options.IncludeNames) || ~isempty(options.ExcludeNames) ...
+        || ~isempty(options.IncludeIds)   || ~isempty(options.ExcludeIds) ...
+        || ~isempty(options.IncludeIndex) || ~isempty(options.ExcludeIndex);
+    if ~anyFilter
+        return;
+    end
+
+    exclude_ids = options.ExcludeIds(:).';
+    if useQuality
+        [qnum, qlabel] = ndi.fun.ensemble.neuronQuality(S, E.neuron_ids);
+        qmask = true(1, numel(E.neuron_ids));
+        if ~isempty(options.MinQuality)
+            qmask = qmask & (qnum >= options.MinQuality);
+        end
+        if ~isempty(options.QualityLabel)
+            qmask = qmask & ismember(qlabel, cellstr(options.QualityLabel));
+        end
+        if options.KeepUnrated
+            qmask(isnan(qnum)) = true;
+        end
+        exclude_ids = [exclude_ids, E.neuron_ids(~qmask)];
+    end
+
+    E = ndi.fun.ensemble.filter(E, ...
+        'IncludeNames', options.IncludeNames, 'ExcludeNames', options.ExcludeNames, ...
+        'IncludeIndex', options.IncludeIndex, 'ExcludeIndex', options.ExcludeIndex, ...
+        'IncludeIds', options.IncludeIds, 'ExcludeIds', exclude_ids);
+end
+
+function v = local_field(s, f, default)
+    % return s.(f) if present, else default
+    v = default;
+    if isstruct(s) && isfield(s, f), v = s.(f); end
+end
+

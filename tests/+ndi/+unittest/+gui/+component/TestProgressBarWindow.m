@@ -12,6 +12,9 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.log(1, 'Closing all pre-existing progress bar windows...');
             figs = findall(groot, 'Type', 'figure', 'Tag', 'progressbar');
             delete(figs);
+            % Also ensure no navigator is open, so these tests exercise the
+            % standalone-window path (a navigator would cause docking).
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'ndiNavigator'));
         end
     end
     methods (TestMethodTeardown)
@@ -19,6 +22,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             % Close any progress bar figures created during tests
             figs = findall(groot, 'Type', 'figure', 'Tag', 'progressbar');
             delete(figs);
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'ndiNavigator'));
         end
     end
     methods (Test)

@@ -1,0 +1,20 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/kiasort\/kiasort_clusters.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/kiasort\/kiasort_clusters_schema.json",
+		"class_name":						"kiasort_clusters",
+		"property_list_name":					"kiasort_clusters",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
+		]
+	},
+	"depends_on": [
+		{  "name": "element_id", "value": "" }
+	],
+	"kiasort_clusters": {
+		"kiasort_directory": "kiasort",
+		"curated_output_MD5_checksum": ""
+	}
+}
