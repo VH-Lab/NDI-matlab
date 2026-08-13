@@ -42,18 +42,14 @@ classdef testNdiQuery < matlab.unittest.TestCase
 
     methods (Access = private)
         function teardownDataset(testCase)
-            % Clean up local
+            % Clean up local. Close open SQLite handles before removing the
+            % dataset/session directories so their did-sqlite.sqlite files are
+            % not still locked on Windows (see issue #870).
              if ~isempty(testCase.Dataset)
-                 path = testCase.Dataset.path;
-                 if isfolder(path)
-                     rmdir(path, 's');
-                 end
+                 ndi.unittest.cloud.closeAndRemoveDir(testCase.Dataset.path);
              end
              if ~isempty(testCase.Session)
-                 path = testCase.Session.path;
-                 if isfolder(path)
-                     rmdir(path, 's');
-                 end
+                 ndi.unittest.cloud.closeAndRemoveDir(testCase.Session.path);
              end
 
              % Clean up remote
