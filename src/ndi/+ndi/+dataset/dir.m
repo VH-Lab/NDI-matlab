@@ -66,7 +66,18 @@ classdef dir < ndi.dataset
                 q_session = ndi.query('','isa','session') & ndi.query('base.session_id','exact_string',correctSessionId);                
                 candidate_session_doc = ndi_dataset_dir_obj.database_search(q_session);
                 if isscalar(candidate_session_doc)
-                    ref = candidate_session_doc{1}.document_properties.session.reference;
+                    % BOTH VINTAGES. V_eta renamed session.reference ->
+                    % session.local_identifier (did-schema, signed 2026-08-13).
+                    % This is a DOCUMENT FIELD read by path, not an ndi.query, so
+                    % a query-shaped grep does not find it -- the daqsystem
+                    % lesson. A dataset can hold a session document of either
+                    % vintage, so both spellings are accepted.
+                    session_blk = candidate_session_doc{1}.document_properties.session;
+                    if isfield(session_blk,'local_identifier')
+                        ref = session_blk.local_identifier;
+                    else
+                        ref = session_blk.reference;
+                    end
                     session_id = candidate_session_doc{1}.document_properties.base.session_id;
                     ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
                 else
