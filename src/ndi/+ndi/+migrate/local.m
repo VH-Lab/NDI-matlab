@@ -252,6 +252,7 @@ function result = local(path, options)
     datasetEntitiesReport = [];
     epochMintReport = [];
     epochAnchorReport = [];
+    recordingAttributionReport = [];
     sessionAnchorReport = [];
     responseParametersReport = [];
     lawnPlateReport = [];
@@ -797,6 +798,15 @@ function result = local(path, options)
                  'documents.'], ME.message);
         end
         try
+            [convertResult, recordingAttributionReport] = ...
+                resolveRecordingAttribution(convertResult, options);
+        catch ME
+            warning('NDI:migrate:recordingAttributionFailed', ...
+                ['Second-pass raw-recording attribution failed (%s); leaving ' ...
+                 'probe-attributed observations as pass-1 emitted them.'], ...
+                ME.message);
+        end
+        try
             [convertResult, sessionAnchorReport] = ...
                 did2.convert.resolveSessionAnchors( ...
                 convertResult, ...
@@ -951,6 +961,7 @@ function result = local(path, options)
         'datasetEntities',     datasetEntitiesReport, ...
         'epochMint',           epochMintReport, ...
         'epochAnchorFold',     epochAnchorReport, ...
+        'recordingAttribution', recordingAttributionReport, ...
         'sessionAnchorFold',   sessionAnchorReport, ...
         'responseParametersFold', responseParametersReport, ...
         'lawnPlateSubjects',   lawnPlateReport, ...
@@ -1343,6 +1354,97 @@ function [convertResult, report] = resolveOntologyRowSubjects(convertResult, bod
     end
     convertResult.migrated = [kept, newDocs];
     convertResult.summary = recountSummary(convertResult);
+    report.changed = true;
+end
+
+function [convertResult, report] = resolveRecordingAttribution(convertResult, options)
+%RESOLVERECORDINGATTRIBUTION V_eta second pass: a raw recording is an
+%   observation OF THE SPECIMEN, taken WITH the probe (T7) -- for every emitter,
+%   not just the one that could see the specimen in its own document.
+%
+%   ndi.migrate.internal.recordingAttribution does the RESOLUTION (pure struct
+%   logic, no converter, no schema, no database) and returns a plan carrying a
+%   ready V_eta body per re-attributable observation. This function does the
+%   REPLACEMENT, ONE AT A TIME and REVERTIBLY, through did2.convert.v1_to_v2 --
+%   the same footing epochAnchorFold, resolveOntologyLabelSubjects and Path-S
+%   use, and for the same reason: a re-fold that QUARANTINES must not replace a
+%   document that validated. Trading a clean document for a gating quarantine is
+%   the `epochfiles_ingested` regression (2,484 documents) all over again.
+%
+%   THE base.id IS PRESERVED, so every `derived_from` / `time_reference_#` edge
+%   pointing at the observation keeps resolving across the replacement. Only the
+%   subject and instrument edges move.
+%
+%   WHY IT RUNS AFTER epochAnchorFold: no data dependency, but the anchor fold
+%   REPLACES documents too, and running after it means this pass reads the
+%   settled set rather than bodies that are about to be superseded. Cheap
+%   ordering, one fewer interaction to reason about.
+%
+%   STATUS: WRITTEN 2026-08-13 IN A CONTAINER WITH NO MATLAB. NOT EXECUTED HERE.
+    report = [];
+    if ~strcmp(options.TargetVersion, 'V_eta')
+        return;     % `instrument_id` on an observation is a V_eta shape.
+    end
+    docs = convertResult.migrated;
+    if isempty(docs)
+        return;
+    end
+
+    structs = cell(1, numel(docs));
+    for k = 1:numel(docs)
+        structs{k} = docs{k}.toStruct();
+    end
+    [plan, report] = ndi.migrate.internal.recordingAttribution(structs);
+
+    % Initialised unconditionally, before the early return: a pass that plans
+    % nothing must report the same fields as one that replaces everything.
+    report.observations_reattributed = 0;
+    report.reattribution_quarantined = 0;
+    report.folded                    = false;
+    if isempty(plan)
+        return;
+    end
+
+    replacedIds = {};
+    newDocs = {};
+    for k = 1:numel(plan)
+        try
+            sub = did2.convert.v1_to_v2({plan(k).body}, ...
+                'Validate',      options.Validate, ...
+                'SchemaCache',   options.SchemaCache, ...
+                'TargetVersion', options.TargetVersion, ...
+                'Verbose',       false);
+        catch
+            report.reattribution_quarantined = ...
+                report.reattribution_quarantined + 1;
+            continue;   % REVERT: keep the pass-1 document
+        end
+        if ~isempty(sub.quarantine) || isempty(sub.migrated)
+            report.reattribution_quarantined = ...
+                report.reattribution_quarantined + 1;
+            continue;   % REVERT
+        end
+        replacedIds{end+1} = plan(k).source_id; %#ok<AGROW>
+        newDocs = [newDocs, sub.migrated]; %#ok<AGROW>
+        report.observations_reattributed = ...
+            report.observations_reattributed + 1;
+    end
+
+    if isempty(replacedIds)
+        return;
+    end
+
+    kept = {};
+    for k = 1:numel(convertResult.migrated)
+        d = convertResult.migrated{k};
+        if any(strcmp(d.get('base.id'), replacedIds))
+            continue;   % superseded by the re-attributed document, same id
+        end
+        kept{end+1} = d; %#ok<AGROW>
+    end
+    convertResult.migrated = [kept, newDocs];
+    convertResult.summary = recountSummary(convertResult);
+    report.folded = true;
     report.changed = true;
 end
 

@@ -435,21 +435,55 @@ assertEqual(testCase, numel(allObs), 2, sprintf( ...
     ['PRED should yield exactly 2 voltage_observation documents (element''s ' ...
      'raw recording and pyraview''s pyramid); found %d. The selector below ' ...
      'cannot be trusted until this holds.'], numel(allObs)));
-withInstrument = {};
-without = {};
+%   THE DISCRIMINATOR CHANGED 2026-08-13, AND THE OLD ONE IS WHY. It was
+%   `instrument_id` -- present on element's, absent on pyraview's. The
+%   second-pass `recordingAttribution` now gives pyraview's observation the
+%   same specimen and the same instrument edge, which is the entire point of
+%   that pass and which makes the old discriminator select NOTHING. A test
+%   whose selector is the property under repair cannot survive the repair.
+%
+%   `base.name` is used instead, and it is a WRITER-SIDE constant on both
+%   sides rather than anything this pass touches:
+%       element   private/jRecordingObservation.m:215  'migrated_recording_observation'
+%       pyraview  migrators_j/pyraview.m               'migrated_signal'
+byName = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(allObs)
-    if isempty(depValue(allObs{k}, 'instrument_id'))
-        without{end+1} = allObs{k}; %#ok<AGROW>
-    else
-        withInstrument{end+1} = allObs{k}; %#ok<AGROW>
+    nm = '';
+    st = allObs{k};
+    if isfield(st, 'base') && isstruct(st.base) && isfield(st.base, 'name')
+        nm = char(st.base.name);
     end
+    if ~isKey(byName, nm)
+        byName(nm) = {};
+    end
+    acc = byName(nm);
+    acc{end+1} = allObs{k}; %#ok<AGROW>
+    byName(nm) = acc;
 end
-assertEqual(testCase, numel(without), 1, ...
-    ['the two voltage_observations are no longer told apart by ' ...
-     '`instrument_id`; the selector needs a new discriminator']);
-assertEqual(testCase, numel(withInstrument), 1, ...
-    'element''s recording observation lost its instrument_id');
-obs = without{1};
+assertTrue(testCase, isKey(byName, 'migrated_signal'), ...
+    ['no voltage_observation carries base.name `migrated_signal` -- pyraview ' ...
+     'stopped naming its observation, and the selector needs a new discriminator']);
+assertTrue(testCase, isKey(byName, 'migrated_recording_observation'), ...
+    ['no voltage_observation carries base.name `migrated_recording_observation` ' ...
+     '-- element''s raw-recording observation is missing entirely']);
+pyr = byName('migrated_signal');
+assertEqual(testCase, numel(pyr), 1, ...
+    'more than one pyraview observation; the selector is ambiguous');
+obs = pyr{1};
+
+% THE SIGNED ATTRIBUTION, asserted on pyraview's document specifically. Before
+% recordingAttribution this observation named the PROBE as its subject and no
+% instrument at all, so "every recording from this specimen" missed it.
+elemObs = byName('migrated_recording_observation');
+specimenId = depValue(elemObs{1}, 'subject_id');
+probeId    = depValue(elemObs{1}, 'instrument_id');
+assertNotEmpty(testCase, specimenId, ...
+    'element''s observation names no specimen; the donor map would be empty');
+assertEqual(testCase, depValue(obs, 'subject_id'), specimenId, ...
+    ['pyraview''s observation is not attributed to the SPECIMEN -- ' ...
+     'recordingAttribution did not run, or refused it']);
+assertEqual(testCase, depValue(obs, 'instrument_id'), probeId, ...
+    'pyraview''s observation does not name the probe as its instrument (T7)');
 end
 
 function doc = findById(bodies, docId)
