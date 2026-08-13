@@ -170,7 +170,7 @@ if mintReference
         'schema_version', targetVersion);
     timeRefBody.depends_on = struct('name', 'element_id', 'value', stimulatorId);
     timeRefBody.base = struct('id', timeRefId, 'session_id', sessionId, ...
-        'name', 'migrated_stimulator_epoch_anchor', 'datestamp', datestamp);
+        'name', 'migrated_stimulator_epoch_anchor', 'creation_timestamp', datestamp);
     timeRefBody.time_reference = struct('is_approximate', false);
     timeRefBody.epochid = struct('epochid', epochId);
     timeRefBody.epoch_bounded_reference = struct('epoch_clock', epochClock);
@@ -245,7 +245,7 @@ if strcmp(targetVersion, 'V_eta')
     end
     bathBody.depends_on = bathDeps;
     bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
-        'name', 'migrated_bath', 'datestamp', datestamp);
+        'name', 'migrated_bath', 'creation_timestamp', datestamp);
     bathBody.subject_statement = struct('variable', primaryChemical(mixture), ...
         'storage_mode', 'inline');
     bathBody.subject_interaction = struct('method', struct('node', '', 'name', ''), ...
@@ -268,7 +268,7 @@ bathBody.depends_on = [ ...
     struct('name', 'subject_id',       'value', subjectId), ...
     struct('name', 'time_reference_1', 'value', timeRefId)];
 bathBody.base = struct('id', bathId, 'session_id', sessionId, ...
-    'name', 'migrated_bath', 'datestamp', datestamp);
+    'name', 'migrated_bath', 'creation_timestamp', datestamp);
 
 if strcmp(targetVersion, 'V_zeta')
     % Brainstorm I: a bath is a subject_interaction. Identity is OFF the class

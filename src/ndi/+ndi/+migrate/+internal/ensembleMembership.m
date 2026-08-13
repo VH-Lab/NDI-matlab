@@ -566,7 +566,7 @@ if ~isempty(epochDocId)
 end
 body.depends_on = deps;
 body.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', name, 'datestamp', ds);
+    'name', name, 'creation_timestamp', ds);
 block = struct('relation', relTerm);
 if ~isempty(sequence)
     % `sequence` is directed_relation's declared "ordinal for ordered

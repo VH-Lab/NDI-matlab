@@ -557,7 +557,7 @@ for g = 1:nGroups
     body.depends_on = deps;
 
     body.base = struct('id', groupDocId{g}, 'session_id', rep.session_id, ...
-        'name', 'migrated_strain', 'datestamp', rep.datestamp);
+        'name', 'migrated_strain', 'creation_timestamp', rep.datestamp);
 
     body.entity = struct();
     body.entity.global_identifier = rep.identifiers;

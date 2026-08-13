@@ -136,7 +136,7 @@ subj = struct();
 subj.document_class = classBlock('subject', {'base'});
 subj.depends_on = struct('name', {}, 'value', {});
 subj.base = struct('id', partId, 'session_id', sessionId, ...
-    'name', ['migrated_part_' partName], 'datestamp', ds);
+    'name', ['migrated_part_' partName], 'creation_timestamp', ds);
 % local_identifier is REQUIRED on a V_eta subject. Compose animal+part; trim any
 % degenerate leading/trailing underscores (an empty animalId would leave one), and
 % fall back to the document id if somehow empty -- the same guarantee the DID-side
@@ -149,7 +149,7 @@ assertion = struct();
 assertion.document_class = classBlock('term_assertion', {'subject_assertion', 'term'});
 assertion.depends_on = struct('name', {'subject_id'}, 'value', {partId});
 assertion.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', 'migrated_part_kind', 'datestamp', ds);
+    'name', 'migrated_part_kind', 'creation_timestamp', ds);
 assertion.subject_statement = struct('variable', ...
     struct('node', '', 'name', 'anatomical structure'), 'storage_mode', 'inline');
 assertion.subject_assertion = struct();
@@ -174,7 +174,7 @@ relation.depends_on = [ ...
     struct('name', 'child',  'value', partId), ...     % the part
     struct('name', 'parent', 'value', animalId)];      % the whole animal
 relation.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', 'migrated_part_of', 'datestamp', ds);
+    'name', 'migrated_part_of', 'creation_timestamp', ds);
 relation.directed_relation = struct('relation', ...
     struct('node', 'BFO:0000050', 'name', 'part_of'));
 

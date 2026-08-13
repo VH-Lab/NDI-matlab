@@ -86,7 +86,7 @@ manipBody.document_class = struct('class_name', 'visual_grating_manipulation', .
     'schema_version', targetVersion);
 manipBody.depends_on = struct('name', {'subject_id'}, 'value', {animalId});
 manipBody.base = struct('id', manipId, 'session_id', sessionId, ...
-    'name', 'migrated_visual_stimulus', 'datestamp', datestamp);
+    'name', 'migrated_visual_stimulus', 'creation_timestamp', datestamp);
 % storage_mode: body -> the grating value stream lives in the sampled_body.
 manipBody.subject_statement = struct( ...
     'variable', struct('node', '', 'name', 'visual grating'), 'storage_mode', 'body');
@@ -104,7 +104,7 @@ bodyDoc.document_class = struct('class_name', 'sampled_body', 'class_version', '
     'schema_version', targetVersion);
 bodyDoc.depends_on = struct('name', {'statement'}, 'value', {manipId});
 bodyDoc.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', 'migrated_visual_stimulus_series', 'datestamp', datestamp);
+    'name', 'migrated_visual_stimulus_series', 'creation_timestamp', datestamp);
 bodyDoc.sampled_body = struct('datum', datum, 'sample_time', sampleTime, ...
     'summary', struct('value', struct(), 'time', struct()));
 % `records` is returned for the caller to serialise into the body payload +
