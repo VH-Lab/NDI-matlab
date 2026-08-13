@@ -24,6 +24,7 @@ on:
     paths:
       - '.github/workflows/test-eta-migrate-e2e.yml'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta.m'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaPRED.m'
       - 'src/ndi/*ndi/*migrate/**'
   workflow_dispatch:
     inputs:
@@ -121,6 +122,21 @@ jobs:
           command: |
             addpath(genpath("src"));
             addpath(genpath("tests"));
-            results = runtests('ndi.unittest.migrate.TestMigrateLocalEta');
+            % BOTH classes, in ONE runtests call, so a failure in either is
+            % fatal and neither can be quietly dropped by an `assertSuccess`
+            % that only ever saw the other.
+            %
+            % TestMigrateLocalEtaPRED (added 2026-08-13) runs the SAME
+            % ndi.migrate.local path over the real 14-document PRED corpus
+            % rather than a 4- or 5-document fixture. It closes a measured
+            % gap: `grep -rn "\bPRED\b"` across this repository returned
+            % NOTHING before it, so NDI's second pass -- including
+            % epochAnchorFold, the third link of the epoch chain -- had never
+            % seen a PRED document, while the DID side gates that corpus hard.
+            % It fetches the corpus zip once and SKIPS (never fails) when the
+            % download is impossible.
+            results = runtests({ ...
+                'ndi.unittest.migrate.TestMigrateLocalEta', ...
+                'ndi.unittest.migrate.TestMigrateLocalEtaPRED'});
             disp(results);
             assertSuccess(results);
