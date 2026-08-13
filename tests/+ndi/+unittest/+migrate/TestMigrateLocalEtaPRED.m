@@ -221,7 +221,7 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             result = runPredMigrate(testCase);
 
             docs = destinationBodies(result.destination);
-            obs = findByClass(docs, 'voltage_observation');
+            obs = pyraviewObservation(testCase, docs);
             verifyNotEmpty(testCase, obs, ...
                 ['pyraview did not produce a voltage_observation. ' ...
                  resultDiag(result)]);
@@ -264,7 +264,7 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             % is the test that says so.
             result = runPredMigrate(testCase);
             docs = destinationBodies(result.destination);
-            obs = findByClass(docs, 'voltage_observation');
+            obs = pyraviewObservation(testCase, docs);
             verifyNotEmpty(testCase, obs, resultDiag(result));
 
             ids = {depValue(obs, 'time_reference_1'), ...
@@ -387,15 +387,69 @@ end
 end
 
 function doc = findByClass(bodies, className)
+%FINDBYCLASS The FIRST document of a class. Safe only where the class is
+%   unique in the batch -- see findAllByClass and pyraviewObservation.
 doc = [];
+hits = findAllByClass(bodies, className);
+if ~isempty(hits); doc = hits{1}; end
+end
+
+function hits = findAllByClass(bodies, className)
+hits = {};
 for k = 1:numel(bodies)
     d = bodies{k};
     if isstruct(d) && isfield(d, 'document_class') ...
             && strcmp(d.document_class.class_name, className)
-        doc = d;
-        return;
+        hits{end+1} = d; %#ok<AGROW>
     end
 end
+end
+
+function obs = pyraviewObservation(testCase, bodies)
+%PYRAVIEWOBSERVATION PRED's pyraview observation, told apart from element's.
+%   PRED YIELDS **TWO** `voltage_observation` DOCUMENTS and the first draft of
+%   this file assumed one. `findByClass` returned whichever the database
+%   happened to yield first, and on the first real run that was ELEMENT's --
+%   which legitimately carries `time_reference_1` and no `time_reference_2`.
+%   The test then reported the epoch link as missing when it was looking at
+%   the wrong document. A migration defect and a selector defect printed
+%   identically, which is the whole reason this helper exists.
+%
+%   THE DISCRIMINATOR IS NOT `time_reference_2`. Selecting on the very edge
+%   under test would make the assertion vacuous -- it would find whichever
+%   document already satisfies it, or none, and never report a real loss.
+%   `instrument_id` is used instead, and it is the RECORDED difference between
+%   the two emitters (DID-schema status_board.py, family `raw recording
+%   observation`):
+%
+%     element   private/jRecordingObservation.m:211-212
+%         subject_id = the SPECIMEN, instrument_id = the electrode
+%     pyraview  migrators_j/pyraview.m:225
+%         subject_id = element_id (the probe-as-subject), NO instrument_id
+%
+%   So pyraview's is the one WITHOUT an instrument edge. Both the count and
+%   the partition are asserted, so if either emitter changes shape this fails
+%   loudly rather than silently picking the other document.
+allObs = findAllByClass(bodies, 'voltage_observation');
+assertEqual(testCase, numel(allObs), 2, sprintf( ...
+    ['PRED should yield exactly 2 voltage_observation documents (element''s ' ...
+     'raw recording and pyraview''s pyramid); found %d. The selector below ' ...
+     'cannot be trusted until this holds.'], numel(allObs)));
+withInstrument = {};
+without = {};
+for k = 1:numel(allObs)
+    if isempty(depValue(allObs{k}, 'instrument_id'))
+        without{end+1} = allObs{k}; %#ok<AGROW>
+    else
+        withInstrument{end+1} = allObs{k}; %#ok<AGROW>
+    end
+end
+assertEqual(testCase, numel(without), 1, ...
+    ['the two voltage_observations are no longer told apart by ' ...
+     '`instrument_id`; the selector needs a new discriminator']);
+assertEqual(testCase, numel(withInstrument), 1, ...
+    'element''s recording observation lost its instrument_id');
+obs = without{1};
 end
 
 function doc = findById(bodies, docId)
