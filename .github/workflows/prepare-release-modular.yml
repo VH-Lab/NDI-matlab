@@ -14,14 +14,14 @@ on:
 jobs:
   validate_version:
     name: Validate version number
-    uses: ehennestad/matbox-actions/.github/workflows/validate-version-job.yml@v1
+    uses: ehennestad/matbox-actions/.github/workflows/validate-version-job.yml@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
     with:
       version: ${{ inputs.version }}
       ref_name: ${{ github.ref_name }}
 
   configure_test_matrix:
     name: Configure release test matrix
-    uses: ehennestad/matbox-actions/.github/workflows/create-matrix-job.yml@v1
+    uses: ehennestad/matbox-actions/.github/workflows/create-matrix-job.yml@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
     with:
       tools_directory: tools
       needs_python: false
@@ -38,7 +38,7 @@ jobs:
         MATLABVersion: [R2024b, latest]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Start virtual display server
         if: runner.os == 'Linux'
@@ -48,7 +48,7 @@ jobs:
           echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v2
+        uses: matlab-actions/setup-matlab@aa8bbc7b76daa63c5d456d1430cbd6cb5b626ab4 # v2
         with:
           release: ${{ matrix.MATLABVersion }}
           products: |
@@ -57,10 +57,10 @@ jobs:
             Signal_Processing_Toolbox
 
       - name: Install MatBox
-        uses: ehennestad/matbox-actions/install-matbox@v1
+        uses: ehennestad/matbox-actions/install-matbox@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
 
       - name: Run tests
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
         if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,7 +77,7 @@ jobs:
 
       # Save the contents of the report directory from each release into an artifact.
       - name: Save report directory
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: reports-${{ matrix.MATLABVersion }}
@@ -86,7 +86,7 @@ jobs:
   release:
     name: Package toolbox and create draft release
     needs: [test, validate_version]
-    uses: ehennestad/matbox-actions/.github/workflows/package-toolbox-job.yml@v1
+    uses: ehennestad/matbox-actions/.github/workflows/package-toolbox-job.yml@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
     with:
       version_number: ${{ needs.validate_version.outputs.version_number }}
       source_directory: src/ndi
@@ -97,6 +97,6 @@ jobs:
   verify_installation:
     name: Verify toolbox installation
     needs: [release, validate_version]
-    uses: ehennestad/matbox-actions/.github/workflows/verify-installation-job.yml@v1
+    uses: ehennestad/matbox-actions/.github/workflows/verify-installation-job.yml@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
     with:
       toolbox_name: ${{ needs.release.outputs.toolbox_name }}

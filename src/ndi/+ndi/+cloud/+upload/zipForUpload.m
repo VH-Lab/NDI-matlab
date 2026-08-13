@@ -166,6 +166,22 @@ if options.DebugLog
     end
 end
 
+% --- Report skipped files as a failure ---
+% Files that were missing from disk are skipped during batching above. A
+% skipped file means a binary that the manifest expected to upload did not
+% get uploaded, so report this as a failure rather than silently succeeding.
+% Otherwise the caller would record the associated documents as fully synced
+% when their binaries are not on the remote (issue #805).
+if ~isempty(skipped_files)
+    b = 0;
+    skipped_uids = cellfun(@(s) string(s.uid), skipped_files);
+    msg = sprintf(['%d file(s) were not uploaded because they were missing ', ...
+        'from disk (UIDs: %s).'], numel(skipped_files), strjoin(skipped_uids, ', '));
+    if options.Verbose
+        fprintf('%s\n', msg);
+    end
+end
+
 if options.Verbose
     fprintf('Upload process finished. %d files were included in upload batches.\n', files_uploaded_count);
 end

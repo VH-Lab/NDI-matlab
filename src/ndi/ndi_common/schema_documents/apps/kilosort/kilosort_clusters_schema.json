@@ -1,0 +1,26 @@
+{
+	"classname": "kilosort_clusters",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"kilosort_clusters": [
+		{
+			"name": "kilosort_directory",
+			"type": "string",
+			"default_value": "kilosort",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The relative path (within the ndi.session) to the kilosort output directory that was imported."
+		},
+		{
+			"name": "curated_output_MD5_checksum",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The MD5 checksum of the curated spike_clusters.npy file. Used to detect whether the curation has changed since a previous import."
+		}
+	]
+}

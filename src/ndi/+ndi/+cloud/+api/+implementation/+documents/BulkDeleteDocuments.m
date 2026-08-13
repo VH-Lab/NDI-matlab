@@ -72,7 +72,7 @@ classdef BulkDeleteDocuments < ndi.cloud.api.call
             
             apiResponse = send(request, apiURL);
             
-            if (apiResponse.StatusCode == 200 || apiResponse.StatusCode == 204 || apiResponse.StatusCode == 504)
+            if (apiResponse.StatusCode == 200 || apiResponse.StatusCode == 204)
                 b = true;
                 if ~isempty(apiResponse.Body.Data)
                     answer = apiResponse.Body.Data;

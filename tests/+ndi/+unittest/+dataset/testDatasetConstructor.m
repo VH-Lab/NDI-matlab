@@ -63,5 +63,85 @@ classdef testDatasetConstructor < matlab.unittest.TestCase
             testCase.verifyNotEmpty(id, 'Dataset ID (delegated to session) should not be empty');
             testCase.verifyTrue(ischar(id) || isstring(id), 'Dataset ID should be a string or char');
         end
+
+        function testOpeningSessionAsDatasetErrors(testCase)
+            % Opening a plain session directory as an ndi.dataset.dir must fail
+            % cleanly rather than silently succeeding and relabeling the
+            % directory as a dataset.
+
+            p = fullfile(testCase.TempDir, 'plain_session');
+            mkdir(p);
+            s = ndi.session.dir('sess_ref', p); %#ok<NASGU>
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'session');
+
+            % One-argument (open) form.
+            testCase.verifyError(@() ndi.dataset.dir(p), ...
+                'NDI:dataset:dir:NotADataset');
+
+            % Two-argument (reference, path) form.
+            testCase.verifyError(@() ndi.dataset.dir('sess_ref', p), ...
+                'NDI:dataset:dir:NotADataset');
+
+            % The failed open must not have altered the directory's type.
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'session');
+        end
+
+        function testOpeningDatasetAsDatasetStillWorks(testCase)
+            % The guard must not block re-opening a genuine dataset.
+            p = fullfile(testCase.TempDir, 'real_dataset');
+            mkdir(p);
+            d1 = ndi.dataset.dir('ds_ref', p); %#ok<NASGU>
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'dataset');
+
+            d2 = ndi.dataset.dir(p);
+            testCase.verifyClass(d2, 'ndi.dataset.dir');
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'dataset');
+        end
+
+        function testOpeningUnmarkedSessionAsDatasetErrors(testCase)
+            % A legacy session whose type marker was never recorded ('unknown')
+            % must be investigated and caught, not mislabeled as a dataset.
+            p = fullfile(testCase.TempDir, 'legacy_session');
+            mkdir(p);
+            s = ndi.session.dir('sess_ref', p); %#ok<NASGU>
+
+            % Simulate a pre-marker directory by deleting the marker file.
+            markerfile = fullfile(p, '.ndi', ...
+                ndi.session.dir.objecttypemarkerfilename());
+            delete(markerfile);
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'unknown');
+
+            % Opening as a dataset must fail and must have recorded 'session'.
+            testCase.verifyError(@() ndi.dataset.dir(p), ...
+                'NDI:dataset:dir:NotADataset');
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'session');
+        end
+
+        function testOpeningUnmarkedPopulatedDatasetStillWorks(testCase)
+            % A legacy dataset that carries bookkeeping documents but whose
+            % marker was never recorded ('unknown') must be recognized as a
+            % dataset by the investigation and still open.
+            p = fullfile(testCase.TempDir, 'legacy_dataset');
+            mkdir(p);
+            d1 = ndi.dataset.dir('ds_ref', p);
+
+            % Give it dataset bookkeeping (a 'session_in_a_dataset' document) by
+            % linking a session, so that it is distinguishable from a plain
+            % session on disk, then simulate a pre-marker directory by deleting
+            % the marker file.
+            memberDir = fullfile(testCase.TempDir, 'member_session');
+            mkdir(memberDir);
+            s = ndi.session.dir('member_ref', memberDir);
+            d1.add_linked_session(s);
+            markerfile = fullfile(p, '.ndi', ...
+                ndi.session.dir.objecttypemarkerfilename());
+            delete(markerfile);
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'unknown');
+
+            % Re-opening must succeed and re-record 'dataset'.
+            d2 = ndi.dataset.dir(p);
+            testCase.verifyClass(d2, 'ndi.dataset.dir');
+            testCase.verifyEqual(ndi.session.dir.directorytype(p), 'dataset');
+        end
     end
 end

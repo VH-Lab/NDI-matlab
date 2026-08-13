@@ -12,7 +12,7 @@ classdef blankSessionVhlab < matlab.unittest.TestCase
                 rmdir(testCase.SessionPath, 's');
             end
             mkdir(testCase.SessionPath);
-            testCase.Session = ndi.setup.vhlab('exp1', testCase.SessionPath);
+            testCase.Session = ndi.setup.lab('vhlab', 'exp1', testCase.SessionPath);
         end
     end
 

@@ -115,16 +115,45 @@ function [success, errorMessage, report] = uploadNew(ndiDataset, syncOptions)
                      report.uploaded_document_ids = string(ndiIdsToUpload);
                 end
 
+                % If the document metadata upload failed, do not proceed. The
+                % sync index must not be updated, otherwise these documents
+                % would be recorded as "uploaded" even though they are not on
+                % the remote (see issue #805).
+                if ~b
+                    success = false;
+                    errorMessage = 'Document upload failed; sync index not updated.';
+                    if syncOptions.Verbose
+                        fprintf('Error in uploadNew: %s\n', errorMessage);
+                    end
+                    return
+                end
+
                 % Upload associated files
                 if syncOptions.Verbose
                     fprintf('Uploading associated data files...\n');
                 end
-                ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
+                [fileUploadSuccess, fileUploadMessage] = ...
+                    ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
                     cloudDatasetId, ...
                     ndiDataset, ...
                     documentsToUpload, ...
                     "Verbose", syncOptions.Verbose, ...
                     "FileUploadStrategy", syncOptions.FileUploadStrategy);
+
+                % If any associated binary file failed to upload, do not update
+                % the sync index. Recording the documents as synced here would
+                % leave the cloud with document metadata but missing binaries,
+                % and downstream callers (export, mirror, twoWaySync) would hit
+                % 404s with no way for automated retry to recover (issue #805).
+                if ~fileUploadSuccess
+                    success = false;
+                    errorMessage = sprintf(['Binary upload failed: %s ', ...
+                        'Sync index not updated.'], fileUploadMessage);
+                    if syncOptions.Verbose
+                        fprintf('Error in uploadNew: %s\n', errorMessage);
+                    end
+                    return
+                end
 
                 if syncOptions.Verbose
                     fprintf('Completed uploading %d documents.\n', numel(ndiIdsToUpload));
