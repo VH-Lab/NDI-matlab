@@ -64,7 +64,20 @@ classdef TestVintageMap < matlab.unittest.TestCase
 
         function testIsaQueryAsksForBothVintages(testCase)
             q = ndi.vintage.isaQuery('daqsystem');
-            testCase.verifyClass(q, 'ndi.query');
+            % `did.query` IS the right expectation and `ndi.query` is not,
+            % because of an asymmetry inside did.query that this test found
+            % by asserting the wrong one first:
+            %
+            %     and(A,B)   C = A;              <- keeps A's subclass
+            %     or(A,B)    C = did.query('');  <- builds a BASE object
+            %
+            % So OR-ing two ndi.query objects yields a did.query. That is
+            % harmless everywhere it lands -- ndi.session/database_search
+            % takes {'ndi.query','did.query'}, and so do both database
+            % backends' do_search -- so the requirement is did.query, and
+            % demanding ndi.query would be this test inventing a constraint
+            % the system does not have.
+            testCase.verifyTrue(isa(q, 'did.query'));
             ss = q.searchstructure;
             % One `or` term whose halves are the two class names. Asserting
             % the NAMES rather than the structure shape keeps this readable
@@ -131,11 +144,30 @@ classdef TestVintageMap < matlab.unittest.TestCase
                 'the V_eta field did not resolve through both renames');
             testCase.verifyEqual(val2, 'ndi.epoch.epochprobemap_daqsystem');
 
-            % Absence is DATA, not a fault: v1 leaves fileparameters empty
-            % for a navigator with no pattern, so `found` must be false
-            % rather than an error.
-            [~, found3] = ndi.vintage.field(eta, 'fileparameters');
-            testCase.verifyFalse(found3);
+            % Absence is DATA, not a fault: v1 leaves these empty for a
+            % navigator with no pattern, so `found` must be false rather
+            % than an error.
+            %
+            % THE FIELD ASKED FOR HERE MATTERS, and the first version of
+            % this test got it wrong in a way worth keeping a note about:
+            % it asked for `fileparameters` and expected false. But
+            % `fileparameters` MAPS to `data_file_pattern`, which the block
+            % above does carry -- so `found` was correctly true and the
+            % test was asserting that the translation had failed. The right
+            % probe is a field whose V_eta counterpart is genuinely absent:
+            % `epochprobemap_fileparameters` -> `epoch_map_pattern`, which
+            % this block does not set.
+            [~, found3] = ndi.vintage.field(eta, 'epochprobemap_fileparameters');
+            testCase.verifyFalse(found3, ...
+                'a field absent from the block must report found=false');
+
+            % ...and the mapped-and-present case is asserted alongside it,
+            % so "false" here can never be produced by a translation that
+            % simply stopped working.
+            [val4, found4] = ndi.vintage.field(eta, 'fileparameters');
+            testCase.verifyTrue(found4, ...
+                'fileparameters -> data_file_pattern did not resolve');
+            testCase.verifyEqual(val4, {'a.rhd'});
         end
 
         function testTheV1ObjectClassPathIsByteForByteTheOldOne(testCase)
