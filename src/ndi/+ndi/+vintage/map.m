@@ -54,13 +54,18 @@ function entries = map()
 %   deliberately retired. Whether `ndi.element` survives V_eta is a
 %   modelling decision for the team, not something this map can express.
 %
-%   `daqreader` is also absent, for the opposite reason: it needs nothing.
-%   V_eta keeps the class name AND keeps `ndi_daqreader_class` as a field
-%   (schemas/V_eta/stable/daqreader.json), so both the `isa` lookup and the
-%   existing object-reconstruction path work unchanged. `daqreader_ndr`
-%   folds INTO `daqreader`, and `isa daqreader` matched a `daqreader_ndr`
-%   document before the migration too (it was a subclass), so that lookup
-%   is unaffected in both directions.
+%   A CORRECTION KEPT IN PLACE, because the mistake is instructive. This
+%   note used to say `daqreader` "needs nothing -- V_eta keeps the class
+%   name AND keeps `ndi_daqreader_class` as a field". Both halves are true
+%   about the SCHEMA SET and neither is true about a MIGRATED DOCUMENT:
+%   `schemas/V_eta/stable/daqreader.json` is the v1 TOMBSTONE, and what the
+%   migrator emits is `acquisition_reader`
+%   (+migrators_j/daqreader.m:159, "did_v1 daqreader folds to an
+%   `acquisition_reader` + a `software` entity"). Reasoning from "the name
+%   still exists in V_eta" instead of "what does the migrator emit" cost a
+%   CI run, and it failed four levels deep -- after the acquisition_system
+%   was found, its class resolved and its reader_id followed -- because
+%   every earlier step was right.
 %
 %   `session` and `subject` are absent because V_eta renames neither class.
 %
@@ -126,6 +131,21 @@ e(k).object_field = 'ndi_daqmetadatareader_class';
 e(k).object_edge  = 'software_id';
 e(k).edges        = cell(0,2);
 e(k).fields       = {'tab_separated_file_parameter', 'metadata_file_pattern'};
+
+% ---- daqreader -> acquisition_reader ---------------------------------
+% `daqreader_ndr` folds into this too (the reader subtype was encoded in
+% the class name and is already discriminated by the class string).
+% v1 `daqreader.reader_string` keeps its name on acquisition_reader, so
+% there is no field row -- only the object key moves, from the field to
+% the software entity.
+k = k + 1;
+e(k).concept      = 'daqreader';
+e(k).v1_class     = 'daqreader';
+e(k).eta_class    = 'acquisition_reader';
+e(k).object_field = 'ndi_daqreader_class';
+e(k).object_edge  = 'software_id';
+e(k).edges        = cell(0,2);
+e(k).fields       = cell(0,2);
 
 % ---- syncgraph -> clock_alignment_policy -----------------------------
 k = k + 1;

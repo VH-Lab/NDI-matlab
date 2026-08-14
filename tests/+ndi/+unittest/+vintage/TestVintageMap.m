@@ -27,10 +27,11 @@ classdef TestVintageMap < matlab.unittest.TestCase
             % (struct('fields',{cell(0,2)}) yields a 0x2 EMPTY struct array,
             % which is why map.m assigns field by field).
             m = ndi.vintage.map();
-            testCase.verifyEqual(numel(m), 5, sprintf( ...
+            testCase.verifyEqual(numel(m), 6, sprintf( ...
                 ['ndi.vintage.map declares %d concept(s); this test was ' ...
-                 'written against 5 (daqsystem, filenavigator, ' ...
-                 'daqmetadatareader, syncgraph, syncrule)'], numel(m)));
+                 'written against 6 (daqsystem, filenavigator, ' ...
+                 'daqmetadatareader, daqreader, syncgraph, syncrule)'], ...
+                numel(m)));
             for i = 1:numel(m)
                 testCase.verifyNotEmpty(m(i).concept);
                 testCase.verifyNotEmpty(m(i).eta_class);
@@ -59,7 +60,28 @@ classdef TestVintageMap < matlab.unittest.TestCase
             % ...and the classes V_eta leaves alone need no row either.
             testCase.verifyEmpty(ndi.vintage.entryFor('session'));
             testCase.verifyEmpty(ndi.vintage.entryFor('subject'));
-            testCase.verifyEmpty(ndi.vintage.entryFor('daqreader'));
+        end
+
+        function testDaqreaderIsMappedBecauseTheNAMESURVIVINGIsNotTheTest(testCase)
+            % THIS ASSERTION USED TO SAY THE OPPOSITE, and the inversion is
+            % the point. `daqreader` was left out of the map on the
+            % reasoning that V_eta "keeps the class name and keeps
+            % ndi_daqreader_class as a field" -- both true of
+            % schemas/V_eta/stable/daqreader.json, which is the v1
+            % TOMBSTONE, and neither true of a migrated document. The
+            % migrator emits `acquisition_reader`
+            % (+migrators_j/daqreader.m:159).
+            %
+            % So the test is not "is the name still in V_eta" but "what
+            % does the migrator emit", and it is written that way round
+            % here so the old reasoning cannot come back.
+            [entry, vintage] = ndi.vintage.entryFor('acquisition_reader');
+            testCase.verifyNotEmpty(entry, ...
+                ['acquisition_reader is unmapped -- ndi.daq.system follows ' ...
+                 'reader_id to one of these and needs its object class']);
+            testCase.verifyEqual(vintage, 'V_eta');
+            testCase.verifyEqual(entry.concept, 'daqreader');
+            testCase.verifyEqual(entry.object_edge, 'software_id');
         end
 
         function testIsaQueryAsksForBothVintages(testCase)
