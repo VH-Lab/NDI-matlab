@@ -154,7 +154,15 @@ e(k).object_edge  = 'software_id';
 e(k).object_assertion = '';
 e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);
-e(k).fields       = cell(0,2);
+% BOTH v1 READER CLASSES LAND HERE, so both their field spellings are
+% listed on this one row. `daqreader.reader_string` keeps its name;
+% `daqreader_ndr.ndr_reader_string` becomes `reader_string` too
+% (+migrators_j/daqreader_ndr.m: "ndr_reader_string ->
+% daqreader.reader_string"). A v1 `daqreader_ndr` document matches no
+% entry at all -- it is not any row's v1_class -- so ndi.vintage.field
+% falls through to reading the block named after its own class, which is
+% exactly the untouched v1 behaviour.
+e(k).fields       = {'ndr_reader_string', 'reader_string'};
 
 % ---- syncgraph -> clock_alignment_policy -----------------------------
 k = k + 1;
