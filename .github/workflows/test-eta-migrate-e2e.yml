@@ -144,8 +144,18 @@ jobs:
             % seen a PRED document, while the DID side gates that corpus hard.
             % It fetches the corpus zip once and SKIPS (never fails) when the
             % download is impossible.
+            % TestDid2SqliteHierarchy (added 2026-08-14) is here because it
+            % would otherwise run NOWHERE. It lives in
+            % tests/+ndi/+unittest/+database, which is swept by
+            % run-tests.yml -- and run-tests.yml fires only on `main` and
+            % `Vnext`, so on a claude/** branch it had never executed. It
+            % needs no database and no corpus; it pins the couplings that
+            % let TestMigrateLocalEtaPRED's read-back test find the
+            % migrated file at all, so it belongs beside the test it
+            % protects.
             results = runtests({ ...
                 'ndi.unittest.migrate.TestMigrateLocalEta', ...
-                'ndi.unittest.migrate.TestMigrateLocalEtaPRED'});
+                'ndi.unittest.migrate.TestMigrateLocalEtaPRED', ...
+                'ndi.unittest.database.TestDid2SqliteHierarchy'});
             disp(results);
             assertSuccess(results);
