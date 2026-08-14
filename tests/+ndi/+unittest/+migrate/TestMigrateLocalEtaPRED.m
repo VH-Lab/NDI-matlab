@@ -381,6 +381,57 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                 ['base.creation_timestamp is absent on a document read back ' ...
                  'through NDI -- V_eta renamed base.datestamp, and 3 NDI ' ...
                  'read sites still name the old spelling']);
+
+            % ---- DOCUMENTS COME BACK; DO OBJECTS? --------------------
+            % Everything above proves the DOCUMENTS are readable. None of
+            % it proves NDI can turn them into the objects a user actually
+            % works with, and those are two different claims: every object
+            % loader finds its documents by v1 class name, and `isa` cannot
+            % bridge a rename (acquisition_system's chain is [entity],
+            % clock_alignment_policy's is [base]). Before ndi.vintage,
+            % each of these returned empty with no error.
+
+            % PRED carries 2 `daqsystem` documents. `daqsystem_load` has to
+            % find them as `acquisition_system`, resolve each one's MATLAB
+            % class through its `software_id` edge, and follow three
+            % renamed edges to the reader, the file navigator and the
+            % metadata reader -- so one number here exercises the whole
+            % daq chain.
+            % No name filter: the bare call takes the `isa` + session
+            % branch only, so a failure here is about finding the class and
+            % not about how a name pattern was written.
+            devs = s.daqsystem_load();
+            if ~iscell(devs); devs = {devs}; end
+            assertEqual(testCase, numel(devs), 2, sprintf( ...
+                ['daqsystem_load returned %d daq system(s); PRED holds 2. ' ...
+                 'Zero is the pre-ndi.vintage symptom and reads exactly ' ...
+                 'like a session with no rigs.'], numel(devs)));
+            for k = 1:numel(devs)
+                assertTrue(testCase, isa(devs{k}, 'ndi.daq.system'), sprintf( ...
+                    'daqsystem_load returned a "%s"', class(devs{k})));
+                assertNotEmpty(testCase, devs{k}.name, ...
+                    ['the daq system has no name -- base.name is the join ' ...
+                     'key probe->device attribution matches on']);
+                assertTrue(testCase, isa(devs{k}.filenavigator, 'ndi.file.navigator'), ...
+                    'the epoch_file_pattern edge did not resolve to a navigator');
+                assertTrue(testCase, isa(devs{k}.daqreader, 'ndi.daq.reader'), ...
+                    'the reader_id edge did not resolve to a daq reader');
+            end
+
+            % PRED carries 1 syncgraph and 1 syncrule. A syncgraph that was
+            % NOT found comes back freshly constructed with ZERO rules and
+            % no error, so the rule count -- not the object's existence --
+            % is what distinguishes "loaded" from "silently replaced".
+            assertTrue(testCase, isa(s.syncgraph, 'ndi.time.syncgraph'), ...
+                'the session has no syncgraph object at all');
+            assertEqual(testCase, numel(s.syncgraph.rules), 1, sprintf( ...
+                ['the syncgraph carries %d rule(s); PRED holds 1. Zero ' ...
+                 'means ndi.session.dir did not find the migrated ' ...
+                 'clock_alignment_policy and built an empty one instead -- ' ...
+                 'a session that opens fine having lost its ' ...
+                 'synchronisation.'], numel(s.syncgraph.rules)));
+            assertTrue(testCase, isa(s.syncgraph.rules{1}, 'ndi.time.syncrule'), ...
+                'the reconstructed rule is not an ndi.time.syncrule');
         end
 
         function testTheTimeReferenceFamilyIsTheFirstOfSizeTwoAndIsLegal(testCase)

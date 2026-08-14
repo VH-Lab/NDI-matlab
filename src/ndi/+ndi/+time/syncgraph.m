@@ -888,7 +888,12 @@ classdef syncgraph < ndi.ido
                         syncgraph_doc_id '. Do not know what to do.']);
             end
 
-            rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id','ErrorIfNotFound',0);
+            % BOTH VINTAGES: V_eta renames the family `syncrule_id_#` ->
+            % `clock_alignment_configuration_#`. The ids on the other end
+            % are unchanged -- the syncrule migrator preserves base.id on
+            % both its converting and its passthrough branch -- so the
+            % lookup below by base.id is untouched.
+            rules_id_list = ndi.vintage.edge_n(syncgraph_doc,'syncrule_id','ErrorIfNotFound',0);
             for i=1:numel(rules_id_list)
                 rules_doc = ndi_session_obj.database_search(ndi.query(...
                     'base.id','exact_string',rules_id_list{i},''));

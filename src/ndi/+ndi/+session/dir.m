@@ -164,7 +164,14 @@ classdef dir < ndi.session
                 ndi_session_dir_obj.database_add(g);
             end
 
-            syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','syncgraph','') & ...
+            % BOTH VINTAGES. V_eta renames `syncgraph` to
+            % `clock_alignment_policy`, whose class chain is [base] -- so an
+            % `isa syncgraph` query against a migrated session matched
+            % nothing, this fell into the isempty branch below, and the
+            % session came up with a FRESH, RULE-LESS syncgraph while a real
+            % one sat in the database. Silently: a session that opened fine
+            % and had lost its synchronisation.
+            syncgraph_doc = ndi_session_dir_obj.database_search( ndi.vintage.isaQuery('syncgraph') & ...
                 ndi.query('base.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
 
             if isempty(syncgraph_doc)
