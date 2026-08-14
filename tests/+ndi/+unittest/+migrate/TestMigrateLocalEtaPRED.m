@@ -296,6 +296,35 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                 'ndi.migrate.local reported destination %s and no file is there', ...
                 result.destination));
 
+            % THE FIXTURE IS MISSING ONE FILE A REAL SESSION ALWAYS HAS, and
+            % writing it here is a fixture repair, not a shortcut around the
+            % thing under test.
+            %
+            % `ndi.session.dir` decides WHICH session it is before it opens
+            % anything: it reads `.ndi/unique_reference.txt`, and
+            % `database_search` then ANDs `base.session_id == that id` into
+            % every query. This fixture builds a session directory out of
+            % corpus bodies and never writes that file, so the id would be a
+            % freshly minted random one, the session query would match
+            % nothing, and dir.m would fall through to `reference.txt` and
+            % error -- a fixture artefact with nothing to say about V_eta.
+            % Every real session directory has the file, because dir.m
+            % writes it at the end of every open.
+            %
+            % ONLY `unique_reference.txt` IS WRITTEN, DELIBERATELY.
+            % `reference.txt` is the FALLBACK dir.m uses when the database
+            % cannot answer; writing it would let this test pass without the
+            % database being read at all, which is the one thing it exists to
+            % prove. The id comes from the MIGRATED session document.
+            migrated = destinationBodies(result.destination);
+            sessionDoc = findByClass(migrated, 'session');
+            assertNotEmpty(testCase, sessionDoc, ...
+                ['no `session` document in the migrated database -- ' ...
+                 'ndi.session.dir has nothing to identify the session by']);
+            vlt.file.str2text( ...
+                fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
+                sessionDoc.base.session_id);
+
             % THE HEADLINE. If this errors, NDI cannot open a migrated session
             % and every assertion below is moot.
             s = ndi.session.dir(testCase.SessionRoot);
