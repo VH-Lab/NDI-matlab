@@ -85,9 +85,30 @@ classdef TestVintageMap < matlab.unittest.TestCase
             % element, so there is no object to reconstruct.
             testCase.verifyEmpty(ndi.vintage.entryFor('pyraview'), ...
                 'pyraview is not an NDI object type');
-            % ...and the classes V_eta leaves alone need no row either.
-            testCase.verifyEmpty(ndi.vintage.entryFor('session'));
-            testCase.verifyEmpty(ndi.vintage.entryFor('subject'));
+            testCase.verifyEmpty(ndi.vintage.entryFor('session'), ...
+                'V_eta renames neither session nor its class');
+
+            % `subject` IS NOW A MAPPED NAME, and this assertion says so
+            % rather than being deleted. It used to assert the opposite,
+            % which was true until `element` gained a row whose eta_class
+            % is `subject` -- so asking the map about `subject` now returns
+            % the element row.
+            %
+            % That is safe ONLY because of `isa_bridges`. Every other
+            % consumer does the right thing with it by construction: field
+            % reads resolve to the `subject` block either way, the row
+            % declares no edges, and objectClass on a real specimen fails
+            % with "this subject was never an element" -- which is correct,
+            % an animal is not an object NDI can rebuild. The one place it
+            % WOULD matter is isaQuery, and the flag stops it there.
+            [subjEntry, subjVintage] = ndi.vintage.entryFor('subject');
+            testCase.verifyNotEmpty(subjEntry, ...
+                'subject resolves to the element row via its eta_class');
+            testCase.verifyEqual(subjEntry.concept, 'element');
+            testCase.verifyEqual(subjVintage, 'V_eta');
+            testCase.verifyFalse(subjEntry.isa_bridges, ...
+                ['the element row must not bridge -- it is the only thing ' ...
+                 'keeping `subject` being a mapped name harmless']);
         end
 
         function testDaqreaderIsMappedBecauseTheNAMESURVIVINGIsNotTheTest(testCase)
