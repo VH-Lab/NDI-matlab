@@ -1,0 +1,349 @@
+classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
+%TESTMIGRATELOCALETA20211116 The 20211116 corpus through the WHOLE V_eta pipeline.
+%
+%   The second corpus to get the PRED treatment: migrate, open through
+%   `ndi.session.dir`, and assert that NDI OBJECTS come back. PRED proved
+%   the daq/sync spine; this one is chosen because it is the SMALLEST STEP
+%   beyond it, measured rather than assumed (2026-08-14, read from the
+%   corpus zips):
+%
+%       corpus         docs classes  NEW vs PRED   new docs
+%       20211116       1220      21           13         1185
+%       Dab           27561      26           17        26288
+%       Soph         101427      32           24        99395
+%
+%   It shares 8 of PRED's 10 classes, so everything the vintage layer
+%   already does is re-exercised, and its 13 new classes cluster into two
+%   families plus one loner:
+%
+%       the stimulus-response tier   stimulus_response_scalar (273),
+%                                    _parameters_basic (273),
+%                                    stimulus_presentation (11),
+%                                    control_stimulus_ids (11)
+%       the calculator tier          hartley_calc (210), tuningcurve_calc
+%                                    (84), oridirtuning_calc (42)
+%       the epoch family             element_epoch (252)
+%
+%   WHAT THE UP-FRONT AUDIT SAID, so a reader knows what to expect rather
+%   than discovering it from a red run. Of the 13 new classes only
+%   `daqreader` is an NDI OBJECT type, and it is already in
+%   ndi.vintage.map -- the others carry no `ndi_*_class` key and are data
+%   documents. So the object layer needs little or nothing new here. The
+%   risk is elsewhere:
+%
+%     * `element_epoch` documents carry an `epochid` BLOCK, and two NDI
+%       readers index it by name -- `ndi.element` (the added-epoch branch)
+%       and `ndi.daq.reader` (the ingested branch). V_eta drops `epochid`
+%       for an `epoch_id` edge, so those are the frames most likely to
+%       break first.
+%     * the calculator fold is the one with history: dissolving a `_calc`
+%       document instead of folding it 1->1 cost 11,448 orphans on Soph.
+%       The orphan assertion below is that failure's regression test on a
+%       corpus that actually holds calculators.
+%
+%   MIGRATION RUNS ONCE, in TestClassSetup, unlike PRED's per-method
+%   `runPredMigrate`. At 14 documents re-migrating per method is free; at
+%   1,220 it is 87x the work for no added coverage, and every method here
+%   only READS the result.
+%
+%   SKIPS, NEVER FAILS, when the environment cannot support it: no
+%   mksqlite, no NDI_TEST_ETA, no DID_SCHEMA_PATH, or no network for the
+%   corpus. "Could not run" and "ran and found a defect" are different
+%   findings and must not print the same result.
+
+    properties
+        SessionRoot
+        CorpusDir
+        Result
+        Bodies
+    end
+
+    methods (TestClassSetup)
+
+        function gateAndMigrate(testCase)
+            if isempty(which('mksqlite'))
+                assumeFail(testCase, 'mksqlite not on path; skipping.');
+            end
+            if ~etaEnabled()
+                assumeFail(testCase, 'NDI_TEST_ETA not truthy; skipping V_eta e2e.');
+            end
+            if isempty(getenv('DID_SCHEMA_PATH'))
+                assumeFail(testCase, 'DID_SCHEMA_PATH unset; skipping.');
+            end
+            try
+                testCase.CorpusDir = ensure20211116Corpus();
+            catch ME
+                assumeFail(testCase, sprintf( ...
+                    'could not fetch the 20211116 corpus (%s); skipping.', ...
+                    ME.message));
+            end
+
+            testCase.SessionRoot = tempname();
+            mkdir(testCase.SessionRoot);
+            mkdir(fullfile(testCase.SessionRoot, '.ndi'));
+
+            testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
+            buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
+                testCase.Bodies);
+
+            testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
+                'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
+        end
+
+    end
+
+    methods (TestClassTeardown)
+        function cleanup(testCase)
+            try
+                if ~isempty(testCase.SessionRoot) && isfolder(testCase.SessionRoot)
+                    rmdir(testCase.SessionRoot, 's');
+                end
+            catch
+            end
+        end
+    end
+
+    methods (Test)
+
+        function testTheWholeCorpusMigratesWithNothingQuarantinedOrDangling(testCase)
+            % DENOMINATOR FIRST. A pass over zero documents quarantines
+            % zero documents, and that reading prints the same digit as a
+            % clean migration.
+            verifyEqual(testCase, numel(testCase.Bodies), 1220, sprintf( ...
+                ['the 20211116 corpus did not read as 1220 documents (got ' ...
+                 '%d); every assertion here would be about a different ' ...
+                 'corpus'], numel(testCase.Bodies)));
+            verifyGreaterThan(testCase, testCase.Result.summary.total, 0, ...
+                'the migration saw no documents at all');
+
+            verifyEmpty(testCase, testCase.Result.quarantine, ...
+                quarantineDiag(testCase.Result));
+
+            % THE GRAPH CLOSES. This is the assertion the calculator family
+            % exists to stress: folding a `_calc` document 1->1 preserves
+            % its id so downstream references resolve, while DISSOLVING it
+            % strands every reference to it. That mistake cost 11,448
+            % orphans on Soph, and 20211116 is the smallest corpus that
+            % holds calculators at all.
+            verifyEqual(testCase, testCase.Result.references.orphan_count, 0, ...
+                sprintf('the migrated graph does not close: %d orphan(s). %s', ...
+                    testCase.Result.references.orphan_count, ...
+                    resultDiag(testCase.Result)));
+            verifyGreaterThan(testCase, testCase.Result.references.edges_examined, 0, ...
+                ['the reference sweep examined 0 edges, so its 0 orphans ' ...
+                 'is a statement about the sweep and not about the corpus']);
+        end
+
+        function testTheMigratedSessionOpensAndReadsBackThroughNDI(testCase)
+            % The headline, same shape as PRED's. If this errors, nothing
+            % below it is meaningful.
+            assertTrue(testCase, isfile(testCase.Result.destination), sprintf( ...
+                'ndi.migrate.local reported destination %s and no file is there', ...
+                testCase.Result.destination));
+
+            % The fixture has no unique_reference.txt -- see the PRED test
+            % for why only this one file is written and why reference.txt
+            % deliberately is not.
+            migrated = destinationBodies(testCase.Result.destination);
+            sessionDoc = findByClass(migrated, 'session');
+            assertNotEmpty(testCase, sessionDoc, ...
+                'no `session` document in the migrated database');
+            vlt.file.str2text( ...
+                fullfile(testCase.SessionRoot, '.ndi', 'unique_reference.txt'), ...
+                sessionDoc.base.session_id);
+
+            s = ndi.session.dir(testCase.SessionRoot);
+            assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
+                'ndi.session.dir did not return a session object');
+
+            selected = ndi.database.fun.opendatabase( ...
+                fullfile(testCase.SessionRoot, '.ndi'), s.id());
+            assertTrue(testCase, isa(selected, ...
+                'ndi.database.implementations.database.did2sqlite'), sprintf( ...
+                'opendatabase chose a "%s", not a did2sqlite', class(selected)));
+
+            % OBJECTS, not documents. Counts are not pinned to a literal
+            % here the way PRED's are: PRED is 14 documents and hand
+            % checkable, this is 1,220 and its class mix moves whenever a
+            % fold changes. What must hold is that the object API returns
+            % SOMETHING and that what it returns is the right type -- zero
+            % is the pre-vintage symptom and is what this catches.
+            devs = s.daqsystem_load();
+            if isempty(devs); devs = {}; elseif ~iscell(devs); devs = {devs}; end
+            verifyNotEmpty(testCase, devs, ...
+                ['daqsystem_load returned nothing; 20211116 holds daqsystem ' ...
+                 'documents, and zero is how a missed class rename reads']);
+            for k = 1:numel(devs)
+                verifyTrue(testCase, isa(devs{k}, 'ndi.daq.system'), sprintf( ...
+                    'daqsystem_load returned a "%s"', class(devs{k})));
+            end
+
+            els = s.getelements();
+            if isempty(els); els = {}; elseif ~iscell(els); els = {els}; end
+            verifyNotEmpty(testCase, els, ...
+                'getelements returned nothing; 20211116 holds element documents');
+            for k = 1:numel(els)
+                verifyTrue(testCase, isa(els{k}, 'ndi.element'), sprintf( ...
+                    'getelements returned a "%s"', class(els{k})));
+            end
+        end
+
+        function testTheEpochFamilyMigratesAndIsReachable(testCase)
+            % `element_epoch` (252 documents) is the class PRED does not
+            % have, and it is the reason this corpus is the next step. Its
+            % v1 documents carry an `epochid` BLOCK that two NDI readers
+            % index by name; V_eta drops `epochid` for an `epoch_id` edge.
+            migrated = destinationBodies(testCase.Result.destination);
+            epochs = findAllByClass(migrated, 'acquisition_epoch');
+            verifyNotEmpty(testCase, epochs, ...
+                ['no `acquisition_epoch` documents in the destination. ' ...
+                 '20211116 holds 252 `element_epoch` documents, which is ' ...
+                 'what that class is renamed from -- zero here means the ' ...
+                 'rename did not happen or the class moved again.']);
+            % NOTHING SURVIVES UNDER THE V1 NAME. A migration that emitted
+            % both would double-count every epoch.
+            verifyEmpty(testCase, findAllByClass(migrated, 'element_epoch'), ...
+                'element_epoch documents survived migration under the v1 name');
+        end
+
+        function testTheCalculatorFamilyKeepsItsIdentities(testCase)
+            % The 1->1 fold's whole point: a calculator output keeps its
+            % base.id so downstream references resolve. The orphan count
+            % above is the systemic check; this one names the mechanism, so
+            % a regression says WHICH property broke.
+            srcIds = {};
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                cn = '';
+                if isfield(j,'document_class') && isfield(j.document_class,'class_name')
+                    cn = j.document_class.class_name;
+                end
+                if any(strcmp(cn, {'tuningcurve_calc','oridirtuning_calc','hartley_calc'}))
+                    srcIds{end+1} = j.base.id; %#ok<AGROW>
+                end
+            end
+            verifyNotEmpty(testCase, srcIds, ...
+                'no calculator documents found in the corpus to check');
+
+            migrated = destinationBodies(testCase.Result.destination);
+            dstIds = cellfun(@(d) string(d.base.id), migrated(:)');
+            missing = srcIds(~ismember(string(srcIds), dstIds));
+            verifyEmpty(testCase, missing, sprintf( ...
+                ['%d of %d calculator id(s) are absent from the migrated ' ...
+                 'set. A calculator that DISSOLVES loses its id and every ' ...
+                 'downstream reference dangles -- the 11,448-orphan ' ...
+                 'failure.'], numel(missing), numel(srcIds)));
+        end
+
+    end
+end
+
+% ===================== harness ============================================
+
+function tf = etaEnabled()
+v = getenv('NDI_TEST_ETA');
+tf = ~isempty(v) && ~any(strcmpi(v, {'0','false','no'}));
+end
+
+function corpusDir = ensure20211116Corpus()
+%ENSURE20211116CORPUS Download (once) and extract 20211116.zip.
+%   Same URL shape and cache layout as the PRED helper, deliberately.
+corpusURL = 'https://ndi-programming-development.s3.us-east-1.amazonaws.com/20211116.zip';
+cacheRoot = fullfile(tempdir(), 'ndi-corpus-20211116');
+corpusDir = fullfile(cacheRoot, '20211116');
+if isfolder(corpusDir) && ~isempty(dir(fullfile(corpusDir, '*.json')))
+    return;
+end
+if ~isfolder(cacheRoot); mkdir(cacheRoot); end
+zipPath = fullfile(cacheRoot, '20211116.zip');
+if ~isfile(zipPath)
+    websave(zipPath, corpusURL);
+end
+unzip(zipPath, cacheRoot);
+if ~isfolder(corpusDir)
+    error('ndi:corpus:noDir', ...
+        'the zip did not extract a 20211116/ directory under %s', cacheRoot);
+end
+end
+
+function bodies = readCorpusBodies(corpusDir)
+%READCORPUSBODIES Every v1 document in the corpus, as JSON text.
+%   `._` sidecars are macOS resource forks the zip carries; skipping them
+%   is what did2.validate.sourceCensus's own reader does.
+files = dir(fullfile(corpusDir, '*.json'));
+files = files(~startsWith({files.name}, '._'));
+bodies = cell(numel(files), 1);
+for k = 1:numel(files)
+    bodies{k} = fileread(fullfile(files(k).folder, files(k).name));
+end
+end
+
+function buildV1Sqlite(tmpFile, bodies)
+%BUILDV1SQLITE A did_v1 sqlite database holding BODIES.
+%   The shape is `docs(doc_id, doc_idx, json_code, timestamp)` because that
+%   is what the reader asks for -- did2.convert.readers.sqliteV1 issues
+%   `SELECT json_code FROM docs`, and the real legacy backend writes the
+%   same columns (did/+implementations/sqlitedb.m: insert_into_table('docs',
+%   'doc_id,json_code,timestamp', ...)). So this fixture is not a
+%   simplification of the read path; it is the same column.
+dbid = mksqlite(0, 'open', tmpFile);
+cleanup = onCleanup(@() mksqlite(dbid, 'close')); %#ok<NASGU>
+mksqlite(dbid, ['CREATE TABLE docs (' ...
+    'doc_id    TEXT    NOT NULL UNIQUE, ' ...
+    'doc_idx   INTEGER NOT NULL UNIQUE, ' ...
+    'json_code TEXT, ' ...
+    'timestamp NUMERIC, ' ...
+    'PRIMARY KEY(doc_idx AUTOINCREMENT))']);
+for k = 1:numel(bodies)
+    docId = sprintf('id_%05d', k);
+    mksqlite(dbid, ...
+        'INSERT INTO docs (doc_id, doc_idx, json_code, timestamp) VALUES (?, ?, ?, ?)', ...
+        docId, k, bodies{k}, 0);
+end
+end
+
+function bodies = destinationBodies(dstPath)
+%DESTINATIONBODIES Every document in the destination, as structs, read ONCE.
+db = did2.database.sqlitedb(dstPath);
+cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+ids = db.allIds();
+bodies = cell(1, numel(ids));
+for k = 1:numel(ids)
+    bodies{k} = db.get(ids{k}).toStruct();
+end
+end
+
+function hits = findAllByClass(bodies, className)
+hits = {};
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if isfield(b,'document_class') && isfield(b.document_class,'class_name') ...
+            && strcmp(b.document_class.class_name, className)
+        hits{end+1} = b; %#ok<AGROW>
+    end
+end
+end
+
+function doc = findByClass(bodies, className)
+doc = [];
+hits = findAllByClass(bodies, className);
+if ~isempty(hits); doc = hits{1}; end
+end
+
+function s = quarantineDiag(result)
+if isempty(result.quarantine)
+    s = ''; return;
+end
+n = numel(result.quarantine);
+s = sprintf('%d document(s) quarantined; first %d:', n, min(5,n));
+for i = 1:min(5,n)
+    s = sprintf('%s\n    %s: %s', s, result.quarantine(i).class_name, ...
+        result.quarantine(i).reason);
+end
+end
+
+function s = resultDiag(result)
+s = sprintf('[migrated %d, quarantined %d, edges %d] %s', ...
+    result.summary.total, numel(result.quarantine), ...
+    result.references.edges_examined, quarantineDiag(result));
+end
