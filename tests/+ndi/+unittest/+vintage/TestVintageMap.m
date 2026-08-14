@@ -27,11 +27,11 @@ classdef TestVintageMap < matlab.unittest.TestCase
             % (struct('fields',{cell(0,2)}) yields a 0x2 EMPTY struct array,
             % which is why map.m assigns field by field).
             m = ndi.vintage.map();
-            testCase.verifyEqual(numel(m), 6, sprintf( ...
+            testCase.verifyEqual(numel(m), 7, sprintf( ...
                 ['ndi.vintage.map declares %d concept(s); this test was ' ...
-                 'written against 6 (daqsystem, filenavigator, ' ...
-                 'daqmetadatareader, daqreader, syncgraph, syncrule)'], ...
-                numel(m)));
+                 'written against 7 (daqsystem, filenavigator, ' ...
+                 'daqmetadatareader, daqreader, syncgraph, syncrule, ' ...
+                 'element)'], numel(m)));
             for i = 1:numel(m)
                 testCase.verifyNotEmpty(m(i).concept);
                 testCase.verifyNotEmpty(m(i).eta_class);
@@ -41,22 +41,50 @@ classdef TestVintageMap < matlab.unittest.TestCase
                     sprintf('%s: fields must be N-by-2', m(i).concept));
                 % A renamed class whose object key has no home in V_eta
                 % would be unconstructable, which is the whole point.
-                testCase.verifyNotEmpty(m(i).object_edge, ...
-                    sprintf('%s: no V_eta object-class edge', m(i).concept));
+                % Every concept must say WHERE its object class lives --
+                % an edge to a software entity, or an inbound assertion.
+                % A row with neither is unconstructable.
+                testCase.verifyTrue( ...
+                    ~isempty(m(i).object_edge) || ~isempty(m(i).object_assertion), ...
+                    sprintf('%s: no V_eta object-class locator', m(i).concept));
             end
         end
 
-        function testTheDecomposedClassesAreNotInTheMap(testCase)
-            % `element` and `pyraview` are DECOMPOSED, not renamed -- one
-            % document becomes five. Adding a row for either would claim a
-            % one-to-one correspondence that does not exist and would make
-            % `isa element` match a `subject`, which is every subject in the
-            % session. This asserts the absence so a later "just add a row"
-            % has to argue with a test.
-            testCase.verifyEmpty(ndi.vintage.entryFor('element'), ...
-                'element is decomposed by V_eta, not renamed');
+        function testOnlyElementDeclinesToBridgeIsa(testCase)
+            % THIS ASSERTION WAS INVERTED, and the reason it changed is
+            % worth more than the assertion. It used to say `element` had
+            % no map row at all, on the reasoning that a decomposed class
+            % cannot be mapped. That was the wrong axis: `element` -> 5
+            % documents and `daqsystem` -> 2 documents are the same shape,
+            % a ROOT carrying the preserved v1 base.id plus satellites, and
+            % the element migrator preserves the id exactly as the others
+            % do ("becomes a `subject` with its id PRESERVED").
+            %
+            % What actually distinguishes element is that its root class is
+            % SHARED. `acquisition_system` is a class NDI uses for nothing
+            % else, so `isa` bridges cleanly; `subject` is not, so bridging
+            % would return every animal as an element. That is the property
+            % this test pins.
+            m = ndi.vintage.map();
+            nonBridging = {m(~[m.isa_bridges]).concept};
+            testCase.verifyEqual(nonBridging, {'element'}, ...
+                ['exactly one concept should decline to bridge `isa`, and ' ...
+                 'it is `element` -- its V_eta class `subject` is shared ' ...
+                 'with real specimens']);
+
+            entry = ndi.vintage.entryFor('element');
+            testCase.verifyNotEmpty(entry, 'element must have a map row');
+            testCase.verifyEqual(entry.eta_class, 'subject');
+            testCase.verifyNotEmpty(entry.object_assertion, ...
+                'element''s object class comes from an inbound assertion');
+
+            % pyraview stays out, and for a reason that is NOT cardinality:
+            % it is not an NDI object type at all. Of the 91 NDI templates
+            % only 8 declare an `ndi_*_class` field and pyraview is not
+            % among them -- its documents are data, reached through an
+            % element, so there is no object to reconstruct.
             testCase.verifyEmpty(ndi.vintage.entryFor('pyraview'), ...
-                'pyraview is decomposed by V_eta, not renamed');
+                'pyraview is not an NDI object type');
             % ...and the classes V_eta leaves alone need no row either.
             testCase.verifyEmpty(ndi.vintage.entryFor('session'));
             testCase.verifyEmpty(ndi.vintage.entryFor('subject'));
@@ -82,6 +110,20 @@ classdef TestVintageMap < matlab.unittest.TestCase
             testCase.verifyEqual(vintage, 'V_eta');
             testCase.verifyEqual(entry.concept, 'daqreader');
             testCase.verifyEqual(entry.object_edge, 'software_id');
+        end
+
+        function testIsaQueryRefusesToBridgeElement(testCase)
+            % The consequence of the flag, asserted where a caller would
+            % feel it. If this ever OR-s `subject` in, `getelements` starts
+            % returning every animal in the session -- and because that
+            % WIDENS the result nothing errors, so this is the only place
+            % it would be caught.
+            q = ndi.vintage.isaQuery('element');
+            txt = jsonencode(q.searchstructure);
+            testCase.verifySubstring(txt, 'element');
+            testCase.verifyEmpty(strfind(txt, 'subject'), ...
+                ['isaQuery(''element'') reaches `subject`; every specimen ' ...
+                 'in the session would come back as an element']);
         end
 
         function testIsaQueryAsksForBothVintages(testCase)

@@ -32,6 +32,17 @@ if isempty(entry)
     return;
 end
 
+% A CONCEPT WHOSE V_eta CLASS IS SHARED MUST NOT BRIDGE. `element` became
+% `subject`, and not every subject was an element -- PRED migrates 2
+% elements plus 1 animal into 3 subject documents, so OR-ing `isa subject`
+% into an `isa element` query would hand back the animal as a probe.
+% Widening a search is the dangerous direction here: it returns MORE, so
+% nothing errors and the caller acts on the extra rows.
+% ndi.vintage.elementSubjectDocs is the two-step lookup for that case.
+if ~entry.isa_bridges
+    return;
+end
+
 % Both names, so neither vintage is privileged. `|` is did.query/or.
 if ~strcmp(entry.v1_class, entry.eta_class)
     q = q | ndi.query('', 'isa', entry.eta_class, '');

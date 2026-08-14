@@ -53,6 +53,17 @@ if isempty(entry) || strcmp(vintage, 'v1')
     return;
 end
 
+% V_eta, KEY LOCATION 3: an INBOUND term_assertion. Used by `element`,
+% whose class name did not fold into a software entity -- it became a
+% statement ABOUT the element-subject, pointing back at it by subject_id.
+% So the lookup runs the other way round from the software case: search
+% for the assertion, do not follow an edge off this document.
+if ~isempty(entry.object_assertion)
+    objClass = assertionValue(ndi_document_obj, ndi_session_obj, ...
+        entry.object_assertion);
+    return;
+end
+
 % V_eta: one hop to the software entity.
 swId = ndi_document_obj.dependency_value(entry.object_edge, 'ErrorIfNotFound', 0);
 if isempty(swId)
@@ -82,4 +93,33 @@ if ~isfield(swProps, 'software') || ~isstruct(swProps.software) ...
          'jSoftware puts the implementation class string'], swId);
 end
 objClass = swProps.software.name;
+end
+
+function v = assertionValue(ndi_document_obj, ndi_session_obj, label)
+%ASSERTIONVALUE Read a kind assertion pointing AT this document.
+%   The migrator writes one `term_assertion` per kind fact, carrying
+%   `subject_statement.variable.name = <label>` and the answer in
+%   `term.value.name`, with `subject_id` pointing back at the subject
+%   (DID-matlab +migrators_j/element.m, kindAssertion).
+docId = ndi_document_obj.document_properties.base.id;
+q = ndi.query('', 'isa', 'term_assertion', '') & ...
+    ndi.query('subject_statement.variable.name', 'exact_string', label, '') & ...
+    ndi.query('', 'depends_on', 'subject_id', docId);
+docs = ndi_session_obj.database_search(q);
+if numel(docs) ~= 1
+    error('NDI:vintage:assertionNotFound', ...
+        ['subject %s carries %d term_assertion(s) labelled "%s"; exactly ' ...
+         'one holds the MATLAB class to construct. Zero means this ' ...
+         'subject was never an element (or the element carried no class ' ...
+         'name, which the migrator skips) -- it is not an object NDI can ' ...
+         'rebuild.'], docId, numel(docs), label);
+end
+p = docs{1}.document_properties;
+if ~isfield(p, 'term') || ~isstruct(p.term) || ~isfield(p.term, 'value') ...
+        || ~isfield(p.term.value, 'name') || isempty(p.term.value.name)
+    error('NDI:vintage:assertionHasNoValue', ...
+        ['the "%s" assertion on subject %s carries no term.value.name'], ...
+        label, docId);
+end
+v = p.term.value.name;
 end

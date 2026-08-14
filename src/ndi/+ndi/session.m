@@ -682,7 +682,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
             probestruct = vlt.data.equnique(probestruct);
 
+            % BOTH VINTAGES. v1 keeps the class name in a field on the
+            % element document; a migrated one keeps it in an inbound
+            % `ndi element class` assertion, which is where the
+            % contains_string 'probe' test now runs (in the database, not
+            % over everything in MATLAB).
             existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
+            existing_probes = [existing_probes(:); ...
+                ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe')];
             existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
             subjectlist.a = 0;
             for i=1:numel(existing_subjects)
@@ -771,6 +778,20 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 end
             end
             doc = ndi_session_obj.database_search(q_E&q_t);
+
+            % BOTH VINTAGES. A migrated element is a `subject` carrying an
+            % inbound `ndi element class` assertion, so `isa element`
+            % cannot find it -- and bridging onto `isa subject` would hand
+            % back every animal in the session as an element. The two-step
+            % lookup is in ndi.vintage.elementSubjectDocs; see there for
+            % why it cannot be one query.
+            %
+            % The two searches are UNIONED rather than switched between: a
+            % session can hold both vintages at once (NDI still writes v1),
+            % and a document found twice is impossible because the class
+            % names are disjoint.
+            doc = [doc(:); ndi.vintage.elementSubjectDocs(ndi_session_obj)];
+
             elements = {};
             for i=1:numel(doc)
                 elements{i} = ndi.database.fun.ndi_document2ndi_object(doc{i}, ndi_session_obj);

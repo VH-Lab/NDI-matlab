@@ -85,7 +85,8 @@ end
 % cell yields a 0x2 EMPTY struct array and the entry silently disappears.
 % Assigning field by field has no such rule.
 e = struct('concept', {}, 'v1_class', {}, 'eta_class', {}, ...
-    'object_field', {}, 'object_edge', {}, 'edges', {}, 'fields', {});
+    'object_field', {}, 'object_edge', {}, 'object_assertion', {}, ...
+    'isa_bridges', {}, 'edges', {}, 'fields', {});
 k = 0;
 
 % ---- daqsystem -> acquisition_system ---------------------------------
@@ -104,6 +105,8 @@ e(k).v1_class     = 'daqsystem';
 e(k).eta_class    = 'acquisition_system';
 e(k).object_field = 'ndi_daqsystem_class';
 e(k).object_edge  = 'software_id';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
 e(k).edges        = {'daqreader_id',         'reader_id'; ...
                      'filenavigator_id',     'epoch_file_pattern_id'; ...
                      'daqmetadatareader_id', 'acquisition_metadata_reader'};
@@ -117,6 +120,8 @@ e(k).v1_class     = 'filenavigator';
 e(k).eta_class    = 'epoch_file_pattern';
 e(k).object_field = 'ndi_filenavigator_class';
 e(k).object_edge  = 'software_id';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);
 e(k).fields       = {'fileparameters',               'data_file_pattern'; ...
                      'epochprobemap_fileparameters', 'epoch_map_pattern'; ...
@@ -129,6 +134,8 @@ e(k).v1_class     = 'daqmetadatareader';
 e(k).eta_class    = 'acquisition_metadata_reader';
 e(k).object_field = 'ndi_daqmetadatareader_class';
 e(k).object_edge  = 'software_id';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);
 e(k).fields       = {'tab_separated_file_parameter', 'metadata_file_pattern'};
 
@@ -144,6 +151,8 @@ e(k).v1_class     = 'daqreader';
 e(k).eta_class    = 'acquisition_reader';
 e(k).object_field = 'ndi_daqreader_class';
 e(k).object_edge  = 'software_id';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
 e(k).edges        = cell(0,2);
 e(k).fields       = cell(0,2);
 
@@ -154,6 +163,8 @@ e(k).v1_class     = 'syncgraph';
 e(k).eta_class    = 'clock_alignment_policy';
 e(k).object_field = 'ndi_syncgraph_class';
 e(k).object_edge  = 'software_id';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
 e(k).edges        = {'syncrule_id', 'clock_alignment_configuration'};
 e(k).fields       = cell(0,2);
 
@@ -168,7 +179,40 @@ e(k).v1_class     = 'syncrule';
 e(k).eta_class    = 'clock_alignment_configuration';
 e(k).object_field = 'ndi_syncrule_class';
 e(k).object_edge  = 'software_id';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
 e(k).edges        = {'acquisition_channels', 'acquisition_channels'};
+e(k).fields       = cell(0,2);
+
+% ---- element -> subject (+ satellites) -------------------------------
+% THE ONE ENTRY WHOSE `isa_bridges` IS FALSE, and the reason is the whole
+% difference between this row and the six above. Those six renamed a class
+% to a class NDI uses for nothing else, so `isa acquisition_system` finds
+% daq systems and only daq systems. `element` became `subject` -- and NOT
+% every subject was an element. In PRED, migrating 2 elements plus 1
+% animal yields THREE subject documents, so bridging `isa element` onto
+% `isa subject` would return the animal as a probe.
+%
+% What separates them is an inbound `term_assertion` carrying
+% `ndi.vintage.elementLabel('class')`. That is a second document, and a
+% did.query evaluates against one document at a time, so this cannot be
+% expressed as an `isa` query at all -- ndi.vintage.elementSubjectDocs
+% does it in two steps instead. `isa_bridges = false` is what stops
+% isaQuery from trying.
+%
+% The row still earns its place: ndi.vintage.objectClass uses
+% `object_assertion` to recover the MATLAB class from that same
+% assertion, so `ndi_document2ndi_object` works on a migrated element the
+% way it works on everything else.
+k = k + 1;
+e(k).concept      = 'element';
+e(k).v1_class     = 'element';
+e(k).eta_class    = 'subject';
+e(k).object_field = 'ndi_element_class';
+e(k).object_edge  = '';
+e(k).object_assertion = 'ndi element class';   % ndi.vintage.elementLabel('class')
+e(k).isa_bridges  = false;
+e(k).edges        = cell(0,2);
 e(k).fields       = cell(0,2);
 
 cached = e;

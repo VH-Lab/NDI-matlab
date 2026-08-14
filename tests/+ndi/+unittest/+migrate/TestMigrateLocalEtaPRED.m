@@ -432,6 +432,36 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                  'synchronisation.'], numel(s.syncgraph.rules)));
             assertTrue(testCase, isa(s.syncgraph.rules{1}, 'ndi.time.syncrule'), ...
                 'the reconstructed rule is not an ndi.time.syncrule');
+
+            % ---- THE ELEMENTS, WHICH IN PRED ARE PROBES --------------
+            % Read from the corpus zip: PRED's 2 element documents are
+            % `ndi.probe.timeseries.mfdaq` (name electrode16, type n-trode)
+            % and `ndi.probe.timeseries.stimulator` (name rayostim, type
+            % stimulator). Both are `direct` with an empty
+            % underlying_element_id, so they are hardware attached to the
+            % one animal, not derived signals.
+            %
+            % After migration they are `subject` documents -- as is the
+            % animal -- so this is the case `isa` cannot decide. The lookup
+            % goes through the inbound `ndi element class` assertion.
+            els = s.getelements();
+            assertEqual(testCase, numel(els), 2, sprintf( ...
+                ['getelements returned %d; PRED holds 2 elements. Zero is ' ...
+                 'the pre-ndi.vintage symptom; THREE would mean the ' ...
+                 'lookup reached `isa subject` and swept in the animal.'], ...
+                numel(els)));
+
+            names = sort(cellfun(@(x) string(x.name), els(:)'));
+            assertEqual(testCase, names, ["electrode16", "rayostim"], ...
+                'the two elements are not the two PRED probes');
+
+            % The MATLAB class is recovered from the assertion, so this is
+            % what proves the object-class hop worked rather than some
+            % default being constructed.
+            classes = sort(cellfun(@(x) string(class(x)), els(:)'));
+            assertEqual(testCase, classes, ...
+                ["ndi.probe.timeseries.mfdaq", "ndi.probe.timeseries.stimulator"], ...
+                'the elements did not rebuild as their recorded probe classes');
         end
 
         function testTheTimeReferenceFamilyIsTheFirstOfSizeTwoAndIsLegal(testCase)
