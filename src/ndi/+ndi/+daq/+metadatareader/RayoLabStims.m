@@ -23,6 +23,23 @@ classdef RayoLabStims < ndi.daq.metadatareader
             obj = obj@ndi.daq.metadatareader(varargin{:});
         end
 
+        function parameters = readmetadata(obj, ~)
+            %READMETADATA Return the constant RayoLab parameter set.
+            %
+            %   PARAMETERS = READMETADATA(OBJ, EPOCHFILES) ignores
+            %   EPOCHFILES and returns {struct('stimid', 1)}.
+            %
+            %   The RayoLab stimulator has a single stimulus whose only
+            %   parameter is its stimulus id (always 1), so the metadata
+            %   does not depend on any file in the epoch. Overriding
+            %   readmetadata (rather than only readmetadatafromfile) means
+            %   the reader does not require a "trigger" file to match its
+            %   tab_separated_file_parameter regular expression, which the
+            %   base class would otherwise insist on before returning any
+            %   parameters.
+            parameters = obj.readmetadatafromfile([]);
+        end
+
         function parameters = readmetadatafromfile(~, ~)
             %READMETADATAFROMFILE Return the constant RayoLab parameter set.
             %
