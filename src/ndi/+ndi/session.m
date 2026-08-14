@@ -91,7 +91,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
             sq = dev.searchquery();
             search_result = ndi_session_obj.database_search(sq);
-            sq1 = ndi.query('','isa','daqsystem','') & ...
+            % BOTH VINTAGES here too, and for a different reason than the
+            % lookup in daqsystem_load: this is the DUPLICATE check on add.
+            % Blind to `acquisition_system`, it would report "no match" for a
+            % rig the migrated session already holds and add a second one.
+            sq1 = ndi.vintage.isaQuery('daqsystem') & ...
                 ndi.query('base.name','exact_string',dev.name,'');
             search_result1 = ndi_session_obj.database_search(sq1);
             if (numel(search_result) == 0) & (numel(search_result1) == 0)
@@ -151,7 +155,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
             %
             dev = {};
-            q1 = ndi.query('','isa','daqsystem','');
+            % BOTH VINTAGES. V_eta renames `daqsystem` to `acquisition_system`,
+            % and `isa` cannot bridge that -- acquisition_system's chain is
+            % [entity], with no `daqsystem` in it. An `isa daqsystem` query
+            % against a migrated session therefore matched nothing and this
+            % function returned {} with no error, which reads exactly like a
+            % session that has no daq systems.
+            q1 = ndi.vintage.isaQuery('daqsystem');
             q2 = ndi.query('base.session_id','exact_string',ndi_session_obj.id(),'');
             q = q1 & q2;
             if numel(varargin)>0

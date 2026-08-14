@@ -35,6 +35,12 @@ on:
       # test was written to close, one level up.
       - 'src/ndi/*ndi/*database/*implementations/*database/**'
       - 'src/ndi/*ndi/*database/*fun/databasehierarchyinit.m'
+      # THE OBJECT LAYER'S VINTAGE MAP and the readers wired to it. These
+      # decide whether a migrated session yields daq systems or an empty
+      # cell array, and the failure is silent, so they gate here.
+      - 'src/ndi/*ndi/*vintage/**'
+      - 'src/ndi/*ndi/*database/*fun/ndi_document2ndi_object.m'
+      - 'tests/*ndi/*unittest/*vintage/**'
   workflow_dispatch:
     inputs:
       ref:
@@ -156,6 +162,7 @@ jobs:
             results = runtests({ ...
                 'ndi.unittest.migrate.TestMigrateLocalEta', ...
                 'ndi.unittest.migrate.TestMigrateLocalEtaPRED', ...
-                'ndi.unittest.database.TestDid2SqliteHierarchy'});
+                'ndi.unittest.database.TestDid2SqliteHierarchy', ...
+                'ndi.unittest.vintage.TestVintageMap'});
             disp(results);
             assertSuccess(results);
