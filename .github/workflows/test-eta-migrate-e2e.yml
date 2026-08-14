@@ -26,6 +26,15 @@ on:
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta.m'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaPRED.m'
       - 'src/ndi/*ndi/*migrate/**'
+      # THE READ PATH. TestMigrateLocalEtaPRED now opens the migrated
+      # database through `ndi.session.dir`, so it is the covering test for
+      # `did2sqlite` (the backend that can read a did2 store) and for
+      # `databasehierarchyinit` (what lets NDI find the migrated file).
+      # Without these two globs a change to either could break opening a
+      # migrated session and no job would say so -- the exact gap this
+      # test was written to close, one level up.
+      - 'src/ndi/*ndi/*database/*implementations/*database/**'
+      - 'src/ndi/*ndi/*database/*fun/databasehierarchyinit.m'
   workflow_dispatch:
     inputs:
       ref:

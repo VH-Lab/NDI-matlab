@@ -259,22 +259,26 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
         %   case: can `ndi.session.dir` still turn a migrated session into an
         %   object?
         %
-        %   WHY THE DATABASE FILE IS COPIED, AND WHY THAT IS NOT CHEATING.
-        %   `ndi.migrate.local` writes `<TargetVersion>.sqlite` BESIDE the
-        %   original (`local.m:195`), while NDI opens a hard-coded filename:
+        %   NOTHING IS COPIED OVER A HARD-CODED NAME ANY MORE, AND THAT CHANGE
+        %   IS THE POINT. The first version of this test copied
+        %   `V_eta.sqlite` over `did-sqlite.sqlite` in a throwaway session,
+        %   because NDI could not open a migrated database at all: the
+        %   migrator writes `<TargetVersion>.sqlite` (`local.m:195`) while
+        %   `didsqlite.m:24` hard-codes `did-sqlite.sqlite`. That copy hid
+        %   TWO separate failures behind one workaround -- where the file
+        %   lives, and what can read it -- and the second was the real one:
+        %   the two backends are DIFFERENT FORMATS. `did.implementations.
+        %   sqlitedb` is branch-versioned (`branches`, and the open fails
+        %   with '"branches" table not found'); `did2.database.sqlitedb` has
+        %   no notion of a branch anywhere. Copying the file across only
+        %   moved a did2 database under a name a legacy reader would open.
         %
-        %       +ndi/+database/+implementations/+database/didsqlite.m:24
-        %           database_filename = fullfile(..., 'did-sqlite.sqlite');
-        %
-        %   So NDI cannot open a migrated database AT ALL today -- not because
-        %   of anything about V_eta, but because nothing tells it where the
-        %   migrated file is. That is a product decision (does migration
-        %   replace the database, or does NDI learn to select one?) and not
-        %   this test's to make. Copying V_eta.sqlite over the hard-coded name
-        %   in a THROWAWAY COPY of the session isolates the question this test
-        %   is actually for -- can NDI read V_eta DOCUMENTS -- from the
-        %   separate question of where the file lives. The copy is deliberate
-        %   and is the reason this test cannot go green by accident.
+        %   Both halves are now built, so the session is opened WHERE THE
+        %   MIGRATOR LEFT IT:
+        %       ndi.database.implementations.database.did2sqlite   -- reads it
+        %       ndi.database.fun.databasehierarchyinit             -- finds it
+        %   If either regresses this test fails at `ndi.session.dir`, which is
+        %   exactly the failure a user would hit.
         %
         %   SCOPE IS PRED, DELIBERATELY. PRED holds 10 v1 classes and none of
         %   the analysis tier, so this covers session/subject/element/daq and
@@ -284,9 +288,6 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
         %   broken in the read path.
             result = runPredMigrate(testCase);
 
-            readRoot = fullfile(tempname, 'pred-readback');
-            mkdir(readRoot);
-            copyfile(testCase.SessionRoot, readRoot);
             % The migrated file is taken from the MIGRATOR'S OWN ANSWER rather
             % than reconstructed from a filename this test guesses -- if
             % `<TargetVersion>.sqlite` ever changes, this follows it instead of
@@ -294,14 +295,32 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
             assertTrue(testCase, isfile(result.destination), sprintf( ...
                 'ndi.migrate.local reported destination %s and no file is there', ...
                 result.destination));
-            copyfile(result.destination, ...
-                fullfile(readRoot, '.ndi', 'did-sqlite.sqlite'));
 
             % THE HEADLINE. If this errors, NDI cannot open a migrated session
             % and every assertion below is moot.
-            s = ndi.session.dir(readRoot);
+            s = ndi.session.dir(testCase.SessionRoot);
             assertTrue(testCase, isa(s, 'ndi.session.dir'), ...
                 'ndi.session.dir did not return a session object');
+
+            % SELECTION IS ASSERTED, NOT ASSUMED. The session directory holds
+            % BOTH databases -- the original the migration read and the
+            % V_eta one it wrote -- so "it opened" does not by itself say
+            % WHICH opened. Without this a hierarchy that silently fell back
+            % to the legacy file would pass every assertion below that does
+            % not turn on a rename.
+            %
+            % `ndi.session`'s `database` property is not publicly readable,
+            % so the selection is re-run through the same function
+            % `ndi.session.dir` calls rather than reached for through the
+            % object. That tests the mechanism, which is the thing that can
+            % regress.
+            selected = ndi.database.fun.opendatabase( ...
+                fullfile(testCase.SessionRoot, '.ndi'), s.id());
+            assertTrue(testCase, isa(selected, ...
+                'ndi.database.implementations.database.did2sqlite'), sprintf( ...
+                ['ndi.database.fun.opendatabase chose a "%s", not a ' ...
+                 'did2sqlite -- the migrated database was written and ' ...
+                 'something else was opened'], class(selected)));
 
             % The session's own identity, read back off a MIGRATED document --
             % `session.reference` is `local_identifier` in V_eta, and this is
