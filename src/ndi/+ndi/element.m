@@ -84,21 +84,56 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else
                     element_doc = varargin{2};
                 end
-                if ~isfield(element_doc.document_properties, 'element')
-                    error('This document does not have parameters ''element''.');
+                % BOTH VINTAGES, AND THIS IS THE 1 -> N CASE. A v1 element
+                % carries everything in one `element` block. A migrated one
+                % is a `subject` whose parts are spread over five
+                % documents, so there is no block to index and this used to
+                % fail with "This document does not have parameters
+                % 'element'". ndi.vintage.elementFields puts them back
+                % together; see there for where each piece went and which
+                % one is inferred rather than stored.
+                [vEntry, vVintage] = ndi.vintage.entryFor(element_doc);
+                isEtaElement = ~isempty(vEntry) && strcmp(vVintage, 'V_eta') ...
+                    && strcmp(vEntry.concept, 'element');
+
+                if isEtaElement
+                    ef = ndi.vintage.elementFields(element_doc, element_session);
+                    ndi_element_class  = ef.ndi_element_class;
+                    element_name       = ef.name;
+                    element_reference  = ef.reference;
+                    element_type       = ef.type;
+                else
+                    if ~isfield(element_doc.document_properties, 'element')
+                        error('This document does not have parameters ''element''.');
+                    end
+                    % now we have the document and can start reading
+                    ndi_element_class = element_doc.document_properties.element.ndi_element_class;
+                    element_name = element_doc.document_properties.element.name;
+                    element_reference = element_doc.document_properties.element.reference;
+                    element_type = element_doc.document_properties.element.type;
                 end
-                % now we have the document and can start reading
-                ndi_element_class = element_doc.document_properties.element.ndi_element_class;
-                element_name = element_doc.document_properties.element.name;
-                element_reference = element_doc.document_properties.element.reference;
-                element_type = element_doc.document_properties.element.type;
-                if isempty(element_doc.dependency_value('underlying_element_id'))
+                if isEtaElement
+                    % The underlying element is a `derived_from` relation
+                    % rather than an edge on this document.
+                    if isempty(ef.underlying_element_id)
+                        element_underlying_element = [];
+                    else
+                        element_underlying_element = ndi.database.fun.ndi_document2ndi_object(...
+                            ef.underlying_element_id, element_session);
+                    end
+                elseif isempty(element_doc.dependency_value('underlying_element_id'))
                     element_underlying_element = [];
                 else
                     element_underlying_element = ndi.database.fun.ndi_document2ndi_object(...
                         dependency_value(element_doc,'underlying_element_id'), element_session);
                 end
-                if ischar(element_doc.document_properties.element.direct)
+                if isEtaElement
+                    % `direct` is the one field V_eta stores NOWHERE. It is
+                    % recovered from which lineage relation the migrator
+                    % emitted, because that is the only thing it was used
+                    % to decide -- see ndi.vintage.elementFields.
+                    direct = ef.direct;
+                elseif ischar(element_doc.document_properties.element.direct)
                     % Parse the stored boolean flag without eval: the value
                     % comes from a document and must never be executed as code.
                     directStr = strtrim(element_doc.document_properties.element.direct);
@@ -118,7 +153,14 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else
                     direct = logical(element_doc.document_properties.element.direct);
                 end
-                subject_id = element_doc.dependency_value('subject_id');
+                if isEtaElement
+                    % The specimen is an `observes` relation, not an edge:
+                    % v1's `subject_id` on the element became a
+                    % directed_relation pointing at the animal.
+                    subject_id = ef.subject_id;
+                else
+                    subject_id = element_doc.dependency_value('subject_id');
+                end
                 [dependency_names,dependencies] = element_doc.dependency();
                 [dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id'});
                 dependencies = dependencies(ia);
