@@ -90,8 +90,26 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
     % read of a legacy doc. Schema_version stamping, base reconciliation,
     % app block renames, and depends_on rewrites still run — those are
     % the V_delta shape transformations the read path actually needs.
+    % THE TARGET IS NAMED HERE, not inherited. This call passed no
+    % TargetVersion and so took did2.convert.v1_to_v2's own default -- a
+    % default set for the converter's callers, not for this read path. The
+    % version every document NDI reads is normalised to was therefore decided
+    % in another repository, by a parameter nobody here mentions.
+    %
+    % It is still 'V_delta', deliberately and visibly: flipping the read path
+    % to V_eta would run the per-class migrators on every read while the NINE
+    % BATCH POST-PASSES and the NDI second pass -- epochMint, resolveSessionAnchors,
+    % recordingAttribution and the rest -- CANNOT run per document, because they
+    % need the whole set. That would produce half-migrated documents that look
+    % migrated. Changing this constant is a real decision and now has to be made
+    % on purpose.
+    %
+    % V_eta documents are unaffected either way as of 2026-08-14: they rank
+    % BEYOND this target, and isAlreadyTarget now compares rank rather than
+    % string equality, so they pass through untouched instead of being pushed
+    % back through migrators aimed at a version they have already passed.
     result = did2.convert.v1_to_v2(body, 'Validate', false, ...
-        'RenameClassNames', false);
+        'RenameClassNames', false, 'TargetVersion', READ_TARGET_VERSION);
 
     if isempty(result.migrated)
         if ~isempty(result.quarantine)
@@ -107,4 +125,13 @@ function ndiDocumentObj = applyReadNormalization(rawDoc)
     end
 
     ndiDocumentObj = ndi.document(result.migrated{1}.toStruct());
+end
+
+function v = READ_TARGET_VERSION()
+%READ_TARGET_VERSION The schema version NDI normalises stored bodies TO on read.
+%   ONE definition, named, so "what version does NDI read at" is answerable by
+%   grep instead of by tracing an unpassed argument into another repository's
+%   default. See the call site for why it is still V_delta and what changing it
+%   would require.
+v = 'V_delta';
 end
