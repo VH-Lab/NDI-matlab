@@ -139,6 +139,32 @@ if options.Migrate
     fprintf('  quarantined      : %d\n', numel(result.quarantine));
     fprintf('  dangling edges   : %d (of %d examined)\n', ...
         result.references.orphan_count, result.references.edges_examined);
+
+    % THE FAST PASS IS A TRAP AND IT MUST BE ANNOUNCED, NOT INFERRED.
+    % `ndi.migrate.local` decides with `alreadyMigrated = isfile(dstPath)`
+    % (local.m:199) and then reads bodies back out of the DESTINATION
+    % instead of the v1 source. That is right for a completed migration and
+    % wrong for a POISONED one -- and a poisoned one is easy to make,
+    % because the first run writes V_eta.sqlite even when every document
+    % quarantines. So a failed run leaves an EMPTY destination, and every
+    % run after it reports `documents seen: 0` and changes nothing.
+    %
+    % Reported once as "documents seen: 0, quarantined: 0", which reads
+    % like a clean no-op and is really a short-circuit onto an empty file.
+    % A zero whose denominator is unstated is not evidence -- so state it.
+    if isfield(result, 'alreadyMigrated') && result.alreadyMigrated
+        fprintf(['  *** FAST PASS: %s already existed, so NOTHING WAS ' ...
+                 'MIGRATED.\n      The counts above describe that file, ' ...
+                 'not your v1 database.\n'], result.destination);
+        if result.summary.total == 0
+            fprintf(['  *** AND IT IS EMPTY (0 documents). This is the ' ...
+                     'signature of a FAILED\n      earlier run: the ' ...
+                     'destination is written even when every document\n' ...
+                     '      quarantines. Delete it and run again:\n' ...
+                     '          delete(''%s'')\n'], result.destination);
+        end
+    end
+
     if ~isempty(result.quarantine)
         fprintf('  *** quarantine is NOT empty; the reads below may be partial\n');
         for i = 1:min(5, numel(result.quarantine))
@@ -348,6 +374,30 @@ sentinelFile = fullfile(resolved, [SENTINEL '.json']);
 if isfile(sentinelFile)
     n = numel(dir(fullfile(resolved, '*.json')));
     fprintf('  DENOMINATOR: %d schema file(s) visible at DID_SCHEMA_PATH\n', n);
+
+    % SETTING THE ENVIRONMENT VARIABLE IS NOT ENOUGH, AND THIS FUNCTION
+    % LEARNED THAT THE EXPENSIVE WAY. `did2.schema.cache.shared` holds a
+    % `persistent instance` and reads DID_SCHEMA_PATH exactly ONCE, when it
+    % first constructs -- so a cache built earlier in the MATLAB session
+    % keeps its original path forever, and a later setenv changes nothing.
+    %
+    % The symptom is diagnostic and was misread once already: the banner
+    % above prints the NEW path while the validator errors on the OLD one,
+    % which reads as "the fix did not apply" and is really "the fix applied
+    % to a variable nobody re-reads". The tell is the two paths DISAGREEING
+    % in the same output.
+    %
+    % setSchemaPath does shared('-reset') then shared(path), so the next
+    % getClass builds against what we just assembled.
+    did2.schema.cache.setSchemaPath(resolved);
+    active = did2.schema.cache.shared().schemaPath;
+    fprintf('  schema cache    : rebuilt at %s\n', active);
+    if ~strcmp(active, resolved)
+        error('veta:schemaCacheNotRebuilt', ...
+            ['The did2 schema cache reports "%s" after being pointed at ' ...
+             '"%s". Something else is holding the singleton; restart ' ...
+             'MATLAB.'], active, resolved);
+    end
     return;
 end
 
