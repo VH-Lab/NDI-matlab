@@ -42,17 +42,32 @@ function entries = map()
 %     fields         N-by-2 cellstr, {v1_field, eta_field}, within the
 %                    document's own block.
 %
-%   WHAT IS DELIBERATELY ABSENT
-%   ---------------------------
-%   `element` and `pyraview` are NOT here, and cannot be added by writing a
-%   row. V_eta DECOMPOSES them -- one `element` document becomes `subject` +
-%   `term_assertion` + `directed_relation` + `sampled_body` +
-%   `session_relative_reference`, and the migrator's own header states the
-%   intent: "Strict J retires the recording-side `element` class (J:214,
-%   D2): any identifiable thing ... is a `subject`". Reassembling an
-%   `ndi.element` from five documents would rebuild a class V_eta
-%   deliberately retired. Whether `ndi.element` survives V_eta is a
-%   modelling decision for the team, not something this map can express.
+%   WHAT IS ABSENT, AND A CORRECTION TO WHY
+%   ---------------------------------------
+%   THIS SECTION USED TO SAY `element` "is NOT here, and cannot be added by
+%   writing a row", on the reasoning that V_eta DECOMPOSES it. That was the
+%   wrong axis and the paragraph is replaced rather than softened, because
+%   as written it forbids the row that is now four entries below it.
+%
+%   Cardinality was never the test. `element` -> 5 documents and
+%   `daqsystem` -> 2 documents are the SAME SHAPE: a root document carrying
+%   the preserved v1 `base.id`, plus satellites. The element migrator
+%   preserves that id exactly as the others do ("becomes a `subject` with
+%   its id PRESERVED"). What actually distinguishes `element` is that its
+%   root class is SHARED -- `acquisition_system` is a class NDI uses for
+%   nothing else, while `subject` is also every real specimen -- which is
+%   what `isa_bridges` exists to express.
+%
+%   `pyraview` IS still absent, and for a reason that is not cardinality
+%   either: it is not an NDI object type at all. Of the 91 NDI templates
+%   only 8 declare an `ndi_*_class` field and pyraview is not among them.
+%   Its documents are DATA, reached through an element, so there is no
+%   object to reconstruct and nothing for a row to say.
+%
+%   Whether `ndi.element` should keep existing at all remains a modelling
+%   question for the team -- but it is a question about NDI's API, not a
+%   blocker to reading the documents, and this map no longer pretends
+%   otherwise.
 %
 %   A CORRECTION KEPT IN PLACE, because the mistake is instructive. This
 %   note used to say `daqreader` "needs nothing -- V_eta keeps the class
