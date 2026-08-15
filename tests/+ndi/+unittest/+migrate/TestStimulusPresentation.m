@@ -26,13 +26,37 @@ classdef TestStimulusPresentation < matlab.unittest.TestCase
             testCase.verifyEqual(m.subject_statement.storage_mode, 'body');
             testCase.verifyEqual(m.base.id, 'pres_1');   % source id preserved
 
-            % the sampled_body: onsets ARE the sample times (offsets), record per trial
+            % the sampled_body: onsets ARE the sample times, record per trial.
+            % REWRITTEN for the signed axis entry -- `datum`, `summary` and
+            % `sample_time` are gone from the class, and the first two were an
+            % active break: this pass was writing fields the schema no longer
+            % declares, which is `undeclaredField` on every emitted document.
             testCase.verifyEqual(b.document_class.class_name, 'sampled_body');
             testCase.verifyEqual(depValue(b, 'statement'), 'pres_1');
-            testCase.verifyFalse(b.sampled_body.sample_time.regular);
-            testCase.verifyEqual(b.sampled_body.sample_time.offsets, [0 5]);
-            testCase.verifyEqual(b.sampled_body.sample_time.n, 2);
-            testCase.verifyEqual(b.sampled_body.datum.shape, [2 7]);
+            testCase.verifyFalse(isfield(b.sampled_body, 'datum'));
+            testCase.verifyFalse(isfield(b.sampled_body, 'summary'));
+            testCase.verifyFalse(isfield(b.sampled_body, 'sample_time'));
+            % dtype moved to the STATEMENT (signed sec.5)
+            testCase.verifyEqual(m.subject_statement.datum_type, 'float64');
+            testCase.verifyEqual(m.subject_statement.source_datum_type, 'double');
+
+            % THE AXES ARE POSITIONAL: `axes[k] IS array dimension k`, and
+            % `records` is [nTrials x 7]. This is the assertion pyraview did not
+            % have when it shipped a one-entry list claiming dimension 1 was
+            % channels; the order is the thing being pinned, not the presence.
+            ax = b.sampled_body.axes;
+            testCase.verifyEqual(numel(ax), 2);
+            testCase.verifyEqual(ax(1).variable.name, 'time');
+            testCase.verifyEqual(ax(1).n, 2);
+            testCase.verifyFalse(ax(1).regular);
+            testCase.verifyEqual(ax(1).values.values, [0 5]);
+            testCase.verifyEqual(ax(2).variable.name, 'stimulus parameter');
+            testCase.verifyEqual(ax(2).n, 7);
+            % the seven column names, which lived only in a code comment before
+            testCase.verifyEqual(numel(ax(2).labels), 7);
+            testCase.verifyEqual(ax(2).labels(1).name, 'angle');
+            testCase.verifyEqual(ax(2).labels(6).name, 'is blank');
+            testCase.verifyEqual(ax(2).labels(7).name, 'duration');
 
             % trial records: [angle sf tf contrast size is_blank duration]
             testCase.verifyEqual(size(records), [2 7]);
@@ -50,7 +74,7 @@ classdef TestStimulusPresentation < matlab.unittest.TestCase
             r = ndi.migrate.internal.bodyResolver(bodies);
             [~, b, records] = ...
                 ndi.migrate.internal.stimulusPresentationToManipulation(pres, r, 'V_eta');
-            testCase.verifyEqual(b.sampled_body.sample_time.n, 2);   % blank kept
+            testCase.verifyEqual(b.sampled_body.axes(1).n, 2);   % blank kept
             testCase.verifyEqual(records(2, 6), 1);   % trial 2 is_blank = true
         end
 
