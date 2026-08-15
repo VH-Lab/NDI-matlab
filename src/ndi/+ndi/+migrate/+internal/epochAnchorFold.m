@@ -78,6 +78,45 @@ function [plan, report] = epochAnchorFold(migratedStructs, epochIndex)
 %   So: still exactly ONE production mint site, still ZERO in DID-matlab. The
 %   growth in the line counts is comments and the new tests.
 %
+%   ---------------------------------------------------------------------
+%   THE TWO SENTENCES ABOVE ARE FALSE AS OF 2026-08-15, AND THE WAY THEY WENT
+%   FALSE IS THE POINT: A SECOND EMITTER LANDED IN THE OTHER REPOSITORY AND
+%   NOTHING BROUGHT THE NEWS BACK.
+%   ---------------------------------------------------------------------
+%   `migrators_j/pyraview.m` now mints an `epoch_bounded_reference` HANDLE, so
+%   "the ONLY site in either repo" and "ZERO in DID-matlab" are both wrong. It
+%   uses `classBlock(...)` rather than a literal `'class_name', ...` pair, which
+%   is why the grep above still returns no output for DID-matlab -- the census
+%   was written against ONE construction idiom and a second idiom is invisible
+%   to it. That is the `valid_interval` writer-check failure exactly
+%   (`session.newdocument` vs `ndi.document`), arriving here through the
+%   CONSTRUCTOR SHAPE instead of the class name. Re-derived 2026-08-15, both
+%   idioms, tracked files only:
+%
+%       $ git grep -n "'class_name', 'epoch_bounded_reference'\|classBlock('epoch_bounded_reference'" -- '*.m'
+%       NDI-matlab  src/ndi/+ndi/+migrate/+internal/stimulusBathToBath.m:166
+%                   tests/+ndi/+unittest/+migrate/TestEpochAnchorFold.m:439
+%       DID-matlab  src/did/+did2/+convert/+migrators_j/pyraview.m:177
+%
+%       DENOMINATOR (mentions, tracked files, not mint sites):
+%         NDI 12 files / 81 lines   (was 11 / 62)
+%         DID 11 files / 26 lines   (was 10 / 18)
+%
+%   SO THERE ARE TWO PRODUCTION MINT SITES, ONE PER REPOSITORY, AND THIS PASS
+%   FOLDS BOTH. That is not luck: it keys on the CLASS, not on the emitter, and
+%   `ndi.migrate.local` runs it over the whole migrated batch after
+%   `did2.convert.epochMint`, so a DID-side handle is in reach by the time it
+%   runs. Pinned end-to-end on real PRED documents by
+%   tests/+ndi/+unittest/+migrate/TestMigrateLocalEtaPRED.m:205, which asserts
+%   `epoch_bounded_reference` is ABSENT from `summary.by_class` while `:208`
+%   and `:211` assert `epoch` and `relative_reference` are present.
+%
+%   WHAT A READER SHOULD TAKE FROM THIS, since the behaviour did not change:
+%   the wrong half was a UNIQUENESS claim, and a uniqueness claim decays the
+%   moment anyone anywhere adds an emitter. It cannot be maintained by the
+%   author of the file it lives in. Do not re-assert "the only site" here --
+%   re-run the two-idiom grep above.
+%
 %   And nothing folded it. `did2.convert.resolveSessionAnchors` -- the batch pass
 %   that collapses the retiring reference family -- matches exactly two class
 %   names and neither is this one:
