@@ -285,10 +285,31 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
             anchorId = depValue(dose, 'time_reference_1');
             verifyNotEmpty(testCase, anchorId, resultDiag(result));
 
-            ref = findByClass(result.destination, 'relative_reference');
-            verifyNotEmpty(testCase, ref, resultDiag(result));
-            verifyEqual(testCase, ref.base.id, anchorId, ...
-                'the fold moved the anchor id; every time_reference_1 edge dangles');
+            % SELECTED BY ID, NOT BY CLASS -- and that distinction is now
+            % load-bearing. `findByClass` returns the FIRST document of a class
+            % in `db.allIds()` order, which was unambiguous while the fold's
+            % output was the only `relative_reference` here. It is not any more:
+            % epochMint gained the epoch EXTENT references (#60 option A,
+            % signed -- "acquisition_epoch won't exist", so the epoch carries
+            % its own clock references), minting one per DISTINCT clock. This
+            % fixture's element_epoch has one, so there are now TWO.
+            %
+            % Selecting by class picked whichever sqlite returned first, and
+            % when that was the extent the test failed on assertions it was
+            % never making. All three CI symptoms are that one substitution:
+            %     :290  base.id mismatch  -- two different minted documents
+            %     :300  relative_to was the SESSION, not the epoch
+            %     :307  'MATLAB:nonExistentField' on value.relation, which an
+            %           extent does not carry (it has clock/start/duration)
+            % and the failure message blamed the fold for moving an id it had
+            % not touched -- a wrong diagnosis aimed at innocent code.
+            ref = findById(result.destination, anchorId);
+            verifyNotEmpty(testCase, ref, ['the anchor id the dose names is ' ...
+                'not in the destination at all. ' resultDiag(result)]);
+            verifyEqual(testCase, ref.document_class.class_name, ...
+                'relative_reference', ...
+                ['the anchor id resolves to a document of the wrong class; ' ...
+                 'the fold did not upgrade it. ' resultDiag(result)]);
 
             % and the whole graph still closes
             verifyEqual(testCase, result.references.orphan_count, 0, ...
@@ -318,6 +339,28 @@ classdef TestMigrateLocalEta < matlab.unittest.TestCase
                 isfield(ref.relative_reference.value, 'start'));
             verifyFalse(testCase, ...
                 isfield(ref.relative_reference.value, 'duration'));
+
+            % --- AND THE OTHER relative_reference IS THE EPOCH'S EXTENT -----
+            % Named rather than tolerated. The assertions above were silently
+            % ambiguous from the moment a second one existed: a test that says
+            % "the relative_reference" while two exist can pass against the
+            % wrong one as easily as fail against it, and which it gets is
+            % sqlite's row order. One clock -> exactly two documents.
+            allRefs = findAllByClass(result.destination, 'relative_reference');
+            verifyEqual(testCase, numel(allRefs), 2, ...
+                ['expected the folded anchor plus ONE epoch extent reference. ' ...
+                 resultDiag(result)]);
+            extent = allRefs{find(cellfun(@(b) ~strcmp(b.base.id, anchorId), ...
+                allRefs), 1)};
+            % The two are told apart by WHAT THEY ANCHOR TO, the substantive
+            % difference: the fold's anchor is relative to the EPOCH, the
+            % extent to the SESSION.
+            verifyEqual(testCase, depValue(extent, 'relative_to'), sessId, ...
+                ['the epoch extent must be anchored to the session, not to ' ...
+                 'the epoch it describes. ' resultDiag(result)]);
+            % and it carries the offsets the anchor deliberately does not
+            verifyTrue(testCase, isfield(extent.relative_reference.value, 'start'));
+            verifyTrue(testCase, isfield(extent.relative_reference.value, 'duration'));
         end
 
         function testWithoutASessionDocumentTheRetiredAnchorReachesTheDatabase(testCase)
@@ -591,6 +634,43 @@ d = '2024-06-01T12:00:00.000Z';
 end
 
 % ===================== inspection / sqlite helpers ========================
+
+function body = findById(dstPath, wantId)
+%FINDBYID The document with this base.id, or [] -- the unambiguous lookup.
+%   findByClass below returns the FIRST document of a class, which is fine while
+%   a class has one instance. Once epochMint began minting epoch EXTENT
+%   references there are several `relative_reference` documents per run and
+%   "the first one" is whatever sqlite returns, so a test that means a SPECIFIC
+%   document has to name it. Use this whenever the document under test is
+%   identified by an EDGE rather than by its class.
+body = [];
+db = did2.database.sqlitedb(dstPath);
+cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+ids = db.allIds();
+for k = 1:numel(ids)
+    doc = db.get(ids{k});
+    s = doc.toStruct();
+    if isfield(s, 'base') && isfield(s.base, 'id') && strcmp(s.base.id, wantId)
+        body = s;
+        return;
+    end
+end
+end
+
+function bodies = findAllByClass(dstPath, className)
+%FINDALLBYCLASS Every document of a class, so a COUNT can be asserted.
+%   findByClass answers "is there one"; this answers "how many, and which".
+bodies = {};
+db = did2.database.sqlitedb(dstPath);
+cleanup = onCleanup(@() db.close()); %#ok<NASGU>
+ids = db.allIds();
+for k = 1:numel(ids)
+    doc = db.get(ids{k});
+    if strcmp(doc.className(), className)
+        bodies{end+1} = doc.toStruct(); %#ok<AGROW>
+    end
+end
+end
 
 function body = findByClass(dstPath, className)
 body = [];
