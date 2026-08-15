@@ -869,11 +869,19 @@ classdef mfdaq < ndi.daq.reader
                     % will this work for all channel types? Probably not
                     [underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
                         types{i},[ci(chan_entries_indexes(group_indexes)).number]);
-                    sample_rates_here = [];
-                    for k=1:numel(group_indexes)
-                        sample_rates_here(k) = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, ...
-                            ci(chan_entries_indexes(group_indexes(k))).type,...
-                            ci(chan_entries_indexes(group_indexes(k))).number);
+                    % event/marker/text channels are timestamped events with no scalar
+                    % sample rate, so do not query samplerate for them (the eventmarktext
+                    % ingestion branch below never uses it). This mirrors Step 1, which
+                    % leaves these channel types at NaN.
+                    if strcmp(types{i},'eventmarktext')
+                        sample_rates_here = nan(1,numel(group_indexes));
+                    else
+                        sample_rates_here = [];
+                        for k=1:numel(group_indexes)
+                            sample_rates_here(k) = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, ...
+                                ci(chan_entries_indexes(group_indexes(k))).type,...
+                                ci(chan_entries_indexes(group_indexes(k))).number);
+                        end
                     end
 
                     sample_rates_here_unique = unique(sample_rates_here);

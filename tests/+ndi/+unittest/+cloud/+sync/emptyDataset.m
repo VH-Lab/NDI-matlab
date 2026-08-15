@@ -23,9 +23,10 @@ classdef emptyDataset < matlab.unittest.TestCase
                      warning(['Failed to delete remote dataset: ' ME.message]);
                  end
             end
-            if exist(testCase.testDir, 'dir')
-                rmdir(testCase.testDir, 's');
-            end
+            % Close open SQLite handles before removing the temp directory so
+            % the dataset's did-sqlite.sqlite is not still locked on Windows
+            % (see issue #870).
+            ndi.unittest.cloud.closeAndRemoveDir(testCase.testDir);
         end
     end
 
