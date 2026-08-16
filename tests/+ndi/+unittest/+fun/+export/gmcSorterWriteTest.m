@@ -13,6 +13,10 @@ classdef gmcSorterWriteTest < matlab.unittest.TestCase
     %   * The file sizes yield the same n_saved_chans / n_time_samples /
     %     sample_rate that parse_dat_t_s_metadata computes.
     %   * The channel map (channel_positions.csv) is [x y] in channel order.
+    %
+    % It also covers the GMC_Sorter Version 4 sidecars: channel_info.csv (the
+    % per-shank ch_order/ch_map source), the kcoords/connected additions to
+    % channel_map.mat, and the generated run_gmc_extract.py driver.
 
     properties
         OutDir
@@ -123,6 +127,100 @@ classdef gmcSorterWriteTest < matlab.unittest.TestCase
             % driver + metadata exist
             testCase.verifyTrue(isfile(fullfile(testCase.OutDir,'run_gmc_extract.py')));
             testCase.verifyTrue(isfile(fullfile(testCase.OutDir,'RawData.metadata')));
+        end
+
+        function testChannelInfoDefaults(testCase)
+            % channel_info.csv: 0-based channel, [x y], shank, connected.
+            % With no shankIndex/connected given, everything is one connected shank.
+            [x, t, pos, fs] = testCase.basicData();
+            ndi.fun.export.gmcSorterWrite(testCase.OutDir, x, t, pos, ...
+                'baseName','RawData','sampleRate',fs,'verbose',0);
+
+            info = readmatrix(fullfile(testCase.OutDir,'channel_info.csv'), ...
+                'NumHeaderLines', 1);
+            nCh = size(pos,1);
+            testCase.verifyEqual(size(info), [nCh 5], 'channel_info.csv shape');
+            testCase.verifyEqual(info(:,1), (0:nCh-1).', '0-based channel index');
+            testCase.verifyEqual(info(:,2:3), pos, 'AbsTol', 1e-6);
+            testCase.verifyEqual(info(:,4), ones(nCh,1), 'default: one shank');
+            testCase.verifyEqual(info(:,5), ones(nCh,1), 'default: all connected');
+        end
+
+        function testChannelInfoShanksAndConnected(testCase)
+            % A 2-shank probe with one dead channel round-trips into the sidecars.
+            [x, t, pos, fs] = testCase.basicData();
+            shank = [1;1;2;2];
+            conn  = [true;false;true;true];
+            ndi.fun.export.gmcSorterWrite(testCase.OutDir, x, t, pos, ...
+                'baseName','RawData','sampleRate',fs,'verbose',0, ...
+                'shankIndex',shank,'connected',conn);
+
+            info = readmatrix(fullfile(testCase.OutDir,'channel_info.csv'), ...
+                'NumHeaderLines', 1);
+            testCase.verifyEqual(info(:,4), shank, 'shank ids');
+            testCase.verifyEqual(logical(info(:,5)), conn, 'connected flags');
+
+            % channel_map.mat carries the same as kcoords / connected
+            m = load(fullfile(testCase.OutDir,'channel_map.mat'));
+            testCase.verifyEqual(m.kcoords(:), shank, 'kcoords');
+            testCase.verifyEqual(logical(m.connected(:)), conn, 'connected');
+        end
+
+        function testShankIndexLengthMismatchErrors(testCase)
+            [x, t, pos, fs] = testCase.basicData();
+            testCase.verifyError(@() ndi.fun.export.gmcSorterWrite( ...
+                testCase.OutDir, x, t, pos, 'sampleRate',fs,'verbose',0, ...
+                'shankIndex',[1;1;2]), ...
+                'ndi:fun:export:writeGmcSidecars:shankIndex');
+        end
+
+        function testDriverUsesVersion4Api(testCase)
+            % The generated driver must drive GMC_Sorter Version 4:
+            % one extract_spike_features(..., ch_order=...) pass per shank,
+            % then properties.mat.
+            [x, t, pos, fs] = testCase.basicData();
+            ndi.fun.export.gmcSorterWrite(testCase.OutDir, x, t, pos, ...
+                'baseName','RawData','sampleRate',fs,'verbose',0, ...
+                'shankIndex',[1;1;2;2], ...
+                'featureOptions',{'refr_space',150,'noise_space',NaN});
+
+            drv = fileread(fullfile(testCase.OutDir,'run_gmc_extract.py'));
+            testCase.verifyNotEmpty(strfind(drv,'from sp_feature_ext import extract_spike_features'), ...
+                'imports the Version 4 extractor');
+            testCase.verifyNotEmpty(strfind(drv,'ch_order=sh["ch_order"]'), ...
+                'passes ch_order (the Version 4 addition)');
+            testCase.verifyNotEmpty(strfind(drv,'channel_info.csv'), ...
+                'reads the per-shank channel table');
+            testCase.verifyNotEmpty(strfind(drv,'save_properties_mat(out_folder)'), ...
+                'writes properties.mat as main.py does');
+            % featureOptions become Python keyword arguments
+            testCase.verifyNotEmpty(strfind(drv, ...
+                'EXTRACT_KWARGS = dict(refr_space=150, noise_space=float("nan"))'), ...
+                'featureOptions render as Python kwargs, NaN included');
+            % no probe_mappings import unless gmcProbeName was asked for
+            testCase.verifyEmpty(strfind(drv,'from probe_mappings import'), ...
+                'probe_mappings imported only when gmcProbeName is set');
+        end
+
+        function testDriverProbeMappingsMode(testCase)
+            [x, t, pos, fs] = testCase.basicData();
+            ndi.fun.export.gmcSorterWrite(testCase.OutDir, x, t, pos, ...
+                'baseName','RawData','sampleRate',fs,'verbose',0, ...
+                'gmcProbeName','KN_UCLA_64M');
+
+            drv = fileread(fullfile(testCase.OutDir,'run_gmc_extract.py'));
+            testCase.verifyNotEmpty(strfind(drv,'from probe_mappings import get_probe_map'), ...
+                'imports GMC_Sorter''s probe table');
+            testCase.verifyNotEmpty(strfind(drv,'PROBE_NAME = "KN_UCLA_64M"'), ...
+                'names the probe');
+        end
+
+        function testFeatureOptionsMustBePairs(testCase)
+            [x, t, pos, fs] = testCase.basicData();
+            testCase.verifyError(@() ndi.fun.export.gmcSorterWrite( ...
+                testCase.OutDir, x, t, pos, 'sampleRate',fs,'verbose',0, ...
+                'featureOptions',{'refr_space'}), ...
+                'ndi:fun:export:writeGmcSidecars:featureOptions');
         end
 
         function testMultiplierAndSaturation(testCase)
