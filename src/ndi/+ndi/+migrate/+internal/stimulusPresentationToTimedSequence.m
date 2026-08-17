@@ -1,5 +1,5 @@
 function [manipBody, gratingBodies, bodyDoc, records, report] = ...
-        stimulusPresentationToTimedSequence(v1Body, resolver, targetVersion)
+        stimulusPresentationToTimedSequence(v1Body, resolver, targetVersion, sequence)
 %STIMULUSPRESENTATIONTOTIMEDSEQUENCE Assemble the SIGNED stimulus model from a
 %   legacy stimulus_presentation: N deduped standalone `visual_grating`
 %   documents + ONE `timed_sequence_manipulation` that references them, its

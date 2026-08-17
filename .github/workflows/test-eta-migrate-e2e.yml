@@ -51,6 +51,11 @@ on:
       # they changed.
       - 'src/ndi/*ndi/element.m'
       - 'src/ndi/*ndi/*element/timeseries.m'
+      # THE SECOND-PASS ASSEMBLERS AND THEIR OWN UNIT TESTS. `+migrate/**`
+      # above already covers the sources; this adds the tests, which lived
+      # in a directory no workflow on this branch swept -- see the note by
+      # the runtests list.
+      - 'tests/*ndi/*unittest/*migrate/**'
   workflow_dispatch:
     inputs:
       ref:
@@ -176,6 +181,53 @@ jobs:
                 'ndi.unittest.database.TestDid2SqliteHierarchy', ...
                 'ndi.unittest.vintage.TestVintageMap', ...
                 'ndi.unittest.vintage.TestElementLabelMatchesMigrator', ...
-                'ndi.unittest.vintage.TestAddedEpoch'});
+                'ndi.unittest.vintage.TestAddedEpoch', ...
+                ...
+                ... % THE SECOND-PASS ASSEMBLERS' OWN UNIT TESTS, added
+                ... % 2026-08-17. Every one of these existed and had NEVER
+                ... % RUN on a claude/** branch: they live in
+                ... % tests/+ndi/+unittest/+migrate, which only run-tests.yml
+                ... % sweeps, and run-tests.yml fires on `main` and `Vnext`
+                ... % alone. This is the same gap the note above records for
+                ... % TestDid2SqliteHierarchy -- third instance, and this
+                ... % time it cost something concrete.
+                ... %
+                ... % HOW IT WAS FOUND. `stimulusPresentationToTimedSequence`
+                ... % shipped with a function line declaring THREE inputs and
+                ... % an `arguments` block declaring FOUR. MATLAB rejects
+                ... % that at parse time, so every call threw before running
+                ... % a line; ndi.migrate.local catches, warns, and falls
+                ... % back to passthrough, so the e2e read "0 of 11
+                ... % presentations decomposed" for five runs and looked like
+                ... % a modelling shortfall. TestStimulusPresentationTimedSequence
+                ... % calls the function directly and would have failed on
+                ... % the first invocation -- it just never ran.
+                ... %
+                ... % ONLY THE SELF-CONTAINED ONES ARE HERE. Measured: these
+                ... % 16 classes touch no session, no database and no cloud
+                ... % (247 test methods between them, plus
+                ... % TestRecordingAttribution, whose methods do not start
+                ... % with `test` and so were not counted). The
+                ... % session-dependent classes -- TestMigrateCloud,
+                ... % TestMigrateLocal{,Zeta,Epsilon} -- are deliberately
+                ... % NOT added: they need credentials or target other
+                ... % vintages, and a gate that is red for reasons nobody
+                ... % owns trains readers to ignore it.
+                'ndi.unittest.migrate.TestStimulusPresentationTimedSequence', ...
+                'ndi.unittest.migrate.TestHartleyBasisGratings', ...
+                'ndi.unittest.migrate.TestStimulusPassGating', ...
+                'ndi.unittest.migrate.TestStimulusPresentation', ...
+                'ndi.unittest.migrate.TestGratingValue', ...
+                'ndi.unittest.migrate.TestBathAssembly', ...
+                'ndi.unittest.migrate.TestBodyResolver', ...
+                'ndi.unittest.migrate.TestEnsembleMembership', ...
+                'ndi.unittest.migrate.TestImagedEntitySubjects', ...
+                'ndi.unittest.migrate.TestOntologyLabelSubjects', ...
+                'ndi.unittest.migrate.TestOntologyRowSubjects', ...
+                'ndi.unittest.migrate.TestPathSPromotion', ...
+                'ndi.unittest.migrate.TestRecordingAttribution', ...
+                'ndi.unittest.migrate.TestSoftwareDedup', ...
+                'ndi.unittest.migrate.TestStrainAssembly', ...
+                'ndi.unittest.migrate.TestSubjectStrainAssembly'});
             disp(results);
             assertSuccess(results);
