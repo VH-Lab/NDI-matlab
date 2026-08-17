@@ -393,6 +393,7 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
             expected = {'stimuli_read'; 'non_grating_stimuli'; ...
                 'distinct_gratings'; 'blank_gratings'; 'trials'; ...
                 'trials_out_of_range'; 'trials_with_timing'; 'timing_source'; ...
+                'basis_source'; 'shared_refs'; 'frames'; ...
                 'subjects_resolved'; 'instrument_resolved'; 'epoch_id'; 'reason'};
 
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
@@ -413,36 +414,142 @@ classdef TestStimulusPresentationTimedSequence < matlab.unittest.TestCase
 
         % ================= a canary on the subject link ==================
 
-        function testStimulusResponseScalarIsNotYetSeenByTheResolver(testCase)
-            % THIS TEST PINS A GAP, NOT A DESIGN. It is written to FAIL the day
-            % somebody widens the resolver, so that this file is found.
+        function testStimulusResponseScalarNowResolvesTheSubject(testCase)
+            % THIS TEST WAS THE INVERSE OF ITSELF UNTIL 2026-08-17, and it is
+            % kept rather than deleted because the gap it pinned is the reason
+            % this whole path was dead on real data.
             %
-            % ndi.migrate.internal.bodyResolver's subjectsForPresentation
-            % matches `strcmp(classNameOf(b), 'stimulus_response')`. The
-            % production writer never mints that class: `+ndi/+app/+stimulus/
-            % tuning_response.m:320` on origin/main writes
-            % `ndi.document('stimulus_response_scalar', ...)` and sets both
+            % bodyResolver's subjectsForPresentation matched
+            % `strcmp(classNameOf(b), 'stimulus_response')`, and the
+            % production writer never mints that class:
+            % `+ndi/+app/+stimulus/tuning_response.m` writes
+            % `ndi.document('stimulus_response_scalar', ...)` with both
             % `stimulus_presentation_id` and `element_id` on it. Measured over
-            % the 20211116 corpus: 0 documents named `stimulus_response`, 273
-            % named `stimulus_response_scalar`, and the latter IS-A
-            % stimulus_response only by its superclass definition path.
+            % the 20211116 corpus (1220 documents read): 0 named
+            % `stimulus_response`, 273 named `stimulus_response_scalar`, all
+            % 273 carrying both edges, covering all 11 presentations. So NO
+            % emitter could fire, on any presentation, on that corpus.
             %
-            % So on that corpus the subject cannot be resolved at all, and
-            % NEITHER this emitter NOR the existing flattening pass fires --
-            % which is also why fixing it is not done here: widening the
-            % resolver changes what the pass that is already running does.
+            % The resolver now reads the IS-A from the document's OWN
+            % `document_class.superclasses` -- the v1 template declares
+            % `{definition: '$NDIDOCUMENTPATH/stimulus/stimulus_response.json'}`
+            % on stimulus_response_scalar -- so this is a widening by
+            % declaration, not a second name in a list.
             pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
             bodies = { pres, ...
-                docBody('stimulus_response_scalar', 'resp_1', ...
+                responseScalar('resp_1', 'pres_1', 'elem_9'), ...
+                docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.subjectsForPresentation('pres_1'), {'animal_1'});
+
+            % and the emitter now lands on that corpus shape
+            [m, gratings] = ndi.migrate.internal.stimulusPresentationToTimedSequence( ...
+                pres, r, 'V_eta');
+            testCase.verifyEqual(m.document_class.class_name, ...
+                'timed_sequence_manipulation');
+            testCase.verifyEqual(depValue(m, 'subject_id'), 'animal_1');
+            testCase.verifyEqual(numel(gratings), 1);
+        end
+
+        function testADocumentThatIsNotAResponseIsStillNotSweptIn(testCase)
+            % The widening is by DECLARED superclass, so a class that merely
+            % carries the same two edges does not resolve a subject. Without
+            % this the previous test would pass under a `contains('response')`
+            % implementation too.
+            pres = presentationBody('pres_1', 1, { gratingStim(0, 0.04, 0.5) });
+            bodies = { pres, ...
+                docBody('stimulus_response_scalar_parameters_basic', 'p_1', ...
                     {'stimulus_presentation_id', 'pres_1'}, {'element_id', 'elem_9'}), ...
                 docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
             r = ndi.migrate.internal.bodyResolver(bodies);
-            testCase.verifyEmpty(r.subjectsForPresentation('pres_1'), ...
-                ['bodyResolver now resolves a subject through ' ...
-                 'stimulus_response_scalar. That is the right outcome -- ' ...
-                 'update this test AND re-check ' ...
-                 'stimulusPresentationToManipulation, which starts firing ' ...
-                 'on corpora it never touched before.']);
+            testCase.verifyEmpty(r.subjectsForPresentation('pres_1'));
+        end
+
+        % ================= the supplied enumeration (Hartley) ============
+
+        function testASuppliedSequenceReplacesThePlaylistAndTheRefs(testCase)
+            % The shape 10 of the 11 20211116 presentations have: a GENERATOR
+            % RECIPE that enumerates nothing. Refused on its own (the test
+            % above), emitted when the enumeration is supplied from the
+            % `hartley_calc` documents.
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            seq = struct('presented_ids', {{'g_a', 'g_b', 'g_c'}}, ...
+                'order', [1 3 2 3 1], 'frame_times', [0 0.1 0.2 0.3 0.4]);
+            [m, gratings, body, records, report] = emit(testCase, pres, seq);
+
+            testCase.verifyEqual(m.document_class.class_name, ...
+                'timed_sequence_manipulation');
+            % the refs are the SUPPLIED ones -- nothing is minted here,
+            % because the basis is shared across every presentation that plays
+            % it and must be minted ONCE by the caller
+            testCase.verifyEmpty(gratings);
+            testCase.verifyEqual(depValue(m, 'presented_id_1'), 'g_a');
+            testCase.verifyEqual(depValue(m, 'presented_id_3'), 'g_c');
+            testCase.verifyEmpty(depValue(m, 'presented_id_4'));
+            testCase.verifyEqual(m.timed_sequence.value.presentation_order, ...
+                [1 3 2 3 1]);
+            testCase.verifyEqual(m.base.id, 'pres_hartley');   % id preserved
+
+            % the report says WHERE the basis came from, and both counts
+            testCase.verifyEqual(report.basis_source, ...
+                'supplied enumeration (hartley_calc)');
+            testCase.verifyEqual(report.shared_refs, 3);
+            testCase.verifyEqual(report.frames, 5);
+            testCase.verifyEqual(report.non_grating_stimuli, 0, ...
+                ['the generator guard must not run on the supplied path -- ' ...
+                 'it describes the presentation''s own stimuli list']);
+
+            % NO sampled_body: there are no bytes. The frame onsets are the
+            % axis and the playlist is inline, so the axis mounts on the
+            % STATEMENT and storage_mode stays `inline`.
+            testCase.verifyEmpty(body);
+            testCase.verifyEmpty(records);
+            testCase.verifyEqual(m.subject_statement.storage_mode, 'inline');
+            ax = m.subject_statement.axes;
+            testCase.verifyEqual(numel(ax), 1);
+            testCase.verifyEqual(ax(1).variable.name, 'time');
+            testCase.verifyFalse(ax(1).regular);
+            testCase.verifyEqual(ax(1).n, 5);
+            testCase.verifyEqual(ax(1).source_unit, 's');
+            testCase.verifyEqual(ax(1).values.values, [0 0.1 0.2 0.3 0.4]);
+            testCase.verifyEqual(report.timing_source, 'frameTimes (hartley_calc)');
+            testCase.verifyEqual(report.trials_with_timing, 5);
+        end
+
+        function testASuppliedSequenceWithNoFrameTimesEmitsNoAxis(testCase)
+            % "Nobody looked" is not "it happened at t=0": an absent
+            % frame_times leaves the statement without an axis rather than
+            % inventing one.
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+            seq = struct('presented_ids', {{'g_a', 'g_b'}}, 'order', [1 2 1]);
+            [m, ~, ~, ~, report] = emit(testCase, pres, seq);
+            testCase.verifyFalse(isfield(m.subject_statement, 'axes'));
+            testCase.verifyEqual(report.trials_with_timing, 0);
+            testCase.verifyEqual(report.frames, 3);
+        end
+
+        function testASuppliedSequenceIsRefusedRatherThanRepaired(testCase)
+            % Each of the three ways the two halves can disagree. Every one
+            % would otherwise emit a document that VALIDATES while saying
+            % something untrue, which is the failure mode the whole
+            % invented-empty-edge family belongs to.
+            pres = presentationBody('pres_hartley', 1, hartleyGeneratorStim());
+
+            outOfRange = struct('presented_ids', {{'g_a'}}, 'order', [1 2]);
+            [m1, ~, ~, ~, r1] = emit(testCase, pres, outOfRange);
+            testCase.verifyEmpty(m1);
+            testCase.verifyNotEmpty(r1.reason);
+
+            raggedTimes = struct('presented_ids', {{'g_a'}}, 'order', [1 1], ...
+                'frame_times', [0 1 2]);
+            [m2, ~, ~, ~, r2] = emit(testCase, pres, raggedTimes);
+            testCase.verifyEmpty(m2);
+            testCase.verifyNotEmpty(r2.reason);
+
+            noRefs = struct('presented_ids', {{}}, 'order', [1 1]);
+            [m3, ~, ~, ~, r3] = emit(testCase, pres, noRefs);
+            testCase.verifyEmpty(m3);
+            testCase.verifyNotEmpty(r3.reason);
         end
 
     end
@@ -450,20 +557,38 @@ end
 
 % ===================== driver =============================================
 
-function [manipBody, gratingBodies, bodyDoc, records, report] = emit(~, pres)
+function [manipBody, gratingBodies, bodyDoc, records, report] = emit(~, pres, sequence)
 %EMIT Run the assembler with a responding animal in scope.
-%   Uses the real bodyResolver over a `stimulus_response` body -- the class
-%   name it currently matches -- so the assembler is exercised through the
-%   production resolution path rather than a stub. See
-%   testStimulusResponseScalarIsNotYetSeenByTheResolver for why the fixture
-%   uses that name and real corpora do not.
+%   Uses the real bodyResolver over a `stimulus_response_scalar` body -- the
+%   class production actually writes, and the one 273 of the 20211116 corpus's
+%   documents carry -- so the assembler is exercised through the production
+%   resolution path rather than a stub. The fixture used the bare
+%   `stimulus_response` name until 2026-08-17, which no corpus holds; see
+%   testStimulusResponseScalarNowResolvesTheSubject.
+if nargin < 3
+    sequence = [];
+end
 bodies = { pres, ...
-    docBody('stimulus_response', 'resp_1', ...
-        {'stimulus_presentation_id', pres.base.id}, {'element_id', 'elem_9'}), ...
+    responseScalar('resp_1', pres.base.id, 'elem_9'), ...
     docBody('element', 'elem_9', {'subject_id', 'animal_1'}) };
 r = ndi.migrate.internal.bodyResolver(bodies);
 [manipBody, gratingBodies, bodyDoc, records, report] = ...
-    ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta');
+    ndi.migrate.internal.stimulusPresentationToTimedSequence(pres, r, 'V_eta', ...
+        sequence);
+end
+
+function b = responseScalar(id, presentationId, elementId)
+%RESPONSESCALAR A `stimulus_response_scalar` body carrying the v1 template's
+%   OWN superclass declaration -- that declaration is what the resolver reads,
+%   so a fixture without it would test a different mechanism.
+%   Verbatim from ndi_common/database_documents/stimulus/
+%   stimulus_response_scalar.json, and matched by every one of the 273 such
+%   documents in the 20211116 corpus.
+b = docBody('stimulus_response_scalar', id, ...
+    {'stimulus_presentation_id', presentationId}, {'element_id', elementId});
+b.document_class.superclasses = [ ...
+    struct('definition', '$NDIDOCUMENTPATH/base.json'), ...
+    struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
 end
 
 function verifyNoEmptyEdges(testCase, body)

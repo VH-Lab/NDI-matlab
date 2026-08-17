@@ -206,6 +206,136 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
                 'element_epoch documents survived migration under the v1 name');
         end
 
+        function testEveryStimulusPresentationIsDecomposedAroundItsPreservedId(testCase)
+            % THE SIGNED STIMULUS MODEL, on the only corpus that holds it.
+            % Read from the corpus rather than quoted: 11
+            % stimulus_presentation documents, 1 enumerating 225 stimuli and
+            % 10 carrying a Hartley GENERATOR recipe that enumerates nothing.
+            srcPres = {};
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                if isfield(j, 'document_class') ...
+                        && isfield(j.document_class, 'class_name') ...
+                        && strcmp(j.document_class.class_name, 'stimulus_presentation')
+                    srcPres{end+1} = j.base.id; %#ok<AGROW>
+                end
+            end
+            verifyEqual(testCase, numel(srcPres), 11, sprintf( ...
+                ['the corpus did not read as 11 stimulus_presentation ' ...
+                 'documents (got %d); every count below would be about ' ...
+                 'something else'], numel(srcPres)));
+
+            migrated = destinationBodies(testCase.Result.destination);
+            seqs = findAllByClass(migrated, 'timed_sequence_manipulation');
+            verifyEqual(testCase, numel(seqs), 11, sprintf( ...
+                ['%d of 11 presentations became a ' ...
+                 'timed_sequence_manipulation. A presentation is refused ' ...
+                 'when no animal responded or when its stimuli cannot be ' ...
+                 'typed, so a shortfall is a refusal to read, not a crash.'], ...
+                numel(seqs)));
+
+            % THE ID IS PRESERVED, WHICH IS THE WHOLE MODEL. 494 inbound
+            % edges point at these 11 ids on this corpus (273
+            % stimulus_response_scalar + 210 hartley_calc + 11
+            % control_stimulus_ids); reassigning one dangles all of them,
+            % which is the 11,448-orphan failure in a different family.
+            dstIds = cellfun(@(d) string(d.base.id), seqs(:)');
+            verifyTrue(testCase, all(ismember(string(srcPres), dstIds)), ...
+                ['a stimulus_presentation id is missing from the ' ...
+                 'timed_sequence_manipulation set -- the decomposition ' ...
+                 'reassigned an id instead of preserving it']);
+
+            % and NOTHING survives under the v1 name or under the superseded
+            % flattened one
+            verifyEmpty(testCase, findAllByClass(migrated, 'stimulus_presentation'), ...
+                'stimulus_presentation documents survived the decomposition');
+            verifyEmpty(testCase, ...
+                findAllByClass(migrated, 'visual_grating_manipulation'), ...
+                ['a visual_grating_manipulation was emitted. That pass is ' ...
+                 'GATED OFF: it is retained only for the presentation-less ' ...
+                 'single-grating case, and both emitters claim the same ' ...
+                 'base.id.']);
+        end
+
+        function testTheHartleyBasisIsMintedOnceAndCarriesItsPhase(testCase)
+            % The enumeration lives in the `hartley_calc` documents, not in
+            % the presentations: hartley_numbers {S,KXV,KYV,ORDER} is 3360
+            % entries and has ONE distinct value across all 210 of them --
+            % 1680 (kx,ky) pairs x 2 signs, 41*41-1 = 1680 exactly, the DC
+            % term excluded. So ONE basis set serves all ten presentations.
+            migrated = destinationBodies(testCase.Result.destination);
+            gratings = findAllByClass(migrated, 'visual_grating');
+            verifyNotEmpty(testCase, gratings, ...
+                ['no standalone visual_grating documents. Either the basis ' ...
+                 'was not assembled or `visual_grating` is abstract again ' ...
+                 '(it stopped being abstract on 2026-08-17).']);
+
+            % MINTED ONCE: 3360 for the Hartley basis + the distinct gratings
+            % of the single 225-stimulus enumerated presentation. Ten copies
+            % of the basis would be 33,600.
+            verifyLessThan(testCase, numel(gratings), 33600, sprintf( ...
+                ['%d visual_grating documents. The Hartley basis is shared ' ...
+                 'by all ten generator presentations and must be minted ' ...
+                 'ONCE; a per-presentation mint gives ten copies.'], ...
+                numel(gratings)));
+
+            % THE PHASE IS THE FIELD WITHOUT WHICH THE SET COLLAPSES: with it
+            % the 3360 basis functions give 3360 distinct values, without it
+            % 1680. So both signs must be present among the minted documents.
+            phases = [];
+            for k = 1:numel(gratings)
+                v = gratings{k}.visual_grating.value;
+                if isfield(v, 'phase') && ~isempty(v.phase)
+                    phases(end+1) = double(v.phase); %#ok<AGROW>
+                end
+            end
+            verifyNotEmpty(testCase, phases, ...
+                'no visual_grating carries a phase; the signed pair collapses');
+            verifyGreaterThanOrEqual(testCase, numel(unique(phases)), 2, ...
+                ['only one distinct phase across the basis -- the s = -1 ' ...
+                 'half of every (kx,ky) pair has deduped away']);
+
+            % and the pixel-domain frequency did NOT go into the
+            % cycles-per-degree field
+            withGeom = 0;
+            for k = 1:numel(gratings)
+                v = gratings{k}.visual_grating.value;
+                if isfield(v, 'source_geometry') && isstruct(v.source_geometry) ...
+                        && isfield(v.source_geometry, 'unit') ...
+                        && strcmp(char(v.source_geometry.unit), 'cycles/pixel')
+                    withGeom = withGeom + 1;
+                end
+            end
+            verifyGreaterThan(testCase, withGeom, 0, ...
+                ['no visual_grating carries source_geometry in ' ...
+                 'cycles/pixel; the Hartley spatial frequency has nowhere ' ...
+                 'correct to live']);
+        end
+
+        function testTheFrameTimesSurviveAsAnIrregularTimeAxis(testCase)
+            % frameTimes is the ONLY surviving stimulus timing on this
+            % corpus. The writer moved `presentation_time` into
+            % presentation_time.bin -- declared by 11 of 11 presentations and
+            % present in 0 of them -- and a struct-level batch pass does not
+            % open attached binaries.
+            migrated = destinationBodies(testCase.Result.destination);
+            seqs = findAllByClass(migrated, 'timed_sequence_manipulation');
+            withAxis = 0;
+            for k = 1:numel(seqs)
+                st = seqs{k}.subject_statement;
+                if isfield(st, 'axes') && ~isempty(st.axes) ...
+                        && isfield(st.axes(1), 'n') && st.axes(1).n > 1
+                    withAxis = withAxis + 1;
+                end
+            end
+            verifyGreaterThanOrEqual(testCase, withAxis, 10, sprintf( ...
+                ['%d of the migrated sequences carry a time axis. The ten ' ...
+                 'Hartley presentations each have a frameTimes of 3360, so ' ...
+                 'fewer than ten means the timing was dropped -- and it is ' ...
+                 'not recoverable from anywhere else in this corpus.'], ...
+                withAxis));
+        end
+
         function testTheCalculatorFamilyKeepsItsIdentities(testCase)
             % The 1->1 fold's whole point: a calculator output keeps its
             % base.id so downstream references resolve. The orphan count

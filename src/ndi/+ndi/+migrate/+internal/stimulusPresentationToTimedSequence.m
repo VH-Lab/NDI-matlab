@@ -19,44 +19,46 @@ function [manipBody, gratingBodies, bodyDoc, records, report] = ...
 %                        genuine single-grating, presentation-less case.
 %
 %   ========================================================================
-%   STATUS: NOT WIRED INTO ANY PASS, AND IT MUST NOT BE UNTIL TWO TEAM
-%   QUESTIONS ARE ANSWERED. BOTH ARE RECORDED HERE RATHER THAN GUESSED AT.
+%   STATUS: WIRED, 2026-08-17. THE TWO BLOCKERS RECORDED HERE ARE BOTH
+%   CLEARED, AND THE RESOLUTION OF EACH IS KEPT so a reader does not go
+%   looking for a decision that has already been made.
 %   ========================================================================
 %
-%   (1) THE PRESERVED id COLLIDES WITH THE PASS THAT RUNS TODAY.
-%       ndi.migrate.internal.stimulusPresentationToManipulation:79 sets
-%       `manipId = presentationId` and puts it on a
-%       `visual_grating_manipulation`; this function puts the SAME
-%       presentation id on a `timed_sequence_manipulation`. Both fire on the
-%       same input under the same precondition (a resolved subject), so with
-%       both running two documents claim one `base.id`. The store cannot hold
-%       that -- `+did2/+database/sqlitedb.m`, in `documentsTableSQL`, opens
-%       `CREATE TABLE documents (id TEXT PRIMARY KEY, ...`. (Cited by content
-%       rather than by line: files this team edits drift within hours.)
-%       The 2026-08-17 signature's SEQUENCING paragraph forbids retiring the
-%       flattening pass ahead of a green emitter, because
-%       `+migrators_j/control_stimulus_ids.m:122` writes a POPULATED
-%       `timed_sequence_id` that resolves only through the presentation id.
-%       So which document keeps the id -- and whether the flattening pass is
-%       gated to the single-grating case it is now RETAINED for -- is the
-%       team's call, not this file's.
+%   (1) THE id COLLISION IS GONE, BECAUSE THE TWO PASSES ARE NOW MUTUALLY
+%       EXCLUSIVE BY DEFINITION. The 2026-08-17 signature RETAINS
+%       `visual_grating_manipulation` for the PRESENTATION-LESS single-grating
+%       case -- "not a rival model to retire, the degenerate one". A
+%       presentation is either a sequence (this function) or absent (that
+%       one), so only one document can ever claim the presentation id. The
+%       flattening pass is gated OFF in ndi.migrate.local accordingly.
 %
-%   (2) `visual_grating` IS STILL DECLARED ABSTRACT, so the N documents this
-%       function builds CANNOT BE INSTANTIATED.
-%         schemas/V_eta/stable/visual_grating.json  "abstract": true
-%         +did2/+schema/cache.m:805-812 raises
-%         `did2:validation:abstractInstantiation` for any document naming an
-%         abstract class.
-%       This is exactly the flag that was removed from `timed_sequence` on
-%       2026-08-17 (DID-schema 034293e, team: "It doesn't need to be
-%       abstract.") for exactly this reason -- and it was not removed from
-%       `visual_grating`, which the same signature requires to stand alone.
-%       40 of the 41 direct subclasses of `data_type` are abstract;
-%       `timed_sequence` is the only concrete one. So `presented_id ->
-%       data_type` currently has almost nothing it can point at.
+%       AND THE CONSEQUENCE IS NOT PAPERED OVER: that pass structurally
+%       requires a presentation (`if ~isPresentationBody(b); continue`), so
+%       gating it to the presentation-less case means it stops firing
+%       ENTIRELY, and the retained single-grating case has NO EMITTER TODAY.
+%       No v1 class carries a lone grating -- `stimulus_presentation` is the
+%       only carrier of grating parameters in the did_v1 universe -- so
+%       nothing is stranded by this today. It is recorded as an open item
+%       rather than filled with an invented source class.
 %
-%   Until (1) and (2) are answered this is a tested assembler with no caller.
-%   It writes nothing, decides nothing, and retires nothing.
+%       The SEQUENCING condition the signature set is met rather than waived:
+%       `+migrators_j/control_stimulus_ids.m` writes a POPULATED
+%       `timed_sequence_id` equal to the presentation id, and this function
+%       PRESERVES that id on the manipulation, so the edge resolves to the
+%       new document instead of dangling.
+%
+%   (2) `visual_grating` IS NO LONGER ABSTRACT. The flag was removed by team
+%       decision on 2026-08-17 (DID-schema 744149b, "visual_grating stops
+%       being abstract"), as it had been for `timed_sequence` the same day,
+%       so the N standalone documents this function builds can be
+%       instantiated. Both classes now read `abstract=<absent>`.
+%
+%   THE SAME DAY, `visual_grating` GAINED TWO FIELDS THIS EMITTER USES
+%   (DID-schema 7abb2d3): `value.phase` and `value.source_geometry`. They are
+%   populated on the Hartley path -- see
+%   ndi.migrate.internal.hartleyBasisGratings, which explains why the phase is
+%   load-bearing (without it the 3360 basis functions dedup to 1680) and why
+%   the degree-domain fields are deliberately left unset.
 %
 %   WHAT IT EMITS, per input stimulus_presentation
 %   ------------------------------------------------------------------------
@@ -85,16 +87,28 @@ function [manipBody, gratingBodies, bodyDoc, records, report] = ...
 %     bodyDoc        a `sampled_body` -- ONLY when the source carries a real
 %                    per-trial onset AND offset for every trial. See TIMING.
 %
-%   SCOPE: the 2026-08-17 signature covers a presentation carrying a SEQUENCE
-%   OF VISUAL GRATINGS, and not every v1 presentation is one. On 20211116 only
-%   224 of 235 stimuli are gratings; 10 are a Hartley GENERATOR spec (M,
+%     records        the per-trial durations, [nTrials x 1], for the caller to
+%                    serialise into the body payload (the same contract
+%                    stimulusPresentationToManipulation uses for its matrix).
+%
+%   SCOPE, AND THE FOURTH ARGUMENT
+%   ------------------------------------------------------------------------
+%   The 2026-08-17 signature covers a presentation carrying a SEQUENCE OF
+%   VISUAL GRATINGS, and not every v1 presentation ENUMERATES one. On 20211116
+%   only 224 of 235 stimuli are gratings; 10 are a Hartley GENERATOR spec (M,
 %   K_absmax, L_absmax, sfmax, randState) that enumerates nothing, and 1 is the
 %   blank. A presentation holding any stimulus the mapper cannot type is
 %   REFUSED rather than mapped to zeros -- see the guard below for the
 %   measurement and the reasoning.
-%     records        the per-trial durations, [nTrials x 1], for the caller to
-%                    serialise into the body payload (the same contract
-%                    stimulusPresentationToManipulation uses for its matrix).
+%
+%   SEQUENCE (optional, 4th) supplies that missing enumeration from elsewhere:
+%     .presented_ids  cell of ALREADY-MINTED stimulus document ids
+%     .order          [1 x nFrames] index into presented_ids, per frame
+%     .frame_times    [1 x nFrames] frame onsets, seconds (optional)
+%   When it is given, the refusal above does not apply -- the playlist and the
+%   refs come from SEQUENCE and the presentation's own `stimuli` block is read
+%   only for its denominators. ndi.migrate.internal.hartleyBasisGratings builds
+%   it from the `hartley_calc` documents that reference the presentation.
 %
 %   TIMING, AND WHY THE BODY IS USUALLY ABSENT
 %   ------------------------------------------------------------------------
@@ -140,14 +154,17 @@ function [manipBody, gratingBodies, bodyDoc, records, report] = ...
 %   nothing can be assembled; the caller then leaves the presentation as-is.
 %
 %   See also: ndi.migrate.internal.gratingValueFromParameters,
-%   ndi.migrate.internal.stimulusPresentationToManipulation (the flattening
-%   pass this one does NOT replace yet),
+%   ndi.migrate.internal.hartleyBasisGratings (the supplied enumeration),
+%   ndi.migrate.internal.stimulusPresentationToManipulation (RETAINED for the
+%   presentation-less single-grating case, and gated off in ndi.migrate.local
+%   because no v1 document is in that case),
 %   ndi.migrate.internal.bodyResolver (subjectsForPresentation).
 
 arguments
     v1Body   (1,1) struct
     resolver (1,1) struct
     targetVersion (1,:) char = 'V_eta'
+    sequence = []
 end
 
 manipBody = []; gratingBodies = {}; bodyDoc = []; records = [];
@@ -200,6 +217,61 @@ if isempty(stimuli) || isempty(order)
     return;
 end
 
+% --- THE SUPPLIED-SEQUENCE PATH: the enumeration lives in another document ---
+% Ten of the eleven 20211116 presentations carry a GENERATOR RECIPE, not a
+% list: one stimulus whose parameters are (M, K_absmax, L_absmax, sfmax, fps,
+% randState). Nothing in the document enumerates the basis, so the guards
+% below correctly refuse it -- and the enumeration is not lost, it is in the
+% `hartley_calc` documents that reference this presentation
+% (`hartley_reverse_correlation.hartley_numbers`, 3360 entries, identical
+% across all 210 of them) together with a `frameTimes` of the same length.
+% ndi.migrate.internal.hartleyBasisGratings reads that half, mints the basis
+% ONCE for the whole session, and hands the result in here.
+%
+% WHY THE REFS ARE MINTED BY THE CALLER AND NOT HERE: the basis is a property
+% of the SESSION, not of one presentation. All ten presentations play the same
+% 3360 basis functions, so minting per presentation would create 33,600
+% documents describing 3,360 distinct gratings.
+if ~isempty(sequence)
+    [presentedIds, presentationOrder, frameTimes, why] = readSequence(sequence);
+    report.basis_source = 'supplied enumeration (hartley_calc)';
+    report.shared_refs  = numel(presentedIds);
+    report.frames       = numel(presentationOrder);
+    if ~isempty(why)
+        report.reason = why;
+        report.basis_source = 'not read';
+        report.shared_refs = 0;
+        report.frames = 0;
+        return;
+    end
+    manipBody = manipulationBody(presentationId, sessionId, datestamp, ...
+        animalId, stimulatorId, presentedIds, presentationOrder, targetVersion);
+    % THE AXIS GOES ON THE STATEMENT, NOT ON A BODY, and the rule is "axes
+    % live where the payload lives". The signed data_body decision mounts
+    % `axes[]` on `subject_statement` when storage_mode is `inline` and on
+    % `sampled_body` when it is `body`, mutually exclusive. Here there are no
+    % bytes to store: the playlist is inline in `timed_sequence.value` and the
+    % frame onsets are the axis itself. The deprecated-inline-timing path
+    % below DOES have a payload (one duration per trial), which is why it
+    % emits a body and this does not.
+    %
+    % AND THIS RECOVERS TIMING THAT IS OTHERWISE LOST. The writer moved
+    % `presentation_time` into `presentation_time.bin` -- declared by 11 of 11
+    % presentations in this corpus and present in 0 of them -- so `frameTimes`
+    % is the only surviving stimulus timing on this data.
+    if ~isempty(frameTimes)
+        timeAxis = axisEntry(struct('node', '', 'name', 'time'), numel(frameTimes));
+        timeAxis.regular     = false;
+        timeAxis.source_unit = 's';
+        timeAxis.values = struct('values', {frameTimes}, ...
+            'source_values', {frameTimes});
+        manipBody.subject_statement.axes = timeAxis;
+        report.trials_with_timing = numel(frameTimes);
+        report.timing_source = 'frameTimes (hartley_calc)';
+    end
+    return;
+end
+
 % v1 `presentation_order` indexes `stimuli` 1-based (measured on 20211116: the
 % 225-stimulus run's order runs 1..225 over 675 trials). An index outside that
 % range indexes nothing, and quietly dropping those trials would shorten a
@@ -233,6 +305,12 @@ end
 % does not ENUMERATE the basis; it carries the recipe. Expanding it into M
 % gratings means running the vhlab generator, which is not a struct
 % transformation and is not what this signature authorised.
+%
+% AND IT IS STILL NOT DONE HERE -- the enumeration is READ, not regenerated.
+% The basis those ten presentations played is recorded in the `hartley_calc`
+% documents that reference them, so the supplied-sequence branch above
+% receives it as data. This guard is what that branch bypasses; on the path
+% below, with no enumeration in hand, the refusal stands.
 %
 % gratingValueFromParameters would happily map such a spec: no angle, no
 % sFrequency, no tFrequency means the mapper's getNum default fires three times
@@ -317,6 +395,56 @@ else
 end
 
 % --- the manipulation --------------------------------------------------------
+manipBody = manipulationBody(presentationId, sessionId, datestamp, ...
+    animalId, stimulatorId, gratingIds, presentationOrder, targetVersion);
+if bodyRequired(timingOk)
+    % storage_mode governs where the SAMPLES live, and the data_body decision
+    % puts axes[] on the body exactly when it is `body`. The playlist stays in
+    % `timed_sequence.value` either way -- it is the statement's own content,
+    % not a sampled payload.
+    manipBody.subject_statement.storage_mode = 'body';
+    manipBody.subject_statement.datum_type = 'float64';
+    manipBody.subject_statement.source_datum_type = 'double';
+end
+
+% --- the sampled_body: onsets are an irregular time axis ---------------------
+if ~bodyRequired(timingOk)
+    return;
+end
+timeAxis = axisEntry(struct('node', '', 'name', 'time'), numel(order));
+timeAxis.regular     = false;   % trial onsets are irregular by construction
+timeAxis.source_unit = 's';
+timeAxis.values = struct('values', {onsets}, 'source_values', {onsets});
+
+bodyDoc = struct();
+bodyDoc.document_class = struct('class_name', 'sampled_body', ...
+    'class_version', '1.0.0', ...
+    'superclasses', struct('class_name', 'data_body', 'class_version', '1.0.0'), ...
+    'schema_version', targetVersion);
+% `statement` is mustBeNonEmpty on data_body; it points at the manipulation,
+% which IS a subject_statement descendant. Populated by construction here --
+% this branch is unreachable without a manipulation.
+bodyDoc.depends_on = struct('name', {'statement'}, 'value', {presentationId});
+bodyDoc.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
+    'name', 'migrated_stimulus_sequence_timing', 'creation_timestamp', datestamp);
+bodyDoc.sampled_body = struct();
+% ONE axis, because the payload is 1-D: one duration per trial, indexed by the
+% onset. `datum_order` stays empty -- the schema says it is meaningless for a
+% 1-D body -- and `byte_order` is left to the caller that serialises the bytes.
+bodyDoc.sampled_body.axes = timeAxis;
+records = durations(:);
+end
+
+% ===================== assembly helpers ====================================
+
+function manipBody = manipulationBody(presentationId, sessionId, datestamp, ...
+        animalId, stimulatorId, presentedIds, presentationOrder, targetVersion)
+%MANIPULATIONBODY The one `timed_sequence_manipulation`, shared by both paths.
+%   Both the enumerated case (the presentation lists its stimuli) and the
+%   supplied-enumeration case (the presentation is a generator recipe and the
+%   basis comes from the calculators) produce the SAME document; they differ
+%   only in where the refs and the playlist come from. Written once so the two
+%   cannot drift into emitting differently-shaped documents.
 manipBody = struct();
 manipBody.document_class = struct('class_name', 'timed_sequence_manipulation', ...
     'class_version', '1.0.0', ...
@@ -352,9 +480,9 @@ end
 % timeReferenceFamilies -- only recognise a family whose SCHEMA name carries
 % `#`, so these edges are invisible to them until the declaration is amended.
 % That is a schema question, deliberately not answered here.
-for d = 1:numel(gratingIds)
+for d = 1:numel(presentedIds)
     deps(end+1) = struct('name', sprintf('presented_id_%d', d), ...
-        'value', gratingIds{d}); %#ok<AGROW>
+        'value', presentedIds{d}); %#ok<AGROW>
 end
 manipBody.depends_on = deps;
 
@@ -365,15 +493,6 @@ manipBody.base = struct('id', presentationId, 'session_id', sessionId, ...
 manipBody.subject_statement = struct( ...
     'variable', struct('node', '', 'name', 'visual grating'), ...
     'storage_mode', 'inline');
-if bodyRequired(timingOk)
-    % storage_mode governs where the SAMPLES live, and the data_body decision
-    % puts axes[] on the body exactly when it is `body`. The playlist stays in
-    % `timed_sequence.value` either way -- it is the statement's own content,
-    % not a sampled payload.
-    manipBody.subject_statement.storage_mode = 'body';
-    manipBody.subject_statement.datum_type = 'float64';
-    manipBody.subject_statement.source_datum_type = 'double';
-end
 manipBody.subject_interaction = struct( ...
     'method', struct('node', '', 'name', 'visual stimulus presentation'));
 manipBody.subject_manipulation = struct();
@@ -382,36 +501,62 @@ manipBody.timed_sequence = struct();
 % struct(...) would distribute a non-scalar into a struct array.
 manipBody.timed_sequence.value = struct();
 manipBody.timed_sequence.value.presentation_order = presentationOrder;
+end
 
-% --- the sampled_body: onsets are an irregular time axis ---------------------
-if ~bodyRequired(timingOk)
+function [presentedIds, order, frameTimes, why] = readSequence(sequence)
+%READSEQUENCE Validate a supplied enumeration and return its three parts.
+%   Refuses rather than repairs. A playlist index outside the ref list would
+%   name no document, and a frame-time vector of a different length than the
+%   playlist means the two halves describe different runs -- both would emit a
+%   document that validates while saying something untrue.
+presentedIds = {};
+order        = [];
+frameTimes   = [];
+why          = '';
+
+if ~isstruct(sequence) || ~isscalar(sequence)
+    why = 'supplied sequence is not a scalar struct';
     return;
 end
-timeAxis = axisEntry(struct('node', '', 'name', 'time'), numel(order));
-timeAxis.regular     = false;   % trial onsets are irregular by construction
-timeAxis.source_unit = 's';
-timeAxis.values = struct('values', {onsets}, 'source_values', {onsets});
-
-bodyDoc = struct();
-bodyDoc.document_class = struct('class_name', 'sampled_body', ...
-    'class_version', '1.0.0', ...
-    'superclasses', struct('class_name', 'data_body', 'class_version', '1.0.0'), ...
-    'schema_version', targetVersion);
-% `statement` is mustBeNonEmpty on data_body; it points at the manipulation,
-% which IS a subject_statement descendant. Populated by construction here --
-% this branch is unreachable without a manipulation.
-bodyDoc.depends_on = struct('name', {'statement'}, 'value', {presentationId});
-bodyDoc.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
-    'name', 'migrated_stimulus_sequence_timing', 'creation_timestamp', datestamp);
-bodyDoc.sampled_body = struct();
-% ONE axis, because the payload is 1-D: one duration per trial, indexed by the
-% onset. `datum_order` stays empty -- the schema says it is meaningless for a
-% 1-D body -- and `byte_order` is left to the caller that serialises the bytes.
-bodyDoc.sampled_body.axes = timeAxis;
-records = durations(:);
+if ~isfield(sequence, 'presented_ids') || ~iscell(sequence.presented_ids) ...
+        || isempty(sequence.presented_ids)
+    why = 'supplied sequence carries no presented_ids';
+    return;
 end
-
-% ===================== assembly helpers ====================================
+presentedIds = sequence.presented_ids(:)';
+for k = 1:numel(presentedIds)
+    if isempty(presentedIds{k}) || ~(ischar(presentedIds{k}) ...
+            || (isstring(presentedIds{k}) && isscalar(presentedIds{k})))
+        why = sprintf('supplied presented_ids(%d) is not a non-empty id', k);
+        presentedIds = {};
+        return;
+    end
+    presentedIds{k} = char(presentedIds{k});
+end
+if ~isfield(sequence, 'order') || ~isnumeric(sequence.order) || isempty(sequence.order)
+    why = 'supplied sequence carries no order';
+    presentedIds = {};
+    return;
+end
+order = double(sequence.order(:)');
+bad = sum(order < 1 | order > numel(presentedIds) | order ~= floor(order));
+if bad > 0
+    why = sprintf(['supplied order has %d entr(ies) outside the ' ...
+        'presented_ids list'], bad);
+    presentedIds = {}; order = [];
+    return;
+end
+if isfield(sequence, 'frame_times') && isnumeric(sequence.frame_times) ...
+        && ~isempty(sequence.frame_times)
+    frameTimes = double(sequence.frame_times(:)');
+    if numel(frameTimes) ~= numel(order)
+        why = sprintf(['supplied frame_times has %d entr(ies) for %d frame(s)'], ...
+            numel(frameTimes), numel(order));
+        presentedIds = {}; order = []; frameTimes = [];
+        return;
+    end
+end
+end
 
 function ax = axisEntry(variable, n)
 %AXISENTRY One signed axis entry, every field present, in a FIXED order.
@@ -481,6 +626,9 @@ r = struct( ...
     'trials_out_of_range', 0, ...
     'trials_with_timing',  0, ...
     'timing_source',       'not read', ...
+    'basis_source',        'the presentation''s own stimuli list', ...
+    'shared_refs',         0, ...
+    'frames',              0, ...
     'subjects_resolved',   0, ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...

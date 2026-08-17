@@ -56,6 +56,48 @@ classdef TestBodyResolver < matlab.unittest.TestCase
             testCase.verifyEmpty(r.subjectsForPresentation('pres_1'));
         end
 
+        % ============ the IS-A widening, 2026-08-17 ======================
+
+        function testASubclassOfStimulusResponseResolves(testCase)
+            % THE CASE PRODUCTION ACTUALLY WRITES. The exact-name match this
+            % replaced could not fire on real data: measured over the
+            % 20211116 corpus (1220 documents read), 0 documents are named
+            % `stimulus_response` and 273 are named
+            % `stimulus_response_scalar`, all 273 carrying BOTH
+            % `stimulus_presentation_id` and `element_id`.
+            bodies = { ...
+                responseScalar('resp_1', 'pres_1', 'elem_9'), ...
+                element('elem_9', 'animal_1') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.subjectsForPresentation('pres_1'), {'animal_1'});
+        end
+
+        function testTheVetaSpellingOfASuperclassAlsoResolves(testCase)
+            % A body set can arrive in either vintage -- v1 superclass entries
+            % carry `definition`, V_eta ones carry `class_name` -- so both
+            % spellings are read.
+            b = docBody('stimulus_response_scalar', 'resp_1', ...
+                {'stimulus_presentation_id', 'pres_1'}, {'element_id', 'elem_9'});
+            b.document_class.superclasses = ...
+                struct('class_name', 'stimulus_response', 'class_version', '1.0.0');
+            r = ndi.migrate.internal.bodyResolver({ b, element('elem_9', 'animal_1') });
+            testCase.verifyEqual(r.subjectsForPresentation('pres_1'), {'animal_1'});
+        end
+
+        function testAnUnrelatedClassWithTheSameEdgesDoesNotResolve(testCase)
+            % The widening is by DECLARED superclass, not by name shape or by
+            % which edges a document happens to carry. 20211116 holds 273
+            % `stimulus_response_scalar_parameters_basic` documents, and they
+            % must not be read as responses.
+            bodies = { ...
+                docBody('stimulus_response_scalar_parameters_basic', 'p_1', ...
+                    {'stimulus_presentation_id', 'pres_1'}, ...
+                    {'element_id', 'elem_9'}), ...
+                element('elem_9', 'animal_1') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEmpty(r.subjectsForPresentation('pres_1'));
+        end
+
     end
 end
 
@@ -68,6 +110,19 @@ end
 function b = stimResponse(id, presentationId, elementId)
 b = docBody('stimulus_response', id, ...
     {'stimulus_presentation_id', presentationId}, {'element_id', elementId});
+end
+
+function b = responseScalar(id, presentationId, elementId)
+%RESPONSESCALAR The class production writes, carrying the v1 template's OWN
+%   superclass declaration -- verbatim from ndi_common/database_documents/
+%   stimulus/stimulus_response_scalar.json, and matched by every one of the
+%   273 such documents in the 20211116 corpus. That declaration is what the
+%   resolver reads, so a fixture without it would exercise nothing.
+b = docBody('stimulus_response_scalar', id, ...
+    {'stimulus_presentation_id', presentationId}, {'element_id', elementId});
+b.document_class.superclasses = [ ...
+    struct('definition', '$NDIDOCUMENTPATH/base.json'), ...
+    struct('definition', '$NDIDOCUMENTPATH/stimulus/stimulus_response.json')];
 end
 
 function b = element(id, subjectId)

@@ -30,27 +30,48 @@
 %                          is the "deduplicated by name+version" half of the
 %                          signed R1 model. Runs LAST of the V_eta sub-passes.
 %     stimulusPresentationToTimedSequence
-%                        - V_eta SIGNED stimulus model: N deduped standalone
-%                          `visual_grating` docs + ONE
+%                        - V_eta SIGNED stimulus model, and the pass that runs
+%                          on stimulus_presentation since 2026-08-17: N
+%                          deduped standalone `visual_grating` docs + ONE
 %                          `timed_sequence_manipulation` carrying the v1
 %                          presentation id and a playlist that indexes them.
-%                          *** NOT WIRED INTO ANY PASS, DELIBERATELY. *** It
-%                          would claim the same preserved base.id as
-%                          stimulusPresentationToManipulation (which still
-%                          runs, and which the 2026-08-17 signature forbids
-%                          retiring first), and `visual_grating` is still
-%                          declared abstract so its documents cannot be
-%                          instantiated. Both are open team questions; the
-%                          file's own header states them. Do not re-derive
-%                          this emitter -- it exists, with tests.
+%                          The two blockers this entry used to record are both
+%                          cleared -- `visual_grating` stopped being abstract
+%                          (team, 2026-08-17), and the id collision is gone
+%                          because the two emitters are now mutually exclusive
+%                          by definition.
+%     hartleyBasisGratings
+%                        - the half of the Hartley decomposition the
+%                          presentation does not contain. Ten of the eleven
+%                          20211116 presentations are a GENERATOR RECIPE (M,
+%                          K_absmax, L_absmax, sfmax, fps, randState) that
+%                          enumerates nothing; the basis they play is in the
+%                          `hartley_calc` documents that reference them
+%                          (`hartley_reverse_correlation.hartley_numbers`,
+%                          3360 entries, ONE distinct value across all 210),
+%                          with a `frameTimes` of the same length. Mints the
+%                          basis ONCE per session and hands the playlist +
+%                          frame times to the assembler above.
+%     stimulusPresentationToManipulation
+%                        - the FLATTENING emitter, GATED OFF. RETAINED by the
+%                          2026-08-17 signature for the presentation-less
+%                          single-grating case -- "not a rival model to
+%                          retire, the degenerate one" -- and that case has NO
+%                          v1 source, so this emitter has no caller and no
+%                          reachable input. It is not retired; do not delete
+%                          it, and do not re-wire it without reading the
+%                          signature: both emitters preserve the presentation
+%                          id, and `documents(id TEXT PRIMARY KEY)` cannot
+%                          hold two claimants.
 %
 % NOTE the list above is a HAND-WRITTEN NARRATIVE and is NOT a census of
-% +internal/. Measured 2026-08-17: 19 .m files in
-% src/ndi/+ndi/+migrate/+internal/, of which 6 are named anywhere above
-% (bodyResolver, pathSPromotion, softwareDedup, stimulusBathToBath,
-% stimulusPresentationToManipulation, stimulusPresentationToTimedSequence) and
-% 13 are not. An absence here has never meant a helper does not exist. To ask
-% what helpers exist, list the folder.
+% +internal/. Measured 2026-08-17: 20 .m files in
+% src/ndi/+ndi/+migrate/+internal/, of which 7 are named anywhere above
+% (bodyResolver, hartleyBasisGratings, pathSPromotion, softwareDedup,
+% stimulusBathToBath, stimulusPresentationToManipulation,
+% stimulusPresentationToTimedSequence) and 13 are not. An absence here has
+% never meant a helper does not exist. To ask what helpers exist, list the
+% folder.
 %
 % See also: did2.convert.v1_to_v2, did2.convert.migrators_j,
 %           did2.validate.references, did2.database.sqlitedb.
