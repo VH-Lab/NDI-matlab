@@ -29,6 +29,28 @@
 %                          single-document migrator cannot see the batch; this
 %                          is the "deduplicated by name+version" half of the
 %                          signed R1 model. Runs LAST of the V_eta sub-passes.
+%     stimulusPresentationToTimedSequence
+%                        - V_eta SIGNED stimulus model: N deduped standalone
+%                          `visual_grating` docs + ONE
+%                          `timed_sequence_manipulation` carrying the v1
+%                          presentation id and a playlist that indexes them.
+%                          *** NOT WIRED INTO ANY PASS, DELIBERATELY. *** It
+%                          would claim the same preserved base.id as
+%                          stimulusPresentationToManipulation (which still
+%                          runs, and which the 2026-08-17 signature forbids
+%                          retiring first), and `visual_grating` is still
+%                          declared abstract so its documents cannot be
+%                          instantiated. Both are open team questions; the
+%                          file's own header states them. Do not re-derive
+%                          this emitter -- it exists, with tests.
+%
+% NOTE the list above is a HAND-WRITTEN NARRATIVE and is NOT a census of
+% +internal/. Measured 2026-08-17: 19 .m files in
+% src/ndi/+ndi/+migrate/+internal/, of which 6 are named anywhere above
+% (bodyResolver, pathSPromotion, softwareDedup, stimulusBathToBath,
+% stimulusPresentationToManipulation, stimulusPresentationToTimedSequence) and
+% 13 are not. An absence here has never meant a helper does not exist. To ask
+% what helpers exist, list the folder.
 %
 % See also: did2.convert.v1_to_v2, did2.convert.migrators_j,
 %           did2.validate.references, did2.database.sqlitedb.
