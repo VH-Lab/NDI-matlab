@@ -188,6 +188,172 @@ classdef TestMigrateLocalEta20211116 < matlab.unittest.TestCase
             end
         end
 
+        function testTheAddedEpochTableIsReadableThroughTheObjectAPI(testCase)
+            % A CHARACTERIZATION TEST, WRITTEN BEFORE THE #60 DISSOLUTION AND
+            % DELIBERATELY ASSERTING TODAY'S BEHAVIOUR RATHER THAN THE SIGNED
+            % ONE. It exists to be the gate that change is measured against.
+            %
+            % WHY IT IS NEEDED. `ndi.element.loadaddedepochs` appears in
+            % exactly ONE file in this repository -- element.m itself:
+            %
+            %     $ grep -rln "loadaddedepochs" --include=*.m tests/ src/
+            %     src/ndi/+ndi/element.m
+            %
+            % Zero tests. The method above this one opens the migrated
+            % session and calls `getelements`, and never touches the epoch
+            % table, so the whole added-epoch path has been unmeasured on
+            % every corpus. That is the gap this closes: without it, #60
+            % lands blind and the first evidence is somebody noticing the
+            % spike epochs are gone.
+            %
+            % WHAT BREAKS UNDER THE DISSOLUTION, and it is three things at
+            % once rather than the one the file header names:
+            %
+            %     element.m:459  if isfield(...document_properties,'element_epoch')
+            %     element.m:463      newet.epoch_id = ...epochid.epochid;
+            %     element.m:468      clocks_array = ...element_epoch.clocks;
+            %
+            % The GATE at :459 is the worst of the three: once the block is
+            % gone the loop matches nothing, `et_added` comes back empty, and
+            % every derived element reports NO epochs -- silently, with no
+            % error, which is the shape this project keeps paying for.
+            %
+            % THE POPULATION, read from the corpus rather than quoted:
+            %
+            %     DENOMINATOR: 1220 json file(s); 23 element, 252 element_epoch
+            %       element.direct == false : 21   <- these have epoch tables
+            %       element.direct == true  :  2   (n-trode, stimulator)
+            %       21 derived x 12 (session,epochid) pairs = 252, exact
+            %
+            % `buildepochtable` returns early for a DIRECT element, so the 2
+            % probes are correctly expected to have no added epochs and are
+            % excluded rather than counted as failures.
+            %
+            % STATUS: NEVER RUN when written -- there is no MATLAB in the
+            % environment it was authored in. A first red run is as likely to
+            % be this test being wrong as the code being wrong; the counts are
+            % derived from the SOURCE bodies below rather than hard-coded, and
+            % every failure prints its actuals, so the first run can settle
+            % which it is without a second round trip.
+            assertTrue(testCase, isfile(testCase.Result.destination), sprintf( ...
+                'ndi.migrate.local reported destination %s and no file is there', ...
+                testCase.Result.destination));
+
+            % The expected epoch ids come from the V1 SOURCE, not from a
+            % literal and not from the migrated output -- an assertion built
+            % from the migration's own result cannot catch the migration.
+            % `testCase.Bodies` holds JSON TEXT, not structs -- see
+            % readCorpusBodies at the foot of this file. `jsondecode` is the
+            % idiom every other method here uses, and the first draft of this
+            % one indexed the char arrays as structs.
+            expectedEpochIds = {};
+            derivedSourceElements = 0;
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                if ~isfield(j, 'document_class') ...
+                        || ~isfield(j.document_class, 'class_name')
+                    continue;
+                end
+                cn = j.document_class.class_name;
+                if strcmp(cn, 'element_epoch') && isfield(j, 'epochid') ...
+                        && isfield(j.epochid, 'epochid') && ~isempty(j.epochid.epochid)
+                    expectedEpochIds{end+1} = char(j.epochid.epochid); %#ok<AGROW>
+                elseif strcmp(cn, 'element') && isfield(j, 'element') ...
+                        && isfield(j.element, 'direct') && ~j.element.direct
+                    derivedSourceElements = derivedSourceElements + 1;
+                end
+            end
+            expectedEpochIds = unique(expectedEpochIds);
+
+            % DENOMINATOR FIRST, UNCONDITIONALLY (rule 5). A run where the
+            % source scan found nothing must say so rather than pass by
+            % asserting nothing -- the silentLoss defect exactly.
+            fprintf(['\n  ADDED-EPOCH CHARACTERIZATION\n' ...
+                     '    DENOMINATOR: %d source body(ies) read; %d derived ' ...
+                     '(direct==false) element(s); %d distinct epoch id(s)\n'], ...
+                numel(testCase.Bodies), derivedSourceElements, ...
+                numel(expectedEpochIds));
+            assertNotEmpty(testCase, expectedEpochIds, ...
+                ['no epoch ids found in the SOURCE bodies -- this test ' ...
+                 'measured nothing, which is not a pass']);
+            assertGreaterThan(testCase, derivedSourceElements, 0, ...
+                ['no derived (direct==false) elements in the source -- ' ...
+                 'nothing here can exercise loadaddedepochs']);
+
+            s = ndi.session.dir(testCase.SessionRoot);
+            els = s.getelements();
+            if isempty(els); els = {}; elseif ~iscell(els); els = {els}; end
+            assertNotEmpty(testCase, els, ...
+                'getelements returned nothing, so no epoch table can be read');
+
+            % ONLY THE DERIVED ELEMENTS ARE DRIVEN, mirroring
+            % buildepochtable's own early return for a DIRECT element. The
+            % two probes here (n-trode, stimulator) are direct, and their
+            % epoch table comes from the daq system and file navigator rather
+            % than from added-epoch documents -- a path that needs
+            % acquisition files the corpus zips do not carry (measured
+            % 2026-08-14: 0 non-JSON files in 20211116). Driving them would
+            % test the absence of the fixture, not the read path.
+            %
+            % ERRORS ARE COLLECTED, NOT THROWN, so one bad element cannot
+            % abort the loop and take the denominator print with it. A
+            % characterization test that dies before reporting has measured
+            % nothing, and "it errored" and "it returned empty" are different
+            % findings that must not arrive as the same silence.
+            withEpochs = 0;
+            derivedDriven = 0;
+            seenEpochIds = {};
+            pairCount = 0;
+            failures = {};
+            for k = 1:numel(els)
+                if els{k}.direct
+                    continue;
+                end
+                derivedDriven = derivedDriven + 1;
+                try
+                    et = els{k}.epochtable();
+                catch epochErr
+                    failures{end+1} = sprintf('%s: %s', ...
+                        els{k}.elementstring(), epochErr.message); %#ok<AGROW>
+                    continue;
+                end
+                pairCount = pairCount + numel(et);
+                if ~isempty(et)
+                    withEpochs = withEpochs + 1;
+                    seenEpochIds = [seenEpochIds, {et.epoch_id}]; %#ok<AGROW>
+                end
+            end
+
+            fprintf(['    MEASURED: %d derived element object(s) driven of ' ...
+                     '%d returned; %d returned a non-empty epoch table; ' ...
+                     '%d (element,epoch) pair(s); %d distinct epoch id(s); ' ...
+                     '%d ERRORED\n'], ...
+                derivedDriven, numel(els), withEpochs, pairCount, ...
+                numel(unique(seenEpochIds)), numel(failures));
+
+            verifyEmpty(testCase, failures, sprintf( ...
+                ['epochtable() raised on %d derived element(s):\n      %s'], ...
+                numel(failures), strjoin(failures, sprintf('\n      '))));
+
+            % THE ASSERTION THAT MATTERS. Zero is the pre-vintage symptom and
+            % is exactly what the dissolution would produce.
+            verifyGreaterThan(testCase, withEpochs, 0, sprintf( ...
+                ['NO element returned an epoch table. The source holds %d ' ...
+                 'derived element(s) and %d distinct epoch id(s), so this ' ...
+                 'is the added-epoch read path returning empty -- the ' ...
+                 'element.m:459 `isfield(...,''element_epoch'')` gate is ' ...
+                 'the first place to look.'], ...
+                derivedSourceElements, numel(expectedEpochIds)));
+
+            % Every epoch id the object layer reports must be one the SOURCE
+            % carried. A rebuilt-but-invented id would satisfy the count
+            % assertion above and mean the table was reconstructed wrongly.
+            unexpected = setdiff(unique(seenEpochIds), expectedEpochIds);
+            verifyEmpty(testCase, unexpected, sprintf( ...
+                ['the epoch table reports %d id(s) the v1 source never ' ...
+                 'carried: %s'], numel(unexpected), strjoin(unexpected, ', ')));
+        end
+
         function testTheEpochFamilyMigratesAndIsReachable(testCase)
             % `element_epoch` (252 documents) is the class PRED does not
             % have, and it is the reason this corpus is the next step. Its
