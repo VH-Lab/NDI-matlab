@@ -1197,8 +1197,16 @@ function [convertResult, report] = resolveEnsembleMembership(convertResult, ...
 %   _no_epoch_string / _epoch_unresolved) because they have different remedies.
 %
 %   See ndi.migrate.internal.ensembleMembership for what is deliberately not
-%   built yet (the `sampled_body` cache document and its T6 `is_cache` marker,
-%   neither of which exists in the built schema set).
+%   built yet: the `sampled_body` cache document carrying the T6 `is_cache`
+%   marker. THIS SENTENCE SAID "neither of which exists in the built schema
+%   set". HALF STALE, corrected 2026-08-17 -- `sampled_body` exists and is
+%   emitted by four production migrators through
+%   `+migrators_j/private/jSampledBody.m`; `is_cache` is declared by 0 of the
+%   247 json files under DID-schema `schemas/V_eta/`, and THAT is the blocker.
+%   Without the marker the cache is indistinguishable from the primary
+%   per-neuron data, which is the one thing the signed model guarantees. See
+%   item 3 of the assembler's header for the evidence and for the owning
+%   `statement` the body would also need.
     report = [];
     docs = convertResult.migrated;
     if isempty(docs)

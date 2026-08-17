@@ -174,15 +174,71 @@ function [kept, minted, report] = ensembleMembership(structs, options)
 %      edge kinds and the dedupe key separates epochs. Nothing empty is ever
 %      emitted (rule: never emit an empty edge).
 %
-%   3. NO `sampled_body` CACHE DOCUMENT IS MATERIALISED. The signed model marks
-%      the cache with the T6 `is_cache` marker on a `sampled_body`; neither
-%      exists in the built schema set today:
-%        - `is_cache` appears in NO schema (only in three prose documents:
-%          V_eta_tenets.md, V_eta_tenet_audit.md, V_eta_ensemble_plan.md);
-%        - `sampled_body` is still DRAFT (schemas/V_eta/draft/sampled_body.json)
-%          with a REQUIRED `statement -> subject_statement` edge, and the whole
-%          data_body tier is under redesign (V_eta_data_body_model_plan.md,
-%          #45, blocked on #32).
+%   3. NO `sampled_body` CACHE DOCUMENT IS MATERIALISED -- AND THIS ITEM'S OWN
+%      ACCOUNT OF WHY WAS HALF STALE, in the direction that makes the block look
+%      WIDER than it is. Corrected 2026-08-17 with positive evidence. The
+%      CONCLUSION is unchanged; it now rests on ONE blocker instead of two, and
+%      the one that lapsed is the one a reader would have quoted as "the tier
+%      isn't ready yet".
+%
+%      IT SAID `sampled_body` "does not exist in the built schema set" and that
+%      "the whole data_body tier is under redesign (#45, blocked on #32)".
+%      BOTH FALSE NOW. #45 is SIGNED:
+%
+%        $ grep -n "^TEAM-SIGN-OFF" \
+%              DID-schema/schemas/V_eta_data_body_model_plan.md
+%        648:TEAM-SIGN-OFF [data_body]: jess@walthamdatascience.com /
+%            2026-08-14 -- the axis entry replacing all three regularity
+%            encodings; time becomes an ordinary axis and both sample_time
+%            blocks retire; [...]
+%
+%      and `sampled_body` is live, instantiable and ALREADY EMITTED by
+%      production migrators, all through the shared helper:
+%
+%        $ cd DID-matlab && grep -rn "sampled_body" \
+%              src/did/+did2/+convert/+migrators_j/{*.m,private/*.m}
+%        image_stack.m:388   body.sampled_body.axes = jAxis(...)
+%        pyraview.m:431,433  b.sampled_body.axes = timeAxis / [timeAxis, ...]
+%        private/jNgridBody.m:224   body.sampled_body.axes = axesArray
+%        private/jSampledBody.m:22  class_name 'sampled_body'
+%
+%      It is still filed under `draft/`, which is a MATURITY LABEL and not a bar
+%      to emission -- the old wording read the directory as a prohibition.
+%
+%      WHAT ACTUALLY BLOCKS THE CACHE IS THE MARKER, AND ONLY THE MARKER. The
+%      signed model requires the T6 `is_cache` marker precisely so the combined
+%      stream is distinguishable from source-of-truth data. No schema declares
+%      it:
+%
+%        DENOMINATOR: 247 json file(s) under DID-schema schemas/V_eta/ read
+%          declaring `is_cache`: 0
+%        `is_cache` occurs ONLY in prose -- V_eta_tenets.md,
+%        V_eta_tenet_audit.md, V_eta_ensemble_plan.md, V_eta_OPEN_WORK.md
+%        (plus web/public/tenets.json, which renders the first of those).
+%
+%      Minting the body WITHOUT the marker yields a document indistinguishable
+%      from primary archival data -- the single property the signed model exists
+%      to guarantee, dropped silently, on a class whose whole point is that the
+%      per-neuron trains are the source of truth. The absence is a reason not to
+%      build it, not a detail to route around. Adding the marker is a DID-schema
+%      change and is not this pass's to make.
+%
+%      A SECOND FACT, A COST RATHER THAN A BLOCKER: the body needs an OWNER, and
+%      the requirement is easy to miss because it is declared on the PARENT.
+%      `schemas/V_eta/draft/data_body.json` declares
+%      `statement -> subject_statement` with `mustBeNonEmpty: true`, while
+%      `sampled_body.json`'s own `depends_on` is `filter_id` ALONE -- so grepping
+%      the child for `statement` finds nothing and reads as "the requirement
+%      lapsed". It did not; `jSampledBody(statementId, ...)` takes the owner as
+%      its first argument for exactly that reason. Nothing mints a spike-time
+%      statement on the ensemble group-subject today: the only statements it
+%      carries are the two `term_assertion` kind assertions from
+%      migrators_j.element ('element type' = ensemble, 'ndi element class'), and
+%      a marked-point-process body hung off a kind assertion would be wrong.
+%      Emitting one with an EMPTY `statement` is the invented-empty-edge pattern
+%      and would quarantine under #37 RequiredDependencies, which is ARMED by
+%      default.
+%
 %      So the cache is recorded here as PROVENANCE (the `derived_from` edges)
 %      over the carrier that already holds the bytes, which is the half that
 %      can be built correctly today.
