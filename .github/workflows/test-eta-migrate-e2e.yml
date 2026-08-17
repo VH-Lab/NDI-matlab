@@ -42,6 +42,15 @@ on:
       - 'src/ndi/*ndi/*vintage/**'
       - 'src/ndi/*ndi/*database/*fun/ndi_document2ndi_object.m'
       - 'tests/*ndi/*unittest/*vintage/**'
+      # THE ADDED-EPOCH READ PATH, added 2026-08-17 with #60's reader port.
+      # `element.m` holds loadaddedepochs and `+element/timeseries.m` holds
+      # the `isa` search for the epoch document readtimeseries opens; both
+      # index an epoch document by its class/block name, and both were
+      # returning nothing on a migrated session. Neither file was under any
+      # glob here, so the job that measures exactly this did not fire when
+      # they changed.
+      - 'src/ndi/*ndi/element.m'
+      - 'src/ndi/*ndi/*element/timeseries.m'
   workflow_dispatch:
     inputs:
       ref:
@@ -166,6 +175,7 @@ jobs:
                 'ndi.unittest.migrate.TestMigrateLocalEta20211116', ...
                 'ndi.unittest.database.TestDid2SqliteHierarchy', ...
                 'ndi.unittest.vintage.TestVintageMap', ...
-                'ndi.unittest.vintage.TestElementLabelMatchesMigrator'});
+                'ndi.unittest.vintage.TestElementLabelMatchesMigrator', ...
+                'ndi.unittest.vintage.TestAddedEpoch'});
             disp(results);
             assertSuccess(results);

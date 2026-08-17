@@ -455,24 +455,30 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 return;
             end
             % loads from database
+            %
+            % EVERY VINTAGE, THROUGH ONE READER. This loop used to gate on
+            % `isfield(...,'element_epoch')` and then read `.clocks`, which
+            % is a shape NO document reachable from here actually has:
+            % a MIGRATED document's block is `acquisition_epoch` and failed
+            % the gate silently, while a document NDI itself wrote carries
+            % `epoch_clock`/`t0_t1` and has no `.clocks` to read.
+            % ndi.vintage.addedEpoch knows all three shapes and answers
+            % FOUND=false for a document that is not an epoch record at all
+            % -- which is most of what load_all_element_docs returns,
+            % including the element document itself.
             potential_epochdocs = ndi_element_obj.load_all_element_docs();
             for i=1:numel(potential_epochdocs)
-                if isfield(potential_epochdocs{i}.document_properties,'element_epoch')
+                [epoch_id, ec, t0_t1, found] = ...
+                    ndi.vintage.addedEpoch(potential_epochdocs{i});
+                if found
                     clear newet;
-                    newet.epoch_number = i;
-                    newet.epoch_id = potential_epochdocs{i}.document_properties.epochid.epochid;
+                    % NUMBERED BY POSITION IN THE ACCEPTED SET, not by the
+                    % loop index. `i` counts every candidate the search
+                    % returned, so with the element document among them the
+                    % old code produced epoch_number 2..N+1 and skipped 1.
+                    newet.epoch_number = numel(et_added) + 1;
+                    newet.epoch_id = epoch_id;
                     newet.epochprobemap = '';
-                    % V_delta element_epoch.clocks: array-of-records
-                    % with fields {name, t0, t1}. Replaces the v1
-                    % parallel (epoch_clock CSV + t0_t1 matrix) shape.
-                    clocks_array = potential_epochdocs{i}.document_properties.element_epoch.clocks;
-                    nClocks = numel(clocks_array);
-                    ec = cell(1, nClocks);
-                    t0_t1 = cell(1, nClocks);
-                    for k=1:nClocks
-                        ec{k} = ndi.time.clocktype(char(clocks_array(k).name));
-                        t0_t1{k} = vlt.data.rowvec([clocks_array(k).t0, clocks_array(k).t1]);
-                    end
                     newet.epoch_clock = ec;
                     newet.t0_t1 = t0_t1;
                     newet.underlying_epochs = []; % leave this for buildepochtable

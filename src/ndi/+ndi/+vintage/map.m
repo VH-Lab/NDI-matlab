@@ -238,6 +238,50 @@ e(k).isa_bridges  = false;
 e(k).edges        = cell(0,2);
 e(k).fields       = cell(0,2);
 
+% ---- element_epoch -> acquisition_epoch ------------------------------
+% NOT AN NDI OBJECT TYPE, and it earns a row anyway. Every other entry
+% here exists so `ndi_document2ndi_object` can reconstruct something;
+% this one exists because TWO READ SITES index the block by its v1 name
+% and a THIRD searches for it by `isa`:
+%
+%     element.m  loadaddedepochs   the added-epoch table of every
+%                                  DERIVED element
+%     +element/timeseries.m:57     the `isa` query that finds the epoch
+%                                  document whose .vhsb readtimeseries
+%                                  then opens
+%
+% So `object_field` / `object_edge` / `object_assertion` are all empty --
+% there is no MATLAB class encoded on the document, the same reason
+% `pyraview` is absent (the note above). What the row provides is the
+% class rename, which is all those three sites need.
+%
+% `isa_bridges` IS true, and the `element` row above is the reason to
+% check rather than assume: bridging is unsafe only when the V_eta class
+% is SHARED with something else. `acquisition_epoch` is not -- it is the
+% migrator's target for `element_epoch` and for nothing else
+% (+migrators_j/element_epoch.m renames the class and its block, one to
+% one), so `isa element_epoch OR isa acquisition_epoch` cannot widen onto
+% a document that was never an element_epoch.
+%
+% NO `fields` ROW, AND THE ABSENCE IS THE POINT. v1 carries two parallel
+% fields, `epoch_clock` (a comma-separated char) and `t0_t1` (2-by-N,
+% columns = clocks); V_eta carries ONE `clocks` array-of-records. That is
+% a SHAPE change, not a rename, so it cannot be expressed as a
+% {v1_field, eta_field} pair and `ndi.vintage.field` must not be asked
+% for it -- exactly the `filenavigator.fileparameters` case that
+% field.m's header already carves out. `ndi.vintage.addedEpoch` is the
+% one function that knows all three shapes.
+k = k + 1;
+e(k).concept      = 'element_epoch';
+e(k).v1_class     = 'element_epoch';
+e(k).eta_class    = 'acquisition_epoch';
+e(k).object_field = '';
+e(k).object_edge  = '';
+e(k).object_assertion = '';
+e(k).isa_bridges  = true;
+e(k).edges        = cell(0,2);   % `element_id` keeps its name on both
+e(k).fields       = cell(0,2);   % see above -- a shape change, not a rename
+
 cached = e;
 entries = e;
 end

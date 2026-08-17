@@ -64,6 +64,21 @@ if ~isempty(entry.object_assertion)
     return;
 end
 
+% A MAPPED CLASS THAT IS NOT AN NDI OBJECT AT ALL. `element_epoch` has a
+% map row so the three sites that index its block by v1 name can find it,
+% and v1 stores no `ndi_*_class` on it -- there is no object to build and
+% never was. Refused by NAME here rather than falling through to the
+% software hop, which would ask for `dependency_value('')` and report a
+% missing edge, blaming the document for an absence that is a property of
+% the concept.
+if isempty(entry.object_field) && isempty(entry.object_edge)
+    error('NDI:vintage:notAnObjectConcept', ...
+        ['"%s" (v1 "%s") is not an NDI object type -- ndi.vintage.map ' ...
+         'carries it for its class rename only, and v1 stored no ' ...
+         'implementation class on it. There is nothing to construct.'], ...
+        entry.eta_class, entry.v1_class);
+end
+
 % V_eta: one hop to the software entity.
 swId = ndi_document_obj.dependency_value(entry.object_edge, 'ErrorIfNotFound', 0);
 if isempty(swId)
