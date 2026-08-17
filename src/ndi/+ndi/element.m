@@ -497,14 +497,14 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %
             % Returns empty if there is no such document.
             %
-            sq = ndi_element_obj.searchquery();
-            E = ndi_element_obj.session;
-            element_doc = E.database_search(sq);
-            if numel(element_doc)>1
-                error(['More than one document matches the ELEMENT definition. This should not happen.']);
-            elseif ~isempty(element_doc)
-                element_doc = element_doc{1};
-            end
+            % EVERY VINTAGE. `searchquery` matches four fields of the v1
+            % `element` block and TWO OF THEM MOVED ONTO OTHER DOCUMENTS in
+            % V_eta (type and class became inbound term_assertions), so no
+            % query can find a migrated element and this cannot be fixed by
+            % widening `searchquery`. ndi.vintage.elementDoc tries the v1
+            % query FIRST, unchanged, and falls back to the two-step
+            % assertion lookup only when it finds nothing.
+            element_doc = ndi.vintage.elementDoc(ndi_element_obj);
         end % load_element_doc()
 
         function element_ref = doc_unique_id(ndi_element_obj)
@@ -547,7 +547,12 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %
             element_doc = ndi_element_obj.load_element_doc();
             if ~isempty(element_doc)
-                sq = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
+                % `element_doc.id()`, NOT `ndi_element_obj.id()`. They are
+                % the same id -- `id()` is `load_element_doc().id()` -- but
+                % going through the object repeats the whole lookup, which
+                % on the V_eta path is an assertion query plus one fetch per
+                % element-subject. Same answer, half the searches.
+                sq = ndi.query('depends_on','depends_on','element_id',element_doc.id());
                 E = ndi_element_obj.session;
                 epochdocs = E.database_search(sq);
                 element_docs = cat(1, {element_doc}, epochdocs(:));

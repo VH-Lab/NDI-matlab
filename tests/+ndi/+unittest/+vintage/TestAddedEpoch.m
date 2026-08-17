@@ -217,9 +217,74 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
             testCase.verifySubstring(txt, 'acquisition_epoch');
         end
 
+        % ===================== what feeds the reader ===================
+
+        function testLoadElementDocRoutesThroughTheVintageLookup(testCase)
+            % THE EIGHTH FRAME, and the reason this section exists at all.
+            %
+            % Every test above passed on their first run (11/11, e2e run
+            % 74) and the characterization test STILL reported 0 epoch
+            % tables over 21 derived elements. The reader was correct and
+            % NOTHING REACHED IT: `load_element_doc` -> `searchquery`
+            % matches four fields of the v1 `element` block, two of which
+            % moved onto OTHER documents in V_eta, so it found nothing;
+            % `load_all_element_docs` then returned {} on its own
+            % `if ~isempty(element_doc)` guard.
+            %
+            % THIS TEST IS STRUCTURAL AND THAT IS A WEAKNESS, STATED
+            % PLAINLY. It reads element.m as text because the real check
+            % needs a migrated database, which no test in this file has.
+            % It can only catch the routing being removed; it cannot catch
+            % the lookup being wrong. The GATE for that is
+            % `ndi.unittest.migrate.TestMigrateLocalEta20211116/
+            % testTheAddedEpochTableIsReadableThroughTheObjectAPI`, which
+            % runs against a real migration -- and which is what caught
+            % this in the first place, after a green unit suite did not.
+            src = ndi.unittest.vintage.TestAddedEpoch.sourceOf( ...
+                fullfile('src', 'ndi', '+ndi', 'element.m'));
+            testCase.verifyTrue( ...
+                contains(src, 'ndi.vintage.elementDoc(ndi_element_obj)'), ...
+                ['ndi.element/load_element_doc no longer routes through ' ...
+                 'ndi.vintage.elementDoc -- a migrated element cannot ' ...
+                 'find its own document, and the symptom is an empty ' ...
+                 'epoch table rather than an error']);
+        end
+
+        function testTheVintageLookupTriesV1First(testCase)
+            % NDI still WRITES v1, so the v1 query must stay the first
+            % thing tried and must stay unmodified. If the fallback ever
+            % ran first it would still be CORRECT on a v1 session -- and
+            % would cost an assertion query plus one fetch per
+            % element-subject on every single lookup, on the path that is
+            % already called twice per element.
+            src = ndi.unittest.vintage.TestAddedEpoch.sourceOf( ...
+                fullfile('src', 'ndi', '+ndi', '+vintage', 'elementDoc.m'));
+            iV1 = strfind(src, 'ndi_element_obj.searchquery()');
+            iEta = strfind(src, 'ndi.vintage.elementSubjectDocs(E)');
+            testCase.verifyNotEmpty(iV1, ...
+                'elementDoc no longer runs the v1 searchquery at all');
+            testCase.verifyNotEmpty(iEta, ...
+                'elementDoc no longer has a V_eta fallback');
+            testCase.verifyLessThan(iV1(1), iEta(1), ...
+                'the V_eta fallback now runs before the v1 query');
+        end
+
     end
 
     methods (Static, Access = private)
+
+        function src = sourceOf(relPath)
+            %SOURCEOF A repository file as TEXT, resolved from this file.
+            %   From mfilename('fullpath') rather than `which`, for the
+            %   reason testBatchPassWiring gives: a path lookup with two
+            %   candidates can resolve to an installed copy of another
+            %   revision and still print a confident result.
+            here = fileparts(mfilename('fullpath'));  % tests/+ndi/+unittest/+vintage
+            repoRoot = fileparts(fileparts(fileparts(fileparts(here))));
+            p = fullfile(repoRoot, relPath);
+            assert(isfile(p), '%s not found at %s', relPath, p);
+            src = fileread(p);
+        end
 
         function d = epochDoc(className, blockName, blockStruct, epochId)
             % A minimal ndi.document with a named class, one property block
