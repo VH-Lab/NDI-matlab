@@ -349,7 +349,44 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
                     end
                     underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
-                    if ~isempty(ndi_element_obj.underlying_element)
+                    % `&& epoch_mapping` ADDED 2026-08-17. THE FLAG ALREADY
+                    % EXISTED AND ONLY ONE OF THE TWO READERS CONSULTED IT.
+                    % When intersect finds no mapping the code above sets
+                    % `ib = 1:numel(et_added)` -- a range sized by THIS
+                    % element's epochs and then used to index
+                    % `underlying_et`, which may be shorter or empty. The
+                    % epoch_id read at the top of this loop is guarded by
+                    % `if epoch_mapping`; this block was not, so it indexed
+                    % straight off the end.
+                    %
+                    % `epoch_mapping == false` means, in the comment three
+                    % blocks up, "it is legal for there to be no mapping" --
+                    % so there IS no underlying epoch to record, and the
+                    % empty struct above is the right answer. That is
+                    % already what the `isempty(underlying_element)` case
+                    % produces.
+                    %
+                    % UNREACHABLE UNTIL NOW, which is why it is here rather
+                    % than upstream: the loop only runs when `et_added` is
+                    % non-empty, and on a migrated session
+                    % `loadaddedepochs` returned nothing at all until the
+                    % vintage port landed. `origin/main` carries the same
+                    % lines. Measured on migrated 20211116, e2e run 75:
+                    % epochtable() raised `Index exceeds array bounds` on
+                    % all 21 derived elements, having raised nothing when it
+                    % was returning empty.
+                    %
+                    % WHY `underlying_et` IS EMPTY HERE, so a green test is
+                    % not read as more than it is: the underlying n-trode is
+                    % a DIRECT probe whose epoch table comes from the daq
+                    % system and file navigator, i.e. from raw acquisition
+                    % files -- and the corpus zips carry none (measured
+                    % 2026-08-14: 0 non-JSON entries in 20211116). The added
+                    % epochs are real and in the database; the underlying
+                    % ones are absent from the FIXTURE. This guard makes the
+                    % first readable without claiming anything about the
+                    % second.
+                    if ~isempty(ndi_element_obj.underlying_element) && epoch_mapping
                         underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
                         underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
                         underlying_epochs.epoch_session_id = underlying_et(ib(n)).epoch_session_id;

@@ -250,6 +250,28 @@ classdef TestAddedEpoch < matlab.unittest.TestCase
                  'epoch table rather than an error']);
         end
 
+        function testBothUnderlyingEpochReadsConsultTheMappingFlag(testCase)
+            % `buildepochtable` sets `ib = 1:numel(et_added)` when
+            % intersect finds no mapping -- a range sized by THIS element's
+            % epochs, then used to index `underlying_et`, which may be
+            % shorter or empty. Two blocks read `underlying_et(ib(n))` on
+            % the non-direct path and only ONE checked `epoch_mapping`.
+            %
+            % Measured on migrated 20211116, e2e run 75: `Index exceeds
+            % array bounds` on all 21 derived elements -- and it raised
+            % NOTHING in run 74, because the loop had no iterations to run.
+            % A guard that only fires once the code upstream of it starts
+            % working is invisible to every test that never got that far.
+            src = ndi.unittest.vintage.TestAddedEpoch.sourceOf( ...
+                fullfile('src', 'ndi', '+ndi', 'element.m'));
+            testCase.verifyTrue(contains(src, ...
+                ['if ~isempty(ndi_element_obj.underlying_element) ' ...
+                 '&& epoch_mapping']), ...
+                ['the underlying_epochs block no longer checks ' ...
+                 'epoch_mapping -- with no mapping, ib indexes ' ...
+                 'underlying_et out of bounds']);
+        end
+
         function testTheVintageLookupTriesV1First(testCase)
             % NDI still WRITES v1, so the v1 query must stay the first
             % thing tried and must stay unmodified. If the fallback ever
