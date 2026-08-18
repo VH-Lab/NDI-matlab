@@ -13,15 +13,28 @@ function outputFolders = gmcSorter(probe, outputFolder, options)
 % written for you), then open the resulting spike_prop/ folder in the
 % GMC_Sorter GUI.
 %
+% This targets GMC_Sorter Version 4. Version 4's extract_spike_features takes
+% a CH_ORDER argument (0-based recording channel indices) that selects and
+% orders the channels each pass loads, and its own driver uses that to run one
+% pass PER SHANK. The generated run_gmc_extract.py follows that structure: the
+% probe's shank assignment (the Kilosort 'kcoords' from its geometry) becomes
+% one extract_spike_features pass per shank, channels with no electrode site
+% are left out of ch_order, and each pass's results are additionally saved as
+% properties.mat the way GMC_Sorter's main.py does.
+%
 % For each exported epoch this writes a self-contained GMC_Sorter input
 % folder containing:
 %   [baseName]_samples.dat       int16 voltage, channel-interleaved
 %   [baseName]_timestamps.dat    int64 sample times (microseconds)
+%   channel_info.csv             per channel: index, [x y] (microns), shank,
+%                                  connected -- the per-shank ch_order/ch_map
+%                                  source for the Version 4 driver
 %   channel_positions.csv        [x y] electrode positions (microns), the
-%                                  ch_map GMC_Sorter's extractor needs
-%   channel_map.mat              same positions as xcoords/ycoords/ch_map
+%                                  whole-probe ch_map
+%   channel_map.mat              same positions as xcoords/ycoords/kcoords/
+%                                  connected/ch_map
 %   [baseName].metadata          epoch/sample bookkeeping
-%   run_gmc_extract.py           ready-to-run GMC_Sorter driver
+%   run_gmc_extract.py           ready-to-run GMC_Sorter Version 4 driver
 %
 % The int16 samples are written as int16 = round(multiplier * physical),
 % column-interleaved so that GMC_Sorter's raw_data.py reshapes them as
@@ -35,11 +48,14 @@ function outputFolders = gmcSorter(probe, outputFolder, options)
 % 'epoch_<id>' subfolder (GMC_Sorter's dat_t_s reader expects one recording
 % per folder). OUTPUTFOLDERS is a cellstr of the folder(s) written.
 %
-% CHANNEL MAP: the [x y] positions are read from PROBE's stored geometry with
-% NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP, aligned to the exported channel order.
-% If PROBE has no geometry document, a default single-column linear map
-% (x = 0, y spaced by 'spacing' microns) is written with a warning; pass
-% 'channelPositions' to supply the true geometry explicitly.
+% CHANNEL MAP: the [x y] positions, the shank id of each channel, and which
+% channels carry an electrode site are read from PROBE's stored geometry with
+% NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP (xcoords/ycoords, kcoords, connected),
+% aligned to the exported channel order. If PROBE has no geometry document, a
+% default single-column linear map (x = 0, y spaced by 'spacing' microns, one
+% shank, all channels connected) is written with a warning; pass
+% 'channelPositions' (and 'shankIndex' / 'connected') to supply the true
+% geometry explicitly.
 %
 % This function's parameters can be modified by passing name/value pairs:
 % --------------------------------------------------------------------------
@@ -56,6 +72,26 @@ function outputFolders = gmcSorter(probe, outputFolder, options)
 % |                         |   precision/clipping.                         |
 % | channelPositions ([])   | n_channels x 2 [x y] positions (microns) in   |
 % |                         |   channel order, overriding the probe geometry|
+% | shankIndex ([])         | n_channels x 1 shank id per channel,          |
+% |                         |   overriding the geometry's kcoords. One      |
+% |                         |   GMC_Sorter pass runs per distinct id.       |
+% | connected ([])          | n_channels x 1 logical, overriding the        |
+% |                         |   geometry's 'connected'. False channels are  |
+% |                         |   exported but left out of the driver's       |
+% |                         |   ch_order, so GMC_Sorter never sorts them.   |
+% | sortByDepth (true)      | Order each shank's ch_order tip-to-base       |
+% |                         |   (ascending y), as GMC_Sorter's              |
+% |                         |   probe_mappings.py does.                     |
+% | gmcProbeName ('')       | Name of a GMC_Sorter built-in probe (see      |
+% |                         |   probe_mappings.get_probe_map). If given, the|
+% |                         |   driver uses GMC's own wiring rather than    |
+% |                         |   the exported channel table -- only correct  |
+% |                         |   if the exported channel order IS that       |
+% |                         |   probe's wiring.                             |
+% | featureOptions ({})     | Name/value cell forwarded to                  |
+% |                         |   extract_spike_features as keyword args,     |
+% |                         |   e.g. {'refr_space',150,'wvf_space',150}.    |
+% | makePlots (false)       | make_plots for extract_spike_features.        |
 % | horizontalAxis          | Which probe axis becomes x: 'leftright' or    |
 % |   ('leftright')         |   'frontback' (y is always depth).            |
 % | spacing (25)            | Default linear y-spacing (microns) used only  |
@@ -71,10 +107,12 @@ function outputFolders = gmcSorter(probe, outputFolder, options)
 % Example:
 %   S = ndi.session.dir('/path/to/session');
 %   p = S.getprobes('type','n-trode'); p = p{1};
-%   ndi.fun.export.gmcSorter(p, '/tmp/gmc_export');
-%   % then, on a machine with GMC_Sorter installed:
+%   ndi.fun.export.gmcSorter(p, '/tmp/gmc_export', ...
+%       'featureOptions', {'refr_space',150,'wvf_space',150,'noise_space',NaN});
+%   % then, on a machine with GMC_Sorter (Version 4) installed:
 %   %   python /tmp/gmc_export/run_gmc_extract.py
-%   % and open /tmp/gmc_export in the GMC_Sorter GUI.
+%   % and open /tmp/gmc_export (or /tmp/gmc_export/Sh0 for a multi-shank
+%   % probe) in the GMC_Sorter GUI.
 %
 % See also: NDI.FUN.EXPORT.GMCSORTERWRITE, NDI.FUN.EXPORT.WRITEGMCSIDECARS,
 %   NDI.FUN.PROBE.EXPORT.BINARY, NDI.FUN.PROBE.GEOMETRY.TOKILOSORTMAP,
@@ -87,6 +125,12 @@ function outputFolders = gmcSorter(probe, outputFolder, options)
         options.baseName (1,:) char = 'RawData'
         options.multiplier (1,1) double = 1
         options.channelPositions double = []
+        options.shankIndex double = []
+        options.connected = []
+        options.sortByDepth (1,1) logical = true
+        options.gmcProbeName (1,:) char = ''
+        options.featureOptions cell = {}
+        options.makePlots (1,1) logical = false
         options.horizontalAxis (1,:) char {mustBeMember(options.horizontalAxis,{'leftright','frontback'})} = 'leftright'
         options.spacing (1,1) double = 25
         options.gmcSorterPath (1,:) char = ''
@@ -180,12 +224,16 @@ function outputFolders = gmcSorter(probe, outputFolder, options)
             numChannels = 0;
         end
 
-        % resolve channel positions [x y] aligned to the exported channel order
-        channelPositions = local_channel_positions(probe, numChannels, options);
+        % resolve channel geometry ([x y], shank, connected) aligned to the
+        % exported channel order
+        G = local_channel_geometry(probe, numChannels, options);
 
         epoch_sample_counts = local_epoch_sample_count(probe, epoch_id);
 
-        ndi.fun.export.writeGmcSidecars(thisFolder, options.baseName, channelPositions, ...
+        ndi.fun.export.writeGmcSidecars(thisFolder, options.baseName, G.positions, ...
+            'shankIndex', G.shank, 'connected', G.connected, ...
+            'sortByDepth', options.sortByDepth, 'gmcProbeName', options.gmcProbeName, ...
+            'featureOptions', options.featureOptions, 'makePlots', options.makePlots, ...
             'epochSampleCounts', epoch_sample_counts, 'epochSampleRates', sr, ...
             'sampleRate', sr, 'multiplier', options.multiplier, ...
             'probeName', probe.elementstring(), 'gmcSorterPath', options.gmcSorterPath, ...
@@ -209,37 +257,66 @@ function local_write_timestamps(fid, t_seconds)
 end
 
 % =========================================================================
-% Channel positions [x y], aligned to the exported channel order
+% Channel geometry aligned to the exported channel order: [x y] positions,
+% the shank id of each channel (GMC_Sorter Version 4 sorts one shank per
+% pass), and which channels actually carry an electrode site.
 % =========================================================================
-function pos = local_channel_positions(probe, numChannels, options)
+function G = local_channel_geometry(probe, numChannels, options)
+    G = struct('positions', [], 'shank', [], 'connected', []);
+
     if ~isempty(options.channelPositions)
-        pos = options.channelPositions;
-        if size(pos,1) ~= numChannels && numChannels>0
+        G.positions = options.channelPositions;
+        if size(G.positions,1) ~= numChannels && numChannels>0
             error('ndi:fun:export:gmcSorter:posmismatch', ...
                 ['channelPositions has %d rows but the export has %d channels; ' ...
-                 'they must match.'], size(pos,1), numChannels);
+                 'they must match.'], size(G.positions,1), numChannels);
         end
-        return;
+    else
+        S = probe.session;
+        mapFile = [tempname '.mat'];
+        cleanup = onCleanup(@() local_delete(mapFile)); %#ok<NASGU>
+        tf = ndi.fun.probe.geometry.toKilosortMap(S, probe, mapFile, ...
+            'num_channels', numChannels, 'horizontal_axis', options.horizontalAxis, ...
+            'verbose', options.verbose);
+        if tf && isfile(mapFile)
+            m = load(mapFile, 'xcoords', 'ycoords', 'kcoords', 'connected');
+            G.positions = [m.xcoords(:) m.ycoords(:)];
+            if isfield(m,'kcoords') && ~isempty(m.kcoords)
+                G.shank = double(m.kcoords(:));
+            end
+            if isfield(m,'connected') && ~isempty(m.connected)
+                G.connected = logical(m.connected(:));
+            end
+        else
+            if options.verbose
+                warning('ndi:fun:export:gmcSorter:nogeometry', ...
+                    ['Probe %s has no geometry document; writing a default single-column ' ...
+                     'linear channel map (x=0, y spaced by %g um, one shank). Pass ' ...
+                     'channelPositions for the real geometry.'], ...
+                    probe.elementstring(), options.spacing);
+            end
+            y = (0:max(numChannels-1,0)).' * options.spacing;
+            G.positions = [zeros(numel(y),1) y];
+        end
     end
 
-    S = probe.session;
-    mapFile = [tempname '.mat'];
-    cleanup = onCleanup(@() local_delete(mapFile));
-    tf = ndi.fun.probe.geometry.toKilosortMap(S, probe, mapFile, ...
-        'num_channels', numChannels, 'horizontal_axis', options.horizontalAxis, ...
-        'verbose', options.verbose);
-    if tf && isfile(mapFile)
-        m = load(mapFile, 'xcoords', 'ycoords');
-        pos = [m.xcoords(:) m.ycoords(:)];
-    else
-        if options.verbose
-            warning('ndi:fun:export:gmcSorter:nogeometry', ...
-                ['Probe %s has no geometry document; writing a default single-column ' ...
-                 'linear channel map (x=0, y spaced by %g um). Pass channelPositions ' ...
-                 'for the real geometry.'], probe.elementstring(), options.spacing);
-        end
-        y = (0:max(numChannels-1,0)).' * options.spacing;
-        pos = [zeros(numel(y),1) y];
+    % explicit overrides win over whatever the geometry supplied
+    if ~isempty(options.shankIndex)
+        G.shank = double(options.shankIndex(:));
+    end
+    if ~isempty(options.connected)
+        G.connected = logical(options.connected(:));
+    end
+
+    nPos = size(G.positions,1);
+    if isempty(G.shank),     G.shank     = ones(nPos,1);  end
+    if isempty(G.connected), G.connected = true(nPos,1);  end
+
+    if nPos>0 && ~any(G.connected)
+        warning('ndi:fun:export:gmcSorter:noconnected', ...
+            ['No channel of probe %s is marked connected; the generated driver ' ...
+             'would have nothing to sort. Pass ''connected'' explicitly.'], ...
+            probe.elementstring());
     end
 end
 

@@ -25,6 +25,11 @@ function gmcSorterWrite(outputFolder, samples, timestamps, channelPositions, opt
 % |                   |   (microns), in the same channel order as SAMPLES.  |
 % --------------------------------------------------------------------------
 %
+% The sidecars and the generated driver target GMC_Sorter Version 4: pass
+% 'shankIndex' for a multi-shank probe and the driver runs one
+% extract_spike_features(..., ch_order=...) pass per shank, as GMC_Sorter's
+% own main.py does. See NDI.FUN.EXPORT.WRITEGMCSIDECARS.
+%
 % The two '.dat' files are written little-endian (matching raw_data.py's
 % native-endian numpy reads on x86). GMC_Sorter derives from their sizes:
 %   n_time_samples = sizeof(timestamps)/8 (int64)
@@ -52,6 +57,17 @@ function gmcSorterWrite(outputFolder, samples, timestamps, channelPositions, opt
 % |                       |   driver. If empty, inferred from TIMESTAMPS.   |
 % | probeName ('')        | Probe elementstring recorded in the metadata.   |
 % | writeSidecars (true)  | Write channel map / metadata / driver too.      |
+% | shankIndex ([])       | n_channels x 1 shank id per channel; one        |
+% |                       |   GMC_Sorter pass runs per distinct id. Empty   |
+% |                       |   => a single shank.                            |
+% | connected ([])        | n_channels x 1 logical; false channels are      |
+% |                       |   written but left out of the driver's ch_order.|
+% | sortByDepth (true)    | Order each shank's ch_order tip-to-base.        |
+% | gmcProbeName ('')     | Use GMC_Sorter's probe_mappings wiring for this |
+% |                       |   named probe instead of the exported table.    |
+% | featureOptions ({})   | Name/value cell forwarded to                    |
+% |                       |   extract_spike_features as keyword arguments.  |
+% | makePlots (false)     | make_plots for extract_spike_features.          |
 % | gmcSorterPath ('')    | Path to the GMC_Sorter checkout for the driver. |
 % | verbose (1)           | 0/1 Should we be verbose?                       |
 % --------------------------------------------------------------------------
@@ -75,6 +91,12 @@ function gmcSorterWrite(outputFolder, samples, timestamps, channelPositions, opt
         options.sampleRate double = []
         options.probeName (1,:) char = ''
         options.writeSidecars (1,1) logical = true
+        options.shankIndex double = []
+        options.connected = []
+        options.sortByDepth (1,1) logical = true
+        options.gmcProbeName (1,:) char = ''
+        options.featureOptions cell = {}
+        options.makePlots (1,1) logical = false
         options.gmcSorterPath (1,:) char = ''
         options.verbose (1,1) double = 1
     end
@@ -136,6 +158,9 @@ function gmcSorterWrite(outputFolder, samples, timestamps, channelPositions, opt
             sr = 1e6 / median(diff(timestamps)*1e6); % = 1/median(diff(t))
         end
         ndi.fun.export.writeGmcSidecars(outputFolder, options.baseName, channelPositions, ...
+            'shankIndex', options.shankIndex, 'connected', options.connected, ...
+            'sortByDepth', options.sortByDepth, 'gmcProbeName', options.gmcProbeName, ...
+            'featureOptions', options.featureOptions, 'makePlots', options.makePlots, ...
             'epochSampleCounts', nSamples, 'epochSampleRates', sr, 'sampleRate', sr, ...
             'multiplier', options.multiplier, 'probeName', options.probeName, ...
             'gmcSorterPath', options.gmcSorterPath, 'verbose', options.verbose);
