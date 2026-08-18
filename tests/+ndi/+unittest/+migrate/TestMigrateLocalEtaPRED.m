@@ -162,6 +162,74 @@ classdef TestMigrateLocalEtaPRED < matlab.unittest.TestCase
                  'a statement about the sweep and not about the corpus']);
         end
 
+        function testEveryDocumentThatDidNotConvertDidSoDeliberately(testCase)
+            % THE GAP THE HEADLINE GATE LEAVES OPEN. `0 quarantined` +
+            % `0 orphans` says the migration did not BREAK anything; it says
+            % nothing about whether every document reached its DECIDED shape.
+            % A migrator that hands its input straight back is counted in
+            % `migrated_count` -- nothing errored, nothing dangled, and the
+            % result is a valid v1-class document that did2.validate.silentLoss
+            % cannot see either. v1_to_v2 counts it per class at :259; this
+            % test supplies the EXPECTATION that separates a deliberate
+            % deferral from an accidental fall-through, which its own comment
+            % says is the only thing that can.
+            %
+            % PRED IS THE CLEAN END OF THE SCALE and that is why it belongs
+            % here as well as on 20211116: 12 of its 14 documents convert, so
+            % this corpus can hold the assertion nearly tight, and any drift
+            % shows up as a third class rather than as a bigger number.
+            % Checked against the real documents off the corpus zip before
+            % the rows were written -- reading the guard is not enough,
+            % because every one of these guards is conditional:
+            %
+            %   DENOMINATOR: 10 distinct class(es) over 14 document(s);
+            %                7 have a `bodies = {preBody}` branch at all
+            %     daqsystem          2/2 carry `ndi_daqsystem_class`      -> converts
+            %     filenavigator      2/2 carry class AND epochprobemap    -> converts
+            %     daqmetadatareader  1/1 carries class AND file parameter -> converts
+            %     daqreader_ndr      2/2 carry class AND `ndr_reader_string`
+            %                            ('intan')                        -> converts
+            %   element, session, subject and pyraview have no passthrough
+            %   branch, so they cannot take one.
+            [result, bodies] = runPredMigrate(testCase);
+            s = result.summary;
+
+            fprintf(['\n  PASS-1 CONVERSION CENSUS (PRED)\n' ...
+                     '    DENOMINATOR: %d document(s) read, %d migrated, ' ...
+                     '%d quarantined\n' ...
+                     '    unconverted (migrator returned its input): %d\n' ...
+                     '    fragments (emitted, but hollow):           %d\n'], ...
+                s.total, s.migrated_count, s.quarantine_count, ...
+                s.unconverted_count, s.fragment_count);
+            ndi.unittest.migrate.printClassTable(s.unconverted_by_class, '    unconverted');
+            ndi.unittest.migrate.printClassTable(s.fragment_by_class,    '    fragment');
+
+            verifyEqual(testCase, numel(bodies), 14, ...
+                'the pass did not see 14 documents; every figure here is about a different corpus');
+
+            % A FRAGMENT IS NEVER DELIBERATE: unlike a passthrough it is a
+            % document the migrator DID emit and that carries nothing.
+            verifyEqual(testCase, s.fragment_count, 0, sprintf( ...
+                ['%d document(s) migrated to a FRAGMENT. A passthrough is a ' ...
+                 'deferral; a fragment is silent loss.'], s.fragment_count));
+
+            declared = { ...
+                'syncgraph', ...
+                    ['THE SESSION GATE, and it fires on every document: ' ...
+                     '+migrators_j/syncgraph.m says of `jSessionDocId` that it "answers '''' ' ...
+                     'by construction in pass 1 -- the same shape as jEpochDocId". Closes ' ...
+                     'when the fold moves into the batch phase']; ...
+                'syncrule', ...
+                    ['no device pair to name. The one v1 document here is a `filematch` rule ' ...
+                     'carrying `parameters.number_fullpath_matches` and NO `daqsystem1_name`, ' ...
+                     'so jAcquisitionChannels returns [] -- "NO DEVICE => NO DOCUMENT" -- and ' ...
+                     'an `acquisition_channels` edge naming nothing would be the ' ...
+                     'invented-empty-edge defect. The source is being honest, not lossy']};
+
+            ndi.unittest.migrate.verifyDeferralsAreDeclared(testCase, ...
+                s.unconverted_by_class, declared);
+        end
+
         function testTheEpochChainResolvesOnRealDocuments(testCase)
             % The three links, each asserted through the pass's OWN counters
             % before any class-name check -- so "the fold did not run" and
