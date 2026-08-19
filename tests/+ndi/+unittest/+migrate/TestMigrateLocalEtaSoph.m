@@ -69,12 +69,22 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             mkdir(testCase.SessionRoot);
             mkdir(fullfile(testCase.SessionRoot, '.ndi'));
 
+            % PHASE TIMING. At Soph's scale (~101,427 documents) the setup is
+            % where run #1 timed out, so each phase reports its wall-clock: a
+            % future timeout is then localised from the log instead of guessed.
+            t = tic;
             testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
+            fprintf('  [Soph timing] readCorpusBodies: %d docs in %.1f s\n', ...
+                numel(testCase.Bodies), toc(t));
+            t = tic;
             buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
                 testCase.Bodies);
+            fprintf('  [Soph timing] buildV1Sqlite: %.1f s\n', toc(t));
 
+            t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
+            fprintf('  [Soph timing] ndi.migrate.local: %.1f s\n', toc(t));
         end
 
     end
@@ -357,12 +367,22 @@ mksqlite(dbid, ['CREATE TABLE docs (' ...
     'json_code TEXT, ' ...
     'timestamp NUMERIC, ' ...
     'PRIMARY KEY(doc_idx AUTOINCREMENT))']);
+% BULK INSERT IN ONE TRANSACTION. Outside an explicit transaction every
+% INSERT is its own implicit commit -- one fsync per row -- which is invisible
+% at PRED/20211116 scale (<=1,220 rows) and pathological at Soph's ~101,427:
+% run #1 (2026-08-19) timed out at 5h50m on exactly this loop while the same
+% corpus migrates in a fraction of that on the DID side. This is a throwaway
+% fixture DB, so also drop the per-write durability guarantees.
+mksqlite(dbid, 'PRAGMA synchronous = OFF');
+mksqlite(dbid, 'PRAGMA journal_mode = MEMORY');
+mksqlite(dbid, 'BEGIN TRANSACTION');
 for k = 1:numel(bodies)
     docId = sprintf('id_%06d', k);
     mksqlite(dbid, ...
         'INSERT INTO docs (doc_id, doc_idx, json_code, timestamp) VALUES (?, ?, ?, ?)', ...
         docId, k, bodies{k}, 0);
 end
+mksqlite(dbid, 'COMMIT');
 end
 
 function bodies = destinationBodies(dstPath)
