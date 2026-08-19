@@ -26,6 +26,7 @@ on:
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta.m'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaPRED.m'
       - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta20211116.m'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSoph.m'
       - 'src/ndi/*ndi/*migrate/**'
       # THE READ PATH. TestMigrateLocalEtaPRED now opens the migrated
       # database through `ndi.session.dir`, so it is the covering test for
@@ -174,10 +175,22 @@ jobs:
             % let TestMigrateLocalEtaPRED's read-back test find the
             % migrated file at all, so it belongs beside the test it
             % protects.
+            % TestMigrateLocalEtaSoph (added 2026-08-19) runs the SAME
+            % ndi.migrate.local path over the real ~101,427-document Soph
+            % corpus -- ~800x PRED, and the first real workout for the
+            % element assembler (~1,647 element documents). It SKIPS (never
+            % fails) when the corpus download is impossible, and is
+            % REPORT-ONLY on its two census methods and its multi-session
+            % read-back counts on this first landing: Soph's exact pass-1
+            % unconverted set and final survivor set are MEASURED here before
+            % they are asserted. It hard-asserts 0 quarantine / 0 orphans,
+            % that the session opens on the did2sqlite backend, and
+            % calculator id-preservation.
             results = runtests({ ...
                 'ndi.unittest.migrate.TestMigrateLocalEta', ...
                 'ndi.unittest.migrate.TestMigrateLocalEtaPRED', ...
                 'ndi.unittest.migrate.TestMigrateLocalEta20211116', ...
+                'ndi.unittest.migrate.TestMigrateLocalEtaSoph', ...
                 'ndi.unittest.database.TestDid2SqliteHierarchy', ...
                 'ndi.unittest.vintage.TestVintageMap', ...
                 'ndi.unittest.vintage.TestElementLabelMatchesMigrator', ...
