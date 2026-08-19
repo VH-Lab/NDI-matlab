@@ -20,6 +20,16 @@ name: V_eta migrate Soph (on-demand)
 # workflow_dispatch input if needed.
 
 on:
+  # Runs ONLY when Soph's own files change -- the test or this workflow -- so a
+  # ~2-3h Soph run never rides on an unrelated push and never gates the fast
+  # e2e check. This is the on-demand trigger usable from a feature branch:
+  # workflow_dispatch below only becomes available once this file reaches the
+  # default branch (a GitHub constraint), so the scoped push is what runs Soph
+  # until then.
+  push:
+    paths:
+      - '.github/workflows/test-eta-migrate-soph.yml'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSoph.m'
   workflow_dispatch:
     inputs:
       ref:
