@@ -73,18 +73,13 @@ jobs:
         run: |
           echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
           echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
-          # TEMPORARY subset diagnostic. The setup-only run confirmed the setup
-          # (corpus read + sqlite build) is fast, so the 5h50m sink is inside
-          # ndi.migrate.local. Migrate only the first N documents so the run
-          # COMPLETES fast and its full log IS retrievable, localising the slow
-          # pass (via the log's line timestamps) and the O(N) vs O(N^2) scaling.
-          # Remove this line (and the subset gate in the test) once localised.
-          echo "NDI_SOPH_SUBSET=8000" >> "$GITHUB_ENV"
-          # PROFILE the migration to name the O(N^2) pass. Subset kept small
-          # (8000) because the profiler's per-call overhead is heavy on the very
-          # hot loop we are hunting; the relative TotalTime ranking still names
-          # the sink. TEMPORARY, with the profiler block in the test.
-          echo "NDI_SOPH_PROFILE=1" >> "$GITHUB_ENV"
+          # TEMPORARY measurement run. The profiler named the sink: the
+          # destination sqlite write committed per-document (DID-matlab
+          # sqlitedb.add), fixed to batch in one transaction. Re-run the 25000
+          # subset (NO profiler, for a clean number) against the fixed DID to
+          # measure the speedup vs the prior 2950 s for 25k. Remove this line
+          # (and the subset gate in the test) once the full corpus fits.
+          echo "NDI_SOPH_SUBSET=25000" >> "$GITHUB_ENV"
 
       - name: Start virtual display server
         run: |
