@@ -1,4 +1,4 @@
-function [manipBody, gratingBodies, bodyDoc, records, report] = ...
+function [manipBody, gratingBodies, bodyDoc, records, report, extraBodies] = ...
         stimulusPresentationToTimedSequence(v1Body, resolver, targetVersion, sequence)
 %STIMULUSPRESENTATIONTOTIMEDSEQUENCE Assemble the SIGNED stimulus model from a
 %   legacy stimulus_presentation: N deduped standalone `visual_grating`
@@ -91,6 +91,53 @@ function [manipBody, gratingBodies, bodyDoc, records, report] = ...
 %                    serialise into the body payload (the same contract
 %                    stimulusPresentationToManipulation uses for its matrix).
 %
+%     extraBodies    {} on the single-subject path. On the MULTI-SUBJECT path
+%                    (the presentation resolves to N>1 responding animals) it
+%                    carries the ONE standalone `timed_sequence` body-of-record
+%                    plus the N-1 further per-subject
+%                    `timed_sequence_manipulation` leaves -- the caller mints
+%                    all of them alongside `manipBody` (the primary, first
+%                    subject's manip) and the shared gratings.
+%
+%   MULTI-SUBJECT (storage_mode: reference)
+%   ------------------------------------------------------------------------
+%   The signed model (V_eta_stimulus_model_plan.md, worked example :73-88)
+%   makes multi-subject fall out of `storage_mode`, not a structural fork: a
+%   presentation shown to N animals becomes ONE shared standalone
+%   `timed_sequence` (the body-of-record: the deduped `presented_id_#` edges +
+%   the `value.presentation_order` playlist) and N `timed_sequence_manipulation`
+%   leaves, one per subject, each referencing that body-of-record through a
+%   `timed_sequence_id` edge (storage_mode = 'reference') INSTEAD of carrying
+%   inline `presented_id_#` edges. The heavy `visual_grating` config docs are
+%   minted ONCE and shared by reference; nothing about the stimuli is
+%   duplicated across subjects.
+%
+%   base.id / THE FAN-IN. The preserved v1 presentation id sits on the
+%   BODY-OF-RECORD (the standalone `timed_sequence`), per the plan's "the v1
+%   stimulus_presentation id is preserved on the body-of-record it becomes (the
+%   `timed_sequence`)" (:102-104). So `stimulus_response_scalar.
+%   stimulus_presentation_id`, `hartley_calc.stimulus_presentation_id` and
+%   `control_designation.timed_sequence_id` all keep resolving to it. The N
+%   manipulations each take a FRESH `did.ido.unique_id()` -- two documents
+%   cannot share the sqlite PRIMARY KEY `documents(id TEXT PRIMARY KEY)`, and
+%   nothing in v1 references a per-subject manipulation. (On the single-subject
+%   path the ONE manip is itself the body-of-record and keeps the id, inline
+%   storage_mode, unchanged.)
+%
+%   Each manip STILL carries `timed_sequence.value.presentation_order`:
+%   `timed_sequence_manipulation` is-a `timed_sequence`, `value` is
+%   mustBeNonEmpty, and v1_to_v2 ensureClassBlocks materialises the
+%   `timed_sequence` block on every such document, so an empty one would
+%   quarantine (missingField / vacuousField). The playlist is a small index
+%   array; the no-duplication rule is about the config docs, which are shared.
+%
+%   TIMING in reference mode is DEFERRED: no v1 multi-subject presentation
+%   exists (on 20211116 all 11 presentations resolve to exactly one subject),
+%   and the signed reference shape gives the sampled_body/axis tier no home on a
+%   data_type body-of-record. Recorded in `report.timing_source` rather than
+%   forced into an invented slot; if a multi-subject presentation carrying real
+%   timing ever appears, that tier is the follow-up.
+%
 %   SCOPE, AND THE FOURTH ARGUMENT
 %   ------------------------------------------------------------------------
 %   The 2026-08-17 signature covers a presentation carrying a SEQUENCE OF
@@ -168,6 +215,12 @@ arguments
 end
 
 manipBody = []; gratingBodies = {}; bodyDoc = []; records = [];
+% extraBodies: the additional documents the MULTI-SUBJECT storage_mode:reference
+% decomposition mints beyond the primary manipulation and the shared gratings --
+% the ONE standalone `timed_sequence` body-of-record plus the N-1 further
+% per-subject `timed_sequence_manipulation` leaves. Stays {} on the
+% single-subject path, whose execution below is byte-for-byte unchanged.
+extraBodies = {};
 
 % Rule 5: the report's denominators exist before any early return, so a
 % refusal prints the same SHAPE as a success and "fell through" is never
@@ -242,6 +295,20 @@ if ~isempty(sequence)
         report.basis_source = 'not read';
         report.shared_refs = 0;
         report.frames = 0;
+        return;
+    end
+    % MULTI-SUBJECT: one shared timed_sequence body-of-record (over the SUPPLIED
+    % basis refs) + N reference manipulations. The frameTimes axis tier is
+    % deferred in reference mode (see the header) -- recorded, not invented.
+    if numel(animals) > 1
+        [manipBody, extraBodies] = referenceManipulations(presentationId, ...
+            sessionId, datestamp, animals, stimulatorId, presentedIds, ...
+            presentationOrder, targetVersion);
+        report.timing_source = ['multi-subject reference mode -- frameTimes ' ...
+            'axis tier deferred (no v1 multi-subject presentation exists)'];
+        if ~isempty(frameTimes)
+            report.trials_with_timing = numel(frameTimes);
+        end
         return;
     end
     manipBody = manipulationBody(presentationId, sessionId, datestamp, ...
@@ -381,6 +448,21 @@ end
 % the moment anything dedups, so the remap is the encoding, not a tidy-up.
 presentationOrder = mapToDistinct(order);
 
+% --- MULTI-SUBJECT: one shared body-of-record + N reference manipulations -----
+% The dedup + N standalone visual_grating mint above is SHARED with the
+% single-subject path -- the gratings are minted once (gratingIds/gratingBodies)
+% and referenced by the ONE standalone timed_sequence, not per subject. Only the
+% manipulation shape forks on numel(animals). The per-trial timing tier (the
+% sampled_body below) is deferred in reference mode; recorded, not invented.
+if numel(animals) > 1
+    [manipBody, extraBodies] = referenceManipulations(presentationId, ...
+        sessionId, datestamp, animals, stimulatorId, gratingIds, ...
+        presentationOrder, targetVersion);
+    report.timing_source = ['multi-subject reference mode -- per-trial timing ' ...
+        'tier deferred (no v1 multi-subject presentation exists)'];
+    return;
+end
+
 % --- the timing, if and only if the source really carries it -----------------
 times = struct([]);
 if isfield(block, 'presentation_time') && isstruct(block.presentation_time)
@@ -501,6 +583,117 @@ manipBody.timed_sequence = struct();
 % struct(...) would distribute a non-scalar into a struct array.
 manipBody.timed_sequence.value = struct();
 manipBody.timed_sequence.value.presentation_order = presentationOrder;
+end
+
+function [primaryManip, extraBodies] = referenceManipulations(presentationId, ...
+        sessionId, datestamp, animals, stimulatorId, presentedIds, ...
+        presentationOrder, targetVersion)
+%REFERENCEMANIPULATIONS The multi-subject storage_mode:reference shape.
+%   ONE standalone `timed_sequence` body-of-record + N
+%   `timed_sequence_manipulation` leaves (one per subject). The body-of-record
+%   carries the PRESERVED presentation id, the `presented_id_#` edges (so the
+%   config docs are shared, not duplicated) and the `value.presentation_order`
+%   playlist; each manipulation carries a FRESH id, its own `subject_id`, the
+%   stimulator's `instrument_id`, storage_mode='reference', a `timed_sequence_id`
+%   edge to the body-of-record INSTEAD of inline `presented_id_#` edges, and its
+%   own copy of the (required, non-empty) playlist.
+%
+%   base.id: the body-of-record keeps the presentation id -- signed plan "the v1
+%   stimulus_presentation id is preserved on the body-of-record it becomes (the
+%   `timed_sequence`)" -- so the fan-in edges
+%   (`stimulus_response_scalar.stimulus_presentation_id`,
+%   `hartley_calc.stimulus_presentation_id`,
+%   `control_designation.timed_sequence_id`) all resolve to it. Each manip takes
+%   a fresh `did.ido.unique_id()`: two documents cannot share the sqlite PRIMARY
+%   KEY, and nothing in v1 references a per-subject manipulation.
+%
+%   `primaryManip` is the first subject's manipulation, returned as the
+%   function's `manipBody`; `extraBodies` is {the body-of-record, then
+%   manip_2..manip_N}. The caller mints all of them.
+
+% --- the body-of-record: a standalone timed_sequence -------------------------
+seq = struct();
+seq.document_class = struct('class_name', 'timed_sequence', ...
+    'class_version', '1.0.0', ...
+    'superclasses', struct('class_name', 'data_type', 'class_version', '1.0.0'), ...
+    'schema_version', targetVersion);
+% presented_id_1..N onto the body-of-record. Same numbered-family spelling and
+% same empty-edge discipline as manipulationBody: an edge is emitted only with a
+% real value, never a blank one references.m:90 would skip.
+deps = struct('name', {}, 'value', {});
+for d = 1:numel(presentedIds)
+    deps(end+1) = struct('name', sprintf('presented_id_%d', d), ...
+        'value', presentedIds{d}); %#ok<AGROW>
+end
+seq.depends_on = deps;
+% THE PRESERVED ID sits on the body-of-record in reference mode.
+seq.base = struct('id', presentationId, 'session_id', sessionId, ...
+    'name', 'migrated_stimulus_sequence', 'creation_timestamp', datestamp);
+seq.timed_sequence = struct();
+seq.timed_sequence.value = struct();
+seq.timed_sequence.value.presentation_order = presentationOrder;
+
+extraBodies = {seq};
+primaryManip = [];
+for k = 1:numel(animals)
+    m = referenceManipulation(sessionId, datestamp, animals{k}, stimulatorId, ...
+        presentationId, presentationOrder, targetVersion);
+    if k == 1
+        primaryManip = m;
+    else
+        extraBodies{end+1} = m; %#ok<AGROW>
+    end
+end
+end
+
+function m = referenceManipulation(sessionId, datestamp, animalId, stimulatorId, ...
+        sequenceId, presentationOrder, targetVersion)
+%REFERENCEMANIPULATION One per-subject `timed_sequence_manipulation` in
+%   storage_mode:reference. Identical to manipulationBody in everything the two
+%   share (variable / method / subject_manipulation / the required, non-empty
+%   `timed_sequence.value` playlist) so the two shapes cannot drift; it differs
+%   ONLY in the three things reference mode changes -- a fresh id, a
+%   `timed_sequence_id` edge in place of inline `presented_id_#` edges, and
+%   storage_mode='reference'.
+m = struct();
+m.document_class = struct('class_name', 'timed_sequence_manipulation', ...
+    'class_version', '1.0.0', ...
+    'superclasses', [ ...
+        struct('class_name', 'subject_manipulation', 'class_version', '1.0.0'), ...
+        struct('class_name', 'timed_sequence',       'class_version', '1.0.0')], ...
+    'schema_version', targetVersion);
+
+% EVERY EDGE EMITTED ONLY WITH A REAL VALUE (the invented-empty-edge discipline,
+% as in manipulationBody). subject_id is REQUIRED and mustBeNonEmpty; the caller
+% only ever hands non-empty, resolver-de-duplicated animal ids.
+deps = struct('name', {}, 'value', {});
+deps(end+1) = struct('name', 'subject_id', 'value', animalId);
+if ~isempty(stimulatorId)
+    deps(end+1) = struct('name', 'instrument_id', 'value', stimulatorId);
+end
+% The shared body-of-record, INSTEAD of inline presented_id_# edges. Optional
+% (mustBeNonEmpty false) but always populated here -- reference mode is
+% meaningless without it.
+deps(end+1) = struct('name', 'timed_sequence_id', 'value', sequenceId);
+m.depends_on = deps;
+
+% FRESH id: the presentation id lives on the body-of-record, not here.
+m.base = struct('id', did.ido.unique_id(), 'session_id', sessionId, ...
+    'name', 'migrated_stimulus_sequence', 'creation_timestamp', datestamp);
+
+m.subject_statement = struct( ...
+    'variable', struct('node', '', 'name', 'visual grating'), ...
+    'storage_mode', 'reference');
+m.subject_interaction = struct( ...
+    'method', struct('node', '', 'name', 'visual stimulus presentation'));
+m.subject_manipulation = struct();
+% `timed_sequence.value` is mustBeNonEmpty and ensureClassBlocks materialises
+% the block on this leaf, so it is populated even in reference mode -- an empty
+% one quarantines. The playlist is a small index array; the config docs are the
+% thing shared by reference, not this.
+m.timed_sequence = struct();
+m.timed_sequence.value = struct();
+m.timed_sequence.value.presentation_order = presentationOrder;
 end
 
 function [presentedIds, order, frameTimes, why] = readSequence(sequence)
