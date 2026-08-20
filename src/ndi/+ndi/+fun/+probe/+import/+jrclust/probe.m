@@ -63,7 +63,8 @@ function probe(S, probe, options)
 % ---------------------------------------------------------------------------------
 %
 % See also: NDI.FUN.PROBE.EXPORT.JRCLUST, NDI.FUN.PROBE.IMPORT.JRCLUST.SESSION,
-%   NDI.FUN.PROBE.IMPORT.JRCLUST.CURATE, NDI.FUN.PROBE.IMPORT.KIASORT.PROBE
+%   NDI.FUN.PROBE.IMPORT.JRCLUST.CURATE, NDI.FUN.PROBE.IMPORT.JRCLUST.EPOCHBOUNDS,
+%   NDI.FUN.PROBE.IMPORT.JRCLUST.SPLITSPIKES, NDI.FUN.PROBE.IMPORT.KIASORT.PROBE
 %
 % Example:
 %    S = ndi.session.dir('/path/to/session');
@@ -86,7 +87,8 @@ function probe(S, probe, options)
     end
 
     if numel(options.qualityLabels)~=numel(options.qualityValues),
-        error('qualityLabels and qualityValues must have the same number of elements.');
+        error('ndi:fun:probe:import:jrclust:probe:qualityMismatch', ...
+            'qualityLabels and qualityValues must have the same number of elements.');
     end;
 
     verbose = options.verbose;
@@ -176,46 +178,19 @@ function probe(S, probe, options)
     % sorted and in what order; the sample count of each comes from the probe, the
     % same way JRCLUST's ndiRecording computes it.
 
-    et = probe.epochtable();
-    allEpochIds = {et.epoch_id};
-
     epochIds = prm.rawRecordings;
     if isempty(epochIds),
         error('ndi:fun:probe:import:jrclust:probe:noRecordings', ...
             'No rawRecordings are listed in %s.', P.prmFile);
     end;
 
+    E = ndi.fun.probe.import.jrclust.epochbounds(probe, epochIds);
+
     nEpochs = numel(epochIds);
-    epochCounts = zeros(nEpochs,1);
-    epochT0T1 = cell(nEpochs,1);
-    epochClock = cell(nEpochs,1);
-
-    for e=1:nEpochs,
-        match = find(strcmp(epochIds{e}, allEpochIds),1);
-        if isempty(match),
-            error('ndi:fun:probe:import:jrclust:probe:noSuchEpoch', ...
-                ['%s lists a recording (''%s'') that is not an epoch of probe %s. The ' ...
-                'sort does not correspond to this probe.'], P.prmFile, epochIds{e}, ...
-                P.elementString);
-        end;
-        % the dev_local_time clock, in which spike times are stored
-        found = 0;
-        for c=1:numel(et(match).epoch_clock),
-            if strcmp(et(match).epoch_clock{c}.type,'dev_local_time'),
-                found = c; break;
-            end;
-        end;
-        if ~found,
-            error(['Epoch ' epochIds{e} ' has no ''dev_local_time'' clock.']);
-        end;
-        epochClock{e} = et(match).epoch_clock{found};
-        epochT0T1{e} = et(match).t0_t1{found};
-        ss = probe.times2samples(epochIds{e}, epochT0T1{e});
-        epochCounts(e) = 1 + diff(ss); % matches jrclust.detect.ndiRecording
-    end;
-
-    bounds = [0; cumsum(epochCounts)]; % 1-based spikes fall in (bounds(e), bounds(e+1)]
-    totalSamples = bounds(end);
+    epochT0T1 = E.t0_t1;
+    epochClock = E.clock;
+    bounds = E.bounds;          % 1-based spikes fall in (bounds(e), bounds(e+1)]
+    totalSamples = E.totalSamples;
 
     if ~isempty(R.spikeSamples),
         nOverrun = sum(R.spikeSamples > totalSamples | R.spikeSamples < 1);
@@ -336,14 +311,13 @@ function probe(S, probe, options)
         neuronDoc = neuronDoc.set_dependency_value('spike_clusters_id', jc.id());
 
         % the spike trains, one entry per sorted epoch (empty where there are no spikes)
+        localSamples = ndi.fun.probe.import.jrclust.splitspikes(bounds, g);
         clear epochs;
         for e=1:nEpochs,
-            inEpoch = find(g > bounds(e) & g <= bounds(e+1));
-            if isempty(inEpoch),
+            if isempty(localSamples{e}),
                 spikeTimesLocal = [];
             else,
-                local1 = g(inEpoch) - bounds(e); % 1-based sample within the epoch
-                spikeTimesLocal = probe.samples2times(epochIds{e}, double(local1));
+                spikeTimesLocal = probe.samples2times(epochIds{e}, double(localSamples{e}));
                 spikeTimesLocal = spikeTimesLocal(:);
             end;
             % wrap array-valued fields in cells so struct() stores them as-is

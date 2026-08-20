@@ -10,6 +10,7 @@ classdef MockProbe < handle
         epochIds = {'epoch1','epoch2'}
         sampleRate = 1000
         epochDuration = 0.099  % 100 samples at 1000 Hz, 1-based
+        clockType = 'dev_local_time'  % the clock the epochs are kept in
     end
 
     methods
@@ -25,7 +26,7 @@ classdef MockProbe < handle
             et = struct('epoch_id',{},'epoch_clock',{},'t0_t1',{});
             for i=1:numel(obj.epochIds)
                 et(i).epoch_id = obj.epochIds{i};
-                et(i).epoch_clock = {ndi.time.clocktype('dev_local_time')};
+                et(i).epoch_clock = {ndi.time.clocktype(obj.clockType)};
                 et(i).t0_t1 = {[0 obj.epochDuration]};
             end
         end
