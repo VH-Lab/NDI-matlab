@@ -81,6 +81,17 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
                 testCase.Bodies);
             fprintf('  [Soph timing] buildV1Sqlite: %.1f s\n', toc(t));
 
+            % SETUP-ONLY DIAGNOSTIC. With NDI_SOPH_SETUP_ONLY set, stop here and
+            % SKIP -- the two timing lines above isolate the corpus-read +
+            % sqlite-build cost at full (~101k-document) scale, in a tiny log
+            % that is readable even when the full run's is not. Used to decide
+            % whether the setup or ndi.migrate.local is the wall-clock sink.
+            % TEMPORARY: remove once the sink is localised.
+            if ~isempty(getenv('NDI_SOPH_SETUP_ONLY'))
+                assumeFail(testCase, ['NDI_SOPH_SETUP_ONLY set: setup-only ' ...
+                    'diagnostic; skipping ndi.migrate.local.']);
+            end
+
             t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);

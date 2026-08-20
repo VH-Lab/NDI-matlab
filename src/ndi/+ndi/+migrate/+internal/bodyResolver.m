@@ -70,12 +70,70 @@ bodies = normaliseBodies(bodies);
 
 byId = indexById(bodies);
 
+% Pre-index the two session-graph lookups that would otherwise linear-scan
+% ALL bodies on EVERY call -- O(N) per call, hence O(N^2) across a corpus,
+% invisible at ~1e3 documents and pathological at ~1e5. One O(N) pass builds
+% the maps; the readers below then answer in O(1)/O(matches). The ordering
+% and first-match semantics of the old scans are preserved exactly: each map
+% stores its bodies in body order and the readers stop at the first hit.
+[responsesByPresentation, elementEpochByKey, clocktimesByEpoch] = ...
+    indexGraph(bodies);
+
 resolver = struct();
 resolver.subjectOfElement   = @(elementId) subjectOfElement(byId, elementId);
 resolver.epochClockOfElement = @(elementId, epochId) ...
-    epochClockOfElement(bodies, elementId, epochId);
+    epochClockOfElement(elementEpochByKey, clocktimesByEpoch, elementId, epochId);
 resolver.subjectsForPresentation = @(presentationId) ...
-    subjectsForPresentation(bodies, byId, presentationId);
+    subjectsForPresentation(responsesByPresentation, byId, presentationId);
+end
+
+% ===================== graph index (one O(N) pass) =======================
+
+function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch] = ...
+        indexGraph(bodies)
+% Build, in a single pass over BODIES and in body order:
+%   responsesByPresentation : stimulus_presentation_id -> cell of the
+%                             stimulus_response bodies that name it
+%   elementEpochByKey       : '<element_id>|<epoch_id>' -> cell of the
+%                             element_epoch bodies for that pair
+%   clocktimesByEpoch       : epoch_id -> cell of the epochclocktimes bodies
+% Each holds exactly the subset the old per-call scans would have visited, in
+% the same order, so the readers reproduce the old first-match results.
+responsesByPresentation = containers.Map('KeyType', 'char', 'ValueType', 'any');
+elementEpochByKey        = containers.Map('KeyType', 'char', 'ValueType', 'any');
+clocktimesByEpoch        = containers.Map('KeyType', 'char', 'ValueType', 'any');
+for k = 1:numel(bodies)
+    b = bodies{k};
+    if isaStimulusResponse(b)
+        pid = dependencyValue(b, 'stimulus_presentation_id');
+        if ~isempty(pid)
+            responsesByPresentation = appendToMap(responsesByPresentation, pid, b);
+        end
+    end
+    cls = classNameOf(b);
+    if strcmp(cls, 'element_epoch')
+        eid = dependencyValue(b, 'element_id');
+        ep  = epochIdOf(b);
+        if ~isempty(eid) && ~isempty(ep)
+            elementEpochByKey = appendToMap(elementEpochByKey, [eid '|' ep], b);
+        end
+    elseif strcmp(cls, 'epochclocktimes')
+        ep = epochIdOf(b);
+        if ~isempty(ep)
+            clocktimesByEpoch = appendToMap(clocktimesByEpoch, ep, b);
+        end
+    end
+end
+end
+
+function map = appendToMap(map, key, value)
+if isKey(map, key)
+    lst = map(key);
+else
+    lst = {};
+end
+lst{end+1} = value; %#ok<AGROW>
+map(key) = lst;
 end
 
 % ===================== normalisation ======================================
@@ -136,22 +194,26 @@ end
 
 % ===================== stimulus animal resolution ========================
 
-function subs = subjectsForPresentation(bodies, byId, presentationId)
+function subs = subjectsForPresentation(responsesByPresentation, byId, presentationId)
 % The animal subject(s) a stimulus_presentation was shown to. A presentation only
 % names the STIMULATOR, so the animal is reached through the response link:
 % stimulus_response carries both stimulus_presentation_id and element_id (the
 % responding element), so presentation <- stimulus_response -> element ->
 % subjectOfElement -> the animal. Returns a de-duplicated cell of subject_ids
 % (usually one; empty if nothing responded / no element resolves).
+%
+% RESPONSESBYPRESENTATION (from indexGraph) already holds exactly the
+% stimulus_response bodies that name this presentation, in body order, so the
+% de-dup below yields the same subject_ids in the same order as the old scan.
 presentationId = char(presentationId);
 subs = {};
+if ~isKey(responsesByPresentation, presentationId)
+    return;
+end
+responses = responsesByPresentation(presentationId);
 seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
-for k = 1:numel(bodies)
-    b = bodies{k};
-    if ~isaStimulusResponse(b) ...
-            || ~strcmp(dependencyValue(b, 'stimulus_presentation_id'), presentationId)
-        continue;
-    end
+for k = 1:numel(responses)
+    b = responses{k};
     elementId = dependencyValue(b, 'element_id');
     if isempty(elementId)
         continue;
@@ -170,17 +232,17 @@ end
 
 % ===================== epoch clock resolution ============================
 
-function clock = epochClockOfElement(bodies, elementId, epochId)
+function clock = epochClockOfElement(elementEpochByKey, clocktimesByEpoch, elementId, epochId)
 elementId = char(elementId);
 epochId   = char(epochId);
 
-% 1) element_epoch document for this element + epoch.
-for k = 1:numel(bodies)
-    b = bodies{k};
-    if strcmp(classNameOf(b), 'element_epoch') ...
-            && strcmp(dependencyValue(b, 'element_id'), elementId) ...
-            && strcmp(epochIdOf(b), epochId)
-        c = subField(b, 'element_epoch', 'epoch_clock');
+% 1) element_epoch document for this element + epoch -- the first one (in body
+%    order) carrying a non-empty epoch_clock, exactly as the old scan chose.
+key = [elementId '|' epochId];
+if isKey(elementEpochByKey, key)
+    matches = elementEpochByKey(key);
+    for k = 1:numel(matches)
+        c = subField(matches{k}, 'element_epoch', 'epoch_clock');
         if ~isempty(c)
             clock = c;
             return;
@@ -190,11 +252,10 @@ end
 
 % 2) any epochclocktimes for this epoch; prefer the device-local clock.
 fallback = '';
-for k = 1:numel(bodies)
-    b = bodies{k};
-    if strcmp(classNameOf(b), 'epochclocktimes') ...
-            && strcmp(epochIdOf(b), epochId)
-        c = subField(b, 'epochclocktimes', 'clocktype');
+if isKey(clocktimesByEpoch, epochId)
+    matches = clocktimesByEpoch(epochId);
+    for k = 1:numel(matches)
+        c = subField(matches{k}, 'epochclocktimes', 'clocktype');
         if strcmp(c, 'dev_local_time')
             clock = c;
             return;
