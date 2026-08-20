@@ -32,8 +32,16 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 
             if (nargin==2) & (isa(varargin{1},'ndi.session')) & (isa(varargin{2},'ndi.document'))
                 obj.identifier = varargin{2}.document_properties.base.id;
-                if isfield(varargin{2}.document_properties,'daqmetadatareader')
-                    tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
+                % BOTH VINTAGES. V_eta renames the class
+                % (daqmetadatareader -> acquisition_metadata_reader) and the
+                % field (tab_separated_file_parameter ->
+                % metadata_file_pattern), so the isfield test above could
+                % not see a migrated document and this reader silently kept
+                % whatever tsv_p already held.
+                [v, found] = ndi.vintage.field(varargin{2}, ...
+                    'tab_separated_file_parameter');
+                if found
+                    tsv_p = v;
                 end
             end
             obj.tab_separated_file_parameter = tsv_p;

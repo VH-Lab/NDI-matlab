@@ -32,8 +32,15 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
             if nargin==2 & isa(name,'ndi.session') & isa(thefilenavigator,'ndi.document')
                 session = name;
                 daqsystem_doc = thefilenavigator;
-                daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
-                filenavigator_id = daqsystem_doc.dependency_value('filenavigator_id');
+                % EDGE NAMES MOVE, TARGET IDS DO NOT. V_eta renames these
+                % three edges (daqreader_id -> reader_id, filenavigator_id ->
+                % epoch_file_pattern_id, daqmetadatareader_id_# ->
+                % acquisition_metadata_reader_#) while every migrator in the
+                % family preserves base.id on what it emits -- so the lookups
+                % below by `base.id` are unchanged and only the names need
+                % translating. ndi.vintage.edge is a no-op on a v1 document.
+                daqreader_id = ndi.vintage.edge(daqsystem_doc,'daqreader_id');
+                filenavigator_id = ndi.vintage.edge(daqsystem_doc,'filenavigator_id');
                 docs = session.database_search(ndi.query('base.id','exact_string',daqreader_id,''));
                 if numel(docs)~=1
                     error(['Could not find daqreader document with id ' daqreader_id '.']);
@@ -45,7 +52,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
                 end
                 filenavigator_doc = docs{1};
 
-                D = daqsystem_doc.dependency_value_n('daqmetadatareader_id','ErrorIfNotFound',0);
+                D = ndi.vintage.edge_n(daqsystem_doc,'daqmetadatareader_id','ErrorIfNotFound',0);
                 metadatadocs = {};
                 thedaqmetadatareader = {};
                 for i=1:numel(D)

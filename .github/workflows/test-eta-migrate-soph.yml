@@ -1,0 +1,141 @@
+name: V_eta migrate Soph (on-demand)
+
+# The Soph corpus (~101,427 v1 documents, ~446 MB compressed) through the
+# WHOLE V_eta pipeline: ndi.migrate.local over the real corpus, then open the
+# result through ndi.session.dir and read it back through the object API, with
+# the element assembler exercised at Soph's scale (~1,647 element documents).
+#
+# WHY THIS IS ITS OWN, DISPATCH-ONLY WORKFLOW rather than a line in
+# test-eta-migrate-e2e.yml. Soph is ~800x PRED. Migrating it inline alongside
+# PRED, 20211116 and the ~20 assembler classes exhausted the standard runner
+# and the e2e job was killed ~2h41m into the test step (run 84, 2026-08-19)
+# without producing a census. Run alone, with a generous timeout, and never on
+# every push: it does not gate the fast e2e check, and a Soph timeout/OOM here
+# cannot turn that check red. Soph's MIGRATION (0 quarantine / 0 orphans) is
+# also gated independently on the DID-matlab side (test-corpus.yml); what this
+# workflow uniquely adds is the NDI object-layer read-back.
+#
+# The DID-matlab, did-schema, and NDI-matlab V_eta branches share a name, so the
+# dep refs default to this run's branch (github.ref_name); override via the
+# workflow_dispatch input if needed.
+
+on:
+  # Runs ONLY when Soph's own files change -- the test or this workflow -- so a
+  # ~2-3h Soph run never rides on an unrelated push and never gates the fast
+  # e2e check. This is the on-demand trigger usable from a feature branch:
+  # workflow_dispatch below only becomes available once this file reaches the
+  # default branch (a GitHub constraint), so the scoped push is what runs Soph
+  # until then.
+  push:
+    paths:
+      - '.github/workflows/test-eta-migrate-soph.yml'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaSoph.m'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'did-matlab / did-schema branch (V_eta line)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eta_migrate_soph:
+    name: V_eta Soph end-to-end (on-demand)
+    runs-on: ubuntu-latest
+    # Generous headroom under the 6-hour hosted-runner cap. Soph is the long
+    # pole; run 84 was still migrating at 2h41m when the shared job died.
+    timeout-minutes: 350
+    env:
+      DID_MATLAB_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+      DID_SCHEMA_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Check out did-schema (for V_eta schemas)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_REF }}
+          path: did-schema
+
+      - name: Assemble V_eta schema set (stable + draft)
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+
+      - name: Export env (schema path + eta test gate)
+        run: |
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
+          echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
+
+      - name: Start virtual display server
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: |
+            Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Point requirements at the DID-matlab V_eta branch
+        # requirements.txt pins a DID-matlab that predates +migrators_j /
+        # TargetVersion='V_eta'. Rewrite it to the V_eta branch so v1_to_v2
+        # accepts TargetVersion='V_eta'.
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              if not p.exists():
+                  continue
+              out = []
+              for line in p.read_text().splitlines():
+                  if "DID-matlab" in line:
+                      out.append(line.split("@", 1)[0] + "@" + ref)
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+          grep -i did-matlab requirements.txt tests/requirements.txt || true
+
+      - name: Install repo dependencies (DID-matlab@V_eta, mksqlite, vhlab-toolbox)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Run the Soph V_eta migrate end-to-end test
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % Soph ALONE. On this first landing the test is report-only on its
+            % two census methods and its multi-session read-back counts
+            % (Soph's exact pass-1 unconverted set and final survivor set are
+            % MEASURED here before they are asserted); it hard-asserts
+            % 0 quarantine / 0 orphans, that the session opens on the
+            % did2sqlite backend, and calculator id-preservation. It SKIPS
+            % (never fails) when the corpus download is impossible.
+            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaSoph');
+            disp(results);
+            assertSuccess(results);

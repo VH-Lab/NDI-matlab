@@ -49,7 +49,14 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         disp(['Doc index ' int2str(ind) ' with id ' id ':']);
         ud.docs{ind}.document_properties
         ud.docs{ind}.document_properties.document_class
-        ud.docs{ind}.document_properties.ndi_document
+        % `base`, not `ndi_document`: NDI commit 9783809c2 (2023-04-13,
+        % "database document definitions all changed") added base.json and
+        % deleted ndi_document.json in the same commit. The data-tip half of
+        % this same function was updated then (it disps
+        % document_properties.base and labels the row 'base:'); this click
+        % callback was missed, so clicking a node threw "Reference to
+        % non-existent field 'ndi_document'".
+        ud.docs{ind}.document_properties.base
 
         clicked_node = ud.docs{ind};
         disp(['Global variable ''clicked_node'' set to clicked document']);

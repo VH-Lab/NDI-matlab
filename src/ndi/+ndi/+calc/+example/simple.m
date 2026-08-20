@@ -39,7 +39,7 @@ classdef simple < ndi.calculator
             % Step 3: place the results of the calculator into an NDI document
             doc = ndi.document(ndi_calculator_obj.doc_document_types{1},'simple_calc',simple_calc) + ...
                 ndi_calculator_obj.session.newdocument();
-            doc = doc.set_dependency_value('document_id',parameters.depends_on(1).value);
+            doc = doc.set_dependency_value('document_id',ndi.document.i_readDependencyTarget(parameters.depends_on(1)));
         end % calculate
 
         function parameters = default_search_for_input_parameters(ndi_calculator_obj)

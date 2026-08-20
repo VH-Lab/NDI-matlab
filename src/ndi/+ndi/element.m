@@ -84,21 +84,56 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else
                     element_doc = varargin{2};
                 end
-                if ~isfield(element_doc.document_properties, 'element')
-                    error('This document does not have parameters ''element''.');
+                % BOTH VINTAGES, AND THIS IS THE 1 -> N CASE. A v1 element
+                % carries everything in one `element` block. A migrated one
+                % is a `subject` whose parts are spread over five
+                % documents, so there is no block to index and this used to
+                % fail with "This document does not have parameters
+                % 'element'". ndi.vintage.elementFields puts them back
+                % together; see there for where each piece went and which
+                % one is inferred rather than stored.
+                [vEntry, vVintage] = ndi.vintage.entryFor(element_doc);
+                isEtaElement = ~isempty(vEntry) && strcmp(vVintage, 'V_eta') ...
+                    && strcmp(vEntry.concept, 'element');
+
+                if isEtaElement
+                    ef = ndi.vintage.elementFields(element_doc, element_session);
+                    ndi_element_class  = ef.ndi_element_class;
+                    element_name       = ef.name;
+                    element_reference  = ef.reference;
+                    element_type       = ef.type;
+                else
+                    if ~isfield(element_doc.document_properties, 'element')
+                        error('This document does not have parameters ''element''.');
+                    end
+                    % now we have the document and can start reading
+                    ndi_element_class = element_doc.document_properties.element.ndi_element_class;
+                    element_name = element_doc.document_properties.element.name;
+                    element_reference = element_doc.document_properties.element.reference;
+                    element_type = element_doc.document_properties.element.type;
                 end
-                % now we have the document and can start reading
-                ndi_element_class = element_doc.document_properties.element.ndi_element_class;
-                element_name = element_doc.document_properties.element.name;
-                element_reference = element_doc.document_properties.element.reference;
-                element_type = element_doc.document_properties.element.type;
-                if isempty(element_doc.dependency_value('underlying_element_id'))
+                if isEtaElement
+                    % The underlying element is a `derived_from` relation
+                    % rather than an edge on this document.
+                    if isempty(ef.underlying_element_id)
+                        element_underlying_element = [];
+                    else
+                        element_underlying_element = ndi.database.fun.ndi_document2ndi_object(...
+                            ef.underlying_element_id, element_session);
+                    end
+                elseif isempty(element_doc.dependency_value('underlying_element_id'))
                     element_underlying_element = [];
                 else
                     element_underlying_element = ndi.database.fun.ndi_document2ndi_object(...
                         dependency_value(element_doc,'underlying_element_id'), element_session);
                 end
-                if ischar(element_doc.document_properties.element.direct)
+                if isEtaElement
+                    % `direct` is the one field V_eta stores NOWHERE. It is
+                    % recovered from which lineage relation the migrator
+                    % emitted, because that is the only thing it was used
+                    % to decide -- see ndi.vintage.elementFields.
+                    direct = ef.direct;
+                elseif ischar(element_doc.document_properties.element.direct)
                     % Parse the stored boolean flag without eval: the value
                     % comes from a document and must never be executed as code.
                     directStr = strtrim(element_doc.document_properties.element.direct);
@@ -118,7 +153,14 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else
                     direct = logical(element_doc.document_properties.element.direct);
                 end
-                subject_id = element_doc.dependency_value('subject_id');
+                if isEtaElement
+                    % The specimen is an `observes` relation, not an edge:
+                    % v1's `subject_id` on the element became a
+                    % directed_relation pointing at the animal.
+                    subject_id = ef.subject_id;
+                else
+                    subject_id = element_doc.dependency_value('subject_id');
+                end
                 [dependency_names,dependencies] = element_doc.dependency();
                 [dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id'});
                 dependencies = dependencies(ia);
@@ -307,7 +349,44 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
                     end
                     underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
-                    if ~isempty(ndi_element_obj.underlying_element)
+                    % `&& epoch_mapping` ADDED 2026-08-17. THE FLAG ALREADY
+                    % EXISTED AND ONLY ONE OF THE TWO READERS CONSULTED IT.
+                    % When intersect finds no mapping the code above sets
+                    % `ib = 1:numel(et_added)` -- a range sized by THIS
+                    % element's epochs and then used to index
+                    % `underlying_et`, which may be shorter or empty. The
+                    % epoch_id read at the top of this loop is guarded by
+                    % `if epoch_mapping`; this block was not, so it indexed
+                    % straight off the end.
+                    %
+                    % `epoch_mapping == false` means, in the comment three
+                    % blocks up, "it is legal for there to be no mapping" --
+                    % so there IS no underlying epoch to record, and the
+                    % empty struct above is the right answer. That is
+                    % already what the `isempty(underlying_element)` case
+                    % produces.
+                    %
+                    % UNREACHABLE UNTIL NOW, which is why it is here rather
+                    % than upstream: the loop only runs when `et_added` is
+                    % non-empty, and on a migrated session
+                    % `loadaddedepochs` returned nothing at all until the
+                    % vintage port landed. `origin/main` carries the same
+                    % lines. Measured on migrated 20211116, e2e run 75:
+                    % epochtable() raised `Index exceeds array bounds` on
+                    % all 21 derived elements, having raised nothing when it
+                    % was returning empty.
+                    %
+                    % WHY `underlying_et` IS EMPTY HERE, so a green test is
+                    % not read as more than it is: the underlying n-trode is
+                    % a DIRECT probe whose epoch table comes from the daq
+                    % system and file navigator, i.e. from raw acquisition
+                    % files -- and the corpus zips carry none (measured
+                    % 2026-08-14: 0 non-JSON entries in 20211116). The added
+                    % epochs are real and in the database; the underlying
+                    % ones are absent from the FIXTURE. This guard makes the
+                    % first readable without claiming anything about the
+                    % second.
+                    if ~isempty(ndi_element_obj.underlying_element) && epoch_mapping
                         underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
                         underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
                         underlying_epochs.epoch_session_id = underlying_et(ib(n)).epoch_session_id;
@@ -413,20 +492,30 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 return;
             end
             % loads from database
+            %
+            % EVERY VINTAGE, THROUGH ONE READER. This loop used to gate on
+            % `isfield(...,'element_epoch')` and then read `.clocks`, which
+            % is a shape NO document reachable from here actually has:
+            % a MIGRATED document's block is `acquisition_epoch` and failed
+            % the gate silently, while a document NDI itself wrote carries
+            % `epoch_clock`/`t0_t1` and has no `.clocks` to read.
+            % ndi.vintage.addedEpoch knows all three shapes and answers
+            % FOUND=false for a document that is not an epoch record at all
+            % -- which is most of what load_all_element_docs returns,
+            % including the element document itself.
             potential_epochdocs = ndi_element_obj.load_all_element_docs();
             for i=1:numel(potential_epochdocs)
-                if isfield(potential_epochdocs{i}.document_properties,'element_epoch')
+                [epoch_id, ec, t0_t1, found] = ...
+                    ndi.vintage.addedEpoch(potential_epochdocs{i});
+                if found
                     clear newet;
-                    newet.epoch_number = i;
-                    newet.epoch_id = potential_epochdocs{i}.document_properties.epochid.epochid;
+                    % NUMBERED BY POSITION IN THE ACCEPTED SET, not by the
+                    % loop index. `i` counts every candidate the search
+                    % returned, so with the element document among them the
+                    % old code produced epoch_number 2..N+1 and skipped 1.
+                    newet.epoch_number = numel(et_added) + 1;
+                    newet.epoch_id = epoch_id;
                     newet.epochprobemap = '';
-                    clock_types = strtrim(split(potential_epochdocs{i}.document_properties.element_epoch.epoch_clock,','));
-                    ec = {};
-                    t0_t1 = {};
-                    for k=1:numel(clock_types)
-                        ec{k} = ndi.time.clocktype(clock_types{k});
-                        t0_t1{k} = vlt.data.rowvec(potential_epochdocs{i}.document_properties.element_epoch.t0_t1(:,k));
-                    end
                     newet.epoch_clock = ec;
                     newet.t0_t1 = t0_t1;
                     newet.underlying_epochs = []; % leave this for buildepochtable
@@ -445,14 +534,14 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %
             % Returns empty if there is no such document.
             %
-            sq = ndi_element_obj.searchquery();
-            E = ndi_element_obj.session;
-            element_doc = E.database_search(sq);
-            if numel(element_doc)>1
-                error(['More than one document matches the ELEMENT definition. This should not happen.']);
-            elseif ~isempty(element_doc)
-                element_doc = element_doc{1};
-            end
+            % EVERY VINTAGE. `searchquery` matches four fields of the v1
+            % `element` block and TWO OF THEM MOVED ONTO OTHER DOCUMENTS in
+            % V_eta (type and class became inbound term_assertions), so no
+            % query can find a migrated element and this cannot be fixed by
+            % widening `searchquery`. ndi.vintage.elementDoc tries the v1
+            % query FIRST, unchanged, and falls back to the two-step
+            % assertion lookup only when it finds nothing.
+            element_doc = ndi.vintage.elementDoc(ndi_element_obj);
         end % load_element_doc()
 
         function element_ref = doc_unique_id(ndi_element_obj)
@@ -495,7 +584,12 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %
             element_doc = ndi_element_obj.load_element_doc();
             if ~isempty(element_doc)
-                sq = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
+                % `element_doc.id()`, NOT `ndi_element_obj.id()`. They are
+                % the same id -- `id()` is `load_element_doc().id()` -- but
+                % going through the object repeats the whole lookup, which
+                % on the V_eta path is an assertion query plus one fetch per
+                % element-subject. Same answer, half the searches.
+                sq = ndi.query('depends_on','depends_on','element_id',element_doc.id());
                 E = ndi_element_obj.session;
                 epochdocs = E.database_search(sq);
                 element_docs = cat(1, {element_doc}, epochdocs(:));

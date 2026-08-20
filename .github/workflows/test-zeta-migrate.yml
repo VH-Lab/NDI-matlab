@@ -1,0 +1,120 @@
+name: V_zeta migrate (stimulus_bath end-to-end)
+
+# Real-session verification of the context-dependent V_zeta (Brainstorm I)
+# migration (issue #782): ndi.migrate.local must resolve a deferred
+# stimulus_bath into a validated `bath` (+ epoch_bounded_reference, + the
+# subject_interaction spine) using the session/element graph. That path needs
+# BOTH the TargetVersion-aware DID-matlab (with +migrators_i) and the assembled
+# V_zeta schema set -- which neither run-tests.yml nor test-vnext.yml provide.
+# This job assembles that environment and runs the gated TestMigrateLocalZeta
+# (which skips everywhere else).
+#
+# Dep refs track the matching feature branch via github.head_ref (the DID-matlab
+# and did-schema V_zeta branches share the NDI branch name); revert the
+# fallbacks to V2 / main once the V_zeta branches merge.
+
+on:
+  pull_request:
+    branches: [Vnext]
+    paths-ignore:
+      - '*.md'
+      - 'docs/reports/**'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'did-matlab / did-schema branch (V_zeta line)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zeta_migrate:
+    name: V_zeta stimulus_bath migration
+    runs-on: ubuntu-latest
+    env:
+      DID_MATLAB_REF: ${{ inputs.ref || github.head_ref || 'V2' }}
+      DID_SCHEMA_REF: ${{ inputs.ref || github.head_ref || 'main' }}
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Check out did-schema (for V_zeta schemas)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_REF }}
+          path: did-schema
+
+      - name: Assemble V_zeta schema set (stable + draft)
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/zeta-schemas"
+          cp did-schema/schemas/V_zeta/stable/*.json "${GITHUB_WORKSPACE}/zeta-schemas/"
+          cp did-schema/schemas/V_zeta/draft/*.json  "${GITHUB_WORKSPACE}/zeta-schemas/"
+
+      - name: Export env (schema path + zeta test gate)
+        run: |
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/zeta-schemas" >> "$GITHUB_ENV"
+          echo "NDI_TEST_ZETA=1" >> "$GITHUB_ENV"
+
+      - name: Start virtual display server
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: |
+            Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Point requirements at the DID-matlab V_zeta branch
+        # requirements.txt (Vnext) pins DID-matlab@V2, which predates the
+        # +migrators_i / TargetVersion='V_zeta' support. Rewrite it to the
+        # V_zeta branch so v1_to_v2 accepts TargetVersion='V_zeta'.
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              if not p.exists():
+                  continue
+              out = []
+              for line in p.read_text().splitlines():
+                  if "DID-matlab" in line:
+                      out.append(line.split("@", 1)[0] + "@" + ref)
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+          grep -i did-matlab requirements.txt tests/requirements.txt || true
+
+      - name: Install repo dependencies (DID-matlab@V_zeta, mksqlite, vhlab-toolbox)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Run the V_zeta migrate test
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            results = runtests('ndi.unittest.migrate.TestMigrateLocalZeta');
+            disp(results);
+            assertSuccess(results);

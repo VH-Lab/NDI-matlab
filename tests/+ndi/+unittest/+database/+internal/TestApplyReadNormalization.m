@@ -1,0 +1,134 @@
+classdef TestApplyReadNormalization < matlab.unittest.TestCase
+%TESTAPPLYREADNORMALIZATION Unit tests for the v1->V_delta read-time
+%   normaliser that concrete ndi.database subclasses call from do_read
+%   and do_search.
+%
+%   The active-gate tests use the same v1 body shape as the synthetic-
+%   corpus tests under +ndi/+unittest/+migrate, so an upstream change
+%   in did2.convert.v1_to_v2 surfaces here too.
+
+    methods (Test)
+
+        function testEmptyReturnsEmpty(testCase)
+            verifyEmpty(testCase, ...
+                ndi.database.internal.applyReadNormalization([]));
+            verifyEmpty(testCase, ...
+                ndi.database.internal.applyReadNormalization(struct([])));
+        end
+
+        function testConvertsV1StructToVDelta(testCase)
+            v1 = makeV1Body('alpha');
+            doc = ndi.database.internal.applyReadNormalization(v1);
+
+            verifyClass(testCase, doc, 'ndi.document');
+            % After v1->V_delta normalisation universalRenames stamps
+            % document_class.schema_version to 'V_delta'.
+            verifyTrue(testCase, isfield(doc.document_properties, ...
+                'document_class'));
+            verifyTrue(testCase, isfield( ...
+                doc.document_properties.document_class, 'schema_version'));
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.schema_version), ...
+                'V_delta');
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.class_name), ...
+                'demo_a');
+        end
+
+        function testVDeltaBodyShortCircuits(testCase)
+            % An already-V_delta body should round-trip with no shape
+            % drift (the converter's idempotency check fires).
+            v1 = makeV1Body('beta');
+            firstPass = ndi.database.internal.applyReadNormalization(v1);
+            secondPass = ndi.database.internal.applyReadNormalization( ...
+                firstPass.document_properties);
+
+            verifyEqual(testCase, ...
+                secondPass.document_properties.base.name, ...
+                firstPass.document_properties.base.name);
+            verifyEqual(testCase, ...
+                char(secondPass.document_properties.document_class.schema_version), ...
+                'V_delta');
+        end
+
+        function testLegacyCamelCaseClassNamePreserved(testCase)
+            % NDI's on-disk schemas (e.g. demoNDI) still spell their
+            % classnames in camelCase, and the legacy v1 validator
+            % compares class_name strings exactly. The read path
+            % MUST NOT snake_case identifiers, or every read of a
+            % legacy doc would trip ValidationClassname against the
+            % schema's camelCase classname declaration. Schema_version
+            % stamping still runs (that's the gate-flip's payload).
+            v1 = makeV1Body('alpha');
+            v1.document_class.class_name = 'demoNDI';
+            v1 = rmfield(v1, 'demo_a');
+            v1.demoNDI = struct('value', 5);
+
+            doc = ndi.database.internal.applyReadNormalization(v1);
+
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.class_name), ...
+                'demoNDI');
+            verifyTrue(testCase, isfield(doc.document_properties, 'demoNDI'));
+            verifyFalse(testCase, isfield(doc.document_properties, 'demo_ndi'));
+            verifyEqual(testCase, ...
+                char(doc.document_properties.document_class.schema_version), ...
+                'V_delta');
+        end
+
+        function testNdiDocumentPassThrough(testCase)
+            % An ndi.document already lives at the abstraction layer
+            % the helper is normalising into, so it is returned
+            % verbatim.
+            v1 = makeV1Body('gamma');
+            wrapped = ndi.document(v1);
+            doc = ndi.database.internal.applyReadNormalization(wrapped);
+            verifyClass(testCase, doc, 'ndi.document');
+            verifyEqual(testCase, doc.document_properties, ...
+                wrapped.document_properties);
+        end
+
+        function testAcceptsDid2Document(testCase)
+            v1 = makeV1Body('delta');
+            d2 = did2.document(v1);
+            doc = ndi.database.internal.applyReadNormalization(d2);
+            verifyClass(testCase, doc, 'ndi.document');
+        end
+
+        function testBadInputErrors(testCase)
+            verifyError(testCase, ...
+                @() ndi.database.internal.applyReadNormalization(42), ...
+                'NDI:database:normalizeBadInput');
+            verifyError(testCase, ...
+                @() ndi.database.internal.applyReadNormalization("not a body"), ...
+                'NDI:database:normalizeBadInput');
+        end
+
+    end
+end
+
+% ---- helpers -------------------------------------------------------------
+
+function body = makeV1Body(name)
+body = struct();
+body.document_class = struct( ...
+    'class_name',    'demo_a', ...
+    'class_version', '1.0.0', ...
+    'superclasses',  struct( ...
+        'class_name',    'base', ...
+        'class_version', '1.0.0'));
+body.depends_on = struct('name', {}, 'value', {});
+body.base = struct( ...
+    'id',         ['aabb1122ccdd3344_' pad16(name)], ...
+    'session_id', 'aabb1122ccdd3344_9900aabbccddeeff', ...
+    'name',       name, ...
+    'datestamp',  '2024-06-01T12:00:00.000Z');
+body.demo_a = struct('marker', name);
+end
+
+function s = pad16(name)
+hex = lower(dec2hex(double(name)));
+joined = strjoin(cellstr(hex(:)'), '');
+joined = [joined repmat('0', 1, 16)];
+s = joined(1:16);
+end

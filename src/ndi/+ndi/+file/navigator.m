@@ -40,18 +40,30 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %
             if nargin==2 & isa(session_,'ndi.session') & isa(fileparameters_,'ndi.document')
                 filenavdoc = fileparameters_;
-                % extract parameters from the document
-                if ~isempty(filenavdoc.document_properties.filenavigator.fileparameters)
-                    fileparameters_ =      eval([filenavdoc.document_properties.filenavigator.fileparameters]);
-                else
-                    fileparameters_ = [];
-                end
-                epochprobemap_class_ = filenavdoc.document_properties.filenavigator.epochprobemap_class;
-                if ~isempty(filenavdoc.document_properties.filenavigator.epochprobemap_fileparameters)
-                    epochprobemap_fileparameters_ = eval([filenavdoc.document_properties.filenavigator.epochprobemap_fileparameters]);
-                else
-                    epochprobemap_fileparameters_ = [];
-                end
+                % extract parameters from the document -- BOTH VINTAGES.
+                % V_eta renames the class (filenavigator ->
+                % epoch_file_pattern) AND all three fields
+                % (+migrators_j/filenavigator.m:34-36):
+                %     fileparameters               -> data_file_pattern
+                %     epochprobemap_fileparameters -> epoch_map_pattern
+                %     epochprobemap_class          -> epoch_map_format
+                % ndi.vintage.field resolves both halves from one map.
+                %
+                % THE eval IS VINTAGE-SPECIFIC AND THAT IS THE SUBTLE PART.
+                % v1 stores these two as a MATLAB EXPRESSION and the reader
+                % eval's it; V_eta declares them as string LISTS -- already
+                % the value the eval produced. Eval'ing a V_eta list would
+                % try to execute the pattern text itself. So the vintage
+                % decides, and it is asked explicitly rather than guessed
+                % from whether the value happens to look like code.
+                [~, vintage] = ndi.vintage.entryFor(filenavdoc);
+                isEta = strcmp(vintage, 'V_eta');
+
+                fileparameters_ = ndi.file.navigator.patternFromDocument( ...
+                    filenavdoc, 'fileparameters', isEta);
+                epochprobemap_fileparameters_ = ndi.file.navigator.patternFromDocument( ...
+                    filenavdoc, 'epochprobemap_fileparameters', isEta);
+                epochprobemap_class_ = ndi.vintage.field(filenavdoc, 'epochprobemap_class');
                 obj.identifier = filenavdoc.document_properties.base.id;
             else
                 if nargin<4
@@ -819,6 +831,50 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 'This function is only applicable to ingested EPOCHFILES.');
             epoch_id = epochfiles{1}( (1+numel('epochid://')):end);
         end % ingestedfiles_epochid
+
+        function p = patternFromDocument(filenavdoc, v1_field_name, isEta)
+            % PATTERNFROMDOCUMENT - read a file-match pattern from either vintage
+            %
+            % P = PATTERNFROMDOCUMENT(FILENAVDOC, V1_FIELD_NAME, ISETA)
+            %
+            % Returns the file-match parameter stored in V1_FIELD_NAME
+            % ('fileparameters' or 'epochprobemap_fileparameters'), as the
+            % cell/struct form the rest of this class expects. [] when the
+            % document does not carry it.
+            %
+            % THE TWO VINTAGES STORE THE SAME FACT IN DIFFERENT KINDS, which
+            % is why ISETA is passed in rather than sniffed:
+            %
+            %   v1     a MATLAB EXPRESSION, as text. The historical reader
+            %          eval'd it (that is what this branch preserves).
+            %   V_eta  the LIST ITSELF -- did-schema declares
+            %          data_file_pattern / epoch_map_pattern as `string`
+            %          with mustBeScalar false, so the value is already what
+            %          the eval used to produce.
+            %
+            % Eval'ing the V_eta form would execute the pattern text as
+            % code. Sniffing "does this look like an expression" is exactly
+            % the guess that gets that wrong on a pattern such as
+            % '.*\.rhd\>', so the caller states the vintage instead.
+            p = [];
+            [raw, found] = ndi.vintage.field(filenavdoc, v1_field_name);
+            if ~found || isempty(raw)
+                return;
+            end
+            if isEta
+                % Already a list. A single pattern may arrive as a bare
+                % char; the rest of this class expects a cell array.
+                if ischar(raw)
+                    p = {raw};
+                elseif isstring(raw)
+                    p = cellstr(raw);
+                else
+                    p = raw;
+                end
+                return;
+            end
+            p = eval(raw);
+        end % patternFromDocument
     end % methods (Static)
 
 end % classdef

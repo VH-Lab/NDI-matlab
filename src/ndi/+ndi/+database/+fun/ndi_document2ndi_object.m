@@ -22,22 +22,18 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
         end
     end
 
-    classname = ndi_document_obj.document_properties.document_class.class_name;
-
-    doc_string = 'ndi_document_';
-    index = findstr(classname,doc_string);
-
-    if ~isempty(index)
-        obj_parent_string = classname(index+numel(doc_string):end);
-    else
-        obj_parent_string = classname;
-    end
-
-    if ~isfield(ndi_document_obj.document_properties, obj_parent_string)
-        error(['NDI_DOCUMENT_OBJ does not have a ''' obj_parent_string  ''' field.']);
-    else
-        obj_struct = getfield(ndi_document_obj.document_properties, obj_parent_string);
-        obj_string = getfield(obj_struct,['ndi_' obj_parent_string '_class']);
-    end
+    % THE OBJECT-RECONSTRUCTION KEY, IN EITHER VINTAGE.
+    %
+    % This used to read `document_properties.<class_name>.ndi_<class_name>_class`
+    % inline. That field name is CONSTRUCTED, which is why a literal grep for
+    % `ndi_daqsystem_class` finds only NDI's writer and reports the field as
+    % unread -- and it is the exact read a V_eta document cannot satisfy,
+    % because R1 folded every implementation class name out of a field and
+    % into a `software` entity behind an edge.
+    %
+    % ndi.vintage.objectClass answers for both vintages from one declaration.
+    % For a v1 document it performs the identical read, including the legacy
+    % `ndi_document_` prefix strip, so nothing about the v1 path changes.
+    obj_string = ndi.vintage.objectClass(ndi_document_obj, ndi_session_obj);
 
     o = eval([obj_string '(ndi_session_obj, ndi_document_obj);']);

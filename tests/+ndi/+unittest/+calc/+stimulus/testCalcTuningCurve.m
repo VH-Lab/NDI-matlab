@@ -13,8 +13,9 @@ classdef testCalcTuningCurve < ndi.unittest.session.buildSession
             % Use 4 tests because numberOfSelfTests is 4
             [b, reports, b_expected] = S.test('highSNR', 4, 0);
 
-            % Verify first output (b) is diag([1 1 1 1])
             expected_matrix = diag([1 1 1 1]);
+
+            % Verify first output (b) is diag([1 1 1 1])
             testCase.verifyTrue(isequal(double(b), expected_matrix), ...
                 'First output argument (b) should be diag([1 1 1 1])');
 

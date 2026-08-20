@@ -105,9 +105,10 @@ if clock_global
     time = 24*60*60*(time - time(1));
 end
 
-% Retrieve t0_t1 for each clock type
-t0_t1 = zeros(numel(epoch_clocks),2);
-for k = 1:numel(epoch_clocks)
+% Retrieve t0_t1 for each clock type (2-by-N: rows=[t0;t1], cols=clocks)
+nClocks = numel(epoch_clocks);
+t0_t1 = zeros(2, nClocks);
+for k = 1:nClocks
     t0_t1(1,k) = t0_t1_in{1,k}(1);
     if ndi.time.clocktype.isGlobal(epoch_clocks{k})
         t0_t1(2,k) = t0_t1(1,k) + time(end)/(24*60*60);

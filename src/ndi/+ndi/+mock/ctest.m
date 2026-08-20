@@ -273,7 +273,8 @@ classdef ctest
             fname = ctest_obj.mock_expected_filename(number);
             if vlt.file.isfile(fname)
                 json_data = vlt.file.textfile2char(fname);
-                doc = ndi.document(jsondecode(json_data));
+                body = jsondecode(json_data);
+                doc = ndi.database.internal.applyReadNormalization(body);
             else
                 error(['File ' fname ' does not exist.']);
             end

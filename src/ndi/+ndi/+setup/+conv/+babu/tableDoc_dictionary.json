@@ -1,4 +1,5 @@
 {
+  "SubjectDocumentIdentifier": "EMPTY:subject document identifier",
   "mixture_table": "EMPTY:C. elegans chemotaxis assay parameter: chemoattractant mixture table",
   "odorVolume": "EMPTY:C. elegans chemotaxis assay parameter: chemoattractant mixture volume",
   "duration": "EMPTY:C. elegans chemotaxis assay parameter: assay duration",

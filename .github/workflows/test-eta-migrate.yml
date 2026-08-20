@@ -1,0 +1,267 @@
+name: V_eta migrate assemblers (fast)
+
+# Fast, focused gate for the V_eta second-pass assemblers
+# (ndi.migrate.internal.*): the pure struct-assembly unit tests only -- no
+# database, no schema cache, no cloud, no full toolbox suite -- so a change to
+# stimulusBathToBath / stimulusPresentationToManipulation / bodyResolver /
+# pathSPromotion / epochAnchorFold / ontologyRowSubjects / ontologyLabelSubjects
+# is validated in a couple of minutes instead of the full run-tests.yml. The
+# full suite stays the milestone gate.
+#
+# THE runtests LIST BELOW IS EXPLICIT, SO IT IS ALSO A PLACE WORK CAN HIDE: a
+# test file that exists but is not named here does not run on a claude/**
+# branch, because run-tests.yml (which would sweep the whole package) triggers
+# only on main and Vnext. Two files sat in that gap. Add new
+# tests/+ndi/+unittest/+migrate/Test*.m to the list in the same commit that
+# adds the file.
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    # NOTE: GitHub filter patterns treat '+' as a quantifier (one-or-more of the
+    # preceding char), so a literal '+ndi'/'+migrate' in a paths glob never
+    # matches the real MATLAB-package path -- the '*'-prefixed segments below
+    # match the '+' as an ordinary character instead.
+    paths:
+      - 'src/ndi/*ndi/*migrate/**'
+      - 'tests/*ndi/*unittest/*migrate/**'
+      - '.github/workflows/test-eta-migrate.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eta-migrate:
+    name: V_eta migrate assemblers (fast)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Install repo requirements (did, deps)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(fullfile(nditools.projectdir(), "tests"));
+
+      - name: Run V_eta migrate assembler tests (self-contained)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % Parse-check local.m: its second-pass wiring (resolveDeferred /
+            % resolveStimulusPresentations / resolvePathS) is NOT exercised by the
+            % struct-assembly unit tests below, so force MATLAB to parse the whole
+            % file (local functions included) to catch syntax / undefined-reference
+            % errors cheaply. nargin() on the entry point does this.
+            try
+                nargin('ndi.migrate.local');
+            catch ME
+                error('ndi.migrate.local failed to parse: %s', ME.message);
+            end
+            % THIS LIST IS THE GATE, AND A TEST NOT IN IT IS NOT RUN AT ALL ON
+            % a claude/** branch. run-tests.yml sweeps the whole package
+            % (testToolboxNoCloud -> TestSuite.fromFolder("tests",
+            % "IncludingSubfolders", true)), but it triggers only on
+            % branches: ["main", "Vnext"], so it never fires here.
+            %
+            % RE-MEASURED 2026-08-11 (mechanically: every workflow file read,
+            % every classdef line read, exact word-boundary match of each class
+            % name against non-comment workflow lines). The previous
+            % DENOMINATOR here said "16 .m / 15 TestCase" and was written in the
+            % same commit that added the 17th file (TestEpochAnchorFold), so it
+            % undercounted by one from the moment it was written:
+            %
+            %   DENOMINATOR: 11 workflow files, 11 read; 17 .m in
+            %                tests/+ndi/+unittest/+migrate, of which 16 are
+            %                matlab.unittest.TestCase (FakeCloudClient extends
+            %                ndi.migrate.internal.cloudClient -- a stub, not a
+            %                test).
+            %   BEFORE this commit: 9 of 16 ran on a claude/** push -- the 8
+            %                previously listed here plus TestMigrateLocalEta
+            %                (test-eta-migrate-e2e.yml, also claude/**).
+            %   ADDED here:  TestEnsembleMembership, TestSoftwareDedup,
+            %                TestStrainAssembly. All three are pure struct
+            %                assembly over ndi.migrate.internal.{ensembleMembership,
+            %                softwareDedup,strainAssembly} -- no database, no
+            %                schema cache, no cloud -- so they belong in this
+            %                gate. They had never executed anywhere.
+            %   NOW:         12 of 16 on a claude/** push.
+            %
+            %   RE-MEASURED 2026-08-12, adding TestSubjectStrainAssembly (#78,
+            %   the openminds_subject half of the strain family). The same
+            %   mechanical sweep, re-run rather than incremented: every
+            %   workflow file read, every classdef line read, word-boundary
+            %   match of each class name against non-MATLAB-comment workflow
+            %   lines. NOTE the lookbehind has to ADMIT a preceding '.' -- the
+            %   names appear as `ndi.unittest.migrate.TestX`, and a sweep that
+            %   excluded a leading dot reported all 18 as run by nothing.
+            %
+            %     DENOMINATOR: 11 workflow files, 11 read; 19 .m in
+            %                  tests/+ndi/+unittest/+migrate, 18 of them
+            %                  matlab.unittest.TestCase (FakeCloudClient is a
+            %                  stub, not a test).
+            %     BEFORE this commit: 13 of 18 ran on a claude/** push -- the
+            %                  12 listed below plus TestMigrateLocalEta
+            %                  (test-eta-migrate-e2e.yml, branches
+            %                  ['claude/**']).
+            %     ADDED here:  TestSubjectStrainAssembly. Pure struct assembly
+            %                  over ndi.migrate.internal.subjectStrainAssembly
+            %                  -- no database, no schema cache, no cloud -- so
+            %                  it belongs in this gate. It has never executed.
+            %     NOW:         14 of 18 on a claude/** push.
+            %     STILL NOT RUN, unchanged and each for its stated reason:
+            %                  TestMigrateLocal, TestMigrateCloud (named by NO
+            %                  workflow), TestMigrateLocalZeta and
+            %                  TestMigrateLocalEpsilon (their workflows are
+            %                  pull_request -> Vnext only).
+            %
+            %   The "12 of 16" line above is left as written rather than
+            %   edited: it was true when it was measured, and a count that is
+            %   silently updated in place stops being evidence of anything.
+            %
+            %   RESULT OF THE FIRST EXECUTION (run 31567993862, 8b5996a8a):
+            %   the job was GREEN and every declared Test method of
+            %   TestSubjectStrainAssembly ran with a non-zero duration --
+            %   34/34, not the 29 its own commit message claimed. THE COUNT IN
+            %   THAT MESSAGE WAS WRONG, and it is corrected here rather than
+            %   left standing: 34 is what the file declares
+            %   (`grep -c '^        function test'`) and what the runner's
+            %   table printed. The direction was the harmless one -- fewer
+            %   tests claimed than exist -- but a hand-counted number that
+            %   nobody re-derived is the same defect whichever way it points.
+            %
+            %   READ THE GREEN NARROWLY, for the reason the paragraph above
+            %   already gives: the assembler and its tests were written by the
+            %   same author in the same session with no MATLAB available, so
+            %   green proves the PAIR is self-consistent and free of
+            %   load/parse/arity faults. It is not evidence that
+            %   ndi.migrate.internal.subjectStrainAssembly matches NDI ground
+            %   truth, and no corpus has ever exercised it.
+            %   STILL NOT RUN on claude/**, each for a stated reason, none
+            %                silently omitted:
+            %     TestMigrateLocal        needs an on-disk v1 session + database
+            %     TestMigrateCloud        needs the cloud client / FakeCloudClient
+            %                             harness, and is swept by run-tests.yml
+            %     TestMigrateLocalZeta    V_zeta target env; test-zeta-migrate.yml
+            %                             (pull_request -> Vnext only)
+            %     TestMigrateLocalEpsilon V_epsilon target env;
+            %                             test-epsilon-migrate.yml
+            %                             (pull_request -> Vnext only)
+            %   NOTE a naive substring grep reports TestMigrateLocal as covered:
+            %   "TestMigrateLocal" is a prefix of TestMigrateLocalEta/Zeta/
+            %   Epsilon. It is named by NO workflow. Match on word boundaries.
+            %
+            %   RESULT OF THE FIRST EXECUTION (run 31463051482, af840428f):
+            %   all three PASSED on their first ever run -- 13/13
+            %   TestEnsembleMembership, 15/15 TestSoftwareDedup, 17/17
+            %   TestStrainAssembly, every declared Test method collected, all
+            %   with non-zero durations. READ THAT NARROWLY. These tests were
+            %   written by the same author as the assemblers, in the same
+            %   session, with no MATLAB available -- so green proves the pair is
+            %   SELF-CONSISTENT and free of load/parse/arity faults. It is not
+            %   evidence the assemblers match NDI ground truth, which is what
+            %   "a test written from the same premise as the code cannot catch
+            %   the code" warns about. The corpus gate remains the real check.
+            %
+            %   The job was RED on that run, and both failures PREDATED it --
+            %   they reproduced identically on the parent (run 31460488423,
+            %   e3795c2f7, also "2 migrate-assembler test(s) failed"):
+            %     TestPathSPromotion/testAttributedSitePromoted        Errored.
+            %     TestEpochAnchorFold/
+            %       testNonAnchorDocumentsAreInspectedButNotCountedAsAnchors
+            %                                          Failed by verification.
+            %   Neither was touched by that commit; adding three classes did not
+            %   cause them and did not fix them.
+            %
+            %   DIAGNOSED + FIXED 2026-08-11. DENOMINATOR: 2 failures, 2
+            %   diagnosed, 2 TEST fixes, 0 code fixes, 0 tests weakened/skipped.
+            %   BOTH were stale tests, and in both the CODE was right:
+            %     * testAttributedSitePromoted read
+            %       `assertion.term_assertion.value` ('MATLAB:nonExistentField').
+            %       `term_assertion` is subject_assertion x `term` and declares
+            %       NO fields of its own, so `value` rides the `term` block --
+            %       V_eta/stable/term_assertion.json ("fields": []),
+            %       V_eta/stable/term.json (declares `value`), and 16 DID-matlab
+            %       migrator sites writing `.term` against 0 writing a
+            %       `term_assertion` block. NDI d03a42bdf moved the emitter on
+            %       2026-07-28; the test predates it (6108689dc) and was never
+            %       updated. INVERTED, not deleted, and it now also pins the
+            %       superclass chain and the ABSENCE of the stale block.
+            %     * testNonAnchorDocumentsAreInspectedButNotCountedAsAnchors
+            %       expected documents_inspected == 4 over a 3-document fixture
+            %       (a 1-document `oneFoldableAnchor` plus two non-anchors).
+            %       Actual 3 was correct: epochAnchorFold.m:219 sets the
+            %       denominator to numel(migratedStructs) unconditionally,
+            %       before any body is read. The expectation is now tied to
+            %       numel(docs) AND to anchors_seen, so the property it exists
+            %       to protect -- "looked at nothing" and "looked and found no
+            %       anchors" are different numbers -- is asserted more tightly
+            %       than before, not relaxed.
+            %   One test was ADDED with the first fix, not to make anything
+            %   pass: the stale fixture had been exercising only pathSPromotion
+            %   siteValue's LEGACY fallback branch, so flipping it to the
+            %   writer's shape would have silently retired that branch's only
+            %   coverage. testLegacyTermObservationShapeStillResolves keeps it.
+            %
+            %   ADDED 2026-08-20 -- the three stimulus-decompose tests, which
+            %   had never run on a claude/** push: TestStimulusPresentationTimedSequence
+            %   (the timed_sequence + visual_grating emitter),
+            %   TestHartleyBasisGratings (the once-per-session basis mint), and
+            %   TestStimulusPassGating (the exclusivity guard -- that the
+            %   SUPERSEDED stimulusPresentationToManipulation is not co-emitted
+            %   with the new path, two documents claiming one base.id). All
+            %   three are pure struct assembly over ndi.migrate.internal, so
+            %   they belong in this gate. ALSO ADDED, same day, #3 GAP-1:
+            %   TestStimulusPresentationTimedSequenceMultiSubject -- the
+            %   multi-subject storage_mode:reference branch (one shared
+            %   timed_sequence body-of-record + N reference manipulations),
+            %   pure struct assembly like the rest.
+            %   WHY THIS MATTERS: the emitter repoint
+            %   + the un-abstract landed 2026-08-17, but the guard that pins the
+            %   old assembler OFF was never wired here, so nothing on a
+            %   claude/** push actually checked it. READ ANY GREEN NARROWLY,
+            %   same reason as every entry above: written without MATLAB, so
+            %   green proves self-consistency, not corpus truth.
+            %   DENOMINATOR NOTE: the "of 18" figures above are STALE -- the
+            %   migrate test dir now holds 26 matlab.unittest.TestCase files,
+            %   not 18. A full non-comment re-sweep of all 11 workflows is a
+            %   separate follow-up; this entry documents only the three added
+            %   here, not a recomputed cross-workflow total.
+            results = runtests([ ...
+                "ndi.unittest.migrate.TestBathAssembly", ...
+                "ndi.unittest.migrate.TestStimulusPresentation", ...
+                "ndi.unittest.migrate.TestStimulusPresentationTimedSequence", ...
+                "ndi.unittest.migrate.TestStimulusPresentationTimedSequenceMultiSubject", ...
+                "ndi.unittest.migrate.TestHartleyBasisGratings", ...
+                "ndi.unittest.migrate.TestStimulusPassGating", ...
+                "ndi.unittest.migrate.TestBodyResolver", ...
+                "ndi.unittest.migrate.TestGratingValue", ...
+                "ndi.unittest.migrate.TestPathSPromotion", ...
+                "ndi.unittest.migrate.TestEpochAnchorFold", ...
+                "ndi.unittest.migrate.TestRecordingAttribution", ...
+                "ndi.unittest.migrate.TestOntologyRowSubjects", ...
+                "ndi.unittest.migrate.TestOntologyLabelSubjects", ...
+                "ndi.unittest.migrate.TestImagedEntitySubjects", ...
+                "ndi.unittest.migrate.TestEnsembleMembership", ...
+                "ndi.unittest.migrate.TestSoftwareDedup", ...
+                "ndi.unittest.migrate.TestStrainAssembly", ...
+                "ndi.unittest.migrate.TestSubjectStrainAssembly"]);
+            disp(table(results));
+            assert(sum([results.Failed]) == 0, ...
+                sprintf("%d migrate-assembler test(s) failed", sum([results.Failed])));

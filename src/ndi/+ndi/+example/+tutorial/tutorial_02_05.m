@@ -199,7 +199,8 @@ function tutorial_02_05(prefix, testing)
     spikes_doc = spikes_doc{1}
 
     for i=1:numel(spikes_doc.document_properties.depends_on)
-        disp(['Depends on ' spikes_doc.document_properties.depends_on(i).name ': ' spikes_doc.document_properties.depends_on(i).value]);
+        depTarget = ndi.document.i_readDependencyTarget(spikes_doc.document_properties.depends_on(i));
+        disp(['Depends on ' spikes_doc.document_properties.depends_on(i).name ': ' depTarget]);
     end
 
     % Should see 3 entries, with your own unique IDs:

@@ -111,7 +111,20 @@ classdef dir < ndi.session
                     time_loc = 0;
                     now_time = datetime('now','TimeZone','UTCLeapSeconds');
                     for i=1:numel(session_doc)
-                        time_here = datetime(session_doc{i}.document_properties.base.datestamp,'TimeZone','UTCLeapSeconds');
+                        % BOTH VINTAGES. V_eta renamed base.datestamp ->
+                        % base.creation_timestamp (did-schema, signed
+                        % 2026-08-13). This loop reads a document straight out
+                        % of the database, which may be pre- or post-migration,
+                        % so it must accept either spelling. Reading only the v1
+                        % name against a migrated database throws a missing-field
+                        % error here rather than degrading quietly.
+                        base_here = session_doc{i}.document_properties.base;
+                        if isfield(base_here,'creation_timestamp')
+                            stamp_here = base_here.creation_timestamp;
+                        else
+                            stamp_here = base_here.datestamp;
+                        end
+                        time_here = datetime(stamp_here,'TimeZone','UTCLeapSeconds');
                         time_diff_here = seconds(now_time-time_here);
                         if time_diff_here>time_diff_max
                             time_diff_max = time_diff_here;
@@ -121,7 +134,18 @@ classdef dir < ndi.session
                     session_doc = session_doc{time_loc};
 
                     ndi_session_dir_obj.identifier = session_doc.document_properties.base.session_id;
-                    ndi_session_dir_obj.reference = session_doc.document_properties.session.reference;
+                    % BOTH VINTAGES. V_eta renamed session.reference ->
+                    % session.local_identifier -- the name `subject` and `epoch`
+                    % already use for the same fact (did-schema, signed
+                    % 2026-08-13). The OBJECT property stays `reference`: that is
+                    % ndi.session's own public API, read at 20 call sites, and it
+                    % is not what the migration renamed.
+                    session_blk = session_doc.document_properties.session;
+                    if isfield(session_blk,'local_identifier')
+                        ndi_session_dir_obj.reference = session_blk.local_identifier;
+                    else
+                        ndi_session_dir_obj.reference = session_blk.reference;
+                    end
                     read_from_database = 1;
                 end
             end
@@ -140,7 +164,14 @@ classdef dir < ndi.session
                 ndi_session_dir_obj.database_add(g);
             end
 
-            syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','syncgraph','') & ...
+            % BOTH VINTAGES. V_eta renames `syncgraph` to
+            % `clock_alignment_policy`, whose class chain is [base] -- so an
+            % `isa syncgraph` query against a migrated session matched
+            % nothing, this fell into the isempty branch below, and the
+            % session came up with a FRESH, RULE-LESS syncgraph while a real
+            % one sat in the database. Silently: a session that opened fine
+            % and had lost its synchronisation.
+            syncgraph_doc = ndi_session_dir_obj.database_search( ndi.vintage.isaQuery('syncgraph') & ...
                 ndi.query('base.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
 
             if isempty(syncgraph_doc)

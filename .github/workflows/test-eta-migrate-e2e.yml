@@ -1,0 +1,239 @@
+name: V_eta migrate (end-to-end)
+
+# Real-session verification of the V_eta (Brainstorm J) second pass:
+# ndi.migrate.local must resolve a deferred stimulus_bath into a validated
+# dose_manipulation (D8 retired the bath family) AND assemble a
+# stimulus_presentation into a body-backed visual_grating_manipulation
+# (+ sampled_body) from the recording graph. That path needs BOTH the
+# TargetVersion-aware DID-matlab (with +migrators_j) and the assembled V_eta
+# schema set -- which the fast test-eta-migrate.yml (struct assemblers only) and
+# run-tests.yml do not provide. This job assembles that environment and runs the
+# gated TestMigrateLocalEta (which skips everywhere else).
+#
+# The DID-matlab, did-schema, and NDI-matlab V_eta branches share a name, so the
+# dep refs default to this run's branch (github.ref_name); override via the
+# workflow_dispatch input if needed.
+
+on:
+  push:
+    branches: ['claude/**']
+    # NOTE: GitHub filter patterns treat '+' as a quantifier (one-or-more of the
+    # preceding char), so a literal '+ndi'/'+migrate' in a paths glob never
+    # matches the real MATLAB-package path -- the '*'-prefixed segments below
+    # match the '+' as an ordinary character instead.
+    paths:
+      - '.github/workflows/test-eta-migrate-e2e.yml'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta.m'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaPRED.m'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEta20211116.m'
+      - 'src/ndi/*ndi/*migrate/**'
+      # THE READ PATH. TestMigrateLocalEtaPRED now opens the migrated
+      # database through `ndi.session.dir`, so it is the covering test for
+      # `did2sqlite` (the backend that can read a did2 store) and for
+      # `databasehierarchyinit` (what lets NDI find the migrated file).
+      # Without these two globs a change to either could break opening a
+      # migrated session and no job would say so -- the exact gap this
+      # test was written to close, one level up.
+      - 'src/ndi/*ndi/*database/*implementations/*database/**'
+      - 'src/ndi/*ndi/*database/*fun/databasehierarchyinit.m'
+      # THE OBJECT LAYER'S VINTAGE MAP and the readers wired to it. These
+      # decide whether a migrated session yields daq systems or an empty
+      # cell array, and the failure is silent, so they gate here.
+      - 'src/ndi/*ndi/*vintage/**'
+      - 'src/ndi/*ndi/*database/*fun/ndi_document2ndi_object.m'
+      - 'tests/*ndi/*unittest/*vintage/**'
+      # THE ADDED-EPOCH READ PATH, added 2026-08-17 with #60's reader port.
+      # `element.m` holds loadaddedepochs and `+element/timeseries.m` holds
+      # the `isa` search for the epoch document readtimeseries opens; both
+      # index an epoch document by its class/block name, and both were
+      # returning nothing on a migrated session. Neither file was under any
+      # glob here, so the job that measures exactly this did not fire when
+      # they changed.
+      - 'src/ndi/*ndi/element.m'
+      - 'src/ndi/*ndi/*element/timeseries.m'
+      # THE SECOND-PASS ASSEMBLERS AND THEIR OWN UNIT TESTS. `+migrate/**`
+      # above already covers the sources; this adds the tests, which lived
+      # in a directory no workflow on this branch swept -- see the note by
+      # the runtests list.
+      - 'tests/*ndi/*unittest/*migrate/**'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'did-matlab / did-schema branch (V_eta line)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eta_migrate_e2e:
+    name: V_eta second-pass end-to-end
+    runs-on: ubuntu-latest
+    env:
+      DID_MATLAB_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+      DID_SCHEMA_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Check out did-schema (for V_eta schemas)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_REF }}
+          path: did-schema
+
+      - name: Assemble V_eta schema set (stable + draft)
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+
+      - name: Export env (schema path + eta test gate)
+        run: |
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
+          echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
+
+      - name: Start virtual display server
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: |
+            Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Point requirements at the DID-matlab V_eta branch
+        # requirements.txt pins a DID-matlab that predates +migrators_j /
+        # TargetVersion='V_eta'. Rewrite it to the V_eta branch so v1_to_v2
+        # accepts TargetVersion='V_eta'.
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              if not p.exists():
+                  continue
+              out = []
+              for line in p.read_text().splitlines():
+                  if "DID-matlab" in line:
+                      out.append(line.split("@", 1)[0] + "@" + ref)
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+          grep -i did-matlab requirements.txt tests/requirements.txt || true
+
+      - name: Install repo dependencies (DID-matlab@V_eta, mksqlite, vhlab-toolbox)
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Run the V_eta migrate end-to-end test
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % BOTH classes, in ONE runtests call, so a failure in either is
+            % fatal and neither can be quietly dropped by an `assertSuccess`
+            % that only ever saw the other.
+            %
+            % TestMigrateLocalEtaPRED (added 2026-08-13) runs the SAME
+            % ndi.migrate.local path over the real 14-document PRED corpus
+            % rather than a 4- or 5-document fixture. It closes a measured
+            % gap: `grep -rn "\bPRED\b"` across this repository returned
+            % NOTHING before it, so NDI's second pass -- including
+            % epochAnchorFold, the third link of the epoch chain -- had never
+            % seen a PRED document, while the DID side gates that corpus hard.
+            % It fetches the corpus zip once and SKIPS (never fails) when the
+            % download is impossible.
+            % TestDid2SqliteHierarchy (added 2026-08-14) is here because it
+            % would otherwise run NOWHERE. It lives in
+            % tests/+ndi/+unittest/+database, which is swept by
+            % run-tests.yml -- and run-tests.yml fires only on `main` and
+            % `Vnext`, so on a claude/** branch it had never executed. It
+            % needs no database and no corpus; it pins the couplings that
+            % let TestMigrateLocalEtaPRED's read-back test find the
+            % migrated file at all, so it belongs beside the test it
+            % protects.
+            % NOTE: TestMigrateLocalEtaSoph is DELIBERATELY NOT in this list.
+            % Soph is ~101,427 documents; migrating it inline alongside PRED,
+            % 20211116 and the assembler classes exhausted the standard runner
+            % and the job was killed ~2h41m in (run 84, 2026-08-19) without
+            % producing a census. It runs on demand instead, alone and with a
+            % generous timeout, in test-eta-migrate-soph.yml (workflow_dispatch).
+            results = runtests({ ...
+                'ndi.unittest.migrate.TestMigrateLocalEta', ...
+                'ndi.unittest.migrate.TestMigrateLocalEtaPRED', ...
+                'ndi.unittest.migrate.TestMigrateLocalEta20211116', ...
+                'ndi.unittest.database.TestDid2SqliteHierarchy', ...
+                'ndi.unittest.vintage.TestVintageMap', ...
+                'ndi.unittest.vintage.TestElementLabelMatchesMigrator', ...
+                'ndi.unittest.vintage.TestAddedEpoch', ...
+                ...
+                ... % THE SECOND-PASS ASSEMBLERS' OWN UNIT TESTS, added
+                ... % 2026-08-17. Every one of these existed and had NEVER
+                ... % RUN on a claude/** branch: they live in
+                ... % tests/+ndi/+unittest/+migrate, which only run-tests.yml
+                ... % sweeps, and run-tests.yml fires on `main` and `Vnext`
+                ... % alone. This is the same gap the note above records for
+                ... % TestDid2SqliteHierarchy -- third instance, and this
+                ... % time it cost something concrete.
+                ... %
+                ... % HOW IT WAS FOUND. `stimulusPresentationToTimedSequence`
+                ... % shipped with a function line declaring THREE inputs and
+                ... % an `arguments` block declaring FOUR. MATLAB rejects
+                ... % that at parse time, so every call threw before running
+                ... % a line; ndi.migrate.local catches, warns, and falls
+                ... % back to passthrough, so the e2e read "0 of 11
+                ... % presentations decomposed" for five runs and looked like
+                ... % a modelling shortfall. TestStimulusPresentationTimedSequence
+                ... % calls the function directly and would have failed on
+                ... % the first invocation -- it just never ran.
+                ... %
+                ... % ONLY THE SELF-CONTAINED ONES ARE HERE. Measured: these
+                ... % 16 classes touch no session, no database and no cloud
+                ... % (247 test methods between them, plus
+                ... % TestRecordingAttribution, whose methods do not start
+                ... % with `test` and so were not counted). The
+                ... % session-dependent classes -- TestMigrateCloud,
+                ... % TestMigrateLocal{,Zeta,Epsilon} -- are deliberately
+                ... % NOT added: they need credentials or target other
+                ... % vintages, and a gate that is red for reasons nobody
+                ... % owns trains readers to ignore it.
+                'ndi.unittest.migrate.TestStimulusPresentationTimedSequence', ...
+                'ndi.unittest.migrate.TestHartleyBasisGratings', ...
+                'ndi.unittest.migrate.TestStimulusPassGating', ...
+                'ndi.unittest.migrate.TestStimulusPresentation', ...
+                'ndi.unittest.migrate.TestGratingValue', ...
+                'ndi.unittest.migrate.TestBathAssembly', ...
+                'ndi.unittest.migrate.TestBodyResolver', ...
+                'ndi.unittest.migrate.TestEnsembleMembership', ...
+                'ndi.unittest.migrate.TestImagedEntitySubjects', ...
+                'ndi.unittest.migrate.TestOntologyLabelSubjects', ...
+                'ndi.unittest.migrate.TestOntologyRowSubjects', ...
+                'ndi.unittest.migrate.TestPathSPromotion', ...
+                'ndi.unittest.migrate.TestRecordingAttribution', ...
+                'ndi.unittest.migrate.TestSoftwareDedup', ...
+                'ndi.unittest.migrate.TestStrainAssembly', ...
+                'ndi.unittest.migrate.TestSubjectStrainAssembly'});
+            disp(results);
+            assertSuccess(results);
