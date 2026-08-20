@@ -73,12 +73,13 @@ jobs:
         run: |
           echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
           echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
-          # TEMPORARY setup-only diagnostic: the Soph test reads the corpus and
-          # builds the v1 sqlite, prints the two [Soph timing] lines, then SKIPS
-          # before ndi.migrate.local. Isolates whether the setup or the
-          # migration is the wall-clock sink at ~101k documents. Remove this
-          # line (and the gate in the test) once the sink is localised.
-          echo "NDI_SOPH_SETUP_ONLY=1" >> "$GITHUB_ENV"
+          # TEMPORARY subset diagnostic. The setup-only run confirmed the setup
+          # (corpus read + sqlite build) is fast, so the 5h50m sink is inside
+          # ndi.migrate.local. Migrate only the first N documents so the run
+          # COMPLETES fast and its full log IS retrievable, localising the slow
+          # pass (via the log's line timestamps) and the O(N) vs O(N^2) scaling.
+          # Remove this line (and the subset gate in the test) once localised.
+          echo "NDI_SOPH_SUBSET=25000" >> "$GITHUB_ENV"
 
       - name: Start virtual display server
         run: |

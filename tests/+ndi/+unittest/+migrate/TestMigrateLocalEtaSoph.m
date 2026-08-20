@@ -76,6 +76,19 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
             fprintf('  [Soph timing] readCorpusBodies: %d docs in %.1f s\n', ...
                 numel(testCase.Bodies), toc(t));
+            % SUBSET DIAGNOSTIC. With NDI_SOPH_SUBSET=N, migrate only the first N
+            % bodies so the run COMPLETES (or fails) fast instead of timing out
+            % -- the full log then IS retrievable, localising whether
+            % ndi.migrate.local scales O(N) or O(N^2) and surfacing the slow
+            % pass through the log's own line timestamps. The corpus-count
+            % assertions fail on a subset by design; the migration timing prints
+            % first. TEMPORARY: remove once the migration sink is localised.
+            subsetN = str2double(getenv('NDI_SOPH_SUBSET'));
+            if ~isnan(subsetN) && subsetN >= 1 && subsetN < numel(testCase.Bodies)
+                testCase.Bodies = testCase.Bodies(1:round(subsetN));
+                fprintf('  [Soph timing] SUBSET: migrating first %d bodies only\n', ...
+                    numel(testCase.Bodies));
+            end
             t = tic;
             buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
                 testCase.Bodies);
