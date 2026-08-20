@@ -218,9 +218,32 @@ jobs:
             %   siteValue's LEGACY fallback branch, so flipping it to the
             %   writer's shape would have silently retired that branch's only
             %   coverage. testLegacyTermObservationShapeStillResolves keeps it.
+            %
+            %   ADDED 2026-08-20 -- the three stimulus-decompose tests, which
+            %   had never run on a claude/** push: TestStimulusPresentationTimedSequence
+            %   (the timed_sequence + visual_grating emitter),
+            %   TestHartleyBasisGratings (the once-per-session basis mint), and
+            %   TestStimulusPassGating (the exclusivity guard -- that the
+            %   SUPERSEDED stimulusPresentationToManipulation is not co-emitted
+            %   with the new path, two documents claiming one base.id). All
+            %   three are pure struct assembly over ndi.migrate.internal, so
+            %   they belong in this gate. WHY THIS MATTERS: the emitter repoint
+            %   + the un-abstract landed 2026-08-17, but the guard that pins the
+            %   old assembler OFF was never wired here, so nothing on a
+            %   claude/** push actually checked it. READ ANY GREEN NARROWLY,
+            %   same reason as every entry above: written without MATLAB, so
+            %   green proves self-consistency, not corpus truth.
+            %   DENOMINATOR NOTE: the "of 18" figures above are STALE -- the
+            %   migrate test dir now holds 26 matlab.unittest.TestCase files,
+            %   not 18. A full non-comment re-sweep of all 11 workflows is a
+            %   separate follow-up; this entry documents only the three added
+            %   here, not a recomputed cross-workflow total.
             results = runtests([ ...
                 "ndi.unittest.migrate.TestBathAssembly", ...
                 "ndi.unittest.migrate.TestStimulusPresentation", ...
+                "ndi.unittest.migrate.TestStimulusPresentationTimedSequence", ...
+                "ndi.unittest.migrate.TestHartleyBasisGratings", ...
+                "ndi.unittest.migrate.TestStimulusPassGating", ...
                 "ndi.unittest.migrate.TestBodyResolver", ...
                 "ndi.unittest.migrate.TestGratingValue", ...
                 "ndi.unittest.migrate.TestPathSPromotion", ...
