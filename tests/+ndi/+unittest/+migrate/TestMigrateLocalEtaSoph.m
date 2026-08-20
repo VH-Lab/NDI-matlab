@@ -105,10 +105,32 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
                     'diagnostic; skipping ndi.migrate.local.']);
             end
 
+            % PROFILE DIAGNOSTIC. With NDI_SOPH_PROFILE set, run the migration
+            % under the MATLAB profiler and print the top functions by total
+            % time -- this pinpoints WHICH of ndi.migrate.local's ~12 second
+            % passes is the O(N^2) sink (the passes are silent on success, so
+            % line timestamps alone cannot localise it). Best paired with
+            % NDI_SOPH_SUBSET so the run completes and the log is retrievable.
+            % TEMPORARY: remove once the sink pass is fixed.
+            doProfile = ~isempty(getenv('NDI_SOPH_PROFILE'));
+            if doProfile
+                profile('off'); profile('on');
+            end
             t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
             fprintf('  [Soph timing] ndi.migrate.local: %.1f s\n', toc(t));
+            if doProfile
+                p = profile('info'); profile('off');
+                tt = [p.FunctionTable.TotalTime];
+                [~, order] = sort(tt, 'descend');
+                fprintf('  [Soph profile] top functions by TotalTime:\n');
+                for ii = 1:min(25, numel(order))
+                    f = p.FunctionTable(order(ii));
+                    fprintf('    %8.1f s  %8d calls  %s\n', ...
+                        f.TotalTime, f.NumCalls, f.FunctionName);
+                end
+            end
         end
 
     end
