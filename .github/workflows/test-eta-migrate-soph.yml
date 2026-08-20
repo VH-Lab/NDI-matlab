@@ -73,13 +73,6 @@ jobs:
         run: |
           echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
           echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
-          # TEMPORARY measurement run. The profiler named the sink: the
-          # destination sqlite write committed per-document (DID-matlab
-          # sqlitedb.add), fixed to batch in one transaction. Re-run the 25000
-          # subset (NO profiler, for a clean number) against the fixed DID to
-          # measure the speedup vs the prior 2950 s for 25k. Remove this line
-          # (and the subset gate in the test) once the full corpus fits.
-          echo "NDI_SOPH_SUBSET=25000" >> "$GITHUB_ENV"
 
       - name: Start virtual display server
         run: |

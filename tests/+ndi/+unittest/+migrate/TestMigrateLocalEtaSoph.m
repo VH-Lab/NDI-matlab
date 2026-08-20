@@ -76,61 +76,15 @@ classdef TestMigrateLocalEtaSoph < matlab.unittest.TestCase
             testCase.Bodies = readCorpusBodies(testCase.CorpusDir);
             fprintf('  [Soph timing] readCorpusBodies: %d docs in %.1f s\n', ...
                 numel(testCase.Bodies), toc(t));
-            % SUBSET DIAGNOSTIC. With NDI_SOPH_SUBSET=N, migrate only the first N
-            % bodies so the run COMPLETES (or fails) fast instead of timing out
-            % -- the full log then IS retrievable, localising whether
-            % ndi.migrate.local scales O(N) or O(N^2) and surfacing the slow
-            % pass through the log's own line timestamps. The corpus-count
-            % assertions fail on a subset by design; the migration timing prints
-            % first. TEMPORARY: remove once the migration sink is localised.
-            subsetN = str2double(getenv('NDI_SOPH_SUBSET'));
-            if ~isnan(subsetN) && subsetN >= 1 && subsetN < numel(testCase.Bodies)
-                testCase.Bodies = testCase.Bodies(1:round(subsetN));
-                fprintf('  [Soph timing] SUBSET: migrating first %d bodies only\n', ...
-                    numel(testCase.Bodies));
-            end
             t = tic;
             buildV1Sqlite(fullfile(testCase.SessionRoot, '.ndi', 'did-sqlite.sqlite'), ...
                 testCase.Bodies);
             fprintf('  [Soph timing] buildV1Sqlite: %.1f s\n', toc(t));
 
-            % SETUP-ONLY DIAGNOSTIC. With NDI_SOPH_SETUP_ONLY set, stop here and
-            % SKIP -- the two timing lines above isolate the corpus-read +
-            % sqlite-build cost at full (~101k-document) scale, in a tiny log
-            % that is readable even when the full run's is not. Used to decide
-            % whether the setup or ndi.migrate.local is the wall-clock sink.
-            % TEMPORARY: remove once the sink is localised.
-            if ~isempty(getenv('NDI_SOPH_SETUP_ONLY'))
-                assumeFail(testCase, ['NDI_SOPH_SETUP_ONLY set: setup-only ' ...
-                    'diagnostic; skipping ndi.migrate.local.']);
-            end
-
-            % PROFILE DIAGNOSTIC. With NDI_SOPH_PROFILE set, run the migration
-            % under the MATLAB profiler and print the top functions by total
-            % time -- this pinpoints WHICH of ndi.migrate.local's ~12 second
-            % passes is the O(N^2) sink (the passes are silent on success, so
-            % line timestamps alone cannot localise it). Best paired with
-            % NDI_SOPH_SUBSET so the run completes and the log is retrievable.
-            % TEMPORARY: remove once the sink pass is fixed.
-            doProfile = ~isempty(getenv('NDI_SOPH_PROFILE'));
-            if doProfile
-                profile('off'); profile('on');
-            end
             t = tic;
             testCase.Result = ndi.migrate.local(testCase.SessionRoot, ...
                 'Validate', true, 'TargetVersion', 'V_eta', 'Backup', false);
             fprintf('  [Soph timing] ndi.migrate.local: %.1f s\n', toc(t));
-            if doProfile
-                p = profile('info'); profile('off');
-                tt = [p.FunctionTable.TotalTime];
-                [~, order] = sort(tt, 'descend');
-                fprintf('  [Soph profile] top functions by TotalTime:\n');
-                for ii = 1:min(25, numel(order))
-                    f = p.FunctionTable(order(ii));
-                    fprintf('    %8.1f s  %8d calls  %s\n', ...
-                        f.TotalTime, f.NumCalls, f.FunctionName);
-                end
-            end
         end
 
     end
