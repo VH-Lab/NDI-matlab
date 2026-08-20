@@ -115,15 +115,30 @@ classdef ProbeImportTest < matlab.unittest.TestCase
         end
 
         function testUnannotatedUnitsAreSkipped(testCase)
+            % one unit labelled, the rest left as JRCLUST's sort created them
             res = testCase.defaultRes();
-            res.clusterNotes = {'','',''};
+            res.clusterNotes = {'single', [], []};
             testCase.writePrm();
             testCase.writeRes(res);
 
             out = testCase.dryImport();
 
-            testCase.verifySubstring(out,'Unit 1 (not annotated) skipped');
-            testCase.verifySubstring(out,'Would import 0 neuron(s)');
+            testCase.verifySubstring(out,'Unit 2 (not annotated) skipped');
+            testCase.verifySubstring(out,'Unit 3 (not annotated) skipped');
+            testCase.verifySubstring(out,'Would import 1 neuron(s)');
+        end
+
+        function testSortedButUnlabelledSortIsRefused(testCase)
+            % What 'jrc sort' leaves behind: a clusterNotes field with one empty
+            % note per unit. Importing selects units by their note, so this would
+            % import nothing; it must say so rather than report zero neurons.
+            res = testCase.defaultRes();
+            res.clusterNotes = cell(3,1);
+            testCase.writePrm();
+            testCase.writeRes(res);
+
+            testCase.verifyError(@() testCase.dryImport(), ...
+                'ndi:fun:probe:import:jrclust:probe:notAnnotated');
         end
 
         function testMissingParameterFileErrors(testCase)

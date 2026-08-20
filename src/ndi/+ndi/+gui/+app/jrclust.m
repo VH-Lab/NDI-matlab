@@ -9,7 +9,8 @@ classdef jrclust < ndi.gui.app.sessionApp
 %   other NDI spike sorters (e.g. ndi.gui.app.kiasort).
 %
 %   The window lists the session's n-trode probes, each with its pipeline state in
-%   parentheses ("parameters", "detected", "sorted", "curated", "imported"), and has
+%   parentheses ("parameters", "detected", "sorted", "curated", "annotated",
+%   "imported"), and has
 %   one button per step, in order:
 %
 %     Check JRCLUST   - report the JRCLUST installation NDI can see: where it is,
@@ -245,6 +246,7 @@ classdef jrclust < ndi.gui.app.sessionApp
                 if st.detected,     words{end+1} = 'detected';   end %#ok<AGROW>
                 if st.sorted,       words{end+1} = 'sorted';     end %#ok<AGROW>
                 if st.curated,      words{end+1} = 'curated';    end %#ok<AGROW>
+                if st.annotated,    words{end+1} = 'annotated'; end %#ok<AGROW>
                 if st.imported,     words{end+1} = 'imported';   end %#ok<AGROW>
                 if isempty(words)
                     label = [char(p.elementstring()) ' (not started)'];
@@ -279,9 +281,13 @@ classdef jrclust < ndi.gui.app.sessionApp
                 canParams = true;
                 canEdit   = st.bootstrapped;
                 canDetect = st.bootstrapped;
-                canSort   = st.detected;
+                % sorting reads the features detection wrote; without them JRCLUST
+                % stops with 'cannot sort without features'
+                canSort   = st.detected && st.features;
                 canCurate = st.sorted;
-                canImport = st.sorted;
+                % importing selects units by their curation note, so it needs a sort
+                % somebody has actually labelled, not merely a saved one
+                canImport = st.annotated;
                 if st.bootstrapped
                     obj.ParamsButton.Text = '1. Update Params';
                 else

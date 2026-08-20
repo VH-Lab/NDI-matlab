@@ -22,9 +22,18 @@ function R = results(resFile, options)
 %   unitCount       - 1xK double, the number of spikes in each unit
 %   meanWfGlobal    - the mean filtered waveform of each unit over all sites, as
 %                       [nSamples x nSites x K] ([] if not present in the file)
-%   hasNotes        - true if the file carries a clusterNotes field (i.e. the sort
-%                       has been through the curator)
-%   detectedOn/sortedOn/curatedOn - the timestamps JRCLUST records ([] if absent)
+%   hasNotes        - true if the file carries a clusterNotes field. NOTE that this
+%                       is NOT the same as having been curated: JRCLUST creates the
+%                       field, with one empty note per unit, when the clustering is
+%                       committed during 'jrc sort' (see
+%                       jrclust.interfaces.Clustering/commit). Use 'annotated'.
+%   annotated       - true if at least one unit carries a non-empty note, i.e. a
+%                       human has been through 'jrc manual' and labelled units
+%   annotatedCount  - the number of units carrying a non-empty note
+%   detectedOn/sortedOn/curatedOn - the timestamps JRCLUST records ([] if absent).
+%                       JRCLUST sets detectedOn in its detect step, sortedOn in its
+%                       sort step, and curatedOn only when the curator saves, so
+%                       curatedOn is the authoritative "this sort has been curated".
 %
 % Units are read from 'spikesByCluster' when JRCLUST stored it and are otherwise
 % reconstructed from 'spikeClusters'.
@@ -50,6 +59,18 @@ function R = results(resFile, options)
     end
 
     present = who('-file', resFile);
+
+    % A results file saved by an old JRCLUST holds the clustering as a saved
+    % 'hClust' object rather than as the flat fields the current JRCLUST writes
+    % (its saveRes/saveFiles flatten hClust before saving). NDI reads the flat
+    % form; loading an object here would also need JRCLUST's class definitions.
+    if ismember('hClust', present) && ~ismember('spikeClusters', present),
+        error('ndi:fun:probe:import:jrclust:results:oldFormat', ...
+            ['%s stores its clustering as a saved hClust object, which was written ' ...
+            'by an older version of JRCLUST. Open it once in the current JRCLUST ' ...
+            '(''jrc manual'') and save, which rewrites the file in the current ' ...
+            'format, then import it.'], resFile);
+    end;
 
     if ~ismember('spikeTimes', present),
         error('ndi:fun:probe:import:jrclust:results:noSpikes', ...
@@ -77,6 +98,14 @@ function R = results(resFile, options)
             '(run ''jrc sort'').'], resFile);
     end;
 
+    if numel(R.spikeClusters) ~= numel(R.spikeSamples),
+        error('ndi:fun:probe:import:jrclust:results:inconsistent', ...
+            ['%s holds %d spike times but %d cluster assignments. The file is in an ' ...
+            'inconsistent state; open it in JRCLUST (''jrc manual''), let it recover ' ...
+            'the clustering, and save before importing.'], resFile, ...
+            numel(R.spikeSamples), numel(R.spikeClusters));
+    end;
+
     if isfield(res,'spikesByCluster') && ~isempty(res.spikesByCluster),
         sbc = res.spikesByCluster(:)';
         R.unitIds = 1:numel(sbc); % JRCLUST indexes units 1..K by position
@@ -95,6 +124,9 @@ function R = results(resFile, options)
         R.unitCount = cellfun(@numel, R.spikesByCluster);
     end;
 
+    % JRCLUST creates clusterNotes (one empty note per unit) when the clustering is
+    % committed during sorting, so the field's presence says nothing about whether a
+    % human has annotated anything: that is what 'annotated' reports.
     R.hasNotes = isfield(res,'clusterNotes');
     R.unitLabels = repmat("", 1, nUnits);
     if R.hasNotes,
@@ -114,6 +146,9 @@ function R = results(resFile, options)
             end;
         end;
     end;
+
+    R.annotatedCount = sum(strlength(R.unitLabels)>0);
+    R.annotated = R.annotatedCount > 0;
 
     R.meanWfGlobal = [];
     if options.needWaveforms && isfield(res,'meanWfGlobal'),

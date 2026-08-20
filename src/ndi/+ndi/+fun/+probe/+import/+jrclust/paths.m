@@ -42,6 +42,9 @@ function p = paths(S, probe, options)
 %    P = ndi.fun.probe.import.jrclust.paths(S, p{1});
 %    edit(P.prmFile);
 %
+% Fields: elementString, directory, sessionName, prmFile, resFile, and JRCLUST's
+% intermediate files rawFile, filtFile, featuresFile and histFile.
+%
 
     arguments
         S
@@ -61,5 +64,13 @@ function p = paths(S, probe, options)
     p.prmFile       = fullfile(p.directory, options.prmName);
     p.sessionName   = sessionName;
     p.resFile       = fullfile(p.directory, [sessionName '_res.mat']);
+    % JRCLUST's intermediate files (jrclust.Config: rawFile / filtFile /
+    % featuresFile / histFile). Detection writes the first three; sorting reads the
+    % features (jrclust.sort.SortController errors 'cannot sort without features'
+    % when they are missing), and the curator appends to the history file.
+    p.rawFile       = fullfile(p.directory, [sessionName '_raw.jrc']);
+    p.filtFile      = fullfile(p.directory, [sessionName '_filt.jrc']);
+    p.featuresFile  = fullfile(p.directory, [sessionName '_features.jrc']);
+    p.histFile      = fullfile(p.directory, [sessionName '_hist.jrc']);
 
 end

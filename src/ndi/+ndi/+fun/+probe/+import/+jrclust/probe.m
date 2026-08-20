@@ -24,7 +24,11 @@ function probe(S, probe, options)
 % been run and curated.
 %
 % ANNOTATION: JRCLUST records each unit's curation note (set in 'jrc manual', see
-% NDI.FUN.PROBE.IMPORT.JRCLUST.CURATE). By default the units noted 'single' (imported
+% NDI.FUN.PROBE.IMPORT.JRCLUST.CURATE). Sorting alone does not annotate anything:
+% JRCLUST creates an empty note for every unit when the clustering is committed, so
+% importing a sort that has not been through the curator is refused (see the
+% ndi:fun:probe:import:jrclust:probe:notAnnotated error) rather than silently
+% importing nothing. By default the units noted 'single' (imported
 % with quality_number 1) and 'multi' (quality_number 4) are imported and every other
 % unit, including unannotated ones, is skipped. Change that with 'qualityLabels' and
 % 'qualityValues'.
@@ -166,11 +170,16 @@ function probe(S, probe, options)
 
     R = ndi.fun.probe.import.jrclust.results(P.resFile);
 
-    if ~R.hasNotes,
+    % Sorting alone is not enough: JRCLUST gives every unit an empty note when the
+    % clustering is committed during 'jrc sort', and this importer selects units by
+    % their note, so a sort nobody has labelled would import nothing at all. Say so
+    % rather than reporting that zero neurons were found.
+    if ~R.annotated,
         error('ndi:fun:probe:import:jrclust:probe:notAnnotated', ...
-            ['The units in %s have not been annotated. Open the curation GUI ' ...
-            '(ndi.fun.probe.import.jrclust.curate), annotate each unit (''single'', ' ...
-            '''multi'', ''noise'', ...) and save before importing.'], P.resFile);
+            ['None of the %d unit(s) in %s carries a curation note. Open the ' ...
+            'curation GUI (ndi.fun.probe.import.jrclust.curate), annotate the units ' ...
+            '(''single'', ''multi'', ''noise'', ...) and save before importing.'], ...
+            numel(R.unitIds), P.resFile);
     end;
 
     % Step 4: rebuild the epoch boundaries of JRCLUST's concatenated sample stream.

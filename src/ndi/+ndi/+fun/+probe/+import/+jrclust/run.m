@@ -60,6 +60,21 @@ function run(S, probe, options)
         case 'detect-sort', stages = {'detect','sort'};
     end;
 
+    % Sorting reads the features that detection wrote; if they are gone, JRCLUST
+    % stops inside SortController with 'cannot sort without features', so check here
+    % and say what to do about it.
+    if any(strcmp(stages,'sort')) && ~any(strcmp(stages,'detect')),
+        P = ndi.fun.probe.import.jrclust.paths(S, probe, ...
+            'jrclustDir', options.jrclustDir, 'prmName', options.prmName);
+        if ~isfile(P.featuresFile),
+            error('ndi:fun:probe:import:jrclust:run:noFeatures', ...
+                ['The spike features JRCLUST needs to sort are not on disk (%s). ' ...
+                'Detect the spikes first (stage ''detect'' or ''detect-sort''); if ' ...
+                'they were detected before, the intermediate .jrc files have since ' ...
+                'been removed and detection has to be run again.'], P.featuresFile);
+        end;
+    end;
+
     for i=1:numel(stages),
         if options.verbose,
             disp(['Running ''jrc ' stages{i} ' ' prmFile '''...']);

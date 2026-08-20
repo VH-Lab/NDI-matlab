@@ -41,6 +41,8 @@ classdef ResultsTest < matlab.unittest.TestCase
             testCase.verifyEqual(R.spikesByCluster{1},[1;3]);
             testCase.verifyEqual(R.unitCount,[2 2]);
             testCase.verifyTrue(R.hasNotes);
+            testCase.verifyTrue(R.annotated);
+            testCase.verifyEqual(R.annotatedCount,2);
             testCase.verifyEqual(size(R.meanWfGlobal),[31 4 2]);
         end
 
@@ -70,7 +72,64 @@ classdef ResultsTest < matlab.unittest.TestCase
             R = ndi.fun.probe.import.jrclust.results(f);
 
             testCase.verifyFalse(R.hasNotes);
+            testCase.verifyFalse(R.annotated);
             testCase.verifyEqual(R.unitLabels,"");
+        end
+
+        function testSortedButUnlabelledIsNotAnnotated(testCase)
+            % This is what JRCLUST leaves behind after 'jrc sort': committing the
+            % clustering creates one EMPTY note per unit, so the clusterNotes field
+            % is present even though nobody has curated anything.
+            res = struct();
+            res.spikeTimes = int32([1; 2; 3]);
+            res.spikeClusters = int32([1; 1; 2]);
+            res.spikesByCluster = {[1;2], 3};
+            res.clusterNotes = cell(2,1); % {[]; []}, exactly as commit() creates them
+            f = testCase.writeRes(res);
+
+            R = ndi.fun.probe.import.jrclust.results(f);
+
+            testCase.verifyTrue(R.hasNotes);   % the field is there ...
+            testCase.verifyFalse(R.annotated); % ... but nothing is labelled
+            testCase.verifyEqual(R.annotatedCount,0);
+            testCase.verifyEqual(R.unitLabels,["",""]);
+        end
+
+        function testPartiallyAnnotatedSortIsAnnotated(testCase)
+            res = struct();
+            res.spikeTimes = int32([1; 2; 3]);
+            res.spikeClusters = int32([1; 1; 2]);
+            res.spikesByCluster = {[1;2], 3};
+            res.clusterNotes = {'single', []};
+            f = testCase.writeRes(res);
+
+            R = ndi.fun.probe.import.jrclust.results(f);
+
+            testCase.verifyTrue(R.annotated);
+            testCase.verifyEqual(R.annotatedCount,1);
+            testCase.verifyEqual(R.unitLabels,["single",""]);
+        end
+
+        function testOldStyleClusteringObjectErrors(testCase)
+            % Older JRCLUST versions saved the clustering as an hClust object; the
+            % current one flattens it before saving (saveRes/saveFiles).
+            res = struct();
+            res.spikeTimes = int32([1; 2]);
+            res.hClust = struct('spikeClusters',int32([1;1])); % a saved object
+            f = testCase.writeRes(res);
+
+            testCase.verifyError(@() ndi.fun.probe.import.jrclust.results(f), ...
+                'ndi:fun:probe:import:jrclust:results:oldFormat');
+        end
+
+        function testMismatchedSpikeAndClusterCountsError(testCase)
+            res = struct();
+            res.spikeTimes = int32([1; 2; 3]);
+            res.spikeClusters = int32([1; 1]); % one short
+            f = testCase.writeRes(res);
+
+            testCase.verifyError(@() ndi.fun.probe.import.jrclust.results(f), ...
+                'ndi:fun:probe:import:jrclust:results:inconsistent');
         end
 
         function testDetectedButNotSortedErrors(testCase)
