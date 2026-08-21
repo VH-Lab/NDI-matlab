@@ -124,6 +124,47 @@ classdef ElementDirectoryTest < matlab.unittest.TestCase
             testCase.verifyFalse(isLegacy);
         end
 
+        function testElementDirectoryAcceptsElementObject(testCase)
+            % Every production call site passes a probe/element object rather than
+            % the element string, so exercise that dispatch directly.
+            probe = ndi.unittest.fun.probe.MockProbe('ctx | 1');
+
+            [p, name, isLegacy] = ndi.fun.file.elementDirectory(testCase.rootDir, probe);
+            testCase.verifyEqual(name, 'ctx_-_1');
+            testCase.verifyEqual(p, fullfile(testCase.rootDir, 'ctx_-_1'));
+            testCase.verifyFalse(isLegacy);
+        end
+
+        function testElementDirectoryObjectFallsBackToLegacyFolder(testCase)
+            % The legacy fallback must work for an object argument too, since
+            % that is how the importers and the export GUI call it.
+            testCase.assumeFalse(ispc, ...
+                'Legacy ''|'' folder names cannot be created on Windows.');
+
+            probe = ndi.unittest.fun.probe.MockProbe('ctx | 1');
+            legacyDir = fullfile(testCase.rootDir, 'ctx_|_1');
+            mkdir(legacyDir);
+
+            [p, name, isLegacy] = ndi.fun.file.elementDirectory(testCase.rootDir, probe);
+            testCase.verifyEqual(name, 'ctx_|_1');
+            testCase.verifyEqual(p, legacyDir);
+            testCase.verifyTrue(isLegacy);
+        end
+
+        function testElementDirectoryAcceptsStringParentDir(testCase)
+            % parentDir is validated with mustBeTextScalar, so a string scalar
+            % must work as well as a char row vector.
+            [p, name] = ndi.fun.file.elementDirectory(string(testCase.rootDir), 'ctx | 1');
+            testCase.verifyEqual(name, 'ctx_-_1');
+            testCase.verifyEqual(p, fullfile(testCase.rootDir, 'ctx_-_1'));
+        end
+
+        function testElementDirectoryNameAcceptsString(testCase)
+            [dirName, legacyName] = ndi.fun.file.elementDirectoryName("ctx | 1");
+            testCase.verifyEqual(dirName, 'ctx_-_1');
+            testCase.verifyEqual(legacyName, 'ctx_|_1');
+        end
+
         function testElementDirectoryNoLegacySearchWhenNameIsUnchanged(testCase)
             % A name that needs no sanitizing has no legacy alternative to find.
             [p, name, isLegacy] = ndi.fun.file.elementDirectory(testCase.rootDir, 'mock_probe');
