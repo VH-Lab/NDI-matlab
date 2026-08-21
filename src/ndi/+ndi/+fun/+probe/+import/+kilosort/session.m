@@ -8,7 +8,13 @@ function session(S, options)
 % import-side analog of NDI.FUN.PROBE.EXPORT.ALL_BINARY.
 %
 % The Kilosort output for each probe is expected in
-%       [S.path]/[kilosort_dir]/[probe_elementstring]/
+%       [S.path]/[kilosort_dir]/[probe_directory]/
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 % (the same layout produced by NDI.FUN.PROBE.EXPORT.ALL_BINARY). Probes whose
 % kilosort directory or curated files are missing are skipped with a warning.
 %
@@ -84,9 +90,8 @@ function session(S, options)
     end;
 
     for p=1:numel(probe_list),
-        elestr = probe_list{p}.elementstring();
-        elestr(elestr==' ') = '_';
-        kdir = fullfile(S.path, options.kilosort_dir, elestr, subdir);
+        [probedir, elestr] = ndi.fun.file.elementDirectory(fullfile(S.path, options.kilosort_dir), probe_list{p});
+        kdir = fullfile(probedir, subdir);
         if ~isfolder(kdir) || ~isfile(fullfile(kdir,'spike_times.npy')),
             warning(['Skipping probe ' elestr ': no kilosort output found in ' kdir '.']);
             continue;

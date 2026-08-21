@@ -160,12 +160,12 @@ classdef ElectrodeDataExport < ndi.gui.app.sessionApp
         function names = exportedSorters(obj, probe)
             % Names of the sorters PROBE has already been exported for (its binary
             % file exists in that sorter's folder).
-            elestr = char(probe.elementstring());
-            elestr(elestr == ' ') = '_';
             names = {};
             for i = 1:numel(obj.exporters)
                 ex = obj.exporters(i);
-                if isfile(fullfile(obj.session.path, ex.dir, elestr, ex.bin))
+                probedir = ndi.fun.file.elementDirectory( ...
+                    fullfile(obj.session.path, ex.dir), probe);
+                if isfile(fullfile(probedir, ex.bin))
                     names{end+1} = ex.name; %#ok<AGROW>
                 end
             end
