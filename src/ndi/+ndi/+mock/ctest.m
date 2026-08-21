@@ -283,7 +283,7 @@ classdef ctest
              % telling the tests apart.
             for i = testIndexes
                 for j = testIndexes
-                    if i==j | i>size(b,1) | j>size(b,2), continue; end
+                    if i==j || i>size(b,1) || j>size(b,2), continue; end
                     if isnan(b(i,j)), continue; end
                     testCase.verifyTrue(isequal(double(b(i,j)),0), sprintf(...
                         '%s self-tests %d and %d are not distinguished from one another.', ...
@@ -297,7 +297,7 @@ classdef ctest
 
             for i = testIndexes
                 for j = testIndexes
-                    if i==j | i>size(options.bExpected,1) | j>size(options.bExpected,2), continue; end
+                    if i==j || i>size(options.bExpected,1) || j>size(options.bExpected,2), continue; end
                     if isnan(options.bExpected(i,j)), continue; end
                     testCase.verifyTrue(isequal(double(options.bExpected(i,j)),0), sprintf(...
                         '%s: the stored expectations for self-tests %d and %d are not distinct.', ...
