@@ -189,85 +189,122 @@ classdef ctest
 
         end % generate_mock_docs()
 
-        function verifySelfTests(ctest_obj, testCase, options)
-            % VERIFYSELFTESTS - run this calculator's self-tests and verify every comparison
+        function verifyTestResults(ctest_obj, testCase, b, reports, options)
+            % VERIFYTESTRESULTS - verify the comparison results returned by TEST
             %
-            % VERIFYSELFTESTS(CTEST_OBJ, TESTCASE)
-            % VERIFYSELFTESTS(CTEST_OBJ, TESTCASE, 'Name', VALUE, ...)
+            % VERIFYTESTRESULTS(CTEST_OBJ, TESTCASE, B, REPORTS)
+            % VERIFYTESTRESULTS(CTEST_OBJ, TESTCASE, B, REPORTS, 'Name', VALUE, ...)
             %
-            % Runs the self-tests of this calculator and adds one qualification to
-            % TESTCASE for each test run, so that a failing test is reported on its own
-            % together with the comparison report that explains it.
+            % Adds one qualification to TESTCASE for each self-test represented in B,
+            % so that a failing test is reported on its own together with the fields
+            % that were out of tolerance.
             %
-            % TESTCASE is a matlab.unittest.TestCase, normally the test case performing
-            % the check. Qualifications are added with verifyTrue, which records a
-            % failure without halting, so the whole battery is still run and reported
-            % when one test fails.
+            % B and REPORTS are the first two outputs of TEST. A test reproduces its
+            % stored expectation when the corresponding diagonal entry of B is 1; an
+            % entry that is NaN marks a test that was not run.
             %
-            % Without this method a test can call TEST and discard the comparison matrix
-            % it returns, in which case the test passes as long as the calculator does
-            % not raise an error, whatever answer it produced.
+            % This method performs no calculation of its own. It exists so that the
+            % results of TEST can be examined by hand and verified separately, and so
+            % that the verification is written once rather than in every test case.
+            % ndi.calculator/verifySelfTests runs TEST and calls this in one step.
+            %
+            % Qualifications are added with verifyTrue, which records a failure without
+            % halting, so every result in B is reported even when one fails.
             %
             % This method takes name/value pairs:
             % |------------------------|-------------------------------------------------|
             % | Name (default)         | Description                                     |
             % |------------------------|-------------------------------------------------|
-            % | scope ('highSNR')      | 'highSNR' or 'lowSNR'.                          |
-            % | testIndexes ([])       | Which self-tests to run. Empty runs them all,   |
-            % |                        |   that is 1:NUMBEROFSELFTESTS.                  |
-            % | plotIt (false)         | Whether each result should be plotted.          |
+            % | testIndexes ([])       | Which self-tests to require. Empty verifies     |
+            % |                        |   every test that ran, that is every diagonal   |
+            % |                        |   entry of B that is not NaN. Naming indexes    |
+            % |                        |   explicitly makes a test that did not run a    |
+            % |                        |   failure rather than an omission.              |
+            % | requireDistinct (false)| Also require that different self-tests give     |
+            % |                        |   different answers, that is that the           |
+            % |                        |   off-diagonal entries are 0. A battery whose   |
+            % |                        |   tests all produce the same answer does not    |
+            % |                        |   discriminate between them, however well each  |
+            % |                        |   matches its own expectation.                  |
+            % | bExpected ([])         | The third output of TEST. When given together   |
+            % |                        |   with requireDistinct, the stored expectations |
+            % |                        |   are themselves required to be distinct.       |
             % |------------------------|-------------------------------------------------|
             %
-            % Example, inside a matlab.unittest test method:
-            %    c = ndi.calc.vis.oridir_tuning(testCase.Session);
-            %    c.verifySelfTests(testCase);
+            % Example, verifying results obtained separately:
+            %    [b,reports] = c.test('highSNR',c.numberOfSelfTests,0);
+            %    c.verifyTestResults(testCase,b,reports);
             %
-            % Example, running only two of the tests:
-            %    c.verifySelfTests(testCase,'testIndexes',[3 5]);
-            %
-            % See also: ndi.mock.ctest/test, matlab.unittest.TestCase
+            % See also: ndi.mock.ctest/test, ndi.calculator/verifySelfTests
             %
             arguments
                 ctest_obj (1,1) ndi.mock.ctest
                 testCase (1,1) matlab.unittest.TestCase
-                options.scope (1,:) char {mustBeMember(options.scope,{'highSNR','lowSNR'})} = 'highSNR'
+                b double
+                reports cell = {}
                 options.testIndexes (1,:) double {mustBeInteger,mustBePositive} = []
-                options.plotIt (1,1) logical = false
+                options.requireDistinct (1,1) logical = false
+                options.bExpected double = []
             end
 
-             % numberOfSelfTests belongs to ndi.calculator rather than to this class,
-             % so a bare ndi.mock.ctest has nothing to run.
-            if ~isprop(ctest_obj,'numberOfSelfTests')
-                testCase.assertFail(['This object does not declare numberOfSelfTests, ' ...
-                    'so there are no self-tests to verify.']);
-                return;
-            end
-
-            numberOfTests = ctest_obj.numberOfSelfTests;
-            testCase.assertGreaterThan(numberOfTests, 0, ...
-                [class(ctest_obj) ' declares no self-tests (numberOfSelfTests is 0).']);
+            d = diag(b);
+            d = d(:)';
 
             testIndexes = options.testIndexes;
             if isempty(testIndexes)
-                testIndexes = 1:numberOfTests;
+                 % Verify whatever ran. A run that produced nothing is caught below.
+                testIndexes = find(~isnan(d));
             end
-            testCase.assertLessThanOrEqual(max(testIndexes), numberOfTests, ...
-                ['testIndexes asks for a self-test that ' class(ctest_obj) ' does not declare.']);
 
-            [b, reports] = ctest_obj.test(options.scope, numberOfTests, options.plotIt, ...
-                'specific_test_inds', testIndexes);
+            testCase.assertNotEmpty(testIndexes, ...
+                [class(ctest_obj) ': there are no self-test results to verify.']);
 
             for i = testIndexes
-                if isnan(b(i,i))
+                if i>numel(d) || isnan(d(i))
                     testCase.verifyFail(sprintf('%s self-test %d did not run.', ...
                         class(ctest_obj), i));
                     continue;
                 end
-                testCase.verifyTrue(isequal(double(b(i,i)),1), ...
+                summary = '';
+                if ~isempty(reports) && i<=size(reports,1) && i<=size(reports,2)
+                    summary = ndi.mock.ctest.reportSummary(reports{i,i});
+                end
+                testCase.verifyTrue(isequal(double(d(i)),1), ...
                     sprintf('%s self-test %d did not reproduce its stored expectation.%s', ...
-                    class(ctest_obj), i, ndi.mock.ctest.reportSummary(reports{i,i})));
+                    class(ctest_obj), i, summary));
             end
-        end % verifySelfTests()
+
+            if ~options.requireDistinct
+                return;
+            end
+
+             % Off-diagonal entries compare one test's answer against another's
+             % expectation. They should differ; if they do not, the battery is not
+             % telling the tests apart.
+            for i = testIndexes
+                for j = testIndexes
+                    if i==j | i>size(b,1) | j>size(b,2), continue; end
+                    if isnan(b(i,j)), continue; end
+                    testCase.verifyTrue(isequal(double(b(i,j)),0), sprintf(...
+                        '%s self-tests %d and %d are not distinguished from one another.', ...
+                        class(ctest_obj), i, j));
+                end
+            end
+
+            if isempty(options.bExpected)
+                return;
+            end
+
+            for i = testIndexes
+                for j = testIndexes
+                    if i==j | i>size(options.bExpected,1) | j>size(options.bExpected,2), continue; end
+                    if isnan(options.bExpected(i,j)), continue; end
+                    testCase.verifyTrue(isequal(double(options.bExpected(i,j)),0), sprintf(...
+                        '%s: the stored expectations for self-tests %d and %d are not distinct.', ...
+                        class(ctest_obj), i, j));
+                end
+            end
+        end % verifyTestResults()
 
         function [b, report] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope, docCompare)
             % COMPARE_MOCK_DOCS - compare an expected calculation answer with an actual answer
