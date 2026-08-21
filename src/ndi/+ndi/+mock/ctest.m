@@ -72,7 +72,11 @@ classdef ctest
 
             docComparisons = cell(numel(doc_output),1);
             for i=1:numel(test_inds)
-                docComparisons{i} = ctest_obj.load_mock_comparison(i);
+                 % Index by the test number, not the loop position. When
+                 % test_inds is a subset such as [5], loading into slot i=1
+                 % leaves slot 5 empty, and compare_mock_docs treats an empty
+                 % comparison as a pass, so the subset silently succeeds.
+                docComparisons{test_inds(i)} = ctest_obj.load_mock_comparison(test_inds(i));
             end
 
             b = [];
@@ -184,6 +188,123 @@ classdef ctest
             end
 
         end % generate_mock_docs()
+
+        function verifyTestResults(ctest_obj, testCase, b, reports, options)
+            % VERIFYTESTRESULTS - verify the comparison results returned by TEST
+            %
+            % VERIFYTESTRESULTS(CTEST_OBJ, TESTCASE, B, REPORTS)
+            % VERIFYTESTRESULTS(CTEST_OBJ, TESTCASE, B, REPORTS, 'Name', VALUE, ...)
+            %
+            % Adds one qualification to TESTCASE for each self-test represented in B,
+            % so that a failing test is reported on its own together with the fields
+            % that were out of tolerance.
+            %
+            % B and REPORTS are the first two outputs of TEST. A test reproduces its
+            % stored expectation when the corresponding diagonal entry of B is 1; an
+            % entry that is NaN marks a test that was not run.
+            %
+            % This method performs no calculation of its own. It exists so that the
+            % results of TEST can be examined by hand and verified separately, and so
+            % that the verification is written once rather than in every test case.
+            % ndi.calculator/verifySelfTests runs TEST and calls this in one step.
+            %
+            % Qualifications are added with verifyTrue, which records a failure without
+            % halting, so every result in B is reported even when one fails.
+            %
+            % This method takes name/value pairs:
+            % |------------------------|-------------------------------------------------|
+            % | Name (default)         | Description                                     |
+            % |------------------------|-------------------------------------------------|
+            % | testIndexes ([])       | Which self-tests to require. Empty verifies     |
+            % |                        |   every test that ran, that is every diagonal   |
+            % |                        |   entry of B that is not NaN. Naming indexes    |
+            % |                        |   explicitly makes a test that did not run a    |
+            % |                        |   failure rather than an omission.              |
+            % | requireDistinct (false)| Also require that different self-tests give     |
+            % |                        |   different answers, that is that the           |
+            % |                        |   off-diagonal entries are 0. A battery whose   |
+            % |                        |   tests all produce the same answer does not    |
+            % |                        |   discriminate between them, however well each  |
+            % |                        |   matches its own expectation.                  |
+            % | bExpected ([])         | The third output of TEST. When given together   |
+            % |                        |   with requireDistinct, the stored expectations |
+            % |                        |   are themselves required to be distinct.       |
+            % |------------------------|-------------------------------------------------|
+            %
+            % Example, verifying results obtained separately:
+            %    [b,reports] = c.test('highSNR',c.numberOfSelfTests,0);
+            %    c.verifyTestResults(testCase,b,reports);
+            %
+            % See also: ndi.mock.ctest/test, ndi.calculator/verifySelfTests
+            %
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+                testCase (1,1) matlab.unittest.TestCase
+                b double
+                reports cell = {}
+                options.testIndexes (1,:) double {mustBeInteger,mustBePositive} = []
+                options.requireDistinct (1,1) logical = false
+                options.bExpected double = []
+            end
+
+            d = diag(b);
+            d = d(:)';
+
+            testIndexes = options.testIndexes;
+            if isempty(testIndexes)
+                 % Verify whatever ran. A run that produced nothing is caught below.
+                testIndexes = find(~isnan(d));
+            end
+
+            testCase.assertNotEmpty(testIndexes, ...
+                [class(ctest_obj) ': there are no self-test results to verify.']);
+
+            for i = testIndexes
+                if i>numel(d) || isnan(d(i))
+                    testCase.verifyFail(sprintf('%s self-test %d did not run.', ...
+                        class(ctest_obj), i));
+                    continue;
+                end
+                summary = '';
+                if ~isempty(reports) && i<=size(reports,1) && i<=size(reports,2)
+                    summary = ndi.mock.ctest.reportSummary(reports{i,i});
+                end
+                testCase.verifyTrue(isequal(double(d(i)),1), ...
+                    sprintf('%s self-test %d did not reproduce its stored expectation.%s', ...
+                    class(ctest_obj), i, summary));
+            end
+
+            if ~options.requireDistinct
+                return;
+            end
+
+             % Off-diagonal entries compare one test's answer against another's
+             % expectation. They should differ; if they do not, the battery is not
+             % telling the tests apart.
+            for i = testIndexes
+                for j = testIndexes
+                    if i==j || i>size(b,1) || j>size(b,2), continue; end
+                    if isnan(b(i,j)), continue; end
+                    testCase.verifyTrue(isequal(double(b(i,j)),0), sprintf(...
+                        '%s self-tests %d and %d are not distinguished from one another.', ...
+                        class(ctest_obj), i, j));
+                end
+            end
+
+            if isempty(options.bExpected)
+                return;
+            end
+
+            for i = testIndexes
+                for j = testIndexes
+                    if i==j || i>size(options.bExpected,1) || j>size(options.bExpected,2), continue; end
+                    if isnan(options.bExpected(i,j)), continue; end
+                    testCase.verifyTrue(isequal(double(options.bExpected(i,j)),0), sprintf(...
+                        '%s: the stored expectations for self-tests %d and %d are not distinct.', ...
+                        class(ctest_obj), i, j));
+                end
+            end
+        end % verifyTestResults()
 
         function [b, report] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope, docCompare)
             % COMPARE_MOCK_DOCS - compare an expected calculation answer with an actual answer
@@ -347,5 +468,25 @@ classdef ctest
     end
 
     methods(Static)
+        function str = reportSummary(report)
+            % REPORTSUMMARY - render a comparison report as a short sentence
+            %
+            % STR = ndi.mock.ctest.reportSummary(REPORT)
+            %
+            % REPORT is one entry of the REPORTS output of TEST. It may be a character
+            % description or the structure array that ndi.database.doctools.docComparison
+            % returns. Returns a leading-space sentence naming the fields that were out
+            % of tolerance, or '' if there is nothing to say.
+            %
+            str = '';
+            if isempty(report)
+                return;
+            end
+            if ischar(report) || isstring(report)
+                str = [' ' char(report)];
+            elseif isstruct(report) && isfield(report,'name')
+                str = [' Out of tolerance: ' strjoin({report.name},', ') '.'];
+            end
+        end % reportSummary()
     end % static methods
 end

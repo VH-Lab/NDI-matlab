@@ -15,7 +15,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     %
     %   Usage Example 2 (auto close, uuid):
     %       app = ndi.gui.component.ProgressBarWindow(); % Create a window
-    %       uuid = did.ido.unique;
+    %       uuid = did.ido.unique_id();
     %       app.addBar('Label','Save document(s)','Tag',uuid,'Auto',true); % Add a bar
     %       app.updateBar(uuid,0.5) % Update the bar's progress
     %
