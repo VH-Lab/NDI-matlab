@@ -72,7 +72,11 @@ classdef ctest
 
             docComparisons = cell(numel(doc_output),1);
             for i=1:numel(test_inds)
-                docComparisons{i} = ctest_obj.load_mock_comparison(i);
+                 % Index by the test number, not the loop position. When
+                 % test_inds is a subset such as [5], loading into slot i=1
+                 % leaves slot 5 empty, and compare_mock_docs treats an empty
+                 % comparison as a pass, so the subset silently succeeds.
+                docComparisons{test_inds(i)} = ctest_obj.load_mock_comparison(test_inds(i));
             end
 
             b = [];
@@ -184,6 +188,86 @@ classdef ctest
             end
 
         end % generate_mock_docs()
+
+        function verifySelfTests(ctest_obj, testCase, options)
+            % VERIFYSELFTESTS - run this calculator's self-tests and verify every comparison
+            %
+            % VERIFYSELFTESTS(CTEST_OBJ, TESTCASE)
+            % VERIFYSELFTESTS(CTEST_OBJ, TESTCASE, 'Name', VALUE, ...)
+            %
+            % Runs the self-tests of this calculator and adds one qualification to
+            % TESTCASE for each test run, so that a failing test is reported on its own
+            % together with the comparison report that explains it.
+            %
+            % TESTCASE is a matlab.unittest.TestCase, normally the test case performing
+            % the check. Qualifications are added with verifyTrue, which records a
+            % failure without halting, so the whole battery is still run and reported
+            % when one test fails.
+            %
+            % Without this method a test can call TEST and discard the comparison matrix
+            % it returns, in which case the test passes as long as the calculator does
+            % not raise an error, whatever answer it produced.
+            %
+            % This method takes name/value pairs:
+            % |------------------------|-------------------------------------------------|
+            % | Name (default)         | Description                                     |
+            % |------------------------|-------------------------------------------------|
+            % | scope ('highSNR')      | 'highSNR' or 'lowSNR'.                          |
+            % | testIndexes ([])       | Which self-tests to run. Empty runs them all,   |
+            % |                        |   that is 1:NUMBEROFSELFTESTS.                  |
+            % | plotIt (false)         | Whether each result should be plotted.          |
+            % |------------------------|-------------------------------------------------|
+            %
+            % Example, inside a matlab.unittest test method:
+            %    c = ndi.calc.vis.oridir_tuning(testCase.Session);
+            %    c.verifySelfTests(testCase);
+            %
+            % Example, running only two of the tests:
+            %    c.verifySelfTests(testCase,'testIndexes',[3 5]);
+            %
+            % See also: ndi.mock.ctest/test, matlab.unittest.TestCase
+            %
+            arguments
+                ctest_obj (1,1) ndi.mock.ctest
+                testCase (1,1) matlab.unittest.TestCase
+                options.scope (1,:) char {mustBeMember(options.scope,{'highSNR','lowSNR'})} = 'highSNR'
+                options.testIndexes (1,:) double {mustBeInteger,mustBePositive} = []
+                options.plotIt (1,1) logical = false
+            end
+
+             % numberOfSelfTests belongs to ndi.calculator rather than to this class,
+             % so a bare ndi.mock.ctest has nothing to run.
+            if ~isprop(ctest_obj,'numberOfSelfTests')
+                testCase.assertFail(['This object does not declare numberOfSelfTests, ' ...
+                    'so there are no self-tests to verify.']);
+                return;
+            end
+
+            numberOfTests = ctest_obj.numberOfSelfTests;
+            testCase.assertGreaterThan(numberOfTests, 0, ...
+                [class(ctest_obj) ' declares no self-tests (numberOfSelfTests is 0).']);
+
+            testIndexes = options.testIndexes;
+            if isempty(testIndexes)
+                testIndexes = 1:numberOfTests;
+            end
+            testCase.assertLessThanOrEqual(max(testIndexes), numberOfTests, ...
+                ['testIndexes asks for a self-test that ' class(ctest_obj) ' does not declare.']);
+
+            [b, reports] = ctest_obj.test(options.scope, numberOfTests, options.plotIt, ...
+                'specific_test_inds', testIndexes);
+
+            for i = testIndexes
+                if isnan(b(i,i))
+                    testCase.verifyFail(sprintf('%s self-test %d did not run.', ...
+                        class(ctest_obj), i));
+                    continue;
+                end
+                testCase.verifyTrue(isequal(double(b(i,i)),1), ...
+                    sprintf('%s self-test %d did not reproduce its stored expectation.%s', ...
+                    class(ctest_obj), i, ndi.mock.ctest.reportSummary(reports{i,i})));
+            end
+        end % verifySelfTests()
 
         function [b, report] = compare_mock_docs(ctest_obj, expected_doc, actual_doc, scope, docCompare)
             % COMPARE_MOCK_DOCS - compare an expected calculation answer with an actual answer
@@ -347,5 +431,25 @@ classdef ctest
     end
 
     methods(Static)
+        function str = reportSummary(report)
+            % REPORTSUMMARY - render a comparison report as a short sentence
+            %
+            % STR = ndi.mock.ctest.reportSummary(REPORT)
+            %
+            % REPORT is one entry of the REPORTS output of TEST. It may be a character
+            % description or the structure array that ndi.database.doctools.docComparison
+            % returns. Returns a leading-space sentence naming the fields that were out
+            % of tolerance, or '' if there is nothing to say.
+            %
+            str = '';
+            if isempty(report)
+                return;
+            end
+            if ischar(report) || isstring(report)
+                str = [' ' char(report)];
+            elseif isstruct(report) && isfield(report,'name')
+                str = [' Out of tolerance: ' strjoin({report.name},', ') '.'];
+            end
+        end % reportSummary()
     end % static methods
 end
