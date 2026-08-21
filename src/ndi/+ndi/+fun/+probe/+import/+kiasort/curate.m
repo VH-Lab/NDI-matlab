@@ -40,9 +40,7 @@ function fig = curate(S, probe, options)
     end;
     have_standalone = exist('kiaSort_curate_standalone','file')==2;
 
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
-    probedir = fullfile(S.path, options.kiasort_dir, elestr);
+    [probedir, elestr] = ndi.fun.file.elementDirectory(fullfile(S.path, options.kiasort_dir), probe);
     outputFolder = fullfile(probedir, options.subdir);
     if ~isfolder(fullfile(outputFolder,'RES_Sorted')),
         error(['No KIASORT results found for probe %s (looked for %s). Run KIASORT first ' ...
