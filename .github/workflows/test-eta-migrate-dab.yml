@@ -1,0 +1,158 @@
+name: V_eta migrate Dab (on-demand)
+
+# The Dab corpus (~27,561 v1 documents, ~35 MB compressed) through the WHOLE
+# V_eta pipeline: ndi.migrate.local over the real corpus, then open the result
+# through ndi.session.dir and read it back through the object API.
+#
+# WHY DAB HAS ITS OWN, DISPATCH-ONLY WORKFLOW rather than a line in
+# test-eta-migrate-e2e.yml. Dab is the WIDEST corpus (26 v1 classes) and the
+# only one that holds `ontologyTableRow` at scale (~6,205 docs). Its
+# decomposition -- ndi.migrate.internal.ontologyRowSubjects, the two-tier
+# subject fan-out (#53) -- is proven only by a fixture (TestOntologyRowSubjects)
+# and has never run over a real corpus. This workflow is the first full-corpus
+# exercise of that pass, plus the widest object read-back surface (ingestion
+# ~9,419, openMINDS ~2,344, syncrule_mapping ~2,484). Run alone, with a generous
+# timeout, and never on every push: it does not gate the fast e2e check, and a
+# Dab timeout/OOM here cannot turn that check red. Dab's MIGRATION (0 quarantine
+# / 0 orphans) is also gated independently on the DID-matlab side
+# (test-corpus.yml); what this workflow uniquely adds is the NDI second passes +
+# object-layer read-back on Dab's real documents.
+#
+# The DID-matlab, did-schema, and NDI-matlab V_eta branches share a name, so the
+# dep refs default to this run's branch (github.ref_name); override via the
+# workflow_dispatch input if needed.
+
+on:
+  # Runs ONLY when Dab's own files change -- the test or this workflow -- so a
+  # long Dab run never rides on an unrelated push and never gates the fast e2e
+  # check. workflow_dispatch below only becomes available once this file reaches
+  # the default branch (a GitHub constraint), so the scoped push is what runs
+  # Dab from a feature branch until then.
+  push:
+    paths:
+      - '.github/workflows/test-eta-migrate-dab.yml'
+      - 'tests/*ndi/*unittest/*migrate/TestMigrateLocalEtaDab.m'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'did-matlab / did-schema branch (V_eta line)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eta_migrate_dab:
+    name: V_eta Dab end-to-end (on-demand)
+    runs-on: ubuntu-latest
+    # Generous headroom. Dab is ~1/4 of Soph by document count and migrates fast
+    # on the DID side; the unknown is the ontologyRowSubjects fan-out at scale,
+    # so the ceiling is set well above the expected wall clock.
+    timeout-minutes: 180
+    env:
+      DID_MATLAB_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+      DID_SCHEMA_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+    steps:
+      - name: Check out NDI-matlab
+        uses: actions/checkout@v4
+
+      - name: Check out did-schema (for V_eta schemas)
+        uses: actions/checkout@v4
+        with:
+          repository: Waltham-Data-Science/did-schema
+          ref: ${{ env.DID_SCHEMA_REF }}
+          path: did-schema
+
+      - name: Assemble V_eta schema set (stable + draft)
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}/eta-schemas"
+          cp did-schema/schemas/V_eta/stable/*.json "${GITHUB_WORKSPACE}/eta-schemas/"
+          cp did-schema/schemas/V_eta/draft/*.json  "${GITHUB_WORKSPACE}/eta-schemas/"
+
+      - name: Export env (schema path + eta test gate)
+        run: |
+          echo "DID_SCHEMA_PATH=${GITHUB_WORKSPACE}/eta-schemas" >> "$GITHUB_ENV"
+          echo "NDI_TEST_ETA=1" >> "$GITHUB_ENV"
+
+      - name: Start virtual display server
+        run: |
+          sudo apt-get install -y xvfb
+          Xvfb :99 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: latest
+          cache: true
+          products: |
+            Statistics_and_Machine_Learning_Toolbox
+
+      - name: Install MatBox
+        env:
+          # MatBox resolves its dependencies through the GitHub API.
+          # UNAUTHENTICATED that is 60 requests/hour per runner IP, so this step
+          # fails on `rate limit exceeded` (403) in a way indistinguishable from
+          # a real dependency break (the Soph run 32545423486 died here on
+          # vhlab-library-matlab's getDefaultBranch). secrets.GITHUB_TOKEN is
+          # minted per run, needs no setup, and raises the limit to 1000/hour.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ehennestad/matbox-actions/install-matbox@v1
+
+      - name: Point requirements at the DID-matlab V_eta branch
+        # requirements.txt pins a DID-matlab that predates +migrators_j /
+        # TargetVersion='V_eta'. Rewrite it to the V_eta branch so v1_to_v2
+        # accepts TargetVersion='V_eta'.
+        run: |
+          set -eux
+          python3 - <<'PY'
+          import os, pathlib
+          ref = os.environ["DID_MATLAB_REF"]
+          for rel in ("requirements.txt", "tests/requirements.txt"):
+              p = pathlib.Path(rel)
+              if not p.exists():
+                  continue
+              out = []
+              for line in p.read_text().splitlines():
+                  if "DID-matlab" in line:
+                      out.append(line.split("@", 1)[0] + "@" + ref)
+                  else:
+                      out.append(line)
+              p.write_text("\n".join(out) + "\n")
+          PY
+          grep -i did-matlab requirements.txt tests/requirements.txt || true
+
+      - name: Install repo dependencies (DID-matlab@V_eta, mksqlite, vhlab-toolbox)
+        env:
+          # Same rate-limit fix as Install MatBox above: installRequirements
+          # resolves every dependency (DID-matlab, mksqlite, vhlab-toolbox,
+          # vhlab-library) through the GitHub API, so it needs the token to stay
+          # under the 1000/hour authenticated limit rather than the 60/hour IP one.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tools"));
+            matbox.installRequirements(nditools.projectdir());
+            matbox.installRequirements(fullfile(pwd, "tests"));
+
+      - name: Run the Dab V_eta migrate end-to-end test
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath(genpath("src"));
+            addpath(genpath("tests"));
+            % Dab ALONE. Hard-asserts corpus size, 0 quarantine / 0 orphans /
+            % 0 fragments, that the session opens on the did2sqlite backend, and
+            % that the ontologyRowSubjects fan-out (#53) leaves no unfolded
+            % `ontologyTableRow` in the output. The pass-1 census, final survivor
+            % set, per-session read-back counts, and fan-out OUTPUT volume are
+            % report-only on this first landing (measured before pinned). SKIPS
+            % (never fails) when the corpus download is impossible.
+            results = runtests('ndi.unittest.migrate.TestMigrateLocalEtaDab');
+            disp(results);
+            assertSuccess(results);
