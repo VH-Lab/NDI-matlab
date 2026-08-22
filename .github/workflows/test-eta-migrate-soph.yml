@@ -89,6 +89,14 @@ jobs:
             Statistics_and_Machine_Learning_Toolbox
 
       - name: Install MatBox
+        env:
+          # MatBox resolves its dependencies through the GitHub API.
+          # UNAUTHENTICATED that is 60 requests/hour per runner IP, so this step
+          # fails on `rate limit exceeded` (403) in a way indistinguishable from
+          # a real dependency break -- run 32545423486 died here on
+          # vhlab-library-matlab's getDefaultBranch. secrets.GITHUB_TOKEN is
+          # minted per run, needs no setup, and raises the limit to 1000/hour.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: ehennestad/matbox-actions/install-matbox@v1
 
       - name: Point requirements at the DID-matlab V_eta branch
@@ -115,6 +123,12 @@ jobs:
           grep -i did-matlab requirements.txt tests/requirements.txt || true
 
       - name: Install repo dependencies (DID-matlab@V_eta, mksqlite, vhlab-toolbox)
+        env:
+          # Same rate-limit fix as Install MatBox above: installRequirements
+          # resolves every dependency (DID-matlab, mksqlite, vhlab-toolbox,
+          # vhlab-library) through the GitHub API, so it needs the token to stay
+          # under the 1000/hour authenticated limit rather than the 60/hour IP one.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: matlab-actions/run-command@v2
         with:
           command: |
