@@ -339,6 +339,23 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 end
             end
 
+            % THE FORK-1 EVIDENCE. For each refused presentation the second
+            % pass also asked: would the presentation's EPOCH attribute it to a
+            % recorded subject (the fallback the response link cannot give an
+            % opto/bath experiment)? Report-only. `one` = the epoch names
+            % exactly one subject (fork 1 works, unambiguous); `zero` = no
+            % recorded subject in the epoch (genuinely subject-less -> fork 2, a
+            % bare timed_sequence); `multi` = several (ambiguous, an edge case to
+            % decide). It measures that the path RESOLVES and is UNIQUE, NOT that
+            % the resolved animal is the intended stimulus target -- that
+            % identity is a domain fact about the experiment, not something a
+            % document count establishes.
+            fprintf(['    epoch-fallback attribution of the refused (report-only, #31):\n' ...
+                     '        exactly one recorded subject: %d\n' ...
+                     '        none (subject-less epoch):     %d\n' ...
+                     '        several (ambiguous):           %d\n'], ...
+                r.epoch_fallback_one, r.epoch_fallback_zero, r.epoch_fallback_multi);
+
             % Denominator only: a run that read zero presentations would make
             % the histogram a statement about nothing. Dab holds 1242 of them.
             verifyGreaterThan(testCase, r.presentations_read, 0, ...

@@ -76,7 +76,7 @@ byId = indexById(bodies);
 % the maps; the readers below then answer in O(1)/O(matches). The ordering
 % and first-match semantics of the old scans are preserved exactly: each map
 % stores its bodies in body order and the readers stop at the first hit.
-[responsesByPresentation, elementEpochByKey, clocktimesByEpoch] = ...
+[responsesByPresentation, elementEpochByKey, clocktimesByEpoch, elementsByEpoch] = ...
     indexGraph(bodies);
 
 resolver = struct();
@@ -85,11 +85,13 @@ resolver.epochClockOfElement = @(elementId, epochId) ...
     epochClockOfElement(elementEpochByKey, clocktimesByEpoch, elementId, epochId);
 resolver.subjectsForPresentation = @(presentationId) ...
     subjectsForPresentation(responsesByPresentation, byId, presentationId);
+resolver.subjectsViaEpoch = @(presentationId) ...
+    subjectsViaEpoch(byId, elementsByEpoch, presentationId);
 end
 
 % ===================== graph index (one O(N) pass) =======================
 
-function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch] = ...
+function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch, elementsByEpoch] = ...
         indexGraph(bodies)
 % Build, in a single pass over BODIES and in body order:
 %   responsesByPresentation : stimulus_presentation_id -> cell of the
@@ -97,11 +99,16 @@ function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch] = ...
 %   elementEpochByKey       : '<element_id>|<epoch_id>' -> cell of the
 %                             element_epoch bodies for that pair
 %   clocktimesByEpoch       : epoch_id -> cell of the epochclocktimes bodies
+%   elementsByEpoch         : epoch_id -> cell of the element_ids recorded in
+%                             that epoch (the inverse of elementEpochByKey's
+%                             element half), for the epoch->element->subject
+%                             fallback (subjectsViaEpoch).
 % Each holds exactly the subset the old per-call scans would have visited, in
 % the same order, so the readers reproduce the old first-match results.
 responsesByPresentation = containers.Map('KeyType', 'char', 'ValueType', 'any');
 elementEpochByKey        = containers.Map('KeyType', 'char', 'ValueType', 'any');
 clocktimesByEpoch        = containers.Map('KeyType', 'char', 'ValueType', 'any');
+elementsByEpoch          = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(bodies)
     b = bodies{k};
     if isaStimulusResponse(b)
@@ -116,6 +123,7 @@ for k = 1:numel(bodies)
         ep  = epochIdOf(b);
         if ~isempty(eid) && ~isempty(ep)
             elementEpochByKey = appendToMap(elementEpochByKey, [eid '|' ep], b);
+            elementsByEpoch   = appendToMap(elementsByEpoch, ep, eid);
         end
     elseif strcmp(cls, 'epochclocktimes')
         ep = epochIdOf(b);
@@ -220,6 +228,45 @@ for k = 1:numel(responses)
     end
     try
         sid = subjectOfElement(byId, elementId);
+    catch
+        continue;   % element does not resolve to a subject -> skip
+    end
+    if ~isempty(sid) && ~isKey(seen, sid)
+        seen(sid) = true;
+        subs{end+1} = sid; %#ok<AGROW>
+    end
+end
+end
+
+function subs = subjectsViaEpoch(byId, elementsByEpoch, presentationId)
+% The animal subject(s) reachable from a presentation's EPOCH rather than
+% through a stimulus_response. A stimulus_presentation carries the `epochid`
+% superclass, and the elements recorded in that epoch (element_epoch docs)
+% resolve to their subjects -- so a presentation with NO response document
+% (the non-tuning case: an opto/bath ephys experiment computes no per-stimulus
+% response) can still name the animal it was shown to, because that animal is
+% the one being recorded in the same epoch. Returns a de-duplicated cell of
+% subject_ids (empty if the presentation has no epoch, no element is recorded
+% in it, or no element resolves to a subject).
+%
+% USED REPORT-ONLY TODAY: the second pass calls this to MEASURE how many
+% response-less presentations the epoch path would attribute (0 / 1 / many),
+% and emits nothing from it. It is the resolver a fork-1 build ("attribute via
+% the epoch's recorded subject") would reuse unchanged.
+presentationId = char(presentationId);
+subs = {};
+if ~isKey(byId, presentationId)
+    return;
+end
+epochId = epochIdOf(byId(presentationId));
+if isempty(epochId) || ~isKey(elementsByEpoch, epochId)
+    return;
+end
+elementIds = elementsByEpoch(epochId);
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(elementIds)
+    try
+        sid = subjectOfElement(byId, elementIds{k});
     catch
         continue;   % element does not resolve to a subject -> skip
     end

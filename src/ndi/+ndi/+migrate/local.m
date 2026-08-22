@@ -2186,6 +2186,23 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             % crash must not print the same result.
             report.presentations_refused = report.presentations_refused + 1;
             report.refusals{end+1} = struct('id', presId, 'reason', rep.reason);
+            % REPORT-ONLY MEASUREMENT (no emission). A presentation refused
+            % because no stimulus_response links it to a responding element
+            % (the opto/bath ephys case: no per-stimulus response is computed)
+            % may still name its animal through its EPOCH -- the subject
+            % recorded in that epoch. This counts how many the epoch path would
+            % attribute (exactly one / none / several); it does NOT act. That
+            % attribution ("fork 1") is a team decision, and this is its
+            % evidence. subjectsViaEpoch is the resolver such a build reuses.
+            viaEpoch = resolver.subjectsViaEpoch(presId);
+            switch numel(viaEpoch)
+                case 1
+                    report.epoch_fallback_one = report.epoch_fallback_one + 1;
+                case 0
+                    report.epoch_fallback_zero = report.epoch_fallback_zero + 1;
+                otherwise
+                    report.epoch_fallback_multi = report.epoch_fallback_multi + 1;
+            end
             continue;
         end
         minted{end+1} = manip; %#ok<AGROW>
@@ -2329,6 +2346,9 @@ function r = newStimulusSequenceReport()
         'sampled_bodies',             0, ...
         'reference_bodies_minted',    0, ...
         'single_grating_candidates',  0, ...
+        'epoch_fallback_one',         0, ...
+        'epoch_fallback_zero',        0, ...
+        'epoch_fallback_multi',       0, ...
         'flattening_pass',            'GATED OFF -- retained for the presentation-less single-grating case, which has no v1 source', ...
         'refusals',                   {{}}, ...
         'hartley',                    []);
