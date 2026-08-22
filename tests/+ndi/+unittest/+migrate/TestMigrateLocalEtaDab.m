@@ -295,6 +295,57 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % guarantee (0 quarantine / 0 orphans) is the hard gate above.
         end
 
+        function testStimulusPresentationRefusalsByReason(testCase)
+            % REPORT-ONLY. Dab's survivor census shows all of its
+            % stimulus_presentation UNFOLDED, whereas Soph's e2e folded 173/175.
+            % The second pass records a REASON per refused presentation
+            % (Result.secondPass.stimulusSequence.refusals), and this surfaces
+            % the histogram of those reasons -- which the corpus log did not.
+            % It decides nothing (Operating Rule 4): whether "no responding
+            % animal" (a genuine subject-less presentation, whose home is a bare
+            % `timed_sequence` -- a team call) DOMINATES, or a different reason
+            % (an unresolved-linkage bug the resolver should fix) does, is the
+            % measurement this exists to take. Denominator asserted; the split
+            % is report-only.
+            r = testCase.Result.secondPass.stimulusSequence;
+            testCase.assertTrue(isstruct(r) && isfield(r, 'presentations_read'), ...
+                'the migrate result carries no stimulusSequence report');
+
+            fprintf(['\n  STIMULUS-PRESENTATION FOLD (Dab, #31) -- report-only\n' ...
+                     '    DENOMINATOR: %d presentation(s) read\n' ...
+                     '    decomposed to timed_sequence_manipulation: %d\n' ...
+                     '    refused (left as passthrough):             %d\n'], ...
+                r.presentations_read, r.presentations_decomposed, ...
+                r.presentations_refused);
+
+            % Histogram the refusal reasons. `refusals` is a cell of
+            % struct('id', ..., 'reason', ...) appended once per refusal.
+            counts = containers.Map('KeyType', 'char', 'ValueType', 'double');
+            for k = 1:numel(r.refusals)
+                why = r.refusals{k}.reason;
+                if isempty(why); why = '(empty reason)'; end
+                if isKey(counts, why)
+                    counts(why) = counts(why) + 1;
+                else
+                    counts(why) = 1;
+                end
+            end
+            ks = keys(counts);
+            if isempty(ks)
+                fprintf('        (no refusals recorded)\n');
+            else
+                for i = 1:numel(ks)
+                    fprintf('        %6d  %s\n', counts(ks{i}), ks{i});
+                end
+            end
+
+            % Denominator only: a run that read zero presentations would make
+            % the histogram a statement about nothing. Dab holds 1242 of them.
+            verifyGreaterThan(testCase, r.presentations_read, 0, ...
+                ['the second pass read 0 stimulus_presentation bodies, so the ' ...
+                 'refusal histogram describes nothing -- Dab holds 1242']);
+        end
+
     end
 end
 
