@@ -76,8 +76,8 @@ byId = indexById(bodies);
 % the maps; the readers below then answer in O(1)/O(matches). The ordering
 % and first-match semantics of the old scans are preserved exactly: each map
 % stores its bodies in body order and the readers stop at the first hit.
-[responsesByPresentation, elementEpochByKey, clocktimesByEpoch, elementsByEpoch] = ...
-    indexGraph(bodies);
+[responsesByPresentation, elementEpochByKey, clocktimesByEpoch, elementsByEpoch, ...
+    elementsBySessionEpoch] = indexGraph(bodies);
 
 resolver = struct();
 resolver.subjectOfElement   = @(elementId) subjectOfElement(byId, elementId);
@@ -87,12 +87,14 @@ resolver.subjectsForPresentation = @(presentationId) ...
     subjectsForPresentation(responsesByPresentation, byId, presentationId);
 resolver.subjectsViaEpoch = @(presentationId) ...
     subjectsViaEpoch(byId, elementsByEpoch, presentationId);
+resolver.subjectsViaEpochScoped = @(presentationId) ...
+    subjectsViaEpochScoped(byId, elementsBySessionEpoch, presentationId);
 end
 
 % ===================== graph index (one O(N) pass) =======================
 
-function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch, elementsByEpoch] = ...
-        indexGraph(bodies)
+function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch, elementsByEpoch, ...
+        elementsBySessionEpoch] = indexGraph(bodies)
 % Build, in a single pass over BODIES and in body order:
 %   responsesByPresentation : stimulus_presentation_id -> cell of the
 %                             stimulus_response bodies that name it
@@ -103,12 +105,21 @@ function [responsesByPresentation, elementEpochByKey, clocktimesByEpoch, element
 %                             that epoch (the inverse of elementEpochByKey's
 %                             element half), for the epoch->element->subject
 %                             fallback (subjectsViaEpoch).
+%   elementsBySessionEpoch  : '<session_id>|<epoch_id>' -> cell of element_ids.
+%                             The SESSION-SCOPED elementsByEpoch: because a v1
+%                             `epochid` is an epoch NAME that repeats across
+%                             sessions, the bare-epoch map pools elements from
+%                             different sessions/subjects. Scoping by the
+%                             element_epoch's own base.session_id keeps a
+%                             presentation's epoch attribution inside its own
+%                             session (subjectsViaEpochScoped).
 % Each holds exactly the subset the old per-call scans would have visited, in
 % the same order, so the readers reproduce the old first-match results.
 responsesByPresentation = containers.Map('KeyType', 'char', 'ValueType', 'any');
 elementEpochByKey        = containers.Map('KeyType', 'char', 'ValueType', 'any');
 clocktimesByEpoch        = containers.Map('KeyType', 'char', 'ValueType', 'any');
 elementsByEpoch          = containers.Map('KeyType', 'char', 'ValueType', 'any');
+elementsBySessionEpoch   = containers.Map('KeyType', 'char', 'ValueType', 'any');
 for k = 1:numel(bodies)
     b = bodies{k};
     if isaStimulusResponse(b)
@@ -124,6 +135,11 @@ for k = 1:numel(bodies)
         if ~isempty(eid) && ~isempty(ep)
             elementEpochByKey = appendToMap(elementEpochByKey, [eid '|' ep], b);
             elementsByEpoch   = appendToMap(elementsByEpoch, ep, eid);
+            sid = subField(b, 'base', 'session_id');
+            if ~isempty(sid)
+                elementsBySessionEpoch = ...
+                    appendToMap(elementsBySessionEpoch, [sid '|' ep], eid);
+            end
         end
     elseif strcmp(cls, 'epochclocktimes')
         ep = epochIdOf(b);
@@ -263,6 +279,44 @@ if isempty(epochId) || ~isKey(elementsByEpoch, epochId)
     return;
 end
 elementIds = elementsByEpoch(epochId);
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(elementIds)
+    try
+        sid = subjectOfElement(byId, elementIds{k});
+    catch
+        continue;   % element does not resolve to a subject -> skip
+    end
+    if ~isempty(sid) && ~isKey(seen, sid)
+        seen(sid) = true;
+        subs{end+1} = sid; %#ok<AGROW>
+    end
+end
+end
+
+function subs = subjectsViaEpochScoped(byId, elementsBySessionEpoch, presentationId)
+% subjectsViaEpoch, SCOPED TO THE PRESENTATION'S OWN SESSION. A v1 `epochid` is
+% an epoch NAME that repeats across sessions, so the bare-epoch fallback pools
+% elements from every session that reused the name and reports several subjects
+% for what is one animal per session. This keys the epoch by the presentation's
+% base.session_id so only the elements recorded in THAT session's epoch are
+% considered. Same return contract as subjectsViaEpoch (de-duplicated cell of
+% subject_ids; empty if no epoch / session / recorded element / subject).
+presentationId = char(presentationId);
+subs = {};
+if ~isKey(byId, presentationId)
+    return;
+end
+pres = byId(presentationId);
+epochId   = epochIdOf(pres);
+sessionId = subField(pres, 'base', 'session_id');
+if isempty(epochId) || isempty(sessionId)
+    return;
+end
+key = [sessionId '|' epochId];
+if ~isKey(elementsBySessionEpoch, key)
+    return;
+end
+elementIds = elementsBySessionEpoch(key);
 seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for k = 1:numel(elementIds)
     try

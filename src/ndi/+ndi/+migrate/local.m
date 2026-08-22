@@ -2203,6 +2203,22 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
                 otherwise
                     report.epoch_fallback_multi = report.epoch_fallback_multi + 1;
             end
+            % SESSION-SCOPED variant of the same measurement. A v1 epochid is an
+            % epoch NAME that repeats across sessions, and this pass runs over
+            % the whole corpus, so the unscoped tally above pools elements
+            % across sessions and over-reports "several". Scoping the epoch to
+            % the presentation's own session_id separates a real multi-subject
+            % epoch (still `multi` here) from that pooling artifact (collapses
+            % to `one`).
+            viaEpochScoped = resolver.subjectsViaEpochScoped(presId);
+            switch numel(viaEpochScoped)
+                case 1
+                    report.epoch_fallback_scoped_one = report.epoch_fallback_scoped_one + 1;
+                case 0
+                    report.epoch_fallback_scoped_zero = report.epoch_fallback_scoped_zero + 1;
+                otherwise
+                    report.epoch_fallback_scoped_multi = report.epoch_fallback_scoped_multi + 1;
+            end
             continue;
         end
         minted{end+1} = manip; %#ok<AGROW>
@@ -2349,6 +2365,9 @@ function r = newStimulusSequenceReport()
         'epoch_fallback_one',         0, ...
         'epoch_fallback_zero',        0, ...
         'epoch_fallback_multi',       0, ...
+        'epoch_fallback_scoped_one',  0, ...
+        'epoch_fallback_scoped_zero', 0, ...
+        'epoch_fallback_scoped_multi', 0, ...
         'flattening_pass',            'GATED OFF -- retained for the presentation-less single-grating case, which has no v1 source', ...
         'refusals',                   {{}}, ...
         'hartley',                    []);
