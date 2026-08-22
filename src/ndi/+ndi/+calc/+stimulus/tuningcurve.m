@@ -473,8 +473,10 @@ classdef tuningcurve < ndi.calculator
                 reps = 5; % Number of repetitions
 
                 % Use the mock utility to generate documents
+                 % Seeded by test index; see the note in ndi.calc.tuning_fit.
                 docs_here = ndi.mock.fun.stimulus_response(ndi_calculator_obj.session, ...
-                    param_struct, independent_variables, X, R, noise, reps);
+                    param_struct, independent_variables, X, R, noise, reps, ...
+                    'RandomSeed', i);
 
                 % Extract the relevant input documents (subject, stimulator, spikes, stim_pres, control_stim, stim_response)
                 % ndi.mock.fun.stimulus_response returns:

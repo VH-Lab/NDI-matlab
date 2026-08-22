@@ -78,8 +78,14 @@ classdef (Abstract) tuning_fit < ndi.calculator
                                 error(['Unknown scope ' scope '.']);
                         end % switch
 
+                         % Seed by test index, so each self-test keeps its own
+                         % noise realisation and repeated runs reproduce it. One
+                         % seed for all of them would give every test the same
+                         % draw, which would weaken the requireDistinct check in
+                         % ndi.mock.ctest/verifyTestResults.
                         docs{i} = ndi.mock.fun.stimulus_response(obj.session,...
-                            param_struct, independent_variable, x, r, noise, reps);
+                            param_struct, independent_variable, x, r, noise, reps,...
+                            'RandomSeed', i);
 
                         calcparameters = obj.default_search_for_input_parameters();
 

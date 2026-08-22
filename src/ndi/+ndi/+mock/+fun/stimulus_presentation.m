@@ -65,6 +65,18 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
         options.interstimulus_interval (1,1) double = 5
         options.stim_duration_min (1,1) double = 0.2
         options.epochid (1,:) char = 'mockepoch'
+        options.RandomSeed = 0
+    end
+
+     % Draw the trial-to-trial variability from a private, seeded stream. It
+     % came from the global one, unseeded, so the same mock inputs produced
+     % different responses on every call and no stored expectation computed from
+     % them could be reproduced. Empty selects the global stream, for a caller
+     % who wants a fresh draw each time.
+    if isempty(options.RandomSeed)
+        noiseStream = RandStream.getGlobalStream();
+    else
+        noiseStream = RandStream('mt19937ar','Seed',options.RandomSeed);
     end
 
     stim_duration = options.stim_duration;
@@ -103,7 +115,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
 
         % now see how many spikes to fire for this stimulus
         stimid = stim_pres_struct.presentation_order(i);
-        R_here = R(stimid) + noise * randn * R(stimid);
+        R_here = R(stimid) + noise * randn(noiseStream) * R(stimid);
         if ~isnan(R_here) & (R_here>0)
             n_spikes_mean = R_here * stim_duration;
             n_spikes_floor = floor( n_spikes_mean );
