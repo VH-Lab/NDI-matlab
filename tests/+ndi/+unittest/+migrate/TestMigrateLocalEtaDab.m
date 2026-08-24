@@ -360,6 +360,104 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                  'refusal histogram describes nothing -- Dab holds 1242']);
         end
 
+        function testWhatTheStimulusPresentationParametersActuallyAre(testCase)
+            % REPORT-ONLY. Dabrowska's only stimulator probe is the drug `bath`
+            % (probeTable type 'stimulator'), so its stimulus_presentation are
+            % pharmacological, not visual -- yet 1011 tripped isGratingParameters
+            % (ANY one of angle/orientation/sf/tf present, non-empty). This dumps
+            % the ACTUAL parameter field-name sets across every stimulus, and the
+            % value ranges of the grating-named fields, so what the decoder wrote
+            % is SEEN rather than inferred: a real grating carries angle+sf+tf
+            % with varied values; a bath event mistyped as one carries a stray or
+            % constant field. It decides nothing (Rule 4). The parse mirrors
+            % stimulusArray/stimParameters so the sets match what the fold saw.
+            gratingNames = {'angle', 'orientation', 'sFrequency', ...
+                'spatial_frequency', 'sf', 'tFrequency', 'temporal_frequency', 'tf'};
+            fieldSets = containers.Map('KeyType', 'char', 'ValueType', 'double');
+            gCount    = containers.Map('KeyType', 'char', 'ValueType', 'double');
+            gVals     = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            for g = 1:numel(gratingNames); gCount(gratingNames{g}) = 0; end
+            nPres = 0; nStim = 0;
+
+            for k = 1:numel(testCase.Bodies)
+                j = jsondecode(testCase.Bodies{k});
+                if ~(isfield(j, 'document_class') && isfield(j.document_class, 'class_name') ...
+                        && strcmp(j.document_class.class_name, 'stimulus_presentation'))
+                    continue;
+                end
+                nPres = nPres + 1;
+                if ~isfield(j, 'stimulus_presentation') ...
+                        || ~isfield(j.stimulus_presentation, 'stimuli')
+                    continue;
+                end
+                raw = j.stimulus_presentation.stimuli;
+                stims = {};
+                if isstruct(raw)
+                    for i = 1:numel(raw); stims{end+1} = raw(i); end %#ok<AGROW>
+                elseif iscell(raw)
+                    stims = raw;
+                end
+                for i = 1:numel(stims)
+                    s = stims{i};
+                    if ~(isstruct(s) && isscalar(s) && isfield(s, 'parameters') ...
+                            && isstruct(s.parameters) && isscalar(s.parameters))
+                        continue;
+                    end
+                    nStim = nStim + 1;
+                    p = s.parameters;
+                    fns = sort(fieldnames(p));
+                    key = strjoin(reshape(fns, 1, []), ',');
+                    if isKey(fieldSets, key); fieldSets(key) = fieldSets(key) + 1; ...
+                    else; fieldSets(key) = 1; end
+                    for g = 1:numel(gratingNames)
+                        gn = gratingNames{g};
+                        if isfield(p, gn) && ~isempty(p.(gn))
+                            gCount(gn) = gCount(gn) + 1;
+                            v = p.(gn);
+                            if isnumeric(v) && isscalar(v)
+                                if isKey(gVals, gn); acc = gVals(gn); else; acc = []; end
+                                acc(end+1) = v; %#ok<AGROW>
+                                gVals(gn) = acc;
+                            end
+                        end
+                    end
+                end
+            end
+
+            fprintf('\n  STIMULUS-PARAMETER CENSUS (Dab, #31) -- report-only\n');
+            fprintf(['    DENOMINATOR: %d stimulus_presentation, %d stimulus(i) ' ...
+                     'with a scalar parameters struct\n'], nPres, nStim);
+            fprintf('    distinct parameter field-name set(s): %d\n', fieldSets.Count);
+            ksets = keys(fieldSets);
+            counts = cell2mat(values(fieldSets));
+            [~, ord] = sort(counts, 'descend');
+            for i = 1:min(numel(ksets), 25)
+                kk = ksets{ord(i)};
+                fprintf('        %6d  {%s}\n', fieldSets(kk), kk);
+            end
+            fprintf('    grating-named field presence + value range:\n');
+            anyGrating = false;
+            for g = 1:numel(gratingNames)
+                gn = gratingNames{g};
+                if gCount(gn) == 0; continue; end
+                anyGrating = true;
+                if isKey(gVals, gn) && ~isempty(gVals(gn))
+                    vv = gVals(gn);
+                    fprintf('        %-20s present %6d   distinct-values %d   min %g   max %g\n', ...
+                        gn, gCount(gn), numel(unique(vv)), min(vv), max(vv));
+                else
+                    fprintf('        %-20s present %6d   (non-numeric / non-scalar values)\n', ...
+                        gn, gCount(gn));
+                end
+            end
+            if ~anyGrating
+                fprintf('        (no grating-named field present on any stimulus)\n');
+            end
+
+            verifyGreaterThan(testCase, nPres, 0, ...
+                'no stimulus_presentation bodies read -- census describes nothing');
+        end
+
     end
 end
 
