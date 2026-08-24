@@ -89,6 +89,8 @@ resolver.subjectsViaEpoch = @(presentationId) ...
     subjectsViaEpoch(byId, elementsByEpoch, presentationId);
 resolver.subjectsViaEpochScoped = @(presentationId) ...
     subjectsViaEpochScoped(byId, elementsBySessionEpoch, presentationId);
+resolver.epochElementCountScoped = @(presentationId) ...
+    epochElementCountScoped(byId, elementsBySessionEpoch, presentationId);
 end
 
 % ===================== graph index (one O(N) pass) =======================
@@ -328,6 +330,29 @@ for k = 1:numel(elementIds)
         seen(sid) = true;
         subs{end+1} = sid; %#ok<AGROW>
     end
+end
+end
+
+function n = epochElementCountScoped(byId, elementsBySessionEpoch, presentationId)
+% How many elements are recorded in the presentation's own session-epoch,
+% regardless of whether they resolve to a subject. Lets a caller distinguish
+% "the epoch has NO recorded element" (n == 0) from "it has element(s) but none
+% resolve to a subject" (n > 0 while subjectsViaEpochScoped is empty) when
+% characterising a presentation the epoch fallback could not attribute.
+n = 0;
+presentationId = char(presentationId);
+if ~isKey(byId, presentationId)
+    return;
+end
+pres = byId(presentationId);
+epochId   = epochIdOf(pres);
+sessionId = subField(pres, 'base', 'session_id');
+if isempty(epochId) || isempty(sessionId)
+    return;
+end
+key = [sessionId '|' epochId];
+if isKey(elementsBySessionEpoch, key)
+    n = numel(elementsBySessionEpoch(key));
 end
 end
 

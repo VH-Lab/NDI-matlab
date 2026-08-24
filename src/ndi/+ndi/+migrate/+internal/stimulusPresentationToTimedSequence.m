@@ -245,9 +245,36 @@ end
 % armed by default (+did2/+schema/cache.m), so no animal means no manipulation.
 animals = resolver.subjectsForPresentation(presentationId);
 report.subjects_resolved = numel(animals);
+report.animal_source = 'response';
 if isempty(animals)
-    report.reason = 'no responding animal -- subject_id would be empty';
-    return;
+    % FORK 1 (team call 2026-08-22): a presentation with NO stimulus_response
+    % linking it to a responding element -- the non-tuning case, e.g. an
+    % opto/bath ephys experiment that computes no per-stimulus response -- is
+    % still attributed to the animal RECORDED IN ITS OWN EPOCH. Session-scoped,
+    % because a v1 epoch id is a NAME that repeats across sessions and the bare
+    % map pools them. Measured on Dab (run #4, 1242 refused): 1174 resolve to
+    % exactly one subject, 0 to several, 68 to none.
+    scoped = resolver.subjectsViaEpochScoped(presentationId);
+    if numel(scoped) == 1
+        animals = scoped;
+        report.animal_source = 'epoch';
+    elseif numel(scoped) > 1
+        report.animal_source = 'none';
+        report.reason = sprintf(['no responding animal; the epoch names %d ' ...
+            'subjects -- ambiguous'], numel(scoped));
+        return;
+    else
+        report.animal_source = 'none';
+        nEl = resolver.epochElementCountScoped(presentationId);
+        if nEl == 0
+            report.reason = ['no responding animal; the epoch has no recorded ' ...
+                'element to attribute it to'];
+        else
+            report.reason = sprintf(['no responding animal; the epoch''s %d ' ...
+                'recorded element(s) resolve to no subject'], nEl);
+        end
+        return;
+    end
 end
 animalId = animals{1};
 
@@ -825,6 +852,7 @@ r = struct( ...
     'subjects_resolved',   0, ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...
+    'animal_source',       '', ...
     'reason',              '');
 end
 
