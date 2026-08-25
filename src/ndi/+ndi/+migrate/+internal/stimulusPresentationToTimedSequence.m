@@ -253,7 +253,9 @@ if isempty(animals)
     % still attributed to the animal RECORDED IN ITS OWN EPOCH. Session-scoped,
     % because a v1 epoch id is a NAME that repeats across sessions and the bare
     % map pools them. Measured on Dab (run #4, 1242 refused): 1174 resolve to
-    % exactly one subject, 0 to several, 68 to none.
+    % exactly one subject, 0 to several, 68 to none. The 68 (all session-id
+    % gaps -- measured 68/0, none a genuinely stimulus-only epoch) are the input
+    % to FORK 2 in the scoped==0 branch below.
     scoped = resolver.subjectsViaEpochScoped(presentationId);
     if numel(scoped) == 1
         animals = scoped;
@@ -275,18 +277,45 @@ if isempty(animals)
             % anywhere, the epoch is genuinely stimulus-only.
             nAny = resolver.epochElementCountUnscoped(presentationId);
             if nAny > 0
-                report.reason = ['no responding animal; the epoch has no ' ...
-                    'recorded element in THIS session, but the epoch name ' ...
-                    'carries one in another (a session-id gap)'];
+                % SESSION-ID GAP. FORK 2 (built 2026-08-25 at the user's
+                % direction; PROPOSED, not team-signed like fork 1, because it
+                % crosses a session boundary). The epoch name carries a
+                % recording element only in a sibling session. Widen there and
+                % attribute IFF exactly one subject is reachable; refuse if
+                % several (ambiguous across sessions) or none resolves. It fires
+                % only here -- scoped == 0 AND nEl == 0 -- so it can never touch
+                % a presentation fork 1 already attributed and cannot regress
+                % the in-session count. See
+                % bodyResolver.subjectsViaEpochSibling for why the exactly-one
+                % guard is what makes the cross-session hypothesis testable
+                % rather than assumed.
+                sibling = resolver.subjectsViaEpochSibling(presentationId);
+                report.sibling_subjects = numel(sibling);
+                if numel(sibling) == 1
+                    animals = sibling;
+                    report.animal_source = 'epoch_sibling';
+                elseif numel(sibling) > 1
+                    report.reason = sprintf(['no responding animal; the epoch ' ...
+                        'name records only in sibling session(s), resolving to ' ...
+                        '%d subjects -- ambiguous across sessions'], ...
+                        numel(sibling));
+                    return;
+                else
+                    report.reason = ['no responding animal; the epoch name ' ...
+                        'records in a sibling session, but no element there ' ...
+                        'resolves to a subject'];
+                    return;
+                end
             else
                 report.reason = ['no responding animal; the epoch has no ' ...
                     'recorded element in any session (a stimulus-only epoch)'];
+                return;
             end
         else
             report.reason = sprintf(['no responding animal; the epoch''s %d ' ...
                 'recorded element(s) resolve to no subject'], nEl);
+            return;
         end
-        return;
     end
 end
 animalId = animals{1};
@@ -863,6 +892,7 @@ r = struct( ...
     'shared_refs',         0, ...
     'frames',              0, ...
     'subjects_resolved',   0, ...
+    'sibling_subjects',    0, ...
     'instrument_resolved', false, ...
     'epoch_id',            '', ...
     'animal_source',       '', ...

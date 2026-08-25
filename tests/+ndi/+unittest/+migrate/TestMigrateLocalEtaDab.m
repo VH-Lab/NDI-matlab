@@ -311,15 +311,20 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             testCase.assertTrue(isstruct(r) && isfield(r, 'presentations_read'), ...
                 'the migrate result carries no stimulusSequence report');
 
+            viaSibling = 0;
+            if isfield(r, 'decomposed_via_epoch_sibling')
+                viaSibling = r.decomposed_via_epoch_sibling;
+            end
             fprintf(['\n  STIMULUS-PRESENTATION FOLD (Dab, #31) -- report-only\n' ...
                      '    DENOMINATOR: %d presentation(s) read\n' ...
                      '    decomposed to timed_sequence_manipulation: %d\n' ...
-                     '        animal via stimulus_response:  %d\n' ...
-                     '        animal via epoch (FORK 1):     %d\n' ...
+                     '        animal via stimulus_response:      %d\n' ...
+                     '        animal via epoch, own session (FORK 1): %d\n' ...
+                     '        animal via epoch, sibling session (FORK 2): %d\n' ...
                      '    refused (left as passthrough):             %d\n'], ...
                 r.presentations_read, r.presentations_decomposed, ...
                 r.decomposed_via_response, r.decomposed_via_epoch, ...
-                r.presentations_refused);
+                viaSibling, r.presentations_refused);
 
             % Histogram the refusal reasons. `refusals` is a cell of
             % struct('id', ..., 'reason', ...) appended once per refusal.
@@ -342,21 +347,23 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 end
             end
 
-            % FORK 1 is now LIVE (not a report-only measurement): the fold
+            % FORK 1 and FORK 2 are both LIVE (not report-only): fork 1
             % attributes a response-less presentation to the animal recorded in
-            % its own session-scoped epoch and emits the manipulation. The
-            % `decomposed ... via epoch` line above counts the ones it folded.
-            % The RESIDUAL -- presentations the epoch could not attribute -- is
-            % characterised by the refusal reasons above, which now split the
-            % no-subject case three ways (part b, 2026-08-25): "elements resolve
-            % to no subject" (the epoch has recorded elements, none with a
-            % subject); "no recorded element in any session (a stimulus-only
-            % epoch)" -- the epoch genuinely records nothing; and "no recorded
-            % element in THIS session, but the epoch name carries one in another
-            % (a session-id gap)" -- the recording exists but is keyed to a
-            % different session_id, potentially recoverable. A refusal for "no
-            % grating parameter" instead means fork 1 resolved the animal but
-            % the stimuli are not gratings -- a separate, non-visual gap (#48).
+            % its OWN session-scoped epoch; FORK 2 (2026-08-25) handles the
+            % session-id-gap residual fork 1 leaves -- when the own session
+            % recorded nothing but the epoch NAME records in a sibling session,
+            % it attributes to that sibling subject IFF exactly one is reachable.
+            % The two `animal via epoch ...` lines count each. The RESIDUAL that
+            % survives both is characterised by the refusal reasons above:
+            % "ambiguous across sessions" (the sibling epoch resolves to several
+            % subjects -- fork 2 refuses); "no element there resolves to a
+            % subject"; "elements resolve to no subject" (the OWN epoch has
+            % elements, none with a subject); and "a stimulus-only epoch" (the
+            % epoch records nothing anywhere). A refusal for "no grating
+            % parameter" instead means an animal WAS resolved but the stimuli
+            % are not gratings -- a separate, non-visual gap (#48). Measured 68/0
+            % on the prior run: all 68 subject-less were session-id gaps, so fork
+            % 2's ceiling is 68 minus however many resolve ambiguously.
 
             % Denominator only: a run that read zero presentations would make
             % the histogram a statement about nothing. Dab holds 1242 of them.

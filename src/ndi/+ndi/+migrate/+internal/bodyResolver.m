@@ -89,6 +89,8 @@ resolver.subjectsViaEpoch = @(presentationId) ...
     subjectsViaEpoch(byId, elementsByEpoch, presentationId);
 resolver.subjectsViaEpochScoped = @(presentationId) ...
     subjectsViaEpochScoped(byId, elementsBySessionEpoch, presentationId);
+resolver.subjectsViaEpochSibling = @(presentationId) ...
+    subjectsViaEpochSibling(byId, elementsByEpoch, elementsBySessionEpoch, presentationId);
 resolver.epochElementCountUnscoped = @(presentationId) ...
     epochElementCountUnscoped(byId, elementsByEpoch, presentationId);
 resolver.epochElementCountScoped = @(presentationId) ...
@@ -325,6 +327,68 @@ seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
 for k = 1:numel(elementIds)
     try
         sid = subjectOfElement(byId, elementIds{k});
+    catch
+        continue;   % element does not resolve to a subject -> skip
+    end
+    if ~isempty(sid) && ~isKey(seen, sid)
+        seen(sid) = true;
+        subs{end+1} = sid; %#ok<AGROW>
+    end
+end
+end
+
+function subs = subjectsViaEpochSibling(byId, elementsByEpoch, elementsBySessionEpoch, presentationId)
+% FORK 2 (proposed, not signed): the animal subject(s) reachable from the
+% presentation's bare epoch NAME in OTHER sessions, EXCLUDING the presentation's
+% own session. This is the last-resort widening for the SESSION-ID-GAP case that
+% subjectsViaEpochScoped (fork 1) leaves refused: the presentation's own session
+% recorded no element in its epoch, but the epoch NAME carries a recording
+% element in a sibling session (epochElementCountUnscoped > 0 while
+% epochElementCountScoped == 0). The caller attributes ONLY when this resolves
+% to exactly one subject; more than one is ambiguous across sibling sessions and
+% the caller refuses. Same return contract as the other resolvers (a
+% de-duplicated cell of subject_ids).
+%
+% CROSS-SESSION, AND THAT IS THE WHOLE RISK: fork 1 keeps attribution inside one
+% session by construction and is safe; this reaches ACROSS a session boundary on
+% the hypothesis that the empty own-session epoch is a linkage gap (the same
+% experiment written under two session_ids), not a genuine epoch-name collision
+% between unrelated animals. The exactly-one-subject guard is what makes that
+% hypothesis testable rather than assumed: if the bare epoch name were reused
+% across several animals, this would resolve to several subjects and refuse. Own-
+% session elements are excluded explicitly so the resolver is correct even if
+% called when the own session does have (non-resolving) elements, though the
+% caller only invokes it when the scoped element count is 0.
+presentationId = char(presentationId);
+subs = {};
+if ~isKey(byId, presentationId)
+    return;
+end
+pres = byId(presentationId);
+epochId   = epochIdOf(pres);
+sessionId = subField(pres, 'base', 'session_id');
+if isempty(epochId) || ~isKey(elementsByEpoch, epochId)
+    return;
+end
+allElements = elementsByEpoch(epochId);
+ownSet = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+if ~isempty(sessionId)
+    ownKey = [sessionId '|' epochId];
+    if isKey(elementsBySessionEpoch, ownKey)
+        ownElements = elementsBySessionEpoch(ownKey);
+        for k = 1:numel(ownElements)
+            ownSet(char(ownElements{k})) = true;
+        end
+    end
+end
+seen = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+for k = 1:numel(allElements)
+    eid = char(allElements{k});
+    if isKey(ownSet, eid)
+        continue;   % this element is recorded in the presentation's OWN session
+    end
+    try
+        sid = subjectOfElement(byId, eid);
     catch
         continue;   % element does not resolve to a subject -> skip
     end

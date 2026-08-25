@@ -2188,13 +2188,20 @@ function [convertResult, report] = resolveStimulusPresentations(convertResult, b
             report.refusals{end+1} = struct('id', presId, 'reason', rep.reason);
             continue;
         end
-        % FORK 1 outcome: the manipulation was built. Record HOW its animal was
-        % resolved -- through a stimulus_response (`response`) or, when none
-        % exists, through the presentation's session-scoped epoch (`epoch`).
-        if isfield(rep, 'animal_source') && strcmp(rep.animal_source, 'epoch')
-            report.decomposed_via_epoch = report.decomposed_via_epoch + 1;
-        else
-            report.decomposed_via_response = report.decomposed_via_response + 1;
+        % Record HOW the manipulation's animal was resolved: through a
+        % stimulus_response (`response`); through the presentation's own
+        % session-scoped epoch (`epoch`, FORK 1); or through a sibling session's
+        % epoch when the own session recorded nothing (`epoch_sibling`, FORK 2).
+        src = '';
+        if isfield(rep, 'animal_source'); src = rep.animal_source; end
+        switch src
+            case 'epoch'
+                report.decomposed_via_epoch = report.decomposed_via_epoch + 1;
+            case 'epoch_sibling'
+                report.decomposed_via_epoch_sibling = ...
+                    report.decomposed_via_epoch_sibling + 1;
+            otherwise
+                report.decomposed_via_response = report.decomposed_via_response + 1;
         end
         minted{end+1} = manip; %#ok<AGROW>
         for g = 1:numel(gratings)
@@ -2339,6 +2346,7 @@ function r = newStimulusSequenceReport()
         'single_grating_candidates',  0, ...
         'decomposed_via_response',    0, ...
         'decomposed_via_epoch',       0, ...
+        'decomposed_via_epoch_sibling', 0, ...
         'flattening_pass',            'GATED OFF -- retained for the presentation-less single-grating case, which has no v1 source', ...
         'refusals',                   {{}}, ...
         'hartley',                    []);

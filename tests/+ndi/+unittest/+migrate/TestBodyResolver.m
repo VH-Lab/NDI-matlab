@@ -98,6 +98,84 @@ classdef TestBodyResolver < matlab.unittest.TestCase
             testCase.verifyEmpty(r.subjectsForPresentation('pres_1'));
         end
 
+        % ============ the epoch fallback: FORK 1 (own session) ===========
+
+        function testEpochScopedResolvesTheOwnSessionSubject(testCase)
+            % FORK 1: a presentation with no response is attributed to the
+            % animal recorded in its OWN session's epoch. The sibling resolver
+            % must NOT also claim that element -- it belongs to this session.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementEpoch('elem_9', 't5', 'sessA'), ...
+                       element('elem_9', 'animal_1') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.epochElementCountScoped('pres_1'), 1);
+            testCase.verifyEqual(r.subjectsViaEpochScoped('pres_1'), {'animal_1'});
+            testCase.verifyEmpty(r.subjectsViaEpochSibling('pres_1'));
+        end
+
+        % ============ the epoch fallback: FORK 2 (sibling session) ========
+
+        function testEpochSiblingRecoversWhenTheOwnSessionRecordsNothing(testCase)
+            % The session-id-gap case. The presentation's own session (sessA)
+            % records no element in epoch t5, but the epoch NAME records
+            % elem_9 -> animal_1 in a sibling session (sessB). Fork 2 attributes
+            % to animal_1; the counters distinguish it from a stimulus-only epoch.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementEpoch('elem_9', 't5', 'sessB'), ...
+                       element('elem_9', 'animal_1') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.epochElementCountScoped('pres_1'), 0);
+            testCase.verifyEqual(r.epochElementCountUnscoped('pres_1'), 1);
+            testCase.verifyEmpty(r.subjectsViaEpochScoped('pres_1'));
+            testCase.verifyEqual(r.subjectsViaEpochSibling('pres_1'), {'animal_1'});
+        end
+
+        function testEpochSiblingIsAmbiguousAcrossTwoSiblingSubjects(testCase)
+            % Two sibling sessions reused the epoch name for DIFFERENT animals.
+            % Fork 2 must resolve to both, so the caller refuses (ambiguous),
+            % rather than silently attributing to one.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementEpoch('elem_9', 't5', 'sessB'), element('elem_9', 'animal_1'), ...
+                       elementEpoch('elem_10', 't5', 'sessC'), element('elem_10', 'animal_2') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(numel(r.subjectsViaEpochSibling('pres_1')), 2);
+        end
+
+        function testEpochSiblingElementWithNoSubjectYieldsEmpty(testCase)
+            % The sibling epoch records an element that is not in the body set
+            % (or carries no subject): the count is non-zero but nothing
+            % resolves, so fork 2 attributes nobody and the caller refuses.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementEpoch('missing_elem', 't5', 'sessB') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.epochElementCountUnscoped('pres_1'), 1);
+            testCase.verifyEmpty(r.subjectsViaEpochSibling('pres_1'));
+        end
+
+        function testEpochSiblingExcludesTheOwnSessionElement(testCase)
+            % Both sessions record in the epoch name. Fork 1 attributes the OWN
+            % session's animal; fork 2, which only fires when fork 1 found
+            % nothing, must exclude the own-session element and see only the
+            % sibling -- so the two resolvers never double-count one element.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA'), ...
+                       elementEpoch('elem_own', 't5', 'sessA'), element('elem_own', 'animal_own'), ...
+                       elementEpoch('elem_sib', 't5', 'sessB'), element('elem_sib', 'animal_sib') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.subjectsViaEpochScoped('pres_1'), {'animal_own'});
+            testCase.verifyEqual(r.subjectsViaEpochSibling('pres_1'), {'animal_sib'});
+        end
+
+        function testAStimulusOnlyEpochHasNoElementAnywhere(testCase)
+            % The other half of the 68/0 split: an epoch that records nothing in
+            % ANY session. Both counts are 0 and fork 2 finds nobody, so the
+            % caller reports a genuinely stimulus-only epoch.
+            bodies = { presentationInEpoch('pres_1', 't5', 'sessA') };
+            r = ndi.migrate.internal.bodyResolver(bodies);
+            testCase.verifyEqual(r.epochElementCountScoped('pres_1'), 0);
+            testCase.verifyEqual(r.epochElementCountUnscoped('pres_1'), 0);
+            testCase.verifyEmpty(r.subjectsViaEpochSibling('pres_1'));
+        end
+
     end
 end
 
@@ -132,6 +210,25 @@ end
 function b = derivedElement(id, underlyingId)
 % a derived element carries no subject of its own, only underlying_element_id
 b = docBody('element', id, {'underlying_element_id', underlyingId});
+end
+
+function b = elementEpoch(elementId, epochName, sessionId)
+%ELEMENTEPOCH An element_epoch document -- the record that ELEMENTID was
+%   recorded in the epoch named EPOCHNAME within session SESSIONID. This is what
+%   the epoch->element->subject fallbacks index: elementsByEpoch keys on the
+%   bare epoch NAME, elementsBySessionEpoch on '<session_id>|<epoch>'.
+b = docBody('element_epoch', ['ee_' elementId '_' sessionId], {'element_id', elementId});
+b.base.session_id = sessionId;
+b.epochid = struct('epochid', epochName);
+end
+
+function b = presentationInEpoch(id, epochName, sessionId)
+%PRESENTATIONINEPOCH A stimulus_presentation carrying the epochid superclass and
+%   a session, with NO response linking it to an element -- the shape the epoch
+%   fallbacks exist for.
+b = docBody('stimulus_presentation', id, {'stimulus_element_id', 'stimulator_5'});
+b.base.session_id = sessionId;
+b.epochid = struct('epochid', epochName);
 end
 
 function b = docBody(className, id, varargin)
