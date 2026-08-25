@@ -347,23 +347,21 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
                 end
             end
 
-            % FORK 1 and FORK 2 are both LIVE (not report-only): fork 1
-            % attributes a response-less presentation to the animal recorded in
-            % its OWN session-scoped epoch; FORK 2 (2026-08-25) handles the
-            % session-id-gap residual fork 1 leaves -- when the own session
-            % recorded nothing but the epoch NAME records in a sibling session,
-            % it attributes to that sibling subject IFF exactly one is reachable.
-            % The two `animal via epoch ...` lines count each. The RESIDUAL that
-            % survives both is characterised by the refusal reasons above:
-            % "ambiguous across sessions" (the sibling epoch resolves to several
-            % subjects -- fork 2 refuses); "no element there resolves to a
-            % subject"; "elements resolve to no subject" (the OWN epoch has
-            % elements, none with a subject); and "a stimulus-only epoch" (the
-            % epoch records nothing anywhere). A refusal for "no grating
-            % parameter" instead means an animal WAS resolved but the stimuli
-            % are not gratings -- a separate, non-visual gap (#48). Measured 68/0
-            % on the prior run: all 68 subject-less were session-id gaps, so fork
-            % 2's ceiling is 68 minus however many resolve ambiguously.
+            % FORK 1 is LIVE: it attributes a response-less presentation to the
+            % animal recorded in its OWN session-scoped epoch (the `via epoch,
+            % own session` line). FORK 2 is MEASURED AND DISARMED (2026-08-25):
+            % it measures the sibling-session subject count for the session-id-gap
+            % residual but does NOT attribute, so `via epoch, sibling session`
+            % reads 0. The reason it is disarmed is in the histogram: all 68
+            % session-id-gap presentations resolve to 2-12 sibling subjects
+            % ("ambiguous across sessions"), NONE to exactly one -- genuine
+            % epoch-name collisions, not recoverable linkage gaps. So the RESIDUAL
+            % is characterised by: "ambiguous across sessions" (several sibling
+            % subjects); "exactly one sibling ... DISARMED" (the recoverable case,
+            % if it ever appears -- 0 on Dab); "no element there resolves"; and
+            % "a stimulus-only epoch" (records nothing anywhere). A refusal for
+            % "no grating parameter" instead means an animal WAS resolved but the
+            % stimuli are not gratings -- a separate, non-visual gap (#48).
 
             % Denominator only: a run that read zero presentations would make
             % the histogram a statement about nothing. Dab holds 1242 of them.

@@ -277,35 +277,38 @@ if isempty(animals)
             % anywhere, the epoch is genuinely stimulus-only.
             nAny = resolver.epochElementCountUnscoped(presentationId);
             if nAny > 0
-                % SESSION-ID GAP. FORK 2 (built 2026-08-25 at the user's
-                % direction; PROPOSED, not team-signed like fork 1, because it
-                % crosses a session boundary). The epoch name carries a
-                % recording element only in a sibling session. Widen there and
-                % attribute IFF exactly one subject is reachable; refuse if
-                % several (ambiguous across sessions) or none resolves. It fires
-                % only here -- scoped == 0 AND nEl == 0 -- so it can never touch
-                % a presentation fork 1 already attributed and cannot regress
-                % the in-session count. See
-                % bodyResolver.subjectsViaEpochSibling for why the exactly-one
-                % guard is what makes the cross-session hypothesis testable
-                % rather than assumed.
+                % SESSION-ID GAP. FORK 2 -- MEASURED AND DISARMED (2026-08-25).
+                % The epoch name records only in a sibling session, so a
+                % cross-session widening COULD attribute the presentation to
+                % that session's subject. It was armed and run on Dab (e2e
+                % 32868824054): all 68 such presentations resolved to 2-12
+                % sibling subjects, NONE to exactly one -- genuine epoch-name
+                % collisions across many animals, not one experiment split
+                % across two session ids. The recoverable-linkage hypothesis is
+                % refuted on the only corpus that carries these, so cross-session
+                % ATTRIBUTION is disarmed (team call pending). The sibling-subject
+                % COUNT is still measured and its distinctions still reported, so
+                % a future corpus with a clean one-subject gap is visible in the
+                % histogram rather than silently folded on an unproven premise.
+                % See bodyResolver.subjectsViaEpochSibling.
                 sibling = resolver.subjectsViaEpochSibling(presentationId);
                 report.sibling_subjects = numel(sibling);
                 if numel(sibling) == 1
-                    animals = sibling;
-                    report.animal_source = 'epoch_sibling';
+                    report.reason = ['no responding animal; the epoch records ' ...
+                        'no element in THIS session, and exactly one sibling ' ...
+                        'session carries the name -- a recoverable session-id ' ...
+                        'gap, but fork 2 attribution is DISARMED (team call)'];
                 elseif numel(sibling) > 1
                     report.reason = sprintf(['no responding animal; the epoch ' ...
                         'name records only in sibling session(s), resolving to ' ...
                         '%d subjects -- ambiguous across sessions'], ...
                         numel(sibling));
-                    return;
                 else
                     report.reason = ['no responding animal; the epoch name ' ...
                         'records in a sibling session, but no element there ' ...
                         'resolves to a subject'];
-                    return;
                 end
+                return;
             else
                 report.reason = ['no responding animal; the epoch has no ' ...
                     'recorded element in any session (a stimulus-only epoch)'];
