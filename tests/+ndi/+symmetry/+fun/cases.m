@@ -127,13 +127,33 @@ classdef cases
             %   only one of them. Python would return a one-element list there,
             %   so rendering the MATLAB scalar as '5' instead of '[5]' would be
             %   a spurious mismatch.
-            n = numel(v);
-            parts = cell(1, n);
-            for i = 1:n
-                if iscell(v)
-                    parts{i} = ndi.symmetry.fun.cases.render(v{i});
-                else
-                    parts{i} = ndi.symmetry.fun.cases.render(v(i));
+            %
+            %   A bare CHAR counts as ONE element here, not as a sequence of
+            %   characters. Without the ischar(v) && size(v,1) <= 1 guard below,
+            %   'circle' has numel 6 and the loop would render it
+            %   ['c', 'i', 'r', 'c', 'l', 'e'] while Python's render_sequence --
+            %   which treats a str as one element -- gives ['circle']. No case in
+            %   this battery reaches that today (whatVaries returns non-numeric
+            %   distinct values in a CELL, so even a single distinct string
+            %   arrives as a one-element container on both sides), so the guard
+            %   changes no current expectation. It is here so that a future case
+            %   which does hand a bare char to renderSequence fails as a real
+            %   behaviour difference instead of a silent character explosion.
+            if ischar(v)
+                % size(v,1) <= 1 is the row-vector case and renders as the
+                % quoted string; a char MATRIX renders as '<charmatrix>'.
+                % render() already distinguishes the two, and BOTH are one
+                % element.
+                parts = {ndi.symmetry.fun.cases.render(v)};
+            else
+                n = numel(v);
+                parts = cell(1, n);
+                for i = 1:n
+                    if iscell(v)
+                        parts{i} = ndi.symmetry.fun.cases.render(v{i});
+                    else
+                        parts{i} = ndi.symmetry.fun.cases.render(v(i));
+                    end
                 end
             end
             s = ['[' ndi.symmetry.fun.cases.joinParts(parts, ', ') ']'];
@@ -397,7 +417,9 @@ classdef cases
             defs(k).expectedStatus = 'ok';
             defs(k).expectedName = 'COM0';
             defs(k).expectedUtf16Units = 4;
-            defs(k).note = 'COM0 and LPT0 are NOT reserved';
+            defs(k).note = ['COM0 is NOT reserved; it is the only non-reserved ' ...
+                'device name in this battery (LPT0 etc. are covered Python-side ' ...
+                'in tests/test_element_directory.py)'];
 
             % --- unicode ---------------------------------------------------
             k = k + 1;
@@ -586,7 +608,17 @@ classdef cases
                     stimuli = dp;
 
                 case 'poolingAcrossPresentations'
+                    % Presentation 2 carries TWO stimuli on purpose. With one,
+                    % its 'stimuli' field is a 1x1 struct, which render() maps to
+                    % a MAPPING '{parameters: {...}}', while Python's
+                    % one-element list renders as a SEQUENCE
+                    % '[{parameters: {...}}]'. inputRendered is a COMPARED
+                    % field, so that collapse would make the two languages
+                    % compare different inputs on the very first joint run --
+                    % the exact drift inputRendered exists to catch. Two stimuli
+                    % render as a sequence on both sides.
                     s2(1).parameters = struct('angle',270,'contrast',1,'sFrequency',0.5);
+                    s2(2).parameters = struct('angle',315,'contrast',1,'sFrequency',0.5);
                     dp(1).stimulus_presentation.stimuli = ...
                         ndi.symmetry.fun.cases.threeAngleStimuli();
                     dp(2).stimulus_presentation.stimuli = s2;
@@ -718,7 +750,11 @@ classdef cases
             defs(k).shape = 'documentPropertiesArray';
             defs(k).expectedStatus = 'ok';
             defs(k).expectedVaries = {'angle'};
-            defs(k).expectedVariesValues = {'[0, 90, 180, 270]'};
+            % 5 angles: 0/90/180 from presentation 1, 270/315 from presentation
+            % 2 (which carries two stimuli so its 'stimuli' field cannot collapse
+            % to a 1x1 struct -- see whatVariesInput). local_uniqueValues sorts
+            % ascending, so the pooled distinct set renders in this order.
+            defs(k).expectedVariesValues = {'[0, 90, 180, 270, 315]'};
             defs(k).expectedConstant = {'contrast','sFrequency'};
             defs(k).expectedConstantValues = {'1','0.5'};
             defs(k).divergenceExpected = false;
@@ -932,7 +968,16 @@ classdef cases
                     c.variesValues       = ndi.symmetry.fun.cases.renderedList(varies, 'values');
                     c.constantParameters = ndi.symmetry.fun.cases.paramNames(constant);
                     c.constantValues     = ndi.symmetry.fun.cases.renderedScalar(constant, 'value');
-                    c.whatIsConstantRendered = ndi.symmetry.fun.cases.render(constant2);
+                    % renderSequence, NOT render: whatIsConstant returns a LIST
+                    % of {parameter, value} entries, and a ONE-entry result must
+                    % still bracket. A 1x1 MATLAB struct array collapses under
+                    % render() to a bare mapping '{parameter: ..., value: ...}',
+                    % while Python -- and the schema's own section 5 example --
+                    % give '[{parameter: ..., value: ...}]'. This affects the 7
+                    % cases that have exactly one constant parameter; empty and
+                    % multi-entry results render identically either way.
+                    c.whatIsConstantRendered = ...
+                        ndi.symmetry.fun.cases.renderSequence(constant2);
                 catch ME
                     c.status = 'error';
                     c.identifier = ndi.symmetry.fun.cases.errorId(ME);
