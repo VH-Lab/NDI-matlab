@@ -41,6 +41,16 @@ Files are written as **UTF-8 bytes**. The MATLAB side writes
 because the astral pathSafeName cases put characters above U+00FF in the payload
 and `'char'` truncates each to one byte.
 
+**Non-ASCII policy: raw UTF-8, no `\uXXXX` escaping required — and both readers
+must accept either form.** MATLAB's `jsonencode` emits non-ASCII characters
+literally and the Python side passes `ensure_ascii=False`, so in practice both
+files carry raw UTF-8; but escaping is *not* part of this contract, `jsondecode`
+and `json.loads` both decode `\uXXXX` transparently, and neither side may assume
+which form it will be handed. This is why the astral cases are compared as
+**codepoint lists** (`inputCodepoints`,
+`elementLegacyDirNameCodepoints`) rather than as raw text: a JSON text-encoding
+choice can then never masquerade as a behaviour difference.
+
 ## 2. Common envelope
 
 ```json
@@ -102,6 +112,23 @@ Some fields are semantically a *list even when it has one element*.
 value to a bare scalar, while Python returns a one-element list. Those fields are
 rendered with `renderSequence`, which always brackets: `[5]`, never `5`. The
 per-field table below says which is which.
+
+`whatIsConstantRendered` is the same kind of field and is easy to get wrong,
+because the collapse happens one level up: `whatIsConstant` returns a *struct
+array*, and a MATLAB **1x1** struct array is indistinguishable from a scalar
+struct, so plain `render` maps a single-constant result to a **mapping**
+`{parameter: 'contrast', value: 1}` while Python's one-element list gives the
+**sequence** `[{parameter: 'contrast', value: 1}]`. It must therefore go through
+`renderSequence` too. Empty and multi-entry results are unaffected — `render`
+already delegates those to `renderSequence`.
+
+`renderSequence` also has to special-case a bare `char`/`str`: it is **one**
+element, not a sequence of characters. Iterating a MATLAB `char` row vector
+would render `'circle'` as `['c', 'i', 'r', 'c', 'l', 'e']` against Python's
+`['circle']`. No case in this battery reaches that today (`whatVaries` returns
+non-numeric distinct values in a cell, so even a single distinct string arrives
+as a one-element container on both sides), so the guard is a trap-setter, not a
+behaviour change — but both ports carry it.
 
 ## 4. `pathSafeNameCases.json`
 
@@ -179,7 +206,11 @@ should).
 Cases 9/10/17 pin the ordering inside `pathSafeName`: the trailing-dot strip runs
 **before** the empty check and **before** the reserved-name check. Case 11 pins
 that the base name before the first dot is empty for `.hidden`, so no `_` prefix
-is added. Case 18 pins that `COM0` and `LPT0` are *not* reserved.
+is added. Case 18 pins that **`COM0`** is *not* reserved — **`COM0` is the only
+non-reserved device name this battery exercises.** `LPT0`, along with `COM10`,
+`CONS`, `CONSOLE` and `AUXX`, is covered Python-side in
+`tests/test_element_directory.py`, not here; an earlier version of this line
+claimed `LPT0` for the symmetry battery, which was coverage it does not have.
 
 `elementDirName` must equal `pathSafeName` on every case: `elementDirectoryName`
 maps space to `_` before delegating, and `pathSafeName` maps space to `_` too.
@@ -206,7 +237,7 @@ Exercises `ndi.fun.stimulus.whatVaries` and `ndi.fun.stimulus.whatIsConstant`.
 | `variesValues` | string list | **yes** | parallel to `variesParameters`; each entry is the distinct-value list, rendered **as a sequence** (`[5]`, never `5`) |
 | `constantParameters` | string list | **yes** | constant parameter names, in output order |
 | `constantValues` | string list | **yes** | parallel to `constantParameters`; each entry is a **single value**, rendered normally (`1`, `['r', 'g', 'b']`) |
-| `whatIsConstantRendered` | string | **yes** | the whole `whatIsConstant` result, rendered — `[{parameter: 'contrast', value: 1}, …]`, `[]` when empty |
+| `whatIsConstantRendered` | string | **yes** | the whole `whatIsConstant` result, rendered **via `renderSequence`** — `[{parameter: 'contrast', value: 1}, …]`, `[{…}]` for a single constant parameter (never a bare `{…}`), `[]` when empty |
 
 `inputRendered` is compared on purpose: it is the only thing that catches the two
 hand-written batteries drifting apart. Without it the suite could go green while
@@ -215,6 +246,15 @@ silently comparing two different inputs.
 `whatIsConstantRendered` exists so that `whatVariesTest`'s
 `testWhatIsConstantMatchesSecondOutput` is covered on *every* case rather than as
 one extra case.
+
+**The grammar's fallback tokens are language-specific and deliberately
+unreachable from this battery.** MATLAB `render` emits `<missing>` for a missing
+`string` scalar and `<classname>` for any class it does not know; Python emits
+`<NoneType>` for `None` and `<typename>` otherwise. These can never match across
+languages and no case produces one. That is the point: a fallback token showing
+up in an artifact does not mean the two sides disagree, it means a case grew a
+value the grammar was never given a symmetric rendering for. The fix is to add
+that rendering **on both sides**, not to add a token to the table in section 3.
 
 ### `shape` tokens
 
@@ -226,10 +266,24 @@ Recorded, not compared — Python has one list type for several of these.
 
 ### The 18 cases, and how they map onto the 17 MATLAB test methods
 
-`tests/+ndi/+unittest/+fun/+stimulus/whatVariesTest.m` has 17 test methods. Two
-of them do not contribute a distinct input (one reuses the three-angle fixture,
-one asserts two errors), so the battery is 17 rows plus one added divergence
-probe.
+`tests/+ndi/+unittest/+fun/+stimulus/whatVariesTest.m` has 17 test methods and
+the battery has 18 rows. The mapping is not one-to-one in *either* direction, so
+here is the arithmetic in full:
+
+* **15** methods contribute exactly one row each.
+* `testWhatIsConstantMatchesSecondOutput` contributes **no row of its own**. It
+  reuses `testStimuliStructArray`'s three-angle fixture (row 1), and the
+  equivalence it asserts is instead checked on *every* row by the
+  `whatIsConstantRendered` field.
+* `testBadInputErrors` contributes **two** rows, not one: it asserts two separate
+  errors, `whatVaries(42)` and `whatVaries({42})`, which are rows 17 and 18.
+* **1** row, `allNaNParameter`, mirrors no method at all — it is the added
+  divergence probe.
+
+So **15 + 2 + 1 = 18**. (An earlier version of this paragraph said "two methods
+do not contribute a distinct input … 17 rows plus one", which double-counted:
+`testBadInputErrors` does not fail to contribute a row, it contributes an extra
+one.)
 
 | # | case name | mirrors `whatVariesTest` method |
 |---|---|---|
@@ -238,7 +292,7 @@ probe.
 | 3 | `cellOfParameterStructs` | `testCellOfParameterStructs` |
 | 4 | `structArrayOfParameterStructs` | `testStructArrayOfParameterStructs` |
 | 5 | `documentPropertiesShapedStruct` | `testDocumentPropertiesShapedStruct` |
-| 6 | `poolingAcrossPresentations` | `testPoolingAcrossPresentations` |
+| 6 | `poolingAcrossPresentations` | `testPoolingAcrossPresentations` (presentation 2 carries **two** stimuli — see below) |
 | 7 | `fieldPresentInSomeStimuli` | `testFieldPresentInSomeStimuli` |
 | 8 | `blankStimuliExcludedByDefault` | `testBlankStimuliExcludedByDefault` |
 | 9 | `blankStimuliIncludedWhenOptionFalse` | `testBlankStimuliIncludedWhenOptionFalse` (same stimuli as 8, `excludeBlank=false`) |
@@ -254,6 +308,17 @@ probe.
 
 The exact inputs are in `ndi.symmetry.fun.cases.whatVariesInput`; the Python side
 carries an equivalent table. `inputRendered` is what keeps the two honest.
+
+**Every nested list in a fixture must have at least two elements.** This is a
+hard constraint on the case list, not a style note. MATLAB cannot tell a 1x1
+struct array from a scalar struct, so a one-element nested list renders as a
+**mapping** on the MATLAB side and a **sequence** on the Python side — and since
+`inputRendered` is compared, the two languages would fail against each other over
+a container shape rather than a behaviour. `poolingAcrossPresentations` is the
+case this bites: presentation 2 therefore carries **two** stimuli (angles 270 and
+315, giving the pooled `[0, 90, 180, 270, 315]`), not the one it originally had.
+Top-level lists are safe — the `cases` array is a MATLAB *cell*, which
+`jsonencode` never collapses — but nested `stimuli` arrays are not.
 
 ### Known divergences
 
@@ -280,6 +345,14 @@ available when this battery was written. The first real run settles them:
   `knownDivergences` and clear `divergenceExpected` in `whatVariesDefs` so the
   case becomes a hard assertion again. A stale allow-list is how a symmetry suite
   goes quietly green over the bug it exists to watch.
+
+**Open contract question for Steve:** that auditor currently *reports* and never
+fails, so a stale allow-list entry lands as a line in the CI log rather than a red
+build — which is exactly the failure mode the paragraph above warns about. Whether
+`testKnownDivergencesAreStillReal` (and its Python twin `audit_known_divergences`)
+should **fail** on a stale entry instead of printing is deliberately left
+unresolved here; it is raised in the PR bodies on both sides. Report-not-fail
+stands until that is settled, and both languages must change together.
 
 If the divergences turn out to be real, the upstream fix is to swap `eqlen` for
 `isequaln` in `local_varyingFields`.
