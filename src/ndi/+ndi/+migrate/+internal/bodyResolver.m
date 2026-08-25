@@ -89,6 +89,8 @@ resolver.subjectsViaEpoch = @(presentationId) ...
     subjectsViaEpoch(byId, elementsByEpoch, presentationId);
 resolver.subjectsViaEpochScoped = @(presentationId) ...
     subjectsViaEpochScoped(byId, elementsBySessionEpoch, presentationId);
+resolver.epochElementCountUnscoped = @(presentationId) ...
+    epochElementCountUnscoped(byId, elementsByEpoch, presentationId);
 resolver.epochElementCountScoped = @(presentationId) ...
     epochElementCountScoped(byId, elementsBySessionEpoch, presentationId);
 end
@@ -353,6 +355,27 @@ end
 key = [sessionId '|' epochId];
 if isKey(elementsBySessionEpoch, key)
     n = numel(elementsBySessionEpoch(key));
+end
+end
+
+function n = epochElementCountUnscoped(byId, elementsByEpoch, presentationId)
+% How many elements are recorded under the presentation's BARE epoch NAME
+% across ALL sessions. Paired with epochElementCountScoped, it characterises a
+% presentation whose OWN session-epoch has no recorded element (scoped == 0):
+% unscoped > 0 means the epoch name DOES carry recording elements, just in
+% another session -- a session-id gap; unscoped == 0 means the epoch name
+% carries none anywhere -- a genuinely stimulus-only epoch.
+n = 0;
+presentationId = char(presentationId);
+if ~isKey(byId, presentationId)
+    return;
+end
+epochId = epochIdOf(byId(presentationId));
+if isempty(epochId)
+    return;
+end
+if isKey(elementsByEpoch, epochId)
+    n = numel(elementsByEpoch(epochId));
 end
 end
 

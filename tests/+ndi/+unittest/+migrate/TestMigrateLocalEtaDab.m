@@ -347,11 +347,16 @@ classdef TestMigrateLocalEtaDab < matlab.unittest.TestCase
             % its own session-scoped epoch and emits the manipulation. The
             % `decomposed ... via epoch` line above counts the ones it folded.
             % The RESIDUAL -- presentations the epoch could not attribute -- is
-            % characterised by the refusal reasons above, which now distinguish
-            % "epoch has no recorded element" from "elements resolve to no
-            % subject" (part b). A refusal for "no grating parameter" instead
-            % would mean fork 1 resolved the animal but the stimuli are not the
-            % gratings this fold emits -- a separate, non-visual-modality gap.
+            % characterised by the refusal reasons above, which now split the
+            % no-subject case three ways (part b, 2026-08-25): "elements resolve
+            % to no subject" (the epoch has recorded elements, none with a
+            % subject); "no recorded element in any session (a stimulus-only
+            % epoch)" -- the epoch genuinely records nothing; and "no recorded
+            % element in THIS session, but the epoch name carries one in another
+            % (a session-id gap)" -- the recording exists but is keyed to a
+            % different session_id, potentially recoverable. A refusal for "no
+            % grating parameter" instead means fork 1 resolved the animal but
+            % the stimuli are not gratings -- a separate, non-visual gap (#48).
 
             % Denominator only: a run that read zero presentations would make
             % the histogram a statement about nothing. Dab holds 1242 of them.

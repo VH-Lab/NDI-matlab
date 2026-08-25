@@ -267,8 +267,21 @@ if isempty(animals)
         report.animal_source = 'none';
         nEl = resolver.epochElementCountScoped(presentationId);
         if nEl == 0
-            report.reason = ['no responding animal; the epoch has no recorded ' ...
-                'element to attribute it to'];
+            % (b) 2026-08-25: split the no-element case so "genuinely records
+            % nothing" and "a session-id gap" are distinguishable. If the bare
+            % epoch NAME carries recording elements in ANOTHER session, the
+            % recording exists but is keyed to a different session_id (a
+            % linkage gap, potentially recoverable); if it carries none
+            % anywhere, the epoch is genuinely stimulus-only.
+            nAny = resolver.epochElementCountUnscoped(presentationId);
+            if nAny > 0
+                report.reason = ['no responding animal; the epoch has no ' ...
+                    'recorded element in THIS session, but the epoch name ' ...
+                    'carries one in another (a session-id gap)'];
+            else
+                report.reason = ['no responding animal; the epoch has no ' ...
+                    'recorded element in any session (a stimulus-only epoch)'];
+            end
         else
             report.reason = sprintf(['no responding animal; the epoch''s %d ' ...
                 'recorded element(s) resolve to no subject'], nEl);
