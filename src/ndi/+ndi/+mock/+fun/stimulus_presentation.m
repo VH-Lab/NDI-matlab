@@ -65,14 +65,15 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
         options.interstimulus_interval (1,1) double = 5
         options.stim_duration_min (1,1) double = 0.2
         options.epochid (1,:) char = 'mockepoch'
-        options.RandomSeed = 0
+        options.RandomSeed = 'shuffle'
     end
 
-     % Draw the trial-to-trial variability from a private, seeded stream. It
-     % came from the global one, unseeded, so the same mock inputs produced
-     % different responses on every call and no stored expectation computed from
-     % them could be reproduced. Empty selects the global stream, for a caller
-     % who wants a fresh draw each time.
+     % Draw the trial-to-trial variability from a private stream, so that
+     % generating a mock does not disturb the caller's own random numbers. By
+     % default the stream is not pinned: each call draws fresh, so a self-test
+     % that passes has recovered its answer from data it has not seen before.
+     % Pass a non-negative integer to reproduce a particular call's responses,
+     % or empty to draw from the global stream.
     if isempty(options.RandomSeed)
         noiseStream = RandStream.getGlobalStream();
     else
