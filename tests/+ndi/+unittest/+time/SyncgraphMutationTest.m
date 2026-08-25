@@ -25,7 +25,11 @@ classdef SyncgraphMutationTest < matlab.unittest.TestCase
             sg = sg.removerule(1);
             testCase.verifyEqual(numel(sg.rules), 1);
             % The surviving rule must be r2 (index 2), not r1.
-            testCase.verifyTrue(sg.rules{1} == r2);
+            % ndi.time.syncrule/eq delegates to vlt.data.eqlen, which returns a
+            % double 0/1 rather than a logical, and verifyTrue rejects a
+            % non-logical actual value. Convert explicitly.
+            testCase.verifyTrue(logical(sg.rules{1} == r2), ...
+                'removerule(1) must leave r2, not r1, as the surviving rule.');
         end
 
         function testRemoveRuleDoesNotError(testCase)
