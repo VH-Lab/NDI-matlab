@@ -18,9 +18,19 @@ classdef objectTypeMarker < matlab.unittest.TestCase
     %   (.ndi/ndi_object_type.txt) without any object being instantiated.
     %
     %   This class only READS; it adds no new artifact and no new makeArtifacts
-    %   counterpart, so it stays in the +session namespace next to buildSession
-    %   and follows that namespace's skip convention (print and return, so an
-    %   absent artifact passes silently rather than showing up as Incomplete).
+    %   counterpart, so it stays in the +session namespace next to buildSession.
+    %
+    %   It does NOT follow that namespace's print-and-return skip convention.
+    %   A plain 'return' counts as Passed, so on a runner with no Python
+    %   artifacts the pythonArtifacts leg reported PASS having compared
+    %   nothing - measured, not assumed: VH-Lab/NDI-matlab actions run
+    %   32805548653 shows both pythonArtifacts legs of this class green while
+    %   no Python ever ran in that job. assumeTrue reports the same situation
+    %   as Incomplete, which is what it is. The workflow gate asserts only on
+    %   Failed, so this changes what the log says, not whether the job passes.
+    %   The other +session/+dataset readArtifacts classes still print-and-return
+    %   and still show vacuous pythonArtifacts passes; that is upstream's
+    %   convention to change, not this file's.
     %
     %   /!\ ORDERING HAZARD -- READ BEFORE TRUSTING A PASS
     %   The ndi.session.dir CONSTRUCTOR calls updateObjectTypeMarker (see
@@ -52,10 +62,8 @@ classdef objectTypeMarker < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, ...
                 'session', 'buildSession', 'testBuildSessionArtifacts');
 
-            if ~isfolder(artifactDir)
-                disp(['Session artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
-            end
+            testCase.assumeTrue(isfolder(artifactDir), ...
+                ['Session artifact directory from ' SourceType ' does not exist.']);
 
             ndi.symmetry.readArtifacts.session.objectTypeMarker.reportMarker(artifactDir, ...
                 SourceType, 'session');
@@ -74,10 +82,8 @@ classdef objectTypeMarker < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, ...
                 'dataset', 'buildDataset', 'testBuildDatasetArtifacts');
 
-            if ~isfolder(artifactDir)
-                disp(['Dataset artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
-            end
+            testCase.assumeTrue(isfolder(artifactDir), ...
+                ['Dataset artifact directory from ' SourceType ' does not exist.']);
 
             ndi.symmetry.readArtifacts.session.objectTypeMarker.reportMarker(artifactDir, ...
                 SourceType, 'dataset');
