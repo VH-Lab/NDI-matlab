@@ -1,0 +1,172 @@
+{
+	"classname": "geneExpressionPyramid",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 1}
+	],
+	"file": [
+		{"name": "genes.tsv", "mustbenotempty": 1}
+	],
+	"geneExpressionPyramid": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this pyramid (e.g. 'Opossum V1 Stereo-seq')."
+		},
+		{
+			"name": "assay",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The spatial transcriptomics assay that produced the data (e.g. 'Stereo-seq', 'Visium', 'Xenium')."
+		},
+		{
+			"name": "species",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The species of the tissue, preferably as an ontology node (e.g. 'NCBITaxon:9265')."
+		},
+		{
+			"name": "chip_serial",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The capture chip serial number, if the assay uses one. For Stereo-seq this is the SAW 'sn' field."
+		},
+		{
+			"name": "pipeline_version",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The version of the primary analysis pipeline that produced the counts (e.g. 'SAW v7.1.2')."
+		},
+		{
+			"name": "annotation_source",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Identifier of the genome annotation (GTF) used to assign reads to genes. Counts are not reproducible without it."
+		},
+		{
+			"name": "n_genes",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,100000000,0,0],
+			"queryable": 1,
+			"documentation": "The number of genes in genes.tsv. Every gene_index stored in a tile must be less than this value."
+		},
+		{
+			"name": "bin_sizes",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "Vector of the bin sizes present in this pyramid, in base pixel units, finest first (e.g. [1 5 10 20 50]). One geneExpressionTiles document exists per entry."
+		},
+		{
+			"name": "base_pixel_size_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [0,10000000,1,1],
+			"queryable": 1,
+			"documentation": "The physical size of one base (bin size 1) pixel in x, in pixel_size_units. For Stereo-seq at 500 nm DNB pitch this is 0.5."
+		},
+		{
+			"name": "base_pixel_size_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [0,10000000,1,1],
+			"queryable": 1,
+			"documentation": "The physical size of one base (bin size 1) pixel in y, in pixel_size_units."
+		},
+		{
+			"name": "pixel_size_units",
+			"type": "string",
+			"default_value": "micrometer",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of base_pixel_size_x, base_pixel_size_y, origin_x, origin_y, extent_x, and extent_y."
+		},
+		{
+			"name": "origin_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [-10000000,10000000,0,0],
+			"queryable": 1,
+			"documentation": "The x coordinate of the upper-left corner of tile (0,0), in the source coordinate system. For Stereo-seq this is the GEF minX. Required to register tiles against cell centroids, segmentation contours, and stain images."
+		},
+		{
+			"name": "origin_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [-10000000,10000000,0,0],
+			"queryable": 1,
+			"documentation": "The y coordinate of the upper-left corner of tile (0,0), in the source coordinate system (GEF minY for Stereo-seq)."
+		},
+		{
+			"name": "extent_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [0,10000000,1,1],
+			"queryable": 1,
+			"documentation": "The full width of the tiled region, in base pixel units. Equal to tile_columns * tile_size_x_bins * bin_size at every level."
+		},
+		{
+			"name": "extent_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [0,10000000,1,1],
+			"queryable": 1,
+			"documentation": "The full height of the tiled region, in base pixel units."
+		},
+		{
+			"name": "tile_rows",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,100000,0,0],
+			"queryable": 1,
+			"documentation": "Number of tile rows. Identical at every level, so a tile (row,column) covers the same physical region at every bin size and a viewport maps to tile indices once."
+		},
+		{
+			"name": "tile_columns",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,100000,0,0],
+			"queryable": 1,
+			"documentation": "Number of tile columns. Identical at every level."
+		},
+		{
+			"name": "index_order",
+			"type": "string",
+			"default_value": "row-major",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "How a (row,column) tile pair maps to the numeric suffix N in tile.bin_N. 'row-major' means N = row*tile_columns + column; 'column-major' means N = column*tile_rows + row."
+		},
+		{
+			"name": "origin_corner",
+			"type": "string",
+			"default_value": "upper-left",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Which corner of the tiled region tile (0,0) occupies: 'upper-left' or 'lower-left'. Determines whether row index increases with increasing y."
+		},
+		{
+			"name": "byte_order",
+			"type": "string",
+			"default_value": "little",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Byte order of all multi-byte values in the tile files: 'little' or 'big'."
+		}
+	]
+}
