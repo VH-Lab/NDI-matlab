@@ -62,9 +62,19 @@ A human-readable label for this gene list.
 The number of data rows in `genes.tsv`. Every `gene_index` referring to
 this list must be less than this value.
 
-### species
+### genome_assembly
 
-The species the annotation describes, preferably as an ontology node.
+The reference genome assembly the annotation was built against (e.g.
+`monDom5`, `GRCm39`).
+
+This describes the **annotation**, not the animal. The subject's species
+belongs in an `animalsubject` or `openminds_subject` document depending
+on `subject_id`, per NDI convention, and duplicating it here would create
+a second place for it to be wrong. The assembly is recorded because it,
+together with `annotation_source`, is what actually determines the gene
+set — and because a gene list is a property of a reference, not of any
+one animal, so it can legitimately be used with subjects of a different
+species during cross-species work.
 
 ### gene_id_namespace, gene_symbol_namespace
 

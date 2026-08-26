@@ -33,12 +33,12 @@
 			"documentation": "The number of data rows in genes.tsv. Every gene_index referring to this list must be less than this value."
 		},
 		{
-			"name": "species",
+			"name": "genome_assembly",
 			"type": "string",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The species the annotation describes, preferably as an ontology node (e.g. 'NCBITaxon:9265')."
+			"documentation": "The reference genome assembly the annotation was built against (e.g. 'monDom5', 'GRCm39'). This describes the ANNOTATION, not the animal: the subject's species belongs in an animalsubject or openminds_subject document depending on subject_id, per NDI convention. The assembly is recorded here because it, together with annotation_source, is what actually determines the gene set."
 		},
 		{
 			"name": "gene_id_namespace",

@@ -19,7 +19,7 @@
 	"geneList": {
 		"label": "",
 		"n_genes": 0,
-		"species": "",
+		"genome_assembly": "",
 		"gene_id_namespace": "",
 		"gene_symbol_namespace": "",
 		"annotation_source": "",
