@@ -57,6 +57,31 @@ constant across levels.
 not fill a rectangle. Size the grid from the largest tile; a grid chosen
 from the median will be exceeded in the middle of the section.
 
+**A reader must crop each level to `dimension_size`.** Tiles are laid out
+on a `tile_rows` by `tile_columns` grid, so the assembled array is
+`tile_rows * tile_size_y_bins` by `tile_columns * tile_size_x_bins`, which
+overshoots the level whenever its dimensions do not divide evenly by the
+grid. Left uncropped, a level covers more ground than the extent it
+claims, levels of one pyramid disagree about their own field of view, and
+a viewer registering them by scale and translate misaligns them -- worse
+at coarse levels, where the rounding is proportionally larger. It also
+dilutes mean density: on one 8192-wide section a 1,5,10,20,50 ladder
+padded bin50 from 164 to 168 columns and diluted the mean by 4.9%. The
+level's true size is in `dimension_size`; slice to it.
+
+**Prefer a uniform, small ratio between levels.** `bin_sizes` defaults to
+a dyadic ladder for a measurable reason rather than convention. Binning
+preserves mean density but not the distribution: at the finest level a
+nonzero pixel holds one or two counts, while at bin N the same density
+arrives spread across N^2 pixels, so the peak falls by roughly the step's
+AREA factor while the mean does not move. With a single contrast range
+per layer, that area factor is the brightness discontinuity a viewer shows
+at each transition -- 4x for a doubling, 25x for a five-fold step.
+Measured on one section, the 99th percentile of nonzero density fell
+0.54x across the worst dyadic transition and 0.31x across the worst
+1,5,10,20,50 one, and the latter was visibly jumpy where the former was
+not.
+
 **Do not display summed counts directly.** Binning sums, so a level is
 bin_size^2 brighter than the one below it, and a viewer carrying a
 single contrast range per layer (napari does) cannot serve every level.
