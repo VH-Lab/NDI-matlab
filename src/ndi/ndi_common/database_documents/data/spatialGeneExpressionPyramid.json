@@ -28,7 +28,14 @@
 		"label": "",
 		"chip_serial": "",
 		"pipeline_version": "",
-		"bin_sizes": [],
+		"bin_sizes": [
+			1,
+			2,
+			4,
+			8,
+			16,
+			32
+		],
 		"base_pixel_size_x": 0,
 		"base_pixel_size_y": 0,
 		"pixel_size_units": "micrometer",
@@ -36,10 +43,15 @@
 		"origin_y": 0,
 		"extent_x": 0,
 		"extent_y": 0,
-		"tile_rows": 0,
-		"tile_columns": 0,
+		"tile_rows": 9,
+		"tile_columns": 9,
 		"index_order": "row-major",
 		"origin_corner": "upper-left",
 		"byte_order": "little"
+	},
+	"files": {
+		"file_list": [
+			"gene_totals.tsv"
+		]
 	}
 }

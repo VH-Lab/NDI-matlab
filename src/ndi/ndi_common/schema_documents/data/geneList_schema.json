@@ -76,6 +76,19 @@
 			],
 			"queryable": 1,
 			"documentation": "Fraction of rows with a non-empty gene_name. Stereo-seq GEFs commonly leave 10-20 percent of symbols blank; a reader that keys on symbols must know this."
+		},
+		{
+			"name": "n_duplicate_gene_names",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "How many gene_name values appear on more than one row. 0 means symbols are unique and may be used as a key; any other value means they may not. Measured at 5,531 for the opossum SAW annotation, where PAX8 spans 89 rows and the placeholder monDomV1R1278 spans 95, so a symbol-keyed lookup would silently discard most of a gene. Only gene_id is guaranteed unique."
 		}
 	]
 }

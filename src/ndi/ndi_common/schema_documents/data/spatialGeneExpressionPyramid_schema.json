@@ -14,7 +14,12 @@
 			"mustbenotempty": 1
 		}
 	],
-	"file": [],
+	"file": [
+		{
+			"name": "gene_totals.tsv",
+			"mustbenotempty": 0
+		}
+	],
 	"spatialGeneExpressionPyramid": [
 		{
 			"name": "label",
@@ -43,13 +48,20 @@
 		{
 			"name": "bin_sizes",
 			"type": "matrix",
-			"default_value": [],
+			"default_value": [
+				1,
+				2,
+				4,
+				8,
+				16,
+				32
+			],
 			"parameters": [
 				1,
-				NaN
+				null
 			],
 			"queryable": 1,
-			"documentation": "Vector of the bin sizes present in this pyramid, in base pixel units, finest first (e.g. [1 5 10 20 50]). One spatialGeneExpressionTiles document exists per entry."
+			"documentation": "Vector of the bin sizes present in this pyramid, in base pixel units, finest first (e.g. [1 5 10 20 50]). One spatialGeneExpressionTiles document exists per entry. A dyadic ladder is the default: measured against a 1,5,10,20,50 ladder on the same section, both met every size constraint, but level switching was visibly smoother when successive levels differ by a constant factor."
 		},
 		{
 			"name": "base_pixel_size_x",
@@ -140,7 +152,7 @@
 		{
 			"name": "tile_rows",
 			"type": "integer",
-			"default_value": 0,
+			"default_value": 9,
 			"parameters": [
 				0,
 				100000,
@@ -148,12 +160,12 @@
 				0
 			],
 			"queryable": 1,
-			"documentation": "Number of tile rows, identical at every level, so tile (row,column) covers the same physical region at every bin size."
+			"documentation": "Number of tile rows, identical at every level, so tile (row,column) covers the same physical region at every bin size. Default 9 is measured, not assumed: on a 18126 x 18968 opossum section with 30,434 genes, a 9 x 9 grid gives a largest tile of 46 MB and 444 files across six levels, about 79 KB of file_info. An 8 x 8 grid exceeded a 50 MB tile budget; 10 x 10 approached a 100 KB metadata budget."
 		},
 		{
 			"name": "tile_columns",
 			"type": "integer",
-			"default_value": 0,
+			"default_value": 9,
 			"parameters": [
 				0,
 				100000,
@@ -161,7 +173,7 @@
 				0
 			],
 			"queryable": 1,
-			"documentation": "Number of tile columns, identical at every level."
+			"documentation": "Number of tile columns, identical at every level. Default 9 is measured, not assumed: on a 18126 x 18968 opossum section with 30,434 genes, a 9 x 9 grid gives a largest tile of 46 MB and 444 files across six levels, about 79 KB of file_info. An 8 x 8 grid exceeded a 50 MB tile budget; 10 x 10 approached a 100 KB metadata budget."
 		},
 		{
 			"name": "index_order",

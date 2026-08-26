@@ -23,6 +23,7 @@
 		"gene_id_namespace": "",
 		"gene_symbol_namespace": "",
 		"annotation_source": "",
-		"gene_name_completeness": 1
+		"gene_name_completeness": 1,
+		"n_duplicate_gene_names": 0
 	}
 }

@@ -88,6 +88,19 @@ Identifier of the genome annotation (GTF/GFF) the list came from,
 including any modification. Counts assigned against a modified annotation
 are not reproducible without knowing which one was used.
 
+### n_duplicate_gene_names
+
+How many `gene_name` values appear on more than one row. 0 means symbols
+are unique and can serve as a key; anything else means they cannot.
+
+This is not a rare edge case. The opossum SAW annotation repeats 5,531
+symbols: `PAX8` spans 89 rows and the assembly placeholder
+`monDomV1R1278` spans 95. A consumer that builds a symbol-to-row map
+keeps one row per symbol and silently discards the rest, which looks
+correct and is not. Selecting a repeated symbol should return every row
+that carries it, and any join between two gene lists should key on
+`gene_id`.
+
 ### gene_name_completeness
 
 Fraction of rows with a non-empty `gene_name`. A reader that keys on
