@@ -1,6 +1,6 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/simple_calc.json",
+		"definition":						"$NDIDOCUMENTPATH\/apps\/calculators\/simple_calc.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/simple_calc_schema.json",
 		"class_name":						"simple_calc",
 		"property_list_name":					"simple_calc",
