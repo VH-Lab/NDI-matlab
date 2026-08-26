@@ -1,6 +1,6 @@
 {
 	"classname": "tuningcurve_calc",
-	"superclasses":  [ "base", "stimulus_tuningcurve"],
+	"superclasses":  [ "base", "app", "calculator", "stimulus_tuningcurve"],
 	"depends_on": [ ],
 	"file": [ ],
 	"tuningcurve_calc": [

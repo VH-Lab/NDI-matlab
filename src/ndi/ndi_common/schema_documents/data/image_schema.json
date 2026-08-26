@@ -1,6 +1,6 @@
 {
 	"classname": "image",
-	"superclasses":  [ "base" , "imageStack_parameters" ],
+	"superclasses":  [ "base" , "imageStackParameters" ],
 	"depends_on": [
 		{ "name": "subject_id", "mustbenotempty": 0},
 		{ "name": "imageCollection_id", "mustbenotempty": 0}
