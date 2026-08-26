@@ -1,6 +1,6 @@
 {
 	"document_class": {
-		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculations\/tuningcurve_calc.json",
+		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculators\/tuningcurve_calc.json",
 		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/tuningcurve_calc_schema.json",
 		"class_name":                       "tuningcurve_calc",
 		"property_list_name":                   "tuningcurve_calc", 
