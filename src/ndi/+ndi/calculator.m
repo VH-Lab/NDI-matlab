@@ -39,6 +39,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             docs = {};
             docs_tocat = {};
             docs_to_add = {};
+            app_doc = [];  % built on first use; describes this calculator and this run
 
             % Step 2: identify all sets of possible input parameters that are compatible with
             % what was specified by 'parameters'
@@ -67,14 +68,23 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 if do_calc
                     docs_out = ndi_calculator_obj.calculate(all_parameters{i});
                     if ~iscell(docs_out), docs_out = {docs_out}; end
+                    % Stamp the app group here, before these documents are handed
+                    % to both the return value and the add list. ndi.document is a
+                    % value class, so stamping later would leave the returned
+                    % documents describing a different provenance from the ones
+                    % actually written.
+                    if isempty(app_doc)
+                        app_doc = ndi_calculator_obj.newdocument();
+                    end
+                    for j=1:numel(docs_out)
+                        docs_out{j} = docs_out{j}.setproperties('app',app_doc.document_properties.app);
+                    end
                     docs_tocat{i} = docs_out;
                     docs_to_add = cat(2, docs_to_add, docs_out);
                 end
             end
             for i=1:numel(all_parameters), if i <= numel(docs_tocat), docs = cat(2,docs,docs_tocat{i}); end; end
             if ~isempty(docs_to_add)
-                app_doc = ndi_calculator_obj.newdocument();
-                for i=1:numel(docs_to_add), docs_to_add{i} = docs_to_add{i}.setproperties('app',app_doc.document_properties.app); end
                 ndi_calculator_obj.session.database_add(docs_to_add);
             end
             mylog.msg('system',1,'Concluding calculator.');
