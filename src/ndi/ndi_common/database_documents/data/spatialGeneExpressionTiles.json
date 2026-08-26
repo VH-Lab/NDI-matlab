@@ -1,0 +1,54 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/spatialGeneExpressionTiles.json",
+		"validation": "$NDISCHEMAPATH\/data\/spatialGeneExpressionTiles_schema.json",
+		"class_name": "spatialGeneExpressionTiles",
+		"property_list_name": "spatialGeneExpressionTiles",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "spatialGeneExpressionPyramid_id",
+			"value": ""
+		},
+		{
+			"name": "subject_id",
+			"value": ""
+		},
+		{
+			"name": "source_file_id",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [
+			"tile.bin_#"
+		]
+	},
+	"spatialGeneExpressionTiles": {
+		"label": "",
+		"bin_size": 1,
+		"pixel_size_x": 0,
+		"pixel_size_y": 0,
+		"pixel_size_units": "micrometer",
+		"dimension_order": "YXG",
+		"dimension_labels": "height,width,gene",
+		"dimension_size": [],
+		"dimension_scale": [],
+		"dimension_scale_units": "micrometer,micrometer,dimensionless",
+		"tile_size_x_bins": 0,
+		"tile_size_y_bins": 0,
+		"n_tiles_stored": 0,
+		"data_type_gene_index": "uint32",
+		"data_type_count": "uint16",
+		"data_type_offset": "uint32",
+		"data_type_coordinate": "uint16",
+		"tile_compression": "none",
+		"tile_format_version": 1
+	}
+}

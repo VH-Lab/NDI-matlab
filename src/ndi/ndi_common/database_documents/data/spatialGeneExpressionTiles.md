@@ -1,6 +1,6 @@
-# geneExpressionTiles
+# spatialGeneExpressionTiles
 
-The `geneExpressionTiles` document class stores one resolution level of a
+The `spatialGeneExpressionTiles` document class stores one resolution level of a
 spatially tiled gene expression pyramid. Each level is a sparse
 (pixel x gene) count matrix cut into rectangular tiles, one binary file
 per tile, so that a viewer can fetch a viewport without reading the
@@ -8,15 +8,15 @@ whole level.
 
 It is the spatial counterpart to `pyraview`. Where `pyraview` stores one
 whole file per decimation level and seeks to a sample range inside it,
-`geneExpressionTiles` stores many files per level and selects among them,
+`spatialGeneExpressionTiles` stores many files per level and selects among them,
 because the seek-inside-a-file model does not survive an interface that
 can only retrieve whole files.
 
 ## Model
 
-A `geneExpressionPyramid` document owns the shared identity: the gene
-dictionary, the coordinate origin, the tile grid, and the list of bin
-sizes. One `geneExpressionTiles` document exists per bin size, each
+A `spatialGeneExpressionPyramid` document owns the shared identity: the
+gene list it is indexed against, the coordinate origin, the tile grid, and the list of bin
+sizes. One `spatialGeneExpressionTiles` document exists per bin size, each
 depending on that parent. Levels are siblings rather than a chain, so
 enumerating them is a single query and no level orphans another.
 
@@ -31,31 +31,17 @@ once, independent of zoom.
 
 ## Files
 
-* **genes.tsv** (on the parent `geneExpressionPyramid`)
 * **tile.bin_#** — one file per stored tile
+
+The gene dictionary is **not** a file of this document. It lives in the
+`geneList` document that the parent pyramid depends on, so that a
+dissociated RNA-seq dataset built on the same annotation can share it.
 
 `#` is a non-negative integer computed from the tile's (row, column) by
 the parent's `index_order`; for `row-major` it is
 `row * tile_columns + column`. Tiles containing no data are not written.
 Use `ndi.document/current_file_list` to discover which tiles exist —
 there is no separate index file.
-
-### genes.tsv
-
-Tab-separated, uncompressed, one header row. The `gene_index` column is
-the value stored in each tile's `gene_index` array and MUST be the
-0-based row number; it is written explicitly so a reader can verify it
-rather than assume row order survived transport.
-
-```
-gene_index	gene_id	gene_name
-0	ENSMODG00000020019	A1CF
-1	ENSMODG00000003447	Pvalb
-```
-
-Uncompressed because the file is a few megabytes against a multi-gigabyte
-pyramid, and staying plain text keeps it readable by `readtable`,
-`pandas.read_csv`, and `grep` with no decode step.
 
 ### tile.bin_N layout (tile_format_version 1)
 
@@ -126,7 +112,7 @@ How many tile files were written. Less than
 ### data_type_gene_index, data_type_count, data_type_offset, data_type_coordinate
 
 The integer types of the four arrays in the tile layout above.
-`data_type_gene_index` must be wide enough for the parent's `n_genes`;
+`data_type_gene_index` must be wide enough for the geneList's `n_genes`;
 prefer `uint32` over `uint16` even when the gene count would fit, since
 gene counts near 65535 are common and leave no margin.
 
@@ -140,7 +126,7 @@ The version of the binary layout described above.
 
 ## Dependencies
 
-* **geneExpressionPyramid_id**: the pyramid this level belongs to.
+* **spatialGeneExpressionPyramid_id**: the pyramid this level belongs to.
 * **subject_id**: the subject the tissue came from. Present on each level
   as well as the parent so a level is independently queryable by subject.
 * **source_file_id**: optional. The `generic_file` or other document

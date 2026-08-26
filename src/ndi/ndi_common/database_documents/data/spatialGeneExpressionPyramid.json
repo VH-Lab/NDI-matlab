@@ -1,0 +1,45 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/spatialGeneExpressionPyramid.json",
+		"validation": "$NDISCHEMAPATH\/data\/spatialGeneExpressionPyramid_schema.json",
+		"class_name": "spatialGeneExpressionPyramid",
+		"property_list_name": "spatialGeneExpressionPyramid",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			},
+			{
+				"definition": "$NDIDOCUMENTPATH\/data\/geneExpression.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "subject_id",
+			"value": ""
+		},
+		{
+			"name": "geneList_id",
+			"value": ""
+		}
+	],
+	"spatialGeneExpressionPyramid": {
+		"label": "",
+		"chip_serial": "",
+		"pipeline_version": "",
+		"bin_sizes": [],
+		"base_pixel_size_x": 0,
+		"base_pixel_size_y": 0,
+		"pixel_size_units": "micrometer",
+		"origin_x": 0,
+		"origin_y": 0,
+		"extent_x": 0,
+		"extent_y": 0,
+		"tile_rows": 0,
+		"tile_columns": 0,
+		"index_order": "row-major",
+		"origin_corner": "upper-left",
+		"byte_order": "little"
+	}
+}

@@ -1,0 +1,145 @@
+{
+	"classname": "spatialGeneExpressionCells",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "spatialGeneExpressionPyramid_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "subject_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "source_file_id",
+			"mustbenotempty": 0
+		}
+	],
+	"file": [
+		{
+			"name": "cells.tsv",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "contours.bin",
+			"mustbenotempty": 0
+		}
+	],
+	"spatialGeneExpressionCells": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this segmentation (e.g. 'SAW cellbin adjusted')."
+		},
+		{
+			"name": "n_cells",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The number of data rows in cells.tsv."
+		},
+		{
+			"name": "segmentation_method",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "How cells were segmented (e.g. 'SAW v7.1.2 CellBin', 'Cellpose 2.0'). Stereo-seq CellBin segments nuclei from the stain image and dilates outward, so a 'cell' is a nucleus plus a margin, not a measured cell body."
+		},
+		{
+			"name": "segmentation_dilation",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The radial expansion applied to each segmented nucleus, in coordinate_units. 0 if none. SAW's default is about 5 micrometers."
+		},
+		{
+			"name": "coordinate_units",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of the centroid and contour coordinates. These are the SOURCE coordinate units (DNB chip units for Stereo-seq), the same frame as the pyramid's origin_x and origin_y, NOT micrometers unless stated."
+		},
+		{
+			"name": "contours_present",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				1,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "1 if contours.bin was written, 0 if only centroids are available."
+		},
+		{
+			"name": "contour_reference",
+			"type": "string",
+			"default_value": "centroid",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Whether contour vertices are stored relative to their cell centroid ('centroid') or in absolute source coordinates ('absolute'). Storing this removes the need to guess from vertex magnitude, which is what the source h5ad forces."
+		},
+		{
+			"name": "n_vertices_per_cell",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "0 means contours are ragged and contours.bin carries an offset array (the normal case; SAW pads a fixed 32-slot array with a sentinel and about two thirds of slots are padding, which is stripped on ingest). A positive value means every cell has exactly that many vertices and no offset array is present."
+		},
+		{
+			"name": "data_type_vertex",
+			"type": "string",
+			"default_value": "int16",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Integer type of the contour vertex arrays."
+		},
+		{
+			"name": "data_type_offset",
+			"type": "string",
+			"default_value": "uint32",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Integer type of the contour offset array."
+		},
+		{
+			"name": "contour_format_version",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				1,
+				1000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The version of the contour binary layout. See spatialGeneExpressionCells.md."
+		}
+	]
+}

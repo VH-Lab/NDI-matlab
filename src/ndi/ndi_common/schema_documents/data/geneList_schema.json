@@ -1,0 +1,81 @@
+{
+	"classname": "geneList",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [],
+	"file": [
+		{
+			"name": "genes.tsv",
+			"mustbenotempty": 1
+		}
+	],
+	"geneList": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this gene list (e.g. 'Opossum SAW bin1 GEF genes')."
+		},
+		{
+			"name": "n_genes",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The number of data rows in genes.tsv. Every gene_index referring to this list must be less than this value."
+		},
+		{
+			"name": "species",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The species the annotation describes, preferably as an ontology node (e.g. 'NCBITaxon:9265')."
+		},
+		{
+			"name": "gene_id_namespace",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The identifier system used in the gene_id column (e.g. 'Ensembl', 'NCBI', 'FlyBase'). Two gene lists in different namespaces cannot be compared without a geneListMapping."
+		},
+		{
+			"name": "gene_symbol_namespace",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The identifier system used in the gene_name column (e.g. 'HGNC', 'MGI', ''). May be empty if symbols are absent or unofficial."
+		},
+		{
+			"name": "annotation_source",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Identifier of the genome annotation (GTF/GFF) this list came from, including any modification. Counts are not reproducible without it."
+		},
+		{
+			"name": "gene_name_completeness",
+			"type": "double",
+			"default_value": 1,
+			"parameters": [
+				0,
+				1,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "Fraction of rows with a non-empty gene_name. Stereo-seq GEFs commonly leave 10-20 percent of symbols blank; a reader that keys on symbols must know this."
+		}
+	]
+}

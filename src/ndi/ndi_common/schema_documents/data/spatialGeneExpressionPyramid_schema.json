@@ -1,0 +1,191 @@
+{
+	"classname": "spatialGeneExpressionPyramid",
+	"superclasses": [
+		"base",
+		"geneExpression"
+	],
+	"depends_on": [
+		{
+			"name": "subject_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "geneList_id",
+			"mustbenotempty": 1
+		}
+	],
+	"file": [],
+	"spatialGeneExpressionPyramid": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this pyramid (e.g. 'Opossum V1 Stereo-seq')."
+		},
+		{
+			"name": "chip_serial",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The capture chip serial number, if the assay uses one. For Stereo-seq this is the SAW 'sn' field."
+		},
+		{
+			"name": "pipeline_version",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The version of the primary analysis pipeline that produced the counts (e.g. 'SAW v7.1.2')."
+		},
+		{
+			"name": "bin_sizes",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Vector of the bin sizes present in this pyramid, in base pixel units, finest first (e.g. [1 5 10 20 50]). One spatialGeneExpressionTiles document exists per entry."
+		},
+		{
+			"name": "base_pixel_size_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The physical size of one base (bin size 1) pixel in x, in pixel_size_units. For Stereo-seq at 500 nm DNB pitch this is 0.5."
+		},
+		{
+			"name": "base_pixel_size_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The physical size of one base (bin size 1) pixel in y, in pixel_size_units."
+		},
+		{
+			"name": "pixel_size_units",
+			"type": "string",
+			"default_value": "micrometer",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of the pixel size, origin, and extent fields."
+		},
+		{
+			"name": "origin_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				-10000000,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The x coordinate of the upper-left corner of tile (0,0) in the source coordinate system (GEF minX for Stereo-seq). Required to register tiles against cell centroids, contours, and stain images."
+		},
+		{
+			"name": "origin_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				-10000000,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The y coordinate of the upper-left corner of tile (0,0) in the source coordinate system (GEF minY for Stereo-seq)."
+		},
+		{
+			"name": "extent_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The full width of the tiled region, in base pixel units."
+		},
+		{
+			"name": "extent_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The full height of the tiled region, in base pixel units."
+		},
+		{
+			"name": "tile_rows",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Number of tile rows, identical at every level, so tile (row,column) covers the same physical region at every bin size."
+		},
+		{
+			"name": "tile_columns",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Number of tile columns, identical at every level."
+		},
+		{
+			"name": "index_order",
+			"type": "string",
+			"default_value": "row-major",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "How (row,column) maps to the suffix N in tile.bin_N. 'row-major': N = row*tile_columns + column. 'column-major': N = column*tile_rows + row."
+		},
+		{
+			"name": "origin_corner",
+			"type": "string",
+			"default_value": "upper-left",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Which corner tile (0,0) occupies: 'upper-left' or 'lower-left'."
+		},
+		{
+			"name": "byte_order",
+			"type": "string",
+			"default_value": "little",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Byte order of multi-byte values in all binary files of this pyramid: 'little' or 'big'."
+		}
+	]
+}
