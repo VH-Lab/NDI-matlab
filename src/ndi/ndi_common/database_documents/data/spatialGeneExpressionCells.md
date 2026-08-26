@@ -20,6 +20,57 @@ membership varies by species. A single document cannot express those
 different parentages honestly, and bundling them would mean rewriting
 geometry to revise a label.
 
+## Measured behaviour
+
+Values below are measured on a real SAW cellbin (opossum V1,
+`cellbin_1.0.adjusted.labeled.h5ad`, 80,369 cells) rather than assumed.
+
+| what | measured |
+|---|---|
+| `obsm['cell_border']` | `(80369, 32, 2)`, dtype `int64` |
+| padding sentinel | `32767`, filling 67% of slots |
+| real vertices per cell | min 4, median 10, **max 24** |
+| `contour_reference` | `centroid` (median vertex 10 against a centroid scale of 9,695) |
+| `n_vertices_per_cell` | **0** — ragged |
+
+Three consequences.
+
+**The source array is far larger than the information in it.** It
+allocates 32 slots where at most 24 are ever used, fills two thirds with
+a sentinel, and stores in `int64` values that fit in `int16`. Stripping
+the padding and narrowing the type shrinks contours by roughly twenty
+times, which is why this document stores them ragged rather than
+mirroring the source layout.
+
+**Stored contours are not guaranteed renderable.** They are traced from a
+segmentation mask, not idealised, so they contain repeated vertices and
+occasional self-intersections. A consumer must add them as OUTLINES --
+paths -- and not as filled polygons: a renderer that triangulates faces
+will reject them, and one bad contour among eighty thousand is enough to
+lose the whole layer. Rendered as closed paths, 80,369 outlines build in
+about five seconds.
+
+**Placing cells uses the centroid, not the origin.** See the coordinate
+rule below; getting it wrong displaces every cell by exactly the origin,
+which looks plausible and is not.
+
+## The coordinate rule
+
+Contours are stored relative to their cell's centroid, and centroids are
+in source coordinate units. A source coordinate `(x, y)` reaches world
+position by multiplying by the pixel size alone:
+
+    world_x = x * pixel_size_x        world_y = y * pixel_size_y
+
+`origin_x` and `origin_y` on the pyramid say where the tiled region
+begins in source coordinates. They are **not** subtracted when placing
+cells. Whatever positions the raster -- a viewer's translate, or an
+offset applied when reading tiles -- already accounts for the origin, so
+subtracting it again here removes it once and adds it once, leaving every
+cell displaced from the expression data by exactly the origin. That
+failure is silent: both layers look internally correct and simply
+disagree about where zero is.
+
 ## Files
 
 * **cells.tsv** — one row per cell
