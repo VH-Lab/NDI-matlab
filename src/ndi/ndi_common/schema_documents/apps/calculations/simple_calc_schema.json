@@ -1,6 +1,6 @@
 {
 	"classname": "simple_calc",
-	"superclasses":  [ "base", "app"],
+	"superclasses":  [ "base", "app", "calculator"],
 	"depends_on": [
 		{ "name": "document_id", "mustbenotempty": 1}
 	],
