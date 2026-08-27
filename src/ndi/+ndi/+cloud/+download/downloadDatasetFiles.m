@@ -64,7 +64,31 @@ function downloadDatasetFiles(cloudDatasetId, targetFolder, fileUuids, options)
             continue;
         end
 
-        targetFilepath = fullfile(targetFolder, file_uid);
+        % file_uid comes verbatim from the getDataset API response and is used
+        % below as a local destination path. A malicious value such as
+        % '../../../.matlab/R2024b/startup.m' would otherwise let a downloaded
+        % dataset write outside targetFolder -- e.g. overwrite an auto-executed
+        % MATLAB startup script. Reduce the uid to its final path component
+        % (dropping any directory parts), reject empty / '.' / '..', and assert
+        % the resolved path stays inside targetFolder before writing.
+        %
+        % Coordinated with the NDI-python fix to src/ndi/database.py
+        % (get_binary_path), which closes the identical unsanitized-traversal
+        % hole on the Python side; NDI-python download.py:317-321 already applies
+        % the equivalent basename + containment guard.
+        [safeFileName, isSafe] = ndi.cloud.download.internal.safeLocalFilename(file_uid);
+        if ~isSafe
+            warning('NDI:Cloud:UnsafeFileUid', ...
+                'File uid "%s" does not yield a safe filename; skipping.', file_uid);
+            continue;
+        end
+        targetFilepath = fullfile(targetFolder, safeFileName);
+        if ~startsWith(fullfile(targetFilepath), fullfile(targetFolder))
+            warning('NDI:Cloud:UnsafeFileUid', ...
+                'Refusing to write file uid "%s" outside the target folder; skipping.', ...
+                file_uid);
+            continue;
+        end
         if isfile(targetFilepath)
             if options.Verbose; fprintf('File %d already exists locally, skipping...\n', i); end
             continue;
