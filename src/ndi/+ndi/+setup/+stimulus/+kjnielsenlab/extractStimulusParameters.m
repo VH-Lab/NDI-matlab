@@ -13,6 +13,14 @@ function [parameters, displayOrder] = extractStimulusParameters(analyzer)
 %   inconsistencies previously handled by warnings. Handles zero-trial
 %   experiments gracefully by returning an empty displayOrder.
 %
+%   The 'trialno' of a repeat is its position within the stimulus
+%   presentation sequence, so the length of the sequence is the largest
+%   'trialno' recorded, not the number of repeats stored in the file. A run
+%   that was aborted before all of its planned trials were presented records
+%   fewer repeats than the sequence has positions; that is a valid file, and
+%   the positions with no recorded trial are returned as NaN rather than
+%   treated as an error.
+%
 %   INPUTS:
 %   analyzer (struct): MATLAB structure with experiment details. Must contain
 %                      appropriately structured fields 'M', 'P', and 'loops'.
@@ -29,8 +37,11 @@ function [parameters, displayOrder] = extractStimulusParameters(analyzer)
 %   OUTPUTS:
 %   parameters (cell array): 1xN cell array (N=conditions). parameters{i}
 %                            is a struct with combined parameters for condition i.
-%   displayOrder (numeric vector): 1xT vector (T=trials). displayOrder(k)=i
-%                                  means trial k used condition i. Empty ([])
+%   displayOrder (numeric vector): 1xT vector, where T is the highest trial
+%                                  number recorded. displayOrder(k)=i means
+%                                  the stimulus presented at position k of
+%                                  the sequence used condition i. Positions
+%                                  with no recorded trial are NaN. Empty ([])
 %                                  if no trials are found.
 %
 %   EXAMPLE (based on provided structure snippets):
@@ -49,25 +60,26 @@ validateAnalyzerStructure(analyzer); % Call custom validation function
 numConditions = length(analyzer.loops.conds);
 parameters = cell(1, numConditions);
 
-% Determine total number of trials
-totalTrials = 0;
+% Determine the length of the stimulus presentation sequence. Each repeat
+% records the position it occupied in that sequence, so the sequence length
+% is the largest position recorded. It is not the number of repeats stored:
+% a run that was aborted partway through records fewer repeats than the
+% sequence has positions. The validator guarantees 'repeats' is a cell.
+sequenceLength = 0;
 for i = 1:numConditions
-    if isfield(analyzer.loops.conds{i}, 'repeats') && iscell(analyzer.loops.conds{i}.repeats)
-        totalTrials = totalTrials + length(analyzer.loops.conds{i}.repeats);
-    else
-        error('extractStimulusParameters:missingRepeats', ...
-              'Condition %d is missing or has invalid ''repeats'' field required for trial counting.', i);
+    condRepeats = analyzer.loops.conds{i}.repeats;
+    for j = 1:length(condRepeats)
+        trialNum = readTrialNumber(condRepeats{j}, i, j);
+        sequenceLength = max(sequenceLength, trialNum);
     end
 end
 
-% --- MODIFIED HERE: Removed warning for zero trials ---
-if totalTrials == 0
-    % No warning needed, just set displayOrder to empty for valid zero-trial case
+if sequenceLength == 0
+    % Valid zero-trial case; no warning needed
     displayOrder = [];
 else
-    displayOrder = nan(1, totalTrials);
+    displayOrder = nan(1, sequenceLength);
 end
-% --- END MODIFICATION ---
 
 % --- Parameter Extraction and Display Order Mapping ---
 
@@ -135,44 +147,65 @@ for i = 1:numConditions
     parameters{i} = currentParams;
 
     % 4. Map trials for displayOrder
-    % Only loop through repeats if displayOrder was initialized (i.e., totalTrials > 0)
+    % Only loop through repeats if displayOrder was initialized
     if ~isempty(displayOrder)
         % Validator ensures 'repeats' exists and is a cell here
         numRepeats = length(condData.repeats);
         for j = 1:numRepeats
-            repeatData = condData.repeats{j};
-            if isstruct(repeatData) && isscalar(repeatData) && isfield(repeatData, 'trialno')
-                trialNum = repeatData.trialno;
-                if isnumeric(trialNum) && isscalar(trialNum) && trialNum > 0 && trialNum <= totalTrials && floor(trialNum) == trialNum
-                    if isnan(displayOrder(trialNum))
-                         displayOrder(trialNum) = i;
-                    else
-                        error('extractStimulusParameters:duplicateTrial', ...
-                              'Trial number %d is assigned to multiple conditions (existing: %d, new: %d). Ambiguous display order.', ...
-                              trialNum, displayOrder(trialNum), i);
-                    end
-                else
-                    error('extractStimulusParameters:invalidTrialNum', ...
-                          'Invalid or out-of-range trial number (%g) found for condition %d, repeat %d. Expected integer between 1 and %d.', ...
-                          trialNum, i, j, totalTrials);
-                end
+            trialNum = readTrialNumber(condData.repeats{j}, i, j);
+            if isnan(displayOrder(trialNum))
+                displayOrder(trialNum) = i;
             else
-                 error('extractStimulusParameters:invalidRepeatStruct', ...
-                       'Invalid repeat structure or missing ''trialno'' field for condition %d, repeat %d.', i, j);
+                error('extractStimulusParameters:duplicateTrial', ...
+                      'Trial number %d is assigned to multiple conditions (existing: %d, new: %d). Ambiguous display order.', ...
+                      trialNum, displayOrder(trialNum), i);
             end
         end % end loop over repeats
     end % end check ~isempty(displayOrder)
 end % end loop over conditions
 
-% Final check for unassigned trials (only if trials were expected)
+% Positions with no recorded trial are left as NaN. This is expected for a
+% run that was aborted before every planned trial was presented, so it is
+% reported rather than treated as an error; callers that need to pair trials
+% with recorded stimulus times must decide how to handle the gaps.
 if ~isempty(displayOrder) && any(isnan(displayOrder))
-    unassigned_indices = find(isnan(displayOrder));
-    error('extractStimulusParameters:unassignedTrials', ...
-          'Display order calculation incomplete. Some trials were not assigned a condition index (e.g., trial %d of %d). Check ''trialno'' fields in all conditions.', ...
-          unassigned_indices(1), totalTrials);
+    unassignedIndices = find(isnan(displayOrder));
+    warning('extractStimulusParameters:unassignedTrials', ...
+            'No condition is recorded for %d of %d positions in the stimulus sequence (first: %d). These entries of displayOrder are NaN.', ...
+            numel(unassignedIndices), numel(displayOrder), unassignedIndices(1));
 end
 
 end % end function
+
+
+% --- Local Helper Function for Reading a Repeat's Trial Number ---
+function trialNum = readTrialNumber(repeatData, conditionIndex, repeatIndex)
+    % Validates one element of a condition's 'repeats' cell array and
+    % returns its 'trialno', the position of that trial in the stimulus
+    % presentation sequence.
+
+    if ~isstruct(repeatData) || ~isscalar(repeatData) || ~isfield(repeatData, 'trialno')
+        error('extractStimulusParameters:invalidRepeatStruct', ...
+              'Invalid repeat structure or missing ''trialno'' field for condition %d, repeat %d.', ...
+              conditionIndex, repeatIndex);
+    end
+
+    trialNum = repeatData.trialno;
+
+    if ~isnumeric(trialNum) || ~isscalar(trialNum) || ~isfinite(trialNum) || ...
+       trialNum < 1 || floor(trialNum) ~= trialNum
+        if isnumeric(trialNum) && isscalar(trialNum)
+            trialNumStr = sprintf('%g', trialNum);
+        else
+            trialNumStr = sprintf('of class ''%s''', class(trialNum));
+        end
+        error('extractStimulusParameters:invalidTrialNum', ...
+              'Invalid trial number (%s) found for condition %d, repeat %d. Expected a positive integer.', ...
+              trialNumStr, conditionIndex, repeatIndex);
+    end
+
+    trialNum = double(trialNum);
+end
 
 
 % --- Local Helper Function for Input Structure Validation ---
