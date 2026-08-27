@@ -76,13 +76,15 @@ classdef param < ndi.epoch.epochset
             %     EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
             %
             epochprobemapfile_fullpath = epochprobemapfilename(ndi_epochset_param_obj, N);
-            % epochprobemap_class can originate from untrusted document content;
-            % validate it and use feval instead of eval so it cannot execute
-            % arbitrary MATLAB/shell code (see ndi.fun.validateClassName).
-            epochprobemap_class = ndi.fun.validateClassName(...
-                ndi_epochset_param_obj.epochprobemap_class, ...
-                'ndi:epoch:epochset:param:invalidClassName');
-            epochprobemap = feval(epochprobemap_class, epochprobemapfile_fullpath);
+            % epochprobemap_class can arrive from untrusted document content, so
+            % check it before instantiating. mustBeClassnameOfType inspects class
+            % metadata only (meta.class.fromName plus a superclass walk) and never
+            % constructs anything, so the check itself is safe; feval then replaces
+            % an eval that would otherwise execute an arbitrary expression built
+            % from the field's value.
+            probemapClass = ndi_epochset_param_obj.epochprobemap_class;
+            ndi.validators.mustBeClassnameOfType(probemapClass, 'ndi.epoch.epochprobemap');
+            epochprobemap = feval(probemapClass, epochprobemapfile_fullpath);
             [b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap, N);
             if ~b
                 error(['The epochprobemap are not valid for this object: ' msg]);

@@ -1,25 +1,30 @@
 name: Run NDI Test Suite Cloud Prod
 
 on:
-  # This suite creates, uploads files to, publishes, unpublishes and deletes
-  # datasets against the PRODUCTION NDI Cloud API (api.ndi-cloud.com). It must
-  # NOT run on every push / pull_request: a cancelled or SIGKILLed runner skips
-  # MATLAB teardown and can orphan synthetic (possibly published) datasets in
-  # the public commons. Restrict it to manual dispatch and a nightly schedule
-  # so writes happen on a predictable, low-contention cadence.
-  #
-  # push/pull_request gating for the dev stage lives in test-cloud-api.yml.
-  # NOTE for Steve: main's branch protection / required checks must be updated
-  # to stop requiring this workflow before it can be retargeted off main.
+  # Triggers the workflow on push or pull request events for the "main" branch
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
+      - 'docs/reports/**'
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '*.md'
+      - '.github/workflows/**'
+      - 'docs/reports/**'
+
+  # Allows for manually running this workflow from the Actions tab
   workflow_dispatch:
-  schedule:
-    # 07:00 UTC nightly (off-peak for US/EU contributors).
-    - cron: '0 7 * * *'
 
 concurrency:
-  # Do NOT cancel in progress: a cancelled runner is SIGKILLed before MATLAB
-  # teardown (addTeardown/deleteDatasetAfterTest) runs, orphaning prod datasets.
-  # Serialize instead so a new run waits for the current one to finish cleanly.
+  # Do NOT cancel a run in progress. This suite creates, uploads to, publishes
+  # and deletes datasets on the PRODUCTION NDI Cloud API, and a cancelled runner
+  # is SIGKILLed before MATLAB teardown (addTeardown / deleteDatasetAfterTest)
+  # can run -- orphaning synthetic, possibly published datasets in the public
+  # commons. Serialize instead so a new run waits for the current one to finish
+  # cleaning up after itself.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
@@ -27,6 +32,11 @@ jobs:
   run_tests:
     name: Cloud CI ${{ matrix.part }}
     runs-on: ubuntu-latest
+    # Runs of this suite complete in roughly 10-17 minutes. Cap the job well
+    # above that: with cancel-in-progress: false, runs queue instead of
+    # superseding each other, so a hung run would otherwise hold the queue for
+    # GitHub's 6-hour default.
+    timeout-minutes: 60
     # matbox dependency resolution calls the GitHub API; authenticate so the
     # requests aren't unauthenticated-rate-limited (which surfaced as webread
     # timeouts when several jobs install in parallel).
