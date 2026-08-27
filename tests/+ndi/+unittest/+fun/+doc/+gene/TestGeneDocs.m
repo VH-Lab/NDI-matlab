@@ -20,6 +20,7 @@ classdef TestGeneDocs < matlab.unittest.TestCase
     properties
         testDir
         session
+        subjectID
     end
 
     methods (TestClassSetup)
@@ -30,6 +31,17 @@ classdef TestGeneDocs < matlab.unittest.TestCase
             if ~isfolder(testCase.testDir), mkdir(testCase.testDir); end
             ndi.test.helper.initializeMksqliteNoOutput()
             testCase.session = ndi.session.dir('gene_exp1', testCase.testDir);
+
+            % A real subject document, not a fabricated id. The pyramid
+            % declares subject_id mustbenotempty, so a pyramid cannot exist
+            % without one -- a section is measured from an animal, and NDI
+            % records that on the measurement rather than leaving it to be
+            % inferred. The tiles documents do not require it; they depend
+            % on the pyramid, which carries it.
+            sub = ndi.document('subject', 'base.session_id', testCase.session.id(), ...
+                'subject.local_identifier', 'gene_test_subject@vhlab');
+            testCase.session.database_add(sub);
+            testCase.subjectID = sub.id();
         end
     end
 
@@ -67,7 +79,7 @@ classdef TestGeneDocs < matlab.unittest.TestCase
 
             [pyr, tiles] = ndi.fun.doc.gene.makePyramid(testCase.session, ...
                 x, y, gi, c, gl, 'binSizes', [1 2], 'grid', 2, ...
-                'basePixelSize', [0.5 0.5]);
+                'basePixelSize', [0.5 0.5], 'subjectID', testCase.subjectID);
 
             testCase.verifyNumElements(tiles, 2, 'One tiles document per bin size.');
             p = pyr.document_properties.spatialGeneExpressionPyramid;
@@ -75,6 +87,9 @@ classdef TestGeneDocs < matlab.unittest.TestCase
             testCase.verifyEqual(p.origin_y, 2000);
             testCase.verifyEqual(p.tile_rows, 2);
             testCase.verifyEqual(p.bin_sizes, [1 2]);
+            testCase.verifyEqual(pyr.dependency_value('subject_id'), ...
+                testCase.subjectID, ...
+                'The pyramid must carry the subject it was measured from.');
 
             % counts must survive binning at every level
             total = sum(c);
@@ -108,7 +123,7 @@ classdef TestGeneDocs < matlab.unittest.TestCase
             x = [10; 10; 12; 40]; y = [20; 20; 21; 50];
             gi = [0; 1; 2; 3];  c = [2; 3; 4; 5];
             [pyr, ~] = ndi.fun.doc.gene.makePyramid(testCase.session, x, y, gi, c, gl, ...
-                'binSizes', 1, 'grid', 2);
+                'binSizes', 1, 'grid', 2, 'subjectID', testCase.subjectID);
 
             [M, pixelXY] = ndi.fun.doc.gene.exportRegion(testCase.session, pyr, 1, []);
             testCase.verifySize(M, [3 4], ...

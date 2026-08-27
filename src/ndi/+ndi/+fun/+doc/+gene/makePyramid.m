@@ -24,7 +24,12 @@ function [pyrDoc, tileDocs] = makePyramid(session, x, y, geneIndex, count, geneL
 %       leaving the mean unchanged, so uniform, small ratios give the
 %       smoothest zooming: a 2x step costs 4x, a 5x step costs 25x.
 %   grid (9)            - tile grid, GRID by GRID at every level
-%   subjectID ('')      - subject to depend on
+%   subjectID           - subject to depend on. REQUIRED: the pyramid
+%       document declares subject_id mustbenotempty, because a section
+%       is measured from an animal and NDI records that on the
+%       measurement. The tiles and cells documents do NOT require it;
+%       they depend on the pyramid, which already carries it, and a
+%       second copy is a second place to be wrong.
 %   basePixelSize ([0.5 0.5]) - physical size of one base pixel, [x y]
 %   pixelSizeUnits ('micrometer')
 %   label ('')
@@ -79,6 +84,16 @@ end
 if n == 0
     error('NDI:gene:makePyramid:noRecords', 'No records were supplied.');
 end
+if isempty(options.subjectID)
+    % Checked here rather than left to the database. The pyramid schema
+    % declares subject_id mustbenotempty, so an empty one fails inside DID
+    % validation with a message about the schema; saying it here names the
+    % argument the caller actually has to supply.
+    error('NDI:gene:makePyramid:subjectRequired', ...
+        ['A subject is required: pass ''subjectID'' with the id of a subject ' ...
+         'document. The spatialGeneExpressionPyramid schema declares ' ...
+         'subject_id mustbenotempty.']);
+end
 
 nGenes = geneListDoc.document_properties.geneList.n_genes;
 if max(geneIndex) >= nGenes
@@ -120,9 +135,7 @@ ge = struct('assay', options.assay, 'count_type', 'raw', 'count_units', 'UMI');
 pyrDoc = ndi.document('spatialGeneExpressionPyramid', ...
     'spatialGeneExpressionPyramid', pyr, 'geneExpression', ge) + session.newdocument();
 pyrDoc = pyrDoc.set_dependency_value('geneList_id', geneListDoc.id());
-if ~isempty(options.subjectID)
-    pyrDoc = pyrDoc.set_dependency_value('subject_id', options.subjectID);
-end
+pyrDoc = pyrDoc.set_dependency_value('subject_id', options.subjectID);
 
 totalsPath = localWriteGeneTotals(geneIndex, count, nGenes);
 pyrDoc = storeDoc(session, pyrDoc, {'gene_totals.tsv'}, {totalsPath});
