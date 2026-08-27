@@ -415,7 +415,31 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function bytes = randomBytes(n)
-            bytes = int8(randi([-128, 127], 1, n));
+            % Generate cryptographically secure random bytes for the AES-CBC IV.
+            %
+            % The previous implementation used int8(randi([-128,127],1,n)),
+            % which draws from MATLAB's default RNG -- a deterministic stream
+            % that starts from a fixed seed in every fresh MATLAB session. The
+            % AES key is derived only from hostname+username (aesKeyBytes), with
+            % no per-write randomness, so a repeated IV under that fixed key
+            % makes identical passwords encrypt to identical ciphertext blocks
+            % (IV reuse). java.security.SecureRandom is a CSPRNG, so IVs do not
+            % repeat.
+            %
+            % The bytes must come OUT of Java as a return value, never be
+            % filled INTO a buffer passed in. MATLAB converts a Java primitive
+            % array to a MATLAB array at the boundary, so a byte[] obtained via
+            % reflection is already a plain int8 array by the time it reaches
+            % MATLAB; handing it to nextBytes marshals a *copy* into the JVM,
+            % SecureRandom fills the copy, and it is discarded on return --
+            % leaving the IV all zeros. A fixed zero IV under the fixed
+            % hostname+username key is worse than the randi draw this replaced.
+            %
+            % generateSeed declares a byte[] return type, so MATLAB converts the
+            % already-filled result outward and the by-value boundary cannot
+            % swallow it.
+            sr = java.security.SecureRandom();
+            bytes = reshape(int8(sr.generateSeed(n)), 1, n);
         end
     end
 
