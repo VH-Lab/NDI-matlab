@@ -1,28 +1,28 @@
 {
   "app": {
-    "name": "",
-    "version": "",
-    "url": "",
-    "os": "",
-    "os_version": "",
-    "interpreter": "",
-    "interpreter_version": ""
+    "name": "ndi.calc.stimulus.tuningcurve",
+    "version": "58046c5cd610bf20c7437c955e5a8a6c8735eb4e",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "26.6.2",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
   },
   "base": {
-    "session_id": "412696f999384995_40ce00353523c0d4",
-    "id": "412696f9a63a50b8_c0dd11eda0dfc30a",
+    "session_id": "412696f9abd9edc3_40dbbdf6582271b2",
+    "id": "412696f9abe462df_c0d772baa86e38bf",
     "name": "",
-    "datestamp": "2026-08-26T23:47:30.940Z"
+    "datestamp": "2026-08-27T00:03:26.797Z"
   },
   "calculator": {},
   "depends_on": [
     {
       "name": "element_id",
-      "value": "412696f9a6352a33_40d7b65ef7e9e22c"
+      "value": "412696f9abe242a8_c0d87471cee6c95a"
     },
     {
       "name": "stimulus_response_scalar_id",
-      "value": "412696f9a6397200_c0b1931bd11bbb0b"
+      "value": "412696f9abe3fbb4_c0d539e0a574a585"
     }
   ],
   "document_class": {
@@ -323,11 +323,11 @@
     "depends_on": [
       {
         "name": "stimulus_response_scalar_id",
-        "value": "412696f9a6397200_c0b1931bd11bbb0b"
+        "value": "412696f9abe3fbb4_c0d539e0a574a585"
       },
       {
         "name": "stimulus_response_scalar_id",
-        "value": "412696f9a633ccfb_c0d82374c77d0d53"
+        "value": "412696f9abe1595f_40c2e3dda9144214"
       }
     ],
     "log": "angle best value is 90.",

@@ -1,28 +1,28 @@
 {
   "app": {
-    "name": "",
-    "version": "",
-    "url": "",
-    "os": "",
-    "os_version": "",
-    "interpreter": "",
-    "interpreter_version": ""
+    "name": "ndi.calc.stimulus.tuningcurve",
+    "version": "58046c5cd610bf20c7437c955e5a8a6c8735eb4e",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "26.6.2",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
   },
   "base": {
-    "session_id": "412696f999384995_40ce00353523c0d4",
-    "id": "412696f9a634b6f0_c0dbdbd82627d2f1",
+    "session_id": "412696f9abd9edc3_40dbbdf6582271b2",
+    "id": "412696f9abe1cc49_40d3ea983b22d91f",
     "name": "",
-    "datestamp": "2026-08-26T23:47:27.248Z"
+    "datestamp": "2026-08-27T00:03:25.091Z"
   },
   "calculator": {},
   "depends_on": [
     {
       "name": "element_id",
-      "value": "412696f9a62fb2d0_c0dfe68dfb270751"
+      "value": "412696f9abdf3dca_40dfb6a27433d45f"
     },
     {
       "name": "stimulus_response_scalar_id",
-      "value": "412696f9a633ccfb_c0d82374c77d0d53"
+      "value": "412696f9abe1595f_40c2e3dda9144214"
     }
   ],
   "document_class": {
@@ -344,11 +344,11 @@
     "depends_on": [
       {
         "name": "stimulus_response_scalar_id",
-        "value": "412696f9a633ccfb_c0d82374c77d0d53"
+        "value": "412696f9abe1595f_40c2e3dda9144214"
       },
       {
         "name": "stimulus_response_scalar_id",
-        "value": "412696f9a633ccfb_c0d82374c77d0d53"
+        "value": "412696f9abe1595f_40c2e3dda9144214"
       }
     ],
     "log": "",

@@ -1,23 +1,23 @@
 {
   "app": {
-    "name": "",
-    "version": "",
-    "url": "",
-    "os": "",
-    "os_version": "",
-    "interpreter": "",
-    "interpreter_version": ""
+    "name": "ndi.calc.example.simple",
+    "version": "58046c5cd610bf20c7437c955e5a8a6c8735eb4e",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "26.6.2",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
   },
   "base": {
-    "session_id": "412696f999384995_40ce00353523c0d4",
-    "id": "412696f9a62e7ec1_c0df99d00cf8f473",
+    "session_id": "412696f9abd9edc3_40dbbdf6582271b2",
+    "id": "412696f9abddedd3_40db704f95e9c01c",
     "name": "",
-    "datestamp": "2026-08-26T23:47:23.148Z"
+    "datestamp": "2026-08-27T00:03:22.541Z"
   },
   "calculator": {},
   "depends_on": {
     "name": "document_id",
-    "value": "412696f9994021e5_40ca4f12b29a0eed"
+    "value": "412696f9abdda127_40c3d457007f500c"
   },
   "document_class": {
     "definition": "$NDIDOCUMENTPATH/apps/calculators/simple_calc.json",
