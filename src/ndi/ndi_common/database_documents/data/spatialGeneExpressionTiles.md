@@ -32,30 +32,49 @@ once, independent of zoom.
 ## Measured behaviour
 
 The defaults are measured on a real Stereo-seq section (opossum V1,
-18126 x 18968 bin1 units, 30,434 genes, 121 M records) rather than
-estimated.
+18126 x 18968 bin1 units, 30,434 genes, 120,966,551 records) rather than
+estimated. Every stored tile was measured, not sampled.
 
-| level | nonzeros | largest tile | level total |
-|---|---|---|---|
-| bin1  | 119.3 M | 46.3 MB | 1.18 GB |
-| bin2  | 118.5 M | 37.1 MB | 0.95 GB |
-| bin4  | 116.8 M | 30.8 MB | 0.77 GB |
-| bin8  | 113.3 M | 28.1 MB | 0.70 GB |
-| bin16 | 106.6 M | 25.8 MB | 0.64 GB |
-| bin32 |  95.2 M | 22.7 MB | 0.57 GB |
+| level | size | tiles | median tile | largest tile | level total |
+|---|---|---|---|---|---|
+| bin1  | 18126 x 18968 | 74 / 81 | 11.57 MB | 46.78 MB | 1195.0 MB |
+| bin2  |  9063 x  9484 | 74 / 81 |  9.59 MB | 37.46 MB |  964.9 MB |
+| bin4  |  4532 x  4742 | 74 / 81 |  7.65 MB | 31.22 MB |  782.5 MB |
+| bin8  |  2266 x  2371 | 74 / 81 |  6.61 MB | 28.57 MB |  707.5 MB |
+| bin16 |  1133 x  1186 | 74 / 81 |  6.13 MB | 26.36 MB |  653.7 MB |
+| bin32 |   567 x   593 | 74 / 81 |  5.43 MB | 22.99 MB |  577.3 MB |
 
-Three consequences worth carrying into any implementation.
+Four consequences worth carrying into any implementation.
 
-**Nonzeros barely fall with bin size** -- 17% across a 32x linear
-downsample -- because coarsening trades occupied pixels for genes
-detected per pixel. Each level therefore costs nearly as much as the
-finest one, and the whole pyramid is about six times the base rather
-than the 4/3 an image pyramid costs. It is also why the tile grid is
-constant across levels.
+**A coarse level costs nearly as much as a fine one.** bin32 is a 32x
+linear downsample and still costs 48% of bin1, because coarsening trades
+occupied pixels for genes detected per pixel: fewer pixels, but each
+holding more of the gene axis. The whole pyramid is **4.1 times** the base
+level rather than the 4/3 an image pyramid costs. That is also why the
+tile grid is constant across levels -- every level wants comparable
+tiling, so tile (row, column) can cover the same physical region at every
+zoom.
 
-**The largest tile is about four times the median**, because tissue does
-not fill a rectangle. Size the grid from the largest tile; a grid chosen
-from the median will be exceeded in the middle of the section.
+**The largest tile is about four times the median** -- 46.78 against
+11.57 MB at bin1 -- because tissue does not fill a rectangle. Size the
+grid from the largest tile; a grid chosen from the median will be
+exceeded in the middle of the section.
+
+**A 9 x 9 grid is only just adequate for a section this size.** The
+largest tile reaches 46.78 MB against the 50 MB per-file budget the grid
+was sized for -- 94% of it, with 3.2 MB to spare. A denser section, or one
+with more genes, will exceed it. `tile_rows` and `tile_columns` are
+per-document fields precisely so this can be raised without a format
+change; 10 x 10 gives roughly 38 MB on this section.
+
+> Earlier revisions of this table reported per-level *nonzero* counts and
+> a "17% falloff" derived from them. Those came from a build whose sort
+> key overflowed int32, silently merging distinct (pixel, gene) pairs, so
+> they understated every figure by about 1%. The byte measurements above
+> replace them and are what the grid is actually sized against. The
+> corrected per-level nonzero counts have not been re-measured; at bin1 it
+> is 120,966,551, the full record count, because that section turns out to
+> contain no genuine duplicate (pixel, gene) pairs at all.
 
 **A reader must crop each level to `dimension_size`.** Tiles are laid out
 on a `tile_rows` by `tile_columns` grid, so the assembled array is
