@@ -32,6 +32,11 @@ jobs:
   run_tests:
     name: Cloud CI ${{ matrix.part }}
     runs-on: ubuntu-latest
+    # Runs of this suite complete in roughly 10-17 minutes. Cap the job well
+    # above that: with cancel-in-progress: false, runs queue instead of
+    # superseding each other, so a hung run would otherwise hold the queue for
+    # GitHub's 6-hour default.
+    timeout-minutes: 60
     # matbox dependency resolution calls the GitHub API; authenticate so the
     # requests aren't unauthenticated-rate-limited (which surfaced as webread
     # timeouts when several jobs install in parallel).
