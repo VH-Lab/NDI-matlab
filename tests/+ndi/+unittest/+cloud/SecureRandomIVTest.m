@@ -9,10 +9,12 @@ classdef SecureRandomIVTest < matlab.unittest.TestCase
     %
     % randomBytes is private, so this test exercises the exact SecureRandom
     % idiom the fix depends on: it confirms the platform/JVM supports it, that
-    % nextBytes fills a full-length primitive byte[], and that two draws differ.
+    % a full-length buffer of real entropy comes back, and that two draws differ.
     % If this canary fails, the profile IV generation is compromised.
     %
-    % Authored without a local MATLAB runtime; needs MATLAB to validate/run.
+    % It earned its keep: the original nextBytes-into-a-reflected-byte[] idiom
+    % returned all zeros, because MATLAB converts a Java primitive array at the
+    % boundary and so passed nextBytes a copy it then discarded.
 
     methods (Test)
 
@@ -32,10 +34,12 @@ classdef SecureRandomIVTest < matlab.unittest.TestCase
         end
 
         function testNotAllZero(testCase)
-            % The reflection-allocated byte[] must actually be filled in place.
+            % Real entropy must come back, not a zeroed buffer -- the failure
+            % mode that a fill-in-place idiom produces across the MATLAB/Java
+            % by-value boundary.
             b = ndi.unittest.cloud.SecureRandomIVTest.secureRandomBytes(16);
             testCase.verifyFalse(all(b == 0), ...
-                'nextBytes must fill the buffer (not leave it zeroed).');
+                'SecureRandom must return real entropy, not a zeroed buffer.');
         end
 
     end
@@ -43,10 +47,11 @@ classdef SecureRandomIVTest < matlab.unittest.TestCase
     methods (Static, Access = private)
         function bytes = secureRandomBytes(n)
             % Mirror of ndi.cloud.profile.randomBytes (which is private).
-            sr   = java.security.SecureRandom();
-            jbuf = java.lang.reflect.Array.newInstance(java.lang.Byte.TYPE, n);
-            sr.nextBytes(jbuf);
-            bytes = reshape(int8(jbuf), 1, n);
+            % Must be kept identical to it -- this mirror is the only thing
+            % under test, so a divergence here silently stops testing the
+            % production idiom.
+            sr = java.security.SecureRandom();
+            bytes = reshape(int8(sr.generateSeed(n)), 1, n);
         end
     end
 
