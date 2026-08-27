@@ -19,8 +19,14 @@ on:
   workflow_dispatch:
 
 concurrency:
+  # Do NOT cancel a run in progress. This suite creates, uploads to, publishes
+  # and deletes datasets on the PRODUCTION NDI Cloud API, and a cancelled runner
+  # is SIGKILLed before MATLAB teardown (addTeardown / deleteDatasetAfterTest)
+  # can run -- orphaning synthetic, possibly published datasets in the public
+  # commons. Serialize instead so a new run waits for the current one to finish
+  # cleaning up after itself.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run_tests:
