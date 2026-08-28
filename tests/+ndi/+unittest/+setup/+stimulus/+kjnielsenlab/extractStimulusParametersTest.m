@@ -204,6 +204,22 @@ classdef extractStimulusParametersTest < matlab.unittest.TestCase
             end
         end
 
+        function testRepeatBlocksAndVectorsMixInOneFile(testCase)
+            % 'repeats{r}' is the r-th repeat block and 'trialno' lists every
+            % position within that block at which the condition appeared. A
+            % condition normally appears once per block, giving one scalar per
+            % block; one appearing several times within a block gives a vector.
+            % Both shapes can occur in the same file, and conditions need not
+            % share a repeat count.
+            analyzer = buildAnalyzer({[1 4], [2 6], 1}, [0 90 180]);
+            analyzer.loops.conds{3}.repeats = { struct('trialno', [3 5 7]) };
+
+            [~, displayOrder] = ...
+                ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(analyzer);
+
+            testCase.verifyEqual(displayOrder, [1 2 3 1 3 2 3]);
+        end
+
         function testTrialNumberMatrixErrors(testCase)
             % A two-dimensional value is not a list of sequence positions.
             analyzer = buildAnalyzer({1}, 0);
