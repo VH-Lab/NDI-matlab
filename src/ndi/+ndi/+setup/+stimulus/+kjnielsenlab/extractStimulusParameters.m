@@ -13,14 +13,20 @@ function [parameters, displayOrder] = extractStimulusParameters(analyzer)
 %   inconsistencies previously handled by warnings. Handles zero-trial
 %   experiments gracefully by returning an empty displayOrder.
 %
-%   The 'trialno' of a repeat is its position within the stimulus
-%   presentation sequence, so the length of the sequence is the largest
-%   'trialno' recorded, not the number of repeats stored in the file. A run
-%   that was aborted before all of its planned trials were presented records
-%   fewer repeats than the sequence has positions; that is a valid file, and
-%   the positions with no recorded trial are returned as NaN rather than
-%   treated as an error. A repeat whose 'trialno' is empty likewise records a
-%   trial that was never presented, and is skipped.
+%   The 'trialno' of a repeat gives the positions within the stimulus
+%   presentation sequence that the repeat occupied. It is NOT a count, and it
+%   is not necessarily scalar: a condition presented several times records
+%   every one of its positions in a single repeat, as a vector. A blank or
+%   control condition interleaved throughout a run is the usual example - a
+%   12-orientation run with an interleaved blank stores 12 conditions holding
+%   one position each and a 13th holding ten. An empty 'trialno' records a
+%   condition that was never presented.
+%
+%   The length of the sequence is therefore the largest position recorded
+%   across every repeat of every condition, which is unrelated to the number
+%   of repeats stored. Positions that no repeat claims are returned as NaN
+%   rather than treated as an error, so a run that stopped before all of its
+%   planned trials were presented still loads.
 %
 %   INPUTS:
 %   analyzer (struct): MATLAB structure with experiment details. Must contain
@@ -70,9 +76,9 @@ sequenceLength = 0;
 for i = 1:numConditions
     condRepeats = analyzer.loops.conds{i}.repeats;
     for j = 1:length(condRepeats)
-        trialNum = readTrialNumber(condRepeats{j}, i, j);
-        if ~isempty(trialNum)
-            sequenceLength = max(sequenceLength, trialNum);
+        trialNumbers = readTrialNumbers(condRepeats{j}, i, j);
+        if ~isempty(trialNumbers)
+            sequenceLength = max(sequenceLength, max(trialNumbers));
         end
     end
 end
@@ -155,17 +161,17 @@ for i = 1:numConditions
         % Validator ensures 'repeats' exists and is a cell here
         numRepeats = length(condData.repeats);
         for j = 1:numRepeats
-            trialNum = readTrialNumber(condData.repeats{j}, i, j);
-            if isempty(trialNum)
-                % Never presented; it occupies no position in displayOrder.
-                continue
-            end
-            if isnan(displayOrder(trialNum))
-                displayOrder(trialNum) = i;
-            else
-                error('extractStimulusParameters:duplicateTrial', ...
-                      'Trial number %d is assigned to multiple conditions (existing: %d, new: %d). Ambiguous display order.', ...
-                      trialNum, displayOrder(trialNum), i);
+            % A repeat may claim several positions, or none at all.
+            trialNumbers = readTrialNumbers(condData.repeats{j}, i, j);
+            for k = 1:numel(trialNumbers)
+                trialNum = trialNumbers(k);
+                if isnan(displayOrder(trialNum))
+                    displayOrder(trialNum) = i;
+                else
+                    error('extractStimulusParameters:duplicateTrial', ...
+                          'Trial number %d is assigned to multiple conditions (existing: %d, new: %d). Ambiguous display order.', ...
+                          trialNum, displayOrder(trialNum), i);
+                end
             end
         end % end loop over repeats
     end % end check ~isempty(displayOrder)
@@ -185,11 +191,16 @@ end
 end % end function
 
 
-% --- Local Helper Function for Reading a Repeat's Trial Number ---
-function trialNum = readTrialNumber(repeatData, conditionIndex, repeatIndex)
-    % Validates one element of a condition's 'repeats' cell array and
-    % returns its 'trialno', the position of that trial in the stimulus
-    % presentation sequence.
+% --- Local Helper Function for Reading a Repeat's Trial Numbers ---
+function trialNumbers = readTrialNumbers(repeatData, conditionIndex, repeatIndex)
+    % Validates one element of a condition's 'repeats' cell array and returns
+    % the positions in the stimulus presentation sequence that it occupied,
+    % as a row vector.
+    %
+    % 'trialno' is not necessarily scalar. A condition presented several times
+    % records all of its positions in one repeat, so a blank condition
+    % interleaved through a run arrives here as a long vector. An empty value
+    % means the condition was never presented and yields no positions.
 
     if ~isstruct(repeatData) || ~isscalar(repeatData) || ~isfield(repeatData, 'trialno')
         error('extractStimulusParameters:invalidRepeatStruct', ...
@@ -197,25 +208,28 @@ function trialNum = readTrialNumber(repeatData, conditionIndex, repeatIndex)
               conditionIndex, repeatIndex);
     end
 
-    trialNum = repeatData.trialno;
+    trialNumbers = repeatData.trialno;
 
-    % An empty 'trialno' records no position in the sequence: the trial this
-    % repeat stands for was never presented. That is expected of a run that
-    % was aborted before its planned trials were exhausted, so it is returned
-    % as empty and skipped by the caller rather than treated as an error.
-    if isnumeric(trialNum) && isempty(trialNum)
-        trialNum = [];
+    if isnumeric(trialNumbers) && isempty(trialNumbers)
+        trialNumbers = [];
         return
     end
 
-    if ~isnumeric(trialNum) || ~isscalar(trialNum) || ~isfinite(trialNum) || ...
-       trialNum < 1 || floor(trialNum) ~= trialNum
+    if ~isnumeric(trialNumbers) || ~isvector(trialNumbers) || ...
+       ~all(isfinite(trialNumbers)) || any(trialNumbers < 1) || ...
+       any(floor(trialNumbers) ~= trialNumbers)
         error('extractStimulusParameters:invalidTrialNum', ...
-              'Invalid trial number (%s) found for condition %d, repeat %d. Expected a positive integer or an empty value.', ...
-              describeValue(trialNum), conditionIndex, repeatIndex);
+              'Invalid trial number (%s) found for condition %d, repeat %d. Expected positive integers.', ...
+              describeValue(trialNumbers), conditionIndex, repeatIndex);
     end
 
-    trialNum = double(trialNum);
+    trialNumbers = double(trialNumbers(:).');
+
+    if numel(unique(trialNumbers)) ~= numel(trialNumbers)
+        error('extractStimulusParameters:duplicateTrial', ...
+              'Condition %d, repeat %d claims the same trial number more than once (%s).', ...
+              conditionIndex, repeatIndex, mat2str(trialNumbers));
+    end
 end
 
 

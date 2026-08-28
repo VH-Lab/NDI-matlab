@@ -6,12 +6,12 @@ classdef extractStimulusParametersTest < matlab.unittest.TestCase
 %   analyzer.P.param and analyzer.loops.conds{i}, and that the display order
 %   is built from the 'trialno' of each repeat.
 %
-%   The central case here is a run whose repeats do not cover every position
-%   of the stimulus sequence. 'trialno' is a trial's position in the
-%   presentation sequence, so a run that was aborted before all planned
-%   trials were presented stores fewer repeats than the sequence has
-%   positions, and its trial numbers may exceed the number of repeats stored.
-%   That is a valid file, not an error.
+%   The central case here is that 'trialno' gives the positions a repeat
+%   occupied in the presentation sequence, and may hold several of them: a
+%   condition shown more than once records all of its positions in one
+%   repeat. Trial numbers are therefore unrelated to the number of repeats
+%   stored, and may exceed it. Positions that no repeat claims are valid too,
+%   and come back as NaN rather than as an error.
 %
 %   These tests run fully offline: the analyzer structures are built as plain
 %   structs, with no ndi.session, database or data files needed.
@@ -175,12 +175,39 @@ classdef extractStimulusParametersTest < matlab.unittest.TestCase
             testCase.verifyEqual(numel(parameters), 2);
         end
 
-        function testNonScalarTrialNumberErrorDescribesTheValue(testCase)
-            % A trial number holding several positions is genuinely ambiguous
-            % and still errors, but the message must report the size and the
-            % contents: reporting only the class hides what is wrong.
+        function testRepeatMayClaimSeveralPositions(testCase)
+            % Taken from a real analyzer file: 13 conditions, twelve of them
+            % presented once each and one presented ten times at interleaved
+            % positions. The ten positions are recorded in a single repeat as
+            % a vector, which is the format's normal shape for a condition
+            % shown more than once - not a malformed value. Together the two
+            % sets cover positions 1 to 22 exactly once.
+            scalarPositions = [15 1 3 6 10 12 13 14 16 17 20 22];
+            blankPositions  = [2 4 5 7 8 9 11 18 19 21];
+
+            condTrialNumbers = num2cell(scalarPositions);
+            condTrialNumbers{end+1} = 1; % replaced with the vector below
+            analyzer = buildAnalyzer(condTrialNumbers, 10*(0:12));
+            analyzer.loops.conds{13}.repeats = { struct('trialno', blankPositions) };
+
+            [parameters, displayOrder] = ...
+                ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(analyzer);
+
+            testCase.verifyEqual(numel(parameters), 13);
+            testCase.verifyEqual(numel(displayOrder), 22);
+            testCase.verifyFalse(any(isnan(displayOrder)), ...
+                'Every position of the sequence should be accounted for.');
+            testCase.verifyTrue(all(displayOrder(blankPositions) == 13), ...
+                'Every position listed by the repeat should map to its condition.');
+            for k = 1:numel(scalarPositions)
+                testCase.verifyEqual(displayOrder(scalarPositions(k)), k);
+            end
+        end
+
+        function testTrialNumberMatrixErrors(testCase)
+            % A two-dimensional value is not a list of sequence positions.
             analyzer = buildAnalyzer({1}, 0);
-            analyzer.loops.conds{1}.repeats{1} = struct('trialno', [15 16]);
+            analyzer.loops.conds{1}.repeats{1} = struct('trialno', [1 2; 3 4]);
 
             errorRaised = false;
             try
@@ -188,13 +215,21 @@ classdef extractStimulusParametersTest < matlab.unittest.TestCase
             catch ME
                 errorRaised = true;
                 testCase.verifyEqual(ME.identifier, 'extractStimulusParameters:invalidTrialNum');
-                testCase.verifyTrue(contains(ME.message, '1x2 double'), ...
+                testCase.verifyTrue(contains(ME.message, '2x2 double'), ...
                     'The message should report the size and class of the value.');
-                testCase.verifyTrue(contains(ME.message, '[15 16]'), ...
-                    'The message should report the contents of the value.');
             end
             testCase.verifyTrue(errorRaised, ...
-                'Expected an error for a non-scalar trial number.');
+                'Expected an error for a two-dimensional trial number.');
+        end
+
+        function testRepeatedPositionWithinOneRepeatErrors(testCase)
+            % One repeat claiming the same position twice is ambiguous.
+            analyzer = buildAnalyzer({1}, 0);
+            analyzer.loops.conds{1}.repeats{1} = struct('trialno', [3 5 3]);
+
+            testCase.verifyError( ...
+                @() ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(analyzer), ...
+                'extractStimulusParameters:duplicateTrial');
         end
 
     end
