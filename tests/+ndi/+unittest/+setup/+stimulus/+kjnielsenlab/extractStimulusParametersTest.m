@@ -150,6 +150,53 @@ classdef extractStimulusParametersTest < matlab.unittest.TestCase
             testCase.verifyEqual(parameters{2}.ori, 90);
         end
 
+        function testEmptyTrialNumberIsSkipped(testCase)
+            % A repeat whose trial was never presented records an empty
+            % 'trialno'. It occupies no position in the sequence, so it is
+            % skipped rather than treated as a bad value.
+            analyzer = buildAnalyzer({[1 2], 3}, [0 90]);
+            analyzer.loops.conds{2}.repeats{1} = struct('trialno', []);
+
+            [~, displayOrder] = ...
+                ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(analyzer);
+
+            testCase.verifyEqual(displayOrder, [1 1]);
+        end
+
+        function testAllTrialNumbersEmptyGivesEmptyDisplayOrder(testCase)
+            analyzer = buildAnalyzer({1, 2}, [0 90]);
+            analyzer.loops.conds{1}.repeats{1} = struct('trialno', []);
+            analyzer.loops.conds{2}.repeats{1} = struct('trialno', []);
+
+            [parameters, displayOrder] = ...
+                ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(analyzer);
+
+            testCase.verifyEmpty(displayOrder);
+            testCase.verifyEqual(numel(parameters), 2);
+        end
+
+        function testNonScalarTrialNumberErrorDescribesTheValue(testCase)
+            % A trial number holding several positions is genuinely ambiguous
+            % and still errors, but the message must report the size and the
+            % contents: reporting only the class hides what is wrong.
+            analyzer = buildAnalyzer({1}, 0);
+            analyzer.loops.conds{1}.repeats{1} = struct('trialno', [15 16]);
+
+            errorRaised = false;
+            try
+                ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(analyzer);
+            catch ME
+                errorRaised = true;
+                testCase.verifyEqual(ME.identifier, 'extractStimulusParameters:invalidTrialNum');
+                testCase.verifyTrue(contains(ME.message, '1x2 double'), ...
+                    'The message should report the size and class of the value.');
+                testCase.verifyTrue(contains(ME.message, '[15 16]'), ...
+                    'The message should report the contents of the value.');
+            end
+            testCase.verifyTrue(errorRaised, ...
+                'Expected an error for a non-scalar trial number.');
+        end
+
     end
 
 end

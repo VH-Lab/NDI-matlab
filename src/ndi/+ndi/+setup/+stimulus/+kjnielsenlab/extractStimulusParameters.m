@@ -19,7 +19,8 @@ function [parameters, displayOrder] = extractStimulusParameters(analyzer)
 %   that was aborted before all of its planned trials were presented records
 %   fewer repeats than the sequence has positions; that is a valid file, and
 %   the positions with no recorded trial are returned as NaN rather than
-%   treated as an error.
+%   treated as an error. A repeat whose 'trialno' is empty likewise records a
+%   trial that was never presented, and is skipped.
 %
 %   INPUTS:
 %   analyzer (struct): MATLAB structure with experiment details. Must contain
@@ -70,7 +71,9 @@ for i = 1:numConditions
     condRepeats = analyzer.loops.conds{i}.repeats;
     for j = 1:length(condRepeats)
         trialNum = readTrialNumber(condRepeats{j}, i, j);
-        sequenceLength = max(sequenceLength, trialNum);
+        if ~isempty(trialNum)
+            sequenceLength = max(sequenceLength, trialNum);
+        end
     end
 end
 
@@ -153,6 +156,10 @@ for i = 1:numConditions
         numRepeats = length(condData.repeats);
         for j = 1:numRepeats
             trialNum = readTrialNumber(condData.repeats{j}, i, j);
+            if isempty(trialNum)
+                % Never presented; it occupies no position in displayOrder.
+                continue
+            end
             if isnan(displayOrder(trialNum))
                 displayOrder(trialNum) = i;
             else
@@ -192,19 +199,54 @@ function trialNum = readTrialNumber(repeatData, conditionIndex, repeatIndex)
 
     trialNum = repeatData.trialno;
 
+    % An empty 'trialno' records no position in the sequence: the trial this
+    % repeat stands for was never presented. That is expected of a run that
+    % was aborted before its planned trials were exhausted, so it is returned
+    % as empty and skipped by the caller rather than treated as an error.
+    if isnumeric(trialNum) && isempty(trialNum)
+        trialNum = [];
+        return
+    end
+
     if ~isnumeric(trialNum) || ~isscalar(trialNum) || ~isfinite(trialNum) || ...
        trialNum < 1 || floor(trialNum) ~= trialNum
-        if isnumeric(trialNum) && isscalar(trialNum)
-            trialNumStr = sprintf('%g', trialNum);
-        else
-            trialNumStr = sprintf('of class ''%s''', class(trialNum));
-        end
         error('extractStimulusParameters:invalidTrialNum', ...
-              'Invalid trial number (%s) found for condition %d, repeat %d. Expected a positive integer.', ...
-              trialNumStr, conditionIndex, repeatIndex);
+              'Invalid trial number (%s) found for condition %d, repeat %d. Expected a positive integer or an empty value.', ...
+              describeValue(trialNum), conditionIndex, repeatIndex);
     end
 
     trialNum = double(trialNum);
+end
+
+
+% --- Local Helper Function for Describing an Unusable Value ---
+function description = describeValue(value)
+    % Renders VALUE for an error message. Reports its size and class as well
+    % as its contents, because the size is often the thing that is wrong and
+    % the class alone does not reveal it.
+
+    maxValuesShown = 10;
+
+    dims = size(value);
+    sizeText = sprintf('%d', dims(1));
+    for k = 2:numel(dims)
+        sizeText = sprintf('%sx%d', sizeText, dims(k));
+    end
+
+    if isnumeric(value) && isscalar(value)
+        description = sprintf('%g', value);
+    elseif isnumeric(value)
+        values = value(:).';
+        if numel(values) > maxValuesShown
+            description = sprintf('%s %s, values %s ...', sizeText, class(value), ...
+                                  mat2str(values(1:maxValuesShown)));
+        else
+            description = sprintf('%s %s, values %s', sizeText, class(value), ...
+                                  mat2str(values));
+        end
+    else
+        description = sprintf('%s %s', sizeText, class(value));
+    end
 end
 
 
