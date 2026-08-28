@@ -108,7 +108,7 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
 
             % do the decoding. Errors are re-thrown naming the analyzer file,
             % so a failure part-way through an ingestion identifies its source.
-            [stimParams,displayOrder] = ndi.setup.stimulus.kjnielsenlab.extractStimulusParametersFromFile(analyzerFile);
+            [~,displayOrder] = ndi.setup.stimulus.kjnielsenlab.extractStimulusParametersFromFile(analyzerFile);
             stimid = displayOrder;
 
             % read analog data and time
@@ -166,7 +166,7 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
                             % '%s' keeps the path literal; it may contain backslashes.
                             error('%s', ['Found ' int2str(numOnsets) ' stimulus onsets but the analyzer file describes only ' ...
                                 int2str(numel(stimid)) ' stimulus presentations; cannot identify the stimulus shown at every onset.' ...
-                                char(10) 'Analyzer file: ' analyzerFile]);
+                                newline 'Analyzer file: ' analyzerFile]);
                         end
                         data2 = stimid(1:numOnsets);
                         data2 = data2(:);
@@ -174,7 +174,7 @@ classdef nielsenvisneuropixelsglx < ndi.daq.reader.mfdaq.ndr
                             unknownPositions = find(isnan(data2));
                             error('%s', ['The analyzer file records no condition for position(s) ' mat2str(unknownPositions(:)') ...
                                 ' of the stimulus sequence, so stimulus identities cannot be aligned with the recorded onset times.' ...
-                                char(10) 'Analyzer file: ' analyzerFile]);
+                                newline 'Analyzer file: ' analyzerFile]);
                         end
                         ch{2} = [time2 data2];
 
