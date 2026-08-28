@@ -53,7 +53,13 @@ classdef  didsqlite < ndi.database
         end
 
         function ndi_didsqlite_obj = do_add(ndi_didsqlite_obj, ndi_document_obj, add_parameters)
-            ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a');
+            % A file location marked for ingestion that is not a local path is
+            % retrieved through the same handler do_openbinarydoc uses. DID
+            % downloads nothing itself, so without this an ndic:// location
+            % marked ingest cannot be fetched at add time. Remote ingestion is
+            % rare -- ingest defaults to 0 for 'url' and 'ndicloud' locations.
+            ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a', ...
+                'customFileHandler', @download_file_from_cloud);
         end % do_add
 
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id)
@@ -86,28 +92,6 @@ classdef  didsqlite < ndi.database
         end % do_search()
 
         function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
-            function download_file_from_cloud(destPath, sourcePath)
-                if startsWith(sourcePath, 'ndic://')
-                    cloudPath = split( extractAfter(sourcePath, 'ndic://'), "/" );
-                    cloudDatasetId = cloudPath{1};
-                    ndiFileUid = cloudPath{2};
-    
-                    [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, ndiFileUid);
-                    if ~success
-                        error(['Failed to get file details: ' answer.message]);
-                    end
-                    fileUrl = answer.downloadUrl;
-                    [success2, answer2] = ndi.cloud.api.files.getFile(fileUrl, destPath, 'useCurl', true);
-                    if ~success2
-                        error(['Failed to download file from cloud: ' answer2]);
-                    end
-                else
-                    error('NDI:Didsqlite:UnsupportedFileLocationType', ...
-                        ['The source path "%s" uses an unsupported file location type. ' ...
-                        'Expected a path starting with "ndic://".'], ...
-                        sourcePath);
-                end
-            end
             ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id, filename, ...
                 'customFileHandler', @download_file_from_cloud);
             ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
@@ -137,5 +121,41 @@ classdef  didsqlite < ndi.database
             %
             file_dir = [ndi_didsqlite_obj.path filesep 'files'];
         end % file_directory
+    end
+end
+
+function download_file_from_cloud(destPath, sourcePath)
+    % DOWNLOAD_FILE_FROM_CLOUD - retrieve an ndic:// file for DID
+    %
+    % DOWNLOAD_FILE_FROM_CLOUD(DESTPATH, SOURCEPATH)
+    %
+    % Satisfies did.database's customFileHandler contract: retrieve the file
+    % identified by SOURCEPATH and leave it at DESTPATH. SOURCEPATH must be an
+    % 'ndic://<datasetId>/<fileUid>' reference; the download URL is minted
+    % fresh here because pre-signed URLs expire, which is why documents store
+    % the durable identifier rather than a URL.
+    %
+    % Previously a nested function inside do_openbinarydoc. It is file-local so
+    % that do_add can pass the same handler.
+
+    if startsWith(sourcePath, 'ndic://')
+        cloudPath = split( extractAfter(sourcePath, 'ndic://'), "/" );
+        cloudDatasetId = cloudPath{1};
+        ndiFileUid = cloudPath{2};
+
+        [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, ndiFileUid);
+        if ~success
+            error(['Failed to get file details: ' answer.message]);
+        end
+        fileUrl = answer.downloadUrl;
+        [success2, answer2] = ndi.cloud.api.files.getFile(fileUrl, destPath, 'useCurl', true);
+        if ~success2
+            error(['Failed to download file from cloud: ' answer2]);
+        end
+    else
+        error('NDI:Didsqlite:UnsupportedFileLocationType', ...
+            ['The source path "%s" uses an unsupported file location type. ' ...
+            'Expected a path starting with "ndic://".'], ...
+            sourcePath);
     end
 end
