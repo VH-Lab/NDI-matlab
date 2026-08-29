@@ -251,13 +251,18 @@ classdef database
         end % do_add
         function [ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id)
         end % do_read
-        function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id, varargin)
-            % Overridden by each backend. Trailing arguments are the OnMissing
-            % ('ignore'|'warn'|'error') name/value pair, saying what to do when
-            % ndi_document_id is not present; the subclass declares and
-            % validates it. This stub takes varargin rather than an arguments
-            % block so it stays a do-nothing signature, with no inputs to leave
-            % unused and no return value to leave unset.
+        function ndi_document_obj = do_remove(~, ~, varargin)
+            % Overridden by each backend; this stub does nothing. Trailing
+            % arguments are the OnMissing ('ignore'|'warn'|'error') name/value
+            % pair, saying what to do when the document is not present, which
+            % the subclass declares and validates.
+            %
+            % The inputs are ~ and the output is assigned because Code Analyzer
+            % reads an unnamed-but-unused input and an unset return value as
+            % defects. The sibling stubs above share the shape and are flagged
+            % the same way; only this one is touched here, since widening the
+            % change to them is beyond what this PR is about.
+            ndi_document_obj = [];
         end % do_remove
         function [ndi_document_objs] = do_search(ndi_database_obj, searchoptions, searchparams)
         end % do_search()
