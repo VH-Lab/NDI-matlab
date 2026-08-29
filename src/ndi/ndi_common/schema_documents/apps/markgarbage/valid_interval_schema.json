@@ -17,7 +17,7 @@
 			"name": "t0",
 			"type": "double",
 			"default_value": 0,
-			"parameters": [-1.7976931348623157e308,1.7976931348623157e308,0],
+			"parameters": [-Inf,Inf,0],
 			"queryable": 1,
 			"documentation": "t0, in time units of timeref_structt0"
 		},
@@ -33,7 +33,7 @@
 			"name": "t1",
 			"type": "double",
 			"default_value": 1,
-			"parameters": [-1.7976931348623157e308,1.7976931348623157e308,0],
+			"parameters": [-Inf,Inf,0],
 			"queryable": 1,
 			"documentation": "t1, in time units of timeref_structt0"
 		}

@@ -18,7 +18,7 @@
 			"name": "answer",
 			"type": "double",
 			"default_value": 1,
-			"parameters": [-1.7976931348623157e308,1.7976931348623157e308,0],
+			"parameters": [-Inf,Inf,0],
 			"queryable": 1,
 			"documentation": "The value for this example calculation."
 		}
