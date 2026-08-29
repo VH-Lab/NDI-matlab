@@ -21,6 +21,7 @@ classdef diffTest < matlab.unittest.TestCase
             % Add document
             doc1_base = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             doc1 = doc1_base + S1.newdocument();
+            doc1 = attachDemoFile(doc1, tempDir1);
             S1.database_add(doc1);
 
             D1.add_linked_session(S1);
@@ -64,6 +65,7 @@ classdef diffTest < matlab.unittest.TestCase
             % Add a document only to the first dataset
             doc1 = S1.newdocument('demoNDI', 'base.name', 'doc in A only', 'demoNDI.value', 1);
             doc1 = doc1 + S1.newdocument();
+            doc1 = attachDemoFile(doc1, tempDir1);
             S1.database_add(doc1);
 
             % Call the diff function
@@ -105,6 +107,7 @@ classdef diffTest < matlab.unittest.TestCase
 
             doc2 = S2.newdocument('demoNDI', 'base.name', 'doc in B only', 'demoNDI.value', 1);
             doc2 = doc2 + S2.newdocument();
+            doc2 = attachDemoFile(doc2, tempDir2);
             S2.database_add(doc2);
 
             % Call the diff function
@@ -142,6 +145,7 @@ classdef diffTest < matlab.unittest.TestCase
             % Add documents with same ID but different properties
             doc1 = S1.newdocument('demoNDI', 'base.name', 'test doc', 'demoNDI.value', 1);
             doc1 = doc1 + S1.newdocument();
+            doc1 = attachDemoFile(doc1, tempDir1);
             S1.database_add(doc1);
 
             doc2_structure = doc1.document_properties;
@@ -153,6 +157,16 @@ classdef diffTest < matlab.unittest.TestCase
             D2 = ndi.dataset.dir(tempDir2); 
             [~,sessions] = D2.session_list();
             S2 = D2.open_session(sessions{1});
+
+            % doc2 inherits doc1's file info, but that entry points at the
+            % file S1's add already consumed, so S2 could not cache it and
+            % the diff reported an inaccessible file rather than the value
+            % mismatch this test is about. Give doc2 its own copy with the
+            % same contents: ndi.fun.dataset.diff matches files by name and
+            % compares them byte for byte, so identical contents produce no
+            % file difference even though the fuids differ.
+            doc2 = doc2.reset_file_info();
+            doc2 = attachDemoFile(doc2, tempDir2);
 
             S2.database_add(doc2);
 
@@ -228,4 +242,29 @@ classdef diffTest < matlab.unittest.TestCase
             testCase.verifyNotEmpty(report.fileDifferences(1).documentDiff, 'The document diff should not be empty.');
         end
     end
+end
+
+function doc = attachDemoFile(doc, folder)
+% ATTACHDEMOFILE - attach the file the demoNDI schema requires
+%
+% demoNDI_schema.json declares filename1.ext with mustbenotempty == 1, so a
+% demoNDI document is only schema-valid once that file is attached. These
+% tests used to add demoNDI documents with no file at all: did.database's
+% checkfiles built the "Some required files are missing" message and then
+% fell through to isvalid = 1, so add_docs committed them anyway. DID now
+% rejects such a document (DID:Database:ValidationFiles), which is correct,
+% so the tests have to supply the file they always should have.
+%
+% A local (non-ingested) file is referenced by path, so it is written inside
+% the session/dataset folder the test already cleans up.
+
+    f = fullfile(folder, ['demo_' doc.id() '.bin']);
+    fid = fopen(f, 'w');
+    if fid < 0
+        error('NDI:diffTest:cannotWriteDemoFile', ...
+            'Could not create the demoNDI required file %s', f);
+    end
+    fwrite(fid, 'demo', 'char');
+    fclose(fid);
+    doc = doc.add_file('filename1.ext', f);
 end
