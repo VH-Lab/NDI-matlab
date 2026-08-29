@@ -277,7 +277,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.database.add(document);
         end % database_add()
 
-        function ndi_session_obj = database_rm(ndi_session_obj, doc_unique_id, varargin)
+        function ndi_session_obj = database_rm(ndi_session_obj, doc_unique_id, options)
             % DATABASE_RM - Remove an ndi.document with a given document ID from an ndi.session object
             %
             % NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
@@ -292,18 +292,27 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % This function also takes parameters as name/value pairs that modify its behavior:
             % Parameter (default)        | Description
             % --------------------------------------------------------------------------------
-            % ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
+            % ErrIfNotFound (false)      | Produce an error if an ID to be deleted is not found.
             %
             % The default is deliberately forgiving: the point of a removal is
             % that the document ends up gone, so an id someone else already
-            % deleted is treated as success. Pass ErrIfNotFound=1 when the
+            % deleted is treated as success. Pass ErrIfNotFound=true when the
             % caller needs to know it asked for something that was not there.
             %
             % See also: DATABASE_ADD, ndi.session
-            ErrIfNotFound = 0;
-            vlt.data.assign(varargin{:});
 
-            if ErrIfNotFound
+            % Declared rather than read out of varargin with vlt.data.assign:
+            % that assigns dynamically, so static analysis saw ErrIfNotFound as
+            % the constant it was initialised to and called the 'error' branch
+            % below unreachable. This also matches ndi.dataset/database_rm,
+            % which already declares the same option and forwards it here.
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                doc_unique_id
+                options.ErrIfNotFound (1,1) logical = false
+            end
+
+            if options.ErrIfNotFound
                 onMissing = 'error';
             else
                 onMissing = 'ignore';

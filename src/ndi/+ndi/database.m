@@ -251,14 +251,13 @@ classdef database
         end % do_add
         function [ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id)
         end % do_read
-        function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id, options)
-            % Subclasses accept OnMissing ('ignore'|'warn'|'error') and decide
-            % what to do when ndi_document_id is not present.
-            arguments
-                ndi_database_obj
-                ndi_document_id
-                options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
-            end
+        function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id, varargin)
+            % Overridden by each backend. Trailing arguments are the OnMissing
+            % ('ignore'|'warn'|'error') name/value pair, saying what to do when
+            % ndi_document_id is not present; the subclass declares and
+            % validates it. This stub takes varargin rather than an arguments
+            % block so it stays a do-nothing signature, with no inputs to leave
+            % unused and no return value to leave unset.
         end % do_remove
         function [ndi_document_objs] = do_search(ndi_database_obj, searchoptions, searchparams)
         end % do_search()

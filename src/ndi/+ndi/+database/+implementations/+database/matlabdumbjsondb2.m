@@ -66,10 +66,10 @@ classdef  matlabdumbjsondb2 < ndi.database
         end % do_read
 
         function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id, options)
-            % OnMissing is accepted so every database backend takes the same
-            % removal options. dumbjsondb's remove() does not report whether
-            % the document was there, so this backend cannot tell a missing
-            % document from a removed one and behaves as 'ignore' throughout.
+            % dumbjsondb's remove() does not report whether the document was
+            % there, but this backend reads the document first to work out
+            % which files to expell, so an empty read is the missing case and
+            % OnMissing can be honoured from it.
             arguments
                 ndi_matlabdumbjsondb_obj
                 ndi_document_id
@@ -79,6 +79,16 @@ classdef  matlabdumbjsondb2 < ndi.database
             % need to read document to delete files
             ndi_doc = ndi_matlabdumbjsondb_obj.do_read(ndi_document_id);
             if isempty(ndi_doc)
+                switch options.OnMissing
+                    case 'error'
+                        error('NDI:database:noSuchDocument', ...
+                            'Cannot remove document %s: it is not in the database.', ...
+                            ndi_document_id);
+                    case 'warn'
+                        warning('NDI:database:noSuchDocument', ...
+                            'Cannot remove document %s: it is not in the database.', ...
+                            ndi_document_id);
+                end
                 to_delete_list = {};
             else
                 [to_delete_list] = ndi.database.implementations.fun.expell_plan(ndi_doc, ...
