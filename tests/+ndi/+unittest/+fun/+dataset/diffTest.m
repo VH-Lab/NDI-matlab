@@ -158,6 +158,16 @@ classdef diffTest < matlab.unittest.TestCase
             [~,sessions] = D2.session_list();
             S2 = D2.open_session(sessions{1});
 
+            % doc2 inherits doc1's file info, but that entry points at the
+            % file S1's add already consumed, so S2 could not cache it and
+            % the diff reported an inaccessible file rather than the value
+            % mismatch this test is about. Give doc2 its own copy with the
+            % same contents: ndi.fun.dataset.diff matches files by name and
+            % compares them byte for byte, so identical contents produce no
+            % file difference even though the fuids differ.
+            doc2 = doc2.reset_file_info();
+            doc2 = attachDemoFile(doc2, tempDir2);
+
             S2.database_add(doc2);
 
             % Call the diff function

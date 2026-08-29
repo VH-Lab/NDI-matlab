@@ -74,8 +74,19 @@ classdef  didsqlite < ndi.database
             end
         end % do_read
 
-        function ndi_didsqlite_obj = do_remove(ndi_didsqlite_obj, ndi_document_id)
-            ndi_didsqlite_obj.db.remove_docs(ndi_document_id,'a');
+        function ndi_didsqlite_obj = do_remove(ndi_didsqlite_obj, ndi_document_id, options)
+            % did.database/remove_docs defaults to OnMissing='error'. NDI's
+            % removals default to 'ignore' instead: a document someone else
+            % already deleted still satisfies the request that it be gone.
+            % Callers that need to hear about it pass ErrIfNotFound=1 to
+            % ndi.session/database_rm, which maps to 'error' here.
+            arguments
+                ndi_didsqlite_obj
+                ndi_document_id
+                options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
+            end
+            ndi_didsqlite_obj.db.remove_docs(ndi_document_id,'a', ...
+                'OnMissing',options.OnMissing);
         end % do_remove
 
         function [ndi_document_objs] = do_search(ndi_didsqlite_obj, searchoptions, searchparams)

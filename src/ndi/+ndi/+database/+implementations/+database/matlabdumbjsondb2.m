@@ -65,8 +65,17 @@ classdef  matlabdumbjsondb2 < ndi.database
             end
         end % do_read
 
-        function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id)
-            
+        function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id, options)
+            % OnMissing is accepted so every database backend takes the same
+            % removal options. dumbjsondb's remove() does not report whether
+            % the document was there, so this backend cannot tell a missing
+            % document from a removed one and behaves as 'ignore' throughout.
+            arguments
+                ndi_matlabdumbjsondb_obj
+                ndi_document_id
+                options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
+            end
+
             % need to read document to delete files
             ndi_doc = ndi_matlabdumbjsondb_obj.do_read(ndi_document_id);
             if isempty(ndi_doc)

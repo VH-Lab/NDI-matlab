@@ -294,9 +294,20 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % --------------------------------------------------------------------------------
             % ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
             %
+            % The default is deliberately forgiving: the point of a removal is
+            % that the document ends up gone, so an id someone else already
+            % deleted is treated as success. Pass ErrIfNotFound=1 when the
+            % caller needs to know it asked for something that was not there.
+            %
             % See also: DATABASE_ADD, ndi.session
             ErrIfNotFound = 0;
             vlt.data.assign(varargin{:});
+
+            if ErrIfNotFound
+                onMissing = 'error';
+            else
+                onMissing = 'ignore';
+            end
 
             if isempty(doc_unique_id)
                 return;
@@ -329,7 +340,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                         continue;
                     end
                     removed_ids{end+1} = id_here; %#ok<AGROW>
-                    ndi_session_obj.database.remove(remove_list{i});
+                    ndi_session_obj.database.remove(remove_list{i}, 'OnMissing', onMissing);
                 end
             else
                 error(['Did not think we could get here..notify steve.']);
