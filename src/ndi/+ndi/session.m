@@ -121,14 +121,25 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                     daqsys = {daqsys};
                 end
                 docs = ndi_session_obj.database_search(daqsys{1}.searchquery());
+                % Collect the daqsystem documents together with the documents
+                % they depend on, then remove them in a SINGLE database_rm
+                % call. Removing a dependency on its own first cascades through
+                % database_rm's dependent-document search and takes the
+                % daqsystem document with it, so the follow-up removal of that
+                % same document was a second delete of an id that was already
+                % gone. That used to be swallowed inside did.database; it now
+                % raises DID:SQLITEDB:NO_SUCH_DOC. One call also lets
+                % database_rm de-duplicate the whole set.
+                docs_to_remove = docs(:)';
                 for k=1:numel(docs) % should be 1 only, but keep deleting even if not
                     for i=1:numel(docs{k}.document_properties.depends_on)
                         dochere = ndi_session_obj.database_search(...
                             ndi.query('base.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
-                        ndi_session_obj.database_rm(dochere);
+                        docs_to_remove = cat(2, docs_to_remove, dochere(:)');
                     end
-                    ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
                 end
+                % database_rm can process single or a cell list of ndi_document_obj(s)
+                ndi_session_obj.database_rm(docs_to_remove);
             else
                 error(['No daqsystem named ' dev.name ' found.']);
             end
@@ -302,10 +313,24 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 if numel(dependent_docs)>1
                     warning('NDISESSION:deletingDependents',['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
                 end
-                for i=1:numel(dependent_docs)
-                    ndi_session_obj.database.remove(dependent_docs{i});
+                % Remove each document id exactly once, dependents first. A
+                % document can appear both in doc_list and among the dependents
+                % found for another doc in doc_list -- removing a daqsystem's
+                % daqreader also finds the daqsystem -- and doc_list itself can
+                % repeat an id. did.database/remove_docs used to swallow every
+                % failure from its removal loop; it now honours OnMissing
+                % (default 'error'), so deleting an id that is already gone
+                % raises DID:SQLITEDB:NO_SUCH_DOC instead of passing silently.
+                remove_list = cat(2, dependent_docs(:)', doc_list(:)');
+                removed_ids = {};
+                for i=1:numel(remove_list)
+                    id_here = remove_list{i}.id();
+                    if any(strcmp(id_here, removed_ids))
+                        continue;
+                    end
+                    removed_ids{end+1} = id_here; %#ok<AGROW>
+                    ndi_session_obj.database.remove(remove_list{i});
                 end
-                ndi_session_obj.database.remove(doc_list);
             else
                 error(['Did not think we could get here..notify steve.']);
             end
