@@ -28,7 +28,24 @@ classdef  didsqlite < ndi.database
             end
             bid = ndi_didsqlite_obj.db.all_branch_ids();
             if isempty(bid)
+                % No branches at all, so there is no current branch either,
+                % and 'a' is necessarily a root. The parent argument is
+                % omitted deliberately: since DID-matlab #164 an omitted or
+                % empty parent means "the current branch", not "no parent",
+                % so this guard is what makes 'a' a root rather than some
+                % other branch's child. Do not widen it to a plain
+                % ~ismember check.
                 ndi_didsqlite_obj.db.add_branch('a');
+            elseif ~ismember('a', bid)
+                % The database exists and has branches, but not the one every
+                % other method here hardcodes. Creating it now would attach it
+                % to whatever the current branch happens to be, so say what is
+                % wrong instead of leaving DID to raise
+                % DID:Database:InvalidBranch on the next read.
+                error('NDI:Database:MissingBranch', ...
+                    ['The DID database at %s has branches %s but not ''a'', ' ...
+                     'which ndi.database.implementations.database.didsqlite requires.'], ...
+                    database_filename, strjoin(bid, ', '));
             end
         end % ndi.database.implementations.database.didsqlite()
     end
