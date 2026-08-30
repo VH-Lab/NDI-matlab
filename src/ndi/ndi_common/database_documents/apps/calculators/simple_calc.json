@@ -11,7 +11,7 @@
 	},
 	"depends_on": [
 		{	"name": "document_id",
-			"value": 0 
+			"value": "" 
 		}
 	],
 	"simple_calc": {
