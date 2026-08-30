@@ -855,11 +855,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % B = UPDATE_SYNCGRAPH_IN_DB(NDI_SESSION_OBJ)
             %
-            % Removes the ndi.time.syncgraph (and any SYNCRULE documents) from the database in
-            % NDI_SESSION_OBJ and adds it back. Useful for updating the SYNCGRAPH when
-            % SYNCRULEs are added or removed.
-
-            b = 1;
+            % Removes the ndi.time.syncgraph document from the database in NDI_SESSION_OBJ and
+            % adds a rebuilt one. Documents for SYNCRULEs that survive the update are left in
+            % place; only the SYNCRULEs that are actually gone are removed, and only the
+            % SYNCRULEs that are actually new are added. Useful for updating the SYNCGRAPH
+            % when SYNCRULEs are added or removed.
 
             [syncgraph_doc,syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(ndi_session_obj, ...
                 ndi_session_obj.syncgraph.id());
@@ -874,23 +874,53 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
             newdocs = ndi_session_obj.syncgraph.newdocument(); % generate new documents
 
-            % now, delete old docs and add new ones
+            % The syncgraph is a brand new object, so its document carries a brand new id and
+            % can be deleted and rewritten freely. The syncrules are not: addrule stores the
+            % rule object it is handed without cloning it, and ndi.time.syncrule/newdocument
+            % uses that object's id. Deleting every syncrule document and re-adding documents
+            % built from the surviving rules would therefore re-use ids that DID retires the
+            % moment their documents leave the last branch, and the add would be refused.
+            % So compare what is stored against what the rebuilt syncgraph holds, and touch
+            % only the difference.
 
-            gooddelete = 0;
+            ruleIds = cell(1,numel(ndi_session_obj.syncgraph.rules));
+            for i=1:numel(ndi_session_obj.syncgraph.rules)
+                ruleIds{i} = ndi_session_obj.syncgraph.rules{i}.id();
+            end
+
+            storedRuleIds = cell(1,numel(syncrule_doc));
+            for i=1:numel(syncrule_doc)
+                storedRuleIds{i} = syncrule_doc{i}.id();
+            end
+
+            staleRuleDocs = {}; % stored rules that the rebuilt syncgraph no longer has
+            for i=1:numel(syncrule_doc)
+                if ~any(strcmp(storedRuleIds{i},ruleIds))
+                    staleRuleDocs{end+1} = syncrule_doc{i}; %#ok<AGROW>
+                end
+            end
+
+            % newdocument() returns the syncgraph document first and then one document per
+            % rule, each carrying that rule's id. A rule whose document is already stored
+            % keeps it; its id is still referenced by the rebuilt syncgraph document.
+            docsToAdd = newdocs(1);
+            for i=2:numel(newdocs)
+                if ~any(strcmp(newdocs{i}.id(),storedRuleIds))
+                    docsToAdd{end+1} = newdocs{i}; %#ok<AGROW>
+                end
+            end
+
+            % Delete before adding: removing a stale syncrule document also removes whatever
+            % depends on it, which would include the syncgraph document we are about to add.
+
             if ~isempty(syncgraph_doc)
                 ndi_session_obj.database_rm(syncgraph_doc);
             end
-            if ~isempty(syncrule_doc)
-                ndi_session_obj.database_rm(syncrule_doc);
+            if ~isempty(staleRuleDocs)
+                ndi_session_obj.database_rm(staleRuleDocs);
             end
-            gooddelete = 1;
 
-            % now add new docs
-            ndi_session_obj.database_add(newdocs);
-
-            if ~gooddelete
-                error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
-            end
+            ndi_session_obj.database_add(docsToAdd);
         end % update_syncgraph_in_db()
 
         function autoclose_listener_callback(ndi_session_obj, src, event)
