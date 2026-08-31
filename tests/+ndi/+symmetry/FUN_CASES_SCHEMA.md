@@ -546,40 +546,53 @@ structs to force the array.
 | 14 | `allMissesNaNCleaned` | an all-`NaN` numeric column is removed by `Clean` |
 | 15 | `multiRowMixedTypes` | three rules of three classes over three rows — pins column **order** as well as content |
 | 16 | `unicodeToken` | a non-ASCII token, exercising the UTF-8 artifact path (BMP only; no surrogate pair) |
-| 17 | `multipleGroupsFirstGroupWins` | **trap**, deferred — see below |
-| 18 | `escapedParenTreatedAsToken` | **trap**, deferred — see below |
+| 17 | `multipleGroupsFirstParticipatingGroupWins` | **trap** — settled by the first real run, *against* the prediction; see below |
+| 18 | `escapedParenTreatedAsToken` | **trap** — settled by the first real run, confirming the prediction; see below |
 
-### The two traps, and why their expectations are deferred
+### The two traps, and how the first real run settled them
 
-Cases 17 and 18 carry `expectationDeferred = true`: they are recorded and
-compared across languages, but no *predicted* value is asserted.
+Cases 17 and 18 were first recorded with `expectationDeferred = true`:
+compared across languages, but with no *predicted* value asserted, because
+their MATLAB behaviour was a source read rather than a measurement. The first
+cross-language run settled both — **one each way**, exactly as happened to the
+two `whatVaries` predictions.
 
-**`multipleGroupsFirstGroupWins`.** Only the first capture group is ever read.
-With `(\d+)MM|(\d+)\s+mM`, a row matching the *second* alternative leaves group
-1 unparticipating, so a row that plainly matched records the **empty string**.
+**`multipleGroupsFirstParticipatingGroupWins` — the prediction was wrong.**
+The claim was that only the first capture group is read, and that with
+`(\d+)MM|(\d+)\s+mM` a row matching the *second* alternative leaves group 1
+unparticipating, so MATLAB records the empty string. The run reported:
+
+```
+MATLAB:  types=double;  values=[5, 7]
+Python:  types=cell;    values=[5, '']
+```
+
+MATLAB's `regexp(…, 'tokens', 'once')` does **not** return one entry per group
+in the pattern with `''` for the absentees. It returns the tokens of the
+**matched alternative alone**, so `'7 mM'` yields `{'7'}` and the value is the
+number 7. It is the first *participating* group that is read. Python returns
+one entry per group with `None` for the ones that did not take part, and must
+drop those to agree — which is what the port does now. The case is named for
+the settled behaviour rather than the prediction.
+
 The shipped `XylidineDose` rule in
 `src/ndi/+ndi/+setup/+conv/+babu/textParser.json` has exactly this shape, so
-this is live behaviour and not a hypothetical. It is also the one place a
-Python port diverges for free: `re` yields `None` where MATLAB yields `''`, and
-a port that does not map `None` to `''` fails here and nowhere else.
+this is live behaviour and not a hypothetical — and it is a good deal less
+broken than the prediction made it look.
 
-**`escapedParenTreatedAsToken`.** The `(` scan cannot tell an escaped paren
-from a capture group, so `value\(\d+\)` is treated as a token rule despite
-having no groups. What `regexp(…, 'tokens', 'once')` returns for a group-less
-pattern then decides whether the rows record `NaN` or something else.
+**`escapedParenTreatedAsToken` — the prediction held.** The `(` scan cannot
+tell an escaped paren from a capture group, so `value\(\d+\)` is treated as
+a token rule despite having no groups; the group-less match yields no tokens,
+every row takes the miss branch, and each records `NaN` because the pattern
+text contains `\d`.
 
-Both are **source-read predictions, not measurements** — no MATLAB runtime was
-available when this battery was written. The artifact records what MATLAB
-really does, `readArtifacts/fun/parseText.testDeferredExpectationsAreReported`
-prints it, and Python is compared against it. This is the same mechanism that
-settled the two `whatVaries` predictions on first contact with a real runtime,
-one each way.
-
-**Once a trap is settled, fill in its expected table and clear
-`expectationDeferred`.** A deferred flag left on a case that is now understood
-is a silently skipped assertion — the same failure mode as a stale
-`knownDivergences` entry, and section 5 has the full argument for why that
-matters.
+Both expected tables are now filled in and `expectationDeferred` is cleared on
+both, and the reporting test that existed only to surface them
+(`testDeferredExpectationsAreReported` / `test_deferred_expectations_are_reported`)
+is deleted. **A deferred flag left on a case that is now understood is a
+silently skipped assertion** — the same failure mode as a stale
+`knownDivergences` entry, and section 5 has the full argument. The flag
+machinery itself stays, for the next trap: predict, defer, then settle.
 
 ### Two things this battery does not cover
 

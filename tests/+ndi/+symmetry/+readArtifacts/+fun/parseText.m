@@ -2,7 +2,7 @@ classdef parseText < matlab.unittest.TestCase
     % parseText (readArtifacts/fun) - verify the ndi.fun.parseText symmetry
     % artifacts written by both languages.
     %
-    %   Four checks, each skipping (assumption failure -> Incomplete, which the
+    %   Three checks, each skipping (assumption failure -> Incomplete, which the
     %   symmetry workflow's stage asserts on, so it cannot pass silently) when
     %   the required artifact is absent:
     %
@@ -14,8 +14,6 @@ classdef parseText < matlab.unittest.TestCase
     %     * testInputsAgree: assert both languages started from the same rules
     %       and the same text rows, so a green comparison cannot be two
     %       different batteries agreeing with themselves.
-    %     * testDeferredExpectationsAreReported: print what the two trap cases
-    %       actually recorded, so the first run on a real MATLAB settles them.
     %
     %   WHAT THE SIGNATURE COMPARES, AND WHY columnTypes IS IN IT
     %   status, the Clean option, the row count, the column NAMES, the column
@@ -105,44 +103,6 @@ classdef parseText < matlab.unittest.TestCase
                     ndi.symmetry.fun.parseTextCases.inputSignature(py(key)), ...
                     sprintf('Inputs differ between languages for case ''%s''.', key));
             end
-        end
-
-        function testDeferredExpectationsAreReported(testCase)
-            % The two trap cases carry no predicted value, because the exact
-            % regexp return shape for a pattern whose capture group did not
-            % participate is a source-read prediction rather than a
-            % measurement. This test REPORTS what MATLAB really recorded so the
-            % first run on a real runtime settles them; it does not fail on the
-            % answer. Once settled, fill in the expected table in
-            % parseTextCases.definitions and clear expectationDeferred -- a
-            % deferred flag left on a case that is now understood is a silently
-            % skipped assertion, the same failure mode as a stale
-            % knownDivergences entry.
-            mlFile = ndi.symmetry.readArtifacts.fun.parseText.artifactFile('matlabArtifacts');
-            testCase.assumeTrue(isfile(mlFile), ...
-                'matlabArtifacts parseText artifact missing. Skipping.');
-
-            ml = ndi.symmetry.fun.cases.indexByName( ...
-                ndi.symmetry.fun.cases.loadCases(mlFile));
-            defs = ndi.symmetry.fun.parseTextCases.definitions();
-
-            nDeferred = 0;
-            for i = 1:numel(defs)
-                if ~defs(i).expectationDeferred
-                    continue;
-                end
-                nDeferred = nDeferred + 1;
-                key = defs(i).name;
-                if ~ml.isKey(key)
-                    fprintf('parseText deferred case ''%s'' is MISSING from the artifact.\n', key);
-                    continue;
-                end
-                fprintf('parseText deferred case ''%s'' recorded: %s\n', ...
-                    key, ndi.symmetry.fun.parseTextCases.signature(ml(key)));
-            end
-            testCase.verifyGreaterThan(nDeferred, 0, ...
-                ['No deferred cases found. If both traps have been settled, ' ...
-                 'delete this test along with the expectationDeferred flag.']);
         end
 
     end
