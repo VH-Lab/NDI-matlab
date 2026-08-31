@@ -335,37 +335,54 @@ Top-level lists are safe — the `cases` array is a MATLAB *cell*, which
 
 ### Known divergences
 
-`ndi.symmetry.fun.cases.knownDivergences` lists the cases where MATLAB `main` and
-the Python port are believed to disagree **today**. Both trace to one line:
-`local_varyingFields` in `src/ndi/+ndi/+fun/+stimulus/whatVaries.m` compares with
-`vlt.data.eqlen`, which bottoms out in a bare `==`, while `local_uniqueValues` in
-the same file already uses `isequaln` and the Python port uses `isequaln`
-semantics throughout.
+`ndi.symmetry.fun.cases.knownDivergences` lists the cases where MATLAB `main`
+and the Python port disagree **today**. **It is now empty**, and that is the goal
+state: every case in the battery is a hard assertion in both languages. Both
+auditors iterate the list, so an empty one simply asserts nothing extra.
 
-| case | predicted MATLAB | predicted Python | **measured** |
+It held two entries. Both are gone, for opposite reasons, and the difference is
+the useful part of this history:
+
+| case | predicted MATLAB | predicted Python | **outcome** |
 |---|---|---|---|
-| `cellValuedConstantParameter` | **errors** — `==` is undefined for two cell arrays | succeeds; `color` is constant | **prediction wrong.** MATLAB succeeds and agrees with Python: `angle` varying, `color` constant. Entry removed; the case is a hard assertion again |
-| `allNaNParameter` | `angle` reported **varying** — `eqlen(NaN,NaN)` is false | `angle` reported **constant** | **prediction right.** Still the only entry in `knownDivergences` |
+| `cellValuedConstantParameter` | **errors** — `==` is undefined for two cell arrays | succeeds; `color` is constant | **never diverged.** The prediction was wrong: MATLAB succeeds and agrees with Python (`angle` varying, `color` constant). Entry removed; hard assertion again |
+| `allNaNParameter` | `angle` reported **varying** — `eqlen(NaN,NaN)` is false | `angle` reported **constant** | **really diverged, and was FIXED.** `local_varyingFields` compares with `isequaln` now, so an all-NaN parameter is constant in both languages |
 
 The two predictions shared a *cause* (`vlt.data.eqlen`) but were independent
-*claims*, and the first run on a real MATLAB split them. `eqlen` is still why
-`allNaNParameter` diverges; it is simply not true that
-`eqlen({'r','g','b'},{'r','g','b'})` throws, so the cell-valued case never
-diverged at all. **The mechanism is not established from source** —
+*claims*, and the first run on a real MATLAB split them. It is simply not true
+that `eqlen({'r','g','b'},{'r','g','b'})` throws, so the cell-valued case never
+diverged at all. **That mechanism is not established from source** —
 `vlt.data.eqemp` does reach a bare `x==y` on two cell arrays — only the
 outcome is, and the case now pins that outcome.
 
+The NaN one was real, and it was a bug in MATLAB on its own terms rather than a
+mere difference of convention: `local_varyingFields` used `vlt.data.eqlen`, so
+`NaN ~= NaN` reported an all-NaN parameter as **varying over a single distinct
+value** — because `local_uniqueValues`, in the same file, already used
+`isequaln` and collapsed the NaNs. `whatVaries.m` contradicted itself. The
+comparison is `isequaln` throughout now, which is a deliberate deviation from
+`vlt.data.structwhatvaries` and is documented as such in the function. Note the
+two changes could not be split across the repositories: the *code* change is
+what ends the divergence, so MATLAB's fix and both languages' list removals had
+to land together, validated on identically-named branches so the symmetry job's
+branch-matching checkout tested the pair.
+
 **These were source-read predictions, not measurements.** No MATLAB runtime was
-available when this battery was written. The first real run settles them:
+available when this battery was written; the first real run settled them, one
+each way. The mechanics that did the settling:
 
 * `readArtifacts/fun/whatVaries.testMatlabPythonSymmetry` reports rather than
   fails on a listed case, and fails on every other mismatch.
-* `readArtifacts/fun/whatVaries.testKnownDivergencesAreStillReal` prints, for each
-  listed case, whether the divergence actually showed up. **A listed case that now
-  agrees means the upstream fix landed** — delete the entry from
-  `knownDivergences` and clear `divergenceExpected` in `whatVariesDefs` so the
-  case becomes a hard assertion again. A stale allow-list is how a symmetry suite
-  goes quietly green over the bug it exists to watch.
+* `readArtifacts/fun/whatVaries.testKnownDivergencesAreStillReal` reports, for
+  each listed case, whether the divergence actually showed up. **A listed case
+  that now agrees means the fix landed, or the entry was never right** — delete
+  it from `knownDivergences` and clear `divergenceExpected` in `whatVariesDefs`
+  so the case becomes a hard assertion again. A stale allow-list is how a
+  symmetry suite goes quietly green over the bug it exists to watch. To ADD an
+  entry, record why the divergence is real and set `divergenceExpected` to
+  match; the flag is what makes `verifyWhatVariesExpected` skip the case, so
+  leaving it set on a case that has stopped diverging is a silently skipped
+  assertion.
 
 **Settled: the auditor FAILS on a stale entry.** It previously reported and never
 failed, so a stale allow-list entry landed as a line in the CI log rather than a
