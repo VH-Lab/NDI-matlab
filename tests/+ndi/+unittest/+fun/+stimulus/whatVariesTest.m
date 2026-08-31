@@ -149,6 +149,32 @@ classdef whatVariesTest < matlab.unittest.TestCase
             testCase.verifyEqual(varies.values, {[0 0 100 100], [0 0 200 200]});
         end
 
+        function testAllNaNParameterIsConstant(testCase)
+            % a parameter that is NaN in EVERY stimulus is constant, not
+            % varying. Comparison is isequaln, not vlt.data.eqlen: eqlen
+            % bottoms out in a bare '==', and NaN ~= NaN made this parameter
+            % report as VARYING -- over a single distinct value, because
+            % local_uniqueValues already collapses NaNs with isequaln.
+            p = { struct('angle',NaN,'contrast',1), ...
+                  struct('angle',NaN,'contrast',1) };
+            [varies, constant] = ndi.fun.stimulus.whatVaries(p);
+            testCase.verifyEmpty(varies);
+            testCase.verifyEqual({constant.parameter}, {'angle','contrast'});
+            testCase.verifyTrue(isequaln([constant.value], [NaN 1]));
+        end
+
+        function testNaNVaryingAgainstNonNaNStillVaries(testCase)
+            % the companion guard: isequaln must not collapse NaN against a
+            % real value. Without this, a test suite could go green on an
+            % equality that ignored the parameter altogether.
+            p = { struct('angle',NaN,'contrast',1), ...
+                  struct('angle',90, 'contrast',1) };
+            [varies, constant] = ndi.fun.stimulus.whatVaries(p);
+            testCase.verifyEqual(varies.parameter, 'angle');
+            testCase.verifyTrue(isequaln(sort(varies.values), [90 NaN]));
+            testCase.verifyEqual(constant.parameter, 'contrast');
+        end
+
         function testAllBlankStimuliGivesEmpty(testCase)
             % if every stimulus is blank, there is nothing left to compare
             p = { struct('angle',0,'isblank',1), ...
