@@ -3,12 +3,26 @@
 The on-disk contract for the three `fun`-namespace symmetry artifacts:
 `pathSafeNameCases.json`, `whatVariesCases.json` and `parseTextCases.json`.
 
-**Status: the MATLAB side of this contract was authored without a MATLAB runtime
-and has never been executed.** Both sides were written in parallel by different
-tasks, so the two implementations are expected to disagree in small ways on
-first contact. This document is the reconciliation reference — *the integrator
-adjusts one side to the other against this file*, and whichever side is changed,
-this file is updated to match.
+**Status: every battery here has now been executed on a real MATLAB runtime,
+and each one settled predictions that had been made by reading the source.**
+`whatVaries` settled two, one each way — `cellValuedConstantParameter` never
+diverged and `allNaNParameter` really did (§5). `parseText` settled two more,
+also one each way (§9). That track record is the reason for the working method
+this document describes, and it is worth stating plainly: **roughly half the
+predictions made from a careful source read turned out to be wrong.**
+
+So when a battery is extended, the expected values are still written from the
+source — there is no other way to start — but a value the author is not certain
+of is recorded as a *prediction*: compared across the two languages, but not
+asserted against a predicted number, via `expectationDeferred`
+(§9) or `knownDivergences` (§5). The first real run decides it, and the flag is
+then cleared. **A flag left set on a case that has since been understood is a
+silently skipped assertion**, which is the failure mode both mechanisms exist
+to prevent.
+
+This document remains the reconciliation reference — *the integrator adjusts
+one side to the other against this file*, and whichever side is changed, this
+file is updated to match.
 
 ---
 
@@ -73,6 +87,18 @@ choice can then never masquerade as a behaviour difference.
 
 Cases are joined **by `name`**, not by position. Order is irrelevant to the
 comparison, though both sides currently emit the same order.
+
+**Renaming a case is a two-repository change that cannot be made atomic, and
+it goes red in between.** The name is the join key, so the moment one side is
+renamed and the other is not, `testMatlabPythonSymmetry` fails with a
+key-set mismatch — every other case still passing — no matter which side
+lands first. This is not a flake and re-running does not fix it; landing the
+matching rename does, and then one re-run of the symmetry job clears the
+stale result. `multipleGroupsFirstGroupWins` →
+`multipleGroupsFirstParticipatingGroupWins` hit exactly this. If you are
+renaming a case, expect one red run between the two pushes, and read a
+key-set mismatch naming a single case as the rename catching up rather than
+as a real divergence.
 
 ## 3. The canonical value grammar
 
