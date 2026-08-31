@@ -801,7 +801,9 @@ classdef cases
             defs(k).expectedVariesValues = {'[0, 90]'};
             defs(k).expectedConstant = {'color'};
             defs(k).expectedConstantValues = {'[''r'', ''g'', ''b'']'};
-            defs(k).divergenceExpected = true;
+            % Was true on the prediction that MATLAB errors on a cell-valued
+            % '=='. Measured otherwise -- see knownDivergences.
+            defs(k).divergenceExpected = false;
             defs(k).mirrors = 'testCellValuedConstantParameter';
 
             k = k + 1;
@@ -895,26 +897,34 @@ classdef cases
 
         function names = knownDivergences()
             % KNOWNDIVERGENCES - whatVaries cases where MATLAB main and the
-            % Python port are believed to disagree TODAY.
+            % Python port are MEASURED to disagree TODAY.
             %
-            %   Both entries trace to one line: local_varyingFields in
+            %   The remaining entry traces to one line: local_varyingFields in
             %   src/ndi/+ndi/+fun/+stimulus/whatVaries.m compares with
             %   vlt.data.eqlen (which bottoms out in a bare '=='), while
             %   local_uniqueValues in the same file already uses isequaln and
             %   the Python port uses isequaln semantics throughout.
             %
-            %     cellValuedConstantParameter - '==' is undefined for two cell
-            %       arrays, so MATLAB is expected to ERROR where Python succeeds.
-            %     allNaNParameter - eqlen(NaN,NaN) is false, so MATLAB is
-            %       expected to report an all-NaN parameter as VARYING where
-            %       Python reports it CONSTANT.
+            %     allNaNParameter - eqlen(NaN,NaN) is false, so MATLAB reports
+            %       an all-NaN parameter as VARYING where Python reports it
+            %       CONSTANT.
             %
-            %   Both are SOURCE-READ predictions, not measurements. When this
-            %   suite is first run on a real MATLAB the readArtifacts test prints
-            %   whether each divergence is real; if one turns out to agree after
-            %   all, delete it here AND clear divergenceExpected in
-            %   whatVariesDefs so the case becomes a hard assertion again.
-            names = {'cellValuedConstantParameter', 'allNaNParameter'};
+            %   REMOVED, and why. cellValuedConstantParameter was listed here on
+            %   the source-read prediction that '==' is undefined for two cell
+            %   arrays and MATLAB would therefore ERROR. The first run on a real
+            %   MATLAB refuted it: eqlen({'r','g','b'},{'r','g','b'}) returns
+            %   true, MATLAB reports 'color' constant and 'angle' varying, and
+            %   the signature matches Python's exactly. The case is a hard
+            %   assertion again (divergenceExpected is false in whatVariesDefs).
+            %   Note the two predictions were independent -- allNaNParameter was
+            %   confirmed by the same run, so eqlen is still the reason for it.
+            %
+            %   A listed case that now agrees means the upstream fix landed:
+            %   delete it here AND clear divergenceExpected in whatVariesDefs so
+            %   the case becomes a hard assertion again. readArtifacts/fun/
+            %   whatVaries.testKnownDivergencesAreStillReal FAILS on a stale
+            %   entry rather than printing, so this cannot go unnoticed.
+            names = {'allNaNParameter'};
         end % knownDivergences
 
         function results = runWhatVariesCases()
