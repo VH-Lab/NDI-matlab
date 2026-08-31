@@ -159,6 +159,19 @@ identifiers (`MATLAB:validators:mustBeTextScalar`) and Python exception names
 translation table instead of a behaviour check. Only the *fact* of an error
 (`status`) is symmetric.
 
+**A one-element `int list` arrives as a bare number, and both readers must
+normalize it.** `jsonencode` cannot tell a 1x1 numeric array from a scalar, so
+MATLAB writes `astralOnlyEmoji`'s single codepoint as `129417`, not `[129417]`;
+`jsondecode` does the mirror-image thing to Python's `[129417]`, handing MATLAB
+a 1x1 double. Neither writer can fix this — the ambiguity is in the language,
+not the encoder — so `inputCodepoints` and `elementLegacyDirNameCodepoints` go
+through `ndi.symmetry.fun.cases.asRow` on the MATLAB side and `cases.as_row` on
+the Python side before they are compared. This is the same collapse the
+rendered-value grammar of section 3 exists to avoid; these two fields are
+compared as numbers rather than through the grammar, so they need the
+normalizer instead. `singleSpace` and `astralOnlyEmoji` are the cases that hit
+it today.
+
 **The input is specified as codepoints, not as a literal.** Each side builds its
 input string from `inputCodepoints` — MATLAB via UTF-8 and `native2unicode`,
 Python via `chr()`. Neither side has to trust a source-file encoding, and
@@ -296,7 +309,7 @@ one.)
 | 7 | `fieldPresentInSomeStimuli` | `testFieldPresentInSomeStimuli` |
 | 8 | `blankStimuliExcludedByDefault` | `testBlankStimuliExcludedByDefault` |
 | 9 | `blankStimuliIncludedWhenOptionFalse` | `testBlankStimuliIncludedWhenOptionFalse` (same stimuli as 8, `excludeBlank=false`) |
-| 10 | `cellValuedConstantParameter` | `testCellValuedConstantParameter` — **known divergence** |
+| 10 | `cellValuedConstantParameter` | `testCellValuedConstantParameter` — a *predicted* divergence that the first real run refuted; now a hard assertion |
 | 11 | `vectorValuedVaryingParameter` | `testVectorValuedVaryingParameter` |
 | 12 | `allBlankStimuli` | `testAllBlankStimuliGivesEmpty` |
 | 13 | `nonNumericValues` | `testNonNumericValuesReturnedAsCell` |
@@ -329,12 +342,20 @@ the Python port are believed to disagree **today**. Both trace to one line:
 the same file already uses `isequaln` and the Python port uses `isequaln`
 semantics throughout.
 
-| case | predicted MATLAB | predicted Python |
-|---|---|---|
-| `cellValuedConstantParameter` | **errors** — `==` is undefined for two cell arrays | succeeds; `color` is constant |
-| `allNaNParameter` | `angle` reported **varying** — `eqlen(NaN,NaN)` is false | `angle` reported **constant** |
+| case | predicted MATLAB | predicted Python | **measured** |
+|---|---|---|---|
+| `cellValuedConstantParameter` | **errors** — `==` is undefined for two cell arrays | succeeds; `color` is constant | **prediction wrong.** MATLAB succeeds and agrees with Python: `angle` varying, `color` constant. Entry removed; the case is a hard assertion again |
+| `allNaNParameter` | `angle` reported **varying** — `eqlen(NaN,NaN)` is false | `angle` reported **constant** | **prediction right.** Still the only entry in `knownDivergences` |
 
-**These are source-read predictions, not measurements.** No MATLAB runtime was
+The two predictions shared a *cause* (`vlt.data.eqlen`) but were independent
+*claims*, and the first run on a real MATLAB split them. `eqlen` is still why
+`allNaNParameter` diverges; it is simply not true that
+`eqlen({'r','g','b'},{'r','g','b'})` throws, so the cell-valued case never
+diverged at all. **The mechanism is not established from source** —
+`vlt.data.eqemp` does reach a bare `x==y` on two cell arrays — only the
+outcome is, and the case now pins that outcome.
+
+**These were source-read predictions, not measurements.** No MATLAB runtime was
 available when this battery was written. The first real run settles them:
 
 * `readArtifacts/fun/whatVaries.testMatlabPythonSymmetry` reports rather than
@@ -346,16 +367,21 @@ available when this battery was written. The first real run settles them:
   case becomes a hard assertion again. A stale allow-list is how a symmetry suite
   goes quietly green over the bug it exists to watch.
 
-**Open contract question for Steve:** that auditor currently *reports* and never
-fails, so a stale allow-list entry lands as a line in the CI log rather than a red
-build — which is exactly the failure mode the paragraph above warns about. Whether
-`testKnownDivergencesAreStillReal` (and its Python twin `audit_known_divergences`)
-should **fail** on a stale entry instead of printing is deliberately left
-unresolved here; it is raised in the PR bodies on both sides. Report-not-fail
-stands until that is settled, and both languages must change together.
+**Settled: the auditor FAILS on a stale entry.** It previously reported and never
+failed, so a stale allow-list entry landed as a line in the CI log rather than a
+red build — the same failure mode as a silently skipped test, and exactly what
+the paragraph above warns about. `testKnownDivergencesAreStillReal` and its
+Python twin `audit_known_divergences` now both fail when a listed case starts
+agreeing across languages, so the entry gets removed and the case goes back to
+being a hard assertion.
 
-If the divergences turn out to be real, the upstream fix is to swap `eqlen` for
-`isequaln` in `local_varyingFields`.
+A case *missing* from either artifact still only reports. That is list drift
+rather than a landed fix, and the key-set check in `testMatlabPythonSymmetry`
+already fails on it; failing twice for one cause is noise.
+
+`allNaNParameter` is real and still listed. The upstream fix is to swap
+`eqlen` for `isequaln` in `local_varyingFields`; until that lands the entry
+stays, and the auditor fails the build the moment it stops diverging.
 
 ## 6. Why the whatVaries generator records errors instead of failing
 
