@@ -346,13 +346,17 @@ available when this battery was written. The first real run settles them:
   case becomes a hard assertion again. A stale allow-list is how a symmetry suite
   goes quietly green over the bug it exists to watch.
 
-**Open contract question for Steve:** that auditor currently *reports* and never
-fails, so a stale allow-list entry lands as a line in the CI log rather than a red
-build — which is exactly the failure mode the paragraph above warns about. Whether
-`testKnownDivergencesAreStillReal` (and its Python twin `audit_known_divergences`)
-should **fail** on a stale entry instead of printing is deliberately left
-unresolved here; it is raised in the PR bodies on both sides. Report-not-fail
-stands until that is settled, and both languages must change together.
+**Settled: the auditor FAILS on a stale entry.** It previously reported and never
+failed, so a stale allow-list entry landed as a line in the CI log rather than a
+red build — the same failure mode as a silently skipped test, and exactly what
+the paragraph above warns about. `testKnownDivergencesAreStillReal` and its
+Python twin `audit_known_divergences` now both fail when a listed case starts
+agreeing across languages, so the entry gets removed and the case goes back to
+being a hard assertion.
+
+A case *missing* from either artifact still only reports. That is list drift
+rather than a landed fix, and the key-set check in `testMatlabPythonSymmetry`
+already fails on it; failing twice for one cause is noise.
 
 If the divergences turn out to be real, the upstream fix is to swap `eqlen` for
 `isequaln` in `local_varyingFields`.
