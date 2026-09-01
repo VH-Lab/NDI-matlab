@@ -1,14 +1,28 @@
 # `fun` symmetry artifact schema
 
-The on-disk contract for the two `fun`-namespace symmetry artifacts:
-`pathSafeNameCases.json` and `whatVariesCases.json`.
+The on-disk contract for the three `fun`-namespace symmetry artifacts:
+`pathSafeNameCases.json`, `whatVariesCases.json` and `parseTextCases.json`.
 
-**Status: the MATLAB side of this contract was authored without a MATLAB runtime
-and has never been executed.** Both sides were written in parallel by different
-tasks, so the two implementations are expected to disagree in small ways on
-first contact. This document is the reconciliation reference — *the integrator
-adjusts one side to the other against this file*, and whichever side is changed,
-this file is updated to match.
+**Status: every battery here has now been executed on a real MATLAB runtime,
+and each one settled predictions that had been made by reading the source.**
+`whatVaries` settled two, one each way — `cellValuedConstantParameter` never
+diverged and `allNaNParameter` really did (§5). `parseText` settled two more,
+also one each way (§9). That track record is the reason for the working method
+this document describes, and it is worth stating plainly: **roughly half the
+predictions made from a careful source read turned out to be wrong.**
+
+So when a battery is extended, the expected values are still written from the
+source — there is no other way to start — but a value the author is not certain
+of is recorded as a *prediction*: compared across the two languages, but not
+asserted against a predicted number, via `expectationDeferred`
+(§9) or `knownDivergences` (§5). The first real run decides it, and the flag is
+then cleared. **A flag left set on a case that has since been understood is a
+silently skipped assertion**, which is the failure mode both mechanisms exist
+to prevent.
+
+This document remains the reconciliation reference — *the integrator adjusts
+one side to the other against this file*, and whichever side is changed, this
+file is updated to match.
 
 ---
 
@@ -28,6 +42,7 @@ Both languages use the layout the `makeArtifacts` / `readArtifacts`
 |---|---|---|---|
 | pathSafeName | `pathSafeName` | `testPathSafeNameArtifacts` | `pathSafeNameCases.json` |
 | whatVaries | `whatVaries` | `testWhatVariesArtifacts` | `whatVariesCases.json` |
+| parseText | `parseText` | `testParseTextArtifacts` | `parseTextCases.json` |
 
 The `<className>` / `<testName>` segments are **MATLAB-style names on both
 sides**. That is not an oversight: the existing Python make-side tests already
@@ -72,6 +87,18 @@ choice can then never masquerade as a behaviour difference.
 
 Cases are joined **by `name`**, not by position. Order is irrelevant to the
 comparison, though both sides currently emit the same order.
+
+**Renaming a case is a two-repository change that cannot be made atomic, and
+it goes red in between.** The name is the join key, so the moment one side is
+renamed and the other is not, `testMatlabPythonSymmetry` fails with a
+key-set mismatch — every other case still passing — no matter which side
+lands first. This is not a flake and re-running does not fix it; landing the
+matching rename does, and then one re-run of the symmetry job clears the
+stale result. `multipleGroupsFirstGroupWins` →
+`multipleGroupsFirstParticipatingGroupWins` hit exactly this. If you are
+renaming a case, expect one red run between the two pushes, and read a
+key-set mismatch naming a single case as the rename catching up rather than
+as a real divergence.
 
 ## 3. The canonical value grammar
 
@@ -448,6 +475,158 @@ TestSuite.fromPackage("ndi.symmetry.readArtifacts", "IncludingSubpackages", true
 ```
 
 so the new `+fun` subpackages are picked up automatically, exactly as `+time`
-was. `ndi.symmetry.fun.cases` is a plain `classdef` (not a `TestCase`) and sits
-outside both packages, so it is a shared helper and never a discovered test —
-the same arrangement as `ndi.symmetry.time.scenario`.
+was. `ndi.symmetry.fun.cases` and `ndi.symmetry.fun.parseTextCases` are plain
+`classdef`s (not `TestCase`s) and sit outside both packages, so they are shared
+helpers and never discovered tests — the same arrangement as
+`ndi.symmetry.time.scenario`.
+
+## 9. `parseTextCases.json`
+
+Exercises `ndi.fun.parseText` (Python: `ndi.fun.parse_text`).
+
+### Why this battery lives in its own helper class
+
+`ndi.symmetry.fun.cases` is already 1238 lines. The battery is therefore in
+`ndi.symmetry.fun.parseTextCases` / `tests/symmetry/fun/parse_text_cases.py`,
+which **reuses** the canonical value grammar (`render` / `renderSequence`) and
+the artifact I/O (`writeCases` / `loadCases` / `indexByName` / `asCellStr` /
+`asChar` / `errorId`) from `cases`. The grammar of section 3 stays
+single-sourced; only the case list is new.
+
+### Why `parseText` is the `ndi.fun` item that most wants symmetry coverage
+
+It is a pure deterministic function from text plus a JSON rules file to a table
+— no session, no database, no file layout — so the two languages can be
+compared exactly. And essentially none of its behaviour is written down:
+
+* whether a rule yields a **logical** column or a **token** column is decided by
+  scanning the *pattern text* for `(` not followed by `?`;
+* whether a token becomes a **number** or a **string** is decided by a digit
+  scan and then `str2double`;
+* what a **miss** records (`NaN` or `''`) is decided by a literal `\d`
+  substring test on the pattern text;
+* and the final column **class** is decided by a flattening pass that can turn
+  a column of empty strings into a `logical` column of `false`.
+
+A port has nothing to aim at except the source. That is what this battery is
+for.
+
+### Case object
+
+| field | type | compared? | meaning |
+|---|---|---|---|
+| `name` | string | join key | stable ASCII case id |
+| `note` | string | no | which decision in `parseText` the case pins |
+| `status` | string | **yes** | `"ok"` or `"error"` |
+| `identifier` | string | no | error id / exception class; humans only |
+| `message` | string | no | error text; humans only |
+| `clean` | bool | **yes** | the `Clean` option the case was run with |
+| `rulesRendered` | string | **yes** | the rule list in the canonical grammar, `[{StringFormat: '…', VariableName: '…'}, …]` |
+| `inputRendered` | string list | **yes** | one entry per text row, each rendered as a sequence of its columns |
+| `rowCount` | int | **yes** | `height` of the resulting table |
+| `columnNames` | string list | **yes** | surviving column names, **in order** |
+| `columnTypes` | string list | **yes** | MATLAB class of each column: `logical`, `double` or `cell` |
+| `columnValues` | string list | **yes** | parallel to `columnNames`; each entry is that column rendered **as a sequence** |
+
+**`columnTypes` is compared, and that is the load-bearing part.** The flattening
+pass at the end of `parseText` is where the two languages are most likely to
+drift, and a values-only comparison cannot see it: a column of empty strings
+becoming a `logical` column of `false` is invisible in the values once `Clean`
+has removed the column. `allMissesBecomeLogicalFalse` and its `Clean=false`
+twin exist as a pair for exactly this reason — the first shows the column being
+dropped, the second shows *what class it had been* when it was dropped.
+
+`inputRendered` and `rulesRendered` are compared for the same reason
+`whatVaries` compares `inputRendered`: they are the only thing that catches the
+two hand-written batteries drifting apart. Without them the suite could go
+green while comparing two different inputs.
+
+`identifier` and `message` are never compared, per section 4.
+
+### The rules file
+
+`parseText`'s second argument is `mustBeFile`, so each side writes its case's
+rules to a temp JSON file and passes the path. Both sides emit a JSON **array
+of objects**, never a bare object: `jsonencode` collapses a 1×1 struct array to
+an object, and the single-rule cases would then reach Python in a different
+shape from every other case. The MATLAB side encodes from a *cell* of scalar
+structs to force the array.
+
+### The 18 cases
+
+| # | name | pins |
+|---|---|---|
+| 1 | `logicalMatch` | `(?i)…` — a `(` followed by `?` is not a group, so this is a logical rule |
+| 2 | `logicalAllFalseCleaned` | `Clean` removes an all-`false` column; here, every column |
+| 3 | `cleanFalseKeepsAllFalse` | same rules with `Clean=false` — proves 2 measured `Clean`, not a parse failure |
+| 4 | `nonCapturingGroupIsLogical` | `(?:…)` is not a capture group |
+| 5 | `columnsJoinedWithSpace` | a row's columns are joined with one space before matching |
+| 6 | `tokenNumeric` | a digit-bearing token `str2double` accepts becomes a `double` |
+| 7 | `tokenUnderscoreDecimal` | `_` → `.` before `str2double`, so `3_5` is `3.5` |
+| 8 | `tokenRomanNumeralString` | a token with no digits is never parsed |
+| 9 | `tokenDigitBearingNotANumber` | `1B` has a digit, `str2double` gives `NaN`, the **text** is kept — and the column is then mixed, so it stays a `cell` |
+| 10 | `tokenMissingWithDigitPattern` | a miss records `NaN` when the pattern *text* contains `\d` |
+| 11 | `tokenMissingWithoutDigitPattern` | a miss records `''` otherwise |
+| 12 | `allMissesBecomeLogicalFalse` | `isempty('')` is true, so an all-empty text column becomes `logical` `false` — and `Clean` removes it |
+| 13 | `allMissesLogicalVisibleWithoutClean` | the same, with `Clean=false`, so the `logical` class is visible |
+| 14 | `allMissesNaNCleaned` | an all-`NaN` numeric column is removed by `Clean` |
+| 15 | `multiRowMixedTypes` | three rules of three classes over three rows — pins column **order** as well as content |
+| 16 | `unicodeToken` | a non-ASCII token, exercising the UTF-8 artifact path (BMP only; no surrogate pair) |
+| 17 | `multipleGroupsFirstParticipatingGroupWins` | **trap** — settled by the first real run, *against* the prediction; see below |
+| 18 | `escapedParenTreatedAsToken` | **trap** — settled by the first real run, confirming the prediction; see below |
+
+### The two traps, and how the first real run settled them
+
+Cases 17 and 18 were first recorded with `expectationDeferred = true`:
+compared across languages, but with no *predicted* value asserted, because
+their MATLAB behaviour was a source read rather than a measurement. The first
+cross-language run settled both — **one each way**, exactly as happened to the
+two `whatVaries` predictions.
+
+**`multipleGroupsFirstParticipatingGroupWins` — the prediction was wrong.**
+The claim was that only the first capture group is read, and that with
+`(\d+)MM|(\d+)\s+mM` a row matching the *second* alternative leaves group 1
+unparticipating, so MATLAB records the empty string. The run reported:
+
+```
+MATLAB:  types=double;  values=[5, 7]
+Python:  types=cell;    values=[5, '']
+```
+
+MATLAB's `regexp(…, 'tokens', 'once')` does **not** return one entry per group
+in the pattern with `''` for the absentees. It returns the tokens of the
+**matched alternative alone**, so `'7 mM'` yields `{'7'}` and the value is the
+number 7. It is the first *participating* group that is read. Python returns
+one entry per group with `None` for the ones that did not take part, and must
+drop those to agree — which is what the port does now. The case is named for
+the settled behaviour rather than the prediction.
+
+The shipped `XylidineDose` rule in
+`src/ndi/+ndi/+setup/+conv/+babu/textParser.json` has exactly this shape, so
+this is live behaviour and not a hypothetical — and it is a good deal less
+broken than the prediction made it look.
+
+**`escapedParenTreatedAsToken` — the prediction held.** The `(` scan cannot
+tell an escaped paren from a capture group, so `value\(\d+\)` is treated as
+a token rule despite having no groups; the group-less match yields no tokens,
+every row takes the miss branch, and each records `NaN` because the pattern
+text contains `\d`.
+
+Both expected tables are now filled in and `expectationDeferred` is cleared on
+both, and the reporting test that existed only to surface them
+(`testDeferredExpectationsAreReported` / `test_deferred_expectations_are_reported`)
+is deleted. **A deferred flag left on a case that is now understood is a
+silently skipped assertion** — the same failure mode as a stale
+`knownDivergences` entry, and section 5 has the full argument. The flag
+machinery itself stays, for the next trap: predict, defer, then settle.
+
+### Two things this battery does not cover
+
+* **A 2-D char matrix input.** `parseText` accepts one (`inputText(f,:)` then
+  `cellstr`), but the battery passes cell arrays, which is what
+  `ndi.setup.conv.babu.import` actually passes (`table2cell` and cellstr file
+  lists). A char-matrix case would render in MATLAB's column-major order
+  against Python's row-major, which section 3 rules out.
+* **Invalid or duplicate `VariableName`s.** Whether `cell2table` errors or
+  mangles a name that is not a valid MATLAB identifier is version-dependent,
+  and pandas accepts anything. Pinning it without a runtime would be a guess.
