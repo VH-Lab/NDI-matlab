@@ -35,7 +35,7 @@ classdef vhsbRoundTrip < matlab.unittest.TestCase
                 'matlabArtifacts', 'element', 'vhsbRoundTrip', 'testVhsbArtifacts');
 
             names = ndi.symmetry.element.vhsbCases.writeCases(artifactDir);
-            testCase.verifyEqual(numel(names), 8, 'Expected 8 recorded cases.');
+            testCase.verifyEqual(numel(names), 9, 'Expected 9 recorded cases.');
 
             for i = 1:numel(names)
                 f = fullfile(artifactDir, [names{i} '.vhsb']);

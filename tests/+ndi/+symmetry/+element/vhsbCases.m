@@ -23,17 +23,20 @@ classdef vhsbCases
     %   formatting artifact. A case built from (0:99)/1000 would not have that
     %   property.
     %
-    %   WHAT IS DELIBERATELY ABSENT
-    %   A series whose sampling interval SHRINKS monotonically. That is the one
-    %   shape where the two languages' X_constantinterval disagrees today: this
-    %   repository's dependency vhlab-toolbox-matlab tests
-    %   max(diff(diff(x)))<1e-7 on the SIGNED second difference, so an
-    %   all-negative one passes and the series is mis-flagged as
-    %   constant-interval; vhlab-toolbox-python takes abs and is correct.
-    %   Reported as VH-Lab/vhlab-toolbox-matlab#145 and covered by the two
-    %   toolboxes' own suites, not here -- an allow-listed entry in this
-    %   battery would go red the moment that issue is fixed, which is the
-    %   wrong reward for fixing it.
+    %   WHAT THE SHRINKING-INTERVAL CASE PINS
+    %   shrinkingInterval is the one shape whose X_constantinterval the two
+    %   languages disagreed about. This repository's dependency
+    %   vhlab-toolbox-matlab tested max(diff(diff(x)))<1e-7 on the SIGNED
+    %   second difference, so an all-negative one passed and a series whose
+    %   interval shrinks was recorded as constant-interval;
+    %   vhlab-toolbox-python already took abs and was right. This battery
+    %   deliberately left the shape out while that was true, because an
+    %   allow-listed entry would have gone red the moment the bug was fixed --
+    %   the wrong reward for fixing it. It is fixed
+    %   (VH-Lab/vhlab-toolbox-matlab#145, PR #147; mirrored in
+    %   VH-Lab/vhlab-toolbox-python#23), so the case is in, and it is the only
+    %   one here that tells the two rules apart: remove the abs on either side
+    %   and this case alone goes red.
     %
     %   /!\ AUTHORED WITHOUT A MATLAB RUNTIME -- validate before relying on it.
     %
@@ -50,8 +53,8 @@ classdef vhsbCases
             % CASENAMES - case names in a stable (sorted) order.
             names = sort({ ...
                 'largeMagnitude', 'markedPointProcess', 'multiChannel', ...
-                'negativeTimes', 'regularInterval', 'singleSample', ...
-                'threeSamples', 'twoSamples'});
+                'negativeTimes', 'regularInterval', 'shrinkingInterval', ...
+                'singleSample', 'threeSamples', 'twoSamples'});
         end
 
         function [x, y, note] = expected(name)
@@ -83,6 +86,16 @@ classdef vhsbCases
                     note = ['The n=3 boundary: X_increment is computed (numel>2) ' ...
                         'but X_constantinterval is not (numel>3), so the flag ' ...
                         'stays 0 with an increment of 0.25.'];
+                case 'shrinkingInterval'
+                    x = [0; 1; 1.5; 1.75];
+                    y = [1; 2; 3; 4];
+                    note = ['Intervals 1, 0.5, 0.25 -- shrinking, so ' ...
+                        'X_constantinterval must be 0 even though ' ...
+                        'X_increment is a median of 0.5 that describes none ' ...
+                        'of them. The reproduction from ' ...
+                        'VH-Lab/vhlab-toolbox-matlab#145: this repository''s ' ...
+                        'dependency wrote 1 here until PR #147 took abs() of ' ...
+                        'the second difference.'];
                 case 'negativeTimes'
                     x = [-1.5; -0.5; 0; 0.5; 1.5];
                     y = [1; 2; 3; 4; 5];
@@ -179,15 +192,15 @@ classdef vhsbCases
             % EXPECTEDCONSTANTINTERVAL - the flag vhsb_write should have written.
             %
             %   MATLAB's rule: computed only when numel(x) > 3, else 0. The
-            %   comparison uses ABS on the second difference, which is the
-            %   corrected rule -- see VH-Lab/vhlab-toolbox-matlab#145. Every
-            %   case in this battery gives the same answer under either rule,
-            %   which is exactly why the one shape that does not is excluded.
+            %   comparison takes ABS of the second difference, which is what
+            %   both toolboxes do now -- see VH-Lab/vhlab-toolbox-matlab#145.
+            %   Every case here but shrinkingInterval gives the same answer
+            %   under the old signed rule; that one is what separates them.
             %
             %   The flag is compared as well as the values because it decides
             %   how a WINDOWED read selects samples, and the two languages
             %   wrote different flags for the same input until
-            %   VH-Lab/vhlab-toolbox-python#21.
+            %   VH-Lab/vhlab-toolbox-python#21 and #145.
             x = double(x(:));
             if numel(x) <= 3
                 flag = 0;
