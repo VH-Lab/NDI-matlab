@@ -43,8 +43,14 @@ classdef PathConstants
         % LogFolder - A path to a directory for storing logs
         LogFolder = fullfile(userpath, 'Documents', 'NDI', 'Logs')
 
-        % Preferences - A path to a directory of preferences files
-        Preferences {mustBeWritable} = fullfile(userpath, 'Preferences', 'NDI') % Todo: Use prefdir
+        % Preferences - A path to a directory of preferences files.
+        % Kept in sync with ndi.cloud.profile.userPrefDir() (~/.ndi/) so
+        % that ndi-python, which has always defaulted to ~/.ndi/, and
+        % MATLAB share the same on-disk preferences directory. The value
+        % is inlined here because Constant property initializers cannot
+        % reliably call static methods on other classes across every
+        % supported MATLAB release. See ndi-matlab#922 / ndi-python#172.
+        Preferences {mustBeWritable} = fullfile(char(java.lang.System.getProperty('user.home')), '.ndi')
 
         % CalcDoc - A cell array of paths to NDI calculator document definitions
         CalcDoc {mustUpdateDidGlobals(CalcDoc, '$NDICALCDOCUMENTPATH')} = ...
