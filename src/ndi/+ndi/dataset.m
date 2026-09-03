@@ -10,6 +10,16 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % Note: This is not a session in the context of representing an
         % experimental session, but instead an entrypoint to a session-like
         % database.
+
+        % BinaryDocSessions - map from a live binarydoc's
+        % fullpathfilename to the ndi.session that opened it. Populated
+        % by database_openbinarydoc when a linked-session doc is
+        % dispatched, and consulted by database_closebinarydoc so the
+        % close goes to the same session's autoclose listener map and
+        % database driver. Fixes #509: without this, close on the
+        % dataset always went to session (the dataset's internal
+        % session), leaking the lock on the linked session's DID store.
+        BinaryDocSessions = containers.Map('KeyType', 'char', 'ValueType', 'any');
     end
 
     methods
@@ -751,13 +761,14 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                         try
                             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
                             ndi_binarydoc_obj = ndi_session_obj.database_openbinarydoc(doc, filename, 'autoClose', options.autoClose);
+                            ndi_dataset_obj.rememberBinaryDocSession(ndi_binarydoc_obj, ndi_session_obj);
                             return;
                         catch
                             % if we can't open it or something goes wrong, fall back to current behavior
                         end
                     end
                 end
-                
+
                 ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
 
         end % database_openbinarydoc
@@ -796,10 +807,24 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATASET_OBJ, NDI_BINARYDOC_OBJ)
             %
-            % Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
-            % database, which is why it is necessary to call this function through the dataset object.
+            % Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be
+            % unlocked in the database, which is why it is necessary to call this
+            % function through the dataset object.
             %
-            ndi_binarydoc_obj = ndi_dataset_obj.session.database_closebinarydoc(ndi_binarydoc_obj);
+            % When database_openbinarydoc dispatched to a linked/member session
+            % (because the doc's session_id was not the dataset's own), the
+            % returned handle was remembered in BinaryDocSessions so this close
+            % goes to that same session's database driver and autoclose listener
+            % map. Without that lookup the close would always go to the dataset's
+            % internal session and the linked session's DID lock would leak (#509).
+            % Falls back to the internal session when no owning session is
+            % recorded, matching prior behavior.
+            owningSession = ndi_dataset_obj.lookupBinaryDocSession(ndi_binarydoc_obj);
+            if isempty(owningSession)
+                owningSession = ndi_dataset_obj.session;
+            end
+            ndi_dataset_obj.forgetBinaryDocSession(ndi_binarydoc_obj);
+            ndi_binarydoc_obj = owningSession.database_closebinarydoc(ndi_binarydoc_obj);
         end % database_closebinarydoc
 
         function ndi_session_obj = document_session(ndi_dataset_obj, ndi_document_obj)
@@ -1061,6 +1086,42 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
             end
         end % open_linked_sessions
+
+        function rememberBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj, ndi_session_obj)
+        %REMEMBERBINARYDOCSESSION Record which session opened a binarydoc.
+        %   database_openbinarydoc calls this whenever it dispatches to
+        %   a linked/member session, so that database_closebinarydoc can
+        %   later route the close to that same session's autoclose
+        %   listener map and database driver (#509). The key is the
+        %   binarydoc's fullpathfilename -- the same key the session's
+        %   autoclose map already uses, so lookups are cheap and stable
+        %   across the binarydoc handle's lifetime.
+            key = ndi_binarydoc_obj.fullpathfilename;
+            ndi_dataset_obj.BinaryDocSessions(key) = ndi_session_obj;
+        end % rememberBinaryDocSession
+
+        function ndi_session_obj = lookupBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj)
+        %LOOKUPBINARYDOCSESSION Return the session that opened NDI_BINARYDOC_OBJ, or [].
+            ndi_session_obj = [];
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                return;
+            end
+            key = ndi_binarydoc_obj.fullpathfilename;
+            if isKey(ndi_dataset_obj.BinaryDocSessions, key)
+                ndi_session_obj = ndi_dataset_obj.BinaryDocSessions(key);
+            end
+        end % lookupBinaryDocSession
+
+        function forgetBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj)
+        %FORGETBINARYDOCSESSION Drop NDI_BINARYDOC_OBJ from the owning-session map.
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                return;
+            end
+            key = ndi_binarydoc_obj.fullpathfilename;
+            if isKey(ndi_dataset_obj.BinaryDocSessions, key)
+                remove(ndi_dataset_obj.BinaryDocSessions, key);
+            end
+        end % forgetBinaryDocSession
 
     end % methods protected
 end % class
