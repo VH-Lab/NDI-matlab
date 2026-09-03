@@ -19,7 +19,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % database driver. Fixes #509: without this, close on the
         % dataset always went to session (the dataset's internal
         % session), leaking the lock on the linked session's DID store.
-        BinaryDocSessions = containers.Map('KeyType', 'char', 'ValueType', 'any');
+        %
+        % Default is [] (not a containers.Map) so every dataset
+        % instance gets its own map on first use in the helpers below.
+        % A handle-typed default would have every dataset share the
+        % SAME map -- Code Analyzer flags this and it is a real bug
+        % when two datasets are open in the same MATLAB session.
+        BinaryDocSessions = []
     end
 
     methods
@@ -1096,6 +1102,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         %   binarydoc's fullpathfilename -- the same key the session's
         %   autoclose map already uses, so lookups are cheap and stable
         %   across the binarydoc handle's lifetime.
+            ndi_dataset_obj.ensureBinaryDocSessions();
             key = ndi_binarydoc_obj.fullpathfilename;
             ndi_dataset_obj.BinaryDocSessions(key) = ndi_session_obj;
         end % rememberBinaryDocSession
@@ -1122,6 +1129,19 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 remove(ndi_dataset_obj.BinaryDocSessions, key);
             end
         end % forgetBinaryDocSession
+
+        function ensureBinaryDocSessions(ndi_dataset_obj)
+        %ENSUREBINARYDOCSESSIONS Lazily create this instance's map.
+        %   The BinaryDocSessions property defaults to [] so each
+        %   ndi.dataset gets its own containers.Map here -- a handle
+        %   default would have every dataset share the SAME map (Code
+        %   Analyzer flags this and it is a real bug when two datasets
+        %   are open concurrently).
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                ndi_dataset_obj.BinaryDocSessions = containers.Map( ...
+                    'KeyType', 'char', 'ValueType', 'any');
+            end
+        end % ensureBinaryDocSessions
 
     end % methods protected
 end % class
