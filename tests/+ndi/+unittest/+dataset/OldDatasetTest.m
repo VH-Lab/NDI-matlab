@@ -5,7 +5,14 @@ classdef OldDatasetTest < matlab.unittest.TestCase
             % Construct path to the dataset
             originalDatasetPath = fullfile(ndi.toolboxdir, 'ndi_common', 'example_datasets', 'oldDataset');
 
-            % Copy to a temporary directory so we don't modify the example
+            % Copy to a temporary directory so we don't modify the example.
+            % ndi.dataset.dir runs repairDatasetSessionInfo on a legacy
+            % dataset_session_info document during construction, which writes
+            % new session_in_a_dataset documents and deletes the old one.
+            % Opening originalDatasetPath directly would mutate the shared
+            % example. Python's tests/matlab_tests/test_dabrowska.py fixture
+            % follows the same copy-before-open pattern for its shared corpus.
+            % See ndi-python issue #99.
             tempDir = tempname;
             copyfile(originalDatasetPath, tempDir);
             testCase.addTeardown(@rmdir, tempDir, 's');
