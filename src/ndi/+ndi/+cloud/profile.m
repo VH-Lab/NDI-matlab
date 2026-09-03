@@ -45,12 +45,17 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 %
 %   Profile metadata is persisted to:
 %
-%       fullfile(prefdir, 'NDI_Cloud_Profiles.json')
+%       fullfile(userHome, '.ndi', 'NDI_Cloud_Profiles.json')
 %
 %   The vault never sees that file; the AES backend writes ciphertext
 %   to a sibling file:
 %
-%       fullfile(prefdir, 'NDI_Cloud_Secrets.json')
+%       fullfile(userHome, '.ndi', 'NDI_Cloud_Secrets.json')
+%
+%   The location was moved from MATLAB's prefdir to ~/.ndi/ so that
+%   ndi-python (which has always defaulted to ~/.ndi/) and MATLAB share
+%   the same saved profiles by default. A legacy pair in prefdir is
+%   migrated on first load. See ndi-matlab#920 and ndi-python#168.
 %
 %   Typical usage:
 %
@@ -67,10 +72,23 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
     properties (Constant)
         % Filename - JSON file holding profile list and DefaultUID.
-        Filename = fullfile(prefdir, 'NDI_Cloud_Profiles.json')
+        % Kept in sync with ndi.cloud.profile.userPrefDir(); inlined here
+        % because Constant property initializers cannot reliably call
+        % static methods on their own class across every supported MATLAB
+        % release.
+        Filename = fullfile(char(java.lang.System.getProperty('user.home')), ...
+                            '.ndi', 'NDI_Cloud_Profiles.json')
 
         % SecretsFilename - AES backend's ciphertext file.
-        SecretsFilename = fullfile(prefdir, 'NDI_Cloud_Secrets.json')
+        SecretsFilename = fullfile(char(java.lang.System.getProperty('user.home')), ...
+                                   '.ndi', 'NDI_Cloud_Secrets.json')
+
+        % LegacyFilename - historical location under MATLAB's prefdir.
+        % Kept for one-time migration only; never written to.
+        LegacyFilename        = fullfile(prefdir, 'NDI_Cloud_Profiles.json')
+
+        % LegacySecretsFilename - historical AES ciphertext file.
+        LegacySecretsFilename = fullfile(prefdir, 'NDI_Cloud_Secrets.json')
     end
 
     properties (Constant, Access = private)
@@ -124,6 +142,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         function loadFromDisk(obj)
         %LOADFROMDISK Read profiles and DefaultUID from JSON. CurrentUID
         %is intentionally not persisted (per-session state).
+            ndi.cloud.profile.migrateLegacyIfNeeded();
             if ~isfile(obj.Filename); return; end
             try
                 txt = fileread(obj.Filename);
@@ -144,6 +163,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function saveToDisk(obj)
         %SAVETODISK Write profiles and DefaultUID. CurrentUID is omitted.
+            ndi.cloud.profile.ensurePrefDir();
             S = struct('Profiles', obj.Profiles, ...
                        'DefaultUID', obj.DefaultUID);
             try
@@ -165,14 +185,46 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             end
         end
 
-        function idx = findIndex(obj, uid)
-        %FINDINDEX Return the index of the profile with the given UID.
-            mask = strcmp({obj.Profiles.UID}, uid);
-            idx = find(mask, 1, 'first');
-            if isempty(idx)
+        function idx = findIndex(obj, key)
+        %FINDINDEX Resolve KEY to a profile index.
+        %
+        %   KEY may be a UID (exact match), a Nickname (exact match), or an
+        %   Email (case-insensitive exact match), tried in that order. UID
+        %   wins outright; among nickname/email matches an ambiguous
+        %   result throws NDI:cloud:profile:ambiguousProfile rather than
+        %   silently picking one. No match throws
+        %   NDI:cloud:profile:unknownProfile.
+            if isempty(obj.Profiles)
                 error('NDI:cloud:profile:unknownProfile', ...
-                    'Unknown profile UID "%s".', uid);
+                    'Unknown profile "%s" (no profiles saved).', key);
             end
+            uidHit = find(strcmp({obj.Profiles.UID}, key), 1, 'first');
+            if ~isempty(uidHit)
+                idx = uidHit;
+                return;
+            end
+            nickHits = find(strcmp({obj.Profiles.Nickname}, key));
+            if isscalar(nickHits)
+                idx = nickHits;
+                return;
+            elseif numel(nickHits) > 1
+                cands = strjoin({obj.Profiles(nickHits).UID}, ', ');
+                error('NDI:cloud:profile:ambiguousProfile', ...
+                    'Nickname "%s" matches multiple profiles (%s); use the UID to disambiguate.', ...
+                    key, cands);
+            end
+            emailHits = find(strcmpi({obj.Profiles.Email}, key));
+            if isscalar(emailHits)
+                idx = emailHits;
+                return;
+            elseif numel(emailHits) > 1
+                cands = strjoin({obj.Profiles(emailHits).UID}, ', ');
+                error('NDI:cloud:profile:ambiguousProfile', ...
+                    'Email "%s" matches multiple profiles (%s); use the UID to disambiguate.', ...
+                    key, cands);
+            end
+            error('NDI:cloud:profile:unknownProfile', ...
+                'Unknown profile "%s" (not a UID, Nickname, or Email).', key);
         end
 
         function setSecretInternal(obj, key, value)
@@ -291,6 +343,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
         end
 
         function aesWriteSecret(filename, key, value)
+            ndi.cloud.profile.ensurePrefDir();
             keyBytes = ndi.cloud.profile.aesKeyBytes();
             keySpec  = javax.crypto.spec.SecretKeySpec(keyBytes, 'AES');
             cipher   = javax.crypto.Cipher.getInstance('AES/CBC/PKCS5Padding');
@@ -445,6 +498,69 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
     methods (Static)
 
+        function d = userPrefDir()
+        %NDI.CLOUD.PROFILE.USERPREFDIR Cross-language NDI preferences directory.
+        %
+        %   Returns fullfile(userHome, '.ndi'). Uses Java to resolve the
+        %   user's home directory so the same location resolves on every
+        %   platform. ndi-python already writes to ~/.ndi/ by default,
+        %   so MATLAB sharing this location lets the two clients see
+        %   each other's saved profiles without per-user configuration.
+            home = char(java.lang.System.getProperty('user.home'));
+            d = fullfile(home, '.ndi');
+        end
+
+        function ensurePrefDir()
+        %NDI.CLOUD.PROFILE.ENSUREPREFDIR Create the ~/.ndi directory on demand.
+            d = ndi.cloud.profile.userPrefDir();
+            if ~isfolder(d)
+                try
+                    mkdir(d);
+                catch ME
+                    warning('NDI:cloud:profile:mkdirFailed', ...
+                        'Could not create %s: %s', d, ME.message);
+                end
+            end
+        end
+
+        function migrateLegacyIfNeeded()
+        %NDI.CLOUD.PROFILE.MIGRATELEGACYIFNEEDED Copy any old prefdir profiles into ~/.ndi/.
+        %
+        %   One-time, best-effort. If the new location already has a
+        %   profiles file, this is a no-op -- the new location wins.
+        %   The legacy files are left in place (this is a copy, not a
+        %   move) so a downgrade to a pre-migration MATLAB keeps
+        %   working, at the cost of a stale set that will drift.
+            newProfiles = ndi.cloud.profile.Filename;
+            oldProfiles = ndi.cloud.profile.LegacyFilename;
+            if isfile(newProfiles)
+                return;
+            end
+            if ~isfile(oldProfiles)
+                return;
+            end
+            ndi.cloud.profile.ensurePrefDir();
+            try
+                copyfile(oldProfiles, newProfiles);
+            catch ME
+                warning('NDI:cloud:profile:migrateFailed', ...
+                    'Could not migrate %s to %s: %s', ...
+                    oldProfiles, newProfiles, ME.message);
+                return;
+            end
+            oldSecrets = ndi.cloud.profile.LegacySecretsFilename;
+            newSecrets = ndi.cloud.profile.SecretsFilename;
+            if isfile(oldSecrets) && ~isfile(newSecrets)
+                try
+                    copyfile(oldSecrets, newSecrets);
+                catch ME
+                    warning('NDI:cloud:profile:migrateFailed', ...
+                        'Could not migrate %s to %s: %s', ...
+                        oldSecrets, newSecrets, ME.message);
+                end
+            end
+        end
+
         function obj = getSingleton()
         %NDI.CLOUD.PROFILE.GETSINGLETON Return the shared profile manager.
             persistent objStore
@@ -490,22 +606,23 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             obj.saveToDisk();
         end
 
-        function remove(uid)
+        function remove(key)
         %NDI.CLOUD.PROFILE.REMOVE Delete a profile and its stored secret.
         %If the removed profile was the current and/or default, both
-        %selections are cleared.
+        %selections are cleared. KEY is UID | Nickname | Email (see findIndex).
             arguments
-                uid (1,:) char
+                key (1,:) char
             end
             obj = ndi.cloud.profile.getSingleton();
-            idx = obj.findIndex(uid);
-            secretKey = obj.Profiles(idx).PasswordSecret;
+            idx = obj.findIndex(key);
+            resolvedUid = obj.Profiles(idx).UID;
+            secretKey   = obj.Profiles(idx).PasswordSecret;
             obj.removeSecretInternal(secretKey);
             obj.Profiles(idx) = [];
-            if strcmp(obj.CurrentUID, uid)
+            if strcmp(obj.CurrentUID, resolvedUid)
                 obj.CurrentUID = '';
             end
-            if strcmp(obj.DefaultUID, uid)
+            if strcmp(obj.DefaultUID, resolvedUid)
                 obj.DefaultUID = '';
             end
             obj.saveToDisk();
@@ -517,18 +634,18 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             p = ndi.cloud.profile.profileForUID(obj, obj.CurrentUID);
         end
 
-        function setCurrent(uid)
+        function setCurrent(key)
         %NDI.CLOUD.PROFILE.SETCURRENT Set the current profile (session only).
         %
+        %   KEY is UID | Nickname | Email; the resolved UID is stored.
         %   The change does NOT touch disk. CurrentUID is per-session
         %   so two MATLAB instances can hold different active
         %   profiles concurrently.
             arguments
-                uid (1,:) char
+                key (1,:) char
             end
             obj = ndi.cloud.profile.getSingleton();
-            obj.findIndex(uid);   % validates existence
-            obj.CurrentUID = uid;
+            obj.CurrentUID = obj.Profiles(obj.findIndex(key)).UID;
         end
 
         function p = getDefault()
@@ -537,19 +654,19 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             p = ndi.cloud.profile.profileForUID(obj, obj.DefaultUID);
         end
 
-        function setDefault(uid)
-        %NDI.CLOUD.PROFILE.SETDEFAULT Persist UID as the default profile.
+        function setDefault(key)
+        %NDI.CLOUD.PROFILE.SETDEFAULT Persist the profile as the default.
         %
+        %   KEY is UID | Nickname | Email; the resolved UID is persisted.
         %   The constructor copies DefaultUID into CurrentUID at the
         %   start of every MATLAB session. Setting a default does not
         %   change CurrentUID for the current session; use setCurrent
         %   for that, or switchProfile to also reconfigure env vars.
             arguments
-                uid (1,:) char
+                key (1,:) char
             end
             obj = ndi.cloud.profile.getSingleton();
-            obj.findIndex(uid);   % validates existence
-            obj.DefaultUID = uid;
+            obj.DefaultUID = obj.Profiles(obj.findIndex(key)).UID;
             obj.saveToDisk();
         end
 
@@ -603,20 +720,21 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             obj.saveToDisk();
         end
 
-        function switchProfile(uid)
-        %NDI.CLOUD.PROFILE.SWITCHPROFILE Make UID active for this session.
+        function switchProfile(key)
+        %NDI.CLOUD.PROFILE.SWITCHPROFILE Make a saved profile active for this session.
         %
+        %   KEY is UID | Nickname | Email (see findIndex).
         %   Calls ndi.cloud.logout, sets the env vars
         %   CLOUD_API_ENVIRONMENT (= profile.Stage),
         %   NDI_CLOUD_USERNAME    (= profile.Email), and
         %   NDI_CLOUD_PASSWORD    (= getPassword(uid)),
-        %   then marks UID as the current profile (in memory only —
-        %   does not change DefaultUID).
+        %   then marks the resolved profile as the current profile
+        %   (in memory only — does not change DefaultUID).
             arguments
-                uid (1,:) char
+                key (1,:) char
             end
             obj  = ndi.cloud.profile.getSingleton();
-            idx  = obj.findIndex(uid);
+            idx  = obj.findIndex(key);
             prof = obj.Profiles(idx);
             try
                 ndi.cloud.logout();
@@ -628,7 +746,7 @@ classdef profile < matlab.mixin.CustomDisplay & handle
             setenv('CLOUD_API_ENVIRONMENT', prof.Stage);
             setenv('NDI_CLOUD_USERNAME',    prof.Email);
             setenv('NDI_CLOUD_PASSWORD',    obj.getSecretInternal(prof.PasswordSecret));
-            obj.CurrentUID = uid;
+            obj.CurrentUID = prof.UID;
         end
 
         function path = filename()
