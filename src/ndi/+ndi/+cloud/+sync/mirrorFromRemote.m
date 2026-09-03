@@ -30,6 +30,9 @@ function [success, errorMessage, report] = mirrorFromRemote(ndiDataset, syncOpti
 %           Fields:
 %           - downloaded_document_ids (string array)
 %           - deleted_local_document_ids (string array)
+%           - failed (string array) - NDI IDs that were requested from the
+%             remote but did not arrive. These are deliberately left out of
+%             the sync index so they stay outstanding.
 %
 %   See also:
 %       ndi.cloud.syncDataset
@@ -43,7 +46,13 @@ function [success, errorMessage, report] = mirrorFromRemote(ndiDataset, syncOpti
 
     success = true;
     errorMessage = '';
-    report = struct('downloaded_document_ids', string.empty, 'deleted_local_document_ids', string.empty);
+    report = struct('downloaded_document_ids', string.empty, ...
+        'deleted_local_document_ids', string.empty, ...
+        'failed', string.empty);
+
+    % Remote documents we asked for and did not get. Declared here so the
+    % index update in Phase 4 can see it whichever branch below ran.
+    notObtainedNdiIds = string.empty;
 
     try
         syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
@@ -103,8 +112,21 @@ function [success, errorMessage, report] = mirrorFromRemote(ndiDataset, syncOpti
                      report.downloaded_document_ids = string(docIds);
                 end
 
+                % What we asked for and did not receive.
+                notObtainedNdiIds = setdiff(ndiIdsToDownload, ...
+                    report.downloaded_document_ids, 'stable');
+                report.failed = string(notObtainedNdiIds);
+
+                if ~isempty(notObtainedNdiIds)
+                    warning('NDI:cloud:sync:DocumentsNotDownloaded', ...
+                        ['%d of %d documents were not downloaded. The local ' ...
+                         'dataset is not yet a mirror of the remote.'], ...
+                        numel(notObtainedNdiIds), numel(ndiIdsToDownload));
+                end
+
                 if syncOptions.Verbose
-                    fprintf('Completed download phase.\n');
+                    fprintf('Completed download phase: %d of %d documents.\n', ...
+                        numel(report.downloaded_document_ids), numel(ndiIdsToDownload));
                 end
             end
         elseif syncOptions.Verbose
@@ -145,10 +167,22 @@ function [success, errorMessage, report] = mirrorFromRemote(ndiDataset, syncOpti
             % Update local state after update. Remote was not change by this mode
             [~, finalLocalDocumentIds] = ndi.cloud.sync.internal.listLocalDocuments(ndiDataset);
 
+            % Record only the remote documents that actually arrived. This
+            % mode recomputes what to download from the *local* list, so its
+            % retry path survives either way -- but writing the full remote
+            % list here still makes remoteDocumentIdsLastSync a statement
+            % about documents that were never fetched, which twoWaySync
+            % later reads as settled remote state.
+            % A filter rather than setdiff: this keeps the list's exact
+            % order and shape and removes only the missing entries, where
+            % setdiff would also silently deduplicate it.
+            syncedRemoteNdiIds = initialRemoteDocumentIdMap.ndiId( ...
+                ~ismember(initialRemoteDocumentIdMap.ndiId, notObtainedNdiIds));
+
             ndi.cloud.sync.internal.index.updateSyncIndex(...
                 ndiDataset, cloudDatasetId, ...
                 "LocalDocumentIds", finalLocalDocumentIds, ...
-                "RemoteDocumentIds", initialRemoteDocumentIdMap.ndiId)
+                "RemoteDocumentIds", syncedRemoteNdiIds)
 
             if syncOptions.Verbose
                 fprintf('Sync index updated.\n');
