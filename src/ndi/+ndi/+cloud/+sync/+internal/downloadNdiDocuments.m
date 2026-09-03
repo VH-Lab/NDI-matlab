@@ -62,6 +62,19 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
         fprintf('Successfully retrieved metadata for %d documents.\n', numel(newNdiDocuments));
     end
 
+    % Only the completely-empty case was checked above. A *partial* result --
+    % ask for 50, get 47 -- passed through without a word, which is exactly
+    % what the silent pagination in issue #817 produces. Say so, or the
+    % caller reports a download that did not happen. An empty-string request
+    % means "download everything", so there is no requested count to compare.
+    isDownloadAllRequest = isscalar(cloudDocumentIds) && cloudDocumentIds == "";
+    if ~isDownloadAllRequest && numel(newNdiDocuments) < numel(cloudDocumentIds)
+        warning('NDI:cloud:sync:PartialDownload', ...
+            ['Requested %d documents from the cloud but received %d. ' ...
+             'The remaining documents were not downloaded.'], ...
+            numel(cloudDocumentIds), numel(newNdiDocuments));
+    end
+
     % 2. Handle associated data files
     if syncOptions.SyncFiles
         if syncOptions.Verbose
