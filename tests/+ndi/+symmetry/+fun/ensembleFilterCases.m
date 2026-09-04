@@ -47,10 +47,6 @@ classdef ensembleFilterCases
     %   though, so the battery encodes activity as a cell array of rendered
     %   row sequences -- exactly the pattern parseText uses for inputRendered.
     %
-    %   /!\ AUTHORED WITHOUT A MATLAB RUNTIME -- the expected values are
-    %   derived by reading src/ndi/+ndi/+fun/+ensemble/filter.m branch by
-    %   branch, not by executing MATLAB. VALIDATE BEFORE RELYING ON IT.
-    %
     %   See also: ndi.symmetry.fun.cases,
     %     ndi.symmetry.makeArtifacts.fun.ensembleFilter,
     %     ndi.symmetry.readArtifacts.fun.ensembleFilter

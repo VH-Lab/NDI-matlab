@@ -29,7 +29,6 @@ classdef ensembleFilter < matlab.unittest.TestCase
     %   match, and pinning them would make this a translation table instead of
     %   a behaviour check. Only the FACT of an error is symmetric.
     %
-    %   /!\ AUTHORED WITHOUT A MATLAB RUNTIME -- VALIDATE BEFORE RELYING ON IT.
     %   Run the matching makeArtifacts/fun test first to populate the artifact.
     %
     %   See also: ndi.symmetry.fun.ensembleFilterCases,
