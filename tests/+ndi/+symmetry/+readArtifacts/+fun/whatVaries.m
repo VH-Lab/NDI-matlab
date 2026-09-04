@@ -83,10 +83,22 @@ classdef whatVaries < matlab.unittest.TestCase
         end
 
         function testKnownDivergencesAreStillReal(testCase)
-            % Reports only -- never fails. A knownDivergences entry that now
-            % agrees across the two languages means the upstream fix has landed
-            % and the entry (plus the matching divergenceExpected flag in
-            % ndi.symmetry.fun.cases.whatVariesDefs) should be removed.
+            % FAILS on a stale entry. A knownDivergences entry that now agrees
+            % across the two languages means the upstream fix has landed, and
+            % the entry (plus the matching divergenceExpected flag in
+            % ndi.symmetry.fun.cases.whatVariesDefs) must be removed so the
+            % case becomes a hard assertion again.
+            %
+            % This used to report and never fail, which FUN_CASES_SCHEMA.md
+            % raised as an open question: a stale entry then landed as a line
+            % in the CI log rather than a red build, which is the same failure
+            % mode as a silently skipped test -- a suite going quietly green
+            % over the bug it exists to watch. Settled in favour of failing;
+            % the Python twin (audit_known_divergences) does the same.
+            %
+            % A case missing from either artifact still only reports: that is
+            % list drift, which the key-set check in testMatlabPythonSymmetry
+            % already fails on, and failing twice for one cause is noise.
             mlFile = ndi.symmetry.readArtifacts.fun.whatVaries.artifactFile('matlabArtifacts');
             pyFile = ndi.symmetry.readArtifacts.fun.whatVaries.artifactFile('pythonArtifacts');
             testCase.assumeTrue(isfile(mlFile) && isfile(pyFile), ...
@@ -98,6 +110,7 @@ classdef whatVaries < matlab.unittest.TestCase
                 ndi.symmetry.fun.cases.loadCases(pyFile));
 
             known = ndi.symmetry.fun.cases.knownDivergences();
+            stale = {};
             for i = 1:numel(known)
                 key = known{i};
                 if ~ml.isKey(key) || ~py.isKey(key)
@@ -108,6 +121,7 @@ classdef whatVaries < matlab.unittest.TestCase
                 sigML = ndi.symmetry.fun.cases.whatVariesSignature(ml(key));
                 sigPY = ndi.symmetry.fun.cases.whatVariesSignature(py(key));
                 if strcmp(sigML, sigPY)
+                    stale{end+1} = key; %#ok<AGROW>
                     fprintf(['knownDivergences entry ''%s'' now AGREES across languages. ' ...
                         'Remove it from ndi.symmetry.fun.cases.knownDivergences and clear ' ...
                         'divergenceExpected in whatVariesDefs so the case is asserted again.\n'], key);
@@ -116,6 +130,13 @@ classdef whatVaries < matlab.unittest.TestCase
                         key, sigML, sigPY);
                 end
             end
+
+            testCase.verifyEmpty(stale, sprintf( ...
+                ['%d knownDivergences entry/entries now agree across languages: %s. ' ...
+                 'The upstream fix has landed -- remove them from ' ...
+                 'ndi.symmetry.fun.cases.knownDivergences and clear the matching ' ...
+                 'divergenceExpected flags so the cases are asserted again.'], ...
+                numel(stale), strjoin(stale, ', ')));
         end
 
     end

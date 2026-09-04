@@ -60,9 +60,20 @@ classdef  matlabdumbjsondb < ndi.database
             ndi_document_obj = ndi.document(doc);
         end % do_read
 
-        function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id, versions)
-            if nargin<3
-                versions = [];
+        function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id, varargin)
+            % VERSIONS remains an optional positional argument, followed by
+            % name/value options (OnMissing). They are separated by hand
+            % rather than with an arguments block: with VERSIONS declared
+            % positionally, a trailing 'OnMissing' pair could otherwise be
+            % taken for the VERSIONS value. An odd argument count means
+            % VERSIONS was supplied.
+            %
+            % dumbjsondb's remove() does not report whether the document was
+            % present, so OnMissing is accepted but this backend always
+            % behaves as 'ignore'.
+            versions = [];
+            if mod(numel(varargin),2)==1
+                versions = varargin{1};
             end
             ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj.db.remove(ndi_document_id, versions);
 

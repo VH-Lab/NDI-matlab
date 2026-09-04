@@ -11,10 +11,10 @@ classdef ingestionAxonNDR < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'session', 'ingestionAxonNDR', 'testIngestionAxonNDRArtifacts');
 
             % If the directory does not exist, we cannot run the read tests.
-            % Return early so the test passes silently instead of showing up as "Incomplete/Filtered"
+            % A missing artifact is an assumption failure, not a pass: see
+            % Waltham-Data-Science/NDI-python#77.
             if ~isfolder(artifactDir)
-                disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
+                testCase.assumeFail(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
             end
 
             % Load the NDI session
@@ -23,7 +23,7 @@ classdef ingestionAxonNDR < matlab.unittest.TestCase
             % Verify session summary
             summaryJsonFile = fullfile(artifactDir, 'sessionSummary.json');
             if ~isfile(summaryJsonFile)
-                disp(['sessionSummary.json file not found in ' SourceType ' artifact directory. Skipping summary comparison.']);
+                testCase.assumeFail(['sessionSummary.json file not found in ' SourceType ' artifact directory. Skipping summary comparison.']);
             else
                 fid = fopen(summaryJsonFile, 'r');
                 rawJson = fread(fid, inf, '*char')';
@@ -41,8 +41,7 @@ classdef ingestionAxonNDR < matlab.unittest.TestCase
             % Read expected documents
             jsonDocsDir = fullfile(artifactDir, 'jsonDocuments');
             if ~isfolder(jsonDocsDir)
-                disp(['jsonDocuments directory not found in ', SourceType, '. Skipping.']);
-                return;
+                testCase.assumeFail(['jsonDocuments directory not found in ', SourceType, '. Skipping.']);
             end
 
             jsonFiles = dir(fullfile(jsonDocsDir, '*.json'));

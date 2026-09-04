@@ -9,8 +9,7 @@ classdef preferences < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'util', 'preferences', 'testPreferences');
 
             if ~isfolder(artifactDir)
-                disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
+                testCase.assumeFail(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
             end
 
             prefsFile = fullfile(artifactDir, 'NDI_Preferences.json');

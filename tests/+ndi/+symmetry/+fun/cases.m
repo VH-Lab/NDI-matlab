@@ -801,7 +801,9 @@ classdef cases
             defs(k).expectedVariesValues = {'[0, 90]'};
             defs(k).expectedConstant = {'color'};
             defs(k).expectedConstantValues = {'[''r'', ''g'', ''b'']'};
-            defs(k).divergenceExpected = true;
+            % Was true on the prediction that MATLAB errors on a cell-valued
+            % '=='. Measured otherwise -- see knownDivergences.
+            defs(k).divergenceExpected = false;
             defs(k).mirrors = 'testCellValuedConstantParameter';
 
             k = k + 1;
@@ -863,12 +865,16 @@ classdef cases
             defs(k).name = 'allNaNParameter';
             defs(k).shape = 'cellOfParameterStructs';
             defs(k).expectedStatus = 'ok';
-            defs(k).expectedVaries = {'angle'};
-            defs(k).expectedVariesValues = {'[NaN]'};
-            defs(k).expectedConstant = {'contrast'};
-            defs(k).expectedConstantValues = {'1'};
-            defs(k).divergenceExpected = true;
-            defs(k).mirrors = 'none - added to pin the eqlen(NaN,NaN) divergence';
+            defs(k).expectedVaries = {};
+            defs(k).expectedVariesValues = {};
+            defs(k).expectedConstant = {'angle', 'contrast'};
+            defs(k).expectedConstantValues = {'NaN', '1'};
+            % Was the eqlen(NaN,NaN) divergence probe, expecting 'angle' to be
+            % reported VARYING over the single value [NaN]. local_varyingFields
+            % now compares with isequaln, so an all-NaN parameter is CONSTANT
+            % and both languages agree.
+            defs(k).divergenceExpected = false;
+            defs(k).mirrors = 'testAllNaNParameterIsConstant';
 
             k = k + 1;
             defs(k).name = 'badInputNumeric';
@@ -895,26 +901,37 @@ classdef cases
 
         function names = knownDivergences()
             % KNOWNDIVERGENCES - whatVaries cases where MATLAB main and the
-            % Python port are believed to disagree TODAY.
+            % Python port are MEASURED to disagree TODAY.
             %
-            %   Both entries trace to one line: local_varyingFields in
-            %   src/ndi/+ndi/+fun/+stimulus/whatVaries.m compares with
-            %   vlt.data.eqlen (which bottoms out in a bare '=='), while
-            %   local_uniqueValues in the same file already uses isequaln and
-            %   the Python port uses isequaln semantics throughout.
+            %   The list is EMPTY, and that is the goal state: every case in the
+            %   battery is a hard assertion in both languages. Both auditors
+            %   iterate this list, so an empty one simply asserts nothing extra.
             %
-            %     cellValuedConstantParameter - '==' is undefined for two cell
-            %       arrays, so MATLAB is expected to ERROR where Python succeeds.
-            %     allNaNParameter - eqlen(NaN,NaN) is false, so MATLAB is
-            %       expected to report an all-NaN parameter as VARYING where
-            %       Python reports it CONSTANT.
+            %   Both original entries are gone, for opposite reasons, and the
+            %   difference is worth keeping:
             %
-            %   Both are SOURCE-READ predictions, not measurements. When this
-            %   suite is first run on a real MATLAB the readArtifacts test prints
-            %   whether each divergence is real; if one turns out to agree after
-            %   all, delete it here AND clear divergenceExpected in
-            %   whatVariesDefs so the case becomes a hard assertion again.
-            names = {'cellValuedConstantParameter', 'allNaNParameter'};
+            %     cellValuedConstantParameter - never diverged. It was listed on
+            %       the source-read prediction that '==' is undefined for two
+            %       cell arrays and MATLAB would ERROR. The first run on a real
+            %       MATLAB refuted it: eqlen({'r','g','b'},{'r','g','b'}) is
+            %       true and the signature matched Python's exactly.
+            %
+            %     allNaNParameter - really did diverge, and was FIXED.
+            %       local_varyingFields compared with vlt.data.eqlen, so
+            %       eqlen(NaN,NaN) being false made an all-NaN parameter report
+            %       as VARYING -- over one distinct value, since
+            %       local_uniqueValues in the same file already used isequaln.
+            %       That comparison is isequaln now, so the parameter is
+            %       CONSTANT and both languages agree.
+            %
+            %   To ADD an entry, record why the divergence is real and set
+            %   divergenceExpected in whatVariesDefs to match. A listed case
+            %   that starts agreeing means the fix landed: delete it here AND
+            %   clear that flag, so the case becomes a hard assertion again.
+            %   readArtifacts/fun/whatVaries.testKnownDivergencesAreStillReal
+            %   FAILS on a stale entry rather than printing, so a list that has
+            %   gone out of date cannot pass unnoticed.
+            names = {};
         end % knownDivergences
 
         function results = runWhatVariesCases()
