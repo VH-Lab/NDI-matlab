@@ -19,6 +19,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
 
     properties
         session
+        subjectID
         pyr
         cells
     end
@@ -33,6 +34,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
                 'subject.local_identifier', 'ingest@vhlab', ...
                 'base.session_id', S.id());
             S.database_add(sub);
+            testCase.subjectID = sub.id();
             gl = ndi.fun.doc.gene.makeGeneList(S, {'E1','E2'}, {'a','b'});
             testCase.pyr = ndi.fun.doc.gene.makePyramid(S, [1000;1005], [2000;2003], ...
                 [0;1], [2;3], gl, 'subjectID', sub.id(), ...
@@ -71,8 +73,14 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % needs ingesting", and a pyramid with no cells looks exactly
             % like one with cells unless the list distinguishes them.
             gl = ndi.fun.doc.gene.makeGeneList(testCase.session, {'E9'}, {'z'});
+            % The subject is REAL here. makePyramid refuses an empty one --
+            % the pyramid schema declares subject_id mustbenotempty -- so
+            % passing '' never made a bare pyramid, it just errored. What
+            % this test is about is a pyramid with no CELLS, which is a
+            % different kind of bare.
             ndi.fun.doc.gene.makePyramid(testCase.session, 1, 1, 0, 1, gl, ...
-                'subjectID', '', 'binSizes', 1, 'grid', 1, 'label', 'bare');
+                'subjectID', testCase.subjectID, ...
+                'binSizes', 1, 'grid', 1, 'label', 'bare');
             rows = ndi.gui.app.GeneIngest.pyramidRows(testCase.session);
             bare = rows(strcmp({rows.label}, 'bare'));
             testCase.verifyEqual(bare.nCells, 0);
