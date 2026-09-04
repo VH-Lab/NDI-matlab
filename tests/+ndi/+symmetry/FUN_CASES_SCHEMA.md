@@ -630,3 +630,127 @@ machinery itself stays, for the next trap: predict, defer, then settle.
 * **Invalid or duplicate `VariableName`s.** Whether `cell2table` errors or
   mangles a name that is not a valid MATLAB identifier is version-dependent,
   and pandas accepts anything. Pinning it without a runtime would be a guess.
+
+## 10. `ensembleFilterCases.json`
+
+Exercises `ndi.fun.ensemble.filter` (Python: `ndi.fun.ensemble.filter`).
+
+### Why this battery lives in its own helper class
+
+Same reason as parseText. `ndi.symmetry.fun.cases` and
+`ndi.symmetry.fun.parseTextCases` were already 1238 + 465 lines, and folding a
+third battery in would give one giant file to reason about. The battery lives
+in `ndi.symmetry.fun.ensembleFilterCases` /
+`tests/symmetry/fun/ensemble_filter_cases.py` and **reuses** the canonical
+value grammar (`render` / `renderSequence`) and the artifact I/O (`writeCases`
+/ `loadCases` / `indexByName` / `asCellStr` / `asChar` / `errorId` / `asRow`)
+from `cases`. Only the case list is new.
+
+### Why `ensemble.filter` is the `+ensemble` item that gets symmetry coverage
+
+The `+ensemble` package has nine functions, and eight of them (`allElement`,
+`allNTrodes`, `create`, `findExisting`, `load`, `neuronQuality`, `plot`,
+`read`) need a session, a clock, epoch resolution, or a display. A JSON
+artifact cannot compare those without turning the battery into a
+fixture-management exercise -- the port's PR body already noted this and
+deferred the decision to a separate discussion.
+
+`filter` is the exception: it is pure and in-memory, a subset of the neurons
+in an ensemble structure with no database access. That is where a cross-language
+comparison fits. And each of its rules -- includes are a UNION, excludes
+always win, indices are 1-based on both sides, all-zero trailing columns are
+trimmed **except when nothing is kept** -- is easy to invert in a port.
+
+### Case object
+
+| field | type | compared? | meaning |
+|---|---|---|---|
+| `name` | string | join key | stable ASCII case id |
+| `note` | string | no | which rule of `filter` the case pins |
+| `mirrors` | string | no | which `ensembleFilterTest` method(s) this case mirrors |
+| `status` | string | **yes** | `"ok"` or `"error"` |
+| `identifier` | string | no | error id / exception class; humans only |
+| `message` | string | no | error text; humans only |
+| `neuronIds` | string list | **yes** | input ensemble element-id list |
+| `neuronNames` | string list | **yes** | input ensemble neuron-name list |
+| `activity` | string list | **yes** | input activity **row by row**; each entry is `renderSequence` of one row |
+| `includeNames` | string list | **yes** | the `IncludeNames` option, `[]` when unset |
+| `excludeNames` | string list | **yes** | the `ExcludeNames` option |
+| `includeIndex` | int list | **yes** | the `IncludeIndex` option, 1-based |
+| `excludeIndex` | int list | **yes** | the `ExcludeIndex` option, 1-based |
+| `includeIds` | string list | **yes** | the `IncludeIds` option |
+| `excludeIds` | string list | **yes** | the `ExcludeIds` option |
+| `keepLogical` | bool list | **yes** | the `Keep` option when it is a length-N mask |
+| `keepIndex` | int list | **yes** | the `Keep` option when it is a 1-based index vector |
+| `neuronIdsOut` | string list | **yes** | ids surviving the filter |
+| `neuronNamesOut` | string list | **yes** | names surviving the filter |
+| `activityOut` | string list | **yes** | surviving activity, row by row |
+| `shapeOut` | int list (length 2) | **yes** | `[rows, cols]` of the surviving activity |
+| `numNeuronsOut` | int | **yes** | `info.num_neurons` after filtering |
+
+Only one of `keepLogical` and `keepIndex` is non-empty per case: they both
+feed the single `Keep` name/value argument, and having both populated would
+be ambiguous.
+
+`identifier` and `message` are deliberately **never compared**, per section 4.
+
+### Why activity is encoded row by row
+
+The activity matrix is 2-D. Section 3 rules a 2-D matrix out of the canonical
+grammar because MATLAB's column-major and Python's row-major iteration render
+one the wrong way round. Rows are 1-D though, so the battery encodes activity
+as a list of rendered row sequences -- exactly the pattern `parseText` uses
+for `inputRendered`. `activity`, `activityOut` and `expectedActivity` all
+follow the same shape.
+
+### Why shape is in the signature
+
+`shapeOut` is compared as well as `activityOut` because the
+`nothingKeptPreservesWidth` case is 0-by-3 in both languages **by design**.
+MATLAB's `filter` has an `isempty` guard on its trim-columns helper that
+returns early when the row count is zero, so the 0-by-Smax width survives.
+The Python port reproduces the asymmetry deliberately: a filter that kept
+nothing must not silently redefine the ensemble's temporal width. A row-only
+comparison could not tell 0-by-3 from 0-by-1, so the two ports could drift
+into disagreement while the (empty) row lists still happened to agree; the
+shape field prevents that.
+
+### The 15 cases
+
+| # | name | mirrors `ensembleFilterTest` method |
+|---|---|---|
+| 1 | `noCriteriaKeepsAll` | `testNoOptionsKeepsAll` |
+| 2 | `includeNamesBasic` | `testIncludeNames` |
+| 3 | `excludeNamesBasic` | `testExcludeNames` |
+| 4 | `includeIndexBasic` | `testIncludeIndex` |
+| 5 | `excludeIndexBasic` | `testExcludeIndex` |
+| 6 | `includeIdsBasic` | `testIncludeIds` |
+| 7 | `excludeIdsBasic` | `testExcludeIds` |
+| 8 | `keepLogicalMask` | `testKeepLogicalMask` |
+| 9 | `keepIndexVectorOrderFollowsEnsemble` | `testKeepIndexVector` — pins that the argument order is not the output order |
+| 10 | `includesAreAUnion` | `testIncludeUnionThenExclude` |
+| 11 | `excludeBeatsIncludeOnSameNeuron` | `testIncludeUnionThenExclude` |
+| 12 | `trailingColumnsTrimmedToOne` | `testIncludeNames` — pins that trimming keeps at least one column |
+| 13 | `nothingKeptPreservesWidth` | *none* — added to pin the isempty-guard asymmetry |
+| 14 | `errorBadIndex` | `testBadIndexErrors` |
+| 15 | `errorBadKeepMask` | `testBadKeepMaskErrors` |
+
+The exact inputs are in `ndi.symmetry.fun.ensembleFilterCases.definitions`;
+the Python side carries the same table. `inputSignature` is what keeps the two
+honest — every option field and the ensemble itself are compared, so a green
+output comparison cannot be two different batteries agreeing with themselves.
+
+### No deferred expectations
+
+Every rule of `ensemble.filter` is stated in the MATLAB help, so there is no
+source-read prediction that needs the `expectationDeferred` cycle
+(§9's traps). If one is added later, mirror the parseText battery's flag.
+
+### One thing this battery does not cover
+
+* **Sparse activity input.** The MATLAB unit test builds its fixture with
+  `sparse(4, 3)` because that is what `read` returns, but this battery uses
+  dense activity throughout to keep the rendering symmetric. Both languages'
+  `filter` implementations accept either, and the row-selection + trim logic
+  is the same for sparse and dense inputs, so this is not a coverage gap
+  worth solving with a duplicate battery.
