@@ -9,8 +9,7 @@ classdef rhdSeriesNavigator < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'file', 'rhdSeriesNavigator', 'testRhdSeriesNavigator');
 
             if ~isfolder(artifactDir)
-                disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
+                testCase.assumeFail(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
             end
 
             navJsonFile = fullfile(artifactDir, 'rhd_series_navigator.json');

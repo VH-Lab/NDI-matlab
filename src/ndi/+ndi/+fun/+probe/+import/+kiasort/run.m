@@ -27,7 +27,13 @@ function outputFolder = run(S, probe, options)
 % umap-learn installed; otherwise the sort errors in pythonUMAP.
 %
 % The exported binary is expected at
-%       [S.path]/[kiasort_dir]/[probe_elementstring]/[binaryFileName]
+%       [S.path]/[kiasort_dir]/[probe_directory]/[binaryFileName]
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 % and KIASORT writes its output into the [subdir] subfolder (default
 % 'kiasort_output'), which is where NDI.FUN.PROBE.IMPORT.KIASORT.PROBE looks for it.
 %
@@ -82,9 +88,7 @@ function outputFolder = run(S, probe, options)
     % Fail fast if a non-toolbox pca.m is shadowing the Statistics Toolbox pca.
     i_checkPca();
 
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
-    probedir = fullfile(S.path, options.kiasort_dir, elestr);
+    [probedir, elestr] = ndi.fun.file.elementDirectory(fullfile(S.path, options.kiasort_dir), probe);
     binaryfile = fullfile(probedir, options.binaryFileName);
     if ~isfile(binaryfile),
         error(['Exported binary not found: ' binaryfile '. Export the probe first ' ...

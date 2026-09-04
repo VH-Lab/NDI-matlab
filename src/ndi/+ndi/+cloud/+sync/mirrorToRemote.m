@@ -100,11 +100,21 @@ function [success, errorMessage, report] = mirrorToRemote(ndiDataset, syncOption
             else
                 [b, uploadReport] = ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, documentsToUpload);
                 report.uploaded_documents_report = uploadReport;
-                % Try to extract IDs from the report if available, or just use intended IDs if successful
-                if isfield(uploadReport, 'uploaded_document_ids')
-                     report.uploaded_document_ids = string(uploadReport.uploaded_document_ids);
-                else
-                     report.uploaded_document_ids = string(ndiIdsToUpload);
+                % Derive the uploaded IDs from the manifest entries that
+                % actually succeeded -- never from the intended list. uploadReport
+                % has no 'uploaded_document_ids' field, so the old fallback
+                % recorded every intended ID as uploaded even on total failure.
+                report.uploaded_document_ids = ...
+                    ndi.cloud.sync.internal.uploadedDocumentIds(uploadReport);
+
+                % Honour the success flag: if any document failed to upload, do
+                % not proceed to delete remote docs or advance the sync index
+                % (Phase 4) as though the mirror succeeded.
+                if ~b
+                    error('NDI:Cloud:Sync:UploadIncomplete', ...
+                        ['Upload to remote did not fully succeed: %d of %d ' ...
+                         'document(s) uploaded.'], ...
+                        numel(report.uploaded_document_ids), numel(ndiIdsToUpload));
                 end
 
                 if syncOptions.Verbose

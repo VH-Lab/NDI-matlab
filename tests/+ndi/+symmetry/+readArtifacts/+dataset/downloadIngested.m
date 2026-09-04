@@ -12,15 +12,13 @@ classdef downloadIngested < matlab.unittest.TestCase
 
             % If the directory does not exist, skip gracefully
             if ~isfolder(artifactDir)
-                disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
+                testCase.assumeFail(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
             end
 
             % Load the dataset summary JSON
             summaryJsonFile = fullfile(artifactDir, 'datasetSummary.json');
             if ~isfile(summaryJsonFile)
-                disp(['datasetSummary.json file not found in ' SourceType ' artifact directory. Skipping.']);
-                return;
+                testCase.assumeFail(['datasetSummary.json file not found in ' SourceType ' artifact directory. Skipping.']);
             end
 
             fid = fopen(summaryJsonFile, 'r');

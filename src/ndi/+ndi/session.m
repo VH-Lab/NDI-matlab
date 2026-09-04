@@ -121,14 +121,25 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                     daqsys = {daqsys};
                 end
                 docs = ndi_session_obj.database_search(daqsys{1}.searchquery());
+                % Collect the daqsystem documents together with the documents
+                % they depend on, then remove them in a SINGLE database_rm
+                % call. Removing a dependency on its own first cascades through
+                % database_rm's dependent-document search and takes the
+                % daqsystem document with it, so the follow-up removal of that
+                % same document was a second delete of an id that was already
+                % gone. That used to be swallowed inside did.database; it now
+                % raises DID:SQLITEDB:NO_SUCH_DOC. One call also lets
+                % database_rm de-duplicate the whole set.
+                docs_to_remove = docs(:)';
                 for k=1:numel(docs) % should be 1 only, but keep deleting even if not
                     for i=1:numel(docs{k}.document_properties.depends_on)
                         dochere = ndi_session_obj.database_search(...
                             ndi.query('base.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
-                        ndi_session_obj.database_rm(dochere);
+                        docs_to_remove = cat(2, docs_to_remove, dochere(:)');
                     end
-                    ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
                 end
+                % database_rm can process single or a cell list of ndi_document_obj(s)
+                ndi_session_obj.database_rm(docs_to_remove);
             else
                 error(['No daqsystem named ' dev.name ' found.']);
             end
@@ -266,7 +277,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.database.add(document);
         end % database_add()
 
-        function ndi_session_obj = database_rm(ndi_session_obj, doc_unique_id, varargin)
+        function ndi_session_obj = database_rm(ndi_session_obj, doc_unique_id, options)
             % DATABASE_RM - Remove an ndi.document with a given document ID from an ndi.session object
             %
             % NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
@@ -281,11 +292,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % This function also takes parameters as name/value pairs that modify its behavior:
             % Parameter (default)        | Description
             % --------------------------------------------------------------------------------
-            % ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
+            % ErrIfNotFound (false)      | Produce an error if an ID to be deleted is not found.
+            %
+            % The default is deliberately forgiving: the point of a removal is
+            % that the document ends up gone, so an id someone else already
+            % deleted is treated as success. Pass ErrIfNotFound=true when the
+            % caller needs to know it asked for something that was not there.
             %
             % See also: DATABASE_ADD, ndi.session
-            ErrIfNotFound = 0;
-            vlt.data.assign(varargin{:});
+
+            % Declared rather than read out of varargin with vlt.data.assign:
+            % that assigns dynamically, so static analysis saw ErrIfNotFound as
+            % the constant it was initialised to and called the 'error' branch
+            % below unreachable. This also matches ndi.dataset/database_rm,
+            % which already declares the same option and forwards it here.
+            arguments
+                ndi_session_obj (1,1) ndi.session
+                doc_unique_id
+                options.ErrIfNotFound (1,1) logical = false
+            end
+
+            if options.ErrIfNotFound
+                onMissing = 'error';
+            else
+                onMissing = 'ignore';
+            end
 
             if isempty(doc_unique_id)
                 return;
@@ -302,10 +333,24 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 if numel(dependent_docs)>1
                     warning('NDISESSION:deletingDependents',['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
                 end
-                for i=1:numel(dependent_docs)
-                    ndi_session_obj.database.remove(dependent_docs{i});
+                % Remove each document id exactly once, dependents first. A
+                % document can appear both in doc_list and among the dependents
+                % found for another doc in doc_list -- removing a daqsystem's
+                % daqreader also finds the daqsystem -- and doc_list itself can
+                % repeat an id. did.database/remove_docs used to swallow every
+                % failure from its removal loop; it now honours OnMissing
+                % (default 'error'), so deleting an id that is already gone
+                % raises DID:SQLITEDB:NO_SUCH_DOC instead of passing silently.
+                remove_list = cat(2, dependent_docs(:)', doc_list(:)');
+                removed_ids = {};
+                for i=1:numel(remove_list)
+                    id_here = remove_list{i}.id();
+                    if any(strcmp(id_here, removed_ids))
+                        continue;
+                    end
+                    removed_ids{end+1} = id_here; %#ok<AGROW>
+                    ndi_session_obj.database.remove(remove_list{i}, 'OnMissing', onMissing);
                 end
-                ndi_session_obj.database.remove(doc_list);
             else
                 error(['Did not think we could get here..notify steve.']);
             end
@@ -810,11 +855,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             %
             % B = UPDATE_SYNCGRAPH_IN_DB(NDI_SESSION_OBJ)
             %
-            % Removes the ndi.time.syncgraph (and any SYNCRULE documents) from the database in
-            % NDI_SESSION_OBJ and adds it back. Useful for updating the SYNCGRAPH when
-            % SYNCRULEs are added or removed.
-
-            b = 1;
+            % Removes the ndi.time.syncgraph document from the database in NDI_SESSION_OBJ and
+            % adds a rebuilt one. Documents for SYNCRULEs that survive the update are left in
+            % place; only the SYNCRULEs that are actually gone are removed, and only the
+            % SYNCRULEs that are actually new are added. Useful for updating the SYNCGRAPH
+            % when SYNCRULEs are added or removed.
 
             [syncgraph_doc,syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(ndi_session_obj, ...
                 ndi_session_obj.syncgraph.id());
@@ -829,23 +874,53 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
             newdocs = ndi_session_obj.syncgraph.newdocument(); % generate new documents
 
-            % now, delete old docs and add new ones
+            % The syncgraph is a brand new object, so its document carries a brand new id and
+            % can be deleted and rewritten freely. The syncrules are not: addrule stores the
+            % rule object it is handed without cloning it, and ndi.time.syncrule/newdocument
+            % uses that object's id. Deleting every syncrule document and re-adding documents
+            % built from the surviving rules would therefore re-use ids that DID retires the
+            % moment their documents leave the last branch, and the add would be refused.
+            % So compare what is stored against what the rebuilt syncgraph holds, and touch
+            % only the difference.
 
-            gooddelete = 0;
+            ruleIds = cell(1,numel(ndi_session_obj.syncgraph.rules));
+            for i=1:numel(ndi_session_obj.syncgraph.rules)
+                ruleIds{i} = ndi_session_obj.syncgraph.rules{i}.id();
+            end
+
+            storedRuleIds = cell(1,numel(syncrule_doc));
+            for i=1:numel(syncrule_doc)
+                storedRuleIds{i} = syncrule_doc{i}.id();
+            end
+
+            staleRuleDocs = {}; % stored rules that the rebuilt syncgraph no longer has
+            for i=1:numel(syncrule_doc)
+                if ~any(strcmp(storedRuleIds{i},ruleIds))
+                    staleRuleDocs{end+1} = syncrule_doc{i}; %#ok<AGROW>
+                end
+            end
+
+            % newdocument() returns the syncgraph document first and then one document per
+            % rule, each carrying that rule's id. A rule whose document is already stored
+            % keeps it; its id is still referenced by the rebuilt syncgraph document.
+            docsToAdd = newdocs(1);
+            for i=2:numel(newdocs)
+                if ~any(strcmp(newdocs{i}.id(),storedRuleIds))
+                    docsToAdd{end+1} = newdocs{i}; %#ok<AGROW>
+                end
+            end
+
+            % Delete before adding: removing a stale syncrule document also removes whatever
+            % depends on it, which would include the syncgraph document we are about to add.
+
             if ~isempty(syncgraph_doc)
                 ndi_session_obj.database_rm(syncgraph_doc);
             end
-            if ~isempty(syncrule_doc)
-                ndi_session_obj.database_rm(syncrule_doc);
+            if ~isempty(staleRuleDocs)
+                ndi_session_obj.database_rm(staleRuleDocs);
             end
-            gooddelete = 1;
 
-            % now add new docs
-            ndi_session_obj.database_add(newdocs);
-
-            if ~gooddelete
-                error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
-            end
+            ndi_session_obj.database_add(docsToAdd);
         end % update_syncgraph_in_db()
 
         function autoclose_listener_callback(ndi_session_obj, src, event)

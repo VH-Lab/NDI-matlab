@@ -1,18 +1,17 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/simple_calc.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/simple_calc_schema.json",
+		"definition":						"$NDIDOCUMENTPATH\/apps\/calculators\/simple_calc.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/simple_calc_v2_schema.json",
 		"class_name":						"simple_calc",
 		"property_list_name":					"simple_calc",
-		"class_version":					1,
+		"class_version":					2,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/app.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/calculator.json" }
 		]
 	},
 	"depends_on": [
 		{	"name": "document_id",
-			"value": 0 
+			"value": "" 
 		}
 	],
 	"simple_calc": {

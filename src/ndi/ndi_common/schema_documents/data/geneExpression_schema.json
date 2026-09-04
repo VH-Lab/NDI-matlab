@@ -1,0 +1,34 @@
+{
+	"classname": "geneExpression",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [],
+	"file": [],
+	"geneExpression": [
+		{
+			"name": "assay",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The assay that produced the counts (e.g. 'Stereo-seq', 'Visium', '10x Chromium 3-prime')."
+		},
+		{
+			"name": "count_type",
+			"type": "string",
+			"default_value": "raw",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "What the stored values are: 'raw' for integer UMI or read counts, 'normalized', or 'log-normalized'. Analyses that assume raw counts must check this."
+		},
+		{
+			"name": "count_units",
+			"type": "string",
+			"default_value": "UMI",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The unit of one count: 'UMI', 'read', or 'arbitrary' for normalized values."
+		}
+	]
+}

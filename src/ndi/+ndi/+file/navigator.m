@@ -217,7 +217,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             if ndi.file.navigator.isingested(epochfiles)
                 d = ndi_file_navigator_obj.getepochingesteddoc(epochfiles);
-                eval(['epochprobemap = ' ndi_file_navigator_obj.epochprobemap_class '(d.document_properties.epochfiles_ingested.epochprobemap);']);
+                % Same untrusted-class-name check as the non-ingested branch
+                % below, which reaches ndi.epoch.epochset.param/getepochprobemap.
+                probemapClass = ndi_file_navigator_obj.epochprobemap_class;
+                ndi.validators.mustBeClassnameOfType(probemapClass, 'ndi.epoch.epochprobemap');
+                epochprobemap = feval(probemapClass, d.document_properties.epochfiles_ingested.epochprobemap);
             else
                 epochprobemap = getepochprobemap@ndi.epoch.epochset.param(ndi_file_navigator_obj, N);
             end
@@ -520,12 +524,18 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             [c,ia] = unique(cat(1,epoch_id_ingested(:),epoch_id_disk(:)));
 
+            % The class name is constant across the loop, so check it once here.
+            % feval alone cannot execute an arbitrary expression, but without this
+            % it would still instantiate whatever class an untrusted document named.
+            probemapClass = ndi_filenavigator_obj.epochprobemap_class;
+            ndi.validators.mustBeClassnameOfType(probemapClass, 'ndi.epoch.epochprobemap');
+
             epochfiles = {};
             epochprobemaps = {};
             for i=1:numel(c)
                 if ia(i)<=numel(epoch_id_ingested)
                     epochfiles{i} = d_ingested{ia(i)}.document_properties.epochfiles_ingested.files;
-                    epochprobemaps{i} = feval(ndi_filenavigator_obj.epochprobemap_class, d_ingested{ia(i)}.document_properties.epochfiles_ingested.epochprobemap);
+                    epochprobemaps{i} = feval(probemapClass, d_ingested{ia(i)}.document_properties.epochfiles_ingested.epochprobemap);
                 else
                     epochfiles{i} = epochfiles_disk{ia(i)-numel(epoch_id_ingested)};
                     epochprobemaps{i} = [];

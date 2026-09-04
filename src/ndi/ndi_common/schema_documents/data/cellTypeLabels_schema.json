@@ -1,0 +1,108 @@
+{
+	"classname": "cellTypeLabels",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "cells_document_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "reference_document_id",
+			"mustbenotempty": 0
+		}
+	],
+	"file": [
+		{
+			"name": "labels.tsv",
+			"mustbenotempty": 1
+		}
+	],
+	"cellTypeLabels": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this labeling (e.g. 'G&T 2026 subclass, NN transfer')."
+		},
+		{
+			"name": "label_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the labeled variable as it appeared in the source (e.g. 'subclass_nn_column', 'leiden')."
+		},
+		{
+			"name": "taxonomy_level",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Where this sits in a class/subclass/type hierarchy, if any. Free text; use '' for flat or unsupervised labelings."
+		},
+		{
+			"name": "n_cells",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The number of data rows in labels.tsv. Must equal the n_cells of the document this one depends on, and rows must be in the same order."
+		},
+		{
+			"name": "n_categories",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				1000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The number of distinct non-empty categories."
+		},
+		{
+			"name": "n_unlabeled",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "How many cells have no category. Column-region and QC labelings are often mostly empty."
+		},
+		{
+			"name": "assignment_method",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "How labels were assigned (e.g. 'nearest-neighbor transfer from a dissociated atlas', 'Leiden clustering', 'manual'). A transferred label is an inference about the cell, not a measurement of it."
+		},
+		{
+			"name": "is_unsupervised",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				1,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "1 if the labels come from unsupervised clustering and therefore carry no biological identity. Leiden and SNN clusterings must set this to 1 so they are not mistaken for cell type calls."
+		}
+	]
+}
