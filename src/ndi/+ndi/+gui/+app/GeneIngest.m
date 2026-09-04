@@ -735,10 +735,11 @@ classdef GeneIngest < ndi.gui.app.sessionApp
             for i = 1:numel(docs)
                 k = numel(subj) + 1;
                 subj(k).id = docs{i}.id();
-                lbl = '';
                 try
                     lbl = char(docs{i}.document_properties.subject.local_identifier);
                 catch
+                    % A subject document without a local_identifier is
+                    % legal; it falls back to the id below.
                     lbl = '';
                 end
                 if isempty(lbl), lbl = subj(k).id; end
