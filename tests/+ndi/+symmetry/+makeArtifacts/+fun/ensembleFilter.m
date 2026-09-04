@@ -85,7 +85,8 @@ classdef ensembleFilter < matlab.unittest.TestCase
             ndi.symmetry.fun.cases.writeCases(testCase, artifactDir, ...
                 'ensembleFilterCases.json', payload);
 
-            testCase.verifyEqual(numel(results), 15, 'Expected 15 recorded cases.');
+            testCase.verifyEqual(numel(results), 17, ...
+                'Expected 17 recorded cases (15 dense + 2 sparse).');
         end
     end
 end
