@@ -674,6 +674,7 @@ trimmed **except when nothing is kept** -- is easy to invert in a port.
 | `neuronIds` | string list | **yes** | input ensemble element-id list |
 | `neuronNames` | string list | **yes** | input ensemble neuron-name list |
 | `activity` | string list | **yes** | input activity **row by row**; each entry is `renderSequence` of one row |
+| `storage` | string | **yes** (via `inputSignature`) | `"dense"` or `"sparse"` — picks how the activity is handed to `filter` |
 | `includeNames` | string list | **yes** | the `IncludeNames` option, `[]` when unset |
 | `excludeNames` | string list | **yes** | the `ExcludeNames` option |
 | `includeIndex` | int list | **yes** | the `IncludeIndex` option, 1-based |
@@ -715,25 +716,27 @@ comparison could not tell 0-by-3 from 0-by-1, so the two ports could drift
 into disagreement while the (empty) row lists still happened to agree; the
 shape field prevents that.
 
-### The 15 cases
+### The 17 cases
 
-| # | name | mirrors `ensembleFilterTest` method |
-|---|---|---|
-| 1 | `noCriteriaKeepsAll` | `testNoOptionsKeepsAll` |
-| 2 | `includeNamesBasic` | `testIncludeNames` |
-| 3 | `excludeNamesBasic` | `testExcludeNames` |
-| 4 | `includeIndexBasic` | `testIncludeIndex` |
-| 5 | `excludeIndexBasic` | `testExcludeIndex` |
-| 6 | `includeIdsBasic` | `testIncludeIds` |
-| 7 | `excludeIdsBasic` | `testExcludeIds` |
-| 8 | `keepLogicalMask` | `testKeepLogicalMask` |
-| 9 | `keepIndexVectorOrderFollowsEnsemble` | `testKeepIndexVector` — pins that the argument order is not the output order |
-| 10 | `includesAreAUnion` | `testIncludeUnionThenExclude` |
-| 11 | `excludeBeatsIncludeOnSameNeuron` | `testIncludeUnionThenExclude` |
-| 12 | `trailingColumnsTrimmedToOne` | `testIncludeNames` — pins that trimming keeps at least one column |
-| 13 | `nothingKeptPreservesWidth` | *none* — added to pin the isempty-guard asymmetry |
-| 14 | `errorBadIndex` | `testBadIndexErrors` |
-| 15 | `errorBadKeepMask` | `testBadKeepMaskErrors` |
+| # | name | storage | mirrors `ensembleFilterTest` method |
+|---|---|---|---|
+| 1 | `noCriteriaKeepsAll` | dense | `testNoOptionsKeepsAll` |
+| 2 | `includeNamesBasic` | dense | `testIncludeNames` |
+| 3 | `excludeNamesBasic` | dense | `testExcludeNames` |
+| 4 | `includeIndexBasic` | dense | `testIncludeIndex` |
+| 5 | `excludeIndexBasic` | dense | `testExcludeIndex` |
+| 6 | `includeIdsBasic` | dense | `testIncludeIds` |
+| 7 | `excludeIdsBasic` | dense | `testExcludeIds` |
+| 8 | `keepLogicalMask` | dense | `testKeepLogicalMask` |
+| 9 | `keepIndexVectorOrderFollowsEnsemble` | dense | `testKeepIndexVector` — pins that the argument order is not the output order |
+| 10 | `includesAreAUnion` | dense | `testIncludeUnionThenExclude` |
+| 11 | `excludeBeatsIncludeOnSameNeuron` | dense | `testIncludeUnionThenExclude` |
+| 12 | `trailingColumnsTrimmedToOne` | dense | `testIncludeNames` — pins that trimming keeps at least one column |
+| 13 | `nothingKeptPreservesWidth` | dense | *none* — added to pin the isempty-guard asymmetry |
+| 14 | `errorBadIndex` | dense | `testBadIndexErrors` |
+| 15 | `errorBadKeepMask` | dense | `testBadKeepMaskErrors` |
+| 16 | `sparseInputBasic` | **sparse** | `testIncludeNames` — same fixture through the sparse code path |
+| 17 | `sparseNothingKeptPreservesWidth` | **sparse** | *none* — pins the isempty guard on the sparse slice |
 
 The exact inputs are in `ndi.symmetry.fun.ensembleFilterCases.definitions`;
 the Python side carries the same table. `inputSignature` is what keeps the two
@@ -746,11 +749,17 @@ Every rule of `ensemble.filter` is stated in the MATLAB help, so there is no
 source-read prediction that needs the `expectationDeferred` cycle
 (§9's traps). If one is added later, mirror the parseText battery's flag.
 
-### One thing this battery does not cover
+### Sparse activity
 
-* **Sparse activity input.** The MATLAB unit test builds its fixture with
-  `sparse(4, 3)` because that is what `read` returns, but this battery uses
-  dense activity throughout to keep the rendering symmetric. Both languages'
-  `filter` implementations accept either, and the row-selection + trim logic
-  is the same for sparse and dense inputs, so this is not a coverage gap
-  worth solving with a duplicate battery.
+`ndi.element.ensemble.spike_matrix` returns sparse activity by default, and
+the round-trip format (`ndi.util.readSparse` / `writeSparse`) is NDI-specific
+and exists precisely so an ensemble moves sparsely between the two languages.
+The two sparse cases (`sparseInputBasic` and `sparseNothingKeptPreservesWidth`)
+run the same fixture through the sparse code path — MATLAB `sparse()` on this
+side, scipy CSR on the Python side. Both `filter` implementations densify
+before rendering, so the signature is identical to the dense twin's, but
+`inputSignature` records `storage`, so one language sparse and the other
+dense would fail as a real disagreement rather than pass because the numbers
+happened to match. The `nothingKeptPreservesWidth` twin is deliberately
+included: the isempty guard has to fire on a 0-row sparse slice just as on
+a 0-row dense one, and the pair is what pins that.
