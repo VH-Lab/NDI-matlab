@@ -39,6 +39,7 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             docs = {};
             docs_tocat = {};
             docs_to_add = {};
+            app_doc = [];  % built on first use; describes this calculator and this run
 
             % Step 2: identify all sets of possible input parameters that are compatible with
             % what was specified by 'parameters'
@@ -67,14 +68,23 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 if do_calc
                     docs_out = ndi_calculator_obj.calculate(all_parameters{i});
                     if ~iscell(docs_out), docs_out = {docs_out}; end
+                    % Stamp the app group here, before these documents are handed
+                    % to both the return value and the add list. ndi.document is a
+                    % value class, so stamping later would leave the returned
+                    % documents describing a different provenance from the ones
+                    % actually written.
+                    if isempty(app_doc)
+                        app_doc = ndi_calculator_obj.newdocument();
+                    end
+                    for j=1:numel(docs_out)
+                        docs_out{j} = docs_out{j}.setproperties('app',app_doc.document_properties.app);
+                    end
                     docs_tocat{i} = docs_out;
                     docs_to_add = cat(2, docs_to_add, docs_out);
                 end
             end
             for i=1:numel(all_parameters), if i <= numel(docs_tocat), docs = cat(2,docs,docs_tocat{i}); end; end
             if ~isempty(docs_to_add)
-                app_doc = ndi_calculator_obj.newdocument();
-                for i=1:numel(docs_to_add), docs_to_add{i} = docs_to_add{i}.setproperties('app',app_doc.document_properties.app); end
                 ndi_calculator_obj.session.database_add(docs_to_add);
             end
             mylog.msg('system',1,'Concluding calculator.');
@@ -325,6 +335,79 @@ classdef (Abstract) calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             doc = {};
 
         end % calculate()
+
+        function verifySelfTests(ndi_calculator_obj, testCase, options)
+            % VERIFYSELFTESTS - run this calculator's self-tests and verify every result
+            %
+            % VERIFYSELFTESTS(NDI_CALCULATOR_OBJ, TESTCASE)
+            % VERIFYSELFTESTS(NDI_CALCULATOR_OBJ, TESTCASE, 'Name', VALUE, ...)
+            %
+            % Runs the self-tests this calculator declares and verifies each result,
+            % adding one qualification to TESTCASE per test so that a failure is
+            % reported on its own with the fields that were out of tolerance.
+            %
+            % How many tests are run comes from NUMBEROFSELFTESTS, so a test case does
+            % not have to repeat that number and keep it in step by hand.
+            %
+            % A test case that calls TEST and discards the comparison matrix it returns
+            % passes as long as the calculator does not raise an error, whatever answer
+            % it produced. This method is the one-line alternative.
+            %
+            % This method takes name/value pairs:
+            % |------------------------|-------------------------------------------------|
+            % | Name (default)         | Description                                     |
+            % |------------------------|-------------------------------------------------|
+            % | scope ('highSNR')      | 'highSNR' or 'lowSNR'.                          |
+            % | testIndexes ([])       | Which self-tests to run. Empty runs them all,   |
+            % |                        |   that is 1:NUMBEROFSELFTESTS.                  |
+            % | plotIt (false)         | Whether each result should be plotted.          |
+            % | requireDistinct (false)| Also require that different self-tests give     |
+            % |                        |   different answers, and that their stored      |
+            % |                        |   expectations differ. See                      |
+            % |                        |   ndi.mock.ctest/verifyTestResults.             |
+            % |------------------------|-------------------------------------------------|
+            %
+            % Example, inside a matlab.unittest test method:
+            %    c = ndi.calc.vis.oridir_tuning(testCase.Session);
+            %    c.verifySelfTests(testCase);
+            %
+            % Example, running only two of the tests:
+            %    c.verifySelfTests(testCase,'testIndexes',[3 5]);
+            %
+            % To examine the results by hand instead, call TEST and verify separately
+            % with ndi.mock.ctest/verifyTestResults.
+            %
+            % See also: ndi.mock.ctest/test, ndi.mock.ctest/verifyTestResults
+            %
+            arguments
+                ndi_calculator_obj (1,1) ndi.calculator
+                testCase (1,1) matlab.unittest.TestCase
+                options.scope (1,:) char {mustBeMember(options.scope,{'highSNR','lowSNR'})} = 'highSNR'
+                options.testIndexes (1,:) double {mustBeInteger,mustBePositive} = []
+                options.plotIt (1,1) logical = false
+                options.requireDistinct (1,1) logical = false
+            end
+
+            numberOfTests = ndi_calculator_obj.numberOfSelfTests;
+            testCase.assertGreaterThan(numberOfTests, 0, ...
+                [class(ndi_calculator_obj) ' declares no self-tests (numberOfSelfTests is 0).']);
+
+            testIndexes = options.testIndexes;
+            if isempty(testIndexes)
+                testIndexes = 1:numberOfTests;
+            end
+            testCase.assertLessThanOrEqual(max(testIndexes), numberOfTests, ...
+                ['testIndexes asks for a self-test that ' class(ndi_calculator_obj) ...
+                ' does not declare.']);
+
+            [b, reports, bExpected] = ndi_calculator_obj.test(options.scope, numberOfTests, ...
+                options.plotIt, 'specific_test_inds', testIndexes);
+
+            ndi_calculator_obj.verifyTestResults(testCase, b, reports, ...
+                'testIndexes', testIndexes, ...
+                'requireDistinct', options.requireDistinct, ...
+                'bExpected', bExpected);
+        end % verifySelfTests()
 
         function [docs, doc_output, doc_expected_output] = generate_mock_docs(ndi_calculator_obj, scope, number_of_tests, options)
             % GENERATE_MOCK_DOCS - generate mock documents for testing

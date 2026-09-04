@@ -6,7 +6,13 @@ function status = oneProbe(S, probe, options)
 % Exports one PROBE of the ndi.session S to the flat int16 binary format used by
 % Kilosort / KIASORT, writing (per probe) into
 %
-%       [S.path]/[binary_dir]/[probe_elementstring]/[binaryFileName]
+%       [S.path]/[binary_dir]/[probe_directory]/[binaryFileName]
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 %
 % and, unless disabled, a Kilosort-style 'channel_map.mat' alongside it built from
 % the probe's assigned electrode geometry (ndi.fun.probe.geometry.toKilosortMap). If
@@ -54,9 +60,7 @@ function status = oneProbe(S, probe, options)
         options.verbose (1,1) double = 1
     end
 
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
-    probedir = fullfile(S.path, options.binary_dir, elestr);
+    probedir = ndi.fun.file.elementDirectory(fullfile(S.path, options.binary_dir), probe);
     if ~isfolder(probedir),
         mkdir(probedir);
     end;

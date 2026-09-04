@@ -53,5 +53,145 @@ classdef datasetsPane_test < matlab.unittest.TestCase
             testCase.verifyEqual(string({entries.Label}), ["Alpha","Beta"]);
             testCase.verifyEqual(string({entries.Kind}), ["app","app"]);
         end
+
+        %% Cloud context-menu status/result message helpers
+
+        function testCloudCheckMessageRemotePluralisation(testCase)
+            f = @(n) ndi.gui.nav.datasetsPane.cloudCheckMessage('remote', n);
+            testCase.verifySubstring(f(0), 'no new documents on the cloud');
+            testCase.verifySubstring(f(1), 'There is 1 document on the cloud');
+            testCase.verifySubstring(f(3), 'There are 3 documents on the cloud');
+        end
+
+        function testCloudCheckMessageLocalPluralisation(testCase)
+            f = @(n) ndi.gui.nav.datasetsPane.cloudCheckMessage('local', n);
+            testCase.verifySubstring(f(0), 'no new local documents');
+            testCase.verifySubstring(f(1), 'There is 1 local document');
+            testCase.verifySubstring(f(2), 'There are 2 local documents');
+        end
+
+        function testCloudCheckMessageRejectsBadSide(testCase)
+            testCase.verifyError( ...
+                @() ndi.gui.nav.datasetsPane.cloudCheckMessage('sideways', 1), ...
+                'NDI:datasetsPane:BadSide');
+        end
+
+        function testSyncResultMessageNoChanges(testCase)
+            % A report with all-empty count fields reports "no changes".
+            report = struct('uploaded_document_ids', string.empty, ...
+                'downloaded_document_ids', string.empty);
+            msg = ndi.gui.nav.datasetsPane.syncResultMessage(report);
+            testCase.verifySubstring(msg, 'No changes were needed');
+        end
+
+        function testSyncResultMessageEmptyReportStruct(testCase)
+            % A report struct with none of the count fields also reports
+            % "no changes" rather than erroring.
+            msg = ndi.gui.nav.datasetsPane.syncResultMessage(struct());
+            testCase.verifySubstring(msg, 'No changes were needed');
+        end
+
+        function testSyncResultMessageCountsAndPluralisation(testCase)
+            % Two-way-sync-shaped report: uploaded (plural) + downloaded (singular).
+            report = struct( ...
+                'uploaded_document_ids',   ["a" "b" "c"], ...
+                'downloaded_document_ids', "z");
+            msg = ndi.gui.nav.datasetsPane.syncResultMessage(report);
+            testCase.verifySubstring(msg, '3 documents uploaded');
+            testCase.verifySubstring(msg, '1 document downloaded');
+        end
+
+        %% Cloud menu enable/disable from cached status
+
+        function testDatasetMenuEnableInCloud(testCase)
+            % When the dataset is in the cloud, upload is disabled and the
+            % link-requiring actions are enabled.
+            [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable('incloud');
+            testCase.verifyEqual(up, 'off');
+            testCase.verifyEqual(linked, 'on');
+        end
+
+        function testDatasetMenuEnableNotInCloud(testCase)
+            % When the dataset is not in the cloud, upload is enabled and the
+            % link-requiring actions are disabled.
+            [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable('notincloud');
+            testCase.verifyEqual(up, 'on');
+            testCase.verifyEqual(linked, 'off');
+        end
+
+        function testDatasetMenuEnableUnknownEnablesAll(testCase)
+            % Before the status is checked, nothing is blocked.
+            for state = ["unknown", "", "something else"]
+                [up, linked] = ndi.gui.nav.datasetsPane.datasetMenuEnable(char(state));
+                testCase.verifyEqual(up, 'on');
+                testCase.verifyEqual(linked, 'on');
+            end
+        end
+
+        %% Bulk cloud-status summary message
+
+        function testCloudSummaryMessageNoDatasets(testCase)
+            r = struct('total', 0, 'inCloud', 0, 'notInCloud', 0, 'errors', 0);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifySubstring(msg, 'no datasets to check');
+        end
+
+        function testCloudSummaryMessageCountsAndPluralisation(testCase)
+            r = struct('total', 5, 'inCloud', 3, 'notInCloud', 2, 'errors', 0);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifyEqual(msg, '3 of 5 datasets are in NDI Cloud.');
+
+            % Singular total uses "dataset is".
+            r1 = struct('total', 1, 'inCloud', 1, 'notInCloud', 0, 'errors', 0);
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.cloudSummaryMessage(r1), ...
+                '1 of 1 dataset is in NDI Cloud.');
+        end
+
+        function testCloudSummaryMessageReportsErrors(testCase)
+            r = struct('total', 4, 'inCloud', 1, 'notInCloud', 2, 'errors', 1);
+            msg = ndi.gui.nav.datasetsPane.cloudSummaryMessage(r);
+            testCase.verifySubstring(msg, '1 of 4 datasets are in NDI Cloud.');
+            testCase.verifySubstring(msg, '1 dataset could not be checked.');
+        end
+
+        %% Workspace-variable annotation of node labels
+
+        function testAppendWorkspaceVarNamesNoneLeavesLabel(testCase)
+            % A node with no workspace variable is shown by reference alone.
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('myref', {}), ...
+                'myref');
+        end
+
+        function testAppendWorkspaceVarNamesSingle(testCase)
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('myref', {'S'}), ...
+                'myref "S"');
+        end
+
+        function testAppendWorkspaceVarNamesMultiple(testCase)
+            % Several variables holding the same object are all listed.
+            testCase.verifyEqual( ...
+                ndi.gui.nav.datasetsPane.appendWorkspaceVarNames('ds', {'D', 'D2'}), ...
+                'ds "D", "D2"');
+        end
+
+        function testSyncResultMessageReportsDeletions(testCase)
+            % Mirror-shaped reports surface the deletion counts.
+            fromRemote = struct( ...
+                'downloaded_document_ids',    ["a" "b"], ...
+                'deleted_local_document_ids', "x");
+            msg = ndi.gui.nav.datasetsPane.syncResultMessage(fromRemote);
+            testCase.verifySubstring(msg, '2 documents downloaded');
+            testCase.verifySubstring(msg, '1 local document deleted');
+
+            toRemote = struct( ...
+                'uploaded_document_ids',       "a", ...
+                'deleted_remote_document_ids', ["x" "y" "z"]);
+            msg2 = ndi.gui.nav.datasetsPane.syncResultMessage(toRemote);
+            testCase.verifySubstring(msg2, '1 document uploaded');
+            testCase.verifySubstring(msg2, '3 remote documents deleted');
+        end
     end
 end

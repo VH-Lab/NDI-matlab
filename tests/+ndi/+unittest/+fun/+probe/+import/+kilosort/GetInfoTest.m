@@ -98,6 +98,57 @@ classdef GetInfoTest < matlab.unittest.TestCase
                 ?MException, 'A missing kilosort directory should raise an error.');
         end
 
+        function testBinaryNotFoundByDefault(testCase)
+            % the base fixture has no binary, sidecar, or params.py
+            [info, summary] = ndi.fun.probe.import.kilosort.getInfo(testCase.S, testCase.probe);
+            testCase.verifyFalse(info.binary_found, 'No binary should be found.');
+            testCase.verifyEqual(info.binary_file, '', 'binary_file should be empty.');
+            testCase.verifyEqual(info.binary_dat_path, '', 'binary_dat_path should be empty.');
+            testCase.verifyTrue(contains(summary,'NOT FOUND'), ...
+                'Summary should flag the missing binary.');
+        end
+
+        function testBinaryFoundViaMetadata(testCase)
+            % place a binary + '.metadata' sidecar in the probe directory (the
+            % parent of the curated 'kilosort_output' subdir)
+            probeDir = fullfile(testCase.sessionDir,'kilosort','mock_probe');
+            binFile = fullfile(probeDir,'kilosort.bin');
+            fid = fopen(binFile,'w','ieee-le');
+            fwrite(fid, int16(zeros(4,50)), 'int16'); % 4 channels x 50 samples
+            fclose(fid);
+            meta = struct('epoch_sample_counts',50,'epoch_sample_rates',30000, ...
+                'multiplier',1/0.195,'num_channels',4,'probe_name','mock_probe');
+            vlt.file.saveStructArray([binFile '.metadata'], meta);
+
+            [info, summary] = ndi.fun.probe.import.kilosort.getInfo(testCase.S, testCase.probe);
+            testCase.verifyTrue(info.binary_found, 'Binary should be found via sidecar.');
+            testCase.verifyEqual(info.binary_file, binFile);
+            testCase.verifyEqual(info.binary_num_channels, 4);
+            testCase.verifyTrue(contains(summary,'found:'), ...
+                'Summary should report the found binary.');
+        end
+
+        function testBinaryDatPathReportedWhenMissing(testCase)
+            % params.py referencing a recording that is not present: the raw
+            % dat_path must be reported so a moved sort can be spotted.
+            kdir = fullfile(testCase.sessionDir,'kilosort','mock_probe','kilosort_output');
+            missingPath = '/nonexistent/path/recording.dat';
+            fid = fopen(fullfile(kdir,'params.py'),'w');
+            fprintf(fid,'dat_path = r"%s"\n', missingPath);
+            fprintf(fid,'n_channels_dat = 4\n');
+            fprintf(fid,"dtype = 'int16'\n");
+            fprintf(fid,'offset = 0\n');
+            fprintf(fid,'sample_rate = 30000.\n');
+            fclose(fid);
+
+            [info, summary] = ndi.fun.probe.import.kilosort.getInfo(testCase.S, testCase.probe);
+            testCase.verifyFalse(info.binary_found, 'The referenced file does not exist.');
+            testCase.verifyEqual(info.binary_dat_path, missingPath, ...
+                'The raw dat_path should be reported.');
+            testCase.verifyTrue(contains(summary, missingPath), ...
+                'Summary should show the dangling dat_path.');
+        end
+
     end
 
     methods (Static)

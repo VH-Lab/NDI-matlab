@@ -59,6 +59,7 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
         options.interstimulus_interval (1,1) double = 3
         options.stim_duration_min (1,1) double = 0.2
         options.epochid (1,:) char = 'mockepoch'
+        options.RandomSeed = 'shuffle'
     end
 
     mock_output = ndi.mock.fun.subject_stimulator_neuron(S);

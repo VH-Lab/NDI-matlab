@@ -119,7 +119,7 @@ classdef vhPrairie2p < ndi.file.navigator
                     grp = [grp; anchors(:)]; %#ok<AGROW>
                 end
 
-                epochfiles_disk{end+1,1} = grp(:)'; %#ok<AGROW>
+                epochfiles_disk{end+1,1} = grp(:); %#ok<AGROW>
             end
 
             epochfiles_disk = ndi.util.removehiddenfilegroups(epochfiles_disk);

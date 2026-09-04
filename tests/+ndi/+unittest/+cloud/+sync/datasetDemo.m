@@ -15,19 +15,15 @@ classdef datasetDemo < matlab.unittest.TestCase
 
     methods (TestMethodTeardown)
         function teardownDataset(testCase)
-            % Clean up local dataset
+            % Clean up local dataset. Close open SQLite handles before
+            % removing the directories so their did-sqlite.sqlite files are
+            % not still locked on Windows (see issue #870).
             if ~isempty(testCase.ndiDatasetToUpload)
-                path = testCase.ndiDatasetToUpload.path;
-                if isfolder(path)
-                    rmdir(path, 's');
-                end
+                ndi.unittest.cloud.closeAndRemoveDir(testCase.ndiDatasetToUpload.path);
             end
             % Clean up downloaded dataset
             if ~isempty(testCase.ndiDatasetDownloaded)
-                path = testCase.ndiDatasetDownloaded.path;
-                if isfolder(path)
-                    rmdir(path, 's');
-                end
+                ndi.unittest.cloud.closeAndRemoveDir(testCase.ndiDatasetDownloaded.path);
             end
             % Delete remote dataset
             if ~isempty(testCase.cloudDatasetId)
@@ -118,7 +114,7 @@ classdef datasetDemo < matlab.unittest.TestCase
             % 1. Make a dataset and add 2 ingested sessions with documents.
             % The setup already created a dataset with 1 session. We will add a second one.
             session2 = ndi.unittest.session.buildSession.withDocsAndFiles();
-            testCase.addTeardown(@rmdir, session2.path(), 's');
+            testCase.addTeardown(@ndi.unittest.cloud.closeAndRemoveDir, session2.path());
 
             testCase.ndiDatasetToUpload.add_ingested_session(session2);
 
@@ -140,7 +136,7 @@ classdef datasetDemo < matlab.unittest.TestCase
             % 3. Download the dataset to a new (temporary) location
             tempFolder1 = tempname;
             mkdir(tempFolder1);
-            testCase.addTeardown(@rmdir, tempFolder1, 's');
+            testCase.addTeardown(@ndi.unittest.cloud.closeAndRemoveDir, tempFolder1);
 
             pause(5); % Allow cloud to settle
 
@@ -152,11 +148,11 @@ classdef datasetDemo < matlab.unittest.TestCase
 
             % 4. Add two more ingested sessions to the local dataset
             session3 = ndi.unittest.session.buildSession.withDocsAndFiles();
-            testCase.addTeardown(@rmdir, session3.path(), 's');
+            testCase.addTeardown(@ndi.unittest.cloud.closeAndRemoveDir, session3.path());
             testCase.ndiDatasetToUpload.add_ingested_session(session3);
 
             session4 = ndi.unittest.session.buildSession.withDocsAndFiles();
-            testCase.addTeardown(@rmdir, session4.path(), 's');
+            testCase.addTeardown(@ndi.unittest.cloud.closeAndRemoveDir, session4.path());
             testCase.ndiDatasetToUpload.add_ingested_session(session4);
 
             % Verify we have 4 sessions locally
@@ -171,7 +167,7 @@ classdef datasetDemo < matlab.unittest.TestCase
             % 6. Download the dataset to yet another new (temporary) location
             tempFolder2 = tempname;
             mkdir(tempFolder2);
-            testCase.addTeardown(@rmdir, tempFolder2, 's');
+            testCase.addTeardown(@ndi.unittest.cloud.closeAndRemoveDir, tempFolder2);
 
             pause(5);
 

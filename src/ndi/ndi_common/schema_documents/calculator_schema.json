@@ -1,0 +1,7 @@
+{
+	"classname":	"calculator",
+	"superclasses": [ "base", "app" ],
+	"depends_on": [ ],
+	"calculator": [
+	]
+}

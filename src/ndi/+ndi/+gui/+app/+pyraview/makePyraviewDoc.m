@@ -6,7 +6,9 @@ function pyraview_doc = makePyraviewDoc(probe, epochid, filterband, options)
     % Inputs:
     %   PROBE: An ndi.probe object
     %   EPOCHID: The epoch identifier string
-    %   FILTERBAND: 'low' or 'high'
+    %   FILTERBAND: 'low', 'high', or 'all'. 'all' stores the unfiltered
+    %       (all-pass) data. A pyraview document (with its pyramid views) is
+    %       created for every band, including 'all'.
     %
     % Optional Parameters:
     %   chunkDuration (default 50)
@@ -15,7 +17,7 @@ function pyraview_doc = makePyraviewDoc(probe, epochid, filterband, options)
     arguments
         probe (1,1) {mustBeA(probe, 'ndi.probe')}
         epochid (1,:) char
-        filterband (1,:) char {mustBeMember(filterband, {'low', 'high'})}
+        filterband (1,:) char {mustBeMember(filterband, {'low', 'high', 'all'})}
         options.chunkDuration (1,1) double = 50
         options.chunkExcess (1,1) double = 1
     end

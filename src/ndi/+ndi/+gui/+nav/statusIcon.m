@@ -7,13 +7,24 @@ function iconPath = statusIcon(status)
 %
 %   Badge grammar ("letter names the check, colour names the state"):
 %       * Each status dimension is drawn as one letter glyph:
-%             ingestion -> 'i'   (more can be added; see DIMS below)
+%             ingestion -> 'i'   (session ingestion state)
+%             cloud     -> 'c'   (whether a dataset is linked to NDI Cloud)
+%         (more can be added; see DIMS below)
 %       * The glyph colour encodes that dimension's state, from the shared
 %         palette in ndi.gui.cloudColors:
 %             'ingested' -> okGreen      (good / complete)
 %             'linked'   -> warnAmber    (partial / attention)
 %             'none'     -> neutralGrey  (not yet / absent)
+%             'incloud'  -> lightBlue    (linked to NDI Cloud)
 %             'unknown'  -> not drawn    (the default; nothing is known yet)
+%       * The completed ingestion state is additionally double-coded by
+%         shape: 'ingested' is drawn as a capital 'I' (green), while the
+%         other states use a lowercase 'i', so ingested vs not-ingested is
+%         distinguishable without relying on colour alone. Likewise the cloud
+%         dimension draws a capital 'C' (light blue) for the 'incloud' state.
+%       * The cloud dimension has only one drawn state: a dataset that is not
+%         in the cloud (state 'notincloud', or unknown) draws no cloud glyph,
+%         so a local-only dataset carries no cloud badge.
 %       * Dimensions whose state is 'unknown' (or missing) contribute no
 %         glyph. When every dimension is unknown the badge is empty and ''
 %         is returned, so a freshly-listed node carries no icon until a
@@ -45,8 +56,8 @@ function iconPath = statusIcon(status)
     % Add a row to extend the badge (e.g. metadata completeness as 'm');
     % the glyph letter must be defined in glyphMask below.
     DIMS = struct( ...
-        'field',  {'ingestion'}, ...
-        'letter', {'i'});
+        'field',  {'ingestion', 'cloud'}, ...
+        'letter', {'i',         'c'});
 
     % Collect the active (non-unknown) dimensions, in DIMS order, and build
     % a stable cache key from them.
@@ -63,7 +74,7 @@ function iconPath = statusIcon(status)
         if isempty(col)
             continue;   % 'unknown' / unrecognised -> nothing to draw
         end
-        letters{end+1}  = DIMS(i).letter;   %#ok<AGROW>
+        letters{end+1}  = glyphLetter(DIMS(i).field, DIMS(i).letter, state); %#ok<AGROW>
         colors{end+1}   = col;              %#ok<AGROW>
         keyparts{end+1} = [f '=' state];    %#ok<AGROW>
     end
@@ -73,9 +84,13 @@ function iconPath = statusIcon(status)
         return;
     end
 
+    % BADGEVERSION invalidates cached PNGs when the glyph rendering changes
+    % (e.g. ingested moving from a lowercase 'i' to a capital 'I'); bump it
+    % whenever glyphMask / renderBadge output changes for an existing key.
+    BADGEVERSION = 'v2';
     key      = strjoin(keyparts, '_');
     cdir     = cacheDir();
-    iconPath = fullfile(cdir, ['navstatus_' key '.png']);
+    iconPath = fullfile(cdir, ['navstatus_' BADGEVERSION '_' key '.png']);
     if isfile(iconPath)
         return;   % already rendered for this exact status
     end
@@ -99,8 +114,25 @@ function col = stateColor(state)
             col = c.warnAmber;
         case 'none'
             col = c.neutralGrey;
-        otherwise           % 'unknown', '', or anything unrecognised
+        case 'incloud'
+            col = c.lightBlue;
+        otherwise           % 'unknown', 'notincloud', '', or unrecognised
             col = [];
+    end
+end
+
+% ------------------------------------------------------------------------
+function letter = glyphLetter(field, defaultLetter, state)
+    %GLYPHLETTER Glyph for a dimension's state (shape double-coding).
+    %   The ingestion dimension's completed state ('ingested') is drawn as
+    %   a capital 'I' so it is distinguishable from the not-yet-ingested
+    %   states by shape as well as colour; every other case keeps the
+    %   dimension's default lowercase letter.
+    letter = defaultLetter;
+    if strcmpi(field, 'ingestion') && strcmpi(char(state), 'ingested')
+        letter = 'I';
+    elseif strcmpi(field, 'cloud') && strcmpi(char(state), 'incloud')
+        letter = 'C';
     end
 end
 
@@ -154,7 +186,8 @@ end
 function m = glyphMask(letter)
     %GLYPHMASK 5-wide by 7-tall logical bitmap for a supported glyph.
     %   Extend this map to add a new badge letter. '#' marks a lit pixel.
-    switch lower(char(letter))
+    %   Case-sensitive: lowercase 'i' and capital 'I' are distinct glyphs.
+    switch char(letter)
         case 'i'
             art = { ...
                 '..#..'; ...
@@ -164,6 +197,40 @@ function m = glyphMask(letter)
                 '..#..'; ...
                 '..#..'; ...
                 '..#..'};
+        case 'I'
+            % Serifed capital I: top and bottom bars plus a centre stem,
+            % clearly distinct in shape from the lowercase 'i'.
+            art = { ...
+                '#####'; ...
+                '..#..'; ...
+                '..#..'; ...
+                '..#..'; ...
+                '..#..'; ...
+                '..#..'; ...
+                '#####'};
+        case 'c'
+            % Lowercase 'c' (not currently drawn - the cloud dimension only
+            % draws its 'incloud' state as a capital 'C' - but defined so a
+            % future secondary cloud state can use it).
+            art = { ...
+                '.....'; ...
+                '.....'; ...
+                '.####'; ...
+                '#....'; ...
+                '#....'; ...
+                '#....'; ...
+                '.####'};
+        case 'C'
+            % Capital 'C' for the 'incloud' state (light blue), double-coding
+            % cloud presence by shape as well as colour.
+            art = { ...
+                '.###.'; ...
+                '#...#'; ...
+                '#....'; ...
+                '#....'; ...
+                '#....'; ...
+                '#...#'; ...
+                '.###.'};
         case 'm'
             art = { ...
                 '.....'; ...

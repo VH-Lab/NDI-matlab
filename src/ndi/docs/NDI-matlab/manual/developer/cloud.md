@@ -470,10 +470,10 @@ Where:
 | Function | Signature | Description |
 |---|---|---|
 | `ndi.cloud.api.files.getFileDetails` | `getFileDetails(cloudDatasetID, cloudFileUID)` | Retrieves metadata for a single file, including a pre-signed download URL. |
-| `ndi.cloud.api.files.getFile` | `getFile(downloadURL, downloadedFile, 'useCurl', false)` | Downloads a file from a pre-signed URL and saves it to a local path. Set `useCurl` to `true` to use the system `curl` command as a fallback. |
+| `ndi.cloud.api.files.getFile` | `getFile(downloadURL, downloadedFile, 'useCurl', true)` | Downloads a file from a pre-signed URL and saves it to a local path. `useCurl` defaults to `true` (curl requests identity encoding so already-compressed archives are not corrupted); set it to `false` to use MATLAB's native `websave`. |
 | `ndi.cloud.api.files.getFileUploadURL` | `getFileUploadURL(cloudDatasetID, cloudFileUID)` | Returns a pre-signed URL for uploading a single file. |
 | `ndi.cloud.api.files.getFileCollectionUploadURL` | `getFileCollectionUploadURL(cloudDatasetID)` | Returns a pre-signed URL for uploading a ZIP archive of multiple files. |
-| `ndi.cloud.api.files.putFiles` | `putFiles(preSignedURL, filePath, 'useCurl', false)` | Uploads a local file to a pre-signed URL via HTTP PUT. Set `useCurl` to `true` to use the system `curl` command as a fallback. |
+| `ndi.cloud.api.files.putFiles` | `putFiles(preSignedURL, filePath, 'useCurl', true)` | Uploads a local file to a pre-signed URL via HTTP PUT. `useCurl` defaults to `true` (consistent S3 object headers); set it to `false` to use MATLAB's native HTTP client. |
 | `ndi.cloud.api.files.listFiles` | `listFiles(cloudDatasetId, ...)` | Lists all files associated with a dataset, with optional polling for newly uploaded files. |
 
 ### Compute (`ndi.cloud.api.compute.*`)

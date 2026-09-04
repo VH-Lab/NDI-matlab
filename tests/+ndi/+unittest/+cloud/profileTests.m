@@ -271,12 +271,75 @@ classdef profileTests < matlab.unittest.TestCase
             testCase.verifyEqual(getenv('CLOUD_API_ENVIRONMENT'), 'dev');
         end
 
-        function testFilenameLivesInPrefdir(testCase)
+        function testFilenameLivesInUserPrefDir(testCase)
+            % Filenames moved from MATLAB's prefdir to ~/.ndi/ so that
+            % ndi-python and MATLAB share saved profiles by default
+            % (see ndi-matlab#920 / ndi-python#168).
             f = ndi.cloud.profile.filename();
             testCase.verifyClass(f, 'char');
-            testCase.verifyTrue(startsWith(f, prefdir), ...
-                sprintf('Expected filename to start with prefdir (%s) but got %s', ...
-                    prefdir, f));
+            expected = ndi.cloud.profile.userPrefDir();
+            testCase.verifyTrue(startsWith(f, expected), ...
+                sprintf('Expected filename to start with %s but got %s', ...
+                    expected, f));
+        end
+
+        function testFindIndexByNickname(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.add('dev-account', 'dev@lab.org', 'pw2');
+            testCase.verifyEqual( ...
+                ndi.cloud.profile.get('lab-primary').UID, uidLab);
+        end
+
+        function testFindIndexByEmailIsCaseInsensitive(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.add('dev-account', 'dev@lab.org', 'pw2');
+            testCase.verifyEqual( ...
+                ndi.cloud.profile.get('ME@LAB.ORG').UID, uidLab);
+        end
+
+        function testFindIndexAmbiguousNicknameThrows(testCase)
+            uidA = ndi.cloud.profile.add('shared', 'a@lab.org', 'pwA');
+            uidB = ndi.cloud.profile.add('shared', 'b@lab.org', 'pwB');
+            try
+                ndi.cloud.profile.get('shared');
+                testCase.verifyFail('Ambiguous nickname should have thrown.');
+            catch ME
+                testCase.verifyEqual(ME.identifier, ...
+                    'NDI:cloud:profile:ambiguousProfile');
+                testCase.verifyTrue(contains(ME.message, uidA));
+                testCase.verifyTrue(contains(ME.message, uidB));
+            end
+        end
+
+        function testSwitchProfileByNicknameStoresResolvedUid(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            saved = ndi.unittest.cloud.profileTests.snapshotEnv();
+            cleanup = onCleanup(@() ...
+                ndi.unittest.cloud.profileTests.restoreEnv(saved)); %#ok<NASGU>
+            ndi.cloud.profile.switchProfile('lab-primary');
+            testCase.verifyEqual(getenv('NDI_CLOUD_USERNAME'), 'me@lab.org');
+            testCase.verifyEqual(getenv('NDI_CLOUD_PASSWORD'), 'pw1');
+            cur = ndi.cloud.profile.getCurrent();
+            testCase.assertNotEmpty(cur);
+            testCase.verifyEqual(cur.UID, uidLab, ...
+                'switchProfile must store the resolved UID, not the raw key.');
+        end
+
+        function testSetCurrentByEmailStoresResolvedUid(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setCurrent('me@lab.org');
+            cur = ndi.cloud.profile.getCurrent();
+            testCase.assertNotEmpty(cur);
+            testCase.verifyEqual(cur.UID, uidLab);
+        end
+
+        function testRemoveByNicknameClearsCurrentAndDefault(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setCurrent(uidLab);
+            ndi.cloud.profile.setDefault(uidLab);
+            ndi.cloud.profile.remove('lab-primary');
+            testCase.verifyEmpty(ndi.cloud.profile.getCurrent());
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
         end
 
         function testEditorSmoke(testCase)
@@ -301,6 +364,41 @@ classdef profileTests < matlab.unittest.TestCase
 
             delete(fig);
             testCase.verifyFalse(isvalid(fig));
+        end
+
+        function testVaultBackendWriteErrorsClearly(testCase)
+            % Regression: MATLAB's vault setSecret is interactive and takes
+            % only a name, so it cannot store a supplied password. Forcing
+            % the vault backend must fail with a clear, specific error
+            % rather than the opaque "requires exactly 1 positional input".
+            ndi.cloud.profile.useBackend('vault');
+            testCase.addTeardown(@() ndi.cloud.profile.useBackend('memory'));
+            testCase.verifyError( ...
+                @() ndi.cloud.profile.add('Lab', 'me@lab.org', 'pw'), ...
+                'NDI:cloud:profile:vaultWriteUnsupported');
+        end
+
+        function testAesBackendRoundTripAndFormat(testCase)
+            % The AES backend is the default. It must round-trip the
+            % password, and the on-disk secrets file must be standard JSON
+            % with base64 iv/ciphertext per secret, so other languages
+            % (e.g. ndi-python) can read it on the same host+user.
+            ndi.cloud.profile.useBackend('aes');
+            testCase.addTeardown(@() ndi.cloud.profile.useBackend('memory'));
+
+            uid = ndi.cloud.profile.add('Lab', 'me@lab.org', 'sekret');
+            testCase.verifyEqual(ndi.cloud.profile.getPassword(uid), 'sekret');
+
+            sf = ndi.cloud.profile.secretsFilename();
+            testCase.assertTrue(isfile(sf), 'AES secrets file should exist.');
+            S  = jsondecode(fileread(sf));
+            fn = fieldnames(S);
+            testCase.assertNotEmpty(fn, 'Secrets file should hold an entry.');
+            entry = S.(fn{1});
+            testCase.verifyTrue(isfield(entry, 'iv'), ...
+                'Each secret should carry a base64 iv.');
+            testCase.verifyTrue(isfield(entry, 'ciphertext'), ...
+                'Each secret should carry a base64 ciphertext.');
         end
 
     end

@@ -10,7 +10,13 @@ function [info, summary] = getInfo(S, probe, options)
 %
 % The directory is located the same way as the importer:
 %
-%       [S.path]/[kilosort_dir]/[probe_elementstring]/[subdir]/
+%       [S.path]/[kilosort_dir]/[probe_directory]/[subdir]/
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 %
 % INFO is a structure with fields:
 %   directory          - the directory that was read
@@ -28,6 +34,11 @@ function [info, summary] = getInfo(S, probe, options)
 %   num_templates      - number of Kilosort templates (NaN if templates absent)
 %   num_channels       - number of channels in the templates (NaN if absent)
 %   samples_per_template - samples per template waveform (NaN if absent)
+%   binary_found       - true if the raw binary recording could be located (used
+%                          by the importer to recalculate wide mean waveforms)
+%   binary_file        - resolved path to the raw binary ('' if not found)
+%   binary_dat_path    - the raw 'dat_path' string from params.py, if any ('')
+%   binary_num_channels- channel count that would be used to read the binary (NaN)
 %
 % SUMMARY is a multiline character array giving a human-readable version of INFO.
 %
@@ -39,6 +50,9 @@ function [info, summary] = getInfo(S, probe, options)
 % | subdir ('kilosort_output')     | Subfolder within the probe's directory        |
 % | noSubFolder (false)            | If true, read directly from the probe's dir   |
 % | quality_labels (["good" "mua"])| Labels that would be imported (for would_import)|
+% | binary_file ('')               | Explicit path to the raw binary; when empty it|
+% |                                |   is located from the .metadata sidecar (not  |
+% |                                |   params.py dat_path), for reporting.         |
 % ---------------------------------------------------------------------------------
 %
 % Example:
@@ -56,16 +70,16 @@ function [info, summary] = getInfo(S, probe, options)
         options.subdir (1,:) char = 'kilosort_output'
         options.noSubFolder (1,1) logical = false
         options.quality_labels (1,:) string = ["good" "mua"]
+        options.binary_file (1,:) char = ''
     end
 
     % Step 1: locate the kilosort output directory (same logic as the importer)
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
+    probedir = ndi.fun.file.elementDirectory(fullfile(S.path, options.kilosort_dir), probe);
     subdir = options.subdir;
     if options.noSubFolder,
         subdir = '';
     end;
-    kdir = fullfile(S.path, options.kilosort_dir, elestr, subdir);
+    kdir = fullfile(probedir, subdir);
 
     if ~isfolder(kdir),
         error(['Kilosort directory not found: ' kdir '.']);
@@ -113,6 +127,10 @@ function [info, summary] = getInfo(S, probe, options)
         if numel(sz)>=3, num_channels = sz(3); end;
     end;
 
+    % Step 6b: locate the raw binary that the importer would use to recalculate
+    % wide mean waveforms, so a moved/misreferenced recording can be spotted here.
+    bininfo = ndi.fun.probe.import.kilosort.binaryinfo(kdir, 'binary_file', options.binary_file);
+
     % Step 7: assemble the info structure
     info = struct();
     info.directory = kdir;
@@ -128,6 +146,10 @@ function [info, summary] = getInfo(S, probe, options)
     info.num_templates = num_templates;
     info.num_channels = num_channels;
     info.samples_per_template = samples_per_template;
+    info.binary_found = bininfo.found;
+    info.binary_file = bininfo.file;
+    info.binary_dat_path = bininfo.dat_path;
+    info.binary_num_channels = bininfo.num_channels;
 
     % Step 8: build the multiline character summary
     nl = newline;
@@ -152,6 +174,25 @@ function [info, summary] = getInfo(S, probe, options)
             num2str(num_channels) ' channels, ' num2str(samples_per_template) ' samples each'];
     else,
         lines{end+1} = '  Templates:        (templates.npy not present)';
+    end;
+    % raw binary status (used for wide mean-waveform recalculation)
+    if info.binary_found,
+        nchStr = '';
+        if ~isnan(info.binary_num_channels),
+            nchStr = [' (' num2str(info.binary_num_channels) ' channels)'];
+        end;
+        lines{end+1} = ['  Raw binary:       found: ' info.binary_file nchStr];
+    else,
+        lines{end+1} = '  Raw binary:       NOT FOUND automatically (no .metadata sidecar).';
+        lines{end+1} = '                      The importer will PROMPT for the raw recording and';
+        lines{end+1} = '                      its Neuropixels generation, then high-pass filter it';
+        lines{end+1} = '                      to recalculate wide mean waveforms. Pass binary_file /';
+        lines{end+1} = '                      RawFile to skip the prompt.';
+        if ~isempty(info.binary_dat_path),
+            lines{end+1} = ['                      (params.py dat_path names ' ...
+                info.binary_dat_path ' - not used; it often names a'];
+            lines{end+1} = '                       whitened/filtered temp file.)';
+        end;
     end;
 
     summary = strjoin(lines, nl);

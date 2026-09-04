@@ -101,7 +101,7 @@
   },
   {
     "VariableName": "PT3602",
-    "StringFormat": "S5D.*Control|Figure_5)E"
+    "StringFormat": "S5D.*Control|Figure_5E"
   },
   {
     "VariableName": "TM5848",

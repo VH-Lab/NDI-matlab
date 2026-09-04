@@ -6,7 +6,14 @@ function [filtered_data, filterStruct] = filterData(data, sr, type)
     %   Inputs:
     %       DATA - numeric matrix (Samples x Channels)
     %       SR   - Sampling rate (Hz)
-    %       TYPE - 'low' or 'high'
+    %       TYPE - 'low', 'high', 'all', or 'none'. 'all' (the user-facing band)
+    %              and 'none' (the stored filter type) both apply no filter (an
+    %              all-pass), returning the data unchanged; the returned
+    %              FILTERSTRUCT then describes a 'none' filter (per the filter
+    %              document schema), keeping the given TYPE as its user label.
+    %              Both spellings are accepted so this can be called from the
+    %              creation path (with the band 'all') and from the read-back
+    %              path (with the stored filter type 'none').
     %
     %   Outputs:
     %       FILTERED_DATA - Filtered data
@@ -16,12 +23,28 @@ function [filtered_data, filterStruct] = filterData(data, sr, type)
     arguments
         data (:,:) double
         sr (1,1) double
-        type (1,:) char {mustBeMember(type, {'low', 'high'})}
+        type (1,:) char {mustBeMember(type, {'low', 'high', 'all', 'none'})}
+    end
+
+    % The label carries the user-facing band ('low', 'high', 'all'); the type
+    % and algorithm carry the schema's filter vocabulary.
+    filterStruct.label = type;
+
+    if any(strcmp(type, {'all', 'none'}))
+        % All-pass: return the data unfiltered and record a 'none' filter.
+        filterStruct.type = 'none';
+        filterStruct.algorithm = 'none';
+        filterStruct.parameters = struct('sampleFrequency', sr, ...
+            'order', NaN, ...
+            'filterFrequency', NaN, ...
+            'passBandRipple', NaN, ...
+            'stopbandAttentuation', NaN);
+        filtered_data = data;
+        return;
     end
 
     % Define filter parameters
     filterStruct.type = type;
-    filterStruct.label = type;
     filterStruct.algorithm = 'chebyshev_1';
     filterStruct.parameters = struct('sampleFrequency', sr, ...
         'order', 4, ...

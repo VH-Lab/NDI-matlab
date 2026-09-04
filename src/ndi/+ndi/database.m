@@ -140,7 +140,7 @@ classdef database
             ndi_binarydoc_obj = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj);
         end % closebinarydoc
 
-        function ndi_database_obj = remove(ndi_database_obj, ndi_document_id)
+        function ndi_database_obj = remove(ndi_database_obj, ndi_document_id, options)
             % REMOVE - remove a document from an ndi.database
             %
             % NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
@@ -154,6 +154,20 @@ classdef database
             % ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
             % all of the documents are removed.
             %
+            % This function also takes parameters as name/value pairs:
+            % Parameter (default)        | Description
+            % --------------------------------------------------------------------------------
+            % OnMissing ('ignore')       | 'ignore', 'warn' or 'error' when an id to be
+            %                            |   removed is not in the database. The default
+            %                            |   treats an already-deleted document as success,
+            %                            |   since the caller wanted it gone either way.
+            %
+            arguments
+                ndi_database_obj
+                ndi_document_id
+                options.OnMissing {mustBeMember(options.OnMissing,{'ignore','warn','error'})} = 'ignore'
+            end
+
             if isempty(ndi_document_id)
                 return; % nothing to do
             end
@@ -173,7 +187,7 @@ classdef database
             end
 
             for i=1:numel(ndi_document_id_list)
-                do_remove(ndi_database_obj, ndi_document_id_list{i});
+                do_remove(ndi_database_obj, ndi_document_id_list{i}, 'OnMissing', options.OnMissing);
             end
         end % remove()
 
@@ -237,7 +251,18 @@ classdef database
         end % do_add
         function [ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id)
         end % do_read
-        function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id)
+        function ndi_document_obj = do_remove(~, ~, varargin)
+            % Overridden by each backend; this stub does nothing. Trailing
+            % arguments are the OnMissing ('ignore'|'warn'|'error') name/value
+            % pair, saying what to do when the document is not present, which
+            % the subclass declares and validates.
+            %
+            % The inputs are ~ and the output is assigned because Code Analyzer
+            % reads an unnamed-but-unused input and an unset return value as
+            % defects. The sibling stubs above share the shape and are flagged
+            % the same way; only this one is touched here, since widening the
+            % change to them is beyond what this PR is about.
+            ndi_document_obj = [];
         end % do_remove
         function [ndi_document_objs] = do_search(ndi_database_obj, searchoptions, searchparams)
         end % do_search()
