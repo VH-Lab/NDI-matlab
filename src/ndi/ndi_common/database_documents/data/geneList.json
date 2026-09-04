@@ -1,0 +1,29 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/geneList.json",
+		"validation": "$NDISCHEMAPATH\/data\/geneList_schema.json",
+		"class_name": "geneList",
+		"property_list_name": "geneList",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"files": {
+		"file_list": [
+			"genes.tsv"
+		]
+	},
+	"geneList": {
+		"label": "",
+		"n_genes": 0,
+		"genome_assembly": "",
+		"gene_id_namespace": "",
+		"gene_symbol_namespace": "",
+		"annotation_source": "",
+		"gene_name_completeness": 1,
+		"n_duplicate_gene_names": 0
+	}
+}

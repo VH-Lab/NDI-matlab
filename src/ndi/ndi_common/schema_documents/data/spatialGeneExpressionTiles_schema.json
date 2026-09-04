@@ -1,0 +1,221 @@
+{
+	"classname": "spatialGeneExpressionTiles",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "spatialGeneExpressionPyramid_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "subject_id",
+			"mustbenotempty": 0
+		},
+		{
+			"name": "source_file_id",
+			"mustbenotempty": 0
+		}
+	],
+	"file": [
+		{
+			"name": "tile.bin_#",
+			"mustbenotempty": 0
+		}
+	],
+	"spatialGeneExpressionTiles": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this level (e.g. 'bin20')."
+		},
+		{
+			"name": "bin_size",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				1,
+				100000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The edge length of one pixel of this level in base pixel units. Must appear in the parent's bin_sizes."
+		},
+		{
+			"name": "pixel_size_x",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The physical size of one pixel of this level in x. Equal to bin_size times the parent's base_pixel_size_x."
+		},
+		{
+			"name": "pixel_size_y",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "The physical size of one pixel of this level in y."
+		},
+		{
+			"name": "pixel_size_units",
+			"type": "string",
+			"default_value": "micrometer",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of pixel_size_x and pixel_size_y."
+		},
+		{
+			"name": "dimension_order",
+			"type": "string",
+			"default_value": "YXG",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The order of the dimensions, following the imageStack_parameters convention; G denotes the gene dimension."
+		},
+		{
+			"name": "dimension_labels",
+			"type": "string",
+			"default_value": "height,width,gene",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The labels of each dimension as a comma-separated list, in dimension_order."
+		},
+		{
+			"name": "dimension_size",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "The length of each dimension in dimension_order for the whole level, not per tile."
+		},
+		{
+			"name": "dimension_scale",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "The scale of each dimension in dimension_order, in dimension_scale_units."
+		},
+		{
+			"name": "dimension_scale_units",
+			"type": "string",
+			"default_value": "micrometer,micrometer,dimensionless",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of each dimension as a comma-separated list, in dimension_order."
+		},
+		{
+			"name": "tile_size_x_bins",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				1,
+				1000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The width of one tile in pixels of THIS level. Edge tiles may be partially filled."
+		},
+		{
+			"name": "tile_size_y_bins",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				1,
+				1000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The height of one tile in pixels of THIS level."
+		},
+		{
+			"name": "n_tiles_stored",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				10000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The number of tile files written. May be less than tile_rows*tile_columns because empty tiles are omitted; use ndi.document/current_file_list to discover which exist."
+		},
+		{
+			"name": "data_type_gene_index",
+			"type": "string",
+			"default_value": "uint32",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Integer type of the gene_index array. Values index rows of the geneList the parent depends on."
+		},
+		{
+			"name": "data_type_count",
+			"type": "string",
+			"default_value": "uint16",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Integer type of the count array."
+		},
+		{
+			"name": "data_type_offset",
+			"type": "string",
+			"default_value": "uint32",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Integer type of the offset (row pointer) array."
+		},
+		{
+			"name": "data_type_coordinate",
+			"type": "string",
+			"default_value": "uint16",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Integer type of the tile-local x and y coordinate arrays."
+		},
+		{
+			"name": "tile_compression",
+			"type": "string",
+			"default_value": "none",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Compression applied to each tile file as a whole: 'none' or 'gzip'."
+		},
+		{
+			"name": "tile_format_version",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				1,
+				1000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The version of the tile binary layout. See spatialGeneExpressionTiles.md."
+		}
+	]
+}

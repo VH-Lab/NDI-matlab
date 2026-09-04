@@ -1,0 +1,39 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/geneListMapping.json",
+		"validation": "$NDISCHEMAPATH\/data\/geneListMapping_schema.json",
+		"class_name": "geneListMapping",
+		"property_list_name": "geneListMapping",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "geneList_id_a",
+			"value": ""
+		},
+		{
+			"name": "geneList_id_b",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [
+			"mapping.tsv"
+		]
+	},
+	"geneListMapping": {
+		"label": "",
+		"mapping_type": "alias",
+		"method": "",
+		"symmetric": 1,
+		"n_pairs": 0,
+		"n_genes_mapped_a": 0,
+		"n_genes_mapped_b": 0,
+		"has_score": 0
+	}
+}
