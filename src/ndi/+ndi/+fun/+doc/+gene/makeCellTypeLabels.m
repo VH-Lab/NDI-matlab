@@ -88,15 +88,20 @@ n = numel(labels);
 % The row order is the contract with cells.tsv, so a length mismatch is an
 % error rather than something to pad or truncate: a shifted labeling
 % assigns every cell its neighbour's type and nothing downstream notices.
+% Empty is checked FIRST. Otherwise {} against a populated cells document
+% is a length mismatch before it is an empty input, and the caller is told
+% their labels are the wrong length rather than that they passed none --
+% which is both less useful and, when the two ports order these
+% differently, a divergence.
+if n == 0
+    error('NDI:gene:makeCellTypeLabels:empty', 'LABELS is empty.');
+end
 nCells = localCellCount(cellsDoc);
 if ~isnan(nCells) && nCells ~= n
     error('NDI:gene:makeCellTypeLabels:length', ...
         ['LABELS has %d entries but the cells document has %d cells. ' ...
          'Labels are matched to cells by ROW ORDER, so a mismatch would ' ...
          'silently give cells the wrong type.'], n, nCells);
-end
-if n == 0
-    error('NDI:gene:makeCellTypeLabels:empty', 'LABELS is empty.');
 end
 
 % ---- labels.tsv ---------------------------------------------------------
