@@ -274,7 +274,7 @@ function G = local_channel_geometry(probe, numChannels, options)
     else
         S = probe.session;
         mapFile = [tempname '.mat'];
-        cleanup = onCleanup(@() local_delete(mapFile)); %#ok<NASGU>
+        cleanup = onCleanup(@() local_delete(mapFile));
         tf = ndi.fun.probe.geometry.toKilosortMap(S, probe, mapFile, ...
             'num_channels', numChannels, 'horizontal_axis', options.horizontalAxis, ...
             'verbose', options.verbose);
