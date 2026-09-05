@@ -42,7 +42,22 @@ classdef readIngested < matlab.unittest.TestCase
             % readtimeseries. Save the previous value so we do not leak
             % 'prod' into any subsequent test class in the same session.
             previousEnv = getenv('CLOUD_API_ENVIRONMENT');
+
+            % Teardown -- run in reverse order of registration, so the
+            % order below matters:
+            %   (1) restore CLOUD_API_ENVIRONMENT to whatever it was.
+            %   (2) BEFORE that, log out the prod token this class cached.
+            %       Without (2), the enclosing session is left with a prod
+            %       token bound to a restored CLOUD_API_ENVIRONMENT=dev,
+            %       and the very next dev-api request 403s with
+            %       "Invalid or expired token". Registering the logout
+            %       teardown after the env-restore teardown makes the
+            %       logout run FIRST (LIFO), so the API call ndi.cloud.logout
+            %       makes still goes to the prod endpoint the token was
+            %       issued for, not the dev endpoint the caller is about
+            %       to switch back to.
             testCase.addTeardown(@() setenv('CLOUD_API_ENVIRONMENT', previousEnv));
+            testCase.addTeardown(@() safeLogout());
             setenv('CLOUD_API_ENVIRONMENT', 'prod');
 
             % Force a fresh login against prod. Without an explicit logout
@@ -50,12 +65,17 @@ classdef readIngested < matlab.unittest.TestCase
             % cached token is in scope, and if the previous test was running
             % against dev, that token is a DEV token -- prod rejects it with
             % "Invalid or expired token" on the very next request.
-            try
-                ndi.cloud.logout();
-            catch
-                % No prior session to log out of -- fine, continue.
-            end
+            safeLogout();
             ndi.cloud.authenticate('InteractionEnabled', 'off');
+
+            function safeLogout()
+                try
+                    ndi.cloud.logout();
+                catch
+                    % No prior session, network flake in teardown, etc.
+                    % Not this test's job to fail on that.
+                end
+            end
 
             testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
 
