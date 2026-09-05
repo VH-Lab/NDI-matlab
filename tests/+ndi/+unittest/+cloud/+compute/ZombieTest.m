@@ -5,18 +5,24 @@ classdef ZombieTest < matlab.unittest.TestCase
 %   It starts a 'zombie-test-v1' pipeline, monitors its status, and waits for completion.
 
     properties
-        Narrative (1,:) string
+        Narrative      (1,:) string
+        OrganizationId (1,1) string  % From NDI_CLOUD_TEST_ORGANIZATION_ID
     end
 
     methods (TestClassSetup)
         function checkCredentials(testCase)
-            % Ensure credentials are present in the environment
+            % Ensure credentials are present in the environment; also pick
+            % up the organization id the compute session should bill to.
+            % See ComputeTest for the full NDI_CLOUD_TEST_ORGANIZATION_ID
+            % contract.
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assumeNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assumeNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set.');
+
+            testCase.OrganizationId = string(getenv("NDI_CLOUD_TEST_ORGANIZATION_ID"));
         end
     end
 
@@ -32,15 +38,7 @@ classdef ZombieTest < matlab.unittest.TestCase
             % 1. Start Pipeline
             narrative(end+1) = "Starting 'zombie-test-v1' pipeline...";
 
-            % Handle optional Org ID from env (mimicking script logic)
-            % The script: ORG_ID=$4. If -n "$ORG_ID", include it.
-            % We don't have direct access to script args, but we can check if the user
-            % typically has multiple orgs or if we want to rely on default.
-            % For this test, we'll stick to the default unless we want to look up an org.
-            % The user instruction said "You do not need to get the username and password...".
-            % We'll assume default org behavior is sufficient or handled by authentication context.
-
-            [b_start, answer_start, apiResponse_start, apiURL_start] = startSession(pipelineId);
+            [b_start, answer_start, apiResponse_start, apiURL_start] = startSession(pipelineId, testCase.OrganizationId);
 
             narrative(end+1) = "Attempted to start session. URL: " + string(apiURL_start);
             start_msg = ndi.unittest.cloud.APIMessage(narrative, b_start, answer_start, apiResponse_start, apiURL_start);

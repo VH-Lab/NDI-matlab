@@ -60,9 +60,14 @@ classdef HelloMatlabTest < matlab.unittest.TestCase
             end
 
             % --- 2. Run the hello-matlab-v1 pipeline end-to-end.
+            %        NDI_CLOUD_TEST_ORGANIZATION_ID names the org to bill
+            %        the compute session to. Empty for single-org test
+            %        accounts (CI's secret account); required otherwise.
+            orgId = string(getenv("NDI_CLOUD_TEST_ORGANIZATION_ID"));
             narrative(end+1) = "Calling ndi.cloud.helloMatlab to start hello-matlab-v1 and poll until terminal.";
             [success, sessionId, statusMessage, sessionDoc] = ndi.cloud.helloMatlab(...
-                'TimeoutSeconds', 1200, 'PollIntervalSeconds', 15, 'Verbose', true);
+                'TimeoutSeconds', 1200, 'PollIntervalSeconds', 15, 'Verbose', true, ...
+                'OrganizationId', orgId);
 
             narrative(end+1) = "helloMatlab completed. session=" + sessionId + ...
                 " success=" + string(success) + " message=" + statusMessage;
