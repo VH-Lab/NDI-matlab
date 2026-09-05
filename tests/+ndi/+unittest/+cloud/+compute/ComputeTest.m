@@ -6,19 +6,31 @@ classdef ComputeTest < matlab.unittest.TestCase
 %   sessions, and aborting a long-running session.
 %
     properties
-        Narrative (1,:) string % Stores the narrative for each test
+        Narrative      (1,:) string  % Stores the narrative for each test
+        OrganizationId (1,1) string  % From NDI_CLOUD_TEST_ORGANIZATION_ID
     end
 
     methods (TestClassSetup)
         function checkCredentials(testCase)
-            % This fatal assertion runs once before any tests in this class.
-            % It ensures that the necessary credentials are set as environment variables.
+            % This runs once before any tests in this class. It ensures the
+            % environment carries the credentials and (for multi-org
+            % accounts) the org id the backend needs to bill the compute
+            % session to.
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assumeNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assumeNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set.');
+
+            % NDI_CLOUD_TEST_ORGANIZATION_ID is the organization id these
+            % compute tests bill their sessions to. Single-org test
+            % accounts (CI's secret account) can leave it unset and the
+            % backend picks that account's sole org; multi-org accounts
+            % (real developers) MUST set it, or the API returns HTTP 400
+            % "Organization ID is required (user has multiple)" and every
+            % test in this class fails identically.
+            testCase.OrganizationId = string(getenv("NDI_CLOUD_TEST_ORGANIZATION_ID"));
         end
     end
 
@@ -37,7 +49,7 @@ classdef ComputeTest < matlab.unittest.TestCase
 
             % --- 1. Start Session ---
             narrative(end+1) = "Preparing to call ndi.cloud.api.compute.startSession with pipelineId: " + pipelineId;
-            [b_start, answer_start, apiResponse_start, apiURL_start] = ndi.cloud.api.compute.startSession(pipelineId);
+            [b_start, answer_start, apiResponse_start, apiURL_start] = ndi.cloud.api.compute.startSession(pipelineId, testCase.OrganizationId);
             narrative(end+1) = "Attempted to call API with URL " + string(apiURL_start);
 
             narrative(end+1) = "Testing: Verifying the startSession API call was successful.";
@@ -144,7 +156,7 @@ classdef ComputeTest < matlab.unittest.TestCase
             % actually running. This is the test we want for the abortSession
             % API surface, not a race against helloWorld's fast self-completion.
             pipelineId = "zombie-test-v1";
-            [b_start, answer_start, ~, ~] = ndi.cloud.api.compute.startSession(pipelineId);
+            [b_start, answer_start, ~, ~] = ndi.cloud.api.compute.startSession(pipelineId, testCase.OrganizationId);
             testCase.verifyTrue(b_start, "startSession failed");
             sessionId = string(answer_start.sessionId);
 
