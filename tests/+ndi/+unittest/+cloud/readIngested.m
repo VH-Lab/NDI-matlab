@@ -45,8 +45,16 @@ classdef readIngested < matlab.unittest.TestCase
             testCase.addTeardown(@() setenv('CLOUD_API_ENVIRONMENT', previousEnv));
             setenv('CLOUD_API_ENVIRONMENT', 'prod');
 
-            % Re-authenticate in case token expired during a long test suite
-            % AND to bind the token to the (now prod) environment.
+            % Force a fresh login against prod. Without an explicit logout
+            % first, authenticate('InteractionEnabled','off') reuses whatever
+            % cached token is in scope, and if the previous test was running
+            % against dev, that token is a DEV token -- prod rejects it with
+            % "Invalid or expired token" on the very next request.
+            try
+                ndi.cloud.logout();
+            catch
+                % No prior session to log out of -- fine, continue.
+            end
             ndi.cloud.authenticate('InteractionEnabled', 'off');
 
             testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
