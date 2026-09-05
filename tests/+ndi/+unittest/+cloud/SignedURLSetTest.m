@@ -182,6 +182,36 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         end
     end
 
+    methods (Static, Access = private)
+        function uids = normalizeReturnedUIDs(filesStruct)
+            % jsondecode prepends an 'x' to any JSON object key that isn't
+            % a valid MATLAB identifier -- and file UIDs start with a
+            % digit, so every UID in the `files` map comes back with an
+            % extra leading 'x'. Strip it back off so the returned UIDs
+            % match what listFiles reports and what the server actually
+            % signed. Keys that did NOT get an 'x' prefix (rare, but
+            % possible if a UID ever begins with a letter) are left
+            % alone.
+            raw = string(fieldnames(filesStruct));
+            uids = raw;
+            for i = 1:numel(uids)
+                s = char(uids(i));
+                if ~isempty(s) && s(1) == 'x'
+                    uids(i) = string(s(2:end));
+                end
+            end
+        end
+
+        function id = wellFormedButUnusedDocId()
+            % Endpoint routes /:documentId through Mongoose findById, which
+            % throws a CastError (surfacing as 500) on a non-24-hex-char
+            % string. Use a well-formed but not-in-database id so the 404
+            % path is what we actually exercise.
+            hex = '0123456789abcdef';
+            id = string(hex(randi(numel(hex), 1, 24)));
+        end
+    end
+
     methods (Test)
         % ------------------------------------------------------------------
         % Sync path: single-page getSignedURLSet
@@ -211,7 +241,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyGreaterThanOrEqual(page.totalCount, 1, ...
                 "totalCount was 0; the endpoint could not resolve any file UID for this doc. " + msg);
 
-            returnedUIDs = string(fieldnames(page.files));
+            returnedUIDs = ndi.unittest.cloud.SignedURLSetTest.normalizeReturnedUIDs(page.files);
             testCase.verifyEqual(numel(returnedUIDs), page.totalCount, ...
                 "files map has a different size than totalCount. " + msg);
 
@@ -240,14 +270,17 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             msg = ndi.unittest.cloud.APIMessage(narrative, b, page, resp, url);
             testCase.assertTrue(b, "getSignedURLSet failed. " + msg);
 
-            returnedUIDs = string(fieldnames(page.files));
-            testCase.assertNotEmpty(returnedUIDs, ...
+            % Fieldnames still carry the 'x' prefix that jsondecode adds;
+            % use the raw name to index into page.files but the stripped
+            % form only for display / cross-checks.
+            rawFieldNames = string(fieldnames(page.files));
+            testCase.assertNotEmpty(rawFieldNames, ...
                 "Endpoint returned an empty files map. " + msg);
 
-            uid = returnedUIDs(1);
-            signedUrl = page.files.(char(uid));
+            rawKey = char(rawFieldNames(1));
+            signedUrl = page.files.(rawKey);
 
-            narrative(end+1) = "Preparing to download signed URL for UID " + uid;
+            narrative(end+1) = "Preparing to download signed URL for UID " + string(rawKey);
             body = testCase.downloadURLBody(signedUrl);
             narrative(end+1) = "Downloaded " + strlength(body) + " bytes.";
 
@@ -299,7 +332,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyEqual(all.pageCount, all.totalCount, ...
                 "Merged pageCount does not match totalCount. " + msg);
 
-            mergedUIDs = string(fieldnames(all.files));
+            mergedUIDs = ndi.unittest.cloud.SignedURLSetTest.normalizeReturnedUIDs(all.files);
             for i = 1:numel(mergedUIDs)
                 testCase.verifyTrue(ismember(mergedUIDs(i), testCase.FileUIDs), ...
                     "Merged UID " + mergedUIDs(i) + " is not in the dataset's uploaded files. " + msg);
@@ -315,13 +348,13 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.Narrative = "Begin testGetSignedURLSetUnknownDocument";
             narrative = testCase.Narrative;
 
-            bogusDoc = "doc-that-does-not-exist-" + string(did.ido.unique_id());
+            bogusDoc = ndi.unittest.cloud.SignedURLSetTest.wellFormedButUnusedDocId();
             [b, ans_, resp, url] = ndi.cloud.api.files.getSignedURLSet(...
                 testCase.DatasetID, bogusDoc);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_, resp, url);
             testCase.verifyFalse(b, "Bogus document id should fail. " + msg);
             testCase.verifyEqual(double(resp.StatusCode), 404, ...
-                "Expected HTTP 404 for unknown document. " + msg);
+                "Expected HTTP 404 for unknown (but well-formed) document id. " + msg);
 
             testCase.Narrative = narrative;
         end
