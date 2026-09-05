@@ -35,7 +35,18 @@ classdef readIngested < matlab.unittest.TestCase
 
             testCase.addTeardown(@() testCase.cleanupTargetDir());
 
+            % Pin this class to prod for the duration of its run: the
+            % reference dataset (CloudDatasetId) was published on prod, and
+            % on dev its file records return 404 from getFileDetails, which
+            % surfaces later as a DID "cannot be accessed" error deep in
+            % readtimeseries. Save the previous value so we do not leak
+            % 'prod' into any subsequent test class in the same session.
+            previousEnv = getenv('CLOUD_API_ENVIRONMENT');
+            testCase.addTeardown(@() setenv('CLOUD_API_ENVIRONMENT', previousEnv));
+            setenv('CLOUD_API_ENVIRONMENT', 'prod');
+
             % Re-authenticate in case token expired during a long test suite
+            % AND to bind the token to the (now prod) environment.
             ndi.cloud.authenticate('InteractionEnabled', 'off');
 
             testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
