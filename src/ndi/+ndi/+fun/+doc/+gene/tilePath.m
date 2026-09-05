@@ -14,12 +14,23 @@ function p = tilePath(session, doc, filename)
 %   different. That is what makes a memo correct here and would not be
 %   true of a path derived from mutable state.
 %
-%   WHY IT IS WORTH IT. database_openbinarydoc is a document read plus a
-%   location resolve plus, on a cloud-backed session, a retrieval. A
-%   viewer that pans, changes a gene selection, or re-renders at another
-%   contrast pays all of that again for tiles it already has on disk.
-%   readViewport and exportRegion open every tile they touch on every
-%   call, so the repeat is the common case rather than the exception.
+%   WHAT IT IS AND IS NOT WORTH, stated plainly because the obvious story
+%   is the wrong one. There is NO MATLAB viewer for these pyramids: the
+%   only callers of readViewport and exportRegion are readViewportBase and
+%   the tests, and interactive viewing is napari's, through NDI-python. So
+%   this saves nothing for a viewer that pans, because there is none.
+%
+%   What it does save is a REPEATED PROGRAMMATIC READ: a sweep over
+%   overlapping rectangles, an export run for several gene subsets over
+%   one region, a montage. Each of those opens every tile it touches on
+%   every call, and each open is a document read plus a location resolve.
+%   It is NOT a download saved -- a cloud-backed session's own cache
+%   already prevents a second retrieval of the same file -- so the win is
+%   modest and local, not the difference between usable and not.
+%
+%   The Python side's equivalent is worth more, because napari does
+%   re-render on every gene toggle and there the memo also keeps the
+%   fetch off a thread that may not touch the session.
 %
 %   THE FILE CAN STILL DISAPPEAR, which is why the remembered path is
 %   CHECKED rather than trusted -- and what happens then depends on what

@@ -66,10 +66,10 @@ for r = rFirst:min(rLast, G-1)
             info.tilesEmpty = info.tilesEmpty + 1;
             continue;
         end
-        % tilePath remembers where a tile landed, so panning back over
-        % ground already covered costs an isfile check rather than a
-        % document read, a location resolve and -- on a cloud-backed
-        % session -- a retrieval.
+        % tilePath remembers where a tile landed, so a caller that reads
+        % overlapping rectangles -- a sweep, a montage, one region for
+        % several gene subsets -- pays an isfile check rather than a
+        % document read and a location resolve each time.
         t = ndi.fun.doc.gene.readTileFile( ...
             ndi.fun.doc.gene.tilePath(session, tileDoc, name));
         info.tilesRead = info.tilesRead + 1;
