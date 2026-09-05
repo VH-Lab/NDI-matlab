@@ -66,10 +66,12 @@ for r = rFirst:min(rLast, G-1)
             info.tilesEmpty = info.tilesEmpty + 1;
             continue;
         end
-        bd = session.database_openbinarydoc(tileDoc, name);
-        cl = onCleanup(@() session.database_closebinarydoc(bd));
-        t = ndi.fun.doc.gene.readTileFile(bd.fullpathfilename);
-        clear cl;
+        % tilePath remembers where a tile landed, so a caller that reads
+        % overlapping rectangles -- a sweep, a montage, one region for
+        % several gene subsets -- pays an isfile check rather than a
+        % document read and a location resolve each time.
+        t = ndi.fun.doc.gene.readTileFile( ...
+            ndi.fun.doc.gene.tilePath(session, tileDoc, name));
         info.tilesRead = info.tilesRead + 1;
 
         if options.density
