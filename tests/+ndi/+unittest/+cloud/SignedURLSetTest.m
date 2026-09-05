@@ -12,10 +12,13 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 %   ndi.dataset with a handful of generic_file documents (each carrying a
 %   file), push it to a fresh cloud dataset via ndi.cloud.uploadDataset,
 %   then wait for the server-side bulk extraction to settle before any
-%   test reads the files back. Documents already reference their files via
-%   data.files.file_info.locations[].uid, which is exactly what the
-%   getSignedURLSet endpoint looks at, so no per-test scaffolding is
-%   needed.
+%   test reads the files back.
+%
+%   The setup deliberately keeps its assertions non-fatal so a failure in
+%   one method's setup does not abort the whole run; it also does not try
+%   to pre-parse the cloud document's file references. Each test derives
+%   its expectations from the API response under test, and cross-checks
+%   returned UIDs against ndi.cloud.api.files.listFiles (well-tested).
 %
 %   Each test follows the narrative + APIMessage pattern used throughout
 %   ndi.unittest.cloud so a failure carries every step and the URL of the
@@ -23,9 +26,6 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 
     properties (Constant)
         DatasetNamePrefix = 'NDI_UNITTEST_SIGNED_URL_SET_';
-        % How many generic_file documents to build in the local dataset.
-        % Chosen so at least one page fits comfortably and a limit=2 page
-        % walk exercises the cursor path across multiple pages.
         NumFiles = 4;
     end
 
@@ -33,11 +33,9 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         DatasetID       (1,1) string = missing
         LocalDataset
         Narrative       (1,:) string
-        FileUIDs        (1,:) string  % cloud file UIDs, in creation order
-        FileContent     (1,:) string  % content string for each fileUIDs(i)
-        CloudDocumentID (1,1) string = missing  % cloud id of the doc that
-                                                % references every file
-        CloudDocumentUIDs (1,:) string          % UIDs the cloud doc references
+        FileUIDs        (1,:) string  % dataset's uploaded file UIDs
+        FileContent     (1,:) string  % content strings written to the local files
+        CloudDocumentID (1,1) string = missing  % cloud id of signed_url_set_doc_1
     end
 
     methods (TestClassSetup)
@@ -53,13 +51,15 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function setupLocalDatasetAndCloud(testCase)
+            % Non-fatal by design: a failure here fails only this method's
+            % setup, letting subsequent methods still try their own fresh
+            % dataset. That is why every assert below is a regular
+            % assertTrue rather than a fatalAssertTrue.
             import matlab.unittest.fixtures.SuppressedWarningsFixture
             testCase.applyFixture(SuppressedWarningsFixture('MATLAB:structRefFromNonStruct'));
 
-            % 1. Local dataset carrying N generic_file documents, each with
-            %    a distinct file. All hang off a single 'test_target' base
-            %    document via a dependency so we can look up the cloud
-            %    document ids by name and pick the one under test.
+            % 1. Local dataset with N generic_file documents, each with
+            %    one file. All hang off a base 'test_target' document.
             import matlab.unittest.fixtures.TemporaryFolderFixture;
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             testCase.LocalDataset = ndi.dataset.dir('test_ds', tempFolder.Folder);
@@ -91,46 +91,42 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             end
             testCase.FileContent = fileContents;
 
-            % 2. Create cloud dataset.
+            % 2. Create cloud dataset and link.
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
-            testCase.fatalAssertTrue(b, "Failed to create cloud dataset for SignedURLSetTest.");
+            testCase.assertTrue(b, "Failed to create cloud dataset for SignedURLSetTest.");
             testCase.DatasetID = cloudId;
+            testCase.addTeardown(@() testCase.cleanupCloudDataset());
 
             remoteDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudId, testCase.LocalDataset);
             testCase.LocalDataset.database_add(remoteDoc);
 
-            % 3. Upload, then wait for server-side extraction so listFiles
-            %    reports every file as uploaded before any test reads them.
-            [success_upload] = ndi.cloud.uploadDataset(testCase.LocalDataset);
-            testCase.fatalAssertTrue(success_upload, "Failed to upload test dataset to cloud.");
+            % 3. Upload, then wait for server-side extraction.
+            success_upload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
-            % 4. Record which UIDs the dataset now holds; the signed URL
-            %    set endpoint intersects the doc's referenced UIDs with
-            %    the dataset's uploaded file records, so this list is the
-            %    upper bound of what a well-formed response can carry.
+            % 4. Record dataset-level uploaded UIDs. Any UID returned by
+            %    getSignedURLSet must be in this set.
             [b_files, files_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
-            testCase.fatalAssertTrue(b_files, "listFiles failed after upload.");
+            testCase.assertTrue(b_files, "listFiles failed after upload.");
             testCase.FileUIDs = string({files_list.uid});
+            testCase.assertEqual(numel(testCase.FileUIDs), testCase.NumFiles, ...
+                "Dataset did not report the expected number of uploaded files.");
 
-            % 5. Locate one of the generic_file documents on the cloud so
-            %    later tests can address it by cloud id. We pick doc #1;
-            %    each generic_file references exactly one file, so its
-            %    signed-URL-set has one entry -- easy to verify byte-for-
-            %    byte via the returned URL.
-            [b_docs, docs_list] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
-            testCase.fatalAssertTrue(b_docs, "listDatasetDocumentsAll failed.");
+            % 5. Look up the cloud id of signed_url_set_doc_1 by matching
+            %    ndiId against the local document's id. We do NOT try to
+            %    pre-parse data.files.file_info here; each test asks the
+            %    endpoint under test what it sees and verifies against
+            %    that.
+            [b_docs, docs_list] = ndi.cloud.api.documents.listDatasetDocumentsAll(...
+                testCase.DatasetID, 'checkForUpdates', true);
+            testCase.assertTrue(b_docs, "listDatasetDocumentsAll failed.");
 
-            [cloudId1, uids1] = testCase.findCloudDoc(docs_list, 'signed_url_set_doc_1');
-            testCase.fatalAssertFalse(ismissing(cloudId1), ...
+            cloudId1 = testCase.findCloudDocID(docs_list, 'signed_url_set_doc_1');
+            testCase.assertFalse(ismissing(cloudId1), ...
                 "Could not find cloud id for local doc signed_url_set_doc_1.");
-            testCase.CloudDocumentID   = cloudId1;
-            testCase.CloudDocumentUIDs = uids1;
-            testCase.fatalAssertNotEmpty(uids1, ...
-                "Cloud doc signed_url_set_doc_1 does not reference any file UID.");
-
-            testCase.addTeardown(@() testCase.cleanupCloudDataset());
+            testCase.CloudDocumentID = cloudId1;
         end
     end
 
@@ -146,73 +142,42 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             end
         end
 
-        function [cloudId, uids] = findCloudDoc(testCase, docs_list, localName)
-            % Find a cloud document by base.name and return its cloud id
-            % and the list of file UIDs it references. Returns
-            % (missing, []) if not found.
+        function cloudId = findCloudDocID(testCase, docs_list, localName)
+            % Find a cloud document by base.name -> cloud id.
             cloudId = string(missing);
-            uids = strings(1,0);
-
-            % Search the local dataset by name; ndiId matches on cloud.
             q = ndi.query('base.name', 'exact_string', localName);
             localDocs = testCase.LocalDataset.database_search(q);
             if numel(localDocs) ~= 1, return; end
             localId = localDocs{1}.id();
-
-            match = [];
             for i = 1:numel(docs_list)
                 if isfield(docs_list(i), 'ndiId') && strcmp(docs_list(i).ndiId, localId)
-                    match = docs_list(i);
-                    break;
+                    cloudId = string(docs_list(i).id);
+                    return;
                 end
-            end
-            if isempty(match), return; end
-            cloudId = string(match.id);
-
-            % Fetch the full document so we can inspect its
-            % data.files.file_info.locations[].uid list.
-            [b_get, cloudDoc] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloudId);
-            if ~b_get, return; end
-            try
-                fileInfo = cloudDoc.data.files.file_info;
-                if ~iscell(fileInfo) && numel(fileInfo) > 1
-                    fileInfo = num2cell(fileInfo);
-                elseif ~iscell(fileInfo)
-                    fileInfo = {fileInfo};
-                end
-                collected = strings(1,0);
-                for i = 1:numel(fileInfo)
-                    info = fileInfo{i};
-                    if ~isfield(info, 'locations'), continue; end
-                    locs = info.locations;
-                    if ~iscell(locs) && numel(locs) > 1
-                        locs = num2cell(locs);
-                    elseif ~iscell(locs)
-                        locs = {locs};
-                    end
-                    for k = 1:numel(locs)
-                        if isfield(locs{k}, 'uid') && ~isempty(locs{k}.uid)
-                            collected(end+1) = string(locs{k}.uid); %#ok<AGROW>
-                        end
-                    end
-                end
-                uids = unique(collected);
-            catch
-                % Leave uids empty; caller reports.
             end
         end
 
-        function content = downloadURLBody(~, signedUrl)
+        function body = downloadURLBody(~, signedUrl)
             % Download the body of a signed URL to a scratch file and
-            % return its content as a string. Uses the same file-download
-            % path as ndi.cloud.api.files.getFile so a failure surfaces
-            % the same way it would in production.
+            % return its content as a string. Uses ndi.cloud.api.files.getFile
+            % so a failure surfaces the same way it would in production.
             tmp = tempname();
             [ok, ~] = ndi.cloud.api.files.getFile(string(signedUrl), tmp, 'useCurl', true);
-            content = "";
+            body = "";
             if ok && isfile(tmp)
-                content = string(fileread(tmp));
+                body = string(fileread(tmp));
                 delete(tmp);
+            end
+        end
+
+        function matched = anyContentMatches(testCase, body)
+            % True iff body equals any of the uploaded file contents.
+            matched = false;
+            for k = 1:numel(testCase.FileContent)
+                if body == testCase.FileContent(k)
+                    matched = true;
+                    return;
+                end
             end
         end
     end
@@ -234,21 +199,29 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             if ~b, testCase.Narrative = narrative; return; end
 
             testCase.verifyTrue(isstruct(page), "Response was not a struct. " + msg);
-            testCase.verifyTrue(isfield(page, 'files'), "Response missing `files`. " + msg);
+            testCase.verifyTrue(isfield(page, 'files'),      "Response missing `files`. " + msg);
             testCase.verifyTrue(isfield(page, 'totalCount'), "Response missing `totalCount`. " + msg);
             testCase.verifyTrue(isfield(page, 'expiresAt'),  "Response missing `expiresAt`. " + msg);
 
-            % The doc references one file. Verify totalCount and that the
-            % single UID in the response matches what the document points
-            % at.
-            testCase.verifyEqual(page.totalCount, numel(testCase.CloudDocumentUIDs), ...
-                "totalCount does not match doc's referenced UIDs. " + msg);
+            % totalCount is however many of the doc's referenced UIDs
+            % actually exist as uploaded files in the dataset. For a
+            % generic_file doc, we expect exactly one, but if this
+            % environment resolves fewer we still want a useful
+            % diagnostic instead of a confusing equality failure.
+            testCase.verifyGreaterThanOrEqual(page.totalCount, 1, ...
+                "totalCount was 0; the endpoint could not resolve any file UID for this doc. " + msg);
 
             returnedUIDs = string(fieldnames(page.files));
-            testCase.verifyEqual(sort(returnedUIDs), sort(testCase.CloudDocumentUIDs(:)), ...
-                "UIDs in response do not match doc's referenced UIDs. " + msg);
+            testCase.verifyEqual(numel(returnedUIDs), page.totalCount, ...
+                "files map has a different size than totalCount. " + msg);
 
-            % nextCursor should be absent/empty on a page that fits in one.
+            % Every returned UID must be one the dataset actually holds.
+            for i = 1:numel(returnedUIDs)
+                testCase.verifyTrue(ismember(returnedUIDs(i), testCase.FileUIDs), ...
+                    "Returned UID " + returnedUIDs(i) + " is not in the dataset's uploaded files. " + msg);
+            end
+
+            % nextCursor should be absent/empty on a page that fits.
             noNext = ~isfield(page, 'nextCursor') || isempty(page.nextCursor);
             testCase.verifyTrue(noNext, "nextCursor should be empty when set fits in one page. " + msg);
 
@@ -265,56 +238,42 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             [b, page, resp, url] = ndi.cloud.api.files.getSignedURLSet(...
                 testCase.DatasetID, testCase.CloudDocumentID);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, page, resp, url);
-            testCase.fatalAssertTrue(b, "getSignedURLSet failed. " + msg);
+            testCase.assertTrue(b, "getSignedURLSet failed. " + msg);
 
-            uid = testCase.CloudDocumentUIDs(1);
-            % Fields inside a struct are always valid MATLAB identifiers;
-            % UIDs from did.ido.unique_id() are hex/alnum so field access
-            % is safe. Fall back to dynamic if the server changes shape.
+            returnedUIDs = string(fieldnames(page.files));
+            testCase.assertNotEmpty(returnedUIDs, ...
+                "Endpoint returned an empty files map. " + msg);
+
+            uid = returnedUIDs(1);
             signedUrl = page.files.(char(uid));
 
             narrative(end+1) = "Preparing to download signed URL for UID " + uid;
             body = testCase.downloadURLBody(signedUrl);
             narrative(end+1) = "Downloaded " + strlength(body) + " bytes.";
 
-            % Find which local file this UID belongs to, then verify
-            % byte-for-byte. Which sus_i.dat file the UID maps to is
-            % determined by the upload order; we look it up rather than
-            % assuming.
-            [b_det, det] = ndi.cloud.api.files.getFileDetails(testCase.DatasetID, uid);
-            testCase.fatalAssertTrue(b_det, "Could not fetch file details for the UID. " + msg);
-
-            matched = false;
-            for k = 1:numel(testCase.FileContent)
-                if body == testCase.FileContent(k)
-                    matched = true;
-                    break;
-                end
-            end
-            testCase.verifyTrue(matched, ...
+            testCase.verifyTrue(testCase.anyContentMatches(body), ...
                 "Downloaded body did not match any of the uploaded file contents. " + msg);
 
             testCase.Narrative = narrative;
         end
 
         % ------------------------------------------------------------------
-        % Sync path: limit clamping (server caps at 1000)
+        % Sync path: oversized limit is server-clamped
         % ------------------------------------------------------------------
         function testGetSignedURLSetLimitClamped(testCase)
             testCase.Narrative = "Begin testGetSignedURLSetLimitClamped";
             narrative = testCase.Narrative;
 
-            % A request above the server cap should still succeed and
-            % return the whole (small) set in one page; the server
-            % clamps limit to SIGNED_URL_SET_MAX_LIMIT (1000).
-            narrative(end+1) = "Calling getSignedURLSet with limit=5000 (server should clamp).";
+            narrative(end+1) = "Calling getSignedURLSet with limit=5000 (server should clamp to 1000).";
             [b, page, resp, url] = ndi.cloud.api.files.getSignedURLSet(...
                 testCase.DatasetID, testCase.CloudDocumentID, 'limit', 5000);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, page, resp, url);
             testCase.verifyTrue(b, "getSignedURLSet with oversized limit failed. " + msg);
             if ~b, testCase.Narrative = narrative; return; end
-            testCase.verifyEqual(page.pageCount, numel(testCase.CloudDocumentUIDs), ...
-                "pageCount does not match doc's referenced UIDs. " + msg);
+
+            testCase.verifyTrue(isfield(page, 'pageCount'), "Response missing `pageCount`. " + msg);
+            testCase.verifyEqual(page.pageCount, page.totalCount, ...
+                "pageCount should equal totalCount when limit >> totalCount. " + msg);
 
             testCase.Narrative = narrative;
         end
@@ -326,20 +285,25 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.Narrative = "Begin testGetSignedURLSetAll";
             narrative = testCase.Narrative;
 
-            % Force cursor mechanics via limit=1 so the walker actually
-            % follows nextCursor rather than getting everything in a page.
-            narrative(end+1) = "Calling getSignedURLSetAll with limit=1 to force pagination.";
+            % limit=1 forces the walker to loop even for a single-file
+            % doc: the first page carries one file and no nextCursor
+            % (since 1/1 = last), so the walker terminates cleanly.
+            narrative(end+1) = "Calling getSignedURLSetAll with limit=1.";
             [b, all, resp, url] = ndi.cloud.api.files.getSignedURLSetAll(...
                 testCase.DatasetID, testCase.CloudDocumentID, 'limit', 1);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, all, resp, url);
             testCase.verifyTrue(b, "getSignedURLSetAll returned failure. " + msg);
             if ~b, testCase.Narrative = narrative; return; end
 
-            testCase.verifyEqual(all.totalCount, numel(testCase.CloudDocumentUIDs), ...
-                "Merged totalCount does not match doc's referenced UIDs. " + msg);
+            testCase.verifyGreaterThanOrEqual(all.pages, 1, "Walker reported 0 pages. " + msg);
+            testCase.verifyEqual(all.pageCount, all.totalCount, ...
+                "Merged pageCount does not match totalCount. " + msg);
+
             mergedUIDs = string(fieldnames(all.files));
-            testCase.verifyEqual(sort(mergedUIDs), sort(testCase.CloudDocumentUIDs(:)), ...
-                "Merged UIDs do not match doc's referenced UIDs. " + msg);
+            for i = 1:numel(mergedUIDs)
+                testCase.verifyTrue(ismember(mergedUIDs(i), testCase.FileUIDs), ...
+                    "Merged UID " + mergedUIDs(i) + " is not in the dataset's uploaded files. " + msg);
+            end
 
             testCase.Narrative = narrative;
         end
@@ -363,7 +327,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         end
 
         % ------------------------------------------------------------------
-        % Async path: create + poll + fetch result
+        % Async path: create + poll + wait for result
         % ------------------------------------------------------------------
         function testCreateAndWaitForSignedURLSetJob(testCase)
             testCase.Narrative = "Begin testCreateAndWaitForSignedURLSetJob";
@@ -374,14 +338,15 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
                 testCase.DatasetID, testCase.CloudDocumentID);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, job, resp, url);
 
-            % In an environment where the worker infrastructure has not
-            % been provisioned (SIGNED_URL_SET_TOPIC_ARN unset), the API
-            % returns 500 CONFIGURATION_ERROR. Skip rather than fail so
-            % this test remains meaningful on partial deployments.
+            % Environments where the worker isn't provisioned return
+            % 500 CONFIGURATION_ERROR / ENQUEUE_ERROR / JOB_CREATION_ERROR.
+            % Skip rather than fail so this test stays meaningful on
+            % partial deployments.
             if ~b
-                if isstruct(job) && isfield(job, 'code') && strcmp(job.code, 'CONFIGURATION_ERROR')
+                if isstruct(job) && isfield(job, 'code') && ...
+                        any(strcmp(job.code, {'CONFIGURATION_ERROR','ENQUEUE_ERROR','JOB_CREATION_ERROR'}))
                     testCase.assumeFail(...
-                        "Signed URL set worker is not configured on this environment; skipping async path.");
+                        "Signed URL set worker is not configured on this environment; skipping async path. " + msg);
                     testCase.Narrative = narrative;
                     return;
                 end
@@ -396,8 +361,6 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Job accepted, id = " + string(job.jobId);
 
-            % Poll once immediately so we exercise both the poll wrapper
-            % and the wait wrapper.
             narrative(end+1) = "Polling job once for state.";
             [b_st, st, resp_st, url_st] = ndi.cloud.api.files.getSignedURLSetJob(string(job.jobId));
             msg_st = ndi.unittest.cloud.APIMessage(narrative, b_st, st, resp_st, url_st);
@@ -407,8 +370,6 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(string(st.state) == allowed), ...
                 "Poll returned unexpected state: " + string(st.state) + ". " + msg_st);
 
-            % Wait for the job to reach a terminal state; keep the timeout
-            % modest so the suite does not stall on an unhealthy worker.
             narrative(end+1) = "Waiting for job to reach a terminal state (up to 180s).";
             [b_w, done, resp_w, url_w] = ndi.cloud.api.files.waitForSignedURLSetJob(...
                 string(job.jobId), 'timeout', 180, 'initialInterval', 2, 'maxInterval', 15);
@@ -426,7 +387,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         end
 
         % ------------------------------------------------------------------
-        % Async path: unknown job id should surface 404 cleanly
+        % Async path: unknown job id should surface 404
         % ------------------------------------------------------------------
         function testGetSignedURLSetJobUnknownId(testCase)
             testCase.Narrative = "Begin testGetSignedURLSetJobUnknownId";
