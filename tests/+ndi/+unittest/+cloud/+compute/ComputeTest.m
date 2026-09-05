@@ -7,15 +7,11 @@ classdef ComputeTest < matlab.unittest.TestCase
 %
     properties
         Narrative      (1,:) string  % Stores the narrative for each test
-        OrganizationId (1,1) string  % From NDI_CLOUD_TEST_ORGANIZATION_ID
+        OrganizationId (1,1) string  % Org to bill compute sessions to
     end
 
     methods (TestClassSetup)
         function checkCredentials(testCase)
-            % This runs once before any tests in this class. It ensures the
-            % environment carries the credentials and (for multi-org
-            % accounts) the org id the backend needs to bill the compute
-            % session to.
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
             testCase.assumeNotEmpty(username, ...
@@ -23,14 +19,8 @@ classdef ComputeTest < matlab.unittest.TestCase
             testCase.assumeNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set.');
 
-            % NDI_CLOUD_TEST_ORGANIZATION_ID is the organization id these
-            % compute tests bill their sessions to. Single-org test
-            % accounts (CI's secret account) can leave it unset and the
-            % backend picks that account's sole org; multi-org accounts
-            % (real developers) MUST set it, or the API returns HTTP 400
-            % "Organization ID is required (user has multiple)" and every
-            % test in this class fails identically.
-            testCase.OrganizationId = string(getenv("NDI_CLOUD_TEST_ORGANIZATION_ID"));
+            testCase.OrganizationId = ...
+                ndi.unittest.cloud.compute.resolveTestOrganizationId(testCase);
         end
     end
 

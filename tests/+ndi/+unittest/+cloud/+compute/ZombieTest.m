@@ -6,15 +6,11 @@ classdef ZombieTest < matlab.unittest.TestCase
 
     properties
         Narrative      (1,:) string
-        OrganizationId (1,1) string  % From NDI_CLOUD_TEST_ORGANIZATION_ID
+        OrganizationId (1,1) string  % Org to bill compute sessions to
     end
 
     methods (TestClassSetup)
         function checkCredentials(testCase)
-            % Ensure credentials are present in the environment; also pick
-            % up the organization id the compute session should bill to.
-            % See ComputeTest for the full NDI_CLOUD_TEST_ORGANIZATION_ID
-            % contract.
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
             testCase.assumeNotEmpty(username, ...
@@ -22,7 +18,8 @@ classdef ZombieTest < matlab.unittest.TestCase
             testCase.assumeNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set.');
 
-            testCase.OrganizationId = string(getenv("NDI_CLOUD_TEST_ORGANIZATION_ID"));
+            testCase.OrganizationId = ...
+                ndi.unittest.cloud.compute.resolveTestOrganizationId(testCase);
         end
     end
 

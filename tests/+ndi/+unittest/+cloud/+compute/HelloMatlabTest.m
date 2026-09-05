@@ -19,6 +19,10 @@ classdef HelloMatlabTest < matlab.unittest.TestCase
 %   it. This way the suite does not silently drop license-verification
 %   coverage but also does not break the default cloud-api run.
 
+    properties
+        OrganizationId (1,1) string  % Org to bill compute sessions to
+    end
+
     methods (TestClassSetup)
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
@@ -27,6 +31,9 @@ classdef HelloMatlabTest < matlab.unittest.TestCase
                 'LOCAL CONFIGURATION ERROR: NDI_CLOUD_USERNAME is not set.');
             testCase.fatalAssertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: NDI_CLOUD_PASSWORD is not set.');
+
+            testCase.OrganizationId = ...
+                ndi.unittest.cloud.compute.resolveTestOrganizationId(testCase);
         end
     end
 
@@ -59,15 +66,13 @@ classdef HelloMatlabTest < matlab.unittest.TestCase
                     "before running this test. " + lic_message);
             end
 
-            % --- 2. Run the hello-matlab-v1 pipeline end-to-end.
-            %        NDI_CLOUD_TEST_ORGANIZATION_ID names the org to bill
-            %        the compute session to. Empty for single-org test
-            %        accounts (CI's secret account); required otherwise.
-            orgId = string(getenv("NDI_CLOUD_TEST_ORGANIZATION_ID"));
+            % --- 2. Run the hello-matlab-v1 pipeline end-to-end. The org
+            %        the session bills to is resolved once in
+            %        TestClassSetup (see resolveTestOrganizationId).
             narrative(end+1) = "Calling ndi.cloud.helloMatlab to start hello-matlab-v1 and poll until terminal.";
             [success, sessionId, statusMessage, sessionDoc] = ndi.cloud.helloMatlab(...
                 'TimeoutSeconds', 1200, 'PollIntervalSeconds', 15, 'Verbose', true, ...
-                'OrganizationId', orgId);
+                'OrganizationId', testCase.OrganizationId);
 
             narrative(end+1) = "helloMatlab completed. session=" + sessionId + ...
                 " success=" + string(success) + " message=" + statusMessage;
