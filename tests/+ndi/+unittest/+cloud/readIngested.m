@@ -57,6 +57,23 @@ classdef readIngested < matlab.unittest.TestCase
             end
             ndi.cloud.authenticate('InteractionEnabled', 'off');
 
+            % Clear DID's persistent user-scope file cache before running.
+            % The cache lives at ~/Documents/DID/fileCache and is a
+            % singleton across MATLAB sessions. Its binaryTable index can
+            % carry stale rows for UIDs whose actual files were evicted
+            % between runs; when open_doc then falls back to re-fetch,
+            % addFile refuses with "already a file with name <uid> in the
+            % cache" and open_doc reports "cannot be accessed" for a file
+            % that would otherwise download fine. CI never sees this
+            % (fresh runner every time) but local machines accumulate it.
+            % Clearing here makes the test invulnerable to that state.
+            try
+                did.common.getCache().clear();
+            catch
+                % A cache that doesn't exist yet is the same as an empty
+                % one -- carry on.
+            end
+
             testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
 
             [~, sess_ids] = testCase.Dataset.session_list();
