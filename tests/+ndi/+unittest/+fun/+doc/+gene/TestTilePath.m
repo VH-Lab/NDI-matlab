@@ -75,10 +75,22 @@ classdef TestTilePath < matlab.unittest.TestCase
                 'The memo must return what the database returns.');
         end
 
-        function testAVanishedFileIsFetchedAgainRatherThanReturned(testCase)
-            % The one way a memo can be wrong. The remembered path is
-            % checked, so an evicted file costs a fetch instead of handing
-            % back something that no longer resolves.
+        function testAVanishedFileIsNeverHandedBack(testCase)
+            % The one way a memo can be wrong: returning a path that has
+            % stopped resolving. What SHOULD happen when it does depends on
+            % what the path is, and the two backings differ.
+            %
+            % On a directory-backed session the path IS the stored file,
+            % not a copy of it, so a file that goes away is data that is
+            % gone and the database says so -- DID:SQLITEDB:open, "cannot
+            % be accessed". On a cloud-backed session the local file is a
+            % cache copy and asking again re-fetches it.
+            %
+            % So this asserts the invariant common to both rather than one
+            % backing's outcome: whatever tilePath does, it does not hand
+            % back a path that is not there. Trusting the memo would return
+            % the stale path and move the failure to whoever read it, where
+            % it would look like a corrupt tile rather than a missing one.
             p = ndi.fun.doc.gene.tilePath(testCase.session, ...
                 testCase.tileDoc, testCase.tileName);
             moved = [p '.moved'];
@@ -86,10 +98,41 @@ classdef TestTilePath < matlab.unittest.TestCase
             testCase.addTeardown(@() testCase.restore(moved, p));
             testCase.verifyFalse(isfile(p));
 
+            threw = false;
+            again = '';
+            try
+                again = ndi.fun.doc.gene.tilePath(testCase.session, ...
+                    testCase.tileDoc, testCase.tileName);
+            catch ME
+                threw = true;
+                testCase.verifySubstring(ME.message, testCase.tileName, ...
+                    'The error must name the file that could not be reached.');
+            end
+            if ~threw
+                testCase.verifyTrue(isfile(again), ...
+                    'tilePath returned a path that does not exist.');
+            end
+        end
+
+        function testTheMemoRecoversOnceTheFileIsBack(testCase)
+            % A vanished file must not poison the entry for good: once it
+            % is reachable again, so is the tile.
+            p = ndi.fun.doc.gene.tilePath(testCase.session, ...
+                testCase.tileDoc, testCase.tileName);
+            moved = [p '.moved'];
+            movefile(p, moved);
+            try
+                ndi.fun.doc.gene.tilePath(testCase.session, ...
+                    testCase.tileDoc, testCase.tileName);
+            catch
+                % expected on a directory-backed session
+            end
+            movefile(moved, p);
+
             again = ndi.fun.doc.gene.tilePath(testCase.session, ...
                 testCase.tileDoc, testCase.tileName);
-            testCase.verifyTrue(isfile(again), ...
-                'A vanished file must be fetched again, not returned.');
+            testCase.verifyEqual(again, p);
+            testCase.verifyTrue(isfile(again));
         end
 
         function testTwoFilesOfOneDocumentDoNotCollide(testCase)

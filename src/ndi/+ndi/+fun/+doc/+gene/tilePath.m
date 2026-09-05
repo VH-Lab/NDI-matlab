@@ -22,7 +22,15 @@ function p = tilePath(session, doc, filename)
 %   call, so the repeat is the common case rather than the exception.
 %
 %   THE FILE CAN STILL DISAPPEAR, which is why the remembered path is
-%   CHECKED rather than trusted. A cache eviction just costs one fetch.
+%   CHECKED rather than trusted -- and what happens then depends on what
+%   the path is. On a DIRECTORY-BACKED session the path IS the stored
+%   file, not a copy of it, so a file that has gone is data that is gone
+%   and the database says so. On a CLOUD-BACKED session the local file is
+%   a cache copy, and asking again re-fetches it.
+%
+%   Either way the memo does not hand back a path that has stopped
+%   resolving. Trusting it would move the failure to whoever read the
+%   file, where a missing tile would look like a corrupt one.
 %
 %   Inputs:
 %   SESSION  - an ndi.session or ndi.dataset
