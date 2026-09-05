@@ -202,14 +202,6 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             end
         end
 
-        function id = wellFormedButUnusedDocId()
-            % Endpoint routes /:documentId through Mongoose findById, which
-            % throws a CastError (surfacing as 500) on a non-24-hex-char
-            % string. Use a well-formed but not-in-database id so the 404
-            % path is what we actually exercise.
-            hex = '0123456789abcdef';
-            id = string(hex(randi(numel(hex), 1, 24)));
-        end
     end
 
     methods (Test)
@@ -348,13 +340,13 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.Narrative = "Begin testGetSignedURLSetUnknownDocument";
             narrative = testCase.Narrative;
 
-            bogusDoc = ndi.unittest.cloud.SignedURLSetTest.wellFormedButUnusedDocId();
+            bogusDoc = "doc-that-does-not-exist-" + string(did.ido.unique_id());
             [b, ans_, resp, url] = ndi.cloud.api.files.getSignedURLSet(...
                 testCase.DatasetID, bogusDoc);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, ans_, resp, url);
             testCase.verifyFalse(b, "Bogus document id should fail. " + msg);
             testCase.verifyEqual(double(resp.StatusCode), 404, ...
-                "Expected HTTP 404 for unknown (but well-formed) document id. " + msg);
+                "Expected HTTP 404 for unknown document id. " + msg);
 
             testCase.Narrative = narrative;
         end
