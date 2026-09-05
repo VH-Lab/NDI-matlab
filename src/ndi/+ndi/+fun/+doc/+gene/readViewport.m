@@ -66,10 +66,12 @@ for r = rFirst:min(rLast, G-1)
             info.tilesEmpty = info.tilesEmpty + 1;
             continue;
         end
-        bd = session.database_openbinarydoc(tileDoc, name);
-        cl = onCleanup(@() session.database_closebinarydoc(bd));
-        t = ndi.fun.doc.gene.readTileFile(bd.fullpathfilename);
-        clear cl;
+        % tilePath remembers where a tile landed, so panning back over
+        % ground already covered costs an isfile check rather than a
+        % document read, a location resolve and -- on a cloud-backed
+        % session -- a retrieval.
+        t = ndi.fun.doc.gene.readTileFile( ...
+            ndi.fun.doc.gene.tilePath(session, tileDoc, name));
         info.tilesRead = info.tilesRead + 1;
 
         if options.density
