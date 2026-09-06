@@ -614,6 +614,43 @@ classdef GeneIngest < ndi.gui.app.sessionApp
             notes = ndi.fun.doc.gene.readNotes(gefMeta, geneID);
         end
 
+        function args = stepArgs(plan, kind)
+        % STEPARGS - the args of the first step of KIND, or an empty struct
+        %
+        %   The plan is the contract between the confirmation screen and
+        %   the run, so the run reads its arguments back out of the plan
+        %   rather than off plan.choices. A user who saw a pyramid of six
+        %   levels described gets a pyramid of six levels.
+        %
+        %   Public and static like the rest of the pure layer, so it can be
+        %   tested with no display and no session.
+            args = struct();
+            for i = 1:numel(plan.steps)
+                if strcmp(plan.steps(i).kind, kind)
+                    args = plan.steps(i).args;
+                    return;
+                end
+            end
+        end
+
+        function f = gefProgress(progressFcn, n)
+        % GEFPROGRESS - map fromGEF's own [0 1] onto the whole run's bar
+        %
+        %   fromGEF reports progress across itself; it does not know how
+        %   many steps the plan has. It covers the geneList and pyramid
+        %   steps, which are always the first two, so its fraction is
+        %   scaled into that share and the bar stays monotonic when the
+        %   cells step picks up.
+        %
+        %   Public and static like the rest of the pure layer, so the
+        %   no-overshoot invariant can be tested with no display.
+            f = [];
+            if isempty(progressFcn) || n <= 0, return; end
+            share = min(2, n) / n;
+            f = @(frac, txt) progressFcn(max(0, min(1, frac * share)), txt);
+        end
+
+
         function s = summarizeGef(meta, geneID)
         % SUMMARIZEGEF - what a .gef contains, from a probe alone
         %
@@ -689,36 +726,6 @@ classdef GeneIngest < ndi.gui.app.sessionApp
             result.cellsDoc = cellsDoc;
             result.labelDocs = labelDocs;
             result.notes = [result.notes(:); info.notes(:)];
-        end
-
-        function args = stepArgs(plan, kind)
-        % STEPARGS - the args of the first step of KIND, or an empty struct
-        %
-        %   The plan is the contract between the confirmation screen and
-        %   the run, so the run reads its arguments back out of the plan
-        %   rather than off plan.choices. A user who saw a pyramid of six
-        %   levels described gets a pyramid of six levels.
-            args = struct();
-            for i = 1:numel(plan.steps)
-                if strcmp(plan.steps(i).kind, kind)
-                    args = plan.steps(i).args;
-                    return;
-                end
-            end
-        end
-
-        function f = gefProgress(progressFcn, n)
-        % GEFPROGRESS - map fromGEF's own [0 1] onto the whole run's bar
-        %
-        %   fromGEF reports progress across itself; it does not know how
-        %   many steps the plan has. It covers the geneList and pyramid
-        %   steps, which are always the first two, so its fraction is
-        %   scaled into that share and the bar stays monotonic when the
-        %   cells step picks up.
-            f = [];
-            if isempty(progressFcn) || n <= 0, return; end
-            share = min(2, n) / n;
-            f = @(frac, txt) progressFcn(max(0, min(1, frac * share)), txt);
         end
 
         function tick(progressFcn, i, n, txt)
