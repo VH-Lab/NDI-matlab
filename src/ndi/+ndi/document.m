@@ -362,69 +362,6 @@ classdef document < did.document
             end
         end %  current_file_list()
 
-        function ndi_document_obj_out = plus(ndi_document_obj_a, ndi_document_obj_b)
-            % PLUS - merge two ndi.document objects
-            %
-            % NDI_DOCUMENT_OBJ_OUT = PLUS(NDI_DOCUMENT_OBJ_A, NDI_DOCUMENT_OBJ_B)
-            %
-            % Merges the ndi.document objects A and B. First, the 'document_class'
-            % superclasses are merged. Then, the fields that are in B but are not in A
-            % are added to A. The result is returned in NDI_DOCUMENT_OBJ_OUT.
-            % Note that any fields that A has that are also in B will be preserved; no elements of
-            % those fields of B will be combined with A.
-            %
-            ndi_document_obj_out = ndi_document_obj_a;
-            % Step 1): Merge superclasses
-            ndi_document_obj_out.document_properties.document_class.superclasses = ...
-                (cat(1,ndi_document_obj_out.document_properties.document_class.superclasses,...
-                ndi_document_obj_b.document_properties.document_class.superclasses));
-            otherproperties = rmfield(ndi_document_obj_b.document_properties, 'document_class');
-
-            % Step 2): Merge dependencies if we have to
-            if isfield(ndi_document_obj_out.document_properties,'depends_on') && ...
-                    isfield(ndi_document_obj_b.document_properties,'depends_on')
-                % we need to merge dependencies
-                for k=1:numel(ndi_document_obj_b.document_properties.depends_on)
-                    tf = strcmp(ndi_document_obj_b.document_properties.depends_on(k).name,...
-                        {ndi_document_obj_out.document_properties.depends_on.name});
-                    if any(tf)
-                        index = find(tf);
-                        index = index(1);
-                        ndi_document_obj_out.document_properties.depends_on(index) =  ...
-                            ndi_document_obj_b.document_properties.depends_on(k);
-                    else
-                        ndi_document_obj_out.document_properties.depends_on(end+1) = ...
-                            ndi_document_obj_b.document_properties.depends_on(k);
-                    end
-                end
-                otherproperties = rmfield(otherproperties,'depends_on');
-
-            end
-
-            % Step 3): Merge file_list
-            if isfield(ndi_document_obj_b.document_properties,'files')
-                % does doc a also have it?
-                if isfield(ndi_document_obj_out.document_properties,'files')
-                    file_list = cat(2,ndi_document_obj_out.document_properties.files.file_list(:)', ...
-                        ndi_document_obj_b.document_properties.files.file_list(:)');
-                    file_info = cat(1,ndi_document_obj_out.document_properties.files.file_info(:),...
-                        ndi_document_obj_b.document_properties.files.file_info(:));
-                    if numel(unique(file_list))~=numel(file_list)
-                        error(['Documents have files of the same name. Cannot be combined.']);
-                    end
-                    ndi_document_obj_out.document_properties.files.file_list = file_list;
-                    ndi_document_obj_out.document_properties.files.file_info = file_info;
-                else
-                    % doc a doesn't have it, just use doc b's info
-                    ndi_document_obj_out.document_properties.files = ndi_document_obj_b.document_properties.files;
-                end
-            end
-
-            % Step 4): Merge the other fields
-            ndi_document_obj_out.document_properties = vlt.data.structmerge(ndi_document_obj_out.document_properties,...
-                otherproperties);
-        end % plus()
-
         function write(ndi_document_obj, filePrefix, options)
             % WRITE - write the document properties to a file
             %

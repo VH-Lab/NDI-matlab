@@ -16,11 +16,12 @@ classdef TestNDIDocumentInheritedDependencyAPI < matlab.unittest.TestCase
     % dependency_value_n falls back to an unnumbered name, and all three
     % readers of depends_on guard an empty list.
     %
-    % plus is the one still overridden, and not for its dependency merging --
-    % did.document does B-wins now too. It is the merge in step 4:
-    % did.document uses did.datastructures.structmerge and ndi.document uses
-    % vlt.data.structmerge, and if those order the merged fieldnames
-    % differently the stored JSON key order changes. Unverified, so kept.
+    % plus is inherited too. The question was step 4, where did.document
+    % merges with did.datastructures.structmerge and ndi.document merged with
+    % vlt.data.structmerge -- if those ordered fieldnames differently the
+    % stored JSON key order would change. Reading vlt.data.structmerge settled
+    % it: DID's is a port of it, same docstring, same DoAlphabetical default,
+    % same algorithm. Both alphabetize, so nothing moves.
 
     methods (TestMethodSetup)
         function setupMethod(testCase)
@@ -78,7 +79,36 @@ classdef TestNDIDocumentInheritedDependencyAPI < matlab.unittest.TestCase
             % JSON key order. Kept until that is checked.
             testCase.verifyEqual(testCase.definerOf('eq'), 'did.document');
             testCase.verifyEqual(testCase.definerOf('setproperties'), 'did.document');
-            testCase.verifyEqual(testCase.definerOf('plus'), 'ndi.document');
+            testCase.verifyEqual(testCase.definerOf('plus'), 'did.document');
+        end
+
+        function testPlusMergesDependenciesTakingTheRightDocument(testCase)
+            % plus is inherited now. did.datastructures.structmerge and
+            % vlt.data.structmerge turned out to be the same function -- same
+            % docstring, same DoAlphabetical default, same algorithm -- so the
+            % merged fieldname order is unchanged and stored JSON key order
+            % with it. B wins a dependency name collision, as it always did
+            % here and now does upstream too.
+            docA = testCase.elementDoc();
+            docA = docA.set_dependency_value('subject_id', 'from_A');
+            docB = testCase.elementDoc();
+            docB = docB.set_dependency_value('subject_id', 'from_B');
+
+            merged = docA + docB;
+            testCase.verifyEqual(merged.dependency_value('subject_id'), 'from_B');
+            names = {merged.document_properties.depends_on.name};
+            testCase.verifyEqual(numel(unique(names)), numel(names), ...
+                'merging must not leave the same dependency name twice');
+        end
+
+        function testPlusStillMergesOrdinaryFields(testCase)
+            % Step 4 of plus, the part that made inheriting it a question.
+            docA = testCase.elementDoc();
+            docA = docA.setproperties('element.name', 'from_A');
+            docB = testCase.elementDoc();
+            docB = docB.setproperties('element.name', 'from_B');
+            merged = docA + docB;
+            testCase.verifyEqual(merged.document_properties.element.name, 'from_B');
         end
 
         function testEqStillComparesByBaseId(testCase)
