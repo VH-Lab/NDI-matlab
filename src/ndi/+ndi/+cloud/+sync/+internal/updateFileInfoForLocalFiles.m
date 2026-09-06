@@ -18,6 +18,25 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory)
 
     if document.has_files()
         originalFileInfo = document.document_properties.files.file_info;
+
+        % reset_file_info clears files.series_info along with file_info -- see
+        % did.document/reset_file_info, "A series' per-instance record is reset
+        % with the rest". The loop below only restores file_info, so without
+        % this a downloaded document loses the per-series record entirely and
+        % reports zero members for a populated series. Silently: isFileSeries
+        % reads files.file_series, the class declaration, which the reset
+        % leaves alone, so only seriesCount notices and it returns 0 rather
+        % than erroring. See VH-Lab/NDI-matlab#945.
+        %
+        % Carried across verbatim. The record holds name, count, n_present and
+        % source_root; its ingest_locations were already emptied on the way
+        % into storage, and nothing here re-ingests members, so there is
+        % nothing to recompute.
+        hasSeriesInfo = isfield(document.document_properties.files, 'series_info');
+        if hasSeriesInfo
+            originalSeriesInfo = document.document_properties.files.series_info;
+        end
+
         document = document.reset_file_info();
     
         for i = 1:numel(originalFileInfo)
@@ -31,6 +50,10 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory)
                 warning('Local file does not exist for document "%s"', ...
                     document.document_properties.base.id)
             end
+        end
+
+        if hasSeriesInfo
+            document = document.setproperties('files.series_info', originalSeriesInfo);
         end
     end
 end
