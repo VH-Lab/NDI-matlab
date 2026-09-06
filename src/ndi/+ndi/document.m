@@ -452,17 +452,6 @@ classdef document < did.document
             end
         end % write()
 
-        function b = validate(ndi_document_obj)
-            % VALIDATE - 0/1 evaluate whether ndi.document object is valid by its schema
-            %
-            % B = VALIDATE(NDI_DOCUMENT_OBJ)
-            %
-            % Checks the fields of the ndi.document object against the schema in
-            % NDI_DOCUMENT_OBJ.ndi_core_properties.validation_schema and returns 1
-            % if the object is valid and 0 otherwise.
-            b = 1; % for now, skip this
-        end % validate()
-
     end % methods
 
     methods (Static)
