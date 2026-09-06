@@ -19,7 +19,31 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     %       app.addBar('Label','Save document(s)','Tag',uuid,'Auto',true); % Add a bar
     %       app.updateBar(uuid,0.5) % Update the bar's progress
     %
-    %   See also: uifigure, uigridlayout, uiaxes, patch, uilabel, uibutton
+    %   Silent (headless) mode:
+    %       Creating a uifigure spawns a MATLABWindow (CEF) process. In a
+    %       headless context (a `-batch` job, CI, a cluster run) that launch
+    %       can fail, and the failure is a silent timeout rather than an
+    %       error, so the calling job simply stalls. To avoid depending on a
+    %       GUI launch that batch runs have no business needing, the class
+    %       runs in a silent mode whenever it detects a headless context:
+    %       no uifigure is created and every graphics touchpoint no-ops,
+    %       while all of the bookkeeping (the ProgressBars struct, addBar,
+    %       updateBar, removeBar, timeout tracking, getBarNum, getState)
+    %       behaves exactly as it does with a window. Callers change
+    %       nothing; they simply get no window.
+    %
+    %       The decision is made once per construction by resolveSilentMode,
+    %       in this order:
+    %           1. the 'Silent' name-value argument, when given;
+    %           2. the process-wide default set with silentModeDefault;
+    %           3. automatic detection by isHeadless.
+    %       Levels 1 and 2 exist so a headless context can be forced (or
+    %       refused) without a display, which is also what makes the mode
+    %       testable in either direction.
+    %
+    %   See also: uifigure, uigridlayout, uiaxes, patch, uilabel, uibutton,
+    %       ndi.gui.component.ProgressBarWindow.isHeadless,
+    %       ndi.gui.component.ProgressBarWindow.silentModeDefault
 
     properties (Hidden)
         ScreenFrac double = 0.025 % Fraction of screen height used per bar row.
@@ -32,6 +56,11 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         AutoDelete logical = true % Flag to automatically delete the ProgressBarWindow if all bars are closed.
         IsDocked logical = false % True when the bars are hosted inside an open navigator's progress pane instead of a standalone window.
         HostPane = [] % Handle to the ndi.gui.nav.progressPane hosting the bars when IsDocked is true.
+        WindowTitle char = '' % Title requested for this window, recorded in every mode (there is no figure to read it back from when silent).
+    end
+
+    properties (SetAccess=immutable)
+        Silent (1,1) logical = false % True when running headless: no figure is created and all graphics touchpoints no-op.
     end
 
     properties (SetObservable)
@@ -70,6 +99,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %                   figure and deletes the app handle when there are
             %                   no more progress bars remaining in the window.
             %                   Defaults to true.
+            %       Silent - Forces silent (headless) mode on or off for this
+            %                   window, bypassing detection. Defaults to []
+            %                   (empty), meaning "decide automatically" - see
+            %                   resolveSilentMode. In silent mode no uifigure
+            %                   is created and the bars exist as bookkeeping
+            %                   only.
             %
             %   Outputs:
             %       app - The handle to the created or existing app instance.
@@ -83,7 +118,16 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 options.AutoDelete logical = true
                 options.Visible (1,1) matlab.lang.OnOffSwitchState = "on"
                 options.Dock logical = true
+                options.Silent {mustBeScalarOrEmpty, mustBeNumericOrLogical} = []
             end
+
+            % --- Decide whether to run headless ---------------------------
+            %   Made once, here, and stored on the object, so that every
+            %   method below asks the object rather than re-detecting. That
+            %   is also the injection point the tests use to exercise both
+            %   paths without needing (or avoiding) a display.
+            silent = ndi.gui.component.ProgressBarWindow.resolveSilentMode(options.Silent);
+            app.Silent = silent;
 
             % --- Dock into an open navigator, if there is one -------------
             %   When a navigator is open its progress pane hosts the bars
@@ -91,7 +135,8 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %   navigator is open do we fall through to the standalone
             %   window path below. Callers do not change: the same
             %   constructor they already use routes automatically.
-            if options.Dock
+            %   Docking is a graphics path, so it is skipped when headless.
+            if options.Dock && ~silent
                 dockedApp = app.tryDock(options);
                 if ~isempty(dockedApp)
                     app = dockedApp;
@@ -100,8 +145,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             end
 
 
-            % Find existing figure with that tag
-            openFigs = findall(groot,'Type','figure','tag','progressbar');
+            % Find existing figure with that tag. In silent mode no figure
+            % is ever created, so there is nothing to find or reuse and each
+            % construction yields its own bookkeeping-only instance.
+            if silent
+                openFigs = gobjects(0);
+            else
+                openFigs = findall(groot,'Type','figure','tag','progressbar');
+            end
             if ~isempty(openFigs)
 
                 % Check for figure with same title
@@ -147,24 +198,35 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % Add auto-delete tag
             app.AutoDelete = options.AutoDelete;
 
-            % Add listeners
-            app.ProgressFigureListener = addlistener(app,'ProgressFigure','PostSet',@app.handleAppChange);
-            app.ProgressGridListener = addlistener(app,'ProgressGrid','PostSet',@app.handleAppChange);
-            app.ProgressBarListener = addlistener(app,'ProgressBars','PostSet',@app.handleAppChange);
+            % Add listeners. Not installed when silent: ProgressFigure and
+            % ProgressGrid are never set so those two could not fire anyway,
+            % and handleAppChange has nothing to save or redraw, so listening
+            % on ProgressBars would only cost a drawnow per bookkeeping
+            % update in a batch job.
+            if ~silent
+                app.ProgressFigureListener = addlistener(app,'ProgressFigure','PostSet',@app.handleAppChange);
+                app.ProgressGridListener = addlistener(app,'ProgressGrid','PostSet',@app.handleAppChange);
+                app.ProgressBarListener = addlistener(app,'ProgressBars','PostSet',@app.handleAppChange);
+            end
 
-            % Initialize progress bar figure
-            app.ProgressFigure = uifigure(...
-                'Units', 'normalized',...
-                'NumberTitle', 'off',...
-                'Resize', 'off',...
-                'MenuBar', 'none',...
-                'Tag', 'progressbar', ...
-                'Visible', app.Visible);
+            % Initialize progress bar figure and grid. Skipped when silent:
+            % this uifigure call is the GUI launch that headless runs must
+            % not depend on. Leaving ProgressFigure and ProgressGrid unset
+            % is what every graphics touchpoint below tolerates.
+            if ~silent
+                app.ProgressFigure = uifigure(...
+                    'Units', 'normalized',...
+                    'NumberTitle', 'off',...
+                    'Resize', 'off',...
+                    'MenuBar', 'none',...
+                    'Tag', 'progressbar', ...
+                    'Visible', app.Visible);
 
-            % Initialze progress bar grid
-            app.ProgressGrid = uigridlayout(app.ProgressFigure,...
-                'ColumnWidth',{'17.5x','1.5x','1x'},'RowHeight',{},...
-                'RowSpacing',0);
+                % Initialze progress bar grid
+                app.ProgressGrid = uigridlayout(app.ProgressFigure,...
+                    'ColumnWidth',{'17.5x','1.5x','1x'},'RowHeight',{},...
+                    'RowSpacing',0);
+            end
 
             % Set title and size
             app = app.setFigureTitle(title);
@@ -245,6 +307,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Auto = options.Auto;
             app.ProgressBars(barNum).Progress = 0;
             app.ProgressBars(barNum).Clock(1:2) = {datetime('now')};
+
+            % Everything from here on builds this bar's graphics. When
+            % silent there is no grid and no figure, so the bar exists as
+            % bookkeeping only and its Label/Timer/Axes/Patch/Percent/Button
+            % fields stay empty (which the other methods tolerate).
+            if app.Silent
+                return
+            end
 
             % Add rows to ProgressGrid (one for label/timer, one for bar)
             if isempty(options.Label)
@@ -348,10 +418,11 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.ProgressBars(barNum).Progress = progress;
 
                 % Set progress bar width
-                set(app.ProgressBars(barNum).Patch,'XData',[0;progress;progress;0]);
+                app.setGraphics(app.ProgressBars(barNum).Patch,...
+                    'XData',[0;progress;progress;0]);
 
                 % Set percent label
-                set(app.ProgressBars(barNum).Percent,...
+                app.setGraphics(app.ProgressBars(barNum).Percent,...
                     'Text',sprintf('%.0f%%', progress * 100));
 
                 % Add current time
@@ -369,8 +440,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                     elseif timeRemaining > hours(2)
                         timeString = sprintf('%.0f hours',hours(timeRemaining));
                     end
-                    set(app.ProgressBars(barNum).Timer,'Text',['Estimated time: ',timeString]);
-                    set(app.ProgressBars(barNum).Button,'Icon',app.IconClose);
+                    app.setGraphics(app.ProgressBars(barNum).Timer,...
+                        'Text',['Estimated time: ',timeString]);
+                    app.setGraphics(app.ProgressBars(barNum).Button,'Icon',app.IconClose);
                 end
 
                 % Check for bars that timed out or completed
@@ -425,37 +497,44 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 return
             end
 
-            % Get tag and ProgressGrid row numbers
-            rowNum = app.ProgressBars(barNum).Label.Layout.Row + [0 1];
-
             % Check for state at time of removal
             state = app.ProgressBars(barNum).State;
 
             % Set state to closed
             app.ProgressBars(barNum).State = 'Closed';
-            
-            % Remove progress bar
-            delete([app.ProgressBars(barNum).Axes,...
-                app.ProgressBars(barNum).Percent,...
-                app.ProgressBars(barNum).Button,...
-                app.ProgressBars(barNum).Label,...
-                app.ProgressBars(barNum).Timer]);
 
-            % Adjust position of other bars
-            openBars = find(~strcmpi({app.ProgressBars.State},'Closed'));
-            for i = 1:numel(openBars)
-                app.ProgressBars(openBars(i)).Label.Layout.Row = 2*i - 1;
-                app.ProgressBars(openBars(i)).Timer.Layout.Row = 2*i - 1;
-                app.ProgressBars(openBars(i)).Axes.Layout.Row = 2*i;
-                app.ProgressBars(openBars(i)).Percent.Layout.Row = 2*i;
-                app.ProgressBars(openBars(i)).Button.Layout.Row = 2*i;
+            % Tear down this bar's graphics and re-flow the remaining ones.
+            % Skipped when silent: there are no components to delete and no
+            % grid to re-flow, only the bookkeeping above and the state
+            % reporting below.
+            if ~app.Silent
+
+                % Get tag and ProgressGrid row numbers
+                rowNum = app.ProgressBars(barNum).Label.Layout.Row + [0 1];
+
+                % Remove progress bar
+                delete([app.ProgressBars(barNum).Axes,...
+                    app.ProgressBars(barNum).Percent,...
+                    app.ProgressBars(barNum).Button,...
+                    app.ProgressBars(barNum).Label,...
+                    app.ProgressBars(barNum).Timer]);
+
+                % Adjust position of other bars
+                openBars = find(~strcmpi({app.ProgressBars.State},'Closed'));
+                for i = 1:numel(openBars)
+                    app.ProgressBars(openBars(i)).Label.Layout.Row = 2*i - 1;
+                    app.ProgressBars(openBars(i)).Timer.Layout.Row = 2*i - 1;
+                    app.ProgressBars(openBars(i)).Axes.Layout.Row = 2*i;
+                    app.ProgressBars(openBars(i)).Percent.Layout.Row = 2*i;
+                    app.ProgressBars(openBars(i)).Button.Layout.Row = 2*i;
+                end
+
+                % Adjust figure size
+                app.ProgressGrid.RowHeight(rowNum) = [];
+                rowHeight = cellfun(@(rh) str2double(replace(rh,'x','')),...
+                    app.ProgressGrid.RowHeight);
+                app = app.setFigureSize(sum(rowHeight));
             end
-
-            % Adjust figure size
-            app.ProgressGrid.RowHeight(rowNum) = [];
-            rowHeight = cellfun(@(rh) str2double(replace(rh,'x','')),...
-                app.ProgressGrid.RowHeight);
-            app = app.setFigureSize(sum(rowHeight));
 
             % Throw error/warning if terminated in the middle of task
             if app.ProgressBars(barNum).Progress < 1
@@ -502,6 +581,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 totalRowHeight (1,1) {mustBeNumeric}
             end
 
+            % Nothing to resize when running headless: there is no figure
+            % and no grid.
+            if app.Silent
+                return
+            end
+
             % When docked, grow the host pane instead of a figure.
             if app.IsDocked
                 if ~isempty(app.HostPane) && isvalid(app.HostPane)
@@ -542,9 +627,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 titleName (1,:) {mustBeTextScalar}
             end
 
-            % When docked there is no window title; the pane keeps its own
-            % 'Progress' header, so this is a no-op.
-            if app.IsDocked
+            % Record the requested title in every mode, so that it stays
+            % available when there is no figure to read it back from.
+            app.WindowTitle = char(titleName);
+
+            % When silent there is no window at all, and when docked there
+            % is no window title (the pane keeps its own 'Progress' header),
+            % so in both cases this is a no-op.
+            if app.Silent || app.IsDocked
                 return
             end
 
@@ -608,7 +698,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                         app.ProgressBars(i).Progress >= 1
                     
                     % Set icon to success and state to 'Complete'
-                    set(app.ProgressBars(i).Timer,'Text','Complete');
+                    app.setGraphics(app.ProgressBars(i).Timer,'Text','Complete');
                     app.setSuccessIconForButton(app.ProgressBars(i).Button)
                     app.ProgressBars(i).State = 'Complete';
                     barNum(end+1) = i;
@@ -755,6 +845,13 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %handleAppChange Listener callback for property changes.
             %   Ensures guidata is saved and the figure is redrawn.
 
+            % When silent there is no figure to store guidata in and
+            % nothing on screen to redraw. The listeners are not installed
+            % in that mode, so this is belt and braces.
+            if app.Silent
+                return
+            end
+
             % When docked there is no owning figure; the pane holds the
             % reference to this app, so just redraw.
             if app.IsDocked
@@ -782,7 +879,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             end
 
             if doDelete
-                if app.IsDocked
+                if app.Silent
+                    % No figure to close; just drop the app.
+                    delete(app);
+                elseif app.IsDocked
                     % Never delete the navigator; just return the pane to
                     % its idle state and drop this app.
                     if ~isempty(app.HostPane) && isvalid(app.HostPane)
@@ -798,6 +898,23 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     end
 
     methods (Access = private)
+        function setGraphics(app, handleValue, varargin)
+            %setGraphics Apply set() to a bar component, if there is one.
+            %
+            %   SETGRAPHICS(APP, HANDLEVALUE, ...) forwards to SET when this
+            %   window has graphics, and does nothing when it is silent or
+            %   the component was never created. Deleted (but non-empty)
+            %   handles are deliberately still passed to SET so that callers
+            %   relying on the MATLAB:class:InvalidHandle error - updateBar
+            %   uses it to detect a bar closed concurrently by its button -
+            %   keep seeing it.
+
+            if app.Silent || isempty(handleValue)
+                return
+            end
+            set(handleValue, varargin{:});
+        end
+
         function dockedApp = tryDock(app, options)
             %tryDock Attempt to host the bars in an open navigator's pane.
             %
@@ -877,6 +994,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         end
 
         function bringToFront(app)
+            if app.Silent
+                return
+            end
             if app.IsDocked
                 if ~isempty(app.HostPane) && isvalid(app.HostPane)
                     app.HostPane.setEngagedQuietly(true);
@@ -898,8 +1018,117 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         end
     end
 
+    methods (Static)
+        function tf = isHeadless()
+            %isHeadless True when this MATLAB has no usable display.
+            %
+            %   TF = ISHEADLESS() reports whether the current process is
+            %   running in a context where creating a uifigure is unwise.
+            %   Two signals are used:
+            %
+            %       * batchStartupOptionUsed - documented, and true when
+            %         MATLAB was started with -batch, which is exactly how
+            %         matlab-actions/run-command and most scripted or
+            %         cluster jobs invoke it.
+            %       * an empty DISPLAY on Linux - a second signal, for
+            %         non-batch headless sessions.
+            %
+            %   Outputs:
+            %       tf - Scalar logical.
+            %
+            %   See also: ndi.gui.component.ProgressBarWindow.resolveSilentMode
+
+            % Guarded: batchStartupOptionUsed exists from R2019a onwards.
+            try
+                tf = logical(batchStartupOptionUsed);
+            catch
+                tf = false;
+            end
+
+            if ~tf && isunix() && ~ismac()
+                tf = isempty(getenv('DISPLAY'));
+            end
+        end % ISHEADLESS
+
+        function value = silentModeDefault(newValue)
+            %silentModeDefault Get or set the process-wide silent-mode default.
+            %
+            %   VALUE = SILENTMODEDEFAULT() returns the current override:
+            %   [] when there is none (detection decides), or a scalar
+            %   logical that every subsequent construction will use unless
+            %   the constructor is given an explicit 'Silent' argument.
+            %
+            %   VALUE = SILENTMODEDEFAULT(NEWVALUE) sets the override. Pass
+            %   [] to clear it and return to automatic detection.
+            %
+            %   This exists so that silent mode can be forced on outside a
+            %   detected headless context and - just as importantly - forced
+            %   off, which is how the graphics tests keep exercising the
+            %   windowed path while themselves running under -batch.
+            %
+            %   Example:
+            %       import ndi.gui.component.ProgressBarWindow
+            %       previous = ProgressBarWindow.silentModeDefault();
+            %       c = onCleanup(@() ProgressBarWindow.silentModeDefault(previous));
+            %       ProgressBarWindow.silentModeDefault(true);
+
+            arguments
+                newValue {mustBeScalarOrEmpty, mustBeNumericOrLogical} = []
+            end
+
+            persistent override
+
+            if nargin > 0
+                if isempty(newValue)
+                    override = [];
+                else
+                    override = logical(newValue);
+                end
+            end
+
+            value = override;
+        end % SILENTMODEDEFAULT
+
+        function tf = resolveSilentMode(explicitValue)
+            %resolveSilentMode Decide whether a new window should be silent.
+            %
+            %   TF = RESOLVESILENTMODE(EXPLICITVALUE) applies, in order:
+            %       1. EXPLICITVALUE, when it is not empty (this is the
+            %          constructor's 'Silent' name-value argument);
+            %       2. the process-wide default from silentModeDefault, when
+            %          one has been set;
+            %       3. automatic detection by isHeadless.
+            %
+            %   Inputs:
+            %       explicitValue - [] to defer, or a scalar logical.
+            %
+            %   Outputs:
+            %       tf - Scalar logical.
+
+            arguments
+                explicitValue {mustBeScalarOrEmpty, mustBeNumericOrLogical} = []
+            end
+
+            if ~isempty(explicitValue)
+                tf = logical(explicitValue);
+                return
+            end
+
+            override = ndi.gui.component.ProgressBarWindow.silentModeDefault();
+            if ~isempty(override)
+                tf = logical(override);
+                return
+            end
+
+            tf = ndi.gui.component.ProgressBarWindow.isHeadless();
+        end % RESOLVESILENTMODE
+    end
+
     methods (Static, Access = private)
         function setErrorIconForButton(buttonHandle)
+            if isempty(buttonHandle) % silent mode: no button was created
+                return
+            end
             if exist('isMATLABReleaseOlderThan', 'file') && ~isMATLABReleaseOlderThan('R2022b')
                 set(buttonHandle,'Icon','error');
             else
@@ -908,6 +1137,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         end
 
         function setSuccessIconForButton(buttonHandle)
+            if isempty(buttonHandle) % silent mode: no button was created
+                return
+            end
             if exist('isMATLABReleaseOlderThan', 'file') && ~isMATLABReleaseOlderThan('R2022b')
                 set(buttonHandle,'Icon','success');
             else
