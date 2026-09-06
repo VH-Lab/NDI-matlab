@@ -32,9 +32,9 @@ classdef bulkUploadsJobInfoTest < matlab.unittest.TestCase
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assertNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set. This is not an API problem.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
         end
     end
@@ -51,7 +51,7 @@ classdef bulkUploadsJobInfoTest < matlab.unittest.TestCase
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
                 msg = ndi.unittest.cloud.APIMessage(setup_narrative, b, cloudDatasetID, resp, url);
-                testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
+                testCase.assertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
             end
             testCase.DatasetID = cloudDatasetID;
             testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
@@ -113,8 +113,8 @@ classdef bulkUploadsJobInfoTest < matlab.unittest.TestCase
             % info struct and the APIMessage formatted from the call.
             [b_url, info, resp_url, url_url] = ndi.cloud.api.files.getFileCollectionUploadURL(testCase.DatasetID);
             urlMsg = ndi.unittest.cloud.APIMessage(narrative, b_url, info, resp_url, url_url);
-            testCase.fatalAssertTrue(b_url, "Failed to get bulk upload URL in helper. " + urlMsg);
-            testCase.fatalAssertTrue(isfield(info, 'jobId') && strlength(string(info.jobId)) > 0, ...
+            testCase.assertTrue(b_url, "Failed to get bulk upload URL in helper. " + urlMsg);
+            testCase.assertTrue(isfield(info, 'jobId') && strlength(string(info.jobId)) > 0, ...
                 "Bulk upload response must contain a non-empty jobId. " + urlMsg);
         end
     end
