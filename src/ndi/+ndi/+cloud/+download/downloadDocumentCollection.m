@@ -131,8 +131,30 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
                 'consider increasing the Timeout value.'], c, lastErr);
         end
 
-        % Unzip and process documents from the current chunk
+        % Unzip and process documents from the current chunk.
+        %
+        % Exactly one file is expected in a chunk's archive: the server sends
+        % one JSON carrying every document in the chunk. Nothing guarantees
+        % that, though, and a chunk holds up to ChunkSize documents -- 2000 by
+        % default. Taking unzippedFiles{1} and ignoring anything else would
+        % drop documents with no error at all if the server ever split a
+        % chunk, which is the same silent-loss shape as NDI-matlab#945. unzip
+        % also returns archive order, so "the first entry" is not necessarily
+        % the JSON even when there is only one JSON.
+        %
+        % So fail loudly. A server-side change then surfaces here as an error
+        % naming what it found, rather than as a dataset that quietly came
+        % back short.
         unzippedFiles = unzip(tempZipFilepath,fileparts(tempZipFilepath));
+        if numel(unzippedFiles) ~= 1
+            error('NDI:Cloud:DocumentDownloadUnexpectedArchive', ...
+                ['Expected exactly one file in the document archive for chunk ' ...
+                 '%d of %d, found %d (%s). Reading only the first would ' ...
+                 'silently discard documents, so this refuses rather than ' ...
+                 'guessing which one to use.'], ...
+                c, numel(documentChunks), numel(unzippedFiles), ...
+                strjoin(unzippedFiles, ', '));
+        end
         jsonFile = unzippedFiles{1};
         jsonFileCleanupObj = onCleanup(@() deleteIfExists(jsonFile));
 
