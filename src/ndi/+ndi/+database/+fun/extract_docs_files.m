@@ -116,6 +116,10 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
                 % by its NAME_<i> name, which resolves through the manifest.
                 % An absent slot is normal: a sparse series is the case the
                 % mechanism exists for.
+                % One cell per series, concatenated into files_I_made once
+                % after the loop rather than per series.
+                seriesMemberFiles = repmat({{}},1,numel(seriesInfo));
+
                 for s = 1:numel(seriesInfo)
                     seriesName = seriesInfo(s).name;
                     slotCount = 0;
@@ -151,13 +155,13 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
                         try
                             copyfile(memberPath,memberDestination);
                         catch copyError
-                            % The members copied for THIS series are not in
-                            % files_I_made yet, so clean them up alongside it.
-                            for j=1:memberCount
-                                delete(memberFiles{j});
-                            end
-                            for j=1:numel(files_I_made)
-                                delete(files_I_made{j});
+                            % Members copied for this series, and for earlier
+                            % series of this document, are not in files_I_made
+                            % yet -- clean them up alongside it.
+                            madeSoFar = [files_I_made seriesMemberFiles{:} ...
+                                memberFiles(1:memberCount)];
+                            for j=1:numel(madeSoFar)
+                                delete(madeSoFar{j});
                             end
                             error(['Extraction failed: ' copyError.message]);
                         end
@@ -176,8 +180,9 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
                     % An absent slot leaves a hole, so trim to what was
                     % actually copied; a sparse series is normal.
                     seriesInfo(s).ingest_locations = memberEntries(1:memberCount);
-                    files_I_made = [files_I_made memberFiles(1:memberCount)];
+                    seriesMemberFiles{s} = memberFiles(1:memberCount);
                 end
+                files_I_made = [files_I_made seriesMemberFiles{:}];
 
                 docs{i} = docs{i}.setproperties('files.series_info',seriesInfo);
             end
