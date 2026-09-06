@@ -117,13 +117,24 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
                 % An absent slot is normal: a sparse series is the case the
                 % mechanism exists for.
                 for s = 1:numel(seriesInfo)
-                    memberEntries = did.datastructures.emptystruct('index','uid', ...
-                        'location','location_type','ingest','delete_original','parameters');
                     seriesName = seriesInfo(s).name;
                     slotCount = 0;
                     if isfield(seriesInfo(s),'count') && ~isempty(seriesInfo(s).count)
                         slotCount = seriesInfo(s).count;
                     end
+
+                    % Preallocated to the slot count and trimmed at the end
+                    % rather than grown per member. A level of a lightsheet
+                    % pyramid is tens of thousands of members, which is the
+                    % case this whole mechanism exists for, so growing either
+                    % of these one element at a time is a reallocation per
+                    % member.
+                    memberEntries = repmat(struct('index',0,'uid','', ...
+                        'location','','location_type','file', ...
+                        'ingest',1,'delete_original',0,'parameters',''),1,slotCount);
+                    memberFiles = cell(1,slotCount);
+                    memberCount = 0;
+
                     for m = 1:slotCount
                         memberName = sprintf('%s_%d',seriesName,m);
                         [memberExists,memberPath] = ...
@@ -139,21 +150,33 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
                         memberDestination = [target_path filesep memberUid];
                         try
                             copyfile(memberPath,memberDestination);
-                            files_I_made{end+1} = memberDestination;
-                        catch
+                        catch copyError
+                            % The members copied for THIS series are not in
+                            % files_I_made yet, so clean them up alongside it.
+                            for j=1:memberCount
+                                delete(memberFiles{j});
+                            end
                             for j=1:numel(files_I_made)
                                 delete(files_I_made{j});
                             end
-                            error(['Extraction failed: ' lasterr]);
+                            error(['Extraction failed: ' copyError.message]);
                         end
+
+                        memberCount = memberCount + 1;
+                        memberFiles{memberCount} = memberDestination;
                         % delete_original 0: these are our copies in
                         % TARGET_PATH, and the caller was promised the files
                         % would be there.
-                        memberEntries(end+1) = struct('index',m,'uid',memberUid, ...
-                            'location',memberDestination,'location_type','file', ...
-                            'ingest',1,'delete_original',0,'parameters','');
+                        memberEntries(memberCount) = struct('index',m, ...
+                            'uid',memberUid,'location',memberDestination, ...
+                            'location_type','file','ingest',1, ...
+                            'delete_original',0,'parameters','');
                     end
-                    seriesInfo(s).ingest_locations = memberEntries;
+
+                    % An absent slot leaves a hole, so trim to what was
+                    % actually copied; a sparse series is normal.
+                    seriesInfo(s).ingest_locations = memberEntries(1:memberCount);
+                    files_I_made = [files_I_made memberFiles(1:memberCount)];
                 end
 
                 docs{i} = docs{i}.setproperties('files.series_info',seriesInfo);
