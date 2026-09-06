@@ -94,6 +94,11 @@ classdef document < did.document
             % exists; ndi.document never called reset_file_info and created
             % the field lazily instead. The struct path skips the seeding, so
             % do it here to meet did.document's contract.
+            %
+            % This now runs did.document's reset_file_info rather than a copy
+            % of it, so when DID's grows the series_info seeding of
+            % VH-Lab/DID-matlab#178, ndi.document gets it without a change
+            % here. Against DID main the two are the same function.
             if madeFromDefinition
                 ndi_document_obj = ndi_document_obj.reset_file_info();
             end
@@ -742,82 +747,6 @@ classdef document < did.document
                 error(['Dependency name ' dependency_name ' not found.']);
             end
         end %
-
-        function ndi_document_obj = remove_file(ndi_document_obj, name, location, varargin)
-            % REMOVE_FILE - remove file information from a did.document
-            %
-            % DID_DOCUMENT_OBJ = REMOVE_FILE(NDI_DOCUMENT_OBJ, NAME, [LOCATION], ...)
-            %
-            % Removes the file information for a name or a name and location
-            % combination from a did.document() object.
-            %
-            % If LOCATION is not specified or is empty, then all locations are removed.
-            %
-            % If NDI_DOCUMENT_OBJ does not have a file NAME in its file_list, then an error is
-            % generated.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNoFileInfo (0)    | 0/1 If a name is specified and the
-            %                          |   file info is already empty, should we
-            %                          |   produce an error?
-
-            if nargin<3
-                location = [];
-            end
-
-            ErrorIfNoFileInfo = 0;
-            vlt.data.assign(varargin{:});
-
-            [b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
-            if ~b
-                error(msg);
-            end
-
-            if isempty(fI_index)
-                if ErrorIfNoFileInfo
-                    error(['No file_info for name ' name ' .']);
-                end
-            end
-
-            if isempty(location)
-                ndi_document_obj.document_properties.files.file_info(fI_index) = [];
-                return;
-            end
-
-            location_match_index = find(strcmpi(location,{ndi_document_obj.document_properties.files.file_info(fI_index).locations.location}));
-
-            if isempty(location_match_index)
-                if ErrorIfNoFileInfo
-                    error(['No match found for file ' name ' with location ' location '.']);
-                end
-            else
-                ndi_document_obj.document_properties.files.file_info(fI_index).locations = ...
-                    ndi_document_obj.document_properties.files.file_info(fI_index).locations([1:location_match_index-1 location_match_index+1:end]);
-            end
-
-        end % remove_file
-
-        function ndi_document_obj = reset_file_info(ndi_document_obj)
-            % RESET_FILE_INFO - reset the file information parameters for a new did.document
-            %
-            % NDI_DOCUMENT_OBJ = RESET_FILE_INFO(NDI_DOCUMENT_OBJ)
-            %
-            % Reset (make empty) all file info structures for a new did.document object.
-            %
-            % Sets document_properties.files.file_info to an empty structure
-            %
-
-            % First, check if we even have file info
-            if ~isfield(ndi_document_obj.document_properties,'files')
-                return;
-            end
-
-            ndi_document_obj.document_properties.files.file_info = ...
-                did.datastructures.emptystruct('name','locations');
-
-        end % reset_file_info()
 
         function ndi_document_obj = setproperties(ndi_document_obj, varargin)
             % SETPROPERTIES - Set property values of an ndi.document object
