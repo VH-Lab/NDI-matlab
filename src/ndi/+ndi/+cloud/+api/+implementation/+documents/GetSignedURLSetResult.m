@@ -38,13 +38,15 @@ classdef GetSignedURLSetResult < ndi.cloud.api.call
             %                     matlab.net.http).
             %       apiURL      - The result URL that was fetched.
 
+            % answer is assigned on every path below, so it is not
+            % pre-initialized. apiResponse stays [] by design: the download
+            % does not go through matlab.net.http.
             b = false;
-            answer = [];
             apiResponse = [];
             apiURL = this.resultUrl;
 
             localFile = [tempname '.signedurlset'];
-            cleanup = onCleanup(@() localDelete(localFile)); %#ok<NASGU>
+            cleanup = onCleanup(@() localDelete(localFile));
 
             % Download through ndi.cloud.api.files.getFile rather than websave.
             % That path defaults to curl, which requests identity encoding so

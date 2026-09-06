@@ -53,8 +53,9 @@ classdef GetSignedURLSet < ndi.cloud.api.call
             %                  expiresAt  - when the signed URLs expire
             %                On failure, the error body returned by the server.
 
+            % b stays false unless the status check below sets it; answer is
+            % assigned on every path, so it is not pre-initialized.
             b = false;
-            answer = [];
 
             token = ndi.cloud.authenticate();
 

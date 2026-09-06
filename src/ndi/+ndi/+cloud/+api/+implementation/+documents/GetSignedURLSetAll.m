@@ -50,14 +50,13 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
             %       apiResponse - The ResponseMessage from the last page fetched.
             %       apiURL      - The URL of the last page fetched.
 
+            % The loop below always runs at least once, so apiResponse, apiURL
+            % and expiresAt are assigned by the first page rather than here.
             b = false;
-            apiResponse = [];
-            apiURL = [];
 
             files = containers.Map('KeyType','char','ValueType','any');
             cursor = "";
             pages = 0;
-            expiresAt = '';
             complete = false;
 
             while true

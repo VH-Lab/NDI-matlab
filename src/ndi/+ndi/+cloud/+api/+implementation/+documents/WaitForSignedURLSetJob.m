@@ -41,10 +41,8 @@ classdef WaitForSignedURLSetJob < ndi.cloud.api.call
             %            'state' is set to 'timeout' and 'elapsed' holds the wall
             %            time spent polling.
 
-            b = false;
-            answer = [];
-            apiResponse = [];
-            apiURL = [];
+            % Every output is assigned by the first poll below -- the loop
+            % has no exit that skips it -- so none are pre-initialized.
 
             deadline = tic;
             interval = this.initialInterval;
