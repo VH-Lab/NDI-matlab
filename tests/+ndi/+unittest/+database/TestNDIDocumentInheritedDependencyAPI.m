@@ -1,20 +1,26 @@
 classdef TestNDIDocumentInheritedDependencyAPI < matlab.unittest.TestCase
     % The dependency methods ndi.document now inherits, and the two it keeps.
     %
-    % Step 5 of VH-Lab/NDI-matlab#940. Three of the five dependency_* methods
-    % were did.document's function with varargin and vlt.data.assign in place
-    % of an arguments block, so they are inherited now. The other two are not
-    % the same function and stay:
+    % Steps 5 and 6 of VH-Lab/NDI-matlab#940.
     %
-    %   dependency_value_n   also falls back to an unnumbered dependency name
-    %   set_dependency_value also requires depends_on to be non-empty, not
-    %                        merely present
+    % Step 5 inherited dependency_value, add_dependency_value_n and
+    % remove_dependency_value_n, which were did.document's functions with
+    % varargin and vlt.data.assign in place of an arguments block. It kept
+    % dependency_value_n and set_dependency_value, which carried behaviour
+    % did.document did not have.
     %
-    % That split is the thing worth pinning. The inherited add_ and remove_
-    % call dependency_value_n and set_dependency_value with unqualified
-    % function syntax, which dispatches on the first argument, so on an
-    % ndi.document they still run NDI's versions. These tests exercise that
-    % composition rather than either half alone.
+    % Step 6 inherits those two as well, plus eq and setproperties, because
+    % VH-Lab/DID-matlab#179 and #180 moved that behaviour upstream: eq now
+    % routes through id() instead of reading a field no document has,
+    % setproperties assigns with assignPropertyPath instead of eval,
+    % dependency_value_n falls back to an unnumbered name, and all three
+    % readers of depends_on guard an empty list.
+    %
+    % plus is the one still overridden, and not for its dependency merging --
+    % did.document does B-wins now too. It is the merge in step 4:
+    % did.document uses did.datastructures.structmerge and ndi.document uses
+    % vlt.data.structmerge, and if those order the merged fieldnames
+    % differently the stored JSON key order changes. Unverified, so kept.
 
     methods (TestMethodSetup)
         function setupMethod(testCase)
@@ -54,11 +60,71 @@ classdef TestNDIDocumentInheritedDependencyAPI < matlab.unittest.TestCase
             testCase.verifyEqual(testCase.definerOf('remove_dependency_value_n'), 'did.document');
         end
 
-        function testTheTwoWithExtraBehaviourStayWithNdiDocument(testCase)
-            % Not housekeeping: inheriting either would lose behaviour, and a
-            % later cleanup pass should have to notice that on purpose.
-            testCase.verifyEqual(testCase.definerOf('dependency_value_n'), 'ndi.document');
-            testCase.verifyEqual(testCase.definerOf('set_dependency_value'), 'ndi.document');
+        function testTheOtherTwoAreNowInheritedToo(testCase)
+            % These two kept extra behaviour until did.document grew it in
+            % VH-Lab/DID-matlab#180 -- the unnumbered-name fallback in
+            % dependency_value_n, and set_dependency_value narrowing
+            % hasdependencies to numel>=1 so it can create the list from an
+            % empty depends_on. Both are upstream now, so both are inherited.
+            testCase.verifyEqual(testCase.definerOf('dependency_value_n'), 'did.document');
+            testCase.verifyEqual(testCase.definerOf('set_dependency_value'), 'did.document');
+        end
+
+        function testEqAndSetPropertiesAreInheritedAndPlusIsNot(testCase)
+            % eq and setproperties came upstream with #179 and #180. plus did
+            % not: did.document merges with did.datastructures.structmerge and
+            % ndi.document with vlt.data.structmerge, and those may not order
+            % the merged fieldnames the same way, which would change stored
+            % JSON key order. Kept until that is checked.
+            testCase.verifyEqual(testCase.definerOf('eq'), 'did.document');
+            testCase.verifyEqual(testCase.definerOf('setproperties'), 'did.document');
+            testCase.verifyEqual(testCase.definerOf('plus'), 'ndi.document');
+        end
+
+        function testEqStillComparesByBaseId(testCase)
+            % did.document's eq routes through id(), where ndi.document's read
+            % document_properties.base.id directly. Same answer, since the
+            % inherited id() reads exactly that field -- but worth pinning,
+            % because eq now follows id() and would follow an override of it.
+            docA = testCase.elementDoc();
+            docB = testCase.elementDoc();
+            testCase.verifyTrue(docA == docA);
+            testCase.verifyFalse(docA == docB);
+            testCase.verifyEqual(docA.id(), docA.document_properties.base.id);
+        end
+
+        function testSetPropertiesStillAssignsANestedPath(testCase)
+            doc = testCase.elementDoc();
+            doc = doc.setproperties('element.name', 'a_name');
+            testCase.verifyEqual(doc.document_properties.element.name, 'a_name');
+        end
+
+        function testSetPropertiesRejectsAPropertyNameThatIsNotOne(testCase)
+            % The inherited version uses did.datastructures.assignPropertyPath,
+            % which is ndi.util.assignPropertyPath under another name --
+            % verified identical apart from namespace and error identifier. A
+            % property name is a name, not a fragment of MATLAB to run.
+            doc = testCase.elementDoc();
+            testCase.verifyError( ...
+                @() doc.setproperties('element.name); disp(''x''); %', 1), ?MException);
+        end
+
+        function testDependencyValueNFindsAnUnnumberedEntry(testCase)
+            % The behaviour that used to justify NDI's override, now upstream.
+            doc = testCase.elementDoc();
+            doc = doc.set_dependency_value('subject_id', 'a_value');
+            testCase.verifyEqual(doc.dependency_value_n('subject_id'), {'a_value'});
+        end
+
+        function testSetDependencyValueCreatesTheListWhenDependsOnIsEmpty(testCase)
+            % The other one: an empty depends_on has no .name to index, so the
+            % inherited version must fall through to creating the first entry
+            % rather than throwing.
+            props = testCase.elementDoc().document_properties;
+            props.depends_on = [];
+            doc = ndi.document(props);
+            doc = doc.set_dependency_value('subject_id', 'a_value', 'ErrorIfNotFound', 0);
+            testCase.verifyEqual(doc.dependency_value('subject_id'), 'a_value');
         end
 
         % ---- dependency_value ----------------------------------------

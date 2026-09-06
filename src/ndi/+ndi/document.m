@@ -247,64 +247,6 @@ classdef document < did.document
             end
         end % dependency()
 
-        function d = dependency_value_n(ndi_document_obj, dependency_name, varargin)
-            % DEPENDENCY_VALUE_N - return dependency values from list given dependency name
-            %
-            % D = DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and returns the 'values' associated with the given 'name_i', where i varies from 1 to the
-            % maximum number of entries titled 'name_i'. If there is no such field (either
-            % 'depends_on' or 'name_i'), then D is empty and an error is generated.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, return empty.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            d = {};
-            notfound = 1;
-
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if hasdependencies
-                hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
-            end
-
-            if hasdependencies
-                finished = 0;
-                i = 1;
-                while ~finished
-                    matches = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
-                    if isempty(matches) & i == 1
-                        % Try looking for non-numbered dependency
-                        matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
-                        % Skip if the matched dependency has an empty value (template placeholder)
-                        if ~isempty(matches)
-                            val = ndi_document_obj.document_properties.depends_on(matches(1)).value;
-                            if isempty(val)
-                                matches = [];
-                            end
-                        end
-                    end
-                    if numel(matches)>0
-                        notfound = 0;
-                        d{i} = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
-                    end
-                    finished = numel(matches)==0;
-                    i = i + 1;
-                end
-            end
-
-            if notfound & ErrorIfNotFound
-                error(['Dependency name ' dependency_name ' not found.']);
-            end
-        end %
-
         function b = doc_isa(ndi_document_obj, document_class)
             % DOC_ISA - is an ndi.document a member of a particular document_class?
             %
@@ -356,18 +298,6 @@ classdef document < did.document
             warning('depricated..use ID() instead')
             uid = ndi_document_obj.document_properties.base.id;
         end % doc_unique_id()
-
-        function b = eq(ndi_document_obj1, ndi_document_obj2)
-            % EQ - are two ndi.document objects equal?
-            %
-            % B = EQ(NDI_DOCUMENT_OBJ1, NDI_DOCUMENT_OBJ2)
-            %
-            % Returns 1 if and only if the objects have identical document_properties.base.id
-            % fields.
-            %
-            b = strcmp(ndi_document_obj1.document_properties.base.id,...
-                ndi_document_obj2.document_properties.base.id);
-        end % eq()
 
 
         function uid = session_id(ndi_document_obj)
@@ -494,78 +424,6 @@ classdef document < did.document
             ndi_document_obj_out.document_properties = vlt.data.structmerge(ndi_document_obj_out.document_properties,...
                 otherproperties);
         end % plus()
-
-        function ndi_document_obj = set_dependency_value(ndi_document_obj, dependency_name, value, varargin)
-            % SET_DEPENDENCY_VALUE - set the value of a dependency field
-            %
-            % NDI_DOCUMENT_OBJ = SET_DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and, if there is a dependency with a given 'dependency_name', then the value of the
-            % dependency is set to DEPENDENCY_VALUE.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, add it.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            notfound = 1;
-
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if hasdependencies
-                hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
-            end
-            d_struct = struct('name',dependency_name,'value',value);
-
-            if hasdependencies
-                matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
-                if numel(matches)>0
-                    notfound = 0;
-                    ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
-                elseif ~ErrorIfNotFound % add it
-                    ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
-                    notfound = 0;
-                end
-            elseif ~ErrorIfNotFound
-                ndi_document_obj.document_properties.depends_on = d_struct;
-                notfound = 0;
-            end
-
-            if notfound & ErrorIfNotFound
-                error(['Dependency name ' dependency_name ' not found.']);
-            end
-        end %
-
-        function ndi_document_obj = setproperties(ndi_document_obj, varargin)
-            % SETPROPERTIES - Set property values of an ndi.document object
-            %
-            % NDI_DOCUMENT_OBJ = SETPROPERTIES(NDI_DOCUMENT_OBJ, 'PROPERTY1', VALUE1, ...)
-            %
-            % Sets the property values of NDI_DOCUMENT_OBJ.    PROPERTY values should be expressed
-            % relative to NDI_DOCUMENT_OBJ.document_properties (see example).
-            %
-            % See also: ndi.document, ndi.document/ndi.document
-            %
-            % Example:
-            %   mydoc = mydoc.setproperties('base.name','mydoc name');
-
-            newproperties = ndi_document_obj.document_properties;
-            for i=1:2:numel(varargin)
-                try
-                    newproperties = ndi.util.assignPropertyPath( ...
-                        newproperties, varargin{i}, varargin{i+1});
-                catch
-                    error(['Error in assigning ' varargin{i} '.']);
-                end
-            end
-
-            ndi_document_obj.document_properties = newproperties;
-        end % setproperties
 
         function write(ndi_document_obj, filePrefix, options)
             % WRITE - write the document properties to a file
