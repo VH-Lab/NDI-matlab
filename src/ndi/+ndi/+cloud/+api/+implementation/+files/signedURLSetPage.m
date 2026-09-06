@@ -16,7 +16,9 @@ function page = signedURLSetPage(decodedData, rawPayload)
 %                     Needed because JSONDECODE renames uid keys.
 %
 %   Outputs:
-%       page - struct with fields:
+%       page - the decoded body with `files` replaced by a containers.Map
+%              keyed by real uids, and nextCursor/expiresAt normalized to
+%              char. Every other field the server sent is preserved:
 %                files      - containers.Map from uid (char) to signed URL (char)
 %                nextCursor - char cursor for the next page, '' when this was
 %                             the last page
@@ -35,9 +37,21 @@ function page = signedURLSetPage(decodedData, rawPayload)
         decodedFiles = decodedData.files;
     end
 
-    page = struct();
+    % Start from everything the server sent and replace only `files`.
+    % Building a fresh struct with a hand-picked set of fields silently drops
+    % the rest -- totalCount among them, which callers check against the size
+    % of the map -- and would keep dropping whatever the endpoint grows next.
+    if isstruct(decodedData)
+        page = decodedData;
+    else
+        page = struct();
+    end
+
     page.files = ndi.cloud.api.implementation.files.signedURLFileMap(...
         decodedFiles, rawPayload);
+
+    % Normalize the two fields whose absence is meaningful: jsondecode turns
+    % a JSON null into [], and callers test these with isempty.
     page.nextCursor = localCharField(decodedData, 'nextCursor');
     page.expiresAt  = localCharField(decodedData, 'expiresAt');
 end

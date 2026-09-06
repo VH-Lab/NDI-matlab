@@ -245,6 +245,27 @@ classdef SignedURLSetMockTest < matlab.unittest.TestCase
             testCase.verifyEqual(page.files('9a'), 'u1');
         end
 
+        function testPagePreservesEveryFieldTheServerSent(testCase)
+            % The live cloud test checks page.totalCount against the size of
+            % the map. An earlier version of signedURLSetPage built a fresh
+            % struct from a hand-picked set of fields and dropped the rest,
+            % which broke that silently -- and would drop whatever the
+            % endpoint grows next. Only `files` is replaced.
+            txt = ['{"datasetId":"d1","documentId":"doc1","totalCount":3,' ...
+                   '"limit":500,"files":{"9a":"u1"},"nextCursor":null,' ...
+                   '"expiresAt":"2026-09-07T00:00:00Z"}'];
+            page = ndi.cloud.api.implementation.files.signedURLSetPage(...
+                jsondecode(txt), txt);
+
+            testCase.verifyEqual(page.totalCount, 3);
+            testCase.verifyEqual(page.datasetId, 'd1');
+            testCase.verifyEqual(page.documentId, 'doc1');
+            testCase.verifyEqual(page.limit, 500);
+            testCase.verifyTrue(isa(page.files,'containers.Map'), ...
+                'files is the one field that is replaced');
+            testCase.verifyEqual(page.files('9a'), 'u1');
+        end
+
         function testLastPageHasAnEmptyCursor(testCase)
             txt = '{"files":{"9a":"u1"},"nextCursor":null}';
             page = ndi.cloud.api.implementation.files.signedURLSetPage(...
