@@ -3,6 +3,7 @@ classdef StartSession < ndi.cloud.api.call
 
     properties
         pipelineId (1,1) string
+        organizationId (1,1) string
         inputParameters (1,1) struct
     end
 
@@ -10,18 +11,24 @@ classdef StartSession < ndi.cloud.api.call
         function this = StartSession(args)
             %STARTSESSION Creates a new StartSession API call object.
             %
-            %   THIS = ndi.cloud.api.implementation.compute.StartSession('pipelineId', ID, 'inputParameters', PARAMS)
+            %   THIS = ndi.cloud.api.implementation.compute.StartSession(...
+            %       'pipelineId', ID, 'organizationId', ORG, 'inputParameters', PARAMS)
             %
             %   Inputs:
             %       'pipelineId'      - The ID of the pipeline to start.
+            %       'organizationId'  - The id of the organization owning this
+            %                           session. See ndi.cloud.api.compute.startSession
+            %                           for the "why required" note.
             %       'inputParameters' - (Optional) Structure containing input parameters.
             %
             arguments
                 args.pipelineId (1,1) string
+                args.organizationId (1,1) string
                 args.inputParameters (1,1) struct = struct()
             end
 
             this.pipelineId = args.pipelineId;
+            this.organizationId = args.organizationId;
             this.inputParameters = args.inputParameters;
         end
 
@@ -42,6 +49,13 @@ classdef StartSession < ndi.cloud.api.call
             method = matlab.net.http.RequestMethod.POST;
 
             requestBodyStruct = struct('pipelineId', this.pipelineId);
+            % Only include organizationId when the caller actually supplied
+            % one -- an empty string means "let the backend decide", which is
+            % what a single-org user gets today and what a scripted caller
+            % may want to preserve for compatibility.
+            if strlength(this.organizationId) > 0
+                requestBodyStruct.organizationId = char(this.organizationId);
+            end
             if ~isempty(fieldnames(this.inputParameters))
                 requestBodyStruct.inputParameters = this.inputParameters;
             end

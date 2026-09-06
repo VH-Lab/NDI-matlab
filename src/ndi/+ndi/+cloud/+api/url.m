@@ -65,6 +65,14 @@ function url = url(endpointName, options)
         endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{file_uid}/detail";
         endpointMap("get_bulk_upload_status")         = "/bulk-uploads/{jobId}";
         endpointMap("list_dataset_bulk_uploads")      = "/datasets/{datasetId}/bulk-uploads?state={state}";
+        % Signed download URLs for the files a document references. The
+        % optional query parameters (limit, cursor, fileSeries) are appended by
+        % the implementation classes rather than templated here, because
+        % replacePathParameter below asserts every templated parameter is
+        % non-empty.
+        endpointMap("get_signed_url_set")             = "/datasets/{datasetId}/documents/{documentId}/signed-url-set";
+        endpointMap("create_signed_url_set_job")      = "/datasets/{datasetId}/documents/{documentId}/signed-url-set-jobs";
+        endpointMap("get_signed_url_set_job")         = "/signed-url-set-jobs/{jobId}";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
         endpointMap("submit_dataset")                 = "/datasets/{datasetId}/submit";
