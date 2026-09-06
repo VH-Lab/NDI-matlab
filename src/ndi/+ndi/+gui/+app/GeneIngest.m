@@ -533,46 +533,70 @@ classdef GeneIngest < ndi.gui.app.sessionApp
                 'cellsDoc',[],'labelDocs',{{}},'notes',{{}});
             n = numel(plan.steps);
 
-            % -- the GEF, read once -------------------------------------
-            % Every step below is fed from this one read. The gene list and
-            % the pyramid both need it and it is the expensive thing, so it
-            % happens here rather than inside either maker.
-            ndi.gui.app.GeneIngest.tick(progressFcn, 0, n, 'Reading the GEF...');
-            maxGenes = ndi.gui.app.GeneIngest.field(plan.choices,'maxGenes',0);
-            [x, y, geneIndex, count, geneID, geneName, gefMeta] = ...
-                ndr.format.stereoseq.readGEF(gefPath, 'maxGenes', maxGenes);
-            result.notes = ndi.gui.app.GeneIngest.readNotes(gefMeta, geneID);
+            % -- the GEF, read once, into its documents ------------------
+            % ndi.fun.doc.gene.fromGEF owns this path: one read, then the
+            % gene list and the pyramid built from it. This class used to
+            % run that sequence itself, which left two copies of the
+            % read-once discipline free to drift apart. The app now differs
+            % from a script only in passing a progress callback.
+            %
+            % recordSource is FALSE, which keeps this a refactor rather
+            % than a change of behaviour. fromGEF would otherwise also
+            % create a generic_file describing the .gef and checksum it --
+            % a second full read of a ~9.4 GB file, and a document that
+            % ingestMessage never told the user about. That screen names
+            % every document that will be created, so adding one silently
+            % would make it wrong. Recording provenance from the GUI is
+            % worth doing; it needs a plan step and a line on the
+            % confirmation screen, not a quiet default.
+            glArgs = ndi.gui.app.GeneIngest.stepArgs(plan, 'geneList');
+            pyArgs = ndi.gui.app.GeneIngest.stepArgs(plan, 'pyramid');
+            % Spelled out rather than pulled through a local handle: the
+            % obvious short name for one would be 'get', which shadows the
+            % graphics built-in inside a class that draws.
+            maxGenes   = ndi.gui.app.GeneIngest.field(plan.choices, 'maxGenes', 0);
+            assembly   = ndi.gui.app.GeneIngest.field(glArgs, 'genomeAssembly', '');
+            annotation = ndi.gui.app.GeneIngest.field(glArgs, 'annotationSource', '');
+            lbl        = ndi.gui.app.GeneIngest.field(pyArgs, 'label', '');
+            binSizes   = ndi.gui.app.GeneIngest.field(pyArgs, 'binSizes', [1 2 4 8 16 32]);
+            gridN      = ndi.gui.app.GeneIngest.field(pyArgs, 'grid', 9);
+            subjectID  = ndi.gui.app.GeneIngest.field(pyArgs, 'subjectID', '');
+            pixelSize  = ndi.gui.app.GeneIngest.field(pyArgs, 'basePixelSize', [NaN NaN]);
+            assay      = ndi.gui.app.GeneIngest.field(pyArgs, 'assay', 'Stereo-seq');
+            chipSerial = ndi.gui.app.GeneIngest.field(pyArgs, 'chipSerial', '');
+            [result.pyrDoc, result.tileDocs, result.geneListDoc, gefInfo] = ...
+                ndi.fun.doc.gene.fromGEF(session, gefPath, ...
+                    'maxGenes', maxGenes, ...
+                    'genomeAssembly', assembly, ...
+                    'annotationSource', annotation, ...
+                    'label', lbl, 'binSizes', binSizes, 'grid', gridN, ...
+                    'subjectID', subjectID, 'basePixelSize', pixelSize, ...
+                    'assay', assay, 'chipSerial', chipSerial, ...
+                    'recordSource', false, ...
+                    'progressFcn', ndi.gui.app.GeneIngest.gefProgress( ...
+                        progressFcn, n));
+            result.notes = gefInfo.notes;
 
+            % Only 'cells' still does work here. The other three kinds are
+            % done by the two wrappers, each of which reads its file once
+            % and makes every document that read supports: fromGEF the gene
+            % list and the pyramid, fromCellBin the cells and every
+            % labeling. They stay in plan.steps because the plan is what
+            % the confirmation screen describes, and a user should see each
+            % document named before committing to a read that takes minutes
+            % and cannot be undone without the delete cascade.
             for i = 1:n
                 step = plan.steps(i);
-                ndi.gui.app.GeneIngest.tick(progressFcn, i-1, n, step.description);
                 switch step.kind
-                    case 'geneList'
-                        nv = ndi.gui.app.GeneIngest.nameValue(step.args, ...
-                            {'genomeAssembly','annotationSource','label'});
-                        result.geneListDoc = ndi.fun.doc.gene.makeGeneList( ...
-                            session, geneID, geneName, nv{:});
-                    case 'pyramid'
-                        nv = ndi.gui.app.GeneIngest.nameValue(step.args, ...
-                            {'binSizes','grid','subjectID','basePixelSize', ...
-                             'label','assay','chipSerial'});
-                        [result.pyrDoc, result.tileDocs] = ...
-                            ndi.fun.doc.gene.makePyramid(session, ...
-                                double(x(:)), double(y(:)), ...
-                                double(geneIndex(:)), double(count(:)), ...
-                                result.geneListDoc, nv{:});
                     case 'cells'
+                        ndi.gui.app.GeneIngest.tick( ...
+                            progressFcn, i-1, n, step.description);
                         result = ndi.gui.app.GeneIngest.runCellsStep( ...
                             session, cellbinPath, step, plan, result);
-                    case 'labels'
-                        % Already done. fromCellBin makes the label
-                        % documents in the cells step, from the same read,
-                        % because the only thing tying a label array to a
-                        % cell table is that they came from one pass. The
-                        % step is kept in the plan because the plan is what
-                        % the confirmation screen describes, and a user
-                        % should still see each labeling named before
-                        % committing to it.
+                    case {'geneList','pyramid','labels'}
+                        % Already created; see above. Not ticked either,
+                        % because the bar has passed these already and
+                        % moving it backwards would read as a stall.
                 end
             end
             ndi.gui.app.GeneIngest.tick(progressFcn, n, n, 'Done.');
@@ -667,6 +691,36 @@ classdef GeneIngest < ndi.gui.app.sessionApp
             result.notes = [result.notes(:); info.notes(:)];
         end
 
+        function args = stepArgs(plan, kind)
+        % STEPARGS - the args of the first step of KIND, or an empty struct
+        %
+        %   The plan is the contract between the confirmation screen and
+        %   the run, so the run reads its arguments back out of the plan
+        %   rather than off plan.choices. A user who saw a pyramid of six
+        %   levels described gets a pyramid of six levels.
+            args = struct();
+            for i = 1:numel(plan.steps)
+                if strcmp(plan.steps(i).kind, kind)
+                    args = plan.steps(i).args;
+                    return;
+                end
+            end
+        end
+
+        function f = gefProgress(progressFcn, n)
+        % GEFPROGRESS - map fromGEF's own [0 1] onto the whole run's bar
+        %
+        %   fromGEF reports progress across itself; it does not know how
+        %   many steps the plan has. It covers the geneList and pyramid
+        %   steps, which are always the first two, so its fraction is
+        %   scaled into that share and the bar stays monotonic when the
+        %   cells step picks up.
+            f = [];
+            if isempty(progressFcn) || n <= 0, return; end
+            share = min(2, n) / n;
+            f = @(frac, txt) progressFcn(max(0, min(1, frac * share)), txt);
+        end
+
         function tick(progressFcn, i, n, txt)
             if isempty(progressFcn), return; end
             frac = 0;
@@ -685,19 +739,6 @@ classdef GeneIngest < ndi.gui.app.sessionApp
             t = '';
             for i = 1:numel(lines)
                 t = sprintf('%s  - %s\n', t, lines{i});
-            end
-        end
-
-        function nv = nameValue(args, keep)
-        % Turn a step's args struct into a name-value list, dropping the
-        % fields the maker does not take. The plan carries a few fields for
-        % the confirmation text that are not arguments to anything.
-            nv = {};
-            f = fieldnames(args);
-            for i = 1:numel(f)
-                if ~ismember(f{i}, keep), continue; end
-                nv{end+1} = f{i};        %#ok<AGROW>
-                nv{end+1} = args.(f{i}); %#ok<AGROW>
             end
         end
 

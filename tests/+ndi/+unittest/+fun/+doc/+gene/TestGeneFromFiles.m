@@ -208,6 +208,48 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
             testCase.verifyEmpty(tiles{1}.dependency_value('source_file_id'));
         end
 
+        function testFromGefReportsProgressThroughTheWholeRun(testCase)
+            % ndi.gui.app.GeneIngest drives its bar from this. The
+            % fractions must not go backwards and must reach 1, or the
+            % dialog stalls short of the end on a read that takes minutes
+            % and a user cannot tell a slow step from a hung one.
+            %
+            % The collector is a NESTED function rather than an anonymous
+            % one because an anonymous function captures its workspace by
+            % value and could not accumulate anything.
+            gef = testCase.ndrFixture('gef_basic.gef');
+            calls = {};
+            ndi.fun.doc.gene.fromGEF( ...
+                testCase.session, gef, 'subjectID', testCase.subjectID, ...
+                'binSizes', 1, 'grid', 1, 'checksum', false, ...
+                'progressFcn', @collect);
+
+            testCase.assertNotEmpty(calls, 'progressFcn was never called.');
+            fr = cellfun(@(c) c{1}, calls);
+            testCase.verifyEqual(fr, sort(fr), ...
+                'Progress must never move backwards.');
+            testCase.verifyEqual(fr(1), 0, 'The first report is the read.');
+            testCase.verifyEqual(fr(end), 1, 'The last report must reach 1.');
+            testCase.verifyTrue(all(cellfun(@(c) ischar(c{2}), calls)), ...
+                'Every report must carry text for the dialog.');
+
+            function collect(f, t)
+                calls{end+1} = {f, t};
+            end
+        end
+
+        function testFromGefWithoutAProgressFcnIsSilentRatherThanBroken(testCase)
+            % The default is no handle, because a script has no bar. This
+            % is the path every other test here takes, asserted once
+            % directly so a mistake in the tick helper cannot hide behind
+            % them all passing for other reasons.
+            gef = testCase.ndrFixture('gef_basic.gef');
+            pyr = ndi.fun.doc.gene.fromGEF(testCase.session, gef, ...
+                'subjectID', testCase.subjectID, 'binSizes', 1, ...
+                'grid', 1, 'checksum', false);
+            testCase.verifyClass(pyr, 'ndi.document');
+        end
+
         function testFromGefRefusesWithoutASubject(testCase)
             % A .gef records a chip, not an animal, and the pyramid schema
             % declares subject_id mustbenotempty.

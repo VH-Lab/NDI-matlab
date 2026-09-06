@@ -48,6 +48,12 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %   checksum (true)      - compute the source file's MD5. Costs one full
 %       read of the .gef on top of the ingest's own.
 %   verbose (false)      - progress from the reader
+%   progressFcn ([])     - a handle called as PROGRESSFCN(FRACTION, TEXT)
+%       before each phase, with FRACTION in [0 1] across THIS call. A
+%       plain handle rather than a dialog object so it works with no
+%       display; ndi.gui.app.GeneIngest passes one that drives its
+%       progress bar. The read dominates the time, so the fractions are
+%       weighted towards it rather than spread evenly over the phases.
 %
 %   Outputs:
 %   PYRDOC      - the spatialGeneExpressionPyramid, added to the database
@@ -91,9 +97,11 @@ arguments
     options.recordSource (1,1) logical = true
     options.checksum (1,1) logical = true
     options.verbose (1,1) logical = false
+    options.progressFcn = []
 end
 
 % -- read, once ----------------------------------------------------------
+localTick(options.progressFcn, 0, 'Reading the GEF...');
 [x, y, geneIndex, count, geneID, geneName, meta] = ...
     ndr.format.stereoseq.readGEF(gefPath, 'maxGenes', options.maxGenes, ...
     'verbose', options.verbose);
@@ -115,6 +123,7 @@ if any(isnan(basePixelSize))
 end
 
 % -- documents, in dependency order --------------------------------------
+localTick(options.progressFcn, 0.60, 'Building the gene list...');
 geneListDoc = ndi.fun.doc.gene.makeGeneList(session, geneID, geneName, ...
     'genomeAssembly', options.genomeAssembly, ...
     'annotationSource', options.annotationSource, ...
@@ -124,11 +133,13 @@ geneListDoc = ndi.fun.doc.gene.makeGeneList(session, geneID, geneName, ...
 
 sourceDoc = [];
 if options.recordSource
+    localTick(options.progressFcn, 0.65, 'Describing the source file...');
     sourceDoc = ndi.fun.doc.gene.makeSourceFile(session, gefPath, ...
         'checksum', options.checksum);
     session.database_add(sourceDoc);
 end
 
+localTick(options.progressFcn, 0.70, 'Building the pyramid...');
 [pyrDoc, tileDocs] = ndi.fun.doc.gene.makePyramid(session, ...
     double(x(:)), double(y(:)), double(geneIndex(:)), double(count(:)), ...
     geneListDoc, ...
@@ -139,12 +150,23 @@ end
     'pipelineVersion', options.pipelineVersion, 'origin', options.origin, ...
     'sourceFileID', localDocID(sourceDoc));
 
+localTick(options.progressFcn, 1, 'Pyramid complete.');
+
 info = struct();
 info.meta = meta;
 info.sourceDoc = sourceDoc;
 info.notes = ndi.fun.doc.gene.readNotes(meta, geneID);
 
 end % fromGEF
+
+% ------------------------------------------------------------------------
+
+function localTick(fcn, frac, txt)
+% Silent when no handle was given, so every phase can report progress
+% without each call site testing for a display first.
+if isempty(fcn), return; end
+fcn(frac, txt);
+end
 
 % ------------------------------------------------------------------------
 
