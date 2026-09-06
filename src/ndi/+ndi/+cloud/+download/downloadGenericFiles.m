@@ -96,45 +96,8 @@ function [success, errorMessage, report] = downloadGenericFiles(ndiDataset, ndiD
         % 3. Extract file information (UIDs and filenames). Each entry
         % also carries the id of the document it came from so the batch
         % presign cache below can key on it (NDI-matlab#962).
-        downloadList = struct('uid', {}, 'filename', {}, 'documentId', {});
-
-        for i = 1:numel(documents)
-            doc = documents{i};
-            if doc.has_files()
-                fileInfo = doc.document_properties.files.file_info;
-                for j = 1:numel(fileInfo)
-                    if isfield(fileInfo(j), 'locations') && ~isempty(fileInfo(j).locations)
-                        uid = fileInfo(j).locations(1).uid;
-
-                        % Determine filename with appropriate extension
-                        % We check the generic_file.filename property for the original name
-                        originalFullname = doc.document_properties.generic_file.filename;
-                        [~, name_part, ext_part] = fileparts(originalFullname);
-
-                        if isempty(name_part)
-                            % Fallback to the registered name in file_info
-                            [~, name_part, ext_part] = fileparts(fileInfo(j).name);
-                        end
-                        if contains(fileInfo(j).locations.location,'.zip') & isempty(ext_part)
-                            ext_part = '.zip';
-                        end
-
-                        switch options.NamingStrategy
-                            case "id"
-                                filename = [doc.id() ext_part];
-                            case "id_original"
-                                filename = [doc.id() '_' name_part ext_part];
-                            case "original"
-                                filename = [name_part ext_part];
-                        end
-
-                        downloadList(end+1).uid = uid; %#ok<AGROW>
-                        downloadList(end).filename = filename;
-                        downloadList(end).documentId = doc.id();
-                    end
-                end
-            end
-        end
+        downloadList = ndi.cloud.download.internal.buildGenericFileDownloadList( ...
+            documents, options.NamingStrategy);
 
         if isempty(downloadList)
             if options.Verbose, fprintf('No files associated with these documents.\n'); end
