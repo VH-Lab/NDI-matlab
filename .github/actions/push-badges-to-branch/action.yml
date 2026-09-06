@@ -33,8 +33,15 @@ runs:
       run: |
         set -euo pipefail
 
+        # Resolve $BADGES_DIR to an absolute path *now*, so that the SVG
+        # paths in $svgs stay valid after we `cd` into a working directory.
+        SRC_DIR="$(cd "$BADGES_DIR" 2>/dev/null && pwd || true)"
+
         shopt -s nullglob
-        svgs=("$BADGES_DIR"/*.svg)
+        svgs=()
+        if [ -n "$SRC_DIR" ]; then
+          svgs=("$SRC_DIR"/*.svg)
+        fi
         if (( ${#svgs[@]} == 0 )); then
           echo "No badge SVGs in $BADGES_DIR - nothing to push."
           exit 0
@@ -45,7 +52,6 @@ runs:
 
         REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
         WORKDIR="$(mktemp -d)"
-        SRC_DIR="$PWD/$BADGES_DIR"
 
         cd "$WORKDIR"
         git init -q -b "$BADGES_BRANCH" .
