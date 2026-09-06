@@ -131,8 +131,12 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
                 'consider increasing the Timeout value.'], c, lastErr);
         end
 
-        % Unzip and process documents from the current chunk
+        % Unzip and process documents from the current chunk. The archive
+        % must hold exactly one file; see assertSingleArchiveEntry for why
+        % taking the first and ignoring the rest is not safe.
         unzippedFiles = unzip(tempZipFilepath,fileparts(tempZipFilepath));
+        ndi.cloud.download.internal.assertSingleArchiveEntry( ...
+            unzippedFiles, c, numel(documentChunks));
         jsonFile = unzippedFiles{1};
         jsonFileCleanupObj = onCleanup(@() deleteIfExists(jsonFile));
 
