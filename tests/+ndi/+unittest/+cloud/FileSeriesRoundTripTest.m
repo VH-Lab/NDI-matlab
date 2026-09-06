@@ -5,22 +5,31 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 % uploads it, and reads it back. This is the acceptance test for the file
 % series work tracked in VH-Lab/DID-matlab#173.
 %
-% It does not pass yet, and is written so that it reports Incomplete rather
-% than Failed until each piece lands. Three things are outstanding, and the
-% assumptions below name them individually so the reason a run skipped is the
-% reason, not a guess:
+% It is written so that what cannot work yet reports Incomplete rather than
+% Failed, and so that a skip names its own reason rather than leaving it to be
+% guessed. Of the three things that were outstanding when it was written:
 %
-%   1. ndi.document has no series methods. It re-implements DID's file API
-%      (add_file, is_in_file_list, current_file_list, remove_file,
-%      reset_file_info) rather than inheriting it, so did.document gaining
-%      addFileSeries in VH-Lab/DID-matlab#178 does not give ndi.document one.
-%   2. Member ingestion is deferred: addFileSeries records where members are
-%      but nothing yet copies them into FileDir/<uid> or gives them rows in
-%      the files table, so there is nothing to upload for a member.
-%   3. ndi-cloud-node does not enumerate series members when signing URLs.
+%   1. DONE. ndi.document had no series methods -- it re-implemented DID's
+%      file API rather than inheriting it, so did.document gaining
+%      addFileSeries in VH-Lab/DID-matlab#178 gave ndi.document nothing.
+%      VH-Lab/NDI-matlab#940 made it a subclass, and the class-level
+%      assumption below now opens.
+%   2. OPEN. Member ingestion is deferred: addFileSeries records where
+%      members are but nothing yet copies them into FileDir/<uid> or gives
+%      them rows in the files table, so there is nothing to upload for a
+%      member. testMembersSurviveTheRoundTrip skips on this.
+%   3. OPEN. ndi-cloud-node does not enumerate series members when signing
+%      URLs.
 %
-% The manifest half of the round trip is testable ahead of (2) and (3),
-% because the manifest is an ordinary document file and travels like one.
+% The manifest half is testable ahead of (2) and (3), because the manifest is
+% an ordinary document file and travels like one. Note what that does and does
+% not buy: testManifestSurvivesTheRoundTrip, testDocumentReportsItsSeries and
+% testCurrentFileListDoesNotExpandTheSeries all upload and then assert against
+% LocalDataset, which is never re-downloaded, so they show the cloud ACCEPTS a
+% document carrying a series manifest and nothing more. Only
+% testManifestSurvivesADownloadFromTheCloud reads the series back out of the
+% cloud, and it is the one that would catch a manifest dropped, renamed or
+% altered in transit.
 
     properties (Constant)
         DatasetNamePrefix = 'NDI_UNITTEST_FILE_SERIES_';
@@ -184,5 +193,81 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                     sprintf('member %d came back with different bytes', i));
             end
         end
+
+        function testManifestSurvivesADownloadFromTheCloud(testCase)
+            % The genuine round trip, and the only test here that reads the
+            % series back out of the cloud rather than out of the local
+            % dataset it was built in.
+            %
+            % The three tests above upload and then assert against
+            % testCase.LocalDataset, which is never re-downloaded. That
+            % establishes the cloud ACCEPTS a document carrying a series
+            % manifest, which is worth knowing but is not a round trip: a
+            % server that quietly dropped the manifest file, renamed it, or
+            % returned different bytes would pass all three.
+            %
+            % This one downloads the dataset into a fresh folder and reads the
+            % manifest from the downloaded copy, so the uids it checks are the
+            % ones that actually made the journey. It needs SyncFiles so the
+            % file contents come down and not just the document records.
+            %
+            % Members are still out of reach (see the class header, item 2),
+            % so this covers the manifest half only -- which is the half that
+            % is testable today, and the half a series reader hits first.
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            % The local manifest, to compare against.
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            localDocs = testCase.LocalDataset.database_search(q);
+            testCase.fatalAssertNumElements(localDocs, 1);
+            localFobj = testCase.LocalDataset.database_openbinarydoc(localDocs{1}, 'chunkdata.bin');
+            localManifest = did.file.readSeriesManifest(localFobj.fullpathfilename);
+            testCase.LocalDataset.database_closebinarydoc(localFobj);
+
+            % Two steps rather than chaining off applyFixture, matching the
+            % setup above; indexing into a method's return value is not
+            % something to rely on here.
+            downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, downloadFixture.Folder, ...
+                'SyncFiles', true, 'Verbose', false);
+            testCase.fatalAssertNotEmpty(downloaded, ...
+                'downloadDataset returned nothing for the uploaded dataset');
+
+            remoteDocs = downloaded.database_search(q);
+            testCase.fatalAssertNumElements(remoteDocs, 1, ...
+                'the series document did not come back from the cloud');
+            remoteDoc = remoteDocs{1};
+
+            % The series declaration has to survive serialization, not just
+            % the bytes of the manifest.
+            testCase.verifyTrue(remoteDoc.isFileSeries('chunkdata.bin'), ...
+                'the downloaded document no longer reports chunkdata.bin as a series');
+            [n, nPresent] = remoteDoc.seriesCount('chunkdata.bin');
+            testCase.verifyEqual(n, testCase.MemberCount, ...
+                'downloaded series declares a different member count');
+            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
+                'downloaded series lost members from its manifest slots');
+
+            % And the members must still not be expanded into the file list
+            % on the far side -- the bloat this design exists to avoid would
+            % otherwise reappear on every reader that downloads a dataset.
+            fl = remoteDoc.current_file_list();
+            testCase.verifyTrue(ismember('chunkdata.bin', fl));
+            testCase.verifyFalse(ismember('chunkdata.bin_1', fl), ...
+                'members were expanded into the downloaded file list');
+
+            % The manifest bytes themselves.
+            remoteFobj = downloaded.database_openbinarydoc(remoteDoc, 'chunkdata.bin');
+            remoteManifest = did.file.readSeriesManifest(remoteFobj.fullpathfilename);
+            downloaded.database_closebinarydoc(remoteFobj);
+
+            testCase.verifyEqual(remoteManifest.count, testCase.MemberCount, ...
+                'downloaded manifest reports a different member count');
+            testCase.verifyEqual(remoteManifest.uids, localManifest.uids, ...
+                ['downloaded manifest uids differ from the ones uploaded; ' ...
+                 'a member would resolve to the wrong file']);
+        end
+
     end
 end
