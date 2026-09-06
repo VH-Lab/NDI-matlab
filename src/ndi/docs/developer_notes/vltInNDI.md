@@ -11,7 +11,6 @@
 | vlt.data.assign | ndi.app.stimulus.tuning_response | 936 |  |
 | vlt.data.assign | ndi.calculator | 506 |  |
 | vlt.data.assign | ndi.calculator | 536 |  |
-| vlt.data.assign | ndi.cloud.upload.uploadToNDICloud | 17 |  |
 | vlt.data.assign | ndi.data.evaluate_fitcurve | 54 |  |
 | vlt.data.assign | ndi.data.evaluate_fitcurve | 59 |  |
 | vlt.data.assign | ndi.data.evaluate_fitcurve | 68 |  |

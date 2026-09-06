@@ -211,40 +211,7 @@ datasetId = ndi.cloud.upload.newDataset(D)
 
 Creates a new dataset record on NDI Cloud from an `ndi.dataset` object and uploads its documents and files. Returns the `cloudDatasetID` of the newly created dataset.
 
-#### `ndi.cloud.upload.uploadToNDICloud`
-
-```matlab
-[b, msg] = ndi.cloud.upload.uploadToNDICloud(S, dataset_id)
-```
-
-Uploads an NDI session's database (documents and files) to an existing cloud dataset identified by `dataset_id`. This is an older interface that operates on `ndi.session` objects. Prefer `ndi.cloud.uploadDataset` for new code.
-
-**Inputs:**
-- `S` — An `ndi.session` object.
-- `dataset_id` — The cloud dataset identifier to upload into.
-
-**Outputs:**
-- `b` — `1` if successful, `0` otherwise.
-- `msg` — An error message if the upload failed; `''` otherwise.
-
-#### `ndi.cloud.upload.scanForUpload`
-
-```matlab
-[doc_json_struct, doc_file_struct, total_size] = ndi.cloud.upload.scanForUpload(S, d, new, dataset_id)
-```
-
-Scans a set of documents for their JSON content and associated binary files, and determines which items still need to be uploaded to the cloud.
-
-**Inputs:**
-- `S` — An `ndi.session` object.
-- `d` — Documents returned by a `database_search` call.
-- `new` — `1` if this is a brand-new dataset with no prior uploads; `0` otherwise.
-- `dataset_id` — The cloud dataset identifier (may be `''` for new datasets).
-
-**Outputs:**
-- `doc_json_struct` — Struct array with fields `docid` and `is_uploaded` for each document.
-- `doc_file_struct` — Struct array with fields `uid`, `name`, `docid`, `bytes`, and `is_uploaded` for each file.
-- `total_size` — Total size (in KB) of files that still need to be uploaded.
+A thin wrapper around `ndi.cloud.uploadDataset`; prefer calling that directly, since it reports success and a message rather than raising, and accepts sync options.
 
 ---
 
