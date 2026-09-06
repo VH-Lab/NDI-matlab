@@ -42,6 +42,7 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
     properties (Constant)
         MemberCount = 4;
         SeriesDocName = 'series_extract_doc';
+        SparseDocName = 'series_extract_sparse_doc';
         SeriesName = 'chunkdata.bin';
     end
 
@@ -277,6 +278,64 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
                 'the dataset''s stored copy lost the series member count');
             testCase.verifyEqual(nPresent, testCase.MemberCount, ...
                 'the dataset''s stored copy lost the series present-count');
+        end
+
+        function testASparseSeriesCopiesOnlyThePresentMembers(testCase)
+            % A sparse series -- a chunk grid whose empty regions were never
+            % written -- is the case the series mechanism exists for, per
+            % did.document/addFileSeries. The copy walks slots 1..count and
+            % skips the absent ones, so this covers the skip and the trim
+            % after it; a dense series exercises neither.
+            sparseDir = fullfile(testCase.Session.path(), 'sparse');
+            mkdir(sparseDir);
+            presentPaths = cell(1, 2);
+            for i = 1:2
+                p = fullfile(sparseDir, sprintf('sparse_%04d.bin', i));
+                fid = fopen(p, 'w');
+                fwrite(fid, uint8(mod((1:8) * (i + 10), 251)), 'uint8');
+                fclose(fid);
+                presentPaths{i} = p;
+            end
+
+            % Slots 1 and 3 present, slot 2 never written: count 3,
+            % n_present 2.
+            sparseDoc = ndi.document('demoNDISeries', ...
+                'base.name', testCase.SparseDocName, ...
+                'demoNDISeries.value', 2, ...
+                'base.session_id', testCase.Session.id());
+            sparseDoc = sparseDoc.addFileSeries(testCase.SeriesName, ...
+                presentPaths, 'indices', [1 3]);
+            testCase.Session.database_add(sparseDoc);
+
+            docs = testCase.extractDocs();
+            extracted = [];
+            for i = 1:numel(docs)
+                if strcmp(docs{i}.document_properties.base.name, testCase.SparseDocName)
+                    extracted = docs{i};
+                    break;
+                end
+            end
+            testCase.assertNotEmpty(extracted, ...
+                'the extract did not return the sparse series document');
+
+            [n, nPresent] = extracted.seriesCount(testCase.SeriesName);
+            testCase.verifyEqual(n, 3, 'a sparse series keeps its slot count');
+            testCase.verifyEqual(nPresent, 2, 'a sparse series keeps its present-count');
+
+            entries = extracted.seriesIngestLocations(testCase.SeriesName);
+            testCase.assertNumElements(entries, 2, ...
+                ['only the present members should be recorded, and the ' ...
+                 'array trimmed to them rather than left with empty slots']);
+            % The slot number, not a 1..n counter. Ingestion names each
+            % member NAME_<index>, so a resequenced index would write the
+            % third member as the second one in the new store.
+            testCase.verifyEqual(sort([entries.index]), [1 3], ...
+                'a copied member should carry its real slot number');
+
+            for i = 1:numel(entries)
+                testCase.verifyTrue(isfile(entries(i).location), ...
+                    'a recorded sparse member should have been copied');
+            end
         end
 
         function testTheDatasetCopyKeepsReadableMembers(testCase)
