@@ -20,6 +20,14 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
     % describes a series whose members are not in TARGET_PATH. Copying them
     % belongs here once ingestion records them.
     %
+    % Consequently, STORING an extracted series document in a database that
+    % has never held it is refused: did.implementations.sqlitedb rejects a
+    % document declaring present members while recording no location for any
+    % (VH-Lab/DID-matlab#185). So ndi.dataset.add_ingested_session errors for
+    % a session carrying a populated series, and will until the members can
+    % travel. That is deliberate -- the alternative is a stored manifest full
+    % of uids whose bytes never arrive.
+    %
 
     if nargin<2
         target_path = ndi.file.temp_name();
