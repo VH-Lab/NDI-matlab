@@ -74,7 +74,7 @@ classdef GetSignedURLSetResult < ndi.cloud.api.call
             end
 
             answer = struct();
-            answer.files = ndi.cloud.api.implementation.documents.signedURLFileMap(...
+            answer.files = ndi.cloud.api.implementation.files.signedURLFileMap(...
                 decodedFiles, txt);
             answer.fileCount = localNumericField(data, 'fileCount', answer.files.Count);
             answer.generatedAt = localCharField(data, 'generatedAt');

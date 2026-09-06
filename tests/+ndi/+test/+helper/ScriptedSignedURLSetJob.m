@@ -1,4 +1,4 @@
-classdef ScriptedSignedURLSetJob < ndi.cloud.api.implementation.documents.WaitForSignedURLSetJob
+classdef ScriptedSignedURLSetJob < ndi.cloud.api.implementation.files.WaitForSignedURLSetJob
 % SCRIPTEDSIGNEDURLSETJOB - a WaitForSignedURLSetJob that returns canned states.
 %
 % Overrides the pollStatus seam so the terminal-state, timeout and backoff
@@ -17,7 +17,7 @@ classdef ScriptedSignedURLSetJob < ndi.cloud.api.implementation.documents.WaitFo
 
     methods
         function this = ScriptedSignedURLSetJob(states, varargin)
-            this@ndi.cloud.api.implementation.documents.WaitForSignedURLSetJob(varargin{:});
+            this@ndi.cloud.api.implementation.files.WaitForSignedURLSetJob(varargin{:});
             this.states = states;
         end
     end

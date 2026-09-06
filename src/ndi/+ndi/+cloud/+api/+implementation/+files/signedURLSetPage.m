@@ -1,7 +1,7 @@
 function page = signedURLSetPage(decodedData, rawPayload)
 %SIGNEDURLSETPAGE Turn a signed-url-set response body into a page struct.
 %
-%   PAGE = ndi.cloud.api.implementation.documents.SIGNEDURLSETPAGE(DECODEDDATA, RAWPAYLOAD)
+%   PAGE = ndi.cloud.api.implementation.files.SIGNEDURLSETPAGE(DECODEDDATA, RAWPAYLOAD)
 %
 %   Takes the two halves of the response rather than the ResponseMessage
 %   itself, so a test can exercise it without constructing one: a
@@ -23,7 +23,7 @@ function page = signedURLSetPage(decodedData, rawPayload)
 %                expiresAt  - char timestamp when the signed URLs expire, ''
 %                             if the server did not supply one
 %
-%   See also: ndi.cloud.api.implementation.documents.signedURLFileMap
+%   See also: ndi.cloud.api.implementation.files.signedURLFileMap
 
     arguments
         decodedData
@@ -36,7 +36,7 @@ function page = signedURLSetPage(decodedData, rawPayload)
     end
 
     page = struct();
-    page.files = ndi.cloud.api.implementation.documents.signedURLFileMap(...
+    page.files = ndi.cloud.api.implementation.files.signedURLFileMap(...
         decodedFiles, rawPayload);
     page.nextCursor = localCharField(decodedData, 'nextCursor');
     page.expiresAt  = localCharField(decodedData, 'expiresAt');

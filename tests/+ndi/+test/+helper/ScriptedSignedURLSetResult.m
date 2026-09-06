@@ -1,4 +1,4 @@
-classdef ScriptedSignedURLSetResult < ndi.cloud.api.implementation.documents.GetSignedURLSetResult
+classdef ScriptedSignedURLSetResult < ndi.cloud.api.implementation.files.GetSignedURLSetResult
 % SCRIPTEDSIGNEDURLSETRESULT - a GetSignedURLSetResult served from a local blob.
 %
 % Overrides the downloadTo seam so the gzip detection and parsing can be
@@ -16,7 +16,7 @@ classdef ScriptedSignedURLSetResult < ndi.cloud.api.implementation.documents.Get
 
     methods
         function this = ScriptedSignedURLSetResult(varargin)
-            this@ndi.cloud.api.implementation.documents.GetSignedURLSetResult(varargin{:});
+            this@ndi.cloud.api.implementation.files.GetSignedURLSetResult(varargin{:});
         end
     end
 

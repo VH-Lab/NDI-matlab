@@ -1,7 +1,7 @@
 function fileMap = signedURLFileMap(decodedFiles, rawPayload)
 %SIGNEDURLFILEMAP Build a uid -> signed URL map, preserving the true uids.
 %
-%   FILEMAP = ndi.cloud.api.implementation.documents.SIGNEDURLFILEMAP(DECODEDFILES, RAWPAYLOAD)
+%   FILEMAP = ndi.cloud.api.implementation.files.SIGNEDURLFILEMAP(DECODEDFILES, RAWPAYLOAD)
 %
 %   The signed-url-set endpoints return a JSON object whose keys are DID file
 %   uids:
@@ -41,7 +41,7 @@ function fileMap = signedURLFileMap(decodedFiles, rawPayload)
 %   the caller to download a file that does not exist, or -- if it happened to
 %   collide -- the wrong file.
 %
-%   See also: ndi.cloud.api.documents.getSignedURLSet
+%   See also: ndi.cloud.api.files.getSignedURLSet
 
     arguments
         decodedFiles
@@ -59,7 +59,7 @@ function fileMap = signedURLFileMap(decodedFiles, rawPayload)
         return
     end
 
-    uids = ndi.cloud.api.implementation.documents.signedURLFileMap_keys(rawPayload);
+    uids = ndi.cloud.api.implementation.files.signedURLFileMap_keys(rawPayload);
 
     if numel(uids) ~= numel(values)
         error('NDI:CloudApi:SignedURLSet:KeyCountMismatch', ...

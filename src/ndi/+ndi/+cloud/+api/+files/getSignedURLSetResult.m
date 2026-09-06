@@ -1,7 +1,7 @@
 function [b, answer, apiResponse, apiURL] = getSignedURLSetResult(resultUrl)
 %GETSIGNEDURLSETRESULT Download and parse the blob a signed-url-set job produced.
 %
-%   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.documents.getSignedURLSetResult(RESULTURL)
+%   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.getSignedURLSetResult(RESULTURL)
 %
 %   Inputs:
 %       resultUrl - The resultUrl reported by a job in state 'ready'.
@@ -18,18 +18,18 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSetResult(resultUrl)
 %       apiURL       - The result URL that was fetched.
 %
 %   Example:
-%       [ok, job] = ndi.cloud.api.documents.createSignedURLSetJob(dsid, docid);
-%       [ok, st]  = ndi.cloud.api.documents.waitForSignedURLSetJob(job.jobId);
-%       [ok, res] = ndi.cloud.api.documents.getSignedURLSetResult(st.resultUrl);
+%       [ok, job] = ndi.cloud.api.files.createSignedURLSetJob(dsid, docid);
+%       [ok, st]  = ndi.cloud.api.files.waitForSignedURLSetJob(job.jobId);
+%       [ok, res] = ndi.cloud.api.files.getSignedURLSetResult(st.resultUrl);
 %
-%   See also: ndi.cloud.api.implementation.documents.GetSignedURLSetResult,
-%             ndi.cloud.api.documents.waitForSignedURLSetJob
+%   See also: ndi.cloud.api.implementation.files.GetSignedURLSetResult,
+%             ndi.cloud.api.files.waitForSignedURLSetJob
 
     arguments
         resultUrl (1,1) string
     end
 
-    api_call = ndi.cloud.api.implementation.documents.GetSignedURLSetResult(...
+    api_call = ndi.cloud.api.implementation.files.GetSignedURLSetResult(...
         'resultUrl', resultUrl);
 
     [b, answer, apiResponse, apiURL] = api_call.execute();

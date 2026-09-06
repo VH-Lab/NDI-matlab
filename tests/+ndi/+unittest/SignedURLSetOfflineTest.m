@@ -1,5 +1,5 @@
-classdef SignedURLSetTest < matlab.unittest.TestCase
-% SIGNEDURLSETTEST - offline tests for the signed-url-set client.
+classdef SignedURLSetOfflineTest < matlab.unittest.TestCase
+% SIGNEDURLSETOFFLINETEST - offline tests for the signed-url-set client.
 %
 % Covers the parts that can be exercised without a live cloud: URL
 % construction, query-string assembly, and the uid recovery that keeps
@@ -37,29 +37,37 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 
         % ---- query string -------------------------------------------------
 
-        function testQueryStringDefaultsToLimitOnly(testCase)
-            call = ndi.cloud.api.implementation.documents.GetSignedURLSet(...
+        function testUrlCarriesLimitByDefault(testCase)
+            call = ndi.cloud.api.implementation.files.GetSignedURLSet(...
                 'cloudDatasetID', "ds1", 'cloudDocumentID', "doc1");
-            testCase.verifyEqual(char(call.queryString()), '?limit=500');
+            u = string(call.buildURL());
+            testCase.verifyTrue(contains(u, "limit=500"));
+            testCase.verifyFalse(contains(u, "cursor="), ...
+                'no cursor is sent for the first page');
+            testCase.verifyFalse(contains(u, "fileSeries="));
         end
 
-        function testQueryStringCarriesCursorAndFileSeries(testCase)
-            call = ndi.cloud.api.implementation.documents.GetSignedURLSet(...
+        function testUrlCarriesCursorAndFileSeries(testCase)
+            call = ndi.cloud.api.implementation.files.GetSignedURLSet(...
                 'cloudDatasetID', "ds1", 'cloudDocumentID', "doc1", ...
                 'limit', 1000, 'cursor', "abc", 'fileSeries', "chunkdata.bin");
-            q = char(call.queryString());
-            testCase.verifyEqual(q, '?limit=1000&cursor=abc&fileSeries=chunkdata.bin');
+            u = string(call.buildURL());
+            testCase.verifyTrue(contains(u, "limit=1000"));
+            testCase.verifyTrue(contains(u, "cursor=abc"));
+            testCase.verifyTrue(contains(u, "fileSeries=chunkdata.bin"));
         end
 
-        function testQueryStringEncodesTheCursor(testCase)
-            % Cursors are opaque; a server is free to hand back base64 with
-            % '+' and '=' in it, which must not reach the wire unencoded.
-            call = ndi.cloud.api.implementation.documents.GetSignedURLSet(...
+        function testUrlEncodesAnOpaqueCursor(testCase)
+            % Cursors are opaque server state; a server is free to hand back
+            % base64 with '+', '/' and '=' in it, and those must not reach the
+            % wire unescaped or the cursor comes back different.
+            call = ndi.cloud.api.implementation.files.GetSignedURLSet(...
                 'cloudDatasetID', "ds1", 'cloudDocumentID', "doc1", ...
                 'cursor', "a+b/c=");
-            q = char(call.queryString());
-            testCase.verifyTrue(contains(q, 'cursor='));
-            testCase.verifyFalse(contains(q, 'a+b/c='));
+            u = string(call.buildURL());
+            testCase.verifyTrue(contains(u, "cursor="));
+            testCase.verifyFalse(contains(u, "cursor=a+b/c="), ...
+                'the raw cursor must not appear unencoded');
         end
 
         % ---- uid recovery -------------------------------------------------
@@ -77,7 +85,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(data.files, uid), ...
                 'Expected JSONDECODE to rename a field starting with a digit.');
 
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyTrue(m.isKey(uid));
             testCase.verifyEqual(m(uid), 'https://s3/x');
         end
@@ -93,7 +101,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             txt = ['{"files":{' strjoin(parts, ',') '},"nextCursor":"z"}'];
             data = jsondecode(txt);
 
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), numel(uids));
             for i = 1:numel(uids)
                 testCase.verifyEqual(m(uids{i}), sprintf('https://s3/%d', i));
@@ -103,7 +111,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testBraceInsideAUrlDoesNotEndTheObject(testCase)
             txt = '{"files":{"9a":"https://s3/x?p={weird}&q=1","9b":"https://s3/y"}}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 2);
             testCase.verifyEqual(m('9a'), 'https://s3/x?p={weird}&q=1');
         end
@@ -111,7 +119,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testEscapedQuoteInsideAUrlIsHandled(testCase)
             txt = '{"files":{"9a":"https://s3/x?q=\"quoted\""},"nextCursor":"z"}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 1);
             testCase.verifyTrue(m.isKey('9a'));
         end
@@ -119,7 +127,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testLiteralFilesTextInAValueIsNotTheObject(testCase)
             txt = '{"kind":"files","files":{"9a":"u1"}}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 1);
             testCase.verifyEqual(m('9a'), 'u1');
         end
@@ -127,7 +135,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testNestedFilesObjectIsNotMistakenForTheTopLevelOne(testCase)
             txt = '{"meta":{"files":{"zz":"nope"}},"files":{"9a":"u1"}}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 1);
             testCase.verifyTrue(m.isKey('9a'));
             testCase.verifyFalse(m.isKey('zz'));
@@ -136,7 +144,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testFilesObjectAfterOtherKeys(testCase)
             txt = '{"nextCursor":"z","expiresAt":"2026-01-01","files":{"9a":"u1","9b":"u2"}}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 2);
             testCase.verifyEqual(m('9b'), 'u2');
         end
@@ -144,7 +152,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testWhitespaceBetweenTokens(testCase)
             txt = sprintf('{\n  "files" : {\n    "9a" : "u1" ,\n    "9b" : "u2"\n  }\n}');
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 2);
             testCase.verifyEqual(m('9a'), 'u1');
         end
@@ -152,12 +160,12 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         function testEmptyFilesObjectGivesAnEmptyMap(testCase)
             txt = '{"files":{},"nextCursor":null}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), 0);
         end
 
         function testMissingFilesFieldGivesAnEmptyMap(testCase)
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap([], '{"nextCursor":"z"}');
+            m = ndi.cloud.api.implementation.files.signedURLFileMap([], '{"nextCursor":"z"}');
             testCase.verifyEqual(double(m.Count), 0);
         end
 
@@ -168,7 +176,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             txt = '{"files":{"9a":"u1","9b":"u2"}}';
             data = jsondecode(txt);
             testCase.verifyError(...
-                @() ndi.cloud.api.implementation.documents.signedURLFileMap(...
+                @() ndi.cloud.api.implementation.files.signedURLFileMap(...
                     data.files, '{"files":{"9a":"u1"}}'), ...
                 'NDI:CloudApi:SignedURLSet:KeyCountMismatch');
         end
@@ -177,7 +185,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             txt = '{"files":{"9a":"u1","9b":"u2"}}';
             data = jsondecode(txt);
             testCase.verifyError(...
-                @() ndi.cloud.api.implementation.documents.signedURLFileMap(...
+                @() ndi.cloud.api.implementation.files.signedURLFileMap(...
                     data.files, '{"files":{"9a":"u1'), ...
                 'NDI:CloudApi:SignedURLSet:KeyCountMismatch');
         end
@@ -186,7 +194,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             % matlab.net.http hands back Body.Payload as uint8.
             txt = '{"files":{"9a":"u1"}}';
             data = jsondecode(txt);
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(...
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(...
                 data.files, uint8(txt));
             testCase.verifyEqual(m('9a'), 'u1');
         end
@@ -204,7 +212,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             txt = ['{"files":{' strjoin(parts, ',') '},"nextCursor":"z"}'];
             data = jsondecode(txt);
 
-            m = ndi.cloud.api.implementation.documents.signedURLFileMap(data.files, txt);
+            m = ndi.cloud.api.implementation.files.signedURLFileMap(data.files, txt);
             testCase.verifyEqual(double(m.Count), n);
             for i = 1:n
                 testCase.verifyEqual(m(uids{i}), sprintf('https://s3/%d', i));
@@ -214,16 +222,16 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
         % ---- page assembly ------------------------------------------------
 
         function testKeyScannerReturnsKeysInPayloadOrder(testCase)
-            keys = ndi.cloud.api.implementation.documents.signedURLFileMap_keys(...
+            keys = ndi.cloud.api.implementation.files.signedURLFileMap_keys(...
                 '{"files":{"9a":"u1","0b":"u2","cc":"u3"}}');
             testCase.verifyEqual(keys, {'9a','0b','cc'});
         end
 
         function testKeyScannerOnEmptyInput(testCase)
             testCase.verifyEqual(...
-                ndi.cloud.api.implementation.documents.signedURLFileMap_keys(''), {});
+                ndi.cloud.api.implementation.files.signedURLFileMap_keys(''), {});
             testCase.verifyEqual(...
-                ndi.cloud.api.implementation.documents.signedURLFileMap_keys([]), {});
+                ndi.cloud.api.implementation.files.signedURLFileMap_keys([]), {});
         end
     end
 end

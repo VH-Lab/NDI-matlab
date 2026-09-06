@@ -43,8 +43,9 @@ classdef SignedURLSetMockTest < matlab.unittest.TestCase
             testCase.verifyTrue(b);
             testCase.verifyEqual(call.callCount, 1);
             testCase.verifyEqual(answer.pages, 1);
-            testCase.verifyTrue(answer.complete);
             testCase.verifyEqual(double(answer.files.Count), 2);
+            testCase.verifyFalse(isfield(answer,'state'), ...
+                'a completed walk carries no failure state');
         end
 
         function testFollowsTheCursorAcrossPages(testCase)
@@ -84,10 +85,11 @@ classdef SignedURLSetMockTest < matlab.unittest.TestCase
 
             [b, answer] = call.execute();
 
-            testCase.verifyTrue(b);
+            % Running off maxPages is a bounded failure, not a success: the
+            % caller is holding a partial map and must be able to tell.
+            testCase.verifyFalse(b);
+            testCase.verifyEqual(answer.state, 'maxPagesReached');
             testCase.verifyEqual(answer.pages, 2);
-            testCase.verifyFalse(answer.complete, ...
-                'a caller must be able to tell a short walk from a whole one');
             testCase.verifyEqual(double(answer.files.Count), 2);
         end
 
@@ -125,6 +127,8 @@ classdef SignedURLSetMockTest < matlab.unittest.TestCase
 
             [~, answer] = call.execute();
             testCase.verifyEqual(sort(keys(answer.files)), {'0b','9a','cc'});
+            testCase.verifyEqual(answer.pageCount, 3, ...
+                'pageCount counts entries seen, not pages walked');
         end
 
         % ---- job polling -----------------------------------------------
@@ -233,7 +237,7 @@ classdef SignedURLSetMockTest < matlab.unittest.TestCase
         function testPageCarriesCursorAndExpiry(testCase)
             txt = ['{"files":{"9a":"u1"},"nextCursor":"c1",' ...
                    '"expiresAt":"2026-09-07T00:00:00Z"}'];
-            page = ndi.cloud.api.implementation.documents.signedURLSetPage(...
+            page = ndi.cloud.api.implementation.files.signedURLSetPage(...
                 jsondecode(txt), txt);
 
             testCase.verifyEqual(page.nextCursor, 'c1');
@@ -243,7 +247,7 @@ classdef SignedURLSetMockTest < matlab.unittest.TestCase
 
         function testLastPageHasAnEmptyCursor(testCase)
             txt = '{"files":{"9a":"u1"},"nextCursor":null}';
-            page = ndi.cloud.api.implementation.documents.signedURLSetPage(...
+            page = ndi.cloud.api.implementation.files.signedURLSetPage(...
                 jsondecode(txt), txt);
             testCase.verifyEmpty(page.nextCursor, ...
                 'a null cursor is what ends the walk in getSignedURLSetAll');

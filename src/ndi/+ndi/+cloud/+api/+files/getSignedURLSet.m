@@ -47,13 +47,15 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSet(cloudDatasetID, clou
         cloudDocumentID  (1,1) string
         options.limit    (1,1) double = 500
         options.cursor   (1,1) string = ""
+        options.fileSeries (1,1) string = ""
     end
 
     api_call = ndi.cloud.api.implementation.files.GetSignedURLSet(...
         'cloudDatasetID',  cloudDatasetID, ...
         'cloudDocumentID', cloudDocumentID, ...
         'limit',           options.limit, ...
-        'cursor',          options.cursor);
+        'cursor',          options.cursor, ...
+        'fileSeries',      options.fileSeries);
 
     [b, answer, apiResponse, apiURL] = api_call.execute();
 end

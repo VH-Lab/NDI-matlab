@@ -1,13 +1,13 @@
 function uids = signedURLFileMap_keys(rawPayload)
 %SIGNEDURLFILEMAP_KEYS Extract the uid keys of the `files` object, in order.
 %
-%   UIDS = ndi.cloud.api.implementation.documents.SIGNEDURLFILEMAP_KEYS(RAWPAYLOAD)
+%   UIDS = ndi.cloud.api.implementation.files.SIGNEDURLFILEMAP_KEYS(RAWPAYLOAD)
 %
 %   Scans the raw JSON text of a signed-url-set response for the top-level
 %   "files" object and returns its member names in the order they appear, as a
 %   cell array of char. This exists because JSONDECODE renames object keys that
 %   are not valid MATLAB identifiers, and a did.ido uid usually starts with a
-%   digit; see ndi.cloud.api.implementation.documents.signedURLFileMap.
+%   digit; see ndi.cloud.api.implementation.files.signedURLFileMap.
 %
 %   The scan is vectorized rather than a character loop. A signed URL set for a
 %   lightsheet pyramid level can hold tens of thousands of entries (several MB
@@ -29,7 +29,7 @@ function uids = signedURLFileMap_keys(rawPayload)
 %              caller compares this count against the decoded struct and errors
 %              on a mismatch rather than mispairing uids with URLs.
 %
-%   See also: ndi.cloud.api.implementation.documents.signedURLFileMap
+%   See also: ndi.cloud.api.implementation.files.signedURLFileMap
 
     arguments
         rawPayload

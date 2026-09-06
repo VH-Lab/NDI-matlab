@@ -1,4 +1,4 @@
-classdef ScriptedSignedURLSetAll < ndi.cloud.api.implementation.documents.GetSignedURLSetAll
+classdef ScriptedSignedURLSetAll < ndi.cloud.api.implementation.files.GetSignedURLSetAll
 % SCRIPTEDSIGNEDURLSETALL - a GetSignedURLSetAll that returns canned pages.
 %
 % Overrides the fetchPage seam so the paging, merging and cursor-advance logic
@@ -22,7 +22,7 @@ classdef ScriptedSignedURLSetAll < ndi.cloud.api.implementation.documents.GetSig
 
     methods
         function this = ScriptedSignedURLSetAll(pages, varargin)
-            this@ndi.cloud.api.implementation.documents.GetSignedURLSetAll(varargin{:});
+            this@ndi.cloud.api.implementation.files.GetSignedURLSetAll(varargin{:});
             this.pages = pages;
         end
     end
