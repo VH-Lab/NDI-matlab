@@ -129,5 +129,55 @@ classdef TestDocumentSeriesJsonRoundTrip < matlab.unittest.TestCase
             testCase.verifyEqual(nPresent, testCase.MemberCount);
         end
 
+
+        function testSeriesSurvivesTheBatchEncodingTheUploadActuallyUses(testCase)
+            % The tests above encode ONE properties struct. The upload does
+            % not. ndi.cloud.upload.internal.zip_documents_for_upload builds a
+            % CELL ARRAY of every document's properties and encodes that in
+            % one call:
+            %
+            %   document_properties_array = cellfun(@(x) x.document_properties, ...
+            %       documentList, 'UniformOutput', false);
+            %   jsonStr = did.datastructures.jsonencodenan(document_properties_array);
+            %
+            % A cell array becomes a JSON array of objects, and jsondecode
+            % gives back a struct array when the objects agree on their fields
+            % and a cell array when they do not. That reshaping is a real
+            % opportunity to lose a nested struct, and none of the single
+            % document tests above would see it. The test dataset uploads three
+            % documents of mixed type, so mix them here too.
+            seriesDoc = testCase.makeSeriesDocument();
+            otherA = ndi.document('demoNDI', 'base.name', 'other_a', ...
+                'base.session_id', did.ido.unique_id());
+            otherB = ndi.document('demoNDI', 'base.name', 'other_b', ...
+                'base.session_id', did.ido.unique_id());
+
+            documentList = {otherA, seriesDoc, otherB};
+            propsArray = cellfun(@(x) did.document.stripSeriesIngestLocations( ...
+                x.document_properties), documentList, 'UniformOutput', false);
+
+            encoded = did.datastructures.jsonencodenan(propsArray);
+            decoded = jsondecode(ndi.util.rehydrateJSONNanNull(encoded));
+            if isstruct(decoded), decoded = num2cell(decoded); end
+
+            testCase.fatalAssertEqual(numel(decoded), 3, ...
+                'the batch did not decode back into three documents');
+
+            rebuilt = cellfun(@(x) ndi.document(x), decoded, 'UniformOutput', false);
+            names = cellfun(@(d) string(d.document_properties.base.name), rebuilt);
+            k = find(names == "json_round_trip_doc", 1);
+            testCase.fatalAssertNotEmpty(k, ...
+                'the series document did not survive the batch round trip at all');
+
+            testCase.onFailure(@() disp(rebuilt{k}.document_properties.files));
+            testCase.verifyTrue(rebuilt{k}.isFileSeries('chunkdata.bin'), ...
+                'the series declaration did not survive the batch encoding');
+            [n, nPresent] = rebuilt{k}.seriesCount('chunkdata.bin');
+            testCase.verifyEqual(n, testCase.MemberCount, ...
+                'count did not survive the batch encoding the upload uses');
+            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
+                'n_present did not survive the batch encoding the upload uses');
+        end
+
     end
 end
