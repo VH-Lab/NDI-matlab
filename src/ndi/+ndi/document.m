@@ -1,4 +1,4 @@
-classdef document
+classdef document < did.document
     %NDI.DOCUMENT - NDI_database storage item, general purpose data and parameter storage
     % The ndi.document datatype for storing results in the ndi.database
     %
@@ -14,9 +14,9 @@ classdef document
     %    without the '.json' extension (e.g., use 'stimulus' not 'stimulus.json').
     %
 
-    properties (SetAccess=protected,GetAccess=public)
-        document_properties % a struct with the fields for the document
-    end
+    % document_properties is inherited from did.document. It is deliberately
+    % NOT redeclared here: MATLAB rejects redefining an inherited property,
+    % and two copies of the same state is the drift this subclassing removes.
 
     methods
         function ndi_document_obj = document(document_type, varargin)
@@ -48,11 +48,13 @@ classdef document
                 document_type = 'base';
             end
 
+            madeFromDefinition = false;
             if isstruct(document_type)
                 document_properties = document_type;
             elseif isa(document_type,'did.document')
                 document_properties = document_type.document_properties; % directly compatible
             else  % create blank from definitions
+                madeFromDefinition = true;
                 document_properties = ndi.document.readblankdefinition(document_type);
                 ndiido = ndi.ido();
                 document_properties.base.id = ndiido.id();
@@ -77,7 +79,24 @@ classdef document
                 end
             end
 
-            ndi_document_obj.document_properties = document_properties;
+            % Hand the resolved properties to did.document's struct path.
+            % That path is what makes subclassing possible: did.document's
+            % constructor calls did.document.readblankdefinition with the
+            % class name written out, and MATLAB does not dispatch an
+            % explicitly qualified static call virtually, so an inherited
+            % constructor would resolve $NDIDOCUMENTPATH through DID's
+            % resolver. Resolving here first and passing the struct
+            % sidesteps that.
+            ndi_document_obj@did.document(document_properties);
+
+            % did.document seeds files.file_info when it builds a blank
+            % document from a definition, and its add_file assumes the field
+            % exists; ndi.document never called reset_file_info and created
+            % the field lazily instead. The struct path skips the seeding, so
+            % do it here to meet did.document's contract.
+            if madeFromDefinition
+                ndi_document_obj = ndi_document_obj.reset_file_info();
+            end
 
         end % ndi.document() creator
 
@@ -457,16 +476,6 @@ classdef document
                 ndi_document_obj2.document_properties.base.id);
         end % eq()
 
-        function uid = id(ndi_document_obj)
-            % ID - return the document unique identifier for an ndi.document
-            %
-            % UID = ID (NDI_DOCUMENT_OBJ)
-            %
-            % Returns the unique id of an ndi.document
-            % (Found at NDI_DOCUMENT_OBJ.documentproperties.base.id)
-            %
-            uid = ndi_document_obj.document_properties.base.id;
-        end % id()
 
         function uid = session_id(ndi_document_obj)
             % ID - return the document session unique identifier for an ndi.document
