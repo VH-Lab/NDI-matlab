@@ -1,0 +1,23 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/demoNDISeries.json",
+		"validation":						"$NDISCHEMAPATH\/demoNDISeries_schema.json",
+		"class_name":						"demoNDISeries",
+		"property_list_name":					"demoNDISeries",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"files": {
+		"file_list": [
+			"chunkdata.bin"
+		],
+		"file_series": [
+			"chunkdata.bin"
+		]
+	},
+	"demoNDISeries": {
+		"value":						""
+	}
+}

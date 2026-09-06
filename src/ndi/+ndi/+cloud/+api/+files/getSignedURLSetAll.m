@@ -41,13 +41,15 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSetAll(cloudDatasetID, c
         cloudDocumentID   (1,1) string
         options.limit     (1,1) double = 500
         options.maxPages  (1,1) double = 1000
+        options.fileSeries (1,1) string = ""
     end
 
     api_call = ndi.cloud.api.implementation.files.GetSignedURLSetAll(...
         'cloudDatasetID',  cloudDatasetID, ...
         'cloudDocumentID', cloudDocumentID, ...
         'limit',           options.limit, ...
-        'maxPages',        options.maxPages);
+        'maxPages',        options.maxPages, ...
+        'fileSeries',      options.fileSeries);
 
     [b, answer, apiResponse, apiURL] = api_call.execute();
 end

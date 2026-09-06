@@ -465,6 +465,23 @@ Where:
 | `ndi.cloud.api.documents.ndiquery` | `ndiquery(scope, query_obj, 'page', P, 'pageSize', PS)` | Executes an `ndi.query` against the cloud database within the given scope (`'public'`, `'private'`, or `'all'`). Returns a paginated result. |
 | `ndi.cloud.api.documents.ndiqueryAll` | `ndiqueryAll(scope, query_obj, 'pageSize', PS)` | Executes an `ndi.query` against the cloud database and automatically paginates to return all matching documents. |
 
+#### Signed URL sets and file uids
+
+The `ndi.cloud.api.files.getSignedURLSet*` functions return the uid → URL
+mapping as a `containers.Map`, not as the struct the server's JSON decodes to. A DID file uid is
+`NUM2HEX(<serial date>) '_' NUM2HEX(<random>)`, so it usually begins with a
+digit, and a MATLAB struct field name cannot. `jsondecode` silently renames such
+fields, so reading uids off the decoded struct would hand back uids that do not
+exist. The client recovers the real uids from the raw payload and pairs them
+with the decoded values; it errors rather than guessing if the two disagree.
+
+Prefer `ndi.cloud.api.files.getSignedURLSetAll` for sets of a few thousand
+files and the asynchronous job (`createSignedURLSetJob` → `waitForSignedURLSetJob`
+→ `getSignedURLSetResult`) for larger ones, where paging is the wrong shape for
+the access pattern. A viewer wants one resident hashmap so that panning a
+pyramid level is an O(1) uid lookup rather than another round trip.
+
+
 ### Files (`ndi.cloud.api.files.*`)
 
 | Function | Signature | Description |
