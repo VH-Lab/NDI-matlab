@@ -3,14 +3,19 @@ classdef TestNDIDocumentInheritedFileAPI < matlab.unittest.TestCase
     %
     % Step 1 of VH-Lab/NDI-matlab#940 made ndi.document a subclass of
     % did.document but kept every override, so nothing was actually
-    % inherited yet. This covers what has changed since: reset_file_info and
-    % remove_file, now inherited outright, and add_file, now a thin override
-    % that adds only NDI's ndic:// location type before delegating.
+    % inherited yet. This covers what has changed since:
+    %
+    %   reset_file_info, remove_file, is_in_file_list -- inherited outright
+    %   add_file                                      -- a thin override that
+    %       adds only NDI's ndic:// location type before delegating
+    %   get_fuid                                      -- was a one-line
+    %       delegate to is_in_file_list's fourth output, which did.document's
+    %       does not have, so it now works the uid out itself
     %
     % None of it was tested in NDI before -- remove_file had no caller at
-    % all, and nothing anywhere exercised an ndic:// location through
-    % add_file -- so without these the suite would pass whether or not the
-    % inherited versions behave like the ones they replaced.
+    % all, nothing anywhere exercised an ndic:// location through add_file,
+    % and get_fuid was covered only indirectly -- so without these the suite
+    % would pass whether or not the new versions behave like the old ones.
 
     properties
         tempDir
@@ -168,6 +173,58 @@ classdef TestNDIDocumentInheritedFileAPI < matlab.unittest.TestCase
             testCase.verifyError( ...
                 @() doc.add_file('notdeclared.ext', testCase.writeFile('a.txt')), ...
                 ?MException);
+        end
+
+        % ---- is_in_file_list, and get_fuid which replaced its 4th output
+
+        function testIsInFileListComesFromDidDocument(testCase)
+            testCase.verifyEqual(testCase.definerOf('is_in_file_list'), 'did.document');
+        end
+
+        function testGetFuidReturnsTheFirstLocationsUid(testCase)
+            % ndi.document's is_in_file_list had a fourth output, the uid,
+            % which did.document's does not. get_fuid now works it out, and
+            % this is the answer it has to keep giving: the same uid that
+            % file_info carries, because that is what an ndic:// location and
+            % the cloud file map are keyed on.
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', testCase.writeFile('a.txt'));
+            expected = doc.document_properties.files.file_info(1).locations(1).uid;
+            testCase.verifyNotEmpty(expected);
+            testCase.verifyEqual(doc.get_fuid('filename1.ext'), expected);
+        end
+
+        function testGetFuidIsTheFirstLocationWhenThereAreSeveral(testCase)
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', testCase.writeFile('a.txt'));
+            doc = doc.add_file('filename1.ext', testCase.writeFile('b.txt'));
+            locations = doc.document_properties.files.file_info(1).locations;
+            testCase.assertNumElements(locations, 2);
+            testCase.verifyEqual(doc.get_fuid('filename1.ext'), locations(1).uid);
+        end
+
+        function testGetFuidIsEmptyWhenNoFileWasAdded(testCase)
+            % Declared in file_list, never added. The old fourth output was ''
+            % here and callers test it with isempty, so it must stay ''.
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            testCase.verifyEmpty(doc.get_fuid('filename1.ext'));
+        end
+
+        function testGetFuidIsEmptyAndDoesNotThrowForAnUndeclaredName(testCase)
+            % An undeclared name makes is_in_file_list return false rather
+            % than error, so get_fuid answers '' instead of propagating.
+            % ndi.fun.doc.diff and its session and dataset counterparts read
+            % the uid for names taken from the *other* document, so this case
+            % is reached on any comparison of two unlike documents.
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', testCase.writeFile('a.txt'));
+            testCase.verifyEmpty(doc.get_fuid('notdeclared.ext'));
+        end
+
+        function testGetFuidIsEmptyForADocumentWithNoFilesField(testCase)
+            doc = ndi.document('base');
+            testCase.assertFalse(isfield(doc.document_properties, 'files'));
+            testCase.verifyEmpty(doc.get_fuid('anything.ext'));
         end
 
         % ---- remove_file ---------------------------------------------

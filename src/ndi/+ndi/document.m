@@ -448,76 +448,6 @@ classdef document < did.document
             uid = ndi_document_obj.document_properties.base.session_id;
         end % session_id()
         
-        function [b, msg, fI_index, fuid] = is_in_file_list(ndi_document_obj, name)
-            % IS_IN_FILE_LIST - is a file name in a ndi.document's file list?
-            %
-            % [B, MSG, FI_INDEX, FUID] = IS_IN_FILE_LIST(NDI_DOCUMENT_OBJ, NAME)
-            %
-            % Is the file NAME a valid named binary file for the ndi.document
-            % NDI_DOCUMENT_OBJ? If so, B is 1; else, B is 0.
-            %
-            % A name is a valid name if it appears in NDI_DOCUMENT_OBJ....
-            % document_properties.files.file_list or if it is a numbered
-            % file with an entry in document_properties.files.file_list
-            % as 'filename.ext_#'. (For example, 'filename.ext_1' would
-            % be valid if 'filename.ext_# is in the file_list.)
-            %
-            % If the file NAME is not valid, a reason is returned in MSG.
-            %
-            % If it is a valid file NAME, then the index value of NAME
-            % in NDI_DOCUMENT_OBJ.DOCUMENT_PROPERTIES.FILES.FILE_INFO is also
-            % returned.
-            %
-            b = 1;
-            msg = '';
-            fI_index = [];
-            fuid = '';
-
-            % Step 1: does this did.document have 'files' at all?
-
-            if ~isfield(ndi_document_obj.document_properties,'files')
-                b = 0;
-                msg = 'This type of document does not accept files; it has no ''files'' field';
-                return;
-            end
-
-            % Step 2: is it a valid filename for this document? It must appear in files.file_list
-            %   or be a proper numbered file if files.file_list{i} has has the form 'filename.ext_#'.
-
-            % Step 2a: see if name ends in '_#', where # is a non-negative integer.
-
-            search_name = name;
-            ends_with_number = 0; % assume not at first
-            number = NaN;
-            underscores = find(name=='_');
-            if ~isempty(underscores)
-                n = str2num(name(underscores(end)+1:end));
-                if ~isempty(n) % we have a number
-                    number = n;
-                    ends_with_number = 1;
-                    search_name = [name(1:underscores(end)) '#'];
-                end
-            end
-
-            % Step 2b: now we have the name to search for; make sure it is in the file list
-
-            I = find(strcmpi(search_name,ndi_document_obj.document_properties.files.file_list));
-            if isempty(I)
-                b = 0;
-                msg = ['No such file ' name ' in file_list of ndi.document; file must match an expected name.'];
-                return;
-            end
-
-            % Step 3: now, find which file_info corresponds to search_name, if any
-
-            if isfield(ndi_document_obj.document_properties.files,'file_info')
-                fI_index = find(strcmpi(name,{ndi_document_obj.document_properties.files.file_info.name}));
-                if ~isempty(fI_index)
-                    fuid = ndi_document_obj.document_properties.files.file_info(fI_index).locations(1).uid;
-                end
-            end
-        end % is_in_file_list()
-
         function fuid = get_fuid(ndi_document_obj, filename)
             % GET_FUID - return the file UID for a given filename
             %
@@ -527,7 +457,26 @@ classdef document < did.document
             % associated with that file in the NDI_DOCUMENT_OBJ.
             % If the file is not found, an empty string is returned.
             %
-            [~, ~, ~, fuid] = ndi_document_obj.is_in_file_list(filename);
+            fuid = '';
+
+            % is_in_file_list is did.document's, and it reads files.file_info
+            % without first checking the field is there. has_files() is the
+            % check: false means no file was ever added, so there is no uid to
+            % return and nothing to look up.
+            if ~ndi_document_obj.has_files()
+                return;
+            end
+
+            [b, ~, fI_index] = ndi_document_obj.is_in_file_list(filename);
+            if ~b || isempty(fI_index)
+                return;
+            end
+
+            files = ndi_document_obj.document_properties.files;
+            locations = files.file_info(fI_index(1)).locations;
+            if ~isempty(locations)
+                fuid = locations(1).uid;
+            end
         end % get_fuid()
 
         function fl = current_file_list(ndi_document_obj)

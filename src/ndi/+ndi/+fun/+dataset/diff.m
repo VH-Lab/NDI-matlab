@@ -63,8 +63,8 @@ function [report] = diff(D1,D2, options)
 
             % THIS IS A SIMPLIFIED RECHECK, ASSUMES DOCS EXIST AND FUIDS ARE CORRECT
 
-            [~,~,~,fuid1] = doc1{1}.is_in_file_list(entry.documentA_fname);
-            [~,~,~,fuid2] = doc2{1}.is_in_file_list(entry.documentB_fname);
+            fuid1 = doc1{1}.get_fuid(entry.documentA_fname);
+            fuid2 = doc2{1}.get_fuid(entry.documentB_fname);
 
             file_diff_entry = struct(...
                 'documentA_uid', entry.documentA_uid, 'documentB_uid', entry.documentB_uid, ...
@@ -248,8 +248,8 @@ function [report] = diff(D1,D2, options)
         for f=1:numel(all_fnames)
             fname = all_fnames{f};
 
-            [~, ~, ~, fuid1] = doc1.is_in_file_list(fname);
-            [~, ~, ~, fuid2] = doc2.is_in_file_list(fname);
+            fuid1 = doc1.get_fuid(fname);
+            fuid2 = doc2.get_fuid(fname);
 
             file_diff_entry = struct(...
                 'documentA_uid', doc1.id(), 'documentB_uid', doc2.id(), ...

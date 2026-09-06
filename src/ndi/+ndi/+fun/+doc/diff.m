@@ -146,8 +146,10 @@ function [are_equal, report] = diff(doc1, doc2, options)
             fname = all_fnames{f};
 
             % Check presence in both docs
-            [in1, ~, ~, fuid1] = doc1.is_in_file_list(fname);
-            [in2, ~, ~, fuid2] = doc2.is_in_file_list(fname);
+            in1 = doc1.is_in_file_list(fname);
+            in2 = doc2.is_in_file_list(fname);
+            fuid1 = doc1.get_fuid(fname);
+            fuid2 = doc2.get_fuid(fname);
 
             if in1 ~= in2
                 are_equal = false;
