@@ -37,6 +37,13 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
     end
 
     properties
+        % Every cloud test in this suite carries a narrative, so a failure
+        % reads as a sequence of steps and a structured JSON report rather
+        % than a bare number. The audience for these failures is often not a
+        % MATLAB user -- NDI-matlab#945 is being handed to whoever maintains
+        % ndi-cloud-node -- and "0 where 4 was expected" is not something they
+        % can act on. See ndi.unittest.cloud.APIMessage.
+        Narrative (1,:) string
         DatasetID (1,1) string = missing
         LocalDataset
         MemberPaths (1,:) cell = {}
@@ -68,6 +75,11 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
     methods (TestMethodSetup)
         function setupLocalDatasetAndCloud(testCase)
             import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = "Begin FileSeriesRoundTripTest setup.";
+            narrative(end+1) = "Creating a local dataset and " + ...
+                testCase.MemberCount + " series members on disk.";
+
             tempFolder = testCase.applyFixture(TemporaryFolderFixture);
             testCase.LocalDataset = ndi.dataset.dir('test_series_ds', tempFolder.Folder);
 
@@ -92,22 +104,38 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             doc = doc.addFileSeries('chunkdata.bin', testCase.MemberPaths);
             testCase.LocalDataset.database_add(doc);
             testCase.SeriesDocId = doc.id();
+            narrative(end+1) = "Added document 'test_series_doc' (id " + ...
+                string(doc.id()) + ") with file series 'chunkdata.bin' " + ...
+                "declaring " + testCase.MemberCount + " members.";
 
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
+            narrative(end+1) = "Creating cloud dataset named " + unique_name + ".";
             [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
-            testCase.fatalAssertTrue(b, "Failed to create cloud dataset.");
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, cloudId, ...
+                matlab.net.http.ResponseMessage.empty, "datasets.createDataset");
+            testCase.fatalAssertTrue(b, "Failed to create cloud dataset. " + msg);
             testCase.DatasetID = cloudId;
+            narrative(end+1) = "Cloud dataset id is " + string(cloudId) + ".";
 
             remoteDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudId, testCase.LocalDataset);
             testCase.LocalDataset.database_add(remoteDoc);
 
+            narrative(end+1) = "Uploading the dataset (documents are batched " + ...
+                "as one JSON array by zip_documents_for_upload).";
             successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset);
-            testCase.fatalAssertTrue(successUpload, "Failed to upload test dataset.");
+            msg = ndi.unittest.cloud.APIMessage(narrative, successUpload, ...
+                successUpload, matlab.net.http.ResponseMessage.empty, ...
+                "ndi.cloud.uploadDataset");
+            testCase.fatalAssertTrue(successUpload, ...
+                "Failed to upload test dataset. " + msg);
 
             % Server-side zip extraction has to finish before anything reads
             % the per-file objects back (issue #755).
+            narrative(end+1) = "Waiting for server-side bulk upload extraction to finish.";
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
+            narrative(end+1) = "Setup complete; the series is now in the cloud.";
 
+            testCase.Narrative = narrative;
             testCase.addTeardown(@() testCase.cleanupCloudDataset());
         end
     end
@@ -125,6 +153,11 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
         function testManifestSurvivesTheRoundTrip(testCase)
             % The manifest is an ordinary document file, so this half works
             % before member ingestion and before the server knows about series.
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testManifestSurvivesTheRoundTrip.";
+            narrative(end+1) = "NOTE: this test reads the LOCAL dataset, not the cloud. " + ...
+                "It shows the upload was accepted, not that anything came back.";
+
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             docs = testCase.LocalDataset.database_search(q);
             testCase.fatalAssertNumElements(docs, 1);
@@ -134,43 +167,78 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             m = did.file.readSeriesManifest(manifestPath);
             testCase.LocalDataset.database_closebinarydoc(fobj);
 
-            testCase.verifyEqual(m.count, testCase.MemberCount);
+            narrative(end+1) = "Read the local manifest; it reports " + m.count + " members.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, m, ...
+                matlab.net.http.ResponseMessage.empty, "local read of chunkdata.bin");
+
+            testCase.verifyEqual(m.count, testCase.MemberCount, ...
+                "local manifest member count is wrong. " + msg);
             for i = 1:testCase.MemberCount
                 testCase.verifyNotEmpty(m.uids{i}, ...
-                    sprintf('member %d should have a uid in the manifest', i));
+                    "member " + i + " has no uid in the manifest. " + msg);
             end
+            testCase.Narrative = narrative;
         end
 
         function testDocumentReportsItsSeries(testCase)
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testDocumentReportsItsSeries.";
+            narrative(end+1) = "Reading the LOCAL dataset. This is the control for " + ...
+                "NDI-matlab#945: the same query against the DOWNLOADED dataset returns 0.";
+
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             docs = testCase.LocalDataset.database_search(q);
             testCase.fatalAssertNumElements(docs, 1);
             doc = docs{1};
 
-            testCase.verifyTrue(doc.isFileSeries('chunkdata.bin'));
             [n, nPresent] = doc.seriesCount('chunkdata.bin');
-            testCase.verifyEqual(n, testCase.MemberCount);
-            testCase.verifyEqual(nPresent, testCase.MemberCount);
+            narrative(end+1) = "Local document reports count=" + n + ", n_present=" + nPresent + ".";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, ...
+                doc.document_properties.files, ...
+                matlab.net.http.ResponseMessage.empty, "local database_search");
+
+            testCase.verifyTrue(doc.isFileSeries('chunkdata.bin'), ...
+                "local document does not report chunkdata.bin as a series. " + msg);
+            testCase.verifyEqual(n, testCase.MemberCount, ...
+                "local series count is wrong. " + msg);
+            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
+                "local series present-count is wrong. " + msg);
+            testCase.Narrative = narrative;
         end
 
         function testCurrentFileListDoesNotExpandTheSeries(testCase)
             % A 28,000-member series must not materialise 28,000 names here --
             % that is the bloat the manifest exists to remove, reappearing one
             % layer up. Called out in VH-Lab/DID-matlab#173.
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testCurrentFileListDoesNotExpandTheSeries.";
+
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             docs = testCase.LocalDataset.database_search(q);
             fl = docs{1}.current_file_list();
+            narrative(end+1) = "current_file_list returned " + numel(fl) + " entries.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, fl, ...
+                matlab.net.http.ResponseMessage.empty, "local current_file_list");
 
             testCase.verifyTrue(ismember('chunkdata.bin', fl), ...
-                'the manifest itself is an ordinary file and should be listed');
+                "the manifest itself is an ordinary file and should be listed. " + msg);
             testCase.verifyFalse(ismember('chunkdata.bin_1', fl), ...
-                'members must not be expanded into the file list');
+                "members must not be expanded into the file list. " + msg);
+            testCase.Narrative = narrative;
         end
 
         function testMembersSurviveTheRoundTrip(testCase)
             % The whole point. Needs member ingestion (DID) and series-aware
             % URL signing (ndi-cloud-node); until both land this skips rather
             % than fails, and becomes live on its own once they do.
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testMembersSurviveTheRoundTrip.";
+            narrative(end+1) = "This test skips until member ingestion lands " + ...
+                "(VH-Lab/DID-matlab#173). The gate below is a LOCAL check: nothing " + ...
+                "copies members into FileDir/<uid>, so there is nothing to upload " + ...
+                "and no cloud change can open it.";
+            testCase.Narrative = narrative;
+
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             docs = testCase.LocalDataset.database_search(q);
             doc = docs{1};
@@ -217,6 +285,11 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 
             import matlab.unittest.fixtures.TemporaryFolderFixture
 
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testManifestSurvivesADownloadFromTheCloud.";
+            narrative(end+1) = "This is the only test here that reads the series back " + ...
+                "OUT of the cloud. The three above assert against the local dataset.";
+
             % The local manifest, to compare against.
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             localDocs = testCase.LocalDataset.database_search(q);
@@ -224,19 +297,30 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             localFobj = testCase.LocalDataset.database_openbinarydoc(localDocs{1}, 'chunkdata.bin');
             localManifest = did.file.readSeriesManifest(localFobj.fullpathfilename);
             testCase.LocalDataset.database_closebinarydoc(localFobj);
+            narrative(end+1) = "Local manifest before download: count=" + ...
+                localManifest.count + ".";
 
             % Two steps rather than chaining off applyFixture, matching the
             % setup above; indexing into a method's return value is not
             % something to rely on here.
             downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            narrative(end+1) = "Downloading dataset " + testCase.DatasetID + ...
+                " with SyncFiles=true into a fresh folder.";
             downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, downloadFixture.Folder, ...
                 'SyncFiles', true, 'Verbose', false);
+            msg = ndi.unittest.cloud.APIMessage(narrative, ~isempty(downloaded), ...
+                "downloadDataset returned an ndi.dataset", ...
+                matlab.net.http.ResponseMessage.empty, "ndi.cloud.downloadDataset");
             testCase.fatalAssertNotEmpty(downloaded, ...
-                'downloadDataset returned nothing for the uploaded dataset');
+                "downloadDataset returned nothing for the uploaded dataset. " + msg);
 
             remoteDocs = downloaded.database_search(q);
+            narrative(end+1) = "Downloaded dataset returned " + numel(remoteDocs) + ...
+                " document(s) matching base.name 'test_series_doc'.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, numel(remoteDocs), ...
+                matlab.net.http.ResponseMessage.empty, "downloaded database_search");
             testCase.fatalAssertNumElements(remoteDocs, 1, ...
-                'the series document did not come back from the cloud');
+                "the series document did not come back from the cloud. " + msg);
             remoteDoc = remoteDocs{1};
 
             % On failure, show what actually came back rather than just the
@@ -249,15 +333,31 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             % no-network half of the same question.
             testCase.onFailure(@() disp(remoteDoc.document_properties.files));
 
+            [n, nPresent] = remoteDoc.seriesCount('chunkdata.bin');
+            hasSeriesInfo = isfield(remoteDoc.document_properties.files, 'series_info') && ...
+                ~isempty(remoteDoc.document_properties.files.series_info);
+            narrative(end+1) = "Downloaded document: files.series_info present = " + ...
+                string(hasSeriesInfo) + ", seriesCount reports count=" + n + ...
+                ", n_present=" + nPresent + " (expected " + testCase.MemberCount + ").";
+            narrative(end+1) = "If series_info is absent, the server dropped the whole " + ...
+                "per-series record; if present with zeros, it kept the entry and zeroed " + ...
+                "the numbers. seriesCount returns 0/0 for BOTH, which is why the struct " + ...
+                "is reported below. See VH-Lab/NDI-matlab#945.";
+            narrative(end+1) = "Note isFileSeries reads files.file_series (the CLASS " + ...
+                "declaration, from the schema), not files.series_info, so it can pass " + ...
+                "while the instance record is gone.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, ...
+                remoteDoc.document_properties.files, ...
+                matlab.net.http.ResponseMessage.empty, "downloaded document files struct");
+
             % The series declaration has to survive serialization, not just
             % the bytes of the manifest.
             testCase.verifyTrue(remoteDoc.isFileSeries('chunkdata.bin'), ...
-                'the downloaded document no longer reports chunkdata.bin as a series');
-            [n, nPresent] = remoteDoc.seriesCount('chunkdata.bin');
+                "the downloaded document no longer reports chunkdata.bin as a series. " + msg);
             testCase.verifyEqual(n, testCase.MemberCount, ...
-                'downloaded series declares a different member count');
+                "downloaded series declares a different member count. " + msg);
             testCase.verifyEqual(nPresent, testCase.MemberCount, ...
-                'downloaded series lost members from its manifest slots');
+                "downloaded series lost members from its manifest slots. " + msg);
 
             % And the members must still not be expanded into the file list
             % on the far side -- the bloat this design exists to avoid would
@@ -272,11 +372,16 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             remoteManifest = did.file.readSeriesManifest(remoteFobj.fullpathfilename);
             downloaded.database_closebinarydoc(remoteFobj);
 
+            narrative(end+1) = "Downloaded manifest reports count=" + remoteManifest.count + ".";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, remoteManifest, ...
+                matlab.net.http.ResponseMessage.empty, "downloaded chunkdata.bin manifest");
+
             testCase.verifyEqual(remoteManifest.count, testCase.MemberCount, ...
-                'downloaded manifest reports a different member count');
+                "downloaded manifest reports a different member count. " + msg);
             testCase.verifyEqual(remoteManifest.uids, localManifest.uids, ...
-                ['downloaded manifest uids differ from the ones uploaded; ' ...
-                 'a member would resolve to the wrong file']);
+                "downloaded manifest uids differ from the ones uploaded; " + ...
+                "a member would resolve to the wrong file. " + msg);
+            testCase.Narrative = narrative;
         end
 
     end
