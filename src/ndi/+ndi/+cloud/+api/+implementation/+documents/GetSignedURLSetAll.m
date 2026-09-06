@@ -60,12 +60,7 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
             complete = false;
 
             while true
-                [ok, pageAnswer, apiResponse, apiURL] = ...
-                    ndi.cloud.api.documents.getSignedURLSet(...
-                        this.cloudDatasetID, this.cloudDocumentID, ...
-                        'limit', this.limit, ...
-                        'cursor', cursor, ...
-                        'fileSeries', this.fileSeries);
+                [ok, pageAnswer, apiResponse, apiURL] = this.fetchPage(cursor);
 
                 if ~ok
                     answer = pageAnswer;
@@ -100,6 +95,19 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
             b = true;
             answer = struct('files', files, 'pages', pages, ...
                 'expiresAt', expiresAt, 'complete', complete);
+        end
+    end
+
+    methods (Access = protected)
+        function [ok, page, apiResponse, apiURL] = fetchPage(this, cursor)
+            %FETCHPAGE Fetch one page. Seam: a test subclass overrides this to
+            %   script a sequence of pages, so the paging, merging and
+            %   cursor-advance logic above can be exercised without a server.
+            [ok, page, apiResponse, apiURL] = ndi.cloud.api.documents.getSignedURLSet(...
+                this.cloudDatasetID, this.cloudDocumentID, ...
+                'limit', this.limit, ...
+                'cursor', cursor, ...
+                'fileSeries', this.fileSeries);
         end
     end
 end

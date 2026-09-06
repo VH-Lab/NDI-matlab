@@ -48,8 +48,7 @@ classdef WaitForSignedURLSetJob < ndi.cloud.api.call
             interval = this.initialInterval;
 
             while true
-                [ok, status, apiResponse, apiURL] = ...
-                    ndi.cloud.api.documents.getSignedURLSetJobStatus(this.jobId);
+                [ok, status, apiResponse, apiURL] = this.pollStatus();
                 answer = status;
 
                 if ok && isstruct(status) && isfield(status, 'state')
@@ -82,6 +81,17 @@ classdef WaitForSignedURLSetJob < ndi.cloud.api.call
 
                 interval = min(interval * this.backoffFactor, this.maxInterval);
             end
+        end
+    end
+
+    methods (Access = protected)
+        function [ok, status, apiResponse, apiURL] = pollStatus(this)
+            %POLLSTATUS Read the job's state once. Seam: a test subclass
+            %   overrides this to script a sequence of states, so the terminal-
+            %   state, timeout and backoff logic can be exercised without a
+            %   server and without real sleeping.
+            [ok, status, apiResponse, apiURL] = ...
+                ndi.cloud.api.documents.getSignedURLSetJobStatus(this.jobId);
         end
     end
 end

@@ -53,8 +53,7 @@ classdef GetSignedURLSetResult < ndi.cloud.api.call
             % the gateway does not hand back a body websave would auto-inflate
             % and corrupt -- the same hazard that made getFile prefer curl in
             % the first place, and this blob is gzipped.
-            [downloaded, downloadAnswer] = ndi.cloud.api.files.getFile(...
-                this.resultUrl, localFile);
+            [downloaded, downloadAnswer] = this.downloadTo(localFile);
             if ~downloaded
                 answer = struct('error', downloadAnswer);
                 return
@@ -81,6 +80,15 @@ classdef GetSignedURLSetResult < ndi.cloud.api.call
             answer.generatedAt = localCharField(data, 'generatedAt');
 
             b = true;
+        end
+    end
+
+    methods (Access = protected)
+        function [ok, answer] = downloadTo(this, localFile)
+            %DOWNLOADTO Fetch the result blob. Seam: a test subclass overrides
+            %   this to drop a canned blob at LOCALFILE, so the gzip detection
+            %   and parsing can be exercised without a network.
+            [ok, answer] = ndi.cloud.api.files.getFile(this.resultUrl, localFile);
         end
     end
 end

@@ -82,7 +82,7 @@ classdef GetSignedURLSet < ndi.cloud.api.call
             if (apiResponse.StatusCode == 200)
                 b = true;
                 answer = ndi.cloud.api.implementation.documents.signedURLSetPage(...
-                    apiResponse);
+                    apiResponse.Body.Data, apiResponse.Body.Payload);
             else
                 if isprop(apiResponse.Body, 'Data')
                     answer = apiResponse.Body.Data;
