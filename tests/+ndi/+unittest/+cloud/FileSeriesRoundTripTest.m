@@ -239,6 +239,16 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 'the series document did not come back from the cloud');
             remoteDoc = remoteDocs{1};
 
+            % On failure, show what actually came back rather than just the
+            % number that did not match: whether series_info still has its
+            % count and n_present fields, what else survived beside them, and
+            % whether ingest_locations came back as [] or as a struct. That is
+            % the difference between the server dropping fields and the JSON
+            % round trip reshaping them. See VH-Lab/NDI-matlab#945, and
+            % ndi.unittest.database.TestDocumentSeriesJsonRoundTrip for the
+            % no-network half of the same question.
+            testCase.onFailure(@() disp(remoteDoc.document_properties.files));
+
             % The series declaration has to survive serialization, not just
             % the bytes of the manifest.
             testCase.verifyTrue(remoteDoc.isFileSeries('chunkdata.bin'), ...
