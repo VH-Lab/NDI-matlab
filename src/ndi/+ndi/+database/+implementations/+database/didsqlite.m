@@ -166,13 +166,28 @@ function download_file_from_cloud(destPath, sourcePath, context)
     % CONTEXT is the per-call struct DID's dispatchCustomFileHandler passes
     % when a handler declares three or more inputs (DID-matlab#186): it
     % carries the caller's documentId and, for a series member, the
-    % series name. When present those are used to look the uid up in a
-    % per-document signed-URL cache -- one API round trip per DOCUMENT
-    % (or per fileSeries scope) instead of one per uid, closing DID
-    % #173's step 3 for the read path. Falls back to per-uid
+    % series name and the MEMBER'S OWN UID. When present those are used to
+    % look the uid up in a per-document signed-URL cache -- one API round
+    % trip per DOCUMENT (or per fileSeries scope) instead of one per uid,
+    % closing DID #173's step 3 for the read path. Falls back to per-uid
     % getFileDetails when no context is given or the batch call cannot
     % answer -- so a 2-arg handler-shaped caller, and any uid missing
     % from the batch response, still work.
+    %
+    % WHICH UID IS BEING ASKED FOR. On an ordinary file, SOURCEPATH names
+    % it and its uid is the one in the ndic:// reference. On a SERIES
+    % MEMBER it is not: a member has no location of its own, so DID passes
+    % the SERIES MANIFEST's location as SOURCEPATH and names the member in
+    % context.uid (DID-matlab#188), with context.seriesName marking that it
+    % is a member at all. Parsing the uid out of SOURCEPATH there
+    % fetches the manifest a second time and stores it under the member's
+    % uid, so every later read of that member returns the manifest --
+    % quietly, and forever. DID guards against exactly this, comparing what
+    % a handler returns against the manifest it already holds and refusing
+    % a match with DID:SQLITEDB:FileSeries:HandlerReturnedManifest, which is
+    % what this handler tripped on every member fetch before the context
+    % was read. So the member's uid comes from the context; every other
+    % call still takes it from sourcePath.
     %
     % Previously a nested function inside do_openbinarydoc. It is file-local so
     % that do_add can pass the same handler.
@@ -189,7 +204,26 @@ function download_file_from_cloud(destPath, sourcePath, context)
         % Try the per-document batch cache first. Empty documentId
         % (2-arg dispatch, or an older DID) makes this a no-op that
         % returns "".
-        [docId, seriesName] = readContext(context);
+        [docId, seriesName, contextUid] = readContext(context);
+
+        % Take the uid from the context only for a SERIES MEMBER, which is
+        % what a non-empty seriesName marks. There sourcePath's uid is
+        % definitively the wrong one -- it names the manifest -- so there is
+        % nothing to weigh.
+        %
+        % Deliberately not "prefer context.uid whenever it is present". On an
+        % ordinary file DID also passes a uid (its files-table row), and it
+        % should equal the one in the ndic:// location, since
+        % updateFileInfoForRemoteFiles builds that location out of
+        % locations(1).uid. Should. If the two ever disagreed, the ndic://
+        % one is the identifier the CLOUD was told about and the one a URL
+        % can be minted for, so the context's would be the wrong uid to ask
+        % with -- and this is the live download path for every file NDI
+        % fetches, not just series members. Confining the change to the case
+        % that is broken leaves the case that works alone.
+        if strlength(seriesName) > 0 && strlength(contextUid) > 0
+            ndiFileUid = char(contextUid);
+        end
         fileUrl = ndi.cloud.download.internal.batchSignedUrlLookup( ...
             string(cloudDatasetId), docId, seriesName, string(ndiFileUid));
 
@@ -216,18 +250,23 @@ function download_file_from_cloud(destPath, sourcePath, context)
     end
 end
 
-function [docId, seriesName] = readContext(context)
-    % Pull documentId and seriesName from the DID handler context, if
-    % either field is present. Missing values become "" so the batch
-    % lookup can treat them uniformly.
+function [docId, seriesName, uid] = readContext(context)
+    % Pull documentId, seriesName and uid from the DID handler context, if
+    % the fields are present. Missing values become "" so the batch
+    % lookup can treat them uniformly, and so the caller can test uid
+    % with strlength rather than a field check of its own.
     docId = "";
     seriesName = "";
+    uid = "";
     if isstruct(context)
         if isfield(context,'documentId') && ~isempty(context.documentId)
             docId = string(context.documentId);
         end
         if isfield(context,'seriesName') && ~isempty(context.seriesName)
             seriesName = string(context.seriesName);
+        end
+        if isfield(context,'uid') && ~isempty(context.uid)
+            uid = string(context.uid);
         end
     end
 end
