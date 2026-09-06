@@ -27,9 +27,9 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             %
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assertNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set. This is not an API problem.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
         end
     end
@@ -52,7 +52,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
                 msg = ndi.unittest.cloud.APIMessage(setup_narrative, b, cloudDatasetID, resp, url);
-                testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
+                testCase.assertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
             end
             testCase.DatasetID = cloudDatasetID;
             % The teardown is queued to run after the test method completes.
@@ -115,7 +115,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 json_doc = jsonencodenan(doc_to_add.document_properties);
                 [b_add, ans_add, resp_add, url_add] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
                 msg_add = ndi.unittest.cloud.APIMessage(narrative, b_add, ans_add, resp_add, url_add);
-                testCase.fatalAssertTrue(b_add, "Failed to add document #" + i + ". " + msg_add);
+                testCase.assertTrue(b_add, "Failed to add document #" + i + ". " + msg_add);
                 cloudDocIDs(i) = ans_add.id;
             end
             narrative(end+1) = "All documents uploaded successfully.";
@@ -137,11 +137,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
 
                 [b_url, uploadURL, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUIDs(i));
                 msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, uploadURL, resp_url, url_url);
-                testCase.fatalAssertTrue(b_url, "Failed to get upload URL for file #" + i + ". " + msg_url);
+                testCase.assertTrue(b_url, "Failed to get upload URL for file #" + i + ". " + msg_url);
 
                 [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath, "useCurl", true);
                 msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
-                testCase.fatalAssertTrue(b_put, "Failed to upload file #" + i + ". " + msg_put);
+                testCase.assertTrue(b_put, "Failed to upload file #" + i + ". " + msg_put);
             end
             narrative(end+1) = "All files uploaded successfully.";
 
@@ -193,11 +193,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             narrative(end+1) = "ACTION: Publishing the dataset.";
             [b_pub, ans_pub, resp_pub, url_pub] = ndi.cloud.api.datasets.publishDataset(testCase.DatasetID);
             msg_pub = ndi.unittest.cloud.APIMessage(narrative, b_pub, ans_pub, resp_pub, url_pub);
-            testCase.fatalAssertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
+            testCase.assertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
             narrative(end+1) = "Dataset published. Waiting for isPublished flag to flip to true...";
             [b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub] = ndi.cloud.api.datasets.waitForPublished(testCase.DatasetID);
             msg_wait_pub = ndi.unittest.cloud.APIMessage(narrative, b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub);
-            testCase.fatalAssertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
+            testCase.assertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
             narrative(end+1) = "Dataset isPublished is now true.";
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
@@ -276,7 +276,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             end
             [b_upload_docs, report_upload] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
             msg_upload_docs = "Bulk document upload verification failed. Report: " + jsonencode(report_upload);
-            testCase.fatalAssertTrue(b_upload_docs, msg_upload_docs);
+            testCase.assertTrue(b_upload_docs, msg_upload_docs);
             narrative(end+1) = "All documents uploaded successfully in bulk.";
 
             % Step 2: Create and upload files serially
@@ -296,11 +296,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
 
                 [b_url, uploadURL, resp_url, url_url] = ndi.cloud.api.files.getFileUploadURL(testCase.DatasetID, fileUIDs(i));
                 msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, uploadURL, resp_url, url_url);
-                testCase.fatalAssertTrue(b_url, "Failed to get upload URL for file #" + i + ". " + msg_url);
+                testCase.assertTrue(b_url, "Failed to get upload URL for file #" + i + ". " + msg_url);
 
                 [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, localFilePath, "useCurl", true);
                 msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
-                testCase.fatalAssertTrue(b_put, "Failed to upload file #" + i + ". " + msg_put);
+                testCase.assertTrue(b_put, "Failed to upload file #" + i + ". " + msg_put);
             end
             narrative(end+1) = "All files uploaded successfully.";
 
@@ -352,11 +352,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             narrative(end+1) = "ACTION: Publishing the dataset.";
             [b_pub, ans_pub, resp_pub, url_pub] = ndi.cloud.api.datasets.publishDataset(testCase.DatasetID);
             msg_pub = ndi.unittest.cloud.APIMessage(narrative, b_pub, ans_pub, resp_pub, url_pub);
-            testCase.fatalAssertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
+            testCase.assertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
             narrative(end+1) = "Dataset published. Waiting for isPublished flag to flip to true...";
             [b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub] = ndi.cloud.api.datasets.waitForPublished(testCase.DatasetID);
             msg_wait_pub = ndi.unittest.cloud.APIMessage(narrative, b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub);
-            testCase.fatalAssertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
+            testCase.assertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
             narrative(end+1) = "Dataset isPublished is now true.";
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";
@@ -435,7 +435,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             end
             [b_upload_docs, report_upload] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
             msg_upload_docs = "Bulk document upload verification failed. Report: " + jsonencode(report_upload);
-            testCase.fatalAssertTrue(b_upload_docs, msg_upload_docs);
+            testCase.assertTrue(b_upload_docs, msg_upload_docs);
             narrative(end+1) = "All documents uploaded successfully in bulk.";
 
             % Step 2: Create and upload files in bulk
@@ -457,7 +457,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
 
             [b_url, uploadInfo, resp_url, url_url] = ndi.cloud.api.files.getFileCollectionUploadURL(testCase.DatasetID);
             msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, uploadInfo, resp_url, url_url);
-            testCase.fatalAssertTrue(b_url, "Failed to get bulk file upload URL. " + msg_url);
+            testCase.assertTrue(b_url, "Failed to get bulk file upload URL. " + msg_url);
             uploadURL = uploadInfo.url;
             uploadJobId = uploadInfo.jobId;
 
@@ -470,7 +470,7 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
                 'waitForCompletion', true, ...
                 'timeout', 180);
             msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
-            testCase.fatalAssertTrue(b_put, "Bulk file upload (PUT + extraction wait) failed. " + msg_put);
+            testCase.assertTrue(b_put, "Bulk file upload (PUT + extraction wait) failed. " + msg_put);
             narrative(end+1) = "All files uploaded successfully in bulk; server-side extraction reported complete.";
 
             % Step 2.5: Pre-Publish Verification
@@ -518,11 +518,11 @@ classdef TestPublishWithDocsAndFiles < matlab.unittest.TestCase
             narrative(end+1) = "ACTION: Publishing the dataset.";
             [b_pub, ans_pub, resp_pub, url_pub] = ndi.cloud.api.datasets.publishDataset(testCase.DatasetID);
             msg_pub = ndi.unittest.cloud.APIMessage(narrative, b_pub, ans_pub, resp_pub, url_pub);
-            testCase.fatalAssertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
+            testCase.assertTrue(b_pub, "Failed to publish dataset. " + msg_pub);
             narrative(end+1) = "Dataset published. Waiting for isPublished flag to flip to true...";
             [b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub] = ndi.cloud.api.datasets.waitForPublished(testCase.DatasetID);
             msg_wait_pub = ndi.unittest.cloud.APIMessage(narrative, b_wait_pub, ans_wait_pub, resp_wait_pub, url_wait_pub);
-            testCase.fatalAssertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
+            testCase.assertTrue(b_wait_pub, "Timed out waiting for isPublished=true. " + msg_wait_pub);
             narrative(end+1) = "Dataset isPublished is now true.";
 
             narrative(end+1) = "VERIFICATION: Checking published documents.";

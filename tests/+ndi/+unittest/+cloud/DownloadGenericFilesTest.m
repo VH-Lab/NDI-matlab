@@ -60,7 +60,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             % 2. Create cloud dataset
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
-            testCase.fatalAssertTrue(b, "Failed to create cloud dataset.");
+            testCase.assertTrue(b, "Failed to create cloud dataset.");
             testCase.DatasetID = cloudId;
 
             % Link local to cloud
@@ -69,7 +69,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
 
             % 3. Upload to cloud
             [success_upload] = ndi.cloud.uploadDataset(testCase.LocalDataset);
-            testCase.fatalAssertTrue(success_upload, "Failed to upload test dataset to cloud.");
+            testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
 
             % Wait for server-side bulk extraction of the just-uploaded
             % files to finish before any test reads them back. Without
@@ -96,7 +96,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             % Get NDI IDs
             q = ndi.query('base.name', 'exact_string', 'test_doc_1');
             docs = testCase.LocalDataset.database_search(q);
-            testCase.fatalAssertNumElements(docs, 1);
+            testCase.assertNumElements(docs, 1);
             docId = docs{1}.id();
 
             % Create destination folder
@@ -124,7 +124,7 @@ classdef DownloadGenericFilesTest < matlab.unittest.TestCase
             % Get ID of the target document (which doesn't have files itself)
             q = ndi.query('base.name', 'exact_string', 'test_target');
             docs = testCase.LocalDataset.database_search(q);
-            testCase.fatalAssertNumElements(docs, 1);
+            testCase.assertNumElements(docs, 1);
             targetId = docs{1}.id();
 
             % We already have doc1 (generic_file) that depends on this target.

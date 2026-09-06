@@ -21,9 +21,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
             %
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assertNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set. This is not an API problem.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
         end
     end
@@ -40,7 +40,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
                 msg = ndi.unittest.cloud.APIMessage(setup_narrative, b, cloudDatasetID, resp, url);
-                testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
+                testCase.assertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
             end
             testCase.DatasetID = cloudDatasetID;
             % The teardown is queued to run after the test method completes.
@@ -151,7 +151,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             json_doc = jsonencodenan(doc_to_add.document_properties);
             narrative(end+1) = "Preparing to add an initial document for update test.";
             [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
-            testCase.fatalAssertTrue(b_add, "Failed to add initial document for update test.");
+            testCase.assertTrue(b_add, "Failed to add initial document for update test.");
             cloudDocumentID = ans_add.id;
             narrative(end+1) = "Initial document added with ID: " + cloudDocumentID;
             
@@ -168,7 +168,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             % Step 3: Get the document back and verify the new name
             narrative(end+1) = "Preparing to get the updated document to verify its content.";
             [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloudDocumentID);
-            testCase.fatalAssertTrue(b_get, "Failed to get document after update.");
+            testCase.assertTrue(b_get, "Failed to get document after update.");
             narrative(end+1) = "Testing: Verifying the name of the retrieved document has been updated.";
             msg_get_content = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
             testCase.verifyEqual(ans_get.base.name, 'Updated Name', msg_get_content);
@@ -188,7 +188,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 doc_to_add = ndi.document('base', 'base.name', "doc " + i);
                 json_doc = jsonencodenan(doc_to_add.document_properties);
                 [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
-                testCase.fatalAssertTrue(b_add, "Failed to add document #" + i + " in serial test.");
+                testCase.assertTrue(b_add, "Failed to add document #" + i + " in serial test.");
                 cloudDocIDs(i) = ans_add.id;
             end
             narrative(end+1) = "Successfully added " + numDocs + " documents.";
@@ -232,7 +232,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloud_id_from_summary);
                 
                 msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
-                testCase.fatalAssertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
+                testCase.assertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
                 
                 narrative(end+1) = "  Testing: Verifying content of full document matches summary.";
                 msg_content_match = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
@@ -289,7 +289,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to call listDatasetDocuments on an empty dataset.";
             [b_list, ans_list, resp_list, url_list] = ndi.cloud.api.documents.listDatasetDocuments(testCase.DatasetID);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, ans_list, resp_list, url_list);
-            testCase.fatalAssertTrue(b_list, "API call to listDatasetDocuments failed. " + msg_list);
+            testCase.assertTrue(b_list, "API call to listDatasetDocuments failed. " + msg_list);
 
             narrative(end+1) = "Testing: Verifying that the answer is a struct.";
             testCase.verifyTrue(isstruct(ans_list), "ans_list is not a struct. " + msg_list);
@@ -300,7 +300,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to call listDatasetDocumentsAll on an empty dataset.";
             [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
-            testCase.fatalAssertTrue(b_list_all, "API call to listDatasetDocumentsAll failed. " + msg_list_all);
+            testCase.assertTrue(b_list_all, "API call to listDatasetDocumentsAll failed. " + msg_list_all);
 
             narrative(end+1) = "Testing: Verifying that the answer is a struct.";
             testCase.verifyTrue(isstruct(ans_list_all), "ans_list_all is not a struct. " + msg_list_all);
@@ -346,7 +346,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to verify document count after bulk upload.";
             [b_count, ans_count, resp_count, url_count] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
             msg_count = ndi.unittest.cloud.APIMessage(narrative, b_count, ans_count, resp_count, url_count);
-            testCase.fatalAssertTrue(b_count, "Failed to get document count after bulk upload. " + msg_count);
+            testCase.assertTrue(b_count, "Failed to get document count after bulk upload. " + msg_count);
             testCase.verifyEqual(ans_count, numDocs, msg_count);
             narrative(end+1) = "Document count is correctly " + numDocs + ".";
             
@@ -354,7 +354,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to list all document summaries to get their cloud IDs.";
             [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
-            testCase.fatalAssertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
+            testCase.assertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
             cloudDocIDs = {ans_list_all.id};
             narrative(end+1) = "Successfully listed " + numel(cloudDocIDs) + " document summaries.";
             
@@ -369,7 +369,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloud_id_from_summary);
                 
                 msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
-                testCase.fatalAssertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
+                testCase.assertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
                 
                 narrative(end+1) = "  Testing: Verifying content of full document matches summary.";
                 msg_content_match = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
@@ -538,7 +538,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to verify document count after bulk upload.";
             [b_count, ans_count, resp_count, url_count] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
             msg_count = ndi.unittest.cloud.APIMessage(narrative, b_count, ans_count, resp_count, url_count);
-            testCase.fatalAssertTrue(b_count, "Failed to get document count after bulk upload. " + msg_count);
+            testCase.assertTrue(b_count, "Failed to get document count after bulk upload. " + msg_count);
             testCase.verifyEqual(ans_count, numDocs, msg_count);
             narrative(end+1) = "Document count is correctly " + numDocs + ".";
             
@@ -546,7 +546,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to list all document summaries to get their cloud IDs.";
             [b_list_all, ans_list_all, resp_list_all, url_list_all] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.DatasetID, 'checkForUpdates', true);
             msg_list_all = ndi.unittest.cloud.APIMessage(narrative, b_list_all, ans_list_all, resp_list_all, url_list_all);
-            testCase.fatalAssertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
+            testCase.assertTrue(b_list_all, "Failed to list all documents. " + msg_list_all);
             cloudDocIDs = {ans_list_all.id};
             narrative(end+1) = "Successfully listed " + numel(cloudDocIDs) + " document summaries.";
             
@@ -561,7 +561,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 [b_get, ans_get, resp_get, url_get] = ndi.cloud.api.documents.getDocument(testCase.DatasetID, cloud_id_from_summary);
                 
                 msg_get = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
-                testCase.fatalAssertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
+                testCase.assertTrue(b_get, "Failed to get document with ID " + cloud_id_from_summary + ". " + msg_get);
                 
                 narrative(end+1) = "  Testing: Verifying content of full NaN/Inf document matches expected values.";
                 msg_content_match = ndi.unittest.cloud.APIMessage(narrative, b_get, ans_get, resp_get, url_get);
@@ -648,7 +648,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 doc_to_add = ndi.document('base', 'base.name', char(expectedNames(i)));
                 json_doc = jsonencodenan(doc_to_add.document_properties);
                 [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
-                testCase.fatalAssertTrue(b_add, "Failed to add document #" + i + " in bulkFetch test.");
+                testCase.assertTrue(b_add, "Failed to add document #" + i + " in bulkFetch test.");
                 cloudDocIDs(i) = ans_add.id;
             end
             narrative(end+1) = "Added " + numDocs + " documents.";
@@ -695,7 +695,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             doc_to_add = ndi.document('base', 'base.name', 'bulkfetch_real_doc');
             json_doc = jsonencodenan(doc_to_add.document_properties);
             [b_add, ans_add, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
-            testCase.fatalAssertTrue(b_add, "Failed to add document in bulkFetch unknown-ID test.");
+            testCase.assertTrue(b_add, "Failed to add document in bulkFetch unknown-ID test.");
             realID = string(ans_add.id);
             narrative(end+1) = "Added real document with ID " + realID;
 
