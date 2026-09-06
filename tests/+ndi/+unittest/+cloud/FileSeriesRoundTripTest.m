@@ -434,7 +434,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             % them.
             %
             % EXPECTED TO FAIL until VH-Lab/DID-matlab#188 lands, at the
-            % member reachability assertion below. A member carries no
+            % member open assertion below. A member carries no
             % location of its own, so seriesMemberPath resolves the manifest,
             % looks the member up in the local cache and returns a miss --
             % which is the state of a dataset that has just been downloaded.
@@ -476,41 +476,72 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 "the series document did not come back from the cloud. " + msg);
             remoteDoc = remoteDocs{1};
 
-            % Reachability first, and slot by slot rather than in bulk. WHICH
-            % slots arrived separates "the members never uploaded" from "the
-            % members are on the cloud but cannot be reached from here", and
-            % those are different bugs with different owners: none reachable
-            % is DID-matlab#188, some reachable is a transfer that lost
-            % members and is NDI's.
-            present = false(1, testCase.MemberCount);
+            % A LOCAL-CACHE probe, and deliberately not a gate.
+            % database_existbinarydoc reports what is on this machine and
+            % does not retrieve: did.implementations.sqlitedb.check_exist_doc
+            % calls seriesMemberPath WITHOUT mayRetrieve, because it "must
+            % not go to the network to answer a question about local state".
+            % A member of a freshly downloaded dataset is therefore absent
+            % here even when it is perfectly fetchable, so all-false is the
+            % expected reading before anything opens a member and says
+            % nothing about whether this test should pass. Recorded because
+            % the transition -- absent before, present after -- is what shows
+            % the fetch actually happened rather than the bytes having been
+            % lying around.
+            cachedBefore = false(1, testCase.MemberCount);
             for i = 1:testCase.MemberCount
-                present(i) = downloaded.database_existbinarydoc(remoteDoc.id(), ...
-                    sprintf('chunkdata.bin_%d', i));
+                cachedBefore(i) = downloaded.database_existbinarydoc( ...
+                    remoteDoc.id(), sprintf('chunkdata.bin_%d', i));
             end
-            % mat2str renders an empty row as "zeros(1,0)", and the zero
-            % case is the one this line exists to report. The audience for
-            % these diagnostics is often not a MATLAB user -- see the
-            % Narrative property -- so spell it.
-            presentSlots = find(present);
-            if isempty(presentSlots)
-                slotsText = "none";
-            else
-                slotsText = join(string(presentSlots), ", ");
-            end
-            narrative(end+1) = "Members reachable in the downloaded dataset: " + ...
-                sum(present) + " of " + testCase.MemberCount + ", slots " + ...
-                slotsText + ".";
-            narrative(end+1) = "NONE reachable is VH-Lab/DID-matlab#188: a member " + ...
-                "has no location of its own, and nothing asks the customFileHandler " + ...
-                "for its bytes at open time. SOME reachable is not #188 -- the " + ...
-                "transfer lost members, and that is NDI's bug.";
-            testCase.Narrative = narrative;
-            msg = ndi.unittest.cloud.APIMessage(narrative, all(present), present, ...
-                matlab.net.http.ResponseMessage.empty, ...
-                "downloaded database_existbinarydoc, per member");
 
-            testCase.assertTrue(all(present), ...
-                "a series member of the downloaded dataset could not be reached. " + msg);
+            % Opening is what retrieves -- do_open_doc passes mayRetrieve, so
+            % this is the only call that asks the handler for a member. Each
+            % open is caught rather than allowed to throw: a member that
+            % cannot be fetched raises DID:SQLITEDB:open, and letting the
+            % first one abort the loop would throw away exactly the slot-by-
+            % slot picture this test exists to produce. WHICH slots came back
+            % separates bugs with different owners -- none is
+            % VH-Lab/DID-matlab#188 or the member fetch never reaching the
+            % handler, some is a transfer that lost members and is NDI's.
+            opened     = false(1, testCase.MemberCount);
+            openError  = strings(1, testCase.MemberCount);
+            memberBytes = cell(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                memberName = sprintf('chunkdata.bin_%d', i);
+                try
+                    fobj = downloaded.database_openbinarydoc(remoteDoc, memberName);
+                    fid = fopen(fobj.fullpathfilename, 'rb');
+                    memberBytes{i} = fread(fid, inf, '*uint8')';
+                    fclose(fid);
+                    downloaded.database_closebinarydoc(fobj);
+                    opened(i) = true;
+                catch openME
+                    openError(i) = string(openME.identifier) + ": " + ...
+                        string(openME.message);
+                end
+            end
+
+            % mat2str renders an empty row as "zeros(1,0)", and the zero case
+            % is the one these lines exist to report. The audience for these
+            % diagnostics is often not a MATLAB user -- see the Narrative
+            % property -- so spell it.
+            narrative(end+1) = "Members already in the local cache before any " + ...
+                "open: " + localSlotList(cachedBefore) + " (all-false is expected " + ...
+                "here; exist_doc never retrieves).";
+            narrative(end+1) = "Members successfully opened: " + sum(opened) + ...
+                " of " + testCase.MemberCount + ", slots " + localSlotList(opened) + ".";
+            if any(~opened)
+                narrative(end+1) = "First open failure: " + openError(find(~opened, 1));
+            end
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, all(opened), ...
+                struct('cachedBefore', cachedBefore, 'opened', opened, ...
+                       'firstError', openError(find(~opened, 1))), ...
+                matlab.net.http.ResponseMessage.empty, ...
+                "downloaded database_openbinarydoc, per member");
+
+            testCase.assertTrue(all(opened), ...
+                "a series member of the downloaded dataset could not be opened. " + msg);
 
             % The bytes, compared in full rather than by length. Setup gives
             % all four members the SAME 64 bytes' length and distinguishes
@@ -520,18 +551,23 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             % whole way through -- come back the right size and the wrong
             % file.
             for i = 1:testCase.MemberCount
-                memberName = sprintf('chunkdata.bin_%d', i);
-                fobj = downloaded.database_openbinarydoc(remoteDoc, memberName);
-                fid = fopen(fobj.fullpathfilename, 'rb');
-                got = fread(fid, inf, '*uint8')';
-                fclose(fid);
-                downloaded.database_closebinarydoc(fobj);
-
-                testCase.verifyEqual(got, testCase.MemberContent{i}, ...
+                testCase.verifyEqual(memberBytes{i}, testCase.MemberContent{i}, ...
                     sprintf(['member %d came back from the cloud with ' ...
                              'different bytes than were uploaded'], i));
             end
         end
 
+    end
+end
+
+function text = localSlotList(mask)
+    % Render a logical slot mask as "1, 3" or "none". mat2str would say
+    % "zeros(1,0)" for the empty case, which is the case that matters most
+    % here and the least readable thing to print.
+    slots = find(mask);
+    if isempty(slots)
+        text = "none";
+    else
+        text = join(string(slots), ", ");
     end
 end
