@@ -35,7 +35,7 @@ function assertSingleArchiveEntry(unzippedFiles, chunkIndex, numChunks)
         numChunks (1,1) double
     end
 
-    if numel(unzippedFiles) == 1
+    if isscalar(unzippedFiles)
         return;
     end
 
