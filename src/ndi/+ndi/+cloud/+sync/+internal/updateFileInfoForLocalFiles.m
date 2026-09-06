@@ -1,20 +1,42 @@
-function document = updateFileInfoForLocalFiles(document, fileDirectory)
+function document = updateFileInfoForLocalFiles(document, fileDirectory, cloudDatasetId)
 % updateFileInfoForLocalFiles - Update file info of document for local files
 %
 % Syntax:
 %   document = ndi.cloud.sync.internal.updateFileInfoForLocalFiles(document, fileDirectory)
+%   document = ndi.cloud.sync.internal.updateFileInfoForLocalFiles(document, fileDirectory, cloudDatasetId)
 %       updates the file info of the document to point to a file in the
 %       provided (local) file directory
 %
+%       When CLOUDDATASETID is supplied and the document declares any file
+%       series with n_present > 0, the series' ingest_locations are
+%       reconstructed from the downloaded manifest file (one entry per
+%       present member, ingest=0). This satisfies DID-matlab #185's
+%       MembersNotLocatable guard, which refuses a document whose series
+%       records n_present members but records no way to locate any of
+%       them -- exactly the shape a cloud round trip produces, because
+%       ingest_locations is stripped at store time. See NDI-matlab #958.
+%
 % Input Arguments:
-%   document - The document object that contains file info to be updated
-%   fileDirectory - The directory where local files are stored
+%   document       - The document object that contains file info to be updated
+%   fileDirectory  - The directory where local files are stored
+%   cloudDatasetId - Optional; the cloud dataset id, used to build the
+%                    'ndic://' location strings of the reconstructed
+%                    series ingest_locations. When "" (the default) the
+%                    ingest_locations are not reconstructed, and any
+%                    series with n_present > 0 will hit DID's guard on
+%                    the following add_docs.
 %
 % Output Arguments:
 %   document - The updated document object with new file info
 %
 % See also:
 %   ndi.cloud.sync.internal.updateFileInfoForRemoteFiles
+
+    arguments
+        document
+        fileDirectory (1,1) string
+        cloudDatasetId (1,1) string = ""
+    end
 
     if document.has_files()
         originalFileInfo = document.document_properties.files.file_info;
@@ -53,6 +75,10 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory)
         end
 
         if hasSeriesInfo
+            if strlength(cloudDatasetId) > 0
+                originalSeriesInfo = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
+                    originalSeriesInfo, originalFileInfo, fileDirectory, cloudDatasetId);
+            end
             document = document.setproperties('files.series_info', originalSeriesInfo);
         end
     end

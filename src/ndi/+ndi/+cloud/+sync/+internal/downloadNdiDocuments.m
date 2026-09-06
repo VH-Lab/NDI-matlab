@@ -121,8 +121,11 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
                 fprintf('Updating document file info (SyncMode.Local, but no new files to point to).\n');
             end
         end
+        % cloudDatasetId is threaded through so
+        % reconstructSeriesIngestLocations can build the 'ndic://' locations
+        % of the reconstructed series ingest_locations (NDI-matlab#958).
         documentUpdateFcn = @(doc) ...
-            ndi.cloud.sync.internal.updateFileInfoForLocalFiles(doc, filesTargetFolder);
+            ndi.cloud.sync.internal.updateFileInfoForLocalFiles(doc, filesTargetFolder, cloudDatasetId);
     else
         if syncOptions.Verbose
             fprintf('"SyncFiles" option is false. Updating document file info to reflect remote files.\n');
