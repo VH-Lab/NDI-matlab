@@ -23,13 +23,13 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
     % corrupted a document in memory after download, this wrote the stripped
     % document into a dataset as the stored copy.
     %
-    % That is no longer what happens, and the last test here says so.
-    % VH-Lab/DID-matlab#185 made the database refuse a document that declares
-    % present series members while recording no way to locate any of them --
-    % which is what an extract produces, because it copies the manifest and
-    % not the members (DID#173). So the dataset copy of a series-carrying
-    % session now ERRORS rather than storing zeroed counts. Losing the counts
-    % was the bug; the refusal is the current answer to what replaces it.
+    % The extract now copies the series MEMBERS as well as the manifest, and
+    % records them under their original uids, so the dataset copy carries a
+    % series that can actually be read. That closes the loop: preserving the
+    % counts (this issue) is only honest if the bytes the counts describe
+    % travel with them. VH-Lab/DID-matlab#185 refuses a document that declares
+    % present members while recording no way to locate any of them, which is
+    % exactly what an extract produced before the members were copied.
     %
     % It is silent: isFileSeries reads files.file_series, the class declaration
     % from the schema, which the reset deliberately leaves alone. So a caller
@@ -42,12 +42,14 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
     properties (Constant)
         MemberCount = 4;
         SeriesDocName = 'series_extract_doc';
+        SparseDocName = 'series_extract_sparse_doc';
         SeriesName = 'chunkdata.bin';
     end
 
     properties
         Session
         TargetPath
+        SeriesDocId
         MemberPaths (1,:) cell = {}
     end
 
@@ -78,6 +80,7 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
                 'base.session_id', testCase.Session.id());
             doc = doc.addFileSeries(testCase.SeriesName, testCase.MemberPaths);
             testCase.Session.database_add(doc);
+            testCase.SeriesDocId = doc.id();
 
             % Where the extract puts its copies. Given explicitly so the test
             % can clean it up; extract_docs_files would otherwise pick a
@@ -151,7 +154,9 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
         end
 
         function testExtractKeepsTheSeriesRecord(testCase)
-            % THE BUG. Currently fails: series_info comes back empty.
+            % THE BUG this suite was written for (#946): series_info came
+            % back empty, because reset_file_info clears it and the copy loop
+            % restored file_info only.
             extracted = testCase.findSeriesDoc(testCase.extractDocs());
 
             testCase.onFailure(@() disp(extracted.document_properties.files));
@@ -201,69 +206,164 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
                 'the manifest should have been copied to the target directory');
         end
 
-        function testTheCopyCarriesNoPathIntoTheSourceSession(testCase)
-            % The decision this fix records: an extract carries the series
-            % RECORD (name, count, n_present, source_root) but not
-            % ingest_locations, which name where the members sit in the
-            % source session and are meaningless in the target.
-            %
-            % Today this also holds upstream -- the database strips
-            % ingest_locations on the way into storage, so the documents the
-            % extract reads never carry any. This pins it as a property of
-            % the extract's output regardless, which is what matters for a
-            % copy that gets stored somewhere else.
+        function testTheCopiedMembersLiveInTheTargetDirectory(testCase)
+            % The members travel with the manifest. Before this, the extract
+            % copied the manifest only and the copy described members that
+            % were nowhere -- which VH-Lab/DID-matlab#185 refuses to store,
+            % rightly.
             extracted = testCase.findSeriesDoc(testCase.extractDocs());
 
-            testCase.verifyEmpty(extracted.seriesIngestLocations(testCase.SeriesName), ...
-                'the extracted copy should not carry the source session''s member paths');
+            entries = extracted.seriesIngestLocations(testCase.SeriesName);
+            testCase.assertNumElements(entries, testCase.MemberCount, ...
+                'every present member should be recorded for ingestion');
+
+            for i = 1:numel(entries)
+                testCase.verifyTrue(startsWith(entries(i).location, testCase.TargetPath), ...
+                    'a copied member should live in the extract target directory');
+                testCase.verifyTrue(isfile(entries(i).location), ...
+                    'a recorded member should actually have been copied');
+                testCase.verifyEqual(entries(i).ingest, 1, ...
+                    'a copied member has to be marked for ingestion or it will not travel');
+            end
         end
 
-        function testCopyingASeriesIntoADatasetIsRefusedUntilMembersCanTravel(testCase)
-            % Copying a session that holds a POPULATED series into a dataset
-            % does not work today, and fails loudly rather than quietly. That
-            % is the whole point of the guard, and it is worth pinning.
-            %
-            % HOW THIS GOT HERE. #946 was about the dataset's stored copy
-            % losing its member counts, and this test originally asserted the
-            % counts came back. They do -- out of the extract, which is what
-            % the tests above check. But the extract copies the MANIFEST and
-            % not the members (see extract_docs_files' own help, and
-            % VH-Lab/DID-matlab#173: nothing ingests members yet, so there are
-            % none in the source store to copy). So what reaches the dataset
-            % is a document saying "4 present members" while recording no way
-            % to find one.
-            %
-            % VH-Lab/DID-matlab#185 made did.implementations.sqlitedb refuse
-            % exactly that, for a document the target database has never held:
-            % storing it "produces a manifest full of uids whose bytes will
-            % never arrive". The refusal is correct and it is upstream's call
-            % to make. It also means ndi.dataset.add_ingested_session now
-            % ERRORS for a session carrying a populated series, where before
-            % NDI-matlab#947 it silently stored one with zeroed counts.
-            %
-            % Losing the counts was the bug. Refusing the copy is the current,
-            % deliberate answer to what replaces it. When member copying lands
-            % (DID#173, then the extract work its help text names), this test
-            % should go back to asserting that the dataset's copy keeps its
-            % four members -- the assertion is in the git history of this file.
+        function testTheCopiedMembersKeepTheirOriginalUids(testCase)
+            % The manifest is copied byte for byte and names its members by
+            % uid, so ingestion has to write each member back to
+            % FileDir/<same uid>. A fresh uid would leave the copy's manifest
+            % pointing at files that do not exist -- and nothing would say so,
+            % because the manifest is not read during add.
+            sourceUids = cell(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                memberName = sprintf('%s_%d', testCase.SeriesName, i);
+                [tf, memberPath] = testCase.Session.database_existbinarydoc( ...
+                    testCase.SeriesDocId, memberName);
+                testCase.assertTrue(tf, ...
+                    ['member ' memberName ' should be in the source session']);
+                [~, sourceUids{i}, ~] = fileparts(memberPath);
+            end
+
+            extracted = testCase.findSeriesDoc(testCase.extractDocs());
+            entries = extracted.seriesIngestLocations(testCase.SeriesName);
+            copiedUids = {entries.uid};
+
+            testCase.verifyEqual(sort(copiedUids), sort(sourceUids), ...
+                'the copied members should carry the uids the manifest names');
+        end
+
+        function testASessionCopiedIntoADatasetKeepsItsMembers(testCase)
+            % Why this bug is worse than #945: the extract's return value is
+            % stored. copySessionToDataset runs the extract and database_adds
+            % the result, so a stripped document becomes the dataset's copy
+            % at rest. This is the end-to-end consequence #946 reasoned about
+            % from the code path but had not confirmed.
             datasetPath = tempname;
             mkdir(datasetPath);
             testCase.addTeardown(@() rmdir(datasetPath, 's'));
-            % Registered after the rmdir so it runs BEFORE it (teardowns are
-            % LIFO). add_ingested_session closes the database itself as its
-            % last act; erroring part way through means that never runs, and
-            % an open handle should not be left for the next test.
             testCase.addTeardown(@() testCase.closeDatabasesQuietly());
             dataset = ndi.dataset.dir('ds_series', datasetPath);
 
             % The real entry point, the way ndi.unittest.dataset.buildDataset
             % uses it: add_ingested_session calls copySessionToDataset, which
             % is where the extract runs.
-            testCase.verifyError(@() dataset.add_ingested_session(testCase.Session), ...
-                'DID:SQLITEDB:FileSeries:MembersNotLocatable', ...
-                ['Copying a session with a populated file series into a ' ...
-                 'dataset should be refused while the extract cannot carry ' ...
-                 'the members. See VH-Lab/DID-matlab#185 and #173.']);
+            dataset.add_ingested_session(testCase.Session);
+
+            q = ndi.query('base.name', 'exact_string', testCase.SeriesDocName);
+            docs = dataset.database_search(q);
+            testCase.assertNumElements(docs, 1, ...
+                'expected exactly one series document in the dataset');
+
+            [n, nPresent] = docs{1}.seriesCount(testCase.SeriesName);
+            testCase.verifyEqual(n, testCase.MemberCount, ...
+                'the dataset''s stored copy lost the series member count');
+            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
+                'the dataset''s stored copy lost the series present-count');
+        end
+
+        function testASparseSeriesCopiesOnlyThePresentMembers(testCase)
+            % A sparse series -- a chunk grid whose empty regions were never
+            % written -- is the case the series mechanism exists for, per
+            % did.document/addFileSeries. The copy walks slots 1..count and
+            % skips the absent ones, so this covers the skip and the trim
+            % after it; a dense series exercises neither.
+            sparseDir = fullfile(testCase.Session.path(), 'sparse');
+            mkdir(sparseDir);
+            presentPaths = cell(1, 2);
+            for i = 1:2
+                p = fullfile(sparseDir, sprintf('sparse_%04d.bin', i));
+                fid = fopen(p, 'w');
+                fwrite(fid, uint8(mod((1:8) * (i + 10), 251)), 'uint8');
+                fclose(fid);
+                presentPaths{i} = p;
+            end
+
+            % Slots 1 and 3 present, slot 2 never written: count 3,
+            % n_present 2.
+            sparseDoc = ndi.document('demoNDISeries', ...
+                'base.name', testCase.SparseDocName, ...
+                'demoNDISeries.value', 2, ...
+                'base.session_id', testCase.Session.id());
+            sparseDoc = sparseDoc.addFileSeries(testCase.SeriesName, ...
+                presentPaths, 'indices', [1 3]);
+            testCase.Session.database_add(sparseDoc);
+
+            docs = testCase.extractDocs();
+            extracted = [];
+            for i = 1:numel(docs)
+                if strcmp(docs{i}.document_properties.base.name, testCase.SparseDocName)
+                    extracted = docs{i};
+                    break;
+                end
+            end
+            testCase.assertNotEmpty(extracted, ...
+                'the extract did not return the sparse series document');
+
+            [n, nPresent] = extracted.seriesCount(testCase.SeriesName);
+            testCase.verifyEqual(n, 3, 'a sparse series keeps its slot count');
+            testCase.verifyEqual(nPresent, 2, 'a sparse series keeps its present-count');
+
+            entries = extracted.seriesIngestLocations(testCase.SeriesName);
+            testCase.assertNumElements(entries, 2, ...
+                ['only the present members should be recorded, and the ' ...
+                 'array trimmed to them rather than left with empty slots']);
+            % The slot number, not a 1..n counter. Ingestion names each
+            % member NAME_<index>, so a resequenced index would write the
+            % third member as the second one in the new store.
+            testCase.verifyEqual(sort([entries.index]), [1 3], ...
+                'a copied member should carry its real slot number');
+
+            for i = 1:numel(entries)
+                testCase.verifyTrue(isfile(entries(i).location), ...
+                    'a recorded sparse member should have been copied');
+            end
+        end
+
+        function testTheDatasetCopyKeepsReadableMembers(testCase)
+            % The counts are only honest if the bytes arrived. Read each
+            % member back out of the dataset and compare it to what went in.
+            datasetPath = tempname;
+            mkdir(datasetPath);
+            testCase.addTeardown(@() rmdir(datasetPath, 's'));
+            testCase.addTeardown(@() testCase.closeDatabasesQuietly());
+            dataset = ndi.dataset.dir('ds_series_read', datasetPath);
+            dataset.add_ingested_session(testCase.Session);
+
+            q = ndi.query('base.name', 'exact_string', testCase.SeriesDocName);
+            docs = dataset.database_search(q);
+            testCase.assertNumElements(docs, 1);
+
+            for i = 1:testCase.MemberCount
+                memberName = sprintf('%s_%d', testCase.SeriesName, i);
+                [tf, memberPath] = dataset.database_existbinarydoc(docs{1}, memberName);
+                testCase.assertTrue(tf, ...
+                    ['member ' memberName ' did not arrive in the dataset']);
+
+                fid = fopen(memberPath, 'r');
+                actual = fread(fid, inf, '*uint8')';
+                fclose(fid);
+                testCase.verifyEqual(actual, uint8(mod((1:16) * i, 251)), ...
+                    ['member ' memberName ' arrived with different bytes']);
+            end
         end
 
     end

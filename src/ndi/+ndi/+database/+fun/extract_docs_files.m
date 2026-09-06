@@ -13,20 +13,19 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
     %
     % FILE SERIES. A series' manifest is an ordinary document file and is
     % copied like one, and the series record (name, count, n_present,
-    % source_root) travels with it. The series MEMBERS are not copied:
-    % current_file_list returns the manifest name only, and member ingestion is
-    % not implemented yet (VH-Lab/DID-matlab#173), so there are no member files
-    % in the source session's store to copy. An extracted document therefore
-    % describes a series whose members are not in TARGET_PATH. Copying them
-    % belongs here once ingestion records them.
+    % source_root) travels with it. The MEMBERS are copied too, which
+    % current_file_list does not cover: it returns the manifest name only, so
+    % the members are enumerated from the series record instead and fetched by
+    % their NAME_<i> names, which resolve through the manifest
+    % (VH-Lab/DID-matlab#173, #183).
     %
-    % Consequently, STORING an extracted series document in a database that
-    % has never held it is refused: did.implementations.sqlitedb rejects a
-    % document declaring present members while recording no location for any
-    % (VH-Lab/DID-matlab#185). So ndi.dataset.add_ingested_session errors for
-    % a session carrying a populated series, and will until the members can
-    % travel. That is deliberate -- the alternative is a stored manifest full
-    % of uids whose bytes never arrive.
+    % Each copied member is recorded in the extracted document's
+    % ingest_locations UNDER ITS ORIGINAL UID. That is what lets the copy be
+    % stored somewhere else: did.implementations.sqlitedb refuses a document
+    % declaring present members while recording no location for any of them
+    % (VH-Lab/DID-matlab#185), and ingestion writes each member to
+    % FileDir/<uid> from this record, so reusing the uid keeps the copied
+    % manifest -- which names members by uid -- correct in the new store.
     %
 
     if nargin<2
@@ -50,6 +49,7 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
         if docs{i}.has_files()
             file_info = did.datastructures.emptystruct('file_name','fullpathfilename');
             fl = docs{i}.current_file_list();
+            doc_id_here = d{i}.document_properties.base.id;
 
             % reset_file_info clears files.series_info along with file_info --
             % see did.document/reset_file_info, "A series' per-instance record
@@ -109,6 +109,81 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
             end
 
             if hasSeriesInfo
+                % Copy the members. current_file_list does not name them --
+                % it returns the manifest only, deliberately, so that a
+                % 28,000-member series does not materialise 28,000 names --
+                % so walk the slots the series record declares and fetch each
+                % by its NAME_<i> name, which resolves through the manifest.
+                % An absent slot is normal: a sparse series is the case the
+                % mechanism exists for.
+                % One cell per series, concatenated into files_I_made once
+                % after the loop rather than per series.
+                seriesMemberFiles = repmat({{}},1,numel(seriesInfo));
+
+                for s = 1:numel(seriesInfo)
+                    seriesName = seriesInfo(s).name;
+                    slotCount = 0;
+                    if isfield(seriesInfo(s),'count') && ~isempty(seriesInfo(s).count)
+                        slotCount = seriesInfo(s).count;
+                    end
+
+                    % Preallocated to the slot count and trimmed at the end
+                    % rather than grown per member. A level of a lightsheet
+                    % pyramid is tens of thousands of members, which is the
+                    % case this whole mechanism exists for, so growing either
+                    % of these one element at a time is a reallocation per
+                    % member.
+                    memberEntries = repmat(struct('index',0,'uid','', ...
+                        'location','','location_type','file', ...
+                        'ingest',1,'delete_original',0,'parameters',''),1,slotCount);
+                    memberFiles = cell(1,slotCount);
+                    memberCount = 0;
+
+                    for m = 1:slotCount
+                        memberName = sprintf('%s_%d',seriesName,m);
+                        [memberExists,memberPath] = ...
+                            ndi_session_obj.database_existbinarydoc(doc_id_here,memberName);
+                        if ~memberExists || isempty(memberPath)
+                            continue;
+                        end
+                        % Keep the ORIGINAL uid: ingestion writes the member to
+                        % FileDir/<uid> from this record, and the manifest we
+                        % just copied names its members by uid, so a fresh uid
+                        % would leave the copy's manifest pointing at nothing.
+                        [~,memberUid,~] = fileparts(memberPath);
+                        memberDestination = [target_path filesep memberUid];
+                        try
+                            copyfile(memberPath,memberDestination);
+                        catch copyError
+                            % Members copied for this series, and for earlier
+                            % series of this document, are not in files_I_made
+                            % yet -- clean them up alongside it.
+                            madeSoFar = [files_I_made seriesMemberFiles{:} ...
+                                memberFiles(1:memberCount)];
+                            for j=1:numel(madeSoFar)
+                                delete(madeSoFar{j});
+                            end
+                            error(['Extraction failed: ' copyError.message]);
+                        end
+
+                        memberCount = memberCount + 1;
+                        memberFiles{memberCount} = memberDestination;
+                        % delete_original 0: these are our copies in
+                        % TARGET_PATH, and the caller was promised the files
+                        % would be there.
+                        memberEntries(memberCount) = struct('index',m, ...
+                            'uid',memberUid,'location',memberDestination, ...
+                            'location_type','file','ingest',1, ...
+                            'delete_original',0,'parameters','');
+                    end
+
+                    % An absent slot leaves a hole, so trim to what was
+                    % actually copied; a sparse series is normal.
+                    seriesInfo(s).ingest_locations = memberEntries(1:memberCount);
+                    seriesMemberFiles{s} = memberFiles(1:memberCount);
+                end
+                files_I_made = [files_I_made seriesMemberFiles{:}];
+
                 docs{i} = docs{i}.setproperties('files.series_info',seriesInfo);
             end
         end
