@@ -195,112 +195,67 @@ classdef document < did.document
                 && ~isempty(ndi_document_obj.document_properties.files.file_info);
         end
 
-        function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
-            % ADD_FILE - add a file to a ndi.document
+        function ndi_document_obj = add_file(ndi_document_obj, name, location, options)
+            % ADD_FILE - add a file to an ndi.document
             %
-            % DID_DOCUMENT_OBJ = ADD_FILE(NDI_DOCUMENT_OBJ, NAME, LOCATION, ...)
+            % NDI_DOCUMENT_OBJ = ADD_FILE(NDI_DOCUMENT_OBJ, NAME, LOCATION, ...)
             %
-            % Adds a file's information to a ndi.document, for later ingestion into
-            % the database. NAME is the name of the file record for the document.
-            % LOCATION is a string that identifies the file or URL location on the
-            % internet.
+            % Adds a file's information to an ndi.document, for later ingestion
+            % into the database. did.document/add_file does the work; see it for
+            % NAME, LOCATION and the name/value pairs ingest, delete_original
+            % and location_type.
             %
-            % Note: NAME must not include any file separator characters on any
-            % platform (':','\','/') and may not have leading or trailing spaces.
-            % Leading or trailing spaces will be trimmed.
+            % This override exists for one thing: NDI has a third location type
+            % that did.document does not know about. A LOCATION of the form
+            % 'ndic://<datasetId>/<fileUid>' names a file that lives in NDI
+            % Cloud and is fetched on demand by the custom file handler in
+            % ndi.database.implementations.database.didsqlite. did.document
+            % recognizes only 'file' and 'url', so it would read an ndic://
+            % location as a local path and default to ingesting it and then
+            % deleting the "original" -- a path that does not exist.
             %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ingest (1 or 0)          | 0/1 Should the file be copied into the local
-            %                          |   database by ndi.database.add_doc() ?
-            %                          |   If LOCATION does not begin with 'http://' or
-            %                          |   'https://', then ingest is 1 by default.
-            %                          |   If LOCATION begins with 'http(s)://', then
-            %                          |   ingest is 0 by default. Note that the file
-            %                          |   is only copied upon the later call to
-            %                          |   ndi.database.add_doc(), not at the call to
-            %                          |   ndi.document.add_file().
-            % delete_original (1 or 0) | 0/1 Should we delete the file after ingestion?
-            %                          |   If LOCATION does not begin with 'http://' or
-            %                          |   'https://', then delete_original is 1 by default.
-            %                          |   If LOCATION begins with 'http(s)://', then
-            %                          |   delete_original is 0 by default. Note that the
-            %                          |   file is only deleted upon the later call to
-            %                          |   ndi.database.add_doc(), not at the call to
-            %                          |   ndi.document.add_file().
-            % location_type ('file',   | Can be 'file', 'url' or 'ndicloud'. By default, it 
-            %   'url' or 'ndicloud')   |   is set to 'file' if LOCATION does not begin with
-            %                          |   'http://', 'https://' or 'ndic://', and 'url' or 
-            %                          |   'ndicloud' otherwise.
-            %
-            ingest = NaN;
-            delete_original = NaN;
-            location_type = NaN;
-            uid = did.ido.unique_id();
+            % So detect it here and supply the three defaults did.document
+            % cannot know. A value the caller supplied always wins.
 
-            vlt.data.assign(varargin{:});
-            % Step 1: make sure that the did_document_obj has a 'files' portion
-            % and that name is one of the listed files.
-
-            [b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
-            if ~b
-                error(msg);
+            arguments
+                ndi_document_obj
+                name
+                location
+                options.ingest = NaN
+                options.delete_original = NaN
+                options.location_type = NaN
             end
 
-            % Step 2: detect the default property values, if necessary, and build the structure
-            detected_location_type = 'file'; % default
-            location = strip(location);  % remove whitespace
-            if (startsWith(location,'https://','IgnoreCase',true) || startsWith(location,'http://','IgnoreCase',true))
-                detected_location_type = 'url';
-            elseif startsWith(location, 'ndic://', 'IgnoreCase', true)
-                detected_location_type = 'ndicloud';
+            % did.document's add_file indexes files.file_info directly.
+            % ndi.document's used to create the field on first use instead, so
+            % a document that reached add_file without it still worked. The
+            % constructor now seeds it for a document built from a definition,
+            % but one built from a hand-assembled properties struct can still
+            % arrive without it, so meet the contract here rather than let an
+            % inherited add_file index a field that is not there.
+            if isfield(ndi_document_obj.document_properties, 'files') && ...
+                    ~isfield(ndi_document_obj.document_properties.files, 'file_info')
+                ndi_document_obj = ndi_document_obj.reset_file_info();
             end
 
-            if isnan(ingest) % assign default value
-                switch detected_location_type
-                    case {'url', 'ndicloud'}
-                        ingest = 0;
-                    case 'file'
-                        ingest = 1;
-                    otherwise
-                        error(['Unknown detected_location_type ' detected_location_type '.']);
+            if startsWith(strip(location), 'ndic://', 'IgnoreCase', true)
+                if localIsUnsetOption(options.ingest)
+                    options.ingest = 0;
+                end
+                if localIsUnsetOption(options.delete_original)
+                    options.delete_original = 0;
+                end
+                if localIsUnsetOption(options.location_type)
+                    options.location_type = 'ndicloud';
                 end
             end
-            if isnan(delete_original) % assign default value
-                switch detected_location_type
-                    case {'url', 'ndicloud'}
-                        delete_original = 0;
-                    case 'file'
-                        delete_original = 1;
-                    otherwise
-                        error(['Unknown detected_location_type ' detected_location_type '.']);
-                end
-            end
-            if isnan(location_type) % assign default value
-                location_type = detected_location_type;
-            end
 
-            % Step 2b: build the structure to add
-
-            parameters = '';
-
-            location_here = vlt.data.var2struct('delete_original','uid','location',...
-                'parameters','location_type','ingest');
-
-            % Step 3: Add the file to the list
-
-            if isempty(fI_index)
-                file_info_here = struct('name',name,'locations',location_here);
-                if ~isfield(ndi_document_obj.document_properties.files,'file_info')
-                    ndi_document_obj.document_properties.files.file_info = file_info_here;
-                else
-                    fI_index = numel(ndi_document_obj.document_properties.files.file_info)+1;
-                    ndi_document_obj.document_properties.files.file_info(fI_index) = file_info_here;
-                end
-            else
-                ndi_document_obj.document_properties.files.file_info(fI_index).locations(end+1) = location_here;
-            end
+            % Whatever is still unset goes up as NaN, which is did.document's
+            % own marker for "not given", so passing all three is the same as
+            % naming none of them.
+            args = namedargs2cell(options);
+            ndi_document_obj = add_file@did.document(ndi_document_obj, ...
+                name, location, args{:});
 
         end % add_file
 
@@ -1052,3 +1007,10 @@ classdef document < did.document
 
     end % methods Static
 end % classdef
+
+function tf = localIsUnsetOption(value)
+    % ADD_FILE's options use NaN to mean "not given". A location_type the
+    % caller did supply is a char, and isnan is not a safe test on one, so
+    % check that it is a numeric scalar before asking.
+    tf = isnumeric(value) && isscalar(value) && isnan(value);
+end

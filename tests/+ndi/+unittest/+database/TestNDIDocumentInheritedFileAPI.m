@@ -1,12 +1,16 @@
 classdef TestNDIDocumentInheritedFileAPI < matlab.unittest.TestCase
-    % The file-API methods ndi.document no longer defines for itself.
+    % ndi.document's file API now that most of it comes from did.document.
     %
     % Step 1 of VH-Lab/NDI-matlab#940 made ndi.document a subclass of
     % did.document but kept every override, so nothing was actually
-    % inherited yet. This covers the ones that have since been retired:
-    % they were untested in NDI (remove_file had no caller at all), so
-    % without these the suite would pass whether or not the inherited
-    % versions behave like the deleted ones.
+    % inherited yet. This covers what has changed since: reset_file_info and
+    % remove_file, now inherited outright, and add_file, now a thin override
+    % that adds only NDI's ndic:// location type before delegating.
+    %
+    % None of it was tested in NDI before -- remove_file had no caller at
+    % all, and nothing anywhere exercised an ndic:// location through
+    % add_file -- so without these the suite would pass whether or not the
+    % inherited versions behave like the ones they replaced.
 
     properties
         tempDir
@@ -85,6 +89,85 @@ classdef TestNDIDocumentInheritedFileAPI < matlab.unittest.TestCase
             testCase.assertFalse(isfield(doc.document_properties, 'files'));
             doc = doc.reset_file_info();
             testCase.verifyFalse(isfield(doc.document_properties, 'files'));
+        end
+
+        % ---- add_file, which is a thin override ----------------------
+
+        function testAddFileIsStillDefinedByNdiDocument(testCase)
+            % The counterpart to the assertion above: add_file must NOT be
+            % inherited, because did.document has no notion of ndic://.
+            testCase.verifyEqual(testCase.definerOf('add_file'), 'ndi.document');
+        end
+
+        function testLocalFileIngestsAndDeletesByDefault(testCase)
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', testCase.writeFile('a.txt'));
+            loc = doc.document_properties.files.file_info(1).locations(1);
+            testCase.verifyEqual(loc.location_type, 'file');
+            testCase.verifyEqual(loc.ingest, 1);
+            testCase.verifyEqual(loc.delete_original, 1);
+        end
+
+        function testUrlNeitherIngestsNorDeletesByDefault(testCase)
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', 'https://example.com/a.txt');
+            loc = doc.document_properties.files.file_info(1).locations(1);
+            testCase.verifyEqual(loc.location_type, 'url');
+            testCase.verifyEqual(loc.ingest, 0);
+            testCase.verifyEqual(loc.delete_original, 0);
+        end
+
+        function testNdicLocationGetsTheNdicloudDefaults(testCase)
+            % The whole reason ndi.document still overrides add_file. Inherit
+            % did.document's and this location reads as a local file: ingest 1
+            % and delete_original 1, against a path that does not exist.
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', ...
+                'ndic://abc123/4126945b0315ec90_c0d16626cae2dacf');
+            loc = doc.document_properties.files.file_info(1).locations(1);
+            testCase.verifyEqual(loc.location_type, 'ndicloud');
+            testCase.verifyEqual(loc.ingest, 0);
+            testCase.verifyEqual(loc.delete_original, 0);
+        end
+
+        function testAnExplicitValueBeatsTheNdicDefault(testCase)
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', 'ndic://abc123/deadbeef_cafef00d', ...
+                'ingest', 1, 'location_type', 'url');
+            loc = doc.document_properties.files.file_info(1).locations(1);
+            testCase.verifyEqual(loc.location_type, 'url');
+            testCase.verifyEqual(loc.ingest, 1);
+            testCase.verifyEqual(loc.delete_original, 0, ...
+                'the one default not overridden should still come from ndic://');
+        end
+
+        function testNdicDetectionIgnoresCaseAndSurroundingSpace(testCase)
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', '  NDIC://abc123/deadbeef_cafef00d  ');
+            loc = doc.document_properties.files.file_info(1).locations(1);
+            testCase.verifyEqual(loc.location_type, 'ndicloud');
+            testCase.verifyEqual(loc.location, 'NDIC://abc123/deadbeef_cafef00d', ...
+                'add_file should store the location stripped');
+        end
+
+        function testAddFileGivesEachLocationAUid(testCase)
+            % The uid is what the cloud file map and the ndic:// location are
+            % keyed on, so a missing or repeated one is not cosmetic.
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            doc = doc.add_file('filename1.ext', testCase.writeFile('a.txt'));
+            doc = doc.add_file('filename1.ext', testCase.writeFile('b.txt'));
+            uids = {doc.document_properties.files.file_info(1).locations.uid};
+            testCase.verifyNumElements(uids, 2);
+            testCase.verifyNotEmpty(uids{1});
+            testCase.verifyNotEmpty(uids{2});
+            testCase.verifyNotEqual(uids{1}, uids{2});
+        end
+
+        function testAddFileErrorsForANameNotInTheFileList(testCase)
+            doc = ndi.document('demoNDI', 'demoNDI.value', 5);
+            testCase.verifyError( ...
+                @() doc.add_file('notdeclared.ext', testCase.writeFile('a.txt')), ...
+                ?MException);
         end
 
         % ---- remove_file ---------------------------------------------
