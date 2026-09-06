@@ -167,6 +167,17 @@ function download_file_from_cloud(destPath, sourcePath)
     % that do_add can pass the same handler.
 
     if startsWith(sourcePath, 'ndic://')
+        % Cache-hit short-circuit. The customFileHandler contract is "leave
+        % the file identified by SOURCEPATH at DESTPATH"; a file already
+        % present at DESTPATH already satisfies it. Historically the handler
+        % always re-downloaded, which caused DID's cache manager to fire
+        % "already a file with name <uid> in the cache" and fail
+        % do_open_doc for what should have been a cache hit -- the
+        % handler was clobbering a file DID was about to reuse.
+        if isfile(destPath)
+            return;
+        end
+
         cloudPath = split( extractAfter(sourcePath, 'ndic://'), "/" );
         cloudDatasetId = cloudPath{1};
         ndiFileUid = cloudPath{2};

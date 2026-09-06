@@ -65,6 +65,9 @@ function url = url(endpointName, options)
         endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{file_uid}/detail";
         endpointMap("get_bulk_upload_status")         = "/bulk-uploads/{jobId}";
         endpointMap("list_dataset_bulk_uploads")      = "/datasets/{datasetId}/bulk-uploads?state={state}";
+        endpointMap("get_signed_url_set")             = "/datasets/{datasetId}/documents/{documentId}/signed-url-set";
+        endpointMap("create_signed_url_set_job")      = "/datasets/{datasetId}/documents/{documentId}/signed-url-set-jobs";
+        endpointMap("get_signed_url_set_job")         = "/signed-url-set-jobs/{jobId}";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
         endpointMap("submit_dataset")                 = "/datasets/{datasetId}/submit";
