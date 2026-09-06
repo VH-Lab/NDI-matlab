@@ -50,7 +50,7 @@ classdef ZombieTest < matlab.unittest.TestCase
                 end
             end
 
-            testCase.fatalAssertTrue(strlength(sessionId) > 0, "Failed to obtain valid Session ID. " + start_msg);
+            testCase.assertTrue(strlength(sessionId) > 0, "Failed to obtain valid Session ID. " + start_msg);
 
             narrative(end+1) = "Pipeline started. Session ID: " + sessionId;
             narrative(end+1) = "Monitoring session status. Pipeline should timeout after 2 minutes.";

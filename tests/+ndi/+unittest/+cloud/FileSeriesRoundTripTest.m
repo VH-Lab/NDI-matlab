@@ -113,7 +113,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
             msg = ndi.unittest.cloud.APIMessage(narrative, b, cloudId, ...
                 matlab.net.http.ResponseMessage.empty, "datasets.createDataset");
-            testCase.fatalAssertTrue(b, "Failed to create cloud dataset. " + msg);
+            testCase.assertTrue(b, "Failed to create cloud dataset. " + msg);
             testCase.DatasetID = cloudId;
             narrative(end+1) = "Cloud dataset id is " + string(cloudId) + ".";
 
@@ -126,7 +126,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             msg = ndi.unittest.cloud.APIMessage(narrative, successUpload, ...
                 successUpload, matlab.net.http.ResponseMessage.empty, ...
                 "ndi.cloud.uploadDataset");
-            testCase.fatalAssertTrue(successUpload, ...
+            testCase.assertTrue(successUpload, ...
                 "Failed to upload test dataset. " + msg);
 
             % Server-side zip extraction has to finish before anything reads
@@ -160,7 +160,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             docs = testCase.LocalDataset.database_search(q);
-            testCase.fatalAssertNumElements(docs, 1);
+            testCase.assertNumElements(docs, 1);
 
             fobj = testCase.LocalDataset.database_openbinarydoc(docs{1}, 'chunkdata.bin');
             manifestPath = fobj.fullpathfilename;
@@ -188,7 +188,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             docs = testCase.LocalDataset.database_search(q);
-            testCase.fatalAssertNumElements(docs, 1);
+            testCase.assertNumElements(docs, 1);
             doc = docs{1};
 
             [n, nPresent] = doc.seriesCount('chunkdata.bin');
@@ -293,7 +293,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             % The local manifest, to compare against.
             q = ndi.query('base.name', 'exact_string', 'test_series_doc');
             localDocs = testCase.LocalDataset.database_search(q);
-            testCase.fatalAssertNumElements(localDocs, 1);
+            testCase.assertNumElements(localDocs, 1);
             localFobj = testCase.LocalDataset.database_openbinarydoc(localDocs{1}, 'chunkdata.bin');
             localManifest = did.file.readSeriesManifest(localFobj.fullpathfilename);
             testCase.LocalDataset.database_closebinarydoc(localFobj);
@@ -311,7 +311,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             msg = ndi.unittest.cloud.APIMessage(narrative, ~isempty(downloaded), ...
                 "downloadDataset returned an ndi.dataset", ...
                 matlab.net.http.ResponseMessage.empty, "ndi.cloud.downloadDataset");
-            testCase.fatalAssertNotEmpty(downloaded, ...
+            testCase.assertNotEmpty(downloaded, ...
                 "downloadDataset returned nothing for the uploaded dataset. " + msg);
 
             remoteDocs = downloaded.database_search(q);
@@ -319,7 +319,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 " document(s) matching base.name 'test_series_doc'.";
             msg = ndi.unittest.cloud.APIMessage(narrative, true, numel(remoteDocs), ...
                 matlab.net.http.ResponseMessage.empty, "downloaded database_search");
-            testCase.fatalAssertNumElements(remoteDocs, 1, ...
+            testCase.assertNumElements(remoteDocs, 1, ...
                 "the series document did not come back from the cloud. " + msg);
             remoteDoc = remoteDocs{1};
 
