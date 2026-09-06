@@ -1,4 +1,4 @@
-classdef document
+classdef document < did.document
     %NDI.DOCUMENT - NDI_database storage item, general purpose data and parameter storage
     % The ndi.document datatype for storing results in the ndi.database
     %
@@ -14,9 +14,9 @@ classdef document
     %    without the '.json' extension (e.g., use 'stimulus' not 'stimulus.json').
     %
 
-    properties (SetAccess=protected,GetAccess=public)
-        document_properties % a struct with the fields for the document
-    end
+    % document_properties is inherited from did.document. It is deliberately
+    % NOT redeclared here: MATLAB rejects redefining an inherited property,
+    % and two copies of the same state is the drift this subclassing removes.
 
     methods
         function ndi_document_obj = document(document_type, varargin)
@@ -48,11 +48,13 @@ classdef document
                 document_type = 'base';
             end
 
+            madeFromDefinition = false;
             if isstruct(document_type)
                 document_properties = document_type;
             elseif isa(document_type,'did.document')
                 document_properties = document_type.document_properties; % directly compatible
             else  % create blank from definitions
+                madeFromDefinition = true;
                 document_properties = ndi.document.readblankdefinition(document_type);
                 ndiido = ndi.ido();
                 document_properties.base.id = ndiido.id();
@@ -77,7 +79,29 @@ classdef document
                 end
             end
 
-            ndi_document_obj.document_properties = document_properties;
+            % Hand the resolved properties to did.document's struct path.
+            % That path is what makes subclassing possible: did.document's
+            % constructor calls did.document.readblankdefinition with the
+            % class name written out, and MATLAB does not dispatch an
+            % explicitly qualified static call virtually, so an inherited
+            % constructor would resolve $NDIDOCUMENTPATH through DID's
+            % resolver. Resolving here first and passing the struct
+            % sidesteps that.
+            ndi_document_obj@did.document(document_properties);
+
+            % did.document seeds files.file_info when it builds a blank
+            % document from a definition, and its add_file assumes the field
+            % exists; ndi.document never called reset_file_info and created
+            % the field lazily instead. The struct path skips the seeding, so
+            % do it here to meet did.document's contract.
+            %
+            % This now runs did.document's reset_file_info rather than a copy
+            % of it, so when DID's grows the series_info seeding of
+            % VH-Lab/DID-matlab#178, ndi.document gets it without a change
+            % here. Against DID main the two are the same function.
+            if madeFromDefinition
+                ndi_document_obj = ndi_document_obj.reset_file_info();
+            end
 
         end % ndi.document() creator
 
@@ -90,36 +114,6 @@ classdef document
             %
             ndi_document_obj.document_properties.base.session_id = session_id;
         end % set_session_id
-
-        function ndi_document_obj = add_dependency_value_n(ndi_document_obj, dependency_name, value, varargin)
-            % ADD_DEPENDENCY_VALUE_N - add a dependency to a named list
-            %
-            % NDI_DOCUMENT_OBJ = ADD_DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and adds a dependency name 'dependency_name_(n+1)', where n is the number of entries with
-            % the form 'depenency_name_i' that exist presently. If there is no dependency field with that, then
-            % an entry is added and i is 1.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, generate no error but take no action.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if ~hasdependencies & ErrorIfNotFound
-                error(['This document does not have any dependencies.']);
-            else
-                d_struct = struct('name',[dependency_name '_' int2str(numel(d)+1)],'value',value);
-                ndi_document_obj = set_dependency_value(ndi_document_obj, d_struct.name, d_struct.value, 'ErrorIfNotFound', 0);
-            end
-        end %
 
         function t = to_table(ndi_document_obj)
             % TO_TABLE - convert an ndi.document to a table
@@ -171,112 +165,67 @@ classdef document
                 && ~isempty(ndi_document_obj.document_properties.files.file_info);
         end
 
-        function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
-            % ADD_FILE - add a file to a ndi.document
+        function ndi_document_obj = add_file(ndi_document_obj, name, location, options)
+            % ADD_FILE - add a file to an ndi.document
             %
-            % DID_DOCUMENT_OBJ = ADD_FILE(NDI_DOCUMENT_OBJ, NAME, LOCATION, ...)
+            % NDI_DOCUMENT_OBJ = ADD_FILE(NDI_DOCUMENT_OBJ, NAME, LOCATION, ...)
             %
-            % Adds a file's information to a ndi.document, for later ingestion into
-            % the database. NAME is the name of the file record for the document.
-            % LOCATION is a string that identifies the file or URL location on the
-            % internet.
+            % Adds a file's information to an ndi.document, for later ingestion
+            % into the database. did.document/add_file does the work; see it for
+            % NAME, LOCATION and the name/value pairs ingest, delete_original
+            % and location_type.
             %
-            % Note: NAME must not include any file separator characters on any
-            % platform (':','\','/') and may not have leading or trailing spaces.
-            % Leading or trailing spaces will be trimmed.
+            % This override exists for one thing: NDI has a third location type
+            % that did.document does not know about. A LOCATION of the form
+            % 'ndic://<datasetId>/<fileUid>' names a file that lives in NDI
+            % Cloud and is fetched on demand by the custom file handler in
+            % ndi.database.implementations.database.didsqlite. did.document
+            % recognizes only 'file' and 'url', so it would read an ndic://
+            % location as a local path and default to ingesting it and then
+            % deleting the "original" -- a path that does not exist.
             %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ingest (1 or 0)          | 0/1 Should the file be copied into the local
-            %                          |   database by ndi.database.add_doc() ?
-            %                          |   If LOCATION does not begin with 'http://' or
-            %                          |   'https://', then ingest is 1 by default.
-            %                          |   If LOCATION begins with 'http(s)://', then
-            %                          |   ingest is 0 by default. Note that the file
-            %                          |   is only copied upon the later call to
-            %                          |   ndi.database.add_doc(), not at the call to
-            %                          |   ndi.document.add_file().
-            % delete_original (1 or 0) | 0/1 Should we delete the file after ingestion?
-            %                          |   If LOCATION does not begin with 'http://' or
-            %                          |   'https://', then delete_original is 1 by default.
-            %                          |   If LOCATION begins with 'http(s)://', then
-            %                          |   delete_original is 0 by default. Note that the
-            %                          |   file is only deleted upon the later call to
-            %                          |   ndi.database.add_doc(), not at the call to
-            %                          |   ndi.document.add_file().
-            % location_type ('file',   | Can be 'file', 'url' or 'ndicloud'. By default, it 
-            %   'url' or 'ndicloud')   |   is set to 'file' if LOCATION does not begin with
-            %                          |   'http://', 'https://' or 'ndic://', and 'url' or 
-            %                          |   'ndicloud' otherwise.
-            %
-            ingest = NaN;
-            delete_original = NaN;
-            location_type = NaN;
-            uid = did.ido.unique_id();
+            % So detect it here and supply the three defaults did.document
+            % cannot know. A value the caller supplied always wins.
 
-            vlt.data.assign(varargin{:});
-            % Step 1: make sure that the did_document_obj has a 'files' portion
-            % and that name is one of the listed files.
-
-            [b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
-            if ~b
-                error(msg);
+            arguments
+                ndi_document_obj
+                name
+                location
+                options.ingest = NaN
+                options.delete_original = NaN
+                options.location_type = NaN
             end
 
-            % Step 2: detect the default property values, if necessary, and build the structure
-            detected_location_type = 'file'; % default
-            location = strip(location);  % remove whitespace
-            if (startsWith(location,'https://','IgnoreCase',true) || startsWith(location,'http://','IgnoreCase',true))
-                detected_location_type = 'url';
-            elseif startsWith(location, 'ndic://', 'IgnoreCase', true)
-                detected_location_type = 'ndicloud';
+            % did.document's add_file indexes files.file_info directly.
+            % ndi.document's used to create the field on first use instead, so
+            % a document that reached add_file without it still worked. The
+            % constructor now seeds it for a document built from a definition,
+            % but one built from a hand-assembled properties struct can still
+            % arrive without it, so meet the contract here rather than let an
+            % inherited add_file index a field that is not there.
+            if isfield(ndi_document_obj.document_properties, 'files') && ...
+                    ~isfield(ndi_document_obj.document_properties.files, 'file_info')
+                ndi_document_obj = ndi_document_obj.reset_file_info();
             end
 
-            if isnan(ingest) % assign default value
-                switch detected_location_type
-                    case {'url', 'ndicloud'}
-                        ingest = 0;
-                    case 'file'
-                        ingest = 1;
-                    otherwise
-                        error(['Unknown detected_location_type ' detected_location_type '.']);
+            if startsWith(strip(location), 'ndic://', 'IgnoreCase', true)
+                if localIsUnsetOption(options.ingest)
+                    options.ingest = 0;
+                end
+                if localIsUnsetOption(options.delete_original)
+                    options.delete_original = 0;
+                end
+                if localIsUnsetOption(options.location_type)
+                    options.location_type = 'ndicloud';
                 end
             end
-            if isnan(delete_original) % assign default value
-                switch detected_location_type
-                    case {'url', 'ndicloud'}
-                        delete_original = 0;
-                    case 'file'
-                        delete_original = 1;
-                    otherwise
-                        error(['Unknown detected_location_type ' detected_location_type '.']);
-                end
-            end
-            if isnan(location_type) % assign default value
-                location_type = detected_location_type;
-            end
 
-            % Step 2b: build the structure to add
-
-            parameters = '';
-
-            location_here = vlt.data.var2struct('delete_original','uid','location',...
-                'parameters','location_type','ingest');
-
-            % Step 3: Add the file to the list
-
-            if isempty(fI_index)
-                file_info_here = struct('name',name,'locations',location_here);
-                if ~isfield(ndi_document_obj.document_properties.files,'file_info')
-                    ndi_document_obj.document_properties.files.file_info = file_info_here;
-                else
-                    fI_index = numel(ndi_document_obj.document_properties.files.file_info)+1;
-                    ndi_document_obj.document_properties.files.file_info(fI_index) = file_info_here;
-                end
-            else
-                ndi_document_obj.document_properties.files.file_info(fI_index).locations(end+1) = location_here;
-            end
+            % Whatever is still unset goes up as NaN, which is did.document's
+            % own marker for "not given", so passing all three is the same as
+            % naming none of them.
+            args = namedargs2cell(options);
+            ndi_document_obj = add_file@did.document(ndi_document_obj, ...
+                name, location, args{:});
 
         end % add_file
 
@@ -297,101 +246,6 @@ classdef document
                 depend_struct = ndi_document_obj.document_properties.depends_on;
             end
         end % dependency()
-
-        function d = dependency_value(ndi_document_obj, dependency_name, varargin)
-            % DEPENDENCY_VALUE - return dependency value given dependency name
-            %
-            % D = DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and returns the 'value' associated with the given 'name'. If there is no such
-            % field (either 'depends_on' or 'name'), then D is empty and an error is generated.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, return empty.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            d = [];
-            notfound = 1;
-
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-
-            if hasdependencies
-                matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
-                if numel(matches)>0
-                    notfound = 0;
-                    d = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
-                end
-            end
-
-            if notfound & ErrorIfNotFound
-                error(['Dependency name ' dependency_name ' not found.']);
-            end
-        end %
-
-        function d = dependency_value_n(ndi_document_obj, dependency_name, varargin)
-            % DEPENDENCY_VALUE_N - return dependency values from list given dependency name
-            %
-            % D = DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and returns the 'values' associated with the given 'name_i', where i varies from 1 to the
-            % maximum number of entries titled 'name_i'. If there is no such field (either
-            % 'depends_on' or 'name_i'), then D is empty and an error is generated.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, return empty.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            d = {};
-            notfound = 1;
-
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if hasdependencies
-                hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
-            end
-
-            if hasdependencies
-                finished = 0;
-                i = 1;
-                while ~finished
-                    matches = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
-                    if isempty(matches) & i == 1
-                        % Try looking for non-numbered dependency
-                        matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
-                        % Skip if the matched dependency has an empty value (template placeholder)
-                        if ~isempty(matches)
-                            val = ndi_document_obj.document_properties.depends_on(matches(1)).value;
-                            if isempty(val)
-                                matches = [];
-                            end
-                        end
-                    end
-                    if numel(matches)>0
-                        notfound = 0;
-                        d{i} = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
-                    end
-                    finished = numel(matches)==0;
-                    i = i + 1;
-                end
-            end
-
-            if notfound & ErrorIfNotFound
-                error(['Dependency name ' dependency_name ' not found.']);
-            end
-        end %
 
         function b = doc_isa(ndi_document_obj, document_class)
             % DOC_ISA - is an ndi.document a member of a particular document_class?
@@ -445,28 +299,6 @@ classdef document
             uid = ndi_document_obj.document_properties.base.id;
         end % doc_unique_id()
 
-        function b = eq(ndi_document_obj1, ndi_document_obj2)
-            % EQ - are two ndi.document objects equal?
-            %
-            % B = EQ(NDI_DOCUMENT_OBJ1, NDI_DOCUMENT_OBJ2)
-            %
-            % Returns 1 if and only if the objects have identical document_properties.base.id
-            % fields.
-            %
-            b = strcmp(ndi_document_obj1.document_properties.base.id,...
-                ndi_document_obj2.document_properties.base.id);
-        end % eq()
-
-        function uid = id(ndi_document_obj)
-            % ID - return the document unique identifier for an ndi.document
-            %
-            % UID = ID (NDI_DOCUMENT_OBJ)
-            %
-            % Returns the unique id of an ndi.document
-            % (Found at NDI_DOCUMENT_OBJ.documentproperties.base.id)
-            %
-            uid = ndi_document_obj.document_properties.base.id;
-        end % id()
 
         function uid = session_id(ndi_document_obj)
             % ID - return the document session unique identifier for an ndi.document
@@ -479,76 +311,6 @@ classdef document
             uid = ndi_document_obj.document_properties.base.session_id;
         end % session_id()
         
-        function [b, msg, fI_index, fuid] = is_in_file_list(ndi_document_obj, name)
-            % IS_IN_FILE_LIST - is a file name in a ndi.document's file list?
-            %
-            % [B, MSG, FI_INDEX, FUID] = IS_IN_FILE_LIST(NDI_DOCUMENT_OBJ, NAME)
-            %
-            % Is the file NAME a valid named binary file for the ndi.document
-            % NDI_DOCUMENT_OBJ? If so, B is 1; else, B is 0.
-            %
-            % A name is a valid name if it appears in NDI_DOCUMENT_OBJ....
-            % document_properties.files.file_list or if it is a numbered
-            % file with an entry in document_properties.files.file_list
-            % as 'filename.ext_#'. (For example, 'filename.ext_1' would
-            % be valid if 'filename.ext_# is in the file_list.)
-            %
-            % If the file NAME is not valid, a reason is returned in MSG.
-            %
-            % If it is a valid file NAME, then the index value of NAME
-            % in NDI_DOCUMENT_OBJ.DOCUMENT_PROPERTIES.FILES.FILE_INFO is also
-            % returned.
-            %
-            b = 1;
-            msg = '';
-            fI_index = [];
-            fuid = '';
-
-            % Step 1: does this did.document have 'files' at all?
-
-            if ~isfield(ndi_document_obj.document_properties,'files')
-                b = 0;
-                msg = 'This type of document does not accept files; it has no ''files'' field';
-                return;
-            end
-
-            % Step 2: is it a valid filename for this document? It must appear in files.file_list
-            %   or be a proper numbered file if files.file_list{i} has has the form 'filename.ext_#'.
-
-            % Step 2a: see if name ends in '_#', where # is a non-negative integer.
-
-            search_name = name;
-            ends_with_number = 0; % assume not at first
-            number = NaN;
-            underscores = find(name=='_');
-            if ~isempty(underscores)
-                n = str2num(name(underscores(end)+1:end));
-                if ~isempty(n) % we have a number
-                    number = n;
-                    ends_with_number = 1;
-                    search_name = [name(1:underscores(end)) '#'];
-                end
-            end
-
-            % Step 2b: now we have the name to search for; make sure it is in the file list
-
-            I = find(strcmpi(search_name,ndi_document_obj.document_properties.files.file_list));
-            if isempty(I)
-                b = 0;
-                msg = ['No such file ' name ' in file_list of ndi.document; file must match an expected name.'];
-                return;
-            end
-
-            % Step 3: now, find which file_info corresponds to search_name, if any
-
-            if isfield(ndi_document_obj.document_properties.files,'file_info')
-                fI_index = find(strcmpi(name,{ndi_document_obj.document_properties.files.file_info.name}));
-                if ~isempty(fI_index)
-                    fuid = ndi_document_obj.document_properties.files.file_info(fI_index).locations(1).uid;
-                end
-            end
-        end % is_in_file_list()
-
         function fuid = get_fuid(ndi_document_obj, filename)
             % GET_FUID - return the file UID for a given filename
             %
@@ -558,7 +320,26 @@ classdef document
             % associated with that file in the NDI_DOCUMENT_OBJ.
             % If the file is not found, an empty string is returned.
             %
-            [~, ~, ~, fuid] = ndi_document_obj.is_in_file_list(filename);
+            fuid = '';
+
+            % is_in_file_list is did.document's, and it reads files.file_info
+            % without first checking the field is there. has_files() is the
+            % check: false means no file was ever added, so there is no uid to
+            % return and nothing to look up.
+            if ~ndi_document_obj.has_files()
+                return;
+            end
+
+            [b, ~, fI_index] = ndi_document_obj.is_in_file_list(filename);
+            if ~b || isempty(fI_index)
+                return;
+            end
+
+            files = ndi_document_obj.document_properties.files;
+            locations = files.file_info(fI_index(1)).locations;
+            if ~isempty(locations)
+                fuid = locations(1).uid;
+            end
         end % get_fuid()
 
         function fl = current_file_list(ndi_document_obj)
@@ -580,261 +361,6 @@ classdef document
                 end
             end
         end %  current_file_list()
-
-        function ndi_document_obj_out = plus(ndi_document_obj_a, ndi_document_obj_b)
-            % PLUS - merge two ndi.document objects
-            %
-            % NDI_DOCUMENT_OBJ_OUT = PLUS(NDI_DOCUMENT_OBJ_A, NDI_DOCUMENT_OBJ_B)
-            %
-            % Merges the ndi.document objects A and B. First, the 'document_class'
-            % superclasses are merged. Then, the fields that are in B but are not in A
-            % are added to A. The result is returned in NDI_DOCUMENT_OBJ_OUT.
-            % Note that any fields that A has that are also in B will be preserved; no elements of
-            % those fields of B will be combined with A.
-            %
-            ndi_document_obj_out = ndi_document_obj_a;
-            % Step 1): Merge superclasses
-            ndi_document_obj_out.document_properties.document_class.superclasses = ...
-                (cat(1,ndi_document_obj_out.document_properties.document_class.superclasses,...
-                ndi_document_obj_b.document_properties.document_class.superclasses));
-            otherproperties = rmfield(ndi_document_obj_b.document_properties, 'document_class');
-
-            % Step 2): Merge dependencies if we have to
-            if isfield(ndi_document_obj_out.document_properties,'depends_on') && ...
-                    isfield(ndi_document_obj_b.document_properties,'depends_on')
-                % we need to merge dependencies
-                for k=1:numel(ndi_document_obj_b.document_properties.depends_on)
-                    tf = strcmp(ndi_document_obj_b.document_properties.depends_on(k).name,...
-                        {ndi_document_obj_out.document_properties.depends_on.name});
-                    if any(tf)
-                        index = find(tf);
-                        index = index(1);
-                        ndi_document_obj_out.document_properties.depends_on(index) =  ...
-                            ndi_document_obj_b.document_properties.depends_on(k);
-                    else
-                        ndi_document_obj_out.document_properties.depends_on(end+1) = ...
-                            ndi_document_obj_b.document_properties.depends_on(k);
-                    end
-                end
-                otherproperties = rmfield(otherproperties,'depends_on');
-
-            end
-
-            % Step 3): Merge file_list
-            if isfield(ndi_document_obj_b.document_properties,'files')
-                % does doc a also have it?
-                if isfield(ndi_document_obj_out.document_properties,'files')
-                    file_list = cat(2,ndi_document_obj_out.document_properties.files.file_list(:)', ...
-                        ndi_document_obj_b.document_properties.files.file_list(:)');
-                    file_info = cat(1,ndi_document_obj_out.document_properties.files.file_info(:),...
-                        ndi_document_obj_b.document_properties.files.file_info(:));
-                    if numel(unique(file_list))~=numel(file_list)
-                        error(['Documents have files of the same name. Cannot be combined.']);
-                    end
-                    ndi_document_obj_out.document_properties.files.file_list = file_list;
-                    ndi_document_obj_out.document_properties.files.file_info = file_info;
-                else
-                    % doc a doesn't have it, just use doc b's info
-                    ndi_document_obj_out.document_properties.files = ndi_document_obj_b.document_properties.files;
-                end
-            end
-
-            % Step 4): Merge the other fields
-            ndi_document_obj_out.document_properties = vlt.data.structmerge(ndi_document_obj_out.document_properties,...
-                otherproperties);
-        end % plus()
-
-        function ndi_document_obj = remove_dependency_value_n(ndi_document_obj, dependency_name, value, n, varargin)
-            % REMOVE_DEPENDENCY_VALUE_N - remove a dependency from a named list
-            %
-            % NDI_DOCUMENT_OBJ = REMOVE_DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, N, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and removes the dependency name 'dependency_name_(n)'.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, generate no error but take no action.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if ~hasdependencies & ErrorIfNotFound
-                error(['This document does not have any dependencies.']);
-            end
-
-            if n>numel(d) & ErrorIfNotFound
-                error(['Number to be removed ' int2str(n) ' is greater than total number of entries ' int2str(numel(d)) '.']);
-            end
-
-            match = find(strcmpi([dependency_name '_' int2str(n)],{ndi_document_obj.document_properties.depends_on.name}));
-            if numel(match)~=1
-                error(['Could not locate entry ' dependency_name '_' int2str(n)]);
-            end
-
-            ndi_document_obj.document_properties.depends_on = ndi_document_obj.document_properties.depends_on([1:match-1 match+1:end]);
-
-            for i=n+1:numel(d)
-                match = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
-                if numel(match)~=1
-                    error(['Could not locate entry ' dependency_name '_' int2str(i)]);
-                end
-                ndi_document_obj.document_properties.depends_on(match).name = [dependency_name '_' int2str(i-1)];
-            end
-        end %
-
-        function ndi_document_obj = set_dependency_value(ndi_document_obj, dependency_name, value, varargin)
-            % SET_DEPENDENCY_VALUE - set the value of a dependency field
-            %
-            % NDI_DOCUMENT_OBJ = SET_DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
-            %
-            % Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
-            % and, if there is a dependency with a given 'dependency_name', then the value of the
-            % dependency is set to DEPENDENCY_VALUE.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-            %                          |   not found. Otherwise, add it.
-            %
-            %
-            ErrorIfNotFound = 1;
-            vlt.data.assign(varargin{:});
-
-            notfound = 1;
-
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if hasdependencies
-                hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
-            end
-            d_struct = struct('name',dependency_name,'value',value);
-
-            if hasdependencies
-                matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
-                if numel(matches)>0
-                    notfound = 0;
-                    ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
-                elseif ~ErrorIfNotFound % add it
-                    ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
-                    notfound = 0;
-                end
-            elseif ~ErrorIfNotFound
-                ndi_document_obj.document_properties.depends_on = d_struct;
-                notfound = 0;
-            end
-
-            if notfound & ErrorIfNotFound
-                error(['Dependency name ' dependency_name ' not found.']);
-            end
-        end %
-
-        function ndi_document_obj = remove_file(ndi_document_obj, name, location, varargin)
-            % REMOVE_FILE - remove file information from a did.document
-            %
-            % DID_DOCUMENT_OBJ = REMOVE_FILE(NDI_DOCUMENT_OBJ, NAME, [LOCATION], ...)
-            %
-            % Removes the file information for a name or a name and location
-            % combination from a did.document() object.
-            %
-            % If LOCATION is not specified or is empty, then all locations are removed.
-            %
-            % If NDI_DOCUMENT_OBJ does not have a file NAME in its file_list, then an error is
-            % generated.
-            %
-            % This function accepts name/value pairs that alter its default behavior:
-            % Parameter (default)      | Description
-            % -----------------------------------------------------------------
-            % ErrorIfNoFileInfo (0)    | 0/1 If a name is specified and the
-            %                          |   file info is already empty, should we
-            %                          |   produce an error?
-
-            if nargin<3
-                location = [];
-            end
-
-            ErrorIfNoFileInfo = 0;
-            vlt.data.assign(varargin{:});
-
-            [b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
-            if ~b
-                error(msg);
-            end
-
-            if isempty(fI_index)
-                if ErrorIfNoFileInfo
-                    error(['No file_info for name ' name ' .']);
-                end
-            end
-
-            if isempty(location)
-                ndi_document_obj.document_properties.files.file_info(fI_index) = [];
-                return;
-            end
-
-            location_match_index = find(strcmpi(location,{ndi_document_obj.document_properties.files.file_info(fI_index).locations.location}));
-
-            if isempty(location_match_index)
-                if ErrorIfNoFileInfo
-                    error(['No match found for file ' name ' with location ' location '.']);
-                end
-            else
-                ndi_document_obj.document_properties.files.file_info(fI_index).locations = ...
-                    ndi_document_obj.document_properties.files.file_info(fI_index).locations([1:location_match_index-1 location_match_index+1:end]);
-            end
-
-        end % remove_file
-
-        function ndi_document_obj = reset_file_info(ndi_document_obj)
-            % RESET_FILE_INFO - reset the file information parameters for a new did.document
-            %
-            % NDI_DOCUMENT_OBJ = RESET_FILE_INFO(NDI_DOCUMENT_OBJ)
-            %
-            % Reset (make empty) all file info structures for a new did.document object.
-            %
-            % Sets document_properties.files.file_info to an empty structure
-            %
-
-            % First, check if we even have file info
-            if ~isfield(ndi_document_obj.document_properties,'files')
-                return;
-            end
-
-            ndi_document_obj.document_properties.files.file_info = ...
-                did.datastructures.emptystruct('name','locations');
-
-        end % reset_file_info()
-
-        function ndi_document_obj = setproperties(ndi_document_obj, varargin)
-            % SETPROPERTIES - Set property values of an ndi.document object
-            %
-            % NDI_DOCUMENT_OBJ = SETPROPERTIES(NDI_DOCUMENT_OBJ, 'PROPERTY1', VALUE1, ...)
-            %
-            % Sets the property values of NDI_DOCUMENT_OBJ.    PROPERTY values should be expressed
-            % relative to NDI_DOCUMENT_OBJ.document_properties (see example).
-            %
-            % See also: ndi.document, ndi.document/ndi.document
-            %
-            % Example:
-            %   mydoc = mydoc.setproperties('base.name','mydoc name');
-
-            newproperties = ndi_document_obj.document_properties;
-            for i=1:2:numel(varargin)
-                try
-                    newproperties = ndi.util.assignPropertyPath( ...
-                        newproperties, varargin{i}, varargin{i+1});
-                catch
-                    error(['Error in assigning ' varargin{i} '.']);
-                end
-            end
-
-            ndi_document_obj.document_properties = newproperties;
-        end % setproperties
 
         function write(ndi_document_obj, filePrefix, options)
             % WRITE - write the document properties to a file
@@ -925,17 +451,6 @@ classdef document
                 end
             end
         end % write()
-
-        function b = validate(ndi_document_obj)
-            % VALIDATE - 0/1 evaluate whether ndi.document object is valid by its schema
-            %
-            % B = VALIDATE(NDI_DOCUMENT_OBJ)
-            %
-            % Checks the fields of the ndi.document object against the schema in
-            % NDI_DOCUMENT_OBJ.ndi_core_properties.validation_schema and returns 1
-            % if the object is valid and 0 otherwise.
-            b = 1; % for now, skip this
-        end % validate()
 
     end % methods
 
@@ -1114,3 +629,10 @@ classdef document
 
     end % methods Static
 end % classdef
+
+function tf = localIsUnsetOption(value)
+    % ADD_FILE's options use NaN to mean "not given". A location_type the
+    % caller did supply is a char, and isnan is not a safe test on one, so
+    % check that it is a numeric scalar before asking.
+    tf = isnumeric(value) && isscalar(value) && isnan(value);
+end
