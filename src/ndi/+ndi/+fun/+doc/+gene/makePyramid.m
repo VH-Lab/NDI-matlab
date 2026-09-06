@@ -24,6 +24,12 @@ function [pyrDoc, tileDocs] = makePyramid(session, x, y, geneIndex, count, geneL
 %       leaving the mean unchanged, so uniform, small ratios give the
 %       smoothest zooming: a 2x step costs 4x, a 5x step costs 25x.
 %   grid (9)            - tile grid, GRID by GRID at every level
+%   sourceFileID ('')   - id of a generic_file document describing the
+%       file this pyramid was built from. The spatialGeneExpressionTiles
+%       class has carried a source_file_id dependency since it was
+%       written and nothing populated it; ndi.fun.doc.gene.fromGEF now
+%       does. Empty leaves it unset, which is what a pyramid built from
+%       arrays in memory should say.
 %   subjectID           - subject to depend on. REQUIRED: the pyramid
 %       document declares subject_id mustbenotempty, because a section
 %       is measured from an animal and NDI records that on the
@@ -74,6 +80,7 @@ arguments
     options.chipSerial (1,:) char = ''
     options.pipelineVersion (1,:) char = ''
     options.origin double = []
+    options.sourceFileID (1,:) char = ''
 end
 
 n = numel(x);
@@ -206,6 +213,9 @@ tileDoc = ndi.document('spatialGeneExpressionTiles', ...
 tileDoc = tileDoc.set_dependency_value('spatialGeneExpressionPyramid_id', pyrDoc.id());
 if ~isempty(options.subjectID)
     tileDoc = tileDoc.set_dependency_value('subject_id', options.subjectID);
+end
+if ~isempty(options.sourceFileID)
+    tileDoc = tileDoc.set_dependency_value('source_file_id', options.sourceFileID);
 end
 tileDoc = storeDoc(session, tileDoc, names, paths);
 

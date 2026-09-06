@@ -372,6 +372,56 @@ classdef TestGeneIngest < matlab.unittest.TestCase
                 'NDI:GeneIngest:planHasErrors');
         end
 
+        function testStepArgsReadsTheRunsArgumentsBackOutOfThePlan(testCase)
+            % The plan is the contract between the confirmation screen and
+            % the run. A user who saw a pyramid of six levels described
+            % must get a pyramid of six levels, so runIngest takes its
+            % arguments from the plan rather than from choices directly.
+            c = testCase.baseChoices();
+            c.binSizes = [1 2 4];
+            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1'}, [], c);
+            py = ndi.gui.app.GeneIngest.stepArgs(plan, 'pyramid');
+            testCase.verifyEqual(py.binSizes, [1 2 4]);
+            testCase.verifyEqual(py.subjectID, c.subjectID);
+        end
+
+        function testStepArgsIsEmptyForAKindThePlanDoesNotHave(testCase)
+            % Cells are optional, so asking for a step that was not planned
+            % must be an empty answer rather than an index error.
+            c = testCase.baseChoices();
+            c.importCells = false;
+            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+                testCase.fakeGefMeta(), {'E1'}, [], c);
+            testCase.verifyEmpty(fieldnames( ...
+                ndi.gui.app.GeneIngest.stepArgs(plan, 'cells')));
+        end
+
+        function testGefProgressStaysInsideTheShareItOwns(testCase)
+            % fromGEF reports across itself and knows nothing about the
+            % plan. It covers the geneList and pyramid steps, always the
+            % first two, so a full 1 from fromGEF must land at 2/n and
+            % leave the rest of the bar for the cells step. Overshooting
+            % would drive the bar to 100% with work still to do.
+            got = [];
+            f = ndi.gui.app.GeneIngest.gefProgress(@grab, 4);
+            f(0, 'reading');
+            f(0.5, 'halfway');
+            f(1, 'done with the gef');
+            testCase.verifyEqual(got, [0 0.25 0.5], 'AbsTol', 1e-12);
+
+            function grab(frac, ~)
+                got(end+1) = frac;
+            end
+        end
+
+        function testGefProgressIsEmptyWithNoBarToDrive(testCase)
+            % runIngest is documented to work with no display, so the
+            % absence of a progress handle has to survive the mapping.
+            testCase.verifyEmpty( ...
+                ndi.gui.app.GeneIngest.gefProgress([], 4));
+        end
+
         function testReadNotesReportClampedCounts(testCase)
             % Only reachable after every record has been read, so it is
             % reported afterwards rather than asked about beforehand. Those
