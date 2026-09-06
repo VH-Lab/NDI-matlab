@@ -1,4 +1,4 @@
-function [b, answer, apiResponse, apiURL] = createSignedURLSetJob(cloudDatasetID, cloudDocumentID)
+function [b, answer, apiResponse, apiURL] = createSignedURLSetJob(cloudDatasetID, cloudDocumentID, options)
 %CREATESIGNEDURLSETJOB Kick off an async job to build a document's signed URL set.
 %
 %   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.createSignedURLSetJob(CLOUDDATASETID, CLOUDDOCUMENTID)

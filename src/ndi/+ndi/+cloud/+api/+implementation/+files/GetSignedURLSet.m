@@ -63,8 +63,9 @@ classdef GetSignedURLSet < ndi.cloud.api.call
         function [b, answer, apiResponse, apiURL] = execute(this)
             %EXECUTE Performs the API call.
 
+            % b stays false unless the status check below sets it; answer is
+            % assigned on every path, so it is not pre-initialized.
             b = false;
-            answer = [];
 
             token = ndi.cloud.authenticate();
 
