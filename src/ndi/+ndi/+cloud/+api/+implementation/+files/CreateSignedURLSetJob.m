@@ -9,14 +9,20 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
 %   job is ready. See ndi.cloud.api.files.createSignedURLSetJob for the
 %   user-facing wrapper.
 
+    properties
+        fileSeries (1,1) string
+    end
+
     methods
         function this = CreateSignedURLSetJob(args)
             arguments
                 args.cloudDatasetID  (1,1) string
                 args.cloudDocumentID (1,1) string
+                args.fileSeries      (1,1) string = ""
             end
             this.cloudDatasetID  = args.cloudDatasetID;
             this.cloudDocumentID = args.cloudDocumentID;
+            this.fileSeries = args.fileSeries;
             this.endpointName = 'create_signed_url_set_job';
         end
 
@@ -29,6 +35,16 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
             apiURL = ndi.cloud.api.url('create_signed_url_set_job', ...
                 'dataset_id',  this.cloudDatasetID, ...
                 'document_id', this.cloudDocumentID);
+
+            % Restrict the job to one file series' members.
+            if strlength(this.fileSeries) > 0
+                q = matlab.net.QueryParameter('fileSeries', char(this.fileSeries));
+                if isempty(apiURL.Query)
+                    apiURL.Query = q;
+                else
+                    apiURL.Query = [apiURL.Query q];
+                end
+            end
 
             method = matlab.net.http.RequestMethod.POST;
 

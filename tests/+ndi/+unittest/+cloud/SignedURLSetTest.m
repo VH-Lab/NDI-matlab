@@ -183,23 +183,16 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
     end
 
     methods (Static, Access = private)
-        function uids = normalizeReturnedUIDs(filesStruct)
-            % jsondecode prepends an 'x' to any JSON object key that isn't
-            % a valid MATLAB identifier -- and file UIDs start with a
-            % digit, so every UID in the `files` map comes back with an
-            % extra leading 'x'. Strip it back off so the returned UIDs
-            % match what listFiles reports and what the server actually
-            % signed. Keys that did NOT get an 'x' prefix (rare, but
-            % possible if a UID ever begins with a letter) are left
-            % alone.
-            raw = string(fieldnames(filesStruct));
-            uids = raw;
-            for i = 1:numel(uids)
-                s = char(uids(i));
-                if ~isempty(s) && s(1) == 'x'
-                    uids(i) = string(s(2:end));
-                end
-            end
+        function uids = returnedUIDs(filesMap)
+            % The client hands back a containers.Map keyed by real uids.
+            %
+            % This used to strip a leading 'x' that jsondecode adds to any
+            % JSON key which is not a valid MATLAB identifier -- which a file
+            % uid is not, since it starts with a digit far more often than
+            % not. That un-mangling now happens once inside the client rather
+            % than in every caller, and it handles uids that are not the usual
+            % hex form, where stripping an 'x' would corrupt them.
+            uids = string(keys(filesMap));
         end
 
     end
@@ -233,7 +226,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyGreaterThanOrEqual(page.totalCount, 1, ...
                 "totalCount was 0; the endpoint could not resolve any file UID for this doc. " + msg);
 
-            returnedUIDs = ndi.unittest.cloud.SignedURLSetTest.normalizeReturnedUIDs(page.files);
+            returnedUIDs = ndi.unittest.cloud.SignedURLSetTest.returnedUIDs(page.files);
             testCase.verifyEqual(numel(returnedUIDs), page.totalCount, ...
                 "files map has a different size than totalCount. " + msg);
 
@@ -262,15 +255,14 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             msg = ndi.unittest.cloud.APIMessage(narrative, b, page, resp, url);
             testCase.assertTrue(b, "getSignedURLSet failed. " + msg);
 
-            % Fieldnames still carry the 'x' prefix that jsondecode adds;
-            % use the raw name to index into page.files but the stripped
-            % form only for display / cross-checks.
-            rawFieldNames = string(fieldnames(page.files));
-            testCase.assertNotEmpty(rawFieldNames, ...
+            % Keys are real uids now, so there is no raw-versus-stripped
+            % distinction left to keep straight.
+            returned = string(keys(page.files));
+            testCase.assertNotEmpty(returned, ...
                 "Endpoint returned an empty files map. " + msg);
 
-            rawKey = char(rawFieldNames(1));
-            signedUrl = page.files.(rawKey);
+            rawKey = char(returned(1));
+            signedUrl = page.files(rawKey);
 
             narrative(end+1) = "Preparing to download signed URL for UID " + string(rawKey);
             body = testCase.downloadURLBody(signedUrl);
@@ -324,7 +316,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
             testCase.verifyEqual(all.pageCount, all.totalCount, ...
                 "Merged pageCount does not match totalCount. " + msg);
 
-            mergedUIDs = ndi.unittest.cloud.SignedURLSetTest.normalizeReturnedUIDs(all.files);
+            mergedUIDs = ndi.unittest.cloud.SignedURLSetTest.returnedUIDs(all.files);
             for i = 1:numel(mergedUIDs)
                 testCase.verifyTrue(ismember(mergedUIDs(i), testCase.FileUIDs), ...
                     "Merged UID " + mergedUIDs(i) + " is not in the dataset's uploaded files. " + msg);
