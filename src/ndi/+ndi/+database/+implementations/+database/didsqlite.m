@@ -152,10 +152,10 @@ classdef  didsqlite < ndi.database
     end
 end
 
-function download_file_from_cloud(destPath, sourcePath)
+function download_file_from_cloud(destPath, sourcePath, context)
     % DOWNLOAD_FILE_FROM_CLOUD - retrieve an ndic:// file for DID
     %
-    % DOWNLOAD_FILE_FROM_CLOUD(DESTPATH, SOURCEPATH)
+    % DOWNLOAD_FILE_FROM_CLOUD(DESTPATH, SOURCEPATH, [CONTEXT])
     %
     % Satisfies did.database's customFileHandler contract: retrieve the file
     % identified by SOURCEPATH and leave it at DESTPATH. SOURCEPATH must be an
@@ -163,8 +163,23 @@ function download_file_from_cloud(destPath, sourcePath)
     % fresh here because pre-signed URLs expire, which is why documents store
     % the durable identifier rather than a URL.
     %
+    % CONTEXT is the per-call struct DID's dispatchCustomFileHandler passes
+    % when a handler declares three or more inputs (DID-matlab#186): it
+    % carries the caller's documentId and, for a series member, the
+    % series name. When present those are used to look the uid up in a
+    % per-document signed-URL cache -- one API round trip per DOCUMENT
+    % (or per fileSeries scope) instead of one per uid, closing DID
+    % #173's step 3 for the read path. Falls back to per-uid
+    % getFileDetails when no context is given or the batch call cannot
+    % answer -- so a 2-arg handler-shaped caller, and any uid missing
+    % from the batch response, still work.
+    %
     % Previously a nested function inside do_openbinarydoc. It is file-local so
     % that do_add can pass the same handler.
+
+    if nargin < 3
+        context = struct();
+    end
 
     if startsWith(sourcePath, 'ndic://')
         % Cache-hit short-circuit. The customFileHandler contract is "leave
@@ -182,12 +197,25 @@ function download_file_from_cloud(destPath, sourcePath)
         cloudDatasetId = cloudPath{1};
         ndiFileUid = cloudPath{2};
 
-        [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, ndiFileUid);
-        if ~success
-            error(['Failed to get file details: ' answer.message]);
+        % Try the per-document batch cache first. Empty documentId
+        % (2-arg dispatch, or an older DID) makes this a no-op that
+        % returns "".
+        [docId, seriesName] = readContext(context);
+        fileUrl = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+            string(cloudDatasetId), docId, seriesName, string(ndiFileUid));
+
+        if strlength(fileUrl) == 0
+            % No batch URL for this uid -- either no document context,
+            % or the batch call failed, or the returned map did not name
+            % this uid. Fall back to the per-uid mint, which is exactly
+            % what this handler did before #952.
+            [success, answer, ~] = ndi.cloud.api.files.getFileDetails(cloudDatasetId, ndiFileUid);
+            if ~success
+                error(['Failed to get file details: ' answer.message]);
+            end
+            fileUrl = answer.downloadUrl;
         end
-        fileUrl = answer.downloadUrl;
-        [success2, answer2] = ndi.cloud.api.files.getFile(fileUrl, destPath, 'useCurl', true);
+        [success2, answer2] = ndi.cloud.api.files.getFile(char(fileUrl), destPath, 'useCurl', true);
         if ~success2
             error(['Failed to download file from cloud: ' answer2]);
         end
@@ -196,5 +224,21 @@ function download_file_from_cloud(destPath, sourcePath)
             ['The source path "%s" uses an unsupported file location type. ' ...
             'Expected a path starting with "ndic://".'], ...
             sourcePath);
+    end
+end
+
+function [docId, seriesName] = readContext(context)
+    % Pull documentId and seriesName from the DID handler context, if
+    % either field is present. Missing values become "" so the batch
+    % lookup can treat them uniformly.
+    docId = "";
+    seriesName = "";
+    if isstruct(context)
+        if isfield(context,'documentId') && ~isempty(context.documentId)
+            docId = string(context.documentId);
+        end
+        if isfield(context,'seriesName') && ~isempty(context.seriesName)
+            seriesName = string(context.seriesName);
+        end
     end
 end
