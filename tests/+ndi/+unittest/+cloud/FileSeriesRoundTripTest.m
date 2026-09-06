@@ -18,11 +18,17 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 %      copied into FileDir/<uid> and NAME_<i> resolves through the manifest,
 %      so a member now has bytes to upload. testMembersAreIngestedLocally
 %      checks that and no longer skips.
-%   3. DONE, and it turned out not to need series awareness at all. A member
-%      is uploaded by uid like any other file once the upload manifest names
-%      it, which VH-Lab/NDI-matlab#961 taught
-%      ndi.database.internal.list_binary_files to do, so the existing batch
-%      presign path signs members without knowing they belong to a series.
+%   3. HALF DONE, and it turned out not to need series awareness. A member
+%      is signed by uid like any other file once something names it, which
+%      VH-Lab/NDI-matlab#961 taught ndi.database.internal.list_binary_files
+%      to do for the UPLOAD -- proven, since members demonstrably reach the
+%      cloud now. The DOWNLOAD direction is unproven, and cannot be proven
+%      here yet: nothing has ever asked the cloud for a member's bytes, so
+%      no member uid has been through batchSignedUrlLookup on the way back.
+%      testMembersSurviveADownloadFromTheCloud is what will exercise it, and
+%      is blocked behind the read-side gap below. Do not read this item as
+%      "signing works"; read it as "signing has no reason to care, and the
+%      return half is untested".
 %
 % What remains is on the READ side: VH-Lab/DID-matlab#188. A series member
 % carries no location of its own, so a dataset freshly downloaded from the
@@ -307,9 +313,14 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             % ones that actually made the journey. It needs SyncFiles so the
             % file contents come down and not just the document records.
             %
-            % Members are still out of reach (see the class header, item 2),
-            % so this covers the manifest half only -- which is the half that
-            % is testable today, and the half a series reader hits first.
+            % This covers the MANIFEST half only, on purpose. The member
+            % half is testMembersSurviveADownloadFromTheCloud, below, which
+            % shares this test's shape and downloads its own copy. Keeping
+            % them apart costs a second download per run and buys a failure
+            % that says which half broke: a manifest that arrived intact
+            % while its members did not is a different bug from a manifest
+            % that came back altered, and the manifest is the half a series
+            % reader hits first.
 
             import matlab.unittest.fixtures.TemporaryFolderFixture
 
@@ -431,6 +442,13 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             % member in 'open' mode, given the series manifest's location and
             % the member's uid. That failure is the evidence for #188, so do
             % not skip or delete this test to make CI green.
+            %
+            % If it still fails AFTER #188 lands, the next suspect is the
+            % return half of class header item 3: a member uid has never been
+            % through batchSignedUrlLookup on the way back, because nothing
+            % has ever asked the cloud for a member's bytes. This test is the
+            % first thing that will. Read the per-member diagnostic below
+            % before assuming which of the two it is.
 
             import matlab.unittest.fixtures.TemporaryFolderFixture
 
