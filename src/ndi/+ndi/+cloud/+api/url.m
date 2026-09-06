@@ -81,6 +81,14 @@ function url = url(endpointName, options)
         endpointMap("bulk_download_documents")        = "/datasets/{datasetId}/documents/bulk-download";
         endpointMap("bulk_fetch_documents")           = "/datasets/{datasetId}/documents/bulk-fetch";
         endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents?page={page}&pageSize={pageSize}";
+
+        % Signed download URLs for every file a document references.
+        % Optional query parameters (limit, cursor, fileSeries) are appended
+        % by the implementation classes rather than templated here, because
+        % url.m requires every templated parameter to be non-empty.
+        endpointMap("get_signed_url_set")             = "/datasets/{datasetId}/documents/{documentId}/signed-url-set";
+        endpointMap("create_signed_url_set_job")      = "/datasets/{datasetId}/documents/{documentId}/signed-url-set-jobs";
+        endpointMap("get_signed_url_set_job")         = "/signed-url-set-jobs/{jobId}";
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";
         endpointMap("ndiquery")                       = "/ndiquery?page={page}&pageSize={pageSize}";
