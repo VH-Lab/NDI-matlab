@@ -487,9 +487,19 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 present(i) = downloaded.database_existbinarydoc(remoteDoc.id(), ...
                     sprintf('chunkdata.bin_%d', i));
             end
+            % mat2str renders an empty row as "zeros(1,0)", and the zero
+            % case is the one this line exists to report. The audience for
+            % these diagnostics is often not a MATLAB user -- see the
+            % Narrative property -- so spell it.
+            presentSlots = find(present);
+            if isempty(presentSlots)
+                slotsText = "none";
+            else
+                slotsText = join(string(presentSlots), ", ");
+            end
             narrative(end+1) = "Members reachable in the downloaded dataset: " + ...
                 sum(present) + " of " + testCase.MemberCount + ", slots " + ...
-                mat2str(find(present)) + ".";
+                slotsText + ".";
             narrative(end+1) = "NONE reachable is VH-Lab/DID-matlab#188: a member " + ...
                 "has no location of its own, and nothing asks the customFileHandler " + ...
                 "for its bytes at open time. SOME reachable is not #188 -- the " + ...
