@@ -17,12 +17,19 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
     % struct the reset installed and the copy reports zero members for a
     % populated series.
     %
-    % WHY THIS ONE IS WORSE THAN #945. docs is a return value, and
+    % WHY THIS ONE WAS WORSE THAN #945. docs is a return value, and
     % ndi.dataset.copySessionToDataset stores it: adding a session to a dataset
     % runs the extract and then database_adds the result. So where #945
-    % corrupted a document in memory after download, this writes the stripped
-    % document into a dataset as the stored copy. The dataset test below is
-    % what confirms that, rather than reasoning about it from the code path.
+    % corrupted a document in memory after download, this wrote the stripped
+    % document into a dataset as the stored copy.
+    %
+    % That is no longer what happens, and the last test here says so.
+    % VH-Lab/DID-matlab#185 made the database refuse a document that declares
+    % present series members while recording no way to locate any of them --
+    % which is what an extract produces, because it copies the manifest and
+    % not the members (DID#173). So the dataset copy of a series-carrying
+    % session now ERRORS rather than storing zeroed counts. Losing the counts
+    % was the bug; the refusal is the current answer to what replaces it.
     %
     % It is silent: isFileSeries reads files.file_series, the class declaration
     % from the schema, which the reset deliberately leaves alone. So a caller
@@ -114,6 +121,17 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
             [docs, ~] = ndi.database.fun.extract_docs_files( ...
                 testCase.Session, testCase.TargetPath);
         end
+
+        function closeDatabasesQuietly(~)
+            % Mirrors the mksqlite('close') that add_ingested_session does at
+            % the end of a successful add. Failing to close is not worth
+            % failing a teardown over, and there may be nothing open.
+            try
+                mksqlite('close');
+            catch
+                % nothing open, or no handle to close
+            end
+        end
     end
 
     methods (Test)
@@ -200,32 +218,52 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
                 'the extracted copy should not carry the source session''s member paths');
         end
 
-        function testASessionCopiedIntoADatasetKeepsItsMembers(testCase)
-            % Why this bug is worse than #945: the extract's return value is
-            % stored. copySessionToDataset runs the extract and database_adds
-            % the result, so a stripped document becomes the dataset's copy
-            % at rest. This is the end-to-end consequence #946 reasoned about
-            % from the code path but had not confirmed.
+        function testCopyingASeriesIntoADatasetIsRefusedUntilMembersCanTravel(testCase)
+            % Copying a session that holds a POPULATED series into a dataset
+            % does not work today, and fails loudly rather than quietly. That
+            % is the whole point of the guard, and it is worth pinning.
+            %
+            % HOW THIS GOT HERE. #946 was about the dataset's stored copy
+            % losing its member counts, and this test originally asserted the
+            % counts came back. They do -- out of the extract, which is what
+            % the tests above check. But the extract copies the MANIFEST and
+            % not the members (see extract_docs_files' own help, and
+            % VH-Lab/DID-matlab#173: nothing ingests members yet, so there are
+            % none in the source store to copy). So what reaches the dataset
+            % is a document saying "4 present members" while recording no way
+            % to find one.
+            %
+            % VH-Lab/DID-matlab#185 made did.implementations.sqlitedb refuse
+            % exactly that, for a document the target database has never held:
+            % storing it "produces a manifest full of uids whose bytes will
+            % never arrive". The refusal is correct and it is upstream's call
+            % to make. It also means ndi.dataset.add_ingested_session now
+            % ERRORS for a session carrying a populated series, where before
+            % NDI-matlab#947 it silently stored one with zeroed counts.
+            %
+            % Losing the counts was the bug. Refusing the copy is the current,
+            % deliberate answer to what replaces it. When member copying lands
+            % (DID#173, then the extract work its help text names), this test
+            % should go back to asserting that the dataset's copy keeps its
+            % four members -- the assertion is in the git history of this file.
             datasetPath = tempname;
             mkdir(datasetPath);
             testCase.addTeardown(@() rmdir(datasetPath, 's'));
+            % Registered after the rmdir so it runs BEFORE it (teardowns are
+            % LIFO). add_ingested_session closes the database itself as its
+            % last act; erroring part way through means that never runs, and
+            % an open handle should not be left for the next test.
+            testCase.addTeardown(@() testCase.closeDatabasesQuietly());
             dataset = ndi.dataset.dir('ds_series', datasetPath);
 
             % The real entry point, the way ndi.unittest.dataset.buildDataset
             % uses it: add_ingested_session calls copySessionToDataset, which
             % is where the extract runs.
-            dataset.add_ingested_session(testCase.Session);
-
-            q = ndi.query('base.name', 'exact_string', testCase.SeriesDocName);
-            docs = dataset.database_search(q);
-            testCase.assertNumElements(docs, 1, ...
-                'expected exactly one series document in the dataset');
-
-            [n, nPresent] = docs{1}.seriesCount(testCase.SeriesName);
-            testCase.verifyEqual(n, testCase.MemberCount, ...
-                'the dataset''s stored copy lost the series member count');
-            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
-                'the dataset''s stored copy lost the series present-count');
+            testCase.verifyError(@() dataset.add_ingested_session(testCase.Session), ...
+                'DID:SQLITEDB:FileSeries:MembersNotLocatable', ...
+                ['Copying a session with a populated file series into a ' ...
+                 'dataset should be refused while the extract cannot carry ' ...
+                 'the members. See VH-Lab/DID-matlab#185 and #173.']);
         end
 
     end
