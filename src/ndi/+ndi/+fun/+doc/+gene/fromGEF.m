@@ -1,0 +1,157 @@
+function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, options)
+% FROMGEF - build spatial gene expression documents from a Stereo-seq .gef
+%
+%   [PYRDOC, TILEDOCS, GENELISTDOC, INFO] = ...
+%       ndi.fun.doc.gene.FROMGEF(SESSION, GEFPATH, 'subjectID', ID)
+%
+%   Reads a BGI/MGI Stereo-seq .gef with ndr.format.stereoseq.readGEF and
+%   turns it into the documents that describe it: a geneList, a
+%   spatialGeneExpressionPyramid, and one spatialGeneExpressionTiles per
+%   level. This is the whole .gef-to-database path in one call.
+%
+%   THE DIVISION IT OBSERVES: NDR reads the vendor's file and returns
+%   arrays; NDI turns arrays into documents. Nothing here parses HDF5, and
+%   nothing in NDR knows what a document is. This function is the seam,
+%   and it exists because the seam was previously only crossed inside
+%   ndi.gui.app.GeneIngest -- so a script, a batch import, or the Python
+%   port had to either drive a GUI class or write the sequence again.
+%
+%   IT READS THE FILE ONCE. A real section is ~10^8 records and minutes;
+%   the gene list and the pyramid both need those records, so they are
+%   read once here rather than once per maker.
+%
+%   Inputs:
+%   SESSION - an ndi.session or ndi.dataset
+%   GEFPATH - path to the .gef
+%
+%   Optional Name-Value Arguments:
+%   subjectID ('')       - REQUIRED in practice: the pyramid document
+%       declares subject_id mustbenotempty, because a section is measured
+%       from an animal and a .gef records a chip rather than a subject.
+%       Left with a default so the error comes from makePyramid, which
+%       explains it, rather than from an arguments block that cannot.
+%   maxGenes (0)         - read only the first N genes; 0 is every gene.
+%       A trimmed pyramid is missing genes and nothing in it records
+%       that, so INFO.notes says so.
+%   binSizes / grid / basePixelSize / pixelSizeUnits / label / assay /
+%   chipSerial / pipelineVersion / origin
+%       - passed through to ndi.fun.doc.gene.makePyramid
+%   genomeAssembly / annotationSource / geneIdNamespace /
+%   geneSymbolNamespace
+%       - passed through to ndi.fun.doc.gene.makeGeneList. Counts are not
+%         reproducible without the annotation they were made against and
+%         it cannot be recovered from the .gef, so it is worth passing.
+%   recordSource (true)  - create a generic_file document describing the
+%       .gef and point every tiles document at it through source_file_id.
+%       See ndi.fun.doc.gene.makeSourceFile: it DESCRIBES the file rather
+%       than ingesting a 9.4 GB copy of it.
+%   checksum (true)      - compute the source file's MD5. Costs one full
+%       read of the .gef on top of the ingest's own.
+%   verbose (false)      - progress from the reader
+%
+%   Outputs:
+%   PYRDOC      - the spatialGeneExpressionPyramid, added to the database
+%   TILEDOCS    - cell array of spatialGeneExpressionTiles, one per level
+%   GENELISTDOC - the geneList the pyramid indexes against
+%   INFO        - struct with the reader's meta, the source document (or
+%                 [] when recordSource is false), and NOTES: what the full
+%                 read found that a probe could not. Clamped counts, where
+%                 the extent came from, SAW's own per-gene totals. None of
+%                 it makes the pyramid wrong and all of it changes what it
+%                 means, so it is reported rather than raised.
+%
+%   Example:
+%       [pyr, tiles, gl, info] = ndi.fun.doc.gene.fromGEF(S, ...
+%           '/data/section1.gef', 'subjectID', sub.id(), ...
+%           'genomeAssembly', 'monDom5');
+%       disp(info.notes);
+%
+%   See also: ndr.format.stereoseq.readGEF, ndi.fun.doc.gene.fromCellBin,
+%             ndi.fun.doc.gene.makePyramid, ndi.fun.doc.gene.makeGeneList,
+%             ndi.fun.doc.gene.makeSourceFile
+
+arguments
+    session (1,1)
+    gefPath (1,:) char {mustBeFile}
+    options.subjectID (1,:) char = ''
+    options.maxGenes (1,1) {mustBeInteger, mustBeNonnegative} = 0
+    options.binSizes (1,:) {mustBePositive, mustBeInteger} = [1 2 4 8 16 32]
+    options.grid (1,1) {mustBePositive, mustBeInteger} = 9
+    options.basePixelSize (1,2) double = [NaN NaN]
+    options.pixelSizeUnits (1,:) char = 'micrometer'
+    options.label (1,:) char = ''
+    options.assay (1,:) char = 'Stereo-seq'
+    options.chipSerial (1,:) char = ''
+    options.pipelineVersion (1,:) char = ''
+    options.origin double = []
+    options.genomeAssembly (1,:) char = ''
+    options.annotationSource (1,:) char = ''
+    options.geneIdNamespace (1,:) char = ''
+    options.geneSymbolNamespace (1,:) char = ''
+    options.recordSource (1,1) logical = true
+    options.checksum (1,1) logical = true
+    options.verbose (1,1) logical = false
+end
+
+% -- read, once ----------------------------------------------------------
+[x, y, geneIndex, count, geneID, geneName, meta] = ...
+    ndr.format.stereoseq.readGEF(gefPath, 'maxGenes', options.maxGenes, ...
+    'verbose', options.verbose);
+
+% -- what the file said about itself -------------------------------------
+% The chip serial and the pixel size are IN the .gef, so a caller should
+% not have to repeat them. An explicit value still wins: a caller who
+% knows the file's own attribute is wrong needs a way to say so.
+chipSerial = options.chipSerial;
+if isempty(chipSerial)
+    chipSerial = meta.chipSerial;
+end
+basePixelSize = options.basePixelSize;
+if any(isnan(basePixelSize))
+    % resolutionNm is NANOMETRES and basePixelSize is micrometres. SAW's
+    % usual 500 nm becomes 0.5, which is also makePyramid's own default --
+    % so getting this conversion wrong looks exactly like the default.
+    basePixelSize = [meta.resolutionNm meta.resolutionNm] / 1000;
+end
+
+% -- documents, in dependency order --------------------------------------
+geneListDoc = ndi.fun.doc.gene.makeGeneList(session, geneID, geneName, ...
+    'genomeAssembly', options.genomeAssembly, ...
+    'annotationSource', options.annotationSource, ...
+    'geneIdNamespace', options.geneIdNamespace, ...
+    'geneSymbolNamespace', options.geneSymbolNamespace, ...
+    'label', options.label);
+
+sourceDoc = [];
+if options.recordSource
+    sourceDoc = ndi.fun.doc.gene.makeSourceFile(session, gefPath, ...
+        'checksum', options.checksum);
+    session.database_add(sourceDoc);
+end
+
+[pyrDoc, tileDocs] = ndi.fun.doc.gene.makePyramid(session, ...
+    double(x(:)), double(y(:)), double(geneIndex(:)), double(count(:)), ...
+    geneListDoc, ...
+    'binSizes', options.binSizes, 'grid', options.grid, ...
+    'subjectID', options.subjectID, 'basePixelSize', basePixelSize, ...
+    'pixelSizeUnits', options.pixelSizeUnits, 'label', options.label, ...
+    'assay', options.assay, 'chipSerial', chipSerial, ...
+    'pipelineVersion', options.pipelineVersion, 'origin', options.origin, ...
+    'sourceFileID', localDocID(sourceDoc));
+
+info = struct();
+info.meta = meta;
+info.sourceDoc = sourceDoc;
+info.notes = ndi.fun.doc.gene.readNotes(meta, geneID);
+
+end % fromGEF
+
+% ------------------------------------------------------------------------
+
+function id = localDocID(doc)
+if isempty(doc)
+    id = '';
+else
+    id = doc.id();
+end
+end

@@ -565,58 +565,29 @@ classdef GeneIngest < ndi.gui.app.sessionApp
                         result = ndi.gui.app.GeneIngest.runCellsStep( ...
                             session, cellbinPath, step, plan, result);
                     case 'labels'
-                        % The values were read with the cells, in the same
-                        % pass, because reading the file twice risks the two
-                        % reads disagreeing about row order -- and a label
-                        % array that is off by one row is still a valid set
-                        % of labels.
-                        fn = matlab.lang.makeValidName(step.args.labelName);
-                        labels = result.labelValues.(fn);
-                        d = ndi.fun.doc.gene.makeCellTypeLabels(session, ...
-                            labels, result.cellsDoc, ...
-                            'isUnsupervised', step.args.isUnsupervised, ...
-                            'labelName', step.args.labelName);
-                        result.labelDocs{end+1} = d;
+                        % Already done. fromCellBin makes the label
+                        % documents in the cells step, from the same read,
+                        % because the only thing tying a label array to a
+                        % cell table is that they came from one pass. The
+                        % step is kept in the plan because the plan is what
+                        % the confirmation screen describes, and a user
+                        % should still see each labeling named before
+                        % committing to it.
                 end
             end
             ndi.gui.app.GeneIngest.tick(progressFcn, n, n, 'Done.');
-            if isfield(result,'labelValues')
-                result = rmfield(result, 'labelValues');
-            end
+
         end
 
         function notes = readNotes(gefMeta, geneID)
         % READNOTES - what the full read found that a probe could not
         %
-        %   These are checks that need every record, so they cannot be part
-        %   of the confirmation screen and are reported afterwards instead.
-        %   They are reported rather than raised: none of them makes the
-        %   pyramid wrong, and all of them change what it means.
-            notes = {};
-            nClamped = ndi.gui.app.GeneIngest.field(gefMeta,'nCountsClamped',0);
-            if nClamped > 0
-                notes{end+1} = sprintf(['%s count(s) were clamped at the ' ...
-                    'ceiling. Those pixels read low.'], ...
-                    ndi.gui.app.GeneIngest.comma(nClamped));
-            end
-            src = ndi.gui.app.GeneIngest.field(gefMeta,'boxSource','');
-            if ~isempty(src)
-                notes{end+1} = sprintf('Extent taken from %s.', src);
-            end
-            % SAW computes its own per-gene MID totals. Agreeing with the
-            % instrument vendor's count is a stronger check than the two
-            % ports agreeing with each other, which only shows they made
-            % the same choices.
-            if isfield(gefMeta,'statTotals') && ~isempty(gefMeta.statTotals)
-                note = ndi.gui.app.GeneIngest.field(gefMeta,'statTotalsNote','');
-                if ~isempty(note)
-                    notes{end+1} = sprintf('SAW /stat/gene: %s', note);
-                end
-            end
-            if isempty(geneID)
-                notes{end+1} = 'The read returned no genes.';
-            end
-            notes = notes(:);
+        %   Kept as a forwarder so the app and the ingest wrappers cannot
+        %   drift on what a read is worth reporting. The logic moved to
+        %   ndi.fun.doc.gene.readNotes when the .gef-to-documents path was
+        %   lifted out of this class, because a caller with no display
+        %   needs those notes just as much.
+            notes = ndi.fun.doc.gene.readNotes(gefMeta, geneID);
         end
 
         function s = summarizeGef(meta, geneID)
@@ -669,88 +640,31 @@ classdef GeneIngest < ndi.gui.app.sessionApp
         end
 
         function result = runCellsStep(session, cellbinPath, step, plan, result)
-        % One read of the cellbin file serves the cells AND every labeling.
+        % The cells and every labeling, from ONE read of the cellbin file.
         %
-        % Reading it once per document would be simpler to write and is the
-        % wrong shape: readCellBin returns cells in file order and labels in
-        % file order, and the only thing tying a label array to a cell table
-        % is that they came from the same pass. Two passes that disagreed
-        % about row order -- a column added, a filter applied, anything --
-        % would produce a label array that is still entirely valid and
-        % entirely wrong.
-            sel = ndi.gui.app.GeneIngest.field(plan.choices,'labelSelections', ...
+        % This is now a thin adapter over ndi.fun.doc.gene.fromCellBin,
+        % which owns the read-once discipline: readCellBin returns cells
+        % in file order and labels in file order, and the only thing tying
+        % a label array to a cell table is that they came from the same
+        % pass. The logic lives in the gene package rather than here so a
+        % caller with no display gets the same guarantee -- which was the
+        % whole reason for lifting it out.
+            sel = ndi.gui.app.GeneIngest.field(plan.choices, 'labelSelections', ...
                 struct('name',{},'isUnsupervised',{}));
-            wanted = ndi.gui.app.GeneIngest.field(step.args,'obsColumns',{});
-            for i = 1:numel(sel)
-                if ~ismember(sel(i).name, wanted)
-                    wanted{end+1} = sel(i).name; %#ok<AGROW>
-                end
-            end
-            [cellID, cx, cy, contours, obs, cbMeta] = ...
-                ndr.format.stereoseq.readCellBin(cellbinPath, ...
-                    'contourReference', step.args.contourReference, ...
-                    'obsColumns', wanted);
+            wanted = ndi.gui.app.GeneIngest.field(step.args, 'obsColumns', {});
 
-            nv = ndi.gui.app.GeneIngest.nameValue(step.args, ...
-                {'segmentationMethod','subjectID','label'});
-            % The NUMERIC columns become extra columns of cells.tsv; the
-            % label columns do not, because a labeling gets its own
-            % document. Both were requested in the one read above.
-            numericWanted = setdiff(wanted, {sel.name}, 'stable');
-            extra = table();
-            for i = 1:numel(numericWanted)
-                fn = matlab.lang.makeValidName(numericWanted{i});
-                extra.(fn) = obs.(fn)(:);
-            end
-            % contourReference on the DOCUMENT must be what the reader
-            % actually concluded, not what the user asked for: 'auto' is a
-            % request, and cbMeta.contourReference is the answer.
-            result.cellsDoc = ndi.fun.doc.gene.makeCells(session, ...
-                cellID, cx, cy, result.pyrDoc, nv{:}, ...
-                'contours', contours, 'extra', extra, ...
-                'contourReference', cbMeta.contourReference);
+            [cellsDoc, labelDocs, info] = ndi.fun.doc.gene.fromCellBin( ...
+                session, cellbinPath, result.pyrDoc, ...
+                'labelings', sel, 'obsColumns', wanted, ...
+                'contourReference', step.args.contourReference, ...
+                'segmentationMethod', ...
+                    ndi.gui.app.GeneIngest.field(step.args,'segmentationMethod',''), ...
+                'subjectID', ndi.gui.app.GeneIngest.field(step.args,'subjectID',''), ...
+                'label', ndi.gui.app.GeneIngest.field(step.args,'label',''));
 
-            result.notes{end+1} = sprintf( ...
-                'Contours read as %s (%s).', cbMeta.contourReference, ...
-                cbMeta.contourReferenceSource);
-            % Keep the label values from THIS pass for the label steps.
-            result.labelValues = struct();
-            for i = 1:numel(sel)
-                fn = matlab.lang.makeValidName(sel(i).name);
-                result.labelValues.(fn) = obs.(fn);
-                nUnlabeled = sum(strcmp(obs.(fn), ''));
-                if nUnlabeled > 0
-                    result.notes{end+1} = sprintf(['%s leaves %d cell(s) ' ...
-                        'unlabeled.'], sel(i).name, nUnlabeled); %#ok<AGROW>
-                end
-            end
-        end
-
-        function subj = subjectChoices(session)
-        % The session's subjects, as id plus something a human recognises.
-        % Presented by local_identifier rather than by document id: a
-        % subject is chosen by a person who knows the animal, not the hash.
-            docs = session.database_search(ndi.query('','isa','subject'));
-            subj = struct('id',{},'label',{});
-            for i = 1:numel(docs)
-                k = numel(subj) + 1;
-                subj(k).id = docs{i}.id();
-                try
-                    lbl = char(docs{i}.document_properties.subject.local_identifier);
-                catch
-                    % A subject document without a local_identifier is
-                    % legal; it falls back to the id below.
-                    lbl = '';
-                end
-                if isempty(lbl), lbl = subj(k).id; end
-                subj(k).label = lbl;
-            end
-        end
-
-        function driveDialog(d, frac, txt)
-            if isempty(d) || ~isvalid(d), return; end
-            d.Value = frac;
-            d.Message = txt;
+            result.cellsDoc = cellsDoc;
+            result.labelDocs = labelDocs;
+            result.notes = [result.notes(:); info.notes(:)];
         end
 
         function tick(progressFcn, i, n, txt)

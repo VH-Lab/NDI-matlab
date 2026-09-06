@@ -27,6 +27,12 @@ function cellsDoc = makeCells(session, cellID, x, y, pyrDoc, options)
 %                                 a margin, not a measured cell body.
 %   segmentationDilation (0)    - the dilation applied, in bins
 %   coordinateUnits ('source')  - frame of X and Y
+%   sourceFileID ('')           - id of a generic_file document describing
+%                                 the file these cells were segmented
+%                                 from. The class has carried a
+%                                 source_file_id dependency since it was
+%                                 written and nothing populated it;
+%                                 ndi.fun.doc.gene.fromCellBin now does.
 %   subjectID ('')              - the subject these cells were measured
 %                                 from. Optional here because the pyramid
 %                                 already carries one, unlike makePyramid
@@ -71,6 +77,7 @@ arguments
     options.extra table = table()
     options.contours cell = {}
     options.contourReference (1,:) char = 'centroid'
+    options.sourceFileID (1,:) char = ''
 end
 
 cellID = string(cellID);
@@ -161,6 +168,9 @@ cellsDoc = cellsDoc.set_dependency_value( ...
     'spatialGeneExpressionPyramid_id', pyrDoc.id());
 if ~isempty(options.subjectID)
     cellsDoc = cellsDoc.set_dependency_value('subject_id', options.subjectID);
+end
+if ~isempty(options.sourceFileID)
+    cellsDoc = cellsDoc.set_dependency_value('source_file_id', options.sourceFileID);
 end
 
 cellsDoc = storeDoc(session, cellsDoc, fileNames, filePaths);
