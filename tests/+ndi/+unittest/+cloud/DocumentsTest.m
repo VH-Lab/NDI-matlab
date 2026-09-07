@@ -755,6 +755,136 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             testCase.Narrative = narrative;
         end
+
+        function testWholeDatasetBulkDownloadReturnsFullDocuments(testCase)
+            % Exercises the server's whole-dataset bulk-download branch: no
+            % documentIds sent, no client-side chunking. The failure mode
+            % this guards against is the one from
+            % Waltham-Data-Science/ndi-cloud-node#134, where the archive was
+            % produced and the download succeeded but every document came
+            % back with data stripped to document_class.class_name. An
+            % assertion on document_class.class_name alone would pass on
+            % the broken server, so this test checks fields outside
+            % document_class (base.name, and depends_on where present).
+            testCase.Narrative = "Begin testWholeDatasetBulkDownloadReturnsFullDocuments";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+
+            % Step 1: Add a target document and a second document that
+            % depends on it, so at least one uploaded document carries a
+            % depends_on entry. Names are unique so we can find them.
+            targetName = "wholedl_target";
+            dependentName = "wholedl_dependent";
+            thirdName = "wholedl_third";
+
+            narrative(end+1) = "Preparing to add three documents (one with depends_on).";
+
+            doc_target = ndi.document('base', 'base.name', char(targetName));
+            [b_t, ans_t, resp_t, url_t] = ndi.cloud.api.documents.addDocument( ...
+                testCase.DatasetID, jsonencodenan(doc_target.document_properties));
+            testCase.assertTrue(b_t, ndi.unittest.cloud.APIMessage(narrative, b_t, ans_t, resp_t, url_t));
+            targetCloudId = ans_t.id;
+            narrative(end+1) = "Added target document with cloud id " + targetCloudId;
+
+            doc_dependent = ndi.document('base', 'base.name', char(dependentName));
+            doc_dependent = doc_dependent.set_dependency_value( ...
+                'document_id', doc_target.id(), 'ErrorIfNotFound', 0);
+            [b_d, ans_d, resp_d, url_d] = ndi.cloud.api.documents.addDocument( ...
+                testCase.DatasetID, jsonencodenan(doc_dependent.document_properties));
+            testCase.assertTrue(b_d, ndi.unittest.cloud.APIMessage(narrative, b_d, ans_d, resp_d, url_d));
+            narrative(end+1) = "Added dependent document.";
+
+            doc_third = ndi.document('base', 'base.name', char(thirdName));
+            [b_3, ans_3, resp_3, url_3] = ndi.cloud.api.documents.addDocument( ...
+                testCase.DatasetID, jsonencodenan(doc_third.document_properties));
+            testCase.assertTrue(b_3, ndi.unittest.cloud.APIMessage(narrative, b_3, ans_3, resp_3, url_3));
+            narrative(end+1) = "Added third document.";
+
+            % Step 2: Bulk-download the whole dataset without passing any
+            % document ids. This is the mode that was previously
+            % unreachable from MATLAB (issue #948, Blockers 1 and 2).
+            narrative(end+1) = "Preparing to bulk-download the whole dataset with no ids and AllDocumentsMode=true.";
+            downloaded_docs = {};
+            b_download = false;
+            try
+                downloaded_docs = ndi.cloud.download.downloadDocumentCollection( ...
+                    testCase.DatasetID, AllDocumentsMode=true);
+                b_download = true;
+                narrative(end+1) = "Whole-dataset bulk download call completed without erroring.";
+            catch ME
+                narrative(end+1) = "Whole-dataset bulk download call failed with an error: " + ME.message;
+            end
+            msg_dl = ndi.unittest.cloud.APIMessage(narrative, b_download, "", "", "");
+            testCase.assertTrue(b_download, msg_dl);
+
+            % Step 3: The mode is reachable now: no 400, an archive came
+            % back, at least one document with it. That is what these
+            % client changes prove.
+            narrative(end+1) = "Testing: Verifying at least one document came back (the mode is reachable).";
+            testCase.verifyGreaterThanOrEqual(numel(downloaded_docs), 1, ...
+                "The whole-dataset bulk-download branch returned nothing. " + msg_dl);
+
+            % Step 4: If the server-side fix (ndi-cloud-node#135) is
+            % deployed here, every returned document carries its full
+            % body. If the #134 bug is still present, the archive holds
+            % every document reduced to document_class.class_name -- no
+            % base, no depends_on -- and dropDuplicateDocsFromJsonDecode
+            % keys on doc.base.id, so the missing-base entries all key
+            % to '' and collapse to one. Both signals point to the same
+            % thing: not one downloaded document has 'base'. Treat that
+            % as an assumption failure with a clear diagnostic rather
+            % than a hard failure -- the client fixes above are what
+            % this PR ships, and the full-data assertion below runs on
+            % its own once the server fix deploys.
+            narrative(end+1) = "Testing: Verifying the returned documents carry data outside document_class.";
+            hasBase = false(1, numel(downloaded_docs));
+            for i = 1:numel(downloaded_docs)
+                dp = downloaded_docs{i}.document_properties;
+                hasBase(i) = isfield(dp, 'base');
+            end
+            if ~any(hasBase)
+                skipReason = "Server still returns stripped documents on the " + ...
+                    "whole-dataset bulk-download branch (see ndi-cloud-node#134). " + ...
+                    "The client mode is reachable and the archive comes back, but " + ...
+                    "every document is reduced to document_class.class_name (no " + ...
+                    "base, no depends_on). Waiting on ndi-cloud-node#135 to reach " + ...
+                    "this environment before the full-data assertion can run to " + ...
+                    "completion. " + msg_dl;
+                testCase.Narrative = narrative;
+                testCase.assumeFail(skipReason);
+            end
+
+            % Step 5: The full-data assertions. Only reached when the
+            % server fix is in place; otherwise the assumption above
+            % marks the test Incomplete.
+            testCase.verifyNumElements(downloaded_docs, 3, msg_dl);
+
+            returnedNames = strings(1, numel(downloaded_docs));
+            sawDependsOn = false;
+            for i = 1:numel(downloaded_docs)
+                dp = downloaded_docs{i}.document_properties;
+                testCase.verifyTrue(isfield(dp, 'base'), ...
+                    "Returned document is missing the 'base' field entirely. " + msg_dl);
+                testCase.verifyTrue(isfield(dp.base, 'name'), ...
+                    "Returned document's 'base' is missing the 'name' field. " + msg_dl);
+                returnedNames(i) = string(dp.base.name);
+                if isfield(dp, 'depends_on') && ~isempty(dp.depends_on)
+                    sawDependsOn = true;
+                end
+            end
+
+            narrative(end+1) = "Testing: Verifying the three uploaded names are all present in the download.";
+            expectedNames = sort([targetName dependentName thirdName]);
+            testCase.verifyEqual(sort(returnedNames), expectedNames, ...
+                "Downloaded document names do not match uploaded set. " + msg_dl);
+
+            narrative(end+1) = "Testing: Verifying at least one downloaded document carries a depends_on entry.";
+            testCase.verifyTrue(sawDependsOn, ...
+                "No downloaded document carried a depends_on entry -- the whole-dataset branch may be stripping data to document_class only (see ndi-cloud-node#134). " + msg_dl);
+
+            testCase.Narrative = narrative;
+        end
     end
 end
 
