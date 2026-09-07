@@ -174,11 +174,23 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
                 'signer', signer, 'clearCache', true);
 
             testCase.verifyEqual(url, 'https://s3/x');
+            % Found by name, not by position. The order of name-value
+            % arguments is not a contract, and asserting args{1} made this
+            % test fail the moment a second pair was added ahead of it.
             args = counter('lastArgs');
-            testCase.assertGreaterThanOrEqual(numel(args), 2);
-            testCase.verifyEqual(args{1}, 'fileSeries', ...
+            seriesIdx = find(strcmp(args, 'fileSeries'), 1);
+            testCase.assertNotEmpty(seriesIdx, ...
                 'The fileSeries pair must reach the signer.');
-            testCase.verifyEqual(char(args{2}), 'chunkdata.bin');
+            testCase.verifyEqual(char(args{seriesIdx+1}), 'chunkdata.bin');
+
+            % And the signer must be told which id namespace it is being
+            % handed, since NDI passes an NDI document id and the by-_id
+            % route would 404 on it (VH-Lab/NDI-matlab#968).
+            namespaceIdx = find(strcmp(args, 'idNamespace'), 1);
+            testCase.assertNotEmpty(namespaceIdx, ...
+                'The idNamespace pair must reach the signer.');
+            testCase.verifyEqual(char(args{namespaceIdx+1}), 'ndi', ...
+                'the batch lookup is always given an NDI document id');
         end
 
         function testDifferentScopesGetDifferentCacheEntries(testCase)
