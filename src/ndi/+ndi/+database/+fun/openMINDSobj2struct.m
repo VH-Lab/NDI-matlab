@@ -84,11 +84,10 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
             if isa(f, 'datetime')
                 f = char(f);
             end
-            mt = openminds.utility.isMixedInstance(f);
-            if openminds.utility.isInstance(f) | mt
+            if openminds.utility.isInstance(f) | openminds.utility.isMixedInstance(f)
                 fields_here = {};
                 for k=1:numel(f)
-                    if mt
+                    if openminds.utility.isMixedInstance(f)
                         f_here = f(k).Instance;
                     else
                         f_here = f(k);
