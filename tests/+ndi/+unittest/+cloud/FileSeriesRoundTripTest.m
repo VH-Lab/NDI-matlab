@@ -18,28 +18,32 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 %      copied into FileDir/<uid> and NAME_<i> resolves through the manifest,
 %      so a member now has bytes to upload. testMembersAreIngestedLocally
 %      checks that and no longer skips.
-%   3. HALF DONE, and it turned out not to need series awareness. A member
-%      is signed by uid like any other file once something names it, which
+%   3. DONE, and it turned out not to need series awareness. A member is
+%      signed by uid like any other file once something names it, which
 %      VH-Lab/NDI-matlab#961 taught ndi.database.internal.list_binary_files
-%      to do for the UPLOAD -- proven, since members demonstrably reach the
-%      cloud now. The DOWNLOAD direction is unproven, and cannot be proven
-%      here yet: nothing has ever asked the cloud for a member's bytes, so
-%      no member uid has been through batchSignedUrlLookup on the way back.
-%      testMembersSurviveADownloadFromTheCloud is what will exercise it, and
-%      is blocked behind the read-side gap below. Do not read this item as
-%      "signing works"; read it as "signing has no reason to care, and the
-%      return half is untested".
+%      to do for the UPLOAD. The DOWNLOAD direction closed later and took
+%      three separate fixes to get there, which is why this item spent a
+%      while reading "half done": DID-matlab#188 gave the manifest a way to
+%      ask a handler for a member's bytes, DID-matlab#191 made that work
+%      when the manifest also carries a local path, and VH-Lab/NDI-matlab#968
+%      found that the batch presign call had been addressing documents by
+%      the wrong id namespace since #952 -- so it 404'd every time and the
+%      per-uid fallback silently did the work.
 %
-% What remains is on the READ side: VH-Lab/DID-matlab#188. A series member
-% carries no location of its own, so a dataset freshly downloaded from the
-% cloud cannot fetch one. It has the manifest, and the manifest names its
-% members by uid, but nothing asks the caller's handler for those bytes --
-% did.implementations.sqlitedb.seriesMemberPath resolves the manifest, looks
-% the member up in the local cache, and reports a miss. The ndic:// locations
-% that ndi.cloud.sync.internal.reconstructSeriesIngestLocations builds do not
-% help here: they carry ingest = 0 (members stay on the cloud until wanted,
-% deliberately), and do_add_doc strips them before storing anyway, so by open
-% time the manifest is all there is to go on.
+% The read side is now closed. A member's bytes make the full round trip:
+% testMembersSurviveADownloadFromTheCloud reads them out of a freshly
+% downloaded dataset, and testTheBatchScopeIsTheSeriesAndNotTheWholeDocument
+% additionally requires that they arrived through ONE scoped batch presign
+% call rather than one call per member. Both pass against production.
+%
+% For the record, since the shape of the old gap explains the design: a
+% series member carries no location of its own, so a downloaded dataset has
+% only the manifest, which names members by uid. The ndic:// locations that
+% ndi.cloud.sync.internal.reconstructSeriesIngestLocations builds carry
+% ingest = 0 (members stay on the cloud until wanted, deliberately), and
+% do_add_doc strips them before storing -- so by open time the manifest
+% really is all there is, and fetching a member has to go through the
+% handler DID-matlab#188 added.
 %
 % READ THE TEST NAMES CAREFULLY, because most of them do less than they sound
 % like. testManifestSurvivesTheRoundTrip, testDocumentReportsItsSeries,
@@ -47,9 +51,10 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
 % all upload and then assert against LocalDataset, which is never
 % re-downloaded -- they check the same bytes setup wrote to disk, which no
 % transfer can corrupt, and so establish only that the cloud ACCEPTS a
-% document carrying a series. Only the two ...FromTheCloud tests read anything
-% back out. See VH-Lab/NDI-matlab#966 for how a suite of five green tests
-% managed to prove nothing about a member's bytes.
+% document carrying a series. Only the three tests that download read
+% anything back out: the two ...FromTheCloud tests and the batch scope test.
+% See VH-Lab/NDI-matlab#966 for how a suite of five green tests managed to
+% prove nothing about a member's bytes.
 
     properties (Constant)
         DatasetNamePrefix = 'NDI_UNITTEST_FILE_SERIES_';

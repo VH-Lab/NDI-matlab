@@ -1,17 +1,17 @@
 classdef SignedURLSetMockTest < matlab.unittest.TestCase
 % SIGNEDURLSETMOCKTEST - the signed-url-set sequencing logic, against mocks.
 %
-% ndi-cloud-node does not serve file-series members yet (see
-% VH-Lab/NDI-matlab#939), so there is no live endpoint to test the interesting
-% behaviour against: following a cursor, merging pages, refusing a cursor that
-% does not advance, polling a job to a terminal state, timing out, and
-% decompressing a result blob.
+% The endpoint is live now -- ndi-cloud-node serves file-series members, and
+% SignedURLSetTest and FileSeriesRoundTripTest exercise it under
+% tests/+ndi/+unittest/+cloud -- but the interesting behaviours here are ones
+% a working server will not produce on demand: a cursor that does not advance,
+% a job that never reaches a terminal state, a timeout, a truncated or
+% mis-shaped result blob.
 %
-% Those are exercised here through the fetchPage / pollStatus / downloadTo
-% seams, using the scripted doubles in ndi.test.helper. When the endpoint is
-% real, the same behaviours get a live counterpart under
-% tests/+ndi/+unittest/+cloud; these stay, because a mock is the only way to
-% produce a server that pages badly or a job that never finishes.
+% So these stay, and are the only coverage of those paths. They run through
+% the fetchPage / pollStatus / downloadTo seams against the scripted doubles
+% in ndi.test.helper. A live test can show the happy path works; only a mock
+% can show what happens when it does not.
 
     methods
         function page = makePage(~, uidUrlPairs, nextCursor)
