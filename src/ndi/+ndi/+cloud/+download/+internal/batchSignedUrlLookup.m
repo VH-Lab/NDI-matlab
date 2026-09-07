@@ -64,6 +64,13 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
 %                                   which sends the caller to the per-uid
 %                                   getFileDetails fallback
 %                     .lastMapSize  entries in the most recent batch map
+%                     .lastFailureReason  why the last batch attempt did not
+%                                   produce a usable map -- which of the four
+%                                   unrelated causes it was, with the HTTP
+%                                   status when the signer reports one. This
+%                                   is what makes a client-side shape
+%                                   mismatch distinguishable from a server
+%                                   that refused.
 %                     .lastMapUids  those entries' uids, which is what shows
 %                                   whether a scope was honored: a
 %                                   series-scoped answer names the series'
@@ -116,7 +123,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     end
     if isempty(STATS) || options.clearCache
         STATS = struct('signerCalls', 0, 'uidHits', 0, 'uidMisses', 0, ...
-            'lastMapSize', 0, 'lastMapUids', {{}});
+            'lastMapSize', 0, 'lastMapUids', {{}}, 'lastFailureReason', "");
     end
     if isempty(WARNED) || options.clearCache
         WARNED = containers.Map('KeyType','char','ValueType','logical');
@@ -177,16 +184,42 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
         % Populate the cache for this scope. The signer is expected to
         % return `answer.files` as a containers.Map from uid to URL --
         % which is what getSignedURLSetAll produces via signedURLFileMap.
+        % Ask for the HTTP response too when the signer can provide it.
+        % ndi.cloud.api.files.getSignedURLSetAll returns four outputs; an
+        % injected test signer usually returns two. nargout decides, rather
+        % than calling twice -- a second call would double every side effect
+        % the signer has, including a test's own call counter.
+        wantsFour = false;
         try
-            if strlength(seriesName) > 0
-                [ok, answer] = options.signer(cloudDatasetId, cloudDocumentId, ...
-                    'fileSeries', seriesName);
-            else
-                [ok, answer] = options.signer(cloudDatasetId, cloudDocumentId);
-            end
+            wantsFour = nargout(options.signer) >= 4;
         catch
+            wantsFour = false; %#ok<NASGU>
+        end
+
+        apiResponse = [];
+        failureReason = "";
+        try
+            if wantsFour
+                if strlength(seriesName) > 0
+                    [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
+                        cloudDocumentId, 'fileSeries', seriesName);
+                else
+                    [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
+                        cloudDocumentId);
+                end
+            else
+                if strlength(seriesName) > 0
+                    [ok, answer] = options.signer(cloudDatasetId, cloudDocumentId, ...
+                        'fileSeries', seriesName);
+                else
+                    [ok, answer] = options.signer(cloudDatasetId, cloudDocumentId);
+                end
+            end
+        catch signerError
             ok = false;
             answer = [];
+            failureReason = "the call raised " + string(signerError.identifier) + ...
+                ": " + string(signerError.message);
         end
         STATS.signerCalls = STATS.signerCalls + 1;
         if ~ok || ~isstruct(answer) || ~isfield(answer,'files') || ...
@@ -194,6 +227,16 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
             % Any failure or unexpected shape -> no batch URL. Don't
             % cache a bad answer; do not raise. The caller falls back
             % to getFileDetails for this uid.
+            %
+            % SAY WHICH of those it was. Four unrelated causes end here --
+            % the call raised, the server said no, the payload had no files
+            % field, the files field was the wrong type -- and reporting
+            % them as one silent miss leaves whoever owns the endpoint with
+            % nothing to act on. See VH-Lab/NDI-matlab#968.
+            if strlength(failureReason) == 0
+                failureReason = localDescribeFailure(ok, answer, apiResponse);
+            end
+            STATS.lastFailureReason = failureReason;
             STATS.uidMisses = STATS.uidMisses + 1;
             FAILEDSCOPES(cacheKey) = now_utc;
             localWarnOnce(cacheKey);
@@ -220,6 +263,35 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     end
     stats = STATS;
 
+    function reason = localDescribeFailure(ok, answer, apiResponse)
+        % Name the specific cause, so a report is actionable by whoever owns
+        % the endpoint rather than just "it did not work".
+        status = "";
+        if isa(apiResponse, 'matlab.net.http.ResponseMessage') && ~isempty(apiResponse)
+            status = " (HTTP " + string(apiResponse(end).StatusCode) + ")";
+        end
+        if ~ok
+            detail = "";
+            if isstruct(answer)
+                if isfield(answer, 'message') && ~isempty(answer.message)
+                    detail = ": " + string(answer.message);
+                elseif isfield(answer, 'state') && ~isempty(answer.state)
+                    detail = ": state=" + string(answer.state);
+                end
+            end
+            reason = "the call reported failure" + status + detail;
+        elseif ~isstruct(answer)
+            reason = "the payload was a " + string(class(answer)) + ...
+                ", not a struct" + status;
+        elseif ~isfield(answer, 'files')
+            reason = "the payload has no 'files' field" + status + ...
+                "; fields present: " + strjoin(string(fieldnames(answer)), ", ");
+        else
+            reason = "'files' arrived as a " + string(class(answer.files)) + ...
+                ", not a containers.Map" + status;
+        end
+    end
+
     function localWarnOnce(scopeKey)
         % Say it ONCE per scope, then stay quiet.
         %
@@ -235,11 +307,15 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
         % exactly the one that would otherwise print 10,000 times.
         if isKey(WARNED, scopeKey), return, end
         WARNED(scopeKey) = true;
+        why = STATS.lastFailureReason;
+        if strlength(why) == 0
+            why = "the batch answered but did not name this uid";
+        end
         warning('NDI:Cloud:BatchPresign:FallbackToPerUid', ...
             ['The batch signed-URL lookup did not answer for scope "%s", so ' ...
              'files there are being resolved one API call at a time. This ' ...
              'still works, but for a large file series it is one call per ' ...
-             'member rather than one per series. Reported once per scope.'], ...
-            scopeKey);
+             'member rather than one per series. Cause: %s. Reported once ' ...
+             'per scope.'], scopeKey, char(why));
     end
 end
