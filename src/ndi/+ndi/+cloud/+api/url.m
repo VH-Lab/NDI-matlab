@@ -8,6 +8,7 @@ function url = url(endpointName, options)
         options.dataset_id (1,1) string = ""
         options.user_id (1,1) string = ""
         options.document_id (1,1) string = ""
+        options.ndi_document_id (1,1) string = ""
         options.file_uid (1,1) string = ""
         options.organization_id (1,1) string = ""
         options.session_id (1,1) string = ""
@@ -71,6 +72,13 @@ function url = url(endpointName, options)
         % replacePathParameter below asserts every templated parameter is
         % non-empty.
         endpointMap("get_signed_url_set")             = "/datasets/{datasetId}/documents/{documentId}/signed-url-set";
+        % The same set, addressed by NDI document id instead of the cloud
+        % _id. Separate ROUTES rather than one route that accepts either:
+        % the namespace is stated by the path and never inferred from the
+        % value's shape, so a change to did.ido's format cannot quietly
+        % turn into a 404. See ndi-cloud-node#136, NDI-matlab#968.
+        endpointMap("get_ndi_signed_url_set")         = "/datasets/{datasetId}/ndi-documents/{ndiDocumentId}/signed-url-set";
+        endpointMap("create_ndi_signed_url_set_job")  = "/datasets/{datasetId}/ndi-documents/{ndiDocumentId}/signed-url-set-jobs";
         endpointMap("create_signed_url_set_job")      = "/datasets/{datasetId}/documents/{documentId}/signed-url-set-jobs";
         endpointMap("get_signed_url_set_job")         = "/signed-url-set-jobs/{jobId}";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
@@ -142,6 +150,7 @@ function options = processOptions(options)
     options = renameStructField(options, 'file_uid', 'uid');
     options = renameStructField(options, 'dataset_id', 'datasetId');
     options = renameStructField(options, 'document_id', 'documentId');
+    options = renameStructField(options, 'ndi_document_id', 'ndiDocumentId');
     options = renameStructField(options, 'organization_id', 'organizationId');
     options = renameStructField(options, 'user_id', 'userId');
     options = renameStructField(options, 'page_size', 'pageSize');

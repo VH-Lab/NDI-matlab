@@ -8,6 +8,19 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
 % network; the batch API's own paging and merging live in
 % SignedURLSetMockTest.
 
+    methods (TestMethodSetup)
+        function quietTheExpectedFallbackWarning(testCase)
+            % Most tests here deliberately drive the miss and failure paths,
+            % so the fallback warning fires every time and says nothing a
+            % reader of this suite needs. Left on, it teaches whoever reads
+            % the log to skim past that warning -- which is exactly the
+            % warning that matters in a real run. Silenced here and asserted
+            % on its own in testTheFallbackWarnsOncePerScope.
+            w = warning('off', 'NDI:Cloud:BatchPresign:FallbackToPerUid');
+            testCase.addTeardown(@() warning(w));
+        end
+    end
+
     methods (Access = private)
         function signer = countingSigner(~, filesMap, counterHandle)
             % A signer that returns `filesMap` verbatim and bumps
@@ -58,6 +71,93 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
                 'Two uids in one document must cost one batch call.');
         end
 
+        function testTheCountersRecordHitsAndFallbacks(testCase)
+            % The counters exist so the CLOUD test can insist the batch path
+            % answered, rather than passing on the per-uid getFileDetails
+            % fallback that would have fetched the same bytes with N calls
+            % (VH-Lab/NDI-matlab#968). Untested counters would just move the
+            % blind spot, so they are checked here where a scripted signer
+            % makes the answer knowable.
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            filesMap = testCase.mapOf({'uidA', 'https://example.invalid/a'; ...
+                                       'uidB', 'https://example.invalid/b'});
+            signer = testCase.countingSigner(filesMap, counter);
+
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunk.bin", "uidA", ...
+                'signer', signer, 'clearCache', true);
+            [~, stats] = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunk.bin", "uidB", 'signer', signer);
+
+            testCase.verifyEqual(stats.signerCalls, 1, ...
+                'two uids in one scope should cost one endpoint call');
+            testCase.verifyEqual(stats.uidHits, 2, 'both uids came from the batch');
+            testCase.verifyEqual(stats.uidMisses, 0, 'neither uid needed a fallback');
+            testCase.verifyEqual(stats.lastMapSize, 2, ...
+                'lastMapSize is what shows an unscoped answer: a whole-document map is bigger');
+
+            % A uid the map does not name is the fallback case, and must be
+            % counted as one -- it is the whole reason the counter exists.
+            [url, stats] = ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "chunk.bin", "uidMissing", 'signer', signer);
+            testCase.verifyEqual(strlength(url), 0, ...
+                'an unknown uid yields no URL, so the caller falls back');
+            testCase.verifyEqual(stats.uidMisses, 1, 'the fallback must be counted');
+            testCase.verifyEqual(stats.signerCalls, 1, ...
+                'a cached scope should not be refetched for an unknown uid');
+        end
+
+        function testCountersAreReadableWithoutDisturbingTheCache(testCase)
+            % The cloud test reads the counters mid-run by calling with an
+            % empty documentId. That must return the counters unchanged and
+            % must not count as a miss -- nothing was asked of the batch.
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            filesMap = testCase.mapOf({'uidA', 'https://example.invalid/a'});
+            signer = testCase.countingSigner(filesMap, counter);
+
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "ds", "doc", "", "uidA", 'signer', signer, 'clearCache', true);
+
+            [url, stats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            testCase.verifyEqual(strlength(url), 0);
+            testCase.verifyEqual(stats.uidHits, 1);
+            testCase.verifyEqual(stats.uidMisses, 0, ...
+                'reading the counters must not register as a fallback');
+            testCase.verifyEqual(stats.signerCalls, 1);
+        end
+
+        function testTheFallbackWarnsOncePerScope(testCase)
+            % The warning exists because the fallback is otherwise invisible:
+            % the bytes arrive, nothing fails, nothing is logged, and a
+            % 10,000-member series just reads slowly. A user concludes the
+            % tool is slow rather than that something regressed.
+            %
+            % Once per scope, not once per uid -- the situation worth warning
+            % about is precisely the one that would otherwise print 10,000
+            % times, and a warning that floods gets silenced.
+            warning('on', 'NDI:Cloud:BatchPresign:FallbackToPerUid');
+
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            emptyMap = testCase.mapOf({});
+            signer = testCase.countingSigner(emptyMap, counter);
+
+            % First uid in this scope: the batch answers with a map that does
+            % not name it, so the caller falls back -- and is told.
+            testCase.verifyWarning(@() ...
+                ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                    "ds", "doc", "chunk.bin", "uid1", ...
+                    'signer', signer, 'clearCache', true), ...
+                'NDI:Cloud:BatchPresign:FallbackToPerUid');
+
+            % Second uid, same scope: still a fallback, but silent.
+            testCase.verifyWarningFree(@() ...
+                ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                    "ds", "doc", "chunk.bin", "uid2", 'signer', signer));
+        end
+
         function testSeriesNameIsPassedToTheSigner(testCase)
             % A series-scoped call must reach the endpoint with
             % ?fileSeries=<name>, so the server can return only that
@@ -74,11 +174,23 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
                 'signer', signer, 'clearCache', true);
 
             testCase.verifyEqual(url, 'https://s3/x');
+            % Found by name, not by position. The order of name-value
+            % arguments is not a contract, and asserting args{1} made this
+            % test fail the moment a second pair was added ahead of it.
             args = counter('lastArgs');
-            testCase.assertGreaterThanOrEqual(numel(args), 2);
-            testCase.verifyEqual(args{1}, 'fileSeries', ...
+            seriesIdx = find(strcmp(args, 'fileSeries'), 1);
+            testCase.assertNotEmpty(seriesIdx, ...
                 'The fileSeries pair must reach the signer.');
-            testCase.verifyEqual(char(args{2}), 'chunkdata.bin');
+            testCase.verifyEqual(char(args{seriesIdx+1}), 'chunkdata.bin');
+
+            % And the signer must be told which id namespace it is being
+            % handed, since NDI passes an NDI document id and the by-_id
+            % route would 404 on it (VH-Lab/NDI-matlab#968).
+            namespaceIdx = find(strcmp(args, 'idNamespace'), 1);
+            testCase.assertNotEmpty(namespaceIdx, ...
+                'The idNamespace pair must reach the signer.');
+            testCase.verifyEqual(char(args{namespaceIdx+1}), 'ndi', ...
+                'the batch lookup is always given an NDI document id');
         end
 
         function testDifferentScopesGetDifferentCacheEntries(testCase)

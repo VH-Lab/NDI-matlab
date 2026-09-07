@@ -42,6 +42,13 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSetAll(cloudDatasetID, c
         options.limit     (1,1) double = 500
         options.maxPages  (1,1) double = 1000
         options.fileSeries (1,1) string = ""
+        % "cloud" (default) sends the mongo _id to the by-_id route;
+        % "ndi" sends data.base.id to the ndi-documents route and lets the
+        % server resolve it. Callers that hold an NDI document id -- which
+        % is both of NDI's own callers -- must say so; passing one as
+        % "cloud" is a 404. See NDI-matlab#968.
+        options.idNamespace (1,1) string ...
+            {mustBeMember(options.idNamespace,["cloud","ndi"])} = "cloud"
     end
 
     api_call = ndi.cloud.api.implementation.files.GetSignedURLSetAll(...
@@ -49,7 +56,8 @@ function [b, answer, apiResponse, apiURL] = getSignedURLSetAll(cloudDatasetID, c
         'cloudDocumentID', cloudDocumentID, ...
         'limit',           options.limit, ...
         'maxPages',        options.maxPages, ...
-        'fileSeries',      options.fileSeries);
+        'fileSeries',      options.fileSeries, ...
+        'idNamespace',     options.idNamespace);
 
     [b, answer, apiResponse, apiURL] = api_call.execute();
 end

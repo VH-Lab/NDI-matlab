@@ -9,6 +9,12 @@ classdef GetSignedURLSet < ndi.cloud.api.call
         limit      (1,1) double
         cursor     (1,1) string
         fileSeries (1,1) string
+        % Which namespace cloudDocumentID is in. "cloud" is the mongo _id
+        % the by-_id route wants; "ndi" is data.base.id, resolved by the
+        % server on the ndi-documents route. Stated, never sniffed: an NDI
+        % id and a 24-hex _id are distinguishable today, and depending on
+        % that would couple this to did.ido's format. See NDI-matlab#968.
+        idNamespace (1,1) string
     end
 
     methods
@@ -20,13 +26,20 @@ classdef GetSignedURLSet < ndi.cloud.api.call
                 args.limit           (1,1) double = 500
                 args.cursor          (1,1) string = ""
                 args.fileSeries      (1,1) string = ""
+                args.idNamespace     (1,1) string ...
+                    {mustBeMember(args.idNamespace,["cloud","ndi"])} = "cloud"
             end
             this.cloudDatasetID  = args.cloudDatasetID;
             this.cloudDocumentID = args.cloudDocumentID;
             this.limit  = args.limit;
             this.cursor = args.cursor;
             this.fileSeries = args.fileSeries;
-            this.endpointName = 'get_signed_url_set';
+            this.idNamespace = args.idNamespace;
+            if strcmp(this.idNamespace, "ndi")
+                this.endpointName = 'get_ndi_signed_url_set';
+            else
+                this.endpointName = 'get_signed_url_set';
+            end
         end
 
         function apiURL = buildURL(this)
@@ -37,9 +50,15 @@ classdef GetSignedURLSet < ndi.cloud.api.call
             %   turn into wire format, and a cursor is opaque server state
             %   that must survive being round-tripped.
 
-            apiURL = ndi.cloud.api.url('get_signed_url_set', ...
-                'dataset_id',  this.cloudDatasetID, ...
-                'document_id', this.cloudDocumentID);
+            if strcmp(this.idNamespace, "ndi")
+                apiURL = ndi.cloud.api.url('get_ndi_signed_url_set', ...
+                    'dataset_id',      this.cloudDatasetID, ...
+                    'ndi_document_id', this.cloudDocumentID);
+            else
+                apiURL = ndi.cloud.api.url('get_signed_url_set', ...
+                    'dataset_id',  this.cloudDatasetID, ...
+                    'document_id', this.cloudDocumentID);
+            end
 
             % limit is always sent; cursor and fileSeries only when set.
             q = matlab.net.QueryParameter('limit', sprintf('%d', this.limit));
