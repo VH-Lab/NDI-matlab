@@ -101,6 +101,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
         options.signer     = @ndi.cloud.api.files.getSignedURLSetAll
         options.clearCache (1,1) logical = false
         options.ttlSeconds (1,1) double  = 20*3600
+        options.failureTtlSeconds (1,1) double = 60
     end
 
     % The persistent cache. Keyed on 'datasetId/documentId/seriesName'.
@@ -109,6 +110,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     persistent CACHE
     persistent STATS
     persistent WARNED
+    persistent FAILEDSCOPES
     if isempty(CACHE) || options.clearCache
         CACHE = containers.Map('KeyType','char','ValueType','any');
     end
@@ -118,6 +120,9 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     end
     if isempty(WARNED) || options.clearCache
         WARNED = containers.Map('KeyType','char','ValueType','logical');
+    end
+    if isempty(FAILEDSCOPES) || options.clearCache
+        FAILEDSCOPES = containers.Map('KeyType','char','ValueType','any');
     end
 
     url = "";
@@ -148,6 +153,27 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     end
 
     if isempty(entry)
+        % A scope that just failed is not retried for every uid after it.
+        %
+        % Without this, a batch endpoint that cannot answer costs one FAILED
+        % call per uid on top of the per-uid getFileDetails fallback -- so a
+        % 28,000-member series makes 56,000 calls where the naive path would
+        % have made 28,000. Measured: four members produced four signer
+        % calls, zero hits (VH-Lab/NDI-matlab#968).
+        %
+        % Short-lived on purpose. A failure is usually transient, and the
+        % point is to stop hammering within one read, not to give up on the
+        % scope for the session.
+        if isKey(FAILEDSCOPES, cacheKey)
+            if seconds(now_utc - FAILEDSCOPES(cacheKey)) < options.failureTtlSeconds
+                STATS.uidMisses = STATS.uidMisses + 1;
+                localWarnOnce(cacheKey);
+                stats = STATS;
+                return
+            end
+            remove(FAILEDSCOPES, cacheKey);
+        end
+
         % Populate the cache for this scope. The signer is expected to
         % return `answer.files` as a containers.Map from uid to URL --
         % which is what getSignedURLSetAll produces via signedURLFileMap.
@@ -169,6 +195,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
             % cache a bad answer; do not raise. The caller falls back
             % to getFileDetails for this uid.
             STATS.uidMisses = STATS.uidMisses + 1;
+            FAILEDSCOPES(cacheKey) = now_utc;
             localWarnOnce(cacheKey);
             stats = STATS;
             return
