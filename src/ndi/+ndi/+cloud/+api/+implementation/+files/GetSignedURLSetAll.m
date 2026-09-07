@@ -11,6 +11,9 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
         limit      (1,1) double
         maxPages   (1,1) double
         fileSeries (1,1) string
+        % Which namespace cloudDocumentID is in: "cloud" (mongo _id) or
+        % "ndi" (data.base.id). See NDI-matlab#968.
+        idNamespace (1,1) string
     end
 
     methods
@@ -21,13 +24,20 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
                 args.limit           (1,1) double = 500
                 args.maxPages        (1,1) double = 1000
                 args.fileSeries      (1,1) string = ""
+                args.idNamespace     (1,1) string ...
+                    {mustBeMember(args.idNamespace,["cloud","ndi"])} = "cloud"
             end
             this.cloudDatasetID  = args.cloudDatasetID;
             this.cloudDocumentID = args.cloudDocumentID;
+            this.idNamespace = args.idNamespace;
             this.limit    = args.limit;
             this.maxPages = args.maxPages;
             this.fileSeries = args.fileSeries;
-            this.endpointName = 'get_signed_url_set';
+            if strcmp(this.idNamespace, "ndi")
+                this.endpointName = 'get_ndi_signed_url_set';
+            else
+                this.endpointName = 'get_signed_url_set';
+            end
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -110,6 +120,7 @@ classdef GetSignedURLSetAll < ndi.cloud.api.call
             %   cursor-advance logic can be exercised without a server.
             [ok, page, apiResponse, apiURL] = ndi.cloud.api.files.getSignedURLSet(...
                 this.cloudDatasetID, this.cloudDocumentID, ...
+                'idNamespace', this.idNamespace, ...
                 'limit',      this.limit, ...
                 'cursor',     cursor, ...
                 'fileSeries', this.fileSeries);

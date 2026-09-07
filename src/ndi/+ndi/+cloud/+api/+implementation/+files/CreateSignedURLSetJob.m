@@ -11,6 +11,10 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
 
     properties
         fileSeries (1,1) string
+        % Which namespace cloudDocumentID is in: "cloud" (mongo _id) or
+        % "ndi" (data.base.id), resolved server-side on the ndi-documents
+        % route. Stated, never sniffed -- see NDI-matlab#968.
+        idNamespace (1,1) string
     end
 
     methods
@@ -18,12 +22,19 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
             arguments
                 args.cloudDatasetID  (1,1) string
                 args.cloudDocumentID (1,1) string
+                args.idNamespace     (1,1) string ...
+                    {mustBeMember(args.idNamespace,["cloud","ndi"])} = "cloud"
                 args.fileSeries      (1,1) string = ""
             end
             this.cloudDatasetID  = args.cloudDatasetID;
             this.cloudDocumentID = args.cloudDocumentID;
+            this.idNamespace = args.idNamespace;
             this.fileSeries = args.fileSeries;
-            this.endpointName = 'create_signed_url_set_job';
+            if strcmp(this.idNamespace, "ndi")
+                this.endpointName = 'create_ndi_signed_url_set_job';
+            else
+                this.endpointName = 'create_signed_url_set_job';
+            end
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -32,9 +43,15 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
 
             token = ndi.cloud.authenticate();
 
-            apiURL = ndi.cloud.api.url('create_signed_url_set_job', ...
-                'dataset_id',  this.cloudDatasetID, ...
-                'document_id', this.cloudDocumentID);
+            if strcmp(this.idNamespace, "ndi")
+                apiURL = ndi.cloud.api.url('create_ndi_signed_url_set_job', ...
+                    'dataset_id',      this.cloudDatasetID, ...
+                    'ndi_document_id', this.cloudDocumentID);
+            else
+                apiURL = ndi.cloud.api.url('create_signed_url_set_job', ...
+                    'dataset_id',  this.cloudDatasetID, ...
+                    'document_id', this.cloudDocumentID);
+            end
 
             % Restrict the job to one file series' members.
             if strlength(this.fileSeries) > 0

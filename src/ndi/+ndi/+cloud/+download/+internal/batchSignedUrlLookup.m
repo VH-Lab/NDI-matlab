@@ -1,8 +1,8 @@
-function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, seriesName, uid, options)
+function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seriesName, uid, options)
 %BATCHSIGNEDURLLOOKUP Look one uid up in the per-document signed-URL cache.
 %
 %   URL = ndi.cloud.download.internal.batchSignedUrlLookup( ...
-%             cloudDatasetId, cloudDocumentId, seriesName, uid)
+%             cloudDatasetId, ndiDocumentId, seriesName, uid)
 %
 %   Returns the pre-signed GET URL for one file uid inside a given
 %   (dataset, document [, series]) scope, or "" when no URL could be
@@ -29,10 +29,24 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
 %
 %   Inputs:
 %       cloudDatasetId  (1,1) string  - the dataset id
-%       cloudDocumentId (1,1) string  - the document id; when empty,
-%                                       lookup is bypassed and "" is
-%                                       returned (no document context,
-%                                       nothing to batch against).
+%       ndiDocumentId   (1,1) string  - the NDI document id (data.base.id);
+%                                       when empty, lookup is bypassed and
+%                                       "" is returned (no document
+%                                       context, nothing to batch against).
+%
+%                                       NDI, not cloud. Both callers hold
+%                                       the NDI id -- the DID handler from
+%                                       its context, downloadGenericFiles
+%                                       from doc.id() -- and this helper
+%                                       sends it to the ndi-documents route
+%                                       (idNamespace "ndi"), which resolves
+%                                       it server-side. Sent to the by-_id
+%                                       route it is a 404, which is what
+%                                       happened from #952 until #968:
+%                                       every call failed and fell back to
+%                                       one getFileDetails per uid, so the
+%                                       bytes arrived and nothing looked
+%                                       wrong.
 %       seriesName      (1,1) string  - "" for a whole-document scope,
 %                                       or a file-series name to scope
 %                                       the batch to that series only
@@ -102,7 +116,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
 %             ndi.cloud.api.files.getFileDetails
     arguments
         cloudDatasetId  (1,1) string
-        cloudDocumentId (1,1) string
+        ndiDocumentId   (1,1) string
         seriesName      (1,1) string
         uid             (1,1) string
         options.signer     = @ndi.cloud.api.files.getSignedURLSetAll
@@ -139,12 +153,12 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     % hasn't got one -- means there is nothing to batch against. Not a miss:
     % nothing was asked of the batch, so nothing failed. This is also the
     % call a test uses to read the counters without touching the cache.
-    if strlength(cloudDocumentId) == 0
+    if strlength(ndiDocumentId) == 0
         return
     end
 
     cacheKey = sprintf('%s/%s/%s', ...
-        char(cloudDatasetId), char(cloudDocumentId), char(seriesName));
+        char(cloudDatasetId), char(ndiDocumentId), char(seriesName));
 
     now_utc = datetime('now','TimeZone','UTC');
 
@@ -212,17 +226,19 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
             if wantsFour
                 if strlength(seriesName) > 0
                     [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
-                        cloudDocumentId, 'fileSeries', seriesName);
+                        ndiDocumentId, 'idNamespace', "ndi", ...
+                        'fileSeries', seriesName);
                 else
                     [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
-                        cloudDocumentId);
+                        ndiDocumentId, 'idNamespace', "ndi");
                 end
             else
                 if strlength(seriesName) > 0
-                    [ok, answer] = options.signer(cloudDatasetId, cloudDocumentId, ...
-                        'fileSeries', seriesName);
+                    [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
+                        'idNamespace', "ndi", 'fileSeries', seriesName);
                 else
-                    [ok, answer] = options.signer(cloudDatasetId, cloudDocumentId);
+                    [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
+                        'idNamespace', "ndi");
                 end
             end
         catch signerError
