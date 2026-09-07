@@ -8,6 +8,19 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
 % network; the batch API's own paging and merging live in
 % SignedURLSetMockTest.
 
+    methods (TestMethodSetup)
+        function quietTheExpectedFallbackWarning(testCase)
+            % Most tests here deliberately drive the miss and failure paths,
+            % so the fallback warning fires every time and says nothing a
+            % reader of this suite needs. Left on, it teaches whoever reads
+            % the log to skim past that warning -- which is exactly the
+            % warning that matters in a real run. Silenced here and asserted
+            % on its own in testTheFallbackWarnsOncePerScope.
+            w = warning('off', 'NDI:Cloud:BatchPresign:FallbackToPerUid');
+            testCase.addTeardown(@() warning(w));
+        end
+    end
+
     methods (Access = private)
         function signer = countingSigner(~, filesMap, counterHandle)
             % A signer that returns `filesMap` verbatim and bumps
@@ -113,6 +126,36 @@ classdef BatchSignedUrlLookupTest < matlab.unittest.TestCase
             testCase.verifyEqual(stats.uidMisses, 0, ...
                 'reading the counters must not register as a fallback');
             testCase.verifyEqual(stats.signerCalls, 1);
+        end
+
+        function testTheFallbackWarnsOncePerScope(testCase)
+            % The warning exists because the fallback is otherwise invisible:
+            % the bytes arrive, nothing fails, nothing is logged, and a
+            % 10,000-member series just reads slowly. A user concludes the
+            % tool is slow rather than that something regressed.
+            %
+            % Once per scope, not once per uid -- the situation worth warning
+            % about is precisely the one that would otherwise print 10,000
+            % times, and a warning that floods gets silenced.
+            warning('on', 'NDI:Cloud:BatchPresign:FallbackToPerUid');
+
+            counter = containers.Map('KeyType','char','ValueType','any');
+            counter('n') = 0;
+            emptyMap = testCase.mapOf({});
+            signer = testCase.countingSigner(emptyMap, counter);
+
+            % First uid in this scope: the batch answers with a map that does
+            % not name it, so the caller falls back -- and is told.
+            testCase.verifyWarning(@() ...
+                ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                    "ds", "doc", "chunk.bin", "uid1", ...
+                    'signer', signer, 'clearCache', true), ...
+                'NDI:Cloud:BatchPresign:FallbackToPerUid');
+
+            % Second uid, same scope: still a fallback, but silent.
+            testCase.verifyWarningFree(@() ...
+                ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                    "ds", "doc", "chunk.bin", "uid2", 'signer', signer));
         end
 
         function testSeriesNameIsPassedToTheSigner(testCase)
