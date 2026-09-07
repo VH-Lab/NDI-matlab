@@ -37,11 +37,13 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
             end
         end
 
-        function [b, answer, apiResponse, apiURL] = execute(this)
-            b = false;
-            answer = [];
-
-            token = ndi.cloud.authenticate();
+        function apiURL = buildURL(this)
+            %BUILDURL The full request URI, query included.
+            %
+            %   Separate from execute for the same reason as in
+            %   GetSignedURLSet: which route the namespace selects is then
+            %   checkable without a server, and a wrong route here is a 404
+            %   that looks exactly like a missing document.
 
             if strcmp(this.idNamespace, "ndi")
                 apiURL = ndi.cloud.api.url('create_ndi_signed_url_set_job', ...
@@ -62,6 +64,15 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
                     apiURL.Query = [apiURL.Query q];
                 end
             end
+        end
+
+        function [b, answer, apiResponse, apiURL] = execute(this)
+            b = false;
+            answer = [];
+
+            token = ndi.cloud.authenticate();
+
+            apiURL = this.buildURL();
 
             method = matlab.net.http.RequestMethod.POST;
 
