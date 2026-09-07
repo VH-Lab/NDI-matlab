@@ -31,6 +31,12 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
 %                   The maximum number of document IDs to request in a single
 %                   bulk download operation. Default is 2000.
 %
+%    options.AllDocumentsMode - (1,1) logical, optional
+%                   When true and no documentIds are supplied, the server's
+%                   whole-dataset branch is exercised directly: no id list
+%                   is fetched and no chunking is performed. Intended for
+%                   test coverage of that server branch. Default is false.
+%
 % OUTPUTS:
 %    documents    - Cell
 %                   A cell array of the resulting ndi.document objects.
@@ -50,35 +56,54 @@ function documents = downloadDocumentCollection(datasetId, documentIds, options)
         documentIds (1,:) string = "" % Default: Will download all documents
         options.Timeout = 20 % Default timeout increased to 20 seconds
         options.ChunkSize = 2000 % Default chunk size
+        options.AllDocumentsMode (1,1) logical = false
     end
 
-    % If user requests all documents, fetch the full list of IDs first.
-    if isempty(documentIds) || (isscalar(documentIds) && documentIds == "")
-        disp('No document IDs provided; fetching all document IDs from the server...');
-        id_map = ndi.cloud.sync.internal.listRemoteDocumentIds(datasetId);
-        documentIds = id_map.apiId;
-        if isempty(documentIds)
-            documents = {}; % Return empty if dataset has no documents
-            return;
+    noIdsProvided = isempty(documentIds) || (isscalar(documentIds) && documentIds == "");
+
+    if noIdsProvided && options.AllDocumentsMode
+        % Send a single request with no ids so the server's whole-dataset
+        % branch is used. This bypasses client-side chunking on purpose.
+        documentChunks = {strings(1, 0)};
+        numChunks = 1;
+        numDocs = 0; % Not known until the archive is unpacked
+    else
+        % If user requests all documents, fetch the full list of IDs first.
+        if noIdsProvided
+            disp('No document IDs provided; fetching all document IDs from the server...');
+            id_map = ndi.cloud.sync.internal.listRemoteDocumentIds(datasetId);
+            documentIds = id_map.apiId;
+            if isempty(documentIds)
+                documents = {}; % Return empty if dataset has no documents
+                return;
+            end
+        end
+
+        % Split the documentIds into chunks for processing
+        numDocs = numel(documentIds);
+        numChunks = ceil(numDocs / options.ChunkSize);
+        documentChunks = cell(1, numChunks);
+        for i = 1:numChunks
+            startIndex = (i-1) * options.ChunkSize + 1;
+            endIndex = min(i * options.ChunkSize, numDocs);
+            documentChunks{i} = documentIds(startIndex:endIndex);
         end
     end
 
-    % Split the documentIds into chunks for processing
-    numDocs = numel(documentIds);
-    numChunks = ceil(numDocs / options.ChunkSize);
-    documentChunks = cell(1, numChunks);
-    for i = 1:numChunks
-        startIndex = (i-1) * options.ChunkSize + 1;
-        endIndex = min(i * options.ChunkSize, numDocs);
-        documentChunks{i} = documentIds(startIndex:endIndex);
-    end
-
     all_document_structs = [];
-    fprintf('Beginning download of %d documents in %d chunk(s).\n', numDocs, numChunks);
+    if options.AllDocumentsMode && noIdsProvided
+        fprintf('Beginning download of the entire dataset (server-side all-documents mode).\n');
+    else
+        fprintf('Beginning download of %d documents in %d chunk(s).\n', numDocs, numChunks);
+    end
 
     for c = 1:numel(documentChunks)
         chunk_doc_ids = documentChunks{c};
-        fprintf('  Processing chunk %d of %d (%d documents)...\n', c, numChunks, numel(chunk_doc_ids));
+        if isempty(chunk_doc_ids)
+            fprintf('  Requesting all documents in a single archive...\n');
+        else
+            fprintf('  Processing chunk %d of %d (%d documents)...\n', c, numChunks, numel(chunk_doc_ids));
+        end
 
         [success, downloadUrl, api_reply] = ndi.cloud.api.documents.getBulkDownloadURL(datasetId, "cloudDocumentIDs", chunk_doc_ids);
         if ~success

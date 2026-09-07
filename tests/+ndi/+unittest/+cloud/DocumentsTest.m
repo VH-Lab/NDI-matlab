@@ -755,6 +755,106 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             testCase.Narrative = narrative;
         end
+
+        function testWholeDatasetBulkDownloadReturnsFullDocuments(testCase)
+            % Exercises the server's whole-dataset bulk-download branch: no
+            % documentIds sent, no client-side chunking. The failure mode
+            % this guards against is the one from
+            % Waltham-Data-Science/ndi-cloud-node#134, where the archive was
+            % produced and the download succeeded but every document came
+            % back with data stripped to document_class.class_name. An
+            % assertion on document_class.class_name alone would pass on
+            % the broken server, so this test checks fields outside
+            % document_class (base.name, and depends_on where present).
+            testCase.Narrative = "Begin testWholeDatasetBulkDownloadReturnsFullDocuments";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "SETUP: Using temporary dataset ID: " + testCase.DatasetID;
+
+            % Step 1: Add a target document and a second document that
+            % depends on it, so at least one uploaded document carries a
+            % depends_on entry. Names are unique so we can find them.
+            targetName = "wholedl_target";
+            dependentName = "wholedl_dependent";
+            thirdName = "wholedl_third";
+
+            narrative(end+1) = "Preparing to add three documents (one with depends_on).";
+
+            doc_target = ndi.document('base', 'base.name', char(targetName));
+            [b_t, ans_t, resp_t, url_t] = ndi.cloud.api.documents.addDocument( ...
+                testCase.DatasetID, jsonencodenan(doc_target.document_properties));
+            testCase.assertTrue(b_t, ndi.unittest.cloud.APIMessage(narrative, b_t, ans_t, resp_t, url_t));
+            targetCloudId = ans_t.id;
+            narrative(end+1) = "Added target document with cloud id " + targetCloudId;
+
+            doc_dependent = ndi.document('base', 'base.name', char(dependentName));
+            doc_dependent = doc_dependent.set_dependency_value( ...
+                'document_id', doc_target.id(), 'ErrorIfNotFound', 0);
+            [b_d, ans_d, resp_d, url_d] = ndi.cloud.api.documents.addDocument( ...
+                testCase.DatasetID, jsonencodenan(doc_dependent.document_properties));
+            testCase.assertTrue(b_d, ndi.unittest.cloud.APIMessage(narrative, b_d, ans_d, resp_d, url_d));
+            narrative(end+1) = "Added dependent document.";
+
+            doc_third = ndi.document('base', 'base.name', char(thirdName));
+            [b_3, ans_3, resp_3, url_3] = ndi.cloud.api.documents.addDocument( ...
+                testCase.DatasetID, jsonencodenan(doc_third.document_properties));
+            testCase.assertTrue(b_3, ndi.unittest.cloud.APIMessage(narrative, b_3, ans_3, resp_3, url_3));
+            narrative(end+1) = "Added third document.";
+
+            % Step 2: Bulk-download the whole dataset without passing any
+            % document ids. This is the mode that was previously
+            % unreachable from MATLAB (issue #948, Blockers 1 and 2).
+            narrative(end+1) = "Preparing to bulk-download the whole dataset with no ids and AllDocumentsMode=true.";
+            downloaded_docs = {};
+            b_download = false;
+            try
+                downloaded_docs = ndi.cloud.download.downloadDocumentCollection( ...
+                    testCase.DatasetID, AllDocumentsMode=true);
+                b_download = true;
+                narrative(end+1) = "Whole-dataset bulk download call completed without erroring.";
+            catch ME
+                narrative(end+1) = "Whole-dataset bulk download call failed with an error: " + ME.message;
+            end
+            msg_dl = ndi.unittest.cloud.APIMessage(narrative, b_download, "", "", "");
+            testCase.assertTrue(b_download, msg_dl);
+
+            % Step 3: Verify the correct number of documents came back.
+            narrative(end+1) = "Testing: Verifying three documents were returned.";
+            testCase.verifyNumElements(downloaded_docs, 3, msg_dl);
+
+            % Step 4: Verify each returned document has a full body, not
+            % just document_class.class_name. This is the assertion that
+            % would have caught #134.
+            narrative(end+1) = "Testing: Verifying each returned document has fields outside document_class.";
+            returnedNames = strings(1, numel(downloaded_docs));
+            sawDependsOn = false;
+            for i = 1:numel(downloaded_docs)
+                dp = downloaded_docs{i}.document_properties;
+                testCase.verifyTrue(isfield(dp, 'base'), ...
+                    "Returned document is missing the 'base' field entirely. " + msg_dl);
+                testCase.verifyTrue(isfield(dp.base, 'name'), ...
+                    "Returned document's 'base' is missing the 'name' field. " + msg_dl);
+                returnedNames(i) = string(dp.base.name);
+                if isfield(dp, 'depends_on') && ~isempty(dp.depends_on)
+                    sawDependsOn = true;
+                end
+            end
+
+            % Step 5: The three names we uploaded must all be present.
+            narrative(end+1) = "Testing: Verifying the three uploaded names are all present in the download.";
+            expectedNames = sort([targetName dependentName thirdName]);
+            testCase.verifyEqual(sort(returnedNames), expectedNames, ...
+                "Downloaded document names do not match uploaded set. " + msg_dl);
+
+            % Step 6: The dependent document must still carry its
+            % depends_on. That field is outside document_class and is
+            % exactly what #134 dropped.
+            narrative(end+1) = "Testing: Verifying at least one downloaded document carries a depends_on entry.";
+            testCase.verifyTrue(sawDependsOn, ...
+                "No downloaded document carried a depends_on entry -- the whole-dataset branch may be stripping data to document_class only (see ndi-cloud-node#134). " + msg_dl);
+
+            testCase.Narrative = narrative;
+        end
     end
 end
 
