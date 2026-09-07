@@ -67,8 +67,10 @@ classdef CreateSignedURLSetJob < ndi.cloud.api.call
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
+            % b stays false unless the 202 check below sets it; answer is
+            % assigned on every path out of that check, so it is not
+            % pre-initialized. Same shape as GetSignedURLSet.execute.
             b = false;
-            answer = [];
 
             token = ndi.cloud.authenticate();
 
