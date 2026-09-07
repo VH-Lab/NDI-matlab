@@ -135,5 +135,77 @@ classdef TestGeneDocs < matlab.unittest.TestCase
                 'Pixel coordinates are relative to the level origin.');
         end
 
+
+        % ------------------------------------------- scale guards
+        % Both limits below are unreachable at fixture scale and reachable
+        % on a real Stereo-seq section (18126 x 18972, 30434 genes), so the
+        % geometries here are synthetic on purpose: a handful of records
+        % placed far apart buys the extent without the record count, and
+        % the checks read the geometry rather than the data.
+
+        function testRefusesAGeometryThatWouldMergeCountsSilently(testCase)
+            % THE FAILURE THIS PREVENTS IS SILENT. Duplicate (pixel, gene)
+            % pairs are collapsed with key = (py*lw + px)*nGenes + gi in
+            % double, exact only to 2^53. Past it, distinct records collide
+            % and their counts merge with nothing raised -- a pyramid that
+            % builds cleanly and is wrong. That is why this is an error
+            % rather than a warning.
+            n = 100;
+            ids = arrayfun(@(k) sprintf('ENSZ%04d',k), 1:n, 'UniformOutput', false);
+            gl = ndi.fun.doc.gene.makeGeneList(testCase.session, ids, ids);
+
+            E = 30e6;                       % drives the key to ~9e16
+            x = [0; E-1]; y = [0; E-1]; gi = [0; 1]; c = [1; 1];
+            testCase.verifyError(@() ndi.fun.doc.gene.makePyramid( ...
+                testCase.session, x, y, gi, c, gl, 'binSizes', 1, ...
+                'grid', 9, 'subjectID', testCase.subjectID), ...
+                'NDI:gene:makePyramid:sortKeyOverflow', ...
+                'A geometry past 2^53 must be refused, not built.');
+        end
+
+        function testWarnsWhileTheSortKeyStillHasRoom(testCase)
+            % Headroom of 5x holds for this section and would not for a
+            % larger one, so it warns and BUILDS: refusing here would block
+            % work that is correct today.
+            n = 100;
+            ids = arrayfun(@(k) sprintf('ENSW%04d',k), 1:n, 'UniformOutput', false);
+            gl = ndi.fun.doc.gene.makeGeneList(testCase.session, ids, ids);
+
+            E = 4.24e6;                     % key ~1.8e15, headroom ~5x
+            x = [0; E-1]; y = [0; E-1]; gi = [0; 1]; c = [1; 1];
+            % grid 100 keeps the tiles inside uint16, so this exercises the
+            % sort-key warning alone rather than tripping the tile check.
+            f = @() ndi.fun.doc.gene.makePyramid(testCase.session, ...
+                x, y, gi, c, gl, 'binSizes', 1, 'grid', 100, ...
+                'subjectID', testCase.subjectID);
+            testCase.verifyWarning(f, 'NDI:gene:makePyramid:sortKeyTight');
+        end
+
+        function testRefusesATileWiderThanItsCoordinates(testCase)
+            % Tile-local coordinates are uint16, so a tile over 65536
+            % level-pixels a side would wrap inside writeTileFile and place
+            % records at the wrong end of the tile.
+            gl = ndi.fun.doc.gene.makeGeneList(testCase.session, ...
+                {'ENSV0001'}, {'V'});
+            E = 1e6;              % 1e6/9 = 111112 per tile, key only ~1e12
+            x = [0; E-1]; y = [0; E-1]; gi = [0; 0]; c = [1; 1];
+            testCase.verifyError(@() ndi.fun.doc.gene.makePyramid( ...
+                testCase.session, x, y, gi, c, gl, 'binSizes', 1, ...
+                'grid', 9, 'subjectID', testCase.subjectID), ...
+                'NDI:gene:makePyramid:tileTooWide');
+        end
+
+        function testAnOrdinarySectionTripsNeitherGuard(testCase)
+            % The guards must be silent on the ordinary case, or they are
+            % noise that gets suppressed and stops protecting anything.
+            ids = arrayfun(@(k) sprintf('ENSQ%04d',k), 1:6, 'UniformOutput', false);
+            gl = ndi.fun.doc.gene.makeGeneList(testCase.session, ids, ids);
+            x = [0;0;3;9;9;9]; y = [0;0;1;7;7;7];
+            gi = [0;1;2;3;4;5]; c = [5;7;11;13;17;19];
+            testCase.verifyWarningFree(@() ndi.fun.doc.gene.makePyramid( ...
+                testCase.session, x, y, gi, c, gl, 'binSizes', [1 2], ...
+                'grid', 2, 'subjectID', testCase.subjectID));
+        end
+
     end
 end

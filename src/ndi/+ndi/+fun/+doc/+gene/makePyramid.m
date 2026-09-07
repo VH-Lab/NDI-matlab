@@ -61,7 +61,15 @@ function [pyrDoc, tileDocs] = makePyramid(session, x, y, geneIndex, count, geneL
 %   Tiles containing no data are not written; ndi.document/current_file_list
 %   reports which exist.
 %
+%   TWO WAYS A LARGE SECTION BREAKS THIS, both checked before any tile is
+%   written. Neither can be reached by a fixture of a few records, and one
+%   of them is silent, so they are checked here rather than left to the
+%   caller: this is where the extent, the gene count and the grid are all
+%   known at once, and the arithmetic they threaten is the arithmetic
+%   below.
+%
 %   See also: ndi.fun.doc.gene.makeGeneList, ndi.fun.doc.gene.readViewport
+%
 %
 arguments
     session (1,1)
@@ -124,6 +132,8 @@ extentY = double(max(y) - minY + 1);
 
 G = options.grid;
 binSizes = sort(options.binSizes, 'ascend');
+
+localCheckScale(extentX, extentY, binSizes, G, nGenes);
 
 pyr = struct('label', options.label, ...
     'chip_serial', options.chipSerial, ...
@@ -220,6 +230,55 @@ end
 tileDoc = storeDoc(session, tileDoc, names, paths);
 
 end % localMakeLevel
+
+% ------------------------------------------------------------------------
+
+function localCheckScale(extentX, extentY, binSizes, G, nGenes)
+% Refuse a pyramid whose arithmetic this function cannot represent.
+%
+% Both limits are invisible at fixture scale and reachable on a real
+% section, so they are checked against the geometry rather than trusted.
+% They live here because this is the only place that knows the extent, the
+% gene count and the grid together -- a caller working from a file's
+% attributes may not know the extent at all, since a GEF that carries none
+% has no extent until its records have been read.
+
+lw = ceil(extentX ./ binSizes);
+lh = ceil(extentY ./ binSizes);
+
+% (1) THE SORT KEY, and this is the silent one. Duplicate (pixel, gene)
+% pairs are collapsed below using key = (py*lw + px)*nGenes + gi, computed
+% in DOUBLE. Doubles are exact integers only to 2^53. Past that, distinct
+% records collide and their counts merge with no error raised anywhere --
+% a pyramid that builds cleanly and is wrong.
+maxKey = max((lh - 1) .* lw + (lw - 1)) * nGenes + nGenes;
+if maxKey >= 2^53
+    error('NDI:gene:makePyramid:sortKeyOverflow', ...
+        ['This geometry would drive the duplicate-collapsing sort key to ' ...
+         '%.4g, past 2^53 where doubles stop being exact integers. Distinct ' ...
+         'records would collide and their counts would merge silently.\n' ...
+         'Extent %g x %g, %d genes, finest bin %d. Reduce the gene list, ' ...
+         'or coarsen the finest bin size.'], ...
+        maxKey, extentX, extentY, nGenes, binSizes(1));
+elseif 2^53 / maxKey < 10
+    warning('NDI:gene:makePyramid:sortKeyTight', ...
+        ['The sort key reaches %.4g, only %.1fx below 2^53. This section ' ...
+         'is fine, but a larger one or a bigger gene list would overflow ' ...
+         'and merge counts silently.'], maxKey, 2^53 / maxKey);
+end
+
+% (2) TILE-LOCAL COORDINATES are uint16 in the tile format, so no tile may
+% be more than 65536 level-pixels on a side. Caught here rather than as
+% coordinates that wrap inside writeTileFile.
+maxSide = max([ceil(lw / G) ceil(lh / G)]);
+if maxSide > 65536
+    error('NDI:gene:makePyramid:tileTooWide', ...
+        ['A tile would be %d level-pixels across, but tile-local ' ...
+         'coordinates are uint16 (limit 65536). Raise ''grid'' to at ' ...
+         'least %d.'], maxSide, ceil(max(max(lw), max(lh)) / 65536));
+end
+
+end % localCheckScale
 
 % ------------------------------------------------------------------------
 
