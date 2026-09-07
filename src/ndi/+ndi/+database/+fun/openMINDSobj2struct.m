@@ -15,7 +15,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 
     ndi_cache = ndi.common.getCache();
 
-    openminds_base_class = 'openminds.abstract.Schema';
+    openminds_base_class = 'openminds.Node';
     cachetype = 'openmindsconversionstack';
 
     initial_call = 0;
@@ -85,7 +85,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
                 f = char(f);
             end
             mt = startsWith(class(f),'openminds.internal.mixedtype');
-            if isa(f,'openminds.abstract.Schema') | mt
+            if isa(f,'openminds.Node') | mt
                 fields_here = {};
                 for k=1:numel(f)
                     if mt
