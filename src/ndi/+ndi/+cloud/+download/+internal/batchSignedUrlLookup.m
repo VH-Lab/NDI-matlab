@@ -168,11 +168,20 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
         % have made 28,000. Measured: four members produced four signer
         % calls, zero hits (VH-Lab/NDI-matlab#968).
         %
-        % Short-lived on purpose. A failure is usually transient, and the
-        % point is to stop hammering within one read, not to give up on the
-        % scope for the session.
+        % Short-lived on purpose, and narrow: it suppresses the NEXT uid,
+        % not a retry of the same one. The point is to stop hammering
+        % within one sweep, not to give up on the scope -- see
+        % testFailingSignerReturnsEmpty, which requires that a caller who
+        % recovers on a later request still gets an answer.
         if isKey(FAILEDSCOPES, cacheKey)
-            if seconds(now_utc - FAILEDSCOPES(cacheKey)) < options.failureTtlSeconds
+            lastFailure = FAILEDSCOPES(cacheKey);
+            % A caller asking again for THE SAME uid is retrying on purpose,
+            % and gets a fresh attempt -- a failure must not be sticky for
+            % someone who recovers on a later request. A sweep that moves on
+            % to the NEXT uid is the case worth suppressing: that is the one
+            % that would re-hammer a dead scope 28,000 times.
+            sameUid = strcmp(char(uid), lastFailure.uid);
+            if ~sameUid && seconds(now_utc - lastFailure.at) < options.failureTtlSeconds
                 STATS.uidMisses = STATS.uidMisses + 1;
                 localWarnOnce(cacheKey);
                 stats = STATS;
@@ -239,7 +248,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
             end
             STATS.lastFailureReason = failureReason;
             STATS.uidMisses = STATS.uidMisses + 1;
-            FAILEDSCOPES(cacheKey) = now_utc;
+            FAILEDSCOPES(cacheKey) = struct('at', now_utc, 'uid', char(uid));
             localWarnOnce(cacheKey);
             stats = STATS;
             return
