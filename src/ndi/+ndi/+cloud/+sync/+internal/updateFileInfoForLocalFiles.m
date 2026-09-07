@@ -68,6 +68,37 @@ function document = updateFileInfoForLocalFiles(document, fileDirectory, cloudDa
             filename = originalFileInfo(i).name; % name for ingestion
             if isfile(file_location)
                 document = document.add_file(filename, file_location);
+
+                % A SERIES MANIFEST also keeps the cloud reference it came
+                % from, as a second location alongside the local copy.
+                %
+                % Its members are still on the cloud -- they are left there
+                % deliberately, so that opening a dataset does not drag down
+                % a 28,000-member series -- and a member has no location of
+                % its own. DID resolves one by handing the MANIFEST's
+                % location to the customFileHandler with the member's uid in
+                % the context, so that location is the only thing telling the
+                % handler where to look. With the local path alone,
+                % download_file_from_cloud is handed a path that does not
+                % start with 'ndic://' and raises
+                % NDI:Didsqlite:UnsupportedFileLocationType, which DID takes
+                % as a plain miss -- so every member of a downloaded series
+                % is unreadable, silently. See VH-Lab/NDI-matlab#966.
+                %
+                % The uid in the reference is the file's ORIGINAL uid, the
+                % one the cloud knows it by. add_file mints a fresh uid for
+                % this second location's own record, which is harmless: DID
+                % passes only the location STRING to the handler, and the
+                % member's uid comes from the context.
+                %
+                % Manifests only. Every other file is already here, and a
+                % second location on each would be rows to no purpose.
+                if strlength(cloudDatasetId) > 0 && document.isFileSeries(filename)
+                    % ndi.document.add_file recognizes 'ndic://' and supplies
+                    % ingest 0, delete_original 0, location_type 'ndicloud'.
+                    document = document.add_file(filename, ...
+                        sprintf('ndic://%s/%s', cloudDatasetId, file_uid));
+                end
             else
                 warning('Local file does not exist for document "%s"', ...
                     document.document_properties.base.id)
