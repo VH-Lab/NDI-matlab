@@ -26,6 +26,14 @@ classdef TestDownloadedSeriesManifestKeepsItsCloudLocation < matlab.unittest.Tes
 %
 % Offline. This is the half of #966 that needs no credentials and no network,
 % and it is the half that was wrong.
+%
+% It lives in ndi.unittest, NOT ndi.unittest.cloud, for that reason:
+% testToolboxNoCloud drops every class whose name starts
+% 'ndi.unittest.cloud.', so a test placed there runs only in the slow,
+% credentialed Cloud suite no matter how offline it is. The other offline
+% tests of cloud internals -- ReconstructSeriesIngestLocationsTest,
+% BatchSignedUrlLookupTest, SignedURLSetMockTest -- are here for the same
+% reason.
 
     properties (Constant)
         SeriesName = 'chunkdata.bin';
