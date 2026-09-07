@@ -15,7 +15,6 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 
     ndi_cache = ndi.common.getCache();
 
-    openminds_base_class = 'openminds.Node';
     cachetype = 'openmindsconversionstack';
 
     initial_call = 0;
@@ -84,7 +83,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
             if isa(f, 'datetime')
                 f = char(f);
             end
-            if openminds.utility.isInstance(f) | openminds.utility.isMixedInstance(f)
+            if openminds.utility.isInstance(f) || openminds.utility.isMixedInstance(f)
                 fields_here = {};
                 for k=1:numel(f)
                     if openminds.utility.isMixedInstance(f)
