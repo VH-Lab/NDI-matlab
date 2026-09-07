@@ -85,7 +85,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
                 f = char(f);
             end
             mt = openminds.utility.isMixedInstance(f);
-            if isa(f,'openminds.Node') | mt
+            if openminds.utility.isInstance(f) | mt
                 fields_here = {};
                 for k=1:numel(f)
                     if mt
