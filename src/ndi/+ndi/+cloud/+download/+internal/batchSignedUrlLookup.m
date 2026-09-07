@@ -189,11 +189,12 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
         % injected test signer usually returns two. nargout decides, rather
         % than calling twice -- a second call would double every side effect
         % the signer has, including a test's own call counter.
-        wantsFour = false;
         try
             wantsFour = nargout(options.signer) >= 4;
         catch
-            wantsFour = false; %#ok<NASGU>
+            % nargout raises for some handle kinds; assume the two-output
+            % form, which every signer supports.
+            wantsFour = false;
         end
 
         apiResponse = [];
