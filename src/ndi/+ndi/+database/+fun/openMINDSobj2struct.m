@@ -84,7 +84,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
             if isa(f, 'datetime')
                 f = char(f);
             end
-            mt = startsWith(class(f),'openminds.internal.mixedtype');
+            mt = openminds.utility.isMixedInstance(f);
             if isa(f,'openminds.Node') | mt
                 fields_here = {};
                 for k=1:numel(f)
