@@ -64,6 +64,11 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
 %                                   which sends the caller to the per-uid
 %                                   getFileDetails fallback
 %                     .lastMapSize  entries in the most recent batch map
+%                     .lastMapUids  those entries' uids, which is what shows
+%                                   whether a scope was honored: a
+%                                   series-scoped answer names the series'
+%                                   members, an unscoped one also names
+%                                   every other file the document has
 %
 %                     These exist to make the fallback VISIBLE. It is
 %                     deliberate at runtime -- a reader opening one file
@@ -103,12 +108,16 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
     % `.fetchedAt` (datetime, UTC).
     persistent CACHE
     persistent STATS
+    persistent WARNED
     if isempty(CACHE) || options.clearCache
         CACHE = containers.Map('KeyType','char','ValueType','any');
     end
     if isempty(STATS) || options.clearCache
         STATS = struct('signerCalls', 0, 'uidHits', 0, 'uidMisses', 0, ...
-            'lastMapSize', 0);
+            'lastMapSize', 0, 'lastMapUids', {{}});
+    end
+    if isempty(WARNED) || options.clearCache
+        WARNED = containers.Map('KeyType','char','ValueType','logical');
     end
 
     url = "";
@@ -160,12 +169,14 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
             % cache a bad answer; do not raise. The caller falls back
             % to getFileDetails for this uid.
             STATS.uidMisses = STATS.uidMisses + 1;
+            localWarnOnce(cacheKey);
             stats = STATS;
             return
         end
         entry = struct('map', answer.files, 'fetchedAt', now_utc);
         CACHE(cacheKey) = entry;
         STATS.lastMapSize = double(entry.map.Count);
+        STATS.lastMapUids = keys(entry.map);
     end
 
     key = char(uid);
@@ -178,6 +189,30 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, se
         % a scope that does not actually cover the file. The caller falls
         % back per uid.
         STATS.uidMisses = STATS.uidMisses + 1;
+        localWarnOnce(cacheKey);
     end
     stats = STATS;
+
+    function localWarnOnce(scopeKey)
+        % Say it ONCE per scope, then stay quiet.
+        %
+        % The fallback is correct -- the bytes still arrive -- so nothing
+        % fails and nothing is logged, and that is the problem. Reading a
+        % 10,000-member series then costs 10,000 presign calls instead of
+        % one, and what the user sees is not an error but NDI being slow.
+        % They conclude the tool is like that and never report it. A single
+        % line naming the scope turns "this is slow" into "this fell back,
+        % and here is where". See VH-Lab/NDI-matlab#968.
+        %
+        % Once per scope, not once per uid: the case worth warning about is
+        % exactly the one that would otherwise print 10,000 times.
+        if isKey(WARNED, scopeKey), return, end
+        WARNED(scopeKey) = true;
+        warning('NDI:Cloud:BatchPresign:FallbackToPerUid', ...
+            ['The batch signed-URL lookup did not answer for scope "%s", so ' ...
+             'files there are being resolved one API call at a time. This ' ...
+             'still works, but for a large file series it is one call per ' ...
+             'member rather than one per series. Reported once per scope.'], ...
+            scopeKey);
+    end
 end

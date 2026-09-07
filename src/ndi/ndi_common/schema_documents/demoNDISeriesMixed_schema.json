@@ -1,0 +1,21 @@
+{
+	"classname":	"demoNDISeriesMixed",
+	"superclasses": [ "base" ],
+	"depends_on": [ ],
+	"file": [ 
+		{"name": "chunkdata.bin", "mustbenotempty": 1},
+		{"name": "sidecar1.ext", "mustbenotempty": 1},
+		{"name": "sidecar2.ext", "mustbenotempty": 1},
+		{"name": "sidecar3.ext", "mustbenotempty": 1}
+	],
+	"demoNDISeriesMixed": [
+		{
+			"name": "value",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [-100000,100000,0],
+			"queryable": 1,
+			"documentation": "A value field for the demoNDISeriesMixed class."
+		}
+	]
+}

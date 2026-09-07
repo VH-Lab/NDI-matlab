@@ -596,6 +596,124 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             end
         end
 
+
+        function testTheBatchScopeIsTheSeriesAndNotTheWholeDocument(testCase)
+            % Does the server HONOR the 'fileSeries' scope, or ignore it and
+            % return the whole document's URL set?
+            %
+            % Neither the member bytes nor the fallback counter can tell:
+            % an unscoped map contains the member uids too, so it answers
+            % every one of them and looks exactly like success. The only
+            % thing that separates them is WHAT ELSE the map names. So this
+            % test uses a document that has files OUTSIDE its series --
+            % demoNDISeriesMixed declares three sidecars alongside
+            % chunkdata.bin -- and requires that none of their uids come
+            % back when a MEMBER is fetched.
+            %
+            % A document whose only files are one manifest and four members
+            % cannot pose the question: scoped and unscoped differ by one
+            % entry, which proves nothing. See VH-Lab/NDI-matlab#968.
+            %
+            % Adds a SECOND document to the dataset the fixture already
+            % uploaded, rather than building its own dataset: same cloud
+            % dataset, same teardown, one extra upload instead of a whole
+            % second lifecycle.
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testTheBatchScopeIsTheSeriesAndNotTheWholeDocument.";
+
+            mixedFolder = testCase.applyFixture(TemporaryFolderFixture);
+
+            memberPaths = cell(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                p = fullfile(mixedFolder.Folder, sprintf('mixed_chunk_%04d.bin', i));
+                fid = fopen(p, 'w');
+                fwrite(fid, uint8(mod((1:48) * i, 251)), 'uint8');
+                fclose(fid);
+                memberPaths{i} = p;
+            end
+
+            sidecarNames = {'sidecar1.ext', 'sidecar2.ext', 'sidecar3.ext'};
+            sidecarPaths = cell(1, numel(sidecarNames));
+            for i = 1:numel(sidecarNames)
+                p = fullfile(mixedFolder.Folder, sidecarNames{i});
+                fid = fopen(p, 'w');
+                fwrite(fid, uint8(200 + i), 'uint8');
+                fclose(fid);
+                sidecarPaths{i} = p;
+            end
+
+            mixedDoc = ndi.document('demoNDISeriesMixed', ...
+                'base.name', 'test_series_mixed_doc', ...
+                'demoNDISeriesMixed.value', 1, ...
+                'base.session_id', testCase.LocalDataset.id());
+            mixedDoc = mixedDoc.addFileSeries('chunkdata.bin', memberPaths);
+            for i = 1:numel(sidecarNames)
+                mixedDoc = mixedDoc.add_file(sidecarNames{i}, sidecarPaths{i});
+            end
+            testCase.LocalDataset.database_add(mixedDoc);
+
+            % The sidecars' uids, read back from the stored document: these
+            % are the uids that must NOT appear in a series-scoped map.
+            storedDocs = testCase.LocalDataset.database_search( ...
+                ndi.query('base.name', 'exact_string', 'test_series_mixed_doc'));
+            testCase.assertNumElements(storedDocs, 1);
+            storedDoc = storedDocs{1};
+            sidecarUids = cell(1, numel(sidecarNames));
+            for i = 1:numel(sidecarNames)
+                uids = storedDoc.fileUids(sidecarNames{i});
+                testCase.assertNotEmpty(uids, ...
+                    ['sidecar ' sidecarNames{i} ' has no uid']);
+                sidecarUids{i} = uids{1};
+            end
+
+            narrative(end+1) = "Added a second document with a " + ...
+                testCase.MemberCount + "-member series AND " + ...
+                numel(sidecarNames) + " sidecar files, then re-uploading.";
+            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            testCase.assertTrue(successUpload, ...
+                "failed to upload the mixed document");
+            ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
+
+            downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, ...
+                downloadFixture.Folder, 'SyncFiles', true, 'Verbose', false);
+            testCase.assertNotEmpty(downloaded, ...
+                "downloadDataset returned nothing");
+
+            remoteDocs = downloaded.database_search( ...
+                ndi.query('base.name', 'exact_string', 'test_series_mixed_doc'));
+            testCase.assertNumElements(remoteDocs, 1, ...
+                "the mixed document did not come back from the cloud");
+
+            % Counters cleared here so the map they report on is the one
+            % fetched for the member opened below, and nothing earlier.
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "", "", "", "", 'clearCache', true);
+
+            fobj = downloaded.database_openbinarydoc(remoteDocs{1}, 'chunkdata.bin_1');
+            downloaded.database_closebinarydoc(fobj);
+
+            [~, batchStats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            leaked = intersect(sidecarUids, batchStats.lastMapUids);
+            narrative(end+1) = "Fetching one member drew a batch map of " + ...
+                batchStats.lastMapSize + " uid(s); " + numel(leaked) + ...
+                " of the " + numel(sidecarNames) + " sidecar uids appeared in it.";
+            narrative(end+1) = "A sidecar in the map means the server ignored " + ...
+                "'fileSeries' and returned the whole DOCUMENT's URL set. That " + ...
+                "still answers every member, so nothing else here would notice.";
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, isempty(leaked), ...
+                batchStats, matlab.net.http.ResponseMessage.empty, ...
+                "batchSignedUrlLookup scope for a series member");
+
+            testCase.verifyEmpty(leaked, ...
+                "the batch map for a series member also named files that are " + ...
+                "not in the series, so the 'fileSeries' scope was not honored. " + msg);
+        end
+
     end
 end
 
