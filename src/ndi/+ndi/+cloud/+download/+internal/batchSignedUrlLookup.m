@@ -1,4 +1,4 @@
-function url = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, seriesName, uid, options)
+function [url, stats] = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, seriesName, uid, options)
 %BATCHSIGNEDURLLOOKUP Look one uid up in the per-document signed-URL cache.
 %
 %   URL = ndi.cloud.download.internal.batchSignedUrlLookup( ...
@@ -56,6 +56,35 @@ function url = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, seriesName,
 %   Outputs:
 %       url         - The pre-signed URL for uid (char), or "" (string
 %                     scalar) when no URL is available.
+%       stats       - Cumulative counters since the cache was last cleared:
+%                     .signerCalls  how many times the batch endpoint was
+%                                   actually called (one per scope fetch)
+%                     .uidHits      uids answered from a batch map
+%                     .uidMisses    uids the batch could NOT answer, each of
+%                                   which sends the caller to the per-uid
+%                                   getFileDetails fallback
+%                     .lastMapSize  entries in the most recent batch map
+%
+%                     These exist to make the fallback VISIBLE. It is
+%                     deliberate at runtime -- a reader opening one file
+%                     should not fail because a batch endpoint hiccuped --
+%                     and it is precisely wrong as a test property: a test
+%                     of the batch path that silently falls back to N per-uid
+%                     calls still passes, having proved nothing about the
+%                     path it was written for. See VH-Lab/NDI-matlab#968.
+%
+%                     Read them without disturbing the cache by calling with
+%                     an empty documentId, which returns early:
+%                         [~, s] = batchSignedUrlLookup("", "", "", "");
+%
+%                     NOTE what uidMisses does and does not distinguish. It
+%                     catches a fallback. It does NOT catch a server that
+%                     ignores the 'fileSeries' scope and returns the whole
+%                     DOCUMENT's URL set, since that map contains the member
+%                     uids too and answers every one of them. lastMapSize is
+%                     the handle on that: a scoped answer names the series'
+%                     members, an unscoped one also names every other file
+%                     the document has.
 %
 %   See also: ndi.cloud.api.files.getSignedURLSetAll,
 %             ndi.cloud.api.files.getFileDetails
@@ -73,14 +102,22 @@ function url = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, seriesName,
     % Each entry is a struct with `.map` (containers.Map uid -> URL) and
     % `.fetchedAt` (datetime, UTC).
     persistent CACHE
+    persistent STATS
     if isempty(CACHE) || options.clearCache
         CACHE = containers.Map('KeyType','char','ValueType','any');
     end
+    if isempty(STATS) || options.clearCache
+        STATS = struct('signerCalls', 0, 'uidHits', 0, 'uidMisses', 0, ...
+            'lastMapSize', 0);
+    end
 
     url = "";
+    stats = STATS;
 
     % No document context -- e.g. a 2-arg handler call, or a caller that
-    % hasn't got one -- means there is nothing to batch against.
+    % hasn't got one -- means there is nothing to batch against. Not a miss:
+    % nothing was asked of the batch, so nothing failed. This is also the
+    % call a test uses to read the counters without touching the cache.
     if strlength(cloudDocumentId) == 0
         return
     end
@@ -116,20 +153,31 @@ function url = batchSignedUrlLookup(cloudDatasetId, cloudDocumentId, seriesName,
             ok = false;
             answer = [];
         end
+        STATS.signerCalls = STATS.signerCalls + 1;
         if ~ok || ~isstruct(answer) || ~isfield(answer,'files') || ...
                 ~isa(answer.files,'containers.Map')
             % Any failure or unexpected shape -> no batch URL. Don't
             % cache a bad answer; do not raise. The caller falls back
             % to getFileDetails for this uid.
+            STATS.uidMisses = STATS.uidMisses + 1;
+            stats = STATS;
             return
         end
         entry = struct('map', answer.files, 'fetchedAt', now_utc);
         CACHE(cacheKey) = entry;
+        STATS.lastMapSize = double(entry.map.Count);
     end
 
     key = char(uid);
     if isKey(entry.map, key)
         url = entry.map(key);
         if isstring(url) && isscalar(url), url = char(url); end
+        STATS.uidHits = STATS.uidHits + 1;
+    else
+        % The scope was fetched but does not name this uid -- data drift, or
+        % a scope that does not actually cover the file. The caller falls
+        % back per uid.
+        STATS.uidMisses = STATS.uidMisses + 1;
     end
+    stats = STATS;
 end
