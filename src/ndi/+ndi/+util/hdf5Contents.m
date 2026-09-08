@@ -117,7 +117,7 @@ if isfield(node, 'Datasets')
     if n > options.maxChildren
         rows(end+1) = struct('path', string(sprintf('%s/... %d more dataset(s)', ...
             here, n - options.maxChildren)), 'kind', "note", ...
-            'size', "", 'class', ""); %#ok<AGROW>
+            'size', "", 'class', "");
     end
 end
 
@@ -139,7 +139,7 @@ if isfield(node, 'Groups')
     if n > options.maxChildren
         rows(end+1) = struct('path', string(sprintf('%s/... %d more group(s)', ...
             here, n - options.maxChildren)), 'kind', "note", ...
-            'size', "", 'class', ""); %#ok<AGROW>
+            'size', "", 'class', "");
     end
 end
 
@@ -198,20 +198,20 @@ hasX = any(p == "/X" | startsWith(p, "/X/"));
 v = strings(0,1);
 if hasBin
     v(end+1) = "square-bin GEF: /geneExp or /wholeExp bins are present, " + ...
-        "so ndi.fun.doc.gene.fromGEF can build a pyramid from this."; %#ok<AGROW>
+        "so ndi.fun.doc.gene.fromGEF can build a pyramid from this.";
 end
 if hasCellBin
     v(end+1) = "CellBin GEF: /cellBin holds per-cell expression. This is " + ...
         "NOT a square-bin GEF. fromCellBin reads the cellbin .h5ad, not " + ...
-        "this, so there is no ingest path for it today."; %#ok<AGROW>
+        "this, so there is no ingest path for it today.";
 end
 if hasObs && hasX
     v(end+1) = "AnnData (.h5ad): /obs and /X are present, which is what " + ...
-        "ndi.fun.doc.gene.fromCellBin reads."; %#ok<AGROW>
+        "ndi.fun.doc.gene.fromCellBin reads.";
 end
 if isempty(v)
     v(end+1) = "no /geneExp, /wholeExp, /cellBin or /obs group at this " + ...
-        "depth. Raise maxDepth, or this is an HDF5 file of another kind."; %#ok<AGROW>
+        "depth. Raise maxDepth, or this is an HDF5 file of another kind.";
 end
 end
 
