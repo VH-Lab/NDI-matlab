@@ -13,7 +13,7 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %   arrays; NDI turns arrays into documents. Nothing here parses HDF5, and
 %   nothing in NDR knows what a document is. This function is the seam,
 %   and it exists because the seam was previously only crossed inside
-%   ndi.gui.app.GeneIngest -- so a script, a batch import, or the Python
+%   ndi.gui.app.GEFManager -- so a script, a batch import, or the Python
 %   port had to either drive a GUI class or write the sequence again.
 %
 %   IT READS THE FILE ONCE. A real section is ~10^8 records and minutes;
@@ -51,7 +51,7 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %   progressFcn ([])     - a handle called as PROGRESSFCN(FRACTION, TEXT)
 %       before each phase, with FRACTION in [0 1] across THIS call. A
 %       plain handle rather than a dialog object so it works with no
-%       display; ndi.gui.app.GeneIngest passes one that drives its
+%       display; ndi.gui.app.GEFManager passes one that drives its
 %       progress bar. The read dominates the time, so the fractions are
 %       weighted towards it rather than spread evenly over the phases.
 %

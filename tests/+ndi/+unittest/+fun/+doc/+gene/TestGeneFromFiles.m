@@ -4,7 +4,7 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
     % These exercise the seam: NDR reads the vendor's file and returns
     % arrays, NDI turns arrays into documents. Before fromGEF and
     % fromCellBin the seam was only ever crossed inside
-    % ndi.gui.app.GeneIngest, so nothing without a display could import a
+    % ndi.gui.app.GEFManager, so nothing without a display could import a
     % section and nothing tested the sequence end to end.
     %
     % THE FIXTURES ARE NDR'S, not copies. They are located from the
@@ -209,7 +209,7 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
         end
 
         function testFromGefReportsProgressThroughTheWholeRun(testCase)
-            % ndi.gui.app.GeneIngest drives its bar from this. The
+            % ndi.gui.app.GEFManager drives its bar from this. The
             % fractions must not go backwards and must reach 1, or the
             % dialog stalls short of the end on a read that takes minutes
             % and a user cannot tell a slow step from a hung one.

@@ -1,5 +1,5 @@
-classdef TestGeneIngest < matlab.unittest.TestCase
-    % TestGeneIngest - the model behind ndi.gui.app.GeneIngest.
+classdef TestGEFManager < matlab.unittest.TestCase
+    % TestGEFManager - the model behind ndi.gui.app.GEFManager.
     %
     % Everything asserted here runs with NO FIGURE. The app is built with
     % build=false and only its static, pure methods are exercised, so a
@@ -55,12 +55,12 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testBuildsWithoutAFigure(testCase)
             % The model must construct headlessly, or none of the rest of
             % this class could run in CI.
-            app = ndi.gui.app.GeneIngest(testCase.session, 'build', false);
-            testCase.verifyClass(app, 'ndi.gui.app.GeneIngest');
+            app = ndi.gui.app.GEFManager(testCase.session, 'build', false);
+            testCase.verifyClass(app, 'ndi.gui.app.GEFManager');
         end
 
         function testListsPyramidsWithWhatTheyHave(testCase)
-            rows = ndi.gui.app.GeneIngest.pyramidRows(testCase.session);
+            rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
             testCase.verifyEqual(numel(rows), 1);
             testCase.verifyEqual(rows(1).label, 'opossum s1');
             testCase.verifyEqual(rows(1).nLevels, 2);       % binSizes [1 2]
@@ -81,16 +81,122 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             ndi.fun.doc.gene.makePyramid(testCase.session, 1, 1, 0, 1, gl, ...
                 'subjectID', testCase.subjectID, ...
                 'binSizes', 1, 'grid', 1, 'label', 'bare');
-            rows = ndi.gui.app.GeneIngest.pyramidRows(testCase.session);
+            rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
             bare = rows(strcmp({rows.label}, 'bare'));
             testCase.verifyEqual(bare.nCells, 0);
             testCase.verifyEqual(bare.nLabelSets, 0);
         end
 
+        function testTheSubjectColumnNamesTheSubject(testCase)
+            % An id names the subject uniquely and tells the reader
+            % nothing. The id stays on the row for anything that has to be
+            % exact.
+            rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
+            testCase.verifyEqual(rows(1).subject, 'ingest@vhlab');
+            testCase.verifyEqual(rows(1).subjectID, testCase.subjectID);
+        end
+
+        function testTheGeneCountComesFromTheGeneList(testCase)
+            % n_genes is not on the pyramid. Reading it from there gave
+            % NaN in a column that should hold a number, which reads as
+            % "no genes" rather than as "looked in the wrong place".
+            rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
+            testCase.verifyEqual(rows(1).nGenes, 2);
+        end
+
+        function testTheAssayComesFromTheGeneExpressionSuperclass(testCase)
+            % Same shape of mistake as n_genes: assay is declared on
+            % geneExpression, so it is not in the pyramid's own property
+            % list and reading it from there gave a blank column.
+            gl = ndi.fun.doc.gene.makeGeneList(testCase.session, {'E7'}, {'g'});
+            ndi.fun.doc.gene.makePyramid(testCase.session, 1, 1, 0, 1, gl, ...
+                'subjectID', testCase.subjectID, 'binSizes', 1, 'grid', 1, ...
+                'label', 'assayed', 'assay', 'Stereo-seq');
+            rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
+            r = rows(strcmp({rows.label}, 'assayed'));
+            testCase.verifyEqual(r.assay, 'Stereo-seq');
+        end
+
+        function testASubjectWithNoNameFallsBackToItsId(testCase)
+            % Better than an empty cell, which would say the pyramid has
+            % no subject -- a different and worse claim.
+            m = containers.Map('KeyType','char','ValueType','char');
+            testCase.verifyEqual( ...
+                ndi.gui.app.GEFManager.lookup(m, 'abc', 'abc'), 'abc');
+        end
+
+        function testViewCommandNamesThePyramid(testCase)
+            % A session with two pyramids makes the viewer list them and
+            % open nothing, so View would appear to do nothing at all.
+            cmd = ndi.gui.app.GEFManager.viewCommand('/usr/local/bin/napariViewGEF', ...
+                '/data/opossum', 'abc123');
+            testCase.verifyTrue(contains(cmd, '--pyramid'));
+            testCase.verifyTrue(contains(cmd, 'abc123'));
+            testCase.verifyTrue(contains(cmd, '/data/opossum'));
+        end
+
+        function testViewCommandLeavesOutWhatWasNotAskedFor(testCase)
+            cmd = ndi.gui.app.GEFManager.viewCommand('L', '/d', 'p');
+            testCase.verifyFalse(contains(cmd, '--cells'));
+            testCase.verifyFalse(contains(cmd, '--outlines'));
+            testCase.verifyFalse(contains(cmd, '--no-density'));
+            testCase.verifyFalse(contains(cmd, '--no-controls'));
+            testCase.verifyFalse(contains(cmd, '--name'));
+            testCase.verifyFalse(contains(cmd, '--labels'));
+        end
+
+        function testOutlinesImplyCells(testCase)
+            % The viewer reads boundaries out of the cells document it
+            % resolved, so --outlines without --cells is a refusal rather
+            % than a picture with fewer layers.
+            cmd = ndi.gui.app.GEFManager.viewCommand('L', '/d', 'p', ...
+                'outlines', true);
+            testCase.verifyTrue(contains(cmd, '--outlines'));
+            testCase.verifyTrue(contains(cmd, '--cells'));
+        end
+
+        function testDensityAndControlsAreExpressedByTheirAbsence(testCase)
+            % The viewer's defaults are density on and panels docked, so
+            % the flags are the negatives; emitting them the other way
+            % round would silently invert both.
+            cmd = ndi.gui.app.GEFManager.viewCommand('L', '/d', 'p', ...
+                'density', false, 'controls', false);
+            testCase.verifyTrue(contains(cmd, '--no-density'));
+            testCase.verifyTrue(contains(cmd, '--no-controls'));
+        end
+
+        function testAPathWithSpacesStaysOneArgument(testCase)
+            % Otherwise the viewer is handed two arguments where one was
+            % meant, and reports a session directory that does not exist.
+            cmd = ndi.gui.app.GEFManager.viewCommand('L', ...
+                '/Users/vanhoosr/my data/opossum', 'p', 'name', 'All genes');
+            testCase.verifyTrue(contains(cmd, '''/Users/vanhoosr/my data/opossum'''));
+            testCase.verifyTrue(contains(cmd, '''All genes'''));
+        end
+
+        function testAnEmptyLauncherIsRefusedWithAnExplanation(testCase)
+            testCase.verifyError(@() ndi.gui.app.GEFManager.viewCommand( ...
+                '', '/d', 'p'), 'NDI:gene:GEFManager:noLauncher');
+        end
+
+        function testAnEmptySessionPathIsRefused(testCase)
+            % A session with no directory has nothing for the viewer to
+            % open, and finding that out from Python is finding it out
+            % late.
+            testCase.verifyError(@() ndi.gui.app.GEFManager.viewCommand( ...
+                'L', '', 'p'), 'NDI:gene:GEFManager:noSessionPath');
+        end
+
+        function testTheDefaultLauncherIsTheDocumentedWrapper(testCase)
+            testCase.verifyEqual( ...
+                char(ndi.gui.app.GEFManager.DefaultViewerLauncher), ...
+                '/usr/local/bin/napariViewGEF');
+        end
+
         function testDeletionPlanReachesEveryDependent(testCase)
             % A delete that took the pyramid alone would leave the levels,
             % the cells and the labels all pointing at something gone.
-            plan = ndi.gui.app.GeneIngest.deletionPlan(testCase.session, testCase.pyr);
+            plan = ndi.gui.app.GEFManager.deletionPlan(testCase.session, testCase.pyr);
             testCase.verifyEqual(numel(plan.tiles), 2);
             testCase.verifyEqual(numel(plan.cells), 1);
             testCase.verifyEqual(numel(plan.labels), 2);
@@ -102,7 +208,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % reaching them takes a second hop. A plan that queried only
             % the pyramid's dependents would miss them entirely and leave
             % them orphaned.
-            plan = ndi.gui.app.GeneIngest.deletionPlan(testCase.session, testCase.pyr);
+            plan = ndi.gui.app.GEFManager.deletionPlan(testCase.session, testCase.pyr);
             names = cell(numel(plan.labels),1);
             for i = 1:numel(plan.labels)
                 names{i} = plan.labels{i}.document_properties.cellTypeLabels.label_name;
@@ -112,8 +218,8 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         end
 
         function testDeletionMessageNamesTheCounts(testCase)
-            plan = ndi.gui.app.GeneIngest.deletionPlan(testCase.session, testCase.pyr);
-            msg = ndi.gui.app.GeneIngest.deletionMessage(plan);
+            plan = ndi.gui.app.GEFManager.deletionPlan(testCase.session, testCase.pyr);
+            msg = ndi.gui.app.GEFManager.deletionMessage(plan);
             testCase.verifyTrue(contains(msg, '6 document'));
             testCase.verifyTrue(contains(msg, '2 level'));
             testCase.verifyTrue(contains(msg, '2 label set'));
@@ -125,7 +231,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % "centroid-relative" alone is an assertion; with the ratio and
             % the threshold it is a claim a human can check.
             meta = testCase.fakeCellbinMeta();
-            items = ndi.gui.app.GeneIngest.contourFindings(meta);
+            items = ndi.gui.app.GEFManager.contourFindings(meta);
             ref = items(strcmp({items.name}, 'Contour reference'));
             testCase.verifyEqual(ref.value, 'centroid');
             testCase.verifyTrue(contains(ref.evidence, '0.00019'));
@@ -135,7 +241,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
 
         function testContourFindingsReportAbsence(testCase)
             meta = struct('contoursPresent', false);
-            items = ndi.gui.app.GeneIngest.contourFindings(meta);
+            items = ndi.gui.app.GEFManager.contourFindings(meta);
             testCase.verifyEqual(items(1).value, 'absent');
             testCase.verifyFalse(items(1).overridable);
         end
@@ -145,7 +251,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % transferred cell type call look identical in a legend, so the
             % difference has to be stated where a human will read it.
             meta = testCase.fakeCellbinMeta();
-            items = ndi.gui.app.GeneIngest.labelFindings(meta);
+            items = ndi.gui.app.GEFManager.labelFindings(meta);
             testCase.verifyEqual(numel(items), 2);
 
             leiden = items(strcmp({items.name}, 'leiden'));
@@ -164,7 +270,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             meta = struct('nRecords', 120966551, 'box', [0 0 26459 26459], ...
                 'chipSerial', 'SS200000135TL_D1', 'resolutionNm', 500, ...
                 'root', '/geneExp/bin1', 'boxSource', 'attrs at /geneExp/bin1');
-            s = ndi.gui.app.GeneIngest.summarizeGef(meta, cell(30434,1));
+            s = ndi.gui.app.GEFManager.summarizeGef(meta, cell(30434,1));
             testCase.verifyTrue(contains(s, '30434 genes'));
             testCase.verifyTrue(contains(s, '120,966,551'));
             testCase.verifyTrue(contains(s, '26460 x 26460'));
@@ -179,7 +285,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             meta = struct('nRecords', 5, 'box', [], 'chipSerial', '', ...
                 'resolutionNm', 500, 'root', '/geneExp/bin1', ...
                 'boxSource', 'unknown (no attributes found and no records read)');
-            s = ndi.gui.app.GeneIngest.summarizeGef(meta, {'E1'});
+            s = ndi.gui.app.GEFManager.summarizeGef(meta, {'E1'});
             testCase.verifyTrue(contains(s, 'not yet known'));
             testCase.verifyTrue(contains(s, '(none)'));    % no chip serial
         end
@@ -194,7 +300,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % this after the read would waste minutes and produce nothing.
             c = testCase.baseChoices();
             c.subjectID = '';
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1','E2'}, [], c);
             testCase.verifyEmpty(plan.steps);
             testCase.verifyTrue(any(contains(plan.errors, 'subject')));
@@ -206,7 +312,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             c = testCase.baseChoices();
             c.subjectID = '';
             c.binSizes = [2 2 4];
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
             testCase.verifyGreaterThanOrEqual(numel(plan.errors), 2);
         end
@@ -217,7 +323,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             c = testCase.baseChoices();
             c.importCells = false;
             c.labelSelections = struct('name','leiden','isUnsupervised',true);
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, testCase.fakeCellbinMeta(), c);
             testCase.verifyTrue(any(contains(plan.errors, 'cells were not')));
         end
@@ -226,7 +332,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             c = testCase.baseChoices();
             c.importCells = true;
             c.labelSelections = struct('name','not_a_column','isUnsupervised',false);
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, testCase.fakeCellbinMeta(), c);
             testCase.verifyTrue(any(contains(plan.errors, 'not_a_column')));
         end
@@ -234,7 +340,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testPlanRefusesCellsWithNoCellbinFile(testCase)
             c = testCase.baseChoices();
             c.importCells = true;
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
             testCase.verifyTrue(any(contains(plan.errors, 'no cellbin')));
         end
@@ -248,7 +354,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             c.labelSelections = struct( ...
                 'name', {'leiden','subclass_nn_column'}, ...
                 'isUnsupervised', {true, false});
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1','E2'}, testCase.fakeCellbinMeta(), c);
             testCase.verifyEmpty(plan.errors);
             testCase.verifyEqual({plan.steps.kind}, ...
@@ -256,7 +362,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         end
 
         function testPlanWithoutCellbinStopsAtThePyramid(testCase)
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], testCase.baseChoices());
             testCase.verifyEqual({plan.steps.kind}, {'geneList','pyramid'});
         end
@@ -266,7 +372,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % nothing in it records that.
             meta = testCase.fakeGefMeta();
             meta.nGenesInFile = 30434;
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 meta, {'E1','E2'}, [], testCase.baseChoices());
             testCase.verifyTrue(any(contains(plan.warnings, '30434')));
         end
@@ -274,7 +380,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testPlanWarnsWhenAssemblyIsMissing(testCase)
             % Counts are not reproducible without the annotation they were
             % made against, and it cannot be recovered from the .gef.
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], testCase.baseChoices());
             testCase.verifyTrue(any(contains(plan.warnings, 'assembly')));
         end
@@ -286,7 +392,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             c.importCells = true;
             c.labelSelections = struct('name','subclass_nn_column', ...
                 'isUnsupervised', false);
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, testCase.fakeCellbinMeta(), c);
             testCase.verifyEmpty(plan.errors);
             testCase.verifyTrue(any(contains(plan.warnings, 'scientific error')));
@@ -295,7 +401,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testPlanWarnsWhenNoFullResolutionLevelIsStored(testCase)
             c = testCase.baseChoices();
             c.binSizes = [2 4 8];
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
             testCase.verifyEmpty(plan.errors);        % legal, not fatal
             testCase.verifyTrue(any(contains(plan.warnings, 'full-resolution')));
@@ -304,7 +410,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testPlanWarnsWhenTheExtentIsUnvalidated(testCase)
             meta = testCase.fakeGefMeta();
             meta.boxSource = 'attrs at /geneExp/bin1 (unvalidated: no records read)';
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 meta, {'E1'}, [], testCase.baseChoices());
             testCase.verifyTrue(any(contains(plan.warnings, 'no records have been checked')));
         end
@@ -316,14 +422,14 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % wrong on a 500 nm chip looks exactly like the default.
             meta = testCase.fakeGefMeta();
             meta.resolutionNm = 715;
-            c = ndi.gui.app.GeneIngest.ingestChoices(meta, []);
+            c = ndi.gui.app.GEFManager.ingestChoices(meta, []);
             testCase.verifyEqual(c.basePixelSize, [0.715 0.715]);
         end
 
         function testChoicesNeverGuessASubject(testCase)
             % A .gef records a chip, not an animal. Guessing would attach a
             % section to the wrong subject in a way nothing could detect.
-            c = ndi.gui.app.GeneIngest.ingestChoices(testCase.fakeGefMeta(), []);
+            c = ndi.gui.app.GEFManager.ingestChoices(testCase.fakeGefMeta(), []);
             testCase.verifyEmpty(c.subjectID);
         end
 
@@ -331,7 +437,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % The file does not say which labeling is a cell type call and
             % which is a clustering, so preselecting either would be the
             % heuristic this app exists to avoid.
-            c = ndi.gui.app.GeneIngest.ingestChoices( ...
+            c = ndi.gui.app.GEFManager.ingestChoices( ...
                 testCase.fakeGefMeta(), testCase.fakeCellbinMeta());
             testCase.verifyTrue(c.importCells);
             testCase.verifyEmpty(c.labelSelections);
@@ -340,9 +446,9 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testIngestMessageNamesTheStepsAndTheWarnings(testCase)
             c = testCase.baseChoices();
             c.importCells = true;
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, testCase.fakeCellbinMeta(), c);
-            msg = ndi.gui.app.GeneIngest.ingestMessage(plan);
+            msg = ndi.gui.app.GEFManager.ingestMessage(plan);
             testCase.verifyTrue(contains(msg, 'gene list'));
             testCase.verifyTrue(contains(msg, 'pyramid'));
             testCase.verifyTrue(contains(msg, 'cells'));
@@ -353,9 +459,9 @@ classdef TestGeneIngest < matlab.unittest.TestCase
         function testIngestMessageOnARefusalSaysWhyNotWhatWouldHappen(testCase)
             c = testCase.baseChoices();
             c.subjectID = '';
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
-            msg = ndi.gui.app.GeneIngest.ingestMessage(plan);
+            msg = ndi.gui.app.GEFManager.ingestMessage(plan);
             testCase.verifyTrue(contains(msg, 'cannot run yet'));
             testCase.verifyFalse(contains(msg, 'This creates'));
         end
@@ -365,11 +471,11 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % pure layer already rejected.
             c = testCase.baseChoices();
             c.subjectID = '';
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
-            testCase.verifyError(@() ndi.gui.app.GeneIngest.runIngest( ...
+            testCase.verifyError(@() ndi.gui.app.GEFManager.runIngest( ...
                 testCase.session, 'nofile.gef', '', plan), ...
-                'NDI:GeneIngest:planHasErrors');
+                'NDI:GEFManager:planHasErrors');
         end
 
         function testStepArgsReadsTheRunsArgumentsBackOutOfThePlan(testCase)
@@ -379,9 +485,9 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % arguments from the plan rather than from choices directly.
             c = testCase.baseChoices();
             c.binSizes = [1 2 4];
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
-            py = ndi.gui.app.GeneIngest.stepArgs(plan, 'pyramid');
+            py = ndi.gui.app.GEFManager.stepArgs(plan, 'pyramid');
             testCase.verifyEqual(py.binSizes, [1 2 4]);
             testCase.verifyEqual(py.subjectID, c.subjectID);
         end
@@ -391,10 +497,10 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % must be an empty answer rather than an index error.
             c = testCase.baseChoices();
             c.importCells = false;
-            plan = ndi.gui.app.GeneIngest.ingestPlan( ...
+            plan = ndi.gui.app.GEFManager.ingestPlan( ...
                 testCase.fakeGefMeta(), {'E1'}, [], c);
             testCase.verifyEmpty(fieldnames( ...
-                ndi.gui.app.GeneIngest.stepArgs(plan, 'cells')));
+                ndi.gui.app.GEFManager.stepArgs(plan, 'cells')));
         end
 
         function testGefProgressStaysInsideTheShareItOwns(testCase)
@@ -404,7 +510,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % leave the rest of the bar for the cells step. Overshooting
             % would drive the bar to 100% with work still to do.
             got = [];
-            f = ndi.gui.app.GeneIngest.gefProgress(@grab, 4);
+            f = ndi.gui.app.GEFManager.gefProgress(@grab, 4);
             f(0, 'reading');
             f(0.5, 'halfway');
             f(1, 'done with the gef');
@@ -419,7 +525,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % runIngest is documented to work with no display, so the
             % absence of a progress handle has to survive the mapping.
             testCase.verifyEmpty( ...
-                ndi.gui.app.GeneIngest.gefProgress([], 4));
+                ndi.gui.app.GEFManager.gefProgress([], 4));
         end
 
         function testReadNotesReportClampedCounts(testCase)
@@ -427,14 +533,14 @@ classdef TestGeneIngest < matlab.unittest.TestCase
             % reported afterwards rather than asked about beforehand. Those
             % pixels read LOW and nothing in the pyramid says so.
             meta = struct('nCountsClamped', 1234567, 'boxSource', 'data');
-            notes = ndi.gui.app.GeneIngest.readNotes(meta, {'E1'});
+            notes = ndi.gui.app.GEFManager.readNotes(meta, {'E1'});
             testCase.verifyTrue(any(contains(notes, '1,234,567')));
             testCase.verifyTrue(any(contains(notes, 'read low')));
         end
 
         function testReadNotesAreQuietWhenNothingIsWrong(testCase)
             meta = struct('nCountsClamped', 0, 'boxSource', 'data');
-            notes = ndi.gui.app.GeneIngest.readNotes(meta, {'E1'});
+            notes = ndi.gui.app.GEFManager.readNotes(meta, {'E1'});
             testCase.verifyEqual(numel(notes), 1);       % just the extent
             testCase.verifyTrue(contains(notes{1}, 'data'));
         end
@@ -443,7 +549,7 @@ classdef TestGeneIngest < matlab.unittest.TestCase
 
     methods (Access = private)
         function c = baseChoices(testCase)
-            c = ndi.gui.app.GeneIngest.ingestChoices(testCase.fakeGefMeta(), []);
+            c = ndi.gui.app.GEFManager.ingestChoices(testCase.fakeGefMeta(), []);
             c.subjectID = 'a_subject_id';
         end
 
