@@ -725,11 +725,6 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 ext, ndi.gui.app.GEFManager.orNone(meta.chipSerial), ...
                 meta.resolutionNm, meta.root, meta.boxSource);
         end
-    end
-
-    % =====================================================================
-    methods (Static, Access = private)
-
         function p = launcherPath()
         % LAUNCHERPATH - the viewer launcher, from preferences or default
         %
@@ -792,15 +787,19 @@ classdef GEFManager < ndi.gui.app.sessionApp
         %
         %   See also: ndi.gui.app.GEFManager
             arguments
-                launcher (1,:) char
-                sessionPath (1,:) char
-                pyramidID (1,:) char
+                % char without a (1,:) size: an emptied uieditfield hands
+                % back a 0-by-0 char, and a size constraint would answer
+                % that with a validation error where this raises a
+                % refusal that says what is missing.
+                launcher char
+                sessionPath char
+                pyramidID char
                 options.cells (1,1) logical = false
                 options.outlines (1,1) logical = false
                 options.density (1,1) logical = true
                 options.controls (1,1) logical = true
-                options.name (1,:) char = ''
-                options.labels (1,:) char = ''
+                options.name char = ''
+                options.labels char = ''
             end
             if isempty(strtrim(launcher))
                 error('NDI:gene:GEFManager:noLauncher', ...
@@ -912,6 +911,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
             if isempty(key) || ~isKey(m, char(key)), return; end
             v = m(char(key));
         end
+
+    end
+
+    % =====================================================================
+    methods (Static, Access = private)
 
         function v = field(s, name, dflt)
             if isstruct(s) && isfield(s, name), v = s.(name); else, v = dflt; end
