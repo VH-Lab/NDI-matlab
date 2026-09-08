@@ -187,6 +187,42 @@ classdef TestGEFManager < matlab.unittest.TestCase
                 'L', '', 'p'), 'NDI:gene:GEFManager:noSessionPath');
         end
 
+        function testShellQuotingSurvivesAQuoteInThePath(testCase)
+            % Asserted by round trip through a real shell rather than
+            % against a hand-written expected literal: the escape is
+            % close-quote, escaped-quote, reopen, and a test that spells
+            % that out in MATLAB's own doubled quotes is as easy to get
+            % wrong as the code it checks.
+            testCase.assumeFalse(ispc, 'POSIX quoting; Windows quotes differently.');
+            raw = 'it''s a path';
+            q = ndi.gui.app.GEFManager.shellQuote(raw);
+            [status, out] = system(['printf %s ' q]);
+            testCase.verifyEqual(status, 0);
+            testCase.verifyEqual(out, raw);
+        end
+
+        function testDetachLetsMatlabCarryOn(testCase)
+            % The viewer runs for as long as the user looks at it. Without
+            % this MATLAB sits unresponsive behind it until they close the
+            % window, which reads as the launch having hung.
+            cmd = ndi.gui.app.GEFManager.detach('someviewer /data');
+            if ispc
+                testCase.verifyTrue(startsWith(cmd, 'start '));
+            else
+                testCase.verifyTrue(endsWith(cmd, ' &'));
+            end
+            testCase.verifyTrue(contains(cmd, 'someviewer /data'));
+        end
+
+        function testTheLauncherPathIsAlwaysUsable(testCase)
+            % Falls back to the default rather than raising when the
+            % preference is missing or unreadable: the dialog must still
+            % open, and the field it opens with is editable.
+            p = ndi.gui.app.GEFManager.launcherPath();
+            testCase.verifyClass(p, 'char');
+            testCase.verifyNotEmpty(p);
+        end
+
         function testTheDefaultLauncherIsTheDocumentedWrapper(testCase)
             testCase.verifyEqual( ...
                 char(ndi.gui.app.GEFManager.DefaultViewerLauncher), ...
