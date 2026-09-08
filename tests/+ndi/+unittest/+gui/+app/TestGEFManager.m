@@ -280,6 +280,15 @@ classdef TestGEFManager < matlab.unittest.TestCase
             testCase.verifyNotEmpty(p);
         end
 
+        function testAccentSurvivesAHandleThatIsNotThere(testCase)
+            % Styling must not be able to cost the window. buildUI accents
+            % four buttons; a deleted one during teardown would otherwise
+            % take the figure with it.
+            c = ndi.gui.cloudColors();
+            testCase.verifyWarningFree( ...
+                @() ndi.gui.app.GEFManager.accent([], c));
+        end
+
         function testTheDefaultLauncherIsTheDocumentedWrapper(testCase)
             testCase.verifyEqual( ...
                 char(ndi.gui.app.GEFManager.DefaultViewerLauncher), ...

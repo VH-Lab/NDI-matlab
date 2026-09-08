@@ -725,6 +725,26 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 ext, ndi.gui.app.GEFManager.orNone(meta.chipSerial), ...
                 meta.resolutionNm, meta.root, meta.boxSource);
         end
+        function accent(btn, c)
+        % ACCENT - style a button in the NDI Cloud accent
+        %
+        %   Light blue on navy, matching ndi.util.ListDialog and the cloud
+        %   .mlapp apps. ListDialog has the identical three lines, but its
+        %   copy is in a PRIVATE static block and cannot be called from
+        %   here; the eventual home for this is a shared ndi.gui helper
+        %   beside cloudColors, not a fourth copy.
+        %
+        %   A missing or deleted handle is a no-op rather than an error:
+        %   this is styling, and losing the window over a colour would be
+        %   a poor trade.
+            if isempty(btn) || ~isvalid(btn)
+                return;
+            end
+            btn.BackgroundColor = c.lightBlue;
+            btn.FontColor       = c.darkBlue;
+            btn.FontWeight      = 'bold';
+        end
+
         function p = launcherPath()
         % LAUNCHERPATH - the viewer launcher, from preferences or default
         %
@@ -1080,26 +1100,43 @@ classdef GEFManager < ndi.gui.app.sessionApp
     methods (Access = private)
 
         function buildUI(obj)
-            obj.fig = uifigure('Name','GEF Manager','Position',[100 100 900 420]);
-            g = uigridlayout(obj.fig,[3 5]);
-            g.RowHeight = {'1x', 30, 22};
+            c = ndi.gui.cloudColors();
+            obj.fig = uifigure('Name','GEF Manager','Position',[100 100 900 460], ...
+                'Color', c.offWhite);
+            g = uigridlayout(obj.fig,[4 5]);
+            g.RowHeight = {28, '1x', 30, 22};
             g.ColumnWidth = {'1x', 90, 90, 90, 90};
+            g.BackgroundColor = c.offWhite;
+
+            % Navy header bar with white text, as the cloud apps and
+            % ndi.util.ListDialog have it.
+            hb = uigridlayout(g,[1 1]);
+            hb.Layout.Row = 1; hb.Layout.Column = [1 5];
+            hb.Padding = [8 0 8 0];
+            hb.BackgroundColor = c.darkBlue;
+            uilabel(hb,'Text','Spatial gene expression pyramids', ...
+                'FontColor', c.white, 'FontWeight','bold', 'FontSize',14, ...
+                'VerticalAlignment','center');
 
             obj.table = uitable(g, 'ColumnName', ...
                 {'Label','Subject','Assay','Chip','Genes','Levels','Cells','Label sets'});
-            obj.table.Layout.Row = 1; obj.table.Layout.Column = [1 5];
+            obj.table.Layout.Row = 2; obj.table.Layout.Column = [1 5];
 
             b = uibutton(g,'Text','Reload','ButtonPushedFcn',@(~,~) obj.reload());
-            b.Layout.Row = 2; b.Layout.Column = 2;
+            b.Layout.Row = 3; b.Layout.Column = 2;
+            ndi.gui.app.GEFManager.accent(b, c);
             b = uibutton(g,'Text','View...','ButtonPushedFcn',@(~,~) obj.onView());
-            b.Layout.Row = 2; b.Layout.Column = 3;
+            b.Layout.Row = 3; b.Layout.Column = 3;
+            ndi.gui.app.GEFManager.accent(b, c);
             b = uibutton(g,'Text','Add...','ButtonPushedFcn',@(~,~) obj.onAdd());
-            b.Layout.Row = 2; b.Layout.Column = 4;
+            b.Layout.Row = 3; b.Layout.Column = 4;
+            ndi.gui.app.GEFManager.accent(b, c);
             b = uibutton(g,'Text','Delete','ButtonPushedFcn',@(~,~) obj.onDelete());
-            b.Layout.Row = 2; b.Layout.Column = 5;
+            b.Layout.Row = 3; b.Layout.Column = 5;
+            ndi.gui.app.GEFManager.accent(b, c);
 
-            obj.statusLabel = uilabel(g,'Text','');
-            obj.statusLabel.Layout.Row = 3; obj.statusLabel.Layout.Column = [1 5];
+            obj.statusLabel = uilabel(g,'Text','','FontColor', c.darkBlue);
+            obj.statusLabel.Layout.Row = 4; obj.statusLabel.Layout.Column = [1 5];
         end
 
         function setStatus(obj, msg)
@@ -1152,28 +1189,39 @@ classdef GEFManager < ndi.gui.app.sessionApp
             hasCells = r.nCells > 0;
             launched = false;
 
-            d = uifigure('Name','View in napari','Position',[120 120 660 505]);
-            gl = uigridlayout(d,[9 3]);
-            gl.RowHeight = {40, 24, 24, 90, 24, 24, 24, 24, 60};
+            c = ndi.gui.cloudColors();
+            d = uifigure('Name','View in napari','Position',[120 120 660 545], ...
+                'Color', c.offWhite);
+            gl = uigridlayout(d,[10 3]);
+            gl.RowHeight = {28, 40, 24, 24, 90, 24, 24, 24, 24, 60};
             gl.ColumnWidth = {140, '1x', 100};
+            gl.BackgroundColor = c.offWhite;
+
+            hb = uigridlayout(gl,[1 1]);
+            hb.Layout.Row = 1; hb.Layout.Column = [1 3];
+            hb.Padding = [8 0 8 0];
+            hb.BackgroundColor = c.darkBlue;
+            uilabel(hb,'Text','View in napari', ...
+                'FontColor', c.white, 'FontWeight','bold', 'FontSize',14, ...
+                'VerticalAlignment','center');
 
             intro = uilabel(gl,'WordWrap','on','Text', ...
                 ['Opens this pyramid in napari. The viewer is a separate ' ...
                  'Python program: MATLAB starts it and does not wait for it. ' ...
                  'The command that will run is shown at the bottom.']);
-            intro.Layout.Row = 1; intro.Layout.Column = [1 3];
+            intro.Layout.Row = 2; intro.Layout.Column = [1 3];
 
             lab = uilabel(gl,'Text','Launcher');
-            lab.Layout.Row = 2; lab.Layout.Column = 1;
+            lab.Layout.Row = 3; lab.Layout.Column = 1;
             ed = uieditfield(gl,'text','Value',ndi.gui.app.GEFManager.launcherPath());
-            ed.Layout.Row = 2; ed.Layout.Column = 2;
+            ed.Layout.Row = 3; ed.Layout.Column = 2;
             br = uibutton(gl,'Text','Browse...');
-            br.Layout.Row = 2; br.Layout.Column = 3;
+            br.Layout.Row = 3; br.Layout.Column = 3;
 
             lab = uilabel(gl,'Text','Layer name');
-            lab.Layout.Row = 3; lab.Layout.Column = 1;
+            lab.Layout.Row = 4; lab.Layout.Column = 1;
             nameEd = uieditfield(gl,'text','Value','All genes');
-            nameEd.Layout.Row = 3; nameEd.Layout.Column = [2 3];
+            nameEd.Layout.Row = 4; nameEd.Layout.Column = [2 3];
 
             % Offered rather than typed: these names come from somebody's
             % cellbin /obs columns, and a misremembered one is answered by
@@ -1182,7 +1230,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
             labelNames = ndi.gui.app.GEFManager.labelingNames(obj.session, r.doc);
             cbChoose = uicheckbox(gl,'Text','Choose cell type labelings', ...
                 'Value',false,'Enable',~isempty(labelNames));
-            cbChoose.Layout.Row = 4; cbChoose.Layout.Column = 1;
+            cbChoose.Layout.Row = 5; cbChoose.Layout.Column = 1;
             labelList = uilistbox(gl,'Multiselect','on','Enable','off');
             if isempty(labelNames)
                 cbChoose.Text = 'Cell type labelings (none in this session)';
@@ -1191,27 +1239,28 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 labelList.Items = labelNames;
             end
             labelList.Value = {};
-            labelList.Layout.Row = 4; labelList.Layout.Column = [2 3];
+            labelList.Layout.Row = 5; labelList.Layout.Column = [2 3];
 
             cbCells = uicheckbox(gl,'Text','Cell centroids', ...
                 'Value',hasCells,'Enable',hasCells);
-            cbCells.Layout.Row = 5; cbCells.Layout.Column = [1 3];
+            cbCells.Layout.Row = 6; cbCells.Layout.Column = [1 3];
             cbOut = uicheckbox(gl,'Text','Cell outlines', ...
                 'Value',hasCells,'Enable',hasCells);
-            cbOut.Layout.Row = 6; cbOut.Layout.Column = [1 3];
+            cbOut.Layout.Row = 7; cbOut.Layout.Column = [1 3];
             if ~hasCells
                 cbCells.Text = 'Cell centroids (no cells document for this pyramid)';
                 cbOut.Text = 'Cell outlines (no cells document for this pyramid)';
             end
             cbCounts = uicheckbox(gl,'Text','Raw counts instead of density','Value',false);
-            cbCounts.Layout.Row = 7; cbCounts.Layout.Column = [1 3];
+            cbCounts.Layout.Row = 8; cbCounts.Layout.Column = [1 3];
             cbPanels = uicheckbox(gl,'Text','Control panels','Value',true);
-            cbPanels.Layout.Row = 8; cbPanels.Layout.Column = [1 3];
+            cbPanels.Layout.Row = 9; cbPanels.Layout.Column = [1 3];
 
             cmdArea = uitextarea(gl,'Editable','off','Value','');
-            cmdArea.Layout.Row = 9; cmdArea.Layout.Column = [1 2];
+            cmdArea.Layout.Row = 10; cmdArea.Layout.Column = [1 2];
             go = uibutton(gl,'Text','Launch');
-            go.Layout.Row = 9; go.Layout.Column = 3;
+            ndi.gui.app.GEFManager.accent(go, c);
+            go.Layout.Row = 10; go.Layout.Column = 3;
 
             br.ButtonPushedFcn = @(~,~) localBrowse();
             go.ButtonPushedFcn = @(~,~) localGo();
