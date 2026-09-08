@@ -870,6 +870,42 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
         end
 
+        function names = labelingNames(session, pyrDoc)
+        % LABELINGNAMES - the cell type labelings available for a pyramid
+        %
+        %   NAMES = NDI.GUI.APP.GEFMANAGER.LABELINGNAMES(SESSION, PYRDOC)
+        %   returns a cellstr of label_name, one per cellTypeLabels
+        %   document under this pyramid's cells, in the order found and
+        %   without duplicates.
+        %
+        %   OFFERED RATHER THAN TYPED. The names come from the ingest --
+        %   they are the /obs column names of somebody's cellbin -- so
+        %   asking the user to spell 'subclass_nn_column' from memory
+        %   invites a typo that the viewer can only answer by showing
+        %   nothing, which looks like the labeling being missing.
+        %
+        %   Two hops, because labels depend on the CELLS document and
+        %   cells depend on the pyramid; querying the pyramid's
+        %   dependents alone would find none of them.
+            names = {};
+            cellsDocs = session.database_search( ...
+                ndi.query('','depends_on','spatialGeneExpressionPyramid_id',pyrDoc.id()) & ...
+                ndi.query('','isa','spatialGeneExpressionCells'));
+            for i = 1:numel(cellsDocs)
+                labelDocs = session.database_search( ...
+                    ndi.query('','depends_on','cells_document_id',cellsDocs{i}.id()) & ...
+                    ndi.query('','isa','cellTypeLabels'));
+                for j = 1:numel(labelDocs)
+                    p = labelDocs{j}.document_properties;
+                    if ~isfield(p,'cellTypeLabels'), continue; end
+                    nm = ndi.gui.app.GEFManager.field(p.cellTypeLabels,'label_name','');
+                    if ~isempty(nm) && ~ismember(nm, names)
+                        names{end+1} = char(nm); %#ok<AGROW>
+                    end
+                end
+            end
+        end
+
         function m = subjectNameMap(session)
         % SUBJECTNAMEMAP - subject document id -> local_identifier
         %
@@ -1078,9 +1114,9 @@ classdef GEFManager < ndi.gui.app.sessionApp
             hasCells = r.nCells > 0;
             launched = false;
 
-            d = uifigure('Name','View in napari','Position',[120 120 660 440]);
+            d = uifigure('Name','View in napari','Position',[120 120 660 505]);
             gl = uigridlayout(d,[9 3]);
-            gl.RowHeight = {40, 24, 24, 24, 24, 24, 24, 24, 60};
+            gl.RowHeight = {40, 24, 24, 90, 24, 24, 24, 24, 60};
             gl.ColumnWidth = {140, '1x', 100};
 
             intro = uilabel(gl,'WordWrap','on','Text', ...
@@ -1101,11 +1137,23 @@ classdef GEFManager < ndi.gui.app.sessionApp
             nameEd = uieditfield(gl,'text','Value','All genes');
             nameEd.Layout.Row = 3; nameEd.Layout.Column = [2 3];
 
-            lab = uilabel(gl,'Text','Cell type labelings');
-            lab.Layout.Row = 4; lab.Layout.Column = 1;
-            labelEd = uieditfield(gl,'text','Value','', ...
-                'Placeholder','blank: let the viewer choose.  none: show no labelings.');
-            labelEd.Layout.Row = 4; labelEd.Layout.Column = [2 3];
+            % Offered rather than typed: these names come from somebody's
+            % cellbin /obs columns, and a misremembered one is answered by
+            % the viewer showing nothing, which looks like the labeling
+            % being absent rather than misspelt.
+            labelNames = ndi.gui.app.GEFManager.labelingNames(obj.session, r.doc);
+            cbChoose = uicheckbox(gl,'Text','Choose cell type labelings', ...
+                'Value',false,'Enable',~isempty(labelNames));
+            cbChoose.Layout.Row = 4; cbChoose.Layout.Column = 1;
+            labelList = uilistbox(gl,'Multiselect','on','Enable','off');
+            if isempty(labelNames)
+                cbChoose.Text = 'Cell type labelings (none in this session)';
+                labelList.Items = {};
+            else
+                labelList.Items = labelNames;
+            end
+            labelList.Value = {};
+            labelList.Layout.Row = 4; labelList.Layout.Column = [2 3];
 
             cbCells = uicheckbox(gl,'Text','Cell centroids', ...
                 'Value',hasCells,'Enable',hasCells);
@@ -1129,7 +1177,8 @@ classdef GEFManager < ndi.gui.app.sessionApp
 
             br.ButtonPushedFcn = @(~,~) localBrowse();
             go.ButtonPushedFcn = @(~,~) localGo();
-            everything = {ed, nameEd, labelEd, cbCells, cbOut, cbCounts, cbPanels};
+            everything = {ed, nameEd, labelList, cbChoose, cbCells, cbOut, ...
+                cbCounts, cbPanels};
             for i = 1:numel(everything)
                 everything{i}.ValueChangedFcn = @localRefresh;
             end
@@ -1146,7 +1195,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
                     c = ndi.gui.app.GEFManager.viewCommand(ed.Value, sessionPath, ...
                         r.id, 'cells', cbCells.Value, 'outlines', cbOut.Value, ...
                         'density', ~cbCounts.Value, 'controls', cbPanels.Value, ...
-                        'name', nameEd.Value, 'labels', labelEd.Value);
+                        'name', nameEd.Value, 'labels', localLabels());
                 catch ME
                     c = ME.message;
                 end
@@ -1158,7 +1207,30 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 % user's behalf is honest; leaving it clear while passing
                 % --cells anyway would not be.
                 if cbOut.Value, cbCells.Value = true; end
+                if cbChoose.Value && ~isempty(labelNames)
+                    labelList.Enable = 'on';
+                else
+                    labelList.Enable = 'off';
+                end
                 cmdArea.Value = localCommand();
+            end
+
+            function txt = localLabels()
+                % THREE STATES, and they are not the same. Not choosing
+                % passes nothing and lets the viewer decide, which is what
+                % collapses a clustering and the call transferred onto it.
+                % Choosing nothing is a decision -- show no labelings at
+                % all -- and the viewer spells that 'none'.
+                txt = '';
+                if ~cbChoose.Value, return; end
+                sel = labelList.Value;
+                if isempty(sel)
+                    txt = 'none';
+                elseif ischar(sel)
+                    txt = sel;
+                else
+                    txt = strjoin(sel, ',');
+                end
             end
 
             function localBrowse()

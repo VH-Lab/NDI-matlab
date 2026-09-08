@@ -187,6 +187,35 @@ classdef TestGEFManager < matlab.unittest.TestCase
                 'L', '', 'p'), 'NDI:gene:GEFManager:noSessionPath');
         end
 
+        function testTheLabelingsOnOfferAreTheOnesThatExist(testCase)
+            % Typed names invite a typo the viewer can only answer by
+            % showing nothing, which reads as the labeling being absent.
+            names = ndi.gui.app.GEFManager.labelingNames( ...
+                testCase.session, testCase.pyr);
+            testCase.verifyEqual(sort(names(:)), ...
+                sort({'leiden_res1.0'; 'subclass_nn_column'}));
+        end
+
+        function testAPyramidWithNoCellsOffersNoLabelings(testCase)
+            % Labels hang off the CELLS document, so a pyramid with none
+            % has none -- and the two-hop query must return empty rather
+            % than reaching every labeling in the session.
+            gl = ndi.fun.doc.gene.makeGeneList(testCase.session, {'E8'}, {'y'});
+            bare = ndi.fun.doc.gene.makePyramid(testCase.session, 1, 1, 0, 1, gl, ...
+                'subjectID', testCase.subjectID, 'binSizes', 1, 'grid', 1, ...
+                'label', 'nocells');
+            names = ndi.gui.app.GEFManager.labelingNames(testCase.session, bare);
+            testCase.verifyEmpty(names);
+        end
+
+        function testChosenLabelingsReachTheCommandLine(testCase)
+            cmd = ndi.gui.app.GEFManager.viewCommand('L', '/d', 'p', ...
+                'labels', 'subclass_nn_column,leiden_res1.0');
+            testCase.verifyTrue(contains(cmd, '--labels'));
+            testCase.verifyTrue(contains(cmd, ...
+                '''subclass_nn_column,leiden_res1.0'''));
+        end
+
         function testShellQuotingSurvivesAQuoteInThePath(testCase)
             % Asserted by round trip through a real shell rather than
             % against a hand-written expected literal: the escape is
