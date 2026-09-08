@@ -187,6 +187,34 @@ classdef TestGEFManager < matlab.unittest.TestCase
                 'L', '', 'p'), 'NDI:gene:GEFManager:noSessionPath');
         end
 
+        function testNotChoosingLabelingsPassesNoFlag(testCase)
+            % The viewer then shows every labeling and names any pair
+            % that agrees, which is the default worth having.
+            testCase.verifyEmpty( ...
+                ndi.gui.app.GEFManager.labelSelection(false, {}));
+            % Still nothing even with a stale selection sitting in the
+            % listbox: the checkbox is what decides.
+            testCase.verifyEmpty( ...
+                ndi.gui.app.GEFManager.labelSelection(false, {'leiden'}));
+        end
+
+        function testChoosingNoneIsADecisionNotAnAbsentOne(testCase)
+            % "Nothing selected" and "no preference" look identical in a
+            % listbox and mean opposite things. Collapsing them would
+            % make an explicit "show me none" silently show everything.
+            testCase.verifyEqual( ...
+                ndi.gui.app.GEFManager.labelSelection(true, {}), 'none');
+        end
+
+        function testChosenLabelingsBecomeACommaList(testCase)
+            testCase.verifyEqual(ndi.gui.app.GEFManager.labelSelection( ...
+                true, {'subclass_nn_column','leiden'}), ...
+                'subclass_nn_column,leiden');
+            % A listbox with one selection hands back a char, not a cell.
+            testCase.verifyEqual(ndi.gui.app.GEFManager.labelSelection( ...
+                true, 'subclass_nn_column'), 'subclass_nn_column');
+        end
+
         function testTheLabelingsOnOfferAreTheOnesThatExist(testCase)
             % Typed names invite a typo the viewer can only answer by
             % showing nothing, which reads as the labeling being absent.

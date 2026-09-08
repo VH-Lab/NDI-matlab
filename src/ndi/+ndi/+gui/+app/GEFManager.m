@@ -870,6 +870,44 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
         end
 
+        function txt = labelSelection(choosing, selected)
+        % LABELSELECTION - the --labels value for a dialog's state
+        %
+        %   TXT = NDI.GUI.APP.GEFMANAGER.LABELSELECTION(CHOOSING, SELECTED)
+        %   maps the View dialog's labeling controls onto the viewer's
+        %   --labels argument.
+        %
+        %   THREE STATES, and they are three different requests rather
+        %   than degrees of one:
+        %
+        %     not choosing        ''      pass no flag; the viewer shows
+        %                                 every labeling and names any
+        %                                 pair that agrees.
+        %     choosing, none      'none'  a decision: draw no labelings.
+        %     choosing, some      'a,b'   draw exactly these.
+        %
+        %   The middle one is why this is a function. "Nothing selected"
+        %   and "no preference" look identical in a listbox and mean
+        %   opposite things, and collapsing them would make an explicit
+        %   'show me none' silently show everything.
+        %
+        %   Inputs:
+        %   CHOOSING - logical; is the user choosing labelings at all
+        %   SELECTED - char, cellstr or string array of label names
+            arguments
+                choosing (1,1) logical
+                selected = {}
+            end
+            txt = '';
+            if ~choosing, return; end
+            if isempty(selected), txt = 'none'; return; end
+            if ischar(selected)
+                txt = selected;
+            else
+                txt = strjoin(cellstr(selected), ',');
+            end
+        end
+
         function names = labelingNames(session, pyrDoc)
         % LABELINGNAMES - the cell type labelings available for a pyramid
         %
@@ -1216,21 +1254,8 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
 
             function txt = localLabels()
-                % THREE STATES, and they are not the same. Not choosing
-                % passes nothing and lets the viewer decide, which is what
-                % collapses a clustering and the call transferred onto it.
-                % Choosing nothing is a decision -- show no labelings at
-                % all -- and the viewer spells that 'none'.
-                txt = '';
-                if ~cbChoose.Value, return; end
-                sel = labelList.Value;
-                if isempty(sel)
-                    txt = 'none';
-                elseif ischar(sel)
-                    txt = sel;
-                else
-                    txt = strjoin(sel, ',');
-                end
+                txt = ndi.gui.app.GEFManager.labelSelection( ...
+                    cbChoose.Value, labelList.Value);
             end
 
             function localBrowse()
