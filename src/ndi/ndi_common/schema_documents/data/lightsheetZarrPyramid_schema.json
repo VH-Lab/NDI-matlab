@@ -52,19 +52,19 @@
 		},
 		{
 			"name": "axes_units",
-			"type": "matrix",
-			"default_value": [],
+			"type": "string",
+			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "Per-axis physical unit strings, aligned with axes_order. Stored as a cellstr in MATLAB / list of strings in JSON."
+			"documentation": "Per-axis physical unit strings, aligned with axes_order. Encoded as a comma-separated string (e.g. 'micrometer,micrometer,micrometer' for zyx). Empty allowed."
 		},
 		{
 			"name": "channel_names",
-			"type": "matrix",
-			"default_value": [],
+			"type": "string",
+			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "Display names of the channels, in the order of the 'c' axis. Empty when there are no channels."
+			"documentation": "Display names of the channels, comma-separated in the order of the 'c' axis (e.g. 'GFP,mCherry'). Empty when there are no channels or none are named."
 		},
 		{
 			"name": "n_channels",
