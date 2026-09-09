@@ -726,6 +726,76 @@ classdef TestGEFManager < matlab.unittest.TestCase
             testCase.verifyLessThan(i(end), j(1));
         end
 
+        function testFerretDemoNamesSixGenesWithColours(testCase)
+            % Laminar markers in cortical depth order, so the layers come
+            % up reading down the cortex rather than in an order that has
+            % to be explained.
+            pairs = ndi.gui.app.GEFManager.ferretDemoGenes();
+            testCase.verifySize(pairs, [6 2]);
+            testCase.verifyEqual(pairs(:,1)', ...
+                {'HPCAL1','RORB','FEZF2','TSHZ2','NXPH4','SST'});
+            testCase.verifyEqual(pairs(:,2)', ...
+                {'green','blue','bop orange','yellow','red','cyan'});
+        end
+
+        function testFerretDemoColoursAreAllDistinct(testCase)
+            % The layers blend additively, so two genes in one colormap
+            % make a picture that is neither of them.
+            pairs = ndi.gui.app.GEFManager.ferretDemoGenes();
+            testCase.verifyEqual(numel(unique(pairs(:,2))), 6);
+        end
+
+        function testTheSpecPairsEachGeneWithItsColour(testCase)
+            txt = ndi.gui.app.GEFManager.geneLayerSpec( ...
+                {'A','red'; 'B','bop orange'});
+            testCase.verifyEqual(txt, 'A:red,B:bop orange');
+        end
+
+        function testTheSpecLetsAGeneGoWithoutAColour(testCase)
+            % The viewer then takes the next one from its own cycle, so a
+            % caller can name the colours that matter and leave the rest.
+            txt = ndi.gui.app.GEFManager.geneLayerSpec({'A',''; 'B','cyan'});
+            testCase.verifyEqual(txt, 'A,B:cyan');
+        end
+
+        function testTheSpecOfNothingIsEmpty(testCase)
+            testCase.verifyEmpty(ndi.gui.app.GEFManager.geneLayerSpec({}));
+        end
+
+        function testViewCommandPassesTheGeneLayers(testCase)
+            cmd = ndi.gui.app.GEFManager.viewCommand('/usr/local/bin/napariViewGEF', ...
+                '/data/ferret', 'abc123', 'geneLayers', 'HPCAL1:green,SST:cyan');
+            testCase.verifyTrue(contains(cmd, '--gene-layers'));
+            testCase.verifyTrue(contains(cmd, 'HPCAL1:green,SST:cyan'));
+        end
+
+        function testViewCommandQuotesAColourWithASpace(testCase)
+            % 'bop orange' is a napari colormap, not a typo. Unquoted it
+            % would reach the viewer as two arguments and the second
+            % would be read as a session path.
+            cmd = ndi.gui.app.GEFManager.viewCommand('/l', '/data', 'id', ...
+                'geneLayers', 'FEZF2:bop orange');
+            testCase.verifyTrue(contains(cmd, 'FEZF2:bop orange'));
+            % One argument, so nothing splits the value at its space.
+            testCase.verifyEqual(numel(strfind(cmd, '--gene-layers')), 1);
+        end
+
+        function testViewCommandOmitsGeneLayersWhenNoneAreAsked(testCase)
+            cmd = ndi.gui.app.GEFManager.viewCommand('/l', '/data', 'id');
+            testCase.verifyFalse(contains(cmd, '--gene-layers'));
+        end
+
+        function testTheDemoDoesNotReplaceTheBaseLayer(testCase)
+            % The genes arrive BESIDE "All genes", not instead of it --
+            % which is why the command carries --gene-layers rather than
+            % --genes, the option that filters the base layer down.
+            cmd = ndi.gui.app.GEFManager.viewCommand('/l', '/data', 'id', ...
+                'geneLayers', ndi.gui.app.GEFManager.geneLayerSpec( ...
+                    ndi.gui.app.GEFManager.ferretDemoGenes()));
+            testCase.verifyTrue(contains(cmd, '--gene-layers'));
+            testCase.verifyFalse(contains(cmd, '--genes '));
+        end
+
     end
 
     methods (Static, Access = private)

@@ -804,6 +804,64 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
         end
 
+        function pairs = ferretDemoGenes()
+        % FERRETDEMOGENES - the six genes the ferret demo opens, with colours
+        %
+        %   PAIRS = NDI.GUI.APP.GEFMANAGER.FERRETDEMOGENES() returns an
+        %   N-by-2 cellstr of {symbol, colormap}.
+        %
+        %   Laminar markers, in cortical depth order, so the layers come
+        %   up reading down the cortex rather than in an order that has
+        %   to be explained. The colours are chosen the same way: they
+        %   run along the spectrum with depth, which makes the stack
+        %   legible without a legend.
+        %
+        %   'bop orange' is a napari colormap, not a typo -- napari ships
+        %   'bop blue', 'bop orange' and 'bop purple'. The space is why
+        %   the whole --gene-layers value is shell-quoted as one argument.
+        %
+        %   HELD IN MATLAB, NOT IN PYTHON. The viewer takes genes and
+        %   colours as ordinary command-line options, so a demo is a
+        %   preset command rather than a mode the viewer has to know
+        %   about. Anyone can build the same picture by hand, and a
+        %   second demo needs no Python change at all.
+            pairs = { ...
+                'HPCAL1', 'green'; ...
+                'RORB',   'blue'; ...
+                'FEZF2',  'bop orange'; ...
+                'TSHZ2',  'yellow'; ...
+                'NXPH4',  'red'; ...
+                'SST',    'cyan'};
+        end
+
+        function txt = geneLayerSpec(pairs)
+        % GENELAYERSPEC - {symbol, colormap} rows to a --gene-layers value
+        %
+        %   TXT = NDI.GUI.APP.GEFMANAGER.GENELAYERSPEC(PAIRS) joins an
+        %   N-by-2 cellstr into 'SYMBOL:COLOUR,SYMBOL:COLOUR'.
+        %
+        %   A row whose colour is empty contributes the symbol alone, and
+        %   the viewer then takes the next colour from its own cycle --
+        %   so a caller can name the colours that matter and leave the
+        %   rest.
+            txt = '';
+            if isempty(pairs), return; end
+            items = cell(1, size(pairs,1));
+            for i = 1:size(pairs,1)
+                symbol = strtrim(char(pairs{i,1}));
+                if isempty(symbol), items{i} = ''; continue; end
+                colour = '';
+                if size(pairs,2) > 1, colour = strtrim(char(pairs{i,2})); end
+                if isempty(colour)
+                    items{i} = symbol;
+                else
+                    items{i} = [symbol ':' colour];
+                end
+            end
+            items = items(~cellfun(@isempty, items));
+            txt = strjoin(items, ',');
+        end
+
         function cmd = viewCommand(launcher, sessionPath, pyramidID, options)
         % VIEWCOMMAND - the command line that opens a pyramid in napari
         %
@@ -838,6 +896,12 @@ classdef GEFManager < ndi.gui.app.sessionApp
         %   labels ('')      - cell type labelings to show, comma
         %                      separated; 'none' shows none. '' lets the
         %                      viewer decide.
+        %   geneLayers ('')  - genes to open as their OWN additive layers
+        %                      on top of the base image, as
+        %                      'SYMBOL:COLOUR,SYMBOL:COLOUR'. Different
+        %                      from filtering: the base "All genes" layer
+        %                      stays, and each named gene arrives beside
+        %                      it in its own colour. See ferretDemoGenes.
         %
         %   See also: ndi.gui.app.GEFManager
             arguments
@@ -854,6 +918,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 options.controls (1,1) logical = true
                 options.name char = ''
                 options.labels char = ''
+                options.geneLayers char = ''
             end
             if isempty(strtrim(launcher))
                 error('NDI:gene:GEFManager:noLauncher', ...
@@ -888,6 +953,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
             if ~isempty(strtrim(options.labels))
                 parts{end+1} = '--labels';
                 parts{end+1} = ndi.gui.app.GEFManager.shellQuote(strtrim(options.labels));
+            end
+            if ~isempty(strtrim(options.geneLayers))
+                parts{end+1} = '--gene-layers';
+                parts{end+1} = ndi.gui.app.GEFManager.shellQuote( ...
+                    strtrim(options.geneLayers));
             end
             if ~options.controls
                 parts{end+1} = '--no-controls';
@@ -1328,10 +1398,10 @@ classdef GEFManager < ndi.gui.app.sessionApp
             hasCells = r.nCells > 0;
 
             c = ndi.gui.cloudColors();
-            d = uifigure('Name','View in napari','Position',[120 120 660 545], ...
+            d = uifigure('Name','View in napari','Position',[120 120 660 575], ...
                 'Color', c.offWhite);
-            gl = uigridlayout(d,[10 3]);
-            gl.RowHeight = {28, 40, 24, 24, 90, 24, 24, 24, 24, 60};
+            gl = uigridlayout(d,[11 3]);
+            gl.RowHeight = {28, 40, 24, 24, 90, 24, 24, 24, 24, 24, 60};
             gl.ColumnWidth = {140, '1x', 100};
             gl.BackgroundColor = c.offWhite;
 
@@ -1397,18 +1467,29 @@ classdef GEFManager < ndi.gui.app.sessionApp
             cbCounts.Layout.Row = 8; cbCounts.Layout.Column = [1 3];
             cbPanels = uicheckbox(gl,'Text','Control panels','Value',true);
             cbPanels.Layout.Row = 9; cbPanels.Layout.Column = [1 3];
+            % The base "All genes" layer is unaffected -- these arrive
+            % BESIDE it, which is why this is a checkbox rather than a
+            % choice between one and the other.
+            demoPairs = ndi.gui.app.GEFManager.ferretDemoGenes();
+            cbDemo = uicheckbox(gl,'Text', ...
+                sprintf('Ferret demo genes (%s)', strjoin(demoPairs(:,1)', ', ')), ...
+                'Value',false);
+            cbDemo.Tooltip = ['Opens each of these as its own coloured ' ...
+                'layer on top of the base image. The "All genes" layer ' ...
+                'stays; these arrive beside it.'];
+            cbDemo.Layout.Row = 10; cbDemo.Layout.Column = [1 3];
 
             cmdArea = uitextarea(gl,'Editable','off','Value','');
-            cmdArea.Layout.Row = 10; cmdArea.Layout.Column = [1 2];
+            cmdArea.Layout.Row = 11; cmdArea.Layout.Column = [1 2];
             ndi.gui.app.GEFManager.paper(cmdArea, c);
             go = uibutton(gl,'Text','Launch');
             ndi.gui.app.GEFManager.accent(go, c);
-            go.Layout.Row = 10; go.Layout.Column = 3;
+            go.Layout.Row = 11; go.Layout.Column = 3;
 
             br.ButtonPushedFcn = @(~,~) localBrowse();
             go.ButtonPushedFcn = @(~,~) localGo();
             everything = {ed, nameEd, labelList, cbChoose, cbCells, cbOut, ...
-                cbCounts, cbPanels};
+                cbCounts, cbPanels, cbDemo};
             for i = 1:numel(everything)
                 everything{i}.ValueChangedFcn = @localRefresh;
             end
@@ -1438,7 +1519,8 @@ classdef GEFManager < ndi.gui.app.sessionApp
                     c = ndi.gui.app.GEFManager.viewCommand(ed.Value, sessionPath, ...
                         r.id, 'cells', cbCells.Value, 'outlines', cbOut.Value, ...
                         'density', ~cbCounts.Value, 'controls', cbPanels.Value, ...
-                        'name', nameEd.Value, 'labels', localLabels());
+                        'name', nameEd.Value, 'labels', localLabels(), ...
+                        'geneLayers', localGeneLayers());
                 catch ME
                     c = ME.message;
                 end
@@ -1456,6 +1538,14 @@ classdef GEFManager < ndi.gui.app.sessionApp
                     labelList.Enable = 'off';
                 end
                 cmdArea.Value = localCommand();
+            end
+
+            function txt = localGeneLayers()
+                if cbDemo.Value
+                    txt = ndi.gui.app.GEFManager.geneLayerSpec(demoPairs);
+                else
+                    txt = '';
+                end
             end
 
             function txt = localLabels()
