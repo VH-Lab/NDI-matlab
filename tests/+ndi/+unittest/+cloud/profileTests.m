@@ -47,9 +47,15 @@ classdef profileTests < matlab.unittest.TestCase
     end
 
     methods (TestMethodSetup)
-        function configureForTest(~)
-            ndi.cloud.profile.useBackend('memory');
+        function configureForTest(testCase)
+            % reset() FIRST: it now restores the detected backend, so
+            % selecting memory before it would be undone. And a teardown
+            % puts the real backend back, because this singleton outlives
+            % the test run -- leaving it on memory made every later
+            % setPassword in the same MATLAB session write to RAM.
             ndi.cloud.profile.reset();
+            ndi.cloud.profile.useBackend('memory');
+            testCase.addTeardown(@() ndi.cloud.profile.reset());
             % Wipe the on-disk file so reload() in tests starts clean.
             f = ndi.cloud.profile.filename();
             if isfile(f); delete(f); end
@@ -364,6 +370,23 @@ classdef profileTests < matlab.unittest.TestCase
 
             delete(fig);
             testCase.verifyFalse(isvalid(fig));
+        end
+
+        function testResetRestoresTheDetectedBackend(testCase)
+            % Regression, and it cost a real afternoon. useBackend is a
+            % test hook, but the singleton it writes to outlives the test
+            % run -- it lasts the whole MATLAB session. With reset()
+            % leaving Backend alone, a test run left every later
+            % setPassword writing to a containers.Map that is discarded at
+            % exit. No error, no file change, and getPassword returned the
+            % value it had just stored in RAM, so the password looked
+            % saved and was gone at the next launch.
+            ndi.cloud.profile.useBackend('memory');
+            ndi.cloud.profile.reset();
+            % 'aes' spelled out rather than compared against
+            % detectBackend(), which is private: a test that called it
+            % would fail on access, not on the behaviour it is about.
+            testCase.verifyEqual(ndi.cloud.profile.backend(), 'aes');
         end
 
         function testVaultBackendWriteErrorsClearly(testCase)
