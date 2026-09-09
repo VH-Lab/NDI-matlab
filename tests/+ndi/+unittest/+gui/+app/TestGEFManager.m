@@ -59,6 +59,34 @@ classdef TestGEFManager < matlab.unittest.TestCase
             testCase.verifyClass(app, 'ndi.gui.app.GEFManager');
         end
 
+        function testTheViewDialogDoesNotBlock(testCase)
+            % onView used to end in uiwait(d), which froze the MATLAB
+            % prompt and the manager behind it until the dialog closed --
+            % while the point of the dialog is to read a command and
+            % compare it against the list it came from.
+            %
+            % Checked as SOURCE rather than by opening a window, because
+            % opening one needs a display and CI has none, and because
+            % what would go wrong is exactly that somebody reinstates the
+            % wait. There is no other way to observe blocking headlessly.
+            src = fileread(which('ndi.gui.app.GEFManager'));
+            lines = splitlines(string(src));
+            code = lines(~startsWith(strip(lines), "%"));
+            testCase.verifyEmpty(find(contains(code, "uiwait"), 1), ...
+                'onView must not block; the dialog is non-modal.');
+        end
+
+        function testTheManagerTakesItsDialogWithIt(testCase)
+            % The dialog is a separate top-level window now that it does
+            % not block, so closing the manager has to close it too: an
+            % orphan whose Launch button still worked would report to a
+            % status bar that no longer exists.
+            testCase.verifyTrue( ...
+                ismember('onClose', methods('ndi.gui.app.GEFManager')) || ...
+                contains(fileread(which('ndi.gui.app.GEFManager')), 'function onClose'), ...
+                'GEFManager needs an onClose that deletes the View dialog.');
+        end
+
         function testListsPyramidsWithWhatTheyHave(testCase)
             rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
             testCase.verifyEqual(numel(rows), 1);

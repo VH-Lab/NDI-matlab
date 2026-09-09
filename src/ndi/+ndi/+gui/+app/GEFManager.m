@@ -94,6 +94,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
         table
         statusLabel
         rows = struct([])
+        % The View dialog, kept so a second click RAISES the open one
+        % rather than stacking another. It is non-modal (see onView), so
+        % without this the button would build one dialog per press and
+        % the user would be editing whichever happened to be on top.
+        viewDialog = matlab.ui.Figure.empty
     end
 
     methods
@@ -1142,6 +1147,11 @@ classdef GEFManager < ndi.gui.app.sessionApp
             c = ndi.gui.cloudColors();
             obj.fig = uifigure('Name','GEF Manager','Position',[100 100 900 460], ...
                 'Color', c.offWhite);
+            % The View dialog is a separate top-level window now that it
+            % does not block, so closing the manager has to take it along.
+            % An orphaned dialog whose Launch button still works would
+            % report its result to a status bar that no longer exists.
+            obj.fig.CloseRequestFcn = @(~,~) obj.onClose();
             g = uigridlayout(obj.fig,[4 5]);
             g.RowHeight = {28, '1x', 30, 22};
             g.ColumnWidth = {'1x', 90, 90, 90, 90};
@@ -1226,8 +1236,16 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 return;
             end
 
+            % One dialog at a time. It is non-modal now, so nothing stops
+            % the button being pressed again; without this each press
+            % would build another and the user would be editing whichever
+            % landed on top while an older one held a different pyramid.
+            if ~isempty(obj.viewDialog) && isvalid(obj.viewDialog)
+                figure(obj.viewDialog);
+                return;
+            end
+
             hasCells = r.nCells > 0;
-            launched = false;
 
             c = ndi.gui.cloudColors();
             d = uifigure('Name','View in napari','Position',[120 120 660 545], ...
@@ -1316,8 +1334,21 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
 
             localRefresh();
-            uiwait(d);
-            if ~launched && isvalid(d), delete(d); end
+
+            % NOT MODAL, and no uiwait. This used to block until the
+            % dialog closed, which froze the MATLAB prompt and the
+            % manager window behind it -- while the whole point of the
+            % dialog is to look at a command and compare it against the
+            % list of pyramids it came from.
+            %
+            % Removing uiwait is safe because the callbacks are NESTED
+            % functions: MATLAB keeps this workspace alive for as long as
+            % a handle to one of them exists, so localGo, localRefresh
+            % and localBrowse still see d, ed, the checkboxes and r after
+            % onView has returned. The dialog's default close request
+            % deletes it, which is what the old post-uiwait cleanup did
+            % by hand.
+            obj.viewDialog = d;
 
             function c = localCommand()
                 % A refusal is shown where the command would be, rather
@@ -1379,7 +1410,6 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 end
                 ndi.gui.app.GEFManager.setLauncherPath(target);
                 status = system(ndi.gui.app.GEFManager.detach(cmd));
-                launched = true;
                 delete(d);
                 if status == 0
                     obj.setStatus(sprintf('Launched the viewer for %s.', ...
@@ -1390,6 +1420,20 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 end
             end
         end
+
+        function onClose(obj)
+        % ONCLOSE - shut the manager, and anything it opened
+        %
+        %   Only the View dialog, which is the only window this app owns
+        %   besides its own. The napari process is deliberately NOT
+        %   touched: it was detached on purpose, it is somebody's picture,
+        %   and closing the window that launched it is not a request to
+        %   close it.
+            if ~isempty(obj.viewDialog) && isvalid(obj.viewDialog)
+                delete(obj.viewDialog);
+            end
+            delete(obj.fig);
+        end % onClose()
 
         function onDelete(obj)
             r = obj.selectedRow();
