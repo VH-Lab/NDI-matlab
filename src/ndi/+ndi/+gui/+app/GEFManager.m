@@ -330,7 +330,12 @@ classdef GEFManager < ndi.gui.app.sessionApp
             choices.assay = 'Stereo-seq';
             choices.chipSerial = ndi.gui.app.GEFManager.field(gefMeta,'chipSerial','');
             choices.binSizes = [1 2 4 8 16 32];
-            choices.grid = 9;
+            % [] means SIZE IT FROM THE DATA. A fixed grid is a fixed
+            % fraction of the extent, so the same 9x9 that gives a mouse
+            % section 20 MB tiles gives a ferret hemisphere 257 MB ones.
+            % ndi.fun.doc.gene.makePyramid picks from the record density
+            % against a per-tile byte budget.
+            choices.grid = [];
             % The GEF's resolution attribute is in NANOMETRES and
             % basePixelSize is in micrometres, so this is the one unit
             % conversion in the ingest path. SAW's usual 500 nm becomes
@@ -492,8 +497,8 @@ classdef GEFManager < ndi.gui.app.sessionApp
                        'annotationSource', choices.annotationSource, ...
                        'label', choices.label));
             plan.steps = ndi.gui.app.GEFManager.addStep(plan.steps, ...
-                'pyramid', sprintf('pyramid, %d level(s), %dx%d tiles', ...
-                    numel(bs), choices.grid, choices.grid), ...
+                'pyramid', sprintf('pyramid, %d level(s), %s tiles', ...
+                    numel(bs), ndi.gui.app.GEFManager.gridText(choices.grid)), ...
                 struct('binSizes', bs, 'grid', choices.grid, ...
                        'subjectID', choices.subjectID, ...
                        'basePixelSize', choices.basePixelSize, ...
@@ -610,7 +615,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
             annotation = ndi.gui.app.GEFManager.field(glArgs, 'annotationSource', '');
             lbl        = ndi.gui.app.GEFManager.field(pyArgs, 'label', '');
             binSizes   = ndi.gui.app.GEFManager.field(pyArgs, 'binSizes', [1 2 4 8 16 32]);
-            gridN      = ndi.gui.app.GEFManager.field(pyArgs, 'grid', 9);
+            gridN      = ndi.gui.app.GEFManager.field(pyArgs, 'grid', []);
             subjectID  = ndi.gui.app.GEFManager.field(pyArgs, 'subjectID', '');
             pixelSize  = ndi.gui.app.GEFManager.field(pyArgs, 'basePixelSize', [NaN NaN]);
             assay      = ndi.gui.app.GEFManager.field(pyArgs, 'assay', 'Stereo-seq');
@@ -1022,6 +1027,16 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 v = '';
             end
             if isempty(v), v = ''; end
+        end
+
+        function s = gridText(g)
+        % The tile grid is not known until the records have been read
+        % when it is chosen from them, and the plan is shown before that.
+            if isempty(g)
+                s = 'auto-sized';
+            else
+                s = sprintf('%dx%d', g, g);
+            end
         end
 
         function s = orNone(v)
