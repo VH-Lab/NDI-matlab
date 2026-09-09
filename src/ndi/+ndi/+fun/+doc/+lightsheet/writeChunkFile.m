@@ -27,9 +27,14 @@ function [levelDoc, nWritten] = writeChunkFile(session, levelDoc, pyramidEntry, 
     arguments
         session (1,1) %#ok<INUSA>
         levelDoc (1,1)
-        pyramidEntry (1,1) struct
-        level (1,1) struct
+        pyramidEntry (1,1) struct %#ok<INUSA>
+        level (1,1) struct %#ok<INUSA>
     end
+
+    % Initialise so the return-value-might-be-unset warning is only about
+    % the *documented* scaffold state. The real implementation will
+    % rewrite levelDoc (with the file-series bumps) and set nWritten.
+    nWritten = 0; %#ok<NASGU>
 
     error('NDI:lightsheet:writeChunkFile:notImplemented', ...
         ['This function is a documented scaffold. Materializing ' ...
