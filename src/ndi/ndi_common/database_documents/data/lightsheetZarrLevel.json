@@ -33,7 +33,7 @@
 	"lightsheetZarrLevel": {
 		"label": "",
 		"level": 0,
-		"reduction": "mean",
+		"reduction_function": "none",
 		"axes_order": "tczyx",
 		"shape": [],
 		"chunks": [],

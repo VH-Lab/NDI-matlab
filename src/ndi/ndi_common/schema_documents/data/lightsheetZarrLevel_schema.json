@@ -46,12 +46,12 @@
 			"documentation": "0-based level index within the parent pyramid. 0 is the finest resolution."
 		},
 		{
-			"name": "reduction",
+			"name": "reduction_function",
 			"type": "string",
-			"default_value": "mean",
+			"default_value": "none",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The reduction of this level relative to level 0 ('mean', 'max', ...). Redundant with the parent's field but stored here so a level can be interpreted without loading the parent."
+			"documentation": "The function used to produce this level from level 0: 'mean', 'max', ... 'none' means the array is the raw source (typical for level 0 when it is shared across reductions); a reader asking for reduction R takes levels with reduction_function in {'none', R}, sorted by level ascending."
 		},
 		{
 			"name": "axes_order",

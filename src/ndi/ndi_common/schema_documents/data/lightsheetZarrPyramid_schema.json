@@ -27,14 +27,6 @@
 			"documentation": "Human-readable name for this pyramid, shown in a manager UI. Empty allowed."
 		},
 		{
-			"name": "reduction",
-			"type": "string",
-			"default_value": "mean",
-			"parameters": "",
-			"queryable": 1,
-			"documentation": "The downsampling function used between levels ('mean', 'max', ...). NDI documents are immutable, so a volume that ships both mean and max pyramids becomes two lightsheetZarrPyramid documents, one per reduction."
-		},
-		{
 			"name": "pyramid_name",
 			"type": "string",
 			"default_value": "",
@@ -48,7 +40,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The NGFF multiscales.type field, verbatim. Descriptive only: an earlier writer of this format sometimes labeled the mean pyramid 'gaussian', so 'reduction' is what code should branch on."
+			"documentation": "The NGFF multiscales.type field, verbatim. Descriptive only."
 		},
 		{
 			"name": "axes_order",
@@ -85,20 +77,7 @@
 				0
 			],
 			"queryable": 1,
-			"documentation": "Convenience count; equals the length of channel_names when set."
-		},
-		{
-			"name": "n_levels",
-			"type": "integer",
-			"default_value": 0,
-			"parameters": [
-				0,
-				100000,
-				0,
-				0
-			],
-			"queryable": 1,
-			"documentation": "Number of lightsheetZarrLevel documents that should reference this pyramid."
+			"documentation": "Convenience count; equals the length of channel_names when set. Describes the source volume, not the ladder."
 		},
 		{
 			"name": "shape_level0",
@@ -109,7 +88,7 @@
 				NaN
 			],
 			"queryable": 1,
-			"documentation": "Shape of the finest resolution array, in axes_order."
+			"documentation": "Shape of the finest resolution array, in axes_order. Source-volume intrinsic."
 		},
 		{
 			"name": "voxel_size_level0",

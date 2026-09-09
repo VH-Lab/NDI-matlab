@@ -1,31 +1,30 @@
-function [pyramidDocs, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
+function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 % NDI.FUN.DOC.LIGHTSHEET.FROMOMEZARR - build lightsheetZarrPyramid docs from an OME-Zarr store
 %
-%   [PYRAMIDDOCS, LEVELDOCS, INFO] = NDI.FUN.DOC.LIGHTSHEET.FROMOMEZARR(...
+%   [PYRAMIDDOC, LEVELDOCS, INFO] = NDI.FUN.DOC.LIGHTSHEET.FROMOMEZARR(...
 %       SESSION, ZARRPATH)
 %
 %   Walks an OME-Zarr (NGFF v0.4) store at ZARRPATH, enumerates its
 %   multiscale pyramids with NDR.FORMAT.OMEZARR.LISTPYRAMIDS, and writes
-%   a LIGHTSHEETZARRPYRAMID document plus one LIGHTSHEETZARRLEVEL
-%   document per level to SESSION.
+%   ONE lightsheetZarrPyramid document (the source volume) plus one
+%   lightsheetZarrLevel document per unique level to SESSION.
 %
-%   ONE DOCUMENT PER REDUCTION. An OME-Zarr store frequently contains
-%   both a mean-reduced and a max-projected pyramid. This function writes
-%   ONE lightsheetZarrPyramid per multiscales entry it finds; a store
-%   with two entries produces two parents and their two ladders of
-%   levels.
+%   ONE DOCUMENT PER SOURCE VOLUME. The parent describes the source
+%   volume; reductions (mean, max, ...) live on the level children.
+%   A store with mean and max pyramids produces one parent, not two.
 %
-%   ONE DOCUMENT PER LEVEL. NDI documents are immutable, so each
-%   resolution level is its own lightsheetZarrLevel document. The level
-%   documents depend_on the parent pyramid document.
+%   LEVEL 0 IS DEDUPED. When two NGFF multiscales entries reference
+%   the same underlying array (typically level 0: their
+%   `datasets[0].path` is the same string), one level document is
+%   written -- with reduction_function='none' -- and both readers use
+%   it. Reduced levels are per-reduction and get
+%   reduction_function='mean'/'max'/... .
 %
-%   READING IS METADATA-ONLY. No chunk bytes are read here; the source
-%   store's .zattrs and per-level .zarray are enough to fill the
-%   documents. The chunk bytes belong to the source_file_id
-%   (fileReference) and are materialized into a level document's
-%   `chunk.bin_#` file series by NDI.FUN.DOC.LIGHTSHEET.MAKEPYRAMID.
-%   Separating "probe and describe" from "materialize" keeps this
-%   function fast enough to run inside a GUI dialog.
+%   READING IS METADATA-ONLY. No chunk bytes are read here; the
+%   source store's .zattrs and per-level .zarray are enough to fill
+%   the documents. Materializing chunk bytes into a level document's
+%   `chunk.bin_#` file series is follow-up work (see the package
+%   README).
 %
 %   Optional Name-Value Arguments:
 %   subjectID  - char/string, id of the subject depended on. If empty,
@@ -37,22 +36,23 @@ function [pyramidDocs, levelDocs, info] = fromOMEZarr(session, zarrPath, options
 %                  values. Empty means all.
 %   reductionMap - containers.Map / struct mapping pyramid name (as
 %                  reported by listPyramids) or type to a reduction
-%                  label. Recognised reductions: 'mean', 'max'. When a
-%                  name is not in the map, `pyramid_type` is inspected
-%                  first, then a fallback of 'mean' is used with a
-%                  warning.
+%                  label ('mean', 'max', ...). When a name is not in
+%                  the map, `pyramid_type` is inspected first, then a
+%                  fallback of 'mean' is used with a warning.
 %   pipelineVersion - char/string tag written into
 %                     lightsheetZarrPyramid.pipeline_version.
 %   sourceFileID - id of an existing fileReference document for
 %                  ZARRPATH. When empty, a new fileReference is created
 %                  via NDI.FUN.DOC.LIGHTSHEET.MAKESOURCEFILE.
+%   label      - human-readable label written into the parent pyramid.
 %
 %   INFO returns a struct with fields:
-%     zarrPath         - absolute path resolved
-%     pyramids         - the raw output of ndr.format.omezarr.listPyramids
-%     reductions       - cellstr, one per created pyramid, giving the
-%                        reduction assigned to it
-%     sourceFileID     - id of the fileReference document used
+%     zarrPath          - absolute path resolved
+%     pyramids          - the raw output of ndr.format.omezarr.listPyramids
+%     reductions        - cellstr, unique reductions present in the ladder
+%     sourceFileID      - id of the fileReference document used
+%     sharedLevel0      - logical, true if level 0 was shared across
+%                         reductions and deduped
 %
 %   Example:
 %     S = ndi.session.dir('mysession','/path/to/session');
@@ -75,13 +75,13 @@ function [pyramidDocs, levelDocs, info] = fromOMEZarr(session, zarrPath, options
         options.reductionMap = struct()
         options.pipelineVersion char = ''
         options.sourceFileID char = ''
+        options.label char = ''
     end
 
     if isempty(strtrim(options.subjectID))
         error('NDI:lightsheet:fromOMEZarr:noSubject', ...
             ['A lightsheetZarrPyramid depends_on a subject; pass ' ...
-             '''subjectID'' or use NDI.FUN.DOC.LIGHTSHEET.MAKESOURCEFILE ' ...
-             'first and then this function.']);
+             '''subjectID''.']);
     end
 
     if ~isfolder(zarrPath)
@@ -116,38 +116,33 @@ function [pyramidDocs, levelDocs, info] = fromOMEZarr(session, zarrPath, options
     end
     pyramids = pyramids(keep);
 
+    n = numel(pyramids);
+    perEntryReduction = cell(n, 1);
+    for i = 1:n
+        perEntryReduction{i} = pickReduction(pyramids(i), options.reductionMap);
+    end
+
     sourceFileID = options.sourceFileID;
     if isempty(sourceFileID)
         srcDoc = ndi.fun.doc.lightsheet.makeSourceFile(session, zarrPath);
+        session.database_add(srcDoc);
         sourceFileID = srcDoc.id();
     end
 
-    n = numel(pyramids);
-    pyramidDocs = cell(n, 1);
-    levelDocsPerPyramid = cell(n, 1);
-    reductions = cell(n, 1);
-
-    for i = 1:n
-        reduction = pickReduction(pyramids(i), options.reductionMap);
-        reductions{i} = reduction;
-        [pDoc, lDocs] = ndi.fun.doc.lightsheet.makePyramid(session, ...
-            pyramids(i), ...
-            'reduction', reduction, ...
-            'subjectID', options.subjectID, ...
-            'elementID', options.elementID, ...
-            'sourceFileID', sourceFileID, ...
-            'pipelineVersion', options.pipelineVersion);
-        pyramidDocs{i} = pDoc;
-        levelDocsPerPyramid{i} = lDocs;
-    end
-
-    levelDocs = vertcat(levelDocsPerPyramid{:});
+    [pyramidDoc, levelDocs, sharedLevel0] = ndi.fun.doc.lightsheet.makePyramid( ...
+        session, pyramids, perEntryReduction, ...
+        'subjectID', options.subjectID, ...
+        'elementID', options.elementID, ...
+        'sourceFileID', sourceFileID, ...
+        'pipelineVersion', options.pipelineVersion, ...
+        'label', options.label);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...
         'pyramids', pyramids, ...
-        'reductions', {reductions}, ...
-        'sourceFileID', sourceFileID);
+        'reductions', {unique(perEntryReduction)}, ...
+        'sourceFileID', sourceFileID, ...
+        'sharedLevel0', sharedLevel0);
 end
 
 function r = pickReduction(pyramid, reductionMap)
@@ -155,8 +150,7 @@ function r = pickReduction(pyramid, reductionMap)
 %
 %   Preference: explicit map by name, then by type, then a heuristic:
 %   pyramid.type == 'max' -> 'max', anything else -> 'mean'. Warns when
-%   falling back because pyramid.type is unreliable (the historical
-%   writer of this format sometimes labeled the mean pyramid 'gaussian').
+%   falling back because pyramid.type is unreliable.
     r = '';
     if ~isempty(reductionMap)
         if isstruct(reductionMap)
