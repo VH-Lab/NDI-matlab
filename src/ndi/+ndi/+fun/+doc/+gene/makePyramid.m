@@ -24,7 +24,8 @@ function [pyrDoc, tileDocs] = makePyramid(session, x, y, geneIndex, count, geneL
 %       leaving the mean unchanged, so uniform, small ratios give the
 %       smoothest zooming: a 2x step costs 4x, a 5x step costs 25x.
 %   grid (9)            - tile grid, GRID by GRID at every level
-%   sourceFileID ('')   - id of a generic_file document describing the
+%   sourceFileID ('')   - id of a fileReference (or generic_file) document
+%                         describing the
 %       file this pyramid was built from. The spatialGeneExpressionTiles
 %       class has carried a source_file_id dependency since it was
 %       written and nothing populated it; ndi.fun.doc.gene.fromGEF now

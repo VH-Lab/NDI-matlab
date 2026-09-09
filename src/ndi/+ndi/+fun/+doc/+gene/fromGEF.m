@@ -41,7 +41,7 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %       - passed through to ndi.fun.doc.gene.makeGeneList. Counts are not
 %         reproducible without the annotation they were made against and
 %         it cannot be recovered from the .gef, so it is worth passing.
-%   recordSource (true)  - create a generic_file document describing the
+%   recordSource (true)  - create a fileReference document describing the
 %       .gef and point every tiles document at it through source_file_id.
 %       See ndi.fun.doc.gene.makeSourceFile: it DESCRIBES the file rather
 %       than ingesting a 9.4 GB copy of it.
