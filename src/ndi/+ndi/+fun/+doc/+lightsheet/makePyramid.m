@@ -105,7 +105,6 @@ end
 
 function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, options)
     chunkGrid = ceil(level.shape ./ level.chunks);
-    nChunks = prod(chunkGrid);
 
     props = struct( ...
         'label', sprintf('%s level %d', pyramidEntry.name, levelIndex), ...
