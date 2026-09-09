@@ -181,7 +181,7 @@
 			"default_value": "row-major",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "How (row,column) maps to the suffix N in tile.bin_N. 'row-major': N = row*tile_columns + column. 'column-major': N = column*tile_rows + row."
+			"documentation": "How (row,column) maps to the tile INDEX N. 'row-major': N = row*tile_columns + column. 'column-major': N = column*tile_rows + row. The FILE holding tile N is named tile.bin_<N + tile_index_origin>, where the origin is a field of the tiles document; a DID file series is one-based, so it is 1 for documents written since that was honoured and absent (0) for older ones."
 		},
 		{
 			"name": "origin_corner",

@@ -13,7 +13,7 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %   arrays; NDI turns arrays into documents. Nothing here parses HDF5, and
 %   nothing in NDR knows what a document is. This function is the seam,
 %   and it exists because the seam was previously only crossed inside
-%   ndi.gui.app.GeneIngest -- so a script, a batch import, or the Python
+%   ndi.gui.app.GEFManager -- so a script, a batch import, or the Python
 %   port had to either drive a GUI class or write the sequence again.
 %
 %   IT READS THE FILE ONCE. A real section is ~10^8 records and minutes;
@@ -33,15 +33,18 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %   maxGenes (0)         - read only the first N genes; 0 is every gene.
 %       A trimmed pyramid is missing genes and nothing in it records
 %       that, so INFO.notes says so.
-%   binSizes / grid / basePixelSize / pixelSizeUnits / label / assay /
-%   chipSerial / pipelineVersion / origin
-%       - passed through to ndi.fun.doc.gene.makePyramid
+%   binSizes / grid / tileBudgetBytes / gridRange / basePixelSize /
+%   pixelSizeUnits / label / assay / chipSerial / pipelineVersion / origin
+%       - passed through to ndi.fun.doc.gene.makePyramid. NOTE that grid
+%         now defaults to [], which sizes the tile grid from the data
+%         rather than fixing it at 9x9 for a mouse section and a ferret
+%         hemisphere alike.
 %   genomeAssembly / annotationSource / geneIdNamespace /
 %   geneSymbolNamespace
 %       - passed through to ndi.fun.doc.gene.makeGeneList. Counts are not
 %         reproducible without the annotation they were made against and
 %         it cannot be recovered from the .gef, so it is worth passing.
-%   recordSource (true)  - create a generic_file document describing the
+%   recordSource (true)  - create a fileReference document describing the
 %       .gef and point every tiles document at it through source_file_id.
 %       See ndi.fun.doc.gene.makeSourceFile: it DESCRIBES the file rather
 %       than ingesting a 9.4 GB copy of it.
@@ -51,9 +54,12 @@ function [pyrDoc, tileDocs, geneListDoc, info] = fromGEF(session, gefPath, optio
 %   progressFcn ([])     - a handle called as PROGRESSFCN(FRACTION, TEXT)
 %       before each phase, with FRACTION in [0 1] across THIS call. A
 %       plain handle rather than a dialog object so it works with no
-%       display; ndi.gui.app.GeneIngest passes one that drives its
+%       display; ndi.gui.app.GEFManager passes one that drives its
 %       progress bar. The read dominates the time, so the fractions are
 %       weighted towards it rather than spread evenly over the phases.
+%       makePyramid gets a handle onto the last 30%, so the pyramid
+%       reports per level and per tile instead of going quiet for the
+%       minutes it takes.
 %
 %   Outputs:
 %   PYRDOC      - the spatialGeneExpressionPyramid, added to the database
@@ -82,7 +88,9 @@ arguments
     options.subjectID (1,:) char = ''
     options.maxGenes (1,1) {mustBeInteger, mustBeNonnegative} = 0
     options.binSizes (1,:) {mustBePositive, mustBeInteger} = [1 2 4 8 16 32]
-    options.grid (1,1) {mustBePositive, mustBeInteger} = 9
+    options.grid double = []
+    options.tileBudgetBytes (1,1) double {mustBePositive} = 50 * 2^20
+    options.gridRange (1,2) double {mustBePositive, mustBeInteger} = [3 64]
     options.basePixelSize (1,2) double = [NaN NaN]
     options.pixelSizeUnits (1,:) char = 'micrometer'
     options.label (1,:) char = ''
@@ -140,10 +148,16 @@ if options.recordSource
 end
 
 localTick(options.progressFcn, 0.70, 'Building the pyramid...');
+% The records go in AS READ. Promoting them to double here would cost 32
+% bytes a record where 14 does, held for the whole build -- 14 GB on a
+% 7.7e8-record section -- and makePyramid converts per level anyway, into
+% temporaries it can release.
 [pyrDoc, tileDocs] = ndi.fun.doc.gene.makePyramid(session, ...
-    double(x(:)), double(y(:)), double(geneIndex(:)), double(count(:)), ...
-    geneListDoc, ...
+    x(:), y(:), geneIndex(:), count(:), geneListDoc, ...
+    'progressFcn', localSubProgress(options.progressFcn, 0.70, 1.00), ...
     'binSizes', options.binSizes, 'grid', options.grid, ...
+    'tileBudgetBytes', options.tileBudgetBytes, ...
+    'gridRange', options.gridRange, ...
     'subjectID', options.subjectID, 'basePixelSize', basePixelSize, ...
     'pixelSizeUnits', options.pixelSizeUnits, 'label', options.label, ...
     'assay', options.assay, 'chipSerial', chipSerial, ...
@@ -158,6 +172,20 @@ info.sourceDoc = sourceDoc;
 info.notes = ndi.fun.doc.gene.readNotes(meta, geneID);
 
 end % fromGEF
+
+% ------------------------------------------------------------------------
+
+function sub = localSubProgress(fcn, lo, hi)
+% Re-scale a caller's [0 1] progress handle onto the [LO HI] slice of it,
+% so a phase can report its own progress in its own terms without knowing
+% where in the whole call it sits. Empty stays empty: makePyramid then
+% skips the reporting rather than calling a handle that does nothing.
+if isempty(fcn)
+    sub = [];
+else
+    sub = @(f, t) fcn(lo + (hi - lo) * f, t);
+end
+end
 
 % ------------------------------------------------------------------------
 

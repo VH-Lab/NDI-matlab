@@ -27,7 +27,8 @@ function cellsDoc = makeCells(session, cellID, x, y, pyrDoc, options)
 %                                 a margin, not a measured cell body.
 %   segmentationDilation (0)    - the dilation applied, in bins
 %   coordinateUnits ('source')  - frame of X and Y
-%   sourceFileID ('')           - id of a generic_file document describing
+%   sourceFileID ('')           - id of a fileReference (or generic_file)
+%                                 document describing
 %                                 the file these cells were segmented
 %                                 from. The class has carried a
 %                                 source_file_id dependency since it was

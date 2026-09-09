@@ -789,11 +789,22 @@ classdef profile < matlab.mixin.CustomDisplay & handle
 
         function reset()
         %NDI.CLOUD.PROFILE.RESET Clear the in-memory singleton state.
+        %
+        %   THIS INCLUDES A FORCED BACKEND. useBackend is a test hook and
+        %   the override it sets is in-memory singleton state like any
+        %   other, so reset returns it to detectBackend(). Leaving it out
+        %   made the memory backend outlive the tests that selected it:
+        %   the singleton persists for the whole MATLAB session, so a test
+        %   run left every later setPassword writing to a containers.Map
+        %   that is discarded at exit -- with no error, and with
+        %   getPassword returning the value it had just stored, so it
+        %   looked as though the password had been saved.
             obj = ndi.cloud.profile.getSingleton();
             obj.Profiles    = ndi.cloud.profile.emptyProfiles();
             obj.CurrentUID  = '';
             obj.DefaultUID  = '';
             obj.MemoryStore = containers.Map('KeyType','char','ValueType','char');
+            obj.Backend     = ndi.cloud.profile.detectBackend();
         end
     end
 

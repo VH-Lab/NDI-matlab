@@ -4,7 +4,7 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
     % These exercise the seam: NDR reads the vendor's file and returns
     % arrays, NDI turns arrays into documents. Before fromGEF and
     % fromCellBin the seam was only ever crossed inside
-    % ndi.gui.app.GeneIngest, so nothing without a display could import a
+    % ndi.gui.app.GEFManager, so nothing without a display could import a
     % section and nothing tested the sequence end to end.
     %
     % THE FIXTURES ARE NDR'S, not copies. They are located from the
@@ -38,33 +38,65 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
 
         % ------------------------------------------------ makeSourceFile
 
+        function testADescribedSourceFileIsAValidDocument(testCase)
+            % THE TEST THIS FILE WAS MISSING. Describing used to make a
+            % generic_file with no generic_file.ext, which that class's
+            % schema requires -- invalid from the moment it was made. The
+            % old test asserted the empty file list and so documented the
+            % bug instead of catching it, because building a document
+            % validates nothing. Adding it does.
+            f = testCase.aFile('valid.txt', 'hello');
+            doc = ndi.fun.doc.gene.makeSourceFile(testCase.session, f);
+            testCase.verifyWarningFree(@() testCase.session.database_add(doc));
+            back = testCase.session.database_search( ...
+                ndi.query('base.id','exact_string',doc.id(),''));
+            testCase.verifyEqual(numel(back), 1);
+        end
+
         function testSourceFileDescribesWithoutIngestingAPayload(testCase)
-            % The default is to DESCRIBE. A SAW .gef is ~9.4 GB; ingesting
-            % a copy alongside the pyramid derived from it would roughly
-            % double the storage to hold bytes the pyramid summarises.
+            % The default is to DESCRIBE, and describing is a different
+            % CLASS, not a generic_file missing its file. A SAW .gef is
+            % ~9.4 GB; ingesting a copy alongside the pyramid derived from
+            % it would roughly double the storage to hold bytes the
+            % pyramid summarises.
             f = testCase.aFile('describe.txt', 'hello');
             doc = ndi.fun.doc.gene.makeSourceFile(testCase.session, f);
-            g = doc.document_properties.generic_file;
+            testCase.verifyEqual( ...
+                doc.document_properties.document_class.class_name, ...
+                'fileReference');
+            g = doc.document_properties.fileReference;
             testCase.verifyEqual(g.filename, 'describe.txt');
             testCase.verifyNotEmpty(g.checksum);
+            testCase.verifyEqual(g.checksumAlgorithm, 'MD5');
+            testCase.verifyEqual(g.fileSize, 5);   % 'hello'
             testCase.verifyEmpty(doc.current_file_list(), ...
                 'The default must not attach the file itself.');
         end
 
         function testSourceFileCanAttachWhenAsked(testCase)
+            % Attaching is the other class, and that one really does hold
+            % the bytes its schema requires.
             f = testCase.aFile('attach.txt', 'hello');
             doc = ndi.fun.doc.gene.makeSourceFile(testCase.session, f, ...
                 'attachFile', true);
+            testCase.verifyEqual( ...
+                doc.document_properties.document_class.class_name, ...
+                'generic_file');
             testCase.verifyEqual(doc.current_file_list(), {'generic_file.ext'});
+            testCase.verifyWarningFree(@() testCase.session.database_add(doc));
         end
 
         function testSourceFileChecksumCanBeSkippedAndSaysNothing(testCase)
             % Skipping must leave the field EMPTY, not fill it with a
-            % placeholder that would later read as a real hash.
+            % placeholder that would later read as a real hash -- and the
+            % ALGORITHM goes empty with it, since it names what the
+            % checksum is and there is no checksum to name.
             f = testCase.aFile('nosum.txt', 'hello');
             doc = ndi.fun.doc.gene.makeSourceFile(testCase.session, f, ...
                 'checksum', false);
-            testCase.verifyEmpty(doc.document_properties.generic_file.checksum);
+            g = doc.document_properties.fileReference;
+            testCase.verifyEmpty(g.checksum);
+            testCase.verifyEmpty(g.checksumAlgorithm);
         end
 
         function testSourceFileChecksumDistinguishesSameNamedFiles(testCase)
@@ -76,10 +108,10 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
             d1 = ndi.fun.doc.gene.makeSourceFile(testCase.session, a);
             b = testCase.aFile('run.txt', 'second run', 'sub2');
             d2 = ndi.fun.doc.gene.makeSourceFile(testCase.session, b);
-            testCase.verifyEqual(d2.document_properties.generic_file.filename, ...
-                d1.document_properties.generic_file.filename);
-            testCase.verifyNotEqual(d2.document_properties.generic_file.checksum, ...
-                d1.document_properties.generic_file.checksum);
+            testCase.verifyEqual(d2.document_properties.fileReference.filename, ...
+                d1.document_properties.fileReference.filename);
+            testCase.verifyNotEqual(d2.document_properties.fileReference.checksum, ...
+                d1.document_properties.fileReference.checksum);
         end
 
         % --------------------------------------------- source_file_id
@@ -195,7 +227,7 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
             testCase.verifyEqual(tiles{1}.dependency_value('source_file_id'), ...
                 info.sourceDoc.id());
             testCase.verifyEqual( ...
-                info.sourceDoc.document_properties.generic_file.filename, ...
+                info.sourceDoc.document_properties.fileReference.filename, ...
                 'gef_basic.gef');
         end
 
@@ -209,7 +241,7 @@ classdef TestGeneFromFiles < matlab.unittest.TestCase
         end
 
         function testFromGefReportsProgressThroughTheWholeRun(testCase)
-            % ndi.gui.app.GeneIngest drives its bar from this. The
+            % ndi.gui.app.GEFManager drives its bar from this. The
             % fractions must not go backwards and must reach 1, or the
             % dialog stalls short of the end on a read that takes minutes
             % and a user cannot tell a slow step from a hung one.

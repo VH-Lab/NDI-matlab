@@ -116,11 +116,26 @@ The gene dictionary is **not** a file of this document. It lives in the
 `geneList` document that the parent pyramid depends on, so that a
 dissociated RNA-seq dataset built on the same annotation can share it.
 
-`#` is a non-negative integer computed from the tile's (row, column) by
+`#` is the tile's INDEX plus the document's `tile_index_origin`. The index
+is a non-negative grid position computed from the tile's (row, column) by
 the parent's `index_order`; for `row-major` it is
-`row * tile_columns + column`. Tiles containing no data are not written.
-Use `ndi.document/current_file_list` to discover which tiles exist —
-there is no separate index file.
+`row * tile_columns + column`.
+
+`tile_index_origin` is **1**, because a DID file series is one-based: its
+first member is `NAME_1`, and `did.document/addFileSeries` refuses
+anything else ("Member indices must be positive integers (one-based)").
+So the tile at (0,0) is stored as `tile.bin_1`. Pyramids written before
+this convention was honoured record no `tile_index_origin`, which reads as
+0; they name that tile `tile.bin_0` and stay readable. Read the origin
+from the document rather than inferring it from the names — a sparse
+pyramid whose first tile is empty has no `_0` under either convention, so
+a guess would shift every tile by one on the documents it got wrong.
+
+Tiles containing no data are not written, so the series is SPARSE: an
+absent `#` is normal and means that tile held nothing. Use
+`ndi.document/current_file_list` to discover which tiles exist — there is
+no separate index file, and walking the numbers until one is missing
+finds the first hole rather than the end.
 
 ### tile.bin_N layout (tile_format_version 1)
 
