@@ -730,6 +730,30 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 ext, ndi.gui.app.GEFManager.orNone(meta.chipSerial), ...
                 meta.resolutionNm, meta.root, meta.boxSource);
         end
+        function paper(h, c)
+        % PAPER - put a control on the cloud palette's white body
+        %
+        %   The figure and its layouts were already on c.offWhite, but the
+        %   CONTROLS were not: a uitable, a uitextarea, a uilistbox and a
+        %   uieditfield each default to MATLAB's own grey chrome, and those
+        %   are the largest surfaces in the window. The result read as a
+        %   grey app with a tinted border, which is not what the other NDI
+        %   applets look like.
+        %
+        %   Defensive for the same reason accent() is: a missing handle, or
+        %   a control that has no BackgroundColor, is a no-op. Losing a
+        %   window over a colour would be a poor trade.
+            if isempty(h) || ~isvalid(h)
+                return;
+            end
+            try %#ok<TRYNC>
+                h.BackgroundColor = c.white;
+            end
+            try %#ok<TRYNC>
+                h.FontColor = c.darkBlue;
+            end
+        end % paper()
+
         function accent(btn, c)
         % ACCENT - style a button in the NDI Cloud accent
         %
@@ -1136,6 +1160,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
             obj.table = uitable(g, 'ColumnName', ...
                 {'Label','Subject','Assay','Chip','Genes','Levels','Cells','Label sets'});
             obj.table.Layout.Row = 2; obj.table.Layout.Column = [1 5];
+            ndi.gui.app.GEFManager.paper(obj.table, c);
 
             b = uibutton(g,'Text','Reload','ButtonPushedFcn',@(~,~) obj.reload());
             b.Layout.Row = 3; b.Layout.Column = 2;
@@ -1230,13 +1255,16 @@ classdef GEFManager < ndi.gui.app.sessionApp
             lab.Layout.Row = 3; lab.Layout.Column = 1;
             ed = uieditfield(gl,'text','Value',ndi.gui.app.GEFManager.launcherPath());
             ed.Layout.Row = 3; ed.Layout.Column = 2;
+            ndi.gui.app.GEFManager.paper(ed, c);
             br = uibutton(gl,'Text','Browse...');
             br.Layout.Row = 3; br.Layout.Column = 3;
+            ndi.gui.app.GEFManager.accent(br, c);
 
             lab = uilabel(gl,'Text','Layer name');
             lab.Layout.Row = 4; lab.Layout.Column = 1;
             nameEd = uieditfield(gl,'text','Value','All genes');
             nameEd.Layout.Row = 4; nameEd.Layout.Column = [2 3];
+            ndi.gui.app.GEFManager.paper(nameEd, c);
 
             % Offered rather than typed: these names come from somebody's
             % cellbin /obs columns, and a misremembered one is answered by
@@ -1247,6 +1275,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 'Value',false,'Enable',~isempty(labelNames));
             cbChoose.Layout.Row = 5; cbChoose.Layout.Column = 1;
             labelList = uilistbox(gl,'Multiselect','on','Enable','off');
+            ndi.gui.app.GEFManager.paper(labelList, c);
             if isempty(labelNames)
                 cbChoose.Text = 'Cell type labelings (none in this session)';
                 labelList.Items = {};
@@ -1273,6 +1302,7 @@ classdef GEFManager < ndi.gui.app.sessionApp
 
             cmdArea = uitextarea(gl,'Editable','off','Value','');
             cmdArea.Layout.Row = 10; cmdArea.Layout.Column = [1 2];
+            ndi.gui.app.GEFManager.paper(cmdArea, c);
             go = uibutton(gl,'Text','Launch');
             ndi.gui.app.GEFManager.accent(go, c);
             go.Layout.Row = 10; go.Layout.Column = 3;
