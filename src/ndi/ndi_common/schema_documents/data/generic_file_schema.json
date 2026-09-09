@@ -4,8 +4,8 @@
 	"depends_on": [
 		{ "name": "document_id", "mustbenotempty": 0}
 	],
-	"file": [ 
-		{"name": "generic_file.ext", "mustbenotempty": 1}
+	"file": [
+		{"name": "generic_file.ext", "mustbenotempty": 0}
 	],
 	"generic_file": [
 		{
