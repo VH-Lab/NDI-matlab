@@ -41,12 +41,18 @@ function [img, info] = readViewport(session, pyramidDoc, region, options)
 %             ndr.format.omezarr.readArray
 
     arguments
-        session (1,1)
-        pyramidDoc
-        region (1,1) struct
+        session (1,1) %#ok<INUSA>
+        pyramidDoc   %#ok<INUSA>
+        region (1,1) struct %#ok<INUSA>
         options.targetVoxelSize (1,:) double = []
         options.forceLevel (1,1) double {mustBeInteger} = -1
     end
+
+    % Initialise so the return-value-might-be-unset warning is only about
+    % the *documented* scaffold state, not a real MATLAB unset. The two
+    % backends below will overwrite these before returning normally.
+    img = [];
+    info = struct();
 
     t = ndi.fun.doc.lightsheet.levelTable(session, pyramidDoc);
     if height(t) == 0
@@ -55,7 +61,7 @@ function [img, info] = readViewport(session, pyramidDoc, region, options)
     end
 
     if options.forceLevel >= 0
-        row = t(t.level == options.forceLevel, :);
+        row = t(t.level == options.forceLevel, :); %#ok<NASGU>
         if isempty(row)
             error('NDI:lightsheet:readViewport:noSuchLevel', ...
                 'Requested level %d not present.', options.forceLevel);
@@ -65,11 +71,11 @@ function [img, info] = readViewport(session, pyramidDoc, region, options)
         if isempty(target)
             target = t.voxel_size{1};
         end
-        [~, row] = ndi.fun.doc.lightsheet.chooseLevel(t, target);
+        [~, row] = ndi.fun.doc.lightsheet.chooseLevel(t, target); %#ok<NASGU>
     end
 
     error('NDI:lightsheet:readViewport:notImplemented', ...
         ['readViewport is a scaffold in this PR. See README-' ...
          'lightsheet-zarr.md for the two backend paths (source ' ...
-         'OME-Zarr and materialized chunks) and their status.']); %#ok<UNRCH>
+         'OME-Zarr and materialized chunks) and their status.']);
 end
