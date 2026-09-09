@@ -45,6 +45,12 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
 %                  ZARRPATH. When empty, a new fileReference is created
 %                  via NDI.FUN.DOC.LIGHTSHEET.MAKESOURCEFILE.
 %   label      - human-readable label written into the parent pyramid.
+%   tileBudgetBytes - target uncompressed bytes per chunk when chunk
+%                     shape is chosen automatically. Default 8*2^20
+%                     (8 MB). Forwarded to makePyramid.
+%   chunks     - optional explicit chunk shape (row vector, axes_order).
+%                Empty (default) means auto-size from the budget.
+%                Forwarded to makePyramid.
 %
 %   INFO returns a struct with fields:
 %     zarrPath          - absolute path resolved
@@ -76,6 +82,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         options.pipelineVersion char = ''
         options.sourceFileID char = ''
         options.label char = ''
+        options.tileBudgetBytes (1,1) double {mustBePositive} = 8 * 2^20
+        options.chunks double = []
     end
 
     if isempty(strtrim(options.subjectID))
@@ -135,7 +143,9 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'elementID', options.elementID, ...
         'sourceFileID', sourceFileID, ...
         'pipelineVersion', options.pipelineVersion, ...
-        'label', options.label);
+        'label', options.label, ...
+        'tileBudgetBytes', options.tileBudgetBytes, ...
+        'chunks', options.chunks);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...

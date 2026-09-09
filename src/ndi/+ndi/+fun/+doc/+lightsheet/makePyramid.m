@@ -27,6 +27,27 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 %     sourceFileID    - char, id of the fileReference doc for the store
 %     pipelineVersion - char, tag for the pyramid
 %     label           - char, human-readable label for the pyramid
+%     tileBudgetBytes - target UNCOMPRESSED bytes per chunk when the
+%                       chunk shape is chosen automatically. Default
+%                       8*2^20 (8 MB). Sized for a viewer over an
+%                       ~200 MB/s link fetching ~4 parallel tiles per
+%                       pan gesture. Chunks land near this budget but
+%                       are clamped by the level's own shape, so a
+%                       small coarse level may end up as one whole
+%                       chunk.
+%     chunks          - optional explicit chunk shape (row vector in
+%                       axes_order). Empty (default) means auto: pick
+%                       a shape ISOTROPIC IN WORLD SPACE from the
+%                       level's voxel size, the dtype and
+%                       tileBudgetBytes. Non-empty overrides the
+%                       budget entirely and is used verbatim on every
+%                       level (clamped by shape).
+%
+%   The chosen chunk shape is what a future materializer will
+%   re-tile source bytes to; it is stamped onto the level document
+%   here so a reader can compute chunk_grid and index chunk.bin_#
+%   without consulting the source store. Source-store chunk shape is
+%   NOT preserved.
 %
 %   Metadata only. n_chunks_stored is 0 on every level document in
 %   this PR; materializing chunk bytes into `chunk.bin_#` is follow-up
@@ -45,6 +66,8 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         options.sourceFileID char = ''
         options.pipelineVersion char = ''
         options.label char = ''
+        options.tileBudgetBytes (1,1) double {mustBePositive} = 8 * 2^20
+        options.chunks double = []
     end
 
     if numel(pyramids) ~= numel(perEntryReduction)
@@ -139,7 +162,15 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 end
 
 function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options)
-    chunkGrid = ceil(level.shape ./ level.chunks);
+    axesOrder = joinAxisNames(pyramidEntry.axes);
+    if isempty(options.chunks)
+        chunks = ndi.fun.doc.lightsheet.chooseTileShape(level.shape, ...
+            axesOrder, level.scale, char(level.dtype), ...
+            options.tileBudgetBytes);
+    else
+        chunks = clampChunksToShape(ensureRow(options.chunks), level.shape);
+    end
+    chunkGrid = ceil(level.shape ./ chunks);
 
     props = struct( ...
         'label', sprintf('%s level %d (%s)', pyramidEntry.name, levelIndex, reductionFn), ...
@@ -147,7 +178,7 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
         'reduction_function', reductionFn, ...
         'axes_order', joinAxisNames(pyramidEntry.axes), ...
         'shape', level.shape, ...
-        'chunks', level.chunks, ...
+        'chunks', chunks, ...
         'chunk_grid', chunkGrid, ...
         'n_chunks_stored', 0, ...
         'chunk_index_origin', 1, ...
@@ -206,3 +237,19 @@ function v = ensureRow(x)
         v = reshape(double(x), 1, []);
     end
 end
+
+function chunks = clampChunksToShape(chunks, shape)
+    shape = double(shape(:).');
+    chunks = double(chunks(:).');
+    if numel(chunks) ~= numel(shape)
+        error('NDI:lightsheet:makePyramid:chunksArity', ...
+            'Explicit chunks length %d does not match level shape length %d.', ...
+            numel(chunks), numel(shape));
+    end
+    if any(chunks < 1) || any(chunks ~= fix(chunks))
+        error('NDI:lightsheet:makePyramid:badChunks', ...
+            'Explicit chunks must be positive integers.');
+    end
+    chunks = min(chunks, shape);
+end
+

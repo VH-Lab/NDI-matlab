@@ -44,6 +44,12 @@ NDI documents are immutable, so:
 - `ndi.fun.doc.lightsheet.chooseLevel(levels, targetVoxelSize)` -
   pick the coarsest level whose voxel size still meets the target.
   **Working.**
+- `ndi.fun.doc.lightsheet.chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetBytes)` -
+  size a chunk to a byte budget with tiles isotropic in world space.
+  Default budget 8 MB uncompressed, sized for a viewer over an
+  ~200 MB/s link fetching ~4 tiles in parallel per pan gesture. Used
+  by `makePyramid` per level; the source store's chunk shape is not
+  preserved. **Working.**
 - `ndi.fun.doc.lightsheet.viewCommand(launcher, sessionPath, pyramidID, ...)`
   - pure command builder. Same pattern as
   `ndi.gui.app.GEFManager.viewCommand`; the launcher is
