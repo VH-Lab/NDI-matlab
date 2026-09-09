@@ -61,7 +61,7 @@ rFirst = floor(y0 / th); rLast = floor(max(y1-1,y0) / th);
 
 for r = rFirst:min(rLast, G-1)
     for c = cFirst:min(cLast, G-1)
-        name = sprintf('tile.bin_%d', r * p.tile_columns + c);
+        name = ndi.fun.doc.gene.tileFileName(lv, r * p.tile_columns + c);
         if ~any(strcmp(name, stored))
             info.tilesEmpty = info.tilesEmpty + 1;
             continue;

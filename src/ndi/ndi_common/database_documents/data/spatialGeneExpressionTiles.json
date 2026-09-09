@@ -49,6 +49,7 @@
 		"data_type_offset": "uint32",
 		"data_type_coordinate": "uint16",
 		"tile_compression": "none",
-		"tile_format_version": 1
+		"tile_format_version": 1,
+		"tile_index_origin": 1
 	}
 }

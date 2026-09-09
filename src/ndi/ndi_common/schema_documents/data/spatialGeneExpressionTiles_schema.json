@@ -216,6 +216,19 @@
 			],
 			"queryable": 1,
 			"documentation": "The version of the tile binary layout. See spatialGeneExpressionTiles.md."
+		},
+		{
+			"name": "tile_index_origin",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				0,
+				1,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The suffix of the file holding tile N is N plus this. A DID file series is ONE-BASED -- its first member is NAME_1 -- so this is 1 for every document written since that was honoured. Pyramids written before it name their first tile tile.bin_0 and carry no value here, which reads as 0 and keeps them readable. The tile INDEX itself stays zero-based in either case; it is a grid position, defined by index_order as row*tile_columns + column."
 		}
 	]
 }

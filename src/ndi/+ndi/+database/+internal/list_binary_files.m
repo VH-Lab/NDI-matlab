@@ -14,16 +14,28 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
     %       'docid' - The document id that the file is associated with
     %       'bytes' - The size of the file in bytes
     %
-    % FILE SERIES. A new-style series (files.file_series) records its members
-    % in a manifest rather than in file_list, and names them NAME_<i>, so the
-    % file_list walk below never sees them -- it handles only the legacy
-    % NAME# convention, whose members are NAME1, NAME2 and so on. Members are
-    % therefore enumerated separately, from the per-series record, and
-    % resolved by name through the manifest (VH-Lab/DID-matlab#183).
+    % LEGACY NAME# SERIES ARE ENUMERATED, NOT COUNTED. file_list declares a
+    % PATTERN ('tile.bin_#'); files.file_info records the concrete names
+    % that were actually added, which is what current_file_list returns. An
+    % earlier version walked NAME1, NAME2, ... and treated the first name
+    % that was not there as the end of the series, because that gap was the
+    % only termination signal a probing loop has.
     %
-    % Without this a series reaches the cloud as its manifest alone: a
-    % document declaring N members, none of whose bytes were ever uploaded.
-    % See VH-Lab/NDI-matlab#956.
+    % A sparse series defeats that, and sparse is the normal case: a gene
+    % pyramid does not write a tile with no data in it, so its stored tiles
+    % are 1, 4, 9, ... with holes between. The walk found the first hole and
+    % called it the end. One real pyramid reached the cloud as 24 of its 450
+    % tile files, with the upload reporting success -- the documents were
+    % all there, so the dataset downloaded and opened, and failed at the
+    % first tile read instead. See VH-Lab/NDI-matlab#956.
+    %
+    % Asking the document removes both the guessing and the terminator.
+    %
+    % NEW-STYLE SERIES (files.file_series) still need the separate pass
+    % below: addFileSeries calls add_file once, for the series MANIFEST, so
+    % file_info holds the manifest's name and not the members'. Those come
+    % from the per-series record, and are one-based by DID's own rule
+    % (VH-Lab/DID-matlab#183).
 
     arguments
         ndi_dataset (1,1) ndi.dataset
@@ -50,38 +62,32 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
         ndi_document_id = database_documents{i}.document_properties.base.id;
 
         if isfield(database_documents{i}.document_properties, 'files')
-            for f = 1:numel(database_documents{i}.document_properties.files.file_list)
-                file_name = database_documents{i}.document_properties.files.file_list{f};
+            % The names that were actually added, not the patterns that
+            % could have been. A '#' in file_list never appears here.
+            stored_names = database_documents{i}.current_file_list();
 
-                j = 1; is_finished = false;
-                while ~is_finished % we could potentially read a series of files
-                    if file_name(end)=='#' % this file is a series of files
-                        this_filename = sprintf('%s%d', file_name(1:end-1), j);
-                    else
-                        this_filename = file_name;
-                        is_finished = true; % only 1 file
-                    end
+            for f = 1:numel(stored_names)
+                this_filename = stored_names{f};
 
-                    [file_exists, full_file_path] = ...
-                        ndi_dataset.database_existbinarydoc(ndi_document_id, this_filename);
+                [file_exists, full_file_path] = ...
+                    ndi_dataset.database_existbinarydoc(ndi_document_id, this_filename);
 
-                    if ~file_exists
-                        is_finished = true;
-                        full_file_path = '';
-                    end
-
-                    j = j + 1;
-                    if ~isempty(full_file_path)
-                        curr_idx = numel(file_manifest) + 1;
-                        [~, uid, ~] = fileparts(full_file_path);
-                        file_manifest(curr_idx).docid = ndi_document_id;
-                        file_manifest(curr_idx).uid = uid;
-                        file_manifest(curr_idx).name = this_filename;
-                        file_manifest(curr_idx).file_path = full_file_path;
-                        file_info = dir(full_file_path);
-                        file_manifest(curr_idx).bytes = file_info.bytes;
-                    end
+                % A recorded name whose bytes are not resolvable is skipped
+                % rather than fatal: the document is describing a file this
+                % dataset cannot produce, which is the caller's problem to
+                % notice, not a reason to abandon the other documents.
+                if ~file_exists || isempty(full_file_path)
+                    continue;
                 end
+
+                curr_idx = numel(file_manifest) + 1;
+                [~, uid, ~] = fileparts(full_file_path);
+                file_manifest(curr_idx).docid = ndi_document_id;
+                file_manifest(curr_idx).uid = uid;
+                file_manifest(curr_idx).name = this_filename;
+                file_manifest(curr_idx).file_path = full_file_path;
+                file_info = dir(full_file_path);
+                file_manifest(curr_idx).bytes = file_info.bytes;
             end
 
             % Series members, which file_list does not name.

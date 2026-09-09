@@ -201,7 +201,11 @@ for t = 0:(G*G - 1)
     p = [tempname '.bin'];
     ndi.fun.doc.gene.writeTileFile(p, mod(px(m), tw), mod(py(m), th), gi(m), c(m));
     nStored = nStored + 1;
-    names{end+1} = sprintf('tile.bin_%d', t); %#ok<AGROW>
+    % ONE-BASED file suffix: a DID file series names its first member
+    % NAME_1 (did.document/addFileSeries: "Member indices must be positive
+    % integers (one-based)"). The tile index t stays zero-based -- it is a
+    % grid position, defined by index_order as row*tile_columns + column.
+    names{end+1} = sprintf('tile.bin_%d', t + 1); %#ok<AGROW>
     paths{end+1} = p;                          %#ok<AGROW>
 end
 
@@ -217,7 +221,8 @@ s = struct('label', sprintf('bin%d', b), 'bin_size', b, ...
     'n_tiles_stored', nStored, ...
     'data_type_gene_index', 'uint32', 'data_type_count', 'uint16', ...
     'data_type_offset', 'uint32', 'data_type_coordinate', 'uint16', ...
-    'tile_compression', 'none', 'tile_format_version', 1);
+    'tile_compression', 'none', 'tile_format_version', 1, ...
+    'tile_index_origin', 1);
 
 tileDoc = ndi.document('spatialGeneExpressionTiles', ...
     'spatialGeneExpressionTiles', s) + session.newdocument();
