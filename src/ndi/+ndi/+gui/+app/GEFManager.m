@@ -924,6 +924,86 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
         end
 
+        function tf = cloudTokenNeedsRenewing(token)
+        % CLOUDTOKENNEEDSRENEWING - is there an expired token to renew?
+        %
+        %   TF = NDI.GUI.APP.GEFMANAGER.CLOUDTOKENNEEDSRENEWING(TOKEN)
+        %
+        %   Separated from the renewal itself because the DECISION is what
+        %   has to be right and the renewal is what cannot be run in a
+        %   test: it reads the MATLAB Vault, whose contents differ on
+        %   every machine.
+        %
+        %   NO TOKEN IS NOT A REASON TO ACT. It says this MATLAB has not
+        %   been talking to the cloud -- a local pyramid, or a session
+        %   that has not logged in -- and renewing on its behalf would put
+        %   a login in front of a button that says "View in napari".
+        %
+        %   A token that cannot be decoded reads as NOT expired, which is
+        %   isTokenExpired's own choice: the server stays the judge of an
+        %   opaque token rather than this function guessing about it.
+            tf = false;
+            if isempty(token)
+                return;
+            end
+            tf = ndi.cloud.internal.isTokenExpired(token);
+        end
+
+        function msg = freshenCloudToken()
+        % FRESHENCLOUDTOKEN - renew an expired cloud token before a launch
+        %
+        %   MSG = NDI.GUI.APP.GEFMANAGER.FRESHENCLOUDTOKEN() renews the
+        %   NDI Cloud token if it has expired, and returns '' if there was
+        %   nothing to do or it worked. A non-empty MSG says what is still
+        %   wrong, in a sentence meant for the user.
+        %
+        %   WHY A LAUNCH IS WHERE THIS BELONGS. The viewer is a separate
+        %   process started with system(), so it inherits MATLAB's
+        %   environment -- and NDI_CLOUD_TOKEN lives there. That is the
+        %   whole of the viewer's cloud credentials: it cannot read the
+        %   MATLAB Vault, and a login in some other shell does not reach
+        %   it either. So the token MATLAB happens to be holding at the
+        %   moment of the click is what the picture gets, for as long as
+        %   the window stays open.
+        %
+        %   Left alone, that expires. What it looks like from the viewer
+        %   is not a login prompt but MISSING DATA: tiles already in the
+        %   local cache keep drawing, and the ones that were never
+        %   fetched fail one at a time as the user pans -- "Binary file
+        %   'tile.bin_280' not found", which reads as a broken pyramid
+        %   rather than as a lapsed token. Renewing here costs nothing
+        %   and removes the failure that is hardest to recognise.
+        %
+        %   NO TOKEN AT ALL IS NOT AN ERROR and does not prompt. A local
+        %   pyramid needs no cloud, and a login dialog thrown up by a
+        %   button that says "View in napari" would be a surprise. Only
+        %   an EXPIRED token is acted on: its presence is what says this
+        %   MATLAB has been talking to the cloud and is expected to keep
+        %   doing so. Interaction stays off for the same reason -- the
+        %   vault and the environment are read, nothing is asked.
+            msg = '';
+            if ~ndi.gui.app.GEFManager.cloudTokenNeedsRenewing(getenv('NDI_CLOUD_TOKEN'))
+                return;
+            end
+            try
+                ndi.cloud.authenticate('InteractionEnabled', false);
+            catch ME
+                msg = ['The NDI Cloud token has expired and could not be ' ...
+                    'renewed (' ME.message '). Tiles that are not already ' ...
+                    'downloaded will fail to load in the viewer. Run ' ...
+                    'ndi.cloud.authenticate at the command line, then ' ...
+                    'launch again.'];
+                return;
+            end
+            if ndi.cloud.internal.isTokenExpired(getenv('NDI_CLOUD_TOKEN'))
+                msg = ['The NDI Cloud token has expired and no stored ' ...
+                    'credentials were available to renew it. Tiles that ' ...
+                    'are not already downloaded will fail to load in the ' ...
+                    'viewer. Run ndi.cloud.authenticate at the command ' ...
+                    'line, then launch again.'];
+            end
+        end
+
         function txt = labelSelection(choosing, selected)
         % LABELSELECTION - the --labels value for a dialog's state
         %
@@ -1409,8 +1489,16 @@ classdef GEFManager < ndi.gui.app.sessionApp
                     return;
                 end
                 ndi.gui.app.GEFManager.setLauncherPath(target);
+                % The child inherits NDI_CLOUD_TOKEN and can renew
+                % nothing itself, so a stale one here becomes missing
+                % tiles there, an hour later, with no mention of a login.
+                tokenMsg = ndi.gui.app.GEFManager.freshenCloudToken();
                 status = system(ndi.gui.app.GEFManager.detach(cmd));
                 delete(d);
+                if ~isempty(tokenMsg)
+                    uialert(obj.fig, tokenMsg, 'NDI Cloud token', ...
+                        'Icon', 'warning');
+                end
                 if status == 0
                     obj.setStatus(sprintf('Launched the viewer for %s.', ...
                         ndi.gui.app.GEFManager.orNone(r.label)));

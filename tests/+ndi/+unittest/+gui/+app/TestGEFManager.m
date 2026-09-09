@@ -675,6 +675,75 @@ classdef TestGEFManager < matlab.unittest.TestCase
             testCase.verifyTrue(contains(notes{1}, 'data'));
         end
 
+        function testAnExpiredTokenIsWorthRenewing(testCase)
+            % The failure this prevents does not look like a login
+            % problem: tiles already in the local cache keep drawing and
+            % the rest fail one at a time as the user pans, which reads
+            % as a broken pyramid rather than a lapsed token.
+            token = ndi.unittest.gui.app.TestGEFManager.fakeJwt(-3600);
+            testCase.verifyTrue( ...
+                ndi.gui.app.GEFManager.cloudTokenNeedsRenewing(token));
+        end
+
+        function testALiveTokenIsLeftAlone(testCase)
+            token = ndi.unittest.gui.app.TestGEFManager.fakeJwt(7200);
+            testCase.verifyFalse( ...
+                ndi.gui.app.GEFManager.cloudTokenNeedsRenewing(token));
+        end
+
+        function testNoTokenIsNotAReasonToLogIn(testCase)
+            % A local pyramid needs no cloud, and a login dialog thrown up
+            % by a button that says "View in napari" is a surprise.
+            testCase.verifyFalse( ...
+                ndi.gui.app.GEFManager.cloudTokenNeedsRenewing(''));
+        end
+
+        function testAnUndecodableTokenIsLeftToTheServer(testCase)
+            % isTokenExpired's own choice, and this must not second-guess
+            % it: an opaque token is the server's to judge.
+            testCase.verifyFalse( ...
+                ndi.gui.app.GEFManager.cloudTokenNeedsRenewing('not-a-jwt'));
+        end
+
+        function testFresheningDoesNothingWithNoTokenToFreshen(testCase)
+            % The one path that is safe to run for real: it must not reach
+            % the vault, and it must report nothing wrong.
+            old = getenv('NDI_CLOUD_TOKEN');
+            restore = onCleanup(@() setenv('NDI_CLOUD_TOKEN', old));
+            setenv('NDI_CLOUD_TOKEN', '');
+            testCase.verifyEmpty(ndi.gui.app.GEFManager.freshenCloudToken());
+        end
+
+        function testTheLaunchRefreshesTheTokenBeforeItStartsTheViewer(testCase)
+            % The viewer is a separate process started with system(), so
+            % it inherits NDI_CLOUD_TOKEN and can renew nothing itself.
+            % Refreshing AFTER the launch would hand it the stale one.
+            src = fileread(which('ndi.gui.app.GEFManager'));
+            i = strfind(src, 'freshenCloudToken()');
+            j = strfind(src, 'system(ndi.gui.app.GEFManager.detach(cmd))');
+            testCase.verifyNotEmpty(i);
+            testCase.verifyNotEmpty(j);
+            testCase.verifyLessThan(i(end), j(1));
+        end
+
+    end
+
+    methods (Static, Access = private)
+        function token = fakeJwt(secondsFromNow)
+            % A JWT with nothing in it but an exp claim, which is all
+            % isTokenExpired reads. Base64URL: the '+' and '/' of standard
+            % base64 are '-' and '_' here, and the padding comes off.
+            exp = round(posixtime(datetime('now','TimeZone','UTC'))) + secondsFromNow;
+            payload = ndi.unittest.gui.app.TestGEFManager.b64url( ...
+                sprintf('{"exp":%d}', exp));
+            header = ndi.unittest.gui.app.TestGEFManager.b64url('{"alg":"none"}');
+            token = [header '.' payload '.sig'];
+        end
+
+        function out = b64url(txt)
+            out = matlab.net.base64encode(unicode2native(txt, 'UTF-8'));
+            out = strrep(strrep(strrep(out, '=', ''), '+', '-'), '/', '_');
+        end
     end
 
     methods (Access = private)
