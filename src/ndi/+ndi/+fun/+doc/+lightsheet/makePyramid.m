@@ -13,6 +13,11 @@ function [pyramidDoc, levelDocs] = makePyramid(session, pyramidEntry, options)
 %
 %   and adds them to SESSION.
 %
+%   Metadata only. n_chunks_stored is 0 on every level document in
+%   this PR; materializing chunk bytes into the level document's
+%   `chunk.bin_#` file series is follow-up work (see the package
+%   README).
+%
 %   Required Name-Value:
 %     reduction   - 'mean' or 'max' (or other future value); recorded on
 %                   the parent AND on every level.
@@ -23,17 +28,6 @@ function [pyramidDoc, levelDocs] = makePyramid(session, pyramidEntry, options)
 %     sourceFileID    - char, id of the fileReference document naming
 %                       the OME-Zarr store; ''=no source_file_id.
 %     pipelineVersion - char, tag for the pyramid.
-%     materializeChunks - logical, default false. When true, this
-%                       function writes each level's chunk bytes into
-%                       the level document's `chunk.bin_#` file series
-%                       by reading the source array through
-%                       NDR.FORMAT.OMEZARR.READARRAY. When false, the
-%                       level documents only carry metadata and the
-%                       chunks stay in the source store; a downstream
-%                       ingest job (see the design note in
-%                       README-lightsheet-zarr.md) is responsible for
-%                       materialization. Default false so the ingest is
-%                       incremental: describe first, materialize later.
 %
 %   Returns:
 %     PYRAMIDDOC - the parent ndi.document
@@ -41,8 +35,8 @@ function [pyramidDoc, levelDocs] = makePyramid(session, pyramidEntry, options)
 %                  ordered finest-first (matching PYRAMIDENTRY.levels).
 %
 %   See also: ndi.fun.doc.lightsheet.fromOMEZarr,
-%             ndi.fun.doc.lightsheet.writeChunkFile,
-%             ndi.fun.doc.lightsheet.readViewport
+%             ndi.fun.doc.lightsheet.levelTable,
+%             ndi.fun.doc.lightsheet.chooseLevel
 
     arguments
         session (1,1)
@@ -52,7 +46,6 @@ function [pyramidDoc, levelDocs] = makePyramid(session, pyramidEntry, options)
         options.elementID char = ''
         options.sourceFileID char = ''
         options.pipelineVersion char = ''
-        options.materializeChunks (1,1) logical = false
     end
 
     axesOrder = joinAxisNames(pyramidEntry.axes);
@@ -133,13 +126,6 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
     levelDoc = levelDoc.set_dependency_value('subject_id', options.subjectID);
     if ~isempty(options.sourceFileID)
         levelDoc = levelDoc.set_dependency_value('source_file_id', options.sourceFileID);
-    end
-
-    if options.materializeChunks
-        [levelDoc, nWritten] = ndi.fun.doc.lightsheet.writeChunkFile(...
-            session, levelDoc, pyramidEntry, level);
-        levelDoc = levelDoc.setproperties( ...
-            'lightsheetZarrLevel.n_chunks_stored', nWritten);
     end
 
     session.database_add(levelDoc);
