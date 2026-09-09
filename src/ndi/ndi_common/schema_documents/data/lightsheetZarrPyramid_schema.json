@@ -48,7 +48,7 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The NGFF multiscales.type field, verbatim. Descriptive only."
+			"documentation": "The NGFF multiscales.type field, verbatim. Descriptive only: an earlier writer of this format sometimes labeled the mean pyramid 'gaussian', so 'reduction' is what code should branch on."
 		},
 		{
 			"name": "axes_order",
@@ -56,7 +56,7 @@
 			"default_value": "tczyx",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The axis order carried in every child level (NGFF convention, e.g. 'tczyx', 'czyx', 'zyx')."
+			"documentation": "The axis order carried in every child level (NGFF convention, e.g. 'tczyx', 'czyx', 'zyx'). Every child level uses this order."
 		},
 		{
 			"name": "axes_units",
@@ -64,7 +64,7 @@
 			"default_value": [],
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "Per-axis physical unit strings, aligned with axes_order."
+			"documentation": "Per-axis physical unit strings, aligned with axes_order. Stored as a cellstr in MATLAB / list of strings in JSON."
 		},
 		{
 			"name": "channel_names",
@@ -72,13 +72,18 @@
 			"default_value": [],
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "Display names of the channels, in the order of the 'c' axis."
+			"documentation": "Display names of the channels, in the order of the 'c' axis. Empty when there are no channels."
 		},
 		{
 			"name": "n_channels",
 			"type": "integer",
 			"default_value": 0,
-			"parameters": [0, 100000, 0, 0],
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
 			"queryable": 1,
 			"documentation": "Convenience count; equals the length of channel_names when set."
 		},
@@ -86,7 +91,12 @@
 			"name": "n_levels",
 			"type": "integer",
 			"default_value": 0,
-			"parameters": [0, 100000, 0, 0],
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
 			"queryable": 1,
 			"documentation": "Number of lightsheetZarrLevel documents that should reference this pyramid."
 		},
@@ -94,7 +104,10 @@
 			"name": "shape_level0",
 			"type": "matrix",
 			"default_value": [],
-			"parameters": [1, null],
+			"parameters": [
+				1,
+				NaN
+			],
 			"queryable": 1,
 			"documentation": "Shape of the finest resolution array, in axes_order."
 		},
@@ -102,7 +115,10 @@
 			"name": "voxel_size_level0",
 			"type": "matrix",
 			"default_value": [],
-			"parameters": [1, null],
+			"parameters": [
+				1,
+				NaN
+			],
 			"queryable": 1,
 			"documentation": "Per-axis voxel size at level 0, in voxel_size_units."
 		},
@@ -118,9 +134,12 @@
 			"name": "translation_level0",
 			"type": "matrix",
 			"default_value": [],
-			"parameters": [1, null],
+			"parameters": [
+				1,
+				NaN
+			],
 			"queryable": 1,
-			"documentation": "Per-axis translation at level 0."
+			"documentation": "Per-axis translation at level 0, in voxel_size_units."
 		},
 		{
 			"name": "dtype",
