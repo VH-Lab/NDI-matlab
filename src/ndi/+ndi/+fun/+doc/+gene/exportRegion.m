@@ -60,7 +60,7 @@ tilesRead = 0;
 
 for r = floor(y0/th) : min(floor(max(y1-1,y0)/th), p.tile_rows-1)
     for c = floor(x0/tw) : min(floor(max(x1-1,x0)/tw), p.tile_columns-1)
-        name = sprintf('tile.bin_%d', r * p.tile_columns + c);
+        name = ndi.fun.doc.gene.tileFileName(lv, r * p.tile_columns + c);
         if ~any(strcmp(name, stored)), continue; end
         % tilePath remembers where a tile landed, so a caller that reads
         % overlapping rectangles -- a sweep, a montage, one region for

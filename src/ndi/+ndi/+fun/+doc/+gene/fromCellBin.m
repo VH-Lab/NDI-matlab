@@ -50,7 +50,7 @@ function [cellsDoc, labelDocs, info] = fromCellBin(session, h5adPath, pyrDoc, op
 %   segmentationDilation (0) - the dilation applied, in bins
 %   subjectID ('')       - subject these cells were measured from
 %   label ('')           - human-readable label
-%   recordSource (true)  - create a generic_file document describing the
+%   recordSource (true)  - create a fileReference document describing the
 %       .h5ad and point the cells document at it through source_file_id
 %   checksum (true)      - compute that file's MD5
 %
