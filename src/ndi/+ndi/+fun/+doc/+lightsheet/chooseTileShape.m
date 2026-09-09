@@ -59,7 +59,9 @@ function chunks = chooseTileShape(shape, axesOrder, voxelSize, dtype, budgetByte
             numel(axesOrder), n);
     end
 
-    isSpatial = ~ismember(lower(axesOrder(1:n)), {'t','c'});
+    % ismember with a cellstr treats the char row as ONE string; use a
+    % char row on both sides so it compares element-wise.
+    isSpatial = ~ismember(lower(axesOrder(1:n)), 'tc');
     isSpatial = reshape(isSpatial, 1, n);
     chunks = ones(1, n);
     if ~any(isSpatial)
