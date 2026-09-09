@@ -66,7 +66,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             if ~isKey(pathIndex, p)
                 pathIndex(p) = numel(pathOrder) + 1;
                 pathOrder{end+1} = p; %#ok<AGROW>
-                pathReductions(p) = {perEntryReduction{i}};
+                pathReductions(p) = perEntryReduction(i);
                 representative(p) = struct('entryIdx', i, 'levelIdx', k);
             else
                 cur = pathReductions(p);
