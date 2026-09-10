@@ -243,7 +243,7 @@ function names = resolveChannelNames(userNames, numChannels)
     if isstring(userNames)
         userNames = cellstr(userNames);
     end
-    if ~iscellstr(userNames) %#ok<ISCLSTR>
+    if ~iscellstr(userNames)
         error('NDI:lightsheet:makeBlobFixture:badChannelNames', ...
             'ChannelNames must be a cellstr or string array.');
     end
