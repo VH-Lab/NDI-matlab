@@ -57,7 +57,7 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         options.VoxelSize (1,3) double {mustBePositive} = [1 1 1]
         options.materializeChunks (1,1) logical = true
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
-        options.clevel (1,1) double {mustBeInteger, mustBeInRange(options.clevel, 1, 22)} = 5
+        options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 22)} = 5
     end
 
     sessionDir = options.sessionDir;

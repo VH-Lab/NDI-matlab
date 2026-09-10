@@ -71,7 +71,7 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         options.materializeChunks (1,1) logical = false
         options.sourceZarrPath char = ''
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
-        options.clevel (1,1) double {mustBeInteger, mustBeInRange(options.clevel, 1, 22)} = 5
+        options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 22)} = 5
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -386,7 +386,7 @@ function payload = compressZstd(bytesIn, clevel)
     zstdBin = locateZstd();
     inPath  = [tempname() '.bin'];
     outPath = [tempname() '.zst'];
-    cleaner = onCleanup(@() safeDelete({inPath, outPath})); %#ok<NASGU>
+    cleaner = onCleanup(@() safeDelete({inPath, outPath}));
     fid = fopen(inPath, 'wb');
     fwrite(fid, bytesIn, 'uint8');
     fclose(fid);
@@ -427,7 +427,10 @@ end
 function safeDelete(paths)
     for i = 1:numel(paths)
         if exist(paths{i}, 'file') == 2
-            try, delete(paths{i}); catch, end
+            try
+                delete(paths{i});
+            catch
+            end
         end
     end
 end
