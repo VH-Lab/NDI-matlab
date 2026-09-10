@@ -289,7 +289,11 @@ function levelDoc = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, lev
                 payload = raw;
             case 'blosc-zstd'
                 typesize = elementSizeBytes(class(padded));
-                payload = encodeBloscZstd(raw, typesize, clevel);
+                payload = ndr.format.blosc.encode(raw, ...
+                    'typesize', typesize, ...
+                    'cname',    'zstd', ...
+                    'clevel',   clevel, ...
+                    'shuffle',  1);
             otherwise
                 error('NDI:lightsheet:makePyramid:unknownCodec', ...
                     'Unknown codec %s.', codec);
@@ -331,107 +335,6 @@ function b = elementSizeBytes(className)
             b = 8;
         otherwise
             b = 2;
-    end
-end
-
-function container = encodeBloscZstd(raw, typesize, clevel)
-% Encode a byte vector as a Blosc v1 container with the Zstd codec.
-%
-% Matches numcodecs.Blosc(cname='zstd', shuffle=BYTE_SHUFFLE): byte-
-% shuffle the input, compress the shuffled bytes with system zstd, then
-% wrap in one Blosc block. The container layout is the same NDR's
-% test-fixture writer uses, so the same Python/MATLAB reader path
-% decodes it.
-    raw = raw(:);
-    nbytes = numel(raw);
-    if mod(nbytes, typesize) ~= 0
-        error('NDI:lightsheet:makePyramid:badTypesize', ...
-            'Chunk bytes (%d) not a multiple of typesize (%d).', ...
-            nbytes, typesize);
-    end
-    shuffled = shuffleBytes(raw, typesize);
-    blockPayload = compressZstd(shuffled, clevel);
-
-    blocksize = nbytes;
-    cbytes    = 16 + 4 + 4 + numel(blockPayload);
-
-    hdr = zeros(16, 1, 'uint8');
-    hdr(1) = 2;                             % blosc format version
-    hdr(2) = 1;                             % versionlz (zstd)
-    hdr(3) = uint8(hex2dec('91'));          % flags: byte shuffle + zstd id
-    hdr(4) = uint8(typesize);
-    hdr(5:8)   = typecast(uint32(nbytes),    'uint8');
-    hdr(9:12)  = typecast(uint32(blocksize), 'uint8');
-    hdr(13:16) = typecast(uint32(cbytes),    'uint8');
-
-    offsetTable = typecast(uint32(16 + 4), 'uint8');
-    blockHeader = typecast(uint32(numel(blockPayload)), 'uint8');
-    container   = [hdr(:); offsetTable(:); blockHeader(:); blockPayload(:)];
-end
-
-function out = shuffleBytes(bytesIn, typesize)
-% Byte shuffle: interleaved element bytes -> [byte0 for all elems |
-% byte1 for all elems | ...]. Standard Blosc pre-filter.
-    bytesIn = bytesIn(:);
-    n = numel(bytesIn);
-    nelems = n / typesize;
-    lanes = reshape(bytesIn, typesize, nelems);
-    out = reshape(lanes.', [], 1);
-end
-
-function payload = compressZstd(bytesIn, clevel)
-% Shell out to the system zstd binary. Same pattern NDR's fixture
-% writer uses; keeps the toolchain small and the container binary-
-% identical to what numcodecs writes.
-    zstdBin = locateZstd();
-    inPath  = [tempname() '.bin'];
-    outPath = [tempname() '.zst'];
-    cleaner = onCleanup(@() safeDelete({inPath, outPath}));
-    fid = fopen(inPath, 'wb');
-    fwrite(fid, bytesIn, 'uint8');
-    fclose(fid);
-    cmd = sprintf('%s -qf -%d --no-check -o %s %s', ...
-        shellQuote(zstdBin), clevel, shellQuote(outPath), shellQuote(inPath));
-    [status, out] = system(cmd);
-    if status ~= 0
-        error('NDI:lightsheet:makePyramid:zstdFailed', ...
-            'zstd compression failed (exit %d): %s', status, strtrim(out));
-    end
-    fid = fopen(outPath, 'rb');
-    payload = fread(fid, inf, '*uint8');
-    fclose(fid);
-end
-
-function bin = locateZstd()
-    persistent cached
-    if ~isempty(cached), bin = cached; return; end
-    if ispc, [s, out] = system('where zstd'); else, [s, out] = system('command -v zstd'); end
-    if s == 0
-        candidate = strtrim(strsplit(strtrim(out), newline));
-        candidate = candidate{1};
-        if ~isempty(candidate) && exist(candidate, 'file') == 2
-            cached = candidate; bin = cached; return;
-        end
-    end
-    error('NDI:lightsheet:makePyramid:zstdNotFound', ...
-        ['The zstd executable is required for codec=blosc-zstd and ' ...
-         'was not found on PATH. Install: `brew install zstd`, ' ...
-         '`apt install zstd`, or download for Windows from ' ...
-         'https://github.com/facebook/zstd/releases.']);
-end
-
-function s = shellQuote(p)
-    if ispc, s = ['"' p '"']; else, s = ['''' strrep(p, '''', '''\''''') '''']; end
-end
-
-function safeDelete(paths)
-    for i = 1:numel(paths)
-        if exist(paths{i}, 'file') == 2
-            try
-                delete(paths{i});
-            catch
-            end
-        end
     end
 end
 
