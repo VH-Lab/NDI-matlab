@@ -16,7 +16,9 @@ classdef TestFromOMEZarr < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function build(testCase)
-            if ~exist('ndr.format.omezarr.listPyramids', 'file')
+            % `exist(pkg.fun, 'file')` returns 0 for package functions
+            % even when they resolve, so guard on `which` instead.
+            if isempty(which('ndr.format.omezarr.listPyramids'))
                 testCase.assumeFail(['NDR reader not on path; skipping ' ...
                     'end-to-end OME-Zarr ingest tests.']);
             end

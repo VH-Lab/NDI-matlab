@@ -85,7 +85,9 @@ classdef TestBlobFixture < matlab.unittest.TestCase
         end
 
         function testFromOMEZarrIngestsTheFixture(testCase)
-            if ~exist('ndr.format.omezarr.listPyramids', 'file')
+            % `exist(pkg.fun, 'file')` returns 0 for package functions
+            % even when they resolve, so guard on `which` instead.
+            if isempty(which('ndr.format.omezarr.listPyramids'))
                 testCase.assumeFail(['NDR reader not on path; skipping ' ...
                     'end-to-end ingest.']);
             end
@@ -110,27 +112,24 @@ classdef TestBlobFixture < matlab.unittest.TestCase
 
         function testMaxKeepsBrightSpikeMeanDoesNot(testCase)
             % At the spike's downsampled position, max preserves the
-            % single-voxel 60k value and mean cannot (it averages the
-            % spike with (factor^L - 1) darker neighbours). Verified
-            % directly on the ground-truth ladder rather than through
-            % the on-disk store, so the assertion is about the
-            % downsampler, not the writer.
+            % 60k spike and mean dilutes it (averages the one spike
+            % voxel with factor^3-1 darker neighbours). Verified on
+            % the ground-truth ladder so the assertion is about the
+            % downsampler, not the on-disk writer.
             L0 = testCase.gt.volumes.level0;
             spikePos = max(1, round(testCase.gt.shape / 6));
-            testCase.verifyEqual( ...
-                L0(spikePos(1), spikePos(2), spikePos(3)), ...
-                uint16(60000));
+            % The wide Gaussian bleeds a fraction of a unit into the
+            % spike voxel, so L0 rounds to 60000 or 60001; a >= check
+            % holds either way, and 60000 is the sensible lower bound.
+            testCase.verifyGreaterThanOrEqual( ...
+                L0(spikePos(1), spikePos(2), spikePos(3)), uint16(60000));
             top = testCase.gt.numLevels;
             factor = 2^(top - 1);
-            % 1-based block index containing the spike.
             blk = floor((spikePos - 1) / factor) + 1;
             maxTop  = testCase.gt.volumes.max{top};
             meanTop = testCase.gt.volumes.mean{top};
-            % Max at the spike's block stays at the spike value.
-            testCase.verifyEqual( ...
+            testCase.verifyGreaterThanOrEqual( ...
                 maxTop(blk(1), blk(2), blk(3)), uint16(60000));
-            % Mean at the same block is strictly below max: averaging
-            % over factor^3 voxels dilutes the spike.
             testCase.verifyLessThan( ...
                 double(meanTop(blk(1), blk(2), blk(3))), ...
                 double(maxTop(blk(1), blk(2), blk(3))));
