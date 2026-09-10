@@ -15,12 +15,16 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
 %   viewed by the napari client that reads them back.
 %
 %   The volume itself is three features at three spatial scales, so a
-%   viewer can tell the pyramid levels apart at a glance:
-%     - a wide Gaussian ball at (150,150,150), sigma 40, peak ~50k
-%     - a medium Gaussian at (200,100,150), sigma 15, peak ~30k
-%     - a bright single-voxel spike at (50,50,50), value 60k
-%   The spike survives max downsampling and vanishes under mean; that
-%   contrast makes the mean-vs-max choice visible in the viewer.
+%   viewer can tell the pyramid levels apart at a glance. Positions
+%   scale with Shape so the fixture is well-defined at any size:
+%     - a wide Gaussian ball at Shape/2, sigma Shape/8, peak ~50k
+%     - a medium Gaussian at (2/3, 1/3, 1/2)*Shape, sigma Shape/20,
+%       peak ~30k
+%     - a bright single-voxel spike of value 60k at Shape/6
+%   The spike is much brighter than the local Gaussian background and
+%   fills one voxel out of the whole volume, so max downsampling
+%   holds it up while mean spreads it out over its block -- the
+%   mean-vs-max choice is visible at every pyramid level.
 %
 %   PARENTDIR - char, directory to write into. Empty (default) puts
 %               the store under a fresh tempname; the caller can pass
@@ -169,17 +173,24 @@ function vol = buildBlobVolume(shape)
 % touching random state.
     Z = shape(1); Y = shape(2); X = shape(3);
     [zz, yy, xx] = ndgrid(1:Z, 1:Y, 1:X);
+    % Widths scale with the volume so the two Gaussians stay visible
+    % at every Shape; sigma_wide ~ Shape/8, sigma_medium ~ Shape/20.
+    sigmaWide   = mean(shape) / 8;
+    sigmaMedium = mean(shape) / 20;
     % A wide ball centred in the volume.
     c1 = shape / 2;
     r1sq = (zz - c1(1)).^2 + (yy - c1(2)).^2 + (xx - c1(3)).^2;
-    wide = 50000 * exp(-r1sq / (2 * 40^2));
-    % A medium blob offset to one corner.
+    wide = 50000 * exp(-r1sq / (2 * sigmaWide^2));
+    % A medium blob offset toward one corner.
     c2 = [shape(1)*2/3 shape(2)/3 shape(3)/2];
     r2sq = (zz - c2(1)).^2 + (yy - c2(2)).^2 + (xx - c2(3)).^2;
-    medium = 30000 * exp(-r2sq / (2 * 15^2));
-    % One bright voxel: max keeps it, mean loses it.
+    medium = 30000 * exp(-r2sq / (2 * sigmaMedium^2));
+    % One bright voxel: max keeps its value at every level, mean
+    % spreads it across the block. Position scales with Shape so a
+    % small test fixture puts the spike inside the volume too.
+    spikePos = max(1, round(shape / 6));
     spike = zeros(shape);
-    spike(50, 50, 50) = 60000;
+    spike(spikePos(1), spikePos(2), spikePos(3)) = 60000;
 
     vol = uint16(min(65535, wide + medium + spike));
 end

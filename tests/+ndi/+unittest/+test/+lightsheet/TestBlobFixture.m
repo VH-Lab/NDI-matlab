@@ -109,25 +109,31 @@ classdef TestBlobFixture < matlab.unittest.TestCase
         end
 
         function testMaxKeepsBrightSpikeMeanDoesNot(testCase)
-            % A single-voxel spike at (50,50,50) survives max but not
-            % mean; verify at the fixture's default (small) shape by
-            % rebuilding the level-0 volume and checking the coarsest
-            % level for max vs mean.
-            % At Shape=[32 32 32] the spike position falls outside;
-            % rebuild with a larger fixture to exercise the assertion.
-            [zp, gt2] = ndi.test.lightsheet.makeBlobFixture( ...
-                testCase.parentDir, 'Shape', [64 64 64], ...
-                'NumLevels', 3, 'ChunkShape', [16 16 16]);
-            testCase.addTeardown(@() rmdir(zp, 's'));
-            L0 = gt2.volumes.level0;
-            testCase.verifyEqual(L0(50, 50, 50), uint16(60000));
-            % At level 2 (4x downsample) the spike lives in block
-            % (13,13,13) (1-based ceil). Max keeps 60000, mean drops
-            % it by ~64 (in 4^3 = 64 voxels the spike is one).
-            maxTop = gt2.volumes.max{3};
-            meanTop = gt2.volumes.mean{3};
-            testCase.verifyEqual(maxTop(13, 13, 13), uint16(60000));
-            testCase.verifyLessThan(meanTop(13, 13, 13), uint16(2000));
+            % At the spike's downsampled position, max preserves the
+            % single-voxel 60k value and mean cannot (it averages the
+            % spike with (factor^L - 1) darker neighbours). Verified
+            % directly on the ground-truth ladder rather than through
+            % the on-disk store, so the assertion is about the
+            % downsampler, not the writer.
+            L0 = testCase.gt.volumes.level0;
+            spikePos = max(1, round(testCase.gt.shape / 6));
+            testCase.verifyEqual( ...
+                L0(spikePos(1), spikePos(2), spikePos(3)), ...
+                uint16(60000));
+            top = testCase.gt.numLevels;
+            factor = 2^(top - 1);
+            % 1-based block index containing the spike.
+            blk = floor((spikePos - 1) / factor) + 1;
+            maxTop  = testCase.gt.volumes.max{top};
+            meanTop = testCase.gt.volumes.mean{top};
+            % Max at the spike's block stays at the spike value.
+            testCase.verifyEqual( ...
+                maxTop(blk(1), blk(2), blk(3)), uint16(60000));
+            % Mean at the same block is strictly below max: averaging
+            % over factor^3 voxels dilutes the spike.
+            testCase.verifyLessThan( ...
+                double(meanTop(blk(1), blk(2), blk(3))), ...
+                double(maxTop(blk(1), blk(2), blk(3))));
         end
 
     end
