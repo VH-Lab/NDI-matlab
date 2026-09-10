@@ -248,7 +248,8 @@ function levelDoc = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, lev
 
     shape  = size(data);
     if numel(shape) < numel(chunks)
-        shape(end+1:numel(chunks)) = 1;   %#ok<AGROW>  singleton trailing axes
+        % Singleton trailing axes: pad shape to axis count.
+        shape(end+1:numel(chunks)) = 1;
     end
 
     % Iterate chunks in C-order (last axis fastest). 1-based linear

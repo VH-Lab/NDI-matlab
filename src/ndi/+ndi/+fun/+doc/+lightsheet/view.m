@@ -79,10 +79,10 @@ function view(session, pyramidID, options)
             'level',     options.level);
     end
 
-    if ~options.wait && ispc == 0 %#ok<ISPC>
+    if ~options.wait && ~ispc
         % Background the process on POSIX so MATLAB does not block.
-        % On Windows use `start` (kept simple: fall back to a
-        % foreground wait).
+        % On Windows fall back to a foreground wait (simple; no
+        % `start` handling here).
         cmd = [cmd ' &'];
     end
 
