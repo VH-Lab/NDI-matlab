@@ -68,6 +68,14 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         options.label char = ''
         options.tileBudgetBytes (1,1) double {mustBePositive} = 8 * 2^20
         options.chunks double = []
+        options.materializeChunks (1,1) logical = false
+        options.sourceZarrPath char = ''
+    end
+
+    if options.materializeChunks && isempty(options.sourceZarrPath)
+        error('NDI:lightsheet:makePyramid:noSource', ...
+            ['materializeChunks=true requires sourceZarrPath so ' ...
+             'chunks can be read from the source store.']);
     end
 
     if numel(pyramids) ~= numel(perEntryReduction)
@@ -172,6 +180,12 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
     end
     chunkGrid = ceil(level.shape ./ chunks);
 
+    if options.materializeChunks
+        nChunksStored = prod(chunkGrid);
+    else
+        nChunksStored = 0;
+    end
+
     props = struct( ...
         'label', sprintf('%s level %d (%s)', pyramidEntry.name, levelIndex, reductionFn), ...
         'level', levelIndex, ...
@@ -180,7 +194,7 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
         'shape', level.shape, ...
         'chunks', chunks, ...
         'chunk_grid', chunkGrid, ...
-        'n_chunks_stored', 0, ...
+        'n_chunks_stored', nChunksStored, ...
         'chunk_index_origin', 1, ...
         'chunk_order', 'C', ...
         'dtype', char(level.dtype), ...
@@ -201,7 +215,109 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
         levelDoc = levelDoc.set_dependency_value('source_file_id', options.sourceFileID);
     end
 
+    if options.materializeChunks
+        levelDoc = attachChunkFiles(levelDoc, options.sourceZarrPath, ...
+            pyramidEntry, level, chunks, chunkGrid);
+    end
+
     session.database_add(levelDoc);
+end
+
+function levelDoc = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid)
+% Read the source zarr level as a whole array, then re-tile into the
+% level document's chunk shape and attach each chunk as chunk.bin_<idx>
+% (1-based, C-order over chunkGrid). Files are ingested into DID, which
+% deletes the temp original as it copies -- so we build each chunk in a
+% new tempname and hand it to add_file.
+    pyramidName = char(pyramidEntry.name);
+    % Which position in this pyramid's datasets holds this level? The
+    % `level` struct came from listPyramids(entry).levels; its index is
+    % the 1-based position we need for readArray.
+    kInEntry = find(arrayfun(@(L) strcmp(char(L.path), char(level.path)), ...
+        pyramidEntry.levels), 1);
+    if isempty(kInEntry)
+        error('NDI:lightsheet:makePyramid:missingLevelInEntry', ...
+            'level path %s not found in pyramid %s.', level.path, pyramidName);
+    end
+
+    % Read the full array. For a fixture-scale volume (~54 MB uint16)
+    % this is a single allocation; a lab-scale volume will need a
+    % streaming reader later, but the level doc's chunk shape is fixed
+    % here either way.
+    data = ndr.format.omezarr.readArray(sourceZarrPath, pyramidName, kInEntry);
+
+    shape  = size(data);
+    if numel(shape) < numel(chunks)
+        shape(end+1:numel(chunks)) = 1;   %#ok<AGROW>  singleton trailing axes
+    end
+
+    % Iterate chunks in C-order (last axis fastest). 1-based linear
+    % index goes into the chunk.bin_# filename.
+    idx = 0;
+    tmpRoot = tempname;
+    mkdir(tmpRoot);
+    cleaner = onCleanup(@() cleanupTmp(tmpRoot));
+    subs = cell(1, numel(chunkGrid));
+    linearOrder = allChunkIndices(chunkGrid);   % rows are (c1, c2, c3, ...) 1-based
+    for r = 1:size(linearOrder, 1)
+        idx = idx + 1;
+        cIdx = linearOrder(r, :);
+        % Compute the source slice and the padded chunk.
+        for a = 1:numel(chunkGrid)
+            lo = (cIdx(a) - 1) * chunks(a) + 1;
+            hi = min(lo + chunks(a) - 1, shape(a));
+            subs{a} = lo:hi;
+        end
+        srcTile = data(subs{:});
+        padded = zeros(chunks, 'like', data);
+        localSubs = arrayfun(@(k) 1:size(srcTile, k), 1:numel(chunks), ...
+            'UniformOutput', false);
+        padded(localSubs{:}) = srcTile;
+
+        % Zarr expects C-order bytes: last axis varies fastest. MATLAB
+        % is column-major, so permute the axes into reversed order
+        % before serialising, mirroring the fixture writer.
+        permuted = permute(padded, numel(chunks):-1:1);
+        raw = typecast(permuted(:), 'uint8');
+
+        tmp = fullfile(tmpRoot, sprintf('chunk_%d.bin', idx));
+        fid = fopen(tmp, 'w');
+        fwrite(fid, raw);
+        fclose(fid);
+
+        levelDoc = levelDoc.add_file(sprintf('chunk.bin_%d', idx), tmp);
+    end
+end
+
+function cleanupTmp(d)
+    if isfolder(d)
+        try
+            rmdir(d, 's');
+        catch
+        end
+    end
+end
+
+function idx = allChunkIndices(chunkGrid)
+% Return a matrix whose rows enumerate every 1-based chunk index tuple
+% in C-order (last axis fastest, so the LINEAR order matches
+% index = c1*n2*n3*... + c2*n3*... + ... + cn + 1).
+    n = numel(chunkGrid);
+    counts = cumprod(fliplr(chunkGrid));
+    total = counts(end);
+    idx = zeros(total, n);
+    for r = 1:total
+        rem = r - 1;
+        for a = 1:n
+            % last axis is fastest
+            stride = 1;
+            for b = a+1:n
+                stride = stride * chunkGrid(b);
+            end
+            idx(r, a) = floor(rem / stride) + 1;
+            rem = mod(rem, stride);
+        end
+    end
 end
 
 function s = joinAxisNames(axes)

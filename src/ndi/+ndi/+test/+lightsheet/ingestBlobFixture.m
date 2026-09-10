@@ -55,6 +55,7 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         options.ChunkShape (1,3) double {mustBePositive, mustBeInteger} = [64 64 64]
         options.NumLevels (1,1) double {mustBePositive, mustBeInteger} = 4
         options.VoxelSize (1,3) double {mustBePositive} = [1 1 1]
+        options.materializeChunks (1,1) logical = true
     end
 
     sessionDir = options.sessionDir;
@@ -85,7 +86,9 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
     session.database_add(sub);
 
     [pyramidDoc, ~, info] = ndi.fun.doc.lightsheet.fromOMEZarr( ...
-        session, zarrPath, 'subjectID', sub.id());
+        session, zarrPath, ...
+        'subjectID', sub.id(), ...
+        'materializeChunks', options.materializeChunks);
 
     info.subjectID = sub.id();
     info.fixture   = gt;
