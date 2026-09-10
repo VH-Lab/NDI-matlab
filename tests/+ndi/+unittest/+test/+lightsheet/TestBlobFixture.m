@@ -18,9 +18,14 @@ classdef TestBlobFixture < matlab.unittest.TestCase
             testCase.parentDir = tempname;
             mkdir(testCase.parentDir);
             testCase.addTeardown(@() rmdir(testCase.parentDir, 's'));
+            % Existing tests pin NumChannels=1 so they keep exercising
+            % the 3-D 'z,y,x' layout the assertions were written for.
+            % A separate testMultiChannelFixture below covers the 2-D
+            % default (2 channels, axes 'c,z,y,x').
             [testCase.zarrPath, testCase.gt] = ...
                 ndi.test.lightsheet.makeBlobFixture(testCase.parentDir, ...
                     'Shape', [32 32 32], ...
+                    'NumChannels', 1, ...
                     'NumLevels', 3, ...
                     'ChunkShape', [16 16 16]);
         end
@@ -128,6 +133,7 @@ classdef TestBlobFixture < matlab.unittest.TestCase
                 'sessionDir', sDir, ...
                 'zarrDir', zDir, ...
                 'Shape', [32 32 32], ...
+                'NumChannels', 1, ...
                 'NumLevels', 3, ...
                 'ChunkShape', [16 16 16]);
             testCase.verifyClass(S, 'ndi.session.dir');
@@ -161,6 +167,50 @@ classdef TestBlobFixture < matlab.unittest.TestCase
             testCase.verifyLessThan( ...
                 double(meanTop(blk(1), blk(2), blk(3))), ...
                 double(maxTop(blk(1), blk(2), blk(3))));
+        end
+
+        function testMultiChannelFixtureWritesCZYXLayout(testCase)
+            % The default (NumChannels=2) fixture writes a 4-D
+            % (C, Z, Y, X) OME-Zarr with a leading channel axis, a
+            % 4-tuple chunk shape (channel dim = 1), and an OMERO
+            % channels block naming Ch1 / Ch2.
+            multiDir = tempname;
+            mkdir(multiDir);
+            testCase.addTeardown(@() rmdir(multiDir, 's'));
+            [zp, gt] = ndi.test.lightsheet.makeBlobFixture(multiDir, ...
+                'Shape', [32 32 32], ...
+                'NumLevels', 2, ...
+                'ChunkShape', [16 16 16]);
+            testCase.verifyEqual(gt.numChannels, 2);
+            testCase.verifyEqual(gt.channelNames, {'Ch1','Ch2'});
+            % Level 0 shape has C prepended.
+            level0Shape = gt.levels(1).shape;
+            testCase.verifyEqual(level0Shape, [2 32 32 32]);
+            % .zarray chunks is 4-tuple with 1 on the channel axis.
+            za = jsondecode(fileread(fullfile(zp, '0', '.zarray')));
+            testCase.verifyEqual(reshape(za.chunks, 1, []), [1 16 16 16]);
+            testCase.verifyEqual(reshape(za.shape,  1, []), [2 32 32 32]);
+            % One chunk file per (c, z, y, x) tile with a 4-dot key.
+            testCase.verifyTrue(isfile(fullfile(zp, '0', '0.0.0.0')));
+            testCase.verifyTrue(isfile(fullfile(zp, '0', '1.0.0.0')));
+            % .zattrs axes list carries c first, and an OMERO block
+            % names both channels.
+            attrs = jsondecode(fileread(fullfile(zp, '.zattrs')));
+            firstMultiscale = attrs.multiscales(1);
+            ax = firstMultiscale.axes;
+            firstAxis = ax(1);
+            testCase.verifyEqual(char(firstAxis.name), 'c');
+            testCase.verifyEqual(char(firstAxis.type), 'channel');
+            testCase.verifyTrue(isfield(attrs, 'omero'));
+            omeroChannels = attrs.omero.channels;
+            testCase.verifyEqual(numel(omeroChannels), 2);
+            % jsondecode can turn a homogeneous cell array into a
+            % struct array; either shape carries a 'label' field.
+            firstOmero = omeroChannels(1);
+            if iscell(firstOmero)
+                firstOmero = firstOmero{1};
+            end
+            testCase.verifyEqual(char(firstOmero.label), 'Ch1');
         end
 
     end
