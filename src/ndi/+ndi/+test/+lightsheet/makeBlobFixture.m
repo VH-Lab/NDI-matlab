@@ -106,6 +106,19 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
         maxLadder{L}  = downsampleBlockUint16(maxLadder{L-1},  2, @maxReduce);
     end
 
+    % Every Zarr v2 group node needs a .zgroup marker, or readers
+    % refuse the store with "No group found". The root is one, and so
+    % are the mean/ and max/ subdirectories that hold the coarser
+    % levels for each reduction. Written before the array levels so
+    % the reader sees a valid group tree.
+    writeZGroup(zarrPath);
+    if options.NumLevels > 1
+        mkdir(fullfile(zarrPath, 'mean'));
+        mkdir(fullfile(zarrPath, 'max'));
+        writeZGroup(fullfile(zarrPath, 'mean'));
+        writeZGroup(fullfile(zarrPath, 'max'));
+    end
+
     % Write level 0 (shared) and each reduction's coarser levels.
     writeZarrLevel(fullfile(zarrPath, '0'), lvl0, options.ChunkShape);
     for L = 2:options.NumLevels
@@ -280,6 +293,10 @@ function d = zarrDataset(pathStr, scale)
     d = struct('path', pathStr, ...
         'coordinateTransformations', {{ ...
             struct('type', 'scale', 'scale', scale) }});
+end
+
+function writeZGroup(dir)
+    writeJSON(fullfile(dir, '.zgroup'), struct('zarr_format', 2));
 end
 
 function writeJSON(filePath, s)
