@@ -1,11 +1,12 @@
 classdef TestFromOMEZarr < matlab.unittest.TestCase
     % TestFromOMEZarr - end-to-end ingest against a synthetic OME-Zarr.
     %
-    % Uses ndr.test.format.omezarr.makeExampleFixture (the NDR fixture
-    % also used by NDR's own tests) which writes a metadata-only
-    % dual-pyramid store: mean + max with shared level 0. When NDR is
-    % not installed on the test path, the tests filter rather than fail;
-    % this suite is about the NDI side, not the fixture builder.
+    % The fixture is a metadata-only dual-pyramid store (mean + max
+    % sharing level 0) written in the test setup itself, so this suite
+    % does not depend on NDR being installed. NDR is still the source
+    % of truth for reading OME-Zarr; when NDR is present we call it
+    % here as ingest does. When NDR is not on the path, every test
+    % filters rather than failing.
 
     properties
         session
@@ -15,9 +16,9 @@ classdef TestFromOMEZarr < matlab.unittest.TestCase
 
     methods (TestMethodSetup)
         function build(testCase)
-            if ~exist('ndr.test.format.omezarr.makeExampleFixture', 'file')
-                testCase.assumeFail(['NDR fixture builder not on path; ' ...
-                    'skipping end-to-end OME-Zarr ingest tests.']);
+            if ~exist('ndr.format.omezarr.listPyramids', 'file')
+                testCase.assumeFail(['NDR reader not on path; skipping ' ...
+                    'end-to-end OME-Zarr ingest tests.']);
             end
             d = fullfile(tempname, 'fromome');
             mkdir(d);
@@ -28,8 +29,7 @@ classdef TestFromOMEZarr < matlab.unittest.TestCase
             S.database_add(sub);
             testCase.session = S;
             testCase.subjectID = sub.id();
-            testCase.fixtureDir = ndr.test.format.omezarr.makeExampleFixture();
-            testCase.addTeardown(@() rmdir(fileparts(testCase.fixtureDir), 's'));
+            testCase.fixtureDir = writeSyntheticZarr(testCase);
         end
     end
 
@@ -119,4 +119,90 @@ classdef TestFromOMEZarr < matlab.unittest.TestCase
         end
 
     end
+end
+
+% ---------------------------------------------------------------------
+
+function fixtureDir = writeSyntheticZarr(testCase)
+% Write a metadata-only OME-Zarr with a mean + max ladder sharing '0'.
+% Directory layout:
+%   <fixtureDir>/.zattrs                (multiscales, both pyramids)
+%   <fixtureDir>/0/.zarray              (shared level 0)
+%   <fixtureDir>/mean/1/.zarray
+%   <fixtureDir>/mean/2/.zarray
+%   <fixtureDir>/max/1/.zarray
+%   <fixtureDir>/max/2/.zarray
+%
+% No chunk bytes; fromOMEZarr is metadata-only.
+    parent = tempname;
+    mkdir(parent);
+    testCase.addTeardown(@() rmdir(parent, 's'));
+    fixtureDir = fullfile(parent, 'example.zarr');
+    mkdir(fixtureDir);
+
+    dtype  = '<u2';
+    shape0 = [1 8 8 10];
+    shape1 = [1 4 4 5];
+    shape2 = [1 2 2 3];
+    chunks = [1 4 4 4];
+
+    writeZArray(fullfile(fixtureDir, '0'),           shape0, chunks, dtype);
+    mkdir(fullfile(fixtureDir, 'mean'));
+    writeZArray(fullfile(fixtureDir, 'mean', '1'),   shape1, chunks, dtype);
+    writeZArray(fullfile(fixtureDir, 'mean', '2'),   shape2, chunks, dtype);
+    mkdir(fullfile(fixtureDir, 'max'));
+    writeZArray(fullfile(fixtureDir, 'max', '1'),    shape1, chunks, dtype);
+    writeZArray(fullfile(fixtureDir, 'max', '2'),    shape2, chunks, dtype);
+
+    axes = { ...
+        struct('name', 'c', 'type', 'channel'), ...
+        struct('name', 'z', 'type', 'space', 'unit', 'micrometer'), ...
+        struct('name', 'y', 'type', 'space', 'unit', 'micrometer'), ...
+        struct('name', 'x', 'type', 'space', 'unit', 'micrometer') };
+
+    meanDatasets = { ...
+        dataset('0',      [1 4 4 4]), ...
+        dataset('mean/1', [1 8 8 8]), ...
+        dataset('mean/2', [1 16 16 16]) };
+    maxDatasets = { ...
+        dataset('0',      [1 4 4 4]), ...
+        dataset('max/1',  [1 8 8 8]), ...
+        dataset('max/2',  [1 16 16 16]) };
+
+    multiscales = { ...
+        struct('name', 'mean', 'type', 'box', ...
+               'axes', {axes}, 'datasets', {meanDatasets}), ...
+        struct('name', 'max',  'type', 'max', ...
+               'axes', {axes}, 'datasets', {maxDatasets}) };
+
+    writeJSON(fullfile(fixtureDir, '.zattrs'), ...
+        struct('multiscales', {multiscales}));
+end
+
+function writeZArray(dir, shape, chunks, dtype)
+    mkdir(dir);
+    meta = struct( ...
+        'zarr_format', 2, ...
+        'shape',       shape, ...
+        'chunks',      chunks, ...
+        'dtype',       dtype, ...
+        'compressor',  [], ...
+        'fill_value',  0, ...
+        'order',       'C', ...
+        'filters',     [], ...
+        'dimension_separator', '/');
+    writeJSON(fullfile(dir, '.zarray'), meta);
+end
+
+function d = dataset(pathStr, scale)
+    d = struct('path', pathStr, ...
+        'coordinateTransformations', {{ ...
+            struct('type', 'scale', 'scale', scale) }});
+end
+
+function writeJSON(f, s)
+    txt = jsonencode(s);
+    fid = fopen(f, 'w');
+    fwrite(fid, txt);
+    fclose(fid);
 end
