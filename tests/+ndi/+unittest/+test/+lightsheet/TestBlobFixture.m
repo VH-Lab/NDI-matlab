@@ -110,6 +110,34 @@ classdef TestBlobFixture < matlab.unittest.TestCase
             testCase.verifyEqual(reshape(p.shape_level0, 1, []), [32 32 32]);
         end
 
+        function testIngestBlobFixtureIsOneCallEndToEnd(testCase)
+            % The one-line demo that ships the fixture and ingests it.
+            % Uses a tiny shape so it stays quick; the point is that
+            % session + subject + fromOMEZarr all happen in one call
+            % and INFO carries the fixture ground truth alongside the
+            % ingest info.
+            if isempty(which('ndr.format.omezarr.listPyramids'))
+                testCase.assumeFail(['NDR reader not on path; skipping ' ...
+                    'end-to-end ingest.']);
+            end
+            sDir = fullfile(tempname, 'blobingest');
+            testCase.addTeardown(@() rmdir(fileparts(sDir), 's'));
+            zDir = fullfile(tempname, 'blobingest_zarr');
+            testCase.addTeardown(@() rmdir(zDir, 's'));
+            [S, pdoc, info] = ndi.test.lightsheet.ingestBlobFixture( ...
+                'sessionDir', sDir, ...
+                'zarrDir', zDir, ...
+                'Shape', [32 32 32], ...
+                'NumLevels', 3, ...
+                'ChunkShape', [16 16 16]);
+            testCase.verifyClass(S, 'ndi.session.dir');
+            testCase.verifyClass(pdoc, 'ndi.document');
+            testCase.verifyTrue(info.sharedLevel0);
+            testCase.verifyNotEmpty(info.subjectID);
+            testCase.verifyEqual(info.fixture.shape, [32 32 32]);
+            testCase.verifyEqual(info.fixture.chunkShape, [16 16 16]);
+        end
+
         function testMaxKeepsBrightSpikeMeanDoesNot(testCase)
             % At the spike's downsampled position, max preserves the
             % 60k spike and mean dilutes it (averages the one spike
