@@ -300,7 +300,14 @@ function writeZGroup(dir)
 end
 
 function writeJSON(filePath, s)
+    % MATLAB's jsonencode emits empty [] for MATLAB `[]`, but Zarr v2
+    % expects null for `compressor` and `filters` -- a `[]` there is
+    % refused by the zarr-python 3 reader with "Expected None, a
+    % numcodecs.abc.Codec, or a dict ... Got <class 'list'> instead."
+    % Post-process the string so those two fields become JSON null.
     txt = jsonencode(s);
+    txt = regexprep(txt, '"compressor":\[\]', '"compressor":null');
+    txt = regexprep(txt, '"filters":\[\]',    '"filters":null');
     fid = fopen(filePath, 'w');
     fwrite(fid, txt);
     fclose(fid);
