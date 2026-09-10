@@ -196,20 +196,24 @@ function vol = buildBlobVolume(shape)
     % Widths scale with the volume so the fixture is well-defined at
     % any Shape. The wide feature sits well inside the box (3*sigma
     % ~ 3/10 of a side) rather than running to the edge.
-    sigmaWide   = mean(shape) / 10;
+    sigmaWide   = mean(shape) / 8;     % contain 3*sigma at ~3/8 of a side
     sigmaMedium = mean(shape) / 20;
-    lambdaWide  = mean(shape) / 10;    % ~3 rings inside 3*sigma
+    lambdaWide  = mean(shape) / 5;     % ~2 rings inside 3*sigma,
+                                       % ~7.5 voxels at level 3 (8x down),
+                                       % well above the 2-voxel Nyquist
     % A wide ring pattern centred in the volume: a Gaussian envelope
     % modulated by a radial cosine so brightness oscillates in
     % concentric shells as you move toward the centre. Fine levels
-    % resolve the individual rings; coarse levels smear them, so each
-    % pyramid step shows something new. Amplitude clipped to 50k so
-    % the offset spike still stands out above it.
+    % show the individual rings; coarse levels smooth them, so each
+    % pyramid step reads differently. Amplitude split as a smooth
+    % baseline (25k, the ring troughs) plus a smaller oscillation
+    % (25k, the ring peaks) so max downsampling does not lock onto
+    % the peak-only value and produce blocky per-tile output.
     c1 = shape / 2;
     r1  = sqrt((zz - c1(1)).^2 + (yy - c1(2)).^2 + (xx - c1(3)).^2);
     envelope = exp(-r1.^2 / (2 * sigmaWide^2));
     rings    = 0.5 + 0.5 * cos(2 * pi * r1 / lambdaWide);
-    wide = 50000 * envelope .* rings;
+    wide = envelope .* (25000 + 25000 * rings);
     % A medium blob offset toward one corner (kept as-is).
     c2 = [shape(1)*2/3 shape(2)/3 shape(3)/2];
     r2sq = (zz - c2(1)).^2 + (yy - c2(2)).^2 + (xx - c2(3)).^2;
