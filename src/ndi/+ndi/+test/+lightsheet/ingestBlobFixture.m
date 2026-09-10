@@ -21,13 +21,17 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
 %                  for repeated cloud-upload experiments).
 %     subject    - char, local_identifier for the subject document
 %                  created inside the session (default 'blob@vhlab').
-%     Shape      - passed through to makeBlobFixture (default
-%                  [300 300 300]).
-%     ChunkShape - passed through to makeBlobFixture (default
-%                  [64 64 64]).
-%     NumLevels  - passed through to makeBlobFixture (default 4).
-%     VoxelSize  - passed through to makeBlobFixture (default
-%                  [1 1 1]).
+%     Shape        - passed through to makeBlobFixture (default
+%                    [300 300 300]).
+%     NumChannels  - passed through to makeBlobFixture (default 2).
+%                    Set 1 for the old single-channel layout.
+%     ChannelNames - passed through to makeBlobFixture. Empty
+%                    (default) uses 'Ch1', 'Ch2', ...
+%     ChunkShape   - passed through to makeBlobFixture (default
+%                    [64 64 64], spatial only).
+%     NumLevels    - passed through to makeBlobFixture (default 4).
+%     VoxelSize    - passed through to makeBlobFixture (default
+%                    [1 1 1]).
 %
 %   Returns:
 %     SESSION    - ndi.session.dir opened at sessionDir.
@@ -52,6 +56,8 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         options.zarrDir char = ''
         options.subject (1,:) char = 'blob@vhlab'
         options.Shape (1,3) double {mustBePositive, mustBeInteger} = [300 300 300]
+        options.NumChannels (1,1) double {mustBePositive, mustBeInteger} = 2
+        options.ChannelNames = {}
         options.ChunkShape (1,3) double {mustBePositive, mustBeInteger} = [64 64 64]
         options.NumLevels (1,1) double {mustBePositive, mustBeInteger} = 4
         options.VoxelSize (1,3) double {mustBePositive} = [1 1 1]
@@ -77,10 +83,12 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
     end
 
     [zarrPath, gt] = ndi.test.lightsheet.makeBlobFixture(zarrParent, ...
-        'Shape',      options.Shape, ...
-        'NumLevels',  options.NumLevels, ...
-        'ChunkShape', options.ChunkShape, ...
-        'VoxelSize',  options.VoxelSize);
+        'Shape',        options.Shape, ...
+        'NumChannels',  options.NumChannels, ...
+        'ChannelNames', options.ChannelNames, ...
+        'NumLevels',    options.NumLevels, ...
+        'ChunkShape',   options.ChunkShape, ...
+        'VoxelSize',    options.VoxelSize);
 
     session = ndi.session.dir('blob', sessionDir);
     sub = ndi.document('subject', 'base.session_id', session.id(), ...

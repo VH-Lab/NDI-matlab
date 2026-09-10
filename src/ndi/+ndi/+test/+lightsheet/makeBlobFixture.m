@@ -5,33 +5,43 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
 %   [ZARRPATH, GT] = NDI.TEST.LIGHTSHEET.MAKEBLOBFIXTURE(PARENTDIR, ...)
 %
 %   Writes a small OME-Zarr (NGFF v0.4) store on disk carrying a
-%   deterministic 300x300x300 uint16 volume, downsampled into a
-%   mean + max ladder that shares its raw level 0. Unlike the
-%   metadata-only fixtures the unit tests use, this one writes REAL
-%   chunk bytes -- uncompressed raw (Zarr v2 with `compressor: null`),
-%   which every zarr reader accepts -- so an end-to-end run can
-%   ingest it with ndi.fun.doc.lightsheet.fromOMEZarr, materialize
-%   chunks onto lightsheetZarrLevel documents when that lands, and be
-%   viewed by the napari client that reads them back.
+%   deterministic uint16 lightsheet volume, downsampled into a mean +
+%   max ladder that shares its raw level 0. Unlike the metadata-only
+%   fixtures the unit tests use, this one writes REAL chunk bytes --
+%   uncompressed raw (Zarr v2 with `compressor: null`), which every
+%   zarr reader accepts -- so an end-to-end run can ingest it with
+%   ndi.fun.doc.lightsheet.fromOMEZarr, materialize chunks onto
+%   lightsheetZarrLevel documents, and be viewed by the napari client
+%   that reads them back.
 %
-%   The volume itself is three features at three spatial scales, so a
-%   viewer can tell the pyramid levels apart at a glance. Positions
-%   scale with Shape so the fixture is well-defined at any size:
-%     - a centred RING pattern: Gaussian envelope (sigma Shape/10)
-%       modulated by a radial cosine of wavelength Shape/10, so
+%   The store is multi-channel by default: axes 'c,z,y,x' with 2
+%   channels labelled 'Ch1' and 'Ch2', chunks 1 x (spatial) so a
+%   reader can address one channel per chunk. Napari can be told to
+%   colour each channel independently via the OMERO metadata this
+%   writer emits (Ch1 -> green, Ch2 -> magenta by default, extending
+%   to the palette the client keeps in sync with).
+%
+%   Every channel carries the same three features at three spatial
+%   scales, with per-channel offsets so they read differently in each
+%   colour:
+%     - a centred RING pattern: Gaussian envelope (sigma Shape/8)
+%       modulated by a radial cosine of wavelength Shape/5, so
 %       brightness oscillates in concentric shells around Shape/2.
-%       Fine levels resolve the individual rings; coarse levels
-%       smear them, so each pyramid step shows different structure.
-%     - a medium Gaussian at (2/3, 1/3, 1/2)*Shape, sigma Shape/20,
+%       Same for every channel -- makes a natural registration mark.
+%     - a medium Gaussian at (2/3, 1/3, 1/2)*Shape in Ch1 and the
+%       mirrored (1/3, 2/3, 1/2)*Shape in Ch2, sigma Shape/20,
 %       peak ~30k -- a compact companion that stays a small ball at
-%       every level.
-%     - a bright single-voxel spike of value 60k at Shape/6.
-%   The ring envelope is 3*sigma ~ 3/10 of a side, so the feature
-%   stays well inside the box rather than running to the edge. The
-%   spike is much brighter than the local Gaussian background and
-%   fills one voxel out of the whole volume, so max downsampling
-%   holds it up while mean spreads it out over its block -- the
-%   mean-vs-max choice is visible at every pyramid level.
+%       every level. Positions rotate around the volume when more
+%       channels are requested.
+%     - a bright single-voxel spike of value 60k, placed at Shape/6
+%       (Ch1) and Shape*5/6 (Ch2). Positions distribute along the
+%       diagonal when more channels are requested.
+%   The ring envelope is 3*sigma ~ 3/8 of a side, so the feature
+%   stays well inside the box. The spike is much brighter than the
+%   local Gaussian background and fills one voxel out of the whole
+%   volume, so max downsampling holds it up while mean spreads it
+%   over its block -- the mean-vs-max choice is visible at every
+%   pyramid level.
 %
 %   PARENTDIR - char, directory to write into. Empty (default) puts
 %               the store under a fresh tempname; the caller can pass
@@ -40,32 +50,44 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
 %               fullfile(PARENTDIR, 'blob.ome.zarr').
 %
 %   Name-Value:
-%     Shape (1,3) double   - [Z Y X], default [300 300 300]
+%     Shape (1,3) double   - [Z Y X] spatial shape, default
+%                            [300 300 300]. Channels are added on top
+%                            (see NumChannels).
+%     NumChannels (1,1)    - number of channels (default 2). Set 1 to
+%                            fall back to the old 3-D 'z,y,x' layout.
+%     ChannelNames         - cellstr / string array, one label per
+%                            channel. Empty (default) produces 'Ch1',
+%                            'Ch2', ... Written into the OMERO block
+%                            of .zattrs so napari picks them up.
 %     NumLevels (1,1)      - number of pyramid levels (default 4)
-%     ChunkShape (1,3)     - per-level Zarr chunk shape (default
-%                            [64 64 64]; every level uses the same
-%                            chunk shape, edge chunks pad with 0)
+%     ChunkShape (1,3)     - spatial chunk shape (default [64 64 64]).
+%                            For a multi-channel store the on-disk
+%                            chunk shape is [1, ChunkShape(:)'], so
+%                            one chunk holds one channel.
 %     VoxelSize (1,3)      - level 0 voxel size (default [1 1 1] um).
-%                            Every subsequent level scales by 2x.
+%                            Every subsequent level scales by 2x on
+%                            the spatial axes.
 %     Seed (1,1)           - reserved for future noisy fixtures; the
 %                            default fixture is deterministic without
 %                            it (default 42).
 %
 %   ZARRPATH - char, the absolute path to <PARENTDIR>/blob.ome.zarr
 %   GT       - struct with fields:
-%                shape       - level-0 [Z Y X]
-%                chunkShape  - the chunk shape used
-%                voxelSize   - level-0 voxel size
-%                numLevels   - the ladder depth
-%                levels      - 1xN struct(path, shape) for each level
-%                              across mean and max
-%                volumes     - struct with fields:
-%                                level0 - the raw uint16 volume
-%                                mean   - 1xN cell of mean downsamples
-%                                max    - 1xN cell of max downsamples
-%              Use GT to compare a reader's output against ground
-%              truth. The full uint16 volume is a modest ~54 MB at
-%              the default shape; do NOT return it unrequested.
+%                shape        - level-0 [Z Y X]
+%                numChannels  - number of channels written
+%                channelNames - cellstr of channel labels
+%                chunkShape   - spatial chunk shape
+%                voxelSize    - level-0 voxel size
+%                numLevels    - the ladder depth
+%                levels       - 1xN struct(path, shape) for each level
+%                               across mean and max (shape is the
+%                               on-disk shape, i.e. includes the c dim)
+%                volumes      - struct with fields:
+%                                 level0 - the raw uint16 volume,
+%                                          shape (C, Z, Y, X) when
+%                                          NumChannels > 1
+%                                 mean   - 1xN cell of mean downsamples
+%                                 max    - 1xN cell of max downsamples
 %
 %   Example -- end to end round-trip on the local filesystem:
 %     [zp, gt] = ndi.test.lightsheet.makeBlobFixture(pwd);
@@ -75,7 +97,7 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
 %     S.database_add(sub);
 %     [pyr, lds] = ndi.fun.doc.lightsheet.fromOMEZarr(S, zp, ...
 %             'subjectID', sub.id());
-%     ndi.gui.app.LightsheetZarrManager(S);
+%     ndi.fun.doc.lightsheet.view(S, pyr.id());
 %
 %   See also: ndi.fun.doc.lightsheet.fromOMEZarr,
 %             ndi.fun.doc.lightsheet.makePyramid,
@@ -84,6 +106,8 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
     arguments
         parentDir char = ''
         options.Shape (1,3) double {mustBePositive, mustBeInteger} = [300 300 300]
+        options.NumChannels (1,1) double {mustBePositive, mustBeInteger} = 2
+        options.ChannelNames = {}
         options.NumLevels (1,1) double {mustBePositive, mustBeInteger} = 4
         options.ChunkShape (1,3) double {mustBePositive, mustBeInteger} = [64 64 64]
         options.VoxelSize (1,3) double {mustBePositive} = [1 1 1]
@@ -102,15 +126,26 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
     end
     mkdir(zarrPath);
 
-    % Build level 0 and the two reduction ladders.
-    lvl0 = buildBlobVolume(options.Shape);
+    channelNames = resolveChannelNames(options.ChannelNames, options.NumChannels);
+
+    hasChannels = options.NumChannels > 1 || ~isempty(options.ChannelNames);
+    if hasChannels
+        onDiskChunkShape = [1, options.ChunkShape];
+    else
+        onDiskChunkShape = options.ChunkShape;
+    end
+
+    % Build level 0 and the two reduction ladders. Multi-channel path
+    % keeps channels as a leading axis; single-channel path stays 3-D
+    % so it stays compatible with anything reading the old layout.
+    lvl0 = buildBlobVolume(options.Shape, options.NumChannels, hasChannels);
     meanLadder = cell(1, options.NumLevels);
     maxLadder  = cell(1, options.NumLevels);
     meanLadder{1} = lvl0;
     maxLadder{1}  = lvl0;
     for L = 2:options.NumLevels
-        meanLadder{L} = downsampleBlockUint16(meanLadder{L-1}, 2, @meanReduce);
-        maxLadder{L}  = downsampleBlockUint16(maxLadder{L-1},  2, @maxReduce);
+        meanLadder{L} = downsampleSpatial(meanLadder{L-1}, 2, @meanReduce, hasChannels);
+        maxLadder{L}  = downsampleSpatial(maxLadder{L-1},  2, @maxReduce,  hasChannels);
     end
 
     % Every Zarr v2 group node needs a .zgroup marker, or readers
@@ -127,34 +162,39 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
     end
 
     % Write level 0 (shared) and each reduction's coarser levels.
-    writeZarrLevel(fullfile(zarrPath, '0'), lvl0, options.ChunkShape);
+    writeZarrLevel(fullfile(zarrPath, '0'), lvl0, onDiskChunkShape);
     for L = 2:options.NumLevels
         writeZarrLevel(fullfile(zarrPath, 'mean', sprintf('%d', L-1)), ...
-            meanLadder{L}, options.ChunkShape);
+            meanLadder{L}, onDiskChunkShape);
         writeZarrLevel(fullfile(zarrPath, 'max', sprintf('%d', L-1)), ...
-            maxLadder{L}, options.ChunkShape);
+            maxLadder{L}, onDiskChunkShape);
     end
 
-    % Write .zattrs.
-    ax = {struct('name','z','type','space','unit','micrometer'), ...
-          struct('name','y','type','space','unit','micrometer'), ...
-          struct('name','x','type','space','unit','micrometer')};
+    % .zattrs axes. The spatial 2x downsampling only applies to
+    % spatial axes; the channel axis carries no scale.
+    if hasChannels
+        ax = {struct('name','c','type','channel'), ...
+              struct('name','z','type','space','unit','micrometer'), ...
+              struct('name','y','type','space','unit','micrometer'), ...
+              struct('name','x','type','space','unit','micrometer')};
+        scaleForLevel = @(L) [1, options.VoxelSize * 2^(L-1)];
+    else
+        ax = {struct('name','z','type','space','unit','micrometer'), ...
+              struct('name','y','type','space','unit','micrometer'), ...
+              struct('name','x','type','space','unit','micrometer')};
+        scaleForLevel = @(L) options.VoxelSize * 2^(L-1);
+    end
+
     meanDatasets = cell(1, options.NumLevels);
     maxDatasets  = cell(1, options.NumLevels);
     for L = 1:options.NumLevels
-        scale = options.VoxelSize * 2^(L-1);
+        scale = scaleForLevel(L);
         if L == 1
-            path0 = '0';
+            meanDatasets{L} = zarrDataset('0', scale);
+            maxDatasets{L}  = zarrDataset('0', scale);
         else
-            pMean = sprintf('mean/%d', L-1);
-            pMax  = sprintf('max/%d',  L-1);
-        end
-        if L == 1
-            meanDatasets{L} = zarrDataset(path0, scale);
-            maxDatasets{L}  = zarrDataset(path0, scale);
-        else
-            meanDatasets{L} = zarrDataset(pMean, scale);
-            maxDatasets{L}  = zarrDataset(pMax,  scale);
+            meanDatasets{L} = zarrDataset(sprintf('mean/%d', L-1), scale);
+            maxDatasets{L}  = zarrDataset(sprintf('max/%d',  L-1), scale);
         end
     end
     multiscales = { ...
@@ -162,77 +202,150 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
                'axes', {ax}, 'datasets', {meanDatasets}), ...
         struct('name','max','type','max', ...
                'axes', {ax}, 'datasets', {maxDatasets}) };
-    writeJSON(fullfile(zarrPath, '.zattrs'), ...
-        struct('multiscales', {multiscales}));
+
+    zattrs = struct('multiscales', {multiscales});
+    if hasChannels
+        zattrs.omero = struct('channels', {buildOmeroChannels(channelNames)});
+    end
+    writeJSON(fullfile(zarrPath, '.zattrs'), zattrs);
 
     % Level manifest for the ground truth.
     levels = struct('path', {}, 'shape', {});
-    levels(end+1) = struct('path', '0', 'shape', options.Shape);
+    levels(end+1) = struct('path', '0', 'shape', size(lvl0));
     for L = 2:options.NumLevels
-        s = size(meanLadder{L});
-        levels(end+1) = struct('path', sprintf('mean/%d', L-1), 'shape', s); %#ok<AGROW>
-        levels(end+1) = struct('path', sprintf('max/%d',  L-1), 'shape', s); %#ok<AGROW>
+        levels(end+1) = struct('path', sprintf('mean/%d', L-1), ...
+            'shape', size(meanLadder{L})); %#ok<AGROW>
+        levels(end+1) = struct('path', sprintf('max/%d',  L-1), ...
+            'shape', size(maxLadder{L})); %#ok<AGROW>
     end
 
     gt = struct( ...
-        'shape',      options.Shape, ...
-        'chunkShape', options.ChunkShape, ...
-        'voxelSize',  options.VoxelSize, ...
-        'numLevels',  options.NumLevels, ...
-        'levels',     levels, ...
-        'volumes',    struct('level0', lvl0, ...
-                             'mean',   {meanLadder}, ...
-                             'max',    {maxLadder}));
+        'shape',        options.Shape, ...
+        'numChannels',  options.NumChannels, ...
+        'channelNames', {channelNames}, ...
+        'chunkShape',   options.ChunkShape, ...
+        'voxelSize',    options.VoxelSize, ...
+        'numLevels',    options.NumLevels, ...
+        'levels',       levels, ...
+        'volumes',      struct('level0', lvl0, ...
+                               'mean',   {meanLadder}, ...
+                               'max',    {maxLadder}));
 end
 
 % =====================================================================
 
-function vol = buildBlobVolume(shape)
-% Deterministic 3D uint16 volume with three features at three spatial
-% scales. Every feature is closed-form so the fixture is reproducible
-% without touching random state.
+function names = resolveChannelNames(userNames, numChannels)
+    if isempty(userNames)
+        names = arrayfun(@(k) sprintf('Ch%d', k), 1:numChannels, ...
+            'UniformOutput', false);
+        return;
+    end
+    if isstring(userNames)
+        userNames = cellstr(userNames);
+    end
+    if ~iscellstr(userNames) %#ok<ISCLSTR>
+        error('NDI:lightsheet:makeBlobFixture:badChannelNames', ...
+            'ChannelNames must be a cellstr or string array.');
+    end
+    if numel(userNames) ~= numChannels
+        error('NDI:lightsheet:makeBlobFixture:channelCountMismatch', ...
+            'ChannelNames has %d entries but NumChannels is %d.', ...
+            numel(userNames), numChannels);
+    end
+    names = reshape(userNames, 1, []);
+end
+
+function vol = buildBlobVolume(shape, numChannels, hasChannels)
+% Deterministic uint16 volume with three features at three spatial
+% scales. Multi-channel path returns (C, Z, Y, X) with per-channel
+% variations in the medium blob and spike positions so channels read
+% differently in each napari colour. Single-channel path returns
+% (Z, Y, X) that matches the pre-channel fixture byte-for-byte.
+    if ~hasChannels
+        vol = oneChannelVolume(shape, 1, 1);
+        return;
+    end
+    vol = zeros([numChannels, shape], 'uint16');
+    for ch = 1:numChannels
+        one = oneChannelVolume(shape, ch, numChannels);
+        vol(ch, :, :, :) = reshape(one, [1, shape]);
+    end
+end
+
+function vol = oneChannelVolume(shape, ch, numChannels)
     Z = shape(1); Y = shape(2); X = shape(3);
     [zz, yy, xx] = ndgrid(1:Z, 1:Y, 1:X);
-    % Widths scale with the volume so the fixture is well-defined at
-    % any Shape. The wide feature sits well inside the box (3*sigma
-    % ~ 3/10 of a side) rather than running to the edge.
-    sigmaWide   = mean(shape) / 8;     % contain 3*sigma at ~3/8 of a side
+    sigmaWide   = mean(shape) / 8;
     sigmaMedium = mean(shape) / 20;
-    lambdaWide  = mean(shape) / 5;     % ~2 rings inside 3*sigma,
-                                       % ~7.5 voxels at level 3 (8x down),
-                                       % well above the 2-voxel Nyquist
-    % A wide ring pattern centred in the volume: a Gaussian envelope
-    % modulated by a radial cosine so brightness oscillates in
-    % concentric shells as you move toward the centre. Fine levels
-    % show the individual rings; coarse levels smooth them, so each
-    % pyramid step reads differently. Amplitude split as a smooth
-    % baseline (25k, the ring troughs) plus a smaller oscillation
-    % (25k, the ring peaks) so max downsampling does not lock onto
-    % the peak-only value and produce blocky per-tile output.
+    lambdaWide  = mean(shape) / 5;
+
+    % Wide ring pattern -- IDENTICAL across channels, so a viewer sees
+    % it as a coincidence mark.
     c1 = shape / 2;
     r1  = sqrt((zz - c1(1)).^2 + (yy - c1(2)).^2 + (xx - c1(3)).^2);
     envelope = exp(-r1.^2 / (2 * sigmaWide^2));
     rings    = 0.5 + 0.5 * cos(2 * pi * r1 / lambdaWide);
     wide = envelope .* (25000 + 25000 * rings);
-    % A medium blob offset toward one corner (kept as-is).
-    c2 = [shape(1)*2/3 shape(2)/3 shape(3)/2];
+
+    % Medium blob position rotates around the volume so each channel
+    % sits somewhere different. Ch1 lands at the pre-channel default
+    % (2/3, 1/3, 1/2) for backward-compat, Ch2 mirrors it, N>2 fills
+    % in between.
+    if numChannels <= 1
+        alpha = 1;
+    else
+        alpha = 1 - (ch - 1) / (numChannels - 1);   % 1, ..., 0
+    end
+    c2 = [shape(1) * lerp(1/3, 2/3, alpha), ...
+          shape(2) * lerp(2/3, 1/3, alpha), ...
+          shape(3) / 2];
     r2sq = (zz - c2(1)).^2 + (yy - c2(2)).^2 + (xx - c2(3)).^2;
     medium = 30000 * exp(-r2sq / (2 * sigmaMedium^2));
-    % One bright voxel: max keeps its value at every level, mean
-    % spreads it across the block. Position scales with Shape so a
-    % small test fixture puts the spike inside the volume too.
-    spikePos = max(1, round(shape / 6));
+
+    % Spike positions spaced along the volume diagonal: Ch1 at Shape/6
+    % (matches the pre-channel default), Ch2 at Shape*5/6, N>2
+    % interpolates between them so no two spikes overlap.
+    if numChannels <= 1
+        spikeFrac = 1/6;
+    else
+        spikeFrac = lerp(1/6, 5/6, (ch - 1) / (numChannels - 1));
+    end
+    spikePos = max(1, min(shape, round(shape * spikeFrac)));
     spike = zeros(shape);
     spike(spikePos(1), spikePos(2), spikePos(3)) = 60000;
 
     vol = uint16(min(65535, wide + medium + spike));
 end
 
+function y = lerp(a, b, t)
+    y = a + (b - a) * t;
+end
+
+function out = downsampleSpatial(vol, factor, reducer, hasChannels)
+% Downsample by FACTOR on spatial axes only. When HASCHANNELS is
+% true, the leading axis is the channel dim and is preserved
+% verbatim; otherwise we fall back to the pre-channel 3-D reducer.
+    if ~hasChannels
+        out = downsampleBlockUint16(vol, factor, reducer);
+        return;
+    end
+    C = size(vol, 1);
+    sz3 = size(vol);
+    sz3 = sz3(2:end);
+    outShape3 = ceil(sz3 / factor);
+    out = zeros([C, outShape3], 'like', vol);
+    for c = 1:C
+        one = reshape(vol(c, :, :, :), sz3);
+        down = downsampleBlockUint16(one, factor, reducer);
+        out(c, :, :, :) = reshape(down, [1, size(down)]);
+    end
+end
+
 function out = downsampleBlockUint16(vol, factor, reducer)
 % Reduce each factor x factor x factor block into one voxel using
 % REDUCER (a function handle). Output shape is ceil(size / factor);
-% odd trailing indices reuse the last available block ("edge pad" --
-% simple, and mirrors what OME-Zarr writers commonly do).
+% trailing edge blocks are smaller. Mirrors what OME-Zarr writers
+% commonly do (bioformats2raw, make_zarr_levels.py).
     sz = size(vol);
     out_shape = ceil(sz / factor);
     out = zeros(out_shape, 'like', vol);
@@ -262,10 +375,15 @@ end
 
 function writeZarrLevel(arrayDir, vol, chunkShape)
 % Write one Zarr v2 array: a .zarray metadata file plus one raw chunk
-% file per non-empty tile, keyed as z.y.x (default dimension_separator
-% for Zarr v2).
+% file per non-empty tile. Handles both 3-D (z,y,x) and 4-D (c,z,y,x)
+% layouts; chunkShape must match the array's dimensionality.
     if ~isfolder(arrayDir), mkdir(arrayDir); end
     shape = size(vol);
+    if numel(shape) ~= numel(chunkShape)
+        error('NDI:lightsheet:makeBlobFixture:chunkArity', ...
+            'chunkShape length %d does not match array ndims %d.', ...
+            numel(chunkShape), numel(shape));
+    end
     writeJSON(fullfile(arrayDir, '.zarray'), struct( ...
         'zarr_format', 2, ...
         'shape',       shape, ...
@@ -278,34 +396,42 @@ function writeZarrLevel(arrayDir, vol, chunkShape)
         'dimension_separator', '.'));
 
     nChunks = ceil(shape ./ chunkShape);
-    for cz = 0:nChunks(1)-1
-        for cy = 0:nChunks(2)-1
-            for cx = 0:nChunks(3)-1
-                z0 = cz * chunkShape(1) + 1;
-                y0 = cy * chunkShape(2) + 1;
-                x0 = cx * chunkShape(3) + 1;
-                z1 = min(z0 + chunkShape(1) - 1, shape(1));
-                y1 = min(y0 + chunkShape(2) - 1, shape(2));
-                x1 = min(x0 + chunkShape(3) - 1, shape(3));
+    subs = cell(1, numel(shape));
+    writeChunks(arrayDir, vol, shape, chunkShape, nChunks, subs, [], 1);
+end
 
-                % Pad edge tiles with zeros so on-disk chunks are all
-                % the same size (Zarr v2 requires this).
-                chunk = zeros(chunkShape, 'uint16');
-                chunk(1:(z1-z0+1), 1:(y1-y0+1), 1:(x1-x0+1)) = ...
-                    vol(z0:z1, y0:y1, x0:x1);
-
-                % Zarr expects C-order bytes. MATLAB is column-major,
-                % so permute the axes into reversed order before
-                % linearising (matches NDR's reader inverse).
-                permuted = permute(chunk, ndims(chunk):-1:1);
-                raw = typecast(permuted(:), 'uint8');
-
-                key = sprintf('%d.%d.%d', cz, cy, cx);
-                fid = fopen(fullfile(arrayDir, key), 'w');
-                fwrite(fid, raw);
-                fclose(fid);
-            end
+function writeChunks(arrayDir, vol, shape, chunkShape, nChunks, subs, key, dim)
+% Recursively walk the chunk grid across all dimensions, so the writer
+% is agnostic to how many axes the array has.
+    if dim > numel(shape)
+        lo = zeros(1, numel(shape));
+        hi = zeros(1, numel(shape));
+        for a = 1:numel(shape)
+            lo(a) = (key(a) - 1) * chunkShape(a) + 1;
+            hi(a) = min(lo(a) + chunkShape(a) - 1, shape(a));
+            subs{a} = lo(a):hi(a);
         end
+        % Pad edge tiles with zeros so on-disk chunks are all the same
+        % size (Zarr v2 requires this).
+        chunk = zeros(chunkShape, 'like', vol);
+        localSubs = arrayfun(@(a) 1:(hi(a) - lo(a) + 1), 1:numel(shape), ...
+            'UniformOutput', false);
+        chunk(localSubs{:}) = vol(subs{:});
+        % Zarr expects C-order bytes. MATLAB is column-major, so
+        % permute the axes into reversed order before linearising.
+        permuted = permute(chunk, numel(shape):-1:1);
+        raw = typecast(permuted(:), 'uint8');
+
+        keyStr = strjoin(arrayfun(@(k) num2str(k - 1), key, ...
+            'UniformOutput', false), '.');
+        fid = fopen(fullfile(arrayDir, keyStr), 'w');
+        fwrite(fid, raw);
+        fclose(fid);
+        return;
+    end
+    for c = 1:nChunks(dim)
+        writeChunks(arrayDir, vol, shape, chunkShape, nChunks, subs, ...
+            [key c], dim + 1);
     end
 end
 
@@ -313,6 +439,26 @@ function d = zarrDataset(pathStr, scale)
     d = struct('path', pathStr, ...
         'coordinateTransformations', {{ ...
             struct('type', 'scale', 'scale', scale) }});
+end
+
+function channels = buildOmeroChannels(channelNames)
+% OMERO 'channels' block that napari-ome-zarr reads to pick up
+% per-channel names + display colours. Palette matches the client's
+% default (green, magenta, ...). Windows are wide-open so napari's
+% auto-contrast still runs.
+    palette = {'00FF00', 'FF00FF', '00FFFF', 'FFFF00', ...
+               '0080FF', 'FF8000', '808080'};
+    n = numel(channelNames);
+    channels = cell(1, n);
+    for i = 1:n
+        color = palette{mod(i - 1, numel(palette)) + 1};
+        channels{i} = struct( ...
+            'label', channelNames{i}, ...
+            'color', color, ...
+            'active', true, ...
+            'window', struct('start', 0, 'end', 65535, ...
+                             'min', 0, 'max', 65535));
+    end
 end
 
 function writeZGroup(dir)
