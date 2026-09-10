@@ -217,16 +217,18 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
         levelDoc = levelDoc.set_dependency_value('source_file_id', options.sourceFileID);
     end
 
+    tmpRoot = '';
     if options.materializeChunks
-        levelDoc = attachChunkFiles(levelDoc, options.sourceZarrPath, ...
+        [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, options.sourceZarrPath, ...
             pyramidEntry, level, chunks, chunkGrid, ...
             options.codec, options.clevel);
     end
+    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot)); %#ok<NASGU>
 
     session.database_add(levelDoc);
 end
 
-function levelDoc = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel)
+function [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -260,7 +262,10 @@ function levelDoc = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, lev
     idx = 0;
     tmpRoot = tempname;
     mkdir(tmpRoot);
-    cleaner = onCleanup(@() cleanupTmp(tmpRoot));
+    % No onCleanup here: tmpRoot is returned so the CALLER can register
+    % the cleanup AFTER session.database_add has ingested the files. If
+    % we cleaned up on return, database_add would find the paths already
+    % deleted.
     subs = cell(1, numel(chunkGrid));
     linearOrder = allChunkIndices(chunkGrid);   % rows are (c1, c2, c3, ...) 1-based
     for r = 1:size(linearOrder, 1)
