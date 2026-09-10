@@ -17,11 +17,18 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
 %   The volume itself is three features at three spatial scales, so a
 %   viewer can tell the pyramid levels apart at a glance. Positions
 %   scale with Shape so the fixture is well-defined at any size:
-%     - a wide Gaussian ball at Shape/2, sigma Shape/8, peak ~50k
+%     - a centred RING pattern: Gaussian envelope (sigma Shape/10)
+%       modulated by a radial cosine of wavelength Shape/10, so
+%       brightness oscillates in concentric shells around Shape/2.
+%       Fine levels resolve the individual rings; coarse levels
+%       smear them, so each pyramid step shows different structure.
 %     - a medium Gaussian at (2/3, 1/3, 1/2)*Shape, sigma Shape/20,
-%       peak ~30k
-%     - a bright single-voxel spike of value 60k at Shape/6
-%   The spike is much brighter than the local Gaussian background and
+%       peak ~30k -- a compact companion that stays a small ball at
+%       every level.
+%     - a bright single-voxel spike of value 60k at Shape/6.
+%   The ring envelope is 3*sigma ~ 3/10 of a side, so the feature
+%   stays well inside the box rather than running to the edge. The
+%   spike is much brighter than the local Gaussian background and
 %   fills one voxel out of the whole volume, so max downsampling
 %   holds it up while mean spreads it out over its block -- the
 %   mean-vs-max choice is visible at every pyramid level.
@@ -181,20 +188,29 @@ end
 % =====================================================================
 
 function vol = buildBlobVolume(shape)
-% Deterministic 3D uint16 volume with three features at three scales.
-% Everything is closed-form so the fixture is reproducible without
-% touching random state.
+% Deterministic 3D uint16 volume with three features at three spatial
+% scales. Every feature is closed-form so the fixture is reproducible
+% without touching random state.
     Z = shape(1); Y = shape(2); X = shape(3);
     [zz, yy, xx] = ndgrid(1:Z, 1:Y, 1:X);
-    % Widths scale with the volume so the two Gaussians stay visible
-    % at every Shape; sigma_wide ~ Shape/8, sigma_medium ~ Shape/20.
-    sigmaWide   = mean(shape) / 8;
+    % Widths scale with the volume so the fixture is well-defined at
+    % any Shape. The wide feature sits well inside the box (3*sigma
+    % ~ 3/10 of a side) rather than running to the edge.
+    sigmaWide   = mean(shape) / 10;
     sigmaMedium = mean(shape) / 20;
-    % A wide ball centred in the volume.
+    lambdaWide  = mean(shape) / 10;    % ~3 rings inside 3*sigma
+    % A wide ring pattern centred in the volume: a Gaussian envelope
+    % modulated by a radial cosine so brightness oscillates in
+    % concentric shells as you move toward the centre. Fine levels
+    % resolve the individual rings; coarse levels smear them, so each
+    % pyramid step shows something new. Amplitude clipped to 50k so
+    % the offset spike still stands out above it.
     c1 = shape / 2;
-    r1sq = (zz - c1(1)).^2 + (yy - c1(2)).^2 + (xx - c1(3)).^2;
-    wide = 50000 * exp(-r1sq / (2 * sigmaWide^2));
-    % A medium blob offset toward one corner.
+    r1  = sqrt((zz - c1(1)).^2 + (yy - c1(2)).^2 + (xx - c1(3)).^2);
+    envelope = exp(-r1.^2 / (2 * sigmaWide^2));
+    rings    = 0.5 + 0.5 * cos(2 * pi * r1 / lambdaWide);
+    wide = 50000 * envelope .* rings;
+    % A medium blob offset toward one corner (kept as-is).
     c2 = [shape(1)*2/3 shape(2)/3 shape(3)/2];
     r2sq = (zz - c2(1)).^2 + (yy - c2(2)).^2 + (xx - c2(3)).^2;
     medium = 30000 * exp(-r2sq / (2 * sigmaMedium^2));
