@@ -76,7 +76,7 @@ function [zarrPath, gt] = makeBlobFixture(parentDir, options)
         options.NumLevels (1,1) double {mustBePositive, mustBeInteger} = 4
         options.ChunkShape (1,3) double {mustBePositive, mustBeInteger} = [64 64 64]
         options.VoxelSize (1,3) double {mustBePositive} = [1 1 1]
-        options.Seed (1,1) double = 42 %#ok<INUSA>
+        options.Seed (1,1) double = 42
     end
 
     if isempty(parentDir)
