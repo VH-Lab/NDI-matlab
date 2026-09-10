@@ -194,22 +194,18 @@ classdef TestBlobFixture < matlab.unittest.TestCase
             testCase.verifyTrue(isfile(fullfile(zp, '0', '0.0.0.0')));
             testCase.verifyTrue(isfile(fullfile(zp, '0', '1.0.0.0')));
             % .zattrs axes list carries c first, and an OMERO block
-            % names both channels.
+            % names both channels. jsondecode may return multiscales /
+            % axes / channels as either a struct array or a cell array
+            % depending on field homogeneity, so pick the first entry
+            % through a helper that handles both.
             attrs = jsondecode(fileread(fullfile(zp, '.zattrs')));
-            firstMultiscale = attrs.multiscales(1);
-            ax = firstMultiscale.axes;
-            firstAxis = ax(1);
+            firstMultiscale = firstEntry(attrs.multiscales);
+            firstAxis = firstEntry(firstMultiscale.axes);
             testCase.verifyEqual(char(firstAxis.name), 'c');
             testCase.verifyEqual(char(firstAxis.type), 'channel');
             testCase.verifyTrue(isfield(attrs, 'omero'));
-            omeroChannels = attrs.omero.channels;
-            testCase.verifyEqual(numel(omeroChannels), 2);
-            % jsondecode can turn a homogeneous cell array into a
-            % struct array; either shape carries a 'label' field.
-            firstOmero = omeroChannels(1);
-            if iscell(firstOmero)
-                firstOmero = firstOmero{1};
-            end
+            testCase.verifyEqual(entryCount(attrs.omero.channels), 2);
+            firstOmero = firstEntry(attrs.omero.channels);
             testCase.verifyEqual(char(firstOmero.label), 'Ch1');
         end
 
@@ -217,6 +213,25 @@ classdef TestBlobFixture < matlab.unittest.TestCase
 end
 
 % ---------------------------------------------------------------------
+
+function e = firstEntry(coll)
+% First element of either a cell array or a struct array. jsondecode
+% chooses one or the other depending on field homogeneity, so callers
+% that want "element 1" without caring can go through this helper.
+    if iscell(coll)
+        e = coll{1};
+    else
+        e = coll(1);
+    end
+end
+
+function n = entryCount(coll)
+    if iscell(coll)
+        n = numel(coll);
+    else
+        n = numel(coll);
+    end
+end
 
 function names = collectPyramidNames(ms)
     if iscell(ms)
