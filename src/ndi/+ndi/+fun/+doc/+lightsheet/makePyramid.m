@@ -223,7 +223,7 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
             pyramidEntry, level, chunks, chunkGrid, ...
             options.codec, options.clevel);
     end
-    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot)); %#ok<NASGU>
+    tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
     session.database_add(levelDoc);
 end
