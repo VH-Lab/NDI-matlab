@@ -86,7 +86,7 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         options.chunks double = []
         options.materializeChunks (1,1) logical = false
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
-        options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 22)} = 5
+        options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 9)} = 5
     end
 
     if isempty(strtrim(options.subjectID))
