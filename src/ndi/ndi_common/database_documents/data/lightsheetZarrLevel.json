@@ -1,0 +1,53 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/lightsheetZarrLevel.json",
+		"validation": "$NDISCHEMAPATH\/data\/lightsheetZarrLevel_schema.json",
+		"class_name": "lightsheetZarrLevel",
+		"property_list_name": "lightsheetZarrLevel",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "lightsheetZarrPyramid_id",
+			"value": ""
+		},
+		{
+			"name": "subject_id",
+			"value": ""
+		},
+		{
+			"name": "source_file_id",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [
+			"chunk.bin_#"
+		]
+	},
+	"lightsheetZarrLevel": {
+		"label": "",
+		"level": 0,
+		"reduction_function": "none",
+		"axes_order": "tczyx",
+		"shape": [],
+		"chunks": [],
+		"chunk_grid": [],
+		"n_chunks_stored": 0,
+		"chunk_index_origin": 1,
+		"chunk_order": "C",
+		"dtype": "",
+		"fill_value": 0,
+		"byte_order": "little",
+		"codec": "raw",
+		"codec_params": "{}",
+		"voxel_size": [],
+		"voxel_size_units": "micrometer",
+		"translation": []
+	}
+}

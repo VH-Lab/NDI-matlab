@@ -1,0 +1,148 @@
+{
+	"classname": "lightsheetZarrPyramid",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "subject_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "element_id",
+			"mustbenotempty": 0
+		},
+		{
+			"name": "source_file_id",
+			"mustbenotempty": 0
+		}
+	],
+	"lightsheetZarrPyramid": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Human-readable name for this pyramid, shown in a manager UI. Empty allowed."
+		},
+		{
+			"name": "pyramid_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The NGFF multiscales.name from the source store, if any. Descriptive."
+		},
+		{
+			"name": "pyramid_type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The NGFF multiscales.type field, verbatim. Descriptive only."
+		},
+		{
+			"name": "axes_order",
+			"type": "string",
+			"default_value": "tczyx",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The axis order carried in every child level (NGFF convention, e.g. 'tczyx', 'czyx', 'zyx'). Every child level uses this order."
+		},
+		{
+			"name": "axes_units",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Per-axis physical unit strings, aligned with axes_order. Encoded as a comma-separated string (e.g. 'micrometer,micrometer,micrometer' for zyx). Empty allowed."
+		},
+		{
+			"name": "channel_names",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Display names of the channels, comma-separated in the order of the 'c' axis (e.g. 'GFP,mCherry'). Empty when there are no channels or none are named."
+		},
+		{
+			"name": "n_channels",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Convenience count; equals the length of channel_names when set. Describes the source volume, not the ladder."
+		},
+		{
+			"name": "shape_level0",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Shape of the finest resolution array, in axes_order. Source-volume intrinsic."
+		},
+		{
+			"name": "voxel_size_level0",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis voxel size at level 0, in voxel_size_units."
+		},
+		{
+			"name": "voxel_size_units",
+			"type": "string",
+			"default_value": "micrometer",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The unit that voxel_size_level0 and each child level's voxel_size are expressed in."
+		},
+		{
+			"name": "translation_level0",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis translation at level 0, in voxel_size_units."
+		},
+		{
+			"name": "dtype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The array dtype string as written in NGFF .zarray (e.g. '<u2'). Every level shares it."
+		},
+		{
+			"name": "pipeline_version",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Identifier of the pipeline that produced this pyramid."
+		},
+		{
+			"name": "byte_order",
+			"type": "string",
+			"default_value": "little",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Byte order used when the child level chunks were written into the chunk.bin_# file series: 'little' or 'big'."
+		}
+	]
+}

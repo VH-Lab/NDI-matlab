@@ -1,0 +1,44 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/lightsheetZarrPyramid.json",
+		"validation": "$NDISCHEMAPATH\/data\/lightsheetZarrPyramid_schema.json",
+		"class_name": "lightsheetZarrPyramid",
+		"property_list_name": "lightsheetZarrPyramid",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "subject_id",
+			"value": ""
+		},
+		{
+			"name": "element_id",
+			"value": ""
+		},
+		{
+			"name": "source_file_id",
+			"value": ""
+		}
+	],
+	"lightsheetZarrPyramid": {
+		"label": "",
+		"pyramid_name": "",
+		"pyramid_type": "",
+		"axes_order": "tczyx",
+		"axes_units": "",
+		"channel_names": "",
+		"n_channels": 0,
+		"shape_level0": [],
+		"voxel_size_level0": [],
+		"voxel_size_units": "micrometer",
+		"translation_level0": [],
+		"dtype": "",
+		"pipeline_version": "",
+		"byte_order": "little"
+	}
+}

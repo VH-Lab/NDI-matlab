@@ -1,0 +1,207 @@
+{
+	"classname": "lightsheetZarrLevel",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "lightsheetZarrPyramid_id",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "subject_id",
+			"mustbenotempty": 0
+		},
+		{
+			"name": "source_file_id",
+			"mustbenotempty": 0
+		}
+	],
+	"file": [
+		{
+			"name": "chunk.bin_#",
+			"mustbenotempty": 0
+		}
+	],
+	"lightsheetZarrLevel": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Human-readable name for this level (e.g. 'mean level 2 (12.8um)'). Empty allowed."
+		},
+		{
+			"name": "level",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "0-based level index within the parent pyramid. 0 is the finest resolution."
+		},
+		{
+			"name": "reduction_function",
+			"type": "string",
+			"default_value": "none",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The function used to produce this level from level 0: 'mean', 'max', ... 'none' means the array is the raw source (typical for level 0 when it is shared across reductions); a reader asking for reduction R takes levels with reduction_function in {'none', R}, sorted by level ascending."
+		},
+		{
+			"name": "axes_order",
+			"type": "string",
+			"default_value": "tczyx",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Copied from the parent pyramid; carried here for self-describing reads."
+		},
+		{
+			"name": "shape",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis size of this level's array, in axes_order."
+		},
+		{
+			"name": "chunks",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis chunk size, in axes_order. This is the NGFF / Zarr chunk shape."
+		},
+		{
+			"name": "chunk_grid",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis count of chunks along each axis = ceil(shape ./ chunks)."
+		},
+		{
+			"name": "n_chunks_stored",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "Number of chunk.bin_# files that were written. May be less than prod(chunk_grid) when trailing empty (fill-value) chunks were elided."
+		},
+		{
+			"name": "chunk_index_origin",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				0,
+				1,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The first # in the chunk.bin_# series. Always 1 by convention (NDI file series are 1-based)."
+		},
+		{
+			"name": "chunk_order",
+			"type": "string",
+			"default_value": "C",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The order in which the chunk grid is flattened to the 1-based file series. 'C' for C-order (last axis fastest); 'F' for Fortran-order."
+		},
+		{
+			"name": "dtype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The Zarr dtype string (e.g. '<u2', '<f4')."
+		},
+		{
+			"name": "fill_value",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [
+				-1e300,
+				1e300,
+				1,
+				1
+			],
+			"queryable": 1,
+			"documentation": "Fill value for chunks that were elided from the file series."
+		},
+		{
+			"name": "byte_order",
+			"type": "string",
+			"default_value": "little",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Byte order of the on-disk chunk bytes: 'little' or 'big'."
+		},
+		{
+			"name": "codec",
+			"type": "string",
+			"default_value": "raw",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Zarr codec name ('raw', 'blosc', 'zstd'). 'raw' means the chunk file is the plain little-endian array bytes in dtype / chunk_order."
+		},
+		{
+			"name": "codec_params",
+			"type": "string",
+			"default_value": "{}",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "JSON-encoded string of the codec parameters (cname, clevel, shuffle, ...). Empty JSON '{}' for 'raw'."
+		},
+		{
+			"name": "voxel_size",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis voxel size at this level, in voxel_size_units."
+		},
+		{
+			"name": "voxel_size_units",
+			"type": "string",
+			"default_value": "micrometer",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The unit that voxel_size is expressed in."
+		},
+		{
+			"name": "translation",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [
+				1,
+				NaN
+			],
+			"queryable": 1,
+			"documentation": "Per-axis translation at this level."
+		}
+	]
+}
