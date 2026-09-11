@@ -245,13 +245,15 @@ function [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, sourceZarrPath, pyrami
             'level path %s not found in pyramid %s.', level.path, pyramidName);
     end
 
-    % Read the full array. For a fixture-scale volume (~54 MB uint16)
-    % this is a single allocation; a lab-scale volume will need a
-    % streaming reader later, but the level doc's chunk shape is fixed
-    % here either way.
-    data = ndr.format.omezarr.readArray(sourceZarrPath, pyramidName, kInEntry);
-
-    shape  = size(data);
+    % STREAMING per-chunk read. We call readArray with `Region` per
+    % target chunk instead of loading the whole level up front. Previous
+    % versions did `data = readArray(...)` and sliced `data(subs{:})`
+    % per chunk; that reads O(level bytes) into one MATLAB allocation
+    % and crashes on lab-scale volumes (a stitched SmartSPIM level 0
+    % can be hundreds of GB). Reading a single target chunk touches
+    % only the source chunks that overlap that region, so peak memory
+    % scales with target chunk size, not level size.
+    shape = ensureRow(level.shape);
     if numel(shape) < numel(chunks)
         % Singleton trailing axes: pad shape to axis count.
         shape(end+1:numel(chunks)) = 1;
@@ -266,19 +268,26 @@ function [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, sourceZarrPath, pyrami
     % the cleanup AFTER session.database_add has ingested the files. If
     % we cleaned up on return, database_add would find the paths already
     % deleted.
-    subs = cell(1, numel(chunkGrid));
     linearOrder = allChunkIndices(chunkGrid);   % rows are (c1, c2, c3, ...) 1-based
+    dtypeCls = '';
     for r = 1:size(linearOrder, 1)
         idx = idx + 1;
         cIdx = linearOrder(r, :);
-        % Compute the source slice and the padded chunk.
+        % Compute this chunk's on-disk region: [lo; hi] per axis,
+        % 1-based inclusive, clamped to the level shape at the far
+        % edge.
+        loRow = zeros(1, numel(shape));
+        hiRow = zeros(1, numel(shape));
         for a = 1:numel(chunkGrid)
-            lo = (cIdx(a) - 1) * chunks(a) + 1;
-            hi = min(lo + chunks(a) - 1, shape(a));
-            subs{a} = lo:hi;
+            loRow(a) = (cIdx(a) - 1) * chunks(a) + 1;
+            hiRow(a) = min(loRow(a) + chunks(a) - 1, shape(a));
         end
-        srcTile = data(subs{:});
-        padded = zeros(chunks, 'like', data);
+        srcTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
+            pyramidName, kInEntry, 'Region', [loRow; hiRow]);
+        if isempty(dtypeCls)
+            dtypeCls = class(srcTile);
+        end
+        padded = zeros(chunks, dtypeCls);
         localSubs = arrayfun(@(k) 1:size(srcTile, k), 1:numel(chunks), ...
             'UniformOutput', false);
         padded(localSubs{:}) = srcTile;

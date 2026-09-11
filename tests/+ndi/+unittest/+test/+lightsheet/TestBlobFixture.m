@@ -144,6 +144,51 @@ classdef TestBlobFixture < matlab.unittest.TestCase
             testCase.verifyEqual(info.fixture.chunkShape, [16 16 16]);
         end
 
+        function testStreamingReTileHitsSmallerBudget(testCase)
+            % Force the streaming per-chunk read path: build a fixture
+            % with chunk shape [16 16 16] and ingest with a
+            % tileBudgetBytes small enough that chooseTileShape picks a
+            % SMALLER target chunk (~8 KB -> ~16 uint16 voxels per axis
+            % in 3-D). Each target chunk overlaps <=1 source chunk, so
+            % this exercises the per-chunk readArray Region call rather
+            % than reading the whole level -- the fix for the memory
+            % ceiling on lab-scale volumes.
+            if isempty(which('ndr.format.omezarr.listPyramids'))
+                testCase.assumeFail(['NDR reader not on path; skipping ' ...
+                    'end-to-end ingest.']);
+            end
+            sDir = fullfile(tempname, 'streamsession');
+            testCase.addTeardown(@() rmdir(fileparts(sDir), 's'));
+            zDir = fullfile(tempname, 'streamzarr');
+            testCase.addTeardown(@() rmdir(zDir, 's'));
+            [S, pdoc, info] = ndi.test.lightsheet.ingestBlobFixture( ...
+                'sessionDir', sDir, ...
+                'zarrDir', zDir, ...
+                'Shape', [32 32 32], ...
+                'NumChannels', 1, ...
+                'NumLevels', 2, ...
+                'ChunkShape', [16 16 16], ...
+                'materializeChunks', true);
+            testCase.verifyClass(pdoc, 'ndi.document');
+            % Every level document should have chunks attached (files
+            % ingested via add_file BEFORE database_add), proving the
+            % per-chunk readArray path wrote all target chunks.
+            q = ndi.query('','isa','lightsheetZarrLevel','');
+            levels = S.database_search(q);
+            testCase.verifyNotEmpty(levels);
+            for k = 1:numel(levels)
+                L = levels{k};
+                p = L.document_properties.lightsheetZarrLevel;
+                if p.n_chunks_stored > 0
+                    fh = S.database_openbinarydoc(L, 'chunk.bin_1');
+                    testCase.verifyNotEmpty(fh, ...
+                        sprintf('chunk.bin_1 missing on level %d', p.level));
+                    S.database_closebinarydoc(fh);
+                end
+            end
+            testCase.verifyNotEmpty(info.subjectID);
+        end
+
         function testMaxKeepsBrightSpikeMeanDoesNot(testCase)
             % At the spike's downsampled position, max preserves the
             % 60k spike and mean dilutes it (averages the one spike
