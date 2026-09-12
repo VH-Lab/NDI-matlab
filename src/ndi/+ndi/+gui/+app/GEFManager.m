@@ -112,6 +112,20 @@ classdef GEFManager < ndi.gui.app.sessionApp
             end
             obj.session = sessionObj;
             if options.build
+                % ONE MANAGER WINDOW PER SESSION. The navigator's Apps
+                % menu opens the manager unconditionally, so a second
+                % click on the same session used to build a second
+                % top-level window against the same database; both
+                % listed the same pyramids and only one carried the
+                % state the user was working in. The figure is tagged
+                % by session id at buildUI time, so an already-open
+                % one is found without a live registry to keep in
+                % sync -- and raised rather than duplicated.
+                existing = ndi.gui.app.GEFManager.findOpenFigure(sessionObj);
+                if ~isempty(existing)
+                    figure(existing);
+                    return;
+                end
                 obj.buildUI();
                 obj.reload();
             end
@@ -735,6 +749,54 @@ classdef GEFManager < ndi.gui.app.sessionApp
                 ext, ndi.gui.app.GEFManager.orNone(meta.chipSerial), ...
                 meta.resolutionNm, meta.root, meta.boxSource);
         end
+
+        function tag = figureTag(session)
+        % FIGURETAG - the manager figure's Tag for a given session
+        %
+        %   TAG = NDI.GUI.APP.GEFMANAGER.FIGURETAG(SESSION) returns the
+        %   Tag string set on the manager's uifigure. It embeds the
+        %   session id, so a lookup can find the one window that
+        %   belongs to this session without confusing it with a
+        %   manager open against a different session.
+        %
+        %   PURE, and no session method is called on failure: a
+        %   session whose id() errors falls back to a tag that names
+        %   no session, which findOpenFigure never matches. The
+        %   manager then opens a fresh window rather than trying to
+        %   raise something ambiguous, which is the safer failure of
+        %   the two.
+            id = '';
+            try
+                id = char(session.id());
+            catch
+            end
+            if isempty(id)
+                tag = '';
+                return;
+            end
+            tag = ['ndi.gui.app.GEFManager:' id];
+        end
+
+        function f = findOpenFigure(session)
+        % FINDOPENFIGURE - the open manager window for a session, or []
+        %
+        %   F = NDI.GUI.APP.GEFMANAGER.FINDOPENFIGURE(SESSION) returns
+        %   the uifigure of the manager currently open for SESSION, or
+        %   an empty figure array when none is open.
+        %
+        %   NO REGISTRY. The tag is set on the figure itself, so a
+        %   window that has been closed disappears from the search on
+        %   its own; there is no stale entry to prune and no
+        %   bookkeeping to keep in sync with the graphics state.
+            f = matlab.ui.Figure.empty;
+            tag = ndi.gui.app.GEFManager.figureTag(session);
+            if isempty(tag), return; end
+            hits = findall(groot, 'Type', 'figure', 'Tag', tag);
+            if ~isempty(hits)
+                f = hits(1);
+            end
+        end
+
         function paper(h, c)
         % PAPER - put a control on the cloud palette's white body
         %
@@ -1296,7 +1358,8 @@ classdef GEFManager < ndi.gui.app.sessionApp
         function buildUI(obj)
             c = ndi.gui.cloudColors();
             obj.fig = uifigure('Name','GEF Manager','Position',[100 100 900 460], ...
-                'Color', c.offWhite);
+                'Color', c.offWhite, ...
+                'Tag', ndi.gui.app.GEFManager.figureTag(obj.session));
             % The View dialog is a separate top-level window now that it
             % does not block, so closing the manager has to take it along.
             % An orphaned dialog whose Launch button still works would
