@@ -422,18 +422,24 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     % the bbox volume keeps peak read allocation bounded to
     % ~prefetchBytes regardless of chunk-grid geometry.
     bboxByteCap = max(double(prefetchBytes) * 4, chunkBytes * poolSize * 2);
-    superBlocks = cell(0, 1);
+    % Preallocate to the worst-case super-block count (one chunk per
+    % super-block) so Code Analyzer sees a static-size cell rather
+    % than end+1 growth. Trim at the end. The `nChunks` slot count is
+    % ~156k pointers = ~1.2 MB, negligible.
+    superBlocks = cell(nChunks, 1);
+    nSuperBlocks = 0;
     i = 1;
     while i <= nChunks
         [idxs, lo, hi] = growSuperBlock(linearOrder, i, ...
             min(prefetchChunkCount, nChunks - i + 1), ...
             chunks, chunkGrid, shape, typesize, bboxByteCap);
-        superBlocks{end+1, 1} = struct('idxs', idxs, ...  %#ok<AGROW>
+        nSuperBlocks = nSuperBlocks + 1;
+        superBlocks{nSuperBlocks} = struct('idxs', idxs, ...
             'loRows', lo, 'hiRows', hi, ...
             'loBBox', min(lo, [], 1), 'hiBBox', max(hi, [], 1));
         i = i + numel(idxs);
     end
-    nSuperBlocks = numel(superBlocks);
+    superBlocks = superBlocks(1:nSuperBlocks);
 
     % ASYNC PIPELINE. If a parpool is available and asyncPrefetch is
     % on, the next super-block's read runs concurrently on a pool
