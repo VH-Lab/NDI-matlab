@@ -69,6 +69,7 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         % receiver, or [] to stay silent (which is what CI needs
         % without the auto-headless detection kicking in).
         options.progressFcn = 'default'
+        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, 0)} = 0
     end
 
     sessionDir = options.sessionDir;
@@ -106,7 +107,8 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         'materializeChunks', options.materializeChunks, ...
         'codec', options.codec, ...
         'clevel', options.clevel, ...
-        'progressFcn', options.progressFcn);
+        'progressFcn', options.progressFcn, ...
+        'numWorkers', options.numWorkers);
 
     info.subjectID = sub.id();
     info.fixture   = gt;

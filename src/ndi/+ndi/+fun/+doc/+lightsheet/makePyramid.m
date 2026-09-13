@@ -76,6 +76,15 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % chunk write. Empty = no reporting. Keep this cheap; it fires
         % once per chunk on a real ingest, which is many times.
         options.progressFcn = []
+        % Number of parallel workers to use for compression. 0 or 1 =
+        % single-threaded (the original path, no toolbox dependency).
+        % >1 requires the Parallel Computing Toolbox: reads stay serial
+        % (a slow spinning drive would thrash otherwise), a batch of
+        % numWorkers chunks is read into memory, then compression fans
+        % out to that many workers. Ingestion order into DID is
+        % preserved. If parpool cannot be built, this falls back to
+        % serial with a warning rather than failing.
+        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, 0)} = 0
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -254,14 +263,15 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
         [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, ...
             options.sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, ...
             options.codec, options.clevel, ...
-            options.progressFcn, doneChunks, totalChunks, levelLabel);
+            options.progressFcn, doneChunks, totalChunks, levelLabel, ...
+            options.numWorkers);
     end
     tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
     session.database_add(levelDoc);
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -292,9 +302,7 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         shape(end+1:numel(chunks)) = 1;
     end
 
-    % Iterate chunks in C-order (last axis fastest). 1-based linear
-    % index goes into the chunk.bin_# filename.
-    idx = 0;
+    % 1-based linear index goes into the chunk.bin_# filename.
     tmpRoot = tempname;
     mkdir(tmpRoot);
     % No onCleanup here: tmpRoot is returned so the CALLER can register
@@ -302,60 +310,136 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     % we cleaned up on return, database_add would find the paths already
     % deleted.
     linearOrder = allChunkIndices(chunkGrid);   % rows are (c1, c2, c3, ...) 1-based
-    dtypeCls = '';
-    for r = 1:size(linearOrder, 1)
-        idx = idx + 1;
-        cIdx = linearOrder(r, :);
-        % Compute this chunk's on-disk region: [lo; hi] per axis,
-        % 1-based inclusive, clamped to the level shape at the far
-        % edge.
-        loRow = zeros(1, numel(shape));
-        hiRow = zeros(1, numel(shape));
-        for a = 1:numel(chunkGrid)
-            loRow(a) = (cIdx(a) - 1) * chunks(a) + 1;
-            hiRow(a) = min(loRow(a) + chunks(a) - 1, shape(a));
+    nChunks = size(linearOrder, 1);
+    typesize = elementSizeBytes(char(level.dtype));
+
+    % BATCHED SERIAL-READ / PARALLEL-COMPRESS. On a slow spinning drive
+    % we cannot afford concurrent seeks, so reads stay strictly serial;
+    % but Zstd at clevel=9 is single-core CPU-bound and easy to fan out
+    % across a parallel pool. A batch of `poolSize` chunks is read from
+    % the source, then handed to the workers to compress and write, in
+    % parallel; add_file into the level document happens serially in
+    % chunk-index order so the DID SQLite write is not a contention
+    % point and the on-disk chunk numbering is unchanged. poolSize == 1
+    % is the original serial path with no toolbox dependency.
+    poolSize = resolveParallelPool(numWorkers);
+
+    for batchStart = 1:poolSize:nChunks
+        batchEnd = min(batchStart + poolSize - 1, nChunks);
+        batchIdx = batchStart:batchEnd;
+        b = numel(batchIdx);
+
+        % ---- SERIAL READ into a batch buffer -----------------------
+        raws = cell(1, b);
+        for j = 1:b
+            r = batchIdx(j);
+            cIdx = linearOrder(r, :);
+            loRow = zeros(1, numel(shape));
+            hiRow = zeros(1, numel(shape));
+            for a = 1:numel(chunkGrid)
+                loRow(a) = (cIdx(a) - 1) * chunks(a) + 1;
+                hiRow(a) = min(loRow(a) + chunks(a) - 1, shape(a));
+            end
+            srcTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
+                pyramidName, kInEntry, 'Region', [loRow; hiRow]);
+            padded = zeros(chunks, class(srcTile));
+            localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
+                1:numel(chunks), 'UniformOutput', false);
+            padded(localSubs{:}) = srcTile;
+            % Zarr expects C-order bytes; MATLAB is column-major,
+            % so permute the axes into reversed order before
+            % serialising, mirroring the fixture writer.
+            permuted = permute(padded, numel(chunks):-1:1);
+            raws{j} = typecast(permuted(:), 'uint8');
         end
-        srcTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
-            pyramidName, kInEntry, 'Region', [loRow; hiRow]);
-        if isempty(dtypeCls)
-            dtypeCls = class(srcTile);
+
+        % ---- PARALLEL (or serial) ENCODE + WRITE TEMPFILE ----------
+        tempPaths = cell(1, b);
+        chunkIdxs = zeros(1, b);
+        for j = 1:b
+            chunkIdxs(j) = batchIdx(j);
         end
-        padded = zeros(chunks, dtypeCls);
-        localSubs = arrayfun(@(k) 1:size(srcTile, k), 1:numel(chunks), ...
-            'UniformOutput', false);
-        padded(localSubs{:}) = srcTile;
-
-        % Zarr expects C-order bytes: last axis varies fastest. MATLAB
-        % is column-major, so permute the axes into reversed order
-        % before serialising, mirroring the fixture writer.
-        permuted = permute(padded, numel(chunks):-1:1);
-        raw = typecast(permuted(:), 'uint8');
-
-        switch codec
-            case 'raw'
-                payload = raw;
-            case 'blosc-zstd'
-                typesize = elementSizeBytes(class(padded));
-                payload = ndr.format.blosc.encode(raw, ...
-                    'typesize', typesize, ...
-                    'cname',    'zstd', ...
-                    'clevel',   clevel, ...
-                    'shuffle',  1);
-            otherwise
-                error('NDI:lightsheet:makePyramid:unknownCodec', ...
-                    'Unknown codec %s.', codec);
+        if poolSize > 1 && b > 1
+            parfor j = 1:b
+                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
+                    typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
+            end
+        else
+            for j = 1:b
+                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
+                    typesize, tmpRoot, chunkIdxs(j));
+            end
         end
 
-        tmp = fullfile(tmpRoot, sprintf('chunk_%d.bin', idx));
-        fid = fopen(tmp, 'w');
-        fwrite(fid, payload);
-        fclose(fid);
+        % ---- SERIAL ADD_FILE (in chunk order) ----------------------
+        for j = 1:b
+            levelDoc = levelDoc.add_file( ...
+                sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
+            doneChunks = doneChunks + 1;
+            reportProgress(progressFcn, doneChunks, totalChunks, ...
+                sprintf('%s: chunk %d/%d', levelLabel, ...
+                    chunkIdxs(j), nChunks));
+        end
+    end
+end
 
-        levelDoc = levelDoc.add_file(sprintf('chunk.bin_%d', idx), tmp);
+function tmp = encodeAndWrite(raw, codec, clevel, typesize, tmpRoot, chunkIdx)
+% ENCODEANDWRITE - compress one chunk and drop it in tmpRoot
+%
+%   Pure per-chunk work: whatever runs in a parfor iteration lives
+%   here so the parallel worker has no dependency on outer-function
+%   state beyond the arguments it receives. Returns the tempfile path
+%   that add_file will consume.
+    switch codec
+        case 'raw'
+            payload = raw;
+        case 'blosc-zstd'
+            payload = ndr.format.blosc.encode(raw, ...
+                'typesize', typesize, ...
+                'cname',    'zstd', ...
+                'clevel',   clevel, ...
+                'shuffle',  1);
+        otherwise
+            error('NDI:lightsheet:makePyramid:unknownCodec', ...
+                'Unknown codec %s.', codec);
+    end
+    tmp = fullfile(tmpRoot, sprintf('chunk_%d.bin', chunkIdx));
+    fid = fopen(tmp, 'w');
+    fwrite(fid, payload);
+    fclose(fid);
+end
 
-        doneChunks = doneChunks + 1;
-        reportProgress(progressFcn, doneChunks, totalChunks, ...
-            sprintf('%s: chunk %d/%d', levelLabel, idx, size(linearOrder,1)));
+function n = resolveParallelPool(numWorkers)
+% RESOLVEPARALLELPOOL - open (or attach to) a parpool of size numWorkers
+%
+%   Returns the effective batch size. 0 or 1 -> serial, no toolbox
+%   dependency. >1 tries to create/attach to a parpool with the
+%   requested worker count; a missing PCT falls back to serial with a
+%   warning, since a broken pool must not stop an ingest.
+    n = 1;
+    if numWorkers <= 1
+        return;
+    end
+    if isempty(ver('parallel'))
+        warning('NDI:lightsheet:makePyramid:noPCT', ...
+            ['numWorkers=%d requested but Parallel Computing Toolbox ' ...
+             'is not available. Running serially.'], numWorkers);
+        return;
+    end
+    try
+        p = gcp('nocreate');
+        if isempty(p) || p.NumWorkers ~= numWorkers
+            if ~isempty(p)
+                delete(p);
+            end
+            parpool('local', numWorkers);
+        end
+        n = numWorkers;
+    catch ME
+        warning('NDI:lightsheet:makePyramid:parpoolFailed', ...
+            ['Could not start a parpool of %d workers (%s). ' ...
+             'Running serially.'], numWorkers, ME.message);
+        n = 1;
     end
 end
 
