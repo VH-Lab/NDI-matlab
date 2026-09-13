@@ -106,6 +106,10 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % Reads stay serial in all modes; compression fans out.
         % See makePyramid for details.
         options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, -1)} = -1
+        % How much source data to prefetch into RAM per readArray
+        % call. Bigger = fewer seeks + subprocess round trips at the
+        % cost of more RAM. See makePyramid. Default 512 MB.
+        options.prefetchBytes (1,1) double {mustBePositive} = 512 * 2^20
     end
 
     if isempty(strtrim(options.subjectID))
@@ -181,7 +185,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'codec', options.codec, ...
         'clevel', options.clevel, ...
         'progressFcn', progressFcn, ...
-        'numWorkers', options.numWorkers);
+        'numWorkers', options.numWorkers, ...
+        'prefetchBytes', options.prefetchBytes);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...

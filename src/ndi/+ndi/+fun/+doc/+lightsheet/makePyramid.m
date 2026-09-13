@@ -92,6 +92,16 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % effective-pool-size chunks is read into memory, then
         % compression fans out. Ingestion order into DID is preserved.
         options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, -1)} = -1
+        % How much source data to pull into RAM per readArray call, in
+        % bytes uncompressed. One "super-block" of chunks is read at a
+        % time, then compressed by the worker pool in sub-batches. A
+        % bigger prefetch amortises the fixed cost of a seek + NDR
+        % subprocess round-trip over more voxels, which matters on any
+        % drive slow enough for I/O to dominate. Default 512 MB is a
+        % sensible compromise for a modern workstation; passing 1e9 or
+        % 2e9 is fine on a machine with plenty of RAM. Peak MATLAB
+        % memory is prefetchBytes (uncompressed).
+        options.prefetchBytes (1,1) double {mustBePositive} = 512 * 2^20
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -203,10 +213,11 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     if options.materializeChunks
         [effWorkers, workerSource] = describeParallelPool(options.numWorkers);
         fprintf(['[makePyramid] Parallel workers: %d (%s). ' ...
-            'Total chunks: %d across %d level path(s). Codec: %s. ' ...
-            'One union-bbox read per batch of %d chunks.\n'], ...
-            effWorkers, workerSource, totalChunks, ...
-            numel(pathOrder), options.codec, effWorkers);
+            'Prefetch budget: %.0f MB per read. ' ...
+            'Total chunks: %d across %d level path(s). Codec: %s.\n'], ...
+            effWorkers, workerSource, ...
+            options.prefetchBytes / 2^20, ...
+            totalChunks, numel(pathOrder), options.codec);
     end
 
     % Assign each unique path a 0-based level index in the ORDER it
@@ -292,14 +303,14 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             options.sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, ...
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
-            options.numWorkers);
+            options.numWorkers, options.prefetchBytes);
     end
     tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
     session.database_add(levelDoc);
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -352,28 +363,33 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     % is the original serial path with no toolbox dependency.
     poolSize = resolveParallelPool(numWorkers);
 
-    for batchStart = 1:poolSize:nChunks
-        batchEnd = min(batchStart + poolSize - 1, nChunks);
-        batchIdx = batchStart:batchEnd;
-        b = numel(batchIdx);
+    % How many target chunks fit inside the prefetch budget, sized
+    % by uncompressed chunk bytes. Never smaller than the parfor
+    % pool (a super-block below poolSize would leave workers idle);
+    % never larger than the level itself.
+    chunkBytes = prod(chunks) * typesize;
+    prefetchChunkCount = max(poolSize, ...
+        floor(double(prefetchBytes) / max(chunkBytes, 1)));
+    prefetchChunkCount = min(prefetchChunkCount, nChunks);
 
-        % ---- SERIAL READ, ONE UNION-BOX PER BATCH -------------------
-        % Instead of `b` small readArray calls -- each with its own
-        % Python subprocess round-trip and each seeking to a
-        % different region of the source zarr -- we compute the
+    for superStart = 1:prefetchChunkCount:nChunks
+        superEnd = min(superStart + prefetchChunkCount - 1, nChunks);
+        superIdx = superStart:superEnd;
+        bs = numel(superIdx);
+
+        % ---- SERIAL READ, ONE UNION-BOX PER SUPER-BLOCK -------------
+        % Instead of many small readArray calls -- each with its own
+        % NDR Python subprocess round-trip and each seeking to its
+        % own region of the source zarr -- we compute the union
         % axis-aligned bounding box of every target chunk in the
-        % batch and issue ONE readArray for the whole thing. On any
-        % drive slow enough for I/O to dominate this cuts the read
-        % count by up to `b`x, at the cost of some over-read when
-        % the batch straddles a "row" boundary in C-order (the
-        % bounding box then covers a strip a bit wider than
-        % strictly needed). The over-read is bounded to <= one row
-        % of source data, and even that is on a fast axis where the
-        % drive is already streaming sequentially.
-        loRows = zeros(b, numel(shape));
-        hiRows = zeros(b, numel(shape));
-        for j = 1:b
-            cIdx = linearOrder(batchIdx(j), :);
+        % super-block and issue ONE readArray for the whole thing.
+        % The parfor pool then chews through the buffer in sub-
+        % batches without touching the disk again. Peak memory per
+        % super-block is prefetchBytes uncompressed.
+        loRows = zeros(bs, numel(shape));
+        hiRows = zeros(bs, numel(shape));
+        for j = 1:bs
+            cIdx = linearOrder(superIdx(j), :);
             for a = 1:numel(chunkGrid)
                 loRows(j, a) = (cIdx(a) - 1) * chunks(a) + 1;
                 hiRows(j, a) = min(loRows(j, a) + chunks(a) - 1, shape(a));
@@ -384,54 +400,63 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         bigTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
             pyramidName, kInEntry, 'Region', [loBBox; hiBBox]);
 
-        raws = cell(1, b);
-        for j = 1:b
-            % Slice this target chunk's region out of the batch
-            % buffer using bbox-relative subscripts.
-            subs = cell(1, numel(shape));
-            for a = 1:numel(shape)
-                subs{a} = (loRows(j, a) - loBBox(a) + 1) : ...
-                          (hiRows(j, a) - loBBox(a) + 1);
-            end
-            srcTile = bigTile(subs{:});
-            padded = zeros(chunks, class(srcTile));
-            localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
-                1:numel(chunks), 'UniformOutput', false);
-            padded(localSubs{:}) = srcTile;
-            % Zarr expects C-order bytes; MATLAB is column-major,
-            % so permute the axes into reversed order before
-            % serialising, mirroring the fixture writer.
-            permuted = permute(padded, numel(chunks):-1:1);
-            raws{j} = typecast(permuted(:), 'uint8');
-        end
+        % ---- INNER SUB-BATCH LOOP: poolSize chunks each -----------
+        for subStart = 1:poolSize:bs
+            subEnd = min(subStart + poolSize - 1, bs);
+            b = subEnd - subStart + 1;
 
-        % ---- PARALLEL (or serial) ENCODE + WRITE TEMPFILE ----------
-        tempPaths = cell(1, b);
-        chunkIdxs = zeros(1, b);
-        for j = 1:b
-            chunkIdxs(j) = batchIdx(j);
-        end
-        if poolSize > 1 && b > 1
-            parfor j = 1:b
-                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
-                    typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
-            end
-        else
+            raws = cell(1, b);
+            chunkIdxs = zeros(1, b);
             for j = 1:b
-                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
-                    typesize, tmpRoot, chunkIdxs(j));
+                localJ = subStart + j - 1;
+                chunkIdxs(j) = superIdx(localJ);
+                % Slice this target chunk's region out of the
+                % super-block buffer using bbox-relative subscripts.
+                subs = cell(1, numel(shape));
+                for a = 1:numel(shape)
+                    subs{a} = (loRows(localJ, a) - loBBox(a) + 1) : ...
+                              (hiRows(localJ, a) - loBBox(a) + 1);
+                end
+                srcTile = bigTile(subs{:});
+                padded = zeros(chunks, class(srcTile));
+                localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
+                    1:numel(chunks), 'UniformOutput', false);
+                padded(localSubs{:}) = srcTile;
+                % Zarr expects C-order bytes; MATLAB is column-
+                % major, so permute the axes into reversed order
+                % before serialising, mirroring the fixture writer.
+                permuted = permute(padded, numel(chunks):-1:1);
+                raws{j} = typecast(permuted(:), 'uint8');
+            end
+
+            % ---- PARALLEL (or serial) ENCODE + WRITE TEMPFILE ------
+            tempPaths = cell(1, b);
+            if poolSize > 1 && b > 1
+                parfor j = 1:b
+                    tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
+                        typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
+                end
+            else
+                for j = 1:b
+                    tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
+                        typesize, tmpRoot, chunkIdxs(j));
+                end
+            end
+
+            % ---- SERIAL ADD_FILE (in chunk order) -----------------
+            for j = 1:b
+                levelDoc = levelDoc.add_file( ...
+                    sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
+                doneChunks = doneChunks + 1;
+                reportProgress(progressFcn, doneChunks, totalChunks, ...
+                    sprintf('%s: chunk %d/%d', levelLabel, ...
+                        chunkIdxs(j), nChunks));
             end
         end
 
-        % ---- SERIAL ADD_FILE (in chunk order) ----------------------
-        for j = 1:b
-            levelDoc = levelDoc.add_file( ...
-                sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
-            doneChunks = doneChunks + 1;
-            reportProgress(progressFcn, doneChunks, totalChunks, ...
-                sprintf('%s: chunk %d/%d', levelLabel, ...
-                    chunkIdxs(j), nChunks));
-        end
+        % Release the super-block buffer before the next read so
+        % peak RAM stays at ~prefetchBytes rather than climbing.
+        clear bigTile;
     end
 end
 
