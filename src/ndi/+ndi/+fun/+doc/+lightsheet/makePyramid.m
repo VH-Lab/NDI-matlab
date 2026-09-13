@@ -196,6 +196,18 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         end
     end
 
+    % Announce the run configuration. Users have hit "the parfor did
+    % nothing" because MATLAB had cached the old .m file, or because
+    % no parpool was open at call time. A single up-front print says
+    % which path is really running.
+    if options.materializeChunks
+        [effWorkers, workerSource] = describeParallelPool(options.numWorkers);
+        fprintf(['[makePyramid] Parallel workers: %d (%s). ' ...
+            'Total chunks: %d across %d level path(s). Codec: %s.\n'], ...
+            effWorkers, workerSource, totalChunks, ...
+            numel(pathOrder), options.codec);
+    end
+
     % Assign each unique path a 0-based level index in the ORDER it
     % first appears (finest first, since listPyramids is finest-first).
     levelDocs = cell(numel(pathOrder), 1);
@@ -214,6 +226,14 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
             end
         else
             reductionFn = rlist{1};
+        end
+        if options.materializeChunks
+            nChunksLvl = prod(levelGrids{idx});
+            fprintf(['[makePyramid] Level %d/%d (%s, %s): shape=%s, ' ...
+                'chunks=%s, %d chunks to write.\n'], ...
+                idx, numel(pathOrder), char(entry.name), reductionFn, ...
+                mat2str(double(level.shape)), ...
+                mat2str(double(levelChunks{idx})), nChunksLvl);
         end
         reportProgress(options.progressFcn, doneChunks, totalChunks, ...
             sprintf('Level %d/%d (%s, %s): starting', ...
@@ -414,6 +434,35 @@ function tmp = encodeAndWrite(raw, codec, clevel, typesize, tmpRoot, chunkIdx)
     fid = fopen(tmp, 'w');
     fwrite(fid, payload);
     fclose(fid);
+end
+
+function [n, src] = describeParallelPool(numWorkers)
+% DESCRIBEPARALLELPOOL - peek at the effective pool without side effects
+%
+%   Returns [n, src] where n is the worker count that resolveParallelPool
+%   would end up with, and src is a short human string naming why.
+%   No pool is created; used only to print the run banner before the
+%   pyramid loop starts.
+    if numWorkers == 0 || numWorkers == 1
+        n = 1; src = 'serial, forced by numWorkers'; return;
+    end
+    if isempty(ver('parallel'))
+        n = 1; src = 'serial, Parallel Computing Toolbox not installed'; return;
+    end
+    p = gcp('nocreate');
+    if numWorkers < 0
+        if isempty(p)
+            n = 1; src = 'serial, no parpool open (call parpool(N) to enable)';
+        else
+            n = p.NumWorkers; src = 'from existing parpool';
+        end
+        return;
+    end
+    if isempty(p) || p.NumWorkers ~= numWorkers
+        n = numWorkers; src = 'will open a new parpool';
+    else
+        n = numWorkers; src = 'from existing parpool';
+    end
 end
 
 function n = resolveParallelPool(numWorkers)
