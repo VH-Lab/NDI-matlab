@@ -439,15 +439,14 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
                 pyramidName, kInEntry, sb.loBBox, sb.hiBBox);
         end
 
-        % ---- SLICE the entire super-block into per-chunk raw bytes -
-        % Done once, up front, for the whole super-block instead of
-        % per sub-batch. This lets us fire ONE parfor across every
-        % chunk in the super-block and pay MATLAB's parfor
-        % coordination overhead once instead of ceil(bs/poolSize)
-        % times. Peak memory during this phase is bigTile + raws
-        % (~equal size; both released before the compression pool
-        % begins).
-        raws = cell(1, bs);
+        % ---- SLICE bigTile into per-chunk sub-arrays --------------
+        % Only the raw slice happens on the main thread now; every
+        % chunk's pad + permute + typecast + encode + write moves
+        % into the parfor worker (see padEncodeAndWrite). MATLAB's
+        % bigTile(subs{:}) is a native memcpy of the sub-array; it's
+        % roughly 5-10x faster per chunk than the pad-permute-
+        % typecast pipeline it used to sit in front of.
+        srcs = cell(1, bs);
         chunkIdxs = zeros(1, bs);
         for j = 1:bs
             chunkIdxs(j) = sb.idxs(j);
@@ -456,37 +455,33 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
                 subs{a} = (sb.loRows(j, a) - sb.loBBox(a) + 1) : ...
                           (sb.hiRows(j, a) - sb.loBBox(a) + 1);
             end
-            srcTile = bigTile(subs{:});
-            padded = zeros(chunks, class(srcTile));
-            localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
-                1:numel(chunks), 'UniformOutput', false);
-            padded(localSubs{:}) = srcTile;
-            % Zarr expects C-order bytes; MATLAB is column-major, so
-            % permute the axes into reversed order before
-            % serialising, mirroring the fixture writer.
-            permuted = permute(padded, numel(chunks):-1:1);
-            raws{j} = typecast(permuted(:), 'uint8');
+            srcs{j} = bigTile(subs{:});
         end
-        % Release the source buffer as soon as raws holds copies.
+        % Release the source buffer as soon as srcs holds copies.
         clear bigTile;
 
         % ---- ONE PARFOR ACROSS THE ENTIRE SUPER-BLOCK -------------
+        % Workers now do everything from the raw slice onwards --
+        % pad to chunks shape, permute into C-order, typecast to
+        % bytes, Blosc encode, and write the tempfile. The main
+        % thread's per-super-block work drops to just the sliced
+        % memcpy loop above.
         tempPaths = cell(1, bs);
         if poolSize > 1 && bs > 1
             parfor j = 1:bs
-                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
-                    typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
+                tempPaths{j} = padEncodeAndWrite(srcs{j}, chunks, ...
+                    codec, clevel, typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
             end
         else
             for j = 1:bs
-                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
-                    typesize, tmpRoot, chunkIdxs(j));
+                tempPaths{j} = padEncodeAndWrite(srcs{j}, chunks, ...
+                    codec, clevel, typesize, tmpRoot, chunkIdxs(j));
             end
         end
-        % raws is no longer needed after the pool has produced the
+        % srcs is no longer needed after the pool has produced the
         % tempfiles. Peak RAM stays bounded before the next super-
         % block's read materialises via the async future.
-        clear raws;
+        clear srcs;
 
         % ---- SERIAL ADD_FILE + BATCHED PROGRESS ------------------
         % In-memory metadata registration; still ordered by chunk
@@ -520,13 +515,33 @@ function bigTile = readSuperBlockRegion(sourceZarrPath, pyramidName, kInEntry, l
         pyramidName, kInEntry, 'Region', [loBBox; hiBBox]);
 end
 
-function tmp = encodeAndWrite(raw, codec, clevel, typesize, tmpRoot, chunkIdx)
-% ENCODEANDWRITE - compress one chunk and drop it in tmpRoot
+function tmp = padEncodeAndWrite(srcTile, chunks, codec, clevel, typesize, tmpRoot, chunkIdx)
+% PADENCODEANDWRITE - one chunk, end to end, on the worker
 %
 %   Pure per-chunk work: whatever runs in a parfor iteration lives
 %   here so the parallel worker has no dependency on outer-function
-%   state beyond the arguments it receives. Returns the tempfile path
-%   that add_file will consume.
+%   state beyond the arguments it receives. Takes a source sub-array
+%   (already sliced out of bigTile on the main thread), pads it to
+%   the target chunk shape (edge chunks are smaller than `chunks`),
+%   permutes into C-order, typecasts to bytes, Blosc-encodes when
+%   requested, and writes a tempfile add_file will consume.
+    if isequal(size(srcTile), chunks)
+        % Interior chunk: source already matches target shape, so
+        % skip the zero-pad allocation-and-copy. Most chunks are
+        % interior; only the far-edge chunks need padding.
+        permuted = permute(srcTile, numel(chunks):-1:1);
+    else
+        padded = zeros(chunks, class(srcTile));
+        localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
+            1:numel(chunks), 'UniformOutput', false);
+        padded(localSubs{:}) = srcTile;
+        % Zarr expects C-order bytes; MATLAB is column-major, so
+        % permute the axes into reversed order before serialising,
+        % mirroring the fixture writer.
+        permuted = permute(padded, numel(chunks):-1:1);
+    end
+    raw = typecast(permuted(:), 'uint8');
+
     switch codec
         case 'raw'
             payload = raw;
