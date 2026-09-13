@@ -439,64 +439,73 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
                 pyramidName, kInEntry, sb.loBBox, sb.hiBBox);
         end
 
-        % ---- INNER SUB-BATCH LOOP: poolSize chunks each -----------
-        for subStart = 1:poolSize:bs
-            subEnd = min(subStart + poolSize - 1, bs);
-            b = subEnd - subStart + 1;
-
-            raws = cell(1, b);
-            chunkIdxs = zeros(1, b);
-            for j = 1:b
-                localJ = subStart + j - 1;
-                chunkIdxs(j) = sb.idxs(localJ);
-                % Slice this target chunk's region out of the
-                % super-block buffer using bbox-relative subscripts.
-                subs = cell(1, numel(shape));
-                for a = 1:numel(shape)
-                    subs{a} = (sb.loRows(localJ, a) - sb.loBBox(a) + 1) : ...
-                              (sb.hiRows(localJ, a) - sb.loBBox(a) + 1);
-                end
-                srcTile = bigTile(subs{:});
-                padded = zeros(chunks, class(srcTile));
-                localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
-                    1:numel(chunks), 'UniformOutput', false);
-                padded(localSubs{:}) = srcTile;
-                % Zarr expects C-order bytes; MATLAB is column-
-                % major, so permute the axes into reversed order
-                % before serialising, mirroring the fixture writer.
-                permuted = permute(padded, numel(chunks):-1:1);
-                raws{j} = typecast(permuted(:), 'uint8');
+        % ---- SLICE the entire super-block into per-chunk raw bytes -
+        % Done once, up front, for the whole super-block instead of
+        % per sub-batch. This lets us fire ONE parfor across every
+        % chunk in the super-block and pay MATLAB's parfor
+        % coordination overhead once instead of ceil(bs/poolSize)
+        % times. Peak memory during this phase is bigTile + raws
+        % (~equal size; both released before the compression pool
+        % begins).
+        raws = cell(1, bs);
+        chunkIdxs = zeros(1, bs);
+        for j = 1:bs
+            chunkIdxs(j) = sb.idxs(j);
+            subs = cell(1, numel(shape));
+            for a = 1:numel(shape)
+                subs{a} = (sb.loRows(j, a) - sb.loBBox(a) + 1) : ...
+                          (sb.hiRows(j, a) - sb.loBBox(a) + 1);
             end
+            srcTile = bigTile(subs{:});
+            padded = zeros(chunks, class(srcTile));
+            localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
+                1:numel(chunks), 'UniformOutput', false);
+            padded(localSubs{:}) = srcTile;
+            % Zarr expects C-order bytes; MATLAB is column-major, so
+            % permute the axes into reversed order before
+            % serialising, mirroring the fixture writer.
+            permuted = permute(padded, numel(chunks):-1:1);
+            raws{j} = typecast(permuted(:), 'uint8');
+        end
+        % Release the source buffer as soon as raws holds copies.
+        clear bigTile;
 
-            % ---- PARALLEL (or serial) ENCODE + WRITE TEMPFILE ------
-            tempPaths = cell(1, b);
-            if poolSize > 1 && b > 1
-                parfor j = 1:b
-                    tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
-                        typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
-                end
-            else
-                for j = 1:b
-                    tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
-                        typesize, tmpRoot, chunkIdxs(j));
-                end
+        % ---- ONE PARFOR ACROSS THE ENTIRE SUPER-BLOCK -------------
+        tempPaths = cell(1, bs);
+        if poolSize > 1 && bs > 1
+            parfor j = 1:bs
+                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
+                    typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
             end
-
-            % ---- SERIAL ADD_FILE (in chunk order) -----------------
-            for j = 1:b
-                levelDoc = levelDoc.add_file( ...
-                    sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
-                doneChunks = doneChunks + 1;
-                reportProgress(progressFcn, doneChunks, totalChunks, ...
-                    sprintf('%s: chunk %d/%d', levelLabel, ...
-                        chunkIdxs(j), nChunks));
+        else
+            for j = 1:bs
+                tempPaths{j} = encodeAndWrite(raws{j}, codec, clevel, ...
+                    typesize, tmpRoot, chunkIdxs(j));
             end
         end
+        % raws is no longer needed after the pool has produced the
+        % tempfiles. Peak RAM stays bounded before the next super-
+        % block's read materialises via the async future.
+        clear raws;
 
-        % Release the super-block buffer before the next iteration.
-        % In async mode the next super-block's buffer may already
-        % exist as a Future's result waiting to be fetched.
-        clear bigTile;
+        % ---- SERIAL ADD_FILE + BATCHED PROGRESS ------------------
+        % In-memory metadata registration; still ordered by chunk
+        % index so the on-disk chunk numbering is unchanged. Progress
+        % ticks fire ONCE at the end of each super-block instead of
+        % per chunk: 18 workers producing a burst of 18 nearly-
+        % simultaneous updateBar calls was making the bar's
+        % redraw/ETA-recompute path a measurable fraction of the
+        % gap. One tick per super-block is more than enough
+        % granularity on a multi-hour ingest.
+        for j = 1:bs
+            levelDoc = levelDoc.add_file( ...
+                sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
+        end
+        doneChunks = doneChunks + bs;
+        reportProgress(progressFcn, doneChunks, totalChunks, ...
+            sprintf('%s: super-block %d/%d, chunk %d/%d', ...
+                levelLabel, s, nSuperBlocks, ...
+                chunkIdxs(end), nChunks));
     end
 end
 
