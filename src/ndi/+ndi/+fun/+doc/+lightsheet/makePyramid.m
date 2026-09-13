@@ -203,9 +203,10 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     if options.materializeChunks
         [effWorkers, workerSource] = describeParallelPool(options.numWorkers);
         fprintf(['[makePyramid] Parallel workers: %d (%s). ' ...
-            'Total chunks: %d across %d level path(s). Codec: %s.\n'], ...
+            'Total chunks: %d across %d level path(s). Codec: %s. ' ...
+            'One union-bbox read per batch of %d chunks.\n'], ...
             effWorkers, workerSource, totalChunks, ...
-            numel(pathOrder), options.codec);
+            numel(pathOrder), options.codec, effWorkers);
     end
 
     % Assign each unique path a 0-based level index in the ORDER it
@@ -356,19 +357,43 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         batchIdx = batchStart:batchEnd;
         b = numel(batchIdx);
 
-        % ---- SERIAL READ into a batch buffer -----------------------
+        % ---- SERIAL READ, ONE UNION-BOX PER BATCH -------------------
+        % Instead of `b` small readArray calls -- each with its own
+        % Python subprocess round-trip and each seeking to a
+        % different region of the source zarr -- we compute the
+        % axis-aligned bounding box of every target chunk in the
+        % batch and issue ONE readArray for the whole thing. On any
+        % drive slow enough for I/O to dominate this cuts the read
+        % count by up to `b`x, at the cost of some over-read when
+        % the batch straddles a "row" boundary in C-order (the
+        % bounding box then covers a strip a bit wider than
+        % strictly needed). The over-read is bounded to <= one row
+        % of source data, and even that is on a fast axis where the
+        % drive is already streaming sequentially.
+        loRows = zeros(b, numel(shape));
+        hiRows = zeros(b, numel(shape));
+        for j = 1:b
+            cIdx = linearOrder(batchIdx(j), :);
+            for a = 1:numel(chunkGrid)
+                loRows(j, a) = (cIdx(a) - 1) * chunks(a) + 1;
+                hiRows(j, a) = min(loRows(j, a) + chunks(a) - 1, shape(a));
+            end
+        end
+        loBBox = min(loRows, [], 1);
+        hiBBox = max(hiRows, [], 1);
+        bigTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
+            pyramidName, kInEntry, 'Region', [loBBox; hiBBox]);
+
         raws = cell(1, b);
         for j = 1:b
-            r = batchIdx(j);
-            cIdx = linearOrder(r, :);
-            loRow = zeros(1, numel(shape));
-            hiRow = zeros(1, numel(shape));
-            for a = 1:numel(chunkGrid)
-                loRow(a) = (cIdx(a) - 1) * chunks(a) + 1;
-                hiRow(a) = min(loRow(a) + chunks(a) - 1, shape(a));
+            % Slice this target chunk's region out of the batch
+            % buffer using bbox-relative subscripts.
+            subs = cell(1, numel(shape));
+            for a = 1:numel(shape)
+                subs{a} = (loRows(j, a) - loBBox(a) + 1) : ...
+                          (hiRows(j, a) - loBBox(a) + 1);
             end
-            srcTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
-                pyramidName, kInEntry, 'Region', [loRow; hiRow]);
+            srcTile = bigTile(subs{:});
             padded = zeros(chunks, class(srcTile));
             localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
                 1:numel(chunks), 'UniformOutput', false);
