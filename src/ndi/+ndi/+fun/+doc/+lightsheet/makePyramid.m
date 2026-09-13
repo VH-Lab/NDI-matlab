@@ -565,12 +565,13 @@ function appendDebugLog(path, levelLabel, s, nSuperBlocks, doneChunks, totalChun
                         'rss_MB=%.0f | doc_pre_MB=%.2f | ' ...
                         'doc_post_MB=%.2f | doc_delta_MB=%.2f | ' ...
                         'live_futures=%d'], ...
-            datestr(now, 'yyyy-mm-dd HH:MM:SS'), levelLabel, s, nSuperBlocks, ...
+            char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
+            levelLabel, s, nSuperBlocks, ...
             doneChunks, totalChunks, rss, preBytes/2^20, postBytes/2^20, ...
             (postBytes - preBytes)/2^20, futCount);
         fid = fopen(path, 'a');
         if fid < 0, return; end
-        cleanup = onCleanup(@() fclose(fid)); %#ok<NASGU>
+        cleanup = onCleanup(@() fclose(fid));
         fprintf(fid, '%s\n', line);
     catch
     end
@@ -581,7 +582,7 @@ function mb = matlabRSSMB()
 % Linux we shell out to `ps -o rss= -p <pid>` which prints kilobytes.
     mb = NaN;
     try
-        pid = feature('getpid');
+        pid = matlabProcessID();
         [rc, out] = system(sprintf('ps -o rss= -p %d', pid));
         if rc == 0
             v = sscanf(strtrim(out), '%f');
