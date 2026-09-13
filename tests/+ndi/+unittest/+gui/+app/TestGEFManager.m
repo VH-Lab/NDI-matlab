@@ -87,6 +87,69 @@ classdef TestGEFManager < matlab.unittest.TestCase
                 'GEFManager needs an onClose that deletes the View dialog.');
         end
 
+        function testTheFigureTagNamesTheSession(testCase)
+            % ONE MANAGER WINDOW PER SESSION. The Apps menu opens the
+            % manager unconditionally, so without a per-session tag on
+            % the figure a second click stacked a second top-level
+            % window against the same database. The tag is the whole
+            % of the singleton: it belongs on the figure so a closed
+            % window disappears from the search on its own.
+            tag = ndi.gui.app.GEFManager.figureTag(testCase.session);
+            testCase.verifyNotEmpty(tag, ...
+                'figureTag must produce a tag for a session with an id.');
+            testCase.verifyTrue(contains(tag, testCase.session.id()), ...
+                'The tag must embed the session id or two sessions could collide.');
+        end
+
+        function testDifferentSessionsGetDifferentTags(testCase)
+            % Two managers open at once against two sessions is legal
+            % and expected; only two against the SAME session should
+            % collapse to one. If the tag did not distinguish sessions,
+            % raising the "existing" window would raise somebody
+            % else's.
+            d = fullfile(tempname, 'other');
+            mkdir(d);
+            testCase.addTeardown(@() rmdir(fileparts(d), 's'));
+            other = ndi.session.dir('other', d);
+            testCase.verifyNotEqual( ...
+                ndi.gui.app.GEFManager.figureTag(testCase.session), ...
+                ndi.gui.app.GEFManager.figureTag(other));
+        end
+
+        function testFindOpenFigureIsEmptyWhenNoneIsOpen(testCase)
+            % The lookup has to be safe to call before any window has
+            % been built -- the constructor calls it BEFORE buildUI --
+            % so an empty result is the normal one, not an error.
+            f = ndi.gui.app.GEFManager.findOpenFigure(testCase.session);
+            testCase.verifyEmpty(f);
+        end
+
+        function testTheConstructorRaisesRatherThanDuplicates(testCase)
+            % Checked as SOURCE, for the same reason as
+            % testTheViewDialogDoesNotBlock: opening a window needs a
+            % display and CI has none, and what would go wrong is
+            % somebody reintroducing an unconditional buildUI(). The
+            % constructor must consult findOpenFigure before it builds
+            % anything, and raise the existing window when one is
+            % found; the alternative is two top-level managers against
+            % one session.
+            src = fileread(which('ndi.gui.app.GEFManager'));
+            % findOpenFigure has to appear inside the constructor,
+            % before buildUI, so a second launch sees an existing
+            % window and returns without stacking another.
+            ctorStart = strfind(src, 'function obj = GEFManager(');
+            testCase.assertNotEmpty(ctorStart, ...
+                'Could not locate the GEFManager constructor.');
+            buildStart = strfind(src(ctorStart:end), 'obj.buildUI()');
+            testCase.assertNotEmpty(buildStart, ...
+                'Constructor no longer calls buildUI -- rewrite this test.');
+            ctorBody = src(ctorStart:ctorStart + buildStart(1) - 1);
+            testCase.verifyTrue(contains(ctorBody, 'findOpenFigure'), ...
+                ['GEFManager must consult findOpenFigure before buildUI, ' ...
+                 'so a second launch raises the existing window rather ' ...
+                 'than opening a duplicate.']);
+        end
+
         function testListsPyramidsWithWhatTheyHave(testCase)
             rows = ndi.gui.app.GEFManager.pyramidRows(testCase.session);
             testCase.verifyEqual(numel(rows), 1);
