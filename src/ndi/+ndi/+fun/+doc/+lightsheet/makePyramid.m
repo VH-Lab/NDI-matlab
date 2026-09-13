@@ -543,37 +543,36 @@ function tmp = padEncodeAndWrite(srcTile, chunks, codec, clevel, typesize, tmpRo
 %
 %   Pure per-chunk work: whatever runs in a parfor iteration lives
 %   here so the parallel worker has no dependency on outer-function
-%   state beyond the arguments it receives. Takes a source sub-array
-%   (already sliced out of bigTile on the main thread), pads it to
-%   the target chunk shape (edge chunks are smaller than `chunks`),
-%   permutes into C-order, typecasts to bytes, Blosc-encodes when
-%   requested, and writes a tempfile add_file will consume.
-    if isequal(size(srcTile), chunks)
-        % Interior chunk: source already matches target shape, so
-        % skip the zero-pad allocation-and-copy. Most chunks are
-        % interior; only the far-edge chunks need padding.
-        permuted = permute(srcTile, numel(chunks):-1:1);
-    else
-        padded = zeros(chunks, class(srcTile));
-        localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
-            1:numel(chunks), 'UniformOutput', false);
-        padded(localSubs{:}) = srcTile;
-        % Zarr expects C-order bytes; MATLAB is column-major, so
-        % permute the axes into reversed order before serialising,
-        % mirroring the fixture writer.
-        permuted = permute(padded, numel(chunks):-1:1);
-    end
-    raw = typecast(permuted(:), 'uint8');
-
+%   state beyond the arguments it receives.
+%
+%   For codec='blosc-zstd', the fast path is a single blosc.encodeChunk
+%   MEX call from blosc-matlab v0.2.0: pad + permute (Fortran -> Zarr
+%   C-order) + typecast + Blosc encode happen inside the C code with
+%   no MATLAB-side intermediate allocations. On a lightsheet ingest
+%   that removes ~3 full memcpys per chunk (each ~ chunkBytes), which
+%   at 40k chunks x 5 pyramid levels is hundreds of GB of avoided
+%   main-thread memory traffic per worker.
+%
+%   Fallback (v0.1.0 MEX, or codec='raw'): do the pad + permute +
+%   typecast in MATLAB, then either return the raw bytes or hand them
+%   to ndr.format.blosc.encode. Byte-identical output.
     switch codec
         case 'raw'
-            payload = raw;
+            payload = padPermuteBytes(srcTile, chunks);
         case 'blosc-zstd'
-            payload = ndr.format.blosc.encode(raw, ...
-                'typesize', typesize, ...
-                'cname',    'zstd', ...
-                'clevel',   clevel, ...
-                'shuffle',  1);
+            if canUseEncodeChunk()
+                payload = blosc.encodeChunk(srcTile, chunks(:).', ...
+                    'cname',   'zstd', ...
+                    'clevel',  clevel, ...
+                    'shuffle', 1);
+            else
+                raw = padPermuteBytes(srcTile, chunks);
+                payload = ndr.format.blosc.encode(raw, ...
+                    'typesize', typesize, ...
+                    'cname',    'zstd', ...
+                    'clevel',   clevel, ...
+                    'shuffle',  1);
+            end
         otherwise
             error('NDI:lightsheet:makePyramid:unknownCodec', ...
                 'Unknown codec %s.', codec);
@@ -582,6 +581,50 @@ function tmp = padEncodeAndWrite(srcTile, chunks, codec, clevel, typesize, tmpRo
     fid = fopen(tmp, 'w');
     fwrite(fid, payload);
     fclose(fid);
+end
+
+function tf = canUseEncodeChunk()
+% CANUSEENCODECHUNK - does this worker have blosc.encodeChunk on its path?
+%
+%   Runs on the parfor worker (padEncodeAndWrite is called inside the
+%   parfor). Each worker is a separate MATLAB process with its own
+%   `persistent` scope, so the first call in a worker triggers
+%   ensureMex (which downloads blosc-matlab v0.2.0 to prefdir() on
+%   first use in that worker's session) and every subsequent call in
+%   the same worker is a memoized flag read.
+%
+%   Falls back to false on any error so a caller without NDR-matlab
+%   or without a working install still gets the pad-permute-typecast
+%   MATLAB path via ndr.format.blosc.encode.
+    persistent flag
+    if ~isempty(flag), tf = flag; return; end
+    flag = false;
+    try
+        info = ndr.util.blosc.ensureMex();
+        flag = info.available && exist('blosc.encodeChunk', 'file') == 2;
+    catch
+    end
+    tf = flag;
+end
+
+function bytes = padPermuteBytes(srcTile, chunks)
+% PADPERMUTEBYTES - Fortran ND-array -> zero-padded C-order uint8 bytes.
+%
+%   The MATLAB fallback for the Blosc fast path: pad the tile up to
+%   the target chunk shape with zeros, permute axes into reversed
+%   order so the row-major byte layout matches what Zarr writes, then
+%   typecast to bytes. Only used when the v0.2.0 blosc-matlab MEX is
+%   not available.
+    if isequal(size(srcTile), chunks)
+        permuted = permute(srcTile, numel(chunks):-1:1);
+    else
+        padded = zeros(chunks, class(srcTile));
+        localSubs = arrayfun(@(k) 1:size(srcTile, k), ...
+            1:numel(chunks), 'UniformOutput', false);
+        padded(localSubs{:}) = srcTile;
+        permuted = permute(padded, numel(chunks):-1:1);
+    end
+    bytes = typecast(permuted(:), 'uint8');
 end
 
 function [n, src] = describeParallelPool(numWorkers)
