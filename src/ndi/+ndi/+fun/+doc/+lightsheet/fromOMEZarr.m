@@ -99,11 +99,13 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         %                       your own dialog or logger.
         %   []                - no reporting at all.
         options.progressFcn = 'default'
-        % Number of parallel workers to use for chunk compression. 0
-        % or 1 = single-threaded (default, no toolbox needed). >1
-        % requires the Parallel Computing Toolbox: reads stay serial
-        % and compression fans out. See makePyramid for details.
-        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, 0)} = 0
+        % Number of parallel workers to use for chunk compression.
+        %   -1 (default) - use any parpool already open, else serial.
+        %    0 / 1       - force serial.
+        %    N > 1       - open a parpool of size N.
+        % Reads stay serial in all modes; compression fans out.
+        % See makePyramid for details.
+        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, -1)} = -1
     end
 
     if isempty(strtrim(options.subjectID))

@@ -76,15 +76,22 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % chunk write. Empty = no reporting. Keep this cheap; it fires
         % once per chunk on a real ingest, which is many times.
         options.progressFcn = []
-        % Number of parallel workers to use for compression. 0 or 1 =
-        % single-threaded (the original path, no toolbox dependency).
-        % >1 requires the Parallel Computing Toolbox: reads stay serial
-        % (a slow spinning drive would thrash otherwise), a batch of
-        % numWorkers chunks is read into memory, then compression fans
-        % out to that many workers. Ingestion order into DID is
-        % preserved. If parpool cannot be built, this falls back to
-        % serial with a warning rather than failing.
-        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, 0)} = 0
+        % Number of parallel workers to use for compression.
+        %   -1  (default) - use whatever parpool is already open;
+        %                    if none is open, run serially. This lets
+        %                    the caller size and manage the pool once
+        %                    at the top of their script, and every
+        %                    subsequent ingest just uses it.
+        %    0 / 1        - force serial (the original path, no
+        %                    toolbox dependency).
+        %    N > 1        - open (or replace) a parpool of size N and
+        %                    use it. Requires the Parallel Computing
+        %                    Toolbox; falls back to serial with a
+        %                    warning if unavailable.
+        % Reads stay strictly serial in all modes; a batch of
+        % effective-pool-size chunks is read into memory, then
+        % compression fans out. Ingestion order into DID is preserved.
+        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, -1)} = -1
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -410,24 +417,43 @@ function tmp = encodeAndWrite(raw, codec, clevel, typesize, tmpRoot, chunkIdx)
 end
 
 function n = resolveParallelPool(numWorkers)
-% RESOLVEPARALLELPOOL - open (or attach to) a parpool of size numWorkers
+% RESOLVEPARALLELPOOL - resolve numWorkers into an effective batch size
 %
-%   Returns the effective batch size. 0 or 1 -> serial, no toolbox
-%   dependency. >1 tries to create/attach to a parpool with the
-%   requested worker count; a missing PCT falls back to serial with a
-%   warning, since a broken pool must not stop an ingest.
-    n = 1;
-    if numWorkers <= 1
+%   -1 -> the size of any parpool already open, else 1 (serial). This
+%         is the default so a caller who ran `parpool(8)` once at the
+%         top of their session gets 8-way compression without having
+%         to name a number in every ingest call.
+%   0 or 1 -> serial.
+%   N > 1 -> ensure a parpool of size N is running (create it or
+%         restart the existing one at a different size), returning N.
+%
+%   In every case a missing PCT or a failed parpool startup degrades
+%   to serial with a warning: a broken pool must not stop an ingest
+%   that may already be hours in.
+    if numWorkers == 0 || numWorkers == 1
+        n = 1;
         return;
     end
     if isempty(ver('parallel'))
-        warning('NDI:lightsheet:makePyramid:noPCT', ...
-            ['numWorkers=%d requested but Parallel Computing Toolbox ' ...
-             'is not available. Running serially.'], numWorkers);
+        if numWorkers > 1
+            warning('NDI:lightsheet:makePyramid:noPCT', ...
+                ['numWorkers=%d requested but Parallel Computing ' ...
+                 'Toolbox is not available. Running serially.'], ...
+                numWorkers);
+        end
+        n = 1;
         return;
     end
     try
         p = gcp('nocreate');
+        if numWorkers < 0    % 'auto' -> reuse open pool, else serial
+            if isempty(p)
+                n = 1;
+            else
+                n = p.NumWorkers;
+            end
+            return;
+        end
         if isempty(p) || p.NumWorkers ~= numWorkers
             if ~isempty(p)
                 delete(p);
@@ -437,7 +463,7 @@ function n = resolveParallelPool(numWorkers)
         n = numWorkers;
     catch ME
         warning('NDI:lightsheet:makePyramid:parpoolFailed', ...
-            ['Could not start a parpool of %d workers (%s). ' ...
+            ['Could not use a parpool of %d workers (%s). ' ...
              'Running serially.'], numWorkers, ME.message);
         n = 1;
     end

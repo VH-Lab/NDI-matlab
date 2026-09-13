@@ -69,7 +69,9 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         % receiver, or [] to stay silent (which is what CI needs
         % without the auto-headless detection kicking in).
         options.progressFcn = 'default'
-        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, 0)} = 0
+        % See fromOMEZarr: -1 = auto (use any open pool, else serial),
+        % 0/1 = force serial, N>1 = size a new pool.
+        options.numWorkers (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.numWorkers, -1)} = -1
     end
 
     sessionDir = options.sessionDir;
