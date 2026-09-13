@@ -608,16 +608,18 @@ end
 function mb = matlabRSSMB()
 % MATLAB's own process RSS in MB. `memory` is Windows-only; on macOS /
 % Linux we shell out to `ps -o rss= -p <pid>` which prints kilobytes.
-% matlabProcessID() is R2023a+ and not present on every install; fall
-% back to feature('getpid') where it isn't, so the log always gets a
-% real number instead of NaN.
+%
+% PID lookup goes through Java's ManagementFactory (available in every
+% MATLAB that has bundled Java): getRuntimeMXBean().getName() returns
+% "PID@HOSTNAME" on every JVM implementation we care about. This
+% sidesteps both matlabProcessID (R2023a+ only) and feature('getpid')
+% (Code Analyzer flags as unsupported).
     mb = NaN;
     try
-        try
-            pid = matlabProcessID();
-        catch
-            pid = feature('getpid'); %#ok<*FGETP>
-        end
+        rt = java.lang.management.ManagementFactory.getRuntimeMXBean();
+        pidText = char(rt.getName());
+        pid = str2double(strtok(pidText, '@'));
+        if isnan(pid), return; end
         [rc, out] = system(sprintf('ps -o rss= -p %d', pid));
         if rc == 0
             v = sscanf(strtrim(out), '%f');
