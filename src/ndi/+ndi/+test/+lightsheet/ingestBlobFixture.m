@@ -64,7 +64,11 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         options.materializeChunks (1,1) logical = true
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
         options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 9)} = 5
-        options.progressFcn = []
+        % Match fromOMEZarr's default: 'default' opens the NDI
+        % ProgressBarWindow. Pass a function handle for a custom
+        % receiver, or [] to stay silent (which is what CI needs
+        % without the auto-headless detection kicking in).
+        options.progressFcn = 'default'
     end
 
     sessionDir = options.sessionDir;

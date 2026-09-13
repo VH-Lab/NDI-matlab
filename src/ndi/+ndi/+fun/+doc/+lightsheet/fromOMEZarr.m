@@ -87,10 +87,18 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         options.materializeChunks (1,1) logical = false
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
         options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 9)} = 5
-        % progressFcn(fraction, text) is called before each level and
-        % after each chunk write. Passed through to makePyramid; empty
-        % means silent.
-        options.progressFcn = []
+        % progressFcn is one of:
+        %   'default'         - the default. Open an NDI
+        %                       ProgressBarWindow and drive it.
+        %                       Headless MATLAB (CI, -batch) does
+        %                       silent bookkeeping only, no figure,
+        %                       so this is safe on servers.
+        %   function_handle   - progressFcn(fraction, text) is
+        %                       called before each level and after
+        %                       each chunk write. Use this to feed
+        %                       your own dialog or logger.
+        %   []                - no reporting at all.
+        options.progressFcn = 'default'
     end
 
     if isempty(strtrim(options.subjectID))
@@ -144,6 +152,14 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         sourceFileID = srcDoc.id();
     end
 
+    % Resolve the progress callback: 'default' -> open an NDI
+    % ProgressBarWindow and update it; a function handle -> use it as
+    % is; [] -> stay silent. The window's constructor detects headless
+    % MATLAB by itself and no-ops without a figure, so CI runs need no
+    % special casing here.
+    progressFcn = resolveProgressCallback(options.progressFcn, ...
+        options.label, char(zarrPath));
+
     [pyramidDoc, levelDocs, sharedLevel0] = ndi.fun.doc.lightsheet.makePyramid( ...
         session, pyramids, perEntryReduction, ...
         'subjectID', options.subjectID, ...
@@ -157,7 +173,7 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'sourceZarrPath', char(zarrPath), ...
         'codec', options.codec, ...
         'clevel', options.clevel, ...
-        'progressFcn', options.progressFcn);
+        'progressFcn', progressFcn);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...
@@ -204,4 +220,63 @@ function r = pickReduction(pyramid, reductionMap)
             end
         end
     end
+end
+
+function fcn = resolveProgressCallback(spec, label, zarrPath)
+% RESOLVEPROGRESSCALLBACK - turn the options.progressFcn spec into a
+% callable, opening an NDI ProgressBarWindow when the caller took the
+% default. Failures to open the bar are swallowed and the ingest
+% continues silently: a bar that could not draw itself must not stop
+% a multi-hour ingest.
+    if isa(spec, 'function_handle')
+        fcn = spec;
+        return;
+    end
+    if isempty(spec)
+        fcn = [];
+        return;
+    end
+    if ~(ischar(spec) || (isstring(spec) && isscalar(spec)))
+        error('NDI:lightsheet:fromOMEZarr:badProgressFcn', ...
+            ['progressFcn must be ''default'', a function handle, ' ...
+             'or []. Got a %s.'], class(spec));
+    end
+    spec = char(string(spec));
+    if ~any(strcmpi(spec, {'default', 'auto'}))
+        error('NDI:lightsheet:fromOMEZarr:badProgressFcn', ...
+            ['progressFcn keyword ''%s'' is not recognised. Use ' ...
+             '''default'', a function handle, or [].'], spec);
+    end
+
+    barLabel = 'Building lightsheet pyramid';
+    if ~isempty(label)
+        barLabel = sprintf('Building pyramid: %s', label);
+    elseif ~isempty(zarrPath)
+        [~, zn] = fileparts(char(zarrPath));
+        if ~isempty(zn)
+            barLabel = sprintf('Building pyramid: %s', zn);
+        end
+    end
+    tag = sprintf('lightsheet-ingest-%s', localUniqueId());
+
+    fcn = [];
+    try
+        pbw = ndi.gui.component.ProgressBarWindow('NDI lightsheet ingest');
+        pbw.addBar('Label', barLabel, 'Tag', tag, 'Auto', true);
+        fcn = @(frac, txt) pbw.updateBar(tag, min(1, max(0, frac)));
+    catch
+        % Fall through with fcn = [] -- silent.
+    end
+end
+
+function u = localUniqueId()
+% A short unique tag so a second ingest in the same MATLAB does not
+% collide with a bar the first one is still holding.
+    try
+        u = did.ido.unique_id();
+        u = char(u);
+    catch
+        u = char(java.util.UUID.randomUUID().toString());
+    end
+    if numel(u) > 12, u = u(1:12); end
 end
