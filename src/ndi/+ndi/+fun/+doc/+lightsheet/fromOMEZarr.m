@@ -114,6 +114,13 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % See makePyramid for details. Default true; ignored when
         % numWorkers resolves to serial.
         options.asyncPrefetch (1,1) logical = true
+        % Path to a log file the ingest appends per-super-block memory
+        % diagnostics to (timestamp, level index, super-block index,
+        % chunks done, MATLAB RSS, levelDoc property size before/after
+        % add_file, parpool live-future count). Empty (default)
+        % disables. Intended for diagnosing memory growth. See
+        % makePyramid for details.
+        options.debugLog (1,:) char = ''
     end
 
     if isempty(strtrim(options.subjectID))
@@ -191,7 +198,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'progressFcn', progressFcn, ...
         'numWorkers', options.numWorkers, ...
         'prefetchBytes', options.prefetchBytes, ...
-        'asyncPrefetch', options.asyncPrefetch);
+        'asyncPrefetch', options.asyncPrefetch, ...
+        'debugLog', options.debugLog);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...

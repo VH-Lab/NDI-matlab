@@ -110,6 +110,14 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % otherwise). Peak RAM is ~2 * prefetchBytes (two super-
         % blocks in flight).
         options.asyncPrefetch (1,1) logical = true
+        % Path to a text log file the ingest will append per-super-block
+        % memory diagnostics to (timestamp, level index, super-block
+        % index, chunks done, main-process RSS in MB, `whos` sizes of
+        % the big variables, parpool live-future count). Empty (default)
+        % disables logging. Intended for diagnosing memory growth
+        % without affecting the hot path -- one line per super-block is
+        % negligible on a multi-hour ingest.
+        options.debugLog (1,:) char = ''
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -315,14 +323,15 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             options.sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, ...
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
-            options.numWorkers, options.prefetchBytes, options.asyncPrefetch);
+            options.numWorkers, options.prefetchBytes, options.asyncPrefetch, ...
+            options.debugLog);
     end
     tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
     session.database_add(levelDoc);
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch, debugLog)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -515,15 +524,83 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         % redraw/ETA-recompute path a measurable fraction of the
         % gap. One tick per super-block is more than enough
         % granularity on a multi-hour ingest.
+        preAddDocSize = levelDocPropertyBytes(levelDoc);
         for j = 1:bs
             levelDoc = levelDoc.add_file( ...
                 sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
         end
+        postAddDocSize = levelDocPropertyBytes(levelDoc);
         doneChunks = doneChunks + bs;
         reportProgress(progressFcn, doneChunks, totalChunks, ...
             sprintf('%s: super-block %d/%d, chunk %d/%d', ...
                 levelLabel, s, nSuperBlocks, ...
                 chunkIdxs(end), nChunks));
+        appendDebugLog(debugLog, levelLabel, s, nSuperBlocks, doneChunks, ...
+            totalChunks, preAddDocSize, postAddDocSize);
+    end
+end
+
+function bytes = levelDocPropertyBytes(levelDoc)
+% Approximate size in bytes of levelDoc.document_properties. Uses `whos`
+% on a local copy of the struct so the levelDoc object itself is not
+% traversed (which would add its own overhead). Returns NaN on any
+% error so instrumentation cannot break the ingest.
+    bytes = NaN;
+    try
+        props = levelDoc.document_properties; %#ok<NASGU>
+        w = whos('props');
+        bytes = w.bytes;
+    catch
+    end
+end
+
+function appendDebugLog(path, levelLabel, s, nSuperBlocks, doneChunks, totalChunks, preBytes, postBytes)
+% Append one line of memory diagnostics to `path`. Failures are
+% swallowed; instrumentation must never take down an ingest.
+    if isempty(path), return; end
+    try
+        rss = matlabRSSMB();
+        futCount = poolFutureCount();
+        line = sprintf(['%s | %s | sb=%d/%d | chunks=%d/%d | ' ...
+                        'rss_MB=%.0f | doc_pre_MB=%.2f | ' ...
+                        'doc_post_MB=%.2f | doc_delta_MB=%.2f | ' ...
+                        'live_futures=%d'], ...
+            datestr(now, 'yyyy-mm-dd HH:MM:SS'), levelLabel, s, nSuperBlocks, ...
+            doneChunks, totalChunks, rss, preBytes/2^20, postBytes/2^20, ...
+            (postBytes - preBytes)/2^20, futCount);
+        fid = fopen(path, 'a');
+        if fid < 0, return; end
+        cleanup = onCleanup(@() fclose(fid)); %#ok<NASGU>
+        fprintf(fid, '%s\n', line);
+    catch
+    end
+end
+
+function mb = matlabRSSMB()
+% MATLAB's own process RSS in MB. `memory` is Windows-only; on macOS /
+% Linux we shell out to `ps -o rss= -p <pid>` which prints kilobytes.
+    mb = NaN;
+    try
+        pid = feature('getpid');
+        [rc, out] = system(sprintf('ps -o rss= -p %d', pid));
+        if rc == 0
+            v = sscanf(strtrim(out), '%f');
+            if ~isempty(v), mb = v / 1024; end
+        end
+    catch
+    end
+end
+
+function n = poolFutureCount()
+% Number of parfeval / parfor futures the pool currently holds. This
+% surfaces leaks in the async-prefetch pipeline where a future's output
+% never gets released, which retains its bigTile buffer inside the pool.
+    n = NaN;
+    try
+        p = gcp('nocreate');
+        if isempty(p), n = 0; return; end
+        n = numel(p.FevalQueue.QueuedFutures) + numel(p.FevalQueue.RunningFutures);
+    catch
     end
 end
 
