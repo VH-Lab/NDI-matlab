@@ -72,6 +72,10 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         options.sourceZarrPath char = ''
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
         options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 9)} = 5
+        % progressFcn(fraction, text) is called before and after each
+        % chunk write. Empty = no reporting. Keep this cheap; it fires
+        % once per chunk on a real ingest, which is many times.
+        options.progressFcn = []
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -148,10 +152,39 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
 
     session.database_add(pyramidDoc);
 
+    % PROGRESS ACCOUNTING. Chunk-count planning happens up front so
+    % progressFcn can report overall fraction, not per-level fraction:
+    % a viewer wants "3 of 24000 chunks done", not a bar that resets at
+    % every level. chooseTileShape is cheap (metadata only), so running
+    % it twice -- once here, once inside makeOneLevel -- costs nothing.
+    levelChunks = cell(numel(pathOrder), 1);
+    levelGrids  = cell(numel(pathOrder), 1);
+    totalChunks = 0;
+    for idx = 1:numel(pathOrder)
+        p = pathOrder{idx};
+        rep = representative(p);
+        entry = pyramids(rep.entryIdx);
+        level = entry.levels(rep.levelIdx);
+        axesOrder = joinAxisNames(entry.axes);
+        if isempty(options.chunks)
+            chunks_i = ndi.fun.doc.lightsheet.chooseTileShape(level.shape, ...
+                axesOrder, level.scale, char(level.dtype), ...
+                options.tileBudgetBytes);
+        else
+            chunks_i = clampChunksToShape(ensureRow(options.chunks), level.shape);
+        end
+        levelChunks{idx} = chunks_i;
+        levelGrids{idx}  = ceil(level.shape ./ chunks_i);
+        if options.materializeChunks
+            totalChunks = totalChunks + prod(levelGrids{idx});
+        end
+    end
+
     % Assign each unique path a 0-based level index in the ORDER it
     % first appears (finest first, since listPyramids is finest-first).
     levelDocs = cell(numel(pathOrder), 1);
     sharedLevel0 = false;
+    doneChunks = 0;
     for idx = 1:numel(pathOrder)
         p = pathOrder{idx};
         rep = representative(p);
@@ -166,21 +199,19 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         else
             reductionFn = rlist{1};
         end
-        levelDocs{idx} = makeOneLevel(session, pyramidDoc, entry, ...
-            level, idx - 1, reductionFn, options);
+        reportProgress(options.progressFcn, doneChunks, totalChunks, ...
+            sprintf('Level %d/%d (%s, %s): starting', ...
+                idx, numel(pathOrder), char(entry.name), reductionFn));
+        [levelDocs{idx}, doneChunks] = makeOneLevel(session, pyramidDoc, ...
+            entry, level, idx - 1, reductionFn, options, ...
+            levelChunks{idx}, levelGrids{idx}, ...
+            doneChunks, totalChunks);
     end
+    reportProgress(options.progressFcn, max(doneChunks, totalChunks), ...
+        max(totalChunks, 1), 'Done.');
 end
 
-function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options)
-    axesOrder = joinAxisNames(pyramidEntry.axes);
-    if isempty(options.chunks)
-        chunks = ndi.fun.doc.lightsheet.chooseTileShape(level.shape, ...
-            axesOrder, level.scale, char(level.dtype), ...
-            options.tileBudgetBytes);
-    else
-        chunks = clampChunksToShape(ensureRow(options.chunks), level.shape);
-    end
-    chunkGrid = ceil(level.shape ./ chunks);
+function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry, level, levelIndex, reductionFn, options, chunks, chunkGrid, doneChunks, totalChunks)
 
     if options.materializeChunks
         nChunksStored = prod(chunkGrid);
@@ -219,16 +250,18 @@ function levelDoc = makeOneLevel(session, pyramidDoc, pyramidEntry, level, level
 
     tmpRoot = '';
     if options.materializeChunks
-        [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, options.sourceZarrPath, ...
-            pyramidEntry, level, chunks, chunkGrid, ...
-            options.codec, options.clevel);
+        levelLabel = sprintf('Level %d (%s)', levelIndex, reductionFn);
+        [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, ...
+            options.sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, ...
+            options.codec, options.clevel, ...
+            options.progressFcn, doneChunks, totalChunks, levelLabel);
     end
     tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
     session.database_add(levelDoc);
 end
 
-function [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -319,6 +352,10 @@ function [levelDoc, tmpRoot] = attachChunkFiles(levelDoc, sourceZarrPath, pyrami
         fclose(fid);
 
         levelDoc = levelDoc.add_file(sprintf('chunk.bin_%d', idx), tmp);
+
+        doneChunks = doneChunks + 1;
+        reportProgress(progressFcn, doneChunks, totalChunks, ...
+            sprintf('%s: chunk %d/%d', levelLabel, idx, size(linearOrder,1)));
     end
 end
 
@@ -358,6 +395,24 @@ function cleanupTmp(d)
             rmdir(d, 's');
         catch
         end
+    end
+end
+
+function reportProgress(fcn, done, total, text)
+% REPORTPROGRESS - call the caller's progress callback, if any
+%
+%   Fraction is done/total, clamped into [0,1]. Total==0 (no chunks
+%   materialized) reports 0 rather than dividing, so the caller's bar
+%   still gets its label refreshed. Any exception is swallowed: a bar
+%   that stopped drawing must not stop an ingest.
+    if isempty(fcn), return; end
+    frac = 0;
+    if total > 0
+        frac = max(0, min(1, double(done) / double(total)));
+    end
+    try
+        fcn(frac, char(text));
+    catch
     end
 end
 

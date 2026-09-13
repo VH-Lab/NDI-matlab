@@ -87,6 +87,10 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         options.materializeChunks (1,1) logical = false
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
         options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 9)} = 5
+        % progressFcn(fraction, text) is called before each level and
+        % after each chunk write. Passed through to makePyramid; empty
+        % means silent.
+        options.progressFcn = []
     end
 
     if isempty(strtrim(options.subjectID))
@@ -152,7 +156,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'materializeChunks', options.materializeChunks, ...
         'sourceZarrPath', char(zarrPath), ...
         'codec', options.codec, ...
-        'clevel', options.clevel);
+        'clevel', options.clevel, ...
+        'progressFcn', options.progressFcn);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...

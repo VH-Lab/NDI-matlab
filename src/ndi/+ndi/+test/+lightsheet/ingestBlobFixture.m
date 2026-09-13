@@ -64,6 +64,7 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         options.materializeChunks (1,1) logical = true
         options.codec (1,:) char {mustBeMember(options.codec, {'raw','blosc-zstd'})} = 'raw'
         options.clevel (1,1) double {mustBeInteger, mustBeGreaterThanOrEqual(options.clevel, 1), mustBeLessThanOrEqual(options.clevel, 9)} = 5
+        options.progressFcn = []
     end
 
     sessionDir = options.sessionDir;
@@ -100,7 +101,8 @@ function [session, pyramidDoc, info] = ingestBlobFixture(options)
         'subjectID', sub.id(), ...
         'materializeChunks', options.materializeChunks, ...
         'codec', options.codec, ...
-        'clevel', options.clevel);
+        'clevel', options.clevel, ...
+        'progressFcn', options.progressFcn);
 
     info.subjectID = sub.id();
     info.fixture   = gt;

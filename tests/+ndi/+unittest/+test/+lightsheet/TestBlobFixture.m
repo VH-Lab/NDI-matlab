@@ -189,6 +189,53 @@ classdef TestBlobFixture < matlab.unittest.TestCase
             testCase.verifyNotEmpty(info.subjectID);
         end
 
+        function testProgressCallbackReceivesMonotoneFractionsEndingAtOne(testCase)
+            % progressFcn is called before each level starts and after
+            % each chunk write. The fractions should be monotone
+            % non-decreasing (never step backwards) and end at exactly
+            % 1.0 with the 'Done.' label -- so a bar in the UI is safe
+            % to leave at the last reported fraction.
+            if isempty(which('ndr.format.omezarr.listPyramids'))
+                testCase.assumeFail(['NDR reader not on path; skipping ' ...
+                    'end-to-end ingest.']);
+            end
+            sDir = fullfile(tempname, 'progsession');
+            testCase.addTeardown(@() rmdir(fileparts(sDir), 's'));
+            zDir = fullfile(tempname, 'progzarr');
+            testCase.addTeardown(@() rmdir(zDir, 's'));
+
+            log = struct('frac', {}, 'text', {});
+            function record(f, t)
+                log(end+1).frac = f; %#ok<AGROW>
+                log(end).text = t;
+            end
+            captureFcn = @(f, t) record(f, t);
+
+            % Small volume with 2 pyramid levels and materialized
+            % chunks so several chunks fire the callback.
+            ndi.test.lightsheet.ingestBlobFixture( ...
+                'sessionDir', sDir, ...
+                'zarrDir', zDir, ...
+                'Shape', [32 32 32], ...
+                'NumChannels', 1, ...
+                'NumLevels', 2, ...
+                'ChunkShape', [16 16 16], ...
+                'materializeChunks', true, ...
+                'progressFcn', captureFcn);
+
+            testCase.verifyNotEmpty(log, ...
+                'The callback should have fired at least once.');
+            fracs = [log.frac];
+            testCase.verifyTrue(all(fracs >= 0 & fracs <= 1), ...
+                'All fractions must be in [0,1].');
+            testCase.verifyTrue(all(diff(fracs) >= -1e-12), ...
+                'Fractions must be monotone non-decreasing.');
+            testCase.verifyEqual(fracs(end), 1, ...
+                'Final tick should be fraction 1.0.');
+            testCase.verifyEqual(log(end).text, 'Done.', ...
+                'Final tick should carry the Done label.');
+        end
+
         function testMaxKeepsBrightSpikeMeanDoesNot(testCase)
             % At the spike's downsampled position, max preserves the
             % 60k spike and mean dilutes it (averages the one spike
