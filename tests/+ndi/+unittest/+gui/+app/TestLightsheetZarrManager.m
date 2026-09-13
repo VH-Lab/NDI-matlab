@@ -65,5 +65,46 @@ classdef TestLightsheetZarrManager < matlab.unittest.TestCase
             testCase.verifyEmpty(plan.docsToRemove);
         end
 
+        function testDeletionMessageNamesTheCounts(testCase)
+            % The confirmation must distinguish 1 from many. The pyramid
+            % counts as 1, plus every level.
+            plan = struct('pyramidID','abcd','nLevels',7,'docsToRemove',{{}});
+            msg = ndi.gui.app.LightsheetZarrManager.deletionMessage( ...
+                plan, 'my-pyramid');
+            testCase.verifySubstring(msg, '8 document');
+            testCase.verifySubstring(msg, '7 level');
+            testCase.verifySubstring(msg, 'my-pyramid');
+        end
+
+        function testSubjectNameMapUsesLocalIdentifier(testCase)
+            % pyramidRows shows the subject's local_identifier, not its
+            % raw id. subjectNameMap is where that lookup lives; a
+            % subject with a local_identifier should be findable by its
+            % document id.
+            m = ndi.gui.app.LightsheetZarrManager.subjectNameMap( ...
+                testCase.session);
+            testCase.verifyTrue(isKey(m, testCase.subjectID));
+            testCase.verifyEqual(m(testCase.subjectID), 'lightsheet@vhlab');
+        end
+
+        function testPyramidRowsCarriesSubjectNameAndDoc(testCase)
+            % One row per pyramid parent. Subject is the local_identifier
+            % (not the raw id), and the row keeps the raw doc alongside
+            % the id so the delete/view callbacks can act on it.
+            pys = ndi.unittest.fun.doc.lightsheet.TestMakePyramid.twoPyramidsWithSharedLevel0();
+            [pdoc, ~, ~] = ndi.fun.doc.lightsheet.makePyramid( ...
+                testCase.session, pys, {'mean','max'}, ...
+                'subjectID', testCase.subjectID);
+            rows = ndi.gui.app.LightsheetZarrManager.pyramidRows( ...
+                testCase.session);
+            testCase.verifyNotEmpty(rows);
+            match = find(strcmp({rows.id}, pdoc.id()), 1);
+            testCase.verifyNotEmpty(match);
+            r = rows(match);
+            testCase.verifyEqual(r.subject, 'lightsheet@vhlab');
+            testCase.verifyEqual(r.subjectID, testCase.subjectID);
+            testCase.verifyNotEmpty(r.doc);
+        end
+
     end
 end
