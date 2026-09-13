@@ -407,26 +407,33 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     % Plan every super-block up front (chunk indices + per-chunk lo/hi
     % + union bbox) so the async pipeline can dispatch the next read
     % while the current one is still compressing.
-    nSuperBlocks = ceil(nChunks / prefetchChunkCount);
-    superBlocks = cell(nSuperBlocks, 1);
-    for s = 1:nSuperBlocks
-        s0 = (s - 1) * prefetchChunkCount + 1;
-        s1 = min(s0 + prefetchChunkCount - 1, nChunks);
-        idxs = s0:s1;
-        bs = numel(idxs);
-        lo = zeros(bs, numel(shape));
-        hi = zeros(bs, numel(shape));
-        for j = 1:bs
-            c = linearOrder(idxs(j), :);
-            for a = 1:numel(chunkGrid)
-                lo(j, a) = (c(a) - 1) * chunks(a) + 1;
-                hi(j, a) = min(lo(j, a) + chunks(a) - 1, shape(a));
-            end
-        end
-        superBlocks{s} = struct('idxs', idxs, ...
+    %
+    % Packing rule: chunks are consumed from linearOrder in order, but
+    % a super-block is CLOSED early when adding the next chunk would
+    % blow up the union bounding box past bboxByteCap. Without this
+    % cap, a super-block that spans a wrap in the linear chunk order
+    % (e.g. the last chunks of one row plus the first of the next)
+    % has a bbox that spans the full range on the fastest-varying
+    % axis. When two wraps land inside the same super-block, the
+    % bbox covers a large fraction of the level, and
+    % readSuperBlockRegion allocates that whole region uncompressed:
+    % a 40k-chunk lightsheet ingest can jump from ~7 GB to >100 GB
+    % on a single ill-placed super-block, which we observed. Capping
+    % the bbox volume keeps peak read allocation bounded to
+    % ~prefetchBytes regardless of chunk-grid geometry.
+    bboxByteCap = max(double(prefetchBytes) * 4, chunkBytes * poolSize * 2);
+    superBlocks = cell(0, 1);
+    i = 1;
+    while i <= nChunks
+        [idxs, lo, hi] = growSuperBlock(linearOrder, i, ...
+            min(prefetchChunkCount, nChunks - i + 1), ...
+            chunks, chunkGrid, shape, typesize, bboxByteCap);
+        superBlocks{end+1, 1} = struct('idxs', idxs, ...  %#ok<AGROW>
             'loRows', lo, 'hiRows', hi, ...
             'loBBox', min(lo, [], 1), 'hiBBox', max(hi, [], 1));
+        i = i + numel(idxs);
     end
+    nSuperBlocks = numel(superBlocks);
 
     % ASYNC PIPELINE. If a parpool is available and asyncPrefetch is
     % on, the next super-block's read runs concurrently on a pool
@@ -554,8 +561,9 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
             sprintf('%s: super-block %d/%d, chunk %d/%d', ...
                 levelLabel, s, nSuperBlocks, ...
                 chunkIdxs(end), nChunks));
+        bboxMB = prod(double(sb.hiBBox - sb.loBBox + 1)) * typesize / 2^20;
         appendDebugLog(debugLog, levelLabel, s, nSuperBlocks, doneChunks, ...
-            totalChunks, preAddDocSize, postAddDocSize);
+            totalChunks, preAddDocSize, postAddDocSize, bboxMB);
     end
 
     % ---- ONE BULK addFileSeries CALL FOR THE WHOLE LEVEL ---------
@@ -582,20 +590,22 @@ function bytes = levelDocPropertyBytes(levelDoc)
     end
 end
 
-function appendDebugLog(path, levelLabel, s, nSuperBlocks, doneChunks, totalChunks, preBytes, postBytes)
+function appendDebugLog(path, levelLabel, s, nSuperBlocks, doneChunks, totalChunks, preBytes, postBytes, bboxMB)
 % Append one line of memory diagnostics to `path`. Failures are
 % swallowed; instrumentation must never take down an ingest.
     if isempty(path), return; end
+    if nargin < 9, bboxMB = NaN; end
     try
         rss = matlabRSSMB();
         futCount = poolFutureCount();
         line = sprintf(['%s | %s | sb=%d/%d | chunks=%d/%d | ' ...
-                        'rss_MB=%.0f | doc_pre_MB=%.2f | ' ...
-                        'doc_post_MB=%.2f | doc_delta_MB=%.2f | ' ...
-                        'live_futures=%d'], ...
+                        'rss_MB=%.0f | bbox_MB=%.0f | ' ...
+                        'doc_pre_MB=%.2f | doc_post_MB=%.2f | ' ...
+                        'doc_delta_MB=%.2f | live_futures=%d'], ...
             char(datetime('now', 'Format', 'yyyy-MM-dd HH:mm:ss')), ...
             levelLabel, s, nSuperBlocks, ...
-            doneChunks, totalChunks, rss, preBytes/2^20, postBytes/2^20, ...
+            doneChunks, totalChunks, rss, bboxMB, ...
+            preBytes/2^20, postBytes/2^20, ...
             (postBytes - preBytes)/2^20, futCount);
         fid = fopen(path, 'a');
         if fid < 0, return; end
@@ -640,6 +650,51 @@ function n = poolFutureCount()
         n = numel(p.FevalQueue.QueuedFutures) + numel(p.FevalQueue.RunningFutures);
     catch
     end
+end
+
+function [idxs, lo, hi] = growSuperBlock(linearOrder, i0, budgetChunks, chunks, chunkGrid, shape, typesize, bboxByteCap)
+% GROWSUPERBLOCK - pack chunks starting at index i0 into one super-block,
+% closing early when the union bbox would exceed bboxByteCap.
+%
+%   Adds chunks one at a time from linearOrder(i0:end); recomputes the
+%   union bbox after each. Stops when either budgetChunks chunks have
+%   been packed, or the NEXT chunk would push the union bbox's
+%   uncompressed byte cost above bboxByteCap. Guarantees at least one
+%   chunk in the super-block (the first is always accepted regardless
+%   of bbox cost, because a single chunk cannot cost more than
+%   chunkBytes).
+    idxs  = zeros(1, budgetChunks);
+    lo    = zeros(budgetChunks, numel(shape));
+    hi    = zeros(budgetChunks, numel(shape));
+    curLo = inf(1, numel(shape));
+    curHi = -inf(1, numel(shape));
+    n = 0;
+    for k = 0:budgetChunks-1
+        c = linearOrder(i0 + k, :);
+        pieceLo = zeros(1, numel(shape));
+        pieceHi = zeros(1, numel(shape));
+        for a = 1:numel(chunkGrid)
+            pieceLo(a) = (c(a) - 1) * chunks(a) + 1;
+            pieceHi(a) = min(pieceLo(a) + chunks(a) - 1, shape(a));
+        end
+        newLo = min(curLo, pieceLo);
+        newHi = max(curHi, pieceHi);
+        if n > 0
+            newBoxBytes = prod(double(newHi - newLo + 1)) * typesize;
+            if newBoxBytes > bboxByteCap
+                break;
+            end
+        end
+        n = n + 1;
+        idxs(n) = i0 + k;            % 1-based linear chunk id
+        lo(n, :) = pieceLo;
+        hi(n, :) = pieceHi;
+        curLo = newLo;
+        curHi = newHi;
+    end
+    idxs = idxs(1:n);
+    lo   = lo(1:n, :);
+    hi   = hi(1:n, :);
 end
 
 function bigTile = readSuperBlockRegion(sourceZarrPath, pyramidName, kInEntry, loBBox, hiBBox)
