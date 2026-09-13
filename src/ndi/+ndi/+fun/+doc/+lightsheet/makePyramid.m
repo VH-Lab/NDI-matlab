@@ -608,9 +608,16 @@ end
 function mb = matlabRSSMB()
 % MATLAB's own process RSS in MB. `memory` is Windows-only; on macOS /
 % Linux we shell out to `ps -o rss= -p <pid>` which prints kilobytes.
+% matlabProcessID() is R2023a+ and not present on every install; fall
+% back to feature('getpid') where it isn't, so the log always gets a
+% real number instead of NaN.
     mb = NaN;
     try
-        pid = matlabProcessID();
+        try
+            pid = matlabProcessID();
+        catch
+            pid = feature('getpid'); %#ok<*FGETP>
+        end
         [rc, out] = system(sprintf('ps -o rss= -p %d', pid));
         if rc == 0
             v = sscanf(strtrim(out), '%f');
