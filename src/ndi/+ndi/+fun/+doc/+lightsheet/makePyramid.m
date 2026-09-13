@@ -102,6 +102,14 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
         % 2e9 is fine on a machine with plenty of RAM. Peak MATLAB
         % memory is prefetchBytes (uncompressed).
         options.prefetchBytes (1,1) double {mustBePositive} = 512 * 2^20
+        % Overlap disk reads with compression via parfeval. The next
+        % super-block starts reading on a pool worker while the parfor
+        % is still compressing the current one, so total time
+        % approaches max(read_time, compress_time) instead of their
+        % sum. Requires a parpool (falls back to synchronous reads
+        % otherwise). Peak RAM is ~2 * prefetchBytes (two super-
+        % blocks in flight).
+        options.asyncPrefetch (1,1) logical = true
     end
 
     if options.materializeChunks && isempty(options.sourceZarrPath)
@@ -212,11 +220,15 @@ function [pyramidDoc, levelDocs, sharedLevel0] = makePyramid(session, pyramids, 
     % which path is really running.
     if options.materializeChunks
         [effWorkers, workerSource] = describeParallelPool(options.numWorkers);
+        asyncStr = 'off';
+        if options.asyncPrefetch && effWorkers > 1
+            asyncStr = 'on (read overlaps compress)';
+        end
         fprintf(['[makePyramid] Parallel workers: %d (%s). ' ...
-            'Prefetch budget: %.0f MB per read. ' ...
+            'Prefetch budget: %.0f MB per read. Async prefetch: %s. ' ...
             'Total chunks: %d across %d level path(s). Codec: %s.\n'], ...
             effWorkers, workerSource, ...
-            options.prefetchBytes / 2^20, ...
+            options.prefetchBytes / 2^20, asyncStr, ...
             totalChunks, numel(pathOrder), options.codec);
     end
 
@@ -303,14 +315,14 @@ function [levelDoc, doneChunks] = makeOneLevel(session, pyramidDoc, pyramidEntry
             options.sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, ...
             options.codec, options.clevel, ...
             options.progressFcn, doneChunks, totalChunks, levelLabel, ...
-            options.numWorkers, options.prefetchBytes);
+            options.numWorkers, options.prefetchBytes, options.asyncPrefetch);
     end
     tmpCleaner = onCleanup(@() cleanupTmp(tmpRoot));
 
     session.database_add(levelDoc);
 end
 
-function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes)
+function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarrPath, pyramidEntry, level, chunks, chunkGrid, codec, clevel, progressFcn, doneChunks, totalChunks, levelLabel, numWorkers, prefetchBytes, asyncPrefetch)
 % Read the source zarr level as a whole array, then re-tile into the
 % level document's chunk shape and attach each chunk as chunk.bin_<idx>
 % (1-based, C-order over chunkGrid). Files are ingested into DID, which
@@ -372,33 +384,60 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         floor(double(prefetchBytes) / max(chunkBytes, 1)));
     prefetchChunkCount = min(prefetchChunkCount, nChunks);
 
-    for superStart = 1:prefetchChunkCount:nChunks
-        superEnd = min(superStart + prefetchChunkCount - 1, nChunks);
-        superIdx = superStart:superEnd;
-        bs = numel(superIdx);
-
-        % ---- SERIAL READ, ONE UNION-BOX PER SUPER-BLOCK -------------
-        % Instead of many small readArray calls -- each with its own
-        % NDR Python subprocess round-trip and each seeking to its
-        % own region of the source zarr -- we compute the union
-        % axis-aligned bounding box of every target chunk in the
-        % super-block and issue ONE readArray for the whole thing.
-        % The parfor pool then chews through the buffer in sub-
-        % batches without touching the disk again. Peak memory per
-        % super-block is prefetchBytes uncompressed.
-        loRows = zeros(bs, numel(shape));
-        hiRows = zeros(bs, numel(shape));
+    % Plan every super-block up front (chunk indices + per-chunk lo/hi
+    % + union bbox) so the async pipeline can dispatch the next read
+    % while the current one is still compressing.
+    nSuperBlocks = ceil(nChunks / prefetchChunkCount);
+    superBlocks = cell(nSuperBlocks, 1);
+    for s = 1:nSuperBlocks
+        s0 = (s - 1) * prefetchChunkCount + 1;
+        s1 = min(s0 + prefetchChunkCount - 1, nChunks);
+        idxs = s0:s1;
+        bs = numel(idxs);
+        lo = zeros(bs, numel(shape));
+        hi = zeros(bs, numel(shape));
         for j = 1:bs
-            cIdx = linearOrder(superIdx(j), :);
+            c = linearOrder(idxs(j), :);
             for a = 1:numel(chunkGrid)
-                loRows(j, a) = (cIdx(a) - 1) * chunks(a) + 1;
-                hiRows(j, a) = min(loRows(j, a) + chunks(a) - 1, shape(a));
+                lo(j, a) = (c(a) - 1) * chunks(a) + 1;
+                hi(j, a) = min(lo(j, a) + chunks(a) - 1, shape(a));
             end
         end
-        loBBox = min(loRows, [], 1);
-        hiBBox = max(hiRows, [], 1);
-        bigTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
-            pyramidName, kInEntry, 'Region', [loBBox; hiBBox]);
+        superBlocks{s} = struct('idxs', idxs, ...
+            'loRows', lo, 'hiRows', hi, ...
+            'loBBox', min(lo, [], 1), 'hiBBox', max(hi, [], 1));
+    end
+
+    % ASYNC PIPELINE. If a parpool is available and asyncPrefetch is
+    % on, the next super-block's read runs concurrently on a pool
+    % worker while the parfor is compressing the current one. Total
+    % time approaches max(read_time, compress_time) instead of their
+    % sum. Peak RAM ~ 2 * prefetchBytes (two blocks in flight).
+    useAsync = asyncPrefetch && poolSize > 1 && nSuperBlocks > 1;
+    if useAsync
+        pool = gcp();
+        nextFut = parfeval(pool, @readSuperBlockRegion, 1, ...
+            sourceZarrPath, pyramidName, kInEntry, ...
+            superBlocks{1}.loBBox, superBlocks{1}.hiBBox);
+    end
+
+    for s = 1:nSuperBlocks
+        sb = superBlocks{s};
+        bs = numel(sb.idxs);
+
+        % ---- READ current super-block, DISPATCH the next -----------
+        if useAsync
+            bigTile = fetchOutputs(nextFut);
+            if s < nSuperBlocks
+                nb = superBlocks{s + 1};
+                nextFut = parfeval(pool, @readSuperBlockRegion, 1, ...
+                    sourceZarrPath, pyramidName, kInEntry, ...
+                    nb.loBBox, nb.hiBBox);
+            end
+        else
+            bigTile = readSuperBlockRegion(sourceZarrPath, ...
+                pyramidName, kInEntry, sb.loBBox, sb.hiBBox);
+        end
 
         % ---- INNER SUB-BATCH LOOP: poolSize chunks each -----------
         for subStart = 1:poolSize:bs
@@ -409,13 +448,13 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
             chunkIdxs = zeros(1, b);
             for j = 1:b
                 localJ = subStart + j - 1;
-                chunkIdxs(j) = superIdx(localJ);
+                chunkIdxs(j) = sb.idxs(localJ);
                 % Slice this target chunk's region out of the
                 % super-block buffer using bbox-relative subscripts.
                 subs = cell(1, numel(shape));
                 for a = 1:numel(shape)
-                    subs{a} = (loRows(localJ, a) - loBBox(a) + 1) : ...
-                              (hiRows(localJ, a) - loBBox(a) + 1);
+                    subs{a} = (sb.loRows(localJ, a) - sb.loBBox(a) + 1) : ...
+                              (sb.hiRows(localJ, a) - sb.loBBox(a) + 1);
                 end
                 srcTile = bigTile(subs{:});
                 padded = zeros(chunks, class(srcTile));
@@ -454,10 +493,22 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
             end
         end
 
-        % Release the super-block buffer before the next read so
-        % peak RAM stays at ~prefetchBytes rather than climbing.
+        % Release the super-block buffer before the next iteration.
+        % In async mode the next super-block's buffer may already
+        % exist as a Future's result waiting to be fetched.
         clear bigTile;
     end
+end
+
+function bigTile = readSuperBlockRegion(sourceZarrPath, pyramidName, kInEntry, loBBox, hiBBox)
+% READSUPERBLOCKREGION - fetch one super-block region from the source
+%
+%   Wraps ndr.format.omezarr.readArray so parfeval can dispatch it as
+%   a background read on a pool worker. Kept as a plain subfunction
+%   (not nested) so the worker can serialise it without pulling the
+%   caller's workspace.
+    bigTile = ndr.format.omezarr.readArray(sourceZarrPath, ...
+        pyramidName, kInEntry, 'Region', [loBBox; hiBBox]);
 end
 
 function tmp = encodeAndWrite(raw, codec, clevel, typesize, tmpRoot, chunkIdx)

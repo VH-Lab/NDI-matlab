@@ -110,6 +110,10 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         % call. Bigger = fewer seeks + subprocess round trips at the
         % cost of more RAM. See makePyramid. Default 512 MB.
         options.prefetchBytes (1,1) double {mustBePositive} = 512 * 2^20
+        % Overlap disk reads with parfor compression via parfeval.
+        % See makePyramid for details. Default true; ignored when
+        % numWorkers resolves to serial.
+        options.asyncPrefetch (1,1) logical = true
     end
 
     if isempty(strtrim(options.subjectID))
@@ -186,7 +190,8 @@ function [pyramidDoc, levelDocs, info] = fromOMEZarr(session, zarrPath, options)
         'clevel', options.clevel, ...
         'progressFcn', progressFcn, ...
         'numWorkers', options.numWorkers, ...
-        'prefetchBytes', options.prefetchBytes);
+        'prefetchBytes', options.prefetchBytes, ...
+        'asyncPrefetch', options.asyncPrefetch);
 
     info = struct( ...
         'zarrPath', char(zarrPath), ...
