@@ -373,15 +373,26 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     nChunks = size(linearOrder, 1);
     typesize = elementSizeBytes(char(level.dtype));
 
+    % Locations for the whole level. Filled in as each super-block
+    % completes; handed to did.document.addFileSeries ONCE at the end
+    % of the level. Per-chunk add_file returned a fresh levelDoc every
+    % call, and 40k value-semantics reassignments of a growing struct
+    % churned through many GB of allocations even though the final
+    % series entry is small -- the bulk method installs all locations
+    % in one struct-array assignment, and the observed memory blow-up
+    % goes away.
+    seriesLocations = cell(1, nChunks);
+
     % BATCHED SERIAL-READ / PARALLEL-COMPRESS. On a slow spinning drive
     % we cannot afford concurrent seeks, so reads stay strictly serial;
     % but Zstd at clevel=9 is single-core CPU-bound and easy to fan out
     % across a parallel pool. A batch of `poolSize` chunks is read from
     % the source, then handed to the workers to compress and write, in
-    % parallel; add_file into the level document happens serially in
-    % chunk-index order so the DID SQLite write is not a contention
-    % point and the on-disk chunk numbering is unchanged. poolSize == 1
-    % is the original serial path with no toolbox dependency.
+    % parallel; each chunk's tempfile path is parked in seriesLocations
+    % and installed into the level document via a SINGLE
+    % did.document.addFileSeries call after the super-block loop exits.
+    % poolSize == 1 is the original serial path with no toolbox
+    % dependency.
     poolSize = resolveParallelPool(numWorkers);
 
     % How many target chunks fit inside the prefetch budget, sized
@@ -524,12 +535,20 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         % redraw/ETA-recompute path a measurable fraction of the
         % gap. One tick per super-block is more than enough
         % granularity on a multi-hour ingest.
+        % ---- ACCUMULATE, DO NOT MUTATE levelDoc PER SUPER-BLOCK ---
+        % The old code called `levelDoc = levelDoc.add_file(...)`
+        % 40k+ times per level. Each reassignment triggered a
+        % copy-on-write on the whole document_properties, churning
+        % through gigabytes of transient allocations even though the
+        % final file-series entry is small. Instead, park each
+        % chunk's tempfile path in seriesLocations{chunkIdx} and
+        % install them all in ONE addFileSeries call after the
+        % super-block loop exits.
         preAddDocSize = levelDocPropertyBytes(levelDoc);
         for j = 1:bs
-            levelDoc = levelDoc.add_file( ...
-                sprintf('chunk.bin_%d', chunkIdxs(j)), tempPaths{j});
+            seriesLocations{chunkIdxs(j)} = tempPaths{j};
         end
-        postAddDocSize = levelDocPropertyBytes(levelDoc);
+        postAddDocSize = preAddDocSize;
         doneChunks = doneChunks + bs;
         reportProgress(progressFcn, doneChunks, totalChunks, ...
             sprintf('%s: super-block %d/%d, chunk %d/%d', ...
@@ -538,6 +557,15 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
         appendDebugLog(debugLog, levelLabel, s, nSuperBlocks, doneChunks, ...
             totalChunks, preAddDocSize, postAddDocSize);
     end
+
+    % ---- ONE BULK addFileSeries CALL FOR THE WHOLE LEVEL ---------
+    % did.document.addFileSeries installs the whole cellstr of source
+    % paths in a single struct-array assignment. The level document's
+    % file-series manifest names the series `chunk.bin_#`; `indices`
+    % supplies the 1..N chunk numbering that DID substitutes for `#`
+    % in each stored location. No per-chunk copy-on-write.
+    levelDoc = levelDoc.addFileSeries('chunk.bin_#', seriesLocations, ...
+        'indices', 1:nChunks);
 end
 
 function bytes = levelDocPropertyBytes(levelDoc)
