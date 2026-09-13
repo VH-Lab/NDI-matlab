@@ -439,49 +439,72 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
                 pyramidName, kInEntry, sb.loBBox, sb.hiBBox);
         end
 
-        % ---- SLICE bigTile into per-chunk sub-arrays --------------
-        % Only the raw slice happens on the main thread now; every
-        % chunk's pad + permute + typecast + encode + write moves
-        % into the parfor worker (see padEncodeAndWrite). MATLAB's
-        % bigTile(subs{:}) is a native memcpy of the sub-array; it's
-        % roughly 5-10x faster per chunk than the pad-permute-
-        % typecast pipeline it used to sit in front of.
-        srcs = cell(1, bs);
+        % ---- STAGE bigTile INTO A PARFOR-SLICEABLE ND-ARRAY -------
+        % An earlier version handed the parfor a cell array `srcs`
+        % where each entry held one chunk's sub-array. MATLAB parfor
+        % could not statically slice that cell (`srcs{j}` on a
+        % heterogeneous cell defeats its analyzer), so it BROADCAST
+        % the entire ~512 MB cell to every worker: 512 MB x 18
+        % workers x 2 super-blocks in flight (async prefetch) = 18+
+        % GB of peak RAM per level, which OOM-killed lightsheet
+        % ingests on 64 GB machines. Preallocate a plain typed
+        % ND-array `bigChunks` sized (chunks, bs) instead: assigning
+        % into each j-th slab pre-pads edge chunks with zeros (so
+        % the worker sees an already-full-shape tile and skips the
+        % pad branch of padEncodeAndWrite), and reshaping to
+        % (prod(chunks), bs) makes it a plain 2-D matrix that
+        % parfor's slice detector unambiguously slices along the
+        % second axis. Each worker receives ONLY its 4 MB column,
+        % not the whole super-block.
+        srcClass  = class(bigTile);
+        bigChunks = zeros([chunks(:).' bs], srcClass);
         chunkIdxs = zeros(1, bs);
         for j = 1:bs
             chunkIdxs(j) = sb.idxs(j);
-            subs = cell(1, numel(shape));
+            srcSubs = cell(1, numel(shape));
+            dstSubs = cell(1, numel(chunks));
             for a = 1:numel(shape)
-                subs{a} = (sb.loRows(j, a) - sb.loBBox(a) + 1) : ...
-                          (sb.hiRows(j, a) - sb.loBBox(a) + 1);
+                srcSubs{a} = (sb.loRows(j, a) - sb.loBBox(a) + 1) : ...
+                             (sb.hiRows(j, a) - sb.loBBox(a) + 1);
+                dstSubs{a} = 1:numel(srcSubs{a});
             end
-            srcs{j} = bigTile(subs{:});
+            % Write this chunk's occupied sub-region into the j-th
+            % slab; whatever is beyond it stays zero (that IS the
+            % pad the writer used to do inside padEncodeAndWrite).
+            slabAssign = [dstSubs, {j}];
+            bigChunks(slabAssign{:}) = bigTile(srcSubs{:});
         end
-        % Release the source buffer as soon as srcs holds copies.
         clear bigTile;
 
+        % Flatten to (prod(chunks), bs) so parfor sees a plain 2-D
+        % array and slices it along the loop-variable axis with no
+        % ambiguity.
+        nChunkElems = prod(chunks);
+        bigChunksFlat = reshape(bigChunks, nChunkElems, bs);
+        clear bigChunks;
+
         % ---- ONE PARFOR ACROSS THE ENTIRE SUPER-BLOCK -------------
-        % Workers now do everything from the raw slice onwards --
-        % pad to chunks shape, permute into C-order, typecast to
-        % bytes, Blosc encode, and write the tempfile. The main
-        % thread's per-super-block work drops to just the sliced
-        % memcpy loop above.
+        % Workers now do everything from the flat slice onwards --
+        % reshape into the chunk shape, permute into C-order,
+        % typecast to bytes, Blosc encode, and write the tempfile.
+        chunkShape1 = chunks(:).';
         tempPaths = cell(1, bs);
         if poolSize > 1 && bs > 1
             parfor j = 1:bs
-                tempPaths{j} = padEncodeAndWrite(srcs{j}, chunks, ...
-                    codec, clevel, typesize, tmpRoot, chunkIdxs(j)); %#ok<PFBNS>
+                col = bigChunksFlat(:, j);
+                tile = reshape(col, chunkShape1);
+                tempPaths{j} = padEncodeAndWrite(tile, chunks, ...
+                    codec, clevel, typesize, tmpRoot, chunkIdxs(j));
             end
         else
             for j = 1:bs
-                tempPaths{j} = padEncodeAndWrite(srcs{j}, chunks, ...
+                col = bigChunksFlat(:, j);
+                tile = reshape(col, chunkShape1);
+                tempPaths{j} = padEncodeAndWrite(tile, chunks, ...
                     codec, clevel, typesize, tmpRoot, chunkIdxs(j));
             end
         end
-        % srcs is no longer needed after the pool has produced the
-        % tempfiles. Peak RAM stays bounded before the next super-
-        % block's read materialises via the async future.
-        clear srcs;
+        clear bigChunksFlat;
 
         % ---- SERIAL ADD_FILE + BATCHED PROGRESS ------------------
         % In-memory metadata registration; still ordered by chunk
