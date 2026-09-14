@@ -130,8 +130,39 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
         if syncOptions.Verbose
             fprintf('"SyncFiles" option is false. Updating document file info to reflect remote files.\n');
         end
+        % Cloud storage strips series ingest_locations, so a downloaded
+        % document whose series has present members but no locations trips
+        % DID-matlab#185's MembersNotLocatable guard on add_docs. The
+        % SyncFiles=true path handles this by reading each series' manifest
+        % out of the fully-downloaded FileSyncLocation; on this path
+        % (SyncFiles=false) the manifests do not exist locally, and without
+        % them there is no way to enumerate member uids. Fetch just the
+        % manifest FILES -- one small file per series document -- into a
+        % scratch folder here so reconstructSeriesIngestLocations, called
+        % from the updated updateFileInfoForRemoteFiles, has the bytes it
+        % needs. The member bytes stay on the cloud; DID resolves them
+        % on demand via the reconstructed ndic:// locations. See
+        % NDI-matlab#958 follow-up.
+        manifestUids = ndi.cloud.sync.internal.collectSeriesManifestUids(newNdiDocuments);
+        manifestFolder = "";
+        manifestCleanup = onCleanup.empty;
+        if ~isempty(manifestUids)
+            manifestFolder = string(tempname);
+            mkdir(manifestFolder);
+            manifestCleanup = onCleanup(@() cleanupScratchFolder(manifestFolder));
+            if syncOptions.Verbose
+                fprintf(['Fetching %d series manifest file(s) to ' ...
+                         'reconstruct series ingest_locations...\n'], ...
+                         numel(manifestUids));
+            end
+            ndi.cloud.download.downloadDatasetFiles(...
+                cloudDatasetId, ...
+                manifestFolder, ...
+                manifestUids, ...
+                "Verbose", syncOptions.Verbose);
+        end
         documentUpdateFcn = @(doc) ...
-            ndi.cloud.sync.internal.updateFileInfoForRemoteFiles(doc, cloudDatasetId);
+            ndi.cloud.sync.internal.updateFileInfoForRemoteFiles(doc, cloudDatasetId, manifestFolder);
     end
 
     % 3. Update file info for documents based on local / remote location
@@ -151,5 +182,18 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
 
     if nargout > 0
         downloadedNdiDocuments = newNdiDocuments;
+    end
+end
+
+function cleanupScratchFolder(folderPath)
+% Best-effort teardown of the manifest scratch directory.
+    folderPath = char(folderPath);
+    if isempty(folderPath) || ~isfolder(folderPath)
+        return
+    end
+    try
+        rmdir(folderPath, 's');
+    catch
+        % Nothing to do -- MATLAB's temp cleanup will pick it up later.
     end
 end
