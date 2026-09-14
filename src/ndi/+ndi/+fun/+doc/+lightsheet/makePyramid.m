@@ -578,7 +578,12 @@ function [levelDoc, tmpRoot, doneChunks] = attachChunkFiles(levelDoc, sourceZarr
     % file-series manifest names the series `chunk.bin_#`; `indices`
     % supplies the 1..N chunk numbering that DID substitutes for `#`
     % in each stored location. No per-chunk copy-on-write.
-    levelDoc = levelDoc.addFileSeries('chunk.bin_#', seriesLocations, ...
+    % DID convention: the series MANIFEST name is bare ("chunk.bin"), not
+    % the "_#" pattern. Members are named chunk.bin_1 ... chunk.bin_N
+    % automatically. See did.document.seriesNames docstring for the
+    % contract. The schema declares "chunk.bin" in both file_list and
+    % file_series.
+    levelDoc = levelDoc.addFileSeries('chunk.bin', seriesLocations, ...
         'indices', 1:nChunks);
 end
 

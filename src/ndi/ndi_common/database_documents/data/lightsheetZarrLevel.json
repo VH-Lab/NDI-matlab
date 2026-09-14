@@ -27,7 +27,10 @@
 	],
 	"files": {
 		"file_list": [
-			"chunk.bin_#"
+			"chunk.bin"
+		],
+		"file_series": [
+			"chunk.bin"
 		]
 	},
 	"lightsheetZarrLevel": {
