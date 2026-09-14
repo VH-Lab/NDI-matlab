@@ -781,11 +781,15 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 "the series document did not come back from the SyncFiles=false download.");
             remoteDoc = remoteDocs{1};
 
-            % ingest_locations must be populated: this is what closes the
-            % DID-matlab#185 guard, so a bare series_info with 0 locations
-            % would have raised on the database_add above rather than
-            % reaching this line -- but assert it directly so the
-            % regression names the field it depends on.
+            % Structural check: the series record still names its members
+            % (count / n_present survive the sqlite store). ingest_locations
+            % is INTENTIONALLY not asserted here: DID treats it as transient
+            % authoring state and strips it at store time (see the docstring
+            % on updateFileInfoForLocalFiles and the reconstruct helper's
+            % header), so a downloaded doc that reached this line has
+            % already had its reconstructed locations consumed by the
+            % add_docs guard and then wiped. The real check is the read
+            % loop below.
             testCase.assertTrue( ...
                 isfield(remoteDoc.document_properties.files, 'series_info'), ...
                 "downloaded document lost files.series_info on the way through SyncFiles=false.");
@@ -798,28 +802,13 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
             entry = si(entryIdx);
             testCase.verifyEqual(entry.n_present, testCase.MemberCount, ...
                 "reconstructed series_info reports the wrong n_present after SyncFiles=false.");
-            testCase.assertTrue(isfield(entry, 'ingest_locations') && ~isempty(entry.ingest_locations), ...
-                "SyncFiles=false did not repopulate series_info.ingest_locations; " + ...
-                "add_docs would have tripped DID-matlab#185 if this test got this far, " + ...
-                "so the missing state is the bug directly.");
-            testCase.verifyEqual(numel(entry.ingest_locations), testCase.MemberCount, ...
-                "reconstructed ingest_locations does not have one entry per present slot.");
-            locs = entry.ingest_locations;
-            for k = 1:numel(locs)
-                testCase.verifyEqual(locs(k).location_type, 'ndicloud', ...
-                    "reconstructed ingest_locations should carry location_type='ndicloud'.");
-                testCase.verifyTrue(startsWith(locs(k).location, "ndic://" + testCase.DatasetID + "/"), ...
-                    "reconstructed location does not point back to this cloud dataset.");
-                testCase.verifyEqual(locs(k).ingest, 0, ...
-                    "reconstructed ingest_locations must set ingest=0 (members stay remote).");
-            end
 
-            % Read every member's bytes back through the reconstructed
-            % locations; this closes the loop by proving the ndic://
-            % locations resolve to the same content the members were
-            % uploaded with. If this fails without the assertions above
-            % having fired, the reconstruction wrote wrong uids into the
-            % locations rather than not writing them at all.
+            % Reading every member back is the acceptance test: it proves
+            % add_docs did not trip DID-matlab#185 (or the test would have
+            % thrown, not reached this loop) AND that the ndic:// locations
+            % point at bytes matching what was uploaded. A wrong uid or a
+            % lost cloud reference here means the reconstruction wrote the
+            % wrong locations rather than none.
             for i = 1:testCase.MemberCount
                 memberName = sprintf('chunkdata.bin_%d', i);
                 fobj = downloaded.database_openbinarydoc(remoteDoc, memberName);

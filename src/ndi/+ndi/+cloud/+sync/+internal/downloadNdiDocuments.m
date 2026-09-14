@@ -151,7 +151,7 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
             % onCleanup fires when its handle goes out of scope, so the
             % local must stay bound until this function returns to keep
             % the manifest folder alive across the docfun call below.
-            manifestCleanup = onCleanup(@() cleanupScratchFolder(manifestFolder)); %#ok<NASGU>
+            manifestCleanup = onCleanup(@() cleanupScratchFolder(manifestFolder));
             if syncOptions.Verbose
                 fprintf(['Fetching %d series manifest file(s) to ' ...
                          'reconstruct series ingest_locations...\n'], ...
