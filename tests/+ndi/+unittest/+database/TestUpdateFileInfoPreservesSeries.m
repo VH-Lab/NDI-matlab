@@ -150,5 +150,32 @@ classdef TestUpdateFileInfoPreservesSeries < matlab.unittest.TestCase
                 'file_info should now point into the download folder');
         end
 
+        function testSeriesManifestHasExactlyOneLocation(testCase)
+            % Regression guard on the workaround removal (NDI-matlab#986):
+            % before DID-matlab#191/#201 landed, this helper wrote a second
+            % 'ndicloud' location alongside the local 'file' one on every
+            % series manifest, so member fetches would see an ndic:// source
+            % path. DID now reaches a local-file manifest directly, so that
+            % second location is dead weight. This test says: the manifest
+            % must have exactly ONE location and it must be the local file.
+            % Adding another (bringing back the workaround, or anything
+            % ndic://-shaped) is what this test is here to catch.
+            doc = testCase.makeSeriesDocumentWithAFile();
+            testCase.placeDownloadedCopies(doc);
+
+            updated = ndi.cloud.sync.internal.updateFileInfoForLocalFiles( ...
+                doc, testCase.FileDir, "test-dataset");
+
+            fi = updated.document_properties.files.file_info;
+            k = find(strcmp({fi.name}, 'chunkdata.bin'), 1);
+            testCase.assertNotEmpty(k, 'no file_info entry for the manifest');
+            testCase.verifyNumElements(fi(k).locations, 1, ...
+                ['the series manifest must have exactly one file_info ' ...
+                 'location; a second (ndicloud) location was retired with ' ...
+                 'the workaround at updateFileInfoForLocalFiles:96-101.']);
+            testCase.verifyEqual(fi(k).locations(1).location_type, 'file', ...
+                'the manifest''s remaining location must be its local file');
+        end
+
     end
 end
