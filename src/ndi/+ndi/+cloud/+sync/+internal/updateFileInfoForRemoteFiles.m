@@ -115,7 +115,7 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
     tmpDir = fullfile(did.common.PathConstants.temppath, ...
         ['ndi-manifest-fetch-' did.ido.unique_id()]);
     if ~isfolder(tmpDir), mkdir(tmpDir); end
-    cleanup = onCleanup(@() safeRmdir(tmpDir));  %#ok<NASGU>
+    cleanup = onCleanup(@() safeRmdir(tmpDir));
 
     for k = 1:numel(seriesInfo)
         entry = seriesInfo(k);
@@ -201,6 +201,9 @@ end
 
 function safeRmdir(d)
     if isfolder(d)
-        try, rmdir(d, 's'); catch, end
+        try
+            rmdir(d, 's');
+        catch
+        end
     end
 end
