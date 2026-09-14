@@ -46,15 +46,17 @@ classdef TestUpdateFileInfoForRemoteFilesShape < matlab.unittest.TestCase
         end
 
         function doc = makePlainDocWithOneFile(~)
-            % A demoNDISeries document with no file series -- the series
-            % info branch must be skipped entirely.
-            filePath = fullfile(pwd, 'plain.bin');
+            % A demoNDI document (schema: one plain file named
+            % 'filename1.ext', no file_series). The series_info branch of
+            % updateFileInfoForRemoteFiles must be skipped entirely for a
+            % doc of this shape.
+            filePath = fullfile(pwd, 'filename1.ext');
             fid = fopen(filePath, 'w'); fwrite(fid, uint8(1:16)); fclose(fid);
-            doc = ndi.document('demoNDISeries', ...
+            doc = ndi.document('demoNDI', ...
                 'base.name', 'plain_doc', ...
-                'demoNDISeries.value', 2, ...
+                'demoNDI.value', 2, ...
                 'base.session_id', did.ido.unique_id());
-            doc = doc.add_file('plain.bin', filePath);
+            doc = doc.add_file('filename1.ext', filePath);
         end
     end
 
@@ -169,7 +171,10 @@ classdef TestUpdateFileInfoForRemoteFilesShape < matlab.unittest.TestCase
                 fullfile(pwd, 'localtest.sqlite'));
             db.add_branch('a');
             db.add_docs(doc, 'Validate', false);
-            docBack = db.get_docs(doc.id());
+            % db.get_docs returns a did.document; the SUT (an NDI helper)
+            % operates on ndi.document objects. Convert via ndi.document's
+            % copy constructor, matching didsqlite.do_read.
+            docBack = ndi.document(db.get_docs(doc.id()));
             si = docBack.document_properties.files.series_info;
             testCase.assertTrue( ...
                 ~isfield(si, 'ingest_locations') || isempty(si(1).ingest_locations), ...
