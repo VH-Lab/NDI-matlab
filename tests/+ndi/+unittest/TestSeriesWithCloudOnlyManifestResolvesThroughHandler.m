@@ -171,29 +171,6 @@ classdef TestSeriesWithCloudOnlyManifestResolvesThroughHandler < matlab.unittest
             end
         end
 
-        function [handlerFcn, callsHandle] = uidKeyedHandler(~, srcByUid)
-            % A three-argument handler (DID-matlab#186) that serves the
-            % bytes the map records for context.uid, and records every
-            % call for assertion. callsHandle is a 1-element cell whose
-            % contents grows with each call, so the caller can inspect
-            % it after open_doc returns.
-            callsHandle = {{}};
-            function serve(destPath, sourcePath, context)
-                thisCall = struct( ...
-                    'destPath',   destPath, ...
-                    'sourcePath', sourcePath, ...
-                    'context',    context);
-                callsHandle{1}{end+1} = thisCall;
-                uid = context.uid;
-                if isKey(srcByUid, uid)
-                    fid = fopen(destPath, 'w');
-                    fwrite(fid, srcByUid(uid), 'uint8');
-                    fclose(fid);
-                end
-            end
-            handlerFcn = @serve;
-        end
-
         function bytes = readAll(~, binarydoc)
             % Open the DID readonly_fileobj and read every byte back.
             binarydoc.fopen();
@@ -214,19 +191,38 @@ classdef TestSeriesWithCloudOnlyManifestResolvesThroughHandler < matlab.unittest
                     testCase.ManifestUid)), ...
                 'precondition: filecachepath should not carry the manifest yet');
 
-            [handlerFcn, calls] = testCase.uidKeyedHandler(srcByUid);
+            % The handler is a NESTED function of this test method, not
+            % returned from a helper: MATLAB nested functions share the
+            % enclosing workspace, so the closure writes into this
+            % method's own `calls` cell. Returning `calls` from a helper
+            % would hand back a value copy, and the caller's cell would
+            % stay empty even as the closure kept updating the copy the
+            % helper's workspace retained.
+            calls = {};
+            function serve(destPath, sourcePath, context)
+                thisCall = struct( ...
+                    'destPath',   destPath, ...
+                    'sourcePath', sourcePath, ...
+                    'context',    context);
+                calls{end+1} = thisCall;
+                if isKey(srcByUid, context.uid)
+                    fid = fopen(destPath, 'w');
+                    fwrite(fid, srcByUid(context.uid), 'uint8');
+                    fclose(fid);
+                end
+            end
 
             binarydoc = db.open_doc(doc.id(), ...
                 sprintf('%s_%d', testCase.SeriesName, 2), ...
-                'customFileHandler', handlerFcn);
+                'customFileHandler', @serve);
 
             testCase.verifyEqual(testCase.readAll(binarydoc), ...
                 memberContents{2}, ...
                 'the fetched member did not read back byte-for-byte');
 
-            testCase.assertGreaterThanOrEqual(numel(calls{1}), 1, ...
+            testCase.assertGreaterThanOrEqual(numel(calls), 1, ...
                 'the handler was never asked');
-            manifestCall = calls{1}{1};
+            manifestCall = calls{1};
             testCase.verifyEqual(manifestCall.context.uid, ...
                 testCase.ManifestUid, ...
                 'the first call must be for the manifest by its own uid');
@@ -246,10 +242,17 @@ classdef TestSeriesWithCloudOnlyManifestResolvesThroughHandler < matlab.unittest
             % state.
             [db, doc, ~, srcByUid] = testCase.buildCloudOnlySeries();
 
-            [handlerFcn, ~] = testCase.uidKeyedHandler(srcByUid);
+            function serve(destPath, ~, context)
+                if isKey(srcByUid, context.uid)
+                    fid = fopen(destPath, 'w');
+                    fwrite(fid, srcByUid(context.uid), 'uint8');
+                    fclose(fid);
+                end
+            end
+
             db.open_doc(doc.id(), ...
                 sprintf('%s_1', testCase.SeriesName), ...
-                'customFileHandler', handlerFcn);
+                'customFileHandler', @serve);
 
             cached = fullfile( ...
                 did.common.PathConstants.filecachepath, ...
@@ -264,20 +267,32 @@ classdef TestSeriesWithCloudOnlyManifestResolvesThroughHandler < matlab.unittest
             % asked for the manifest exactly once across the whole run.
             [db, doc, memberContents, srcByUid] = testCase.buildCloudOnlySeries();
 
-            [handlerFcn, calls] = testCase.uidKeyedHandler(srcByUid);
+            % Nested-function handler: see testTheManifestIsFetchedThroughTheHandler
+            % on why this is defined inside the test method rather than
+            % returned from a helper.
+            calls = {};
+            function serve(destPath, ~, context)
+                thisCall = struct('uid', context.uid);
+                calls{end+1} = thisCall;
+                if isKey(srcByUid, context.uid)
+                    fid = fopen(destPath, 'w');
+                    fwrite(fid, srcByUid(context.uid), 'uint8');
+                    fclose(fid);
+                end
+            end
 
             for i = 1:numel(memberContents)
                 binarydoc = db.open_doc(doc.id(), ...
                     sprintf('%s_%d', testCase.SeriesName, i), ...
-                    'customFileHandler', handlerFcn);
+                    'customFileHandler', @serve);
                 testCase.verifyEqual(testCase.readAll(binarydoc), ...
                     memberContents{i}, ...
                     sprintf('member %d bytes', i));
             end
 
             manifestCalls = 0;
-            for i = 1:numel(calls{1})
-                if strcmp(calls{1}{i}.context.uid, testCase.ManifestUid)
+            for i = 1:numel(calls)
+                if strcmp(calls{i}.uid, testCase.ManifestUid)
                     manifestCalls = manifestCalls + 1;
                 end
             end
