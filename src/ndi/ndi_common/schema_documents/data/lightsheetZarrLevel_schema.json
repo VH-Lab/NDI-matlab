@@ -19,7 +19,7 @@
 	],
 	"file": [
 		{
-			"name": "chunk.bin_#",
+			"name": "chunk.bin",
 			"mustbenotempty": 0
 		}
 	],
