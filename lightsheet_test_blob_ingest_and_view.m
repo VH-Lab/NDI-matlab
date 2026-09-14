@@ -35,10 +35,6 @@ clevel      = 5;
 
 % Napari launcher. Same wrapper the real-data script uses.
 launcher    = '/usr/local/bin/napariViewLightsheet';
-
-% Which reduction to open ('mean' or 'max'). The pyramid stores both;
-% napariViewLightsheet needs one picked at launch.
-reduction   = 'mean';
 % ---------------------------------------------------------------------
 
 fprintf('Building blob fixture and ingesting ...\n');
@@ -58,6 +54,4 @@ fprintf('Zarr:     %s\n', info.zarrPath);
 fprintf('Pyramid:  %s\n', P.id());
 
 fprintf('Launching napari viewer ...\n');
-ndi.fun.doc.lightsheet.view(S, P.id(), ...
-    'launcher',  launcher, ...
-    'reduction', reduction);
+ndi.fun.doc.lightsheet.view(S, P.id(), 'launcher', launcher);
