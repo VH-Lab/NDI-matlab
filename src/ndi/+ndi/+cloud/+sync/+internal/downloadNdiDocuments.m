@@ -145,11 +145,13 @@ function downloadedNdiDocuments = downloadNdiDocuments(cloudDatasetId, cloudDocu
         % NDI-matlab#958 follow-up.
         manifestUids = ndi.cloud.sync.internal.collectSeriesManifestUids(newNdiDocuments);
         manifestFolder = "";
-        manifestCleanup = onCleanup.empty;
         if ~isempty(manifestUids)
             manifestFolder = string(tempname);
             mkdir(manifestFolder);
-            manifestCleanup = onCleanup(@() cleanupScratchFolder(manifestFolder));
+            % onCleanup fires when its handle goes out of scope, so the
+            % local must stay bound until this function returns to keep
+            % the manifest folder alive across the docfun call below.
+            manifestCleanup = onCleanup(@() cleanupScratchFolder(manifestFolder)); %#ok<NASGU>
             if syncOptions.Verbose
                 fprintf(['Fetching %d series manifest file(s) to ' ...
                          'reconstruct series ingest_locations...\n'], ...
