@@ -66,13 +66,29 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                    Default 20*3600 (the server currently signs URLs
 %                    for 24 h, leaving a buffer). A scope past its
 %                    TTL is refetched on the next miss.
+%       partialMapRetrySeconds - How long to wait, in seconds, before
+%                    re-fetching a scope whose first answer was a
+%                    populated map that did not name the requested uid.
+%                    Default 0.5. The retry gives a lagged batch
+%                    endpoint time to catch up after a bulk upload; a
+%                    zero value skips the wait but still performs the
+%                    single retry (used by tests). See
+%                    VH-Lab/NDI-matlab#991 and Waltham-Data-Science/
+%                    NDI-python#309.
+%       sleepFcn   - Function handle called as sleepFcn(seconds) to
+%                    perform the pause before a partial-map retry.
+%                    Defaults to @pause. Present so tests can
+%                    short-circuit the wait without adding real
+%                    latency to a suite that exercises the retry many
+%                    times.
 %
 %   Outputs:
 %       url         - The pre-signed URL for uid (char), or "" (string
 %                     scalar) when no URL is available.
 %       stats       - Cumulative counters since the cache was last cleared:
 %                     .signerCalls  how many times the batch endpoint was
-%                                   actually called (one per scope fetch)
+%                                   actually called (one per scope fetch,
+%                                   plus one per partial-map retry)
 %                     .uidHits      uids answered from a batch map
 %                     .uidMisses    uids the batch could NOT answer, each of
 %                                   which sends the caller to the per-uid
@@ -90,6 +106,15 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                                   series-scoped answer names the series'
 %                                   members, an unscoped one also names
 %                                   every other file the document has
+%                     .partialMapRetries  how many scopes were re-fetched
+%                                   because the first answer was populated
+%                                   but did not name a requested uid. One
+%                                   retry per scope, ever, whether it
+%                                   settled or not; a caller that wants to
+%                                   know "does this scope EVER answer for
+%                                   this uid" gets that answer after the
+%                                   retry. See VH-Lab/NDI-matlab#991 and
+%                                   Waltham-Data-Science/NDI-python#309.
 %
 %                     These exist to make the fallback VISIBLE. It is
 %                     deliberate at runtime -- a reader opening one file
@@ -123,6 +148,8 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         options.clearCache (1,1) logical = false
         options.ttlSeconds (1,1) double  = 20*3600
         options.failureTtlSeconds (1,1) double = 60
+        options.partialMapRetrySeconds (1,1) double = 0.5
+        options.sleepFcn (1,1) function_handle = @pause
     end
 
     % The persistent cache. Keyed on 'datasetId/documentId/seriesName'.
@@ -132,18 +159,23 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
     persistent STATS
     persistent WARNED
     persistent FAILEDSCOPES
+    persistent RETRIEDSCOPES
     if isempty(CACHE) || options.clearCache
         CACHE = containers.Map('KeyType','char','ValueType','any');
     end
     if isempty(STATS) || options.clearCache
         STATS = struct('signerCalls', 0, 'uidHits', 0, 'uidMisses', 0, ...
-            'lastMapSize', 0, 'lastMapUids', {{}}, 'lastFailureReason', "");
+            'lastMapSize', 0, 'lastMapUids', {{}}, 'lastFailureReason', "", ...
+            'partialMapRetries', 0);
     end
     if isempty(WARNED) || options.clearCache
         WARNED = containers.Map('KeyType','char','ValueType','logical');
     end
     if isempty(FAILEDSCOPES) || options.clearCache
         FAILEDSCOPES = containers.Map('KeyType','char','ValueType','any');
+    end
+    if isempty(RETRIEDSCOPES) || options.clearCache
+        RETRIEDSCOPES = containers.Map('KeyType','char','ValueType','logical');
     end
 
     url = "";
@@ -174,6 +206,78 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
     end
 
     if isempty(entry)
+        entry = localFetchScope(cacheKey);
+        if isempty(entry)
+            % localFetchScope already recorded the miss and warned.
+            stats = STATS;
+            return
+        end
+    end
+
+    key = char(uid);
+    if isKey(entry.map, key)
+        url = entry.map(key);
+        if isstring(url) && isscalar(url), url = char(url); end
+        STATS.uidHits = STATS.uidHits + 1;
+    else
+        % The scope was fetched but does not name this uid. Two distinct
+        % causes are possible: DATA DRIFT (the file was never in this
+        % scope) or a LAGGED INDEX (the file IS in the scope on the
+        % server, but the batch endpoint's map has not caught up with a
+        % just-completed bulk upload). Falling back per uid on a lagged
+        % index defeats the batch design -- a 28,000-member series that
+        % took the fallback would issue 28,000 getFileDetails calls
+        % where the batch would have taken one.
+        %
+        % Only the second cause is worth a retry, and this side has no
+        % way to distinguish them a priori -- so retry ONCE per scope,
+        % sleep briefly first, and if the second answer still does not
+        % name the uid, take that as data drift and warn.
+        %
+        % Bounded and per-scope: a data-drift miss costs one extra
+        % signer call for the whole scope, not one per uid. A lagged
+        % index that recovers replaces the cache entry for every
+        % subsequent uid in the same scope, so a whole series' worth of
+        % misses becomes a whole series' worth of hits from one retry.
+        % See VH-Lab/NDI-matlab#991 and Waltham-Data-Science/
+        % NDI-python#309.
+        if ~isKey(RETRIEDSCOPES, cacheKey)
+            RETRIEDSCOPES(cacheKey) = true;
+            STATS.partialMapRetries = STATS.partialMapRetries + 1;
+            if options.partialMapRetrySeconds > 0
+                options.sleepFcn(options.partialMapRetrySeconds);
+            end
+            % Drop the stale entry so localFetchScope replaces it fresh.
+            remove(CACHE, cacheKey);
+            refreshed = localFetchScope(cacheKey);
+            if isempty(refreshed)
+                % localFetchScope already recorded the miss and warned;
+                % do not double-count here.
+                stats = STATS;
+                return
+            end
+            entry = refreshed;
+            if isKey(entry.map, key)
+                url = entry.map(key);
+                if isstring(url) && isscalar(url), url = char(url); end
+                STATS.uidHits = STATS.uidHits + 1;
+                stats = STATS;
+                return
+            end
+        end
+
+        STATS.uidMisses = STATS.uidMisses + 1;
+        localWarnOnce(cacheKey);
+    end
+    stats = STATS;
+
+    function e = localFetchScope(theCacheKey)
+        % Fetch the scope's URL map from the signer and cache it. On any
+        % failure or unexpected shape, record the miss, warn once for
+        % the scope, and return []. Extracted so the partial-map retry
+        % path can call it a second time without duplicating the
+        % nargout/try dance.
+
         % A scope that just failed is not retried for every uid after it.
         %
         % Without this, a batch endpoint that cannot answer costs one FAILED
@@ -187,8 +291,8 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         % within one sweep, not to give up on the scope -- see
         % testFailingSignerReturnsEmpty, which requires that a caller who
         % recovers on a later request still gets an answer.
-        if isKey(FAILEDSCOPES, cacheKey)
-            lastFailure = FAILEDSCOPES(cacheKey);
+        if isKey(FAILEDSCOPES, theCacheKey)
+            lastFailure = FAILEDSCOPES(theCacheKey);
             % A caller asking again for THE SAME uid is retrying on purpose,
             % and gets a fresh attempt -- a failure must not be sticky for
             % someone who recovers on a later request. A sweep that moves on
@@ -197,11 +301,11 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             sameUid = strcmp(char(uid), lastFailure.uid);
             if ~sameUid && seconds(now_utc - lastFailure.at) < options.failureTtlSeconds
                 STATS.uidMisses = STATS.uidMisses + 1;
-                localWarnOnce(cacheKey);
-                stats = STATS;
+                localWarnOnce(theCacheKey);
+                e = [];
                 return
             end
-            remove(FAILEDSCOPES, cacheKey);
+            remove(FAILEDSCOPES, theCacheKey);
         end
 
         % Populate the cache for this scope. The signer is expected to
@@ -264,30 +368,16 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             end
             STATS.lastFailureReason = failureReason;
             STATS.uidMisses = STATS.uidMisses + 1;
-            FAILEDSCOPES(cacheKey) = struct('at', now_utc, 'uid', char(uid));
-            localWarnOnce(cacheKey);
-            stats = STATS;
+            FAILEDSCOPES(theCacheKey) = struct('at', now_utc, 'uid', char(uid));
+            localWarnOnce(theCacheKey);
+            e = [];
             return
         end
-        entry = struct('map', answer.files, 'fetchedAt', now_utc);
-        CACHE(cacheKey) = entry;
-        STATS.lastMapSize = double(entry.map.Count);
-        STATS.lastMapUids = keys(entry.map);
+        e = struct('map', answer.files, 'fetchedAt', now_utc);
+        CACHE(theCacheKey) = e;
+        STATS.lastMapSize = double(e.map.Count);
+        STATS.lastMapUids = keys(e.map);
     end
-
-    key = char(uid);
-    if isKey(entry.map, key)
-        url = entry.map(key);
-        if isstring(url) && isscalar(url), url = char(url); end
-        STATS.uidHits = STATS.uidHits + 1;
-    else
-        % The scope was fetched but does not name this uid -- data drift, or
-        % a scope that does not actually cover the file. The caller falls
-        % back per uid.
-        STATS.uidMisses = STATS.uidMisses + 1;
-        localWarnOnce(cacheKey);
-    end
-    stats = STATS;
 
     function reason = localDescribeFailure(ok, answer, apiResponse)
         % Name the specific cause, so a report is actionable by whoever owns
