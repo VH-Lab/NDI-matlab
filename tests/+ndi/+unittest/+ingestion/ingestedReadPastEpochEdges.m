@@ -109,13 +109,22 @@ function [probe, epoch] = setupIngestedProbeEpoch(testCase)
     testCase.assumeNotEmpty(et, 'Probe must have at least one epoch.');
     epoch = et(1);
 
-    % Confirm the ingested path is actually what we exercise. If a future
-    % change stops the daq system dispatching to the ingested reader for
-    % this epoch, the test would silently move to the local reader and
-    % pass without covering the fix.
-    [dev_cell, ~, devepoch_cell] = probe.getchanneldevinfo(1);
+    % Confirm the ingested path is actually what we exercise. Without
+    % this guard, a future change that stops the daq system dispatching
+    % to the ingested reader would silently move the tests to the local
+    % reader (which has always clamped, see NDR-matlab's Intan reader)
+    % and pass without covering the fix. Query the daq system's own
+    % filenavigator, which is what the reader does on line 178 of
+    % src/ndi/+ndi/+daq/+system/mfdaq.m -- getchanneldevinfo returns
+    % devepoch as a cell of epoch IDs, not the epochfiles cell isingested
+    % wants.
+    dev = S.daqsystem_load('name', 'intan1');
+    testCase.assertNotEmpty(dev, ...
+        'buildSession must have added the "intan1" daq system.');
+    if iscell(dev), dev = dev{1}; end
+    epochfiles = getepochfiles(dev.filenavigator, epoch.epoch_id);
     testCase.assertTrue( ...
-        ndi.file.navigator.isingested(devepoch_cell{1}), ...
+        ndi.file.navigator.isingested(epochfiles), ...
         'Test setup did not route the read through the ingested path.');
 end
 
