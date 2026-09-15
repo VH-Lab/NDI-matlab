@@ -210,6 +210,44 @@ classdef FileTierTest < matlab.unittest.TestCase
                     "filesFailed should be 0 on a completed PSEUDO_COLD job. " + msg_w);
             end
 
+            % Read the doc's cached summary back and confirm the freeze
+            % actually shows up there. This is the read path a caller uses
+            % to answer "what tier is this doc on now?" without polling
+            % the job again.
+            narrative(end+1) = "Reading tier summary back via getFileTier.";
+            [b_r, tier, resp_r, url_r] = ndi.cloud.api.files.getFileTier(...
+                testCase.DatasetID, testCase.CloudDocumentID);
+            msg_r = ndi.unittest.cloud.APIMessage(narrative, b_r, tier, resp_r, url_r);
+            testCase.verifyTrue(b_r, "getFileTier returned failure. " + msg_r);
+            testCase.verifyEqual(tier.dominant, "PSEUDO_COLD", ...
+                "getFileTier.dominant did not reflect the completed freeze. " + msg_r);
+            testCase.verifyTrue(isstruct(tier.counts) || isa(tier.counts, 'containers.Map'), ...
+                "getFileTier.counts is not a struct or Map. " + msg_r);
+
+            testCase.Narrative = narrative;
+        end
+
+        % ------------------------------------------------------------------
+        % getFileTier on a doc that has never had a tier op should read
+        % cleanly and return an empty/default summary rather than throw.
+        % ------------------------------------------------------------------
+        function testGetFileTierOnUntieredDocumentReturnsEmpty(testCase)
+            testCase.Narrative = "Begin testGetFileTierOnUntieredDocumentReturnsEmpty";
+            narrative = testCase.Narrative;
+
+            narrative(end+1) = "Reading getFileTier on a fresh doc (no prior tier op).";
+            [b, tier, resp, url] = ndi.cloud.api.files.getFileTier(...
+                testCase.DatasetID, testCase.CloudDocumentID);
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, tier, resp, url);
+            testCase.verifyTrue(b, "getFileTier failed on fresh doc. " + msg);
+            testCase.verifyTrue(isstruct(tier), "getFileTier answer is not a struct. " + msg);
+            % A doc with no tier state should read as "" dominant (or empty
+            % counts). The wrapper normalizes an absent server field to
+            % an empty projection, so this is a shape assertion, not a
+            % server-guarantee assertion.
+            testCase.verifyTrue(tier.dominant == "" || tier.dominant == "STANDARD", ...
+                "Fresh doc dominant should be empty or STANDARD, got: " + tier.dominant + ". " + msg);
+
             testCase.Narrative = narrative;
         end
 
