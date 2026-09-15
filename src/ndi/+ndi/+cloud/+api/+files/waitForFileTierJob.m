@@ -23,12 +23,17 @@ function [b, answer, apiResponse, apiURL] = waitForFileTierJob(jobId, options)
 %
 %   Outputs:
 %       b            - True iff the job reached state 'completed'. False
-%                      on 'failed'/'superseded', timeout, or API error.
+%                      on 'failed'/'superseded', timeout, or unrecovered
+%                      API error at the deadline.
 %       answer       - The last status struct from the server. On timeout,
 %                      `state` is set to 'timeout' and `elapsed` holds the
 %                      wall time spent polling.
 %       apiResponse  - The ResponseMessage from the last poll.
 %       apiURL       - The URL of the last poll.
+%
+%   See also: ndi.cloud.api.implementation.files.WaitForFileTierJob,
+%             ndi.cloud.api.files.setFileTier,
+%             ndi.cloud.api.files.getFileTierJob
 
     arguments
         jobId (1,1) string
@@ -38,39 +43,12 @@ function [b, answer, apiResponse, apiURL] = waitForFileTierJob(jobId, options)
         options.backoffFactor   (1,1) double {mustBePositive} = 2
     end
 
-    startTime  = tic;
-    interval   = options.initialInterval;
-    answer     = struct('state', 'unknown');
-    apiResponse = [];
-    apiURL      = [];
+    api_call = ndi.cloud.api.implementation.files.WaitForFileTierJob(...
+        'jobId',           jobId, ...
+        'timeout',         options.timeout, ...
+        'initialInterval', options.initialInterval, ...
+        'maxInterval',     options.maxInterval, ...
+        'backoffFactor',   options.backoffFactor);
 
-    while true
-        [ok, answer, apiResponse, apiURL] = ndi.cloud.api.files.getFileTierJob(jobId);
-        if ~ok
-            b = false;
-            return;
-        end
-
-        if isfield(answer, 'state')
-            switch string(answer.state)
-                case "completed"
-                    b = true;
-                    return;
-                case {"failed", "superseded"}
-                    b = false;
-                    return;
-            end
-        end
-
-        elapsed = toc(startTime);
-        if elapsed >= options.timeout
-            answer.state = 'timeout';
-            answer.elapsed = elapsed;
-            b = false;
-            return;
-        end
-
-        pause(min(interval, options.timeout - elapsed));
-        interval = min(interval * options.backoffFactor, options.maxInterval);
-    end
+    [b, answer, apiResponse, apiURL] = api_call.execute();
 end
