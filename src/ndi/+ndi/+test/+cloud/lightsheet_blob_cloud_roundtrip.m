@@ -98,6 +98,22 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         end
     end
 
+    % ndi.document.readblankdefinition keeps a persistent containers.Map
+    % of parsed JSON per document type. A MATLAB session that had the
+    % pre-fix lightsheetZarrLevel schema loaded (before chunk.bin became
+    % a DID file_series) hands the stale definition to every later
+    % construction, and addFileSeries('chunk.bin', ...) then refuses the
+    % write with "chunk.bin is not declared as a file series". Nuke the
+    % cache up front so a re-run of this demo cannot inherit a stale
+    % session state.
+    try
+        ndi.document.readblankdefinition('--clear-cache');
+    catch
+        % Older NDI without the sentinel; safe to skip -- the definition
+        % cache is a persistent inside the same file, so a `clear
+        % functions` at the caller resolves the same way.
+    end
+
     % --- (a) three fresh temp directories -------------------------------
     sessionDir  = mustMakeTempDir();
     datasetDir  = mustMakeTempDir();
