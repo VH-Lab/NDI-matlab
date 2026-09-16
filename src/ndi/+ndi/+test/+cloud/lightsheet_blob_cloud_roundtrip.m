@@ -91,20 +91,25 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         options.Verbose (1,1) logical = true
     end
 
-    say = @(varargin) verboseNarrator(options.Verbose, varargin{:});
+    verbose = options.Verbose;
+    function narrate(fmt, varargin)
+        if verbose
+            fprintf(['[roundtrip] ' fmt '\n'], varargin{:});
+        end
+    end
 
     % --- (a) three fresh temp directories -------------------------------
     sessionDir  = mustMakeTempDir();
     datasetDir  = mustMakeTempDir();
     downloadDir = mustMakeTempDir();
     zarrParent  = mustMakeTempDir();
-    say('Temp session   : %s', sessionDir);
-    say('Temp dataset   : %s', datasetDir);
-    say('Temp download  : %s', downloadDir);
-    say('Temp zarr root : %s', zarrParent);
+    narrate('Temp session   : %s', sessionDir);
+    narrate('Temp dataset   : %s', datasetDir);
+    narrate('Temp download  : %s', downloadDir);
+    narrate('Temp zarr root : %s', zarrParent);
 
     % --- (b) build the blob fixture -------------------------------------
-    say('Building blob fixture ([shape=%dx%dx%d, channels=%d, chunks=%dx%dx%d, levels=%d])...', ...
+    narrate('Building blob fixture ([shape=%dx%dx%d, channels=%d, chunks=%dx%dx%d, levels=%d])...', ...
         options.Shape(1), options.Shape(2), options.Shape(3), options.NumChannels, ...
         options.ChunkShape(1), options.ChunkShape(2), options.ChunkShape(3), ...
         options.NumLevels);
@@ -113,10 +118,10 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         'NumChannels', options.NumChannels, ...
         'ChunkShape',  options.ChunkShape, ...
         'NumLevels',   options.NumLevels);
-    say('Zarr fixture   : %s', zarrPath);
+    narrate('Zarr fixture   : %s', zarrPath);
 
     % --- (c) ingest the fixture into a fresh session --------------------
-    say('Opening session on %s ...', sessionDir);
+    narrate('Opening session on %s ...', sessionDir);
     S = ndi.session.dir('blob', sessionDir);
 
     subjectName = 'blob@vhlab';
@@ -124,29 +129,29 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         'base.session_id', S.id(), ...
         'subject.local_identifier', subjectName);
     S.database_add(sub);
-    say('Added subject document "%s".', subjectName);
+    narrate('Added subject document "%s".', subjectName);
 
-    say('Running fromOMEZarr (codec=%s, clevel=%d)...', options.Codec, options.Clevel);
+    narrate('Running fromOMEZarr (codec=%s, clevel=%d)...', options.Codec, options.Clevel);
     [P, ~, ~] = ndi.fun.doc.lightsheet.fromOMEZarr(S, zarrPath, ...
         'subjectID',         sub.id(), ...
         'materializeChunks', true, ...
         'codec',             options.Codec, ...
         'clevel',            options.Clevel);
-    say('Built lightsheetZarrPyramid %s.', P.id());
+    narrate('Built lightsheetZarrPyramid %s.', P.id());
 
     % --- (d) view the local pyramid -------------------------------------
     if options.ViewLocal
-        say('Launching napari viewer on the LOCAL session ...');
+        narrate('Launching napari viewer on the LOCAL session ...');
         ndi.fun.doc.lightsheet.view(S, P.id(), ...
             'launcher',  options.Launcher, ...
             'reduction', options.Reduction, ...
             'wait',      options.WaitViewer);
     else
-        say('Skipping local view (ViewLocal=false).');
+        narrate('Skipping local view (ViewLocal=false).');
     end
 
     % --- (e) make a dataset, ingest the session -------------------------
-    say('Building dataset at %s ...', datasetDir);
+    narrate('Building dataset at %s ...', datasetDir);
     D = ndi.dataset.dir('blob_dataset', datasetDir);
     if ~S.isIngested()
         error('lightsheet_blob_cloud_roundtrip:notIngested', ...
@@ -155,11 +160,11 @@ function info = lightsheet_blob_cloud_roundtrip(options)
              'daq system got attached during setup.'], S.id());
     end
     D = D.add_ingested_session(S);
-    say('Added session %s to dataset (ingested).', S.id());
+    narrate('Added session %s to dataset (ingested).', S.id());
 
     % --- (f) upload to NDI Cloud ----------------------------------------
     cloudDatasetName = buildRemoteDatasetName();
-    say('Uploading to NDI Cloud as remote name "%s" ...', cloudDatasetName);
+    narrate('Uploading to NDI Cloud as remote name "%s" ...', cloudDatasetName);
     [ok, cloudDatasetId, msg] = ndi.cloud.uploadDataset(D, ...
         'uploadAsNew',                 true, ...
         'skipMetadataEditorMetadata',  true, ...
@@ -168,13 +173,13 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         error('lightsheet_blob_cloud_roundtrip:uploadFailed', ...
             'ndi.cloud.uploadDataset failed: %s', msg);
     end
-    say('Cloud dataset id: %s', cloudDatasetId);
+    narrate('Cloud dataset id: %s', cloudDatasetId);
 
     % --- (g) download it back into a fresh temp dir ---------------------
-    say(['Downloading dataset back to %s (SyncFiles defaults false; the ' ...
+    narrate(['Downloading dataset back to %s (SyncFiles defaults false; the ' ...
         'DID-matlab#201 handler-fetch path installs manifests on demand) ...'], downloadDir);
     Ddown = ndi.cloud.downloadDataset(cloudDatasetId, downloadDir);
-    say('Downloaded dataset opened at %s.', char(Ddown.path()));
+    narrate('Downloaded dataset opened at %s.', char(Ddown.path));
 
     % --- (h) list and open the first session ----------------------------
     [refs, ids] = Ddown.session_list();
@@ -182,9 +187,9 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         error('lightsheet_blob_cloud_roundtrip:noSessions', ...
             'Downloaded dataset carries no sessions; upload must have dropped the ingested session.');
     end
-    say('Downloaded dataset lists %d session(s): %s', numel(ids), strjoin(refs, ', '));
+    narrate('Downloaded dataset lists %d session(s): %s', numel(ids), strjoin(refs, ', '));
     firstId = ids{1};
-    say('Opening the first session (%s) ...', firstId);
+    narrate('Opening the first session (%s) ...', firstId);
     Sdown = Ddown.open_session(firstId);
 
     % --- (i) find the pyramid doc and open it ---------------------------
@@ -195,16 +200,16 @@ function info = lightsheet_blob_cloud_roundtrip(options)
             'No lightsheetZarrPyramid documents on the downloaded session %s.', firstId);
     end
     downloadedPyramidId = pyramidDocs{1}.id();
-    say('Found lightsheetZarrPyramid %s on the downloaded session.', downloadedPyramidId);
+    narrate('Found lightsheetZarrPyramid %s on the downloaded session.', downloadedPyramidId);
 
     if options.ViewCloud
-        say('Launching napari viewer on the DOWNLOADED session ...');
+        narrate('Launching napari viewer on the DOWNLOADED session ...');
         ndi.fun.doc.lightsheet.view(Sdown, downloadedPyramidId, ...
             'launcher',  options.Launcher, ...
             'reduction', options.Reduction, ...
             'wait',      options.WaitViewer);
     else
-        say('Skipping cloud view (ViewCloud=false).');
+        narrate('Skipping cloud view (ViewCloud=false).');
     end
 
     info = struct( ...
@@ -219,7 +224,7 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         'downloadedDataset',    Ddown, ...
         'downloadedSession',    Sdown, ...
         'downloadedPyramidId',  downloadedPyramidId);
-    say('Round trip complete.');
+    narrate('Round trip complete.');
 end
 
 % =====================================================================
@@ -241,8 +246,3 @@ function name = buildRemoteDatasetName()
     name = sprintf('Blob Test Dataset %s %d', dstr, r);
 end
 
-function verboseNarrator(verbose, fmt, varargin)
-    if verbose
-        fprintf(['[roundtrip] ' fmt '\n'], varargin{:});
-    end
-end
