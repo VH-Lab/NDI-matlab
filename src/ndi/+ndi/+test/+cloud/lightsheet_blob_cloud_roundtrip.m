@@ -171,8 +171,8 @@ function info = lightsheet_blob_cloud_roundtrip(options)
     say('Cloud dataset id: %s', cloudDatasetId);
 
     % --- (g) download it back into a fresh temp dir ---------------------
-    say('Downloading dataset back to %s (SyncFiles defaults false; the ' ...
-        'DID-matlab#201 handler-fetch path installs manifests on demand) ...', downloadDir);
+    say(['Downloading dataset back to %s (SyncFiles defaults false; the ' ...
+        'DID-matlab#201 handler-fetch path installs manifests on demand) ...'], downloadDir);
     Ddown = ndi.cloud.downloadDataset(cloudDatasetId, downloadDir);
     say('Downloaded dataset opened at %s.', char(Ddown.path()));
 
