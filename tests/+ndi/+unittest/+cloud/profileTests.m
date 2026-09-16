@@ -47,9 +47,15 @@ classdef profileTests < matlab.unittest.TestCase
     end
 
     methods (TestMethodSetup)
-        function configureForTest(~)
-            ndi.cloud.profile.useBackend('memory');
+        function configureForTest(testCase)
+            % reset() FIRST: it now restores the detected backend, so
+            % selecting memory before it would be undone. And a teardown
+            % puts the real backend back, because this singleton outlives
+            % the test run -- leaving it on memory made every later
+            % setPassword in the same MATLAB session write to RAM.
             ndi.cloud.profile.reset();
+            ndi.cloud.profile.useBackend('memory');
+            testCase.addTeardown(@() ndi.cloud.profile.reset());
             % Wipe the on-disk file so reload() in tests starts clean.
             f = ndi.cloud.profile.filename();
             if isfile(f); delete(f); end
@@ -271,12 +277,75 @@ classdef profileTests < matlab.unittest.TestCase
             testCase.verifyEqual(getenv('CLOUD_API_ENVIRONMENT'), 'dev');
         end
 
-        function testFilenameLivesInPrefdir(testCase)
+        function testFilenameLivesInUserPrefDir(testCase)
+            % Filenames moved from MATLAB's prefdir to ~/.ndi/ so that
+            % ndi-python and MATLAB share saved profiles by default
+            % (see ndi-matlab#920 / ndi-python#168).
             f = ndi.cloud.profile.filename();
             testCase.verifyClass(f, 'char');
-            testCase.verifyTrue(startsWith(f, prefdir), ...
-                sprintf('Expected filename to start with prefdir (%s) but got %s', ...
-                    prefdir, f));
+            expected = ndi.cloud.profile.userPrefDir();
+            testCase.verifyTrue(startsWith(f, expected), ...
+                sprintf('Expected filename to start with %s but got %s', ...
+                    expected, f));
+        end
+
+        function testFindIndexByNickname(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.add('dev-account', 'dev@lab.org', 'pw2');
+            testCase.verifyEqual( ...
+                ndi.cloud.profile.get('lab-primary').UID, uidLab);
+        end
+
+        function testFindIndexByEmailIsCaseInsensitive(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.add('dev-account', 'dev@lab.org', 'pw2');
+            testCase.verifyEqual( ...
+                ndi.cloud.profile.get('ME@LAB.ORG').UID, uidLab);
+        end
+
+        function testFindIndexAmbiguousNicknameThrows(testCase)
+            uidA = ndi.cloud.profile.add('shared', 'a@lab.org', 'pwA');
+            uidB = ndi.cloud.profile.add('shared', 'b@lab.org', 'pwB');
+            try
+                ndi.cloud.profile.get('shared');
+                testCase.verifyFail('Ambiguous nickname should have thrown.');
+            catch ME
+                testCase.verifyEqual(ME.identifier, ...
+                    'NDI:cloud:profile:ambiguousProfile');
+                testCase.verifyTrue(contains(ME.message, uidA));
+                testCase.verifyTrue(contains(ME.message, uidB));
+            end
+        end
+
+        function testSwitchProfileByNicknameStoresResolvedUid(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            saved = ndi.unittest.cloud.profileTests.snapshotEnv();
+            cleanup = onCleanup(@() ...
+                ndi.unittest.cloud.profileTests.restoreEnv(saved)); %#ok<NASGU>
+            ndi.cloud.profile.switchProfile('lab-primary');
+            testCase.verifyEqual(getenv('NDI_CLOUD_USERNAME'), 'me@lab.org');
+            testCase.verifyEqual(getenv('NDI_CLOUD_PASSWORD'), 'pw1');
+            cur = ndi.cloud.profile.getCurrent();
+            testCase.assertNotEmpty(cur);
+            testCase.verifyEqual(cur.UID, uidLab, ...
+                'switchProfile must store the resolved UID, not the raw key.');
+        end
+
+        function testSetCurrentByEmailStoresResolvedUid(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setCurrent('me@lab.org');
+            cur = ndi.cloud.profile.getCurrent();
+            testCase.assertNotEmpty(cur);
+            testCase.verifyEqual(cur.UID, uidLab);
+        end
+
+        function testRemoveByNicknameClearsCurrentAndDefault(testCase)
+            uidLab = ndi.cloud.profile.add('lab-primary', 'me@lab.org', 'pw1');
+            ndi.cloud.profile.setCurrent(uidLab);
+            ndi.cloud.profile.setDefault(uidLab);
+            ndi.cloud.profile.remove('lab-primary');
+            testCase.verifyEmpty(ndi.cloud.profile.getCurrent());
+            testCase.verifyEmpty(ndi.cloud.profile.getDefault());
         end
 
         function testEditorSmoke(testCase)
@@ -301,6 +370,23 @@ classdef profileTests < matlab.unittest.TestCase
 
             delete(fig);
             testCase.verifyFalse(isvalid(fig));
+        end
+
+        function testResetRestoresTheDetectedBackend(testCase)
+            % Regression, and it cost a real afternoon. useBackend is a
+            % test hook, but the singleton it writes to outlives the test
+            % run -- it lasts the whole MATLAB session. With reset()
+            % leaving Backend alone, a test run left every later
+            % setPassword writing to a containers.Map that is discarded at
+            % exit. No error, no file change, and getPassword returned the
+            % value it had just stored in RAM, so the password looked
+            % saved and was gone at the next launch.
+            ndi.cloud.profile.useBackend('memory');
+            ndi.cloud.profile.reset();
+            % 'aes' spelled out rather than compared against
+            % detectBackend(), which is private: a test that called it
+            % would fail on access, not on the behaviour it is about.
+            testCase.verifyEqual(ndi.cloud.profile.backend(), 'aes');
         end
 
         function testVaultBackendWriteErrorsClearly(testCase)

@@ -290,7 +290,12 @@ classdef tuning_response < ndi.app
 
                 E.database_rm(rdoc);
 
-                controlstimids = control_doc.document_properties.control_stimulus_ids.control_stimulus_ids(:);
+                % Fix NDI-matlab#912: control_stimulus_ids holds per-presentation
+                % blank-presentation numbers, but vlt's control_stimid wants the
+                % blank's stimulus id. Recover it from the presentation_order at
+                % the stored control positions.
+                cs_ids = control_doc.document_properties.control_stimulus_ids.control_stimulus_ids(:);
+                controlstimids = unique(stim_doc.document_properties.stimulus_presentation.presentation_order(cs_ids(~isnan(cs_ids))));
                 freq_mult = [];
                 for j=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli)
                     eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimulus_presentation.stimuli(j).parameters);']);

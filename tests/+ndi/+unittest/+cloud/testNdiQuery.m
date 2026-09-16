@@ -16,8 +16,8 @@ classdef testNdiQuery < matlab.unittest.TestCase
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, 'NDI_CLOUD_USERNAME not set.');
-            testCase.fatalAssertNotEmpty(password, 'NDI_CLOUD_PASSWORD not set.');
+            testCase.assertNotEmpty(username, 'NDI_CLOUD_USERNAME not set.');
+            testCase.assertNotEmpty(password, 'NDI_CLOUD_PASSWORD not set.');
         end
     end
 
@@ -29,7 +29,7 @@ classdef testNdiQuery < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             [b_up, testCase.DatasetID, msg_up] = ndi.cloud.uploadDataset(testCase.Dataset, 'skipMetadataEditorMetadata',true,...
                 'remoteDatasetName',unique_name);
-            testCase.fatalAssertTrue(b_up, "Failed to upload dataset: " + msg_up);
+            testCase.assertTrue(b_up, "Failed to upload dataset: " + msg_up);
 
             testCase.addTeardown(@() testCase.teardownDataset());
 
@@ -42,18 +42,14 @@ classdef testNdiQuery < matlab.unittest.TestCase
 
     methods (Access = private)
         function teardownDataset(testCase)
-            % Clean up local
+            % Clean up local. Close open SQLite handles before removing the
+            % dataset/session directories so their did-sqlite.sqlite files are
+            % not still locked on Windows (see issue #870).
              if ~isempty(testCase.Dataset)
-                 path = testCase.Dataset.path;
-                 if isfolder(path)
-                     rmdir(path, 's');
-                 end
+                 ndi.unittest.cloud.closeAndRemoveDir(testCase.Dataset.path);
              end
              if ~isempty(testCase.Session)
-                 path = testCase.Session.path;
-                 if isfolder(path)
-                     rmdir(path, 's');
-                 end
+                 ndi.unittest.cloud.closeAndRemoveDir(testCase.Session.path);
              end
 
              % Clean up remote
@@ -163,7 +159,7 @@ classdef testNdiQuery < matlab.unittest.TestCase
                 doc_to_add = ndi.document('base', 'base.name', prefix + "_" + i);
                 json_doc = jsonencodenan(doc_to_add.document_properties);
                 [b_add, ~, ~, ~] = ndi.cloud.api.documents.addDocument(testCase.DatasetID, json_doc);
-                testCase.fatalAssertTrue(b_add, "Failed to add document " + i);
+                testCase.assertTrue(b_add, "Failed to add document " + i);
             end
 
             % 2. Construct ndiqueryAll

@@ -13,8 +13,8 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, 'NDI_CLOUD_USERNAME not set.');
-            testCase.fatalAssertNotEmpty(password, 'NDI_CLOUD_PASSWORD not set.');
+            testCase.assertNotEmpty(username, 'NDI_CLOUD_USERNAME not set.');
+            testCase.assertNotEmpty(password, 'NDI_CLOUD_PASSWORD not set.');
         end
     end
 
@@ -28,7 +28,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + "NOW_" + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
             [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
-            testCase.fatalAssertTrue(b, "Failed to create dataset.");
+            testCase.assertTrue(b, "Failed to create dataset.");
             narrative(end+1) = "Dataset created: " + cloudDatasetID;
 
             % 2. Add a document
@@ -36,7 +36,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             doc_to_add = ndi.document('base', 'base.name', 'Test Document');
             json_doc = jsonencodenan(doc_to_add.document_properties);
             [b_add, ans_add] = ndi.cloud.api.documents.addDocument(cloudDatasetID, json_doc);
-            testCase.fatalAssertTrue(b_add, "Failed to add document.");
+            testCase.assertTrue(b_add, "Failed to add document.");
             narrative(end+1) = "Document added.";
 
             % 3. Delete immediately (when='now')
@@ -74,7 +74,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + "SOFT_" + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
             [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
-            testCase.fatalAssertTrue(b, "Failed to create dataset.");
+            testCase.assertTrue(b, "Failed to create dataset.");
             narrative(end+1) = "Dataset created: " + cloudDatasetID;
 
             % Ensure cleanup if test fails or after success (cleanly remove it)
@@ -86,7 +86,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             doc_to_add = ndi.document('base', 'base.name', 'Test Document');
             json_doc = jsonencodenan(doc_to_add.document_properties);
             [b_add, ans_add] = ndi.cloud.api.documents.addDocument(cloudDatasetID, json_doc);
-            testCase.fatalAssertTrue(b_add, "Failed to add document.");
+            testCase.assertTrue(b_add, "Failed to add document.");
             narrative(end+1) = "Document added.";
 
             % 3. Delete with when='1d'
@@ -127,7 +127,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + "LIST_" + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
             [b, cloudDatasetID, resp, url] = ndi.cloud.api.datasets.createDataset(datasetInfo);
-            testCase.fatalAssertTrue(b, "Failed to create dataset.");
+            testCase.assertTrue(b, "Failed to create dataset.");
 
             % Ensure cleanup
             testCase.addTeardown(@() ndi.cloud.api.datasets.deleteDataset(cloudDatasetID, 'when', 'now'));
@@ -137,7 +137,7 @@ classdef DatasetDeleteAndUndeleteTest < matlab.unittest.TestCase
             doc_to_add = ndi.document('base', 'base.name', 'Deleted Test Document');
             json_doc = jsonencodenan(doc_to_add.document_properties);
             [b_add, ans_add] = ndi.cloud.api.documents.addDocument(cloudDatasetID, json_doc);
-            testCase.fatalAssertTrue(b_add, "Failed to add document.");
+            testCase.assertTrue(b_add, "Failed to add document.");
             cloudDocID = ans_add.id;
 
             % 3. Soft Delete Document

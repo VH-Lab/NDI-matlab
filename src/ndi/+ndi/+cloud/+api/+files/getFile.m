@@ -15,8 +15,10 @@ function [b, answer, apiResponse, apiURL] = getFile(downloadURL, downloadedFile,
 %   Name-Value Pairs:
 %       'useCurl' (logical) - If true, the function will use a system call
 %                             to the `curl` command-line tool to perform the
-%                             download. This can be a robust fallback if the native
-%                             MATLAB HTTP client fails. Defaults to false.
+%                             download. curl requests identity encoding so the
+%                             gateway does not double-compress already-compressed
+%                             archives (websave auto-decompresses and corrupts
+%                             them). Defaults to true.
 %
 %   Outputs:
 %       b            - True if the download succeeded, false otherwise.

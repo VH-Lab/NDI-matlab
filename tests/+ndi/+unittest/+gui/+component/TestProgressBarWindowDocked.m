@@ -18,7 +18,18 @@ classdef TestProgressBarWindowDocked < matlab.unittest.TestCase
     end
 
     methods (TestClassSetup)
-        function cleanUpBeforeAllTests(~)
+        function cleanUpBeforeAllTests(testCase)
+            % These tests assert on the figure and its child components, so
+            % they must run in the windowed path. Pin the rendering decision
+            % rather than let it be detected: the CI test process itself runs
+            % under `-batch`, where ndi.gui.component.ProgressBarWindow now
+            % chooses silent mode by default (issue #941) and there would be
+            % no figure to assert on.
+            previousSilentDefault = ndi.gui.component.ProgressBarWindow.silentModeDefault();
+            testCase.addTeardown(@() ...
+                ndi.gui.component.ProgressBarWindow.silentModeDefault(previousSilentDefault));
+            ndi.gui.component.ProgressBarWindow.silentModeDefault(false);
+
             delete(findall(groot, 'Type', 'figure', 'Tag', 'progressbar'));
             delete(findall(groot, 'Type', 'figure', 'Tag', 'ndiNavigator'));
         end

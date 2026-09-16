@@ -1,0 +1,113 @@
+{
+	"classname": "geneListMapping",
+	"superclasses": [
+		"base"
+	],
+	"depends_on": [
+		{
+			"name": "geneList_id_a",
+			"mustbenotempty": 1
+		},
+		{
+			"name": "geneList_id_b",
+			"mustbenotempty": 1
+		}
+	],
+	"file": [
+		{
+			"name": "mapping.tsv",
+			"mustbenotempty": 1
+		}
+	],
+	"geneListMapping": [
+		{
+			"name": "label",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A human-readable label for this mapping."
+		},
+		{
+			"name": "mapping_type",
+			"type": "string",
+			"default_value": "alias",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The kind of correspondence. 'alias': the two rows denote the SAME gene under different identifier systems, a lossless renaming. 'ortholog': the two rows denote DIFFERENT genes in different species inferred to be homologous, a biological inference that can be wrong. Never treat 'ortholog' as 'alias'."
+		},
+		{
+			"name": "method",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "How the mapping was produced (e.g. 'GEF geneID/geneName pairing', 'OrthoFinder v2.5.5', 'DIAMOND reciprocal best hits')."
+		},
+		{
+			"name": "symmetric",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [
+				0,
+				1,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "1 if the mapping may be applied in either direction, 0 if it is only valid from list a to list b."
+		},
+		{
+			"name": "n_pairs",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "The number of data rows in mapping.tsv."
+		},
+		{
+			"name": "n_genes_mapped_a",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "How many genes of list a appear at least once. Compare against the list's n_genes to see coverage."
+		},
+		{
+			"name": "n_genes_mapped_b",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				100000000,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "How many genes of list b appear at least once."
+		},
+		{
+			"name": "has_score",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [
+				0,
+				1,
+				0,
+				0
+			],
+			"queryable": 1,
+			"documentation": "1 if mapping.tsv carries a score column (e.g. an orthology confidence or bit score), 0 otherwise."
+		}
+	]
+}

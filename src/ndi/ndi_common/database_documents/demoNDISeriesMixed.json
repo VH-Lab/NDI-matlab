@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/demoNDISeriesMixed.json",
+		"validation":						"$NDISCHEMAPATH\/demoNDISeriesMixed_schema.json",
+		"class_name":						"demoNDISeriesMixed",
+		"property_list_name":					"demoNDISeriesMixed",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"files": {
+		"file_list": [
+			"chunkdata.bin",
+			"sidecar1.ext",
+			"sidecar2.ext",
+			"sidecar3.ext"
+		],
+		"file_series": [
+			"chunkdata.bin"
+		]
+	},
+	"demoNDISeriesMixed": {
+		"value":						""
+	}
+}

@@ -23,9 +23,9 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             %
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assertNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set. This is not an API problem.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
         end
     end
@@ -43,7 +43,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
                 msg = ndi.unittest.cloud.APIMessage(setup_narrative, b, cloudDatasetID, resp, url);
-                testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
+                testCase.assertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
             end
             testCase.DatasetID = cloudDatasetID;
             % The teardown is queued to run after the test method completes.
@@ -87,7 +87,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to perform the first bulk document upload.";
             [b_upload1, report_upload1] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload);
             msg_upload1 = ndi.unittest.cloud.APIMessage(narrative, b_upload1, report_upload1, [], []);
-            testCase.fatalAssertTrue(b_upload1, "First bulk upload failed. " + msg_upload1);
+            testCase.assertTrue(b_upload1, "First bulk upload failed. " + msg_upload1);
             narrative(end+1) = "First bulk upload successful.";
 
             pause(5); % Pause to allow the server to process the first batch
@@ -96,7 +96,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to perform the second bulk document upload to create duplicates.";
             [b_upload2, report_upload2] = ndi.cloud.upload.uploadDocumentCollection(testCase.DatasetID, docs_to_upload, 'onlyUploadMissing', false);
             msg_upload2 = ndi.unittest.cloud.APIMessage(narrative, b_upload2, report_upload2, [], []);
-            testCase.fatalAssertTrue(b_upload2, "Second bulk upload failed. " + msg_upload2);
+            testCase.assertTrue(b_upload2, "Second bulk upload failed. " + msg_upload2);
             narrative(end+1) = "Second bulk upload successful.";
 
             pause(5); % Pause to allow the server to process the second batch
@@ -105,7 +105,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to verify document count after creating duplicates.";
             [b_count, ans_count, resp_count, url_count] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
             msg_count = ndi.unittest.cloud.APIMessage(narrative, b_count, ans_count, resp_count, url_count);
-            testCase.fatalAssertTrue(b_count, "Failed to get document count. " + msg_count);
+            testCase.assertTrue(b_count, "Failed to get document count. " + msg_count);
             testCase.verifyEqual(ans_count, 2 * numDocs, "Document count is not double the initial upload. " + msg_count);
             narrative(end+1) = "Document count is correctly " + (2 * numDocs) + ".";
 
@@ -127,7 +127,7 @@ classdef DuplicatesTest < matlab.unittest.TestCase
             narrative(end+1) = "Preparing to verify final document count after duplicate removal.";
             [b_count_final, ans_count_final, resp_count_final, url_count_final] = ndi.cloud.api.documents.documentCount(testCase.DatasetID);
             msg_count_final = ndi.unittest.cloud.APIMessage(narrative, b_count_final, ans_count_final, resp_count_final, url_count_final);
-            testCase.fatalAssertTrue(b_count_final, "Failed to get final document count. " + msg_count_final);
+            testCase.assertTrue(b_count_final, "Failed to get final document count. " + msg_count_final);
             testCase.verifyEqual(ans_count_final, numDocs, "Final document count is incorrect after duplicate removal. " + msg_count_final);
             narrative(end+1) = "Final document count is correctly " + numDocs + ".";
 

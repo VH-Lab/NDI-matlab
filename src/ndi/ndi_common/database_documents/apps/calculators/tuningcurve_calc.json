@@ -1,12 +1,12 @@
 {
 	"document_class": {
-		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculations\/tuningcurve_calc.json",
-		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/tuningcurve_calc_schema.json",
+		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculators\/tuningcurve_calc.json",
+		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/tuningcurve_calc_v2_schema.json",
 		"class_name":                       "tuningcurve_calc",
 		"property_list_name":                   "tuningcurve_calc", 
-		"class_version":                    1,
+		"class_version":                    2,
 		"superclasses": [
-			{ "definition":                 "$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/calculator.json" },
 			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus/stimulus_tuningcurve.json"}
 		]
 	},

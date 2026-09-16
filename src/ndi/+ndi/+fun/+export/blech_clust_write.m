@@ -40,6 +40,23 @@ function blech_clust_write(outputfile, unit_spiketimes, unit_info, onset_times, 
 % | verbose (1)         | 0/1 be verbose.                                     |
 % --------------------------------------------------------------------------
 %
+% AXIS ORDER OF /spike_trains/dig_in_<N>/spike_array
+% --------------------------------------------------------------------------
+% blech_clust requires the raster to have numpy shape (n_trials, n_units,
+% trial_duration_ms). MATLAB (column-major) and h5py/numpy (row-major) index
+% HDF5 datasets in opposite orders, so a dataset written from MATLAB with
+% dimensions [d1 d2 d3] is reported by Python as shape (d3, d2, d1). This
+% function therefore writes the dataset with MATLAB dimensions
+% [trial_dur_ms n_units n_trials], which Python reads back as
+% (n_trials, n_units, trial_dur_ms). Consequences:
+%   * reading spike_array back with MATLAB's h5read yields
+%     [trial_dur_ms n_units n_trials] -- the reverse of the Python shape,
+%     and correct;
+%   * Python consumers must NOT apply a compensating
+%     np.transpose(spike_array, (2,1,0)); the file is already in blech's
+%     order. (Issue #855.)
+% --------------------------------------------------------------------------
+%
 % See also: ndi.fun.export.blech_clust
 
     arguments

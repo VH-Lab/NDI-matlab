@@ -108,12 +108,29 @@ function [b, report] = uploadDocumentCollection(datasetId, documentList, options
         for i=1:numel(documentList)
             report.manifest{i} = docIds{i};
             try
-                % For serial upload, encode just the document properties
+                % For serial upload, encode just the document properties.
+                % addDocument's success flag must be read: AddDocument.execute
+                % swallows exceptions internally (returns ok=false without
+                % rethrowing), so the surrounding try/catch alone can never see
+                % a failed upload and every status would be recorded 'success'.
                 docProperties = documentList{i}.document_properties;
-                [~,~] = ndi.cloud.api.documents.addDocument(datasetId, jsonencodenan(docProperties));
-                report.status{i} = 'success';
-            catch
+                [ok, ~] = ndi.cloud.api.documents.addDocument(datasetId, ...
+                    did.datastructures.jsonencodenan(docProperties));
+                if ok
+                    report.status{i} = 'success';
+                else
+                    report.status{i} = 'failure';
+                end
+            catch ME
+                % Keep the catch for genuinely thrown errors, but say what
+                % happened. Recording 'failure' and discarding the reason is
+                % how the unqualified jsonencodenan call above survived: it
+                % could never resolve, so every document on this path failed,
+                % and the report said only that they had failed.
                 report.status{i} = 'failure';
+                warning('NDI:Cloud:Upload:DocumentUploadFailed', ...
+                    'Upload of document %s failed: %s', ...
+                    string(docIds{i}), ME.message);
             end
             app.updateBar(uuid, i / numel(documentList));
         end

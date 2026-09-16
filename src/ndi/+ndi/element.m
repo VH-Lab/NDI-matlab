@@ -331,6 +331,13 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %
             % For ndi.element objects, this is the string 'element: ' followed by its name
             %
+            % This string is for display only. It contains a '|', which is not a legal
+            % filename character on Windows, so it must not be used to build file or
+            % folder names; use ndi.fun.file.elementDirectoryName (or
+            % ndi.fun.file.elementDirectory) for that.
+            %
+            % See also: ndi.fun.file.elementDirectoryName, ndi.fun.file.elementDirectory
+            %
             elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
         end %elementstring()
 

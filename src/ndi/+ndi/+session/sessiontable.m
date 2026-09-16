@@ -33,6 +33,7 @@ classdef sessiontable
             % Returns the session table, a structure with fields 'SESSION_ID' and 'PATH'. Each entry
             % in the table corresponds to a recently-opened or added path of ndi.session.dir.
             %
+            ndi.session.sessiontable.migrateLegacyIfNeeded();
             t = vlt.data.emptystruct('session_id','path');
             fname = ndi.session.sessiontable.localtablefilename();
             if isfile(fname)
@@ -252,8 +253,73 @@ classdef sessiontable
             %
             % F = LOCALTABLEFILENAME()
             %
+            % Resolves to fullfile(ndi.common.PathConstants.Preferences,
+            % 'local_sessiontable.txt'). Since ndi-matlab#922 /
+            % ndi-python#172 that directory is ~/.ndi/, the same
+            % location ndi-python writes to.
             f = [ndi.common.PathConstants.Preferences filesep 'local_sessiontable.txt'];
         end % tablefilename()
+
+        function f = legacylocaltablefilename()
+            % LEGACYLOCALTABLEFILENAME - historical session table filename.
+            %
+            % The pre-migration location was
+            % fullfile(userpath, 'Preferences', 'NDI', 'local_sessiontable.txt').
+            % Kept for the one-time copy done in migrateLegacyIfNeeded.
+            f = fullfile(userpath, 'Preferences', 'NDI', 'local_sessiontable.txt');
+        end % legacylocaltablefilename()
+
+        function migrateLegacyIfNeeded()
+            % MIGRATELEGACYIFNEEDED - copy an old sessiontable into ~/.ndi/.
+            %
+            % One-time, best-effort. If ~/.ndi/local_sessiontable.txt
+            % already exists this is a no-op -- the new location wins.
+            % The legacy files are left in place (copy, not move) so a
+            % downgrade to a pre-migration MATLAB keeps working, same
+            % rule as ndi.cloud.profile.migrateLegacyIfNeeded.
+            newFile = ndi.session.sessiontable.localtablefilename();
+            oldFile = ndi.session.sessiontable.legacylocaltablefilename();
+            if isfile(newFile)
+                return;
+            end
+            if ~isfile(oldFile)
+                return;
+            end
+            newDir = fileparts(newFile);
+            if ~isfolder(newDir)
+                try
+                    mkdir(newDir);
+                catch ME
+                    warning('NDI:sessiontable:migrateFailed', ...
+                        'Could not create %s: %s', newDir, ME.message);
+                    return;
+                end
+            end
+            try
+                copyfile(oldFile, newFile);
+            catch ME
+                warning('NDI:sessiontable:migrateFailed', ...
+                    'Could not migrate %s to %s: %s', oldFile, newFile, ME.message);
+                return;
+            end
+            [oldDir, stem, ext] = fileparts(oldFile);
+            backupPattern = fullfile(oldDir, [stem '_bkup*' ext]);
+            d = dir(backupPattern);
+            for i = 1:numel(d)
+                dest = fullfile(newDir, d(i).name);
+                if isfile(dest)
+                    continue;
+                end
+                src = fullfile(oldDir, d(i).name);
+                try
+                    copyfile(src, dest);
+                catch ME
+                    warning('NDI:sessiontable:migrateFailed', ...
+                        'Could not migrate backup %s to %s: %s', ...
+                        src, dest, ME.message);
+                end
+            end
+        end % migrateLegacyIfNeeded()
 
     end % static methods
 

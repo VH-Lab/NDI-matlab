@@ -65,6 +65,14 @@ classdef GetFile < ndi.cloud.api.call
             % Request identity encoding so the raw file is delivered as-is.
             % Use -f so HTTP errors surface as non-zero exit codes instead
             % of writing a server error body into the destination file.
+
+            % downloadURL is server-supplied (taken verbatim from the
+            % getFileDetails API response) and is interpolated inside double
+            % quotes below. Validate both interpolated values before building
+            % the shell command so a crafted URL/path cannot inject commands.
+            ndi.cloud.api.implementation.files.assertSafeCurlArgs(...
+                this.downloadURL, this.downloadedFile);
+
             % Reset LD_LIBRARY_PATH for the subprocess so the OS curl loads
             % the OS libraries instead of MATLAB's bundled ones (a MATLAB
             % upgrade can otherwise break this system call). See

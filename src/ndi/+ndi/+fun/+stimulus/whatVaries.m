@@ -25,7 +25,11 @@ function [varies, constant] = whatVaries(stimuli, options)
 %   A parameter is CONSTANT when it is present in every (considered) stimulus
 %   and takes the same value in each; every other parameter (including one
 %   present in some stimuli but not all) is VARYING. Value equality is tested
-%   with vlt.data.eqlen, matching the semantics of vlt.data.structwhatvaries.
+%   with ISEQUALN, so a parameter that is NaN in every stimulus is CONSTANT.
+%   This is a deliberate deviation from vlt.data.structwhatvaries, which
+%   compares with vlt.data.eqlen (a bare '=='), where NaN ~= NaN makes an
+%   all-NaN parameter report as VARYING over a single distinct value. See
+%   local_varyingFields.
 %
 %   VARIES is a struct array (possibly empty) with fields:
 %       parameter - the name of the parameter (a char row vector)
@@ -117,11 +121,20 @@ end % whatVaries
 
 function names = local_varyingFields(params)
 % the parameter names that vary across the cell list of parameter structs
-% PARAMS. Mirrors vlt.data.structwhatvaries: each struct is compared to the
+% PARAMS. Follows vlt.data.structwhatvaries: each struct is compared to the
 % first, and a field is "varying" if it is present in only one of the two, or
-% present in both but with unequal values (compared with vlt.data.eqlen). Unlike
-% structwhatvaries, names are accumulated as cells, so a lone common field does
-% not trigger a char/cell concatenation error.
+% present in both but with unequal values. Two deliberate departures:
+%
+%   names are accumulated as CELLS, so a lone common field does not trigger
+%   the char/cell concatenation error structwhatvaries throws.
+%
+%   equality is ISEQUALN, not vlt.data.eqlen. eqlen bottoms out in a bare
+%   '==', so eqlen(NaN,NaN) is false and a parameter that is NaN in every
+%   stimulus was reported VARYING -- over exactly one distinct value, because
+%   local_uniqueValues below already uses isequaln and collapses the NaNs.
+%   That self-contradiction is the bug this fixes; isequaln also agrees with
+%   eqlen on every non-NaN case here and, unlike '==', is defined for the
+%   struct- and cell-valued parameters real stimulus data carries.
     names = {};
     if isempty(params)
         return;
@@ -134,7 +147,7 @@ function names = local_varyingFields(params)
             setdiff(refFields, theseFields)]; %#ok<AGROW>
         common = intersect(refFields, theseFields);
         for j = 1:numel(common)
-            if ~vlt.data.eqlen(ref.(common{j}), params{i}.(common{j}))
+            if ~isequaln(ref.(common{j}), params{i}.(common{j}))
                 names = [names; common(j)]; %#ok<AGROW>
             end
         end

@@ -103,10 +103,9 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
                 error(['No .analyzer file among epochfiles.']);
             end
 
-            z = load(analyzerFile,'-mat');
-            
-            % do the decoding
-            [stimParams,displayOrder] = ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(z.Analyzer);
+            % do the decoding. Errors are re-thrown naming the analyzer file,
+            % so a failure part-way through an ingestion identifies its source.
+            [~,displayOrder] = ndi.setup.stimulus.kjnielsenlab.extractStimulusParametersFromFile(analyzerFile);
             stimid = displayOrder;
 
             % read digital data
@@ -138,9 +137,28 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
                         data1 = reshape(data1,numel(data1),1);
                         ch{1} = [time1 data1];
 
+                        % Pair each detected stimulus onset with the condition
+                        % presented at that position of the stimulus sequence.
+                        % A run that was aborted produces fewer onsets than the
+                        % analyzer file describes, so trailing entries of stimid
+                        % are dropped here.
                         time2 = [stimontimes(:)];
-                        data2 = [stimid(:)];
-                        ch{2} = [time2 data2(1:size(time2,1),:)]; % fix for aborted trials
+                        numOnsets = size(time2,1);
+                        if numel(stimid) < numOnsets
+                            % '%s' keeps the path literal; it may contain backslashes.
+                            error('%s', ['Found ' int2str(numOnsets) ' stimulus onsets but the analyzer file describes only ' ...
+                                int2str(numel(stimid)) ' stimulus presentations; cannot identify the stimulus shown at every onset.' ...
+                                newline 'Analyzer file: ' analyzerFile]);
+                        end
+                        data2 = stimid(1:numOnsets);
+                        data2 = data2(:);
+                        if any(isnan(data2))
+                            unknownPositions = find(isnan(data2));
+                            error('%s', ['The analyzer file records no condition for position(s) ' mat2str(unknownPositions(:)') ...
+                                ' of the stimulus sequence, so stimulus identities cannot be aligned with the recorded onset times.' ...
+                                newline 'Analyzer file: ' analyzerFile]);
+                        end
+                        ch{2} = [time2 data2];
 
                         time3 = [stimsetuptimes(:)' ; stimcleartimes(:)'];
                         data3 = [ones(size(stimsetuptimes(:)')) ; -1*ones(size(stimcleartimes(:)'))];
