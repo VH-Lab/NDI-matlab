@@ -201,23 +201,34 @@ classdef mfdaq < ndi.daq.reader
             absolute_beginning = abs_s(1);
             absolute_end = abs_s(2);
 
-            if isinf(s0) | isinf(s1) % need to figure out actual values if user gave -inf/inf for either value
-                if isinf(s0)
-                    s0 = absolute_beginning;
-                end
-                if isinf(s1)
-                    s1 = absolute_end;
-                end
-            end
-
-            using_absolute_end = 0;
-            if s1==absolute_end
-                using_absolute_end = 1;
-            end
-
-            if s0>s1
+            % A caller who passes s0 > s1 has inverted the endpoints;
+            % that is a coding error, not a request. Check before the
+            % clamp so a real inversion is not silently absorbed by
+            % clipping one endpoint into the other.
+            if s0 > s1
                 error(['sample number s0 must be less than or equal to s1.']);
             end
+
+            % Clamp the requested window to what the epoch actually has.
+            % -Inf and any finite value before the epoch mean "start at
+            % the first sample"; +Inf and any finite value past the epoch
+            % mean "end at the last sample". A window that lies entirely
+            % outside [t0,t1] returns an empty slice -- read past the
+            % edge, get nothing there. The ingested reader addresses
+            % concrete _seg.nbf_N files, so it cannot pass an
+            % out-of-range sample number through to disk the way the
+            % local readers can; the clamp is what keeps a
+            % filter-warm-up read like pyraview's (which asks for
+            % t = t0 - excess on the first chunk) from asking for a
+            % _seg.nbf_0 that no writer has ever produced.
+            s0 = max(s0, absolute_beginning);
+            s1 = min(s1, absolute_end);
+            if s0 > s1
+                data = zeros(0, numel(channel));
+                return;
+            end
+
+            using_absolute_end = (s1 == absolute_end);
 
             % we have two issues here:
             %   1) identify the groups to which the requested channels belong
