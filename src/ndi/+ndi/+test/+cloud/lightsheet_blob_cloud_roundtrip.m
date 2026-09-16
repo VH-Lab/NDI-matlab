@@ -197,6 +197,20 @@ function info = lightsheet_blob_cloud_roundtrip(options)
     end
     narrate('Cloud dataset id: %s', cloudDatasetId);
 
+    % Server-side zip extraction has to finish before a download can see
+    % the ingested-session's per-file objects. Without this wait,
+    % Ddown.session_list() can come back empty on a fast download --
+    % the race the Python round-trip test guards against with the same
+    % call (see tests/test_cloud_file_series_round_trip.py).
+    narrate('Waiting for server-side bulk-upload extraction to finish ...');
+    [waitOk, waitInfo] = ndi.cloud.api.files.waitForAllBulkUploads(cloudDatasetId);
+    if ~waitOk
+        error('lightsheet_blob_cloud_roundtrip:extractionIncomplete', ...
+            'waitForAllBulkUploads did not confirm completion (state=%s, elapsed=%.1fs).', ...
+            waitInfo.state, waitInfo.elapsed);
+    end
+    narrate('Bulk-upload extraction complete (%.1fs).', waitInfo.elapsed);
+
     % --- (g) download it back into a fresh temp dir ---------------------
     narrate(['Downloading dataset back to %s (SyncFiles defaults false; the ' ...
         'DID-matlab#201 handler-fetch path installs manifests on demand) ...'], downloadDir);
