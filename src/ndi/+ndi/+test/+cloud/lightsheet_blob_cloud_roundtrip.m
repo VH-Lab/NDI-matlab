@@ -89,6 +89,7 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         options.ViewCloud (1,1) logical = true
         options.WaitViewer (1,1) logical = false
         options.Verbose (1,1) logical = true
+        options.DebugLogFile (1,:) char = fullfile(tempdir, 'NapariLightSheetDebugging.txt')
     end
 
     verbose = options.Verbose;
@@ -155,13 +156,18 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         'clevel',            options.Clevel);
     narrate('Built lightsheetZarrPyramid %s.', P.id());
 
+    % Set up the shared debug log. Truncate on entry so a run's log is
+    % just that run's log; both viewer subprocesses append their
+    % NDI_LIGHTSHEET_DEBUG stderr into it with clear === LOCAL === /
+    % === CLOUD === separators so the file reads as one narrative.
+    initDebugLog(options.DebugLogFile);
+    narrate('Napari debug log: %s', options.DebugLogFile);
+
     % --- (d) view the local pyramid -------------------------------------
     if options.ViewLocal
         narrate('Launching napari viewer on the LOCAL session ...');
-        ndi.fun.doc.lightsheet.view(S, P.id(), ...
-            'launcher',  options.Launcher, ...
-            'reduction', options.Reduction, ...
-            'wait',      options.WaitViewer);
+        launchDebugView(S, P.id(), options.Launcher, options.Reduction, ...
+            options.WaitViewer, options.DebugLogFile, 'LOCAL');
     else
         narrate('Skipping local view (ViewLocal=false).');
     end
@@ -220,10 +226,8 @@ function info = lightsheet_blob_cloud_roundtrip(options)
 
     if options.ViewCloud
         narrate('Launching napari viewer on the DOWNLOADED session ...');
-        ndi.fun.doc.lightsheet.view(Sdown, downloadedPyramidId, ...
-            'launcher',  options.Launcher, ...
-            'reduction', options.Reduction, ...
-            'wait',      options.WaitViewer);
+        launchDebugView(Sdown, downloadedPyramidId, options.Launcher, ...
+            options.Reduction, options.WaitViewer, options.DebugLogFile, 'CLOUD');
     else
         narrate('Skipping cloud view (ViewCloud=false).');
     end
@@ -260,5 +264,69 @@ function name = buildRemoteDatasetName()
     dstr = datestr(datetime('now'), 'yyyymmddTHHMMSS'); %#ok<DATST>
     r = randi([0 1000]);
     name = sprintf('Blob Test Dataset %s %d', dstr, r);
+end
+
+function initDebugLog(logfile)
+% Truncate the shared debug log so a rerun starts clean, then write a
+% header row so the file is never zero bytes (Finder / editors show it
+% cleanly). The log lands in an OS-writable dir by default (tempdir),
+% but any caller-supplied path works as long as its parent exists.
+    parent = fileparts(logfile);
+    if ~isempty(parent) && ~isfolder(parent)
+        mkdir(parent);
+    end
+    fid = fopen(logfile, 'w');
+    if fid < 0
+        error('lightsheet_blob_cloud_roundtrip:debugLogOpen', ...
+            'Cannot open debug log %s for writing.', logfile);
+    end
+    fprintf(fid, '=== napariViewLightsheet debug log ===\n');
+    fprintf(fid, 'started at %s\n\n', char(datetime('now')));
+    fclose(fid);
+end
+
+function launchDebugView(session, pyramidId, launcher, reduction, waitForIt, logfile, tag)
+% Build the viewer command via ndi.fun.doc.lightsheet.viewCommand, then
+% run it via system() with NDI_LIGHTSHEET_DEBUG=1 in the environment
+% and stderr+stdout appended to logfile. Bypasses
+% ndi.fun.doc.lightsheet.view because that helper does not expose a
+% redirect hook -- we want the Python side's [lightsheet] chunk fetch
+% failures written where the user can grep them after the run.
+%
+% TAG is a short label (e.g. 'LOCAL' / 'CLOUD') that lands as a
+% separator in the log, so a single log file can hold both viewer
+% invocations from one run.
+
+    sessionPath = char(session.path);
+    cmd = ndi.fun.doc.lightsheet.viewCommand(launcher, sessionPath, pyramidId, ...
+        'reduction', reduction);
+
+    % Append a header into the log identifying this invocation.
+    fid = fopen(logfile, 'a');
+    if fid >= 0
+        fprintf(fid, '\n=== %s : %s ===\n', tag, char(datetime('now')));
+        fprintf(fid, 'session : %s\n', sessionPath);
+        fprintf(fid, 'pyramid : %s\n', pyramidId);
+        fprintf(fid, 'command : %s\n\n', cmd);
+        fclose(fid);
+    end
+
+    % Route Python-side debug prints (NDI_LIGHTSHEET_DEBUG=1 triggers
+    % the [lightsheet] chunk-fetch failure lines) into the log file.
+    % Redirect both stdout and stderr; the launcher wrapper's own
+    % output lands in the same file so a chunk miss and its cause
+    % (auth, HTTP status, missing manifest) sit adjacent.
+    quotedLog = ['''' strrep(logfile, '''', '''\''''') ''''];
+    if ~waitForIt && ~ispc
+        fullCmd = ['NDI_LIGHTSHEET_DEBUG=1 ' cmd ' >>' quotedLog ' 2>&1 &'];
+    else
+        fullCmd = ['NDI_LIGHTSHEET_DEBUG=1 ' cmd ' >>' quotedLog ' 2>&1'];
+    end
+    fprintf('Executing: %s\n', fullCmd);
+    status = system(fullCmd);
+    if status ~= 0 && waitForIt
+        warning('lightsheet_blob_cloud_roundtrip:viewerNonZeroExit', ...
+            'Viewer returned status %d; see %s for stderr.', status, logfile);
+    end
 end
 
