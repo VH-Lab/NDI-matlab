@@ -81,6 +81,9 @@ function url = url(endpointName, options)
         endpointMap("create_ndi_signed_url_set_job")  = "/datasets/{datasetId}/ndi-documents/{ndiDocumentId}/signed-url-set-jobs";
         endpointMap("create_signed_url_set_job")      = "/datasets/{datasetId}/documents/{documentId}/signed-url-set-jobs";
         endpointMap("get_signed_url_set_job")         = "/signed-url-set-jobs/{jobId}";
+        % File-tier control. See ndi-cloud-node manuals/file-tier-design.md.
+        endpointMap("create_file_tier_job")           = "/datasets/{datasetId}/file-tier-jobs";
+        endpointMap("get_file_tier_job")              = "/file-tier-jobs/{jobId}";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
         endpointMap("submit_dataset")                 = "/datasets/{datasetId}/submit";
