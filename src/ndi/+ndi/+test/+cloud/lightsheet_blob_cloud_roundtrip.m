@@ -228,6 +228,17 @@ function info = lightsheet_blob_cloud_roundtrip(options)
         narrate('Launching napari viewer on the DOWNLOADED session ...');
         launchDebugView(Sdown, downloadedPyramidId, options.Launcher, ...
             options.Reduction, options.WaitViewer, options.DebugLogFile, 'CLOUD');
+        % Give napari + the customFileHandler a moment to try the first
+        % chunk fetches, then surface the tail so a black canvas comes
+        % with its cause on the MATLAB console instead of just a
+        % pointer to the log file. Only runs on non-blocking viewers
+        % (WaitViewer=false) -- otherwise the launcher hasn't
+        % returned yet and we'd read an empty log.
+        if ~options.WaitViewer
+            narrate('Sleeping 10 s so napari can attempt its first chunk fetches ...');
+            pause(10);
+            dumpLogTail(options.DebugLogFile, 100);
+        end
     else
         narrate('Skipping cloud view (ViewCloud=false).');
     end
@@ -283,6 +294,22 @@ function initDebugLog(logfile)
     fprintf(fid, '=== napariViewLightsheet debug log ===\n');
     fprintf(fid, 'started at %s\n\n', char(datetime('now')));
     fclose(fid);
+end
+
+function dumpLogTail(logfile, nlines)
+% Read the last NLINES of LOGFILE and print them to the MATLAB console
+% under a clear separator. Runs via `tail -n <n> <file>` in a
+% subprocess so a huge log costs one syscall, not a MATLAB-side file
+% read. Falls back silently if the log does not exist yet.
+    if ~isfile(logfile)
+        fprintf('[roundtrip] debug log %s not written yet; nothing to dump.\n', logfile);
+        return;
+    end
+    quotedLog = ['''' strrep(logfile, '''', '''\''''') ''''];
+    tailCmd = sprintf('tail -n %d %s', nlines, quotedLog);
+    fprintf('\n===== last %d lines of %s =====\n', nlines, logfile);
+    system(tailCmd);
+    fprintf('===== end of debug log tail =====\n\n');
 end
 
 function launchDebugView(session, pyramidId, launcher, reduction, waitForIt, logfile, tag)
