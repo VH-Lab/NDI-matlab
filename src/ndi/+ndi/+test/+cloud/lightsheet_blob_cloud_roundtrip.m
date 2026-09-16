@@ -1,7 +1,11 @@
 function info = lightsheet_blob_cloud_roundtrip(options)
-%LIGHTSHEET_BLOB_CLOUD_ROUNDTRIP - end-to-end cloud round trip for the blob fixture.
+%NDI.TEST.CLOUD.LIGHTSHEET_BLOB_CLOUD_ROUNDTRIP - end-to-end cloud round trip for the blob fixture.
 %
-%   INFO = LIGHTSHEET_BLOB_CLOUD_ROUNDTRIP(...)
+%   INFO = ndi.test.cloud.LIGHTSHEET_BLOB_CLOUD_ROUNDTRIP(...)
+%
+%   Manual test (not part of the automated suite). Set
+%   NDI_CLOUD_USERNAME / NDI_CLOUD_PASSWORD in the shell, then call
+%   this from a MATLAB prompt to smoke-test the whole cloud pipeline.
 %
 %   Full pipeline in one call, staged entirely in the OS temp directory
 %   so a run leaves no artefacts behind on the caller's project tree:
