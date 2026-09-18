@@ -24,8 +24,8 @@ classdef testDocumentClassCounts < matlab.unittest.TestCase
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, 'NDI_CLOUD_USERNAME not set.');
-            testCase.fatalAssertNotEmpty(password, 'NDI_CLOUD_PASSWORD not set.');
+            testCase.assertNotEmpty(username, 'NDI_CLOUD_USERNAME not set.');
+            testCase.assertNotEmpty(password, 'NDI_CLOUD_PASSWORD not set.');
         end
     end
 
@@ -41,7 +41,7 @@ classdef testDocumentClassCounts < matlab.unittest.TestCase
             [b, answer, resp, url] = ndi.cloud.api.documents.documentClassCounts(testCase.TestDatasetID);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, answer, resp, url);
 
-            testCase.fatalAssertTrue(b, "documentClassCounts call failed. " + msg);
+            testCase.assertTrue(b, "documentClassCounts call failed. " + msg);
             testCase.verifyTrue(isstruct(answer), "Answer should be a struct. " + msg);
 
             testCase.verifyTrue(isfield(answer, 'datasetId'), ...
@@ -74,7 +74,7 @@ classdef testDocumentClassCounts < matlab.unittest.TestCase
 
             [b, answer, resp, url] = ndi.cloud.api.documents.documentClassCounts(testCase.TestDatasetID);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, answer, resp, url);
-            testCase.fatalAssertTrue(b, "documentClassCounts call failed. " + msg);
+            testCase.assertTrue(b, "documentClassCounts call failed. " + msg);
 
             fn = fieldnames(answer.classCounts);
             total = 0;
@@ -103,7 +103,7 @@ classdef testDocumentClassCounts < matlab.unittest.TestCase
 
             [b, answer, resp, url] = ndi.cloud.api.documents.documentClassCounts(testCase.TestDatasetID);
             msg = ndi.unittest.cloud.APIMessage(narrative, b, answer, resp, url);
-            testCase.fatalAssertTrue(b, "documentClassCounts call failed. " + msg);
+            testCase.assertTrue(b, "documentClassCounts call failed. " + msg);
 
             fn = fieldnames(answer.classCounts);
             testCase.verifyNotEmpty(fn, ...
@@ -128,11 +128,11 @@ classdef testDocumentClassCounts < matlab.unittest.TestCase
 
             [b1, ans1, resp1, url1] = ndi.cloud.api.documents.documentClassCounts(testCase.TestDatasetID);
             msg1 = ndi.unittest.cloud.APIMessage(narrative, b1, ans1, resp1, url1);
-            testCase.fatalAssertTrue(b1, "documentClassCounts call failed. " + msg1);
+            testCase.assertTrue(b1, "documentClassCounts call failed. " + msg1);
 
             [b2, ans2, resp2, url2] = ndi.cloud.api.documents.documentCount(testCase.TestDatasetID);
             msg2 = ndi.unittest.cloud.APIMessage(narrative, b2, ans2, resp2, url2);
-            testCase.fatalAssertTrue(b2, "documentCount call failed. " + msg2);
+            testCase.assertTrue(b2, "documentCount call failed. " + msg2);
 
             testCase.verifyEqual(double(ans1.totalDocuments), double(ans2), ...
                 "documentClassCounts.totalDocuments must match documentCount. " + msg1);
@@ -174,14 +174,14 @@ classdef testDocumentClassCounts < matlab.unittest.TestCase
             narrative(end+1) = "Calling documentClassCounts.";
             [b1, ans1, resp1, url1] = ndi.cloud.api.documents.documentClassCounts(testCase.TestDatasetID);
             msg1 = ndi.unittest.cloud.APIMessage(narrative, b1, ans1, resp1, url1);
-            testCase.fatalAssertTrue(b1, "documentClassCounts call failed. " + msg1);
+            testCase.assertTrue(b1, "documentClassCounts call failed. " + msg1);
 
             % 2. Ground truth: list every document summary in the dataset.
             narrative(end+1) = "Listing all document summaries for veracity check.";
             [b2, docs, resp2, url2] = ndi.cloud.api.documents.listDatasetDocumentsAll(testCase.TestDatasetID);
             msg2 = ndi.unittest.cloud.APIMessage(narrative, b2, docs, resp2, url2);
-            testCase.fatalAssertTrue(b2, "listDatasetDocumentsAll failed. " + msg2);
-            testCase.fatalAssertNotEmpty(docs, "Expected a non-empty document listing. " + msg2);
+            testCase.assertTrue(b2, "listDatasetDocumentsAll failed. " + msg2);
+            testCase.assertNotEmpty(docs, "Expected a non-empty document listing. " + msg2);
 
             % 3. Tally class names locally. Empty/missing -> "unknown",
             %    matching the server-side bucketing rule.

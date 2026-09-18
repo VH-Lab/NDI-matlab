@@ -160,15 +160,19 @@ classdef clocktype < matlab.mixin.Heterogeneous
 
         end % eq()
 
-        function b = ne(ndi_clocktype_obj_a, ndi_cock_obj_b)
+        function b = ne(ndi_clocktype_obj_a, ndi_clocktype_obj_b)
             % NE - are two ndi.time.clocktype objects not equal?
             %
-            % B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)
+            % B = NE(NDI_CLOCKTYPE_OBJ_A, NDI_CLOCKTYPE_OBJ_B)
             %
             % Compares two NDI_CLOCKTYPE_objects and returns 0 if they refer to the
             % same clock type.
             %
-            b = ~eq(ndi_clocktype_obj_a.type,ndi_clocktype_obj_b.type);
+            % The second argument was previously misnamed (ndi_cock_obj_b) while
+            % the body referenced ndi_clocktype_obj_b, so any call to ne (i.e.
+            % the ~= operator) errored on an undefined variable. Compare the
+            % type strings with strcmp, the inverse of eq().
+            b = ~strcmp(ndi_clocktype_obj_a.type,ndi_clocktype_obj_b.type);
         end % ne()
 
     end % methods

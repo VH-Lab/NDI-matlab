@@ -18,7 +18,7 @@
 			"name": "answer",
 			"type": "double",
 			"default_value": 1,
-			"parameters": [-Inf,Inf,0],
+			"parameters": [-Infinity,Infinity,0],
 			"queryable": 1,
 			"documentation": "The value for this example calculation."
 		}

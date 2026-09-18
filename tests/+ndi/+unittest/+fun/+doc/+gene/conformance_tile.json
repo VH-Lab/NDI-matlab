@@ -1,0 +1,70 @@
+{
+ "description": "Canonical tile.bin, format version 1, written by the Python implementation. NDI-matlab must decode it identically. Coordinates and gene indices are ZERO-BASED.",
+ "n_pixels": 4,
+ "n_nonzero": 7,
+ "x": [
+  0,
+  5,
+  9,
+  1
+ ],
+ "y": [
+  0,
+  1,
+  2,
+  5
+ ],
+ "offset": [
+  0,
+  1,
+  2,
+  4,
+  7
+ ],
+ "gene_index": [
+  5,
+  70000,
+  11,
+  3,
+  3,
+  70000,
+  0
+ ],
+ "count": [
+  1,
+  300,
+  999,
+  50,
+  1,
+  7,
+  2
+ ],
+ "height": 16,
+ "width": 16,
+ "render_all_genes_sum": 1360.0,
+ "render_gene_70000_sum": 307.0,
+ "render_all_genes_nonzero_pixels": [
+  {
+   "x": 0,
+   "y": 0,
+   "value": 1.0
+  },
+  {
+   "x": 5,
+   "y": 1,
+   "value": 300.0
+  },
+  {
+   "x": 9,
+   "y": 2,
+   "value": 1049.0
+  },
+  {
+   "x": 1,
+   "y": 5,
+   "value": 10.0
+  }
+ ],
+ "render_binsize4_sum": 85.0,
+ "bytes_sha256_len": 86
+}

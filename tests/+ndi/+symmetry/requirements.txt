@@ -1,0 +1,8 @@
+https://github.com/VH-lab/vhlab-toolbox-matlab@master
+https://github.com/VH-lab/DID-matlab
+https://github.com/VH-lab/NDR-matlab
+https://github.com/a-ma72/mksqlite@master
+https://github.com/VH-lab/vhlab-thirdparty-matlab@master
+https://github.com/Waltham-Data-Science/NDI-compress-matlabp
+https://github.com/Waltham-Data-Science/ndi-ontology-matlab
+fex://134212-openminds-metadata-models-for-matlab/0.11.0

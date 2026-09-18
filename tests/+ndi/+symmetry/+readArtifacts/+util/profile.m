@@ -9,8 +9,7 @@ classdef profile < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'util', 'profile', 'testProfile');
 
             if ~isfolder(artifactDir)
-                disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
+                testCase.assumeFail(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
             end
 
             profilesFile = fullfile(artifactDir, 'NDI_Cloud_Profiles.json');

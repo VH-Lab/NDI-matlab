@@ -78,8 +78,14 @@ classdef (Abstract) tuning_fit < ndi.calculator
                                 error(['Unknown scope ' scope '.']);
                         end % switch
 
+                         % Draw a fresh noise realization on every run. Pinning
+                         % it made a self-test reproduce one stored draw rather
+                         % than show that the calculator recovers its answer from
+                         % data it has not seen, and the two are indistinguishable
+                         % from outside. Pass a seed to reproduce a run by hand.
                         docs{i} = ndi.mock.fun.stimulus_response(obj.session,...
-                            param_struct, independent_variable, x, r, noise, reps);
+                            param_struct, independent_variable, x, r, noise, reps,...
+                            'RandomSeed', 'shuffle');
 
                         calcparameters = obj.default_search_for_input_parameters();
 

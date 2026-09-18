@@ -1,0 +1,9 @@
+{
+  "syncrule_class": "ndi.time.syncrule.filefind",
+  "parameters": {
+    "number_fullpath_matches": 1,
+    "syncfilename": "vhintan_intan2spike2time.txt",
+    "daqsystem1": "vhintan",
+    "daqsystem2": "vhvis_spike2"
+  }
+}

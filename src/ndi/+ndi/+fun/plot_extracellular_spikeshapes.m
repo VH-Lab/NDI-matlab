@@ -27,7 +27,7 @@ function [g] = plot_extracellular_spikeshapes(S, space, g)
         gi = g{i}.document_properties.neuron_extracellular;
         vlt.plot.plot_multichan(gi.mean_waveform,gi.waveform_sample_times,space);
         x_axis(1) = min(x_axis(1),min(gi.waveform_sample_times));
-        x_axis(2) = max(x_axis(1),max(gi.waveform_sample_times));
+        x_axis(2) = max(x_axis(2),max(gi.waveform_sample_times));
         A = axis;
         y_axis = [min(A(3),y_axis(1)) max(A(4),y_axis(2))];
 

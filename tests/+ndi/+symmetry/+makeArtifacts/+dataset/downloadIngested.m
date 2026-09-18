@@ -12,14 +12,17 @@ classdef downloadIngested < matlab.unittest.TestCase
             mkdir(artifactDir);
 
             % Look for a pre-downloaded archive (placed by CI workflow step)
-            % or download it via curl as a fallback for local runs.
+            % or download it as a fallback for local runs. Use the shared
+            % cloud download helper rather than a bespoke system('curl') call
+            % so the download goes through the single hardened path (which
+            % resets LD_LIBRARY_PATH so the OS curl is not broken by MATLAB's
+            % bundled libraries).
             tgzFile = fullfile(tempdir(), '69a8705aa9ab25373cdc6563.tgz');
             if ~isfile(tgzFile)
                 tgzUrl = 'https://github.com/Waltham-Data-Science/file-passing/raw/refs/heads/main/69a8705aa9ab25373cdc6563.tgz';
-                command = sprintf('curl -L -o "%s" "%s"', tgzFile, tgzUrl);
-                [status, result] = system(command);
-                if status ~= 0
-                    error('Failed to download dataset archive: %s', result);
+                [downloadOK, downloadMsg] = ndi.cloud.api.files.getFile(tgzUrl, tgzFile, 'useCurl', true);
+                if ~downloadOK
+                    error('Failed to download dataset archive: %s', char(string(downloadMsg)));
                 end
             end
             testCase.addTeardown(@() delete(tgzFile));

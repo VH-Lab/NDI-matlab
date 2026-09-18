@@ -9,8 +9,7 @@ classdef blankSessionRayolab < matlab.unittest.TestCase
             artifactDir = fullfile(tempdir(), 'NDI', 'symmetryTest', SourceType, 'session', 'blankSessionRayolab', 'testBlankSessionRayolab');
 
             if ~isfolder(artifactDir)
-                disp(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
-                return;
+                testCase.assumeFail(['Artifact directory from ' SourceType ' does not exist. Skipping.']);
             end
 
             % Load the NDI session
@@ -46,7 +45,7 @@ classdef blankSessionRayolab < matlab.unittest.TestCase
             % Verify session summary
             summaryJsonFile = fullfile(artifactDir, 'sessionSummary.json');
             if ~isfile(summaryJsonFile)
-                disp(['sessionSummary.json file not found in ' SourceType ' artifact directory. Skipping summary comparison.']);
+                testCase.assumeFail(['sessionSummary.json file not found in ' SourceType ' artifact directory. Skipping summary comparison.']);
             else
                 fid = fopen(summaryJsonFile, 'r');
                 rawJson = fread(fid, inf, '*char')';

@@ -56,6 +56,27 @@ classdef UserTest < matlab.unittest.TestCase
                     end
                 end
 
+                % Verify organizationName is a cell array of chars, parallel
+                % to organizationID
+                testCase.verifyTrue(isfield(answer_me, 'organizationName'), me_message);
+                if isfield(answer_me, 'organizationName')
+                    testCase.verifyClass(answer_me.organizationName, 'cell', me_message);
+                    testCase.verifyEqual(numel(answer_me.organizationName), ...
+                        numel(answer_me.organizationID), me_message);
+                    for i = 1:numel(answer_me.organizationName)
+                        testCase.verifyClass(answer_me.organizationName{i}, 'char', me_message);
+                    end
+                end
+
+                % Verify organizationCanUploadDataset is a cell array parallel
+                % to organizationID
+                testCase.verifyTrue(isfield(answer_me, 'organizationCanUploadDataset'), me_message);
+                if isfield(answer_me, 'organizationCanUploadDataset')
+                    testCase.verifyClass(answer_me.organizationCanUploadDataset, 'cell', me_message);
+                    testCase.verifyEqual(numel(answer_me.organizationCanUploadDataset), ...
+                        numel(answer_me.organizationID), me_message);
+                end
+
                 % Verify other fields exist as per new spec
                  testCase.verifyTrue(isfield(answer_me, 'email'), me_message);
                  testCase.verifyTrue(isfield(answer_me, 'name'), me_message);
@@ -63,6 +84,54 @@ classdef UserTest < matlab.unittest.TestCase
             end
 
             narrative(end+1) = "UserTest: testMe complete.";
+        end
+
+        function testParseOrganizationsStructArray(testCase)
+            % Offline test of the organization-parsing helper used by the
+            % me() endpoint. Uses a struct array, the typical shape returned
+            % by the API. Requires no network access or credentials.
+            orgs = struct( ...
+                'id', {'org-1', 'org-2'}, ...
+                'name', {'Alpha Lab', 'Beta Institute'}, ...
+                'canUploadDataset', {true, false});
+
+            [orgID, orgName, orgCanUpload] = ...
+                ndi.cloud.api.implementation.users.Me.parseOrganizations(orgs);
+
+            testCase.verifyEqual(orgID, {'org-1', 'org-2'});
+            testCase.verifyEqual(orgName, {'Alpha Lab', 'Beta Institute'});
+            testCase.verifyEqual(orgCanUpload, {true, false});
+            % IDs and names must be char, not string
+            testCase.verifyClass(orgID{1}, 'char');
+            testCase.verifyClass(orgName{1}, 'char');
+        end
+
+        function testParseOrganizationsCellArray(testCase)
+            % Offline test of the organization-parsing helper with a cell
+            % array of scalar structs (the shape jsondecode sometimes returns)
+            % and string-typed values that must be coerced to char.
+            orgs = {struct('id', "org-9", 'name', "Gamma Center", ...
+                'canUploadDataset', true)};
+
+            [orgID, orgName, orgCanUpload] = ...
+                ndi.cloud.api.implementation.users.Me.parseOrganizations(orgs);
+
+            testCase.verifyEqual(orgID, {'org-9'});
+            testCase.verifyEqual(orgName, {'Gamma Center'});
+            testCase.verifyEqual(orgCanUpload, {true});
+            testCase.verifyClass(orgID{1}, 'char');
+            testCase.verifyClass(orgName{1}, 'char');
+        end
+
+        function testParseOrganizationsEmpty(testCase)
+            % Offline test that an empty organizations list yields empty
+            % parallel cell arrays.
+            [orgID, orgName, orgCanUpload] = ...
+                ndi.cloud.api.implementation.users.Me.parseOrganizations(struct([]));
+
+            testCase.verifyEqual(orgID, {});
+            testCase.verifyEqual(orgName, {});
+            testCase.verifyEqual(orgCanUpload, {});
         end
     end
 end

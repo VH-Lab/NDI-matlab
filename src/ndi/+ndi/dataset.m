@@ -10,6 +10,22 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % Note: This is not a session in the context of representing an
         % experimental session, but instead an entrypoint to a session-like
         % database.
+
+        % BinaryDocSessions - map from a live binarydoc's
+        % fullpathfilename to the ndi.session that opened it. Populated
+        % by database_openbinarydoc when a linked-session doc is
+        % dispatched, and consulted by database_closebinarydoc so the
+        % close goes to the same session's autoclose listener map and
+        % database driver. Fixes #509: without this, close on the
+        % dataset always went to session (the dataset's internal
+        % session), leaking the lock on the linked session's DID store.
+        %
+        % Default is [] (not a containers.Map) so every dataset
+        % instance gets its own map on first use in the helpers below.
+        % A handle-typed default would have every dataset share the
+        % SAME map -- Code Analyzer flags this and it is a real bug
+        % when two datasets are open in the same MATLAB session.
+        BinaryDocSessions = []
     end
 
     methods
@@ -256,6 +272,43 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
             end
         end % isIngested()
+
+        function [b, cloudDatasetId] = isInCloud(ndi_dataset_obj)
+            % ISINCLOUD - is this dataset linked to a dataset on NDI Cloud?
+            %
+            % [B, CLOUDDATASETID] = ISINCLOUD(NDI_DATASET_OBJ)
+            %
+            % Returns true if the dataset is linked to a remote dataset on
+            % NDI Cloud, and false otherwise. A dataset is considered to be
+            % "in the cloud" if its database contains a 'dataset_remote'
+            % document. That document is created and stored locally the first
+            % time the dataset is uploaded (see ndi.cloud.uploadDataset).
+            %
+            % This is a purely local check: it inspects only the dataset's own
+            % database and performs NO network communication, so it does not
+            % verify that the remote dataset still exists or is up to date. It
+            % also does not open the dataset's linked sessions (the
+            % 'dataset_remote' document lives in the dataset's own database, as
+            % its base.session_id is the dataset id), so the check is cheap
+            % enough to call while listing datasets.
+            %
+            % B is a logical scalar. CLOUDDATASETID is the remote NDI Cloud
+            % dataset id (char) when B is true, or '' when B is false. If more
+            % than one 'dataset_remote' document is present - which indicates a
+            % misconfiguration - the id of the first is returned rather than
+            % raising an error, so this status check never throws.
+            %
+            % See also: ndi.dataset/isIngested, ndi.cloud.uploadDataset,
+            %   ndi.cloud.internal.getCloudDatasetIdForLocalDataset
+            cloudDatasetId = '';
+            q = ndi.query('', 'isa', 'dataset_remote');
+            docs = ndi_dataset_obj.session.database.search(q);
+            b = ~isempty(docs);
+            if b
+                cloudDatasetId = char(string( ...
+                    docs{1}.document_properties.dataset_remote.dataset_id));
+            end
+        end % isInCloud()
 
         function unlink_session(ndi_dataset_obj, ndi_session_id, options)
             % UNLINK_SESSION - unlink a session from an ndi.dataset
@@ -714,13 +767,14 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                         try
                             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
                             ndi_binarydoc_obj = ndi_session_obj.database_openbinarydoc(doc, filename, 'autoClose', options.autoClose);
+                            ndi_dataset_obj.rememberBinaryDocSession(ndi_binarydoc_obj, ndi_session_obj);
                             return;
                         catch
                             % if we can't open it or something goes wrong, fall back to current behavior
                         end
                     end
                 end
-                
+
                 ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
 
         end % database_openbinarydoc
@@ -759,10 +813,24 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATASET_OBJ, NDI_BINARYDOC_OBJ)
             %
-            % Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
-            % database, which is why it is necessary to call this function through the dataset object.
+            % Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be
+            % unlocked in the database, which is why it is necessary to call this
+            % function through the dataset object.
             %
-            ndi_binarydoc_obj = ndi_dataset_obj.session.database_closebinarydoc(ndi_binarydoc_obj);
+            % When database_openbinarydoc dispatched to a linked/member session
+            % (because the doc's session_id was not the dataset's own), the
+            % returned handle was remembered in BinaryDocSessions so this close
+            % goes to that same session's database driver and autoclose listener
+            % map. Without that lookup the close would always go to the dataset's
+            % internal session and the linked session's DID lock would leak (#509).
+            % Falls back to the internal session when no owning session is
+            % recorded, matching prior behavior.
+            owningSession = ndi_dataset_obj.lookupBinaryDocSession(ndi_binarydoc_obj);
+            if isempty(owningSession)
+                owningSession = ndi_dataset_obj.session;
+            end
+            ndi_dataset_obj.forgetBinaryDocSession(ndi_binarydoc_obj);
+            ndi_binarydoc_obj = owningSession.database_closebinarydoc(ndi_binarydoc_obj);
         end % database_closebinarydoc
 
         function ndi_session_obj = document_session(ndi_dataset_obj, ndi_document_obj)
@@ -1024,6 +1092,56 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
             end
         end % open_linked_sessions
+
+        function rememberBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj, ndi_session_obj)
+        %REMEMBERBINARYDOCSESSION Record which session opened a binarydoc.
+        %   database_openbinarydoc calls this whenever it dispatches to
+        %   a linked/member session, so that database_closebinarydoc can
+        %   later route the close to that same session's autoclose
+        %   listener map and database driver (#509). The key is the
+        %   binarydoc's fullpathfilename -- the same key the session's
+        %   autoclose map already uses, so lookups are cheap and stable
+        %   across the binarydoc handle's lifetime.
+            ndi_dataset_obj.ensureBinaryDocSessions();
+            key = ndi_binarydoc_obj.fullpathfilename;
+            ndi_dataset_obj.BinaryDocSessions(key) = ndi_session_obj;
+        end % rememberBinaryDocSession
+
+        function ndi_session_obj = lookupBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj)
+        %LOOKUPBINARYDOCSESSION Return the session that opened NDI_BINARYDOC_OBJ, or [].
+            ndi_session_obj = [];
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                return;
+            end
+            key = ndi_binarydoc_obj.fullpathfilename;
+            if isKey(ndi_dataset_obj.BinaryDocSessions, key)
+                ndi_session_obj = ndi_dataset_obj.BinaryDocSessions(key);
+            end
+        end % lookupBinaryDocSession
+
+        function forgetBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj)
+        %FORGETBINARYDOCSESSION Drop NDI_BINARYDOC_OBJ from the owning-session map.
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                return;
+            end
+            key = ndi_binarydoc_obj.fullpathfilename;
+            if isKey(ndi_dataset_obj.BinaryDocSessions, key)
+                remove(ndi_dataset_obj.BinaryDocSessions, key);
+            end
+        end % forgetBinaryDocSession
+
+        function ensureBinaryDocSessions(ndi_dataset_obj)
+        %ENSUREBINARYDOCSESSIONS Lazily create this instance's map.
+        %   The BinaryDocSessions property defaults to [] so each
+        %   ndi.dataset gets its own containers.Map here -- a handle
+        %   default would have every dataset share the SAME map (Code
+        %   Analyzer flags this and it is a real bug when two datasets
+        %   are open concurrently).
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                ndi_dataset_obj.BinaryDocSessions = containers.Map( ...
+                    'KeyType', 'char', 'ValueType', 'any');
+            end
+        end % ensureBinaryDocSessions
 
     end % methods protected
 end % class

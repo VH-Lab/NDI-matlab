@@ -1,0 +1,15 @@
+{
+  "Name": "vhprairieview",
+  "DaqSystemClass": "ndi.daq.system.image",
+  "DaqReaderClass": "ndi.daq.reader.image.ndr",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileNavigatorClass": "ndi.setup.file.navigator.vhPrairie2p",
+  "FileParameters": [
+    "reference.txt"
+  ],
+  "DaqReaderFileParameters": "prairieview",
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "reference.txt",
+  "HasEpochDirectories": false
+}

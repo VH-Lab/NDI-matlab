@@ -1,0 +1,12 @@
+{
+  "syncrule_class": "ndi.time.syncrule.commonTriggersOverlappingEpochs",
+  "parameters": {
+    "daqsystem1_name": "vhtaste_sync",
+    "daqsystem2_name": "vhtaste_bpod",
+    "daqsystem_ch1": "dep1",
+    "daqsystem_ch2": "mk1",
+    "epochclocktype": "dev_local_time",
+    "minEmbeddedFileOverlap": 2,
+    "errorOnFailure": true
+  }
+}

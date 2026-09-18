@@ -35,14 +35,22 @@ classdef GetBulkDownloadURL < ndi.cloud.api.call
 
             method = matlab.net.http.RequestMethod.POST;
             
-            % The body of the request specifies which document IDs to include
-            if isscalar(this.cloudDocumentID)
-                docIdRequest = [this.cloudDocumentID this.cloudDocumentID]; % work around to make an array in JSON
+            % The body of the request specifies which document IDs to include.
+            % When no ids are supplied, omit the documentIds key entirely so the
+            % server takes its whole-dataset branch. A scalar id is wrapped in
+            % a cell so jsonencode emits a JSON array of one, not a bare string;
+            % the previous workaround duplicated the id, which made the server
+            % return the same document twice.
+            noIds = isempty(this.cloudDocumentID) || ...
+                (isscalar(this.cloudDocumentID) && strlength(string(this.cloudDocumentID)) == 0);
+            if noIds
+                data = struct();
+            elseif isscalar(this.cloudDocumentID)
+                data = struct();
+                data.documentIds = {char(this.cloudDocumentID)};
             else
-                docIdRequest = this.cloudDocumentID;
+                data = struct('documentIds', this.cloudDocumentID);
             end
-
-            data = struct('documentIds', docIdRequest);
             body = matlab.net.http.MessageBody(data);
             
             acceptField = matlab.net.http.HeaderField('accept','application/json');

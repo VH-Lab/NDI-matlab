@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/geneExpression.json",
+		"validation": "$NDISCHEMAPATH\/data\/geneExpression_schema.json",
+		"class_name": "geneExpression",
+		"property_list_name": "geneExpression",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"geneExpression": {
+		"assay": "",
+		"count_type": "raw",
+		"count_units": "UMI"
+	}
+}

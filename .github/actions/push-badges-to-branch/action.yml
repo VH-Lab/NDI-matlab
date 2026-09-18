@@ -1,0 +1,105 @@
+name: 'Push badges to badges branch'
+description: >-
+  Copy generated SVG badges from the workspace into the repository's dedicated
+  `badges` branch under `<sanitised-source-ref>/`, so that working branches
+  never receive badge commits.
+
+inputs:
+  source-ref:
+    description: 'Name of the source branch these badges came from (e.g. main, or a PR head ref).'
+    required: true
+  badges-branch:
+    description: 'Name of the dedicated badges branch.'
+    required: false
+    default: 'badges'
+  badges-dir:
+    description: 'Directory in the workspace holding generated badge SVGs.'
+    required: false
+    default: '.github/badges'
+  token:
+    description: 'GITHUB_TOKEN or PAT with write access to the repo.'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Publish badges
+      shell: bash
+      env:
+        SOURCE_REF: ${{ inputs.source-ref }}
+        BADGES_BRANCH: ${{ inputs.badges-branch }}
+        BADGES_DIR: ${{ inputs.badges-dir }}
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+
+        # Resolve $BADGES_DIR to an absolute path *now*, so that the SVG
+        # paths in $svgs stay valid after we `cd` into a working directory.
+        SRC_DIR="$(cd "$BADGES_DIR" 2>/dev/null && pwd || true)"
+
+        shopt -s nullglob
+        svgs=()
+        if [ -n "$SRC_DIR" ]; then
+          svgs=("$SRC_DIR"/*.svg)
+        fi
+        if (( ${#svgs[@]} == 0 )); then
+          echo "No badge SVGs in $BADGES_DIR - nothing to push."
+          exit 0
+        fi
+
+        SRC_SLUG="${SOURCE_REF//\//_}"
+        echo "Publishing badges for ref '$SOURCE_REF' -> '$BADGES_BRANCH:$SRC_SLUG/'"
+
+        REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        WORKDIR="$(mktemp -d)"
+
+        cd "$WORKDIR"
+        git init -q -b "$BADGES_BRANCH" .
+        git config user.name  "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git remote add origin "$REMOTE"
+
+        if git fetch --depth 1 origin "$BADGES_BRANCH" 2>/dev/null; then
+          git reset --hard "origin/$BADGES_BRANCH"
+        else
+          echo "Badges branch does not exist yet; bootstrapping."
+          printf '# CI-generated badges\n\nThis branch is written by CI and holds SVG badges per source branch under `<branch>/`. Do not commit manually.\n' > README.md
+          git add README.md
+          git commit -q -m "Initialise badges branch"
+        fi
+
+        mkdir -p "$SRC_SLUG"
+        cp "${svgs[@]}" "$SRC_SLUG/"
+
+        git add "$SRC_SLUG/"
+        if git diff --cached --quiet; then
+          echo "Badges unchanged; nothing to commit."
+          exit 0
+        fi
+
+        git commit -q -m "Update badges for ${SOURCE_REF} [skip ci]"
+
+        for attempt in 1 2 3 4 5; do
+          if git push origin "HEAD:$BADGES_BRANCH"; then
+            echo "Pushed badges (attempt $attempt)."
+            exit 0
+          fi
+          echo "Push failed on attempt $attempt; refreshing and retrying."
+          git fetch --depth 1 origin "$BADGES_BRANCH"
+          if ! git rebase "origin/$BADGES_BRANCH"; then
+            git rebase --abort || true
+            git reset --hard "origin/$BADGES_BRANCH"
+            mkdir -p "$SRC_SLUG"
+            cp "${svgs[@]}" "$SRC_SLUG/"
+            git add "$SRC_SLUG/"
+            if git diff --cached --quiet; then
+              echo "Badges match remote after refresh; nothing to push."
+              exit 0
+            fi
+            git commit -q -m "Update badges for ${SOURCE_REF} [skip ci]"
+          fi
+          sleep $(( attempt * 2 ))
+        done
+
+        echo "::error::Failed to push badges after 5 attempts."
+        exit 1
