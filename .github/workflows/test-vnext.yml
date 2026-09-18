@@ -51,14 +51,17 @@ concurrency:
 
 jobs:
   vnext_smoke:
-    name: Vnext smoke (did-matlab@${{ inputs.did_matlab_ref || github.head_ref || 'V2' }}, did-schema@${{ inputs.did_schema_ref || 'main' }})
+    name: Vnext smoke (did-matlab@${{ inputs.did_matlab_ref || 'V2' }}, did-schema@${{ inputs.did_schema_ref || 'main' }})
     runs-on: ubuntu-latest
     env:
-      # Track the matching DID-matlab feature branch (github.head_ref) so the
-      # V_delta/V_zeta-ready did. sql layer (doc2sql superclass class_name
-      # fallback) is exercised; revert the fallback to 'V2' once that fix
-      # merges. did-schema stays on main so the gate still validates V_delta.
-      DID_MATLAB_REF: ${{ inputs.did_matlab_ref || github.head_ref || 'V2' }}
+      # DID-matlab V2 now carries the V_delta/V_zeta-ready did. sql layer
+      # (post the V2_Update merge, DID-matlab#205), so we pin at V2. The old
+      # `github.head_ref || 'V2'` fallback tried to fetch a matching feature
+      # branch on DID-matlab and failed for Vnext-side sync PRs like
+      # Vnext_Update, whose head_ref does not exist on DID. If a topic
+      # branch on both repos needs to co-develop, wire that up per-PR via
+      # workflow_dispatch's did_matlab_ref input rather than head_ref magic.
+      DID_MATLAB_REF: ${{ inputs.did_matlab_ref || 'V2' }}
       DID_SCHEMA_REF: ${{ inputs.did_schema_ref || 'main' }}
     steps:
       - name: Check out NDI-matlab
