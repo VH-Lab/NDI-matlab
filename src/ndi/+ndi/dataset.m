@@ -115,7 +115,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % add_linked_session()
 
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-        function ndi_dataset_obj = add_ingested_session(ndi_dataset_obj, ndi_session_obj)
+        function ndi_dataset_obj = add_ingested_session(ndi_dataset_obj, ndi_session_obj, options)
             % ADD_INGESTED_SESSION - ingets an ndi.session into an ndi.dataset
             %
             % NDI_DATASET_OBJ = ADD_INGESTED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ, ...)
