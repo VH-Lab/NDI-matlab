@@ -118,11 +118,34 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         function ndi_dataset_obj = add_ingested_session(ndi_dataset_obj, ndi_session_obj)
             % ADD_INGESTED_SESSION - ingets an ndi.session into an ndi.dataset
             %
-            % NDI_DATASET_OBJ = ADD_INGESTED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ)
+            % NDI_DATASET_OBJ = ADD_INGESTED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ, ...)
             %
             % Add an ndi.session object to an ndi.dataset, by copying the session
             % documents into the dataset.
             %
+            % This function accepts name/value pairs that alter its behavior:
+            % Parameter (default)      | Description
+            % -----------------------------------------------------------------
+            % ReferenceInPlace (true)  | Copy each of the session's files
+            %                          |   directly from its location in the
+            %                          |   source session into the dataset,
+            %                          |   without first staging a second copy
+            %                          |   in a temporary directory. This
+            %                          |   removes the transient 2x disk-space
+            %                          |   requirement of the copy. Files that
+            %                          |   are not on the local filesystem
+            %                          |   (e.g. cloud-backed sessions) fall
+            %                          |   back to staging automatically. Set
+            %                          |   to false to force the old staged
+            %                          |   copy. See
+            %                          |   ndi.dataset.copySessionToDataset.
+            %
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ndi_session_obj (1,1) ndi.session
+                options.ReferenceInPlace (1,1) logical = true
+            end
+
             if isempty(ndi_dataset_obj.session_array)
                 ndi_dataset_obj.build_session_info;
             end
@@ -161,7 +184,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
             end
 
-            ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj);
+            ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj, ...
+                'ReferenceInPlace', options.ReferenceInPlace);
 
             new_doc = ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             session_info_here.session_doc_in_dataset_id = new_doc.id();
@@ -407,12 +431,19 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % After conversion, the session's data is self-contained within the
             % dataset and no longer depends on the original session path.
             %
-            % Note: This operation temporarily requires approximately 2x the disk
-            % space of the session being converted.
+            % Note: With ReferenceInPlace true (the default), each local file is
+            % copied once, directly from the source session into the dataset, so
+            % the operation requires only the space of the copy itself. Set
+            % ReferenceInPlace false to force the old staged copy, which
+            % temporarily requires approximately 2x the disk space of the
+            % session being converted.
             %
             % Options:
             %   areYouSure (false) - must be true to proceed, unless confirmed by user
             %   askUserToConfirm (true) - if true, will ask user for confirmation via dialog
+            %   ReferenceInPlace (true) - copy local files directly from the source
+            %       into the dataset rather than staging a second copy in a
+            %       temporary directory. See ndi.dataset.copySessionToDataset.
             %
             % See also: ndi.dataset/add_linked_session, ndi.dataset/add_ingested_session,
             %   ndi.dataset/unlink_session
@@ -422,6 +453,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 session_id (1,:) char
                 options.areYouSure (1,1) logical = false
                 options.askUserToConfirm (1,1) logical = true
+                options.ReferenceInPlace (1,1) logical = true
             end
 
             if isempty(ndi_dataset_obj.session_info)
@@ -479,7 +511,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % as a linked session in session_list().
 
             ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj, ...
-                'skipDuplicateCheck', true);
+                'skipDuplicateCheck', true, ...
+                'ReferenceInPlace', options.ReferenceInPlace);
 
             % Step 6: Remove the old linked session_in_a_dataset document
 
@@ -967,12 +1000,22 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %       by convertLinkedSessionToIngested when the session is already
             %       linked (and thus already appears in session_list) but its
             %       documents have not yet been copied.
+            %   ReferenceInPlace (true) - If true, the session's files are copied
+            %       directly from the source session into the dataset, without
+            %       first staging a second copy in a temporary directory. This
+            %       removes the transient 2x disk-space requirement (and the
+            %       dependence on the volume that holds tempdir having room for
+            %       the whole session). Files that are not on the local
+            %       filesystem fall back to staging automatically. Set to false
+            %       to force the old staged copy. See
+            %       ndi.database.fun.extract_docs_files.
             %
 
             arguments
                 ndi_session_obj (1,1) ndi.session
                 ndi_dataset_obj (1,1) ndi.dataset
                 options.skipDuplicateCheck (1,1) logical = false
+                options.ReferenceInPlace (1,1) logical = true
             end
 
             b = 1;
@@ -997,7 +1040,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             % Step 2, make a copy of all the documents
 
-            [docs,~] = ndi.database.fun.extract_docs_files(ndi_session_obj);
+            [docs,~] = ndi.database.fun.extract_docs_files(ndi_session_obj, '', ...
+                'ReferenceInPlace', options.ReferenceInPlace);
 
             % what we want is to make a surrogate ndi.session.dir with path matching the dataset path
             % for this, we need to make sure the ndi.session.dir creator doesn't read its session_id or reference from the database
