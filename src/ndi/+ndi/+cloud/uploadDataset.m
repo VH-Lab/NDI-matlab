@@ -33,8 +33,17 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     % |                              | 'remoteDatasetName'.                                                     |
     % | 'remoteDatasetName'          | (char) The name to be assigned to the dataset on the remote server. This |
     % |                              | is *required* if 'skipMetadataEditorMetadata' is true.                   |
+    % | 'organizationName'           | (char/string) The NAME of the NDI Cloud organization the dataset should  |
+    % |                              | be created under. The current user must belong to it. Names are matched  |
+    % |                              | case-sensitively against the list ndi.cloud.api.users.me returns.        |
+    % |                              | Mutually exclusive with 'organizationID'. When neither is given, the     |
+    % |                              | active NDI_CLOUD_ORGANIZATION_ID env var is used (set by login to the    |
+    % |                              | first organization; see ndi.cloud.ui.dialog.selectOrganization).         |
+    % | 'organizationID'             | (char/string) The ID of the NDI Cloud organization to use. Mutually     |
+    % |                              | exclusive with 'organizationName'.                                       |
     %
-    % See also: ndi.cloud.sync.SyncOptions, ndi.cloud.downloadDataset
+    % See also: ndi.cloud.sync.SyncOptions, ndi.cloud.downloadDataset,
+    %           ndi.cloud.ui.dialog.selectOrganization
     %
 
     arguments
@@ -43,9 +52,35 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
         options.uploadAsNew (1,1) logical = false
         options.skipMetadataEditorMetadata (1,1) logical = false
         options.remoteDatasetName (1,:) char = ''
+        options.organizationName (1,:) char = ''
+        options.organizationID (1,:) char = ''
     end
 
     syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
+
+    % Route the request to a specific organization when the caller named one.
+    % Restore the previous NDI_CLOUD_ORGANIZATION_ID on function exit so a
+    % later call in the same MATLAB session inherits neither our resolution
+    % nor a partial state after an early return / error.
+    if ~isempty(options.organizationName) || ~isempty(options.organizationID)
+        if ~isempty(options.organizationName) && ~isempty(options.organizationID)
+            success = false; cloudDatasetId = '';
+            message = 'organizationName and organizationID are mutually exclusive.';
+            return;
+        end
+        previousOrgId = getenv('NDI_CLOUD_ORGANIZATION_ID');
+        orgRestore = onCleanup(@() setenv('NDI_CLOUD_ORGANIZATION_ID', previousOrgId)); %#ok<NASGU>
+        try
+            resolvedOrgId = ndi.cloud.internal.resolveOrganizationId( ...
+                'organizationName', options.organizationName, ...
+                'organizationID',   options.organizationID);
+        catch resolveErr
+            success = false; cloudDatasetId = '';
+            message = resolveErr.message;
+            return;
+        end
+        setenv('NDI_CLOUD_ORGANIZATION_ID', resolvedOrgId);
+    end
 
     success = false;
     cloudDatasetId = '';
