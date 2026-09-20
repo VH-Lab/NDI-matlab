@@ -38,8 +38,7 @@ files_to_process = doc_file_struct(~[doc_file_struct.is_uploaded]);
 files_left = numel(files_to_process);
 files_uploaded_count = 0;
 processed_bytes = 0;
-base_dir = fullfile(D.path, '.ndi', 'files');
-skipped_files = {};
+base_dir = fullfile(D.path, '.ndi', 'files'); %#ok<NASGU>
 
 if options.Verbose
     fprintf('Beginning upload process. %d files to upload.\n', files_left);
@@ -50,10 +49,12 @@ if options.DebugLog
     log_folder = ndi.common.PathConstants.LogFolder;
     if ~isfolder(log_folder), mkdir(log_folder); end
     
-    % Erase previous logs by opening in write mode 'wt' and writing headers
-    log_files_to_clear = {'zip_log.csv', 'processed_log.csv', 'skipped_log.csv'};
-    % **Updated header for zip_log.csv**
-    headers = {'ZipFile,ZippedFile,UncompressedBytes', 'TotalProcessedBytes', 'SkippedFile,UID'};
+    % Erase previous logs by opening in write mode 'wt' and writing headers.
+    % skipped_log.csv is no longer written: the pre-zip isfile() check was
+    % removed as redundant with list_binary_files' manifest, so there is no
+    % "missing at zip time" bookkeeping to log.
+    log_files_to_clear = {'zip_log.csv', 'processed_log.csv'};
+    headers = {'ZipFile,ZippedFile,UncompressedBytes', 'TotalProcessedBytes'};
     
     for k = 1:numel(log_files_to_clear)
         fid = fopen(fullfile(log_folder, log_files_to_clear{k}), 'wt');
@@ -67,10 +68,27 @@ if options.DebugLog
 end
 
 % --- Progress Bar Setup ---
-h = waitbar(0, 'Preparing to upload files...');
-cleanupObj = onCleanup(@() delete(h(ishandle(h))));
+% Standard NDI progress bar, same "NDI tasks" window the serial upload
+% branch uses so bars stack in one place. Auto=true removes it at 1.0.
+progressApp = ndi.gui.component.ProgressBarWindow('NDI tasks');
+uploadBarId = did.ido.unique_id();
+progressApp.addBar( ...
+    'Label', sprintf('Uploading document-associated binary files (0 of %d)', files_left), ...
+    'tag', uploadBarId, ...
+    'Auto', true);
+
 size_limit = options.SizeLimit;
 file_processed = false(1, numel(files_to_process)); % Track processed files
+
+% NOTE: no per-file isfile() check here. list_binary_files already
+% resolved each entry through database_existbinarydoc + dir() when the
+% manifest was built moments ago, so a redundant stat per file (four
+% total per file with the zip/log dir() calls below) costs real time on
+% a slow drive and adds nothing. If a file vanishes between manifest
+% and zip time, MATLAB's zip() raises inside zipAndUploadBatch's
+% try/catch and the batch is reported as failed rather than silently
+% skipped -- the guard against issue #805 that isfile+skipped_files
+% used to enforce.
 
 % --- Main Loop: Continue until all files are processed ---
 while ~all(file_processed)
@@ -84,16 +102,6 @@ while ~all(file_processed)
             current_file = files_to_process(i);
             file_path = current_file.file_path;
             file_bytes = current_file.bytes;
-
-            % --- Logic Check: Ensure file exists on disk ---
-            if ~isfile(file_path)
-                if options.Verbose
-                    warning('File %s (UID: %s) not found on disk. Skipping.', current_file.file_path, current_file.uid);
-                end
-                skipped_files{end+1} = current_file;
-                file_processed(i) = true; % Mark as processed to skip
-                continue;
-            end
 
             % --- Batching Logic ---
             if (current_batch_size + file_bytes <= size_limit) || isempty(files_for_current_batch)
@@ -132,14 +140,11 @@ while ~all(file_processed)
     end
 
     % --- Update Progress Bar ---
-    try
-        progress = sum(file_processed) / files_left;
-        message = sprintf('Processed %d of %d files...', sum(file_processed), files_left);
-        waitbar(progress, h, message);
-    catch
-        b = 0; msg = 'Upload cancelled by user.'; return;
-    end
+    progress = sum(file_processed) / files_left;
+    progressApp.updateBar(uploadBarId, progress);
 end
+
+progressApp.updateBar(uploadBarId, 1); % Auto=true removes it
 
 % --- Final Logging ---
 if options.DebugLog
@@ -151,34 +156,6 @@ if options.DebugLog
     if fid ~= -1
         fprintf(fid, '%d\n', processed_bytes);
         fclose(fid);
-    end
-    
-    % Log skipped files
-    if ~isempty(skipped_files)
-        skipped_log_file = fullfile(log_folder, 'skipped_log.csv');
-        fid = fopen(skipped_log_file, 'at'); % Append skipped files
-        if fid ~= -1
-            for k = 1:numel(skipped_files)
-                fprintf(fid, '"%s","%s"\n', skipped_files{k}.file_path, skipped_files{k}.uid);
-            end
-            fclose(fid);
-        end
-    end
-end
-
-% --- Report skipped files as a failure ---
-% Files that were missing from disk are skipped during batching above. A
-% skipped file means a binary that the manifest expected to upload did not
-% get uploaded, so report this as a failure rather than silently succeeding.
-% Otherwise the caller would record the associated documents as fully synced
-% when their binaries are not on the remote (issue #805).
-if ~isempty(skipped_files)
-    b = 0;
-    skipped_uids = cellfun(@(s) string(s.uid), skipped_files);
-    msg = sprintf(['%d file(s) were not uploaded because they were missing ', ...
-        'from disk (UIDs: %s).'], numel(skipped_files), strjoin(skipped_uids, ', '));
-    if options.Verbose
-        fprintf('%s\n', msg);
     end
 end
 

@@ -53,11 +53,21 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
     % keep it open until finished.
     [db_cleanup_obj, ~] = ndi_dataset.open_database(); %#ok<ASGLU>
 
-    for i = 1:num_documents
+    % Standard NDI progress bar for the top-level document walk. A large
+    % lightsheet dataset's inventory pass is minutes of work on a spinning
+    % drive; without a bar, the whole pre-upload phase looks hung. Same
+    % "NDI tasks" window the serial upload branch uses, so bars stack in
+    % one place. Auto=true removes the bar when it reaches 1.0.
+    if verbose
+        progressApp = ndi.gui.component.ProgressBarWindow('NDI tasks');
+        topBarId = did.ido.unique_id();
+        progressApp.addBar( ...
+            'Label', sprintf('Scanning documents for files (0 of %d)', num_documents), ...
+            'tag', topBarId, ...
+            'Auto', true);
+    end
 
-        if verbose && (mod(i, 1000)==0 || i == num_documents)
-            fprintf('Working on document %d of %d\n', i, num_documents)
-        end
+    for i = 1:num_documents
 
         ndi_document_id = database_documents{i}.document_properties.base.id;
 
@@ -110,14 +120,24 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                     'docid', '', 'bytes', 0, 'file_path', ''), 1, slotCount);
                 member_count = 0;
 
-                % Time-throttled progress: one line every ~5 s, plus a
-                % final line at the end of the series. A stat-per-slot
-                % pass through a lightsheet pyramid level is minutes of
-                % work on a spinning drive, and without this the whole
-                % pre-upload inventory looks hung.
+                % Nested progress bar per large series, so a single doc
+                % whose scan takes minutes shows its own progress rather
+                % than freezing the top-level bar. Small series stay
+                % silent. Time-throttled updates (~5 s) keep the print
+                % itself from becoming the bottleneck at 100+ stat/s.
+                seriesBarId = '';
+                hasSeriesBar = false;
                 progressInterval = 5;
                 lastReport = tic;
-                showedProgress = false;
+                if verbose && slotCount >= 1000
+                    seriesBarId = did.ido.unique_id();
+                    progressApp.addBar( ...
+                        'Label', sprintf('  doc %d/%d: series ''%s'' (%d slots)', ...
+                            i, num_documents, series_name, slotCount), ...
+                        'tag', seriesBarId, ...
+                        'Auto', true);
+                    hasSeriesBar = true;
+                end
 
                 for m = 1:slotCount
                     member_name = sprintf('%s_%d', series_name, m);
@@ -136,21 +156,22 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                         'docid', ndi_document_id, 'bytes', member_info.bytes, ...
                         'file_path', member_path);
 
-                    if verbose && toc(lastReport) >= progressInterval
-                        fprintf('  doc %d/%d: series ''%s'' -- %d/%d slots scanned, %d members so far ...\n', ...
-                            i, num_documents, series_name, m, slotCount, member_count);
+                    if hasSeriesBar && toc(lastReport) >= progressInterval
+                        progressApp.updateBar(seriesBarId, m/slotCount);
                         lastReport = tic;
-                        showedProgress = true;
                     end
                 end
 
-                if verbose && (showedProgress || slotCount >= 1000)
-                    fprintf('  doc %d/%d: series ''%s'' -- %d/%d slots scanned, %d members found.\n', ...
-                        i, num_documents, series_name, slotCount, slotCount, member_count);
+                if hasSeriesBar
+                    progressApp.updateBar(seriesBarId, 1); % Auto=true removes it
                 end
 
                 file_manifest = [file_manifest member_entries(1:member_count)]; %#ok<AGROW>
             end
+        end
+
+        if verbose
+            progressApp.updateBar(topBarId, i/num_documents);
         end
     end
 end
