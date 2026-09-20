@@ -96,8 +96,12 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     if syncOptions.Verbose, disp('Examining documents for upload...'); end
     dataset_documents = ndiDataset.database_search( ndi.query('','isa','base') );
     ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, dataset_documents, "onlyUploadMissing", true);
+    if syncOptions.Verbose, disp('Document upload complete.'); end
 
     % Step 3: Upload files
+    if syncOptions.Verbose
+        disp('Looking for files (walks each document''s series members; can be slow on a spinning drive) ...');
+    end
     [success_upload, message_upload] = ndi.cloud.sync.internal.uploadFilesForDatasetDocuments( ...
         cloudDatasetId, ndiDataset, dataset_documents, ...
         "Verbose", syncOptions.Verbose, ...

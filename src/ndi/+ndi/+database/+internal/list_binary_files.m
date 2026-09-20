@@ -110,6 +110,15 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                     'docid', '', 'bytes', 0, 'file_path', ''), 1, slotCount);
                 member_count = 0;
 
+                % Time-throttled progress: one line every ~5 s, plus a
+                % final line at the end of the series. A stat-per-slot
+                % pass through a lightsheet pyramid level is minutes of
+                % work on a spinning drive, and without this the whole
+                % pre-upload inventory looks hung.
+                progressInterval = 5;
+                lastReport = tic;
+                showedProgress = false;
+
                 for m = 1:slotCount
                     member_name = sprintf('%s_%d', series_name, m);
                     [member_exists, member_path] = ...
@@ -126,6 +135,18 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                         'name', member_name, 'uid', member_uid, ...
                         'docid', ndi_document_id, 'bytes', member_info.bytes, ...
                         'file_path', member_path);
+
+                    if verbose && toc(lastReport) >= progressInterval
+                        fprintf('  doc %d/%d: series ''%s'' -- %d/%d slots scanned, %d members so far ...\n', ...
+                            i, num_documents, series_name, m, slotCount, member_count);
+                        lastReport = tic;
+                        showedProgress = true;
+                    end
+                end
+
+                if verbose && (showedProgress || slotCount >= 1000)
+                    fprintf('  doc %d/%d: series ''%s'' -- %d/%d slots scanned, %d members found.\n', ...
+                        i, num_documents, series_name, slotCount, slotCount, member_count);
                 end
 
                 file_manifest = [file_manifest member_entries(1:member_count)]; %#ok<AGROW>
