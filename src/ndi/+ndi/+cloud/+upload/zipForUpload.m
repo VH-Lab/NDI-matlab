@@ -78,7 +78,8 @@ progressApp.addBar( ...
     'Auto', true);
 
 size_limit = options.SizeLimit;
-file_processed = false(1, numel(files_to_process)); % Track processed files
+n_files = numel(files_to_process);
+file_bytes_all = [files_to_process.bytes]; % scalar array, indexed below
 
 % NOTE: no per-file isfile() check here. list_binary_files already
 % resolved each entry through database_existbinarydoc + dir() when the
@@ -90,58 +91,53 @@ file_processed = false(1, numel(files_to_process)); % Track processed files
 % skipped -- the guard against issue #805 that isfile+skipped_files
 % used to enforce.
 
-% --- Main Loop: Continue until all files are processed ---
-while ~all(file_processed)
-    current_batch_size = 0;
-    files_for_current_batch = {};
-    indices_for_current_batch = [];
-
-    % --- Inner Loop: Find files that fit into the current batch ---
-    for i = 1:numel(files_to_process)
-        if ~file_processed(i)
-            current_file = files_to_process(i);
-            file_path = current_file.file_path;
-            file_bytes = current_file.bytes;
-
-            % --- Batching Logic ---
-            if (current_batch_size + file_bytes <= size_limit) || isempty(files_for_current_batch)
-                files_for_current_batch{end+1} = file_path;
-                current_batch_size = current_batch_size + file_bytes;
-                indices_for_current_batch(end+1) = i;
-                if current_batch_size >= size_limit
-                    break;
-                end
-            end
+% --- Main Loop: Single pass through the file list --------------------
+% Cursor-based, greedy pack in the input order. Each file is examined
+% exactly once across all batches, so the total work is O(N_files)
+% instead of the O(N_batches * N_files) the previous restart-from-top
+% design imposed -- at 160k files and batches of ~50 MB, that mattered.
+% A file too large for the remaining budget of the current batch closes
+% the batch and starts the next one at that file; a single file bigger
+% than size_limit still goes up alone (the first file in a batch is
+% always accepted).
+cursor = 1;
+files_processed_so_far = 0;
+while cursor <= n_files
+    batch_start = cursor;
+    batch_end = cursor;      % inclusive; grown below
+    current_batch_size = file_bytes_all(cursor);
+    cursor = cursor + 1;
+    while cursor <= n_files
+        fb = file_bytes_all(cursor);
+        if current_batch_size + fb > size_limit
+            break;
+        end
+        current_batch_size = current_batch_size + fb;
+        batch_end = cursor;
+        cursor = cursor + 1;
+        if current_batch_size >= size_limit
+            break;
         end
     end
 
-    % --- Upload the batch if it contains any files ---
-    if ~isempty(files_for_current_batch)
-        [success, batch_msg, uploaded_count] = zipAndUploadBatch(files_for_current_batch, dataset_id, options.numberRetries, options);
-        files_uploaded_count = files_uploaded_count + uploaded_count;
+    % Slice out just this batch's paths (no cell growth in a loop).
+    batch_indices = batch_start:batch_end;
+    files_for_current_batch = {files_to_process(batch_indices).file_path};
 
-        if success
-            file_processed(indices_for_current_batch) = true; % Mark files as processed
-        else
-            b = 0;
-            files_not_uploaded = files_left - sum(file_processed);
-            msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
-                batch_msg, files_uploaded_count, files_not_uploaded);
-            return;
-        end
-    else
-        % No files could be added to a batch, break to avoid infinite loop
-        % If there are still unprocessed files, it's an unexpected state
-        if ~all(file_processed)
-            msg = 'An unexpected error occurred: unable to process remaining files.';
-            b = 0;
-            return;
-        end
+    [success, batch_msg, uploaded_count] = zipAndUploadBatch( ...
+        files_for_current_batch, dataset_id, options.numberRetries, options);
+    files_uploaded_count = files_uploaded_count + uploaded_count;
+
+    if ~success
+        b = 0;
+        files_not_uploaded = files_left - files_processed_so_far;
+        msg = sprintf('%s\n%d files were successfully uploaded. %d files were not uploaded.', ...
+            batch_msg, files_uploaded_count, files_not_uploaded);
+        return;
     end
 
-    % --- Update Progress Bar ---
-    progress = sum(file_processed) / files_left;
-    progressApp.updateBar(uploadBarId, progress);
+    files_processed_so_far = files_processed_so_far + numel(batch_indices);
+    progressApp.updateBar(uploadBarId, files_processed_so_far / files_left);
 end
 
 progressApp.updateBar(uploadBarId, 1); % Auto=true removes it
