@@ -70,12 +70,19 @@ end
 % --- Progress Bar Setup ---
 % Standard NDI progress bar, same "NDI tasks" window the serial upload
 % branch uses so bars stack in one place. Auto=true removes it at 1.0.
+% Every touch is guarded with isvalid(): if the user closes the window
+% or updateBar's own timeout culls the bar mid-run, we go silent rather
+% than crash. See list_binary_files for the same pattern.
 progressApp = ndi.gui.component.ProgressBarWindow('NDI tasks');
 uploadBarId = did.ido.unique_id();
-progressApp.addBar( ...
-    'Label', sprintf('Uploading document-associated binary files (0 of %d)', files_left), ...
-    'tag', uploadBarId, ...
-    'Auto', true);
+try
+    progressApp.addBar( ...
+        'Label', sprintf('Uploading document-associated binary files (0 of %d)', files_left), ...
+        'tag', uploadBarId, ...
+        'Auto', true);
+catch
+    progressApp = [];
+end
 
 size_limit = options.SizeLimit;
 n_files = numel(files_to_process);
@@ -137,10 +144,22 @@ while cursor <= n_files
     end
 
     files_processed_so_far = files_processed_so_far + numel(batch_indices);
-    progressApp.updateBar(uploadBarId, files_processed_so_far / files_left);
+    if ~isempty(progressApp) && isvalid(progressApp)
+        try
+            progressApp.updateBar(uploadBarId, files_processed_so_far / files_left);
+        catch
+            progressApp = [];
+        end
+    end
 end
 
-progressApp.updateBar(uploadBarId, 1); % Auto=true removes it
+if ~isempty(progressApp) && isvalid(progressApp)
+    try
+        progressApp.updateBar(uploadBarId, 1); % Auto=true removes it
+    catch
+        % Nothing left to do; the batch loop is finished either way.
+    end
+end
 
 % --- Final Logging ---
 if options.DebugLog

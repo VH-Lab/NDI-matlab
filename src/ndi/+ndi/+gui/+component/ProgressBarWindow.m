@@ -265,6 +265,15 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 options.Tag {mustBeTextScalar(options.Tag)} = ''
                 options.Color (1,3) double {mustBeInRange(options.Color,0,1)} = [1 1 1]
                 options.Auto logical = false
+                % Per-bar timeout. Overrides app.Timeout for this bar only.
+                % duration.empty (the default) means "inherit app.Timeout".
+                % Pass minutes(Inf) to opt this bar out of the timeout entirely
+                % -- appropriate for a top-level bar that ticks less often
+                % than the app-level timeout (typically 1 min), which used to
+                % get culled by updateBar's global timeout sweep while its
+                % owner was still using it. See NDI-matlab lightsheet demo
+                % 2026-09-20.
+                options.Timeout (1,:) duration = duration.empty
             end
 
             % Bring figure to front
@@ -307,6 +316,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Auto = options.Auto;
             app.ProgressBars(barNum).Progress = 0;
             app.ProgressBars(barNum).Clock(1:2) = {datetime('now')};
+            % Per-bar timeout: duration.empty means inherit app.Timeout at
+            % checkTimeout time. minutes(Inf) means "never time out".
+            app.ProgressBars(barNum).Timeout = options.Timeout;
 
             % Everything from here on builds this bar's graphics. When
             % silent there is no grid and no figure, so the bar exists as
@@ -663,11 +675,23 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 % Get duration of time since last update
                 timeout = datetime('now') - app.ProgressBars(i).Clock{2};
 
-                if timeout >= app.Timeout & ...
+                % Per-bar timeout wins over the app default. A bar that
+                % was created with Timeout=minutes(Inf) never times out
+                % here -- this is what long-running top-level bars need
+                % so that a global sweep (fired as a side effect of ANY
+                % updateBar call, including one on a different, actively
+                % updating bar) does not cull them from behind.
+                thisTimeout = app.Timeout;
+                if isfield(app.ProgressBars(i), 'Timeout') && ...
+                        ~isempty(app.ProgressBars(i).Timeout)
+                    thisTimeout = app.ProgressBars(i).Timeout;
+                end
+
+                if timeout >= thisTimeout & ...
                         ~strcmpi(app.ProgressBars(i).State,'Closed') && ...
                         ~strcmpi(app.ProgressBars(i).State,'Complete') && ...
                         app.ProgressBars(i).Progress < 1
-                    
+
                     % Set icon to error and state to 'Timeout'
                     app.setErrorIconForButton(app.ProgressBars(i).Button)
                     app.ProgressBars(i).State = 'Timeout';
