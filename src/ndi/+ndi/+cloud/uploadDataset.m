@@ -143,8 +143,18 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
         "FileUploadStrategy", syncOptions.FileUploadStrategy, "onlyMissing", true);
     if ~success_upload
         message = message_upload;
+        % Print the failure so a caller who did not capture the message
+        % output still sees why success came back false. Otherwise the
+        % previous lines all say "success" and the return value is 0 with
+        % no visible reason.
+        if syncOptions.Verbose
+            fprintf('ndi.cloud.uploadDataset FAILED: %s\n', message);
+        end
         return;
     end
 
     success = true;
+    if syncOptions.Verbose
+        fprintf('ndi.cloud.uploadDataset completed successfully. Cloud dataset id: %s\n', cloudDatasetId);
+    end
 end
