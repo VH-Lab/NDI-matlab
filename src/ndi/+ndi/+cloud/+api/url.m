@@ -53,7 +53,11 @@ function url = url(endpointName, options)
         endpointMap("get_current_user")               = "/users/me";
         endpointMap("get_user")                       = "/users/{userId}";
         endpointMap("get_dataset")                    = "/datasets/{datasetId}";
-        endpointMap("list_dataset_files")             = "/datasets/{datasetId}/files?page={page}&pageSize={pageSize}";
+        % Keyset-paginated. The limit and opaque `after` cursor are appended as
+        % query parameters by the implementation class (ListFiles), not
+        % templated here, because replacePathParameter asserts every templated
+        % parameter is non-empty and the cursor is empty on the first page.
+        endpointMap("list_dataset_files")             = "/datasets/{datasetId}/files";
         endpointMap("update_dataset")                 = "/datasets/{datasetId}";
         endpointMap("delete_dataset")                 = "/datasets/{datasetId}";
         endpointMap("undelete_dataset")               = "/datasets/{datasetId}/undelete";
