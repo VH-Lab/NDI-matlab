@@ -25,7 +25,7 @@ function [files_to_upload, message] = filesNotYetUploaded(fileManifest, cloudDat
     files_to_upload = struct('uid',{},'bytes',{},'file_path',{},'is_uploaded',{});
     message = '';
 
-    [b, file_list] = ndi.cloud.api.files.listFiles(cloudDatasetId, "checkForUpdates", true);
+    [b, file_list] = ndi.cloud.api.files.listFilesAll(cloudDatasetId, "checkForUpdates", true);
     if b
         remote_files = containers.Map();
         for i=1:numel(file_list)

@@ -117,7 +117,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -206,7 +206,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -292,7 +292,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -378,7 +378,7 @@ classdef FilesTest < matlab.unittest.TestCase
             narrative(end+1) = "Successfully obtained upload URL.";
             % Step 2.5: Verify the file does not yet appear in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list to ensure it is empty.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -398,7 +398,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -510,7 +510,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -872,7 +872,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 2: Call listFiles with checkForUpdates enabled
             narrative(end+1) = "Calling listFiles with checkForUpdates=true.";
-            [b_list_true, file_list_true, resp_list_true, url_list_true] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+            [b_list_true, file_list_true, resp_list_true, url_list_true] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, ...
                 'checkForUpdates', true, 'waitForUpdates', 1, 'maximumNumberUpdateReads', 2);
 
             msg_list_true = ndi.unittest.cloud.APIMessage(narrative, b_list_true, file_list_true, resp_list_true, url_list_true);
@@ -884,7 +884,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 3: Call listFiles with checkForUpdates disabled
             narrative(end+1) = "Calling listFiles with checkForUpdates=false.";
-            [b_list_false, file_list_false, resp_list_false, url_list_false] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+            [b_list_false, file_list_false, resp_list_false, url_list_false] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, ...
                 'checkForUpdates', false);
 
             msg_list_false = ndi.unittest.cloud.APIMessage(narrative, b_list_false, file_list_false, resp_list_false, url_list_false);

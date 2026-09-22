@@ -130,7 +130,7 @@ classdef FilesDifficult < matlab.unittest.TestCase
 
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file." + " at " + string(datetime('now','TimeZone','UTC'));
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful." + " at " + string(datetime('now','TimeZone','UTC'));
