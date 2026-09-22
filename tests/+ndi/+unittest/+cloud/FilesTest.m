@@ -898,16 +898,16 @@ classdef FilesTest < matlab.unittest.TestCase
         end
 
         function testListFilesPagination(testCase)
-            % Verifies the paginated file-listing API: listFiles returns a
-            % single page together with a totalNumber/page/pageSize envelope,
-            % and listFilesAll stitches every page together. A small pageSize
-            % is used so more than one page is required (mirrors the paginated
-            % coverage in DocumentsTest).
+            % Verifies the keyset-paginated file-listing API: listFiles returns
+            % a single page together with a cursor/hasMore envelope, and
+            % listFilesAll follows the cursor to stitch every page together. A
+            % small limit is used so more than one page is required (mirrors the
+            % paginated coverage in DocumentsTest).
             testCase.Narrative = "Begin testListFilesPagination";
             narrative = testCase.Narrative;
 
             numFiles = 5;
-            pageSize = 2; % forces 3 pages (2 + 2 + 1)
+            pageLimit = 2; % forces 3 pages (2 + 2 + 1)
 
             % Step 1: Create local files for upload
             narrative(end+1) = "SETUP: Creating " + numFiles + " local temporary files for bulk upload.";
@@ -954,10 +954,11 @@ classdef FilesTest < matlab.unittest.TestCase
             if ~b_put, return; end
             narrative(end+1) = "Uploaded " + numFiles + " files.";
 
-            % Step 3: listFilesAll with a small pageSize must aggregate all pages.
-            narrative(end+1) = "Calling listFilesAll with pageSize=" + pageSize + " (forces multiple pages).";
+            % Step 3: listFilesAll with a small limit must follow the cursor
+            % across all pages.
+            narrative(end+1) = "Calling listFilesAll with limit=" + pageLimit + " (forces multiple pages).";
             [b_all, files_all, resp_all, url_all] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, ...
-                'pageSize', pageSize, 'checkForUpdates', true);
+                'limit', pageLimit, 'checkForUpdates', true);
             msg_all = ndi.unittest.cloud.APIMessage(narrative, b_all, files_all, resp_all, url_all);
             testCase.verifyTrue(b_all, "listFilesAll failed. " + msg_all);
             if ~b_all, return; end
@@ -968,23 +969,37 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyEqual(returnedUIDs, sort(fileUIDs), ...
                 "listFilesAll uids do not match the uploaded files. " + msg_all);
 
-            % Step 4: listFiles single page returns exactly pageSize items plus
-            % the paged envelope (totalNumber/page/pageSize) on the raw response.
-            narrative(end+1) = "Calling listFiles for page 1 with pageSize=" + pageSize + ".";
+            % Step 4: listFiles single page returns at most `limit` items plus
+            % the keyset envelope (cursor/hasMore/totalNumber) on the raw
+            % response. With numFiles > limit, the first page is full and
+            % hasMore is true.
+            narrative(end+1) = "Calling listFiles for the first page with limit=" + pageLimit + ".";
             [b_pg, files_pg, resp_pg, url_pg] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
-                'page', 1, 'pageSize', pageSize);
+                'limit', pageLimit);
             msg_pg = ndi.unittest.cloud.APIMessage(narrative, b_pg, files_pg, resp_pg, url_pg);
             testCase.verifyTrue(b_pg, "listFiles (single page) failed. " + msg_pg);
             if ~b_pg, return; end
-            testCase.verifyNumElements(files_pg, pageSize, ...
-                "listFiles first page did not contain pageSize files. " + msg_pg);
+            testCase.verifyNumElements(files_pg, pageLimit, ...
+                "listFiles first page did not contain `limit` files. " + msg_pg);
             envelope = resp_pg.Body.Data;
             testCase.verifyEqual(double(envelope.totalNumber), numFiles, ...
                 "listFiles envelope totalNumber is wrong. " + msg_pg);
-            testCase.verifyEqual(double(envelope.page), 1, ...
-                "listFiles envelope page is wrong. " + msg_pg);
-            testCase.verifyEqual(double(envelope.pageSize), pageSize, ...
-                "listFiles envelope pageSize is wrong. " + msg_pg);
+            testCase.verifyTrue(isfield(envelope, 'cursor') && ~isempty(envelope.cursor), ...
+                "listFiles envelope is missing a cursor for a full page. " + msg_pg);
+            testCase.verifyTrue(logical(envelope.hasMore), ...
+                "listFiles envelope hasMore should be true when more pages remain. " + msg_pg);
+
+            % Step 5: the cursor fetches the next page (no overlap with page 1).
+            narrative(end+1) = "Fetching the next page using the cursor from page 1.";
+            [b_pg2, files_pg2, resp_pg2, url_pg2] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+                'limit', pageLimit, 'after', string(envelope.cursor));
+            msg_pg2 = ndi.unittest.cloud.APIMessage(narrative, b_pg2, files_pg2, resp_pg2, url_pg2);
+            testCase.verifyTrue(b_pg2, "listFiles (second page) failed. " + msg_pg2);
+            if ~b_pg2, return; end
+            page1_uids = string({files_pg.uid});
+            page2_uids = string({files_pg2.uid});
+            testCase.verifyEmpty(intersect(page1_uids, page2_uids), ...
+                "listFiles second page overlaps the first. " + msg_pg2);
 
             testCase.Narrative = narrative;
         end

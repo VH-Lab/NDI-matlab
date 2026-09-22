@@ -1,15 +1,17 @@
 classdef ListFilesAll < ndi.cloud.api.call
 %LISTFILESALL Implementation class for retrieving all files in a dataset.
-%   This class handles the paginated retrieval of every file summary from a
-%   cloud dataset. It also includes an optional mechanism to check for and fetch
-%   newly-added files that may appear while the initial list is being read.
+%   Retrieves every file summary from a cloud dataset by following the keyset
+%   cursor returned by the files endpoint. It also includes an optional
+%   mechanism to check for and fetch newly-added files that may appear while
+%   the initial list is being read.
 %
-%   Pagination is driven by the totalNumber reported by the files endpoint
-%   (there is no separate file-count endpoint), obtained with a lightweight
-%   single-record probe. This mirrors ListDatasetDocumentsAll's use of the
-%   document-count endpoint.
+%   Keyset pagination (a cursor on insertion order) is used instead of
+%   page/offset: it is O(1) per page at any depth and stable under concurrent
+%   writes, and it lets an update poll resume from the last cursor to pick up
+%   files appended while the scan ran.
 
     properties
+        limit (1,1) double = 1000
         retries (1,1) double = 10
         checkForUpdates (1,1) logical = true
         waitForUpdates (1,1) double = 5
@@ -25,15 +27,15 @@ classdef ListFilesAll < ndi.cloud.api.call
             %   Inputs:
             %       'cloudDatasetID' - The ID of the dataset to query.
             %   Optional Name-Value Inputs:
-            %       'pageSize'   - The number of results per page (default 1000).
-            %       'retries'    - The number of times to retry a failed page read (default 10).
-            %       'checkForUpdates' - Flag to enable checking for new files (default true).
-            %       'waitForUpdates'  - Pause duration in seconds before re-checking (default 5).
+            %       'limit'      - Max results fetched per page (default 1000).
+            %       'retries'    - Times to retry a failed page read (default 10).
+            %       'checkForUpdates' - Check for new files after the first scan (default true).
+            %       'waitForUpdates'  - Pause seconds before re-checking (default 5).
             %       'maximumNumberUpdateReads' - Limit on update re-polls (default 100).
             %
             arguments
                 args.cloudDatasetID (1,1) string
-                args.pageSize (1,1) double = 1000
+                args.limit (1,1) double = 1000
                 args.retries (1,1) double = 10
                 args.checkForUpdates (1,1) logical = true
                 args.waitForUpdates (1,1) double = 5
@@ -41,7 +43,7 @@ classdef ListFilesAll < ndi.cloud.api.call
             end
 
             this.cloudDatasetID = args.cloudDatasetID;
-            this.pageSize = args.pageSize;
+            this.limit = args.limit;
             this.retries = args.retries;
             this.checkForUpdates = args.checkForUpdates;
             this.waitForUpdates = args.waitForUpdates;
@@ -49,118 +51,102 @@ classdef ListFilesAll < ndi.cloud.api.call
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
-            %EXECUTE Performs the API call to list all files.
-            %   This method first determines the total number of files (and thus
-            %   pages), then iterates through them, fetching each one using the
-            %   private `fetch_and_append_page` helper method.
-            %
-            %   If `checkForUpdates` is true, it then enters a loop to re-check
-            %   the total file count. If new files have been added, it fetches
-            %   the new pages, de-duplicating results by uid. This continues
-            %   until no new files are found or the `maximumNumberUpdateReads`
-            %   limit is reached.
+            %EXECUTE Follows the keyset cursor to list all files.
             %
             %   [B, ANSWER, APIRESPONSE, APIURL] = EXECUTE(THIS)
             %
             %   Outputs:
             %       b            - True if all pages were read successfully, false otherwise.
-            %       answer       - A struct array of file summaries on success, or an error struct.
-            %       apiResponse  - An array of matlab.net.http.ResponseMessage objects from all page calls.
-            %       apiURL       - An array of URLs that were called.
-            %
+            %       answer       - A struct array of file summaries (uid, uploaded,
+            %                      sourceDatasetId, size) on success.
+            %       apiResponse  - The matlab.net.http.ResponseMessage object from the LAST page call.
+            %       apiURL       - The URL that was called for the LAST page.
+
             % Initialize outputs
             b = true;
             answer = struct('uid', {}, 'uploaded', {}, 'sourceDatasetId', {}, 'size', {});
             apiResponse = matlab.net.http.ResponseMessage.empty;
             apiURL = matlab.net.URI.empty;
 
-            [b_count, numFiles] = this.fetchFileCount();
+            % lastCursor is the resume token (cursor of the last page seen). An
+            % update poll resumes from it to pick up files appended since.
+            lastCursor = "";
 
-            currentTime = tic;
-
-            if ~b_count
-                b = false;
-                answer = 'Could not determine file count.';
-                return;
-            end
-
-            numPages = ceil(double(numFiles) / this.pageSize);
-            last_page_read = 0;
-
-            for p = 1:numPages
-                [b_page, answer, apiResponse, apiURL] = this.fetch_and_append_page(p, answer, apiResponse, apiURL, false);
+            % --- Initial full scan ---
+            after = "";
+            while true
+                [b_page, answer, apiResponse, apiURL, cursor, hasMore] = ...
+                    this.fetch_and_append_page(after, answer, apiResponse, apiURL, true);
                 if ~b_page
                     b = false;
+                    return;
+                end
+                if strlength(cursor) > 0
+                    lastCursor = cursor;
+                end
+                if hasMore
+                    after = cursor;
+                else
                     break;
                 end
-                last_page_read = p;
             end
 
-            if this.checkForUpdates && b
+            % --- Optional re-poll to catch files added while we ran ---
+            if this.checkForUpdates
                 update_reads = 0;
-                elapsedTime = toc(currentTime); % make sure we waited at least this.waitForUpdates seconds
-                if elapsedTime < this.waitForUpdates
-                    pause(this.waitForUpdates-elapsedTime);
-                end
-                [b_count, newNumFiles] = this.fetchFileCount();
-                while b_count && newNumFiles > numFiles && update_reads < this.maximumNumberUpdateReads
-
+                while update_reads < this.maximumNumberUpdateReads
                     pause(this.waitForUpdates);
-                    numFiles = newNumFiles;
+                    countBefore = numel(answer);
 
-                    start_page = max(1, last_page_read);
-
-                    numPages = ceil(double(numFiles) / this.pageSize);
-                    for p_update = start_page:numPages
-                        [b_page, answer, apiResponse, apiURL] = this.fetch_and_append_page(p_update, answer, apiResponse, apiURL, true);
+                    after = lastCursor;
+                    while true
+                        [b_page, answer, apiResponse, apiURL, cursor, hasMore] = ...
+                            this.fetch_and_append_page(after, answer, apiResponse, apiURL, true);
                         if ~b_page
                             b = false;
                             break;
                         end
-                        last_page_read = p_update;
+                        if strlength(cursor) > 0
+                            lastCursor = cursor;
+                        end
+                        if hasMore
+                            after = cursor;
+                        else
+                            break;
+                        end
                     end
-                    if ~b, break; end
+
+                    if ~b
+                        break;
+                    end
                     update_reads = update_reads + 1;
-                    [b_count, newNumFiles] = this.fetchFileCount();
+                    if numel(answer) == countBefore
+                        break; % nothing new was added
+                    end
                 end
             end
-
         end
     end
 
     methods (Access = private)
-        function [b, total] = fetchFileCount(this)
-            %FETCHFILECOUNT Cheaply read the dataset's current total file count.
-            %   There is no dedicated file-count endpoint, so this requests a
-            %   single-record page and reads totalNumber from the response
-            %   envelope.
+        function [b, answer, apiResponse, apiURL, cursor, hasMore] = fetch_and_append_page(this, afterCursor, answer, apiResponse, apiURL, deduplicate)
+            %FETCH_AND_APPEND_PAGE Fetch one keyset page and append its files.
+            %   Handles retry logic. If `deduplicate` is true, only files whose
+            %   uid is not already present are appended. Returns the page's
+            %   cursor (resume token) and hasMore flag from the response envelope.
             b = false;
-            total = 0;
-            [b_page, ~, resp_page, ~] = ndi.cloud.api.files.listFiles(...
-                this.cloudDatasetID, 'page', 1, 'pageSize', 1);
-            if b_page
-                b = true;
-                data = resp_page.Body.Data;
-                if ~isempty(data) && isfield(data, 'totalNumber') && ~isempty(data.totalNumber)
-                    total = double(data.totalNumber);
-                end
-            end
-        end
-
-        function [b, answer, apiResponse, apiURL] = fetch_and_append_page(this, page_num, answer, apiResponse, apiURL, deduplicate)
-            %FETCH_AND_APPEND_PAGE Fetches a single page of files and appends them.
-            %   This helper method is responsible for fetching a single page of
-            %   file summaries. It handles the retry logic internally. If
-            %   `deduplicate` is true, it will compare the uids of the fetched
-            %   files with the existing files in `answer` and only append the
-            %   new ones.
-            b = false;
+            cursor = "";
+            hasMore = false;
             for attempt = 1:this.retries
                 [b_page, ans_page, resp_page, url_page] = ndi.cloud.api.files.listFiles(...
-                    this.cloudDatasetID, 'page', page_num, 'pageSize', this.pageSize);
+                    this.cloudDatasetID, 'limit', this.limit, 'after', afterCursor);
 
-                apiURL(end+1) = url_page;
-                apiResponse(end+1) = resp_page;
+                % Keep only the most recent page's response/URL. Like
+                % listDatasetDocumentsAll, this wrapper reports the LAST page it
+                % called, not an array across pages -- callers do string(apiURL)
+                % expecting a scalar, and an N-element array broke that.
+                apiURL = url_page;
+                apiResponse = resp_page;
 
                 if b_page
                     if isempty(answer)
@@ -180,6 +166,17 @@ classdef ListFilesAll < ndi.cloud.api.call
                             end
                         end
                     end
+
+                    % Read the keyset envelope from the raw response.
+                    data = resp_page.Body.Data;
+                    if ~isempty(data) && isfield(data, 'cursor') && ~isempty(data.cursor) ...
+                            && (ischar(data.cursor) || isstring(data.cursor))
+                        cursor = string(data.cursor);
+                    end
+                    if ~isempty(data) && isfield(data, 'hasMore') && ~isempty(data.hasMore)
+                        hasMore = logical(data.hasMore);
+                    end
+
                     b = true;
                     break; % Exit retry loop on success
                 end

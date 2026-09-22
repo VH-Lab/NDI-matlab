@@ -1,29 +1,38 @@
 classdef ListFiles < ndi.cloud.api.call
 %LISTFILES Implementation class for listing one page of a dataset's files.
-%   Retrieves a single page from the paginated
+%   Retrieves a single keyset-paginated page from the
 %   GET /datasets/{datasetId}/files endpoint. Use
 %   ndi.cloud.api.implementation.files.ListFilesAll to retrieve every page.
+
+    properties
+        % Keyset pagination. `after` is an opaque cursor (empty for the first
+        % page); the server returns the cursor for the next page and a hasMore
+        % flag in the response envelope.
+        limit (1,1) double = 1000
+        after (1,1) string = ""
+    end
 
     methods
         function this = ListFiles(args)
             %LISTFILES Creates a new ListFiles API call object.
             %
-            %   THIS = ndi.cloud.api.implementation.files.ListFiles('cloudDatasetID', ID, 'page', P, 'pageSize', PS)
+            %   THIS = ndi.cloud.api.implementation.files.ListFiles('cloudDatasetID', ID, 'limit', L, 'after', CURSOR)
             %
             %   Inputs:
             %       'cloudDatasetID' - The ID of the dataset.
-            %       'page'           - (Optional) The page number of results. Default is 1.
-            %       'pageSize'       - (Optional) The number of results per page. Default is 1000.
+            %       'limit'          - (Optional) Max results per page. Default is 1000.
+            %       'after'          - (Optional) Opaque keyset cursor from a previous
+            %                          page's response. Default "" (first page).
             %
             arguments
                 args.cloudDatasetID (1,1) string
-                args.page (1,1) double = 1
-                args.pageSize (1,1) double = 1000
+                args.limit (1,1) double = 1000
+                args.after (1,1) string = ""
             end
 
             this.cloudDatasetID = args.cloudDatasetID;
-            this.page = args.page;
-            this.pageSize = args.pageSize;
+            this.limit = args.limit;
+            this.after = args.after;
         end
 
         function [b, answer, apiResponse, apiURL] = execute(this)
@@ -32,8 +41,8 @@ classdef ListFiles < ndi.cloud.api.call
             %   [B, ANSWER, APIRESPONSE, APIURL] = EXECUTE(THIS)
             %
             %   On success ANSWER is a struct array of the page's files with
-            %   fields uid, uploaded, sourceDatasetId, and size. The full page
-            %   envelope (including totalNumber, page, and pageSize) is
+            %   fields uid, uploaded, sourceDatasetId, and size. The page
+            %   envelope (including cursor, hasMore, and totalNumber) is
             %   available in APIRESPONSE.Body.Data.
 
             % Initialize outputs
@@ -43,9 +52,20 @@ classdef ListFiles < ndi.cloud.api.call
             token = ndi.cloud.authenticate();
 
             apiURL = ndi.cloud.api.url('list_dataset_files', ...
-                'dataset_id', this.cloudDatasetID, ...
-                'page', this.page, ...
-                'page_size', this.pageSize);
+                'dataset_id', this.cloudDatasetID);
+
+            % limit is always sent; the cursor only when set. (Optional query
+            % params are appended here rather than templated in url.m, which
+            % asserts every templated parameter is non-empty.)
+            q = matlab.net.QueryParameter('limit', sprintf('%d', this.limit));
+            if strlength(this.after) > 0
+                q = [q matlab.net.QueryParameter('after', char(this.after))];
+            end
+            if isempty(apiURL.Query)
+                apiURL.Query = q;
+            else
+                apiURL.Query = [apiURL.Query q];
+            end
 
             method = matlab.net.http.RequestMethod.GET;
 
