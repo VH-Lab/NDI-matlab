@@ -398,7 +398,7 @@ Where:
 | Function | Signature | Description |
 |---|---|---|
 | `ndi.cloud.api.datasets.createDataset` | `createDataset(datasetInfoStruct)` | Creates a new dataset record in the cloud. Returns the new `cloudDatasetID`. |
-| `ndi.cloud.api.datasets.getDataset` | `getDataset(cloudDatasetID)` | Retrieves the full details for a dataset, including its document and file lists. |
+| `ndi.cloud.api.datasets.getDataset` | `getDataset(cloudDatasetID)` | Retrieves a dataset's metadata. The response reports `fileCount` (and a document count) but does **not** embed the file list — use `ndi.cloud.api.files.listFilesAll` to enumerate files. |
 | `ndi.cloud.api.datasets.updateDataset` | `updateDataset(cloudDatasetID, datasetInfoStruct)` | Updates a dataset's metadata. |
 | `ndi.cloud.api.datasets.deleteDataset` | `deleteDataset(cloudDatasetID, 'when', '7d')` | Marks a dataset for deletion. The `when` option specifies when deletion occurs (e.g., `'7d'`, `'now'`). |
 | `ndi.cloud.api.datasets.listDatasets` | `listDatasets('page', P, 'pageSize', PS)` | Lists datasets in the current user's organization. Supports pagination. |
@@ -458,7 +458,8 @@ pyramid level is an O(1) uid lookup rather than another round trip.
 | `ndi.cloud.api.files.getFileUploadURL` | `getFileUploadURL(cloudDatasetID, cloudFileUID)` | Returns a pre-signed URL for uploading a single file. |
 | `ndi.cloud.api.files.getFileCollectionUploadURL` | `getFileCollectionUploadURL(cloudDatasetID)` | Returns a pre-signed URL for uploading a ZIP archive of multiple files. |
 | `ndi.cloud.api.files.putFiles` | `putFiles(preSignedURL, filePath, 'useCurl', true)` | Uploads a local file to a pre-signed URL via HTTP PUT. `useCurl` defaults to `true` (consistent S3 object headers); set it to `false` to use MATLAB's native HTTP client. |
-| `ndi.cloud.api.files.listFiles` | `listFiles(cloudDatasetId, ...)` | Lists all files associated with a dataset, with optional polling for newly uploaded files. |
+| `ndi.cloud.api.files.listFiles` | `listFiles(cloudDatasetId, 'limit', L, 'after', cursor)` | Lists a single keyset page of a dataset's files. Returns the page plus a `cursor`/`hasMore` envelope; pass `cursor` back as `after` for the next page. |
+| `ndi.cloud.api.files.listFilesAll` | `listFilesAll(cloudDatasetId, 'limit', L)` | Lists **all** of a dataset's files by following the keyset cursor across pages, with optional polling for newly uploaded files. The whole-dataset counterpart to `listFiles`. |
 
 ### Compute (`ndi.cloud.api.compute.*`)
 
