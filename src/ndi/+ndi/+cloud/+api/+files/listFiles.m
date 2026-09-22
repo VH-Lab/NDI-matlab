@@ -14,6 +14,9 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
 %                             updates. Default is 10.
 %           maximumNumberUpdateReads - The maximum number of times to re-poll for
 %                                      updates. Default is 100.
+%           pageSize        - The number of files requested per page from the
+%                             server. The full list is assembled by paging;
+%                             this only controls the request size. Default 1000.
 %
 %   Outputs:
 %       b                   - True if the API call was successful, false otherwise.
@@ -43,6 +46,7 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
         options.checkForUpdates (1,1) logical = false
         options.waitForUpdates (1,1) {mustBeNumeric} = 10
         options.maximumNumberUpdateReads (1,1) {mustBeNumeric} = 100
+        options.pageSize (1,1) {mustBeNumeric, mustBePositive} = 1000
     end
 
     % 1. Create an instance of the implementation class
@@ -50,7 +54,8 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
         'cloudDatasetId', cloudDatasetId, ...
         'checkForUpdates', options.checkForUpdates, ...
         'waitForUpdates', options.waitForUpdates, ...
-        'maximumNumberUpdateReads', options.maximumNumberUpdateReads);
+        'maximumNumberUpdateReads', options.maximumNumberUpdateReads, ...
+        'pageSize', options.pageSize);
 
     % 2. Call the execute method and return its outputs directly
     [b, answer, apiResponse, apiURL] = api_call.execute();

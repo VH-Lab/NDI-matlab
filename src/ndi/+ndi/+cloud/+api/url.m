@@ -53,6 +53,7 @@ function url = url(endpointName, options)
         endpointMap("get_current_user")               = "/users/me";
         endpointMap("get_user")                       = "/users/{userId}";
         endpointMap("get_dataset")                    = "/datasets/{datasetId}";
+        endpointMap("list_dataset_files")             = "/datasets/{datasetId}/files?page={page}&pageSize={pageSize}";
         endpointMap("update_dataset")                 = "/datasets/{datasetId}";
         endpointMap("delete_dataset")                 = "/datasets/{datasetId}";
         endpointMap("undelete_dataset")               = "/datasets/{datasetId}/undelete";
