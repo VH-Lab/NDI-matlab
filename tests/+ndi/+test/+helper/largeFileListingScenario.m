@@ -112,12 +112,11 @@ function result = largeFileListingScenario(options)
     ndi.cloud.api.files.waitForAllBulkUploads(cloudId);
 
     % ----- 3. Walk the whole file list with the cursor client -----
-    [bAll, filesAll, ~, urlAll] = ndi.cloud.api.files.listFilesAll(cloudId, 'limit', options.pageLimit);
+    [bAll, filesAll] = ndi.cloud.api.files.listFilesAll(cloudId, 'limit', options.pageLimit);
     assert(bAll, 'NDI:test:helper:ListFilesAllFailed', 'listFilesAll failed.');
 
     uids = string({filesAll.uid});
     numReturned = numel(filesAll);
-    numRequests = numel(urlAll);
     uniqueUids = (numel(unique(uids)) == numReturned);
 
     % ----- 4. Single page + cursor envelope + non-overlapping next page -----
@@ -125,6 +124,12 @@ function result = largeFileListingScenario(options)
     assert(b1, 'NDI:test:helper:ListFilesFailed', 'listFiles (first page) failed.');
     env = resp1.Body.Data;
     totalNumber = double(env.totalNumber);
+
+    % The server signalling more pages on the first page is what proves the
+    % cursor walk had to span pages (listFilesAll no longer exposes a per-page
+    % request count). Expected page count is derived for reporting only.
+    firstPageHasMore = isfield(env, 'hasMore') && ~isempty(env.hasMore) && logical(env.hasMore);
+    expectedPages = max(1, ceil(totalNumber / options.pageLimit));
 
     pagesNonOverlapping = true;
     if isfield(env, 'hasMore') && ~isempty(env.hasMore) && logical(env.hasMore)
@@ -144,9 +149,9 @@ function result = largeFileListingScenario(options)
     assert(uniqueUids, 'NDI:test:helper:DuplicateUids', ...
         'The cursor walk returned duplicate uids (dedup/paging bug).');
     if options.numFiles > options.pageLimit
-        assert(numRequests > 1, 'NDI:test:helper:NotMultiPage', ...
-            'Expected a multi-page cursor walk (%d files, limit %d) but only %d request(s) were made.', ...
-            options.numFiles, options.pageLimit, numRequests);
+        assert(firstPageHasMore, 'NDI:test:helper:NotMultiPage', ...
+            'Expected a multi-page cursor walk (%d files, limit %d) but the first page reported hasMore=false.', ...
+            options.numFiles, options.pageLimit);
     end
     assert(pagesNonOverlapping, 'NDI:test:helper:PageOverlap', ...
         'The second cursor page overlapped the first (cursor did not advance).');
@@ -157,13 +162,14 @@ function result = largeFileListingScenario(options)
     result.numRequests = numRequests;
     result.uniqueUids = uniqueUids;
     result.pagesNonOverlapping = pagesNonOverlapping;
+    result.expectedPages = expectedPages;
     result.elapsedSeconds = toc(tStart);
     result.passed = true;
 
     if options.verbose
-        fprintf(['  PASS: listed %d files across %d requests (limit %d); ', ...
+        fprintf(['  PASS: listed %d files across ~%d page(s) (limit %d); ', ...
             'totalNumber=%d, uniqueUids=%d, nonOverlap=%d, %.1fs\n'], ...
-            numReturned, numRequests, options.pageLimit, totalNumber, ...
+            numReturned, expectedPages, options.pageLimit, totalNumber, ...
             uniqueUids, pagesNonOverlapping, result.elapsedSeconds);
     end
 end

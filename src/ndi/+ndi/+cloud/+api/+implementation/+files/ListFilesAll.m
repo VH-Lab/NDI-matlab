@@ -59,8 +59,8 @@ classdef ListFilesAll < ndi.cloud.api.call
             %       b            - True if all pages were read successfully, false otherwise.
             %       answer       - A struct array of file summaries (uid, uploaded,
             %                      sourceDatasetId, size) on success.
-            %       apiResponse  - An array of matlab.net.http.ResponseMessage objects from all page calls.
-            %       apiURL       - An array of URLs that were called.
+            %       apiResponse  - The matlab.net.http.ResponseMessage object from the LAST page call.
+            %       apiURL       - The URL that was called for the LAST page.
 
             % Initialize outputs
             b = true;
@@ -141,8 +141,12 @@ classdef ListFilesAll < ndi.cloud.api.call
                 [b_page, ans_page, resp_page, url_page] = ndi.cloud.api.files.listFiles(...
                     this.cloudDatasetID, 'limit', this.limit, 'after', afterCursor);
 
-                apiURL(end+1) = url_page;
-                apiResponse(end+1) = resp_page;
+                % Keep only the most recent page's response/URL. Like
+                % listDatasetDocumentsAll, this wrapper reports the LAST page it
+                % called, not an array across pages -- callers do string(apiURL)
+                % expecting a scalar, and an N-element array broke that.
+                apiURL = url_page;
+                apiResponse = resp_page;
 
                 if b_page
                     if isempty(answer)

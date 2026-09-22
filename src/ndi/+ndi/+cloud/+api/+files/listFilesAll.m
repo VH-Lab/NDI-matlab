@@ -30,9 +30,9 @@ function [b, answer, apiResponse, apiURL] = listFilesAll(cloudDatasetID, args)
 %                          uploaded        - 0/1 flag: whether the file is uploaded.
 %                          sourceDatasetId - The parent dataset's cloud id.
 %                          size            - The file size in bytes.
-%       apiResponse  - An array of matlab.net.http.ResponseMessage objects from
-%                      all page calls.
-%       apiURL       - An array of the URLs that were called.
+%       apiResponse  - The matlab.net.http.ResponseMessage object from the LAST
+%                      page call.
+%       apiURL       - The URL that was called for the LAST page.
 %
 %   Example:
 %       [success, all_files] = ndi.cloud.api.files.listFilesAll('d-12345');
