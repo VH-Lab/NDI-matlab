@@ -14,6 +14,14 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             % Creates a new ndi.app.oridirtuning object that can operate on
             % NDI_SESSIONS. The app is named 'ndi.app.oridirtuning'.
             %
+            % DEPRECATED. Use ndi.calc.vis.oridir_tuning (from
+            % VH-Lab/NDIcalc-vis-matlab) instead. This pre-calculator-framework
+            % app remains only to service legacy datasets; the calculator is
+            % the supported path for new work. See VH-Lab/NDI-matlab#1001.
+            warning('NDI:deprecated:oridirtuning', ...
+                ['ndi.app.oridirtuning is deprecated and will be removed in a future release. ' ...
+                'Use ndi.calc.vis.oridir_tuning (VH-Lab/NDIcalc-vis-matlab) instead. ' ...
+                'See VH-Lab/NDI-matlab#1001.']);
             session = [];
             name = 'ndi_app_oridirtuning';
             if numel(varargin)>0
