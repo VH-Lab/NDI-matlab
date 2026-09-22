@@ -28,9 +28,10 @@ function result = largeFileListingScenario(options)
 %       verbose      (1,1) logical = true
 %
 %   RESULT is a struct with fields: cloudDatasetId, numFiles, totalNumber,
-%       numReturned, numRequests, uniqueUids, pagesNonOverlapping,
-%       elapsedSeconds, passed. The function errors (does not return) if any
-%       check fails, so it can be called directly or wrapped in a test.
+%       numReturned, datasetFileCount, uniqueUids, pagesNonOverlapping,
+%       expectedPages, elapsedSeconds, passed. The function errors (does not
+%       return) if any check fails, so it can be called directly or wrapped in
+%       a test.
 %
 %   Example:
 %       setenv('CLOUD_API_ENVIRONMENT','dev');
@@ -97,9 +98,9 @@ function result = largeFileListingScenario(options)
         'Failed to create cloud dataset "%s".', uniqueName);
 
     result = struct('cloudDatasetId', cloudId, 'numFiles', options.numFiles, ...
-        'totalNumber', NaN, 'numReturned', NaN, 'numRequests', NaN, ...
+        'totalNumber', NaN, 'numReturned', NaN, 'datasetFileCount', NaN, ...
         'uniqueUids', false, 'pagesNonOverlapping', false, ...
-        'elapsedSeconds', NaN, 'passed', false);
+        'expectedPages', NaN, 'elapsedSeconds', NaN, 'passed', false);
 
     cleanupCloud = onCleanup(@() localMaybeDeleteDataset(cloudId, options.keepDataset, options.verbose)); %#ok<NASGU>
 
@@ -139,10 +140,22 @@ function result = largeFileListingScenario(options)
         pagesNonOverlapping = isempty(intersect(string({page1.uid}), string({page2.uid})));
     end
 
+    % ----- 4b. getDataset fileCount must agree with the listing -----
+    % getDataset returns a fileCount scalar instead of an embedded file list
+    % (see the files-collection migration). It must match what listFilesAll
+    % walks; a mismatch (e.g. getDataset silently returning 0) is exactly the
+    % class of bug this asserts against.
+    [bGet, dsInfo] = ndi.cloud.api.datasets.getDataset(cloudId);
+    assert(bGet, 'NDI:test:helper:GetDatasetFailed', 'getDataset failed.');
+    datasetFileCount = double(dsInfo.fileCount);
+
     % ----- 5. Assertions -----
     assert(numReturned == totalNumber, 'NDI:test:helper:CountMismatch', ...
         'listFilesAll returned %d files but the server reports totalNumber=%d.', ...
         numReturned, totalNumber);
+    assert(datasetFileCount == numReturned, 'NDI:test:helper:FileCountMismatch', ...
+        'getDataset reported fileCount=%d but listFilesAll returned %d files.', ...
+        datasetFileCount, numReturned);
     assert(numReturned >= options.numFiles, 'NDI:test:helper:TooFewFiles', ...
         'Expected at least %d files (series members) but listed %d.', ...
         options.numFiles, numReturned);
@@ -159,7 +172,7 @@ function result = largeFileListingScenario(options)
     % ----- result -----
     result.totalNumber = totalNumber;
     result.numReturned = numReturned;
-    result.numRequests = numRequests;
+    result.datasetFileCount = datasetFileCount;
     result.uniqueUids = uniqueUids;
     result.pagesNonOverlapping = pagesNonOverlapping;
     result.expectedPages = expectedPages;
