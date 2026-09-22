@@ -117,7 +117,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -206,7 +206,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -292,7 +292,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -378,7 +378,7 @@ classdef FilesTest < matlab.unittest.TestCase
             narrative(end+1) = "Successfully obtained upload URL.";
             % Step 2.5: Verify the file does not yet appear in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list to ensure it is empty.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -398,7 +398,7 @@ classdef FilesTest < matlab.unittest.TestCase
             pause(10); % Give server time to process the file
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -510,7 +510,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file.";
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list);
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful.";
@@ -872,7 +872,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 2: Call listFiles with checkForUpdates enabled
             narrative(end+1) = "Calling listFiles with checkForUpdates=true.";
-            [b_list_true, file_list_true, resp_list_true, url_list_true] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+            [b_list_true, file_list_true, resp_list_true, url_list_true] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, ...
                 'checkForUpdates', true, 'waitForUpdates', 1, 'maximumNumberUpdateReads', 2);
 
             msg_list_true = ndi.unittest.cloud.APIMessage(narrative, b_list_true, file_list_true, resp_list_true, url_list_true);
@@ -884,7 +884,7 @@ classdef FilesTest < matlab.unittest.TestCase
 
             % Step 3: Call listFiles with checkForUpdates disabled
             narrative(end+1) = "Calling listFiles with checkForUpdates=false.";
-            [b_list_false, file_list_false, resp_list_false, url_list_false] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+            [b_list_false, file_list_false, resp_list_false, url_list_false] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, ...
                 'checkForUpdates', false);
 
             msg_list_false = ndi.unittest.cloud.APIMessage(narrative, b_list_false, file_list_false, resp_list_false, url_list_false);
@@ -893,6 +893,98 @@ classdef FilesTest < matlab.unittest.TestCase
             testCase.verifyEqual(file_list_false(1).uid, char(fileUID), "Incorrect UID with update check disabled. " + msg_list_false);
             testCase.verifyTrue(file_list_false(1).uploaded, "File not marked as uploaded with update check disabled. " + msg_list_false);
             narrative(end+1) = "Successfully listed 1 file with update check disabled.";
+
+            testCase.Narrative = narrative;
+        end
+
+        function testListFilesPagination(testCase)
+            % Verifies the paginated file-listing API: listFiles returns a
+            % single page together with a totalNumber/page/pageSize envelope,
+            % and listFilesAll stitches every page together. A small pageSize
+            % is used so more than one page is required (mirrors the paginated
+            % coverage in DocumentsTest).
+            testCase.Narrative = "Begin testListFilesPagination";
+            narrative = testCase.Narrative;
+
+            numFiles = 5;
+            pageSize = 2; % forces 3 pages (2 + 2 + 1)
+
+            % Step 1: Create local files for upload
+            narrative(end+1) = "SETUP: Creating " + numFiles + " local temporary files for bulk upload.";
+            import matlab.unittest.fixtures.TemporaryFolderFixture;
+            tempFolder = testCase.applyFixture(TemporaryFolderFixture);
+            localFilePaths = strings(1, numFiles);
+            fileUIDs = strings(1, numFiles);
+            for i = 1:numFiles
+                fileUIDs(i) = string(did.ido.unique_id());
+                localFilePaths(i) = fullfile(tempFolder.Folder, fileUIDs(i));
+                try
+                    fid = fopen(localFilePaths(i), 'w');
+                    fwrite(fid, uint8(randi([0 255], 1, 100)), 'uint8');
+                    fclose(fid);
+                catch ME
+                    msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], 'local_operation:fopen');
+                    testCase.verifyFail("Failed to create local test file. " + msg_fail);
+                    return;
+                end
+            end
+
+            % Step 2: Bulk-upload the files (zip + extract)
+            narrative(end+1) = "Preparing to get a pre-signed URL for bulk file upload.";
+            [b_url, ans_url, resp_url, url_url] = ndi.cloud.api.files.getFileCollectionUploadURL(testCase.DatasetID);
+            msg_url = ndi.unittest.cloud.APIMessage(narrative, b_url, ans_url, resp_url, url_url);
+            testCase.verifyTrue(b_url, "Failed to get bulk file upload URL. " + msg_url);
+            if ~b_url, return; end
+            uploadURL = ans_url.url;
+            uploadJobId = ans_url.jobId;
+
+            uniqueString = string(did.ido.unique_id());
+            zipFilePath = fullfile(tempFolder.Folder, testCase.DatasetID + "." + uniqueString + ".zip");
+            try
+                zip(zipFilePath, localFilePaths);
+            catch ME
+                msg_fail = ndi.unittest.cloud.APIMessage(narrative, false, ME.message, [], 'local_operation:zip');
+                testCase.verifyFail("Failed to create zip archive. " + msg_fail);
+                return;
+            end
+            [b_put, ans_put, resp_put, url_put] = ndi.cloud.api.files.putFiles(uploadURL, zipFilePath, ...
+                'jobId', uploadJobId, 'waitForCompletion', true, 'timeout', 120);
+            msg_put = ndi.unittest.cloud.APIMessage(narrative, b_put, ans_put, resp_put, url_put);
+            testCase.verifyTrue(b_put, "Bulk file upload failed. " + msg_put);
+            if ~b_put, return; end
+            narrative(end+1) = "Uploaded " + numFiles + " files.";
+
+            % Step 3: listFilesAll with a small pageSize must aggregate all pages.
+            narrative(end+1) = "Calling listFilesAll with pageSize=" + pageSize + " (forces multiple pages).";
+            [b_all, files_all, resp_all, url_all] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, ...
+                'pageSize', pageSize, 'checkForUpdates', true);
+            msg_all = ndi.unittest.cloud.APIMessage(narrative, b_all, files_all, resp_all, url_all);
+            testCase.verifyTrue(b_all, "listFilesAll failed. " + msg_all);
+            if ~b_all, return; end
+            testCase.verifyNumElements(files_all, numFiles, ...
+                "listFilesAll did not return all files across pages. " + msg_all);
+            % Every uploaded uid should be present exactly once.
+            returnedUIDs = sort(string({files_all.uid}));
+            testCase.verifyEqual(returnedUIDs, sort(fileUIDs), ...
+                "listFilesAll uids do not match the uploaded files. " + msg_all);
+
+            % Step 4: listFiles single page returns exactly pageSize items plus
+            % the paged envelope (totalNumber/page/pageSize) on the raw response.
+            narrative(end+1) = "Calling listFiles for page 1 with pageSize=" + pageSize + ".";
+            [b_pg, files_pg, resp_pg, url_pg] = ndi.cloud.api.files.listFiles(testCase.DatasetID, ...
+                'page', 1, 'pageSize', pageSize);
+            msg_pg = ndi.unittest.cloud.APIMessage(narrative, b_pg, files_pg, resp_pg, url_pg);
+            testCase.verifyTrue(b_pg, "listFiles (single page) failed. " + msg_pg);
+            if ~b_pg, return; end
+            testCase.verifyNumElements(files_pg, pageSize, ...
+                "listFiles first page did not contain pageSize files. " + msg_pg);
+            envelope = resp_pg.Body.Data;
+            testCase.verifyEqual(double(envelope.totalNumber), numFiles, ...
+                "listFiles envelope totalNumber is wrong. " + msg_pg);
+            testCase.verifyEqual(double(envelope.page), 1, ...
+                "listFiles envelope page is wrong. " + msg_pg);
+            testCase.verifyEqual(double(envelope.pageSize), pageSize, ...
+                "listFiles envelope pageSize is wrong. " + msg_pg);
 
             testCase.Narrative = narrative;
         end
