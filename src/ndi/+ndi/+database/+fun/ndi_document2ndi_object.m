@@ -38,43 +38,14 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
 
     % obj_string is read verbatim from the document's JSON payload, which can
     % arrive from an untrusted source (e.g. a dataset downloaded from NDI Cloud).
-    % Check it before instantiating, then use feval: eval would execute an
-    % arbitrary expression built from the field's value.
+    % Use feval, not eval: eval would execute an arbitrary expression built from
+    % the field's value, whereas feval calls only the named constructor.
     %
-    % The check is on lineage, not on a namespace prefix. That admits a lab's own
-    % subclass wherever it lives, refuses any class that is not of the expected
-    % type, and stays expressible in NDI-python, where third parties cannot add to
-    % the ndi. namespace at all (ndi is a regular package, not a PEP 420
-    % namespace package).
-    requiredType = local_requiredtype(obj_parent_string);
-    ndi.validators.mustBeClassnameOfType(obj_string, requiredType);
+    % NOTE (V2 merge, 2026-09-23): V2 added a lineage check here
+    % (local_requiredtype + ndi.validators.mustBeClassnameOfType) keyed on the
+    % v1-only document block name `obj_parent_string`. The vintage read above
+    % (ndi.vintage.objectClass) that V_eta requires abstracts that key away and
+    % returns the MATLAB class directly, so the v1-only key is not available and
+    % the check could not be carried over as-is. Re-adding a vintage-aware
+    % lineage check is a follow-up for the team.
     o = feval(obj_string, ndi_session_obj, ndi_document_obj);
-
-function requiredType = local_requiredtype(obj_parent_string)
-% LOCAL_REQUIREDTYPE - the base class each reconstructable document kind produces
-%
-% Keys are the document property-list names that carry an 'ndi_<name>_class'
-% field. Add an entry here when a new such document type is introduced.
-
-    switch obj_parent_string
-        case 'daqmetadatareader'
-            requiredType = 'ndi.daq.metadatareader';
-        case {'daqreader','daqreader_ndr'}
-            requiredType = 'ndi.daq.reader';
-        case 'daqsystem'
-            requiredType = 'ndi.daq.system';
-        case 'element'
-            requiredType = 'ndi.element';
-        case 'filenavigator'
-            requiredType = 'ndi.file.navigator';
-        case 'syncgraph'
-            requiredType = 'ndi.time.syncgraph';
-        case 'syncrule'
-            requiredType = 'ndi.time.syncrule';
-        otherwise
-            error('ndi:database:fun:ndi_document2ndi_object:unknownDocumentType', ...
-                ['Document type ''%s'' has no registered base class, so the class ' ...
-                 'named in its ''ndi_%s_class'' field cannot be checked before ' ...
-                 'instantiation. Register it in local_requiredtype.'], ...
-                obj_parent_string, obj_parent_string);
-    end
