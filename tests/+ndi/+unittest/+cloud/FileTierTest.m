@@ -91,7 +91,7 @@ classdef FileTierTest < matlab.unittest.TestCase
             testCase.assertTrue(success_upload, "Failed to upload test dataset to cloud.");
             ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
 
-            [b_files, files_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_files, files_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             testCase.assertTrue(b_files, "listFiles failed after upload.");
             testCase.FileUIDs = string({files_list.uid});
             testCase.assertEqual(numel(testCase.FileUIDs), testCase.NumFiles, ...

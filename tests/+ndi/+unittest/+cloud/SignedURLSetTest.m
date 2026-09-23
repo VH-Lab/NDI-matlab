@@ -108,7 +108,7 @@ classdef SignedURLSetTest < matlab.unittest.TestCase
 
             % 4. Record dataset-level uploaded UIDs. Any UID returned by
             %    getSignedURLSet must be in this set.
-            [b_files, files_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_files, files_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             testCase.assertTrue(b_files, "listFiles failed after upload.");
             testCase.FileUIDs = string({files_list.uid});
             testCase.assertEqual(numel(testCase.FileUIDs), testCase.NumFiles, ...
