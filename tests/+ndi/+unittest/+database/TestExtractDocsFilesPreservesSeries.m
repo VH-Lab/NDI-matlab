@@ -366,5 +366,115 @@ classdef TestExtractDocsFilesPreservesSeries < matlab.unittest.TestCase
             end
         end
 
+        % --- Reference-in-place (the default for a dataset ingest) ---------
+        %
+        % With no target directory, the extract does NOT stage a second copy
+        % of every file. It points each file's location at the source
+        % session's own file, with delete_original 0, so that a later
+        % database_add copies each file exactly once, straight from the
+        % source into the destination store, and never removes the source.
+        % This removes the transient 2x disk-space requirement that made a
+        % large (e.g. lightsheet) session run the volume holding tempdir out
+        % of space. See NDI-matlab extract_docs_files / copySessionToDataset.
+
+        function testReferenceInPlaceKeepsTheSeriesRecord(testCase)
+            % Same guarantee as the copy path (#946): series_info and its
+            % counts survive. Reference-in-place changes only where the
+            % locations point, not whether the record travels.
+            extracted = testCase.findSeriesDoc(testCase.extractDocsInPlace());
+
+            hasSeriesInfo = isfield(extracted.document_properties.files, 'series_info') && ...
+                ~isempty(extracted.document_properties.files.series_info);
+            testCase.verifyTrue(hasSeriesInfo, ...
+                'files.series_info was emptied under reference-in-place');
+
+            [n, nPresent] = extracted.seriesCount(testCase.SeriesName);
+            testCase.verifyEqual(n, testCase.MemberCount);
+            testCase.verifyEqual(nPresent, testCase.MemberCount);
+        end
+
+        function testReferenceInPlacePointsTheManifestAtTheSource(testCase)
+            % The manifest's file_info location is the source session's own
+            % file, not a copy in some target directory, and delete_original
+            % is 0 so the add will not remove it.
+            extracted = testCase.findSeriesDoc(testCase.extractDocsInPlace());
+
+            fileInfo = extracted.document_properties.files.file_info;
+            index = find(strcmpi(testCase.SeriesName, {fileInfo.name}), 1);
+            testCase.assertNotEmpty(index, 'the manifest should be among the files');
+
+            [tf, sourcePath] = testCase.Session.database_existbinarydoc( ...
+                testCase.SeriesDocId, testCase.SeriesName);
+            testCase.assertTrue(tf, 'the manifest should be in the source session');
+
+            loc = fileInfo(index).locations(1);
+            testCase.verifyEqual(loc.location, sourcePath, ...
+                'the manifest should be referenced at its source path, not a copy');
+            testCase.verifyTrue(isfile(loc.location), ...
+                'the referenced manifest should exist at the source');
+            testCase.verifyEqual(loc.delete_original, 0, ...
+                'a referenced source file must not be marked for deletion');
+        end
+
+        function testReferenceInPlacePointsMembersAtTheSource(testCase)
+            % Every member's ingest location is the source file itself, with
+            % its original uid, marked for ingestion and NOT for deletion.
+            extracted = testCase.findSeriesDoc(testCase.extractDocsInPlace());
+            entries = extracted.seriesIngestLocations(testCase.SeriesName);
+            testCase.assertNumElements(entries, testCase.MemberCount);
+
+            for i = 1:numel(entries)
+                memberName = sprintf('%s_%d', testCase.SeriesName, entries(i).index);
+                [tf, sourcePath] = testCase.Session.database_existbinarydoc( ...
+                    testCase.SeriesDocId, memberName);
+                testCase.assertTrue(tf, ...
+                    ['member ' memberName ' should be in the source session']);
+                testCase.verifyEqual(entries(i).location, sourcePath, ...
+                    'a member should be referenced at its source path');
+                testCase.verifyEqual(entries(i).ingest, 1, ...
+                    'a referenced member still has to be marked for ingestion');
+                testCase.verifyEqual(entries(i).delete_original, 0, ...
+                    'a referenced source member must not be marked for deletion');
+                [~, sourceUid, ~] = fileparts(sourcePath);
+                testCase.verifyEqual(entries(i).uid, sourceUid, ...
+                    'a referenced member should keep the uid the manifest names');
+            end
+        end
+
+        function testReferenceInPlaceCopiesNothingAndKeepsTheSource(testCase)
+            % The whole point: no second copy is made, and the source files
+            % are all still there afterward. No location may point into the
+            % NDI temp folder, and every source file the extract referenced
+            % must still exist.
+            tempRoot = ndi.common.PathConstants.TempFolder;
+            extracted = testCase.findSeriesDoc(testCase.extractDocsInPlace());
+
+            fileInfo = extracted.document_properties.files.file_info;
+            for k = 1:numel(fileInfo)
+                for j = 1:numel(fileInfo(k).locations)
+                    loc = fileInfo(k).locations(j).location;
+                    testCase.verifyFalse(startsWith(loc, tempRoot), ...
+                        'reference-in-place must not stage a file in the temp folder');
+                    testCase.verifyTrue(isfile(loc), ...
+                        'a referenced source file should still exist');
+                end
+            end
+
+            entries = extracted.seriesIngestLocations(testCase.SeriesName);
+            for i = 1:numel(entries)
+                testCase.verifyFalse(startsWith(entries(i).location, tempRoot), ...
+                    'a referenced member must not be staged in the temp folder');
+                testCase.verifyTrue(isfile(entries(i).location), ...
+                    'a referenced source member should still exist');
+            end
+        end
+
+    end
+
+    methods (Access = private)
+        function docs = extractDocsInPlace(testCase)
+            [docs, ~] = ndi.database.fun.extract_docs_files( ...
+                testCase.Session, '', 'ReferenceInPlace', true);
+        end
     end
 end

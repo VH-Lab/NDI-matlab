@@ -29,26 +29,27 @@ function downloadDatasetFiles(cloudDatasetId, targetFolder, fileUuids, options)
         options.AbortOnError (1,1) logical = true
     end
 
-    [success, datasetInfo] = ndi.cloud.api.datasets.getDataset(cloudDatasetId);
+    % getDataset no longer returns the file list (it is trimmed server-side to
+    % avoid an oversized response on large datasets); page the full list via
+    % listFilesAll instead.
+    [success, datasetFiles] = ndi.cloud.api.files.listFilesAll(cloudDatasetId);
     if ~success
-        error(['Failed to get dataset: ' datasetInfo.message]);
+        msg = datasetFiles;
+        if isstruct(msg) && isfield(msg, 'message')
+            msg = msg.message;
+        end
+        error('Failed to get dataset file list: %s', char(string(msg)));
     end
 
-    if ~isstruct(datasetInfo) && ~all(ismissing(fileUuids))
-        error('No files found in the dataset despite files requested.');
-    elseif ~isstruct(datasetInfo)
-        % no dataset
-        return;
-    end
-   
-    if ~isstruct(datasetInfo.files) && ~all(ismissing(fileUuids))
-        error('No files found in the dataset despite files requested.');
-    end
-    if ~isstruct(datasetInfo.files) % nothing to do
-        return;
+    % listFilesAll returns a struct array of files (empty if the dataset has none).
+    if isempty(datasetFiles)
+        if ~all(ismissing(fileUuids))
+            error('No files found in the dataset despite files requested.');
+        end
+        return; % nothing to do
     end
 
-    files = filterFilesToDownload(datasetInfo.files, fileUuids);
+    files = filterFilesToDownload(datasetFiles, fileUuids);
     
     numFiles = numel(files);
     if options.Verbose; fprintf('Will download %d files...\n', numFiles ); end
@@ -64,7 +65,7 @@ function downloadDatasetFiles(cloudDatasetId, targetFolder, fileUuids, options)
             continue;
         end
 
-        % file_uid comes verbatim from the getDataset API response and is used
+        % file_uid comes verbatim from the listFilesAll API response and is used
         % below as a local destination path. A malicious value such as
         % '../../../.matlab/R2024b/startup.m' would otherwise let a downloaded
         % dataset write outside targetFolder -- e.g. overwrite an auto-executed
