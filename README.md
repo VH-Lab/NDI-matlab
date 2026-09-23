@@ -1,7 +1,7 @@
 # NDI
-[![MATLAB Tests](.github/badges/tests.svg)](https://github.com/VH-Lab/NDI-matlab/actions/workflows/run_tests.yml)
+[![MATLAB Tests](https://raw.githubusercontent.com/VH-Lab/NDI-matlab/badges/main/tests.svg)](https://github.com/VH-Lab/NDI-matlab/actions/workflows/run-tests.yml)
 [![codecov](https://codecov.io/gh/VH-Lab/NDI-matlab/branch/main/graph/badge.svg?token=5K3PA9KOT9)](https://codecov.io/gh/VH-Lab/NDI-matlab)
-[![MATLAB Code Issues](.github/badges/code_issues.svg)](https://github.com/VH-Lab/NDI-matlab/security/code-scanning)
+[![MATLAB Code Issues](https://raw.githubusercontent.com/VH-Lab/NDI-matlab/badges/main/code_issues.svg)](https://github.com/VH-Lab/NDI-matlab/security/code-scanning)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://gitHub.com/VH-Lab/NDI-matlab/graphs/commit-activity)
 
 Neuroscience Data Interface - A means of specifying and accessing neuroscience data and analyses

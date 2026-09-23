@@ -21,7 +21,7 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
             unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
             datasetInfo = struct("name", unique_name);
             [b, testCase.cloudDatasetId, ~, ~] = ndi.cloud.api.datasets.createDataset(datasetInfo);
-            testCase.fatalAssertTrue(b, "Failed to create remote dataset in TestMethodSetup.");
+            testCase.assertTrue(b, "Failed to create remote dataset in TestMethodSetup.");
 
             % Create a local dataset
             testCase.localDataset = ndi.dataset.dir('dref', testCase.testDir);
@@ -44,9 +44,10 @@ classdef (Abstract) BaseSyncTest < matlab.unittest.TestCase
         end
 
         function deleteLocalDirectory(testCase)
-            if exist(testCase.testDir, 'dir')
-                rmdir(testCase.testDir, 's');
-            end
+            % Close open SQLite handles before removing the temp directory so
+            % the local dataset's did-sqlite.sqlite is not still locked on
+            % Windows (see issue #870).
+            ndi.unittest.cloud.closeAndRemoveDir(testCase.testDir);
         end
     end
 

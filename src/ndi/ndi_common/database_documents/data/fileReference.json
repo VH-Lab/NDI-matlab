@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/fileReference.json",
+		"validation":						"$NDISCHEMAPATH\/data\/fileReference_schema.json",
+		"class_name":						"fileReference",
+		"property_list_name":               "fileReference",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "document_id", "value": "" }
+	],
+	"fileReference":  {
+		"filename":		"",
+		"originalPath":		"",
+		"formatOntology":		"",
+		"dateCreated":		0,
+		"dateUpdated":		0,
+		"fileSize":		0,
+		"checksum":		"",
+		"checksumAlgorithm":		"MD5"
+	}
+}

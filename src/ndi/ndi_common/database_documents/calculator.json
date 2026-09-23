@@ -1,0 +1,15 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/calculator.json",
+		"validation":						"$NDISCHEMAPATH\/calculator_schema.json",
+		"class_name":						"calculator",
+		"property_list_name":					"calculator",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/app.json" }
+		]
+	},
+	"calculator": {
+	}
+}

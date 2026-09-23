@@ -44,6 +44,12 @@ function [success, sessionId, statusMessage, sessionDoc] = helloMatlab(options)
         options.TimeoutSeconds (1,1) double = 1200
         options.PollIntervalSeconds (1,1) double = 10
         options.Verbose (1,1) logical = true
+        % OrganizationId is required whenever the caller is a member of more
+        % than one organization; the backend refuses the start-session POST
+        % with HTTP 400 "Organization ID is required (user has multiple)"
+        % otherwise. Single-org callers may leave this empty. See
+        % VH-Lab/NDI-matlab#936.
+        options.OrganizationId (1,1) string = ""
     end
 
     success = false;
@@ -61,7 +67,8 @@ function [success, sessionId, statusMessage, sessionDoc] = helloMatlab(options)
     if options.Verbose
         fprintf('helloMatlab: starting pipeline %s ...\n', pipelineId);
     end
-    [b_start, answer_start, apiResponse_start, ~] = ndi.cloud.api.compute.startSession(pipelineId);
+    [b_start, answer_start, apiResponse_start, ~] = ndi.cloud.api.compute.startSession( ...
+        pipelineId, options.OrganizationId);
     if ~b_start
         % Surface MATLAB_LICENSE_REQUIRED / MATLAB_LICENSE_DECRYPT_FAILED
         % directly, so the caller doesn't have to inspect the raw payload.

@@ -48,6 +48,7 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
 
     success = false;
+    cloudDatasetId = '';
     message = '';
 
     if ~ndiDataset.isIngested()
@@ -79,12 +80,12 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
         end
 
         %   Step 1c: Create new NDI Cloud Dataset
-        [success_create, cloudDatasetId_or_err] = ndi.cloud.api.datasets.createDataset(cloud_dataset_info);
+        [success_create, newCloudDatasetId, apiResponse] = ndi.cloud.api.datasets.createDataset(cloud_dataset_info);
         if ~success_create
-            message = ['Failed to create dataset: ' cloudDatasetId_or_err.message];
+            message = ['Failed to create dataset: ' ndi.cloud.internal.formatApiError(apiResponse)];
             return;
         end
-        cloudDatasetId = cloudDatasetId_or_err;
+        cloudDatasetId = newCloudDatasetId;
 
         % Add document with remote dataset id to dataset before uploading.
         remoteDatasetDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudDatasetId, ndiDataset);

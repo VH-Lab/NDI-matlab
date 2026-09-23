@@ -13,7 +13,7 @@ function updatedDate = dateUpdated(pathName)
 
 % 1. Check if the path exists (works for both files and folders)
 if ~exist(pathName, 'file')
-    warning('Path not found: %s', pathName);
+    warning('ndi:fun:file:dateUpdated:pathNotFound', 'Path not found: %s', pathName);
     updatedDate = NaT; 
     return;
 end

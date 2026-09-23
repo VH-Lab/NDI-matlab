@@ -12,11 +12,11 @@
 	},
 	"depends_on": [
 		{	"name": "element_id",
-			"value": 0 
+			"value": "" 
 		},
 		{
 			"name": "spike_extraction_id",
-			"value": 0
+			"value": ""
 		}
 	],
 	"vmspikesummary": {

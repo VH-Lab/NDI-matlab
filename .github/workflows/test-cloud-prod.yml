@@ -19,23 +19,39 @@ on:
   workflow_dispatch:
 
 concurrency:
+  # Do NOT cancel a run in progress. This suite creates, uploads to, publishes
+  # and deletes datasets on the PRODUCTION NDI Cloud API, and a cancelled runner
+  # is SIGKILLed before MATLAB teardown (addTeardown / deleteDatasetAfterTest)
+  # can run -- orphaning synthetic, possibly published datasets in the public
+  # commons. Serialize instead so a new run waits for the current one to finish
+  # cleaning up after itself.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run_tests:
     name: Cloud CI ${{ matrix.part }}
     runs-on: ubuntu-latest
+    # Runs of this suite complete in roughly 10-17 minutes. Cap the job well
+    # above that: with cancel-in-progress: false, runs queue instead of
+    # superseding each other, so a hung run would otherwise hold the queue for
+    # GitHub's 6-hour default.
+    timeout-minutes: 60
+    # matbox dependency resolution calls the GitHub API; authenticate so the
+    # requests aren't unauthenticated-rate-limited (which surfaced as webread
+    # timeouts when several jobs install in parallel).
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
         part: [1, 2, 3]
     steps:
       - name: Check out repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v2
+        uses: matlab-actions/setup-matlab@aa8bbc7b76daa63c5d456d1430cbd6cb5b626ab4 # v2
         with:
           release: latest
           cache: true
@@ -44,16 +60,17 @@ jobs:
         run: git clone https://github.com/VH-Lab/NDIcalc-vis-matlab.git ../NDIcalc-vis-matlab
 
       - name: Install MatBox
-        uses: ehennestad/matbox-actions/install-matbox@v1
+        uses: ehennestad/matbox-actions/install-matbox@8fe220fbaec9e119ec5081eb917c8e016e275f1e # v1
 
       - name: Run tests
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@37b454c384483087929a3d652be474ba585a9659 # v2
         with:
           command: |
             setenv("NDI_CLOUD_USERNAME", "${{ secrets.NDI_CLOUD_USERNAME }}")
             setenv("NDI_CLOUD_PASSWORD", "${{ secrets.NDI_CLOUD_PASSWORD }}")
             setenv("GITHUB_TOKEN", "${{ github.token }}")
             setenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE", "false")
+            setenv("NDI_CLOUD_TEST_ORGANIZATION_ID", "${{ secrets.NDI_CLOUD_TEST_ORGANIZATION_ID }}")
             addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));
@@ -62,16 +79,8 @@ jobs:
 
       # Publish test results
       - name: Publish test results
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@db71d41eb79864e25ab0337e395c352e84523afe # v4
         if: always()
         with:
           report_paths: 'docs/reports/test-results.xml'
           check_name: 'Cloud CI ${{ matrix.part }} test results'
-
-      - name: Restore MATLAB Path
-        uses: matlab-actions/run-command@v2
-        if: always()
-        with:
-          command: |
-            restoredefaultpath()
-            savepath()

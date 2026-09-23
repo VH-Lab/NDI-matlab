@@ -1,7 +1,7 @@
 classdef ExportBinaryTest < matlab.unittest.TestCase
     methods (Test)
         function testExportBinary(testCase)
-            disp('Testing ndi.fun.probe.export_binary');
+            disp('Testing ndi.fun.probe.export.binary');
 
             mockProbe = ndi.unittest.fun.probe.MockProbe();
 
@@ -15,7 +15,7 @@ classdef ExportBinaryTest < matlab.unittest.TestCase
                 delete(metafile);
             end
 
-            ndi.fun.probe.export_binary(mockProbe, outputfile, 'multiplier', 2, 'verbose', 0, 'precision', 'int16');
+            ndi.fun.probe.export.binary(mockProbe, outputfile, 'multiplier', 2, 'verbose', 0, 'precision', 'int16');
 
             testCase.verifyTrue(exist(outputfile, 'file') > 0, 'Output file not created');
             testCase.verifyTrue(exist(metafile, 'file') > 0, 'Metadata file not created');

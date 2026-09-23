@@ -9,9 +9,23 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
         function cleanUpBeforeAllTests(testCase)
             % This function runs once before any test in this class.
             % It ensures no progress bars from previous runs interfere.
+            % These tests assert on the figure and its child components, so
+            % they must run in the windowed path. Pin the rendering decision
+            % rather than let it be detected: the CI test process itself runs
+            % under `-batch`, where ndi.gui.component.ProgressBarWindow now
+            % chooses silent mode by default (issue #941) and there would be
+            % no figure to assert on.
+            previousSilentDefault = ndi.gui.component.ProgressBarWindow.silentModeDefault();
+            testCase.addTeardown(@() ...
+                ndi.gui.component.ProgressBarWindow.silentModeDefault(previousSilentDefault));
+            ndi.gui.component.ProgressBarWindow.silentModeDefault(false);
+
             testCase.log(1, 'Closing all pre-existing progress bar windows...');
             figs = findall(groot, 'Type', 'figure', 'Tag', 'progressbar');
             delete(figs);
+            % Also ensure no navigator is open, so these tests exercise the
+            % standalone-window path (a navigator would cause docking).
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'ndiNavigator'));
         end
     end
     methods (TestMethodTeardown)
@@ -19,6 +33,7 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             % Close any progress bar figures created during tests
             figs = findall(groot, 'Type', 'figure', 'Tag', 'progressbar');
             delete(figs);
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'ndiNavigator'));
         end
     end
     methods (Test)

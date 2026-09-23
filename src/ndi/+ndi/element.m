@@ -99,7 +99,22 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         dependency_value(element_doc,'underlying_element_id'), element_session);
                 end
                 if ischar(element_doc.document_properties.element.direct)
-                    direct = logical(eval(element_doc.document_properties.element.direct));
+                    % Parse the stored boolean flag without eval: the value
+                    % comes from a document and must never be executed as code.
+                    directStr = strtrim(element_doc.document_properties.element.direct);
+                    switch lower(directStr)
+                        case {'1','true'}
+                            direct = true;
+                        case {'0','false'}
+                            direct = false;
+                        otherwise
+                            directNum = str2double(directStr);
+                            if isnan(directNum)
+                                error('ndi:element:invalidDirect', ...
+                                    'element.direct string "%s" is not a valid boolean.', directStr);
+                            end
+                            direct = logical(directNum);
+                    end
                 else
                     direct = logical(element_doc.document_properties.element.direct);
                 end
@@ -315,6 +330,13 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             % Returns the name as a human-readable string.
             %
             % For ndi.element objects, this is the string 'element: ' followed by its name
+            %
+            % This string is for display only. It contains a '|', which is not a legal
+            % filename character on Windows, so it must not be used to build file or
+            % folder names; use ndi.fun.file.elementDirectoryName (or
+            % ndi.fun.file.elementDirectory) for that.
+            %
+            % See also: ndi.fun.file.elementDirectoryName, ndi.fun.file.elementDirectory
             %
             elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
         end %elementstring()

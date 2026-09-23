@@ -1,0 +1,47 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/spatialGeneExpressionCells.json",
+		"validation": "$NDISCHEMAPATH\/data\/spatialGeneExpressionCells_schema.json",
+		"class_name": "spatialGeneExpressionCells",
+		"property_list_name": "spatialGeneExpressionCells",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "spatialGeneExpressionPyramid_id",
+			"value": ""
+		},
+		{
+			"name": "subject_id",
+			"value": ""
+		},
+		{
+			"name": "source_file_id",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [
+			"cells.tsv",
+			"contours.bin"
+		]
+	},
+	"spatialGeneExpressionCells": {
+		"label": "",
+		"n_cells": 0,
+		"segmentation_method": "",
+		"segmentation_dilation": 0,
+		"coordinate_units": "",
+		"contours_present": 0,
+		"contour_reference": "centroid",
+		"n_vertices_per_cell": 0,
+		"data_type_vertex": "int16",
+		"data_type_offset": "uint32",
+		"contour_format_version": 1
+	}
+}

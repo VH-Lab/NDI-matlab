@@ -1,0 +1,39 @@
+{
+	"document_class": {
+		"definition": "$NDIDOCUMENTPATH\/data\/cellTypeLabels.json",
+		"validation": "$NDISCHEMAPATH\/data\/cellTypeLabels_schema.json",
+		"class_name": "cellTypeLabels",
+		"property_list_name": "cellTypeLabels",
+		"class_version": 1,
+		"superclasses": [
+			{
+				"definition": "$NDIDOCUMENTPATH\/base.json"
+			}
+		]
+	},
+	"depends_on": [
+		{
+			"name": "cells_document_id",
+			"value": ""
+		},
+		{
+			"name": "reference_document_id",
+			"value": ""
+		}
+	],
+	"files": {
+		"file_list": [
+			"labels.tsv"
+		]
+	},
+	"cellTypeLabels": {
+		"label": "",
+		"label_name": "",
+		"taxonomy_level": "",
+		"n_cells": 0,
+		"n_categories": 0,
+		"n_unlabeled": 0,
+		"assignment_method": "",
+		"is_unsupervised": 0
+	}
+}

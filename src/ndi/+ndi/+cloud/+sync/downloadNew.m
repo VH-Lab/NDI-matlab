@@ -30,6 +30,9 @@ function [success, errorMessage, report] = downloadNew(ndiDataset, syncOptions)
 %       report (struct) - Structure containing details of the changes applied.
 %           Fields:
 %           - downloaded_document_ids (string array)
+%           - failed (string array) - NDI IDs that were requested from the
+%             remote but did not arrive. These are deliberately left out of
+%             the sync index so the next sync requests them again.
 %
 %   See also:
 %       ndi.cloud.syncDataset
@@ -43,7 +46,12 @@ function [success, errorMessage, report] = downloadNew(ndiDataset, syncOptions)
 
     success = true;
     errorMessage = '';
-    report = struct('downloaded_document_ids', string.empty);
+    report = struct('downloaded_document_ids', string.empty, ...
+        'failed', string.empty);
+
+    % Remote documents we asked for and did not get. Declared here so the
+    % index update in step 5 can see it whichever branch below ran.
+    notObtainedNdiIds = string.empty;
 
     try
         syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
@@ -119,8 +127,26 @@ function [success, errorMessage, report] = downloadNew(ndiDataset, syncOptions)
                      report.downloaded_document_ids = string(docIds);
                 end
 
+                % What we asked for and did not receive. This has to be
+                % recorded: step 3 above works out what to fetch by diffing
+                % the remote list against the *index*, not against what is
+                % actually local, so any ID written into the index as synced
+                % is never requested again.
+                notObtainedNdiIds = setdiff(ndiIdsToDownload, ...
+                    report.downloaded_document_ids, 'stable');
+                report.failed = string(notObtainedNdiIds);
+
+                if ~isempty(notObtainedNdiIds)
+                    warning('NDI:cloud:sync:DocumentsNotDownloaded', ...
+                        ['%d of %d documents were not downloaded and remain ' ...
+                         'only on the remote. They stay outstanding and will ' ...
+                         'be retried on the next sync.'], ...
+                        numel(notObtainedNdiIds), numel(ndiIdsToDownload));
+                end
+
                 if syncOptions.Verbose
-                    fprintf('Completed downloading %d documents.\n', numel(ndiIdsToDownload));
+                    fprintf('Completed downloading %d of %d documents.\n', ...
+                        numel(report.downloaded_document_ids), numel(ndiIdsToDownload));
                 end
             end
         else
@@ -135,10 +161,22 @@ function [success, errorMessage, report] = downloadNew(ndiDataset, syncOptions)
             % Update local state after download
             [~, finalLocalDocumentIds] = ndi.cloud.sync.internal.listLocalDocuments(ndiDataset);
 
+            % Record only the remote documents that actually arrived.
+            % Writing the full remote list here was what made a missed
+            % document permanent: it lands in remoteDocumentIdsLastSync as
+            % though it had synced, and the setdiff in step 3 then excludes
+            % it from every future run. (The local side needs no such care --
+            % it is re-listed from the dataset above, so it cannot lie.)
+            % A filter rather than setdiff: this keeps the list's exact
+            % order and shape and removes only the missing entries, where
+            % setdiff would also silently deduplicate it.
+            syncedRemoteNdiIds = remoteDocumentIdMap.ndiId( ...
+                ~ismember(remoteDocumentIdMap.ndiId, notObtainedNdiIds));
+
             ndi.cloud.sync.internal.index.updateSyncIndex(...
                 ndiDataset, cloudDatasetId, ...
                 "LocalDocumentIds", finalLocalDocumentIds, ...
-                "RemoteDocumentIds", remoteDocumentIdMap.ndiId)
+                "RemoteDocumentIds", syncedRemoteNdiIds)
 
             if syncOptions.Verbose
                 fprintf('Sync index updated.\n');

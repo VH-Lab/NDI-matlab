@@ -44,6 +44,11 @@
       "Raw timeseries"
     ]
   },
+  "daqreader_image_epochdata_ingested": {
+    "attributes": [
+      "Raw imageseries"
+    ]
+  },
   "daqreader_ndr": {
     "attributes": [
       "Data acqusiiton metadata"

@@ -104,10 +104,21 @@ function [success, errorMessage, report] = twoWaySync(ndiDataset, syncOptions)
             else
                 [b, uploadReport]=ndi.cloud.upload.uploadDocumentCollection(cloudDatasetId, documentsToUpload);
                 report.uploaded_documents_report = uploadReport;
-                 if isfield(uploadReport, 'uploaded_document_ids')
-                     report.uploaded_document_ids = string(uploadReport.uploaded_document_ids);
-                else
-                     report.uploaded_document_ids = string(ndiIdsToUpload);
+                % Derive the uploaded IDs from the manifest entries that
+                % actually succeeded -- never from the intended list. uploadReport
+                % has no 'uploaded_document_ids' field, so the old fallback
+                % recorded every intended ID as uploaded even on total failure.
+                report.uploaded_document_ids = ...
+                    ndi.cloud.sync.internal.uploadedDocumentIds(uploadReport);
+
+                % Honour the success flag: if any document failed to upload, do
+                % not proceed to the download/index phases as though the upload
+                % half of the two-way sync succeeded.
+                if ~b
+                    error('NDI:Cloud:Sync:UploadIncomplete', ...
+                        ['Upload to remote did not fully succeed: %d of %d ' ...
+                         'document(s) uploaded.'], ...
+                        numel(report.uploaded_document_ids), numel(ndiIdsToUpload));
                 end
 
                 if syncOptions.Verbose

@@ -1,7 +1,22 @@
 classdef MockProbe < handle
+    properties
+        elestr = 'mock_probe'
+    end
     methods
+        function obj = MockProbe(elestr)
+            % MOCKPROBE - a minimal stand-in for an ndi.probe
+            %
+            % OBJ = MOCKPROBE([ELESTR])
+            %
+            % ELESTR is the string returned by elementstring(); it defaults to
+            % 'mock_probe'. Pass something like 'ctx | 1' to exercise the
+            % separator handling of ndi.fun.file.elementDirectoryName.
+            if nargin>=1
+                obj.elestr = elestr;
+            end
+        end
         function str = elementstring(obj)
-            str = 'mock_probe';
+            str = obj.elestr;
         end
         function et = epochtable(obj)
             et = struct('epoch_id', 'epoch1', 't0_t1', {{[0 200]}});

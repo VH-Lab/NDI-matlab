@@ -27,8 +27,8 @@ Standard types:
 |'sharp-I'             |A sharp electrode (single channel, specifies current recording) |
 |_Imaging_             |                 |
 |'wide-field-imaging'  |Wide-field imaging data, as one might acquire with intrinsic signal imaging |
-|'2-photon-imaging'    |2-photon fluorescent imaging data (laser-scanned or imaged) |
-|'1-photon-imaging'    |1-photon fluorescent imaging (laser-scanned or imaged) |
+|'two-photon-imaging'  |2-photon fluorescent imaging data (laser-scanned or imaged) |
+|'one-photon-imaging'  |1-photon fluorescent imaging (laser-scanned or imaged) |
 |'brightfield-imaging' |Brightfield images |
 |_Stimulators_         |                |
 |'display'             |An instrument that displays patterns with light |
