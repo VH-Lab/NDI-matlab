@@ -10,6 +10,22 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         % Note: This is not a session in the context of representing an
         % experimental session, but instead an entrypoint to a session-like
         % database.
+
+        % BinaryDocSessions - map from a live binarydoc's
+        % fullpathfilename to the ndi.session that opened it. Populated
+        % by database_openbinarydoc when a linked-session doc is
+        % dispatched, and consulted by database_closebinarydoc so the
+        % close goes to the same session's autoclose listener map and
+        % database driver. Fixes #509: without this, close on the
+        % dataset always went to session (the dataset's internal
+        % session), leaking the lock on the linked session's DID store.
+        %
+        % Default is [] (not a containers.Map) so every dataset
+        % instance gets its own map on first use in the helpers below.
+        % A handle-typed default would have every dataset share the
+        % SAME map -- Code Analyzer flags this and it is a real bug
+        % when two datasets are open in the same MATLAB session.
+        BinaryDocSessions = []
     end
 
     methods
@@ -99,14 +115,37 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
         end % add_linked_session()
 
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-        function ndi_dataset_obj = add_ingested_session(ndi_dataset_obj, ndi_session_obj)
+        function ndi_dataset_obj = add_ingested_session(ndi_dataset_obj, ndi_session_obj, options)
             % ADD_INGESTED_SESSION - ingets an ndi.session into an ndi.dataset
             %
-            % NDI_DATASET_OBJ = ADD_INGESTED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ)
+            % NDI_DATASET_OBJ = ADD_INGESTED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ, ...)
             %
             % Add an ndi.session object to an ndi.dataset, by copying the session
             % documents into the dataset.
             %
+            % This function accepts name/value pairs that alter its behavior:
+            % Parameter (default)      | Description
+            % -----------------------------------------------------------------
+            % ReferenceInPlace (true)  | Copy each of the session's files
+            %                          |   directly from its location in the
+            %                          |   source session into the dataset,
+            %                          |   without first staging a second copy
+            %                          |   in a temporary directory. This
+            %                          |   removes the transient 2x disk-space
+            %                          |   requirement of the copy. Files that
+            %                          |   are not on the local filesystem
+            %                          |   (e.g. cloud-backed sessions) fall
+            %                          |   back to staging automatically. Set
+            %                          |   to false to force the old staged
+            %                          |   copy. See
+            %                          |   ndi.dataset.copySessionToDataset.
+            %
+            arguments
+                ndi_dataset_obj (1,1) ndi.dataset
+                ndi_session_obj (1,1) ndi.session
+                options.ReferenceInPlace (1,1) logical = true
+            end
+
             if isempty(ndi_dataset_obj.session_array)
                 ndi_dataset_obj.build_session_info;
             end
@@ -145,7 +184,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
             end
 
-            ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj);
+            ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj, ...
+                'ReferenceInPlace', options.ReferenceInPlace);
 
             new_doc = ndi.dataset.addSessionInfoToDataset(ndi_dataset_obj, session_info_here);
             session_info_here.session_doc_in_dataset_id = new_doc.id();
@@ -391,12 +431,19 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % After conversion, the session's data is self-contained within the
             % dataset and no longer depends on the original session path.
             %
-            % Note: This operation temporarily requires approximately 2x the disk
-            % space of the session being converted.
+            % Note: With ReferenceInPlace true (the default), each local file is
+            % copied once, directly from the source session into the dataset, so
+            % the operation requires only the space of the copy itself. Set
+            % ReferenceInPlace false to force the old staged copy, which
+            % temporarily requires approximately 2x the disk space of the
+            % session being converted.
             %
             % Options:
             %   areYouSure (false) - must be true to proceed, unless confirmed by user
             %   askUserToConfirm (true) - if true, will ask user for confirmation via dialog
+            %   ReferenceInPlace (true) - copy local files directly from the source
+            %       into the dataset rather than staging a second copy in a
+            %       temporary directory. See ndi.dataset.copySessionToDataset.
             %
             % See also: ndi.dataset/add_linked_session, ndi.dataset/add_ingested_session,
             %   ndi.dataset/unlink_session
@@ -406,6 +453,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 session_id (1,:) char
                 options.areYouSure (1,1) logical = false
                 options.askUserToConfirm (1,1) logical = true
+                options.ReferenceInPlace (1,1) logical = true
             end
 
             if isempty(ndi_dataset_obj.session_info)
@@ -463,7 +511,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % as a linked session in session_list().
 
             ndi.dataset.copySessionToDataset(ndi_session_obj, ndi_dataset_obj, ...
-                'skipDuplicateCheck', true);
+                'skipDuplicateCheck', true, ...
+                'ReferenceInPlace', options.ReferenceInPlace);
 
             % Step 6: Remove the old linked session_in_a_dataset document
 
@@ -751,13 +800,14 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                         try
                             ndi_session_obj = ndi_dataset_obj.open_session(session_id);
                             ndi_binarydoc_obj = ndi_session_obj.database_openbinarydoc(doc, filename, 'autoClose', options.autoClose);
+                            ndi_dataset_obj.rememberBinaryDocSession(ndi_binarydoc_obj, ndi_session_obj);
                             return;
                         catch
                             % if we can't open it or something goes wrong, fall back to current behavior
                         end
                     end
                 end
-                
+
                 ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename, 'autoClose', options.autoClose);
 
         end % database_openbinarydoc
@@ -796,10 +846,24 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %
             % [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATASET_OBJ, NDI_BINARYDOC_OBJ)
             %
-            % Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
-            % database, which is why it is necessary to call this function through the dataset object.
+            % Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be
+            % unlocked in the database, which is why it is necessary to call this
+            % function through the dataset object.
             %
-            ndi_binarydoc_obj = ndi_dataset_obj.session.database_closebinarydoc(ndi_binarydoc_obj);
+            % When database_openbinarydoc dispatched to a linked/member session
+            % (because the doc's session_id was not the dataset's own), the
+            % returned handle was remembered in BinaryDocSessions so this close
+            % goes to that same session's database driver and autoclose listener
+            % map. Without that lookup the close would always go to the dataset's
+            % internal session and the linked session's DID lock would leak (#509).
+            % Falls back to the internal session when no owning session is
+            % recorded, matching prior behavior.
+            owningSession = ndi_dataset_obj.lookupBinaryDocSession(ndi_binarydoc_obj);
+            if isempty(owningSession)
+                owningSession = ndi_dataset_obj.session;
+            end
+            ndi_dataset_obj.forgetBinaryDocSession(ndi_binarydoc_obj);
+            ndi_binarydoc_obj = owningSession.database_closebinarydoc(ndi_binarydoc_obj);
         end % database_closebinarydoc
 
         function ndi_session_obj = document_session(ndi_dataset_obj, ndi_document_obj)
@@ -936,12 +1000,22 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             %       by convertLinkedSessionToIngested when the session is already
             %       linked (and thus already appears in session_list) but its
             %       documents have not yet been copied.
+            %   ReferenceInPlace (true) - If true, the session's files are copied
+            %       directly from the source session into the dataset, without
+            %       first staging a second copy in a temporary directory. This
+            %       removes the transient 2x disk-space requirement (and the
+            %       dependence on the volume that holds tempdir having room for
+            %       the whole session). Files that are not on the local
+            %       filesystem fall back to staging automatically. Set to false
+            %       to force the old staged copy. See
+            %       ndi.database.fun.extract_docs_files.
             %
 
             arguments
                 ndi_session_obj (1,1) ndi.session
                 ndi_dataset_obj (1,1) ndi.dataset
                 options.skipDuplicateCheck (1,1) logical = false
+                options.ReferenceInPlace (1,1) logical = true
             end
 
             b = 1;
@@ -966,7 +1040,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
             % Step 2, make a copy of all the documents
 
-            [docs,~] = ndi.database.fun.extract_docs_files(ndi_session_obj);
+            [docs,~] = ndi.database.fun.extract_docs_files(ndi_session_obj, '', ...
+                'ReferenceInPlace', options.ReferenceInPlace);
 
             % what we want is to make a surrogate ndi.session.dir with path matching the dataset path
             % for this, we need to make sure the ndi.session.dir creator doesn't read its session_id or reference from the database
@@ -1061,6 +1136,56 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 end
             end
         end % open_linked_sessions
+
+        function rememberBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj, ndi_session_obj)
+        %REMEMBERBINARYDOCSESSION Record which session opened a binarydoc.
+        %   database_openbinarydoc calls this whenever it dispatches to
+        %   a linked/member session, so that database_closebinarydoc can
+        %   later route the close to that same session's autoclose
+        %   listener map and database driver (#509). The key is the
+        %   binarydoc's fullpathfilename -- the same key the session's
+        %   autoclose map already uses, so lookups are cheap and stable
+        %   across the binarydoc handle's lifetime.
+            ndi_dataset_obj.ensureBinaryDocSessions();
+            key = ndi_binarydoc_obj.fullpathfilename;
+            ndi_dataset_obj.BinaryDocSessions(key) = ndi_session_obj;
+        end % rememberBinaryDocSession
+
+        function ndi_session_obj = lookupBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj)
+        %LOOKUPBINARYDOCSESSION Return the session that opened NDI_BINARYDOC_OBJ, or [].
+            ndi_session_obj = [];
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                return;
+            end
+            key = ndi_binarydoc_obj.fullpathfilename;
+            if isKey(ndi_dataset_obj.BinaryDocSessions, key)
+                ndi_session_obj = ndi_dataset_obj.BinaryDocSessions(key);
+            end
+        end % lookupBinaryDocSession
+
+        function forgetBinaryDocSession(ndi_dataset_obj, ndi_binarydoc_obj)
+        %FORGETBINARYDOCSESSION Drop NDI_BINARYDOC_OBJ from the owning-session map.
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                return;
+            end
+            key = ndi_binarydoc_obj.fullpathfilename;
+            if isKey(ndi_dataset_obj.BinaryDocSessions, key)
+                remove(ndi_dataset_obj.BinaryDocSessions, key);
+            end
+        end % forgetBinaryDocSession
+
+        function ensureBinaryDocSessions(ndi_dataset_obj)
+        %ENSUREBINARYDOCSESSIONS Lazily create this instance's map.
+        %   The BinaryDocSessions property defaults to [] so each
+        %   ndi.dataset gets its own containers.Map here -- a handle
+        %   default would have every dataset share the SAME map (Code
+        %   Analyzer flags this and it is a real bug when two datasets
+        %   are open concurrently).
+            if ~isa(ndi_dataset_obj.BinaryDocSessions, 'containers.Map')
+                ndi_dataset_obj.BinaryDocSessions = containers.Map( ...
+                    'KeyType', 'char', 'ValueType', 'any');
+            end
+        end % ensureBinaryDocSessions
 
     end % methods protected
 end % class

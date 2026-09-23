@@ -1,29 +1,45 @@
 {
-  "base": {
-    "session_id": "412694e3b3458fcc_40c4622706c2c487",
-    "id": "41269512cad1b69e_40d5065711e6c7e1",
-    "name": "",
-    "datestamp": "2025-12-26T14:30:25.738Z"
+  "app": {
+    "name": "ndi.calc.stimulus.tuningcurve",
+    "version": "58046c5cd610bf20c7437c955e5a8a6c8735eb4e",
+    "url": "https://github.com/VH-Lab/NDI-matlab",
+    "os": "MACA64",
+    "os_version": "26.6.2",
+    "interpreter": "MATLAB",
+    "interpreter_version": "24.2"
   },
+  "base": {
+    "session_id": "412696f9abd9edc3_40dbbdf6582271b2",
+    "id": "412696f9abe1cc49_40d3ea983b22d91f",
+    "name": "",
+    "datestamp": "2026-08-27T00:03:25.091Z"
+  },
+  "calculator": {},
   "depends_on": [
     {
       "name": "element_id",
-      "value": "41269512cace73f6_c0c424c28329af3b"
+      "value": "412696f9abdf3dca_40dfb6a27433d45f"
     },
     {
       "name": "stimulus_response_scalar_id",
-      "value": "41269512cad103f5_c0d873103e8cdb1a"
+      "value": "412696f9abe1595f_40c2e3dda9144214"
     }
   ],
   "document_class": {
-    "definition": "$NDIDOCUMENTPATH/apps/calculations/tuningcurve_calc.json",
-    "validation": "$NDISCHEMAPATH/apps/calculations/tuningcurve_calc_schema.json",
+    "definition": "$NDIDOCUMENTPATH/apps/calculators/tuningcurve_calc.json",
+    "validation": "$NDISCHEMAPATH/apps/calculations/tuningcurve_calc_v2_schema.json",
     "class_name": "tuningcurve_calc",
     "property_list_name": "tuningcurve_calc",
-    "class_version": 1,
+    "class_version": 2,
     "superclasses": [
       {
+        "definition": "$NDIDOCUMENTPATH/app.json"
+      },
+      {
         "definition": "$NDIDOCUMENTPATH/base.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/calculator.json"
       },
       {
         "definition": "$NDIDOCUMENTPATH/stimulus/stimulus_tuningcurve.json"
@@ -328,11 +344,11 @@
     "depends_on": [
       {
         "name": "stimulus_response_scalar_id",
-        "value": "41269512cad103f5_c0d873103e8cdb1a"
+        "value": "412696f9abe1595f_40c2e3dda9144214"
       },
       {
         "name": "stimulus_response_scalar_id",
-        "value": "41269512cad103f5_c0d873103e8cdb1a"
+        "value": "412696f9abe1595f_40c2e3dda9144214"
       }
     ],
     "log": "",
@@ -340,14 +356,5 @@
       "names": [],
       "values": []
     }
-  },
-  "app": {
-    "name": "ndi.calc.stimulus.tuningcurve",
-    "version": "21139a3ddbf6ccac7c77e164bcfe800aa02ae9d1",
-    "url": "https://github.com/VH-Lab/NDI-matlab",
-    "os": "MACA64",
-    "os_version": "15.7.3",
-    "interpreter": "MATLAB",
-    "interpreter_version": "24.2"
   }
 }

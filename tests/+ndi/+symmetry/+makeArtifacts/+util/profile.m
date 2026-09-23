@@ -18,8 +18,9 @@ classdef profile < matlab.unittest.TestCase
 
             % Use the in-memory backend so no AES file or keyring secret is
             % persisted. Reset the singleton state so we start clean.
-            ndi.cloud.profile.useBackend('memory');
+            % reset() restores the detected backend, so it goes first.
             ndi.cloud.profile.reset();
+            ndi.cloud.profile.useBackend('memory');
 
             uid = ndi.cloud.profile.add('SymmetryTest', 'test@example.org', 'not-a-real-secret');
             ndi.cloud.profile.setStage(uid, 'dev');

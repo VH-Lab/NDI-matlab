@@ -17,7 +17,13 @@ function probe(S, probe, options)
 % import-side complement of NDI.FUN.PROBE.EXPORT.ALL_BINARY / .BINARY: it expects
 % KIASORT to have been run with its output folder set to
 %
-%       [S.path]/[kiasort_dir]/[probe_elementstring]/[subdir]/
+%       [S.path]/[kiasort_dir]/[probe_directory]/[subdir]/
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 %
 % (spaces in the element string are replaced by underscores, matching the export).
 % By default 'subdir' is 'kiasort_output'. KIASORT writes its results into two
@@ -107,13 +113,12 @@ function probe(S, probe, options)
 
     % Step 1: locate the KIASORT output directory (mirror of the export layout)
 
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
+    [probedir, elestr] = ndi.fun.file.elementDirectory(fullfile(S.path, options.kiasort_dir), probe);
     subdir = options.subdir;
     if options.noSubFolder,
         subdir = '';
     end;
-    kdir = fullfile(S.path, options.kiasort_dir, elestr, subdir);
+    kdir = fullfile(probedir, subdir);
 
     if ~isfolder(kdir),
         error(['KIASORT directory not found: ' kdir '. Was the data exported with ndi.fun.probe.export.all_binary and sorted with KIASORT?']);
@@ -259,7 +264,7 @@ function probe(S, probe, options)
     if ~dryRun,
         kc = ndi.document('kiasort_clusters','app',app_struct, ...
             'base.session_id', S.id(), ...
-            'kiasort_clusters.kiasort_directory', [options.kiasort_dir filesep elestr], ...
+            'kiasort_clusters.kiasort_directory', [options.kiasort_dir '/' elestr], ...
             'kiasort_clusters.curated_output_MD5_checksum', md5_value);
         kc = kc.set_dependency_value('element_id', probe.id());
         S.database_add(kc);

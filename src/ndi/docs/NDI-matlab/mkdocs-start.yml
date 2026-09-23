@@ -56,6 +56,7 @@ nav:
     - Manual (in progress):
        - User manual:
          - Queries: 'NDI-matlab/manual/Queries.md'
+         - Spike sorting with JRCLUST: 'NDI-matlab/manual/spike_sorting_jrclust.md'
        - Developer Manual:
          - Cloud: 'NDI-matlab/manual/developer/cloud.md'
          - Calculators: 'NDI-matlab/manual/developer/NDI_Calculator_Manual.md'

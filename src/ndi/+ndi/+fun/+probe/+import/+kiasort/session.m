@@ -8,7 +8,13 @@ function session(S, options)
 % analog of NDI.FUN.PROBE.EXPORT.ALL_BINARY.
 %
 % The KIASORT output for each probe is expected in
-%       [S.path]/[kiasort_dir]/[probe_elementstring]/[subdir]/RES_Sorted/
+%       [S.path]/[kiasort_dir]/[probe_directory]/[subdir]/RES_Sorted/
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 % (the same layout produced by NDI.FUN.PROBE.EXPORT.ALL_BINARY, with KIASORT run
 % using each probe's directory as its output folder). Probes whose KIASORT output
 % is missing are skipped with a warning.
@@ -70,9 +76,8 @@ function session(S, options)
     end;
 
     for p=1:numel(probe_list),
-        elestr = probe_list{p}.elementstring();
-        elestr(elestr==' ') = '_';
-        kdir = fullfile(S.path, options.kiasort_dir, elestr, subdir);
+        [probedir, elestr] = ndi.fun.file.elementDirectory(fullfile(S.path, options.kiasort_dir), probe_list{p});
+        kdir = fullfile(probedir, subdir);
         if ~isfolder(fullfile(kdir,'RES_Sorted')),
             warning(['Skipping probe ' elestr ': no KIASORT output found in ' fullfile(kdir,'RES_Sorted') '.']);
             continue;

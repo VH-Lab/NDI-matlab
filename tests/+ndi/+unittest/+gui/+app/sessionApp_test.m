@@ -110,6 +110,17 @@ classdef sessionApp_test < matlab.unittest.TestCase
             testCase.verifyEqual(string(apps(idx).Category), "Stimulus");
         end
 
+        function testJRCLUSTDiscoveredUnderSpikeSorters(testCase)
+            % The JRCLUST pipeline app is discovered and grouped under the
+            % "Spike Sorters" category so it appears in that Apps submenu.
+            apps = ndi.gui.app.sessionApp.list();
+            idx  = find(string({apps.Class}) == "ndi.gui.app.jrclust", 1);
+            testCase.verifyNotEmpty(idx, ...
+                'ndi.gui.app.jrclust was not discovered');
+            testCase.verifyEqual(string(apps(idx).Name), "JRCLUST");
+            testCase.verifyEqual(string(apps(idx).Category), "Spike Sorters");
+        end
+
         function testDefaultPackagesIncludesBuiltins(testCase)
             pkgs = ndi.gui.app.sessionApp.defaultPackages();
             testCase.verifyTrue(any(pkgs == "ndi.gui.app"));

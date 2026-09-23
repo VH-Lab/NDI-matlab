@@ -1,0 +1,936 @@
+classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
+% FILESERIESROUNDTRIPTEST - a file series through the cloud and back.
+%
+% Builds a demoNDISeries document with a manifest and several chunk members,
+% uploads it, and reads it back. This is the acceptance test for the file
+% series work tracked in VH-Lab/DID-matlab#173.
+%
+% It is written so that what cannot work yet reports Incomplete rather than
+% Failed, and so that a skip names its own reason rather than leaving it to be
+% guessed. Of the three things that were outstanding when it was written:
+%
+%   1. DONE. ndi.document had no series methods -- it re-implemented DID's
+%      file API rather than inheriting it, so did.document gaining
+%      addFileSeries in VH-Lab/DID-matlab#178 gave ndi.document nothing.
+%      VH-Lab/NDI-matlab#940 made it a subclass, and the class-level
+%      assumption below now opens.
+%   2. DONE. Member ingestion landed in VH-Lab/DID-matlab#183: members are
+%      copied into FileDir/<uid> and NAME_<i> resolves through the manifest,
+%      so a member now has bytes to upload. testMembersAreIngestedLocally
+%      checks that and no longer skips.
+%   3. DONE, and it turned out not to need series awareness. A member is
+%      signed by uid like any other file once something names it, which
+%      VH-Lab/NDI-matlab#961 taught ndi.database.internal.list_binary_files
+%      to do for the UPLOAD. The DOWNLOAD direction closed later and took
+%      three separate fixes to get there, which is why this item spent a
+%      while reading "half done": DID-matlab#188 gave the manifest a way to
+%      ask a handler for a member's bytes, DID-matlab#191 made that work
+%      when the manifest also carries a local path, and VH-Lab/NDI-matlab#968
+%      found that the batch presign call had been addressing documents by
+%      the wrong id namespace since #952 -- so it 404'd every time and the
+%      per-uid fallback silently did the work.
+%
+% The read side is now closed. A member's bytes make the full round trip:
+% testMembersSurviveADownloadFromTheCloud reads them out of a freshly
+% downloaded dataset (SyncFiles=true, the manifest arrives with its bytes),
+% testMembersSurviveADownloadFromTheCloudWithSyncFilesFalse repeats the
+% same read against a SyncFiles=false download (the manifest itself is
+% fetched through the customFileHandler now that
+% VH-Lab/DID-matlab#201 opened that read path), and
+% testTheBatchScopeIsTheSeriesAndNotTheWholeDocument additionally requires
+% that a member fetch draws only a series-scoped presign map. They pass
+% against production.
+%
+% For the record, since the shape of the old gap explains the design: a
+% series member carries no location of its own, so a downloaded dataset has
+% only the manifest, which names members by uid. The ndic:// locations that
+% ndi.cloud.sync.internal.reconstructSeriesIngestLocations builds carry
+% ingest = 0 (members stay on the cloud until wanted, deliberately), and
+% do_add_doc strips them before storing -- so by open time the manifest
+% really is all there is, and fetching a member has to go through the
+% handler DID-matlab#188 added.
+%
+% READ THE TEST NAMES CAREFULLY, because most of them do less than they sound
+% like. testManifestSurvivesTheRoundTrip, testDocumentReportsItsSeries,
+% testCurrentFileListDoesNotExpandTheSeries and testMembersAreIngestedLocally
+% all upload and then assert against LocalDataset, which is never
+% re-downloaded -- they check the same bytes setup wrote to disk, which no
+% transfer can corrupt, and so establish only that the cloud ACCEPTS a
+% document carrying a series. Only the four tests that download read
+% anything back out: testManifestSurvivesADownloadFromTheCloud,
+% testMembersSurviveADownloadFromTheCloud (SyncFiles=true),
+% testMembersSurviveADownloadFromTheCloudWithSyncFilesFalse, and
+% testTheBatchScopeIsTheSeriesAndNotTheWholeDocument.
+% See VH-Lab/NDI-matlab#966 for how a suite of five green tests managed to
+% prove nothing about a member's bytes.
+
+    properties (Constant)
+        DatasetNamePrefix = 'NDI_UNITTEST_FILE_SERIES_';
+        MemberCount = 4;
+    end
+
+    properties
+        % Every cloud test in this suite carries a narrative, so a failure
+        % reads as a sequence of steps and a structured JSON report rather
+        % than a bare number. The audience for these failures is often not a
+        % MATLAB user -- NDI-matlab#945 is being handed to whoever maintains
+        % ndi-cloud-node -- and "0 where 4 was expected" is not something they
+        % can act on. See ndi.unittest.cloud.APIMessage.
+        Narrative (1,:) string
+        DatasetID (1,1) string = missing
+        LocalDataset
+        MemberPaths (1,:) cell = {}
+        MemberContent (1,:) cell = {}
+        SeriesDocId (1,1) string = missing
+    end
+
+    methods (TestClassSetup)
+        function checkCredentials(testCase)
+            username = getenv("NDI_CLOUD_USERNAME");
+            password = getenv("NDI_CLOUD_PASSWORD");
+            diagMsg = ['Missing NDI Cloud credentials ' ...
+                '(NDI_CLOUD_USERNAME/NDI_CLOUD_PASSWORD). Skipping cloud tests.'];
+            testCase.assumeNotEmpty(username, diagMsg);
+            testCase.assumeNotEmpty(password, diagMsg);
+        end
+
+        function checkSeriesSupport(testCase)
+            % Named separately from the credential check so a skipped run says
+            % which of the two reasons applied.
+            testCase.assumeTrue(...
+                any(strcmp(methods('ndi.document'), 'addFileSeries')), ...
+                ['ndi.document has no addFileSeries yet. It re-implements ' ...
+                 'DID''s file API rather than inheriting it, so the series ' ...
+                 'methods have to be mirrored onto it. See VH-Lab/DID-matlab#173.']);
+        end
+    end
+
+    methods (TestMethodSetup)
+        function setupLocalDatasetAndCloud(testCase)
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = "Begin FileSeriesRoundTripTest setup.";
+            narrative(end+1) = "Creating a local dataset and " + ...
+                testCase.MemberCount + " series members on disk.";
+
+            tempFolder = testCase.applyFixture(TemporaryFolderFixture);
+            testCase.LocalDataset = ndi.dataset.dir('test_series_ds', tempFolder.Folder);
+
+            % Members with distinguishable content, so a read-back that
+            % returned the right count but the wrong bytes still fails.
+            memberDir = fullfile(tempFolder.Folder, 'level0');
+            mkdir(memberDir);
+            for i = 1:testCase.MemberCount
+                content = uint8(mod((1:64) * i, 251));
+                p = fullfile(memberDir, sprintf('chunk_%04d.bin', i));
+                fid = fopen(p, 'w');
+                fwrite(fid, content, 'uint8');
+                fclose(fid);
+                testCase.MemberPaths{i} = p;
+                testCase.MemberContent{i} = content;
+            end
+
+            doc = ndi.document('demoNDISeries', ...
+                'base.name', 'test_series_doc', ...
+                'demoNDISeries.value', 1, ...
+                'base.session_id', testCase.LocalDataset.id());
+            doc = doc.addFileSeries('chunkdata.bin', testCase.MemberPaths);
+            testCase.LocalDataset.database_add(doc);
+            testCase.SeriesDocId = doc.id();
+            narrative(end+1) = "Added document 'test_series_doc' (id " + ...
+                string(doc.id()) + ") with file series 'chunkdata.bin' " + ...
+                "declaring " + testCase.MemberCount + " members.";
+
+            unique_name = testCase.DatasetNamePrefix + string(did.ido.unique_id());
+            narrative(end+1) = "Creating cloud dataset named " + unique_name + ".";
+            [b, cloudId] = ndi.cloud.api.datasets.createDataset(struct("name", unique_name));
+            msg = ndi.unittest.cloud.APIMessage(narrative, b, cloudId, ...
+                matlab.net.http.ResponseMessage.empty, "datasets.createDataset");
+            testCase.assertTrue(b, "Failed to create cloud dataset. " + msg);
+            testCase.DatasetID = cloudId;
+            narrative(end+1) = "Cloud dataset id is " + string(cloudId) + ".";
+
+            remoteDoc = ndi.cloud.internal.createRemoteDatasetDoc(cloudId, testCase.LocalDataset);
+            testCase.LocalDataset.database_add(remoteDoc);
+
+            narrative(end+1) = "Uploading the dataset (documents are batched " + ...
+                "as one JSON array by zip_documents_for_upload).";
+            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            msg = ndi.unittest.cloud.APIMessage(narrative, successUpload, ...
+                successUpload, matlab.net.http.ResponseMessage.empty, ...
+                "ndi.cloud.uploadDataset");
+            testCase.assertTrue(successUpload, ...
+                "Failed to upload test dataset. " + msg);
+
+            % Server-side zip extraction has to finish before anything reads
+            % the per-file objects back (issue #755).
+            narrative(end+1) = "Waiting for server-side bulk upload extraction to finish.";
+            ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
+            narrative(end+1) = "Setup complete; the series is now in the cloud.";
+
+            testCase.Narrative = narrative;
+            testCase.addTeardown(@() testCase.cleanupCloudDataset());
+        end
+    end
+
+    methods (Access = private)
+        function cleanupCloudDataset(testCase)
+            if ~ismissing(testCase.DatasetID)
+                ndi.cloud.api.datasets.deleteDataset(testCase.DatasetID, 'when', 'now');
+            end
+        end
+    end
+
+    methods (Test)
+
+        function testManifestSurvivesTheRoundTrip(testCase)
+            % The manifest is an ordinary document file, so this half works
+            % before member ingestion and before the server knows about series.
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testManifestSurvivesTheRoundTrip.";
+            narrative(end+1) = "NOTE: this test reads the LOCAL dataset, not the cloud. " + ...
+                "It shows the upload was accepted, not that anything came back.";
+
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            docs = testCase.LocalDataset.database_search(q);
+            testCase.assertNumElements(docs, 1);
+
+            fobj = testCase.LocalDataset.database_openbinarydoc(docs{1}, 'chunkdata.bin');
+            manifestPath = fobj.fullpathfilename;
+            m = did.file.readSeriesManifest(manifestPath);
+            testCase.LocalDataset.database_closebinarydoc(fobj);
+
+            narrative(end+1) = "Read the local manifest; it reports " + m.count + " members.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, m, ...
+                matlab.net.http.ResponseMessage.empty, "local read of chunkdata.bin");
+
+            testCase.verifyEqual(m.count, testCase.MemberCount, ...
+                "local manifest member count is wrong. " + msg);
+            for i = 1:testCase.MemberCount
+                testCase.verifyNotEmpty(m.uids{i}, ...
+                    "member " + i + " has no uid in the manifest. " + msg);
+            end
+            testCase.Narrative = narrative;
+        end
+
+        function testDocumentReportsItsSeries(testCase)
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testDocumentReportsItsSeries.";
+            narrative(end+1) = "Reading the LOCAL dataset. This is the control for " + ...
+                "NDI-matlab#945: the same query against the DOWNLOADED dataset returns 0.";
+
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            docs = testCase.LocalDataset.database_search(q);
+            testCase.assertNumElements(docs, 1);
+            doc = docs{1};
+
+            [n, nPresent] = doc.seriesCount('chunkdata.bin');
+            narrative(end+1) = "Local document reports count=" + n + ", n_present=" + nPresent + ".";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, ...
+                doc.document_properties.files, ...
+                matlab.net.http.ResponseMessage.empty, "local database_search");
+
+            testCase.verifyTrue(doc.isFileSeries('chunkdata.bin'), ...
+                "local document does not report chunkdata.bin as a series. " + msg);
+            testCase.verifyEqual(n, testCase.MemberCount, ...
+                "local series count is wrong. " + msg);
+            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
+                "local series present-count is wrong. " + msg);
+            testCase.Narrative = narrative;
+        end
+
+        function testCurrentFileListDoesNotExpandTheSeries(testCase)
+            % A 28,000-member series must not materialise 28,000 names here --
+            % that is the bloat the manifest exists to remove, reappearing one
+            % layer up. Called out in VH-Lab/DID-matlab#173.
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testCurrentFileListDoesNotExpandTheSeries.";
+
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            docs = testCase.LocalDataset.database_search(q);
+            fl = docs{1}.current_file_list();
+            narrative(end+1) = "current_file_list returned " + numel(fl) + " entries.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, fl, ...
+                matlab.net.http.ResponseMessage.empty, "local current_file_list");
+
+            testCase.verifyTrue(ismember('chunkdata.bin', fl), ...
+                "the manifest itself is an ordinary file and should be listed. " + msg);
+            testCase.verifyFalse(ismember('chunkdata.bin_1', fl), ...
+                "members must not be expanded into the file list. " + msg);
+            testCase.Narrative = narrative;
+        end
+
+        function testMembersAreIngestedLocally(testCase)
+            % Members are copied into FileDir/<uid> and readable back by their
+            % NAME_<i> names (VH-Lab/DID-matlab#183). It used to skip on that,
+            % since nothing ingested a member; the skip is gone.
+            %
+            % RENAMED from testMembersSurviveTheRoundTrip, which is what it
+            % was called for most of its life and is not what it does: it
+            % reads from LocalDataset, never re-downloaded, so the bytes it
+            % compares are the ones setup wrote to disk a moment earlier. No
+            % transfer happens between the write and the read, so nothing a
+            % server did could make this fail. The name is why the suite
+            % looked like it covered the cloud round trip for members when
+            % nothing did -- see VH-Lab/NDI-matlab#966, and
+            % testMembersSurviveADownloadFromTheCloud below for the real one.
+            %
+            % Still worth keeping. When the round-trip test fails, this one
+            % separates "the members were never ingested, so nothing was
+            % uploaded" from "they were ingested and something happened in
+            % transit", and those have different owners.
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testMembersAreIngestedLocally.";
+            narrative(end+1) = "This is a LOCAL check: it reads back from " + ...
+                "LocalDataset, which is never re-downloaded. It says members " + ...
+                "were ingested, not that they survived the cloud.";
+            testCase.Narrative = narrative;
+
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            docs = testCase.LocalDataset.database_search(q);
+            doc = docs{1};
+
+            testCase.assertTrue(...
+                testCase.LocalDataset.database_existbinarydoc(doc.id(), 'chunkdata.bin_1'), ...
+                ['Series members were not ingested: addFileSeries records ' ...
+                 'where they are, and VH-Lab/DID-matlab#183 is meant to copy ' ...
+                 'them into FileDir/<uid> and give them a files-table row.']);
+
+            for i = 1:testCase.MemberCount
+                memberName = sprintf('chunkdata.bin_%d', i);
+                fobj = testCase.LocalDataset.database_openbinarydoc(doc, memberName);
+                fid = fopen(fobj.fullpathfilename, 'rb');
+                got = fread(fid, inf, '*uint8')';
+                fclose(fid);
+                testCase.LocalDataset.database_closebinarydoc(fobj);
+
+                testCase.verifyEqual(got, testCase.MemberContent{i}, ...
+                    sprintf('member %d was ingested with different bytes', i));
+            end
+        end
+
+        function testManifestSurvivesADownloadFromTheCloud(testCase)
+            % The genuine round trip, and the only test here that reads the
+            % series back out of the cloud rather than out of the local
+            % dataset it was built in.
+            %
+            % The three tests above upload and then assert against
+            % testCase.LocalDataset, which is never re-downloaded. That
+            % establishes the cloud ACCEPTS a document carrying a series
+            % manifest, which is worth knowing but is not a round trip: a
+            % server that quietly dropped the manifest file, renamed it, or
+            % returned different bytes would pass all three.
+            %
+            % This one downloads the dataset into a fresh folder and reads the
+            % manifest from the downloaded copy, so the uids it checks are the
+            % ones that actually made the journey. It needs SyncFiles so the
+            % file contents come down and not just the document records.
+            %
+            % This covers the MANIFEST half only, on purpose. The member
+            % half is testMembersSurviveADownloadFromTheCloud, below, which
+            % shares this test's shape and downloads its own copy. Keeping
+            % them apart costs a second download per run and buys a failure
+            % that says which half broke: a manifest that arrived intact
+            % while its members did not is a different bug from a manifest
+            % that came back altered, and the manifest is the half a series
+            % reader hits first.
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testManifestSurvivesADownloadFromTheCloud.";
+            narrative(end+1) = "This is the only test here that reads the series back " + ...
+                "OUT of the cloud. The three above assert against the local dataset.";
+
+            % The local manifest, to compare against.
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            localDocs = testCase.LocalDataset.database_search(q);
+            testCase.assertNumElements(localDocs, 1);
+            localFobj = testCase.LocalDataset.database_openbinarydoc(localDocs{1}, 'chunkdata.bin');
+            localManifest = did.file.readSeriesManifest(localFobj.fullpathfilename);
+            testCase.LocalDataset.database_closebinarydoc(localFobj);
+            narrative(end+1) = "Local manifest before download: count=" + ...
+                localManifest.count + ".";
+
+            % Two steps rather than chaining off applyFixture, matching the
+            % setup above; indexing into a method's return value is not
+            % something to rely on here.
+            downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            narrative(end+1) = "Downloading dataset " + testCase.DatasetID + ...
+                " with SyncFiles=true into a fresh folder.";
+            downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, downloadFixture.Folder, ...
+                'SyncFiles', true, 'Verbose', false);
+            msg = ndi.unittest.cloud.APIMessage(narrative, ~isempty(downloaded), ...
+                "downloadDataset returned an ndi.dataset", ...
+                matlab.net.http.ResponseMessage.empty, "ndi.cloud.downloadDataset");
+            testCase.assertNotEmpty(downloaded, ...
+                "downloadDataset returned nothing for the uploaded dataset. " + msg);
+
+            remoteDocs = downloaded.database_search(q);
+            narrative(end+1) = "Downloaded dataset returned " + numel(remoteDocs) + ...
+                " document(s) matching base.name 'test_series_doc'.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, numel(remoteDocs), ...
+                matlab.net.http.ResponseMessage.empty, "downloaded database_search");
+            testCase.assertNumElements(remoteDocs, 1, ...
+                "the series document did not come back from the cloud. " + msg);
+            remoteDoc = remoteDocs{1};
+
+            % On failure, show what actually came back rather than just the
+            % number that did not match: whether series_info still has its
+            % count and n_present fields, what else survived beside them, and
+            % whether ingest_locations came back as [] or as a struct. That is
+            % the difference between the server dropping fields and the JSON
+            % round trip reshaping them. See VH-Lab/NDI-matlab#945, and
+            % ndi.unittest.database.TestDocumentSeriesJsonRoundTrip for the
+            % no-network half of the same question.
+            testCase.onFailure(@() disp(remoteDoc.document_properties.files));
+
+            [n, nPresent] = remoteDoc.seriesCount('chunkdata.bin');
+            hasSeriesInfo = isfield(remoteDoc.document_properties.files, 'series_info') && ...
+                ~isempty(remoteDoc.document_properties.files.series_info);
+            narrative(end+1) = "Downloaded document: files.series_info present = " + ...
+                string(hasSeriesInfo) + ", seriesCount reports count=" + n + ...
+                ", n_present=" + nPresent + " (expected " + testCase.MemberCount + ").";
+            narrative(end+1) = "If series_info is absent, the server dropped the whole " + ...
+                "per-series record; if present with zeros, it kept the entry and zeroed " + ...
+                "the numbers. seriesCount returns 0/0 for BOTH, which is why the struct " + ...
+                "is reported below. See VH-Lab/NDI-matlab#945.";
+            narrative(end+1) = "Note isFileSeries reads files.file_series (the CLASS " + ...
+                "declaration, from the schema), not files.series_info, so it can pass " + ...
+                "while the instance record is gone.";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, ...
+                remoteDoc.document_properties.files, ...
+                matlab.net.http.ResponseMessage.empty, "downloaded document files struct");
+
+            % The series declaration has to survive serialization, not just
+            % the bytes of the manifest.
+            testCase.verifyTrue(remoteDoc.isFileSeries('chunkdata.bin'), ...
+                "the downloaded document no longer reports chunkdata.bin as a series. " + msg);
+            testCase.verifyEqual(n, testCase.MemberCount, ...
+                "downloaded series declares a different member count. " + msg);
+            testCase.verifyEqual(nPresent, testCase.MemberCount, ...
+                "downloaded series lost members from its manifest slots. " + msg);
+
+            % And the members must still not be expanded into the file list
+            % on the far side -- the bloat this design exists to avoid would
+            % otherwise reappear on every reader that downloads a dataset.
+            fl = remoteDoc.current_file_list();
+            testCase.verifyTrue(ismember('chunkdata.bin', fl));
+            testCase.verifyFalse(ismember('chunkdata.bin_1', fl), ...
+                'members were expanded into the downloaded file list');
+
+            % The manifest bytes themselves.
+            remoteFobj = downloaded.database_openbinarydoc(remoteDoc, 'chunkdata.bin');
+            remoteManifest = did.file.readSeriesManifest(remoteFobj.fullpathfilename);
+            downloaded.database_closebinarydoc(remoteFobj);
+
+            narrative(end+1) = "Downloaded manifest reports count=" + remoteManifest.count + ".";
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, remoteManifest, ...
+                matlab.net.http.ResponseMessage.empty, "downloaded chunkdata.bin manifest");
+
+            testCase.verifyEqual(remoteManifest.count, testCase.MemberCount, ...
+                "downloaded manifest reports a different member count. " + msg);
+            testCase.verifyEqual(remoteManifest.uids, localManifest.uids, ...
+                "downloaded manifest uids differ from the ones uploaded; " + ...
+                "a member would resolve to the wrong file. " + msg);
+            testCase.Narrative = narrative;
+        end
+
+        function testMembersSurviveADownloadFromTheCloud(testCase)
+            % THE acceptance test for the file series cloud path: the only
+            % thing anywhere that proves a member's BYTES made the journey.
+            % See VH-Lab/NDI-matlab#966 for why the suite was green without
+            % it -- every other test either reads from LocalDataset, which no
+            % transfer touches, or checks the manifest, which is an ordinary
+            % document file. A server that accepted the member uploads and
+            % then dropped, truncated or swapped their bytes passes all of
+            % them.
+            %
+            % EXPECTED TO FAIL until VH-Lab/DID-matlab#188 lands, at the
+            % member open assertion below. A member carries no
+            % location of its own, so seriesMemberPath resolves the manifest,
+            % looks the member up in the local cache and returns a miss --
+            % which is the state of a dataset that has just been downloaded.
+            % #188 adds the retrieval: the customFileHandler is called for the
+            % member in 'open' mode, given the series manifest's location and
+            % the member's uid. That failure is the evidence for #188, so do
+            % not skip or delete this test to make CI green.
+            %
+            % If it still fails AFTER #188 lands, the next suspect is the
+            % return half of class header item 3: a member uid has never been
+            % through batchSignedUrlLookup on the way back, because nothing
+            % has ever asked the cloud for a member's bytes. This test is the
+            % first thing that will. Read the per-member diagnostic below
+            % before assuming which of the two it is.
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testMembersSurviveADownloadFromTheCloud.";
+            narrative(end+1) = "Reading each member's bytes from the DOWNLOADED " + ...
+                "copy, not from the local dataset they were written into.";
+
+            downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            narrative(end+1) = "Downloading dataset " + testCase.DatasetID + ...
+                " with SyncFiles=true into a fresh folder.";
+            downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, downloadFixture.Folder, ...
+                'SyncFiles', true, 'Verbose', false);
+            msg = ndi.unittest.cloud.APIMessage(narrative, ~isempty(downloaded), ...
+                "downloadDataset returned an ndi.dataset", ...
+                matlab.net.http.ResponseMessage.empty, "ndi.cloud.downloadDataset");
+            testCase.assertNotEmpty(downloaded, ...
+                "downloadDataset returned nothing for the uploaded dataset. " + msg);
+
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            remoteDocs = downloaded.database_search(q);
+            msg = ndi.unittest.cloud.APIMessage(narrative, true, numel(remoteDocs), ...
+                matlab.net.http.ResponseMessage.empty, "downloaded database_search");
+            testCase.assertNumElements(remoteDocs, 1, ...
+                "the series document did not come back from the cloud. " + msg);
+            remoteDoc = remoteDocs{1};
+
+            % A LOCAL-CACHE probe, and deliberately not a gate.
+            % database_existbinarydoc reports what is on this machine and
+            % does not retrieve: did.implementations.sqlitedb.check_exist_doc
+            % calls seriesMemberPath WITHOUT mayRetrieve, because it "must
+            % not go to the network to answer a question about local state".
+            % A member of a freshly downloaded dataset is therefore absent
+            % here even when it is perfectly fetchable, so all-false is the
+            % expected reading before anything opens a member and says
+            % nothing about whether this test should pass. Recorded because
+            % the transition -- absent before, present after -- is what shows
+            % the fetch actually happened rather than the bytes having been
+            % lying around.
+            cachedBefore = false(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                cachedBefore(i) = downloaded.database_existbinarydoc( ...
+                    remoteDoc.id(), sprintf('chunkdata.bin_%d', i));
+            end
+
+            % INSIST THE BATCH PRESIGN PATH ANSWERS. download_file_from_cloud
+            % falls back to per-uid getFileDetails whenever the batch lookup
+            % cannot answer, which is right at runtime -- a reader opening one
+            % file should not fail because a batch endpoint hiccuped -- and
+            % exactly wrong here. Without this, a test of the series path that
+            % quietly made four per-uid calls would pass, having proved
+            % nothing about the path it exists for. Counters cleared now so
+            % they describe this test's opens and nothing else.
+            % See VH-Lab/NDI-matlab#968.
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "", "", "", "", 'clearCache', true);
+
+            % Opening is what retrieves -- do_open_doc passes mayRetrieve, so
+            % this is the only call that asks the handler for a member. Each
+            % open is caught rather than allowed to throw: a member that
+            % cannot be fetched raises DID:SQLITEDB:open, and letting the
+            % first one abort the loop would throw away exactly the slot-by-
+            % slot picture this test exists to produce. WHICH slots came back
+            % separates bugs with different owners -- none is
+            % VH-Lab/DID-matlab#188 or the member fetch never reaching the
+            % handler, some is a transfer that lost members and is NDI's.
+            opened     = false(1, testCase.MemberCount);
+            openError  = strings(1, testCase.MemberCount);
+            memberBytes = cell(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                memberName = sprintf('chunkdata.bin_%d', i);
+                try
+                    fobj = downloaded.database_openbinarydoc(remoteDoc, memberName);
+                    fid = fopen(fobj.fullpathfilename, 'rb');
+                    memberBytes{i} = fread(fid, inf, '*uint8')';
+                    fclose(fid);
+                    downloaded.database_closebinarydoc(fobj);
+                    opened(i) = true;
+                catch openME
+                    openError(i) = string(openME.identifier) + ": " + ...
+                        string(openME.message);
+                end
+            end
+
+            % mat2str renders an empty row as "zeros(1,0)", and the zero case
+            % is the one these lines exist to report. The audience for these
+            % diagnostics is often not a MATLAB user -- see the Narrative
+            % property -- so spell it.
+            narrative(end+1) = "Members already in the local cache before any " + ...
+                "open: " + localSlotList(cachedBefore) + " (all-false is expected " + ...
+                "here; exist_doc never retrieves).";
+            narrative(end+1) = "Members successfully opened: " + sum(opened) + ...
+                " of " + testCase.MemberCount + ", slots " + localSlotList(opened) + ".";
+            if any(~opened)
+                narrative(end+1) = "First open failure: " + openError(find(~opened, 1));
+            end
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, all(opened), ...
+                struct('cachedBefore', cachedBefore, 'opened', opened, ...
+                       'firstError', openError(find(~opened, 1))), ...
+                matlab.net.http.ResponseMessage.empty, ...
+                "downloaded database_openbinarydoc, per member");
+
+            testCase.assertTrue(all(opened), ...
+                "a series member of the downloaded dataset could not be opened. " + msg);
+
+            % How the members were actually resolved. Reading the counters
+            % with an empty documentId returns early, so this does not
+            % disturb the cache it is reporting on.
+            [~, batchStats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            narrative(end+1) = "Batch presign: " + batchStats.signerCalls + ...
+                " endpoint call(s), " + batchStats.uidHits + " uid(s) answered from " + ...
+                "the batch, " + batchStats.uidMisses + " fell back to per-uid " + ...
+                "getFileDetails, " + batchStats.partialMapRetries + " scope(s) " + ...
+                "re-fetched after a partial map. Last batch map held " + ...
+                batchStats.lastMapSize + " uid(s).";
+            if strlength(batchStats.lastFailureReason) > 0
+                narrative(end+1) = "Why the batch did not answer: " + ...
+                    batchStats.lastFailureReason;
+            end
+            narrative(end+1) = "A map larger than the " + testCase.MemberCount + ...
+                " members suggests the server ignored the 'fileSeries' scope and " + ...
+                "returned the whole DOCUMENT's URL set -- which answers every uid, " + ...
+                "so it cannot fail the check below. See VH-Lab/NDI-matlab#968.";
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, batchStats.uidMisses == 0, ...
+                batchStats, matlab.net.http.ResponseMessage.empty, ...
+                "ndi.cloud.download.internal.batchSignedUrlLookup counters");
+
+            testCase.verifyEqual(batchStats.uidMisses, 0, ...
+                "a series member fell back to per-uid getFileDetails. The bytes " + ...
+                "still arrived, which is why every other assertion here passes, " + ...
+                "but the batch presign path did not answer -- and at 28,000 " + ...
+                "members that fallback is 28,000 API calls. " + msg);
+            % One presign call for the scope, plus at most one retry if
+            % the first answer was a partial map (VH-Lab/NDI-matlab#991
+            % / Waltham-Data-Science/NDI-python#309 -- some environments
+            % lag briefly after the bulk upload). Anything beyond that
+            % would be per-uid fallback, which the uidMisses assertion
+            % above already rules out; this is just for a clearer
+            % failure message.
+            testCase.verifyEqual(batchStats.signerCalls, 1 + batchStats.partialMapRetries, ...
+                "the members of one series should cost ONE presign call, plus " + ...
+                "at most one retry if the first map was partial. Got " + ...
+                "signerCalls=" + batchStats.signerCalls + ", partialMapRetries=" + ...
+                batchStats.partialMapRetries + ". " + msg);
+            testCase.verifyLessThanOrEqual(batchStats.partialMapRetries, 1, ...
+                "the retry is bounded to once per scope; got partialMapRetries=" + ...
+                batchStats.partialMapRetries + ". " + msg);
+
+            % The bytes, compared in full rather than by length. Setup gives
+            % all four members the SAME 64 bytes' length and distinguishes
+            % them by content, so a size check here would catch nothing at
+            % all: two members swapped by a uid mixup -- the failure this
+            % path is most prone to, since a member is addressed by uid the
+            % whole way through -- come back the right size and the wrong
+            % file.
+            for i = 1:testCase.MemberCount
+                testCase.verifyEqual(memberBytes{i}, testCase.MemberContent{i}, ...
+                    sprintf(['member %d came back from the cloud with ' ...
+                             'different bytes than were uploaded'], i));
+            end
+        end
+
+
+        function testMembersSurviveADownloadFromTheCloudWithSyncFilesFalse(testCase)
+            % The SyncFiles=false half of the cloud round trip. Downloads
+            % the dataset WITHOUT installing any bytes, so the manifest
+            % arrives as an ndicloud/ingest=0 file_info entry only. Then
+            % opens each member end-to-end, which is now supposed to fetch
+            % the MANIFEST through the customFileHandler first
+            % (VH-Lab/DID-matlab#201 / PR #202) and each member after.
+            %
+            % Companion to testMembersSurviveADownloadFromTheCloud above,
+            % which covers SyncFiles=true. The offline path is pinned
+            % separately (no cloud creds) in
+            % ndi.unittest.TestSeriesWithCloudOnlyManifestResolvesThroughHandler,
+            % which uses a mock handler; this one exercises the REAL
+            % download_file_from_cloud when DID asks it for a manifest by
+            % uid -- a call shape no cloud test hit before, since every
+            % existing round-trip test downloads the manifest bytes at
+            % SyncFiles=true and only asks the handler for members. See
+            % VH-Lab/NDI-matlab#986.
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testMembersSurviveADownloadFromTheCloudWithSyncFilesFalse.";
+            narrative(end+1) = "Downloading dataset " + testCase.DatasetID + ...
+                " with SyncFiles=false into a fresh folder: no manifest " + ...
+                "bytes are installed locally, the manifest's file_info " + ...
+                "carries only an ndic:// reference.";
+
+            downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, ...
+                downloadFixture.Folder, 'SyncFiles', false, 'Verbose', false);
+            msg = ndi.unittest.cloud.APIMessage(narrative, ~isempty(downloaded), ...
+                "downloadDataset returned an ndi.dataset", ...
+                matlab.net.http.ResponseMessage.empty, ...
+                "ndi.cloud.downloadDataset (SyncFiles=false)");
+            testCase.assertNotEmpty(downloaded, ...
+                "downloadDataset returned nothing for the uploaded dataset. " + msg);
+
+            q = ndi.query('base.name', 'exact_string', 'test_series_doc');
+            remoteDocs = downloaded.database_search(q);
+            testCase.assertNumElements(remoteDocs, 1, ...
+                "the series document did not come back from the cloud");
+            remoteDoc = remoteDocs{1};
+
+            % Grab the manifest's uid from the DOWNLOADED document so the
+            % cache-placement assertion below has a name to check. The uid
+            % came in on the ndicloud location that updateFileInfoForRemoteFiles
+            % wrote, not on any local file.
+            manifestUids = remoteDoc.fileUids('chunkdata.bin');
+            testCase.assertNumElements(manifestUids, 1, ...
+                "the downloaded manifest should have exactly one uid");
+            manifestUid = manifestUids{1};
+
+            % Precondition: neither the manifest nor any member is on
+            % this machine yet. The test would still open the members if
+            % something quietly installed them, and would say nothing
+            % about the path it exists to exercise.
+            cachedManifestPath = fullfile( ...
+                did.common.PathConstants.filecachepath, manifestUid);
+            testCase.assertFalse(isfile(cachedManifestPath), ...
+                "precondition: the manifest bytes must not be here before opening");
+            cachedBefore = false(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                cachedBefore(i) = downloaded.database_existbinarydoc( ...
+                    remoteDoc.id(), sprintf('chunkdata.bin_%d', i));
+            end
+            testCase.assertFalse(any(cachedBefore), ...
+                "precondition: no member should be on this machine yet");
+
+            % Insist the batch presign path answers, same reason as in
+            % testMembersSurviveADownloadFromTheCloud: without this a run
+            % of per-uid getFileDetails could quietly do the work, and
+            % this test would pass having proved nothing about the
+            % batch-scope path. See VH-Lab/NDI-matlab#968.
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "", "", "", "", 'clearCache', true);
+
+            opened      = false(1, testCase.MemberCount);
+            openError   = strings(1, testCase.MemberCount);
+            memberBytes = cell(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                memberName = sprintf('chunkdata.bin_%d', i);
+                try
+                    fobj = downloaded.database_openbinarydoc(remoteDoc, memberName);
+                    fid = fopen(fobj.fullpathfilename, 'rb');
+                    memberBytes{i} = fread(fid, inf, '*uint8')';
+                    fclose(fid);
+                    downloaded.database_closebinarydoc(fobj);
+                    opened(i) = true;
+                catch openME
+                    openError(i) = string(openME.identifier) + ": " + ...
+                        string(openME.message);
+                end
+            end
+
+            narrative(end+1) = "Members successfully opened: " + sum(opened) + ...
+                " of " + testCase.MemberCount + ", slots " + localSlotList(opened) + ".";
+            if any(~opened)
+                narrative(end+1) = "First open failure: " + openError(find(~opened, 1));
+            end
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, all(opened), ...
+                struct('cachedBefore', cachedBefore, 'opened', opened, ...
+                       'firstError', openError(find(~opened, 1))), ...
+                matlab.net.http.ResponseMessage.empty, ...
+                "downloaded database_openbinarydoc, per member, SyncFiles=false");
+
+            testCase.assertTrue(all(opened), ...
+                "a series member of the SyncFiles=false downloaded dataset " + ...
+                "could not be opened. " + msg);
+
+            % After the first open the manifest must be at
+            % filecachepath/<manifestUid> -- the whole point of the
+            % DID-matlab#201 lazy fetch is that a second member open
+            % pays no network for the manifest again. Every open in the
+            % loop above but the first depends on this being true.
+            testCase.verifyTrue(isfile(cachedManifestPath), ...
+                "the manifest must land at filecachepath/<manifestUid> " + ...
+                "after the first member open");
+
+            % Batch presign counters. uidMisses=0 pins that every uid
+            % answered from the batch -- the manifest's included, since
+            % downloading its bytes goes through the same handler as
+            % every other file. signerCalls is not tightly asserted:
+            % SyncFiles=false may reasonably cost one call (a whole-
+            % document scope answers both manifest and members) or two
+            % (manifest first, then a series scope on the first member),
+            % and pinning one over the other would guess at a server
+            % behaviour this suite does not otherwise cover.
+            [~, batchStats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            narrative(end+1) = "Batch presign: " + batchStats.signerCalls + ...
+                " endpoint call(s), " + batchStats.uidHits + " uid(s) answered from " + ...
+                "the batch, " + batchStats.uidMisses + " fell back to per-uid " + ...
+                "getFileDetails, " + batchStats.partialMapRetries + " scope(s) " + ...
+                "re-fetched after a partial map. Last batch map held " + ...
+                batchStats.lastMapSize + " uid(s).";
+            if strlength(batchStats.lastFailureReason) > 0
+                narrative(end+1) = "Why the batch did not answer: " + ...
+                    batchStats.lastFailureReason;
+            end
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, batchStats.uidMisses == 0, ...
+                batchStats, matlab.net.http.ResponseMessage.empty, ...
+                "ndi.cloud.download.internal.batchSignedUrlLookup counters (SyncFiles=false)");
+
+            testCase.verifyEqual(batchStats.uidMisses, 0, ...
+                "a manifest or member of a SyncFiles=false download fell " + ...
+                "back to per-uid getFileDetails. The bytes still arrived, " + ...
+                "which is why every other assertion here passes, but the " + ...
+                "batch presign path did not answer for something. " + msg);
+
+            % Byte-for-byte, not length-only: two members swapped by a
+            % uid mixup would come back the right size and the wrong
+            % file, and that is the failure a manifest fetch through the
+            % handler is most prone to. See #966 and the notes on
+            % testMembersSurviveADownloadFromTheCloud above.
+            for i = 1:testCase.MemberCount
+                testCase.verifyEqual(memberBytes{i}, testCase.MemberContent{i}, ...
+                    sprintf(['member %d came back from a SyncFiles=false ' ...
+                             'cloud download with different bytes than were ' ...
+                             'uploaded'], i));
+            end
+        end
+
+
+        function testTheBatchScopeIsTheSeriesAndNotTheWholeDocument(testCase)
+            % Does the server HONOR the 'fileSeries' scope, or ignore it and
+            % return the whole document's URL set?
+            %
+            % Neither the member bytes nor the fallback counter can tell:
+            % an unscoped map contains the member uids too, so it answers
+            % every one of them and looks exactly like success. The only
+            % thing that separates them is WHAT ELSE the map names. So this
+            % test uses a document that has files OUTSIDE its series --
+            % demoNDISeriesMixed declares three sidecars alongside
+            % chunkdata.bin -- and requires that none of their uids come
+            % back when a MEMBER is fetched.
+            %
+            % A document whose only files are one manifest and four members
+            % cannot pose the question: scoped and unscoped differ by one
+            % entry, which proves nothing. See VH-Lab/NDI-matlab#968.
+            %
+            % Adds a SECOND document to the dataset the fixture already
+            % uploaded, rather than building its own dataset: same cloud
+            % dataset, same teardown, one extra upload instead of a whole
+            % second lifecycle.
+
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+
+            narrative = testCase.Narrative;
+            narrative(end+1) = "Begin testTheBatchScopeIsTheSeriesAndNotTheWholeDocument.";
+
+            mixedFolder = testCase.applyFixture(TemporaryFolderFixture);
+
+            memberPaths = cell(1, testCase.MemberCount);
+            for i = 1:testCase.MemberCount
+                p = fullfile(mixedFolder.Folder, sprintf('mixed_chunk_%04d.bin', i));
+                fid = fopen(p, 'w');
+                fwrite(fid, uint8(mod((1:48) * i, 251)), 'uint8');
+                fclose(fid);
+                memberPaths{i} = p;
+            end
+
+            sidecarNames = {'sidecar1.ext', 'sidecar2.ext', 'sidecar3.ext'};
+            sidecarPaths = cell(1, numel(sidecarNames));
+            for i = 1:numel(sidecarNames)
+                p = fullfile(mixedFolder.Folder, sidecarNames{i});
+                fid = fopen(p, 'w');
+                fwrite(fid, uint8(200 + i), 'uint8');
+                fclose(fid);
+                sidecarPaths{i} = p;
+            end
+
+            mixedDoc = ndi.document('demoNDISeriesMixed', ...
+                'base.name', 'test_series_mixed_doc', ...
+                'demoNDISeriesMixed.value', 1, ...
+                'base.session_id', testCase.LocalDataset.id());
+            mixedDoc = mixedDoc.addFileSeries('chunkdata.bin', memberPaths);
+            for i = 1:numel(sidecarNames)
+                mixedDoc = mixedDoc.add_file(sidecarNames{i}, sidecarPaths{i});
+            end
+            testCase.LocalDataset.database_add(mixedDoc);
+
+            % The sidecars' uids, read back from the stored document: these
+            % are the uids that must NOT appear in a series-scoped map.
+            storedDocs = testCase.LocalDataset.database_search( ...
+                ndi.query('base.name', 'exact_string', 'test_series_mixed_doc'));
+            testCase.assertNumElements(storedDocs, 1);
+            storedDoc = storedDocs{1};
+            sidecarUids = cell(1, numel(sidecarNames));
+            for i = 1:numel(sidecarNames)
+                uids = storedDoc.fileUids(sidecarNames{i});
+                testCase.assertNotEmpty(uids, ...
+                    ['sidecar ' sidecarNames{i} ' has no uid']);
+                sidecarUids{i} = uids{1};
+            end
+
+            narrative(end+1) = "Added a second document with a " + ...
+                testCase.MemberCount + "-member series AND " + ...
+                numel(sidecarNames) + " sidecar files, then re-uploading.";
+            successUpload = ndi.cloud.uploadDataset(testCase.LocalDataset);
+            testCase.assertTrue(successUpload, ...
+                "failed to upload the mixed document");
+            ndi.cloud.api.files.waitForAllBulkUploads(testCase.DatasetID);
+
+            downloadFixture = testCase.applyFixture(TemporaryFolderFixture);
+            downloaded = ndi.cloud.downloadDataset(testCase.DatasetID, ...
+                downloadFixture.Folder, 'SyncFiles', true, 'Verbose', false);
+            testCase.assertNotEmpty(downloaded, ...
+                "downloadDataset returned nothing");
+
+            remoteDocs = downloaded.database_search( ...
+                ndi.query('base.name', 'exact_string', 'test_series_mixed_doc'));
+            testCase.assertNumElements(remoteDocs, 1, ...
+                "the mixed document did not come back from the cloud");
+
+            % Counters cleared here so the map they report on is the one
+            % fetched for the member opened below, and nothing earlier.
+            ndi.cloud.download.internal.batchSignedUrlLookup( ...
+                "", "", "", "", 'clearCache', true);
+
+            fobj = downloaded.database_openbinarydoc(remoteDocs{1}, 'chunkdata.bin_1');
+            downloaded.database_closebinarydoc(fobj);
+
+            [~, batchStats] = ndi.cloud.download.internal.batchSignedUrlLookup("", "", "", "");
+            leaked = intersect(sidecarUids, batchStats.lastMapUids);
+            narrative(end+1) = "Fetching one member drew a batch map of " + ...
+                batchStats.lastMapSize + " uid(s); " + numel(leaked) + ...
+                " of the " + numel(sidecarNames) + " sidecar uids appeared in it.";
+            narrative(end+1) = "A sidecar in the map means the server ignored " + ...
+                "'fileSeries' and returned the whole DOCUMENT's URL set. That " + ...
+                "still answers every member, so nothing else here would notice.";
+            testCase.Narrative = narrative;
+            msg = ndi.unittest.cloud.APIMessage(narrative, isempty(leaked), ...
+                batchStats, matlab.net.http.ResponseMessage.empty, ...
+                "batchSignedUrlLookup scope for a series member");
+
+            % Without this the test passes VACUOUSLY whenever the batch
+            % returns nothing: an empty map leaks no sidecars, so the check
+            % below is satisfied by the very failure it should not survive.
+            % Observed for real -- lastMapSize 0, lastMapUids [] -- while
+            % this test reported success.
+            testCase.assertGreaterThan(batchStats.lastMapSize, 0, ...
+                "the batch returned no map at all, so nothing here can judge " + ...
+                "whether the 'fileSeries' scope was honored. That is the batch " + ...
+                "not answering, which testMembersSurviveADownloadFromTheCloud " + ...
+                "reports; it is not a scope finding. " + msg);
+
+            testCase.verifyEmpty(leaked, ...
+                "the batch map for a series member also named files that are " + ...
+                "not in the series, so the 'fileSeries' scope was not honored. " + msg);
+        end
+
+    end
+end
+
+function text = localSlotList(mask)
+    % Render a logical slot mask as "1, 3" or "none". mat2str would say
+    % "zeros(1,0)" for the empty case, which is the case that matters most
+    % here and the least readable thing to print.
+    slots = find(mask);
+    if isempty(slots)
+        text = "none";
+    else
+        text = join(string(slots), ", ");
+    end
+end

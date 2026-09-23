@@ -48,6 +48,7 @@ function [success, cloudDatasetId, message] = uploadDataset(ndiDataset, syncOpti
     syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
 
     success = false;
+    cloudDatasetId = '';
     message = '';
 
     if ~ndiDataset.isIngested()

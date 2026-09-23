@@ -8,6 +8,7 @@ function url = url(endpointName, options)
         options.dataset_id (1,1) string = ""
         options.user_id (1,1) string = ""
         options.document_id (1,1) string = ""
+        options.ndi_document_id (1,1) string = ""
         options.file_uid (1,1) string = ""
         options.organization_id (1,1) string = ""
         options.session_id (1,1) string = ""
@@ -52,6 +53,11 @@ function url = url(endpointName, options)
         endpointMap("get_current_user")               = "/users/me";
         endpointMap("get_user")                       = "/users/{userId}";
         endpointMap("get_dataset")                    = "/datasets/{datasetId}";
+        % Keyset-paginated. The limit and opaque `after` cursor are appended as
+        % query parameters by the implementation class (ListFiles), not
+        % templated here, because replacePathParameter asserts every templated
+        % parameter is non-empty and the cursor is empty on the first page.
+        endpointMap("list_dataset_files")             = "/datasets/{datasetId}/files";
         endpointMap("update_dataset")                 = "/datasets/{datasetId}";
         endpointMap("delete_dataset")                 = "/datasets/{datasetId}";
         endpointMap("undelete_dataset")               = "/datasets/{datasetId}/undelete";
@@ -65,6 +71,24 @@ function url = url(endpointName, options)
         endpointMap("get_file_details")               = "/datasets/{datasetId}/files/{file_uid}/detail";
         endpointMap("get_bulk_upload_status")         = "/bulk-uploads/{jobId}";
         endpointMap("list_dataset_bulk_uploads")      = "/datasets/{datasetId}/bulk-uploads?state={state}";
+        % Signed download URLs for the files a document references. The
+        % optional query parameters (limit, cursor, fileSeries) are appended by
+        % the implementation classes rather than templated here, because
+        % replacePathParameter below asserts every templated parameter is
+        % non-empty.
+        endpointMap("get_signed_url_set")             = "/datasets/{datasetId}/documents/{documentId}/signed-url-set";
+        % The same set, addressed by NDI document id instead of the cloud
+        % _id. Separate ROUTES rather than one route that accepts either:
+        % the namespace is stated by the path and never inferred from the
+        % value's shape, so a change to did.ido's format cannot quietly
+        % turn into a 404. See ndi-cloud-node#136, NDI-matlab#968.
+        endpointMap("get_ndi_signed_url_set")         = "/datasets/{datasetId}/ndi-documents/{ndiDocumentId}/signed-url-set";
+        endpointMap("create_ndi_signed_url_set_job")  = "/datasets/{datasetId}/ndi-documents/{ndiDocumentId}/signed-url-set-jobs";
+        endpointMap("create_signed_url_set_job")      = "/datasets/{datasetId}/documents/{documentId}/signed-url-set-jobs";
+        endpointMap("get_signed_url_set_job")         = "/signed-url-set-jobs/{jobId}";
+        % File-tier control. See ndi-cloud-node manuals/file-tier-design.md.
+        endpointMap("create_file_tier_job")           = "/datasets/{datasetId}/file-tier-jobs";
+        endpointMap("get_file_tier_job")              = "/file-tier-jobs/{jobId}";
         endpointMap("create_dataset_branch")          = "/datasets/{datasetId}/branch";
         endpointMap("get_branches")                   = "/datasets/{datasetId}/branches";
         endpointMap("submit_dataset")                 = "/datasets/{datasetId}/submit";
@@ -138,6 +162,7 @@ function options = processOptions(options)
     options = renameStructField(options, 'file_uid', 'uid');
     options = renameStructField(options, 'dataset_id', 'datasetId');
     options = renameStructField(options, 'document_id', 'documentId');
+    options = renameStructField(options, 'ndi_document_id', 'ndiDocumentId');
     options = renameStructField(options, 'organization_id', 'organizationId');
     options = renameStructField(options, 'user_id', 'userId');
     options = renameStructField(options, 'page_size', 'pageSize');

@@ -3,18 +3,24 @@ function [b, answer, apiResponse, apiURL] = getDataset(cloudDatasetID)
 %
 %   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.datasets.getDataset(CLOUD_DATASET_ID)
 %
-%   Retrieves the full details for a given dataset on the NDI Cloud.
+%   Retrieves a dataset's metadata from the NDI Cloud.
+%
+%   The dataset struct does NOT embed the file list: it reports the file
+%   count in the 'fileCount' field instead. To enumerate a dataset's files
+%   use ndi.cloud.api.files.listFilesAll (or listFiles for a single page).
 %
 %   Inputs:
 %       cloudDatasetID - The string ID of the dataset.
 %
 %   Outputs:
 %       b            - True if the call succeeded, false otherwise.
-%       answer       - The dataset struct on success, or an error struct on failure.
+%       answer       - The dataset struct on success (with 'fileCount' but no
+%                      embedded file list), or an error struct on failure.
 %       apiResponse  - The full matlab.net.http.ResponseMessage object.
 %       apiURL       - The URL that was called.
 %
-%   See also: ndi.cloud.api.implementation.datasets.GetDataset
+%   See also: ndi.cloud.api.files.listFilesAll, ndi.cloud.api.files.listFiles,
+%             ndi.cloud.api.implementation.datasets.GetDataset
 
     arguments
         cloudDatasetID (1,1) string

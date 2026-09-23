@@ -211,40 +211,7 @@ datasetId = ndi.cloud.upload.newDataset(D)
 
 Creates a new dataset record on NDI Cloud from an `ndi.dataset` object and uploads its documents and files. Returns the `cloudDatasetID` of the newly created dataset.
 
-#### `ndi.cloud.upload.uploadToNDICloud`
-
-```matlab
-[b, msg] = ndi.cloud.upload.uploadToNDICloud(S, dataset_id)
-```
-
-Uploads an NDI session's database (documents and files) to an existing cloud dataset identified by `dataset_id`. This is an older interface that operates on `ndi.session` objects. Prefer `ndi.cloud.uploadDataset` for new code.
-
-**Inputs:**
-- `S` — An `ndi.session` object.
-- `dataset_id` — The cloud dataset identifier to upload into.
-
-**Outputs:**
-- `b` — `1` if successful, `0` otherwise.
-- `msg` — An error message if the upload failed; `''` otherwise.
-
-#### `ndi.cloud.upload.scanForUpload`
-
-```matlab
-[doc_json_struct, doc_file_struct, total_size] = ndi.cloud.upload.scanForUpload(S, d, new, dataset_id)
-```
-
-Scans a set of documents for their JSON content and associated binary files, and determines which items still need to be uploaded to the cloud.
-
-**Inputs:**
-- `S` — An `ndi.session` object.
-- `d` — Documents returned by a `database_search` call.
-- `new` — `1` if this is a brand-new dataset with no prior uploads; `0` otherwise.
-- `dataset_id` — The cloud dataset identifier (may be `''` for new datasets).
-
-**Outputs:**
-- `doc_json_struct` — Struct array with fields `docid` and `is_uploaded` for each document.
-- `doc_file_struct` — Struct array with fields `uid`, `name`, `docid`, `bytes`, and `is_uploaded` for each file.
-- `total_size` — Total size (in KB) of files that still need to be uploaded.
+A thin wrapper around `ndi.cloud.uploadDataset`; prefer calling that directly, since it reports success and a message rather than raising, and accepts sync options.
 
 ---
 
@@ -431,7 +398,7 @@ Where:
 | Function | Signature | Description |
 |---|---|---|
 | `ndi.cloud.api.datasets.createDataset` | `createDataset(datasetInfoStruct)` | Creates a new dataset record in the cloud. Returns the new `cloudDatasetID`. |
-| `ndi.cloud.api.datasets.getDataset` | `getDataset(cloudDatasetID)` | Retrieves the full details for a dataset, including its document and file lists. |
+| `ndi.cloud.api.datasets.getDataset` | `getDataset(cloudDatasetID)` | Retrieves a dataset's metadata. The response reports `fileCount` (and a document count) but does **not** embed the file list — use `ndi.cloud.api.files.listFilesAll` to enumerate files. |
 | `ndi.cloud.api.datasets.updateDataset` | `updateDataset(cloudDatasetID, datasetInfoStruct)` | Updates a dataset's metadata. |
 | `ndi.cloud.api.datasets.deleteDataset` | `deleteDataset(cloudDatasetID, 'when', '7d')` | Marks a dataset for deletion. The `when` option specifies when deletion occurs (e.g., `'7d'`, `'now'`). |
 | `ndi.cloud.api.datasets.listDatasets` | `listDatasets('page', P, 'pageSize', PS)` | Lists datasets in the current user's organization. Supports pagination. |
@@ -465,16 +432,34 @@ Where:
 | `ndi.cloud.api.documents.ndiquery` | `ndiquery(scope, query_obj, 'page', P, 'pageSize', PS)` | Executes an `ndi.query` against the cloud database within the given scope (`'public'`, `'private'`, or `'all'`). Returns a paginated result. |
 | `ndi.cloud.api.documents.ndiqueryAll` | `ndiqueryAll(scope, query_obj, 'pageSize', PS)` | Executes an `ndi.query` against the cloud database and automatically paginates to return all matching documents. |
 
+#### Signed URL sets and file uids
+
+The `ndi.cloud.api.files.getSignedURLSet*` functions return the uid → URL
+mapping as a `containers.Map`, not as the struct the server's JSON decodes to. A DID file uid is
+`NUM2HEX(<serial date>) '_' NUM2HEX(<random>)`, so it usually begins with a
+digit, and a MATLAB struct field name cannot. `jsondecode` silently renames such
+fields, so reading uids off the decoded struct would hand back uids that do not
+exist. The client recovers the real uids from the raw payload and pairs them
+with the decoded values; it errors rather than guessing if the two disagree.
+
+Prefer `ndi.cloud.api.files.getSignedURLSetAll` for sets of a few thousand
+files and the asynchronous job (`createSignedURLSetJob` → `waitForSignedURLSetJob`
+→ `getSignedURLSetResult`) for larger ones, where paging is the wrong shape for
+the access pattern. A viewer wants one resident hashmap so that panning a
+pyramid level is an O(1) uid lookup rather than another round trip.
+
+
 ### Files (`ndi.cloud.api.files.*`)
 
 | Function | Signature | Description |
 |---|---|---|
 | `ndi.cloud.api.files.getFileDetails` | `getFileDetails(cloudDatasetID, cloudFileUID)` | Retrieves metadata for a single file, including a pre-signed download URL. |
-| `ndi.cloud.api.files.getFile` | `getFile(downloadURL, downloadedFile, 'useCurl', false)` | Downloads a file from a pre-signed URL and saves it to a local path. Set `useCurl` to `true` to use the system `curl` command as a fallback. |
+| `ndi.cloud.api.files.getFile` | `getFile(downloadURL, downloadedFile, 'useCurl', true)` | Downloads a file from a pre-signed URL and saves it to a local path. `useCurl` defaults to `true` (curl requests identity encoding so already-compressed archives are not corrupted); set it to `false` to use MATLAB's native `websave`. |
 | `ndi.cloud.api.files.getFileUploadURL` | `getFileUploadURL(cloudDatasetID, cloudFileUID)` | Returns a pre-signed URL for uploading a single file. |
 | `ndi.cloud.api.files.getFileCollectionUploadURL` | `getFileCollectionUploadURL(cloudDatasetID)` | Returns a pre-signed URL for uploading a ZIP archive of multiple files. |
-| `ndi.cloud.api.files.putFiles` | `putFiles(preSignedURL, filePath, 'useCurl', false)` | Uploads a local file to a pre-signed URL via HTTP PUT. Set `useCurl` to `true` to use the system `curl` command as a fallback. |
-| `ndi.cloud.api.files.listFiles` | `listFiles(cloudDatasetId, ...)` | Lists all files associated with a dataset, with optional polling for newly uploaded files. |
+| `ndi.cloud.api.files.putFiles` | `putFiles(preSignedURL, filePath, 'useCurl', true)` | Uploads a local file to a pre-signed URL via HTTP PUT. `useCurl` defaults to `true` (consistent S3 object headers); set it to `false` to use MATLAB's native HTTP client. |
+| `ndi.cloud.api.files.listFiles` | `listFiles(cloudDatasetId, 'limit', L, 'after', cursor)` | Lists a single keyset page of a dataset's files. Returns the page plus a `cursor`/`hasMore` envelope; pass `cursor` back as `after` for the next page. |
+| `ndi.cloud.api.files.listFilesAll` | `listFilesAll(cloudDatasetId, 'limit', L)` | Lists **all** of a dataset's files by following the keyset cursor across pages, with optional polling for newly uploaded files. The whole-dataset counterpart to `listFiles`. |
 
 ### Compute (`ndi.cloud.api.compute.*`)
 

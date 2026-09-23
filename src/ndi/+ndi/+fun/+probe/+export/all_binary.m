@@ -95,12 +95,10 @@ function all_binary(S, options)
     end;
 
     for p=1:numel(probe_list),
-        elestr = probe_list{p}.elementstring();
         if verbose,
-            disp(['Now working on probe ' elestr '.']);
+            disp(['Now working on probe ' probe_list{p}.elementstring() '.']);
         end;
-        elestr(find(elestr==' ')) = '_';
-        this_path = [binary_path filesep elestr];
+        this_path = ndi.fun.file.elementDirectory(binary_path, probe_list{p});
         if ~isfolder(this_path),
             mkdir(this_path);
         end;

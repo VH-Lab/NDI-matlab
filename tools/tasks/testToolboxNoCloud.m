@@ -53,6 +53,14 @@ function testToolboxNoCloud(varargin)
     createTestResultBadge(results, projectRootDir)
     displayTestResultSummary(results)
 
+    % Guard against a silently-empty suite. assertSuccess() on an empty
+    % TestResult array does NOT fail, so a build where test discovery found
+    % nothing would otherwise report success (and publish a green badge). Fail
+    % explicitly instead. createTestResultBadge above has already written a
+    % non-green "no tests" badge for this case.
+    assert(numel(results) > 0, 'NDI:test:noTestsDiscovered', ...
+        'Test discovery found no tests to run; failing rather than reporting success.');
+
     results.assertSuccess();
 end
 
@@ -78,16 +86,10 @@ function createTestResultBadge(results, projectRootDir)
     numPassedTests = sum([results.Passed]);
     numFailedTests = sum([results.Failed]);
 
-    if numFailedTests == 0
-        color = "green";
-        message = sprintf("%d passed", numPassedTests);
-    elseif numFailedTests / numTests < 0.05
-        color = "yellow";
-        message = sprintf("%d/%d passed", numPassedTests, numTests);
-    else
-        color = "red";
-        message = sprintf("%d/%d passed", numPassedTests, numTests);
-    end
+    % Decision logic (including the zero-tests -> non-green guard) is factored
+    % into nditools.testBadgeColorMessage so it can be unit-tested.
+    [color, message] = nditools.testBadgeColorMessage(...
+        numTests, numPassedTests, numFailedTests);
     matbox.utility.createBadgeSvg("tests", message, color, projectRootDir)
 end
 

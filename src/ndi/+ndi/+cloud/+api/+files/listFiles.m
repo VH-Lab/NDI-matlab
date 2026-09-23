@@ -1,24 +1,26 @@
-function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
-% LISTFILES Lists all files associated with a given dataset
+function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetID, args)
+% LISTFILES Lists one keyset page of files associated with a given dataset.
 %
-%   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.listFiles(CLOUDDATASETID, OPTIONS)
+%   [B, ANSWER, APIRESPONSE, APIURL] = ndi.cloud.api.files.listFiles(CLOUDDATASETID, 'limit', L, 'after', CURSOR)
 %
-%   Retrieves a list of all files within a specified cloud dataset.
+%   Retrieves a single keyset-paginated page of file summaries from a cloud
+%   dataset. To retrieve the complete file list across all pages, use
+%   ndi.cloud.api.files.listFilesAll.
 %
 %   Inputs:
-%       cloudDatasetId      - The unique identifier for the cloud dataset.
-%       options             - A struct with the following optional fields:
-%           checkForUpdates - If true, the function will check for new files that
-%                             were added while it was running. Default is false.
-%           waitForUpdates  - The time in seconds to wait before re-checking for
-%                             updates. Default is 10.
-%           maximumNumberUpdateReads - The maximum number of times to re-poll for
-%                                      updates. Default is 100.
+%       cloudDatasetID  - The unique identifier for the cloud dataset.
+%   Name-Value Inputs:
+%       limit           - (Optional) Maximum number of results in the page.
+%                         Default is 1000.
+%       after           - (Optional) Opaque keyset cursor from a previous page's
+%                         response envelope. Omit (or "") for the first page.
 %
 %   Outputs:
 %       b                   - True if the API call was successful, false otherwise.
-%       answer              - A struct array with file details, or an error
-%                             structure from the server.
+%       answer              - A struct array with this page's file details, or an
+%                             error structure from the server. The page envelope
+%                             (cursor, hasMore, totalNumber, files) is available
+%                             in APIRESPONSE.Body.Data.
 %       apiResponse         - The full matlab.net.http.ResponseMessage object.
 %       apiURL              - The URL that was called.
 %
@@ -29,30 +31,29 @@ function [b, answer, apiResponse, apiURL] = listFiles(cloudDatasetId, options)
 %       size                - The file size in bytes.
 %
 %   Example:
-%       [s, files] = ndi.cloud.api.files.listFiles('d-12345', ...
-%           'checkForUpdates', false);
-%       if s
-%           disp(['Found ' num2str(numel(files)) ' files.']);
-%       end
+%       % Get the first page of files
+%       [s, files, resp] = ndi.cloud.api.files.listFiles('d-12345');
 %
-%   See also: ndi.cloud.api.implementation.files.ListFiles,
-%             ndi.cloud.api.datasets.getDataset
+%       % Get the next page using the cursor from the previous response
+%       [s, files2] = ndi.cloud.api.files.listFiles('d-12345', ...
+%           'after', resp.Body.Data.cursor, 'limit', 50);
+%
+%   See also: ndi.cloud.api.files.listFilesAll,
+%             ndi.cloud.api.implementation.files.ListFiles
 %
     arguments
-        cloudDatasetId (1,1) string
-        options.checkForUpdates (1,1) logical = false
-        options.waitForUpdates (1,1) {mustBeNumeric} = 10
-        options.maximumNumberUpdateReads (1,1) {mustBeNumeric} = 100
+        cloudDatasetID (1,1) string
+        args.limit (1,1) double = 1000
+        args.after (1,1) string = ""
     end
 
-    % 1. Create an instance of the implementation class
+    % 1. Create an instance of the implementation class.
     api_call = ndi.cloud.api.implementation.files.ListFiles(...
-        'cloudDatasetId', cloudDatasetId, ...
-        'checkForUpdates', options.checkForUpdates, ...
-        'waitForUpdates', options.waitForUpdates, ...
-        'maximumNumberUpdateReads', options.maximumNumberUpdateReads);
+        'cloudDatasetID', cloudDatasetID, ...
+        'limit', args.limit, ...
+        'after', args.after);
 
-    % 2. Call the execute method and return its outputs directly
+    % 2. Call the execute method and return its outputs directly.
     [b, answer, apiResponse, apiURL] = api_call.execute();
 
 end

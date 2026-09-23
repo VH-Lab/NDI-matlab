@@ -22,9 +22,9 @@ classdef FilesDifficult < matlab.unittest.TestCase
             % This fatal assertion runs once before any tests in this class.
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.fatalAssertNotEmpty(username, ...
+            testCase.assertNotEmpty(username, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_USERNAME environment variable is not set. This is not an API problem.');
-            testCase.fatalAssertNotEmpty(password, ...
+            testCase.assertNotEmpty(password, ...
                 'LOCAL CONFIGURATION ERROR: The NDI_CLOUD_PASSWORD environment variable is not set. This is not an API problem.');
         end
     end
@@ -42,7 +42,7 @@ classdef FilesDifficult < matlab.unittest.TestCase
             if ~b
                 setup_narrative = "TestMethodSetup: Failed to create temporary dataset " + unique_name;
                 msg = ndi.unittest.cloud.APIMessage(setup_narrative, b, cloudDatasetID, resp, url);
-                testCase.fatalAssertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
+                testCase.assertTrue(b, "Failed to create dataset in TestMethodSetup. " + msg);
             end
             testCase.DatasetID = cloudDatasetID;
             testCase.addTeardown(@() testCase.deleteDatasetAfterTest());
@@ -130,7 +130,7 @@ classdef FilesDifficult < matlab.unittest.TestCase
 
             % Step 3.5: Verify the file appears in the dataset's file list
             narrative(end+1) = "Preparing to check dataset file list for the newly uploaded file." + " at " + string(datetime('now','TimeZone','UTC'));
-            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFiles(testCase.DatasetID, 'checkForUpdates', true);
+            [b_list, file_list, resp_list, url_list] = ndi.cloud.api.files.listFilesAll(testCase.DatasetID, 'checkForUpdates', true);
             narrative(end+1) = "Attempted to call API with URL " + string(url_list) + " at " + string(datetime('now','TimeZone','UTC'));
             msg_list = ndi.unittest.cloud.APIMessage(narrative, b_list, file_list, resp_list, url_list);
             narrative(end+1) = "Testing: Verifying that listFiles call was successful." + " at " + string(datetime('now','TimeZone','UTC'));

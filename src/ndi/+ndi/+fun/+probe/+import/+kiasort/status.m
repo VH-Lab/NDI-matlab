@@ -6,7 +6,13 @@ function s = status(S, probe, options)
 % Reports where PROBE stands in the KIASORT pipeline for the ndi.session S_SESSION,
 % by checking for the files each step produces. Returns a struct S with fields:
 %
-%   directory        - [S.path]/[kiasort_dir]/[probe_elementstring]
+%   directory        - [S.path]/[kiasort_dir]/[probe_directory]
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 %   output_directory - the KIASORT output subfolder (holds RES_Sorted)
 %   exported         - true if the exported binary exists (ready to run)
 %   run              - true if KIASORT results exist (RES_Sorted/spike_idx.h5)
@@ -31,10 +37,7 @@ function s = status(S, probe, options)
         options.subdir (1,:) char = 'kiasort_output'
     end
 
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
-
-    d = fullfile(S.path, options.kiasort_dir, elestr);
+    d = ndi.fun.file.elementDirectory(fullfile(S.path, options.kiasort_dir), probe);
     res = fullfile(d, options.subdir, 'RES_Sorted');
 
     s = struct();

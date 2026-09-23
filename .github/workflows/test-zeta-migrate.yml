@@ -9,9 +9,11 @@ name: V_zeta migrate (stimulus_bath end-to-end)
 # This job assembles that environment and runs the gated TestMigrateLocalZeta
 # (which skips everywhere else).
 #
-# Dep refs track the matching feature branch via github.head_ref (the DID-matlab
-# and did-schema V_zeta branches share the NDI branch name); revert the
-# fallbacks to V2 / main once the V_zeta branches merge.
+# Dep refs default to DID-matlab@V2 and did-schema@main -- both carry the
+# V_zeta content today (post DID-matlab#205 merge; V_zeta schemas landed on
+# did-schema main). If a topic branch on both repos needs to co-develop,
+# pass workflow_dispatch's `ref` input rather than relying on head_ref match,
+# which fails for Vnext-side sync PRs (head_ref does not exist on DID).
 
 on:
   pull_request:
@@ -36,8 +38,8 @@ jobs:
     name: V_zeta stimulus_bath migration
     runs-on: ubuntu-latest
     env:
-      DID_MATLAB_REF: ${{ inputs.ref || github.head_ref || 'V2' }}
-      DID_SCHEMA_REF: ${{ inputs.ref || github.head_ref || 'main' }}
+      DID_MATLAB_REF: ${{ inputs.ref || 'V2' }}
+      DID_SCHEMA_REF: ${{ inputs.ref || 'main' }}
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4

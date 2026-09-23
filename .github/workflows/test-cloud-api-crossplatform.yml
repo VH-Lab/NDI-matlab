@@ -60,6 +60,7 @@ jobs:
             setenv("GITHUB_TOKEN", "${{ github.token }}")
             setenv("CLOUD_API_ENVIRONMENT", "${{ inputs.environment }}")
             setenv("NDI_CLOUD_TEST_USER_HAS_MATLAB_LICENSE", "false")
+            setenv("NDI_CLOUD_TEST_ORGANIZATION_ID", "${{ secrets.NDI_CLOUD_TEST_ORGANIZATION_ID }}")
             addpath(genpath( "src" ));
             addpath(genpath( "tests" ));
             addpath(genpath( "tools" ));

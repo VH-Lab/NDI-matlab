@@ -10,7 +10,13 @@ function [info, summary] = getInfo(S, probe, options)
 %
 % The directory is located the same way as the importer:
 %
-%       [S.path]/[kiasort_dir]/[probe_elementstring]/[subdir]/
+%       [S.path]/[kiasort_dir]/[probe_directory]/[subdir]/
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 %
 % INFO is a structure with fields:
 %   directory          - the KIASORT output directory that was read
@@ -62,13 +68,12 @@ function [info, summary] = getInfo(S, probe, options)
     end
 
     % Step 1: locate the KIASORT output directory (same logic as the importer)
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
+    probedir = ndi.fun.file.elementDirectory(fullfile(S.path, options.kiasort_dir), probe);
     subdir = options.subdir;
     if options.noSubFolder,
         subdir = '';
     end;
-    kdir = fullfile(S.path, options.kiasort_dir, elestr, subdir);
+    kdir = fullfile(probedir, subdir);
 
     if ~isfolder(fullfile(kdir,'RES_Sorted')),
         error(['KIASORT RES_Sorted folder not found in ' kdir '.']);

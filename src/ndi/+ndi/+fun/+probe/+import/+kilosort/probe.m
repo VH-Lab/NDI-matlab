@@ -17,7 +17,13 @@ function probe(S, probe, options)
 % NDI.FUN.PROBE.EXPORT.BINARY: it expects the Kilosort output to live in the same
 % directory the binary was exported to, namely
 %
-%       [S.path]/[kilosort_dir]/[probe_elementstring]/[subdir]/
+%       [S.path]/[kilosort_dir]/[probe_directory]/[subdir]/
+%
+%   The [probe_directory] name comes from ndi.fun.file.elementDirectoryName;
+%   for a probe named 'ctx' with reference 1 it is 'ctx_-_1'. Folders written
+%   by older versions of NDI, which used a '|' separator ('ctx_|_1'), are still
+%   found and used if they are present.
+%
 %
 % (spaces in the element string are replaced by underscores, matching the export).
 % By default 'subdir' is 'kilosort_output', so the curated files are expected in
@@ -223,13 +229,12 @@ function probe(S, probe, options)
 
     % Step 1: locate the kilosort output directory (mirror of the export layout)
 
-    elestr = probe.elementstring();
-    elestr(elestr==' ') = '_';
+    [probedir, elestr] = ndi.fun.file.elementDirectory(fullfile(S.path, options.kilosort_dir), probe);
     subdir = options.subdir;
     if options.noSubFolder,
         subdir = '';
     end;
-    kdir = fullfile(S.path, options.kilosort_dir, elestr, subdir);
+    kdir = fullfile(probedir, subdir);
 
     if ~isfolder(kdir),
         error(['Kilosort directory not found: ' kdir '. Was the data exported with ndi.fun.probe.export.all_binary?']);
@@ -472,7 +477,7 @@ function probe(S, probe, options)
     if ~dryRun,
         kc = ndi.document('kilosort_clusters','app',app_struct, ...
             'base.session_id', S.id(), ...
-            'kilosort_clusters.kilosort_directory', [options.kilosort_dir filesep elestr], ...
+            'kilosort_clusters.kilosort_directory', [options.kilosort_dir '/' elestr], ...
             'kilosort_clusters.curated_output_MD5_checksum', md5_value);
         kc = kc.set_dependency_value('element_id', probe.id());
         S.database_add(kc);

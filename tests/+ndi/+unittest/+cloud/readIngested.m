@@ -41,7 +41,7 @@ classdef readIngested < matlab.unittest.TestCase
             testCase.Dataset = ndi.cloud.downloadDataset(testCase.CloudDatasetId, testCase.TargetDir);
 
             [~, sess_ids] = testCase.Dataset.session_list();
-            testCase.fatalAssertNumElements(sess_ids, 1, ...
+            testCase.assertNumElements(sess_ids, 1, ...
                 'Expected exactly one session in the dataset.');
 
             testCase.Session = testCase.Dataset.open_session(sess_ids{1});
@@ -60,7 +60,7 @@ classdef readIngested < matlab.unittest.TestCase
     methods (Test)
         function testReadCarbonFiberProbe(testCase)
             p_cf = testCase.Session.getprobes('name', 'carbonfiber', 'reference', 1);
-            testCase.fatalAssertNumElements(p_cf, 1, ...
+            testCase.assertNumElements(p_cf, 1, ...
                 'Expected exactly one carbonfiber probe with reference 1.');
 
             [d1, t1] = p_cf{1}.readtimeseries(1, 10, 20);
@@ -79,7 +79,7 @@ classdef readIngested < matlab.unittest.TestCase
 
         function testReadStimulatorProbe(testCase)
             p_st = testCase.Session.getprobes('type', 'stimulator');
-            testCase.fatalAssertNotEmpty(p_st, ...
+            testCase.assertNotEmpty(p_st, ...
                 'Expected at least one stimulator probe.');
 
             [ds, ts, ~] = p_st{1}.readtimeseries(1, 10, 20);

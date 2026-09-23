@@ -114,7 +114,8 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 % blech_poisson_hmm.py). This function writes exactly what that code reads:
 %
 %   /spike_trains/dig_in_<N>/spike_array   uint8 (n_trials x n_units x
-%                                          duration_ms); 1 = spike in that
+%                                          duration_ms) AS BLECH_CLUST READS
+%                                          IT in Python; 1 = spike in that
 %                                          ms. Delivery is at column preStim.
 %                                          One group per tastant; N encodes
 %                                          identity. Group attributes record
@@ -125,6 +126,16 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 %   /unit_descriptor                       compound table with Int32 columns
 %                                          single_unit, regular_spiking,
 %                                          fast_spiking (one row per unit).
+%
+% AXIS ORDER: MATLAB (column-major) and h5py/numpy (row-major) index HDF5
+% datasets in opposite orders, so a dataset written from MATLAB with
+% dimensions [d1 d2 d3] is reported by Python as shape (d3, d2, d1). The
+% shapes quoted above are the Python/blech_clust view, which is the contract
+% that matters; spike_array is written so that Python sees exactly
+% (n_trials, n_units, duration_ms). Reading the same dataset back with
+% MATLAB's h5read therefore yields the reverse, [duration_ms n_units
+% n_trials] -- that is correct, not a bug, and no transpose should be applied
+% on the Python side. (Issue #855.)
 %
 % USING THE OUTPUT FILE WITH BLECH_CLUST
 % --------------------------------------------------------------------------
@@ -162,9 +173,12 @@ function blech_clust(stimulator, probe, epochID, outputfile, options)
 %        posterior_proba    (n_trials x time_bins x n_states) state
 %                           probabilities over time
 %        log_likelihood, aic, bic, time
-%    In MATLAB, e.g.:
+%    Those shapes are again the Python view; the same reversal applies when
+%    reading the results in MATLAB, e.g.:
 %        pp = h5read('/tmp/mydata.h5', ...
 %             '/spike_trains/dig_in_0/generic_poisson_hmm_results/states_3/posterior_proba');
+%        % pp is [n_states x time_bins x n_trials]; permute(pp,[3 2 1]) gives
+%        % the (n_trials, time_bins, n_states) layout blech reports.
 %
 % The HMM is fit to one taste at a time (taste_num); repeat step 2-3 per
 % dig_in_<N> to analyze every tastant. The ensemble-state HMM methodology is
