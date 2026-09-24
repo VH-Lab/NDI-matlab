@@ -56,7 +56,10 @@ jobs:
     # so the ceiling is set well above the expected wall clock.
     timeout-minutes: 180
     env:
-      DID_MATLAB_REF: ${{ inputs.ref || github.head_ref || github.ref_name }}
+      # DID-matlab's V_eta migrators merged to V2 (#151, 2026-09-23); validate
+      # the cross-repo wiring against V2 so this resolves after the shared topic
+      # branch is deleted. A workflow_dispatch input still overrides.
+      DID_MATLAB_REF: ${{ inputs.ref || 'V2' }}
       # V_eta lives on did-schema `main` since #64 merged (2026-09-23) and the
       # shared topic branch was deleted; validate against main.
       DID_SCHEMA_REF: main
