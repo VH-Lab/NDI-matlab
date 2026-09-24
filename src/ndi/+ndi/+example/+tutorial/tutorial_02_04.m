@@ -123,23 +123,20 @@ function tutorial_02_04(prefix, testing)
     % Code block 2.4.5.1
     disp(['Code block 2.4.5.1:']);
 
-    oapp = ndi.app.oridirtuning(S);
-
-    for i=1:2
-        tdoc{i} = oapp.calculate_all_tuning_curves(e{i},'Replace'); % replace any existing
-        oriprops{i} = oapp.calculate_all_oridir_indexes(e{i},'Replace'); % this takes a few minutes
-    end
+    thecalc = ndi.calc.vis.oridir_tuning(S);
+    parameters = thecalc.default_search_for_input_parameters();
+    oriprops = thecalc.run('Replace', parameters); % this takes a few minutes
 
     % Code block 2.4.5.2
     disp(['Code block 2.4.5.2:']);
 
     % see all the categories
-    oriprops{1}{1}{1}.document_properties.orientation_direction_tuning
+    oriprops{1}.document_properties.orientation_direction_tuning
     % see the property information
-    oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.properties
+    oriprops{1}.document_properties.orientation_direction_tuning.properties
     % see significance. Responses across orientation are very significant:
-    oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.significance
+    oriprops{1}.document_properties.orientation_direction_tuning.significance
     % fit parameters:
-    oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.fit
+    oriprops{1}.document_properties.orientation_direction_tuning.fit
     % vector tuning parameters:
-    oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.vector
+    oriprops{1}.document_properties.orientation_direction_tuning.vector

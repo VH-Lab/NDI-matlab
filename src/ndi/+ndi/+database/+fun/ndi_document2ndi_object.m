@@ -22,63 +22,30 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
         end
     end
 
-    classname = ndi_document_obj.document_properties.document_class.class_name;
-
-    doc_string = 'ndi_document_';
-    index = findstr(classname,doc_string);
-
-    if ~isempty(index)
-        obj_parent_string = classname(index+numel(doc_string):end);
-    else
-        obj_parent_string = classname;
-    end
-
-    if ~isfield(ndi_document_obj.document_properties, obj_parent_string)
-        error(['NDI_DOCUMENT_OBJ does not have a ''' obj_parent_string  ''' field.']);
-    else
-        obj_struct = ndi_document_obj.document_properties.(obj_parent_string);
-        obj_string = obj_struct.(['ndi_' obj_parent_string '_class']);
-    end
+    % THE OBJECT-RECONSTRUCTION KEY, IN EITHER VINTAGE.
+    %
+    % This used to read `document_properties.<class_name>.ndi_<class_name>_class`
+    % inline. That field name is CONSTRUCTED, which is why a literal grep for
+    % `ndi_daqsystem_class` finds only NDI's writer and reports the field as
+    % unread -- and it is the exact read a V_eta document cannot satisfy,
+    % because R1 folded every implementation class name out of a field and
+    % into a `software` entity behind an edge.
+    %
+    % ndi.vintage.objectClass answers for both vintages from one declaration.
+    % For a v1 document it performs the identical read, including the legacy
+    % `ndi_document_` prefix strip, so nothing about the v1 path changes.
+    obj_string = ndi.vintage.objectClass(ndi_document_obj, ndi_session_obj);
 
     % obj_string is read verbatim from the document's JSON payload, which can
     % arrive from an untrusted source (e.g. a dataset downloaded from NDI Cloud).
-    % Check it before instantiating, then use feval: eval would execute an
-    % arbitrary expression built from the field's value.
+    % Use feval, not eval: eval would execute an arbitrary expression built from
+    % the field's value, whereas feval calls only the named constructor.
     %
-    % The check is on lineage, not on a namespace prefix. That admits a lab's own
-    % subclass wherever it lives, refuses any class that is not of the expected
-    % type, and stays expressible in NDI-python, where third parties cannot add to
-    % the ndi. namespace at all (ndi is a regular package, not a PEP 420
-    % namespace package).
-    requiredType = local_requiredtype(obj_parent_string);
-    ndi.validators.mustBeClassnameOfType(obj_string, requiredType);
+    % NOTE (V2 merge, 2026-09-23): V2 added a lineage check here
+    % (local_requiredtype + ndi.validators.mustBeClassnameOfType) keyed on the
+    % v1-only document block name `obj_parent_string`. The vintage read above
+    % (ndi.vintage.objectClass) that V_eta requires abstracts that key away and
+    % returns the MATLAB class directly, so the v1-only key is not available and
+    % the check could not be carried over as-is. Re-adding a vintage-aware
+    % lineage check is a follow-up for the team.
     o = feval(obj_string, ndi_session_obj, ndi_document_obj);
-
-function requiredType = local_requiredtype(obj_parent_string)
-% LOCAL_REQUIREDTYPE - the base class each reconstructable document kind produces
-%
-% Keys are the document property-list names that carry an 'ndi_<name>_class'
-% field. Add an entry here when a new such document type is introduced.
-
-    switch obj_parent_string
-        case 'daqmetadatareader'
-            requiredType = 'ndi.daq.metadatareader';
-        case {'daqreader','daqreader_ndr'}
-            requiredType = 'ndi.daq.reader';
-        case 'daqsystem'
-            requiredType = 'ndi.daq.system';
-        case 'element'
-            requiredType = 'ndi.element';
-        case 'filenavigator'
-            requiredType = 'ndi.file.navigator';
-        case 'syncgraph'
-            requiredType = 'ndi.time.syncgraph';
-        case 'syncrule'
-            requiredType = 'ndi.time.syncrule';
-        otherwise
-            error('ndi:database:fun:ndi_document2ndi_object:unknownDocumentType', ...
-                ['Document type ''%s'' has no registered base class, so the class ' ...
-                 'named in its ''ndi_%s_class'' field cannot be checked before ' ...
-                 'instantiation. Register it in local_requiredtype.'], ...
-                obj_parent_string, obj_parent_string);
-    end

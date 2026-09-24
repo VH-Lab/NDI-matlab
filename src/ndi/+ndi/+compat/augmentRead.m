@@ -10,14 +10,13 @@ function body = augmentRead(body)
 %   database layer has normalised the stored body to V_delta on read
 %   (see ndi.database.internal.applyReadNormalization).
 %
-%   Field-level rows in the alias table cover the four classes whose
-%   shape changed between did_v1 and V_delta:
-%     probe_location, treatment, ontology_image, ontology_label.
-%   The ontology_label row is composite: V_delta `ontology_label.term.node`
-%   is the CURIE composed from did_v1 `ontology_name` + `label_id`. The
-%   transform function in the alias table handles the decompose direction
-%   used here.
-%
+%   Field-level rows in the alias table cover the two classes whose
+%   shape genuinely changed between did_v1 and V_delta:
+%     probe_location, treatment.
+%   ontology_image and ontology_label USED to be listed here. Their rows
+%   were fabricated -- both templates have only ever carried `ontologyNode`,
+%   never `ontology_name`/`ontology_region`/`label_id`/`label` -- so they
+%   could never fire on a real document. See ndi.compat.fieldAliases.
 %   Note: `depends_on` is NOT touched here. Cross-document references
 %   use only the V_delta canonical entry shape `{name, document_id}`
 %   on the body. Compatibility for callers that read or write

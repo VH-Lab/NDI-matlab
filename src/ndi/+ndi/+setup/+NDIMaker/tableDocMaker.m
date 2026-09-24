@@ -94,6 +94,14 @@ classdef tableDocMaker < handle
             %
             %   Optional Name-Value Arguments:
             %       dependencyVariable: Variable(s) used to establish NDI document dependencies.
+            %                 Each named column becomes a 'document_id' edge AND is still
+            %                 recorded in 'names'/'variableNames'/'ontologyNodes'/'data'
+            %                 like any other column, so the edge can be traced back to the
+            %                 column that produced it: the referent's id appears in 'data'
+            %                 under that column's ontology short name. A dependency column
+            %                 with no entry in the variable map is an ERROR
+            %                 ('tableDocMaker:DependencyVariableNotMapped'), not a skipped
+            %                 column -- see the comment at the varNames block below.
             %       Overwrite: Controls behavior if a document matching the 'identifyingVariables' is found:
             %                   - true: The existing document is removed.
             %                   - false (default): The existing document is returned.
@@ -167,10 +175,39 @@ classdef tableDocMaker < handle
                 end
             end
 
-            % Get variable (column) names from table and filter out dependencies
+            % Get variable (column) names from table. THE DEPENDENCY COLUMNS
+            % ARE KEPT.
+            %
+            % They used to be deleted here:
+            %
+            %     varNames(ismember(varNames,dependencyVariable)) = [];
+            %
+            % and that one line is what made this class's `document_id` edges
+            % ANONYMOUS BY CONSTRUCTION. `names`, `variableNames`,
+            % `ontologyNodes` and `data` are ALL built from `varNames` below,
+            % after the deletion, while the edges are added afterwards from the
+            % same columns. A row naming several referents therefore stored
+            % `document_id_1..n` with no surviving record of which column
+            % produced which edge -- not in `data`, not in `variableNames`, not
+            % in `ontologyNodes` -- so a consumer could not tell a subject edge
+            % from an edge to anything else.
+            %
+            % Keeping the column puts the referent's id back into `data` under
+            % that column's ontology short name, alongside the column's full
+            % name in `names` and its CURIE in `ontologyNodes` at the same
+            % index. A consumer holding an edge value looks up the `data` field
+            % whose value IS that id; that field name is the column. The join
+            % is by VALUE, so it does not depend on the order of the edges or
+            % on the order of the columns.
+            %
+            % This adds NO field: the class declares exactly `names`,
+            % `variableNames`, `ontologyNodes` and `data`
+            % (ndi_common/database_documents/data/ontologyTableRow.json), and
+            % all four already carry per-column entries. The edges themselves
+            % are untouched -- same values, same order, same count.
             varNames = tableRow.Properties.VariableNames;
-            varNames(ismember(varNames,dependencyVariable)) = [];
-            
+            isDependencyCol = ismember(varNames,dependencyVariable);
+
             % Initialize ontologyTableRow field names
             names = cell(numel(varNames),1); 
             variableNames = cell(numel(varNames),1);
@@ -184,6 +221,27 @@ classdef tableDocMaker < handle
                     termName = obj.variableMapStruct.(varNames{i});
                 catch ME
                     if strcmpi(ME.identifier,'MATLAB:nonExistentField')
+                        if isDependencyCol(i)
+                            % A DEPENDENCY COLUMN THAT CANNOT BE MAPPED CANNOT
+                            % SURVIVE, and skipping it silently is the defect
+                            % this method was just repaired for: the edge would
+                            % be written with nothing left to identify it. An
+                            % import that stops is recoverable; a corpus of
+                            % undecidable documents is not, because repairing
+                            % the writer does not reach documents already
+                            % written. So stop, and name the column and the
+                            % file that must gain the entry.
+                            error('tableDocMaker:DependencyVariableNotMapped',...
+                                ['Dependency variable ''%s'' has no entry in the ' ...
+                                'variable map %s. A dependency column must be ' ...
+                                'mappable: its ontology short name is what ' ...
+                                'identifies the `document_id` edge it produces, ' ...
+                                'and without it the edge is anonymous. Add an ' ...
+                                'entry for ''%s'' (a document-identifier column ' ...
+                                'is conventionally "EMPTY:subject document ' ...
+                                'identifier") and re-run.'],...
+                                varNames{i}, obj.variableMapFilename, varNames{i});
+                        end
                         warning(ME.identifier,'%s Skipping.',ME.message)
                         invalidInd(i) = true;
                         continue

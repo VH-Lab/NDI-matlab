@@ -18,7 +18,21 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             parameters = [];
             if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
-                parameters = varargin{2}.document_properties.syncrule.parameters;
+                % BOTH VINTAGES, and this one is not a rename. V_eta
+                % EXPLODES the `parameters` bag: four entries become typed
+                % fields on `clock_alignment_configuration`, the device
+                % pair moves out into two `acquisition_channels`
+                % documents, and `errorOnFailure` is dropped outright. The
+                % v1 read below is what ndi.vintage.syncruleParameters
+                % performs unchanged for a v1 document, so nothing about
+                % the old path moves.
+                %
+                % `class(ndi_syncrule_obj)` is the CONCRETE SUBCLASS here
+                % even though this is the superclass constructor, which is
+                % what lets the reconstruction build the exact parameter
+                % set that subclass's `isvalidparameters` demands.
+                parameters = ndi.vintage.syncruleParameters(varargin{2}, ...
+                    varargin{1}, class(ndi_syncrule_obj));
                 ndi_syncrule_obj.identifier = varargin{2}.document_properties.base.id;
             elseif nargin >0
                 parameters = varargin{1};

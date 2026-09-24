@@ -38,7 +38,23 @@ classdef ndr < ndi.daq.reader.mfdaq
                 end
             elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
-                obj.ndr_reader_string = varargin{2}.document_properties.daqreader_ndr.ndr_reader_string;
+                % BOTH VINTAGES. The v1 class `daqreader_ndr` does not
+                % survive: it dissolves into `daqreader`, which V_eta then
+                % emits as `acquisition_reader`, and the field travels with
+                % it (+migrators_j/daqreader_ndr.m: "ndr_reader_string ->
+                % daqreader.reader_string"). So the block this used to
+                % index by name is absent on a migrated document and the
+                % read failed with a bare "Unrecognized field name".
+                [v, found] = ndi.vintage.field(varargin{2}, 'ndr_reader_string');
+                if ~found
+                    error('NDI:daqreaderndr:noReaderString', ...
+                        ['document %s carries no reader string under ' ...
+                         'either spelling (v1 ' ...
+                         'daqreader_ndr.ndr_reader_string, V_eta ' ...
+                         'acquisition_reader.reader_string)'], ...
+                        varargin{2}.document_properties.base.id);
+                end
+                obj.ndr_reader_string = v;
                 finished = 1;
             else
                 error(['Unknown arguments.']);

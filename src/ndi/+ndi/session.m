@@ -91,7 +91,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
             sq = dev.searchquery();
             search_result = ndi_session_obj.database_search(sq);
-            sq1 = ndi.query('','isa','daqsystem','') & ...
+            % BOTH VINTAGES here too, and for a different reason than the
+            % lookup in daqsystem_load: this is the DUPLICATE check on add.
+            % Blind to `acquisition_system`, it would report "no match" for a
+            % rig the migrated session already holds and add a second one.
+            sq1 = ndi.vintage.isaQuery('daqsystem') & ...
                 ndi.query('base.name','exact_string',dev.name,'');
             search_result1 = ndi_session_obj.database_search(sq1);
             if (numel(search_result) == 0) & (numel(search_result1) == 0)
@@ -162,7 +166,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
             %
             dev = {};
-            q1 = ndi.query('','isa','daqsystem','');
+            % BOTH VINTAGES. V_eta renames `daqsystem` to `acquisition_system`,
+            % and `isa` cannot bridge that -- acquisition_system's chain is
+            % [entity], with no `daqsystem` in it. An `isa daqsystem` query
+            % against a migrated session therefore matched nothing and this
+            % function returned {} with no error, which reads exactly like a
+            % session that has no daq systems.
+            q1 = ndi.vintage.isaQuery('daqsystem');
             q2 = ndi.query('base.session_id','exact_string',ndi_session_obj.id(),'');
             q = q1 & q2;
             if numel(varargin)>0
@@ -717,7 +727,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             end
             probestruct = vlt.data.equnique(probestruct);
 
+            % BOTH VINTAGES. v1 keeps the class name in a field on the
+            % element document; a migrated one keeps it in an inbound
+            % `ndi element class` assertion, which is where the
+            % contains_string 'probe' test now runs (in the database, not
+            % over everything in MATLAB).
             existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
+            existing_probes = [existing_probes(:); ...
+                ndi.vintage.elementSubjectDocs(ndi_session_obj, 'probe')];
             existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
             subjectlist.a = 0;
             for i=1:numel(existing_subjects)
@@ -806,6 +823,20 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 end
             end
             doc = ndi_session_obj.database_search(q_E&q_t);
+
+            % BOTH VINTAGES. A migrated element is a `subject` carrying an
+            % inbound `ndi element class` assertion, so `isa element`
+            % cannot find it -- and bridging onto `isa subject` would hand
+            % back every animal in the session as an element. The two-step
+            % lookup is in ndi.vintage.elementSubjectDocs; see there for
+            % why it cannot be one query.
+            %
+            % The two searches are UNIONED rather than switched between: a
+            % session can hold both vintages at once (NDI still writes v1),
+            % and a document found twice is impossible because the class
+            % names are disjoint.
+            doc = [doc(:); ndi.vintage.elementSubjectDocs(ndi_session_obj)];
+
             elements = {};
             for i=1:numel(doc)
                 elements{i} = ndi.database.fun.ndi_document2ndi_object(doc{i}, ndi_session_obj);

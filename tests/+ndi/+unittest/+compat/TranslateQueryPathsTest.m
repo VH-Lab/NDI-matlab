@@ -30,38 +30,12 @@ classdef TranslateQueryPathsTest < matlab.unittest.TestCase
             testCase.verifyEqual(out.field, 'treatment.treatment_name.node');
         end
 
-        function test_ontology_image_rewritten(testCase)
-            ss = i_ss('ontology_image.ontology_name', 'exact_string', 'uberon:0002435');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'ontology_image.region.node');
-        end
 
-        function test_ontology_image_region_rewritten(testCase)
-            ss = i_ss('ontology_image.ontology_region', 'exact_string', 'striatum');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'ontology_image.region.name');
-        end
 
-        function test_ontology_label_label_rewritten(testCase)
-            ss = i_ss('ontology_label.label', 'exact_string', 'primary visual area');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'ontology_label.term.name');
-        end
 
         % ---- composite legacy paths collapse to one V_delta path ----
 
-        function test_ontology_label_composite_ontology_name(testCase)
-            % Composite row: both legacy paths point at term.node.
-            ss = i_ss('ontology_label.ontology_name', 'exact_string', 'allen_ccf_v3');
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'ontology_label.term.node');
-        end
 
-        function test_ontology_label_composite_label_id(testCase)
-            ss = i_ss('ontology_label.label_id', 'exact_number', 12345);
-            out = ndi.compat.translateQueryPaths(ss);
-            testCase.verifyEqual(out.field, 'ontology_label.term.node');
-        end
 
         % ---- depends_on substring rewrites ----
 

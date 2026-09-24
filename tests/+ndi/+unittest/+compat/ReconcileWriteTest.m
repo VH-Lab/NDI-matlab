@@ -61,52 +61,8 @@ classdef ReconcileWriteTest < matlab.unittest.TestCase
             testCase.verifyFalse(isfield(out.treatment, 'name'));
         end
 
-        function test_ontology_image_legacy_edit_wins(testCase)
-            body = i_baseBody('ontology_image');
-            body.ontology_image = struct( ...
-                'region', struct('node', 'uberon:1111', 'name', 'old'), ...
-                'ontology_name',   'uberon:0002435', ...
-                'ontology_region', 'striatum');
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(out.ontology_image.region.node, ...
-                'uberon:0002435');
-            testCase.verifyEqual(out.ontology_image.region.name, ...
-                'striatum');
-            testCase.verifyFalse(isfield(out.ontology_image, 'ontology_name'));
-            testCase.verifyFalse(isfield(out.ontology_image, 'ontology_region'));
-        end
 
-        function test_ontology_label_composite_legacy_wins(testCase)
-            body = i_baseBody('ontology_label');
-            body.ontology_label = struct( ...
-                'term', struct('node', 'old:0', 'name', 'old'), ...
-                'ontology_name', 'allen_ccf_v3', ...
-                'label_id',      12345, ...
-                'label',         'primary visual area');
-            out = ndi.compat.reconcileWrite(body);
-            testCase.verifyEqual(out.ontology_label.term.node, ...
-                'allen_ccf_v3:12345');
-            testCase.verifyEqual(out.ontology_label.term.name, ...
-                'primary visual area');
-            testCase.verifyFalse(isfield(out.ontology_label, 'ontology_name'));
-            testCase.verifyFalse(isfield(out.ontology_label, 'label_id'));
-            testCase.verifyFalse(isfield(out.ontology_label, 'label'));
-        end
 
-        function test_ontology_label_composite_legacy_only_partial(testCase)
-            % Only one of the two composite legacy fields is set.
-            % The composing transform still runs; the missing legacy
-            % field contributes empty.
-            body = i_baseBody('ontology_label');
-            body.ontology_label = struct( ...
-                'ontology_name', 'allen_ccf_v3');
-            out = ndi.compat.reconcileWrite(body);
-            % toVDelta({'allen_ccf_v3', ''}) = 'allen_ccf_v3:' (empty
-            % numeric -> '0', then composed)
-            testCase.verifyTrue(isfield(out.ontology_label, 'term'));
-            testCase.verifyFalse(isfield(out.ontology_label, 'ontology_name'));
-            testCase.verifyFalse(isfield(out.ontology_label, 'label_id'));
-        end
 
         function test_legacy_absent_no_op(testCase)
             % If only V_delta canonical is present, reconciliation

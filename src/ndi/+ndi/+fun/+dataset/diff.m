@@ -58,8 +58,25 @@ function [report] = diff(D1,D2, options)
         for i=1:numel(options.recheckFileReport.fileDifferences)
             entry = options.recheckFileReport.fileDifferences(i);
 
-            doc1 = D1.database_search(ndi.query('ndi_document.id', 'exact_string', entry.documentA_uid, ''));
-            doc2 = D2.database_search(ndi.query('ndi_document.id', 'exact_string', entry.documentB_uid, ''));
+            % The document identity block is `base`, not `ndi_document`.
+            % NDI commit 9783809c2 (2023-04-13, "database document
+            % definitions all changed") added ndi_common/database_documents/
+            % base.json and deleted ndi_common/database_documents/
+            % ndi_document.json in the same commit. `base` carries
+            % id/session_id/name/datestamp; the retired `ndi_document` block
+            % carried those plus type/database_version.
+            %
+            % These two lines were missed by that rename while the rest of
+            % this file was updated (see the whole-database searches below,
+            % which already query 'base.id'). A query on 'ndi_document.id'
+            % matches nothing: no shipped template declares the block,
+            % ndi.document writes document_properties.base.id, the on-disk
+            % databases index base.id as unique_object_id_field, and
+            % ndi.compat.translateQueryPaths does not alias the old path.
+            % The search therefore returned {} and the doc1{1} indexing
+            % below threw, breaking every 'recheckFileReport' call.
+            doc1 = D1.database_search(ndi.query('base.id', 'exact_string', entry.documentA_uid, ''));
+            doc2 = D2.database_search(ndi.query('base.id', 'exact_string', entry.documentB_uid, ''));
 
             % THIS IS A SIMPLIFIED RECHECK, ASSUMES DOCS EXIST AND FUIDS ARE CORRECT
 

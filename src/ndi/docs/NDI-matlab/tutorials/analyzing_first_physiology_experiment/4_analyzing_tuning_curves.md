@@ -139,19 +139,16 @@ rdocs{1}{1}{1}.document_properties.stimulus_response_scalar.responses.control_re
 
 ### 2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values
 
-Now that we have all of the responses to the individual stimuli, we can create a tuning curve, which examines how the response of the neuron depends on a particular stimulus parameter. In this case, the stimulus is 'angle', which corresponds to the direction of the sinusoidal grating stimulus. We have built a specific application [ndi.app.oridirtuning](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/oridirtuning.m/) to process tuning curves in response to oriented stimuli, or stimuli moving in particular directions. 
+Now that we have all of the responses to the individual stimuli, we can create a tuning curve, which examines how the response of the neuron depends on a particular stimulus parameter. In this case, the stimulus is 'angle', which corresponds to the direction of the sinusoidal grating stimulus. We use the calculator [ndi.calc.vis.oridir_tuning](https://github.com/VH-Lab/NDIcalc-vis-matlab) (from the NDIcalc-vis-matlab package) to process tuning curves in response to oriented stimuli, or stimuli moving in particular directions. Unlike the older `ndi.app.oridirtuning` (deprecated; see [NDI-matlab#1001](https://github.com/VH-Lab/NDI-matlab/issues/1001)), the calculator finds all matching stimulus-response inputs in the database automatically, so you don't loop over elements yourself.
 
-After generating the tuning curve, we can calculate many, many index values that characterize the tuning of each cell. The function that calculates the orientation and direction index values pulls up a plot. If you look at the plot that examines the mean response for `ctx_1`, you can see that the cell responds strongly to gratings drifting at 120 degrees and 300 degrees (0 degrees is up; 90 degrees is to the right).
+After generating the tuning curve, the calculator computes many, many index values that characterize the tuning of each cell. If you look at the plot that examines the mean response for `ctx_1`, you can see that the cell responds strongly to gratings drifting at 120 degrees and 300 degrees (0 degrees is up; 90 degrees is to the right).
 
 #### Code block 2.4.5.1. Type this into Matlab.
 
 ```matlab
-oapp = ndi.app.oridirtuning(S);
-
-for i=1:2,
-	tdoc{i} = oapp.calculate_all_tuning_curves(e{i},'Replace'); % replace any existing 
-	oriprops{i} = oapp.calculate_all_oridir_indexes(e{i},'Replace'); % this takes a few minutes
-end;
+thecalc = ndi.calc.vis.oridir_tuning(S);
+parameters = thecalc.default_search_for_input_parameters();
+oriprops = thecalc.run('Replace', parameters); % this takes a few minutes
 ```
 
 The program should pop up 6 figures that look like this when they are adjusted to have the same axes:
@@ -166,18 +163,18 @@ Now let's take a look at these index values for the first cell. These index valu
 
 ```matlab
   % see all the categories
-oriprops{1}{1}{1}.document_properties.orientation_direction_tuning
+oriprops{1}.document_properties.orientation_direction_tuning
   % see the property information
-oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.properties
+oriprops{1}.document_properties.orientation_direction_tuning.properties
   % see significance. Responses across orientation are very significant:
-oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.significance
+oriprops{1}.document_properties.orientation_direction_tuning.significance
   % fit parameters:
-oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.fit
+oriprops{1}.document_properties.orientation_direction_tuning.fit
   % vector tuning parameters:
-oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.vector
+oriprops{1}.document_properties.orientation_direction_tuning.vector
 ```
 
-Now we have seen how we can analyze stimulus responses and use applications to calculate tuning curves and index values. If you had your own stimulus responses of a different type, you could write functions or apps that analyze the results and calculate the appropriate index values.
+Now we have seen how we can analyze stimulus responses and use a calculator to compute tuning curves and index values. If you had your own stimulus responses of a different type, you could write a calculator (see the "Writing your own apps" tutorial) that analyzes the results and stores the appropriate index values.
 
 
 ### 2.4.5 Discussion/Feedback

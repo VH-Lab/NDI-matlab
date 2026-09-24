@@ -53,8 +53,16 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                 % now we know the epoch to read, finally!
 
                 element_doc = ndi_element_timeseries_obj.load_element_doc();
+                % `isa element_epoch` alone finds nothing in a MIGRATED
+                % session -- the class is `acquisition_epoch` there and
+                % `isa` walks the class chain, which does not carry the v1
+                % name. ndi.vintage.isaQuery is the OR of both, so this
+                % reads a migrated database and one NDI has just written.
+                % The other two conjuncts need no change: `element_id`
+                % keeps its edge name, and the `epochid` mixin survives the
+                % rename (acquisition_epoch's chain is {base, epochid}).
                 sq = ndi.query('depends_on','depends_on','element_id',element_doc.id()) & ...
-                    ndi.query('','isa','element_epoch','') & ...
+                    ndi.vintage.isaQuery('element_epoch') & ...
                     ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
                 E = ndi_element_timeseries_obj.session;
 
