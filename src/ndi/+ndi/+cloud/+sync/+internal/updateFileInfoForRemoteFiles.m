@@ -139,6 +139,13 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
     if ~isfolder(tmpDir), mkdir(tmpDir); end
     cleanup = onCleanup(@() safeRmdir(tmpDir));
 
+    % Count qualifying series up front so the progress bar has a
+    % denominator. A doc with 10 pyramid levels has 10 series that each
+    % require one HTTPS round trip for the manifest, then one linear pass
+    % over the manifest's members; without a bar the whole "Updating
+    % document file info to reflect remote files." step looks hung on a
+    % large lightsheet dataset.
+    qualifyingIdx = [];
     for k = 1:numel(seriesInfo)
         entry = seriesInfo(k);
         if ~isfield(entry, 'n_present') || isempty(entry.n_present) || ...
@@ -148,9 +155,35 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
         if isfield(entry, 'ingest_locations') && ~isempty(entry.ingest_locations)
             continue
         end
+        qualifyingIdx(end+1) = k; %#ok<AGROW>
+    end
+
+    progressApp = [];
+    fetchBarId = '';
+    if numel(qualifyingIdx) > 0
+        try
+            progressApp = ndi.gui.component.ProgressBarWindow('NDI tasks');
+            fetchBarId  = did.ido.unique_id();
+            progressApp.addBar( ...
+                'Label', sprintf('Fetching %d series manifest(s) from cloud', ...
+                    numel(qualifyingIdx)), ...
+                'tag', fetchBarId, ...
+                'Auto', true, ...
+                'Timeout', minutes(Inf));
+        catch
+            progressApp = [];
+        end
+    end
+
+    for j = 1:numel(qualifyingIdx)
+        k = qualifyingIdx(j);
+        entry = seriesInfo(k);
 
         manifestUid = lookupManifestUid(fileInfo, entry.name);
-        if isempty(manifestUid), continue, end
+        if isempty(manifestUid)
+            tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
+            continue
+        end
 
         destPath = fullfile(tmpDir, manifestUid);
         try
@@ -162,8 +195,8 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
             % add_docs with the document's own identity, which is the
             % signal a partial download deserves. No warning here --
             % add_docs is the right voice.
-            continue
         end
+        tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
     end
 
     seriesInfo = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
@@ -244,5 +277,18 @@ function safeRmdir(d)
             rmdir(d, 's');
         catch
         end
+    end
+end
+
+function tickBar(app, tag, progress)
+    % Guarded progress update. If the bar / window has been closed or
+    % culled, drop the update silently rather than crash the download
+    % pipeline. Same defensive contract list_binary_files uses.
+    if isempty(app) || ~isvalid(app) || isempty(tag)
+        return
+    end
+    try
+        app.updateBar(tag, progress);
+    catch
     end
 end
