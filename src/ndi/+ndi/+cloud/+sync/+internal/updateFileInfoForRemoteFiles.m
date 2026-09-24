@@ -61,12 +61,22 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
         document
         cloudDatasetId (1,1) string
         options.customFileHandler = []
+        % A containers.Map of uid -> logical uploaded flag, precomputed
+        % once at the caller from ndi.cloud.api.files.listFilesAll (the
+        % paginated whole-dataset listing landed in main via NDI-matlab
+        % #1004). When supplied, this function uses it to skip the manifest
+        % fetch for series whose manifest uid isn't uploaded on the
+        % server, and to warn on file_info uids that name unuploaded
+        % files. Empty (the default) preserves the previous behavior.
+        options.uploadedUidMap = []
     end
 
     if ~document.has_files(), return, end
 
     updatedFileInfo = document.document_properties.files.file_info;
 
+    missingFileUidCount = 0;
+    firstMissingFileUid = '';
     for i = 1:numel(updatedFileInfo)
         % Replace/override 1st file location
         updatedFileInfo(i).locations(1).delete_original = 0;
@@ -76,8 +86,27 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
         fileLocation = sprintf('ndic://%s/%s', cloudDatasetId, fileUid);
         updatedFileInfo(i).locations(1).location = fileLocation;
         updatedFileInfo(i).locations(1).location_type = 'ndicloud';
+
+        % Optional integrity check: a file_info entry pointing at a uid
+        % the server does not yet report as uploaded produces a broken
+        % ndic:// location -- DID's later member/file open will fail
+        % obscurely. Count them now and warn once at the end of the doc
+        % rather than spamming per file.
+        if ~isUploaded(options.uploadedUidMap, fileUid)
+            missingFileUidCount = missingFileUidCount + 1;
+            if isempty(firstMissingFileUid)
+                firstMissingFileUid = char(fileUid);
+            end
+        end
     end
     document = document.setproperties('files.file_info', updatedFileInfo);
+
+    if missingFileUidCount > 0
+        warning('NDI:cloud:sync:UnuploadedFileUid', ...
+            ['%d file_info entry/entries in document reference uids the ', ...
+             'cloud does not report as uploaded (first: %s). A member/file ', ...
+             'open will fail on those.'], missingFileUidCount, firstMissingFileUid);
+    end
 
     % Rebuild series ingest_locations for any series that came back with
     % n_present > 0 but empty ingest_locations. Without this, DID's
@@ -96,7 +125,8 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
             catch
             end
             seriesInfo = reconstructFromCloud(seriesInfo, updatedFileInfo, ...
-                cloudDatasetId, documentId, options.customFileHandler);
+                cloudDatasetId, documentId, options.customFileHandler, ...
+                options.uploadedUidMap);
             document = document.setproperties('files.series_info', seriesInfo);
         end
     end
@@ -125,7 +155,7 @@ end
 
 
 function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
-        cloudDatasetId, documentId, customFileHandler)
+        cloudDatasetId, documentId, customFileHandler, uploadedUidMap)
     % Fetch each qualifying series' manifest bytes into a scratch dir,
     % reconstruct ingest_locations from them via reconstructSeriesIngestLocations,
     % then delete the scratch dir. Manifests do NOT land in the DID file
@@ -181,6 +211,16 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
 
         manifestUid = lookupManifestUid(fileInfo, entry.name);
         if isempty(manifestUid)
+            tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
+            continue
+        end
+
+        % Skip the fetch when the caller-provided uploaded-uid map says
+        % the manifest itself is not uploaded on the server. Attempting
+        % the fetch would only turn into a wasted HTTPS round trip whose
+        % 404/403 landed in the catch below; no reconstruction happens
+        % either way. When no map was passed, this is a no-op.
+        if ~isUploaded(uploadedUidMap, manifestUid)
             tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
             continue
         end
@@ -277,6 +317,27 @@ function safeRmdir(d)
             rmdir(d, 's');
         catch
         end
+    end
+end
+
+function tf = isUploaded(map, uid)
+    % True when the caller passed no map (default open answer -- preserves
+    % the previous no-check behavior), or when the map says this uid is
+    % on the server as uploaded=true. False only when the map is present
+    % AND names this uid as not uploaded (or does not name it at all).
+    if isempty(map)
+        tf = true;
+        return
+    end
+    try
+        key = char(uid);
+        if ~isKey(map, key)
+            tf = false;
+            return
+        end
+        tf = logical(map(key));
+    catch
+        tf = false;
     end
 end
 
