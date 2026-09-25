@@ -20,7 +20,7 @@ function [names, labels] = getOpenMindsInstances(schemaName, addOptions)
     labels = repmat("", size(names));
 
     for i = 1:numel(names)
-        S = openminds.internal.getControlledInstance(names{i}, schemaName, 'controlledTerms');
+        S = openminds.internal.utility.json.decode(fileread(instanceTable.Filepath(i)));
         labels(i) = S.name;
     end
 
