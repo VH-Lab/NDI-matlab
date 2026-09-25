@@ -114,14 +114,48 @@ classdef LightsheetZarrManager < ndi.gui.app.sessionApp
                 rows(k).id = d.id();
                 rows(k).doc = d;
                 rows(k).label = ndi.gui.app.LightsheetZarrManager.field(p,'label','');
-                rows(k).reduction = ndi.gui.app.LightsheetZarrManager.field(p,'reduction','');
                 rows(k).subjectID = ndi.gui.app.LightsheetZarrManager.dependency(d,'subject_id');
                 rows(k).subject = ndi.gui.app.LightsheetZarrManager.lookup( ...
                     subjectNames, rows(k).subjectID, rows(k).subjectID);
-                rows(k).nLevels = double(ndi.gui.app.LightsheetZarrManager.field(p,'n_levels',0));
+
+                % Level count and reduction come from the child level
+                % docs, not the parent -- the parent schema has neither
+                % an n_levels nor a reduction field. Reductions are per
+                % level (reduction_function on lightsheetZarrLevel);
+                % the parent's pyramid_type names the source volume, not
+                % the reduction. See NDI-matlab#979 review 2026-09-25.
+                q1 = ndi.query('', 'isa', 'lightsheetZarrLevel');
+                q2 = ndi.query('depends_on', 'depends_on', ...
+                    'lightsheetZarrPyramid_id', rows(k).id);
+                levelDocs = session.database_search(q1 & q2);
+                rows(k).nLevels = numel(levelDocs);
+                rows(k).reduction = ndi.gui.app.LightsheetZarrManager.joinReductions(levelDocs);
+
                 shp = ndi.gui.app.LightsheetZarrManager.field(p,'shape_level0',[]);
                 rows(k).shapeLevel0 = shp;
                 rows(k).dtype = ndi.gui.app.LightsheetZarrManager.field(p,'dtype','');
+            end
+        end
+
+        function s = joinReductions(levelDocs)
+        % joinReductions - unique non-'none' reduction_function values
+        %   Reads reduction_function from each lightsheetZarrLevel doc
+        %   and returns them joined by "/", with 'none' (the raw level 0
+        %   marker) filtered out. When only 'none' levels exist, returns
+        %   the string 'none' so the column doesn't lie about a missing
+        %   ladder.
+            seen = strings(1, numel(levelDocs));
+            for j = 1:numel(levelDocs)
+                lp = levelDocs{j}.document_properties.lightsheetZarrLevel;
+                seen(j) = string(ndi.gui.app.LightsheetZarrManager.field( ...
+                    lp, 'reduction_function', 'none'));
+            end
+            reductions = unique(seen);
+            reductions = reductions(reductions ~= "none");
+            if isempty(reductions)
+                s = 'none';
+            else
+                s = char(strjoin(reductions, '/'));
             end
         end
 
