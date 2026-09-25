@@ -53,11 +53,36 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
     % keep it open until finished.
     [db_cleanup_obj, ~] = ndi_dataset.open_database(); %#ok<ASGLU>
 
-    for i = 1:num_documents
+    % Standard NDI progress bar for the top-level document walk. A large
+    % lightsheet dataset's inventory pass is minutes of work on a spinning
+    % drive; without a bar, the whole pre-upload phase looks hung. Same
+    % "NDI tasks" window the serial upload branch uses, so bars stack in
+    % one place. Auto=true removes the bar when it reaches 1.0.
+    %
+    % The progressApp handle is captured in a nested state variable so the
+    % safe* helpers below can null it out if the window is closed / deleted
+    % mid-run (e.g. the user Xs it out, or updateBar's own checkTimeout
+    % culls a bar and then autoDelete tears the window down with it).
+    % Every touch of the bar goes through those helpers -- see the failure
+    % history for what happened before: updateBar's side-effect timeout
+    % check culled the top bar during a >1-min series scan, autoDelete
+    % then removed the window because no bars were left, and the next
+    % addBar crashed on a stale handle. See NDI-matlab lightsheet demo,
+    % 2026-09-20.
+    progressApp = [];
+    topBarId    = '';
+    if verbose
+        progressApp = ndi.gui.component.ProgressBarWindow('NDI tasks');
+        topBarId    = did.ido.unique_id();
+        % Timeout=minutes(Inf): the top bar does not tick as often as the
+        % app-level 1-minute timeout, and we do not want it culled by a
+        % global sweep triggered by an unrelated bar's update. The nested
+        % renew below is belt-and-suspenders progress feedback.
+        safeAddBar(sprintf('Scanning documents for files (%d docs)', num_documents), ...
+            topBarId, minutes(Inf));
+    end
 
-        if verbose && (mod(i, 1000)==0 || i == num_documents)
-            fprintf('Working on document %d of %d\n', i, num_documents)
-        end
+    for i = 1:num_documents
 
         ndi_document_id = database_documents{i}.document_properties.base.id;
 
@@ -110,6 +135,22 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                     'docid', '', 'bytes', 0, 'file_path', ''), 1, slotCount);
                 member_count = 0;
 
+                % Nested progress bar per large series, so a single doc
+                % whose scan takes minutes shows its own progress rather
+                % than freezing the top-level bar. Small series stay
+                % silent. Time-throttled updates (~5 s) keep the print
+                % itself from becoming the bottleneck at 100+ stat/s.
+                seriesBarId = '';
+                hasSeriesBar = false;
+                progressInterval = 5;
+                lastReport = tic;
+                if verbose && slotCount >= 1000
+                    seriesBarId = did.ido.unique_id();
+                    safeAddBar(sprintf('  doc %d/%d: series ''%s'' (%d slots)', ...
+                        i, num_documents, series_name, slotCount), seriesBarId);
+                    hasSeriesBar = ~isempty(progressApp);
+                end
+
                 for m = 1:slotCount
                     member_name = sprintf('%s_%d', series_name, m);
                     [member_exists, member_path] = ...
@@ -126,10 +167,69 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                         'name', member_name, 'uid', member_uid, ...
                         'docid', ndi_document_id, 'bytes', member_info.bytes, ...
                         'file_path', member_path);
+
+                    if hasSeriesBar && toc(lastReport) >= progressInterval
+                        safeUpdateBar(seriesBarId, m/slotCount);
+                        % Also tick the top bar so it does not sit idle
+                        % past ProgressBarWindow's 1-minute timeout during
+                        % a long series scan. Fractional progress is fine:
+                        % (i-1)/N + (m/slotCount)/N is monotone, and the
+                        % update at end-of-doc pins it to i/N below.
+                        safeUpdateBar(topBarId, ((i-1) + m/slotCount) / num_documents);
+                        lastReport = tic;
+                    end
+                end
+
+                if hasSeriesBar
+                    safeUpdateBar(seriesBarId, 1); % Auto=true removes it
                 end
 
                 file_manifest = [file_manifest member_entries(1:member_count)]; %#ok<AGROW>
             end
+        end
+
+        if verbose
+            safeUpdateBar(topBarId, i/num_documents);
+        end
+    end
+
+    % --- Nested helpers -------------------------------------------------
+    % Every touch of the progress window goes through these so a closed /
+    % deleted window does not crash the inventory pass. progressApp is a
+    % handle stored in the enclosing scope; when a call raises because the
+    % window was torn down, we null it out and go silent for the rest of
+    % the run rather than firing a warning per iteration.
+
+    function safeAddBar(labelText, tag, timeoutOverride)
+        if nargin < 3
+            timeoutOverride = duration.empty; % inherit app-level timeout
+        end
+        if isempty(progressApp) || ~isvalid(progressApp)
+            progressApp = [];
+            return
+        end
+        try
+            progressApp.addBar('Label', labelText, 'tag', tag, 'Auto', true, ...
+                'Timeout', timeoutOverride);
+        catch err
+            % One warning, then quiet. A user who closed the window does
+            % not want us re-opening it or spamming diagnostics.
+            warning('NDI:list_binary_files:ProgressBarUnavailable', ...
+                'Progress bar window is no longer available (%s); continuing silently.', ...
+                err.message);
+            progressApp = [];
+        end
+    end
+
+    function safeUpdateBar(tag, progress)
+        if isempty(progressApp) || ~isvalid(progressApp) || isempty(tag)
+            return
+        end
+        try
+            progressApp.updateBar(tag, progress);
+        catch
+            % Bar or window is gone; drop it and stop touching it.
+            progressApp = [];
         end
     end
 end

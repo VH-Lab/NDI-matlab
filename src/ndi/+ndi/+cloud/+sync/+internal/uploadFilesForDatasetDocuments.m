@@ -48,9 +48,25 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
     end
 
     if options.onlyMissing
+        if options.Verbose
+            fprintf('Checking cloud dataset %s for files already uploaded ...\n', cloudDatasetId);
+        end
         [file_manifest, message] = ndi.cloud.sync.internal.filesNotYetUploaded(file_manifest, cloudDatasetId);
         if ~isempty(message)
             success = false;
+            % Do not swallow the diagnostic. A caller that inspects only
+            % `success` still gets a printed line explaining what failed
+            % and where to look next, so the pipeline does not appear to
+            % succeed-silently-fail-silently.
+            if options.Verbose
+                fprintf(['ERROR while checking which files are already ', ...
+                    'in the cloud: %s\n', ...
+                    'This often means the active NDI_CLOUD_ORGANIZATION_ID ', ...
+                    'does not own dataset %s. Pass ndi.cloud.uploadDataset ', ...
+                    'the ''organizationName'' or ''organizationID'' the ', ...
+                    'dataset was created under. Current active org: %s.\n'], ...
+                    message, cloudDatasetId, getenv('NDI_CLOUD_ORGANIZATION_ID'));
+            end
             return;
         end
     end
@@ -61,6 +77,9 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
 
     if isempty(file_manifest)
         message = 'All files are already on the remote.';
+        if options.Verbose
+            fprintf('%s\n', message);
+        end
         return;
     end
 
@@ -71,6 +90,7 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
             app = ndi.gui.component.ProgressBarWindow('NDI tasks');
             uuid = did.ido.unique_id();
             app.addBar('Label','Uploading document-associated binary files','tag',uuid,'Auto',true);
+            files_uploaded_count = 0;
             for i=1:numel(file_manifest)
                 if file_manifest(i).is_uploaded==false
                     [upload_success, upload_message] = ndi.cloud.uploadSingleFile(cloudDatasetId, ...
@@ -80,15 +100,25 @@ function [success, message] = uploadFilesForDatasetDocuments(cloudDatasetId, ndi
                             message = ['Failed to upload file ' file_manifest(i).uid ': ' upload_message];
                         end
                         success = false;
+                    else
+                        files_uploaded_count = files_uploaded_count + 1;
                     end
                 end
                 app.updateBar(uuid,i/numel(file_manifest));
+            end
+            if options.Verbose
+                fprintf('Uploaded %d of %d files.\n', files_uploaded_count, numel(file_manifest));
             end
         case "batch"
             [batch_success, batch_message] = ndi.cloud.upload.zipForUpload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
             if ~batch_success
                 success = false;
                 message = batch_message;
+                if options.Verbose
+                    fprintf('Batch upload failed: %s\n', batch_message);
+                end
+            elseif options.Verbose
+                fprintf('Uploaded %d files in batch mode.\n', numel(file_manifest));
             end
     end
 end

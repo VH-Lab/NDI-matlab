@@ -61,12 +61,22 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
         document
         cloudDatasetId (1,1) string
         options.customFileHandler = []
+        % A containers.Map of uid -> logical uploaded flag, precomputed
+        % once at the caller from ndi.cloud.api.files.listFilesAll (the
+        % paginated whole-dataset listing landed in main via NDI-matlab
+        % #1004). When supplied, this function uses it to skip the manifest
+        % fetch for series whose manifest uid isn't uploaded on the
+        % server, and to warn on file_info uids that name unuploaded
+        % files. Empty (the default) preserves the previous behavior.
+        options.uploadedUidMap = []
     end
 
     if ~document.has_files(), return, end
 
     updatedFileInfo = document.document_properties.files.file_info;
 
+    missingFileUidCount = 0;
+    firstMissingFileUid = '';
     for i = 1:numel(updatedFileInfo)
         % Replace/override 1st file location
         updatedFileInfo(i).locations(1).delete_original = 0;
@@ -76,8 +86,27 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
         fileLocation = sprintf('ndic://%s/%s', cloudDatasetId, fileUid);
         updatedFileInfo(i).locations(1).location = fileLocation;
         updatedFileInfo(i).locations(1).location_type = 'ndicloud';
+
+        % Optional integrity check: a file_info entry pointing at a uid
+        % the server does not yet report as uploaded produces a broken
+        % ndic:// location -- DID's later member/file open will fail
+        % obscurely. Count them now and warn once at the end of the doc
+        % rather than spamming per file.
+        if ~isUploaded(options.uploadedUidMap, fileUid)
+            missingFileUidCount = missingFileUidCount + 1;
+            if isempty(firstMissingFileUid)
+                firstMissingFileUid = char(fileUid);
+            end
+        end
     end
     document = document.setproperties('files.file_info', updatedFileInfo);
+
+    if missingFileUidCount > 0
+        warning('NDI:cloud:sync:UnuploadedFileUid', ...
+            ['%d file_info entry/entries in document reference uids the ', ...
+             'cloud does not report as uploaded (first: %s). A member/file ', ...
+             'open will fail on those.'], missingFileUidCount, firstMissingFileUid);
+    end
 
     % Rebuild series ingest_locations for any series that came back with
     % n_present > 0 but empty ingest_locations. Without this, DID's
@@ -96,7 +125,8 @@ function document = updateFileInfoForRemoteFiles(document, cloudDatasetId, optio
             catch
             end
             seriesInfo = reconstructFromCloud(seriesInfo, updatedFileInfo, ...
-                cloudDatasetId, documentId, options.customFileHandler);
+                cloudDatasetId, documentId, options.customFileHandler, ...
+                options.uploadedUidMap);
             document = document.setproperties('files.series_info', seriesInfo);
         end
     end
@@ -125,7 +155,7 @@ end
 
 
 function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
-        cloudDatasetId, documentId, customFileHandler)
+        cloudDatasetId, documentId, customFileHandler, uploadedUidMap)
     % Fetch each qualifying series' manifest bytes into a scratch dir,
     % reconstruct ingest_locations from them via reconstructSeriesIngestLocations,
     % then delete the scratch dir. Manifests do NOT land in the DID file
@@ -139,6 +169,13 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
     if ~isfolder(tmpDir), mkdir(tmpDir); end
     cleanup = onCleanup(@() safeRmdir(tmpDir));
 
+    % Count qualifying series up front so the progress bar has a
+    % denominator. A doc with 10 pyramid levels has 10 series that each
+    % require one HTTPS round trip for the manifest, then one linear pass
+    % over the manifest's members; without a bar the whole "Updating
+    % document file info to reflect remote files." step looks hung on a
+    % large lightsheet dataset.
+    qualifyingIdx = [];
     for k = 1:numel(seriesInfo)
         entry = seriesInfo(k);
         if ~isfield(entry, 'n_present') || isempty(entry.n_present) || ...
@@ -148,9 +185,45 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
         if isfield(entry, 'ingest_locations') && ~isempty(entry.ingest_locations)
             continue
         end
+        qualifyingIdx(end+1) = k; %#ok<AGROW>
+    end
+
+    progressApp = [];
+    fetchBarId = '';
+    if numel(qualifyingIdx) > 0
+        try
+            progressApp = ndi.gui.component.ProgressBarWindow('NDI tasks');
+            fetchBarId  = did.ido.unique_id();
+            progressApp.addBar( ...
+                'Label', sprintf('Fetching %d series manifest(s) from cloud', ...
+                    numel(qualifyingIdx)), ...
+                'tag', fetchBarId, ...
+                'Auto', true, ...
+                'Timeout', minutes(Inf));
+        catch
+            progressApp = [];
+        end
+    end
+
+    for j = 1:numel(qualifyingIdx)
+        k = qualifyingIdx(j);
+        entry = seriesInfo(k);
 
         manifestUid = lookupManifestUid(fileInfo, entry.name);
-        if isempty(manifestUid), continue, end
+        if isempty(manifestUid)
+            tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
+            continue
+        end
+
+        % Skip the fetch when the caller-provided uploaded-uid map says
+        % the manifest itself is not uploaded on the server. Attempting
+        % the fetch would only turn into a wasted HTTPS round trip whose
+        % 404/403 landed in the catch below; no reconstruction happens
+        % either way. When no map was passed, this is a no-op.
+        if ~isUploaded(uploadedUidMap, manifestUid)
+            tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
+            continue
+        end
 
         destPath = fullfile(tmpDir, manifestUid);
         try
@@ -162,8 +235,8 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
             % add_docs with the document's own identity, which is the
             % signal a partial download deserves. No warning here --
             % add_docs is the right voice.
-            continue
         end
+        tickBar(progressApp, fetchBarId, j / numel(qualifyingIdx));
     end
 
     seriesInfo = ndi.cloud.sync.internal.reconstructSeriesIngestLocations( ...
@@ -244,5 +317,39 @@ function safeRmdir(d)
             rmdir(d, 's');
         catch
         end
+    end
+end
+
+function tf = isUploaded(map, uid)
+    % True when the caller passed no map (default open answer -- preserves
+    % the previous no-check behavior), or when the map says this uid is
+    % on the server as uploaded=true. False only when the map is present
+    % AND names this uid as not uploaded (or does not name it at all).
+    if isempty(map)
+        tf = true;
+        return
+    end
+    try
+        key = char(uid);
+        if ~isKey(map, key)
+            tf = false;
+            return
+        end
+        tf = logical(map(key));
+    catch
+        tf = false;
+    end
+end
+
+function tickBar(app, tag, progress)
+    % Guarded progress update. If the bar / window has been closed or
+    % culled, drop the update silently rather than crash the download
+    % pipeline. Same defensive contract list_binary_files uses.
+    if isempty(app) || ~isvalid(app) || isempty(tag)
+        return
+    end
+    try
+        app.updateBar(tag, progress);
+    catch
     end
 end
