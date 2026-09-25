@@ -13,6 +13,9 @@ function installRequirements(requirementsFolder, varargin)
 %   network timeout. These clear on their own within a minute or so, so a
 %   short retry loop turns a hard CI failure into a brief pause.
 %
+%   After a successful install it calls openminds.startup("latest") so the
+%   openMINDS model classes are on the path.
+%
 %   See also matbox.installRequirements
 
     maxAttempts = 5;
@@ -21,6 +24,7 @@ function installRequirements(requirementsFolder, varargin)
     for attempt = 1:maxAttempts
         try
             matbox.installRequirements(requirementsFolder, varargin{:})
+            selectOpenMINDSModelVersion()
             return
         catch ME
             if attempt == maxAttempts || ~isTransientGithubError(ME)
@@ -33,6 +37,17 @@ function installRequirements(requirementsFolder, varargin)
                 attempt, maxAttempts, ME.message, delaySeconds);
             pause(delaySeconds)
         end
+    end
+end
+
+function selectOpenMINDSModelVersion()
+% Put the classes of the latest openMINDS model version on the path.
+%   Installing the openMINDS_MATLAB FEX package (0.12.0) does not leave the
+%   generated model classes (e.g. openminds.core.research.Strain) resolvable.
+%   openminds.startup runs openminds.selectModelVersion, which adds them from
+%   the installed toolbox root. See VH-Lab/NDI-matlab#1008.
+    if exist('openminds.startup', 'file')
+        openminds.startup("latest")
     end
 end
 
