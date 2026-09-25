@@ -11,4 +11,4 @@ https://github.com/Waltham-Data-Science/NDI-compress-matlabp
 https://github.com/Waltham-Data-Science/ndi-ontology-matlab
 https://github.com/VH-Lab/pyraview
 https://github.com/bastibe/Violinplot-Matlab
-fex://134212-openminds-metadata-models-for-matlab/0.12.0
+https://github.com/openMetadataInitiative/openMINDS_MATLAB@v0.12.0

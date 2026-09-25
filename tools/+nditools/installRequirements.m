@@ -13,9 +13,6 @@ function installRequirements(requirementsFolder, varargin)
 %   network timeout. These clear on their own within a minute or so, so a
 %   short retry loop turns a hard CI failure into a brief pause.
 %
-%   After a successful install it makes sure openMINDS_MATLAB is on the path
-%   and calls openminds.startup("latest") so its model classes resolve.
-%
 %   See also matbox.installRequirements
 
     maxAttempts = 5;
@@ -24,7 +21,6 @@ function installRequirements(requirementsFolder, varargin)
     for attempt = 1:maxAttempts
         try
             matbox.installRequirements(requirementsFolder, varargin{:})
-            selectOpenMINDSModelVersion()
             return
         catch ME
             if attempt == maxAttempts || ~isTransientGithubError(ME)
@@ -37,56 +33,6 @@ function installRequirements(requirementsFolder, varargin)
                 attempt, maxAttempts, ME.message, delaySeconds);
             pause(delaySeconds)
         end
-    end
-end
-
-function selectOpenMINDSModelVersion()
-% Put the classes of the latest openMINDS model version on the path.
-%   Installing the openMINDS_MATLAB FEX package (0.12.0) does not leave the
-%   openminds package on the path, so its classes (e.g.
-%   openminds.core.research.Strain) do not resolve. If the package is not
-%   found, enable the installed add-on or add the folder it was unpacked
-%   to, then run openminds.startup, which puts the classes of the selected
-%   model version on the path. See VH-Lab/NDI-matlab#1008.
-    if ~exist('openminds.startup', 'file')
-        addOpenMINDSToPath()
-    end
-    if exist('openminds.startup', 'file')
-        openminds.startup("latest")
-    else
-        warning('nditools:installRequirements:openMINDSNotFound', ...
-            'openMINDS_MATLAB is not on the path after installing requirements.')
-    end
-end
-
-function addOpenMINDSToPath()
-% Enable an installed openMINDS add-on, or add an unpacked copy to the path.
-    try
-        addons = matlab.addons.installedAddons();
-        isOpenMINDS = contains(addons.Name, "openMINDS", 'IgnoreCase', true);
-        fprintf('Installed openMINDS add-ons:\n');
-        disp(addons(isOpenMINDS, :))
-        openMINDSAddons = addons(isOpenMINDS, :);
-        for i = 1:height(openMINDSAddons)
-            if ~openMINDSAddons.Enabled(i)
-                matlab.addons.enableAddon(openMINDSAddons.Identifier(i), ...
-                    openMINDSAddons.Version(i));
-            end
-        end
-    catch ME
-        fprintf('Could not list or enable add-ons: %s\n', ME.message);
-    end
-    if exist('openminds.startup', 'file')
-        return
-    end
-
-    addonFolder = matbox.setup.internal.getDefaultAddonFolder();
-    startupFiles = dir(fullfile(addonFolder, '**', '+openminds', 'startup.m'));
-    fprintf('openMINDS startup files under %s: %d\n', addonFolder, numel(startupFiles));
-    if ~isempty(startupFiles)
-        codeFolder = fileparts(startupFiles(1).folder);
-        fprintf('Adding %s to the path.\n', codeFolder);
-        addpath(codeFolder)
     end
 end
 
