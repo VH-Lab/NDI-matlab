@@ -23,7 +23,7 @@ function catalog = loadOpenMindsInstanceCatalog(openMindsType, options)
     catalog.NameField = options.PrimaryField;
 
     for i = 1:numel(names)
-        S = openminds.internal.getControlledInstance(names{i}, openMindsType, 'controlledTerms');
+        S = openminds.internal.utility.json.decode(fileread(instanceTable.Filepath(i)));
         catalog.add(S)
     end
 end
