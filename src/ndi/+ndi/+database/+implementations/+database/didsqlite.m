@@ -224,8 +224,16 @@ function download_file_from_cloud(destPath, sourcePath, context)
         if strlength(seriesName) > 0 && strlength(contextUid) > 0
             ndiFileUid = char(contextUid);
         end
+        % diskCache=true because DID is the production reopen-a-dataset
+        % path: a scientist who reopens the same lightsheet the next
+        % morning must not pay the ~85 min signed-URL-set job again.
+        % Signals lookup only for a scoped call (empty documentId
+        % dispatches to the batch's early return and no disk read
+        % happens). See ndi.cloud.download.internal.signedUrlDiskCache.
+        fromDiskCache = strlength(docId) > 0;
         fileUrl = ndi.cloud.download.internal.batchSignedUrlLookup( ...
-            string(cloudDatasetId), docId, seriesName, string(ndiFileUid));
+            string(cloudDatasetId), docId, seriesName, string(ndiFileUid), ...
+            'diskCache', fromDiskCache);
 
         if strlength(fileUrl) == 0
             % No batch URL for this uid -- either no document context,
@@ -237,9 +245,23 @@ function download_file_from_cloud(destPath, sourcePath, context)
                 error(['Failed to get file details: ' answer.message]);
             end
             fileUrl = answer.downloadUrl;
+            fromDiskCache = false; % per-uid mint; nothing to invalidate.
         end
         [success2, answer2] = ndi.cloud.api.files.getFile(char(fileUrl), destPath, 'useCurl', true);
         if ~success2
+            % An S3 403 on a URL that WAS served from the disk cache
+            % says the cached scope has gone stale (token revoked, or
+            % the object rotated). Drop the scope so the next read
+            % refetches -- otherwise we'd 403 our way through every
+            % subsequent uid in the same scope. Mirrors the in-memory
+            % scope-forget the batch would do on refresh. Best-effort;
+            % a failed forget is not fatal to the error we're raising.
+            if fromDiskCache && localIsS3Forbidden(answer2)
+                try %#ok<TRYNC>
+                    ndi.cloud.download.internal.signedUrlDiskCache.forget( ...
+                        string(cloudDatasetId), docId, seriesName);
+                end
+            end
             error(['Failed to download file from cloud: ' answer2]);
         end
     else
@@ -269,4 +291,28 @@ function [docId, seriesName, uid] = readContext(context)
             uid = string(context.uid);
         end
     end
+end
+
+function tf = localIsS3Forbidden(answer)
+    % S3 returns 403 on a rotated/revoked signed URL. curl -f surfaces
+    % that as an exit-22 message like
+    %   curl: (22) The requested URL returned error: 403
+    % (Or "403 Forbidden" on some curl builds.) websave's message
+    % contains "403" too when it makes it that far. Match \b403\b.
+    tf = false;
+    if isempty(answer)
+        return
+    end
+    txt = '';
+    if ischar(answer)
+        txt = answer;
+    elseif isstring(answer) && isscalar(answer)
+        txt = char(answer);
+    elseif isstruct(answer) && isfield(answer, 'message') && ~isempty(answer.message)
+        txt = char(string(answer.message));
+    end
+    if isempty(txt)
+        return
+    end
+    tf = ~isempty(regexp(txt, '\<403\>', 'once'));
 end

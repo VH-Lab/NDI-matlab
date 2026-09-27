@@ -173,6 +173,15 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         options.partialMapRetrySeconds (1,1) double = 0.5
         options.sleepFcn (1,1) function_handle = @pause
         options.retryBackoffSeconds (1,:) double = [1 4 16]
+        % Disk cache off by default: only enable when we have a URL-set
+        % source that will actually reduce cost on reopen (the async
+        % signed-URL-set job, or a scope big enough to matter). Callers
+        % that DO want it -- the DID chunk-download path for large
+        % lightsheet series -- turn it on explicitly. Existing tests
+        % that inject scripted signers see no disk activity, which is
+        % what they want: the disk cache is a production optimisation,
+        % not part of the batch contract.
+        options.diskCache (1,1) logical = false
     end
 
     % The persistent cache. Keyed on 'datasetId/documentId/seriesName'.
@@ -226,6 +235,10 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             % Stale; drop and refetch.
             remove(CACHE, cacheKey);
         end
+    end
+
+    if isempty(entry) && options.diskCache
+        entry = localTryDiskCache();
     end
 
     if isempty(entry)
@@ -437,6 +450,19 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         CACHE(theCacheKey) = e;
         STATS.lastMapSize = double(e.map.Count);
         STATS.lastMapUids = keys(e.map);
+
+        % Persist to disk when the caller has opted in AND the payload
+        % carries a server-signed expiry we can age-check off of. A
+        % payload with neither expiresAt nor filesExpireAt is not
+        % cacheable -- the disk cache refuses to invent a TTL, on
+        % purpose (see signedUrlDiskCache.save). Best-effort: any I/O
+        % failure is swallowed so a full disk does not break a read.
+        if options.diskCache
+            try %#ok<TRYNC>
+                ndi.cloud.download.internal.signedUrlDiskCache.save( ...
+                    cloudDatasetId, ndiDocumentId, seriesName, answer);
+            end
+        end
     end
 
     function reason = localDescribeFailure(ok, answer, apiResponse)
@@ -466,6 +492,35 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             reason = "'files' arrived as a " + string(class(answer.files)) + ...
                 ", not a containers.Map" + status;
         end
+    end
+
+    function e = localTryDiskCache()
+        % Consult the persistent (on-disk) cache before running the async
+        % signed-URL-set job. On hit, populate the in-memory cache so
+        % every uid in the scope resolves without another disk read. On
+        % miss (no file, corrupt file, expired-or-within-safety-buffer),
+        % return [] and let the caller fetch fresh.
+        %
+        % The disk cache lives one layer above DID's file-bytes cache
+        % (which is a different, complementary concern) and its TTL is
+        % keyed to the SERVER'S filesExpireAt, not a hardcoded value --
+        % which is why a scientist reopening the same dataset over a
+        % 24 h day pays the ~85 min sign cost once.
+        e = [];
+        try
+            disk = ndi.cloud.download.internal.signedUrlDiskCache.load( ...
+                cloudDatasetId, ndiDocumentId, seriesName);
+        catch
+            disk = [];
+        end
+        if isempty(disk) || ~isstruct(disk) || ~isfield(disk, 'files') || ...
+                ~isa(disk.files, 'containers.Map')
+            return
+        end
+        e = struct('map', disk.files, 'fetchedAt', now_utc);
+        CACHE(cacheKey) = e;
+        STATS.lastMapSize = double(e.map.Count);
+        STATS.lastMapUids = keys(e.map);
     end
 
     function localWarnOnce(scopeKey)
