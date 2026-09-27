@@ -1,98 +1,141 @@
 classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
 % TESTSIGNEDURLSETJOBFIXTURE - pin the async signed-URL-set-job bug
-% against the existing tiny lightsheet fixture.
+% with a self-contained fresh upload.
 %
-% Confirmed on 2026-09-27: the Python integration test raises the same
-% BatchScopeUnreachable against the 15-file fixture
-% (6ab84b549852a120dbcb22bc, User 1 prod) that it raises against the
-% 121k-file production dataset -- so the failure is GLOBAL, not
-% dataset-specific. getFileDetails(datasetId, manifestUid) returns
-% 200 OK for the fixture's manifest uid in the same instant. Two
-% server code paths disagree on whether the manifest is a file of
-% the dataset.
+% The bug: for a lightsheetZarrLevel document,
+%   POST /datasets/{d}/documents/{doc}/signed-url-set-jobs
+%       ?fileSeries=chunk.bin
+% reaches state=failed with
+%   "Manifest for file series 'chunk.bin' (uid <UID>) is not a file
+%    of this dataset"
+% while adjacent
+%   GET /datasets/{d}/files/{UID}/detail
+% for the same UID returns 200 OK. Two server code paths disagree
+% on whether the manifest UID is a file of the dataset.
 %
-% This test asserts the disagreement from the MATLAB side. For each
-% lightsheetZarrLevel document in the fixture:
-%   * createSignedURLSetJob(id_namespace='ndi', fileSeries='chunk.bin')
+% Confirmed 2026-09-27 against both the tiny lightsheet fixture on
+% User 1 prod (6ab84b549852a120dbcb22bc, 5-of-5 level docs) AND the
+% 121k-member production dataset (6ab034e430a0f8d0e461dfcc). The
+% failure is GLOBAL, not tied to that one dataset. See VH-Lab/
+% NDI-matlab#1010 and the Python analog on the same branch of
+% NDI-python (test_cloud_signed_url_set_job.py, commit 5ab9c04).
+%
+% This test builds its OWN fresh lightsheet fixture on each run --
+% no hardcoded dataset id, no dependency on User 1 prod state -- so
+% it runs the same probe against whichever environment
+% CLOUD_API_ENVIRONMENT / NDI_CLOUD_USERNAME is currently pointed
+% at. Uploads a tiny synthetic OME-Zarr (about 5 lightsheetZarrLevel
+% documents), waits for bulk-upload extraction, then for each level
+% doc:
+%   * createSignedURLSetJob(idNamespace='ndi', fileSeries='chunk.bin')
 %     + waitForSignedURLSetJob to a terminal state.
 %   * INDEPENDENTLY getFileDetails(datasetId, manifestUid).
-% Assert consistency: either both succeed OR both fail. Any row where
-% getFileDetails returns 200 but the async job says "not a file of
-% this dataset" IS the reproducer, and fails the test with a message
-% naming the datasetId / docId / manifestUid so the API bug report
-% can cite it.
+% Assert consistency: both ok, or both fail. Any row where the
+% single-uid fetch returns 200 but the async job says "not a file
+% of this dataset" IS the reproducer and fails the test with a
+% message naming every offending (docId, ndiDocId, manifestUid)
+% triplet so the API team's bug report can cite them.
 %
-% Read-only against the fixture. No uploads, no cleanup.
-%
-% See VH-Lab/NDI-matlab#1010. The Python analog lives under
-% NDI-python's tests/test_cloud_signed_url_set_job.py on the same
-% branch.
+% Every dataset the test creates is deleted on teardown so test
+% accounts stay tidy.
 
     properties (Constant)
-        FixtureDatasetId = "6ab84b549852a120dbcb22bc"
-        LevelClassName   = "lightsheetZarrLevel"
-        SeriesName       = "chunk.bin"
-        % Cap the poll time per document. The fixture is tiny, so a
-        % healthy run reaches terminal state in seconds; a run that
-        % blows past this is diagnostic in its own right (job stuck vs
-        % job failed) and the row records the "timeout" state.
+        DatasetNamePrefix  = "NDI_UNITTEST_SIGNED_URL_FIXTURE_"
+        LevelClassName     = "lightsheetZarrLevel"
+        SeriesName         = "chunk.bin"
         WaitTimeoutSeconds = 120
+    end
+
+    properties
+        WorkDir     char   = ''
+        DatasetIDs  string = string.empty
     end
 
     methods (TestClassSetup)
         function checkCredentials(testCase)
             username = getenv("NDI_CLOUD_USERNAME");
             password = getenv("NDI_CLOUD_PASSWORD");
-            testCase.assumeNotEmpty(username, ...
-                ['Missing NDI Cloud credentials ' ...
-                 '(NDI_CLOUD_USERNAME/NDI_CLOUD_PASSWORD). ' ...
-                 'Skipping TestSignedUrlSetJobFixture.']);
-            testCase.assumeNotEmpty(password, ...
-                ['Missing NDI Cloud credentials ' ...
-                 '(NDI_CLOUD_USERNAME/NDI_CLOUD_PASSWORD). ' ...
-                 'Skipping TestSignedUrlSetJobFixture.']);
+            diagMsg = ['Missing NDI Cloud credentials ' ...
+                '(NDI_CLOUD_USERNAME/NDI_CLOUD_PASSWORD). ' ...
+                'Skipping TestSignedUrlSetJobFixture.'];
+            testCase.assumeNotEmpty(username, diagMsg);
+            testCase.assumeNotEmpty(password, diagMsg);
+        end
+
+        function checkLightsheetToolchain(testCase)
+            testCase.assumeTrue(...
+                exist('ndi.test.lightsheet.makeBlobFixture','file') == 2, ...
+                ['ndi.test.lightsheet.makeBlobFixture is not on the ' ...
+                 'path. This test needs the lightsheet fixture builder.']);
+            testCase.assumeTrue(...
+                exist('ndi.fun.doc.lightsheet.fromOMEZarr','file') == 2, ...
+                ['ndi.fun.doc.lightsheet.fromOMEZarr is not on the path.']);
+        end
+    end
+
+    methods (TestClassTeardown)
+        function cleanupUploadedDatasets(testCase)
+            % Sweep every dataset this class created, even if a
+            % per-test teardown already tried; a failed run may have
+            % left one behind. Best-effort, silent.
+            for i = 1:numel(testCase.DatasetIDs)
+                did = testCase.DatasetIDs(i);
+                if strlength(did) == 0, continue, end
+                try
+                    ndi.cloud.api.datasets.deleteDataset(char(did), ...
+                        'when', 'now'); %#ok<TRYNC>
+                catch
+                end
+            end
+        end
+    end
+
+    methods (TestMethodSetup)
+        function setupWorkFolder(testCase)
+            import matlab.unittest.fixtures.TemporaryFolderFixture
+            fx = testCase.applyFixture(TemporaryFolderFixture);
+            testCase.WorkDir = fx.Folder;
         end
     end
 
     methods (Test)
 
         function testLevelDocsAgreeOnManifestReachability(testCase)
-            % Enumerate the fixture's lightsheetZarrLevel documents,
-            % probe each one's chunk.bin series through the two paths,
-            % and fail on any disagreement.
+            % Build and upload a fresh lightsheet fixture, then run
+            % the disagreement probe against every lightsheetZarrLevel
+            % document the upload produced.
 
-            datasetId = testCase.FixtureDatasetId;
+            cloudDatasetId = testCase.buildAndUploadTinyFixture();
 
-            [okList, docSummaries] = ndi.cloud.api.documents.listDatasetDocumentsAll(datasetId);
+            % Enumerate lightsheetZarrLevel documents from the cloud
+            % side -- the same shape any client would use.
+            [okList, docSummaries] = ndi.cloud.api.documents.listDatasetDocumentsAll( ...
+                cloudDatasetId);
             testCase.assertTrue(okList, ...
-                sprintf(['listDatasetDocumentsAll failed for fixture %s. ' ...
-                    'The fixture must exist and be reachable for this ' ...
-                    'test to run.'], char(datasetId)));
+                sprintf(['listDatasetDocumentsAll failed for freshly ' ...
+                'uploaded dataset %s.'], char(cloudDatasetId)));
 
-            % Filter to lightsheetZarrLevel docs. className comes back as
-            % either "lightsheetZarrLevel" or char depending on the
-            % server; compare as string.
-            classNames = arrayfun(@(s) string(safeField(s, 'className', '')), ...
+            classNames = arrayfun(@(s) string(safeField(s,'className','')), ...
                 docSummaries);
             levelIdx = find(classNames == testCase.LevelClassName);
             testCase.assertNotEmpty(levelIdx, ...
-                sprintf(['Fixture %s has no %s documents. This test ' ...
-                    'expects the tiny lightsheet fixture (15 files) to ' ...
-                    'be present.'], char(datasetId), char(testCase.LevelClassName)));
+                sprintf(['Uploaded dataset %s has no %s documents. ' ...
+                'Fixture upload must have dropped them.'], ...
+                char(cloudDatasetId), char(testCase.LevelClassName)));
 
             disagreements = string.empty;
 
             for k = 1:numel(levelIdx)
-                summary = docSummaries(levelIdx(k));
+                summary    = docSummaries(levelIdx(k));
                 cloudDocId = string(safeField(summary, 'id',    ''));
                 ndiDocId   = string(safeField(summary, 'ndiId', ''));
 
-                % Full doc for its files.file_info -- that is where the
-                % manifest uid for the chunk.bin series lives, in the
-                % same shape ndi.cloud.sync.internal.updateFileInfoForRemoteFiles
-                % reads server-side.
+                % files.file_info on the cloud document names the
+                % manifest UID -- same shape ndi.cloud.sync.internal.
+                % updateFileInfoForRemoteFiles reads on the download
+                % side.
                 [okDoc, docProps] = ndi.cloud.api.documents.getDocument( ...
-                    datasetId, cloudDocId);
+                    cloudDatasetId, cloudDocId);
                 if ~okDoc
                     fprintf(['[fixture-probe] doc=%s: getDocument ' ...
                         'failed; skipping.\n'], char(cloudDocId));
@@ -101,32 +144,31 @@ classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
                 manifestUid = extractManifestUidFromDoc(docProps, testCase.SeriesName);
                 if strlength(manifestUid) == 0
                     fprintf(['[fixture-probe] doc=%s: no chunk.bin ' ...
-                        'file_info entry; skipping (not a level with ' ...
-                        'a materialized manifest).\n'], char(cloudDocId));
+                        'file_info entry; skipping.\n'], char(cloudDocId));
                     continue
                 end
 
-                % --- async job (the failing side, per Python)
+                % --- async job (the failing side, per Python + MATLAB)
                 tStart = tic;
                 [okCreate, createAnswer] = ndi.cloud.api.files.createSignedURLSetJob( ...
-                    datasetId, ndiDocId, ...
+                    cloudDatasetId, ndiDocId, ...
                     'idNamespace', "ndi", ...
                     'fileSeries',  testCase.SeriesName);
                 if ~okCreate
-                    jobState = "createRejected";
-                    jobDetail = extractMessage(createAnswer);
+                    jobState   = "createRejected";
+                    jobDetail  = extractMessage(createAnswer);
                     jobMapSize = NaN;
                 else
                     jobId = string(createAnswer.jobId);
                     [okReady, jobAnswer] = ndi.cloud.api.files.waitForSignedURLSetJob( ...
                         jobId, 'timeout', testCase.WaitTimeoutSeconds);
                     if okReady
-                        jobState = "ready";
-                        jobDetail = "";
+                        jobState   = "ready";
+                        jobDetail  = "";
                         jobMapSize = double(safeField(jobAnswer, 'fileCount', NaN));
                     else
-                        jobState = string(safeField(jobAnswer, 'state', 'failed'));
-                        jobDetail = extractMessage(jobAnswer);
+                        jobState   = string(safeField(jobAnswer, 'state', 'failed'));
+                        jobDetail  = extractMessage(jobAnswer);
                         jobMapSize = NaN;
                     end
                 end
@@ -135,7 +177,7 @@ classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
 
                 % --- independent single-uid fetch (the succeeding side)
                 [detailsOk, detailsAnswer] = ndi.cloud.api.files.getFileDetails( ...
-                    datasetId, manifestUid);
+                    cloudDatasetId, manifestUid);
 
                 fprintf(['[fixture-probe] doc=%s ndi=%s manifestUid=%s ' ...
                     'jobState=%s elapsed=%.1fs mapSize=%s ' ...
@@ -144,25 +186,19 @@ classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
                     char(jobState), jobElapsedSec, mapSizeAsText(jobMapSize), ...
                     detailsOk, char(jobDetail));
 
-                % Consistency assertion.
                 if jobOk && detailsOk
-                    % Healthy: both paths agree that the manifest is a
-                    % file of the dataset. mapSize > 0 is a sanity
-                    % check on the async blob.
                     testCase.verifyGreaterThan(jobMapSize, 0, ...
                         sprintf(['jobMapSize should be > 0 for a ' ...
                         'ready job on doc %s.'], char(cloudDocId)));
                 elseif ~jobOk && ~detailsOk
-                    % Consistent failure. Not the bug we are pinning.
                     fprintf(['[fixture-probe] doc=%s: consistent ' ...
                         'failure (both paths say no).\n'], char(cloudDocId));
                 elseif ~jobOk && detailsOk
-                    % THE BUG. Record for the summary assertion below.
                     disagreements(end+1) = sprintf( ...
                         'doc=%s ndi=%s manifestUid=%s: async job %s (%s) but getFileDetails returned 200', ...
                         char(cloudDocId), char(ndiDocId), char(manifestUid), ...
                         char(jobState), char(jobDetail)); %#ok<AGROW>
-                else % jobOk && !detailsOk
+                else
                     disagreements(end+1) = sprintf( ...
                         'doc=%s: async job ready but getFileDetails failed for manifestUid=%s (%s)', ...
                         char(cloudDocId), char(manifestUid), ...
@@ -173,24 +209,81 @@ classdef TestSignedUrlSetJobFixture < matlab.unittest.TestCase
             if ~isempty(disagreements)
                 testCase.verifyTrue(false, sprintf( ...
                     ['createSignedURLSetJob and getFileDetails disagree ' ...
-                    'on %d document(s) of fixture %s. This is the ' ...
-                    'server-side bug tracked in NDI-matlab#1010: ' ...
-                    'the async job says the manifest is not a file ' ...
-                    'of the dataset while the single-uid fetch ' ...
+                    'on %d document(s) of freshly-uploaded fixture %s. ' ...
+                    'This is the server-side bug tracked in NDI-matlab' ...
+                    '#1010: the async job says the manifest is not a ' ...
+                    'file of the dataset while the single-uid fetch ' ...
                     'returns 200 for the same uid.\n%s'], ...
-                    numel(disagreements), char(datasetId), ...
+                    numel(disagreements), char(cloudDatasetId), ...
                     strjoin("  " + disagreements, newline)));
             end
         end
 
     end
+
+    methods (Access = private)
+        function cloudDatasetId = buildAndUploadTinyFixture(testCase)
+            % Build a tiny lightsheet OME-Zarr on disk, ingest into a
+            % fresh session, wrap in a dataset, upload uploadAsNew.
+            % Small shape/small chunks -> ~5 spatial chunks per level
+            % across a few levels; the disagreement fires per LEVEL
+            % document (each carrying its own chunk.bin series), so
+            % 5-ish level documents is plenty to probe.
+
+            zarrParent = fullfile(testCase.WorkDir, 'zarr');
+            mkdir(zarrParent);
+            [zarrPath, ~] = ndi.test.lightsheet.makeBlobFixture(zarrParent, ...
+                'Shape',       [32 32 32], ...
+                'NumChannels', 1, ...
+                'NumLevels',   3, ...
+                'ChunkShape',  [16 16 16]);
+
+            sessionDir = fullfile(testCase.WorkDir, 'session');
+            mkdir(sessionDir);
+            S = ndi.session.dir('probe', sessionDir);
+
+            subject = ndi.document('subject', ...
+                'base.session_id', S.id(), ...
+                'subject.local_identifier', 'probe@vhlab');
+            S.database_add(subject);
+
+            ndi.fun.doc.lightsheet.fromOMEZarr(S, zarrPath, ...
+                'subjectID',         subject.id(), ...
+                'materializeChunks', true, ...
+                'codec',             'raw');
+
+            datasetDir = fullfile(testCase.WorkDir, 'dataset');
+            mkdir(datasetDir);
+            D = ndi.dataset.dir('probe_ds', datasetDir);
+            D = D.add_ingested_session(S);
+
+            uniqueName = char(testCase.DatasetNamePrefix + ...
+                string(did.ido.unique_id()));
+            [ok, cloudDatasetId, msg] = ndi.cloud.uploadDataset(D, ...
+                'uploadAsNew',                true, ...
+                'skipMetadataEditorMetadata', true, ...
+                'remoteDatasetName',          uniqueName);
+            testCase.assertTrue(ok, ...
+                sprintf('uploadDataset failed: %s', char(string(msg))));
+            cloudDatasetId = string(cloudDatasetId);
+            testCase.DatasetIDs(end+1) = cloudDatasetId;
+            % Per-test cleanup on top of the class-level sweep, so an
+            % aborted test still tears its own dataset down.
+            testCase.addTeardown(@() safeDeleteDataset(cloudDatasetId));
+
+            [waitOk, waitInfo] = ndi.cloud.api.files.waitForAllBulkUploads( ...
+                cloudDatasetId);
+            testCase.assertTrue(waitOk, ...
+                sprintf(['waitForAllBulkUploads did not confirm ' ...
+                'completion (state=%s, elapsed=%.1fs).'], ...
+                char(string(waitInfo.state)), waitInfo.elapsed));
+        end
+    end
 end
 
 function uid = extractManifestUidFromDoc(docProps, seriesName)
-    % The manifest uid for a series named NAME sits in
-    % document.files.file_info as the locations(1).uid of the entry
-    % whose name is NAME. Same shape ndi.cloud.sync.internal.
-    % updateFileInfoForRemoteFiles reads on the download side.
+    % Manifest UID for a series named NAME lives at
+    % document.files.file_info entry.name==NAME .locations(1).uid.
     uid = "";
     if ~isstruct(docProps), return, end
     files = safeField(docProps, 'files', struct());
@@ -235,5 +328,13 @@ function s = mapSizeAsText(value)
         s = sprintf('%d', round(value));
     else
         s = '-';
+    end
+end
+
+function safeDeleteDataset(cloudDatasetId)
+    try
+        ndi.cloud.api.datasets.deleteDataset(char(cloudDatasetId), ...
+            'when', 'now'); %#ok<TRYNC>
+    catch
     end
 end
