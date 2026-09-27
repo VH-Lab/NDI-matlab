@@ -273,7 +273,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 % get culled by updateBar's global timeout sweep while its
                 % owner was still using it. See NDI-matlab lightsheet demo
                 % 2026-09-20.
-                options.Timeout (1,:) duration = duration.empty
+                options.Timeout duration = duration.empty
             end
 
             % Bring figure to front

@@ -408,10 +408,16 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             testCase.addTeardown(@delete, app.ProgressFigure);
             originalTimeout = app.Timeout;
             app.setTimeout(duration(0,0,0.1)); % 0.1 seconds
-            testCase.addTeardown(@() setfield(app,'Timeout',originalTimeout));
+            % Guard the restore teardown against AutoDelete: this test's
+            % updateBar call auto-closes both bars, and with AutoDelete
+            % on (the constructor default) the app is then deleted.
+            % Touching a deleted AppBase handle raises
+            % MATLAB:class:InvalidHandle, which would fail the test
+            % even though the assertion above succeeded.
+            testCase.addTeardown(@() restoreTimeoutIfAlive(app, originalTimeout));
             app.addBar('Tag', 'TAutoTimeout', 'Auto', true);
             app.addBar('Tag', 'TUpdated', 'Auto', true);
-            
+
             pause(0.2); % Wait for timeout
             testCase.verifyWarning(@() app.updateBar('TUpdated', 0.2), 'ProgressBarWindow:AutoCloseOnTimeout');
         end
@@ -588,5 +594,14 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
                 testCase.verifyEqual(buttonHandle.Icon, 'error', 'Button icon should be error.');
             end
         end
+    end
+end
+
+function restoreTimeoutIfAlive(app, originalTimeout)
+    % Teardown helper: restore the app's Timeout only if the app is
+    % still a live handle. A test that drives AutoDelete to tear the
+    % window down cannot then reach through app to write a property.
+    if isvalid(app)
+        app.Timeout = originalTimeout;
     end
 end
