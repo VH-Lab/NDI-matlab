@@ -227,8 +227,9 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
 
         destPath = fullfile(tmpDir, manifestUid);
         try
-            fetchManifest(destPath, cloudDatasetId, string(manifestUid), ...
-                documentId, char(entry.name), customFileHandler);
+            ndi.cloud.sync.internal.fetchManifest( ...
+                string(destPath), string(cloudDatasetId), string(manifestUid), ...
+                string(documentId), string(entry.name), customFileHandler);
         catch
             % A manifest that cannot be fetched leaves the entry
             % un-reconstructed; DID#185's guard will then fire on
@@ -244,57 +245,6 @@ function seriesInfo = reconstructFromCloud(seriesInfo, fileInfo, ...
 end
 
 
-function fetchManifest(destPath, cloudDatasetId, manifestUid, documentId, ...
-        seriesName, customFileHandler)
-    % Fetch one manifest by uid. If a customFileHandler was passed in,
-    % offer the fetch through the DID contract -- same shape DID#201's
-    % fetchSeriesManifestBytes uses on the read side -- so tests can
-    % inject a mock and the two sides share their fetcher. Otherwise
-    % mint a signed URL and fetch directly, matching didsqlite.m's own
-    % download_file_from_cloud for a non-member ndic:// file.
-    %
-    % seriesName is deliberately '' in the context: this is the manifest
-    % itself, not a member. On the DID contract, a non-empty seriesName
-    % marks a MEMBER fetch, where sourcePath names the manifest and
-    % context.uid names the member -- the handler must then treat
-    % context.uid as the file to retrieve, not the manifest again. A
-    % manifest fetch has no such switch: sourcePath names the manifest
-    % and context.uid names the same manifest.
-
-    sourcePath = sprintf('ndic://%s/%s', char(cloudDatasetId), char(manifestUid));
-
-    if ~isempty(customFileHandler)
-        ctx = struct( ...
-            'documentId', char(documentId), ...
-            'filename',   char(seriesName), ...
-            'seriesName', '', ...
-            'uid',        char(manifestUid), ...
-            'mode',       'open');
-        did.implementations.sqlitedb.dispatchCustomFileHandler( ...
-            customFileHandler, destPath, sourcePath, ctx);
-        return
-    end
-
-    fileUrl = ndi.cloud.download.internal.batchSignedUrlLookup( ...
-        string(cloudDatasetId), documentId, "", manifestUid);
-    if strlength(fileUrl) == 0
-        [success, answer] = ndi.cloud.api.files.getFileDetails( ...
-            char(cloudDatasetId), char(manifestUid));
-        if ~success
-            error('NDI:cloud:sync:ManifestFetchFailed', ...
-                'Failed to get file details for manifest %s: %s', ...
-                char(manifestUid), answer.message);
-        end
-        fileUrl = answer.downloadUrl;
-    end
-    [success2, answer2] = ndi.cloud.api.files.getFile( ...
-        char(fileUrl), char(destPath), 'useCurl', true);
-    if ~success2
-        error('NDI:cloud:sync:ManifestFetchFailed', ...
-            'Failed to download manifest %s from cloud: %s', ...
-            char(manifestUid), answer2);
-    end
-end
 
 
 function uid = lookupManifestUid(fileInfo, seriesName)
