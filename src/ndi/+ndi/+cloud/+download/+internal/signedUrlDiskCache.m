@@ -239,7 +239,7 @@ classdef signedUrlDiskCache
                 return
             end
 
-            tmpPath = [filePath '.tmp.' num2str(feature('getpid')) '.' ...
+            tmpPath = [filePath '.tmp.' num2str(localProcessId()) '.' ...
                 num2str(randi(2^31 - 1))];
             try
                 ndi.cloud.download.internal.signedUrlDiskCache.gzipToFile(jsonTxt, tmpPath);
@@ -378,61 +378,88 @@ classdef signedUrlDiskCache
             % ~/.ndi/, which is roughly equivalent.
             if isunix
                 try %#ok<TRYNC>
-                    fileattrib(dirPath, '+w', 'u');
-                    fileattrib(dirPath, '-w', 'go');
-                    fileattrib(dirPath, '-r', 'go');
-                    fileattrib(dirPath, '-x', 'go');
+                    if exist('filePermissions', 'builtin') == 5 || ...
+                            exist('filePermissions', 'file') == 2
+                        p = filePermissions(dirPath);
+                        p.User.Read  = true;
+                        p.User.Write = true;
+                        p.User.Execute = true;
+                        p.Group.Read = false;
+                        p.Group.Write = false;
+                        p.Group.Execute = false;
+                        p.Other.Read = false;
+                        p.Other.Write = false;
+                        p.Other.Execute = false;
+                        filePermissions(dirPath, p);
+                    else
+                        fileattrib(dirPath, '+w', 'u');
+                        fileattrib(dirPath, '-w', 'go');
+                        fileattrib(dirPath, '-r', 'go');
+                        fileattrib(dirPath, '-x', 'go');
+                    end
                 end
             end
         end
 
         function gzipToFile(txt, outPath)
-            % Java's GZIPOutputStream writes a valid single-member gzip
-            % that gunzip(1), `tar -xzf`, and NDI-python's gzip module
-            % can all read. onCleanup makes the stream close on both
-            % normal return and exception; localSafeClose is idempotent
-            % so a successful explicit close followed by the cleanup's
-            % close is harmless.
-            bytes = int8(unicode2native(char(txt), 'UTF-8'));
-            fos  = java.io.FileOutputStream(outPath);
-            fosCloser = onCleanup(@() localSafeClose(fos)); %#ok<NASGU>
-            gzos = java.util.zip.GZIPOutputStream(fos);
-            gzosCloser = onCleanup(@() localSafeClose(gzos)); %#ok<NASGU>
-            gzos.write(bytes);
-            gzos.close();
+            % Write UTF-8 bytes to a plain temp file, then use MATLAB's
+            % builtin gzip to produce a valid single-member gzip that
+            % gunzip(1), tar -xzf and NDI-python's gzip module can all
+            % read. We avoid Java streams because the Java bridge's
+            % overload resolution for write(byte[]) versus write(int) is
+            % release- and JVM-dependent, and a mis-picked overload here
+            % writes silently corrupt output.
+            parent = fileparts(outPath);
+            stem = tempname(parent);
+            plainPath = [stem '.json'];
+            fid = fopen(plainPath, 'w');
+            if fid < 0
+                error('NDI:SignedUrlDiskCache:WriteOpenFailed', ...
+                    'Could not open %s for writing.', plainPath);
+            end
+            cleanupPlain = onCleanup(@() localDeleteIfExists(plainPath)); %#ok<NASGU>
+            bytes = unicode2native(char(txt), 'UTF-8');
+            fwrite(fid, bytes, 'uint8');
+            fclose(fid);
+            % gzip(FILE) writes FILE.gz next to FILE in the same dir.
+            gzip(plainPath);
+            gzPath = [plainPath '.gz'];
+            cleanupGz = onCleanup(@() localDeleteIfExists(gzPath)); %#ok<NASGU>
+            movefile(gzPath, outPath, 'f');
         end
 
         function txt = gunzipToString(inPath)
-            fis = java.io.FileInputStream(inPath);
-            fisCloser = onCleanup(@() localSafeClose(fis)); %#ok<NASGU>
-            gzis = java.util.zip.GZIPInputStream(fis);
-            gzisCloser = onCleanup(@() localSafeClose(gzis)); %#ok<NASGU>
-            baos = java.io.ByteArrayOutputStream();
-            buf = javaArray('byte', 8192);
-            n = gzis.read(buf);
-            while n > 0
-                baos.write(buf, 0, n);
-                n = gzis.read(buf);
+            % gunzip writes into a temp dir, then we read the plain file.
+            % Same rationale as gzipToFile: avoid the Java-bridge
+            % overload traps by using MATLAB builtins end to end.
+            outDir = tempname;
+            mkdir(outDir);
+            cleanupDir = onCleanup(@() localCleanupDir(outDir)); %#ok<NASGU>
+            names = gunzip(inPath, outDir);
+            if isempty(names)
+                error('NDI:SignedUrlDiskCache:EmptyGunzip', ...
+                    'gunzip produced no files from %s', inPath);
             end
-            bytes = typecast(baos.toByteArray(), 'uint8');
-            txt = native2unicode(bytes(:).', 'UTF-8');
+            fid = fopen(names{1}, 'rb');
+            if fid < 0
+                error('NDI:SignedUrlDiskCache:ReadOpenFailed', ...
+                    'Could not open %s for reading.', names{1});
+            end
+            raw = fread(fid, inf, '*uint8')';
+            fclose(fid);
+            txt = native2unicode(raw, 'UTF-8');
         end
 
         function atomicRename(srcPath, dstPath)
-            % Files.move(ATOMIC_MOVE, REPLACE_EXISTING) is the one
-            % cross-platform API that is atomic on both POSIX (rename(2))
-            % and Windows (MoveFileEx MOVEFILE_REPLACE_EXISTING). MATLAB's
-            % movefile is not, so we go to Java directly.
-            %
-            % java.io.File.toPath() avoids the awkward Paths.get(String,
-            % String...) varargs call from MATLAB (the varargs array
-            % conversion is a moving target across JVMs).
-            src = java.io.File(srcPath).toPath();
-            dst = java.io.File(dstPath).toPath();
-            opts = javaArray('java.nio.file.CopyOption', 2);
-            opts(1) = java.nio.file.StandardCopyOption.ATOMIC_MOVE;
-            opts(2) = java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-            java.nio.file.Files.move(src, dst, opts);
+            % movefile on the same directory delegates to a POSIX
+            % rename(2) or a Windows MoveFileEx replace, which is enough
+            % for the "no half-written file visible to a concurrent
+            % reader" invariant this cache needs. We used to go through
+            % java.nio.file.Files.move(ATOMIC_MOVE) but the javaArray
+            % path there is fragile across MATLAB releases -- an
+            % interface-typed array plus an enum-to-array assignment can
+            % throw silently, and save()'s outer try/catch swallows it.
+            movefile(srcPath, dstPath, 'f');
         end
 
         function s = isoNow()
@@ -573,14 +600,32 @@ classdef signedUrlDiskCache
     end
 end
 
-function localSafeClose(obj)
-% Best-effort close for a Java stream inside an onCleanup. Suppresses
-% double-close and I/O errors -- the read/write already succeeded or
-% already failed, and either way the stream is being torn down.
-    if isempty(obj)
-        return
+function localDeleteIfExists(p)
+% Best-effort delete for an onCleanup guard on a scratch file.
+    if ischar(p) && ~isempty(p) && isfile(p)
+        try %#ok<TRYNC>
+            delete(p);
+        end
     end
-    try %#ok<TRYNC>
-        obj.close();
+end
+
+function localCleanupDir(d)
+% Best-effort recursive rmdir for a scratch temp directory used only for
+% one gunzip. Missing directory is not an error.
+    if ischar(d) && ~isempty(d) && isfolder(d)
+        try %#ok<TRYNC>
+            rmdir(d, 's');
+        end
+    end
+end
+
+function pid = localProcessId()
+% matlabProcessID is the supported accessor in recent releases; feature
+% is the old, still-shipping one. Wrap so a plain integer PID comes back
+% either way and no code path relies on feature('getpid').
+    try
+        pid = matlabProcessID();
+    catch
+        pid = feature('getpid');
     end
 end
