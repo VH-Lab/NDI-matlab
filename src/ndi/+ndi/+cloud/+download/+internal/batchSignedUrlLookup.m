@@ -81,6 +81,18 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                    short-circuit the wait without adding real
 %                    latency to a suite that exercises the retry many
 %                    times.
+%       retryBackoffSeconds - Row vector of delays, in seconds,
+%                    between successive scope-fetch attempts after a
+%                    raise. Default [1 4 16] -- one initial call, up
+%                    to three retries at 1 s / 4 s / 16 s, ~21 s of
+%                    wall clock in the worst case. An exception here
+%                    is a transient network condition
+%                    (MATLAB:webservices:ConnectionFailed and the
+%                    like); a signer that reports ok=false is a
+%                    server-side no and is NOT retried. Pass [] to
+%                    disable retries, or a vector of zeros to keep
+%                    the retry count without adding real latency
+%                    (used by tests). See VH-Lab/NDI-matlab#1010.
 %
 %   Outputs:
 %       url         - The pre-signed URL for uid (char), or "" (string
@@ -115,6 +127,16 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                                   this uid" gets that answer after the
 %                                   retry. See VH-Lab/NDI-matlab#991 and
 %                                   Waltham-Data-Science/NDI-python#309.
+%                     .transientRetries  how many extra signer calls were
+%                                   spent recovering from a raise (a
+%                                   transient network error) before the
+%                                   scope was cached or given up on. A
+%                                   fresh scope fetch that raises is
+%                                   retried with backoff so one blip
+%                                   does not cascade to per-member
+%                                   fallback across a 156k-member series.
+%                                   See VH-Lab/NDI-matlab#1010 and
+%                                   Waltham-Data-Science/NDI-python#322.
 %
 %                     These exist to make the fallback VISIBLE. It is
 %                     deliberate at runtime -- a reader opening one file
@@ -150,6 +172,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         options.failureTtlSeconds (1,1) double = 60
         options.partialMapRetrySeconds (1,1) double = 0.5
         options.sleepFcn (1,1) function_handle = @pause
+        options.retryBackoffSeconds (1,:) double = [1 4 16]
     end
 
     % The persistent cache. Keyed on 'datasetId/documentId/seriesName'.
@@ -166,7 +189,7 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
     if isempty(STATS) || options.clearCache
         STATS = struct('signerCalls', 0, 'uidHits', 0, 'uidMisses', 0, ...
             'lastMapSize', 0, 'lastMapUids', {{}}, 'lastFailureReason', "", ...
-            'partialMapRetries', 0);
+            'partialMapRetries', 0, 'transientRetries', 0);
     end
     if isempty(WARNED) || options.clearCache
         WARNED = containers.Map('KeyType','char','ValueType','logical');
@@ -324,34 +347,71 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
             wantsFour = false;
         end
 
+        % Fetch the scope with backoff on a raise. A transient network
+        % blip (MATLAB:webservices:ConnectionFailed and the like) at the
+        % start of a run would otherwise cascade: this scope is marked
+        % failed, every subsequent uid in it falls back to a per-member
+        % getFileDetails call, and a 156k-member series takes hours.
+        % Retry the batch call itself first; the per-member fallback is
+        % still there below as a safety net, just not triggered by
+        % transients. See VH-Lab/NDI-matlab#1010 and Waltham-Data-Science/
+        % NDI-python#322.
+        %
+        % Only a caught exception is retried. A signer that reports
+        % ok=false is a server-side no (auth, 404, business-logic
+        % refusal): retrying hammers a dead endpoint and adds cost with
+        % no chance of recovery.
+        ok = false;
+        answer = [];
         apiResponse = [];
         failureReason = "";
-        try
-            if wantsFour
-                if strlength(seriesName) > 0
-                    [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
-                        ndiDocumentId, 'idNamespace', "ndi", ...
-                        'fileSeries', seriesName);
+        maxAttempts = 1 + numel(options.retryBackoffSeconds);
+        for attempt = 1:maxAttempts
+            apiResponse = [];
+            failureReason = "";
+            try
+                if wantsFour
+                    if strlength(seriesName) > 0
+                        [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
+                            ndiDocumentId, 'idNamespace', "ndi", ...
+                            'fileSeries', seriesName);
+                    else
+                        [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
+                            ndiDocumentId, 'idNamespace', "ndi");
+                    end
                 else
-                    [ok, answer, apiResponse] = options.signer(cloudDatasetId, ...
-                        ndiDocumentId, 'idNamespace', "ndi");
+                    if strlength(seriesName) > 0
+                        [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
+                            'idNamespace', "ndi", 'fileSeries', seriesName);
+                    else
+                        [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
+                            'idNamespace', "ndi");
+                    end
                 end
-            else
-                if strlength(seriesName) > 0
-                    [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
-                        'idNamespace', "ndi", 'fileSeries', seriesName);
-                else
-                    [ok, answer] = options.signer(cloudDatasetId, ndiDocumentId, ...
-                        'idNamespace', "ndi");
-                end
+            catch signerError
+                ok = false;
+                answer = [];
+                failureReason = "the call raised " + string(signerError.identifier) + ...
+                    ": " + string(signerError.message);
             end
-        catch signerError
-            ok = false;
-            answer = [];
-            failureReason = "the call raised " + string(signerError.identifier) + ...
-                ": " + string(signerError.message);
+            STATS.signerCalls = STATS.signerCalls + 1;
+            if ok
+                break
+            end
+            % Retry only on a raise. An ok=false response is not
+            % transient; break out and let the fallback path handle it.
+            if strlength(failureReason) == 0
+                break
+            end
+            if attempt >= maxAttempts
+                break
+            end
+            STATS.transientRetries = STATS.transientRetries + 1;
+            delay = options.retryBackoffSeconds(attempt);
+            if delay > 0
+                options.sleepFcn(delay);
+            end
         end
-        STATS.signerCalls = STATS.signerCalls + 1;
         if ~ok || ~isstruct(answer) || ~isfield(answer,'files') || ...
                 ~isa(answer.files,'containers.Map')
             % Any failure or unexpected shape -> no batch URL. Don't
