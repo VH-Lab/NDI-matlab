@@ -269,12 +269,21 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
             % this dataset down.
             testCase.addTeardown(@() safeDeleteDataset(cloudDatasetId));
 
-            % --- 4. Wait for the server to finish extracting the bulk zip
+            % --- 4. Wait for the server to finish extracting the bulk zip.
+            % Size-adaptive timeout: waitForAllBulkUploads' default 300 s
+            % is fine at N=500/2000 but too tight at N>=10000 -- the
+            % server was still extracting the 10k-file zip when the
+            % client gave up. Once the fixture-count fix (commit
+            % b0dcce11) started producing real N-sized uploads, this
+            % showed up as a red row that has nothing to do with the
+            % bug the class is here to observe. Scale with size so the
+            % test can actually reach the createSignedURLSetJob step.
+            bulkWaitSec = max(300, ceil(targetMemberCount / 20));
             [waitOk, waitInfo] = ndi.cloud.api.files.waitForAllBulkUploads( ...
-                cloudDatasetId);
+                cloudDatasetId, 'timeout', bulkWaitSec);
             testCase.assertTrue(waitOk, ...
-                sprintf('waitForAllBulkUploads did not confirm completion (state=%s, elapsed=%.1fs).', ...
-                    char(string(waitInfo.state)), waitInfo.elapsed));
+                sprintf('waitForAllBulkUploads did not confirm completion (state=%s, elapsed=%.1fs, timeout=%ds).', ...
+                    char(string(waitInfo.state)), waitInfo.elapsed, bulkWaitSec));
 
             % --- 5. Extract the manifest uid from the LOCAL level doc
             [manifestExists, manifestLocalPath] = ...
