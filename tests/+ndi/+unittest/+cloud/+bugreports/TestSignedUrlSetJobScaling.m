@@ -222,11 +222,24 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
                 'subject.local_identifier', 'scaleprobe@vhlab');
             S.database_add(subject);
 
+            % Pass ``chunks`` through explicitly so makePyramid does
+            % NOT fall through to chooseTileShape's default 8 MB
+            % target. Without this the [16 16 16] chunk shape
+            % pickShapeForTarget hands makeBlobFixture gets rechunked
+            % downstream to a much larger tile (observed empirically
+            % as [161 161 161], ~4 MB per chunk), so a "target 100000
+            % members" fixture only produces ~125 members and the
+            % scaling axis this test exists to sweep is silently
+            % collapsed to a constant. Handing the same chunkShape to
+            % fromOMEZarr keeps the level-0 chunk shape at what the
+            % fixture wrote, so ceil(shape ./ chunkShape) member count
+            % actually matches the target.
             [~, levelDocs, ~] = ndi.fun.doc.lightsheet.fromOMEZarr( ...
                 S, zarrPath, ...
                 'subjectID', subject.id(), ...
                 'materializeChunks', true, ...
-                'codec', 'raw');
+                'codec', 'raw', ...
+                'chunks', chunkShape);
             testCase.assertNotEmpty(levelDocs, ...
                 'fromOMEZarr produced no level documents; bail before the cloud call.');
 
@@ -279,6 +292,25 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
                 row.actualMemberCount = localManifest.count;
             catch
                 row.actualMemberCount = -1;
+            end
+
+            % Regression guard: an actual count far below target means
+            % the fixture builder is silently rechunking (as it did
+            % before we started passing ``chunks`` through to
+            % fromOMEZarr), so the scaling axis is not being exercised
+            % at the intended size and every row degenerates into a
+            % test of the small-N case. Warn loudly so a future
+            % regression is visible in the run log rather than only
+            % legible by squinting at the [scaleprobe] rows.
+            if targetMemberCount >= 100 && row.actualMemberCount > 0 && ...
+                    row.actualMemberCount < 0.25 * targetMemberCount
+                warning('NDI:test:SignedUrlSetJobScaling:FixtureCollapsed', ...
+                    ['N=%d requested but fixture produced only %d members ' ...
+                     '(< 25%%). The scaling axis is not being exercised as ' ...
+                     'intended -- check that fromOMEZarr is honoring the ' ...
+                     'requested chunk shape and not falling through to ' ...
+                     'chooseTileShape''s default byte budget.'], ...
+                    targetMemberCount, row.actualMemberCount);
             end
 
             % --- 6. createSignedURLSetJob + wait
