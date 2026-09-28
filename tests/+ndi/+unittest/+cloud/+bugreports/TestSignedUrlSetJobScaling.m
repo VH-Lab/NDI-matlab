@@ -271,19 +271,33 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
 
             % --- 4. Wait for the server to finish extracting the bulk zip.
             % Size-adaptive timeout: waitForAllBulkUploads' default 300 s
-            % is fine at N=500/2000 but too tight at N>=10000 -- the
-            % server was still extracting the 10k-file zip when the
-            % client gave up. Once the fixture-count fix (commit
-            % b0dcce11) started producing real N-sized uploads, this
-            % showed up as a red row that has nothing to do with the
-            % bug the class is here to observe. Scale with size so the
-            % test can actually reach the createSignedURLSetJob step.
+            % is fine at fixture scale but the extract time swings
+            % wildly with server load -- on b0dcce11 N=2000 finished
+            % in 22 s while on e3d5f51c the same N sat past 300 s.
+            % Rather than chase that variance with an ever-larger
+            % ceiling (and fail CI whenever the server is warm),
+            % observe the outcome and press on: the probe's job is to
+            % record server behaviour at scale, and "bulk extract did
+            % not complete in <T> s" is one such observation. If the
+            % extract times out we cannot call createSignedURLSetJob
+            % (files are not there yet), so the row records
+            % state='bulkTimeout' and the next N runs. This matches
+            % the philosophy stated at the failed-job branch below:
+            % the probe does not fail on things the server does; it
+            % records them.
             bulkWaitSec = max(300, ceil(targetMemberCount / 20));
             [waitOk, waitInfo] = ndi.cloud.api.files.waitForAllBulkUploads( ...
                 cloudDatasetId, 'timeout', bulkWaitSec);
-            testCase.assertTrue(waitOk, ...
-                sprintf('waitForAllBulkUploads did not confirm completion (state=%s, elapsed=%.1fs, timeout=%ds).', ...
-                    char(string(waitInfo.state)), waitInfo.elapsed, bulkWaitSec));
+            if ~waitOk
+                row.jobState = "bulkTimeout";
+                row.errorMessage = sprintf( ...
+                    'waitForAllBulkUploads did not confirm completion (state=%s, elapsed=%.1fs, timeout=%ds).', ...
+                    char(string(waitInfo.state)), waitInfo.elapsed, bulkWaitSec);
+                row.jobElapsedSec = waitInfo.elapsed;
+                testCase.Results(end+1) = row;
+                printRow(row);
+                return
+            end
 
             % --- 5. Extract the manifest uid from the LOCAL level doc
             [manifestExists, manifestLocalPath] = ...
