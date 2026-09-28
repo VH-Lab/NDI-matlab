@@ -66,17 +66,27 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
 %                    Default 20*3600 (the server currently signs URLs
 %                    for 24 h, leaving a buffer). A scope past its
 %                    TTL is refetched on the next miss.
-%       partialMapRetrySeconds - How long to wait, in seconds, before
-%                    re-fetching a scope whose first answer was a
-%                    populated map that did not name the requested uid.
-%                    Default 0.5. The retry gives a lagged batch
-%                    endpoint time to catch up after a bulk upload; a
-%                    zero value skips the wait but still performs the
-%                    single retry (used by tests). See
-%                    VH-Lab/NDI-matlab#991 and Waltham-Data-Science/
-%                    NDI-python#309.
+%       partialMapRetryDelays - Row vector of waits, in seconds, between
+%                    successive re-fetches of a scope whose previous
+%                    answer was a populated map that did not name the
+%                    requested uid. Default [1 3 9] -- one initial call
+%                    plus up to three retries at 1 s / 3 s / 9 s, ~13 s
+%                    of wall clock in the worst case. The retries give
+%                    a lagged batch endpoint time to catch up after
+%                    ``waitForAllBulkUploads`` returns; if the whole
+%                    schedule is spent and the map still misses, the
+%                    caller falls back per uid. See
+%                    VH-Lab/NDI-matlab#991 and
+%                    Waltham-Data-Science/NDI-python#309 and #320.
+%       partialMapRetrySeconds - Deprecated single-wait scalar. NaN
+%                    (default) means "use partialMapRetryDelays". Any
+%                    other value replaces the schedule with a
+%                    one-element one containing that wait, matching the
+%                    pre-schedule contract where 0 still fires one
+%                    retry (with no wait). Kept so tests pinned to that
+%                    contract keep passing.
 %       sleepFcn   - Function handle called as sleepFcn(seconds) to
-%                    perform the pause before a partial-map retry.
+%                    perform the pause before each partial-map retry.
 %                    Defaults to @pause. Present so tests can
 %                    short-circuit the wait without adding real
 %                    latency to a suite that exercises the retry many
@@ -170,7 +180,22 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         options.clearCache (1,1) logical = false
         options.ttlSeconds (1,1) double  = 20*3600
         options.failureTtlSeconds (1,1) double = 60
-        options.partialMapRetrySeconds (1,1) double = 0.5
+        % PARTIAL-MAP retry schedule (bounded exponential backoff). Each
+        % entry is a wait, in seconds, before the corresponding retry.
+        % A scope whose Nth wave still returns a partial map falls back
+        % per uid without another wave. Three waves at 1 s / 3 s / 9 s
+        % cover the User-1-prod tail observed on
+        % Waltham-Data-Science/NDI-python#320: one 0.5 s retry was not
+        % enough to bridge the settle between bulk-upload extraction and
+        % the signed-URL-set index catching up. See also
+        % VH-Lab/NDI-matlab#991.
+        options.partialMapRetryDelays (1,:) double = [1 3 9]
+        % Back-compat scalar knob. If passed, replaces the schedule with
+        % a single-element one containing that wait. NaN means "not
+        % set", so partialMapRetryDelays wins. Preserves the pre-schedule
+        % semantics where partialMapRetrySeconds=0 still fires one retry
+        % (with no wait).
+        options.partialMapRetrySeconds (1,1) double = NaN
         options.sleepFcn (1,1) function_handle = @pause
         options.retryBackoffSeconds (1,:) double = [1 4 16]
         % Disk cache off by default: only enable when we have a URL-set
@@ -207,7 +232,20 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         FAILEDSCOPES = containers.Map('KeyType','char','ValueType','any');
     end
     if isempty(RETRIEDSCOPES) || options.clearCache
-        RETRIEDSCOPES = containers.Map('KeyType','char','ValueType','logical');
+        % Values are the number of retry waves already spent on this
+        % scope, bounded by numel(effectiveDelays). Was a logical
+        % "has been retried" set before the multi-wave rework.
+        RETRIEDSCOPES = containers.Map('KeyType','char','ValueType','double');
+    end
+
+    % Resolve the effective partial-map schedule. A caller passing the
+    % deprecated scalar partialMapRetrySeconds gets a one-element
+    % schedule with that wait (scalar=0 still fires ONE retry, matching
+    % the pre-schedule behaviour).
+    if isnan(options.partialMapRetrySeconds)
+        effectiveDelays = options.partialMapRetryDelays;
+    else
+        effectiveDelays = options.partialMapRetrySeconds;
     end
 
     url = "";
@@ -277,14 +315,25 @@ function [url, stats] = batchSignedUrlLookup(cloudDatasetId, ndiDocumentId, seri
         % misses becomes a whole series' worth of hits from one retry.
         % See VH-Lab/NDI-matlab#991 and Waltham-Data-Science/
         % NDI-python#309.
-        if ~isKey(RETRIEDSCOPES, cacheKey)
-            RETRIEDSCOPES(cacheKey) = true;
-            STATS.partialMapRetries = STATS.partialMapRetries + 1;
-            if options.partialMapRetrySeconds > 0
-                options.sleepFcn(options.partialMapRetrySeconds);
+        % Multi-wave retry: each wave sleeps for effectiveDelays(n+1)
+        % where n is the number of waves already spent, then refetches.
+        % Stops as soon as a fresh map names the uid, or when the
+        % schedule is exhausted.
+        if isKey(RETRIEDSCOPES, cacheKey)
+            attemptsSpent = RETRIEDSCOPES(cacheKey);
+        else
+            attemptsSpent = 0;
+        end
+        while attemptsSpent < numel(effectiveDelays)
+            delay = effectiveDelays(attemptsSpent + 1);
+            if delay > 0
+                options.sleepFcn(delay);
             end
             % Drop the stale entry so localFetchScope replaces it fresh.
             remove(CACHE, cacheKey);
+            STATS.partialMapRetries = STATS.partialMapRetries + 1;
+            attemptsSpent = attemptsSpent + 1;
+            RETRIEDSCOPES(cacheKey) = attemptsSpent;
             refreshed = localFetchScope(cacheKey);
             if isempty(refreshed)
                 % localFetchScope already recorded the miss and warned;
