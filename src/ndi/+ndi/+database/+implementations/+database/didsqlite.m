@@ -224,15 +224,34 @@ function download_file_from_cloud(destPath, sourcePath, context)
         if strlength(seriesName) > 0 && strlength(contextUid) > 0
             ndiFileUid = char(contextUid);
         end
+        % A single-file fetch (a series manifest, or any doc-level
+        % attachment) arrives here with seriesName="" -- there is no
+        % member being asked for. Going through the per-document batch
+        % scope to answer one uid is pure loss: for a lightsheet-scale
+        % pyramid document that scope names 15k+ files, so the batch
+        % endpoint spends 60-90 s signing a set the caller has no use
+        % for, delaying the ONE URL the download actually needs by more
+        % than a minute. Same reasoning ndi.cloud.sync.internal
+        % .fetchManifest uses for the internal manifest fetch; the DID
+        % handler path has to make the same choice or the pyramid
+        % pathology reappears whenever DID reads a series member (DID
+        % fetches the manifest via the handler with seriesName="" before
+        % it fetches any members). See Waltham-Data-Science/
+        % NDI-python#320 and NDI-matlab#1010.
+        if strlength(seriesName) == 0
+            batchDocId = "";
+        else
+            batchDocId = docId;
+        end
         % diskCache=true because DID is the production reopen-a-dataset
         % path: a scientist who reopens the same lightsheet the next
         % morning must not pay the ~85 min signed-URL-set job again.
         % Signals lookup only for a scoped call (empty documentId
         % dispatches to the batch's early return and no disk read
         % happens). See ndi.cloud.download.internal.signedUrlDiskCache.
-        fromDiskCache = strlength(docId) > 0;
+        fromDiskCache = strlength(batchDocId) > 0;
         fileUrl = ndi.cloud.download.internal.batchSignedUrlLookup( ...
-            string(cloudDatasetId), docId, seriesName, string(ndiFileUid), ...
+            string(cloudDatasetId), batchDocId, seriesName, string(ndiFileUid), ...
             'diskCache', fromDiskCache);
 
         if strlength(fileUrl) == 0
