@@ -64,15 +64,43 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
         %
         % A run with credentials but a small time budget can restrict
         % via the MATLAB unittest -Selector infrastructure or just let
-        % the small sizes run and Ctrl-C before the big one. 10000 is
-        % included per the task brief -- it is closer to a lightsheet
-        % level than the small sizes are.
+        % the small sizes run and Ctrl-C before the big one.
+        %
+        % Size regimes and their purpose:
+        %   N5, N100, N500      -- exercise the plumbing (upload,
+        %                          extract, signed-URL job) at
+        %                          fixture-scale where the API path
+        %                          used to time out on its own.
+        %   N2000, N10000       -- push into the "signing rate
+        %                          matters" regime where the earlier
+        %                          fix (see NDI-matlab#1010 /
+        %                          ndi-cloud-node#149) moved the
+        %                          floor from ~24 URLs/s.
+        %   N50000, N100000     -- exercise the >100k regime that
+        %                          real lightsheet levels live in
+        %                          (a level of a 121,441-URL pyramid
+        %                          motivated Waltham-Data-Science/
+        %                          NDI-python#320 / ndi-cloud-node
+        %                          #151). Currently gated behind
+        %                          NDI_SCALINGPROBE_HUGE=1 so the
+        %                          default CI run does not swallow a
+        %                          30+ minute upload per row: the
+        %                          size is what proves the fix lands,
+        %                          but the upload is a cloud-budget
+        %                          hit until then. Flip the gate off
+        %                          (i.e. remove the assumeTrue below)
+        %                          once ndi-cloud-node#151 is fixed
+        %                          AND the upload path is fast
+        %                          enough that CI can afford these
+        %                          rows on every push.
         targetMemberCount = struct( ...
-            'N5',     5, ...
-            'N100',   100, ...
-            'N500',   500, ...
-            'N2000',  2000, ...
-            'N10000', 10000);
+            'N5',      5, ...
+            'N100',    100, ...
+            'N500',    500, ...
+            'N2000',   2000, ...
+            'N10000',  10000, ...
+            'N50000',  50000, ...
+            'N100000', 100000);
     end
 
     properties
@@ -155,6 +183,22 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
             % if setup / upload / local extraction goes wrong, since those
             % would poison the row and mask the server-side outcome we are
             % here to observe. The row is what the reader reads.
+
+            % Huge-N gate. 50k / 100k rows upload ~50-100k files each,
+            % which currently takes tens of minutes and burns cloud
+            % budget on every CI push; skip them unless
+            % NDI_SCALINGPROBE_HUGE=1 is explicitly set. Retire this
+            % gate once ndi-cloud-node#151 is fixed and CI can afford
+            % the upload cost on every run.
+            if targetMemberCount >= 50000
+                hugeGate = getenv('NDI_SCALINGPROBE_HUGE');
+                testCase.assumeTrue(strcmp(hugeGate, '1'), ...
+                    sprintf(['N=%d skipped by default: set ' ...
+                             'NDI_SCALINGPROBE_HUGE=1 to run the ' ...
+                             '>=50k rows. See the comment on ' ...
+                             'targetMemberCount for the rationale.'], ...
+                        targetMemberCount));
+            end
 
             row = testCase.freshRow(targetMemberCount);
 
@@ -250,8 +294,16 @@ classdef TestSignedUrlSetJobScaling < matlab.unittest.TestCase
                 row.errorMessage = extractMessage(createAnswer);
             else
                 row.jobId = string(createAnswer.jobId);
+                % Size-adaptive timeout. At the observed per-URL rate the
+                % small sizes finish well inside 300 s; the >=50k rows
+                % need a longer ceiling to reach 'ready' at all once the
+                % server-side fix lands. A generous ceiling costs
+                % nothing when the fix is fast (the wait returns as
+                % soon as the job is ready) and lets the row report
+                % the actual wall time rather than "timed out".
+                jobTimeoutSec = max(300, ceil(targetMemberCount / 100));
                 [readyOk, jobAnswer] = ndi.cloud.api.files.waitForSignedURLSetJob( ...
-                    row.jobId, 'timeout', 300);
+                    row.jobId, 'timeout', jobTimeoutSec);
                 if readyOk
                     row.jobState = "ready";
                     if isfield(jobAnswer, 'fileCount') && ~isempty(jobAnswer.fileCount)
