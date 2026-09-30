@@ -9,20 +9,23 @@ function result = import_V2(dataParentDir, options)
 %   reason, in import_V2_decisions.md next to this file.
 %
 %   The stages, in order (decision log, "Stage order"):
-%     0  discover      list the source files; skip earlier import output
-%     2  metadata      dataset, people, organizations, funding, publication,
-%                      studies, software, products, strains, instruments --
-%                      from import_V2_spec.json (sources: the eLife paper)
-%     3  sessions      one session per experimental day            (not yet)
-%     4  entities      worms, plates, patches as subjects          (not yet)
-%     5  relations     worm on plate, patch on plate, ...          (not yet)
-%     6  assertions    strain, species, exclusion tags, ...        (not yet)
-%     7  manipulations food deprivation, lawn seeding, ...         (not yet)
-%     8  observations  tracks, encounters, images (video epochs)   (not yet)
-%     9  calculations  density, ...                                (not yet)
-%    10  check & write validate, census, write                     (not yet)
-%   Stage 1 (load and profile the tables) runs inside the stages that need a
-%   table; ndi.setup.V2.profileTable describes one on request.
+%     A. dataset, once
+%        0  discover       list the source files; skip earlier import output
+%        1  profile        describe tables (ndi.setup.V2.profileTable, on demand)
+%        2  metadata       dataset, people, organizations, funding, publication,
+%                          studies, software, products, strains, instruments --
+%                          from import_V2_spec.json (sources: the eLife paper)
+%     B. per study (E. coli first); per day:
+%        3  sessions       one per day, part_of its study          (building)
+%        4  acquisition    camera/microscope, one epoch per video  (not yet)
+%        5  subjects       plates, patches, worms                  (not yet)
+%        6  relations      patch on plate, worm on plate, ...      (not yet)
+%        7  assertions     strain, species, exclusion tags         (not yet)
+%        8  manipulations  plate preparation, food deprivation     (not yet)
+%        9  observations   tracks, environment, geometry, images   (not yet)
+%        10 calculations   masks, closest-patch maps               (not yet)
+%     C. dataset-wide, once
+%        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
 %   Nothing is written to disk yet: RESULT holds the documents each stage
 %   built, as structs, for inspection.

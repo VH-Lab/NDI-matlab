@@ -24,10 +24,42 @@ conversation; **OPEN** entries are questions still to answer. The existing
   tables, then each stage asks its questions about them; the answers
   accumulate into a spec that is saved for re-imports and similar datasets.
 
-## Stage order (DECIDED in outline 2026-09-30; details per section)
+## Stage order (DECIDED 2026-09-30, revised after discovery)
 
-discover/profile -> dataset metadata -> sessions -> entities -> relations ->
-assertions -> manipulations -> observations -> calculations -> check & write.
+The first outline (discover -> dataset metadata -> sessions -> entities -> ...)
+was flat and had no acquisition stage. Discovery changed three things:
+every interaction statement needs a time reference (`subject_interaction`
+declares `time_reference_id` with `min_count 1`), so EPOCHS must exist before
+any statement; the source data comes per study (1-4 GB of tracks per folder)
+and is recorded per day, so the loop is NESTED; and some content spans days or
+studies (`encounter.mat` covers all five C. elegans studies; relative patch
+density comes from the E. coli study), so it runs in a final dataset pass.
+
+    A. dataset, once
+       0  discover       list source files; skip earlier import output
+       1  profile        describe tables (on demand)
+       2  metadata       people, organizations, funding, publication, studies,
+                         strains, products, instruments   (BUILT)
+    B. per study (E. coli FIRST), tables loaded once + named corrections;
+       per day:
+       3  session        one per day, `part_of` its study
+       4  acquisition    camera / microscope system, one epoch per video or
+                         image, clocks + syncgraph
+       5  subjects       cultivation (L4) plates, behaviour plates, patches, worms
+       6  relations      patch part_of plate, worm on plate, worm from its
+                         cultivation plate
+       7  assertions     strain, species, exclusion tag on plates
+       8  manipulations  plate preparation timeline (absolute UTC times),
+                         food deprivation, transfer
+       9  observations   tracks per video epoch, temperature/humidity, arena
+                         and patch geometry, fluorescence images
+       10 calculations   per day: masks, closest-patch maps from the first frame
+          write the session
+    C. dataset-wide, once
+       11 encounters     the cross-study encounter table
+       12 calculations   cross-study: relative density (E. coli -> C. elegans)
+       13 check & write  validate, census, write the dataset
+
 Each stage returns an id map (source key -> document id) that later stages use.
 
 ## Decisions
