@@ -56,6 +56,12 @@ arguments
     options.DatasetSessionId (1,:) char = ''
 end
 
+% Check the requirements up front, so a missing one is reported with its fix
+% rather than as "Unable to resolve the name 'did2.build.label'" mid-stage.
+if any(ismember(options.Stages, ["metadata", "sessions"]))
+    ndi.setup.V2.preflight();
+end
+
 result = struct();
 sid = options.DatasetSessionId;
 if isempty(sid)
