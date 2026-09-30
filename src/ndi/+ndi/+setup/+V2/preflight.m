@@ -48,8 +48,34 @@ else
         end
     end
 end
+% The schema cache is a SINGLETON: whichever path it saw first (DID_SCHEMA_PATH,
+% or DID's own default -- a V_delta folder -- when the variable was unset) it
+% keeps until reset. Setting DID_SCHEMA_PATH afterwards changes nothing, which
+% is how a correct setenv still produced "No schema file ... V_delta/stable".
+% So compare the path the cache is ACTUALLY using, and reset it when stale.
+if isempty(problems)
+    cache = did2.schema.cache.shared();
+    if ~strcmp(canonical(cache.schemaPath), canonical(sp))
+        fprintf(['preflight: the schema cache was loaded from %s; resetting it to ' ...
+            'DID_SCHEMA_PATH (%s).\n'], cache.schemaPath, sp);
+        did2.schema.cache.resetSingleton();
+        cache = did2.schema.cache.shared();
+        if ~strcmp(canonical(cache.schemaPath), canonical(sp))
+            problems{end+1} = sprintf(['The schema cache still reads %s after a reset, ' ...
+                'not DID_SCHEMA_PATH (%s).'], cache.schemaPath, sp);
+        end
+    end
+end
 if ~isempty(problems)
     error('ndi:setup:V2:preflight', 'The V2 import cannot run yet:\n  - %s', ...
         strjoin(problems, sprintf('\n  - ')));
+end
+end
+
+function p = canonical(p)
+% Compare folders, not spellings: drop a trailing separator.
+p = char(p);
+while numel(p) > 1 && any(p(end) == '/\\')
+    p = p(1:end-1);
 end
 end
