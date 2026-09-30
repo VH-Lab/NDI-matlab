@@ -303,11 +303,14 @@ function state = checkKnown(state, kind, entry, known, noted)
 if nargin < 5
     noted = struct();
 end
-skip = [{'key', '_verify', '_note'}, known];
+% A spec key starting with `_` (`_verify`, `_note`) is an ANNOTATION for the
+% reader, not data. jsondecode cannot keep a leading underscore in a field name
+% and renames it `x_...`, so both spellings are recognised.
+skip = [{'key'}, known];
 names = fieldnames(entry);
 for k = 1:numel(names)
     n = names{k};
-    if any(strcmp(n, skip))
+    if any(strcmp(n, skip)) || startsWith(n, '_') || startsWith(n, 'x_')
         continue;
     end
     if isfield(noted, n)
