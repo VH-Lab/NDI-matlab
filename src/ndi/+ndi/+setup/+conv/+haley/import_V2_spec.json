@@ -1,0 +1,886 @@
+{
+ "_about": "Dataset-level metadata for the Haley V2 import (stage 2). Sources: the eLife paper (Haley, Chen, Aoi, Chalasani, eLife 13:RP103191, doi:10.7554/eLife.103191; Key resources table, Materials and methods, Funding, Author contributions, Author ORCIDs, Data availability) and the NDI Cloud dataset page (licence). ROR ids came from web search and are marked '_verify' where the search result was not titled with the organization's name. Every entry has a local `key`; references between entries use keys, which the maker resolves to document ids. See import_V2_decisions.md.",
+ "organizations": [
+  {
+   "key": "salk",
+   "name": "Salk Institute for Biological Studies",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/03xez1567"
+    }
+   ]
+  },
+  {
+   "key": "salk_mnl",
+   "name": "Molecular Neurobiology Laboratory",
+   "parent": "salk"
+  },
+  {
+   "key": "ucsd",
+   "name": "University of California, San Diego",
+   "short_name": "UC San Diego",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/0168r3w48"
+    }
+   ],
+   "_verify": "ROR from a search summary, record page not read"
+  },
+  {
+   "key": "ucsd_ngp",
+   "name": "Neurosciences Graduate Program",
+   "parent": "ucsd"
+  },
+  {
+   "key": "ucsd_hdsi",
+   "name": "Halıcıoğlu Data Science Institute",
+   "parent": "ucsd"
+  },
+  {
+   "key": "ucsd_neurobiology",
+   "name": "Department of Neurobiology",
+   "parent": "ucsd"
+  },
+  {
+   "key": "nih",
+   "name": "National Institutes of Health",
+   "short_name": "NIH",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/01cwqze88"
+    }
+   ],
+   "_verify": "top ROR search result, untitled"
+  },
+  {
+   "key": "nimh",
+   "name": "National Institute of Mental Health",
+   "short_name": "NIMH",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/05xj56w78"
+    }
+   ],
+   "parent": "nih"
+  },
+  {
+   "key": "nsf",
+   "name": "U.S. National Science Foundation",
+   "short_name": "NSF",
+   "identifiers": [
+    {
+     "scheme": "ROR",
+     "value": "https://ror.org/021nxhr62"
+    }
+   ],
+   "_verify": "top ROR search result, untitled"
+  },
+  {
+   "key": "dorsett_brown",
+   "name": "Joe W. and Dorothy Dorsett Brown Foundation",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://www.thebrownfoundation.org/"
+    }
+   ]
+  },
+  {
+   "key": "cgc",
+   "name": "Caenorhabditis Genetics Center",
+   "short_name": "CGC",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://cgc.umn.edu/"
+    }
+   ]
+  },
+  {
+   "key": "ndi_cloud",
+   "name": "NDI Cloud",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://ndi-cloud.com/"
+    }
+   ]
+  },
+  {
+   "key": "norpix",
+   "name": "NorPix"
+  },
+  {
+   "key": "mbf",
+   "name": "MBF Bioscience"
+  },
+  {
+   "key": "mathworks",
+   "name": "MathWorks"
+  },
+  {
+   "key": "adobe",
+   "name": "Adobe"
+  },
+  {
+   "key": "pixelink",
+   "name": "PixeLink"
+  },
+  {
+   "key": "navitar",
+   "name": "Navitar"
+  },
+  {
+   "key": "advanced_illumination",
+   "name": "Advanced Illumination"
+  },
+  {
+   "key": "zeiss",
+   "name": "Carl Zeiss"
+  },
+  {
+   "key": "molecular_devices",
+   "name": "Molecular Devices"
+  },
+  {
+   "key": "cricut",
+   "name": "Cricut"
+  },
+  {
+   "key": "bd",
+   "name": "Becton, Dickinson and Company",
+   "short_name": "BD"
+  }
+ ],
+ "people": [
+  {
+   "key": "haley",
+   "given_name": "Jessica A",
+   "family_name": "Haley",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0000-0001-6282-7124"
+    }
+   ],
+   "affiliations": [
+    "ucsd_ngp",
+    "salk_mnl"
+   ]
+  },
+  {
+   "key": "chen",
+   "given_name": "Tianyi",
+   "family_name": "Chen",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0009-0003-7572-2155"
+    }
+   ],
+   "affiliations": [
+    "salk_mnl"
+   ]
+  },
+  {
+   "key": "aoi",
+   "given_name": "Mikio",
+   "family_name": "Aoi",
+   "email": "maoi@ucsd.edu",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0000-0002-7052-880X"
+    }
+   ],
+   "affiliations": [
+    "ucsd_hdsi",
+    "ucsd_neurobiology"
+   ]
+  },
+  {
+   "key": "chalasani",
+   "given_name": "Sreekanth H",
+   "family_name": "Chalasani",
+   "email": "schalasani@salk.edu",
+   "identifiers": [
+    {
+     "scheme": "ORCID",
+     "value": "https://orcid.org/0000-0003-2522-8338"
+    }
+   ],
+   "affiliations": [
+    "salk_mnl"
+   ]
+  }
+ ],
+ "funding": [
+  {
+   "key": "nih_r01",
+   "name": "RO1 MH096881",
+   "identifiers": [
+    {
+     "scheme": "AwardNumber",
+     "value": "R01 MH096881"
+    }
+   ],
+   "funder": "nimh",
+   "recipients": [
+    "chalasani"
+   ]
+  },
+  {
+   "key": "dorsett_brown_award",
+   "name": "Dorsett Brown Foundation award",
+   "funder": "dorsett_brown",
+   "recipients": [
+    "haley",
+    "chalasani"
+   ]
+  },
+  {
+   "key": "salk_innovation",
+   "name": "Salk Innovation Grant",
+   "funder": "salk",
+   "recipients": [
+    "haley",
+    "chalasani"
+   ]
+  },
+  {
+   "key": "nsf_grfp",
+   "name": "Graduate Research Fellowship Program",
+   "identifiers": [
+    {
+     "scheme": "AwardNumber",
+     "value": "DGE-1650112"
+    }
+   ],
+   "funder": "nsf",
+   "recipients": [
+    "haley"
+   ]
+  },
+  {
+   "key": "ucsd_ssra",
+   "name": "Undergraduate Summer Research Award",
+   "funder": "ucsd",
+   "recipients": [
+    "chen"
+   ]
+  }
+ ],
+ "publications": [
+  {
+   "key": "elife_2025",
+   "name": "Accept–reject decision-making revealed via a quantitative and ethological study of C. elegans foraging",
+   "publication_date": "2025-09-10",
+   "authors": "Haley JA, Chen T, Aoi M, Chalasani SH",
+   "identifiers": [
+    {
+     "scheme": "DOI",
+     "value": "https://doi.org/10.7554/eLife.103191"
+    }
+   ]
+  }
+ ],
+ "web_resources": [
+  {
+   "key": "code",
+   "name": "Analysis code (GitHub)",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://github.com/shreklab/Haley-et-al-2024"
+    }
+   ]
+  },
+  {
+   "key": "ndi_cloud_page",
+   "name": "NDI Cloud dataset page",
+   "identifiers": [
+    {
+     "scheme": "URL",
+     "value": "https://ndi-cloud.com/datasets/682e7772cdf3f24938176fac"
+    }
+   ],
+   "host": "ndi_cloud"
+  }
+ ],
+ "software": [
+  {
+   "key": "streampix",
+   "name": "StreamPix",
+   "version": "8",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_015773"
+    }
+   ],
+   "vendor": "norpix"
+  },
+  {
+   "key": "wormlab",
+   "name": "WormLab",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_017669"
+    }
+   ],
+   "vendor": "mbf"
+  },
+  {
+   "key": "matlab",
+   "name": "MATLAB",
+   "version": "2024a",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_001622"
+    }
+   ],
+   "vendor": "mathworks"
+  },
+  {
+   "key": "photoshop",
+   "name": "Photoshop",
+   "version": "2024",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_014199"
+    }
+   ],
+   "vendor": "adobe"
+  },
+  {
+   "key": "illustrator",
+   "name": "Illustrator",
+   "version": "2024",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:SCR_010279"
+    }
+   ],
+   "vendor": "adobe"
+  }
+ ],
+ "products": [
+  {
+   "key": "camera",
+   "name": "PL-B741F camera",
+   "vendor": "pixelink"
+  },
+  {
+   "key": "lens_60135",
+   "name": "Navitar lens",
+   "catalog_number": "1-60135",
+   "vendor": "navitar"
+  },
+  {
+   "key": "lens_6044",
+   "name": "Navitar 0.25x lens",
+   "catalog_number": "1-6044",
+   "vendor": "navitar"
+  },
+  {
+   "key": "backlight",
+   "name": "Edge-lit backlight",
+   "vendor": "advanced_illumination"
+  },
+  {
+   "key": "axio_zoom",
+   "name": "Axio Zoom.V16",
+   "vendor": "zeiss"
+  },
+  {
+   "key": "spectrophotometer",
+   "name": "SpectraMax Plus 384",
+   "vendor": "molecular_devices"
+  },
+  {
+   "key": "cutter",
+   "name": "Cricut Maker 3",
+   "vendor": "cricut"
+  },
+  {
+   "key": "peptone",
+   "name": "Bacto peptone",
+   "catalog_number": "211677",
+   "vendor": "bd"
+  }
+ ],
+ "strains": [
+  {
+   "key": "OP50",
+   "name": "OP50",
+   "species": {
+    "node": "NCBITaxon:562",
+    "name": "Escherichia coli"
+   },
+   "genetic_strain_type": "wild type",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00041969"
+    },
+    {
+     "scheme": "URL",
+     "value": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=637912"
+    }
+   ],
+   "source": "cgc"
+  },
+  {
+   "key": "OP50-GFP",
+   "name": "OP50-GFP",
+   "species": {
+    "node": "NCBITaxon:562",
+    "name": "Escherichia coli"
+   },
+   "genetic_strain_type": "transgenic",
+   "background": [
+    "OP50"
+   ],
+   "description": "OP50 carrying a GFP plasmid (pFPV25.1); ampicillin resistant.",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00041972"
+    }
+   ]
+  },
+  {
+   "key": "N2",
+   "name": "N2",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "wild type",
+   "description": "N2 Bristol, wild isolate.",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00000001"
+    }
+   ]
+  },
+  {
+   "key": "PR811",
+   "name": "PR811",
+   "genotype": "osm-6(p811) V",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00030796"
+    }
+   ]
+  },
+  {
+   "key": "TU253",
+   "name": "TU253",
+   "genotype": "mec-4(u253) X",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00035037"
+    }
+   ]
+  },
+  {
+   "key": "CB1112",
+   "name": "CB1112",
+   "genotype": "cat-2(e1112) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:CB1112"
+    }
+   ]
+  },
+  {
+   "key": "CX6448",
+   "name": "CX6448",
+   "genotype": "gcy-35(ok769) I",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:CX6448"
+    }
+   ]
+  },
+  {
+   "key": "DA465",
+   "name": "DA465",
+   "genotype": "eat-2(ad465) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00005463"
+    }
+   ]
+  },
+  {
+   "key": "DA609",
+   "name": "DA609",
+   "genotype": "npr-1(ad609) X",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:WBStrain00005493"
+    }
+   ]
+  },
+  {
+   "key": "FK103",
+   "name": "FK103",
+   "genotype": "tax-4(ks28) III",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:FK103"
+    }
+   ]
+  },
+  {
+   "key": "MT13113",
+   "name": "MT13113",
+   "genotype": "tdc-1(n3419) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:MT13113"
+    }
+   ]
+  },
+  {
+   "key": "MT15434",
+   "name": "MT15434",
+   "genotype": "tph-1(mg280) II",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:MT15434"
+    }
+   ]
+  },
+  {
+   "key": "MT9455",
+   "name": "MT9455",
+   "genotype": "tbh-1(n3247) X",
+   "species": {
+    "node": "NCBITaxon:6239",
+    "name": "Caenorhabditis elegans"
+   },
+   "genetic_strain_type": "mutant",
+   "source": "cgc",
+   "_verify": "WormBase WBStrain id not found by search; RRID by strain name",
+   "identifiers": [
+    {
+     "scheme": "RRID",
+     "value": "RRID:WB-STRAIN:MT9455"
+    }
+   ]
+  }
+ ],
+ "instruments": [
+  {
+   "key": "camera_1",
+   "local_identifier": "camera 1",
+   "product": "camera",
+   "description": "Behaviour camera (1 of 2; experimentInfo `camera`)."
+  },
+  {
+   "key": "camera_2",
+   "local_identifier": "camera 2",
+   "product": "camera",
+   "description": "Behaviour camera (2 of 2; experimentInfo `camera`)."
+  },
+  {
+   "key": "axio_zoom_1",
+   "local_identifier": "Axio Zoom.V16",
+   "product": "axio_zoom",
+   "description": "Fluorescence stereo microscope used for the E. coli lawn imaging."
+  },
+  {
+   "key": "spectrophotometer_1",
+   "local_identifier": "SpectraMax Plus 384",
+   "product": "spectrophotometer"
+  }
+ ],
+ "studies": [
+  {
+   "key": "single_density_multi_patch",
+   "name": "Single-density, multi-patch assay",
+   "short_name": "foragingConcentration (grid)",
+   "source_folder": "foragingConcentration",
+   "source_condition": "grid",
+   "description": "Four young adult hermaphrodites forage in a 30 mm arena on an isometric grid of 19 patches (0.5 µl, 6 mm apart), all of one OP50 density (OD600 0-10; also 1 (12H) and 1 (48H) grown patches); 1 h at 3 fps.",
+   "factors": [
+    {
+     "node": "",
+     "name": "OD600"
+    },
+    {
+     "node": "",
+     "name": "bacterial growth time"
+    }
+   ]
+  },
+  {
+   "key": "large_single_patch",
+   "name": "Large, single-patch assay",
+   "short_name": "foragingConcentration (single)",
+   "source_folder": "foragingConcentration",
+   "source_condition": "single",
+   "description": "As the single-density multi-patch assay, but one large 20 µl patch in the centre of the 30 mm arena.",
+   "factors": [
+    {
+     "node": "",
+     "name": "OD600"
+    }
+   ]
+  },
+  {
+   "key": "small_single_patch",
+   "name": "Small, single-patch assay",
+   "short_name": "foragingMini",
+   "source_folder": "foragingMini",
+   "description": "One young adult in a 9 mm arena with one 0.5 µl patch (OD600 0, 0.5, 1, 5, 10); 1 h at 8 fps and ~105 px/mm, head and tail tracked.",
+   "factors": [
+    {
+     "node": "",
+     "name": "OD600"
+    }
+   ]
+  },
+  {
+   "key": "multi_density_multi_patch",
+   "name": "Multi-density, multi-patch assay",
+   "short_name": "foragingMatching",
+   "source_folder": "foragingMatching",
+   "description": "Grids of 18 patches combining OD600 1, 5 and 10 on peptone-free NGM; animals released from an S-Complete droplet at the arena centre; 2 h recordings.",
+   "factors": [
+    {
+     "node": "",
+     "name": "OD600"
+    },
+    {
+     "node": "",
+     "name": "patch configuration"
+    }
+   ]
+  },
+  {
+   "key": "mutant_screen",
+   "name": "Mutant screen and food deprivation (single-density, multi-patch)",
+   "short_name": "foragingMutants",
+   "source_folder": "foragingMutants",
+   "description": "Single-density, multi-patch environments with ten mutant strains and N2, well-fed and 3-h food-deprived. The paper's food-deprivation analysis is the N2 subset; most strains are not reported in the paper.",
+   "factors": [
+    {
+     "node": "",
+     "name": "strain"
+    },
+    {
+     "node": "",
+     "name": "food deprivation"
+    }
+   ]
+  },
+  {
+   "key": "sensory_mutants",
+   "name": "Sensory mutants (single-density, multi-patch)",
+   "short_name": "foragingSensory",
+   "source_folder": "foragingSensory",
+   "description": "Wild type (N2) and the sensory mutants osm-6 (PR811) and mec-4 (TU253) in single-density, multi-patch environments.",
+   "factors": [
+    {
+     "node": "",
+     "name": "strain"
+    }
+   ]
+  },
+  {
+   "key": "patch_density_estimation",
+   "name": "Bacterial patch density estimation",
+   "short_name": "ecoli",
+   "source_folder": "ecoli",
+   "description": "OP50-GFP patches seeded as in the behaviour assays and imaged for several hours on a Zeiss Axio Zoom.V16 to estimate relative bacterial density from the patch-edge fluorescence.",
+   "factors": [
+    {
+     "node": "",
+     "name": "OD600"
+    },
+    {
+     "node": "",
+     "name": "bacterial growth time"
+    }
+   ]
+  }
+ ],
+ "dataset": {
+  "name": "Accept-reject decision-making revealed via a quantitative and ethological study of C. elegans foraging",
+  "short_name": "haley_2025",
+  "description": "All raw (behaviour videos, fluorescence microscopy images) and processed (animal and bacterial patch locations over time) data for Haley et al., eLife (2025).",
+  "keyword": [
+   "C. elegans",
+   "foraging",
+   "decision-making",
+   "behavior",
+   "E. coli"
+  ],
+  "license": "CC-BY-4.0",
+  "accessibility": {
+   "node": "",
+   "name": "free access"
+  },
+  "ethics_assessment": {
+   "node": "",
+   "name": "not required"
+  },
+  "release_date": "2025-08-01",
+  "identifiers": [
+   {
+    "scheme": "DOI",
+    "value": "https://doi.org/10.63884/ndic.2025.pb77mj2s"
+   }
+  ],
+  "authors": [
+   {
+    "person": "haley",
+    "roles": [
+     "conceptualization",
+     "resources",
+     "data curation",
+     "software",
+     "formal analysis",
+     "supervision",
+     "funding acquisition",
+     "validation",
+     "investigation",
+     "visualization",
+     "methodology",
+     "writing - original draft",
+     "project administration",
+     "writing - review & editing"
+    ]
+   },
+   {
+    "person": "chen",
+    "roles": [
+     "data curation",
+     "investigation",
+     "writing - review & editing"
+    ]
+   },
+   {
+    "person": "aoi",
+    "roles": [
+     "formal analysis",
+     "supervision",
+     "visualization",
+     "methodology",
+     "writing - review & editing",
+     "corresponding author"
+    ]
+   },
+   {
+    "person": "chalasani",
+    "roles": [
+     "conceptualization",
+     "resources",
+     "supervision",
+     "funding acquisition",
+     "writing - review & editing",
+     "corresponding author"
+    ]
+   }
+  ],
+  "funding": [
+   "nih_r01",
+   "dorsett_brown_award",
+   "salk_innovation",
+   "nsf_grfp",
+   "ucsd_ssra"
+  ],
+  "cites": [
+   "elife_2025"
+  ],
+  "stored_at": [
+   "ndi_cloud_page"
+  ],
+  "documented_by": [
+   "code"
+  ]
+ }
+}
