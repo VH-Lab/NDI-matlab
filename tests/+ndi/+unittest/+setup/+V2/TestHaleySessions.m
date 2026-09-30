@@ -86,6 +86,19 @@ classdef TestHaleySessions < matlab.unittest.TestCase
                 'the range is carried as written; stage 5 checks it against the worms');
         end
 
+        function testChecksFlagTheSourceIndexWithoutChangingIt(testCase)
+            ce = fullfile(testCase.Root, 'haley', 'celegans', 'foragingConcentration', 'videos');
+            mkdir(fullfile(ce, '22-02-01'));   % the day row 0001 names
+            mkdir(fullfile(ce, '22-12-31'));   % a day no row names
+            [T, checks] = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
+            testCase.verifyEqual(height(T), 9, 'checks must not drop or alter rows');
+            testCase.verifyTrue(any(contains(checks.unusedVideoDay, '22-12-31')));
+            testCase.verifyTrue(any(contains(checks.noVideoFolder, '22-02-16')));
+            testCase.verifyFalse(any(contains(checks.noVideoFolder, '22-02-01')));
+            testCase.verifyTrue(any(contains(checks.ecoliSpread, 'experiment 1')) == false, ...
+                'fixture experiment 1 spans one day');
+        end
+
         function testEcoliSessionsAreDatedByTheirFirstImage(testCase)
             T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
             r = T(strcmp(T.local_identifier, 'ecoli_0001'), :);

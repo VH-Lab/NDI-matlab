@@ -1,4 +1,4 @@
-function T = sessionList(dataParentDir, spec, options)
+function [T, checks] = sessionList(dataParentDir, spec, options)
 %SESSIONLIST Stage 3 (Haley): the sessions to create, one per experiment.
 %
 %   T = ndi.setup.conv.haley.sessionList(DATAPARENTDIR, SPEC) reads the raw
@@ -17,6 +17,16 @@ function T = sessionList(dataParentDir, spec, options)
 %   description (notebook, conditions, worm range, inclusion, notes), path
 %   (OUTPUTROOT/<folder>/<local_identifier>), study_key, study_ids, source,
 %   experiment, date, include, worm_first, worm_last.
+%
+%   CHECKS (second output, also printed) reports what looks wrong in the
+%   source's own day index, WITHOUT changing anything:
+%     sharedDay        sessions of one study with the same directoryName (a
+%                      copy-down in the spreadsheet: foragingMatching had all
+%                      five rows at 23-02-24, 2026-09-30)
+%     noVideoFolder    sessions whose videos/<directoryName> folder is missing
+%     unusedVideoDay   video folders no session points at
+%     ecoliSpread      E. coli experiments whose images span more than 14 days
+%                      (a stray timestamp would move the session's date)
 %
 %   The tableOfContents worm range is kept (worm_first / worm_last) but NOT
 %   trusted: stage 5 cross-checks it against the worms actually present
@@ -44,6 +54,8 @@ if isempty(outRoot)
 end
 studies = asCell(spec.studies);
 rows = {};
+checks = struct('sharedDay', {{}}, 'noVideoFolder', {{}}, 'unusedVideoDay', {{}}, ...
+    'ecoliSpread', {{}});
 
 % ---- C. elegans: the tableOfContents of each study folder ------------------
 folders = unique(cellfun(@(s) char(s.source_folder), studies, 'UniformOutput', false));
@@ -64,9 +76,20 @@ for f = 1:numel(folders)
         error('ndi:setup:conv:haley:badTableOfContents', '%s has no column(s) %s.', ...
             toc, strjoin(missing, ', '));
     end
+    seenDays = {};
     for r = 1:height(C)
         if isempty(strtrim(C.experimentNumber{r}))
             continue;   % a blank spreadsheet row
+        end
+        dayDir = strtrim(C.directoryName{r});
+        if any(strcmp(seenDays, dayDir))
+            checks.sharedDay{end+1} = sprintf('%s: experiment %s shares directoryName %s with an earlier row', ...
+                folder, strtrim(C.experimentNumber{r}), dayDir);
+        end
+        seenDays{end+1} = dayDir; %#ok<AGROW>
+        if ~isfolder(fullfile(root, 'celegans', folder, 'videos', dayDir))
+            checks.noVideoFolder{end+1} = sprintf('%s: experiment %s -> videos/%s does not exist', ...
+                folder, strtrim(C.experimentNumber{r}), dayDir);
         end
         n = str2double(C.experimentNumber{r});
         cond = strtrim(C.conditions{r});
@@ -83,6 +106,12 @@ for f = 1:numel(folders)
         id = sprintf('%s_%04d', folder, n);
         rows{end+1} = row(id, study, n, day, desc, include, w1, w2, ...
             fullfile(outRoot, folder, id), ['tableOfContents ' folder], options.StudyIds); %#ok<AGROW>
+    end
+    v = dir(fullfile(root, 'celegans', folder, 'videos'));
+    v = {v([v.isdir] & ~startsWith({v.name}, '.')).name};
+    for u = setdiff(v, seenDays)
+        checks.unusedVideoDay{end+1} = sprintf('%s: videos/%s is not named by any tableOfContents row', ...
+            folder, u{1});
     end
 end
 
@@ -101,6 +130,11 @@ if any(cellfun(@(s) strcmp(char(s.source_folder), 'ecoli'), studies))
             desc = sprintf('%d plate(s); no images recorded in metaData.', numel(plates));
         else
             day = dateshift(min(t), 'start', 'day');
+            if max(t) - min(t) > days(14)
+                checks.ecoliSpread{end+1} = sprintf(['ecoli experiment %d: images span %s to %s; ' ...
+                    'the session is dated by the earliest'], n, char(min(t), 'yyyy-MM-dd'), ...
+                    char(max(t), 'yyyy-MM-dd'));
+            end
             desc = sprintf('%d plate(s) imaged; %d image(s) from %s to %s.', numel(plates), ...
                 numel(t), char(min(t), 'yyyy-MM-dd HH:mm'), char(max(t), 'yyyy-MM-dd HH:mm'));
         end
@@ -114,6 +148,14 @@ T = struct2table([rows{:}], 'AsArray', true);
 fprintf('DENOMINATOR: %d session(s): %d C. elegans from %d tableOfContents file(s), %d E. coli\n', ...
     height(T), sum(~startsWith(T.local_identifier, 'ecoli_')), numel(folders), ...
     sum(startsWith(T.local_identifier, 'ecoli_')));
+names = fieldnames(checks);
+fprintf('CHECKS (reported, nothing changed): %d finding(s)\n', ...
+    sum(cellfun(@(n) numel(checks.(n)), names)));
+for k = 1:numel(names)
+    for m = 1:numel(checks.(names{k}))
+        fprintf('  %-15s %s\n', names{k}, checks.(names{k}){m});
+    end
+end
 end
 
 % =============================================================================

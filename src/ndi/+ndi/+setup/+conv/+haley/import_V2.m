@@ -95,7 +95,7 @@ if any(options.Stages == "sessions")
     if isfield(result, 'metadata')
         studyIds = result.metadata.ids;
     end
-    result.sessions = ndi.setup.conv.haley.sessionList(dataParentDir, spec, ...
+    [result.sessions, result.sessionChecks] = ndi.setup.conv.haley.sessionList(dataParentDir, spec, ...
         'StudyIds', studyIds, 'OutputRoot', options.OutputRoot);
     disp(result.sessions(:, {'local_identifier', 'study_key', 'date', 'include'}));
     if options.Write
