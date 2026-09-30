@@ -109,9 +109,10 @@ for f = 1:numel(folders)
     end
     v = dir(fullfile(root, 'celegans', folder, 'videos'));
     v = {v([v.isdir] & ~startsWith({v.name}, '.')).name};
-    for u = setdiff(v, seenDays)
+    unused = setdiff(v, seenDays);
+    for k = 1:numel(unused)   % by index: a 0x1 cell would still run a `for u = ...` loop once
         checks.unusedVideoDay{end+1} = sprintf('%s: videos/%s is not named by any tableOfContents row', ...
-            folder, u{1});
+            folder, unused{k});
     end
 end
 
