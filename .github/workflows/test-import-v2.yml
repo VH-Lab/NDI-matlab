@@ -5,9 +5,9 @@ name: V2 import (Haley) -- fast
 # DID-matlab's did2.build, so this job needs DID-matlab V2 and a did-schema
 # that carries the classes the import uses.
 #
-# DID_SCHEMA_REF: the `study` entity, `instance_of`, `awarded_to` and
-# `directed_relation.roles` are on did-schema PR #78's branch until it merges.
-# Point this at `main` once #78 is merged.
+# DID_SCHEMA_REF: main. The `study` entity, `instance_of`, `awarded_to` and
+# `directed_relation.roles` the import uses reached main with did-schema PR #78
+# (merged 2026-09-30).
 #
 # The tests FILTER themselves when the schema or did2.build is missing; this
 # job fails if any were filtered, so a green run always means they ran.
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # DID-matlab comes from requirements.txt, which already pins @V2 (did2.build).
-      DID_SCHEMA_REF: claude/ecstatic-pascal-md91fw
+      DID_SCHEMA_REF: main
     steps:
       - name: Check out NDI-matlab
         uses: actions/checkout@v4
