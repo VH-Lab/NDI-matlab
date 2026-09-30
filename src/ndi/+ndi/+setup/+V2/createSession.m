@@ -78,6 +78,15 @@ db = did2.database.sqlitedb(fullfile(ndiDir, ...
 db.add(cellfun(@(d) did2.document(d), docs, 'UniformOutput', false));
 db.close();
 
+% ndi.session.dir scopes EVERY search to its session id (ndi.session/
+% database_search ANDs base.session_id), and on a one-argument open it takes
+% that id from .ndi/unique_reference.txt -- or, if the file is absent, makes a
+% provisional random one, which then finds nothing and fails "Could not load
+% the REFERENCE field". So the two files ndi.session.dir itself writes are
+% written here first (CI run 36752118828 found this).
+vlt.file.str2text(fullfile(ndiDir, 'unique_reference.txt'), sid);
+vlt.file.str2text(fullfile(ndiDir, 'reference.txt'), reference);
+
 session = ndi.session.dir(path);
 if ~strcmp(session.id(), sid)
     error('ndi:setup:V2:sessionMismatch', ...
