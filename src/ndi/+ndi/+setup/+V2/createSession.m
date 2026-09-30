@@ -21,6 +21,8 @@ function [session, docs] = createSession(path, reference, options)
 %
 %   Options:
 %     'SessionId'   the session id (default: a new ndi.ido id)
+%     'Name'        the session's display name (session.name)
+%     'Description' free text about the session (session.description)
 %     'StudyIds'    cellstr: studies this session is `part_of` (a relation
 %                   document each, stored in this session)
 %     'Overwrite'   default false. When false, PATH must not already hold an
@@ -39,6 +41,8 @@ arguments
     path (1,:) char {mustBeFolder}
     reference (1,:) char {mustBeNonzeroLengthText}
     options.SessionId (1,:) char = ''
+    options.Name (1,:) char = ''
+    options.Description (1,:) char = ''
     options.StudyIds = {}
     options.Overwrite (1,1) logical = false
 end
@@ -62,8 +66,14 @@ if isempty(sid)
     sid = ndi.ido.unique_id();
 end
 
-docs = {did2.build.document('session', struct('local_identifier', reference), ...
-    'SessionId', sid)};
+fields = struct('local_identifier', reference);
+if ~isempty(options.Name)
+    fields.name = options.Name;
+end
+if ~isempty(options.Description)
+    fields.description = options.Description;
+end
+docs = {did2.build.document('session', fields, 'SessionId', sid)};
 studies = options.StudyIds;
 if ischar(studies) || isstring(studies)
     studies = cellstr(studies);

@@ -16,7 +16,7 @@ function result = import_V2(dataParentDir, options)
 %                          studies, software, products, strains, instruments --
 %                          from import_V2_spec.json (sources: the eLife paper)
 %     B. per study (E. coli first); per day:
-%        3  sessions       one per day, part_of its study          (building)
+%        3  sessions       one per experiment day, part_of its study
 %        4  acquisition    camera/microscope, one epoch per video  (not yet)
 %        5  subjects       plates, patches, worms                  (not yet)
 %        6  relations      patch on plate, worm on plate, ...      (not yet)
@@ -27,12 +27,18 @@ function result = import_V2(dataParentDir, options)
 %     C. dataset-wide, once
 %        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
-%   Nothing is written to disk yet: RESULT holds the documents each stage
-%   built, as structs, for inspection.
+%   Nothing is written unless 'Write' is true: by default RESULT holds what
+%   each stage WOULD create, for inspection. With 'Write', stage 3 creates the
+%   session directories and their V2 databases under 'OutputRoot'.
 %
 %   Options:
 %     'Spec'              path to the spec (default: import_V2_spec.json here)
 %     'Stages'            which stages to run (default: all implemented)
+%     'OutputRoot'        where session directories go (default:
+%                         <DATAPARENTDIR>/haley_V2; the raw data is never
+%                         written to, decision 21)
+%     'Write'             default false; true creates the sessions
+%     'Overwrite'         default false; true replaces existing sessions
 %     'DatasetSessionId'  session id for dataset-level documents (default: a
 %                         new id; stage 10 will take it from the dataset)
 %
@@ -43,7 +49,10 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions"]
+    options.OutputRoot (1,:) char = ''
+    options.Write (1,1) logical = false
+    options.Overwrite (1,1) logical = false
     options.DatasetSessionId (1,:) char = ''
 end
 
@@ -70,6 +79,24 @@ if any(options.Stages == "metadata")
     fprintf('spec content with NO place in V2 (recorded here, not in the documents): %d\n', numel(u));
     for k = 1:numel(u)
         fprintf('  %-12s %-20s %-16s %s\n', u(k).kind, u(k).key, u(k).field, u(k).why);
+    end
+end
+
+if any(options.Stages == "sessions")
+    fprintf('\n== stage 3: sessions ==\n');
+    spec = jsondecode(fileread(options.Spec));
+    studyIds = containers.Map();
+    if isfield(result, 'metadata')
+        studyIds = result.metadata.ids;
+    end
+    result.sessions = ndi.setup.conv.haley.sessionList(dataParentDir, spec, ...
+        'StudyIds', studyIds, 'OutputRoot', options.OutputRoot);
+    disp(result.sessions(:, {'local_identifier', 'study_key', 'date', 'include'}));
+    if options.Write
+        [result.sessions, result.sessionObjects] = ndi.setup.V2.makeSessions( ...
+            result.sessions, 'Overwrite', options.Overwrite);
+    else
+        fprintf('(not written: pass ''Write'', true to create these sessions)\n');
     end
 end
 end
