@@ -596,20 +596,23 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 "still arrived, which is why every other assertion here passes, " + ...
                 "but the batch presign path did not answer -- and at 28,000 " + ...
                 "members that fallback is 28,000 API calls. " + msg);
-            % One presign call for the scope, plus at most one retry if
-            % the first answer was a partial map (VH-Lab/NDI-matlab#991
-            % / Waltham-Data-Science/NDI-python#309 -- some environments
-            % lag briefly after the bulk upload). Anything beyond that
-            % would be per-uid fallback, which the uidMisses assertion
-            % above already rules out; this is just for a clearer
-            % failure message.
+            % One presign call for the scope, plus up to N partial-map
+            % retries where N is the length of the default retry schedule
+            % (VH-Lab/NDI-matlab#991 / Waltham-Data-Science/NDI-python#309
+            % and #320 -- User 1 prod can lag long enough after
+            % ``waitForAllBulkUploads`` that a single retry is not
+            % enough, so the default schedule is now 1 s / 3 s / 9 s).
+            % Anything beyond that would be per-uid fallback, which the
+            % uidMisses assertion above already rules out; this is just
+            % for a clearer failure message.
+            defaultRetryWaves = 3;
             testCase.verifyEqual(batchStats.signerCalls, 1 + batchStats.partialMapRetries, ...
                 "the members of one series should cost ONE presign call, plus " + ...
-                "at most one retry if the first map was partial. Got " + ...
+                "at most one signer call per partial-map wave. Got " + ...
                 "signerCalls=" + batchStats.signerCalls + ", partialMapRetries=" + ...
                 batchStats.partialMapRetries + ". " + msg);
-            testCase.verifyLessThanOrEqual(batchStats.partialMapRetries, 1, ...
-                "the retry is bounded to once per scope; got partialMapRetries=" + ...
+            testCase.verifyLessThanOrEqual(batchStats.partialMapRetries, defaultRetryWaves, ...
+                "the retry is bounded by the delay schedule; got partialMapRetries=" + ...
                 batchStats.partialMapRetries + ". " + msg);
 
             % The bytes, compared in full rather than by length. Setup gives
@@ -919,6 +922,7 @@ classdef FileSeriesRoundTripTest < matlab.unittest.TestCase
                 "the batch map for a series member also named files that are " + ...
                 "not in the series, so the 'fileSeries' scope was not honored. " + msg);
         end
+
 
     end
 end

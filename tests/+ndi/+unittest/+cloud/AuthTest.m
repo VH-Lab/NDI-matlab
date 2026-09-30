@@ -59,7 +59,13 @@ classdef AuthTest < matlab.unittest.TestCase
 
             narrative(end+1) = "Login call successful. Verifying token and organization ID.";
             testCase.verifyClass(answer_login.token, 'char', login_message);
-            testCase.verifyClass(answer_login.user.organizations.id, 'char', login_message);
+            % `organizations` may be a struct array on a multi-org
+            % account -- `answer_login.user.organizations.id` then
+            % expands to a comma-separated list and verifyClass reads
+            % it as extra positional args (MATLAB:narginchk:
+            % tooManyInputs). ndi.cloud.authenticate already picks the
+            % first (extractFirstOrganizationId); mirror that here.
+            testCase.verifyClass(answer_login.user.organizations(1).id, 'char', login_message);
             narrative(end+1) = "Token and organization ID are of the correct class.";
 
             % Step 3: Test Logout
