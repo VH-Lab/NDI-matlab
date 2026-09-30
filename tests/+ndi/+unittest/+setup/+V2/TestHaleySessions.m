@@ -95,7 +95,7 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             testCase.verifyTrue(any(contains(checks.unusedVideoDay, '22-12-31')));
             testCase.verifyTrue(any(contains(checks.noVideoFolder, '22-02-16')));
             testCase.verifyFalse(any(contains(checks.noVideoFolder, '22-02-01')));
-            testCase.verifyTrue(any(contains(checks.ecoliSpread, 'experiment 1')) == false, ...
+            testCase.verifyFalse(any(contains(checks.ecoliSpread, 'experiment 1')), ...
                 'fixture experiment 1 spans one day');
         end
 
