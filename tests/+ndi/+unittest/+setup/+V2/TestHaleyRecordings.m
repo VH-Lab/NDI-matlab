@@ -20,7 +20,14 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             specFile = fullfile(fileparts(which('ndi.setup.conv.haley.import_V2')), ...
                 'import_V2_spec.json');
             testCase.Spec = jsondecode(fileread(specFile));
-            ce = fullfile(testCase.Root, 'haley', 'celegans');
+            ndi.unittest.setup.V2.TestHaleyRecordings.writeFixture(testCase.Root);
+        end
+    end
+
+    methods (Static)
+        function writeFixture(root)
+            % The raw-data stand-in, also used by TestHaleyWrite.
+            ce = fullfile(root, 'haley', 'celegans');
 
             % foragingConcentration, one day (22-02-04):
             %   plate 11  camera 1  video + lawn clip; filmed twice (an
@@ -56,7 +63,7 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             end
 
             % E. coli: images 2 and 3 on disk, 1 and 4 not (4 is fluorescence).
-            ec = fullfile(testCase.Root, 'haley', 'ecoli');
+            ec = fullfile(root, 'haley', 'ecoli');
             mkdir(fullfile(ec, 'images'));
             placeholder(fullfile(ec, 'images', '0002.tiff'), 50);
             placeholder(fullfile(ec, 'images', '0003.tiff'), 60);
@@ -132,10 +139,18 @@ writetable(T, fullfile(folder, 'tableOfContents.xlsx'));
 end
 
 function writeInfo(folder, expNum, plateNum, videoNum, camera, video, lawn, t, nFrames, rate)
+% The recording columns, plus the subject columns (subjectList needs them)
+% filled with plain values: two worms per plate (plate*10 + 1, + 2), N2,
+% picked the day before, one patch.
+n = numel(expNum);
+worms = arrayfun(@(p) double(p) * 10 + [1 2], plateNum(:), 'UniformOutput', false);
 info = table(uint16(expNum(:)), uint16(plateNum(:)), uint16(videoNum(:)), double(camera(:)), ...
     video(:), lawn(:), t(:), double(nFrames(:)), double(rate(:)), ...
+    worms, repmat({'N2'}, n, 1), t(:) - days(1), repmat({zeros(1, 2)}, n, 1), ...
+    repmat({zeros(1, 1)}, n, 1), false(n, 1), ...
     'VariableNames', {'expNum', 'plateNum', 'videoNum', 'camera', 'videoFileName', ...
-    'lawnFileName', 'timeRecord', 'numFrames', 'frameRate'}); %#ok<NASGU>
+    'lawnFileName', 'timeRecord', 'numFrames', 'frameRate', 'wormNum', 'strainID', ...
+    'growthTimePicked', 'lawnCenters', 'lawnRadii', 'exclude'}); %#ok<NASGU>
 save(fullfile(folder, 'experimentInfo.mat'), 'info');
 end
 

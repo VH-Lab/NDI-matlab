@@ -25,12 +25,20 @@ function [session, docs] = createSession(path, reference, options)
 %     'Description' free text about the session (session.description)
 %     'StudyIds'    cellstr: studies this session is `part_of` (a relation
 %                   document each, stored in this session)
+%     'SessionDocId' base.id of the session document (default: a new id).
+%                   Given when other documents must point at the session
+%                   document before it exists (a time reference's referent).
+%     'TimeReferenceId' the session's own time reference
+%                   (session.time_reference_id), e.g. its UTC extent
+%     'Documents'   cell array of further documents (structs, built with the
+%                   same SessionId) written in the same transaction, before
+%                   the session is opened
 %     'Overwrite'   default false. When false, PATH must not already hold an
 %                   NDI database of either kind. When true, an existing
 %                   PATH/.ndi is DELETED first.
 %
-%   DOCS returns the documents written (the session document and any
-%   relations), as structs.
+%   DOCS returns the documents written (the session document, any relations
+%   and 'Documents'), as structs.
 %
 %   Errors ndi:setup:V2:sessionExists when PATH already has a database and
 %   'Overwrite' is false.
@@ -44,6 +52,9 @@ arguments
     options.Name (1,:) char = ''
     options.Description (1,:) char = ''
     options.StudyIds = {}
+    options.SessionDocId (1,:) char = ''
+    options.TimeReferenceId (1,:) char = ''
+    options.Documents = {}
     options.Overwrite (1,1) logical = false
 end
 
@@ -73,7 +84,14 @@ end
 if ~isempty(options.Description)
     fields.description = options.Description;
 end
-docs = {did2.build.document('session', fields, 'SessionId', sid)};
+args = {'SessionId', sid};
+if ~isempty(options.SessionDocId)
+    args = [args, {'Id', options.SessionDocId}];
+end
+if ~isempty(options.TimeReferenceId)
+    args = [args, {'Edges', struct('time_reference_id', options.TimeReferenceId)}];
+end
+docs = {did2.build.document('session', fields, args{:})};
 studies = options.StudyIds;
 if ischar(studies) || isstring(studies)
     studies = cellstr(studies);
@@ -81,6 +99,15 @@ end
 for k = 1:numel(studies)
     docs{end+1} = did2.build.directedRelation(docs{1}.base.id, studies{k}, ...
         'part_of', 'SessionId', sid); %#ok<AGROW>
+end
+
+docs = [docs, reshape(options.Documents, 1, [])];
+for k = 1:numel(docs)
+    if ~strcmp(docs{k}.base.session_id, sid)
+        error('ndi:setup:V2:wrongSession', ...
+            'Document %d (%s) has session_id %s, not this session''s %s.', ...
+            k, docs{k}.document_class.class_name, docs{k}.base.session_id, sid);
+    end
 end
 
 db = did2.database.sqlitedb(fullfile(ndiDir, ...

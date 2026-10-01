@@ -17,8 +17,8 @@ function result = import_V2(dataParentDir, options)
 %                          from import_V2_spec.json (sources: the eLife paper)
 %     B. per study (E. coli first); per day:
 %        3  sessions       one per experiment day, part_of its study
-%        4  subjects       plates, patches, worms, growth plates   (listed; not yet written)
-%        5  acquisition    camera/microscope, one epoch per video  (listed; not yet written)
+%        4  subjects       plates, patches, worms, acclimation plates
+%        5  acquisition    camera/microscope, one epoch per recording
 %        6  relations      patch on plate, worm on plate, ...      (not yet)
 %        7  assertions     strain, species, exclusion tags         (not yet)
 %        8  manipulations  plate preparation, food deprivation     (not yet)
@@ -28,8 +28,14 @@ function result = import_V2(dataParentDir, options)
 %        11 encounters, 12 cross-study calculations, 13 check & write (not yet)
 %
 %   Nothing is written unless 'Write' is true: by default RESULT holds what
-%   each stage WOULD create, for inspection. With 'Write', stage 3 creates the
-%   session directories and their V2 databases under 'OutputRoot'.
+%   each stage WOULD create, for inspection. With 'Write', each selected
+%   session is created under 'OutputRoot' with its V2 database holding the
+%   session and, when stages 4 and 5 ran, its subjects, acquisition systems,
+%   epochs and recordings (ndi.setup.conv.haley.sessionDocuments); its folder
+%   gets one sub-folder per epoch holding a hard link to the recording and
+%   its probe map (ndi.setup.V2.placeFiles). The dataset-level documents of
+%   stage 2 (instruments included) are not written yet (stage 13), so a
+%   recording's instrument_id names a document outside the session.
 %
 %   Options:
 %     'Spec'              path to the spec (default: import_V2_spec.json here)
@@ -37,7 +43,10 @@ function result = import_V2(dataParentDir, options)
 %     'OutputRoot'        where session directories go (default:
 %                         <DATAPARENTDIR>/haley_V2; the raw data is never
 %                         written to, decision 21)
+%     'Sessions'          local_identifiers of the sessions to import (default:
+%                         all), e.g. "concentration_0002"
 %     'Write'             default false; true creates the sessions
+%     'Checksums'         default true: MD5 of every recording written
 %     'Overwrite'         default false; true replaces existing sessions
 %     'ReadVideos'        default true: opens each lawn clip (VideoReader) to
 %                         read its length (stage 5); false skips it for a
@@ -54,7 +63,9 @@ arguments
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
     options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition"]
     options.OutputRoot (1,:) char = ''
+    options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
+    options.Checksums (1,1) logical = true
     options.Overwrite (1,1) logical = false
     options.DatasetSessionId (1,:) char = ''
     options.ReadVideos (1,1) logical = true
@@ -101,13 +112,16 @@ if any(options.Stages == "sessions")
     end
     [result.sessions, result.sessionChecks] = ndi.setup.conv.haley.sessionList(dataParentDir, spec, ...
         'StudyIds', studyIds, 'OutputRoot', options.OutputRoot);
-    disp(result.sessions(:, {'local_identifier', 'study_key', 'date', 'include'}));
-    if options.Write
-        [result.sessions, result.sessionObjects] = ndi.setup.V2.makeSessions( ...
-            result.sessions, 'Overwrite', options.Overwrite);
-    else
-        fprintf('(not written: pass ''Write'', true to create these sessions)\n');
+    if ~isempty(options.Sessions)
+        unknown = setdiff(options.Sessions, string(result.sessions.local_identifier));
+        if ~isempty(unknown)
+            error('ndi:setup:conv:haley:unknownSession', 'No session %s.', strjoin(unknown, ', '));
+        end
+        result.sessions = result.sessions(ismember(result.sessions.local_identifier, ...
+            cellstr(options.Sessions)), :);
+        fprintf('%d session(s) selected by ''Sessions''\n', height(result.sessions));
     end
+    disp(result.sessions(:, {'local_identifier', 'study_key', 'date', 'include'}));
 end
 
 if any(options.Stages == "subjects")
@@ -121,7 +135,9 @@ if any(options.Stages == "subjects")
     if height(result.subjects) > 0
         disp(groupsummary(result.subjects, {'folder', 'kind'}));
     end
-    fprintf('(listed only: subjects are written with the acquisition stage)\n');
+    if ~options.Write
+        fprintf('(not written: pass ''Write'', true)\n');
+    end
 end
 
 if any(options.Stages == "acquisition")
@@ -135,6 +151,54 @@ if any(options.Stages == "acquisition")
     if height(result.recordings) > 0
         disp(groupsummary(result.recordings, {'kind', 'system'}));
     end
-    fprintf('(listed only: nothing written yet)\n');
+    if ~options.Write
+        fprintf('(not written: pass ''Write'', true)\n');
+    end
 end
+
+if options.Write && isfield(result, 'sessions')
+    fprintf('\n== write ==\n');
+    result = writeSessions(result, dataParentDir, options);
+end
+end
+
+function result = writeSessions(result, dataParentDir, options)
+% One V2 session per selected row: its documents first, then its files.
+T = result.sessions;
+n = height(T);
+T.session_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
+T.session_doc_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
+T.time_reference_id = repmat({''}, n, 1);
+T.documents = repmat({{}}, n, 1);
+built = cell(n, 1);
+instrumentIds = containers.Map();
+if isfield(result, 'metadata')
+    instrumentIds = result.metadata.ids;
+end
+if isfield(result, 'subjects') && isfield(result, 'recordings')
+    for k = 1:n
+        built{k} = ndi.setup.conv.haley.sessionDocuments(dataParentDir, T(k, :), ...
+            result.subjects, result.recordings, 'InstrumentIds', instrumentIds, ...
+            'Checksums', options.Checksums);
+        T.documents{k} = built{k}.documents;
+        T.time_reference_id{k} = built{k}.timeReferenceId;
+        classes = cellfun(@(d) d.document_class.class_name, built{k}.documents, ...
+            'UniformOutput', false);
+        fprintf('%s: %d document(s) built\n', T.local_identifier{k}, numel(classes));
+        disp(groupsummary(table(classes(:), 'VariableNames', {'class'}), 'class'));
+        for j = 1:numel(built{k}.skipped)
+            fprintf('  skipped: %s\n', built{k}.skipped{j});
+        end
+    end
+else
+    fprintf('(stages 4 and 5 did not run: writing the sessions alone)\n');
+end
+[T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite);
+for k = 1:n
+    if ~isempty(built{k})
+        result.files{k} = ndi.setup.V2.placeFiles(built{k}.links, built{k}.texts);
+    end
+end
+result.sessions = removevars(T, 'documents');
+result.written = built;
 end

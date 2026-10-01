@@ -12,6 +12,11 @@ function [T, sessions] = makeSessions(T, options)
 %     name              display name (optional column)
 %     description       free text (optional column)
 %     study_ids         a cellstr per row: the studies it is part_of (optional)
+%     session_id        a preassigned session id (optional; '' = new)
+%     session_doc_id    a preassigned session-document id (optional)
+%     time_reference_id the session's time reference (optional)
+%     documents         a cell per row: further documents for that session,
+%                       built with its session_id (optional)
 %
 %   The table is checked BEFORE anything is written: a missing required
 %   column, an empty or duplicated local_identifier, or two rows sharing a
@@ -52,7 +57,9 @@ if ~isempty(dup)
     error('ndi:setup:V2:badSessionTable', 'Two sessions share a directory: %s.', strjoin(dup, ', '));
 end
 
-T.session_id = repmat({''}, height(T), 1);
+if ~any(strcmp(vars, 'session_id'))
+    T.session_id = repmat({''}, height(T), 1);
+end
 sessions = cell(height(T), 1);
 for k = 1:height(T)
     if ~isfolder(paths{k})
@@ -62,6 +69,13 @@ for k = 1:height(T)
     if any(strcmp(vars, 'name')), args = [args, {'Name', char(T.name{k})}]; end %#ok<AGROW>
     if any(strcmp(vars, 'description')), args = [args, {'Description', char(T.description{k})}]; end %#ok<AGROW>
     if any(strcmp(vars, 'study_ids')), args = [args, {'StudyIds', T.study_ids{k}}]; end %#ok<AGROW>
+    if ~isempty(T.session_id{k}), args = [args, {'SessionId', char(T.session_id{k})}]; end %#ok<AGROW>
+    for opt = {'session_doc_id', 'SessionDocId'; 'time_reference_id', 'TimeReferenceId'; ...
+               'documents', 'Documents'}'
+        if any(strcmp(vars, opt{1})) && ~isempty(T.(opt{1}){k})
+            args = [args, {opt{2}, T.(opt{1}){k}}]; %#ok<AGROW>
+        end
+    end
     sessions{k} = ndi.setup.V2.createSession(paths{k}, ids{k}, args{:});
     T.session_id{k} = sessions{k}.id();
 end
