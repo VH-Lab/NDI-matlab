@@ -38,6 +38,9 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             channels = this session's system; times = a
 %                             relative reference to the EPOCH (videos: the
 %                             same extent; images: `during`) + the UTC one
+%                             datum_type: uint8 for a video (MATLAB's
+%                             VideoReader decodes mp4 to 8-bit RGB); a TIFF's
+%                             from its header (imfinfo), skipped if unreadable
 %     opaque_body             the file, NOT held (decision #34): format,
 %                             filename, size, modified time, MD5; the raw
 %                             location is in `description`
@@ -146,6 +149,14 @@ for k = 1:height(R)
             r.epoch{1}, plate);
         continue;
     end
+    src = fullfile(root, r.file{1});
+    [~, base, ext] = fileparts(src);
+    [datumType, why] = datumTypeOf(src, ext);
+    if isempty(datumType)
+        out.skipped{end+1} = sprintf('%s: %s', r.epoch{1}, why);
+        continue;
+    end
+
     isImage = strcmp(r.kind{1}, 'image');
     dur = r.duration;
     if isImage || isnan(dur)
@@ -175,12 +186,10 @@ for k = 1:height(R)
         instrumentId = options.InstrumentIds(instrumentKey);
     end
     st = did2.build.statement('intensity_observation', subjectIds(plate), ...
-        did2.build.term('', 'image intensity'), [], 'DataBody', true, ...
+        did2.build.term('', 'image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid);
 
-    src = fullfile(root, r.file{1});
-    [~, base, ext] = fileparts(src);
     info = dir(src);
     f = struct('format', mediaType(ext), 'filename', [base ext], ...
         'size_bytes', info.bytes, ...
@@ -234,6 +243,30 @@ if strcmp(sys, 'microscope')
     t = 'wide-field-imaging';
 else
     t = 'brightfield-imaging';
+end
+end
+
+function [t, why] = datumTypeOf(file, ext)
+% How the recording's pixel values are encoded (data_type.datum_type).
+t = ''; why = '';
+switch lower(ext)
+    case '.mp4'
+        t = 'uint8';
+    case {'.tif', '.tiff'}
+        try
+            info = imfinfo(file);
+        catch err
+            why = sprintf('cannot read the TIFF header (%s)', err.message);
+            return;
+        end
+        bits = info(1).BitsPerSample(1);
+        if isfield(info, 'SampleFormat') && strcmpi(info(1).SampleFormat, 'IEEE floating point')
+            t = sprintf('float%d', bits);
+        elseif any(bits == [8 16 32 64])
+            t = sprintf('uint%d', bits);
+        else
+            why = sprintf('%d bits per sample has no datum_type', bits);
+        end
 end
 end
 

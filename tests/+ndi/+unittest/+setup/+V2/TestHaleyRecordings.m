@@ -65,8 +65,9 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             % E. coli: images 2 and 3 on disk, 1 and 4 not (4 is fluorescence).
             ec = fullfile(root, 'haley', 'ecoli');
             mkdir(fullfile(ec, 'images'));
-            placeholder(fullfile(ec, 'images', '0002.tiff'), 50);
-            placeholder(fullfile(ec, 'images', '0003.tiff'), 60);
+            % real (tiny) 16-bit TIFFs: the write path reads their headers
+            imwrite(uint16(magic(4)), fullfile(ec, 'images', '0002.tiff'));
+            imwrite(uint16(magic(5)), fullfile(ec, 'images', '0003.tiff'));
             info = table([1; 1], [1; 2], {'rectangle'; 'none'}, [1; 1], [0.5; 200], ...
                 'VariableNames', {'expNum', 'plateNum', 'template', 'OD600', 'lawnVolume'}); %#ok<NASGU>
             metaData = table([1; 1; 1; 1], [1; 2; 3; 4], [1; 1; 2; 2], ...
