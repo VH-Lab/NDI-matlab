@@ -112,6 +112,7 @@ if any(options.Stages == "sessions")
     end
     [result.sessions, result.sessionChecks] = ndi.setup.conv.haley.sessionList(dataParentDir, spec, ...
         'StudyIds', studyIds, 'OutputRoot', options.OutputRoot);
+    allSessions = result.sessions;
     if ~isempty(options.Sessions)
         unknown = setdiff(options.Sessions, string(result.sessions.local_identifier));
         if ~isempty(unknown)
@@ -130,8 +131,12 @@ if any(options.Stages == "subjects")
         error('ndi:setup:conv:haley:needSessions', ...
             'The subjects stage needs the sessions stage: include "sessions" in ''Stages''.');
     end
+    % Listed against EVERY session, then narrowed: with 'Sessions', a plate
+    % of an unselected day would otherwise read as having no session.
     [result.subjects, result.subjectChecks] = ndi.setup.conv.haley.subjectList( ...
-        dataParentDir, result.sessions);
+        dataParentDir, allSessions);
+    result.subjects = result.subjects(ismember(result.subjects.session, ...
+        result.sessions.local_identifier), :);
     if height(result.subjects) > 0
         disp(groupsummary(result.subjects, {'folder', 'kind'}));
     end
@@ -164,6 +169,18 @@ end
 
 function result = writeSessions(result, dataParentDir, options)
 % One V2 session per selected row: its documents first, then its files.
+% Subjects carry a display name (decision #42), which needs did-schema #80.
+schema = getenv('DID_SCHEMA_PATH');
+subjectFile = fullfile(schema, 'subject.json');
+if isfield(result, 'subjects') && isfile(subjectFile)
+    d = jsondecode(fileread(subjectFile));
+    if ~any(strcmp({d.fields.name}, 'name'))
+        error('ndi:setup:conv:haley:oldSchema', ...
+            ['The V2 schema in %s has no subject.name (did-schema PR #80, merged ' ...
+             '2026-10-01). Update did-schema to main and copy its V_eta schemas ' ...
+             'there again; nothing was written.'], schema);
+    end
+end
 T = result.sessions;
 n = height(T);
 T.session_id = arrayfun(@(~) ndi.ido.unique_id(), (1:n)', 'UniformOutput', false);
