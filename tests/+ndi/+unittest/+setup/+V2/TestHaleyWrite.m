@@ -66,7 +66,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % NDI rebuilds both cameras from the session's own database
             session = ndi.session.dir(sessionPath);
-            sys = session.daqsystem_load('name', '(.*)');
+            sys = session.daqsystem_load();
             if ~iscell(sys), sys = {sys}; end
             names = sort(cellfun(@(x) x.name, sys, 'UniformOutput', false));
             testCase.verifyEqual(names, {'camera1', 'camera2'});
