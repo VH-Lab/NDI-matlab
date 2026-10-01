@@ -49,8 +49,9 @@ function result = import_V2(dataParentDir, options)
 %     'Checksums'         default true: MD5 of every recording written
 %     'Overwrite'         default false; true replaces existing sessions
 %     'ReadVideos'        default true: opens each lawn clip (VideoReader) to
-%                         read its length (stage 5); false skips it for a
-%                         quick look
+%                         read its length (stage 5), and on 'Write' each
+%                         video for its pixel format; false skips both
+%                         (videos are then assumed 8-bit)
 %     'DatasetSessionId'  session id for dataset-level documents (default: a
 %                         new id; stage 10 will take it from the dataset)
 %
@@ -196,7 +197,7 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
     for k = 1:n
         built{k} = ndi.setup.conv.haley.sessionDocuments(dataParentDir, T(k, :), ...
             result.subjects, result.recordings, 'InstrumentIds', instrumentIds, ...
-            'Checksums', options.Checksums);
+            'Checksums', options.Checksums, 'ReadVideos', options.ReadVideos);
         T.documents{k} = built{k}.documents;
         T.time_reference_id{k} = built{k}.timeReferenceId;
         classes = cellfun(@(d) d.document_class.class_name, built{k}.documents, ...

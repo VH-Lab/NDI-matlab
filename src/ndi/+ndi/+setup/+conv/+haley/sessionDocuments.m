@@ -38,9 +38,10 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             channels = this session's system; times = a
 %                             relative reference to the EPOCH (videos: the
 %                             same extent; images: `during`) + the UTC one
-%                             datum_type: uint8 for a video (MATLAB's
-%                             VideoReader decodes mp4 to 8-bit RGB); a TIFF's
-%                             from its header (imfinfo), skipped if unreadable
+%                             datum_type: a video's from VideoReader's
+%                             VideoFormat (RGB24/Grayscale -> uint8,
+%                             RGB48/Mono16 -> uint16), a TIFF's from its
+%                             header (imfinfo); unreadable -> skipped
 %     opaque_body             the file, NOT held (decision #34): format,
 %                             filename, size, modified time, MD5; the raw
 %                             location is in `description`
@@ -54,6 +55,9 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                      stage 2: camera1, camera2, axiozoom1). Missing keys
 %                      leave instrument_id empty.
 %     'Checksums'      default true: MD5 of every recording (reads every byte)
+%     'ReadVideos'     default true: open each video (VideoReader) for its
+%                      pixel format; false assumes uint8 (8-bit) without
+%                      looking
 
 arguments
     dataParentDir (1,:) char {mustBeFolder}
@@ -62,6 +66,7 @@ arguments
     R table
     options.InstrumentIds = containers.Map()
     options.Checksums (1,1) logical = true
+    options.ReadVideos (1,1) logical = true
 end
 
 if height(session) ~= 1
@@ -151,7 +156,7 @@ for k = 1:height(R)
     end
     src = fullfile(root, r.file{1});
     [~, base, ext] = fileparts(src);
-    [datumType, why] = datumTypeOf(src, ext);
+    [datumType, why] = datumTypeOf(src, ext, options.ReadVideos);
     if isempty(datumType)
         out.skipped{end+1} = sprintf('%s: %s', r.epoch{1}, why);
         continue;
@@ -246,12 +251,30 @@ else
 end
 end
 
-function [t, why] = datumTypeOf(file, ext)
+function [t, why] = datumTypeOf(file, ext, readVideos)
 % How the recording's pixel values are encoded (data_type.datum_type).
 t = ''; why = '';
 switch lower(ext)
     case '.mp4'
-        t = 'uint8';
+        if ~readVideos
+            t = 'uint8';   % assumed ('ReadVideos', false): not opened
+            return;
+        end
+        try
+            v = VideoReader(file);
+            fmt = v.VideoFormat;
+        catch err
+            why = sprintf('VideoReader cannot open it (%s)', err.message);
+            return;
+        end
+        switch fmt
+            case {'RGB24', 'Grayscale', 'Indexed', 'RGB24 Signed'}
+                t = 'uint8';
+            case {'RGB48', 'Mono16', 'RGB48 Signed', 'Mono16 Signed'}
+                t = 'uint16';
+            otherwise
+                why = sprintf('video format %s has no datum_type mapping', fmt);
+        end
     case {'.tif', '.tiff'}
         try
             info = imfinfo(file);
