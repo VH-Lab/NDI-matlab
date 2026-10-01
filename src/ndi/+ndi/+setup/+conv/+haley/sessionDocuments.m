@@ -4,11 +4,11 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %   OUT = ndi.setup.conv.haley.sessionDocuments(DATAPARENTDIR, SESSION, S, R)
 %   builds, for the one-row session table SESSION (from sessionList, with
 %   `session_id` already assigned), the V2 documents of its subjects (S rows,
-%   from subjectList) and recordings (R rows, from recordingList), plus the
-%   files the session folder needs so NDI's file navigator finds each
-%   recording. Nothing is written here: ndi.setup.V2.makeSessions writes the
-%   documents and ndi.setup.V2.placeFiles the links and probe maps.
-%   Decision log #28-#35, #45-#49.
+%   from subjectList) and recordings (R rows, from recordingList). Nothing is
+%   written here (ndi.setup.V2.makeSessions writes the documents), and
+%   nothing is ever written into the session folder or the raw data: NDI
+%   finds each recording through its documents (ndi.file.navigator.bodies,
+%   decision #51). Decision log #28-#35, #45-#51.
 %
 %   Documents, all with base.session_id = SESSION.session_id:
 %     subject                 one per S row (local_identifier, name, description)
@@ -17,18 +17,19 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             session.time_reference_id
 %     software                the three NDI classes an acquisition system is
 %                             rebuilt from (decision #29): ndi.daq.system.image,
-%                             ndi.file.navigator.epochdir, ndi.daq.reader.image.ndr
+%                             ndi.file.navigator.bodies, ndi.daq.reader.image.ndr
 %     acquisition_reader      one per reader string: 'video' (cameras),
 %                             'tiffstack' (microscope)
-%     epoch_file_pattern      one per system: its file in each epoch folder
+%     epoch_file_pattern      one per system: the file names that are its
+%                             recordings (the navigator filters bodies by it)
 %     acquisition_system      one per system in the session (camera1, camera2,
 %                             microscope; decision #28)
 %     acquisition_channels    one per system (no channel numbers: a camera has
 %                             no ai/ao/di/do channels, the only types the
 %                             schema binds)
 %   and per recording (R row):
-%     epoch                   local_identifier = R.epoch = the epoch folder
-%                             name, so NDI's epoch id and the document agree
+%     epoch                   local_identifier = R.epoch, which is also NDI's
+%                             epoch id (the navigator reads it from here)
 %     relative_time_reference dev_local_time from 0 for the recording's
 %                             duration, referent the SESSION document (videos)
 %     absolute_time_reference its UTC start (and duration when known)
@@ -37,18 +38,23 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             (when 'InstrumentIds' has it), acquisition
 %                             channels = this session's system; times = a
 %                             relative reference to the EPOCH (videos: the
-%                             same extent; images: `during`) + the UTC one
+%                             same extent; images: `during`) + the UTC one;
+%                             method = the imaging method, which is also the
+%                             NDI probe type (brightfield-imaging /
+%                             wide-field-imaging)
 %                             datum_type: a video's from VideoReader's
 %                             VideoFormat (RGB24/Grayscale -> uint8,
 %                             RGB48/Mono16 -> uint16), a TIFF's from its
 %                             header (imfinfo); unreadable -> skipped
 %     opaque_body             the file, NOT held (decision #34): format,
-%                             filename, size, modified time, MD5; the raw
-%                             location is in `description`
+%                             filename, size, modified time, MD5, and the
+%                             file member body_data_0 recorded BY LOCATION
+%                             (files.file_info.locations: the absolute path,
+%                             location_type 'file', ingest 0) -- the bytes
+%                             stay where they are until ingestion
 %
-%   OUT fields: documents (cell of structs), timeReferenceId, links (struct
-%   array source/target, absolute paths), texts (struct array file/text),
-%   skipped (cellstr: recordings with no plate subject in this session).
+%   OUT fields: documents (cell of structs), timeReferenceId, skipped
+%   (cellstr: recordings not written, and why).
 %
 %   Options:
 %     'InstrumentIds'  containers.Map, instrument key -> document id (from
@@ -79,14 +85,15 @@ end
 sessionDocId = char(session.session_doc_id{1});
 ref = char(session.local_identifier{1});
 root = fullfile(dataParentDir, 'haley');
+if ~startsWith(root, filesep) && isempty(regexp(root, '^[A-Za-z]:', 'once'))
+    root = fullfile(pwd, root);   % a body records an ABSOLUTE location
+end
 tz = 'America/Los_Angeles';
 S = S(strcmp(S.session, ref), :);
 R = R(strcmp(R.session, ref), :);
 
 docs = {};
-out = struct('documents', {{}}, 'timeReferenceId', '', ...
-    'links', struct('source', {}, 'target', {}), ...
-    'texts', struct('file', {}, 'text', {}), 'skipped', {{}});
+out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}});
 
 % ---- subjects ---------------------------------------------------------------
 subjectIds = containers.Map();
@@ -116,7 +123,7 @@ systems = unique(R.system, 'stable');
 if ~isempty(systems)
     sw = struct();
     sw.system = did2.build.document('software', struct('name', 'ndi.daq.system.image'), 'SessionId', sid);
-    sw.navigator = did2.build.document('software', struct('name', 'ndi.file.navigator.epochdir'), 'SessionId', sid);
+    sw.navigator = did2.build.document('software', struct('name', 'ndi.file.navigator.bodies'), 'SessionId', sid);
     sw.reader = did2.build.document('software', struct('name', 'ndi.daq.reader.image.ndr'), 'SessionId', sid);
     docs = [docs, {sw.system, sw.navigator, sw.reader}];
 end
@@ -132,8 +139,7 @@ for k = 1:numel(systems)
         docs{end+1} = d; %#ok<AGROW>
     end
     pat = did2.build.document('epoch_file_pattern', struct( ...
-        'file_pattern', {{filePattern, '.*\.epochprobemap\.ndi\>'}}, ...
-        'epoch_map_pattern', {{'.*\.epochprobemap\.ndi\>'}}, ...
+        'file_pattern', {{filePattern}}, ...
         'epoch_map_format', 'ndi.epoch.epochprobemap_daqsystem'), ...
         'SessionId', sid, 'Edges', struct('software_id', sw.navigator.base.id));
     asys = did2.build.document('acquisition_system', struct('name', sys), 'SessionId', sid, ...
@@ -192,6 +198,7 @@ for k = 1:height(R)
     end
     st = did2.build.statement('intensity_observation', subjectIds(plate), ...
         did2.build.term('', 'image intensity'), [], 'DataBody', true, 'DatumType', datumType, ...
+        'Method', did2.build.term('', probeType(r.system{1})), ...
         'InstrumentId', instrumentId, 'AcquisitionChannelsId', channelIds(r.system{1}), ...
         'TimeReferenceIds', {relEpoch.base.id, absRef.base.id}, 'SessionId', sid);
 
@@ -199,22 +206,19 @@ for k = 1:height(R)
     f = struct('format', mediaType(ext), 'filename', [base ext], ...
         'size_bytes', info.bytes, ...
         'file_modified', isoUtc(datetime(info.datenum, 'ConvertFrom', 'datenum', 'TimeZone', 'local')), ...
-        'description', sprintf(['Not held in the database: the file is at haley/%s ' ...
-            '(the source table names it %s).'], strrep(r.file{1}, '\', '/'), r.source_name{1}));
+        'description', sprintf('The recording; the source table names it %s.', r.source_name{1}));
     if options.Checksums
         f.content_hash = ndi.fun.file.MD5(src);
         f.hash_algorithm = 'MD5';
     end
     body = did2.build.document('opaque_body', f, 'SessionId', sid, ...
-        'Edges', struct('owner_id', st.base.id));
+        'Edges', struct('owner_id', st.base.id), 'Files', {'body_data_0'});
+    % recorded BY LOCATION, not ingested (as ndi.document/add_file writes it)
+    body.files.file_info = struct('name', 'body_data_0', 'locations', struct( ...
+        'delete_original', 0, 'uid', ndi.ido.unique_id(), 'location', src, ...
+        'parameters', '', 'location_type', 'file', 'ingest', 0));
     docs = [docs, {absRef, ep, relEpoch, st, body}]; %#ok<AGROW>
 
-    % the session folder: <session>/<epoch>/<file> + its probe map
-    epochDir = fullfile(char(session.path{1}), r.epoch{1});
-    out.links(end+1) = struct('source', src, 'target', fullfile(epochDir, [base ext]));
-    out.texts(end+1) = struct('file', fullfile(epochDir, [base '.epochprobemap.ndi']), ...
-        'text', sprintf('name\treference\ttype\tdevicestring\tsubjectstring\n%s\t1\t%s\t%s:image1\t%s\n', ...
-        r.system{1}, probeType(r.system{1}), r.system{1}, subjectIds(plate)));
 end
 out.documents = docs;
 end

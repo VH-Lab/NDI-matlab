@@ -31,9 +31,11 @@ function result = import_V2(dataParentDir, options)
 %   each stage WOULD create, for inspection. With 'Write', each selected
 %   session is created under 'OutputRoot' with its V2 database holding the
 %   session and, when stages 4 and 5 ran, its subjects, acquisition systems,
-%   epochs and recordings (ndi.setup.conv.haley.sessionDocuments); its folder
-%   gets one sub-folder per epoch holding a hard link to the recording and
-%   its probe map (ndi.setup.V2.placeFiles). The dataset-level documents of
+%   epochs and recordings (ndi.setup.conv.haley.sessionDocuments). The
+%   session folder holds only .ndi/: each recording's document records where
+%   its raw file is, and NDI finds it there (ndi.file.navigator.bodies);
+%   nothing is linked, copied or written next to the raw data. The
+%   dataset-level documents of
 %   stage 2 (instruments included) are not written yet (stage 13), so a
 %   recording's instrument_id names a document outside the session.
 %
@@ -212,11 +214,6 @@ else
     fprintf('(stages 4 and 5 did not run: writing the sessions alone)\n');
 end
 [T, result.sessionObjects] = ndi.setup.V2.makeSessions(T, 'Overwrite', options.Overwrite);
-for k = 1:n
-    if ~isempty(built{k})
-        result.files{k} = ndi.setup.V2.placeFiles(built{k}.links, built{k}.texts);
-    end
-end
 result.sessions = removevars(T, 'documents');
 result.written = built;
 end
