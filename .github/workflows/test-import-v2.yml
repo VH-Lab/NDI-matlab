@@ -19,6 +19,8 @@ on:
       - 'src/ndi/+ndi/+setup/+V2/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
       - 'tests/+ndi/+unittest/+setup/+V2/**'
+      - 'src/ndi/+ndi/+vintage/**'
+      - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
       - '.github/workflows/test-import-v2.yml'
   pull_request:
     branches: [main, V2]
@@ -26,6 +28,8 @@ on:
       - 'src/ndi/+ndi/+setup/+V2/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
       - 'tests/+ndi/+unittest/+setup/+V2/**'
+      - 'src/ndi/+ndi/+vintage/**'
+      - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
       - '.github/workflows/test-import-v2.yml'
   workflow_dispatch:
 
@@ -89,7 +93,8 @@ jobs:
             addpath(genpath("src"));
             addpath(genpath("tests"));
             import matlab.unittest.TestSuite;
-            suite = TestSuite.fromPackage("ndi.unittest.setup.V2", "IncludingSubpackages", true);
+            suite = [TestSuite.fromPackage("ndi.unittest.setup.V2", "IncludingSubpackages", true), ...
+                     TestSuite.fromClass(?ndi.unittest.vintage.TestVintageMap)];
             results = run(suite);
             disp(table(results));
             nRun = numel(results);

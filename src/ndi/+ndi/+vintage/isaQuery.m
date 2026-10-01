@@ -44,7 +44,10 @@ if ~entry.isa_bridges
 end
 
 % Both names, so neither vintage is privileged. `|` is did.query/or.
-if ~strcmp(entry.v1_class, entry.eta_class)
-    q = q | ndi.query('', 'isa', entry.eta_class, '');
+etaNames = ndi.vintage.names(entry.eta_class);
+for i = 1:numel(etaNames)
+    if ~strcmp(entry.v1_class, etaNames{i})
+        q = q | ndi.query('', 'isa', etaNames{i}, '');
+    end
 end
 end

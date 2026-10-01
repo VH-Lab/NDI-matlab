@@ -131,7 +131,19 @@ classdef ndr < ndi.daq.reader.image
                 end
             elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document')
                 obj.identifier = varargin{2}.document_properties.base.id;
-                obj.ndr_reader_string = varargin{2}.document_properties.daqreader_ndr.ndr_reader_string;
+                % BOTH VINTAGES, as in ndi.daq.reader.mfdaq.ndr: a V2
+                % document carries the reader string as
+                % acquisition_reader.reader_string, not in a daqreader_ndr block.
+                [v, found] = ndi.vintage.field(varargin{2}, 'ndr_reader_string');
+                if ~found
+                    error('NDI:daqreaderimagendr:noReaderString', ...
+                        ['document %s carries no reader string under ' ...
+                         'either spelling (v1 ' ...
+                         'daqreader_ndr.ndr_reader_string, V2 ' ...
+                         'acquisition_reader.reader_string)'], ...
+                        varargin{2}.document_properties.base.id);
+                end
+                obj.ndr_reader_string = v;
                 finished = 1;
             else
                 error('Unknown arguments.');
