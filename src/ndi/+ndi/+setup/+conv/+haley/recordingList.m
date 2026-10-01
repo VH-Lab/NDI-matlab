@@ -14,7 +14,11 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %                go in, shared by a plate's video rows. Its extent is read
 %                from the file (VideoReader) only with 'ReadVideos', true.
 %   E. coli, from ecoli/bacteria.mat `metaData` and ecoli/images:
-%     image      one per image on disk (images/<imageNum>.tiff); an instant.
+%     image      one per image on disk (images/<imageNum>.tiff; all 1,575 --
+%                the analysed ones and the shared unanalysed ones, decision
+%                #43); an instant. Images with no file (brightfield,
+%                backgrounds, other exposures) are not recordings; each kept
+%                image's `note` names its background and brightfield image.
 %
 %   Columns: session, kind, epoch (the epoch's local_identifier: the file
 %   stem with the folder prefix, e.g. concentration_2022-02-04_12-10-51_1,
@@ -22,7 +26,7 @@ function [R, checks] = recordingList(dataParentDir, sessions, options)
 %   plate subject's local_identifier), file (relative to DATAPARENTDIR/haley),
 %   source_name (the name the table records, e.g. the .avi), size_bytes,
 %   local_start (the wall-clock start as recorded, no time zone),
-%   n_frames, frame_rate, duration (seconds; NaN when not known).
+%   n_frames, frame_rate, duration (seconds; NaN when not known), note.
 %
 %   CHECKS (second output, also printed), nothing changed:
 %     rowWithoutFile    a table row names a recording with no file on disk
@@ -66,7 +70,7 @@ for f = 1:numel(folders)
         D = I(I.expNum == mine.experiment(s), :);
         seenLawn = {};
         for r = 1:height(D)
-            plate = sprintf('%s_plate%04d', pre, D.plateNum(r));
+            plate = sprintf('%s_assayPlate%04d', pre, D.plateNum(r));
             % -- the behaviour video --
             src = strtrim(char(D.videoFileName{r}));
             if ~isempty(src)
@@ -155,9 +159,10 @@ if height(mine) > 0
         if ismember('fileName', M.Properties.VariableNames)
             src = char(M.fileName{r});
         end
+        note = imageNote(M, r);
         rows{end+1} = recRow(mine.local_identifier{s}, 'image', sprintf('ecoli_image%04d', M.imageNum(r)), ...
             'microscope', sprintf('ecoli_plate%04d', M.plateNum(r)), fullfile(idir, name), src, ...
-            fi.bytes, M.acquisitionTime(r), 1, NaN, NaN); %#ok<AGROW>
+            fi.bytes, M.acquisitionTime(r), 1, NaN, NaN, note); %#ok<AGROW>
     end
     if missing > 0
         checks.imagesWithoutFile{end+1} = sprintf(['ecoli: %d of %d metaData image(s) have no file in ' ...
@@ -167,9 +172,9 @@ end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    R = cell2table(cell(0, 12), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
+    R = cell2table(cell(0, 13), 'VariableNames', {'session', 'kind', 'epoch', 'system', ...
         'plate', 'file', 'source_name', 'size_bytes', 'local_start', 'n_frames', ...
-        'frame_rate', 'duration'});
+        'frame_rate', 'duration', 'note'});
 else
     R = struct2table([rows{:}], 'AsArray', true);
     [u, ~, j] = unique(R.epoch);
@@ -200,10 +205,31 @@ end
 
 % =============================================================================
 
-function s = recRow(session, kind, epoch, system, plate, file, src, bytes, t, nf, fr, dur)
+function s = recRow(session, kind, epoch, system, plate, file, src, bytes, t, nf, fr, dur, note)
+if nargin < 13
+    note = '';
+end
 s = struct('session', session, 'kind', kind, 'epoch', epoch, 'system', system, ...
     'plate', plate, 'file', file, 'source_name', src, 'size_bytes', double(bytes), ...
-    'local_start', t, 'n_frames', double(nf), 'frame_rate', double(fr), 'duration', double(dur));
+    'local_start', t, 'n_frames', double(nf), 'frame_rate', double(fr), 'duration', double(dur), ...
+    'note', note);
+end
+
+function note = imageNote(M, r)
+% The processing facts an image file cannot carry: its exposure, and the
+% background and brightfield images it was paired with (by imageNum; those
+% images were not shared as files).
+parts = {};
+if ismember('exposureTime', M.Properties.VariableNames)
+    parts{end+1} = sprintf('exposure %g ms', M.exposureTime(r));
+end
+if ismember('backgroundImageNum', M.Properties.VariableNames) && ~isnan(M.backgroundImageNum(r))
+    parts{end+1} = sprintf('background image %d', M.backgroundImageNum(r));
+end
+if ismember('brightfieldImageNum', M.Properties.VariableNames) && ~isnan(M.brightfieldImageNum(r))
+    parts{end+1} = sprintf('brightfield image %d', M.brightfieldImageNum(r));
+end
+note = strjoin(parts, '; ');
 end
 
 function c = cameraOf(stem)

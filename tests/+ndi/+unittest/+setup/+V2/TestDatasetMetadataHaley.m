@@ -100,7 +100,19 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
 
         function testUnrepresentedContentIsReportedNotDropped(testCase)
             u = testCase.Result.unrepresented;
-            % software.vendor has no V2 home; nothing else in the spec should
+            % software.vendor has no V2 home. An instrument's `name` has one only
+            % once the schema declares subject.name (did-schema PR #80); before
+            % that it is reported here, one row per instrument. Nothing else in
+            % the spec should be.
+            s = jsondecode(fileread(fullfile(getenv('DID_SCHEMA_PATH'), 'subject.json')));
+            hasName = any(strcmp({s.fields.name}, 'name'));
+            isName = strcmp({u.field}, 'name');
+            if hasName
+                testCase.verifyFalse(any(isName), 'subject.name exists, so names are built');
+            else
+                testCase.verifyEqual(nnz(isName), numel(testCase.Spec.instruments));
+            end
+            u = u(~isName);
             testCase.verifyEqual(unique({u.field}), {'vendor'});
             testCase.verifyEqual(numel(u), numel(testCase.Spec.software));
         end

@@ -64,9 +64,11 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
                 'VariableNames', {'expNum', 'plateNum', 'template', 'OD600', 'lawnVolume'}); %#ok<NASGU>
             metaData = table([1; 1; 1; 1], [1; 2; 3; 4], [1; 1; 2; 2], ...
                 datetime(2023, 12, 30, 9, [38; 39; 40; 41], 0), ...
-                {'a.tif'; 'b.tif'; 'c.tif'; 'd.tif'}, [0; 1; 1; 1], ...
+                {'a.tif'; 'b.tif'; 'c.tif'; 'd.tif'}, [0; 1; 1; 1], [30; 300; 300; 3000], ...
+                [NaN; 9; 9; 9], [NaN; 1; NaN; NaN], ...
                 'VariableNames', {'expNum', 'imageNum', 'plateNum', 'acquisitionTime', ...
-                'fileName', 'fluorescence'}); %#ok<NASGU>
+                'fileName', 'fluorescence', 'exposureTime', 'backgroundImageNum', ...
+                'brightfieldImageNum'}); %#ok<NASGU>
             save(fullfile(ec, 'bacteria.mat'), 'info', 'metaData');
         end
     end
@@ -85,7 +87,7 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             [R, ~] = testCase.list();
             r = R(strcmp(R.epoch, 'concentration_2022-02-04_12-10-51_2'), :);
             testCase.verifyEqual(r.system{1}, 'camera2');
-            testCase.verifyEqual(r.plate{1}, 'concentration_plate0012');
+            testCase.verifyEqual(r.plate{1}, 'concentration_assayPlate0012');
             testCase.verifyEqual(r.source_name{1}, '2022-02-04_12-10-51_2.avi');
             testCase.verifyEqual(r.duration, 10796 / 2.9991, 'AbsTol', 1e-9);
             l = R(strcmp(R.epoch, 'concentration_2022-02-04_11-49-08_1'), :);
@@ -97,6 +99,8 @@ classdef TestHaleyRecordings < matlab.unittest.TestCase
             testCase.verifyEqual(e.system{1}, 'microscope');
             testCase.verifyEqual(e.plate{1}, 'ecoli_plate0001');
             testCase.verifyEqual(e.local_start, datetime(2023, 12, 30, 9, 39, 0));
+            testCase.verifySubstring(e.note{1}, 'background image 9');
+            testCase.verifySubstring(e.note{1}, 'brightfield image 1');
         end
 
         function testSourceChecks(testCase)

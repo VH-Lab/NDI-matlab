@@ -164,10 +164,21 @@ for e = entries(spec, 'strains')
     state = add(state, 'strain', s.key, f, edges);
 end
 
+% `subject.name` arrived in did-schema PR #80; until the schema in use declares
+% it, an instrument's name is reported as unrepresented rather than built.
+subjectHasName = schemaHasField('subject', 'name');
 for e = entries(spec, 'instruments')
     i = e{1};
-    state = checkKnown(state, 'subject', i, {'local_identifier', 'description', 'product'});
+    if subjectHasName
+        state = checkKnown(state, 'subject', i, {'local_identifier', 'name', 'description', 'product'});
+    else
+        state = checkKnown(state, 'subject', i, {'local_identifier', 'description', 'product'}, ...
+            struct('name', 'the V2 schema in use has no subject.name (did-schema PR #80)'));
+    end
     f = putIf(struct('local_identifier', i.local_identifier), 'description', i, 'description');
+    if subjectHasName
+        f = putIf(f, 'name', i, 'name');
+    end
     state = add(state, 'subject', i.key, f, struct());
     if isfield(i, 'product')
         state = relate(state, i.key, i.product, 'instance_of', {'subject'}, {'product'});
@@ -235,6 +246,20 @@ result.unrepresented = state.unrep;
 end
 
 % =============================================================================
+
+function tf = schemaHasField(className, fieldName)
+% Whether the V2 schema on DID_SCHEMA_PATH declares FIELDNAME on CLASSNAME.
+tf = false;
+p = getenv('DID_SCHEMA_PATH');
+f = fullfile(p, [className '.json']);
+if isempty(p) || ~isfile(f)
+    return;
+end
+d = jsondecode(fileread(f));
+if isfield(d, 'fields') && ~isempty(d.fields)
+    tf = any(strcmp({d.fields.name}, fieldName));
+end
+end
 
 function c = entries(spec, name)
 if ~isfield(spec, name) || isempty(spec.(name))

@@ -6,19 +6,25 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %   subject, each assigned to a session of SESSIONS (the table from
 %   ndi.setup.conv.haley.sessionList). Decision log #37-#41.
 %
+%   Names follow the eLife paper (decision #42): the plate an animal is
+%   filmed on is an ASSAY plate, the plate L4s are picked onto the day
+%   before is an ACCLIMATION plate.
+%
 %   C. elegans, from <folder>/experimentInfo.mat `info` (one row per
 %   plate-video):
-%     behaviour_plate  one per distinct plateNum      concentration_plate0011
-%     patch            one per row of the plate's     concentration_plate0011_patch0007
-%                      lawnCenters (numbered in that
+%     assay_plate      one per distinct plateNum      concentration_assayPlate0011
+%                                                     "Assay Plate 0011"
+%     patch            one per row of the plate's     concentration_assayPlate0011_patch0007
+%                      lawnCenters (numbered in that  "Patch 0007 on Assay Plate 0011"
 %                      order, which is closestLawnID's)
-%     worm             one per distinct wormNum       concentration_worm0451
-%     growth_plate     one per (strain, pick time) in concentration_0001_growth0001
-%                      a session, numbered by pick time
-%                      then strain (the source has no
-%                      id for it; decision #39)
-%   E. coli, from ecoli/bacteria.mat `info` (one row per plate):
-%     behaviour_plate  one per plate                  ecoli_plate0042
+%     worm             one per distinct wormNum       concentration_worm0451  "Worm 0451"
+%     acclimation_plate one per (strain, pick time)   concentration_0001_acclimationPlate0001
+%                      in a session, numbered by pick "Acclimation Plate 0001"
+%                      time then strain (the source
+%                      has no id for it; decision #39)
+%   E. coli, from ecoli/bacteria.mat `info` (one row per plate; all 126 are
+%   kept, analysed or not -- decision #43):
+%     plate            one per plate                  ecoli_plate0042  "Plate 0042"
 %     patch            `rectangle` template: 12 (a    ecoli_plate0042_patch0012
 %                      3 x 4 grid, numbered row by
 %                      row); `none` seeded: 1 (one
@@ -29,10 +35,10 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %   Numbers restart in each source folder, so every local_identifier starts
 %   with ndi.setup.conv.haley.idPrefix(folder) (decision #37).
 %
-%   Columns: session, kind, local_identifier, description, folder, plate,
-%   patch, worm, strain, growth (the growth plate a behaviour plate's worms
-%   came from), exclude (the source's `exclude` flag, for the assertions
-%   stage).
+%   Columns: session, kind, local_identifier, name, description, folder,
+%   plate, patch, worm, strain, acclimation (the acclimation plate an assay
+%   plate's worms came from), exclude (the source's `exclude` flag, for the
+%   assertions stage).
 %
 %   CHECKS (second output, also printed) report what looks wrong in the
 %   source WITHOUT changing anything:
@@ -45,8 +51,8 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %                          check, never trusted)
 %     noLawnCenters        a plate with no patch positions (no patches made)
 %     patchCountDisagrees  lawnCenters and lawnRadii list different counts
-%     noPickTime           a plate with no growthTimePicked (its growth
-%                          plate is grouped by strain alone)
+%     noPickTime           a plate with no growthTimePicked (its
+%                          acclimation plate is grouped by strain alone)
 %     ecoliSeeding         an E. coli plate whose template and seeding
 %                          disagree, or a plateNum used by two experiments
 %
@@ -84,7 +90,7 @@ for f = 1:numel(folders)
     end
     mine = sessions(strcmp(sessions.folder, folder), :);
 
-    % One record per behaviour plate, gathered first: growth plates are
+    % One record per assay plate, gathered first: acclimation plates are
     % numbered per session, which needs every plate of the session.
     plates = unique(I.plateNum);
     P = struct('plate', {}, 'session', {}, 'worms', {}, 'strain', {}, 'pick', {}, ...
@@ -143,7 +149,7 @@ for f = 1:numel(folders)
             'nVideo', height(R), 'exclude', ex); %#ok<AGROW>
     end
 
-    % Growth plates: one per (session, strain, pick time), numbered within the
+    % Acclimation plates: one per (session, strain, pick time), numbered within the
     % session by pick time, then strain.
     growthOf = cell(1, numel(P));
     for s = 1:height(mine)
@@ -167,7 +173,7 @@ for f = 1:numel(folders)
         G = sortrows(G, {'pick', 'strain'});
         for n = 1:height(G)
             g = G.k(n);
-            gid = sprintf('%s_growth%04d', mine.local_identifier{s}, n);
+            gid = sprintf('%s_acclimationPlate%04d', mine.local_identifier{s}, n);
             members = idx(grp == g);
             for m = 1:numel(members)
                 growthOf{members(m)} = gid;
@@ -177,28 +183,32 @@ for f = 1:numel(folders)
             else
                 when = ['picked ' char(G.pick(n), 'yyyy-MM-dd HH:mm')];
             end
-            rows{end+1} = subjRow(mine.local_identifier{s}, 'growth_plate', gid, ...
-                sprintf('Growth (cultivation) plate of %s, %s; the worms of %d behaviour plate(s) came from it.', ...
+            rows{end+1} = subjRow(mine.local_identifier{s}, 'acclimation_plate', gid, ...
+                sprintf('Acclimation Plate %04d', n), ...
+                sprintf('Acclimation plate of %s, %s; the worms of %d assay plate(s) came from it.', ...
                 G.strain{n}, when, numel(members)), folder, NaN, NaN, NaN, G.strain{n}, '', false); %#ok<AGROW>
         end
     end
 
-    % Behaviour plates, their patches and worms.
+    % Assay plates, their patches and worms.
     for m = 1:numel(P)
         q = P(m);
-        pid = sprintf('%s_plate%04d', pre, q.plate);
-        rows{end+1} = subjRow(q.session, 'behaviour_plate', pid, ...
-            sprintf('Behaviour plate %d: %d worm(s), %d patch(es), filmed in %d video(s).', ...
+        pid = sprintf('%s_assayPlate%04d', pre, q.plate);
+        pname = sprintf('Assay Plate %04d', q.plate);
+        rows{end+1} = subjRow(q.session, 'assay_plate', pid, pname, ...
+            sprintf('Assay plate %d: %d worm(s), %d patch(es), filmed in %d video(s).', ...
             q.plate, numel(q.worms), q.nPatch, q.nVideo), folder, q.plate, NaN, NaN, ...
             q.strain, growthOf{m}, q.exclude); %#ok<AGROW>
         for k = 1:q.nPatch
             rows{end+1} = subjRow(q.session, 'patch', sprintf('%s_patch%04d', pid, k), ...
-                sprintf('Patch %d of behaviour plate %d.', k, q.plate), folder, q.plate, k, NaN, ...
+                sprintf('Patch %04d on %s', k, pname), ...
+                sprintf('Patch %d of assay plate %d.', k, q.plate), folder, q.plate, k, NaN, ...
                 '', '', false); %#ok<AGROW>
         end
         for k = 1:numel(q.worms)
             rows{end+1} = subjRow(q.session, 'worm', sprintf('%s_worm%04d', pre, q.worms(k)), ...
-                sprintf('Worm %d, on behaviour plate %d.', q.worms(k), q.plate), folder, q.plate, ...
+                sprintf('Worm %04d', q.worms(k)), ...
+                sprintf('Worm %d, on assay plate %d.', q.worms(k), q.plate), folder, q.plate, ...
                 NaN, q.worms(k), q.strain, growthOf{m}, false); %#ok<AGROW>
         end
     end
@@ -282,10 +292,12 @@ if height(mine) > 0
                 what = ['template ' template];
         end
         pid = sprintf('ecoli_plate%04d', p);
-        rows{end+1} = subjRow(mine.local_identifier{s}, 'behaviour_plate', pid, ...
+        pname = sprintf('Plate %04d', p);
+        rows{end+1} = subjRow(mine.local_identifier{s}, 'plate', pid, pname, ...
             sprintf('E. coli plate %d: %s.', p, what), 'ecoli', p, NaN, NaN, '', '', false); %#ok<AGROW>
         for k = 1:nPatch
             rows{end+1} = subjRow(mine.local_identifier{s}, 'patch', sprintf('%s_patch%04d', pid, k), ...
+                sprintf('Patch %04d on %s', k, pname), ...
                 sprintf('Patch %d of E. coli plate %d.', k, p), 'ecoli', p, k, NaN, '', '', false); %#ok<AGROW>
         end
     end
@@ -293,8 +305,8 @@ end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    S = cell2table(cell(0, 11), 'VariableNames', {'session', 'kind', 'local_identifier', ...
-        'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'growth', 'exclude'});
+    S = cell2table(cell(0, 12), 'VariableNames', {'session', 'kind', 'local_identifier', ...
+        'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', 'exclude'});
 else
     S = struct2table([rows{:}], 'AsArray', true);
 end
@@ -307,10 +319,10 @@ if ~isempty(dup)
     error('ndi:setup:conv:haley:duplicateSubject', ...
         'Two subjects would share local_identifier %s.', strjoin(dup, ', '));
 end
-kinds = {'behaviour_plate', 'patch', 'worm', 'growth_plate'};
+kinds = {'assay_plate', 'acclimation_plate', 'plate', 'patch', 'worm'};
 counts = cellfun(@(k) sum(strcmp(S.kind, k)), kinds);
 fprintf(['DENOMINATOR: %d subject(s) in %d session(s), from %d source file(s): ' ...
-    '%d behaviour plate(s), %d patch(es), %d worm(s), %d growth plate(s)\n'], ...
+    '%d assay plate(s), %d acclimation plate(s), %d E. coli plate(s), %d patch(es), %d worm(s)\n'], ...
     height(S), numel(unique(S.session)), nFiles, counts);
 names = fieldnames(checks);
 fprintf('CHECKS (reported, nothing changed): %d finding(s)\n', ...
@@ -324,10 +336,10 @@ end
 
 % =============================================================================
 
-function s = subjRow(session, kind, id, desc, folder, plate, patch, worm, strain, growth, exclude)
-s = struct('session', session, 'kind', kind, 'local_identifier', id, 'description', desc, ...
-    'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, 'strain', strain, ...
-    'growth', growth, 'exclude', logical(exclude));
+function s = subjRow(session, kind, id, name, desc, folder, plate, patch, worm, strain, acclimation, exclude)
+s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', name, ...
+    'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
+    'strain', strain, 'acclimation', acclimation, 'exclude', logical(exclude));
 end
 
 function k = growthKey(p)

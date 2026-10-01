@@ -5,7 +5,7 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
 %   an experimentInfo.mat `info` table per C. elegans folder (column names
 %   and types as in the real files), and ecoli/bacteria.mat with `info` and
 %   `metaData` -- then checks the subjects listed for each session, their
-%   identifiers, the growth-plate numbering and the source checks.
+%   identifiers, the acclimation-plate numbering and the source checks.
 %
 %   Needs no schema and no did2: it builds no documents.
 
@@ -24,7 +24,7 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             ce = fullfile(testCase.Root, 'haley', 'celegans');
 
             % foragingConcentration: day 1 has plates 1 and 2 (worms 1-8, one
-            % growth plate); day 2 has plate 3, filmed twice (worms 9-12), and
+            % acclimation plate); day 2 has plate 3, filmed twice (worms 9-12), and
             % a tableOfContents range that is wrong (9-14). Plate 4's expNum
             % has no tableOfContents row.
             f = fullfile(ce, 'foragingConcentration');
@@ -81,9 +81,9 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
         function testIdentifiersUseTheFolderPrefix(testCase)
             [S, ~] = testCase.list();
             ids = S.local_identifier;
-            for want = {'concentration_plate0001', 'concentration_plate0001_patch0003', ...
-                        'concentration_worm0012', 'concentration_0001_growth0001', ...
-                        'mutants_plate0002', 'ecoli_plate0001_patch0012', 'ecoli_plate0002_patch0001'}
+            for want = {'concentration_assayPlate0001', 'concentration_assayPlate0001_patch0003', ...
+                        'concentration_worm0012', 'concentration_0001_acclimationPlate0001', ...
+                        'mutants_assayPlate0002', 'ecoli_plate0001_patch0012', 'ecoli_plate0002_patch0001'}
                 testCase.verifyTrue(ismember(want{1}, ids), want{1});
             end
             testCase.verifyFalse(any(startsWith(ids, 'foraging')), ...
@@ -93,7 +93,7 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
 
         function testAPlateFilmedTwiceIsOneSubject(testCase)
             [S, ~] = testCase.list();
-            p3 = S(strcmp(S.local_identifier, 'concentration_plate0003'), :);
+            p3 = S(strcmp(S.local_identifier, 'concentration_assayPlate0003'), :);
             testCase.verifyEqual(height(p3), 1);
             testCase.verifySubstring(p3.description{1}, 'filmed in 2 video(s)');
             testCase.verifyEqual(sum(strcmp(S.kind, 'worm') & S.plate == 3 ...
@@ -113,23 +113,23 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
                 'Concentration plate 2 lists 2 centres and 1 radius');
         end
 
-        function testGrowthPlatesAreNumberedByPickTime(testCase)
+        function testAcclimationPlatesAreNumberedByPickTime(testCase)
             [S, ~] = testCase.list();
-            g = S(strcmp(S.kind, 'growth_plate') & strcmp(S.session, 'mutants_0001'), :);
+            g = S(strcmp(S.kind, 'acclimation_plate') & strcmp(S.session, 'mutants_0001'), :);
             testCase.verifyEqual(height(g), 3, 'one per (strain, pick time)');
-            g1 = g(strcmp(g.local_identifier, 'mutants_0001_growth0001'), :);
+            g1 = g(strcmp(g.local_identifier, 'mutants_0001_acclimationPlate0001'), :);
             testCase.verifyEqual(g1.strain{1}, 'MT15434', 'the earliest pick (10:07) is 0001');
-            p1 = S(strcmp(S.local_identifier, 'mutants_plate0001'), :);
-            p3 = S(strcmp(S.local_identifier, 'mutants_plate0003'), :);
-            testCase.verifyEqual(p1.growth{1}, p3.growth{1}, 'same strain and pick -> same growth plate');
+            p1 = S(strcmp(S.local_identifier, 'mutants_assayPlate0001'), :);
+            p3 = S(strcmp(S.local_identifier, 'mutants_assayPlate0003'), :);
+            testCase.verifyEqual(p1.acclimation{1}, p3.acclimation{1}, 'same strain and pick -> same acclimation plate');
             w = S(strcmp(S.local_identifier, 'mutants_worm0005'), :);
-            testCase.verifyEqual(w.growth{1}, 'mutants_0001_growth0001');
+            testCase.verifyEqual(w.acclimation{1}, 'mutants_0001_acclimationPlate0001');
         end
 
         function testSourceChecksReportWithoutChanging(testCase)
             [S, checks] = testCase.list();
             testCase.verifyTrue(any(contains(checks.plateWithoutSession, 'plate 4 (expNum 9)')));
-            testCase.verifyFalse(any(strcmp(S.local_identifier, 'concentration_plate0004')));
+            testCase.verifyFalse(any(strcmp(S.local_identifier, 'concentration_assayPlate0004')));
             testCase.verifyTrue(any(contains(checks.wormRange, 'concentration_0002')), ...
                 'the 9-14 range against worms 9-12');
             testCase.verifyFalse(any(contains(checks.wormRange, 'concentration_0001')));
@@ -152,10 +152,22 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             testCase.verifySubstring(p5.description{1}, 'LB alone');
         end
 
+        function testNamesFollowThePaper(testCase)
+            [S, ~] = testCase.list();
+            nm = @(id) S.name{strcmp(S.local_identifier, id)};
+            testCase.verifyEqual(nm('concentration_assayPlate0001'), 'Assay Plate 0001');
+            testCase.verifyEqual(nm('concentration_assayPlate0001_patch0003'), 'Patch 0003 on Assay Plate 0001');
+            testCase.verifyEqual(nm('concentration_worm0012'), 'Worm 0012');
+            testCase.verifyEqual(nm('mutants_0001_acclimationPlate0001'), 'Acclimation Plate 0001');
+            testCase.verifyEqual(nm('ecoli_plate0001'), 'Plate 0001');
+            testCase.verifyEqual(nm('ecoli_plate0001_patch0012'), 'Patch 0012 on Plate 0001');
+            testCase.verifyTrue(all(ismember(S.kind, {'assay_plate', 'acclimation_plate', 'plate', 'patch', 'worm'})));
+        end
+
         function testExcludeIsCarriedForTheAssertionsStage(testCase)
             [S, ~] = testCase.list();
-            testCase.verifyTrue(S.exclude(strcmp(S.local_identifier, 'concentration_plate0001')));
-            testCase.verifyFalse(S.exclude(strcmp(S.local_identifier, 'concentration_plate0002')));
+            testCase.verifyTrue(S.exclude(strcmp(S.local_identifier, 'concentration_assayPlate0001')));
+            testCase.verifyFalse(S.exclude(strcmp(S.local_identifier, 'concentration_assayPlate0002')));
         end
     end
 

@@ -656,24 +656,28 @@
   {
    "key": "camera_1",
    "local_identifier": "camera1",
+   "name": "Camera 1",
    "product": "camera",
    "description": "Behaviour camera (1 of 2; experimentInfo `camera`)."
   },
   {
    "key": "camera_2",
    "local_identifier": "camera2",
+   "name": "Camera 2",
    "product": "camera",
    "description": "Behaviour camera (2 of 2; experimentInfo `camera`)."
   },
   {
    "key": "axio_zoom_1",
-   "local_identifier": "Axio Zoom.V16",
+   "local_identifier": "axiozoom1",
+   "name": "Axio Zoom.V16",
    "product": "axio_zoom",
    "description": "Fluorescence stereo microscope used for the E. coli lawn imaging."
   },
   {
    "key": "spectrophotometer_1",
-   "local_identifier": "SpectraMax Plus 384",
+   "local_identifier": "spectramax1",
+   "name": "SpectraMax Plus 384",
    "product": "spectrophotometer"
   }
  ],
