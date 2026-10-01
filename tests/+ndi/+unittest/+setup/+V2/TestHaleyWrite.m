@@ -35,8 +35,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             count = @(c) sum(strcmp(classes, c));
             % plates 11-14, one patch each, two worms each; three acclimation
-            % plates (the fixture's plates were picked at three times)
-            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 3);
+            % plates (the fixture's plates were picked at three times); one
+            % food deprivation plate (plate 14's worms)
+            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 3 + 1);
             % plate 11 twice + 12 + 14 (behaviour) + 2 lawn clips
             testCase.verifyEqual(count('epoch'), 6);
             testCase.verifyEqual(count('intensity_observation'), 6);
@@ -108,8 +109,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its study, minted in stage 3 since decision #50)
             subjectIdSet = values(idOf);
             rel = rel(cellfun(@(r) any(strcmp(edge(r, 'child_id'), subjectIdSet)), rel));
-            testCase.verifyEqual(numel(rel), 4 + 8 + 8, ...
-                '4 patch part_of plate, 8 worms in their assay plate, 8 in their acclimation plate');
+            testCase.verifyEqual(numel(rel), 4 + 8 + 8 + 2, ['4 patch part_of plate, 8 worms ' ...
+                'in their assay plate, 8 in their acclimation plate, 2 (plate 14) in a food deprivation plate']);
             find1 = @(child, parent, name) rel(cellfun(@(r) ...
                 strcmp(edge(r, 'child_id'), idOf(child)) && strcmp(edge(r, 'parent_id'), idOf(parent)) ...
                 && strcmp(r.directed_relation.relation.name, name), rel));
@@ -126,6 +127,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(t, 1);
             ref = byId(t{1});
             testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-04T20:10:51.000Z');
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.start.approximate), ...
+                'the transfer was a few minutes before filming: the start is approximate');
 
             % ... and on its acclimation plate from the pick time (the day
             % before, 12:10:51) until filming, that end approximate
@@ -136,6 +139,24 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-03T20:10:51.000Z');
             testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 86400, 'AbsTol', 1e-6);
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate));
+
+            % plate 14 was food-deprived: acclimation plate (picked the day
+            % before, 15:17:10) -> food deprivation plate (12:17:10, 3 h before
+            % filming) -> assay plate (filmed from 15:17:10)
+            r = find1('concentration_worm0141', 'concentration_0001_foodDeprivationPlate0001', 'contained_in');
+            testCase.verifyNumElements(r, 1);
+            t = edgeAll(r{1}, 'time_reference_id');
+            ref = byId(t{1});
+            testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-04T20:17:10.000Z');
+            testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 3 * 3600, 'AbsTol', 1e-6);
+            r = find1('concentration_worm0141', 'concentration_0001_acclimationPlate0003', 'contained_in');
+            testCase.verifyNumElements(r, 1);
+            t = edgeAll(r{1}, 'time_reference_id');
+            ref = byId(t{1});
+            testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 21 * 3600, 'AbsTol', 1e-6, ...
+                'the acclimation window ends when the worms move to the food deprivation plate');
+            testCase.verifyFalse(isfield(ref.absolute_time_reference.value.duration, 'approximate'), ...
+                'starvedTime is recorded: that end is not approximate');
 
             % plate 13 was never filmed: its worms are in it, with no time
             r = find1('concentration_worm0131', 'concentration_assayPlate0013', 'contained_in');

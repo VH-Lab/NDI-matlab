@@ -18,10 +18,11 @@ function result = import_V2(dataParentDir, options)
 %     B. per study (E. coli first); per day:
 %        3  sessions       the studies (from the spec; decision #50), then one
 %                          session per experiment day, part_of its study
-%        4  subjects       plates, patches, worms, acclimation plates
+%        4  subjects       plates, patches, worms, acclimation and food
+%                          deprivation plates
 %        5  acquisition    camera/microscope, one epoch per recording
-%        6  relations      patch part_of plate; worm contained_in its assay
-%                          and acclimation plates (with when)
+%        6  relations      patch part_of plate; worm contained_in its acclimation,
+%                          food deprivation and assay plates (with when)
 %        7  assertions     strain, species, exclusion tags         (not yet)
 %        8  manipulations  plate preparation, food deprivation     (not yet)
 %        9  observations   tracks, environment, geometry, images   (not yet)
@@ -228,9 +229,10 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.documents = [built{k}.documents, rel.documents];
             built{k}.relations = rel;
             c = rel.counts;
-            fprintf(['%s relations: %d patch part_of plate, %d worm contained_in assay plate, ' ...
-                '%d worm contained_in acclimation plate\n'], T.local_identifier{k}, ...
-                c.patch_part_of_plate, c.worm_in_assay_plate, c.worm_in_acclimation_plate);
+            fprintf(['%s relations: %d patch part_of plate; worm contained_in: %d assay plate, ' ...
+                '%d acclimation plate, %d food deprivation plate\n'], T.local_identifier{k}, ...
+                c.patch_part_of_plate, c.worm_in_assay_plate, c.worm_in_acclimation_plate, ...
+                c.worm_in_food_deprivation_plate);
             for j = 1:numel(rel.skipped)
                 fprintf('  skipped: %s\n', rel.skipped{j});
             end

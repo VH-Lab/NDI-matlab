@@ -22,6 +22,10 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %                      in a session, numbered by pick "Acclimation Plate 0001"
 %                      time then strain (the source
 %                      has no id for it; decision #39)
+%     food_deprivation_plate  one per (strain,   mutants_0001_foodDeprivationPlate0001
+%                      starvedTime) in a session: the "Food Deprivation Plate 0001"
+%                      unseeded plate food-deprived worms were moved to
+%                      from their acclimation plate (decision #53)
 %   E. coli, from ecoli/bacteria.mat `info` (one row per plate; all 126 are
 %   kept, analysed or not -- decision #43):
 %     plate            one per plate                  ecoli_plate0042  "Plate 0042"
@@ -38,8 +42,11 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %   Columns: session, kind, local_identifier, name, description, folder,
 %   plate, patch, worm, strain, acclimation (the acclimation plate an assay
 %   plate's worms came from), exclude (the source's `exclude` flag, for the
-%   assertions stage), pick (an acclimation plate's `growthTimePicked`, the
-%   wall-clock time the L4s were picked onto it; NaT for the other kinds).
+%   assertions stage), deprivation (the food deprivation plate a
+%   food-deprived assay plate's worms came through; '' otherwise),
+%   worms_placed (when worms were put onto this plate: an acclimation
+%   plate's `growthTimePicked`, a food deprivation plate's `starvedTime`;
+%   NaT for the other kinds).
 %
 %   CHECKS (second output, also printed) report what looks wrong in the
 %   source WITHOUT changing anything:
@@ -95,7 +102,7 @@ for f = 1:numel(folders)
     % numbered per session, which needs every plate of the session.
     plates = unique(I.plateNum);
     P = struct('plate', {}, 'session', {}, 'worms', {}, 'strain', {}, 'pick', {}, ...
-        'nPatch', {}, 'nVideo', {}, 'exclude', {});
+        'nPatch', {}, 'nVideo', {}, 'exclude', {}, 'starved', {});
     wormHome = containers.Map('KeyType', 'double', 'ValueType', 'double');
     for k = 1:numel(plates)
         p = double(plates(k));
@@ -145,9 +152,13 @@ for f = 1:numel(folders)
         if ismember('exclude', I.Properties.VariableNames)
             ex = any(R.exclude);
         end
+        starved = NaT;
+        if ismember('starvedTime', I.Properties.VariableNames) && ~isnat(R.starvedTime(1))
+            starved = R.starvedTime(1);
+        end
         P(end+1) = struct('plate', p, 'session', mine.local_identifier{s}, 'worms', kept, ...
             'strain', char(R.strainID{1}), 'pick', pick, 'nPatch', nPatch, ...
-            'nVideo', height(R), 'exclude', ex); %#ok<AGROW>
+            'nVideo', height(R), 'exclude', ex, 'starved', starved); %#ok<AGROW>
     end
 
     % Acclimation plates: one per (session, strain, pick time), numbered within the
@@ -192,6 +203,44 @@ for f = 1:numel(folders)
         end
     end
 
+    % Food deprivation plates: the unseeded plate a food-deprived plate's
+    % worms were moved to from their acclimation plate (`starvedTime`, the
+    % paper's "3 hr of food deprivation"); one per (session, strain, time
+    % moved), numbered within the session by that time, then strain.
+    deprivationOf = repmat({''}, 1, numel(P));
+    for s = 1:height(mine)
+        idx = find(strcmp({P.session}, mine.local_identifier{s}) & ~isnat([P.starved]));
+        if isempty(idx)
+            continue;
+        end
+        keys = arrayfun(@(q) [q.strain '|' char(q.starved, 'yyyyMMddHHmmss')], P(idx), ...
+            'UniformOutput', false);
+        [u, ~, grp] = unique(keys);
+        times = NaT(numel(u), 1);
+        strains = cell(numel(u), 1);
+        for g = 1:numel(u)
+            first = idx(find(grp == g, 1));
+            times(g) = P(first).starved;
+            strains{g} = P(first).strain;
+        end
+        G = table(times, strains, (1:numel(u))', 'VariableNames', {'starved', 'strain', 'k'});
+        G = sortrows(G, {'starved', 'strain'});
+        for n = 1:height(G)
+            g = G.k(n);
+            did = sprintf('%s_foodDeprivationPlate%04d', mine.local_identifier{s}, n);
+            members = idx(grp == g);
+            for m = 1:numel(members)
+                deprivationOf{members(m)} = did;
+            end
+            rows{end+1} = subjRow(mine.local_identifier{s}, 'food_deprivation_plate', did, ...
+                sprintf('Food Deprivation Plate %04d', n), ...
+                sprintf(['Unseeded plate the %s worms of %d assay plate(s) were moved to from ' ...
+                'their acclimation plate at %s, for food deprivation before the assay.'], ...
+                G.strain{n}, numel(members), char(G.starved(n), 'yyyy-MM-dd HH:mm')), ...
+                folder, NaN, NaN, NaN, G.strain{n}, '', false, G.starved(n)); %#ok<AGROW>
+        end
+    end
+
     % Assay plates, their patches and worms.
     for m = 1:numel(P)
         q = P(m);
@@ -200,7 +249,7 @@ for f = 1:numel(folders)
         rows{end+1} = subjRow(q.session, 'assay_plate', pid, pname, ...
             sprintf('Assay plate %d: %d worm(s), %d patch(es), filmed in %d video(s).', ...
             q.plate, numel(q.worms), q.nPatch, q.nVideo), folder, q.plate, NaN, NaN, ...
-            q.strain, growthOf{m}, q.exclude); %#ok<AGROW>
+            q.strain, growthOf{m}, q.exclude, NaT, deprivationOf{m}); %#ok<AGROW>
         for k = 1:q.nPatch
             rows{end+1} = subjRow(q.session, 'patch', sprintf('%s_patch%04d', pid, k), ...
                 sprintf('Patch %04d on %s', k, pname), ...
@@ -211,7 +260,7 @@ for f = 1:numel(folders)
             rows{end+1} = subjRow(q.session, 'worm', sprintf('%s_worm%04d', pre, q.worms(k)), ...
                 sprintf('Worm %04d', q.worms(k)), ...
                 sprintf('Worm %d, on assay plate %d.', q.worms(k), q.plate), folder, q.plate, ...
-                NaN, q.worms(k), q.strain, growthOf{m}, false); %#ok<AGROW>
+                NaN, q.worms(k), q.strain, growthOf{m}, false, NaT, deprivationOf{m}); %#ok<AGROW>
         end
     end
 
@@ -307,9 +356,9 @@ end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    S = cell2table(cell(0, 13), 'VariableNames', {'session', 'kind', 'local_identifier', ...
+    S = cell2table(cell(0, 14), 'VariableNames', {'session', 'kind', 'local_identifier', ...
         'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', ...
-        'exclude', 'pick'});
+        'deprivation', 'exclude', 'worms_placed'});
 else
     S = struct2table([rows{:}], 'AsArray', true);
 end
@@ -322,10 +371,11 @@ if ~isempty(dup)
     error('ndi:setup:conv:haley:duplicateSubject', ...
         'Two subjects would share local_identifier %s.', strjoin(dup, ', '));
 end
-kinds = {'assay_plate', 'acclimation_plate', 'plate', 'patch', 'worm'};
+kinds = {'assay_plate', 'acclimation_plate', 'food_deprivation_plate', 'plate', 'patch', 'worm'};
 counts = cellfun(@(k) sum(strcmp(S.kind, k)), kinds);
 fprintf(['DENOMINATOR: %d subject(s) in %d session(s), from %d source file(s): ' ...
-    '%d assay plate(s), %d acclimation plate(s), %d E. coli plate(s), %d patch(es), %d worm(s)\n'], ...
+    '%d assay plate(s), %d acclimation plate(s), %d food deprivation plate(s), %d E. coli plate(s), ' ...
+    '%d patch(es), %d worm(s)\n'], ...
     height(S), numel(unique(S.session)), nFiles, counts);
 names = fieldnames(checks);
 fprintf('CHECKS (reported, nothing changed): %d finding(s)\n', ...
@@ -339,13 +389,17 @@ end
 
 % =============================================================================
 
-function s = subjRow(session, kind, id, name, desc, folder, plate, patch, worm, strain, acclimation, exclude, pick)
+function s = subjRow(session, kind, id, name, desc, folder, plate, patch, worm, strain, acclimation, exclude, placed, deprivation)
 if nargin < 13
-    pick = NaT;
+    placed = NaT;
+end
+if nargin < 14
+    deprivation = '';
 end
 s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', name, ...
     'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
-    'strain', strain, 'acclimation', acclimation, 'exclude', logical(exclude), 'pick', pick);
+    'strain', strain, 'acclimation', acclimation, 'deprivation', deprivation, ...
+    'exclude', logical(exclude), 'worms_placed', placed);
 end
 
 function k = growthKey(p)
