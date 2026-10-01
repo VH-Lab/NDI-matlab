@@ -79,7 +79,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyClass(cam2.filenavigator, 'ndi.file.navigator.bodies');
             et = cam2.filenavigator.epochtable();
             testCase.verifyEqual(sort({et.epoch_id}), ...
-                {'concentration_2022-02-04_11-49-08_2', 'concentration_2022-02-04_12-10-51_2'});
+                {'concentration_2022-02-04_11-49-08_2', 'concentration_2022-02-04_12-10-51_2', ...
+                 'concentration_2022-02-04_15-17-10_2'}, ...
+                'camera 2: plate 12 and its lawn clip, and plate 14 (camera 2 by its file name)');
             e = et(strcmp({et.epoch_id}, 'concentration_2022-02-04_12-10-51_2'));
             testCase.verifyEqual(e.underlying_epochs.underlying, {raw});
             subj = docs(strcmp(classes, 'subject'));
