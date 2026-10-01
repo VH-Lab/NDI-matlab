@@ -43,9 +43,9 @@ density comes from the E. coli study), so it runs in a final dataset pass.
     B. per study (E. coli FIRST), tables loaded once + named corrections;
        per day:
        3  session        one per day, `part_of` its study
-       4  acquisition    camera / microscope system, one epoch per video or
+       4  subjects       cultivation (L4) plates, behaviour plates, patches, worms
+       5  acquisition    camera / microscope system, one epoch per video or
                          image, clocks + syncgraph
-       5  subjects       cultivation (L4) plates, behaviour plates, patches, worms
        6  relations      patch part_of plate, worm on plate, worm from its
                          cultivation plate
        7  assertions     strain, species, exclusion tag on plates
@@ -61,6 +61,11 @@ density comes from the E. coli study), so it runs in a final dataset pass.
        13 check & write  validate, census, write the dataset
 
 Each stage returns an id map (source key -> document id) that later stages use.
+
+REVISED 2026-10-01 (jess): subjects now come BEFORE acquisition. The epochs-first
+rule is about STATEMENTS (every statement needs a time reference); subjects are
+entities and need none, and creating them first lets each recording name its plate
+and each probe map name a real subject document.
 
 ## Decisions
 
@@ -95,7 +100,11 @@ Each stage returns an id map (source key -> document id) that later stages use.
 | 29 | 2026-10-01 | **The `software` documents naming NDI classes** (`ndi.daq.system.image`, the navigator, `ndi.daq.reader.image.ndr`) **live in each session**: `daqsystem_load` rebuilds objects from the session's own database (`+vintage/objectClass.m` searches the session; `session.m` `database_search` is scoped to the session id), and a session opened alone has no link to its dataset. Decision 20's shared software (StreamPix, WormLab, MATLAB) stays at the dataset level. | DECIDED |
 | 30 | 2026-10-01 | **Lawn clips get a full extent**: the import opens each clip to read its frame count and rate (option B), with MATLAB's native `VideoReader` (no NANSEN). Behaviour videos take theirs from `experimentInfo`. | DECIDED |
 | 31 | 2026-10-01 | **Probe maps** (`.epochprobemap.ndi`, one per epoch: the camera as probe, the plate's `local_identifier` as subject) are written into the session folder, never the raw data. | DECIDED |
-| 32 | — | **How NDI finds the raw recordings** when the session folder is separate from the raw data (NDI's navigator scans the session folder and writes a hidden epoch-id file beside each epoch's first file). Options: symlink, copy into the session, or epochs + `file_reference` documents read by a document-backed navigator. | OPEN |
+| 33 | 2026-10-01 | **Acquisition systems are per session.** NDI rebuilds them only from the session's own database. The physical camera is the dataset-level instrument subject (stage 2, `instance_of` its product); each recording links the two: `instrument_id` = the camera subject, `acquisition_channels_id` -> that session's `acquisition_system`. #73 removed `epoch.instrument_id` on purpose ("the rig is recorded where it is always right -- on each recording statement"), so an epoch needs no edge to its system. | DECIDED |
+| 34 | 2026-10-01 | **Each recording's file is an `opaque_body`** (`format` `video/mp4` or `image/tiff`: bytes laid out by their own format), owned by the recording statement, with `filename`, location, `size_bytes`, `content_hash` + `hash_algorithm`. At import it is NOT held (#73 item 25: recorded by location); ingestion later takes the bytes in AS THEY ARE (never decoded: NDI's image ingester writes every frame uncompressed, ~11 GB for one 2 MB video). On ingestion the location changes; `filename`, size and fingerprint do not. Until NDI can read through a body, the session folder carries HARD LINKS to the recordings so NDI's existing navigator finds them. | DECIDED (direction) |
+| 35 | 2026-10-01 | **An epoch may carry its UTC extent** as an `absolute_time_reference` (today `epoch.time_reference_id` names only `relative_time_reference`, a side effect of keying the #52 family on `value.clock`). For the #52 rule the absolute member is the `utc` one. Schema change in did-schema, not yet made. | DECIDED; NOT BUILT |
+| 36 | 2026-10-01 | **A native NDR video reader** (MATLAB `VideoReader`, no NANSEN) is built before stage 4 writes anything, so `acquisition_reader.reader_string` names it from the start. | DECIDED; IN PROGRESS |
+| 32 | 2026-10-01 | **How NDI finds the raw recordings** when the session folder is separate from the raw data (NDI's navigator scans the session folder and writes a hidden epoch-id file beside each epoch's first file). Now: hard links in the session folder (both folders on one disk; the importer refuses rather than copying). Long term: NDI reads a recording through its `opaque_body` (#34). | DECIDED (see #34) |
 | 6 | — | Distance-to-patch model (was `distance_metadata`). | OPEN |
 | 7 | — | Encounters: one statement per encounter, or a keyed series per worm. | OPEN |
 
