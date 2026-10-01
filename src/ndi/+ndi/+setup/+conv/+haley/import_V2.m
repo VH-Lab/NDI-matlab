@@ -17,8 +17,8 @@ function result = import_V2(dataParentDir, options)
 %                          from import_V2_spec.json (sources: the eLife paper)
 %     B. per study (E. coli first); per day:
 %        3  sessions       one per experiment day, part_of its study
-%        4  acquisition    camera/microscope, one epoch per video  (not yet)
-%        5  subjects       plates, patches, worms                  (not yet)
+%        4  subjects       plates, patches, worms, growth plates   (listed; not yet written)
+%        5  acquisition    camera/microscope, one epoch per video  (not yet)
 %        6  relations      patch on plate, worm on plate, ...      (not yet)
 %        7  assertions     strain, species, exclusion tags         (not yet)
 %        8  manipulations  plate preparation, food deprivation     (not yet)
@@ -49,7 +49,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects"]
     options.OutputRoot (1,:) char = ''
     options.Write (1,1) logical = false
     options.Overwrite (1,1) logical = false
@@ -104,5 +104,19 @@ if any(options.Stages == "sessions")
     else
         fprintf('(not written: pass ''Write'', true to create these sessions)\n');
     end
+end
+
+if any(options.Stages == "subjects")
+    fprintf('\n== stage 4: subjects ==\n');
+    if ~isfield(result, 'sessions')
+        error('ndi:setup:conv:haley:needSessions', ...
+            'The subjects stage needs the sessions stage: include "sessions" in ''Stages''.');
+    end
+    [result.subjects, result.subjectChecks] = ndi.setup.conv.haley.subjectList( ...
+        dataParentDir, result.sessions);
+    if height(result.subjects) > 0
+        disp(groupsummary(result.subjects, {'folder', 'kind'}));
+    end
+    fprintf('(listed only: subjects are written with the acquisition stage)\n');
 end
 end

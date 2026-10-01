@@ -62,26 +62,26 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
             testCase.verifyEqual(height(T), 3 + 4 + 2);
             testCase.verifyEqual(numel(unique(T.local_identifier)), height(T));
-            testCase.verifyTrue(ismember('foragingConcentration_0001', T.local_identifier));
+            testCase.verifyTrue(ismember('concentration_0001', T.local_identifier));
             testCase.verifyTrue(ismember('ecoli_0002', T.local_identifier));
         end
 
         function testConcentrationSplitsIntoTwoStudies(testCase)
             T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
             r = @(id) T(strcmp(T.local_identifier, id), :);
-            testCase.verifyEqual(r('foragingConcentration_0001').study_key{1}, 'single_density_multi_patch');
-            testCase.verifyEqual(r('foragingConcentration_0003').study_key{1}, 'large_single_patch');
-            testCase.verifyEqual(r('foragingSensory_0001').study_key{1}, 'sensory_mutants');
+            testCase.verifyEqual(r('concentration_0001').study_key{1}, 'single_density_multi_patch');
+            testCase.verifyEqual(r('concentration_0003').study_key{1}, 'large_single_patch');
+            testCase.verifyEqual(r('sensory_0001').study_key{1}, 'sensory_mutants');
         end
 
         function testDayMetadataIsKept(testCase)
             T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec);
-            r = T(strcmp(T.local_identifier, 'foragingConcentration_0001'), :);
+            r = T(strcmp(T.local_identifier, 'concentration_0001'), :);
             testCase.verifyFalse(r.include);
             testCase.verifySubstring(r.description{1}, 'no contrast video');
             testCase.verifySubstring(r.description{1}, '220128_foraging_behavior');
             testCase.verifySubstring(r.name{1}, '1 Feb 2022');
-            typo = T(strcmp(T.local_identifier, 'foragingConcentration_0014'), :);
+            typo = T(strcmp(T.local_identifier, 'concentration_0014'), :);
             testCase.verifyEqual([typo.worm_first, typo.worm_last], [449 546], ...
                 'the range is carried as written; stage 5 checks it against the worms');
         end
@@ -110,11 +110,11 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             studyIds = containers.Map({'single_density_multi_patch'}, {ndi.ido.unique_id()});
             T = ndi.setup.conv.haley.sessionList(testCase.Root, testCase.Spec, ...
                 'StudyIds', studyIds, 'OutputRoot', fullfile(testCase.Root, 'out'));
-            T = T(strcmp(T.local_identifier, 'foragingConcentration_0001'), :);
+            T = T(strcmp(T.local_identifier, 'concentration_0001'), :);
             [T, sessions] = ndi.setup.V2.makeSessions(T);
             s = ndi.session.dir(T.path{1});
             testCase.verifyEqual(s.id(), sessions{1}.id());
-            testCase.verifyEqual(s.reference, 'foragingConcentration_0001');
+            testCase.verifyEqual(s.reference, 'concentration_0001');
             d = s.database_search(ndi.query('', 'isa', 'session'));
             testCase.verifySubstring(d{1}.document_properties.session.name, 'experiment 1');
             rel = s.database_search(ndi.query('', 'isa', 'directed_relation'));

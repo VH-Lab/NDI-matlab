@@ -13,10 +13,11 @@ function [T, checks] = sessionList(dataParentDir, spec, options)
 %     E. coli     one row per `expNum` in ecoli/bacteria.mat (entry 23), dated
 %                 by that experiment's earliest image (`metaData.acquisitionTime`).
 %
-%   Columns: local_identifier (e.g. foragingConcentration_0001), name,
-%   description (notebook, conditions, worm range, inclusion, notes), path
-%   (OUTPUTROOT/<folder>/<local_identifier>), study_key, study_ids, source,
-%   experiment, date, include, worm_first, worm_last.
+%   Columns: local_identifier (e.g. concentration_0001; the prefix is
+%   ndi.setup.conv.haley.idPrefix of the folder), name, description
+%   (notebook, conditions, worm range, inclusion, notes), path
+%   (OUTPUTROOT/<prefix>/<local_identifier>), study_key, study_ids, source,
+%   folder, experiment, date, include, worm_first, worm_last.
 %
 %   CHECKS (second output, also printed) reports what looks wrong in the
 %   source's own day index, WITHOUT changing anything:
@@ -29,7 +30,7 @@ function [T, checks] = sessionList(dataParentDir, spec, options)
 %                      (a stray timestamp would move the session's date)
 %
 %   The tableOfContents worm range is kept (worm_first / worm_last) but NOT
-%   trusted: stage 5 cross-checks it against the worms actually present
+%   trusted: the subjects stage cross-checks it against the worms present
 %   (decision 3; foragingConcentration row 0014 is a known typo).
 %
 %   Options:
@@ -103,9 +104,10 @@ for f = 1:numel(folders)
         if ~isempty(strtrim(C.notes{r}))
             desc = sprintf('%s Notes: %s.', desc, strtrim(C.notes{r}));
         end
-        id = sprintf('%s_%04d', folder, n);
+        pre = ndi.setup.conv.haley.idPrefix(folder);
+        id = sprintf('%s_%04d', pre, n);
         rows{end+1} = row(id, study, n, day, desc, include, w1, w2, ...
-            fullfile(outRoot, folder, id), ['tableOfContents ' folder], options.StudyIds); %#ok<AGROW>
+            fullfile(outRoot, pre, id), ['tableOfContents ' folder], folder, options.StudyIds); %#ok<AGROW>
     end
     v = dir(fullfile(root, 'celegans', folder, 'videos'));
     v = {v([v.isdir] & ~startsWith({v.name}, '.')).name};
@@ -141,7 +143,7 @@ if any(cellfun(@(s) strcmp(char(s.source_folder), 'ecoli'), studies))
         end
         id = sprintf('ecoli_%04d', n);
         rows{end+1} = row(id, study, n, day, desc, true, NaN, NaN, ...
-            fullfile(outRoot, 'ecoli', id), 'bacteria.mat', options.StudyIds); %#ok<AGROW>
+            fullfile(outRoot, 'ecoli', id), 'bacteria.mat', 'ecoli', options.StudyIds); %#ok<AGROW>
     end
 end
 
@@ -161,7 +163,7 @@ end
 
 % =============================================================================
 
-function s = row(id, study, n, day, desc, include, w1, w2, path, source, studyIds)
+function s = row(id, study, n, day, desc, include, w1, w2, path, source, folder, studyIds)
 if isnat(day)
     when = 'date unknown';
 else
@@ -174,7 +176,7 @@ end
 s = struct('local_identifier', id, ...
     'name', sprintf('%s, experiment %d (%s)', char(study.name), n, when), ...
     'description', desc, 'path', path, 'study_key', char(study.key), ...
-    'study_ids', {ids}, 'source', source, 'experiment', n, 'date', day, ...
+    'study_ids', {ids}, 'source', source, 'folder', folder, 'experiment', n, 'date', day, ...
     'include', include, 'worm_first', w1, 'worm_last', w2);
 end
 
