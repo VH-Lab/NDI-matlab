@@ -18,7 +18,7 @@ function result = import_V2(dataParentDir, options)
 %     B. per study (E. coli first); per day:
 %        3  sessions       one per experiment day, part_of its study
 %        4  subjects       plates, patches, worms, growth plates   (listed; not yet written)
-%        5  acquisition    camera/microscope, one epoch per video  (not yet)
+%        5  acquisition    camera/microscope, one epoch per video  (listed; not yet written)
 %        6  relations      patch on plate, worm on plate, ...      (not yet)
 %        7  assertions     strain, species, exclusion tags         (not yet)
 %        8  manipulations  plate preparation, food deprivation     (not yet)
@@ -39,6 +39,8 @@ function result = import_V2(dataParentDir, options)
 %                         written to, decision 21)
 %     'Write'             default false; true creates the sessions
 %     'Overwrite'         default false; true replaces existing sessions
+%     'ReadVideos'        default false; true opens each lawn clip (VideoReader)
+%                         to read its length (stage 5)
 %     'DatasetSessionId'  session id for dataset-level documents (default: a
 %                         new id; stage 10 will take it from the dataset)
 %
@@ -49,11 +51,12 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition"]
     options.OutputRoot (1,:) char = ''
     options.Write (1,1) logical = false
     options.Overwrite (1,1) logical = false
     options.DatasetSessionId (1,:) char = ''
+    options.ReadVideos (1,1) logical = false
 end
 
 % Check the requirements up front, so a missing one is reported with its fix
@@ -118,5 +121,19 @@ if any(options.Stages == "subjects")
         disp(groupsummary(result.subjects, {'folder', 'kind'}));
     end
     fprintf('(listed only: subjects are written with the acquisition stage)\n');
+end
+
+if any(options.Stages == "acquisition")
+    fprintf('\n== stage 5: acquisition ==\n');
+    if ~isfield(result, 'sessions')
+        error('ndi:setup:conv:haley:needSessions', ...
+            'The acquisition stage needs the sessions stage: include "sessions" in ''Stages''.');
+    end
+    [result.recordings, result.recordingChecks] = ndi.setup.conv.haley.recordingList( ...
+        dataParentDir, result.sessions, 'ReadVideos', options.ReadVideos);
+    if height(result.recordings) > 0
+        disp(groupsummary(result.recordings, {'kind', 'system'}));
+    end
+    fprintf('(listed only: nothing written yet)\n');
 end
 end

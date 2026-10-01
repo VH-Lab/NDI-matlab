@@ -17,7 +17,9 @@ function [T, checks] = sessionList(dataParentDir, spec, options)
 %   ndi.setup.conv.haley.idPrefix of the folder), name, description
 %   (notebook, conditions, worm range, inclusion, notes), path
 %   (OUTPUTROOT/<prefix>/<local_identifier>), study_key, study_ids, source,
-%   folder, experiment, date, include, worm_first, worm_last.
+%   folder, video_folder (C. elegans: celegans/<folder>/videos/<directoryName>,
+%   relative to DATAPARENTDIR/haley; '' for E. coli), experiment, date,
+%   include, worm_first, worm_last.
 %
 %   CHECKS (second output, also printed) reports what looks wrong in the
 %   source's own day index, WITHOUT changing anything:
@@ -107,7 +109,8 @@ for f = 1:numel(folders)
         pre = ndi.setup.conv.haley.idPrefix(folder);
         id = sprintf('%s_%04d', pre, n);
         rows{end+1} = row(id, study, n, day, desc, include, w1, w2, ...
-            fullfile(outRoot, pre, id), ['tableOfContents ' folder], folder, options.StudyIds); %#ok<AGROW>
+            fullfile(outRoot, pre, id), ['tableOfContents ' folder], folder, ...
+            fullfile('celegans', folder, 'videos', dayDir), options.StudyIds); %#ok<AGROW>
     end
     v = dir(fullfile(root, 'celegans', folder, 'videos'));
     v = {v([v.isdir] & ~startsWith({v.name}, '.')).name};
@@ -143,7 +146,7 @@ if any(cellfun(@(s) strcmp(char(s.source_folder), 'ecoli'), studies))
         end
         id = sprintf('ecoli_%04d', n);
         rows{end+1} = row(id, study, n, day, desc, true, NaN, NaN, ...
-            fullfile(outRoot, 'ecoli', id), 'bacteria.mat', 'ecoli', options.StudyIds); %#ok<AGROW>
+            fullfile(outRoot, 'ecoli', id), 'bacteria.mat', 'ecoli', '', options.StudyIds); %#ok<AGROW>
     end
 end
 
@@ -163,7 +166,7 @@ end
 
 % =============================================================================
 
-function s = row(id, study, n, day, desc, include, w1, w2, path, source, folder, studyIds)
+function s = row(id, study, n, day, desc, include, w1, w2, path, source, folder, videoFolder, studyIds)
 if isnat(day)
     when = 'date unknown';
 else
@@ -176,7 +179,8 @@ end
 s = struct('local_identifier', id, ...
     'name', sprintf('%s, experiment %d (%s)', char(study.name), n, when), ...
     'description', desc, 'path', path, 'study_key', char(study.key), ...
-    'study_ids', {ids}, 'source', source, 'folder', folder, 'experiment', n, 'date', day, ...
+    'study_ids', {ids}, 'source', source, 'folder', folder, 'video_folder', videoFolder, ...
+    'experiment', n, 'date', day, ...
     'include', include, 'worm_first', w1, 'worm_last', w2);
 end
 
