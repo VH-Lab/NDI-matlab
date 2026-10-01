@@ -115,15 +115,18 @@ for f = 1:numel(folders)
             wormHome(worms(m)) = p;
             kept(end+1) = worms(m); %#ok<AGROW>
         end
-        lc = R.lawnCenters{1};
+        % Patch positions from the plate's first video that HAS them: a failed
+        % start (Mutants plate 1, 3 Nov 2023 07:35:52; decision #41) has none,
+        % and its restart does.
+        hasLawn = find(~cellfun(@isempty, R.lawnCenters), 1);
         nPatch = 0;
-        if isempty(lc)
+        if isempty(hasLawn)
             checks.noLawnCenters{end+1} = sprintf('%s: plate %d has no lawnCenters; no patches made', folder, p);
         else
-            nPatch = size(lc, 1);
-            if ismember('lawnRadii', I.Properties.VariableNames) && numel(R.lawnRadii{1}) ~= nPatch
+            nPatch = size(R.lawnCenters{hasLawn}, 1);
+            if ismember('lawnRadii', I.Properties.VariableNames) && numel(R.lawnRadii{hasLawn}) ~= nPatch
                 checks.patchCountDisagrees{end+1} = sprintf('%s: plate %d has %d lawnCenters and %d lawnRadii', ...
-                    folder, p, nPatch, numel(R.lawnRadii{1}));
+                    folder, p, nPatch, numel(R.lawnRadii{hasLawn}));
             end
         end
         pick = R.growthTimePicked(1);

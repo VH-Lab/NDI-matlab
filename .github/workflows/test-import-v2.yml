@@ -18,6 +18,9 @@ on:
     paths:
       - 'src/ndi/+ndi/+setup/+V2/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/sessionList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/subjectList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/idPrefix.m'
       - 'tests/+ndi/+unittest/+setup/+V2/**'
       - 'src/ndi/+ndi/+vintage/**'
       - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
@@ -27,6 +30,9 @@ on:
     paths:
       - 'src/ndi/+ndi/+setup/+V2/**'
       - 'src/ndi/+ndi/+setup/+conv/+haley/import_V2*'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/sessionList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/subjectList.m'
+      - 'src/ndi/+ndi/+setup/+conv/+haley/idPrefix.m'
       - 'tests/+ndi/+unittest/+setup/+V2/**'
       - 'src/ndi/+ndi/+vintage/**'
       - 'tests/+ndi/+unittest/+vintage/TestVintageMap.m'
