@@ -655,13 +655,13 @@
  "instruments": [
   {
    "key": "camera_1",
-   "local_identifier": "camera 1",
+   "local_identifier": "camera1",
    "product": "camera",
    "description": "Behaviour camera (1 of 2; experimentInfo `camera`)."
   },
   {
    "key": "camera_2",
-   "local_identifier": "camera 2",
+   "local_identifier": "camera2",
    "product": "camera",
    "description": "Behaviour camera (2 of 2; experimentInfo `camera`)."
   },

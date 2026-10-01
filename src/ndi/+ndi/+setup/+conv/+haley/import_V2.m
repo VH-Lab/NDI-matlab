@@ -39,8 +39,9 @@ function result = import_V2(dataParentDir, options)
 %                         written to, decision 21)
 %     'Write'             default false; true creates the sessions
 %     'Overwrite'         default false; true replaces existing sessions
-%     'ReadVideos'        default false; true opens each lawn clip (VideoReader)
-%                         to read its length (stage 5)
+%     'ReadVideos'        default true: opens each lawn clip (VideoReader) to
+%                         read its length (stage 5); false skips it for a
+%                         quick look
 %     'DatasetSessionId'  session id for dataset-level documents (default: a
 %                         new id; stage 10 will take it from the dataset)
 %
@@ -56,7 +57,7 @@ arguments
     options.Write (1,1) logical = false
     options.Overwrite (1,1) logical = false
     options.DatasetSessionId (1,:) char = ''
-    options.ReadVideos (1,1) logical = false
+    options.ReadVideos (1,1) logical = true
 end
 
 % Check the requirements up front, so a missing one is reported with its fix
