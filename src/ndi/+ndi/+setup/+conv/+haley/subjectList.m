@@ -21,9 +21,10 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %     behaviour_plate  one per plate                  ecoli_plate0042
 %     patch            `rectangle` template: 12 (a    ecoli_plate0042_patch0012
 %                      3 x 4 grid, numbered row by
-%                      row); `none` with bacteria:
-%                      1 (one large lawn); `none`
-%                      without (lawnVolume 0): 0
+%                      row); `none` seeded: 1 (one
+%                      large patch; OD600 0 = LB
+%                      alone); `none` with
+%                      lawnVolume 0: none
 %
 %   Numbers restart in each source folder, so every local_identifier starts
 %   with ndi.setup.conv.haley.idPrefix(folder) (decision #37).
@@ -257,15 +258,22 @@ if height(mine) > 0
                 end
                 what = '12 patches in a 3 x 4 grid';
             case 'none'
+                % Seeded (lawnVolume > 0) = one large patch. OD600 0 is a patch
+                % of LB alone, a bacteria-free patch at relative density 0 (the
+                % eLife paper, Methods: "A '0' density solution was prepared
+                % with just LB"), so it is still a patch. Unseeded = a blank
+                % plate. Only an OD600 with no volume is inconsistent.
                 nPatch = double(seeded);
-                if seeded ~= (info.OD600(r) > 0)
-                    checks.ecoliSeeding{end+1} = sprintf('ecoli: plate %d has lawnVolume %g but OD600 %g', ...
-                        p, info.lawnVolume(r), info.OD600(r));
+                if ~seeded && info.OD600(r) > 0
+                    checks.ecoliSeeding{end+1} = sprintf('ecoli: plate %d has OD600 %g but lawnVolume 0', ...
+                        p, info.OD600(r));
                 end
-                if seeded
-                    what = 'one large lawn';
-                else
+                if ~seeded
                     what = 'no bacteria';
+                elseif info.OD600(r) == 0
+                    what = 'one large patch of LB alone (relative density 0)';
+                else
+                    what = 'one large lawn';
                 end
             otherwise
                 nPatch = 0;

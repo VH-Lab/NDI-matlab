@@ -67,8 +67,8 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             % 'none' blank plate, and a rectangle plate with no bacteria.
             ec = fullfile(testCase.Root, 'haley', 'ecoli');
             mkdir(ec);
-            info = table([1; 1; 1; 2], [1; 2; 3; 4], {'rectangle'; 'none'; 'none'; 'rectangle'}, ...
-                [1; 1; 0; 1], [0.5; 200; 0; 0], ...
+            info = table([1; 1; 1; 2; 2], [1; 2; 3; 4; 5], {'rectangle'; 'none'; 'none'; 'rectangle'; 'none'}, ...
+                [1; 1; 0; 1; 0], [0.5; 200; 0; 0; 20], ...
                 'VariableNames', {'expNum', 'plateNum', 'template', 'OD600', 'lawnVolume'}); %#ok<NASGU>
             metaData = table([1; 2], [1; 2], ...
                 datetime({'30-Dec-2023 09:39:10'; '05-Jan-2024 08:00:00'}), ...
@@ -135,6 +135,8 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             testCase.verifyFalse(any(contains(checks.wormRange, 'concentration_0001')));
             testCase.verifyTrue(any(contains(checks.ecoliSeeding, 'plate 4')), ...
                 'rectangle template with lawnVolume 0');
+            testCase.verifyFalse(any(contains(checks.ecoliSeeding, 'plate 5')), ...
+                'an LB-only patch is not a finding');
         end
 
         function testEcoliPatchesFollowTheTemplate(testCase)
@@ -145,6 +147,9 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             testCase.verifyEqual(n(3), 0, 'none without bacteria: blank');
             p3 = S(strcmp(S.local_identifier, 'ecoli_plate0003'), :);
             testCase.verifySubstring(p3.description{1}, 'no bacteria');
+            testCase.verifyEqual(n(5), 1, '20 ul of LB alone (OD600 0) is a patch');
+            p5 = S(strcmp(S.local_identifier, 'ecoli_plate0005'), :);
+            testCase.verifySubstring(p5.description{1}, 'LB alone');
         end
 
         function testExcludeIsCarriedForTheAssertionsStage(testCase)
