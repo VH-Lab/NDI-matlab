@@ -32,8 +32,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(sessionPath);
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             count = @(c) sum(strcmp(classes, c));
-            % plates 11-14, one patch each, two worms each, one acclimation plate
-            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 1);
+            % plates 11-14, one patch each, two worms each; three acclimation
+            % plates (the fixture's plates were picked at three times)
+            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 3);
             % plate 11 twice + 12 + 14 (behaviour) + 2 lawn clips
             testCase.verifyEqual(count('epoch'), 6);
             testCase.verifyEqual(count('intensity_observation'), 6);
@@ -45,11 +46,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNotEmpty(s.depends_on, 'the session names its UTC extent');
 
             b = docs(strcmp(classes, 'opaque_body'));
-            b = b{cellfun(@(d) strcmp(d.opaque_body.filename, '2022-02-04_12-10-51_2.mp4'), b)};
-            testCase.verifyEqual(b.opaque_body.format, 'video/mp4');
-            testCase.verifyEqual(b.opaque_body.size_bytes, 100);
-            testCase.verifyEqual(b.opaque_body.hash_algorithm, 'MD5');
-            testCase.verifyEqual(numel(b.opaque_body.content_hash), 32);
+            b = b{cellfun(@(d) strcmp(d.data_body.filename, '2022-02-04_12-10-51_2.mp4'), b)};
+            testCase.verifyEqual(b.data_body.format, 'video/mp4');
+            testCase.verifyEqual(b.data_body.size_bytes, 100);
+            testCase.verifyEqual(b.data_body.hash_algorithm, 'MD5');
+            testCase.verifyEqual(numel(b.data_body.content_hash), 32);
             testCase.verifyFalse(isfield(b, 'files') && ~isempty(b.files), ...
                 'the recording is not held in the database');
 
