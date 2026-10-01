@@ -208,8 +208,9 @@ for f = 1:numel(folders)
     % paper's "3 hr of food deprivation"); one per (session, strain, time
     % moved), numbered within the session by that time, then strain.
     deprivationOf = repmat({''}, 1, numel(P));
+    deprived = arrayfun(@(q) ~isnat(q.starved), P);   % (an empty P gives logical [])
     for s = 1:height(mine)
-        idx = find(strcmp({P.session}, mine.local_identifier{s}) & ~isnat([P.starved]));
+        idx = find(strcmp({P.session}, mine.local_identifier{s}) & deprived);
         if isempty(idx)
             continue;
         end
