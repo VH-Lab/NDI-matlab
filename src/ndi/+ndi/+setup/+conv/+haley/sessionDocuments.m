@@ -54,7 +54,8 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %                             stay where they are until ingestion
 %
 %   OUT fields: documents (cell of structs), timeReferenceId, skipped
-%   (cellstr: recordings not written, and why).
+%   (cellstr: recordings not written, and why), subjectIds (containers.Map,
+%   subject local_identifier -> document id, for stage 6).
 %
 %   Options:
 %     'InstrumentIds'  containers.Map, instrument key -> document id (from
@@ -93,7 +94,8 @@ S = S(strcmp(S.session, ref), :);
 R = R(strcmp(R.session, ref), :);
 
 docs = {};
-out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}});
+out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}}, ...
+    'subjectIds', containers.Map());
 
 % ---- subjects ---------------------------------------------------------------
 subjectIds = containers.Map();
@@ -221,6 +223,7 @@ for k = 1:height(R)
 
 end
 out.documents = docs;
+out.subjectIds = subjectIds;
 end
 
 % -----------------------------------------------------------------------------

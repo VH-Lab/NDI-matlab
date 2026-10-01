@@ -38,16 +38,17 @@ density comes from the E. coli study), so it runs in a final dataset pass.
     A. dataset, once
        0  discover       list source files; skip earlier import output
        1  profile        describe tables (on demand)
-       2  metadata       people, organizations, funding, publication, studies,
+       2  metadata       people, organizations, funding, publication,
                          strains, products, instruments   (BUILT)
     B. per study (E. coli FIRST), tables loaded once + named corrections;
        per day:
-       3  session        one per day, `part_of` its study
+       3  session        the studies (#50), then one session per day,
+                         `part_of` its study
        4  subjects       cultivation (L4) plates, behaviour plates, patches, worms
        5  acquisition    camera / microscope system, one epoch per video or
                          image, clocks + syncgraph
-       6  relations      patch part_of plate, worm on plate, worm from its
-                         cultivation plate
+       6  relations      patch part_of plate; worm contained_in its assay
+                         plate and its acclimation plate, each with when (#52)
        7  assertions     strain, species, exclusion tag on plates
        8  manipulations  plate preparation timeline (absolute UTC times),
                          food deprivation, transfer
@@ -118,8 +119,9 @@ and each probe map name a real subject document.
 | 48 | 2026-10-01 | **Times.** An epoch carries its UTC extent (`absolute_time_reference`, source time zone America/Los_Angeles) and, for a video, its `dev_local_time` extent from 0 (`relative_time_reference`, referent the session document). The recording statement points at a reference to the EPOCH (video: `dev_local_time` 0 to its duration; image: `during`) and at the epoch's UTC reference. A lawn clip's duration is known only when `ReadVideos` is true. | BUILT |
 | 49 | 2026-10-01 | **Provisional, to check:** the recording statement's `variable` is the bare name `image intensity` (no ontology term yet); probe types (carried as the statement `method`, #51) are `brightfield-imaging` (cameras) and `wide-field-imaging` (microscope; the E. coli images are fluorescence); `acquisition_channels` carry no channels (the schema binds only ai/ao/di/do). | PROVISIONAL |
 | 32 | 2026-10-01 | **How NDI finds the raw recordings** when the session folder is separate from the raw data. ~~Hard links in the session folder~~ (dropped 2026-10-01: macOS refused them -- `ln: Operation not permitted` from MATLAB, even within one disk -- and they made every Mac user change a security setting). Now NDI reads a recording through its documents: decision #51. | DECIDED; REVISED by #51 |
-| 50 | 2026-10-01 | **Proposed:** mint the study documents in stage 3, beside the sessions they group (each study's `source_folder` / `source_condition` already assigns days to it), instead of in stage 2. Still dataset-level documents from the spec. | PROPOSED |
+| 50 | 2026-10-01 | **The study documents are minted in stage 3**, beside the sessions they group (each spec study's `source_folder` / `source_condition` already assigns days to it), instead of in stage 2. Still dataset-level documents built from the spec, `part_of` the dataset: `ndi.setup.V2.datasetMetadata` takes `'Studies'` "exclude" (stage 2) / "only" (stage 3, with the run's one `DatasetId`). | DECIDED (user, 2026-10-01); BUILT |
 | 51 | 2026-10-01 | **NDI finds a recording through its documents** (the long-term design of #34, built instead of hard links). `ndi.file.navigator.bodies`, named by each acquisition system's `epoch_file_pattern` (software `ndi.file.navigator.bodies`), builds the system's epochs from the database: acquisition_system <- acquisition_channels <- recording statement <- opaque_body. Epoch files = each body's file at the location it records (the V2 database backend now opens a file recorded by location and not ingested, `ndi.database.fun.externalFileLocation`; anything else still errors); epoch id = the `epoch` document's `local_identifier`; probe map = the system's name, the statement's `method` as the probe type, and the statement's subject (the plate's document id). It scans no folder and writes nothing: no links, no probe-map files, no hidden epoch-id files. A recording whose file is missing on this computer is left out with a warning. The location is an absolute path: moving the raw data means updating the locations (as for any NDI document whose file is not ingested); uploading to NDI Cloud rewrites them. | BUILT |
+| 52 | 2026-10-01 | **Stage 6, relations** (`ndi.setup.conv.haley.relationDocuments`), all `directed_relation`, child -> parent: a **patch `part_of` its plate** (assay or E. coli plate; no time -- it holds for the plate's whole life); a **worm `contained_in` its assay plate**, while filmed (one `absolute_time_reference` per plate: its first behaviour video's start to its last one's end; no time if the plate was never filmed); a **worm `contained_in` its acclimation plate**, from the pick time (`growthTimePicked`) to the start of its assay plate's filming, that end marked approximate (the transfer time is not recorded; only the start if the plate was never filmed; no time if the pick time is missing). `contained_in` is RO:0001018 ("located in"); `part_of` is BFO:0000050. Plates are not related to each other: worms move between plates, plates do not. | PROPOSED (to confirm); BUILT |
 | 6 | — | Distance-to-patch model (was `distance_metadata`). | OPEN |
 | 7 | — | Encounters: one statement per encounter, or a keyed series per worm. | OPEN |
 

@@ -38,7 +38,8 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %   Columns: session, kind, local_identifier, name, description, folder,
 %   plate, patch, worm, strain, acclimation (the acclimation plate an assay
 %   plate's worms came from), exclude (the source's `exclude` flag, for the
-%   assertions stage).
+%   assertions stage), pick (an acclimation plate's `growthTimePicked`, the
+%   wall-clock time the L4s were picked onto it; NaT for the other kinds).
 %
 %   CHECKS (second output, also printed) report what looks wrong in the
 %   source WITHOUT changing anything:
@@ -186,7 +187,8 @@ for f = 1:numel(folders)
             rows{end+1} = subjRow(mine.local_identifier{s}, 'acclimation_plate', gid, ...
                 sprintf('Acclimation Plate %04d', n), ...
                 sprintf('Acclimation plate of %s, %s; the worms of %d assay plate(s) came from it.', ...
-                G.strain{n}, when, numel(members)), folder, NaN, NaN, NaN, G.strain{n}, '', false); %#ok<AGROW>
+                G.strain{n}, when, numel(members)), folder, NaN, NaN, NaN, G.strain{n}, '', false, ...
+                G.pick(n)); %#ok<AGROW>
         end
     end
 
@@ -305,8 +307,9 @@ end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    S = cell2table(cell(0, 12), 'VariableNames', {'session', 'kind', 'local_identifier', ...
-        'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', 'exclude'});
+    S = cell2table(cell(0, 13), 'VariableNames', {'session', 'kind', 'local_identifier', ...
+        'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', ...
+        'exclude', 'pick'});
 else
     S = struct2table([rows{:}], 'AsArray', true);
 end
@@ -336,10 +339,13 @@ end
 
 % =============================================================================
 
-function s = subjRow(session, kind, id, name, desc, folder, plate, patch, worm, strain, acclimation, exclude)
+function s = subjRow(session, kind, id, name, desc, folder, plate, patch, worm, strain, acclimation, exclude, pick)
+if nargin < 13
+    pick = NaT;
+end
 s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', name, ...
     'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
-    'strain', strain, 'acclimation', acclimation, 'exclude', logical(exclude));
+    'strain', strain, 'acclimation', acclimation, 'exclude', logical(exclude), 'pick', pick);
 end
 
 function k = growthKey(p)

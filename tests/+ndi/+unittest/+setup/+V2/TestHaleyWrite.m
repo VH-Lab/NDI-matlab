@@ -92,6 +92,57 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(e.epochprobemap.subjectstring, plate.base.id);
         end
 
+        function testRelations(testCase)
+            % stage 6 (decision #52), over the fixture's concentration_0001:
+            % plates 11-14 (one patch each, two worms each, worms N = plate*10
+            % + 1, 2), three acclimation plates; plate 13 has no video.
+            result = testCase.write("concentration_0001");
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            rel = docs(strcmp(classes, 'directed_relation'));
+            % only relations between subjects (the session is also part_of
+            % its study, minted in stage 3 since decision #50)
+            subjectIdSet = values(idOf);
+            rel = rel(cellfun(@(r) any(strcmp(edge(r, 'child_id'), subjectIdSet)), rel));
+            testCase.verifyEqual(numel(rel), 4 + 8 + 8, ...
+                '4 patch part_of plate, 8 worms in their assay plate, 8 in their acclimation plate');
+            find1 = @(child, parent, name) rel(cellfun(@(r) ...
+                strcmp(edge(r, 'child_id'), idOf(child)) && strcmp(edge(r, 'parent_id'), idOf(parent)) ...
+                && strcmp(r.directed_relation.relation.name, name), rel));
+
+            r = find1('concentration_assayPlate0012_patch0001', 'concentration_assayPlate0012', 'part_of');
+            testCase.verifyNumElements(r, 1);
+            testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'), 'a patch is part of its plate, timeless');
+
+            % worm 121 was on assay plate 12 while it was filmed: from its
+            % first behaviour video, 2022-02-04 12:10:51 Los Angeles = 20:10:51 UTC
+            r = find1('concentration_worm0121', 'concentration_assayPlate0012', 'contained_in');
+            testCase.verifyNumElements(r, 1);
+            t = edgeAll(r{1}, 'time_reference_id');
+            testCase.verifyNumElements(t, 1);
+            ref = byId(t{1});
+            testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-04T20:10:51.000Z');
+
+            % ... and on its acclimation plate from the pick time (the day
+            % before, 12:10:51) until filming, that end approximate
+            r = find1('concentration_worm0121', 'concentration_0001_acclimationPlate0001', 'contained_in');
+            testCase.verifyNumElements(r, 1);
+            t = edgeAll(r{1}, 'time_reference_id');
+            ref = byId(t{1});
+            testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-03T20:10:51.000Z');
+            testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 86400, 'AbsTol', 1e-6);
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate));
+
+            % plate 13 was never filmed: its worms are in it, with no time
+            r = find1('concentration_worm0131', 'concentration_assayPlate0013', 'contained_in');
+            testCase.verifyNumElements(r, 1);
+            testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'));
+        end
+
         function testEcoliSession(testCase)
             result = testCase.write("ecoli_0001");
             docs = testCase.documents(result.sessions.path{1});
@@ -119,7 +170,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
     methods
         function result = write(testCase, which)
             result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
-                'Stages', ["sessions", "subjects", "acquisition"], 'Sessions', which, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations"], 'Sessions', which, ...
                 'OutputRoot', testCase.Out, 'Write', true, 'Overwrite', true, ...
                 'ReadVideos', false);
         end
@@ -132,4 +183,25 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             db.close();
         end
     end
+end
+
+function v = edge(doc, name)
+v = edgeAll(doc, name);
+if isempty(v)
+    v = '';
+else
+    v = v{1};
+end
+end
+
+function v = edgeAll(doc, name)
+v = {};
+if ~isfield(doc, 'depends_on') || isempty(doc.depends_on)
+    return;
+end
+d = doc.depends_on;
+if iscell(d), d = [d{:}]; end
+hit = d(strcmp({d.name}, name));
+v = {hit.document_id};
+v = v(~cellfun(@isempty, v));
 end

@@ -54,6 +54,33 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(numel(testCase.Result.documents), 133);
         end
 
+        function testStudiesCanBeMintedApartFromTheRest(testCase)
+            % import_V2 builds the studies in stage 3, beside the sessions
+            % (decision #50): "exclude" + "only" together are "include".
+            sid = did.ido.unique_id();
+            datasetId = did.ido.unique_id();
+            rest = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
+                'DatasetId', datasetId, 'Studies', "exclude");
+            studies = ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
+                'DatasetId', datasetId, 'Studies', "only");
+            classOf = @(r) cellfun(@(d) d.document_class.class_name, r.documents, 'UniformOutput', false);
+            testCase.verifyEqual(sum(strcmp(classOf(rest), 'study')), 0);
+            testCase.verifyEqual(sum(strcmp(classOf(studies), 'study')), numel(testCase.Spec.studies));
+            testCase.verifyEqual(numel(rest.documents) + numel(studies.documents), ...
+                numel(testCase.Result.documents));
+            % each study is part_of the dataset the other call built
+            rel = studies.documents(strcmp(classOf(studies), 'directed_relation'));
+            testCase.verifyEqual(numel(rel), numel(testCase.Spec.studies));
+            for k = 1:numel(rel)
+                dep = rel{k}.depends_on;
+                testCase.verifyTrue(any(strcmp({dep.document_id}, datasetId)));
+            end
+            ds = rest.documents(strcmp(classOf(rest), 'dataset'));
+            testCase.verifyEqual(ds{1}.base.id, datasetId);
+            testCase.verifyError(@() ndi.setup.V2.datasetMetadata(testCase.Spec, sid, ...
+                'Studies', "only"), 'ndi:setup:V2:noDatasetId');
+        end
+
         function testEveryEdgeNamesABuiltDocument(testCase)
             docs = testCase.Result.documents;
             ids = cellfun(@(d) d.base.id, docs, 'UniformOutput', false);

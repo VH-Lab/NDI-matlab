@@ -25,6 +25,11 @@ function result = datasetMetadata(spec, sessionId, options)
 %   Options:
 %     'DatasetId'   the dataset document's id (default: a new one)
 %     'Validate'    passed to did2.build (default true)
+%     'Studies'     "include" (default): everything, studies too; "exclude":
+%                   everything but the studies; "only": the studies and their
+%                   `part_of` relations alone, which needs 'DatasetId' (an
+%                   import mints studies beside the sessions they group --
+%                   Haley decision #50 -- and the rest in its metadata stage)
 %
 %   Errors did2:build:* when an entry does not fit the schema, and
 %   ndi:setup:V2:* for spec problems (a duplicate key, a key that names
@@ -37,6 +42,7 @@ arguments
     sessionId (1,:) char
     options.DatasetId (1,:) char = ''
     options.Validate (1,1) logical = true
+    options.Studies (1,1) string {mustBeMember(options.Studies, ["include", "exclude", "only"])} = "include"
 end
 
 if ischar(spec) || isstring(spec)
@@ -50,189 +56,203 @@ state.unrep = struct('kind', {}, 'key', {}, 'field', {}, 'why', {});
 state.sid = sessionId;
 state.validate = options.Validate;
 
-% ---- entities, in dependency order ---------------------------------------
-for e = entries(spec, 'organizations')
-    o = e{1};
-    state = checkKnown(state, 'organization', o, {'name', 'short_name', 'identifiers', 'parent'});
-    f = struct('name', o.name);
-    f = putIf(f, 'short_name', o, 'short_name');
-    f = putIds(f, o);
-    state = add(state, 'organization', o.key, f, struct());
-end
-for e = entries(spec, 'organizations')
-    o = e{1};
-    if isfield(o, 'parent') && ~isempty(o.parent)
-        state = relate(state, o.key, o.parent, 'suborganization_of', {'organization'}, {'organization'});
+if ~strcmp(options.Studies, 'only')
+    % ---- entities, in dependency order ---------------------------------------
+    for e = entries(spec, 'organizations')
+        o = e{1};
+        state = checkKnown(state, 'organization', o, {'name', 'short_name', 'identifiers', 'parent'});
+        f = struct('name', o.name);
+        f = putIf(f, 'short_name', o, 'short_name');
+        f = putIds(f, o);
+        state = add(state, 'organization', o.key, f, struct());
     end
-end
+    for e = entries(spec, 'organizations')
+        o = e{1};
+        if isfield(o, 'parent') && ~isempty(o.parent)
+            state = relate(state, o.key, o.parent, 'suborganization_of', {'organization'}, {'organization'});
+        end
+    end
 
-for e = entries(spec, 'people')
-    p = e{1};
-    state = checkKnown(state, 'person', p, {'given_name', 'family_name', 'email', 'identifiers', 'affiliations'});
+    for e = entries(spec, 'people')
+        p = e{1};
+        state = checkKnown(state, 'person', p, {'given_name', 'family_name', 'email', 'identifiers', 'affiliations'});
+        f = struct();
+        f = putIf(f, 'given_name', p, 'given_name');
+        f = putIf(f, 'family_name', p, 'family_name');
+        f = putIf(f, 'email', p, 'email');
+        f = putIds(f, p);
+        state = add(state, 'person', p.key, f, struct());
+        for a = asCell(getOr(p, 'affiliations', {}))
+            state = relate(state, p.key, a{1}, 'affiliated_with', {'person'}, {'organization'});
+        end
+    end
+
+    for e = entries(spec, 'funding')
+        g = e{1};
+        state = checkKnown(state, 'funding', g, {'name', 'identifiers', 'funder', 'recipients'});
+        f = putIds(struct('name', g.name), g);
+        state = add(state, 'funding', g.key, f, struct());
+        if isfield(g, 'funder')
+            state = relate(state, g.key, g.funder, 'issued_by', {'funding'}, {'organization'});
+        end
+        for r = asCell(getOr(g, 'recipients', {}))
+            state = relate(state, g.key, r{1}, 'awarded_to', {'funding'}, {'person', 'organization'});
+        end
+    end
+
+    for e = entries(spec, 'publications')
+        p = e{1};
+        state = checkKnown(state, 'publication', p, {'name', 'publication_date', 'authors', 'identifiers'});
+        f = struct('name', p.name);
+        f = putIf(f, 'publication_date', p, 'publication_date');
+        f = putIf(f, 'authors', p, 'authors');
+        f = putIds(f, p);
+        state = add(state, 'publication', p.key, f, struct());
+    end
+
+    for e = entries(spec, 'web_resources')
+        w = e{1};
+        state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'});
+        state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), struct());
+        if isfield(w, 'host')
+            state = relate(state, w.key, w.host, 'hosted_by', {'web_resource'}, {'organization'});
+        end
+    end
+
+    for e = entries(spec, 'software')
+        s = e{1};
+        state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers'}, ...
+            struct('vendor', 'V2 has no relation from software to its developer or vendor'));
+        f = putIf(struct('name', s.name), 'version', s, 'version');
+        state = add(state, 'software', s.key, putIds(f, s), struct());
+    end
+
+    for e = entries(spec, 'products')
+        p = e{1};
+        state = checkKnown(state, 'product', p, {'name', 'catalog_number', 'lot_number', 'vendor'});
+        f = struct('name', p.name);
+        f = putIf(f, 'catalog_number', p, 'catalog_number');
+        f = putIf(f, 'lot_number', p, 'lot_number');
+        edges = struct();
+        if isfield(p, 'vendor')
+            edges.vendor_id = idOf(state, p.vendor, {'organization'});
+        end
+        state = add(state, 'product', p.key, f, edges);
+    end
+
+    for e = entries(spec, 'strains')
+        s = e{1};
+        state = checkKnown(state, 'strain', s, {'name', 'species', 'genetic_strain_type', ...
+            'description', 'genotype', 'identifiers', 'background', 'source'});
+        f = struct('name', s.name, 'species', s.species, ...
+            'genetic_strain_type', asTerm(s.genetic_strain_type));
+        % V2 `strain` has no genotype field (nor does openMINDS Strain); the
+        % genotype string is kept in the description rather than dropped.
+        desc = strjoin(cellfun(@char, [asCell(getOr(s, 'genotype', {})), ...
+            asCell(getOr(s, 'description', {}))], 'UniformOutput', false), '. ');
+        if ~isempty(desc)
+            f.description = desc;
+        end
+        f = putIds(f, s);
+        edges = struct();
+        if isfield(s, 'source')
+            % The source repository's stock, as the strain's product (the current
+            % schema's strain.product_id; see decision log entry 17).
+            state = add(state, 'product', [s.key '#stock'], ...
+                struct('name', sprintf('%s (stock)', s.name), 'catalog_number', s.name), ...
+                struct('vendor_id', idOf(state, s.source, {'organization'})));
+            edges.product_id = state.ids([s.key '#stock']);
+        end
+        bg = asCell(getOr(s, 'background', {}));
+        if ~isempty(bg)
+            edges.background_strain_id = cellfun(@(k) idOf(state, k, {'strain'}), bg, ...
+                'UniformOutput', false);
+        end
+        state = add(state, 'strain', s.key, f, edges);
+    end
+
+    % `subject.name` arrived in did-schema PR #80; until the schema in use declares
+    % it, an instrument's name is reported as unrepresented rather than built.
+    subjectHasName = schemaHasField('subject', 'name');
+    for e = entries(spec, 'instruments')
+        i = e{1};
+        if subjectHasName
+            state = checkKnown(state, 'subject', i, {'local_identifier', 'name', 'description', 'product'});
+        else
+            state = checkKnown(state, 'subject', i, {'local_identifier', 'description', 'product'}, ...
+                struct('name', 'the V2 schema in use has no subject.name (did-schema PR #80)'));
+        end
+        f = putIf(struct('local_identifier', i.local_identifier), 'description', i, 'description');
+        if subjectHasName
+            f = putIf(f, 'name', i, 'name');
+        end
+        state = add(state, 'subject', i.key, f, struct());
+        if isfield(i, 'product')
+            state = relate(state, i.key, i.product, 'instance_of', {'subject'}, {'product'});
+        end
+    end
+
+    % ---- the dataset, then everything that points at it -----------------------
+    if ~isfield(spec, 'dataset')
+        error('ndi:setup:V2:noDataset', 'The spec has no `dataset` section.');
+    end
+    d = spec.dataset;
+    state = checkKnown(state, 'dataset', d, {'name', 'short_name', 'version', ...
+        'version_innovation', 'description', 'how_to_cite', 'keyword', 'license', ...
+        'accessibility', 'ethics_assessment', 'experimental_approach', 'support_channel', ...
+        'release_date', 'copyright_year', 'identifiers', 'authors', 'funding', 'cites', ...
+        'stored_at', 'documented_by'});
     f = struct();
-    f = putIf(f, 'given_name', p, 'given_name');
-    f = putIf(f, 'family_name', p, 'family_name');
-    f = putIf(f, 'email', p, 'email');
-    f = putIds(f, p);
-    state = add(state, 'person', p.key, f, struct());
-    for a = asCell(getOr(p, 'affiliations', {}))
-        state = relate(state, p.key, a{1}, 'affiliated_with', {'person'}, {'organization'});
+    for fn = {'name', 'short_name', 'version', 'version_innovation', 'description', ...
+            'how_to_cite', 'keyword', 'license', 'accessibility', 'ethics_assessment', ...
+            'experimental_approach', 'support_channel', 'release_date', 'copyright_year'}
+        f = putIf(f, fn{1}, d, fn{1});
     end
+    f = putIds(f, d);
+    key = '#dataset';
+    state = add(state, 'dataset', key, f, struct(), options.DatasetId);
+
+    authors = asCell(getOr(d, 'authors', {}));
+    for k = 1:numel(authors)
+        a = authors{k};
+        extra = struct('sequence', k);
+        if isfield(a, 'roles')
+            extra.roles = did2.build.label(asCell(a.roles));
+        end
+        state = relate(state, key, a.person, 'has_author', {'dataset'}, {'person'}, extra);
+    end
+    for pair = {'funding', 'funded_by', {'funding'}; 'cites', 'cites', {'publication'}; ...
+            'stored_at', 'stored_at', {'web_resource'}; 'documented_by', 'documented_by', {'web_resource'}}'
+        for t = asCell(getOr(d, pair{1}, {}))
+            state = relate(state, key, t{1}, pair{2}, {'dataset'}, pair{3});
+        end
+    end
+else
+    % Studies alone (stage 3 of an import): they are part_of the dataset,
+    % whose document another call builds, so its id is given, not made.
+    if isempty(options.DatasetId)
+        error('ndi:setup:V2:noDatasetId', ['''Studies'', "only" needs ''DatasetId'': ' ...
+            'the dataset document the studies are part_of.']);
+    end
+    key = '#dataset';
+    state.ids(key) = options.DatasetId;
+    state.kinds(key) = 'dataset';
 end
 
-for e = entries(spec, 'funding')
-    g = e{1};
-    state = checkKnown(state, 'funding', g, {'name', 'identifiers', 'funder', 'recipients'});
-    f = putIds(struct('name', g.name), g);
-    state = add(state, 'funding', g.key, f, struct());
-    if isfield(g, 'funder')
-        state = relate(state, g.key, g.funder, 'issued_by', {'funding'}, {'organization'});
+if ~strcmp(options.Studies, 'exclude')
+    for e = entries(spec, 'studies')
+        s = e{1};
+        state = checkKnown(state, 'study', s, {'name', 'short_name', 'description', ...
+            'factors', 'design', 'identifiers'}, ...
+            struct('source_folder', '', 'source_condition', ''));   % import directives
+        f = struct('name', s.name);
+        f = putIf(f, 'short_name', s, 'short_name');
+        f = putIf(f, 'description', s, 'description');
+        f = putIf(f, 'factors', s, 'factors');
+        f = putIf(f, 'design', s, 'design');
+        state = add(state, 'study', s.key, putIds(f, s), struct());
+        state = relate(state, s.key, key, 'part_of', {'study'}, {'dataset'});
     end
-    for r = asCell(getOr(g, 'recipients', {}))
-        state = relate(state, g.key, r{1}, 'awarded_to', {'funding'}, {'person', 'organization'});
-    end
-end
-
-for e = entries(spec, 'publications')
-    p = e{1};
-    state = checkKnown(state, 'publication', p, {'name', 'publication_date', 'authors', 'identifiers'});
-    f = struct('name', p.name);
-    f = putIf(f, 'publication_date', p, 'publication_date');
-    f = putIf(f, 'authors', p, 'authors');
-    f = putIds(f, p);
-    state = add(state, 'publication', p.key, f, struct());
-end
-
-for e = entries(spec, 'web_resources')
-    w = e{1};
-    state = checkKnown(state, 'web_resource', w, {'name', 'identifiers', 'host'});
-    state = add(state, 'web_resource', w.key, putIds(struct('name', w.name), w), struct());
-    if isfield(w, 'host')
-        state = relate(state, w.key, w.host, 'hosted_by', {'web_resource'}, {'organization'});
-    end
-end
-
-for e = entries(spec, 'software')
-    s = e{1};
-    state = checkKnown(state, 'software', s, {'name', 'version', 'identifiers'}, ...
-        struct('vendor', 'V2 has no relation from software to its developer or vendor'));
-    f = putIf(struct('name', s.name), 'version', s, 'version');
-    state = add(state, 'software', s.key, putIds(f, s), struct());
-end
-
-for e = entries(spec, 'products')
-    p = e{1};
-    state = checkKnown(state, 'product', p, {'name', 'catalog_number', 'lot_number', 'vendor'});
-    f = struct('name', p.name);
-    f = putIf(f, 'catalog_number', p, 'catalog_number');
-    f = putIf(f, 'lot_number', p, 'lot_number');
-    edges = struct();
-    if isfield(p, 'vendor')
-        edges.vendor_id = idOf(state, p.vendor, {'organization'});
-    end
-    state = add(state, 'product', p.key, f, edges);
-end
-
-for e = entries(spec, 'strains')
-    s = e{1};
-    state = checkKnown(state, 'strain', s, {'name', 'species', 'genetic_strain_type', ...
-        'description', 'genotype', 'identifiers', 'background', 'source'});
-    f = struct('name', s.name, 'species', s.species, ...
-        'genetic_strain_type', asTerm(s.genetic_strain_type));
-    % V2 `strain` has no genotype field (nor does openMINDS Strain); the
-    % genotype string is kept in the description rather than dropped.
-    desc = strjoin(cellfun(@char, [asCell(getOr(s, 'genotype', {})), ...
-        asCell(getOr(s, 'description', {}))], 'UniformOutput', false), '. ');
-    if ~isempty(desc)
-        f.description = desc;
-    end
-    f = putIds(f, s);
-    edges = struct();
-    if isfield(s, 'source')
-        % The source repository's stock, as the strain's product (the current
-        % schema's strain.product_id; see decision log entry 17).
-        state = add(state, 'product', [s.key '#stock'], ...
-            struct('name', sprintf('%s (stock)', s.name), 'catalog_number', s.name), ...
-            struct('vendor_id', idOf(state, s.source, {'organization'})));
-        edges.product_id = state.ids([s.key '#stock']);
-    end
-    bg = asCell(getOr(s, 'background', {}));
-    if ~isempty(bg)
-        edges.background_strain_id = cellfun(@(k) idOf(state, k, {'strain'}), bg, ...
-            'UniformOutput', false);
-    end
-    state = add(state, 'strain', s.key, f, edges);
-end
-
-% `subject.name` arrived in did-schema PR #80; until the schema in use declares
-% it, an instrument's name is reported as unrepresented rather than built.
-subjectHasName = schemaHasField('subject', 'name');
-for e = entries(spec, 'instruments')
-    i = e{1};
-    if subjectHasName
-        state = checkKnown(state, 'subject', i, {'local_identifier', 'name', 'description', 'product'});
-    else
-        state = checkKnown(state, 'subject', i, {'local_identifier', 'description', 'product'}, ...
-            struct('name', 'the V2 schema in use has no subject.name (did-schema PR #80)'));
-    end
-    f = putIf(struct('local_identifier', i.local_identifier), 'description', i, 'description');
-    if subjectHasName
-        f = putIf(f, 'name', i, 'name');
-    end
-    state = add(state, 'subject', i.key, f, struct());
-    if isfield(i, 'product')
-        state = relate(state, i.key, i.product, 'instance_of', {'subject'}, {'product'});
-    end
-end
-
-% ---- the dataset, then everything that points at it -----------------------
-if ~isfield(spec, 'dataset')
-    error('ndi:setup:V2:noDataset', 'The spec has no `dataset` section.');
-end
-d = spec.dataset;
-state = checkKnown(state, 'dataset', d, {'name', 'short_name', 'version', ...
-    'version_innovation', 'description', 'how_to_cite', 'keyword', 'license', ...
-    'accessibility', 'ethics_assessment', 'experimental_approach', 'support_channel', ...
-    'release_date', 'copyright_year', 'identifiers', 'authors', 'funding', 'cites', ...
-    'stored_at', 'documented_by'});
-f = struct();
-for fn = {'name', 'short_name', 'version', 'version_innovation', 'description', ...
-        'how_to_cite', 'keyword', 'license', 'accessibility', 'ethics_assessment', ...
-        'experimental_approach', 'support_channel', 'release_date', 'copyright_year'}
-    f = putIf(f, fn{1}, d, fn{1});
-end
-f = putIds(f, d);
-key = '#dataset';
-state = add(state, 'dataset', key, f, struct(), options.DatasetId);
-
-authors = asCell(getOr(d, 'authors', {}));
-for k = 1:numel(authors)
-    a = authors{k};
-    extra = struct('sequence', k);
-    if isfield(a, 'roles')
-        extra.roles = did2.build.label(asCell(a.roles));
-    end
-    state = relate(state, key, a.person, 'has_author', {'dataset'}, {'person'}, extra);
-end
-for pair = {'funding', 'funded_by', {'funding'}; 'cites', 'cites', {'publication'}; ...
-        'stored_at', 'stored_at', {'web_resource'}; 'documented_by', 'documented_by', {'web_resource'}}'
-    for t = asCell(getOr(d, pair{1}, {}))
-        state = relate(state, key, t{1}, pair{2}, {'dataset'}, pair{3});
-    end
-end
-
-for e = entries(spec, 'studies')
-    s = e{1};
-    state = checkKnown(state, 'study', s, {'name', 'short_name', 'description', ...
-        'factors', 'design', 'identifiers'}, ...
-        struct('source_folder', '', 'source_condition', ''));   % import directives
-    f = struct('name', s.name);
-    f = putIf(f, 'short_name', s, 'short_name');
-    f = putIf(f, 'description', s, 'description');
-    f = putIf(f, 'factors', s, 'factors');
-    f = putIf(f, 'design', s, 'design');
-    state = add(state, 'study', s.key, putIds(f, s), struct());
-    state = relate(state, s.key, key, 'part_of', {'study'}, {'dataset'});
 end
 
 % ---- result -----------------------------------------------------------------

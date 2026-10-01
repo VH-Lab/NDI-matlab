@@ -13,13 +13,15 @@ function result = import_V2(dataParentDir, options)
 %        0  discover       list the source files; skip earlier import output
 %        1  profile        describe tables (ndi.setup.V2.profileTable, on demand)
 %        2  metadata       dataset, people, organizations, funding, publication,
-%                          studies, software, products, strains, instruments --
-%                          from import_V2_spec.json (sources: the eLife paper)
+%                          software, products, strains, instruments -- from
+%                          import_V2_spec.json (sources: the eLife paper)
 %     B. per study (E. coli first); per day:
-%        3  sessions       one per experiment day, part_of its study
+%        3  sessions       the studies (from the spec; decision #50), then one
+%                          session per experiment day, part_of its study
 %        4  subjects       plates, patches, worms, acclimation plates
 %        5  acquisition    camera/microscope, one epoch per recording
-%        6  relations      patch on plate, worm on plate, ...      (not yet)
+%        6  relations      patch part_of plate; worm contained_in its assay
+%                          and acclimation plates (with when)
 %        7  assertions     strain, species, exclusion tags         (not yet)
 %        8  manipulations  plate preparation, food deprivation     (not yet)
 %        9  observations   tracks, environment, geometry, images   (not yet)
@@ -64,7 +66,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -86,6 +88,9 @@ if isempty(sid)
     sid = did.ido.unique_id();
 end
 result.datasetSessionId = sid;
+% One dataset document id for the whole run: stage 2 builds the dataset with
+% it and stage 3's studies are part_of it, whichever stages run.
+result.datasetId = ndi.ido.unique_id();
 
 if any(options.Stages == "discover")
     fprintf('\n== stage 0: discover ==\n');
@@ -95,7 +100,8 @@ end
 if any(options.Stages == "metadata")
     fprintf('\n== stage 2: dataset metadata ==\n');
     spec = jsondecode(fileread(options.Spec));
-    result.metadata = ndi.setup.V2.datasetMetadata(spec, sid);
+    result.metadata = ndi.setup.V2.datasetMetadata(spec, sid, ...
+        'DatasetId', result.datasetId, 'Studies', "exclude");
     fprintf('DENOMINATOR: %d document(s) built from %s\n', ...
         numel(result.metadata.documents), options.Spec);
     disp(result.metadata.census);
@@ -109,12 +115,17 @@ end
 if any(options.Stages == "sessions")
     fprintf('\n== stage 3: sessions ==\n');
     spec = jsondecode(fileread(options.Spec));
-    studyIds = containers.Map();
-    if isfield(result, 'metadata')
-        studyIds = result.metadata.ids;
-    end
+    % the studies first: they group the sessions (each spec study's
+    % source_folder / source_condition picks its days), so they are minted
+    % here, beside them (decision #50). Dataset-level documents, like stage 2's.
+    result.studies = ndi.setup.V2.datasetMetadata(spec, sid, ...
+        'DatasetId', result.datasetId, 'Studies', "only");
+    fprintf('DENOMINATOR: %d study document(s) and %d relation(s) built from %s\n', ...
+        sum(strcmp(result.studies.census.class, 'study') .* result.studies.census.count), ...
+        sum(strcmp(result.studies.census.class, 'directed_relation') .* result.studies.census.count), ...
+        options.Spec);
     [result.sessions, result.sessionChecks] = ndi.setup.conv.haley.sessionList(dataParentDir, spec, ...
-        'StudyIds', studyIds, 'OutputRoot', options.OutputRoot);
+        'StudyIds', result.studies.ids, 'OutputRoot', options.OutputRoot);
     allSessions = result.sessions;
     if ~isempty(options.Sessions)
         unknown = setdiff(options.Sessions, string(result.sessions.local_identifier));
@@ -164,6 +175,17 @@ if any(options.Stages == "acquisition")
     end
 end
 
+if any(options.Stages == "relations")
+    fprintf('\n== stage 6: relations ==\n');
+    if ~isfield(result, 'subjects') || ~isfield(result, 'recordings')
+        error('ndi:setup:conv:haley:needSubjects', ['The relations stage needs the ' ...
+            'subjects and acquisition stages: include "subjects" and "acquisition" in ''Stages''.']);
+    end
+    if ~options.Write
+        fprintf('(built with the session documents: pass ''Write'', true)\n');
+    end
+end
+
 if options.Write && isfield(result, 'sessions')
     fprintf('\n== write ==\n');
     result = writeSessions(result, dataParentDir, options);
@@ -200,6 +222,19 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
         built{k} = ndi.setup.conv.haley.sessionDocuments(dataParentDir, T(k, :), ...
             result.subjects, result.recordings, 'InstrumentIds', instrumentIds, ...
             'Checksums', options.Checksums, 'ReadVideos', options.ReadVideos);
+        if any(options.Stages == "relations")
+            rel = ndi.setup.conv.haley.relationDocuments(T(k, :), result.subjects, ...
+                result.recordings, built{k}.subjectIds);
+            built{k}.documents = [built{k}.documents, rel.documents];
+            built{k}.relations = rel;
+            c = rel.counts;
+            fprintf(['%s relations: %d patch part_of plate, %d worm contained_in assay plate, ' ...
+                '%d worm contained_in acclimation plate\n'], T.local_identifier{k}, ...
+                c.patch_part_of_plate, c.worm_in_assay_plate, c.worm_in_acclimation_plate);
+            for j = 1:numel(rel.skipped)
+                fprintf('  skipped: %s\n', rel.skipped{j});
+            end
+        end
         T.documents{k} = built{k}.documents;
         T.time_reference_id{k} = built{k}.timeReferenceId;
         classes = cellfun(@(d) d.document_class.class_name, built{k}.documents, ...
