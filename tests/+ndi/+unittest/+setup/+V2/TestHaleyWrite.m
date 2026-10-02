@@ -34,10 +34,11 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             docs = testCase.documents(sessionPath);
             classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
             count = @(c) sum(strcmp(classes, c));
-            % plates 11-14, one patch each, two worms each; three acclimation
-            % plates (the fixture's plates were picked at three times); one
-            % food deprivation plate (plate 14's worms)
-            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 3 + 1);
+            % plates 11-14, one patch each, two worms each, one cohort each
+            % (decision #55); three acclimation plates (the fixture's plates
+            % were picked at three times); one food deprivation plate (plate
+            % 14's worms)
+            testCase.verifyEqual(count('subject'), 4 + 4 + 8 + 4 + 3 + 1);
             % plate 11 twice + 12 + 14 (behaviour) + 2 lawn clips
             testCase.verifyEqual(count('epoch'), 6);
             testCase.verifyEqual(count('intensity_observation'), 6);
@@ -109,8 +110,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % its study, minted in stage 3 since decision #50)
             subjectIdSet = values(idOf);
             rel = rel(cellfun(@(r) any(strcmp(edge(r, 'child_id'), subjectIdSet)), rel));
-            testCase.verifyEqual(numel(rel), 4 + 8 + 8 + 2, ['4 patch part_of plate, 8 worms ' ...
-                'in their assay plate, 8 in their acclimation plate, 2 (plate 14) in a food deprivation plate']);
+            testCase.verifyEqual(numel(rel), 4 + 8 + 4 + 4 + 1, ['4 patch part_of plate, 8 worms ' ...
+                'member_of their cohort, 4 cohorts in their assay plate, 4 in their acclimation ' ...
+                'plate, 1 (plate 14) in a food deprivation plate (decision #55)']);
             find1 = @(child, parent, name) rel(cellfun(@(r) ...
                 strcmp(edge(r, 'child_id'), idOf(child)) && strcmp(edge(r, 'parent_id'), idOf(parent)) ...
                 && strcmp(r.directed_relation.relation.name, name), rel));
@@ -119,10 +121,24 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(r, 1);
             testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'), 'a patch is part of its plate, timeless');
 
-            % worm 121 was on assay plate 12 while it was filmed: from its
-            % first behaviour video, 2022-02-04 12:10:51 Los Angeles = 20:10:51 UTC
-            r = find1('concentration_worm0121', 'concentration_assayPlate0012', 'contained_in');
+            % each worm is a member of its plate's cohort, timelessly; the
+            % plates and moves are stated once, on the cohort (decision #55)
+            r = find1('concentration_worm0121', 'concentration_assayPlate0012_worms', 'member_of');
             testCase.verifyNumElements(r, 1);
+            testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'));
+            testCase.verifyEmpty(find1('concentration_worm0121', 'concentration_assayPlate0012', ...
+                'contained_in'), 'no per-worm plate relation: the cohort carries it');
+
+            % worm 121's cohort was on assay plate 12 while it was filmed: from
+            % its first behaviour video, 2022-02-04 12:10:51 Los Angeles = 20:10:51 UTC
+            r = find1('concentration_assayPlate0012_worms', 'concentration_assayPlate0012', 'contained_in');
+            testCase.verifyNumElements(r, 1);
+            % it holds of each worm: `distributive`, once the schema has it (#84)
+            if ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
+                testCase.verifyTrue(logical(r{1}.directed_relation.distributive));
+            else
+                testCase.verifyFalse(isfield(r{1}.directed_relation, 'distributive'));
+            end
             t = edgeAll(r{1}, 'time_reference_id');
             testCase.verifyNumElements(t, 1);
             ref = byId(t{1});
@@ -149,7 +165,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
 
             % ... and on its acclimation plate from the pick time (the day
             % before, 12:10:51) until filming, that end approximate
-            r = find1('concentration_worm0121', 'concentration_0001_acclimationPlate0001', 'contained_in');
+            r = find1('concentration_assayPlate0012_worms', 'concentration_0001_acclimationPlate0001', 'contained_in');
             testCase.verifyNumElements(r, 1);
             t = edgeAll(r{1}, 'time_reference_id');
             ref = byId(t{1});
@@ -175,7 +191,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             % plate 14 was food-deprived: acclimation plate (picked the day
             % before, 15:17:10) -> food deprivation plate (12:17:10, 3 h before
             % filming) -> assay plate (filmed from 15:17:10)
-            r = find1('concentration_worm0141', 'concentration_0001_foodDeprivationPlate0001', 'contained_in');
+            r = find1('concentration_assayPlate0014_worms', 'concentration_0001_foodDeprivationPlate0001', 'contained_in');
             testCase.verifyNumElements(r, 1);
             t = edgeAll(r{1}, 'time_reference_id');
             ref = byId(t{1});
@@ -188,7 +204,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'starvedTime was read off a clock too: approximate');
             testCase.verifyEqual(ref.absolute_time_reference.value.start.tolerance, ...
                 struct('minus', 60, 'plus', 60));
-            r = find1('concentration_worm0141', 'concentration_0001_acclimationPlate0003', 'contained_in');
+            r = find1('concentration_assayPlate0014_worms', 'concentration_0001_acclimationPlate0003', 'contained_in');
             testCase.verifyNumElements(r, 1);
             t = edgeAll(r{1}, 'time_reference_id');
             ref = byId(t{1});
@@ -197,10 +213,65 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate), ...
                 'the pick (its start) is approximate, so the extent is');
 
-            % plate 13 was never filmed: its worms are in it, with no time
-            r = find1('concentration_worm0131', 'concentration_assayPlate0013', 'contained_in');
+            % plate 13 was never filmed: its cohort is in it, with no time
+            r = find1('concentration_assayPlate0013_worms', 'concentration_assayPlate0013', 'contained_in');
             testCase.verifyNumElements(r, 1);
             testCase.verifyEmpty(edgeAll(r{1}, 'time_reference_id'));
+        end
+
+        function testAssertionsAndTypes(testCase)
+            % stage 7 (decision #55), over the fixture's concentration_0001,
+            % with stage 2 run so the strains have documents
+            result = testCase.write("concentration_0001", ["metadata", "assertions"]);
+            docs = testCase.documents(result.sessions.path{1});
+            classes = cellfun(@(d) d.document_class.class_name, docs, 'UniformOutput', false);
+            subj = docs(strcmp(classes, 'subject'));
+            idOf = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), ...
+                cellfun(@(d) d.base.id, subj, 'UniformOutput', false));
+            byLocal = containers.Map(cellfun(@(d) d.subject.local_identifier, subj, 'UniformOutput', false), subj);
+            ta = docs(strcmp(classes, 'term_assertion'));
+            about = @(local, variable) ta(cellfun(@(a) strcmp(edge(a, 'subject_id'), idOf(local)) ...
+                && strcmp(a.subject_statement.variable.name, variable), ta));
+
+            % 4 cohorts and 4 seeded patches, each with a species and a strain;
+            % plate 13 excluded
+            testCase.verifyNumElements(ta, 4 * 2 + 4 * 2 + 1);
+            a = about('concentration_assayPlate0012_worms', 'species');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:6239');
+            a = about('concentration_assayPlate0012_worms', 'strain');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.term.value.name, 'N2');
+            testCase.verifyEqual(edge(a{1}, 'strain_id'), result.metadata.ids('N2'), ...
+                'the strain assertion names the dataset-level strain document');
+            if ndi.setup.V2.schemaHasField('subject_statement', 'distributive')
+                testCase.verifyTrue(logical(a{1}.subject_statement.distributive), ...
+                    'stated on the cohort, it holds of each worm');
+            end
+            testCase.verifyEmpty(about('concentration_worm0121', 'species'), ...
+                'a worm inherits its cohort''s species; it is not repeated');
+            a = about('concentration_assayPlate0012_patch0001', 'strain');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.term.value.name, 'OP50');
+            a = about('concentration_assayPlate0012_patch0001', 'species');
+            testCase.verifyEqual(a{1}.term.value.node, 'NCBITaxon:562');
+            a = about('concentration_assayPlate0013', 'inclusion in analysis');
+            testCase.verifyNumElements(a, 1);
+            testCase.verifyEqual(a{1}.term.value.name, 'excluded');
+            testCase.verifyEmpty(about('concentration_assayPlate0012', 'inclusion in analysis'));
+
+            % subject.type, once the schema has it (#84)
+            if ndi.setup.V2.schemaHasField('subject', 'type')
+                type = @(local) subjectType(byLocal, local);
+                testCase.verifyEqual(type('concentration_worm0121'), 'organism');
+                testCase.verifyEqual(type('concentration_assayPlate0012_worms'), 'group');
+                testCase.verifyEqual(type('concentration_assayPlate0012_patch0001'), 'culture');
+                testCase.verifyEqual(type('concentration_assayPlate0012'), 'material');
+                testCase.verifyEqual(type('concentration_0001_acclimationPlate0001'), 'material');
+            else
+                w = byLocal('concentration_worm0121');
+                testCase.verifyFalse(isfield(w.subject, 'type'));
+            end
         end
 
         function testEcoliSession(testCase)
@@ -228,9 +299,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
     end
 
     methods
-        function result = write(testCase, which)
+        function result = write(testCase, which, more)
+            if nargin < 3, more = string.empty; end
             result = ndi.setup.conv.haley.import_V2(testCase.Root, ...
-                'Stages', ["sessions", "subjects", "acquisition", "relations"], 'Sessions', which, ...
+                'Stages', ["sessions", "subjects", "acquisition", "relations", more], 'Sessions', which, ...
                 'OutputRoot', testCase.Out, 'Write', true, 'Overwrite', true, ...
                 'ReadVideos', false);
         end
@@ -264,4 +336,9 @@ if iscell(d), d = [d{:}]; end
 hit = d(strcmp({d.name}, name));
 v = {hit.document_id};
 v = v(~cellfun(@isempty, v));
+end
+
+function t = subjectType(byLocal, local)
+d = byLocal(local);
+t = d.subject.type.name;
 end

@@ -161,7 +161,45 @@ classdef TestHaleySubjects < matlab.unittest.TestCase
             testCase.verifyEqual(nm('mutants_0001_acclimationPlate0001'), 'Acclimation Plate 0001');
             testCase.verifyEqual(nm('ecoli_plate0001'), 'Plate 0001');
             testCase.verifyEqual(nm('ecoli_plate0001_patch0012'), 'Patch 0012 on Plate 0001');
-            testCase.verifyTrue(all(ismember(S.kind, {'assay_plate', 'acclimation_plate', 'plate', 'patch', 'worm'})));
+            testCase.verifyEqual(nm('concentration_assayPlate0001_worms'), 'Worms on Assay Plate 0001');
+            testCase.verifyTrue(all(ismember(S.kind, {'assay_plate', 'acclimation_plate', 'plate', ...
+                'patch', 'cohort', 'worm'})));
+        end
+
+        function testEachPlateOfWormsIsOneCohort(testCase)
+            % decision #55: the worms of an assay plate, moved together, are one
+            % group subject; each worm names it
+            [S, ~] = testCase.list();
+            c = S(strcmp(S.kind, 'cohort') & strcmp(S.folder, 'foragingConcentration'), :);
+            testCase.verifyEqual(sort(c.local_identifier'), {'concentration_assayPlate0001_worms', ...
+                'concentration_assayPlate0002_worms', 'concentration_assayPlate0003_worms'});
+            c1 = c(strcmp(c.local_identifier, 'concentration_assayPlate0001_worms'), :);
+            testCase.verifyEqual(c1.strain{1}, 'N2');
+            testCase.verifyEqual(c1.acclimation{1}, 'concentration_0001_acclimationPlate0001', ...
+                'the cohort carries the plates its worms were on');
+            w = S(strcmp(S.local_identifier, 'concentration_worm0003'), :);
+            testCase.verifyEqual(w.cohort{1}, 'concentration_assayPlate0001_worms');
+            testCase.verifyEmpty(S.cohort{strcmp(S.local_identifier, 'concentration_assayPlate0001')});
+        end
+
+        function testTypesAndBacteria(testCase)
+            % subject.type and each patch's bacteria (decisions #54, #55)
+            [S, ~] = testCase.list();
+            row = @(id) S(strcmp(S.local_identifier, id), :);
+            testCase.verifyEqual(row('concentration_worm0003').type{1}, 'organism');
+            testCase.verifyEqual(row('concentration_assayPlate0001_worms').type{1}, 'group');
+            testCase.verifyEqual(row('concentration_assayPlate0001').type{1}, 'material');
+            testCase.verifyEqual(row('mutants_0001_acclimationPlate0001').type{1}, 'material');
+            testCase.verifyEqual(row('ecoli_plate0001').type{1}, 'material');
+            p = row('concentration_assayPlate0001_patch0001');
+            testCase.verifyEqual(p.bacteria{1}, 'OP50', 'OP50 on every C. elegans plate');
+            testCase.verifyEqual(p.type{1}, 'culture');
+            p = row('ecoli_plate0002_patch0001');
+            testCase.verifyEqual(p.bacteria{1}, 'OP50-GFP', 'OP50-GFP on the E. coli plates');
+            testCase.verifyEqual(p.type{1}, 'culture');
+            p = row('ecoli_plate0005_patch0001');
+            testCase.verifyEmpty(p.bacteria{1}, 'OD600 0: LB alone, no bacteria');
+            testCase.verifyEqual(p.type{1}, 'material');
         end
 
         function testExcludeIsCarriedForTheAssertionsStage(testCase)

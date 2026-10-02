@@ -13,7 +13,9 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %     patch  part_of       its plate (assay plate, or E. coli plate). No
 %                          time: a patch is part of its plate for the
 %                          plate's whole life.
-%     worm   contained_in  each plate it was on, in turn: its acclimation
+%     worm   member_of     its cohort (the worms of its assay plate, moved
+%                          together; decision #55). No time.
+%     cohort contained_in  each plate its worms were on, in turn: its acclimation
 %                          plate from the pick (`growthTimePicked`), its
 %                          food deprivation plate if it has one from the move
 %                          to it (`starvedTime`), its assay plate from the
@@ -38,8 +40,9 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %                          Exact (no tolerance): video times -- the end of
 %                          filming here; each epoch's own reference states
 %                          them exactly.
-%                          One time reference per (plate, assay plate),
-%                          shared by the plate's worms (moved together).
+%                          Stated once, on the cohort, with `distributive`
+%                          true (it holds of each worm) when the schema has
+%                          the field (did-schema #84).
 %
 %   Wall-clock times are America/Los_Angeles, as everywhere in this import.
 %
@@ -48,7 +51,9 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %
 %   OUT fields: documents (cell of structs: relations and their time
 %   references), counts (struct: one count per relation kind), skipped
-%   (cellstr: a relation whose parent is not a subject of this session).
+%   (cellstr: a relation whose parent is not a subject of this session),
+%   timeReferenceIds (containers.Map: '<plate>|<cohort>' -> the id of that
+%   window's time reference, for the moves stage 8 states at the same times).
 
 arguments
     session table
@@ -67,9 +72,14 @@ S = S(strcmp(S.session, ref), :);
 R = R(strcmp(R.session, ref), :);
 
 out = struct('documents', {{}}, 'skipped', {{}}, 'counts', struct( ...
-    'patch_part_of_plate', 0, 'worm_in_assay_plate', 0, 'worm_in_acclimation_plate', 0, ...
-    'worm_in_food_deprivation_plate', 0));
+    'patch_part_of_plate', 0, 'worm_member_of_cohort', 0, 'cohort_in_assay_plate', 0, ...
+    'cohort_in_acclimation_plate', 0, 'cohort_in_food_deprivation_plate', 0), ...
+    'timeReferenceIds', containers.Map());
 docs = {};
+eachMember = struct();             % `distributive`, when the schema has it (#84)
+if ndi.setup.V2.schemaHasField('directed_relation', 'distributive')
+    eachMember.distributive = true;
+end
 
 % ---- patch part_of plate --------------------------------------------------------
 patches = S(strcmp(S.kind, 'patch'), :);
@@ -77,10 +87,20 @@ for k = 1:height(patches)
     child = patches.local_identifier{k};
     parent = regexprep(child, '_patch\d+$', '');   % <plate>_patchNNNN (decision #42)
     [docs, out] = relate(docs, out, subjectIds, child, parent, 'part_of', {}, sid, ...
-        'patch_part_of_plate');
+        'patch_part_of_plate', struct());
 end
 
-% ---- worms: each plate the worm was on, in turn --------------------------------
+% ---- worm member_of its cohort --------------------------------------------------
+worms = S(strcmp(S.kind, 'worm'), :);
+for k = 1:height(worms)
+    if isempty(worms.cohort{k})
+        continue;
+    end
+    [docs, out] = relate(docs, out, subjectIds, worms.local_identifier{k}, worms.cohort{k}, ...
+        'member_of', {}, sid, 'worm_member_of_cohort', struct());
+end
+
+% ---- cohorts: each plate the worms were on, in turn ----------------------------
 % acclimation plate (from the pick) -> [food deprivation plate (from
 % starvedTime)] -> assay plate (from the transfer T). Each window runs from
 % its plate's start to the next one's; the assay window ends with filming.
@@ -89,7 +109,7 @@ end
 behaviour = R(strcmp(R.kind, 'behaviour'), :);
 plates = S(strcmp(S.kind, 'assay_plate'), :);
 holding = S(ismember(S.kind, {'acclimation_plate', 'food_deprivation_plate'}), :);
-worms = S(strcmp(S.kind, 'worm'), :);
+cohorts = S(strcmp(S.kind, 'cohort'), :);
 lawns = R(strcmp(R.kind, 'lawn'), :);
 spanOf = containers.Map();      % assay plate id -> struct T, tol, stop (no zone)
 handTol = [60 60];              % a time read off a clock and written to the minute
@@ -123,9 +143,9 @@ for k = 1:height(plates)
         t0, lawnStart, stems, lawnEnd);
     spanOf(id) = struct('T', T, 'tol', rule.tolerance, 'stop', max(t + seconds(dur)));
 end
-refOf = containers.Map();       % plate id|assay plate id -> time reference id (shared)
-for k = 1:height(worms)
-    w = worms(k, :);
+refOf = containers.Map();       % plate id|cohort id -> time reference id
+for k = 1:height(cohorts)
+    w = cohorts(k, :);
     plate = plates.local_identifier(plates.plate == w.plate & strcmp(plates.folder, w.folder));
     if isempty(plate)
         out.skipped{end+1} = sprintf('%s: no assay plate %d in this session', ...
@@ -142,14 +162,14 @@ for k = 1:height(worms)
     seq = struct('id', {}, 'start', {}, 'tol', {}, 'fmt', {}, 'counter', {});
     if ~isempty(w.acclimation{1})                % the pick: read off a clock
         seq(end+1) = struct('id', w.acclimation{1}, 'start', placed(holding, w.acclimation{1}, tz), ...
-            'tol', handTol, 'fmt', minuteFmt, 'counter', 'worm_in_acclimation_plate'); %#ok<AGROW>
+            'tol', handTol, 'fmt', minuteFmt, 'counter', 'cohort_in_acclimation_plate'); %#ok<AGROW>
     end
     if ~isempty(w.deprivation{1})                % starvedTime: read off a clock
         seq(end+1) = struct('id', w.deprivation{1}, 'start', placed(holding, w.deprivation{1}, tz), ...
-            'tol', handTol, 'fmt', minuteFmt, 'counter', 'worm_in_food_deprivation_plate'); %#ok<AGROW>
+            'tol', handTol, 'fmt', minuteFmt, 'counter', 'cohort_in_food_deprivation_plate'); %#ok<AGROW>
     end
     seq(end+1) = struct('id', plate, 'start', T, 'tol', Ttol, 'fmt', secondFmt, ...
-        'counter', 'worm_in_assay_plate'); %#ok<AGROW>   % T: read off a video, early only
+        'counter', 'cohort_in_assay_plate'); %#ok<AGROW>   % T: read off a video, early only
     for i = 1:numel(seq)
         if i < numel(seq)                        % ends when the next move starts
             stop = seq(i+1).start; stopTol = seq(i+1).tol; stopFmt = seq(i+1).fmt;
@@ -157,7 +177,7 @@ for k = 1:height(worms)
             stop = filmedEnd; stopTol = []; stopFmt = secondFmt;
         end
         times = {};
-        key = [seq(i).id '|' plate];
+        key = [seq(i).id '|' w.local_identifier{1}];
         if isKey(refOf, key)
             times = {refOf(key)};
         elseif ~isnat(seq(i).start)
@@ -178,21 +198,22 @@ for k = 1:height(worms)
             times = {d.base.id};
         end
         [docs, out] = relate(docs, out, subjectIds, w.local_identifier{1}, seq(i).id, ...
-            'contained_in', times, sid, seq(i).counter);
+            'contained_in', times, sid, seq(i).counter, eachMember);
     end
 end
 out.documents = docs;
+out.timeReferenceIds = refOf;
 end
 
 % -----------------------------------------------------------------------------
-function [docs, out] = relate(docs, out, ids, child, parent, relation, times, sid, counter)
+function [docs, out] = relate(docs, out, ids, child, parent, relation, times, sid, counter, fields)
 if ~isKey(ids, child) || ~isKey(ids, parent)
     out.skipped{end+1} = sprintf('%s %s %s: not both subjects of this session', ...
         child, relation, parent);
     return;
 end
 docs{end+1} = did2.build.directedRelation(ids(child), ids(parent), relation, ...
-    'TimeReferenceIds', times, 'SessionId', sid);
+    'TimeReferenceIds', times, 'SessionId', sid, 'Fields', fields);
 out.counts.(counter) = out.counts.(counter) + 1;
 end
 

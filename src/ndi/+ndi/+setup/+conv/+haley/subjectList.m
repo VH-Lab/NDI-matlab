@@ -17,6 +17,11 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %     patch            one per row of the plate's     concentration_assayPlate0011_patch0007
 %                      lawnCenters (numbered in that  "Patch 0007 on Assay Plate 0011"
 %                      order, which is closestLawnID's)
+%     cohort           the worms of one assay plate,  concentration_assayPlate0011_worms
+%                      moved together (decision #55): "Worms on Assay Plate 0011"
+%                      a group subject; each worm is
+%                      member_of it, and the plates
+%                      and moves are stated on it
 %     worm             one per distinct wormNum       concentration_worm0451  "Worm 0451"
 %     acclimation_plate one per (strain, pick time)   concentration_0001_acclimationPlate0001
 %                      in a session, numbered by pick "Acclimation Plate 0001"
@@ -46,7 +51,11 @@ function [S, checks] = subjectList(dataParentDir, sessions)
 %   food-deprived assay plate's worms came through; '' otherwise),
 %   worms_placed (when worms were put onto this plate: an acclimation
 %   plate's `growthTimePicked`, a food deprivation plate's `starvedTime`;
-%   NaT for the other kinds).
+%   NaT for the other kinds), bacteria (a patch's strain key: OP50 on the
+%   C. elegans plates, OP50-GFP on the E. coli plates; '' for a patch of LB
+%   alone, OD600 0), cohort (a worm's cohort), type (subject.type, decision
+%   #55: worm organism, cohort group, a patch with bacteria culture, every
+%   plate and a patch of LB alone material).
 %
 %   CHECKS (second output, also printed) report what looks wrong in the
 %   source WITHOUT changing anything:
@@ -102,7 +111,7 @@ for f = 1:numel(folders)
     % numbered per session, which needs every plate of the session.
     plates = unique(I.plateNum);
     P = struct('plate', {}, 'session', {}, 'worms', {}, 'strain', {}, 'pick', {}, ...
-        'nPatch', {}, 'nVideo', {}, 'exclude', {}, 'starved', {});
+        'nPatch', {}, 'nVideo', {}, 'exclude', {}, 'starved', {}, 'od600', {});
     wormHome = containers.Map('KeyType', 'double', 'ValueType', 'double');
     for k = 1:numel(plates)
         p = double(plates(k));
@@ -156,9 +165,15 @@ for f = 1:numel(folders)
         if ismember('starvedTime', I.Properties.VariableNames) && ~isnat(R.starvedTime(1))
             starved = R.starvedTime(1);
         end
+        od = [];                    % the patches' OD600 when the source has it
+        if ismember('OD600', I.Properties.VariableNames)
+            od = R.OD600(1, :);
+            if iscell(od), od = od{1}; end
+            od = double(od(:)');
+        end
         P(end+1) = struct('plate', p, 'session', mine.local_identifier{s}, 'worms', kept, ...
             'strain', char(R.strainID{1}), 'pick', pick, 'nPatch', nPatch, ...
-            'nVideo', height(R), 'exclude', ex, 'starved', starved); %#ok<AGROW>
+            'nVideo', height(R), 'exclude', ex, 'starved', starved, 'od600', od); %#ok<AGROW>
     end
 
     % Acclimation plates: one per (session, strain, pick time), numbered within the
@@ -252,16 +267,38 @@ for f = 1:numel(folders)
             q.plate, numel(q.worms), q.nPatch, q.nVideo), folder, q.plate, NaN, NaN, ...
             q.strain, growthOf{m}, q.exclude, NaT, deprivationOf{m}); %#ok<AGROW>
         for k = 1:q.nPatch
-            rows{end+1} = subjRow(q.session, 'patch', sprintf('%s_patch%04d', pid, k), ...
+            r = subjRow(q.session, 'patch', sprintf('%s_patch%04d', pid, k), ...
                 sprintf('Patch %04d on %s', k, pname), ...
                 sprintf('Patch %d of assay plate %d.', k, q.plate), folder, q.plate, k, NaN, ...
-                '', '', false); %#ok<AGROW>
+                '', '', false);
+            % OP50 on every C. elegans plate (decision #54); a patch the source
+            % gives OD600 0 is LB alone, with no bacteria.
+            od = q.od600;
+            if numel(od) == q.nPatch, od = od(k); end
+            if ~(~isempty(od) && all(od == 0))
+                r.bacteria = 'OP50';
+            end
+            rows{end+1} = r; %#ok<AGROW>
+        end
+        % The plate's worms are one cohort (decision #55): moved together, so
+        % the plates they were on and how they got there are stated once, on
+        % the cohort, and each worm is a member of it.
+        cohort = '';
+        if ~isempty(q.worms)
+            cohort = [pid '_worms'];
+            r = subjRow(q.session, 'cohort', cohort, ['Worms on ' pname], ...
+                sprintf('The %d %s worm(s) of assay plate %d, moved together.', ...
+                numel(q.worms), q.strain, q.plate), folder, q.plate, NaN, NaN, ...
+                q.strain, growthOf{m}, false, NaT, deprivationOf{m});
+            rows{end+1} = r; %#ok<AGROW>
         end
         for k = 1:numel(q.worms)
-            rows{end+1} = subjRow(q.session, 'worm', sprintf('%s_worm%04d', pre, q.worms(k)), ...
+            r = subjRow(q.session, 'worm', sprintf('%s_worm%04d', pre, q.worms(k)), ...
                 sprintf('Worm %04d', q.worms(k)), ...
                 sprintf('Worm %d, on assay plate %d.', q.worms(k), q.plate), folder, q.plate, ...
-                NaN, q.worms(k), q.strain, growthOf{m}, false, NaT, deprivationOf{m}); %#ok<AGROW>
+                NaN, q.worms(k), q.strain, growthOf{m}, false, NaT, deprivationOf{m});
+            r.cohort = cohort;
+            rows{end+1} = r; %#ok<AGROW>
         end
     end
 
@@ -348,20 +385,26 @@ if height(mine) > 0
         rows{end+1} = subjRow(mine.local_identifier{s}, 'plate', pid, pname, ...
             sprintf('E. coli plate %d: %s.', p, what), 'ecoli', p, NaN, NaN, '', '', false); %#ok<AGROW>
         for k = 1:nPatch
-            rows{end+1} = subjRow(mine.local_identifier{s}, 'patch', sprintf('%s_patch%04d', pid, k), ...
+            pr = subjRow(mine.local_identifier{s}, 'patch', sprintf('%s_patch%04d', pid, k), ...
                 sprintf('Patch %04d on %s', k, pname), ...
-                sprintf('Patch %d of E. coli plate %d.', k, p), 'ecoli', p, k, NaN, '', '', false); %#ok<AGROW>
+                sprintf('Patch %d of E. coli plate %d.', k, p), 'ecoli', p, k, NaN, '', '', false);
+            if info.OD600(r) > 0            % OD600 0 is LB alone: no bacteria
+                pr.bacteria = 'OP50-GFP';   % decision #54
+            end
+            rows{end+1} = pr; %#ok<AGROW>
         end
     end
 end
 
 % ---- report -------------------------------------------------------------------
 if isempty(rows)
-    S = cell2table(cell(0, 14), 'VariableNames', {'session', 'kind', 'local_identifier', ...
+    S = cell2table(cell(0, 17), 'VariableNames', {'session', 'kind', 'local_identifier', ...
         'name', 'description', 'folder', 'plate', 'patch', 'worm', 'strain', 'acclimation', ...
-        'deprivation', 'exclude', 'worms_placed'});
+        'deprivation', 'exclude', 'worms_placed', 'bacteria', 'cohort', 'type'});
 else
     S = struct2table([rows{:}], 'AsArray', true);
+    S.type = arrayfun(@(k) typeOf(S.kind{k}, S.bacteria{k}), (1:height(S))', ...
+        'UniformOutput', false);
 end
 dup = {};
 if height(S) > 0
@@ -372,11 +415,12 @@ if ~isempty(dup)
     error('ndi:setup:conv:haley:duplicateSubject', ...
         'Two subjects would share local_identifier %s.', strjoin(dup, ', '));
 end
-kinds = {'assay_plate', 'acclimation_plate', 'food_deprivation_plate', 'plate', 'patch', 'worm'};
+kinds = {'assay_plate', 'acclimation_plate', 'food_deprivation_plate', 'plate', 'patch', ...
+    'cohort', 'worm'};
 counts = cellfun(@(k) sum(strcmp(S.kind, k)), kinds);
 fprintf(['DENOMINATOR: %d subject(s) in %d session(s), from %d source file(s): ' ...
     '%d assay plate(s), %d acclimation plate(s), %d food deprivation plate(s), %d E. coli plate(s), ' ...
-    '%d patch(es), %d worm(s)\n'], ...
+    '%d patch(es), %d worm cohort(s), %d worm(s)\n'], ...
     height(S), numel(unique(S.session)), nFiles, counts);
 names = fieldnames(checks);
 fprintf('CHECKS (reported, nothing changed): %d finding(s)\n', ...
@@ -400,7 +444,23 @@ end
 s = struct('session', session, 'kind', kind, 'local_identifier', id, 'name', name, ...
     'description', desc, 'folder', folder, 'plate', plate, 'patch', patch, 'worm', worm, ...
     'strain', strain, 'acclimation', acclimation, 'deprivation', deprivation, ...
-    'exclude', logical(exclude), 'worms_placed', placed);
+    'exclude', logical(exclude), 'worms_placed', placed, 'bacteria', '', 'cohort', '');
+end
+
+function t = typeOf(kind, bacteria)
+% subject.type (decision #55): plates are material; a patch with bacteria is
+% a culture (a lawn: a population whose members are never subjects), one of
+% LB alone is material; a worm is an organism; a cohort is a group.
+switch kind
+    case 'worm'
+        t = 'organism';
+    case 'cohort'
+        t = 'group';
+    case 'patch'
+        if isempty(bacteria), t = 'material'; else, t = 'culture'; end
+    otherwise
+        t = 'material';
+end
 end
 
 function k = growthKey(p)

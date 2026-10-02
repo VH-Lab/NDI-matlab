@@ -11,7 +11,8 @@ function out = sessionDocuments(dataParentDir, session, S, R, options)
 %   decision #51). Decision log #28-#35, #45-#51.
 %
 %   Documents, all with base.session_id = SESSION.session_id:
-%     subject                 one per S row (local_identifier, name, description)
+%     subject                 one per S row (local_identifier, name, description,
+%                             and type when the schema has subject.type)
 %     absolute_time_reference the session's UTC extent (first recording start
 %                             to last recording end); OUT.timeReferenceId, for
 %                             session.time_reference_id
@@ -99,10 +100,14 @@ out = struct('documents', {{}}, 'timeReferenceId', '', 'skipped', {{}}, ...
 
 % ---- subjects ---------------------------------------------------------------
 subjectIds = containers.Map();
+hasType = ndi.setup.V2.schemaHasField('subject', 'type') && ismember('type', S.Properties.VariableNames);
 for k = 1:height(S)
     f = struct('local_identifier', S.local_identifier{k}, 'name', S.name{k});
     if ~isempty(S.description{k})
         f.description = S.description{k};
+    end
+    if hasType                      % decision #55; did-schema #84
+        f.type = did2.build.term('', S.type{k});
     end
     d = did2.build.document('subject', f, 'SessionId', sid);
     subjectIds(S.local_identifier{k}) = d.base.id;

@@ -18,12 +18,14 @@ function result = import_V2(dataParentDir, options)
 %     B. per study (E. coli first); per day:
 %        3  sessions       the studies (from the spec; decision #50), then one
 %                          session per experiment day, part_of its study
-%        4  subjects       plates, patches, worms, acclimation and food
-%                          deprivation plates
+%        4  subjects       plates, patches, worm cohorts, worms, acclimation
+%                          and food deprivation plates; each with its type
 %        5  acquisition    camera/microscope, one epoch per recording
-%        6  relations      patch part_of plate; worm contained_in its acclimation,
-%                          food deprivation and assay plates (with when)
-%        7  assertions     strain, species, exclusion tags         (not yet)
+%        6  relations      patch part_of plate; worm member_of its cohort;
+%                          cohort contained_in its acclimation, food
+%                          deprivation and assay plates (with when)
+%        7  assertions     species and strain of each cohort and seeded
+%                          patch; exclusion tags on plates
 %        8  manipulations  plate preparation, food deprivation     (not yet)
 %        9  observations   tracks, environment, geometry, images   (not yet)
 %        10 calculations   masks, closest-patch maps               (not yet)
@@ -67,7 +69,7 @@ function result = import_V2(dataParentDir, options)
 arguments
     dataParentDir (1,:) char {mustBeFolder} = fullfile(userpath, 'data')
     options.Spec (1,:) char = fullfile(fileparts(mfilename('fullpath')), 'import_V2_spec.json')
-    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations"]
+    options.Stages (1,:) string = ["discover", "metadata", "sessions", "subjects", "acquisition", "relations", "assertions"]
     options.OutputRoot (1,:) char = ''
     options.Sessions (1,:) string = string.empty(1, 0)
     options.Write (1,1) logical = false
@@ -187,6 +189,17 @@ if any(options.Stages == "relations")
     end
 end
 
+if any(options.Stages == "assertions")
+    fprintf('\n== stage 7: assertions ==\n');
+    if ~isfield(result, 'subjects')
+        error('ndi:setup:conv:haley:needSubjects', ['The assertions stage needs the ' ...
+            'subjects stage: include "subjects" in ''Stages''.']);
+    end
+    if ~options.Write
+        fprintf('(built with the session documents: pass ''Write'', true)\n');
+    end
+end
+
 if options.Write && isfield(result, 'sessions')
     fprintf('\n== write ==\n');
     result = writeSessions(result, dataParentDir, options);
@@ -232,12 +245,29 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             built{k}.documents = [built{k}.documents, rel.documents];
             built{k}.relations = rel;
             c = rel.counts;
-            fprintf(['%s relations: %d patch part_of plate; worm contained_in: %d assay plate, ' ...
-                '%d acclimation plate, %d food deprivation plate\n'], T.local_identifier{k}, ...
-                c.patch_part_of_plate, c.worm_in_assay_plate, c.worm_in_acclimation_plate, ...
-                c.worm_in_food_deprivation_plate);
+            fprintf(['%s relations: %d patch part_of plate; %d worm member_of cohort; ' ...
+                'cohort contained_in: %d assay plate, %d acclimation plate, ' ...
+                '%d food deprivation plate\n'], T.local_identifier{k}, ...
+                c.patch_part_of_plate, c.worm_member_of_cohort, c.cohort_in_assay_plate, ...
+                c.cohort_in_acclimation_plate, c.cohort_in_food_deprivation_plate);
             for j = 1:numel(rel.skipped)
                 fprintf('  skipped: %s\n', rel.skipped{j});
+            end
+        end
+        if any(options.Stages == "assertions")
+            spec = jsondecode(fileread(options.Spec));
+            strains = struct([]);
+            if isfield(spec, 'strains'), strains = spec.strains; end
+            as = ndi.setup.conv.haley.assertionDocuments(T(k, :), result.subjects, ...
+                built{k}.subjectIds, 'Strains', strains, 'StrainIds', instrumentIds);
+            built{k}.documents = [built{k}.documents, as.documents];
+            built{k}.assertions = as;
+            c = as.counts;
+            fprintf(['%s assertions: cohort %d species, %d strain; patch %d species, ' ...
+                '%d strain; %d plate(s) excluded\n'], T.local_identifier{k}, c.cohort_species, ...
+                c.cohort_strain, c.patch_species, c.patch_strain, c.plate_excluded);
+            for j = 1:numel(as.skipped)
+                fprintf('  skipped: %s\n', as.skipped{j});
             end
         end
         T.documents{k} = built{k}.documents;
