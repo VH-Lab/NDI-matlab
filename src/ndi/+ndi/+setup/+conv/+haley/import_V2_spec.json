@@ -888,7 +888,7 @@
   ]
  },
  "transfer_protocol": {
-  "_about": "How and when the worms were moved onto each assay plate -- an import directive (decision #52), not dataset metadata. The transfer time is not recorded: on a plate whose 'contrast' (lawn) video was filmed AFTER the worms went on, the transfer is taken as that video's start; otherwise as the first behaviour video's start; approximate either way. Methods: the eLife paper, Assay preparation and recording (agar plugs; eyelash pick into an S-Complete droplet for multi-density). Contrast-video order: from the gap between each plate's lawn clip and its recording, checked by eye in the videos, 2026-10-02.",
+  "_about": "How and when the worms were moved onto each assay plate -- an import directive (decision #52), not dataset metadata. The transfer time is not recorded: on a plate whose 'contrast' (lawn) video was filmed AFTER the worms went on, the transfer is taken as that video's start; otherwise as the first behaviour video's start; approximate either way. Methods: the eLife paper, Assay preparation and recording (agar plugs; eyelash pick into an S-Complete droplet for multi-density). Contrast-video order: from the gap between each plate's lawn clip and its recording, checked by eye in the videos, 2026-10-02 (Matching day 1, 2023-02-24, is worms first; days 2-3 lawn first).",
   "rules": [
    {
     "source_folder": "foragingConcentration",
@@ -902,6 +902,13 @@
    },
    {
     "source_folder": "foragingMatching",
+    "to_date": "2023-02-24",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingMatching",
+    "from_date": "2023-03-01",
     "to_date": "2023-04-04",
     "method": "eyelash pick into an S-Complete droplet",
     "contrast_video": "before_worms"
@@ -928,6 +935,16 @@
     "video": "2023-04-04_16-10-14_2",
     "contrast_video": "after_worms",
     "why": "worms visible in the contrast video (checked by eye, 2026-10-02); the rest of that day was lawn first"
+   },
+   {
+    "video": "2022-09-02_08-48-41_1",
+    "contrast_video": "after_worms",
+    "why": "lawn clip 2.6 s before recording; the contrast video was taken late, once the worms were on (Jess Haley, 2026-10-02); the rest of that day was lawn first"
+   },
+   {
+    "video": "2022-09-02_08-48-41_2",
+    "contrast_video": "after_worms",
+    "why": "as 2022-09-02_08-48-41_1, the other camera of the same pair"
    }
   ]
  }
