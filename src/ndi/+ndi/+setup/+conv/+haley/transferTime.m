@@ -1,4 +1,4 @@
-function [T, rule] = transferTime(protocol, folder, behaviourStart, lawnStart, behaviourVideo)
+function [T, rule] = transferTime(protocol, folder, behaviourStart, lawnStart, behaviourVideo, lawnEnd)
 %TRANSFERTIME When an assay plate's worms were moved onto it (decision #52).
 %
 %   [T, RULE] = ndi.setup.conv.haley.transferTime(PROTOCOL, FOLDER,
@@ -13,24 +13,36 @@ function [T, rule] = transferTime(protocol, folder, behaviourStart, lawnStart, b
 %     contrast video BEFORE the worms (lawn first), or no rule: T =
 %       BEHAVIOURSTART, the plate's first behaviour video start
 %
-%   T is approximate either way. FOLDER is the source folder
+%   T is approximate either way, and only ever EARLY of the video it is read
+%   off: RULE.tolerance = [minus 0] seconds bounds it (decision #52, CHANGE 7).
+%   minus is the protocol's `max_before_seconds` (default 300), except on a
+%   lawn-first plate whose lawn clip ends before BEHAVIOURSTART: the transfer
+%   came after that clip, so minus = min(max_before_seconds, BEHAVIOURSTART -
+%   LAWNEND). LAWNEND (optional, default LAWNSTART: a wider but still true
+%   bound) is the lawn clip's end. FOLDER is the source folder
 %   (foragingConcentration, ...); BEHAVIOURVIDEO is the plate's video file
 %   names without extension -- a char, or a cellstr such as {first behaviour
 %   video, lawn clip} -- which a protocol `exceptions` entry names by any one
 %   of them (e.g. 2023-04-04_16-10-14_2 is that plate's lawn clip). RULE is a struct: method (how the
 %   worms were moved, '' with no rule), contrast_video ('before_worms',
 %   'after_worms' or ''), source ('rule', 'exception' or 'none'), and used
-%   ('lawn clip' or 'behaviour video').
+%   ('lawn clip' or 'behaviour video'), and tolerance ([minus plus] seconds,
+%   [] when there is no T).
 %
 %   Rules match by `source_folder` and, when given, `from_date` / `to_date`
 %   (inclusive, yyyy-MM-dd) against BEHAVIOURSTART's day; an exception
 %   overrides the contrast-video order of the rule that matched.
 
-rule = struct('method', '', 'contrast_video', '', 'source', 'none', 'used', 'behaviour video');
+if nargin < 6 || isnat(lawnEnd)
+    lawnEnd = lawnStart;
+end
+rule = struct('method', '', 'contrast_video', '', 'source', 'none', 'used', 'behaviour video', ...
+    'tolerance', []);
 T = behaviourStart;
 if isnat(behaviourStart)
     return;
 end
+maxBefore = double(getOr(protocol, 'max_before_seconds', 300));
 day = dateshift(behaviourStart, 'start', 'day');
 for r = asCell(getOr(protocol, 'rules', {}))
     x = r{1};
@@ -59,6 +71,11 @@ if strcmp(rule.contrast_video, 'after_worms') && ~isnat(lawnStart) ...
         && lawnStart <= behaviourStart && behaviourStart - lawnStart <= hours(1)
     T = lawnStart;
     rule.used = 'lawn clip';
+end
+rule.tolerance = [maxBefore 0];
+if strcmp(rule.used, 'behaviour video') && ~isnat(lawnEnd) && lawnEnd <= behaviourStart
+    % lawn first: the worms went on after the lawn clip ended
+    rule.tolerance(1) = min(maxBefore, seconds(behaviourStart - lawnEnd));
 end
 end
 

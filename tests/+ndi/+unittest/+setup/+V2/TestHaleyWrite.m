@@ -135,6 +135,17 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'the window records its end: the end of filming');
             testCase.verifyFalse(logical(ref.absolute_time_reference.value.end.approximate), ...
                 'the end of filming is a video time: exact (CHANGE 6)');
+            % CHANGE 7: T is only ever EARLY of the video it is read off --
+            % [minus 0], minus at most the protocol's 5 min (lawn first: or
+            % less, to the lawn clip); the end of filming states no bound
+            v = ref.absolute_time_reference.value;
+            testCase.verifyEqual(v.start.tolerance.plus, 0, 'never later than the video');
+            testCase.verifyGreaterThan(v.start.tolerance.minus, 0);
+            testCase.verifyLessThanOrEqual(v.start.tolerance.minus, 300);
+            testCase.verifyFalse(isfield(v.end, 'tolerance'), 'the end of filming is exact');
+            testCase.verifyEqual(v.duration.tolerance.minus, 0, ...
+                'the start can only be earlier, so the window only longer');
+            testCase.verifyEqual(v.duration.tolerance.plus, v.start.tolerance.minus, 'AbsTol', 1e-9);
 
             % ... and on its acclimation plate from the pick time (the day
             % before, 12:10:51) until filming, that end approximate
@@ -150,6 +161,16 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate));
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.start.approximate), ...
                 'the pick time was written by hand: approximate');
+            v = ref.absolute_time_reference.value;
+            testCase.verifyEqual(v.start.tolerance, struct('minus', 60, 'plus', 60), ...
+                'read off a clock (perhaps analog) and written to the minute');
+            testCase.verifyEqual(v.start.source_value, '2022-02-03T12:10', ...
+                'source_value at the resolution it was written: no invented seconds');
+            testCase.verifyEqual(v.end.tolerance.plus, 0, 'it ends at T: early only');
+            testCase.verifyEqual(v.duration.tolerance.minus, 60 + v.end.tolerance.minus, 'AbsTol', 1e-9, ...
+                'shortest: picked a minute late and moved T-minus early');
+            testCase.verifyEqual(v.duration.tolerance.plus, 60, 'AbsTol', 1e-9, ...
+                'longest: picked a minute early, moved at T');
 
             % plate 14 was food-deprived: acclimation plate (picked the day
             % before, 15:17:10) -> food deprivation plate (12:17:10, 3 h before
@@ -163,6 +184,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(ref.absolute_time_reference.value.end.utc, '2022-02-04T23:17:10.000Z');
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.end.approximate), ...
                 'it ends at the transfer T, which is approximate');
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.start.approximate), ...
+                'starvedTime was read off a clock too: approximate');
+            testCase.verifyEqual(ref.absolute_time_reference.value.start.tolerance, ...
+                struct('minus', 60, 'plus', 60));
             r = find1('concentration_worm0141', 'concentration_0001_acclimationPlate0003', 'contained_in');
             testCase.verifyNumElements(r, 1);
             t = edgeAll(r{1}, 'time_reference_id');

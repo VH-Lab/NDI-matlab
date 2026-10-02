@@ -89,6 +89,27 @@ classdef TestHaleyTransferTime < matlab.unittest.TestCase
             testCase.verifyEqual(T, b, 'after the recording started: not the transfer either');
         end
 
+        function testTheBoundIsEarlyOnlyAndAtMostFiveMinutes(testCase)
+            % CHANGE 7 / decision #52: T is read off the first video after the
+            % transfer, so it bounds [minus 0]; minus is the protocol's 300 s,
+            % or less on a lawn-first plate whose lawn clip ended closer
+            b = datetime(2022, 4, 22, 10, 0, 0);
+            [~, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
+                'foragingConcentration', b, b - minutes(7), 'x', b - minutes(6.5));
+            testCase.verifyEqual(rule.tolerance, [300 0], 'lawn clip ended 6.5 min before: the cap');
+            [~, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
+                'foragingConcentration', b, b - minutes(3), 'x', b - minutes(2.5));
+            testCase.verifyEqual(rule.tolerance, [150 0], 'AbsTol', 1e-9, ...
+                'lawn clip ended 2.5 min before: the transfer came after it');
+            [~, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
+                'foragingConcentration', b, b - minutes(3), 'x');
+            testCase.verifyEqual(rule.tolerance, [180 0], 'AbsTol', 1e-9, ...
+                'no lawn end known: its start, a wider but true bound');
+            [~, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
+                'foragingMutants', b, b - minutes(1), 'x', b - minutes(0.5));
+            testCase.verifyEqual(rule.tolerance, [300 0], 'worms first: T is the lawn clip; the cap');
+        end
+
         function testNoVideoNoTime(testCase)
             T = ndi.setup.conv.haley.transferTime(testCase.Protocol, 'foragingMini', NaT, NaT, '');
             testCase.verifyTrue(isnat(T));

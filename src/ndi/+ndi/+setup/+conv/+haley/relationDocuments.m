@@ -27,14 +27,17 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %                          video's start -- marked approximate (the assay
 %                          window's start, and the end of the window before it). No time where the source
 %                          has none (an unfilmed plate, a missing pick time).
-%                          Approximate: the pick time (written by hand) and
-%                          T; a duration whenever either of its ends is (an
-%                          absolute_time_reference is start + duration, so an
-%                          approximate start makes the extent approximate
-%                          too). Each window also records its end, with the
-%                          end's own precision (the next window's start, or
-%                          the end of filming). Exact: video times (the end of filming here;
-%                          each epoch's own reference states them exactly).
+%                          Each time carries its own bound (`tolerance`
+%                          [minus plus] s, CHANGE 7; decisions #52, #53):
+%                          the pick and starvedTime, read off a clock and
+%                          written to the minute, the spec's
+%                          `hand_written_tolerance_seconds` (+/- 60) and a
+%                          minute-resolution source_value; T [max_before 0]
+%                          or tighter (transferTime) -- it is only ever early;
+%                          a window's duration the sum of its ends' bounds.
+%                          Exact (no tolerance): video times -- the end of
+%                          filming here; each epoch's own reference states
+%                          them exactly.
 %                          One time reference per (plate, assay plate),
 %                          shared by the plate's worms (moved together).
 %
@@ -88,7 +91,13 @@ plates = S(strcmp(S.kind, 'assay_plate'), :);
 holding = S(ismember(S.kind, {'acclimation_plate', 'food_deprivation_plate'}), :);
 worms = S(strcmp(S.kind, 'worm'), :);
 lawns = R(strcmp(R.kind, 'lawn'), :);
-spanOf = containers.Map();      % assay plate id -> [T end] (datetime, no zone)
+spanOf = containers.Map();      % assay plate id -> struct T, tol, stop (no zone)
+handTol = [60 60];              % a time read off a clock and written to the minute
+if isfield(options.Protocol, 'hand_written_tolerance_seconds')
+    handTol = reshape(double(options.Protocol.hand_written_tolerance_seconds), 1, 2);
+end
+minuteFmt = 'yyyy-MM-dd''T''HH:mm';     % written to the minute: source_value says so
+secondFmt = 'yyyy-MM-dd''T''HH:mm:ss';  % read off a video's timestamp
 for k = 1:height(plates)
     id = plates.local_identifier{k};
     v = behaviour(strcmp(behaviour.plate, id), :);
@@ -101,14 +110,18 @@ for k = 1:height(plates)
     [t0, first] = min(t);
     [~, stem] = fileparts(v.file{first});
     l = lawns(strcmp(lawns.plate, id), :);
-    lawnStart = NaT;
+    lawnStart = NaT; lawnEnd = NaT;
     stems = {stem};
     if height(l) > 0
         [lawnStart, li] = min(wallClock(l.local_start, tz));
         [~, stems{2}] = fileparts(l.file{li});   % an exception may name the lawn clip
+        if ~isnan(l.duration(li))                % known with 'ReadVideos'
+            lawnEnd = lawnStart + seconds(l.duration(li));
+        end
     end
-    T = ndi.setup.conv.haley.transferTime(options.Protocol, plates.folder{k}, t0, lawnStart, stems);
-    spanOf(id) = [T, max(t + seconds(dur))];
+    [T, rule] = ndi.setup.conv.haley.transferTime(options.Protocol, plates.folder{k}, ...
+        t0, lawnStart, stems, lawnEnd);
+    spanOf(id) = struct('T', T, 'tol', rule.tolerance, 'stop', max(t + seconds(dur)));
 end
 refOf = containers.Map();       % plate id|assay plate id -> time reference id (shared)
 for k = 1:height(worms)
@@ -120,27 +133,28 @@ for k = 1:height(worms)
         continue;
     end
     plate = plate{1};
-    T = NaT; filmedEnd = NaT;
+    T = NaT; Ttol = []; filmedEnd = NaT;
     if isKey(spanOf, plate)
         span = spanOf(plate);
-        T = span(1); filmedEnd = span(2);
+        T = span.T; Ttol = span.tol; filmedEnd = span.stop;
     end
-    seq = struct('id', {}, 'start', {}, 'approx', {}, 'counter', {});
-    if ~isempty(w.acclimation{1})
+    % each move: when (wall clock), its bound [minus plus] s, how it was written
+    seq = struct('id', {}, 'start', {}, 'tol', {}, 'fmt', {}, 'counter', {});
+    if ~isempty(w.acclimation{1})                % the pick: read off a clock
         seq(end+1) = struct('id', w.acclimation{1}, 'start', placed(holding, w.acclimation{1}, tz), ...
-            'approx', true, 'counter', 'worm_in_acclimation_plate'); %#ok<AGROW>   % pick time: by hand
+            'tol', handTol, 'fmt', minuteFmt, 'counter', 'worm_in_acclimation_plate'); %#ok<AGROW>
     end
-    if ~isempty(w.deprivation{1})
+    if ~isempty(w.deprivation{1})                % starvedTime: read off a clock
         seq(end+1) = struct('id', w.deprivation{1}, 'start', placed(holding, w.deprivation{1}, tz), ...
-            'approx', false, 'counter', 'worm_in_food_deprivation_plate'); %#ok<AGROW>
+            'tol', handTol, 'fmt', minuteFmt, 'counter', 'worm_in_food_deprivation_plate'); %#ok<AGROW>
     end
-    seq(end+1) = struct('id', plate, 'start', T, 'approx', true, ...
-        'counter', 'worm_in_assay_plate'); %#ok<AGROW>
+    seq(end+1) = struct('id', plate, 'start', T, 'tol', Ttol, 'fmt', secondFmt, ...
+        'counter', 'worm_in_assay_plate'); %#ok<AGROW>   % T: read off a video, early only
     for i = 1:numel(seq)
-        if i < numel(seq)
-            stop = seq(i+1).start; stopApprox = seq(i+1).approx;
-        else
-            stop = filmedEnd; stopApprox = false;
+        if i < numel(seq)                        % ends when the next move starts
+            stop = seq(i+1).start; stopTol = seq(i+1).tol; stopFmt = seq(i+1).fmt;
+        else                                     % the end of filming: exact
+            stop = filmedEnd; stopTol = []; stopFmt = secondFmt;
         end
         times = {};
         key = [seq(i).id '|' plate];
@@ -157,9 +171,8 @@ for k = 1:height(worms)
                     dur = [];
                 end
             end
-            % the duration is end - start, so it is approximate when either end is
-            d = utcReference(seq(i).start, dur, seq(i).approx, ...
-                (seq(i).approx || stopApprox) && ~isempty(dur), stopApprox, tz, sid);
+            d = utcReference(seq(i).start, seq(i).tol, seq(i).fmt, ...
+                stop, stopTol, stopFmt, ~isempty(dur), tz, sid);
             docs{end+1} = d; %#ok<AGROW>
             refOf(key) = d.base.id;
             times = {d.base.id};
@@ -202,30 +215,29 @@ else
 end
 end
 
-function d = utcReference(localStart, dur, approximateStart, approximateDuration, approximateEnd, tz, sid)
-% A window from LOCALSTART lasting DUR seconds ([] = no known end). The end
-% is written too (CHANGE 6), with its own precision: the end of filming is
-% exact even when the start (the transfer T) is not.
-t = localStart;
+function d = utcReference(t0, tol0, fmt0, t1, tol1, fmt1, hasEnd, tz, sid)
+% A window from T0 (wall clock) to T1 (when HASEND), each with its bound
+% [minus plus] seconds ([] = exact) and the precision it was written at (FMT,
+% so source_value does not invent seconds a hand-written time never had). The
+% duration's bound follows: it is shortest when the start is late and the end
+% early (minus = start.plus + end.minus), longest the other way round.
+args = {'SourceValue', char(t0, fmt0), 'SourceTimezone', tz, ...
+    'Approximate', ~isempty(tol0), 'Tolerance', tol0};
+if hasEnd
+    s0 = tol0; if isempty(s0), s0 = [0 0]; end
+    e1 = tol1; if isempty(e1), e1 = [0 0]; end
+    durTol = [s0(2) + e1(1), s0(1) + e1(2)];
+    if all(durTol == 0), durTol = []; end
+    args = [args, {'Duration', seconds(t1 - t0), ...
+        'DurationApproximate', ~isempty(durTol), 'DurationTolerance', durTol, ...
+        'End', utcText(t1, tz), 'EndSourceValue', char(t1, fmt1), 'EndSourceTimezone', tz, ...
+        'EndApproximate', ~isempty(tol1), 'EndTolerance', tol1}];
+end
+d = did2.build.absoluteTimeReference(utcText(t0, tz), 'SessionId', sid, args{:});
+end
+
+function s = utcText(t, tz)
 t.TimeZone = tz;
-u = t;
-u.TimeZone = 'UTC';
-args = {};
-if approximateStart
-    args = [args, {'Approximate', true}];
-end
-if approximateDuration
-    args = [args, {'DurationApproximate', true}];
-end
-if ~isempty(dur)
-    e = t + seconds(dur);
-    ue = e;
-    ue.TimeZone = 'UTC';
-    args = [args, {'End', char(ue, 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z'''), ...
-        'EndSourceValue', char(e, 'yyyy-MM-dd''T''HH:mm:ss'), 'EndSourceTimezone', tz, ...
-        'EndApproximate', logical(approximateEnd)}];   % stated either way: an exact end says so
-end
-d = did2.build.absoluteTimeReference(char(u, 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z'''), ...
-    'SourceValue', char(t, 'yyyy-MM-dd''T''HH:mm:ss'), 'SourceTimezone', tz, ...
-    'Duration', dur, 'SessionId', sid, args{:});
+t.TimeZone = 'UTC';
+s = char(t, 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z''');
 end
