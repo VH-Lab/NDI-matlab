@@ -129,6 +129,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-04T20:10:51.000Z');
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.start.approximate), ...
                 'the transfer was a few minutes before filming: the start is approximate');
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate), ...
+                'an approximate start makes the extent approximate');
 
             % ... and on its acclimation plate from the pick time (the day
             % before, 12:10:51) until filming, that end approximate
@@ -139,6 +141,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-03T20:10:51.000Z');
             testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 86400, 'AbsTol', 1e-6);
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate));
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.start.approximate), ...
+                'the pick time was written by hand: approximate');
 
             % plate 14 was food-deprived: acclimation plate (picked the day
             % before, 15:17:10) -> food deprivation plate (12:17:10, 3 h before
@@ -155,8 +159,8 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ref = byId(t{1});
             testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 21 * 3600, 'AbsTol', 1e-6, ...
                 'the acclimation window ends when the worms move to the food deprivation plate');
-            testCase.verifyFalse(isfield(ref.absolute_time_reference.value.duration, 'approximate'), ...
-                'starvedTime is recorded: that end is not approximate');
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate), ...
+                'the pick (its start) is approximate, so the extent is');
 
             % plate 13 was never filmed: its worms are in it, with no time
             r = find1('concentration_worm0131', 'concentration_assayPlate0013', 'contained_in');

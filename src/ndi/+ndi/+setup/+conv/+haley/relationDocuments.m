@@ -27,6 +27,12 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %                          video's start -- marked approximate (the assay
 %                          window's start, and the end of the window before it). No time where the source
 %                          has none (an unfilmed plate, a missing pick time).
+%                          Approximate: the pick time (written by hand) and
+%                          T; a duration whenever either of its ends is (an
+%                          absolute_time_reference is start + duration, so an
+%                          approximate start makes the extent approximate
+%                          too). Exact: video times (the end of filming here;
+%                          each epoch's own reference states them exactly).
 %                          One time reference per (plate, assay plate),
 %                          shared by the plate's worms (moved together).
 %
@@ -118,7 +124,7 @@ for k = 1:height(worms)
     seq = struct('id', {}, 'start', {}, 'approx', {}, 'counter', {});
     if ~isempty(w.acclimation{1})
         seq(end+1) = struct('id', w.acclimation{1}, 'start', placed(holding, w.acclimation{1}, tz), ...
-            'approx', false, 'counter', 'worm_in_acclimation_plate'); %#ok<AGROW>
+            'approx', true, 'counter', 'worm_in_acclimation_plate'); %#ok<AGROW>   % pick time: by hand
     end
     if ~isempty(w.deprivation{1})
         seq(end+1) = struct('id', w.deprivation{1}, 'start', placed(holding, w.deprivation{1}, tz), ...
@@ -147,7 +153,9 @@ for k = 1:height(worms)
                     dur = [];
                 end
             end
-            d = utcReference(seq(i).start, dur, seq(i).approx, stopApprox && ~isempty(dur), tz, sid);
+            % the duration is end - start, so it is approximate when either end is
+            d = utcReference(seq(i).start, dur, seq(i).approx, ...
+                (seq(i).approx || stopApprox) && ~isempty(dur), tz, sid);
             docs{end+1} = d; %#ok<AGROW>
             refOf(key) = d.base.id;
             times = {d.base.id};
