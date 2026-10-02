@@ -886,5 +886,49 @@
   "documented_by": [
    "code"
   ]
+ },
+ "transfer_protocol": {
+  "_about": "How and when the worms were moved onto each assay plate -- an import directive (decision #52), not dataset metadata. The transfer time is not recorded: on a plate whose 'contrast' (lawn) video was filmed AFTER the worms went on, the transfer is taken as that video's start; otherwise as the first behaviour video's start; approximate either way. Methods: the eLife paper, Assay preparation and recording (agar plugs; eyelash pick into an S-Complete droplet for multi-density). Contrast-video order: from the gap between each plate's lawn clip and its recording, checked by eye in the videos, 2026-10-02.",
+  "rules": [
+   {
+    "source_folder": "foragingConcentration",
+    "method": "agar plug, through an empty NGM plate",
+    "contrast_video": "before_worms"
+   },
+   {
+    "source_folder": "foragingMini",
+    "method": "agar plug, through an empty NGM plate",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingMatching",
+    "to_date": "2023-04-04",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "before_worms"
+   },
+   {
+    "source_folder": "foragingMatching",
+    "from_date": "2023-05-18",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingMutants",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   },
+   {
+    "source_folder": "foragingSensory",
+    "method": "eyelash pick into an S-Complete droplet",
+    "contrast_video": "after_worms"
+   }
+  ],
+  "exceptions": [
+   {
+    "video": "2023-04-04_16-10-14_2",
+    "contrast_video": "after_worms",
+    "why": "worms visible in the contrast video (checked by eye, 2026-10-02); the rest of that day was lawn first"
+   }
+  ]
  }
 }

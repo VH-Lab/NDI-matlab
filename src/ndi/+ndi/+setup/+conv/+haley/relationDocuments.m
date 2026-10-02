@@ -1,4 +1,4 @@
-function out = relationDocuments(session, S, R, subjectIds)
+function out = relationDocuments(session, S, R, subjectIds, options)
 %RELATIONDOCUMENTS Stage 6 (Haley): how one session's subjects are related.
 %
 %   OUT = ndi.setup.conv.haley.relationDocuments(SESSION, S, R, SUBJECTIDS)
@@ -19,22 +19,33 @@ function out = relationDocuments(session, S, R, subjectIds)
 %                          to it (`starvedTime`), its assay plate from the
 %                          transfer T; each window ends when the next starts,
 %                          the assay window when filming ends. T is not
-%                          recorded: the paper moves the worms "immediately
-%                          prior" to recording and measures "time since
-%                          transfer" as time elapsed in the recording, so T =
-%                          the first behaviour video's start, marked
-%                          approximate (the assay window's start, and the end
-%                          of the window before it). No time where the source
+%                          recorded: it is read off the plate's videos with
+%                          the spec's `transfer_protocol`
+%                          (ndi.setup.conv.haley.transferTime) -- the lawn
+%                          clip's start where the contrast video was filmed
+%                          after the worms went on, else the first behaviour
+%                          video's start -- marked approximate (the assay
+%                          window's start, and the end of the window before it). No time where the source
 %                          has none (an unfilmed plate, a missing pick time).
 %                          One time reference per (plate, assay plate),
 %                          shared by the plate's worms (moved together).
 %
 %   Wall-clock times are America/Los_Angeles, as everywhere in this import.
 %
+%   Option 'Protocol': the spec's `transfer_protocol` section (default: none,
+%   so T is the first behaviour video's start everywhere).
+%
 %   OUT fields: documents (cell of structs: relations and their time
 %   references), counts (struct: one count per relation kind), skipped
 %   (cellstr: a relation whose parent is not a subject of this session).
 
+arguments
+    session table
+    S table
+    R table
+    subjectIds
+    options.Protocol = struct()
+end
 if height(session) ~= 1
     error('ndi:setup:conv:haley:oneSession', 'Give exactly one session row.');
 end
@@ -62,23 +73,32 @@ end
 % acclimation plate (from the pick) -> [food deprivation plate (from
 % starvedTime)] -> assay plate (from the transfer T). Each window runs from
 % its plate's start to the next one's; the assay window ends with filming.
-% T is not recorded: the paper's worms were moved "immediately prior" to
-% recording and it measures "time since transfer" as time elapsed in the
-% recording, so T = the first behaviour video's start, marked approximate.
+% T is not recorded: ndi.setup.conv.haley.transferTime reads it off the
+% plate's videos with the spec's transfer protocol (approximate either way).
 behaviour = R(strcmp(R.kind, 'behaviour'), :);
 plates = S(strcmp(S.kind, 'assay_plate'), :);
 holding = S(ismember(S.kind, {'acclimation_plate', 'food_deprivation_plate'}), :);
 worms = S(strcmp(S.kind, 'worm'), :);
-spanOf = containers.Map();      % assay plate id -> [start end] (datetime, no zone)
+lawns = R(strcmp(R.kind, 'lawn'), :);
+spanOf = containers.Map();      % assay plate id -> [T end] (datetime, no zone)
 for k = 1:height(plates)
-    v = behaviour(strcmp(behaviour.plate, plates.local_identifier{k}), :);
+    id = plates.local_identifier{k};
+    v = behaviour(strcmp(behaviour.plate, id), :);
     if height(v) == 0
         continue;
     end
     dur = v.duration;
     dur(isnan(dur)) = 0;
     t = wallClock(v.local_start, tz);
-    spanOf(plates.local_identifier{k}) = [min(t), max(t + seconds(dur))];
+    [t0, first] = min(t);
+    [~, stem] = fileparts(v.file{first});
+    l = lawns(strcmp(lawns.plate, id), :);
+    lawnStart = NaT;
+    if height(l) > 0
+        lawnStart = min(wallClock(l.local_start, tz));
+    end
+    T = ndi.setup.conv.haley.transferTime(options.Protocol, plates.folder{k}, t0, lawnStart, stem);
+    spanOf(id) = [T, max(t + seconds(dur))];
 end
 refOf = containers.Map();       % plate id|assay plate id -> time reference id (shared)
 for k = 1:height(worms)

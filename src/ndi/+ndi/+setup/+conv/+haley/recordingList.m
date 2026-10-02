@@ -209,6 +209,14 @@ function s = recRow(session, kind, epoch, system, plate, file, src, bytes, t, nf
 if nargin < 13
     note = '';
 end
+% One kind of value for the whole column: the sources mix zoned and unzoned
+% datetimes (which cannot be concatenated), so a zoned one is expressed in
+% the lab's time zone and its zone dropped -- `local_start` is wall-clock time.
+if ~isempty(t.TimeZone)
+    t.TimeZone = 'America/Los_Angeles';
+    t.TimeZone = '';
+end
+t.Format = 'dd-MMM-yyyy HH:mm:ss';
 s = struct('session', session, 'kind', kind, 'epoch', epoch, 'system', system, ...
     'plate', plate, 'file', file, 'source_name', src, 'size_bytes', double(bytes), ...
     'local_start', t, 'n_frames', double(nf), 'frame_rate', double(fr), 'duration', double(dur), ...

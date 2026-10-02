@@ -224,8 +224,11 @@ if isfield(result, 'subjects') && isfield(result, 'recordings')
             result.subjects, result.recordings, 'InstrumentIds', instrumentIds, ...
             'Checksums', options.Checksums, 'ReadVideos', options.ReadVideos);
         if any(options.Stages == "relations")
+            spec = jsondecode(fileread(options.Spec));
+            protocol = struct();
+            if isfield(spec, 'transfer_protocol'), protocol = spec.transfer_protocol; end
             rel = ndi.setup.conv.haley.relationDocuments(T(k, :), result.subjects, ...
-                result.recordings, built{k}.subjectIds);
+                result.recordings, built{k}.subjectIds, 'Protocol', protocol);
             built{k}.documents = [built{k}.documents, rel.documents];
             built{k}.relations = rel;
             c = rel.counts;
