@@ -18,7 +18,14 @@ if isempty(p) || ~isfile(f)
     return;
 end
 d = jsondecode(fileread(f));
-if isfield(d, 'fields') && ~isempty(d.fields)
-    tf = any(strcmp({d.fields.name}, fieldName));
+if ~isfield(d, 'fields') || isempty(d.fields)
+    return;
 end
+fields = d.fields;
+if iscell(fields)   % jsondecode gives a cell when the fields differ in shape
+    names = cellfun(@(x) x.name, fields, 'UniformOutput', false);
+else
+    names = {fields.name};
+end
+tf = any(strcmp(names, fieldName));
 end
