@@ -131,6 +131,10 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
                 'the transfer was a few minutes before filming: the start is approximate');
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate), ...
                 'an approximate start makes the extent approximate');
+            testCase.verifyNotEmpty(ref.absolute_time_reference.value.end.utc, ...
+                'the window records its end: the end of filming');
+            testCase.verifyFalse(logical(ref.absolute_time_reference.value.end.approximate), ...
+                'the end of filming is a video time: exact (CHANGE 6)');
 
             % ... and on its acclimation plate from the pick time (the day
             % before, 12:10:51) until filming, that end approximate
@@ -140,6 +144,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ref = byId(t{1});
             testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-03T20:10:51.000Z');
             testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 86400, 'AbsTol', 1e-6);
+            testCase.verifyEqual(ref.absolute_time_reference.value.end.utc, '2022-02-04T20:10:51.000Z');
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.end.approximate), ...
+                'it ends at the transfer T, which is approximate');
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.duration.approximate));
             testCase.verifyTrue(logical(ref.absolute_time_reference.value.start.approximate), ...
                 'the pick time was written by hand: approximate');
@@ -153,6 +160,9 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             ref = byId(t{1});
             testCase.verifyEqual(ref.absolute_time_reference.value.start.utc, '2022-02-04T20:17:10.000Z');
             testCase.verifyEqual(ref.absolute_time_reference.value.duration.seconds, 3 * 3600, 'AbsTol', 1e-6);
+            testCase.verifyEqual(ref.absolute_time_reference.value.end.utc, '2022-02-04T23:17:10.000Z');
+            testCase.verifyTrue(logical(ref.absolute_time_reference.value.end.approximate), ...
+                'it ends at the transfer T, which is approximate');
             r = find1('concentration_worm0141', 'concentration_0001_acclimationPlate0003', 'contained_in');
             testCase.verifyNumElements(r, 1);
             t = edgeAll(r{1}, 'time_reference_id');

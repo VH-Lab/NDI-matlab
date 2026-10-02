@@ -31,7 +31,9 @@ function out = relationDocuments(session, S, R, subjectIds, options)
 %                          T; a duration whenever either of its ends is (an
 %                          absolute_time_reference is start + duration, so an
 %                          approximate start makes the extent approximate
-%                          too). Exact: video times (the end of filming here;
+%                          too). Each window also records its end, with the
+%                          end's own precision (the next window's start, or
+%                          the end of filming). Exact: video times (the end of filming here;
 %                          each epoch's own reference states them exactly).
 %                          One time reference per (plate, assay plate),
 %                          shared by the plate's worms (moved together).
@@ -155,7 +157,7 @@ for k = 1:height(worms)
             end
             % the duration is end - start, so it is approximate when either end is
             d = utcReference(seq(i).start, dur, seq(i).approx, ...
-                (seq(i).approx || stopApprox) && ~isempty(dur), tz, sid);
+                (seq(i).approx || stopApprox) && ~isempty(dur), stopApprox, tz, sid);
             docs{end+1} = d; %#ok<AGROW>
             refOf(key) = d.base.id;
             times = {d.base.id};
@@ -198,7 +200,10 @@ else
 end
 end
 
-function d = utcReference(localStart, dur, approximateStart, approximateEnd, tz, sid)
+function d = utcReference(localStart, dur, approximateStart, approximateDuration, approximateEnd, tz, sid)
+% A window from LOCALSTART lasting DUR seconds ([] = no known end). The end
+% is written too (CHANGE 6), with its own precision: the end of filming is
+% exact even when the start (the transfer T) is not.
 t = localStart;
 t.TimeZone = tz;
 u = t;
@@ -207,8 +212,18 @@ args = {};
 if approximateStart
     args = [args, {'Approximate', true}];
 end
-if approximateEnd
+if approximateDuration
     args = [args, {'DurationApproximate', true}];
+end
+if ~isempty(dur)
+    e = t + seconds(dur);
+    ue = e;
+    ue.TimeZone = 'UTC';
+    args = [args, {'End', char(ue, 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z'''), ...
+        'EndSourceValue', char(e, 'yyyy-MM-dd''T''HH:mm:ss'), 'EndSourceTimezone', tz}];
+    if approximateEnd
+        args = [args, {'EndApproximate', true}];
+    end
 end
 d = did2.build.absoluteTimeReference(char(u, 'yyyy-MM-dd''T''HH:mm:ss.SSS''Z'''), ...
     'SourceValue', char(t, 'yyyy-MM-dd''T''HH:mm:ss'), 'SourceTimezone', tz, ...
