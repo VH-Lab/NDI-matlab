@@ -50,6 +50,19 @@ classdef TestHaleyTransferTime < matlab.unittest.TestCase
         end
 
         function testTheNamedExceptionIsWormsFirst(testCase)
+            % 2023-04-04_16-10-14_2 is the plate's LAWN CLIP; its first
+            % behaviour video is 2023-04-04_16-11-36_2. The exception matches
+            % whichever of the plate's videos it names.
+            b = datetime(2023, 4, 4, 16, 11, 36);
+            [T, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
+                'foragingMatching', b, b - seconds(82), ...
+                {'2023-04-04_16-11-36_2', '2023-04-04_16-10-14_2'});
+            testCase.verifyEqual(T, b - seconds(82));
+            testCase.verifyEqual(rule.source, 'exception');
+            [T, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
+                'foragingMatching', b, b - seconds(82), '2023-04-04_16-11-36_2');
+            testCase.verifyEqual(T, b, 'named by neither of its videos: the day''s rule (lawn first)');
+            testCase.verifyEqual(rule.source, 'rule');
             b = datetime(2023, 4, 4, 16, 11, 30);
             [T, rule] = ndi.setup.conv.haley.transferTime(testCase.Protocol, ...
                 'foragingMatching', b, b - minutes(1.4), '2023-04-04_16-10-14_2');

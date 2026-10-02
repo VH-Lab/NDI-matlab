@@ -14,9 +14,10 @@ function [T, rule] = transferTime(protocol, folder, behaviourStart, lawnStart, b
 %       BEHAVIOURSTART, the plate's first behaviour video start
 %
 %   T is approximate either way. FOLDER is the source folder
-%   (foragingConcentration, ...); BEHAVIOURVIDEO is the first behaviour
-%   video's file name without extension (e.g. 2023-04-04_16-10-14_2), which
-%   a protocol `exceptions` entry names. RULE is a struct: method (how the
+%   (foragingConcentration, ...); BEHAVIOURVIDEO is the plate's video file
+%   names without extension -- a char, or a cellstr such as {first behaviour
+%   video, lawn clip} -- which a protocol `exceptions` entry names by any one
+%   of them (e.g. 2023-04-04_16-10-14_2 is that plate's lawn clip). RULE is a struct: method (how the
 %   worms were moved, '' with no rule), contrast_video ('before_worms',
 %   'after_worms' or ''), source ('rule', 'exception' or 'none'), and used
 %   ('lawn clip' or 'behaviour video').
@@ -49,7 +50,7 @@ for r = asCell(getOr(protocol, 'rules', {}))
 end
 for e = asCell(getOr(protocol, 'exceptions', {}))
     x = e{1};
-    if strcmp(char(x.video), behaviourVideo)
+    if any(strcmp(char(x.video), cellstr(behaviourVideo)))
         rule.contrast_video = char(x.contrast_video);
         rule.source = 'exception';
     end

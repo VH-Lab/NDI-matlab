@@ -102,10 +102,12 @@ for k = 1:height(plates)
     [~, stem] = fileparts(v.file{first});
     l = lawns(strcmp(lawns.plate, id), :);
     lawnStart = NaT;
+    stems = {stem};
     if height(l) > 0
-        lawnStart = min(wallClock(l.local_start, tz));
+        [lawnStart, li] = min(wallClock(l.local_start, tz));
+        [~, stems{2}] = fileparts(l.file{li});   % an exception may name the lawn clip
     end
-    T = ndi.setup.conv.haley.transferTime(options.Protocol, plates.folder{k}, t0, lawnStart, stem);
+    T = ndi.setup.conv.haley.transferTime(options.Protocol, plates.folder{k}, t0, lawnStart, stems);
     spanOf(id) = [T, max(t + seconds(dur))];
 end
 refOf = containers.Map();       % plate id|assay plate id -> time reference id (shared)
