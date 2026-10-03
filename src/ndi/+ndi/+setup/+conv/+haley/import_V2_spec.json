@@ -449,7 +449,7 @@
    "_note": "240102B_NGM_plates (Benchling)."
   },
   {
-   "key": "nacl_fisher",
+   "key": "nacl_s271",
    "name": "Sodium chloride",
    "catalog_number": "S271-1",
    "vendor": "fisher",
@@ -714,7 +714,7 @@
   {
    "key": "nacl_fisher",
    "substance": "sodium chloride",
-   "product": "nacl_fisher"
+   "product": "nacl_s271"
   },
   {
    "key": "nacl",
