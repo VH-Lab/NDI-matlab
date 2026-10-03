@@ -235,6 +235,7 @@ v = NaN;
 if ismember(name, D.Properties.VariableNames)
     v = double(D.(name)(r));
 end
+end
 
 function note = imageNote(M, r)
 % The processing facts an image file cannot carry: its exposure, and the

@@ -56,8 +56,10 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(n('directed_relation'), 54, ...
                 'relation count moved: re-derive it from the spec, do not bump it');
             % 133 before decision #56; + 3 organizations, 1 web resource,
-            % 4 products, 20 chemicals, 9 formulations, 7 relations
-            testCase.verifyEqual(numel(testCase.Result.documents), 177);
+            % 4 products, 20 chemicals, 9 formulations, 7 relations; + the
+            % temperature probe (decision #59: an instrument with no product,
+            % so no instance_of relation)
+            testCase.verifyEqual(numel(testCase.Result.documents), 178);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
