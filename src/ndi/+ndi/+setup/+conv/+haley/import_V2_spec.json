@@ -1504,5 +1504,25 @@
     "why": "as 2022-09-02_08-48-41_1, the other camera of the same pair"
    }
   ]
- }
+ },
+ "corrections": [
+  {
+   "key": "cfu_matching_2023_03_27",
+   "folder": "foragingMatching",
+   "seed_day": "2023-03-27",
+   "column": "CFU",
+   "value": null,
+   "was": 846,
+   "reason": "The S-Complete seeding of 27 Mar 2023 measured no CFU (230327_seeding_S-complete has no CFU section); 846 is the LB seeding's (Mini) count from the same day, copied (Jess, 2026-10-03)."
+  },
+  {
+   "key": "cfu_ecoli_2022_04_28",
+   "folder": "ecoli",
+   "seed_day": "2022-04-28",
+   "column": "CFU",
+   "value": null,
+   "was": 457,
+   "reason": "457 is the OP50 count of Concentration's seeding the same day; an OP50-GFP suspension cannot share it, so it was copied and the real value is unknown (Jess, 2026-10-03)."
+  }
+ ]
 }
