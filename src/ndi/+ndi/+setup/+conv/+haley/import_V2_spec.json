@@ -1505,6 +1505,20 @@
    }
   ]
  },
+ "seeding": {
+  "_about": "Stage 8 part B (decisions #56, #57): which strain and diluent each study's seeding suspensions used. Read by ndi.setup.conv.haley.seedingSuspensions. Acclimation (growth) plates were all seeded the same way, 200 uL at OD600 1 in LB (the paper; Jess, 2026-10-03: Matching's too), so a growth seeding uses that day's LB solution: its own study's, else another study's (Matching's days have Mini's).",
+  "strain": {
+   "default": "OP50",
+   "ecoli": "OP50-GFP"
+  },
+  "diluent": {
+   "default": "lb",
+   "foragingMatching": "s_complete",
+   "ecoli": "lb_carb"
+  },
+  "type": "bacterial suspension",
+  "growth_diluent": "lb"
+ },
  "corrections": [
   {
    "key": "cfu_matching_2023_03_27",

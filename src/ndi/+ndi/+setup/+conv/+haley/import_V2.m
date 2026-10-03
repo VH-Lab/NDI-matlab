@@ -13,8 +13,12 @@ function result = import_V2(dataParentDir, options)
 %        0  discover       list the source files; skip earlier import output
 %        1  profile        describe tables (ndi.setup.V2.profileTable, on demand)
 %        2  metadata       dataset, people, organizations, funding, publication,
-%                          software, products, strains, instruments -- from
-%                          import_V2_spec.json (sources: the eLife paper)
+%                          software, products, strains, chemicals, recipes,
+%                          instruments -- from import_V2_spec.json (sources:
+%                          the eLife paper, WormBook, the lab's Benchling
+%                          protocols) -- and the seeding suspensions, one set
+%                          per seeding day, from the source tables
+%                          (ndi.setup.conv.haley.seedingSuspensions)
 %     B. per study (E. coli first); per day:
 %        3  sessions       the studies (from the spec; decision #50), then one
 %                          session per experiment day, part_of its study
@@ -103,6 +107,16 @@ end
 if any(options.Stages == "metadata")
     fprintf('\n== stage 2: dataset metadata ==\n');
     spec = jsondecode(fileread(options.Spec));
+    % The seeding suspensions (stage 8 part B, decision #57) come from the
+    % source tables, not the spec, but are dataset-level formulations like the
+    % spec's: built here with them, after the strains and diluents they name.
+    if isfield(spec, 'seeding')
+        [result.suspensions, result.suspensionChecks] = ...
+            ndi.setup.conv.haley.seedingSuspensions(dataParentDir, spec);
+        f = spec.formulations;
+        if isstruct(f), f = num2cell(f); end
+        spec.formulations = [reshape(f, 1, []), result.suspensions.entries];
+    end
     result.metadata = ndi.setup.V2.datasetMetadata(spec, sid, ...
         'DatasetId', result.datasetId, 'Studies', "exclude");
     fprintf('DENOMINATOR: %d document(s) built from %s\n', ...
