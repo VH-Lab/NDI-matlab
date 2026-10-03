@@ -3,6 +3,7 @@ function tf = schemaHasField(className, fieldName)
 %
 %   TF = ndi.setup.V2.schemaHasField(CLASSNAME, FIELDNAME) is true when
 %   DID_SCHEMA_PATH/<CLASSNAME>.json declares FIELDNAME among its own fields.
+%   FIELDNAME may be a dotted path to a nested field ('value.type').
 %   A field added to did-schema after a schema copy was made reads as absent,
 %   so a maker can leave it out rather than write a document that schema
 %   refuses (e.g. subject.name, did-schema #80; subject.type, #84).
@@ -18,14 +19,29 @@ if isempty(p) || ~isfile(f)
     return;
 end
 d = jsondecode(fileread(f));
-if ~isfield(d, 'fields') || isempty(d.fields)
+if ~isfield(d, 'fields')
     return;
 end
 fields = d.fields;
-if iscell(fields)   % jsondecode gives a cell when the fields differ in shape
-    names = cellfun(@(x) x.name, fields, 'UniformOutput', false);
-else
-    names = {fields.name};
+parts = strsplit(fieldName, '.');
+for k = 1:numel(parts)
+    hit = [];
+    for m = 1:numel(fields)
+        if iscell(fields), x = fields{m}; else, x = fields(m); end
+        if strcmp(x.name, parts{k})
+            hit = x;
+            break;
+        end
+    end
+    if isempty(hit)
+        return;
+    end
+    if k < numel(parts)
+        if ~isfield(hit, 'fields') || isempty(hit.fields)
+            return;
+        end
+        fields = hit.fields;   % jsondecode gives a cell when the fields differ in shape
+    end
 end
-tf = any(strcmp(names, fieldName));
+tf = true;
 end

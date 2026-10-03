@@ -46,12 +46,18 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyEqual(n('study'), numel(s.studies));
             testCase.verifyEqual(n('strain'), numel(s.strains));
             testCase.verifyEqual(n('subject'), numel(s.instruments));
+            testCase.verifyEqual(n('chemical'), numel(s.chemicals));
+            testCase.verifyEqual(n('formulation'), numel(s.formulations));
             testCase.verifyEqual(n('dataset'), 1);
             % every strain has a source, so each adds one stock product
             testCase.verifyEqual(n('product'), numel(s.products) + numel(s.strains));
-            testCase.verifyEqual(n('directed_relation'), 47, ...
+            % 47 before decision #56; + the media kitchen's suborganization_of
+            % Salk + 6 recipes documented_by WormBook
+            testCase.verifyEqual(n('directed_relation'), 54, ...
                 'relation count moved: re-derive it from the spec, do not bump it');
-            testCase.verifyEqual(numel(testCase.Result.documents), 133);
+            % 133 before decision #56; + 3 organizations, 1 web resource,
+            % 4 products, 20 chemicals, 9 formulations, 7 relations
+            testCase.verifyEqual(numel(testCase.Result.documents), 177);
         end
 
         function testStudiesCanBeMintedApartFromTheRest(testCase)
@@ -125,6 +131,32 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp({gfp.depends_on.name}, 'product_id')));
         end
 
+        function testRecipesAreBuiltFromTheirIngredients(testCase)
+            % decision #56: NGM and the WormBook media, dataset-level
+            docs = testCase.Result.documents;
+            ids = testCase.Result.ids;
+            byId = containers.Map(cellfun(@(d) d.base.id, docs, 'UniformOutput', false), docs);
+            sc = byId(ids('s_complete'));
+            ing = sc.depends_on(strcmp({sc.depends_on.name}, 'ingredient_id'));
+            testCase.verifyEqual({ing.document_id}, {ids('s_basal'), ids('k_citrate_1m_ph6'), ...
+                ids('trace_metals'), ids('cacl2_1m'), ids('mgso4_1m')}, 'in the recipe''s order');
+            testCase.verifyEqual(numel(sc.formulation.value.ingredients), 5, ...
+                'one amount per ingredient edge');
+            testCase.verifyEqual(sc.depends_on(strcmp({sc.depends_on.name}, 'product_id')).document_id, ...
+                ids('s_complete_kitchen'), 'made by the Salk media kitchen');
+            ngm = byId(ids('ngm_no_peptone'));
+            ing = ngm.depends_on(strcmp({ngm.depends_on.name}, 'ingredient_id'));
+            testCase.verifyFalse(any(strcmp({ing.document_id}, ids('peptone_bd'))));
+            testCase.verifyEqual(numel(ing), 7);
+            cited = relationsNamed(docs, 'documented_by');
+            cited = cited(cellfun(@(r) strcmp(parentOf(r), ids('wormbook_maintenance')), cited));
+            testCase.verifyEqual(numel(cited), 6, ...
+                'S Basal, S-Complete, trace metals, potassium citrate, potassium phosphate, LB');
+            if ndi.setup.V2.schemaHasField('formulation', 'value.type')
+                testCase.verifyEqual(sc.formulation.value.type.name, 'S-Complete');
+            end
+        end
+
         function testUnrepresentedContentIsReportedNotDropped(testCase)
             u = testCase.Result.unrepresented;
             % software.vendor has no V2 home. An instrument's `name` has one only
@@ -140,6 +172,15 @@ classdef TestDatasetMetadataHaley < matlab.unittest.TestCase
                 testCase.verifyEqual(nnz(isName), numel(testCase.Spec.instruments));
             end
             u = u(~isName);
+            % formulation.value.type likewise, once the schema declares it
+            % (did-schema PR #84); before that, one row per formulation
+            isType = strcmp({u.field}, 'type');
+            if ndi.setup.V2.schemaHasField('formulation', 'value.type')
+                testCase.verifyFalse(any(isType), 'formulation.value.type exists, so types are built');
+            else
+                testCase.verifyEqual(nnz(isType), numel(testCase.Spec.formulations));
+            end
+            u = u(~isType);
             testCase.verifyEqual(unique({u.field}), {'vendor'});
             testCase.verifyEqual(numel(u), numel(testCase.Spec.software));
         end

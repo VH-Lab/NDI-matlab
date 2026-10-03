@@ -8,7 +8,8 @@ function result = datasetMetadata(spec, sessionId, options)
 %   belong to: for dataset-level entities, the dataset's own session.
 %
 %   The spec lists entries by kind -- organizations, people, funding,
-%   publications, web_resources, software, products, strains, instruments,
+%   publications, web_resources, software, products, strains, chemicals,
+%   formulations, instruments,
 %   studies and one dataset -- each with a local `key`. References between
 %   entries use keys (a person's `affiliations`, a funding's `funder`, ...);
 %   this function resolves them to document ids and emits the relations.
@@ -169,6 +170,68 @@ if ~strcmp(options.Studies, 'only')
                 'UniformOutput', false);
         end
         state = add(state, 'strain', s.key, f, edges);
+    end
+
+    % Chemicals and formulations (Haley decision #56): what plates and seeding
+    % suspensions are made of, dataset-level so every session's doses can point
+    % at one copy. A chemical's `substance` is a term (a name until the ontology
+    % lookup); its `concentration` is the bottle's own strength. A formulation's
+    % `ingredients` name chemicals, formulations or strains by key, each with
+    % what the source gave (an added `mass` / `volume`, or a final
+    % `concentration`), in order; `type` names the standard recipe it is
+    % (did-schema #84; left out on a schema without it); `documented_by` cites
+    % where the recipe is written down.
+    for e = entries(spec, 'chemicals')
+        c = e{1};
+        state = checkKnown(state, 'chemical', c, {'substance', 'concentration', 'product'});
+        v = struct('substance', asTerm(c.substance));
+        v = putIf(v, 'concentration', c, 'concentration');
+        edges = struct();
+        if isfield(c, 'product')
+            edges.product_id = idOf(state, c.product, {'product'});
+        end
+        state = add(state, 'chemical', c.key, struct('value', v), edges);
+    end
+    formulationHasType = ndi.setup.V2.schemaHasField('formulation', 'value.type');
+    for e = entries(spec, 'formulations')
+        c = e{1};
+        if formulationHasType
+            state = checkKnown(state, 'formulation', c, {'type', 'ingredients', 'ph', 'product', ...
+                'documented_by'});
+        else
+            state = checkKnown(state, 'formulation', c, {'ingredients', 'ph', 'product', ...
+                'documented_by'}, struct('type', ...
+                'the V2 schema in use has no formulation.value.type (did-schema PR #84)'));
+        end
+        v = struct();
+        if formulationHasType && isfield(c, 'type')
+            v.type = asTerm(c.type);
+        end
+        ingredients = asCell(getOr(c, 'ingredients', {}));
+        ids = cell(1, numel(ingredients));
+        amounts = cell(1, numel(ingredients));
+        for k = 1:numel(ingredients)
+            g = ingredients{k};
+            ids{k} = idOf(state, g.ingredient, {'chemical', 'formulation', 'strain'});
+            amounts{k} = rmfield(g, 'ingredient');
+        end
+        if ~isempty(amounts)
+            v.ingredients = amounts;
+        end
+        if isfield(c, 'ph')
+            v.ph = struct('ph', c.ph, 'source_value', c.ph, 'source_unit', 'pH');
+        end
+        edges = struct();
+        if ~isempty(ids)
+            edges.ingredient_id = ids;
+        end
+        if isfield(c, 'product')
+            edges.product_id = idOf(state, c.product, {'product'});
+        end
+        state = add(state, 'formulation', c.key, struct('value', v), edges);
+        for t = asCell(getOr(c, 'documented_by', {}))
+            state = relate(state, c.key, t{1}, 'documented_by', {'formulation'}, {'web_resource'});
+        end
     end
 
     % `subject.name` arrived in did-schema PR #80; until the schema in use declares

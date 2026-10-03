@@ -154,6 +154,20 @@
    "key": "bd",
    "name": "Becton, Dickinson and Company",
    "short_name": "BD"
+  },
+  {
+   "key": "salk_media_kitchen",
+   "name": "Media Kitchen",
+   "parent": "salk",
+   "_note": "Made the LB and S-Complete (Jess, 2026-10-02; decision #56)."
+  },
+  {
+   "key": "emd_millipore",
+   "name": "EMD Millipore"
+  },
+  {
+   "key": "fisher",
+   "name": "Fisher Scientific"
   }
  ],
  "people": [
@@ -309,6 +323,17 @@
     }
    ],
    "host": "ndi_cloud"
+  },
+  {
+   "key": "wormbook_maintenance",
+   "name": "Stiernagle T (2006) Maintenance of C. elegans. WormBook",
+   "identifiers": [
+    {
+     "scheme": "DOI",
+     "value": "https://doi.org/10.1895/wormbook.1.101.1"
+    }
+   ],
+   "_note": "Source of truth for the standard recipes (S Basal, S-Complete, trace metals, 1 M potassium citrate, 1 M potassium phosphate pH 6, LB); decision #56."
   }
  ],
  "software": [
@@ -415,6 +440,30 @@
    "name": "Bacto peptone",
    "catalog_number": "211677",
    "vendor": "bd"
+  },
+  {
+   "key": "agar",
+   "name": "Agar",
+   "catalog_number": "101614",
+   "vendor": "emd_millipore",
+   "_note": "240102B_NGM_plates (Benchling)."
+  },
+  {
+   "key": "nacl_fisher",
+   "name": "Sodium chloride",
+   "catalog_number": "S271-1",
+   "vendor": "fisher",
+   "_note": "240102B_NGM_plates (Benchling)."
+  },
+  {
+   "key": "lb_kitchen",
+   "name": "LB",
+   "vendor": "salk_media_kitchen"
+  },
+  {
+   "key": "s_complete_kitchen",
+   "name": "S-Complete",
+   "vendor": "salk_media_kitchen"
   }
  ],
  "strains": [
@@ -650,6 +699,510 @@
      "value": "RRID:WB-STRAIN:MT9455"
     }
    ]
+  }
+ ],
+ "chemicals": [
+  {
+   "key": "water",
+   "substance": "water"
+  },
+  {
+   "key": "agar_emd",
+   "substance": "agar",
+   "product": "agar"
+  },
+  {
+   "key": "nacl_fisher",
+   "substance": "sodium chloride",
+   "product": "nacl_fisher"
+  },
+  {
+   "key": "nacl",
+   "substance": "sodium chloride"
+  },
+  {
+   "key": "peptone_bd",
+   "substance": "peptone",
+   "product": "peptone"
+  },
+  {
+   "key": "kh2po4",
+   "substance": "potassium dihydrogen phosphate"
+  },
+  {
+   "key": "k2hpo4",
+   "substance": "dipotassium hydrogen phosphate"
+  },
+  {
+   "key": "mgso4_1m",
+   "substance": "magnesium sulfate",
+   "concentration": {
+    "molar": 1,
+    "source_value": 1,
+    "source_unit": "M"
+   }
+  },
+  {
+   "key": "cacl2_1m",
+   "substance": "calcium chloride",
+   "concentration": {
+    "molar": 1,
+    "source_value": 1,
+    "source_unit": "M"
+   }
+  },
+  {
+   "key": "cholesterol_5",
+   "substance": "cholesterol",
+   "concentration": {
+    "grams_per_liter": 5,
+    "source_value": 5,
+    "source_unit": "mg/mL"
+   },
+   "_note": "5 mg/mL in ethanol."
+  },
+  {
+   "key": "tryptone",
+   "substance": "tryptone"
+  },
+  {
+   "key": "yeast_extract",
+   "substance": "yeast extract"
+  },
+  {
+   "key": "citric_acid_monohydrate",
+   "substance": "citric acid monohydrate"
+  },
+  {
+   "key": "tripotassium_citrate_monohydrate",
+   "substance": "tripotassium citrate monohydrate"
+  },
+  {
+   "key": "edta_disodium",
+   "substance": "disodium EDTA"
+  },
+  {
+   "key": "feso4",
+   "substance": "iron(II) sulfate heptahydrate"
+  },
+  {
+   "key": "mncl2",
+   "substance": "manganese(II) chloride tetrahydrate"
+  },
+  {
+   "key": "znso4",
+   "substance": "zinc sulfate heptahydrate"
+  },
+  {
+   "key": "cuso4",
+   "substance": "copper(II) sulfate pentahydrate"
+  },
+  {
+   "key": "carbenicillin_50",
+   "substance": "carbenicillin",
+   "concentration": {
+    "grams_per_liter": 50,
+    "source_value": 50,
+    "source_unit": "mg/mL"
+   },
+   "_note": "Frozen stock, 50 mg/mL (231229_OP50_OP50-GFP_cultures)."
+  }
+ ],
+ "formulations": [
+  {
+   "key": "kpo4_1m_ph6",
+   "type": "1 M potassium phosphate buffer, pH 6.0",
+   "ingredients": [
+    {
+     "ingredient": "kh2po4",
+     "concentration": {
+      "grams_per_liter": 108.3,
+      "source_value": 108.3,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "k2hpo4",
+     "concentration": {
+      "grams_per_liter": 35.6,
+      "source_value": 35.6,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "ph": 6.0,
+   "documented_by": [
+    "wormbook_maintenance"
+   ]
+  },
+  {
+   "key": "ngm",
+   "type": "NGM, 3% agar",
+   "ingredients": [
+    {
+     "ingredient": "water",
+     "volume": {
+      "liters": 0.73,
+      "source_value": 730,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "agar_emd",
+     "mass": {
+      "grams": 22.5,
+      "source_value": 22.5,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "nacl_fisher",
+     "mass": {
+      "grams": 2.25,
+      "source_value": 2.25,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "peptone_bd",
+     "mass": {
+      "grams": 1.875,
+      "source_value": 1.875,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "kpo4_1m_ph6",
+     "volume": {
+      "liters": 0.0188,
+      "source_value": 18.8,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "mgso4_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cacl2_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cholesterol_5",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    }
+   ],
+   "_note": "240102B_NGM_plates (Benchling; Kathleen Quach, adapted from WormBook): one batch, 25 mL per 100 mm plate."
+  },
+  {
+   "key": "ngm_no_peptone",
+   "type": "NGM, 3% agar, no peptone",
+   "ingredients": [
+    {
+     "ingredient": "water",
+     "volume": {
+      "liters": 0.73,
+      "source_value": 730,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "agar_emd",
+     "mass": {
+      "grams": 22.5,
+      "source_value": 22.5,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "nacl_fisher",
+     "mass": {
+      "grams": 2.25,
+      "source_value": 2.25,
+      "source_unit": "g"
+     }
+    },
+    {
+     "ingredient": "kpo4_1m_ph6",
+     "volume": {
+      "liters": 0.0188,
+      "source_value": 18.8,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "mgso4_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cacl2_1m",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    },
+    {
+     "ingredient": "cholesterol_5",
+     "volume": {
+      "liters": 0.00075,
+      "source_value": 750,
+      "source_unit": "uL"
+     }
+    }
+   ],
+   "_note": "240102B_NGM_plates without the peptone (the source `peptone` = without)."
+  },
+  {
+   "key": "s_basal",
+   "type": "S Basal",
+   "ingredients": [
+    {
+     "ingredient": "nacl",
+     "concentration": {
+      "grams_per_liter": 5.85,
+      "source_value": 5.85,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "k2hpo4",
+     "concentration": {
+      "grams_per_liter": 1,
+      "source_value": 1,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "kh2po4",
+     "concentration": {
+      "grams_per_liter": 6,
+      "source_value": 6,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "cholesterol_5",
+     "concentration": {
+      "volume_fraction": 0.001,
+      "source_value": 1,
+      "source_unit": "mL/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "documented_by": [
+    "wormbook_maintenance"
+   ]
+  },
+  {
+   "key": "trace_metals",
+   "type": "trace metals solution",
+   "ingredients": [
+    {
+     "ingredient": "edta_disodium",
+     "concentration": {
+      "grams_per_liter": 1.86,
+      "source_value": 1.86,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "feso4",
+     "concentration": {
+      "grams_per_liter": 0.69,
+      "source_value": 0.69,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "mncl2",
+     "concentration": {
+      "grams_per_liter": 0.2,
+      "source_value": 0.2,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "znso4",
+     "concentration": {
+      "grams_per_liter": 0.29,
+      "source_value": 0.29,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "cuso4",
+     "concentration": {
+      "grams_per_liter": 0.025,
+      "source_value": 0.025,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "documented_by": [
+    "wormbook_maintenance"
+   ]
+  },
+  {
+   "key": "k_citrate_1m_ph6",
+   "type": "1 M potassium citrate, pH 6.0",
+   "ingredients": [
+    {
+     "ingredient": "citric_acid_monohydrate",
+     "concentration": {
+      "grams_per_liter": 20,
+      "source_value": 20,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "tripotassium_citrate_monohydrate",
+     "concentration": {
+      "grams_per_liter": 293.5,
+      "source_value": 293.5,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "ph": 6.0,
+   "documented_by": [
+    "wormbook_maintenance"
+   ]
+  },
+  {
+   "key": "s_complete",
+   "type": "S-Complete",
+   "ingredients": [
+    {
+     "ingredient": "s_basal",
+     "volume": {
+      "liters": 1,
+      "source_value": 1,
+      "source_unit": "L"
+     }
+    },
+    {
+     "ingredient": "k_citrate_1m_ph6",
+     "volume": {
+      "liters": 0.01,
+      "source_value": 10,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "trace_metals",
+     "volume": {
+      "liters": 0.01,
+      "source_value": 10,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "cacl2_1m",
+     "volume": {
+      "liters": 0.003,
+      "source_value": 3,
+      "source_unit": "mL"
+     }
+    },
+    {
+     "ingredient": "mgso4_1m",
+     "volume": {
+      "liters": 0.003,
+      "source_value": 3,
+      "source_unit": "mL"
+     }
+    }
+   ],
+   "product": "s_complete_kitchen",
+   "documented_by": [
+    "wormbook_maintenance"
+   ],
+   "_note": "S Medium in WormBook; made by the Salk media kitchen. The diluent for every Matching seeding (decision #56)."
+  },
+  {
+   "key": "lb",
+   "type": "LB",
+   "ingredients": [
+    {
+     "ingredient": "tryptone",
+     "concentration": {
+      "grams_per_liter": 10,
+      "source_value": 10,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "yeast_extract",
+     "concentration": {
+      "grams_per_liter": 5,
+      "source_value": 5,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "nacl",
+     "concentration": {
+      "grams_per_liter": 5,
+      "source_value": 5,
+      "source_unit": "g/L"
+     }
+    },
+    {
+     "ingredient": "water"
+    }
+   ],
+   "product": "lb_kitchen",
+   "documented_by": [
+    "wormbook_maintenance"
+   ],
+   "_note": "WormBook's LB (5 g NaCl per litre, the Lennox form); made by the Salk media kitchen."
+  },
+  {
+   "key": "lb_carb",
+   "type": "LB with carbenicillin",
+   "ingredients": [
+    {
+     "ingredient": "lb"
+    },
+    {
+     "ingredient": "carbenicillin_50",
+     "concentration": {
+      "grams_per_liter": 0.1,
+      "source_value": 100,
+      "source_unit": "ug/mL"
+     }
+    }
+   ],
+   "_note": "OP50-GFP is grown and diluted in it (231229_OP50_OP50-GFP_cultures: 300 uL of 50 mg/mL per 150 mL)."
   }
  ],
  "instruments": [
