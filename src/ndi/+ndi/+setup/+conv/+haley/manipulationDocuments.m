@@ -10,8 +10,9 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %   log #54, #56, #57; every term is a name until the ontology lookup.
 %
 %   Plates (assay, acclimation, food deprivation, E. coli):
-%     pour         dose_manipulation: 25 mL of NGM (or NGM without peptone,
-%                  from the plate's `peptone`), formulation_id the recipe.
+%     pour         dose_manipulation: 25 mL of NGM agar (or NGM agar without
+%                  peptone, from the plate's `peptone`; only Matching and the
+%                  E. coli study used it), formulation_id the recipe.
 %                  When: E. coli `timePoured`; a C. elegans plate, which has no
 %                  pour time, a relative_time_reference `intervalBefore` its
 %                  seeding (an unseeded food deprivation plate: before the
@@ -29,7 +30,8 @@ function out = manipulationDocuments(session, S, subjectIds, options)
 %                  temperature (to the pick), incubator (the pick to the last
 %                  move off it). Food deprivation plate: incubator
 %                  (`starvedTime` to the last move off it). E. coli plate: cold
-%                  room after pouring (to seeding), cold room after seeding (to
+%                  room after pouring (to seeding, which was onto cold plates:
+%                  the end is up to 5 min early), cold room after seeding (to
 %                  `timeRoomTemp`), room temperature (from `timeRoomTemp`).
 %                  Seeding to cold room is at room temperature with no move:
 %                  none. A `timeRoomTemp` the spec's corrections mark as
@@ -147,7 +149,10 @@ for k = find(ismember(S.kind, plateKinds))'
             incubatorRef = temperature(id, S.worms_placed(k), hand, stop, stopTol, stopFmt, ...
                 cfg.temperature.incubator_celsius, '');
         case 'plate'
-            temperature(id, p.poured_cold_room, hand, p.seeded, hand, minuteFmt, ...
+            % out of the cold room shortly before seeding (seeded cold): the
+            % window ends at the seeding, up to out_before_seeding_seconds earlier
+            outTol = [getOr(cfg.temperature, 'out_before_seeding_seconds', 0) + hand(1), hand(2)];
+            temperature(id, p.poured_cold_room, hand, p.seeded, outTol, minuteFmt, ...
                 cfg.temperature.cold_room_celsius, '');
             temperature(id, p.cold_room, hand, p.room_temp, hand, minuteFmt, ...
                 cfg.temperature.cold_room_celsius, '');
@@ -179,7 +184,7 @@ for k = find(ismember(S.kind, plateKinds))'
         if isfield(cfg.pour, 'notes') && isfield(cfg.pour.notes, folder)
             notes = cfg.pour.notes.(folder);
         end
-        dose(id, cfg.pour.variable, cfg.pour.volume_ml, 'mL', cfg.pour.agar.(peptone), ...
+        dose(id, cfg.pour.variable.(peptone), cfg.pour.volume_ml, 'mL', cfg.pour.agar.(peptone), ...
             pourRef, cfg.pour.method, notes, 'pour');
     end
 end

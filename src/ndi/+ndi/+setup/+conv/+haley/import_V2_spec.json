@@ -1523,7 +1523,10 @@
   "_about": "Stage 8 part C (decisions #54, #56, #57): how the plates were prepared and the worms moved, read by ndi.setup.conv.haley.manipulationDocuments. Every value is from the eLife paper's Methods, the lab's Benchling protocols or Jess Haley; terms are names until the ontology lookup.",
   "pour": {
    "_about": "Every plate is 25 mL of NGM in a 100 mm dish (240102B_NGM_plates; Jess: Mini's too). The agar is NGM, or NGM without peptone where the plate's `peptone` says so (Matching, E. coli); acclimation and food deprivation plates have no `peptone` column and are the plain recipe.",
-   "variable": "nematode growth medium",
+   "variable": {
+    "with": "NGM agar",
+    "without": "NGM agar (no peptone)"
+   },
    "method": "pouring",
    "volume_ml": 25,
    "agar": {
@@ -1545,7 +1548,9 @@
    "variable": "ambient temperature",
    "cold_room_celsius": 4,
    "room_celsius": 20,
-   "incubator_celsius": 20
+   "incubator_celsius": 20,
+   "out_before_seeding_seconds": 300,
+   "_out_before_seeding": "An E. coli plate left the cold room shortly before it was seeded: the paper seeds onto cold, low-moisture NGM plates (Methods, Bacterial cultures), and Jess puts it at about 5 min. So the cold-room window after pouring ends at the seeding time, approximate, up to this much earlier (plus the seeding time's own hand-written bound)."
   },
   "transfer": {
    "_about": "One term_manipulation per move, on the cohort, at its contained_in relation's time. The value names the plate moved to; the method the move's last step; every move onto an assay plate first went through an empty NGM plate for about a minute to shed bacteria (Jess, 2026-10-02).",

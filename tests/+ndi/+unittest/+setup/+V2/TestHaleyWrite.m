@@ -313,6 +313,7 @@ classdef TestHaleyWrite < matlab.unittest.TestCase
             testCase.verifyNumElements(pour, 1);
             testCase.verifyEqual(liters(pour{1}), 0.025, 'AbsTol', 1e-12);
             testCase.verifyEqual(edge(pour{1}, 'formulation_id'), result.metadata.ids('ngm'));
+            testCase.verifyEqual(pour{1}.subject_statement.variable.name, 'NGM agar');
             when = byId(edge(pour{1}, 'time_reference_id'));
             testCase.verifyEqual(when.document_class.class_name, 'relative_time_reference');
             testCase.verifyEqual(edge(when, 'referent_id'), edge(seed{1}, 'time_reference_id'));
