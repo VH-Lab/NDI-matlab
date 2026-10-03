@@ -212,8 +212,7 @@ function result = writeSessions(result, dataParentDir, options)
 schema = getenv('DID_SCHEMA_PATH');
 subjectFile = fullfile(schema, 'subject.json');
 if isfield(result, 'subjects') && isfile(subjectFile)
-    d = jsondecode(fileread(subjectFile));
-    if ~any(strcmp({d.fields.name}, 'name'))
+    if ~ndi.setup.V2.schemaHasField('subject', 'name')
         error('ndi:setup:conv:haley:oldSchema', ...
             ['The V2 schema in %s has no subject.name (did-schema PR #80, merged ' ...
              '2026-10-01). Update did-schema to main and copy its V_eta schemas ' ...

@@ -25,8 +25,7 @@ classdef TestHaleySessions < matlab.unittest.TestCase
             sp = getenv('DID_SCHEMA_PATH');
             testCase.assumeTrue(~isempty(sp) && isfile(fullfile(sp, 'study.json')), ...
                 'DID_SCHEMA_PATH does not hold a V2 schema with `study`');
-            s = jsondecode(fileread(fullfile(sp, 'session.json')));
-            testCase.assumeTrue(any(strcmp({s.fields.name}, 'name')), ...
+            testCase.assumeTrue(ndi.setup.V2.schemaHasField('session', 'name'), ...
                 'the V2 schema has no session.name (did-schema PR #79)');
 
             testCase.Root = tempname;
