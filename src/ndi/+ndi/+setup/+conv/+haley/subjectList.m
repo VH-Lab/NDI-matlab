@@ -1,4 +1,4 @@
-function [S, checks] = subjectList(dataParentDir, sessions)
+function [S, checks] = subjectList(dataParentDir, sessions, options)
 %SUBJECTLIST Stage 4 (Haley): the subjects to create, per session.
 %
 %   [S, CHECKS] = ndi.setup.conv.haley.subjectList(DATAPARENTDIR, SESSIONS)
